@@ -1,0 +1,31 @@
+{
+  "name": "grc-platform",
+  "private": true,
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "turbo dev",
+    "build": "turbo build",
+    "lint": "turbo lint",
+    "test": "turbo test",
+    "db:generate": "turbo db:generate --filter=@grc/db",
+    "db:migrate": "turbo db:migrate --filter=@grc/db",
+    "db:seed": "turbo db:seed --filter=@grc/db",
+    "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
+  },
+  "devDependencies": {
+    "dotenv-cli": "^11.0.0",
+    "prettier": "^3.8",
+    "turbo": "^2.8",
+    "typescript": "^6.0"
+  },
+  "overrides": {
+    "esbuild": ">=0.25.0"
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "packageManager": "npm@11.12.0"
+}

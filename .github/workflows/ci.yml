@@ -1,0 +1,386 @@
+# ============================================================================
+# ARCTOS GRC Platform — CI Pipeline
+# Trigger: Push on main/develop, Pull Requests
+# Jobs: Lint → Unit Tests → Integration Tests → DB Integrity → Build → Security
+# ============================================================================
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  # Dummy values so Next.js build doesn't fail on missing env
+  AUTH_SECRET: ci-build-placeholder
+  AUTH_TRUST_HOST: "true"
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+permissions:
+  contents: read
+
+jobs:
+  # ────────────────────────────────────────────────
+  # 1. Lint, type-check, format
+  # ────────────────────────────────────────────────
+  lint:
+    name: Lint & Type Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: ESLint
+        run: npx turbo lint
+
+      - name: Prettier (format check)
+        run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
+
+      - name: TypeScript (type check)
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
+
+  # ────────────────────────────────────────────────
+  # 2. Unit tests with coverage
+  # ────────────────────────────────────────────────
+  unit-tests:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Run tests
+        run: npx turbo test -- --reporter=verbose --coverage
+
+      - name: Upload coverage
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            apps/web/coverage/
+            packages/*/coverage/
+          retention-days: 14
+
+  # ────────────────────────────────────────────────
+  # 3. Integration tests (with PostgreSQL + TimescaleDB)
+  # ────────────────────────────────────────────────
+  integration-tests:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: lint
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc -d grc_platform_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --shm-size 256mb
+
+    env:
+      DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Setup PostgreSQL extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+          "
+
+      - name: Run migrations
+        working-directory: packages/db
+        run: npx drizzle-kit migrate
+
+      - name: Integration tests
+        run: npx turbo test:integration
+        env:
+          TEST_ENV: ci
+
+      - name: RLS isolation tests
+        run: npx turbo test:rls
+
+  # ────────────────────────────────────────────────
+  # 4. Database migration & integrity verification
+  # ────────────────────────────────────────────────
+  database:
+    name: DB Migration & Integrity
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_platform
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc -d grc_platform"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --shm-size 256mb
+
+    env:
+      DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Create PostgreSQL extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+          "
+
+      - name: Run migrations
+        working-directory: packages/db
+        run: npx drizzle-kit migrate
+
+      - name: Verify schema (all tables exist)
+        run: |
+          TABLES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            SELECT count(*) FROM information_schema.tables
+            WHERE table_schema = 'public'
+              AND table_type = 'BASE TABLE'
+              AND table_name NOT LIKE '__drizzle%';
+          " | tr -d ' ')
+          echo "Tables found: $TABLES"
+          if [ "$TABLES" -lt 10 ]; then
+            echo "::error::Expected at least 10 tables, found $TABLES"
+            exit 1
+          fi
+
+      - name: Verify RLS policies
+        run: |
+          POLICIES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            SELECT count(*) FROM pg_policies WHERE schemaname = 'public';
+          " | tr -d ' ')
+          echo "RLS policies: $POLICIES"
+          if [ "$POLICIES" -lt 6 ]; then
+            echo "::error::Expected at least 6 RLS policies, found $POLICIES"
+            exit 1
+          fi
+
+      - name: Verify audit triggers
+        run: |
+          TRIGGERS=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            SELECT count(*) FROM pg_trigger
+            WHERE tgname = 'audit_trigger' AND NOT tgisinternal;
+          " | tr -d ' ')
+          echo "Audit triggers: $TRIGGERS"
+          if [ "$TRIGGERS" -lt 4 ]; then
+            echo "::error::Expected at least 4 audit triggers, found $TRIGGERS"
+            exit 1
+          fi
+
+      - name: Verify append-only rules
+        run: |
+          RULES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            SELECT count(*) FROM pg_rules
+            WHERE schemaname = 'public' AND rulename LIKE '%_no_%';
+          " | tr -d ' ')
+          echo "Append-only rules: $RULES"
+          if [ "$RULES" -lt 6 ]; then
+            echo "::error::Expected 6 append-only rules, found $RULES"
+            exit 1
+          fi
+
+      - name: Run seed
+        working-directory: packages/db
+        run: npx tsx src/seed.ts
+
+      - name: Verify hash chain integrity
+        run: |
+          RESULT=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            WITH RECURSIVE chain AS (
+              SELECT id, entry_hash, 1 AS seq
+              FROM audit_log WHERE previous_hash IS NULL
+              UNION ALL
+              SELECT a.id, a.entry_hash, c.seq + 1
+              FROM audit_log a JOIN chain c ON a.previous_hash = c.entry_hash
+            )
+            SELECT CASE
+              WHEN (SELECT count(*) FROM chain) = (SELECT count(*) FROM audit_log)
+              THEN 'PASS' ELSE 'FAIL'
+            END;
+          " | tr -d ' ')
+          echo "Hash chain integrity: $RESULT"
+          if [ "$RESULT" != "PASS" ]; then
+            echo "::error::Audit log hash chain integrity check FAILED"
+            exit 1
+          fi
+
+      - name: Test RLS isolation
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -c "
+            DO \$\$ BEGIN
+              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grc_app') THEN
+                CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_pass';
+              END IF;
+            END \$\$;
+            GRANT USAGE ON SCHEMA public TO grc_app;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+          "
+          ROWS=$(PGPASSWORD=grc_app_pass psql -h localhost -U grc_app -d grc_platform \
+            -t -c "SELECT count(*) FROM organization;" | tr -d ' ')
+          echo "Rows visible without context: $ROWS"
+          if [ "$ROWS" != "0" ]; then
+            echo "::error::RLS FAILURE — expected 0 rows without org context, got $ROWS"
+            exit 1
+          fi
+
+  # ────────────────────────────────────────────────
+  # 5. Production build + Docker image
+  # ────────────────────────────────────────────────
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [unit-tests, integration-tests, database]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Build all packages
+        run: npx turbo build
+        env:
+          DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+
+      - name: Check bundle size
+        run: |
+          TOTAL=$(du -sb apps/web/.next/ | cut -f1)
+          echo "Total .next size: $(numfmt --to=iec $TOTAL)"
+          if [ "$TOTAL" -gt 104857600 ]; then
+            echo "::error::Bundle size exceeds 100 MB"
+            exit 1
+          fi
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build & Push Web Image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/grc-web:latest
+            ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ────────────────────────────────────────────────
+  # 6. Security audit
+  # ────────────────────────────────────────────────
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: lint
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: npm audit (production deps)
+        run: npm audit --omit=dev --audit-level=high
+        continue-on-error: true
+
+      - name: Check for leaked secrets
+        uses: trufflesecurity/trufflehog@v3.88.12
+        with:
+          extra_args: --only-verified --results=verified
+
+      - name: Check for .env files in repo
+        run: |
+          ENV_FILES=$(git ls-files '*.env' '*.env.*' '.env*' 2>/dev/null | grep -v '.gitignore' || true)
+          if [ -n "$ENV_FILES" ]; then
+            echo "::error::Environment files found in repo: $ENV_FILES"
+            exit 1
+          fi
+
+      - name: License compliance check
+        run: |
+          npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0" \
+            --excludePrivatePackages --summary || true

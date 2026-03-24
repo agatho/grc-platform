@@ -1,0 +1,20 @@
+{
+  "name": "@grc/auth",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./providers": "./src/providers.ts",
+    "./context": "./src/context.ts"
+  },
+  "dependencies": {
+    "@grc/db": "*",
+    "@grc/shared": "*",
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "next-auth": "^5.0.0-beta.30"
+  },
+  "devDependencies": {
+    "typescript": "^5.7"
+  }
+}
