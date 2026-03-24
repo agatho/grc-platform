@@ -1,0 +1,15 @@
+node_modules/
+.next/
+dist/
+.turbo/
+*.env
+*.env.local
+.DS_Store
+coverage/
+.vercel/
+
+# Private docs — competitive analysis, vendor comparisons (not for public repos)
+docs-private/
+
+# Claude Code local settings
+.claude/

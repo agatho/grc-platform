@@ -1,0 +1,9 @@
+{
+  "app": { "name": "GRC Platform", "description": "Governance, Risk & Compliance" },
+  "nav": {
+    "dashboard": "Dashboard", "organizations": "Organisationen", "users": "Benutzerverwaltung",
+    "auditLog": "Änderungshistorie", "settings": "Einstellungen"
+  },
+  "actions": { "create": "Erstellen", "edit": "Bearbeiten", "delete": "Löschen", "save": "Speichern", "cancel": "Abbrechen" },
+  "status": { "active": "Aktiv", "inactive": "Inaktiv" }
+}

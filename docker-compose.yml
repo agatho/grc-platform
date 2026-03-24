@@ -1,0 +1,27 @@
+# GRC Platform — Local Development (ADR-005, ADR-012)
+version: "3.9"
+services:
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: grc
+      POSTGRES_PASSWORD: grc_dev_password
+      POSTGRES_DB: grc_platform
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./packages/db/sql/000_schema.sql:/docker-entrypoint-initdb.d/000_schema.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grc -d grc_platform"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+
+volumes:
+  pgdata:
