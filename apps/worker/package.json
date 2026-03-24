@@ -1,0 +1,22 @@
+{
+  "name": "@grc/worker",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "vitest"
+  },
+  "dependencies": {
+    "hono": "^4.7",
+    "@grc/db": "*",
+    "@grc/shared": "*",
+    "svix": "^1.42"
+  },
+  "devDependencies": {
+    "typescript": "^5.7",
+    "tsx": "^4.19",
+    "vitest": "^3.0"
+  }
+}

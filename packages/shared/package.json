@@ -1,0 +1,7 @@
+{
+  "name": "@grc/shared",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "dependencies": { "zod": "^3.24" },
+  "devDependencies": { "typescript": "^5.7" }
+}

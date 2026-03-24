@@ -1,0 +1,23 @@
+{
+  "name": "@grc/db",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "scripts": {
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "dotenv -- drizzle-kit migrate",
+    "db:seed": "tsx src/seed.ts",
+    "db:studio": "drizzle-kit studio"
+  },
+  "dependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "bcryptjs": "^3.0.3",
+    "drizzle-orm": "^0.39",
+    "drizzle-zod": "^0.7",
+    "postgres": "^3.4"
+  },
+  "devDependencies": {
+    "drizzle-kit": "^0.31.10",
+    "tsx": "^4.19",
+    "typescript": "^5.7"
+  }
+}
