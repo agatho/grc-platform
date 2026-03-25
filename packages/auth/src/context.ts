@@ -11,13 +11,27 @@ const ORG_COOKIE = "arctos-org-id";
 /**
  * Read the currently selected org ID from the cookie.
  * Falls back to the first accessible org from the session.
+ *
+ * SECURITY: The cookie value is validated against the user's role
+ * assignments in the JWT. If the cookie contains an org ID the user
+ * does not have access to, it is ignored and the first accessible org
+ * is returned instead. This prevents cookie manipulation attacks.
  */
 export async function getCurrentOrgId(
   session: Session | null,
 ): Promise<string | null> {
+  // Build the set of org IDs this user actually has roles in
+  const accessibleOrgIds = new Set(
+    session?.user?.roles?.map((r) => r.orgId) ?? [],
+  );
+
   const jar = await cookies();
   const fromCookie = jar.get(ORG_COOKIE)?.value;
-  if (fromCookie) return fromCookie;
+
+  // Only use the cookie value if the user has a role in that org
+  if (fromCookie && accessibleOrgIds.has(fromCookie)) {
+    return fromCookie;
+  }
 
   // Fallback: first org in the user's roles
   if (session?.user?.roles?.length) {
