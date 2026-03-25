@@ -1,9 +1,100 @@
 {
-  "app": { "name": "GRC Platform", "description": "Governance, Risk & Compliance" },
-  "nav": {
-    "dashboard": "Dashboard", "organizations": "Organisationen", "users": "Benutzerverwaltung",
-    "auditLog": "Änderungshistorie", "settings": "Einstellungen"
+  "app": {
+    "name": "ARCTOS",
+    "description": "Audit, Risk, Compliance & Trust Operating System"
   },
-  "actions": { "create": "Erstellen", "edit": "Bearbeiten", "delete": "Löschen", "save": "Speichern", "cancel": "Abbrechen" },
-  "status": { "active": "Aktiv", "inactive": "Inaktiv" }
+  "nav": {
+    "dashboard": "Dashboard",
+    "organizations": "Organisationen",
+    "users": "Benutzerverwaltung",
+    "riskRegister": "Risikoregister",
+    "controls": "Kontrollen",
+    "audit": "Audit",
+    "compliance": "Compliance",
+    "dataPrivacy": "Datenschutz",
+    "processes": "Prozesse",
+    "auditLog": "Änderungshistorie",
+    "accessLog": "Zugriffsprotokoll",
+    "settings": "Einstellungen",
+    "sections": {
+      "main": "Hauptnavigation",
+      "firstLine": "1. Verteidigungslinie",
+      "secondLine": "2. Verteidigungslinie",
+      "thirdLine": "3. Verteidigungslinie",
+      "system": "System"
+    }
+  },
+  "orgSwitcher": {
+    "label": "Organisation",
+    "switchTo": "Wechseln zu",
+    "current": "Aktuelle Organisation",
+    "noOrgs": "Keine Organisationen verfügbar"
+  },
+  "notifications": {
+    "title": "Benachrichtigungen",
+    "empty": "Keine neuen Benachrichtigungen",
+    "markRead": "Als gelesen markieren",
+    "unread": "{count} ungelesen",
+    "viewAll": "Alle anzeigen"
+  },
+  "profile": {
+    "title": "Profil bearbeiten",
+    "name": "Name",
+    "email": "E-Mail",
+    "language": "Sprache",
+    "avatar": "Avatar-URL",
+    "save": "Profil speichern",
+    "saved": "Profil gespeichert",
+    "signOut": "Abmelden",
+    "languages": {
+      "de": "Deutsch",
+      "en": "Englisch"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Willkommen bei ARCTOS",
+    "widgets": {
+      "openRisks": "Offene Risiken",
+      "activeControls": "Aktive Kontrollen",
+      "pendingFindings": "Offene Findings",
+      "complianceScore": "Compliance-Score",
+      "upcomingAudits": "Anstehende Audits",
+      "recentChanges": "Letzte Änderungen",
+      "myTasks": "Meine Aufgaben",
+      "notifications": "Benachrichtigungen"
+    },
+    "placeholder": "Daten werden in Sprint 2 verfügbar"
+  },
+  "actions": {
+    "create": "Erstellen",
+    "edit": "Bearbeiten",
+    "delete": "Löschen",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "confirm": "Bestätigen",
+    "close": "Schließen",
+    "search": "Suchen",
+    "filter": "Filtern",
+    "export": "Exportieren",
+    "refresh": "Aktualisieren"
+  },
+  "status": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "draft": "Entwurf",
+    "inReview": "In Prüfung",
+    "approved": "Genehmigt",
+    "archived": "Archiviert"
+  },
+  "common": {
+    "loading": "Laden...",
+    "error": "Fehler",
+    "noData": "Keine Daten vorhanden",
+    "total": "Gesamt",
+    "page": "Seite",
+    "of": "von",
+    "showing": "Zeige",
+    "entries": "Einträge"
+  }
 }

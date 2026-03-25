@@ -1,9 +1,100 @@
 {
-  "app": { "name": "GRC Platform", "description": "Governance, Risk & Compliance" },
-  "nav": {
-    "dashboard": "Dashboard", "organizations": "Organizations", "users": "User Management",
-    "auditLog": "Audit Trail", "settings": "Settings"
+  "app": {
+    "name": "ARCTOS",
+    "description": "Audit, Risk, Compliance & Trust Operating System"
   },
-  "actions": { "create": "Create", "edit": "Edit", "delete": "Delete", "save": "Save", "cancel": "Cancel" },
-  "status": { "active": "Active", "inactive": "Inactive" }
+  "nav": {
+    "dashboard": "Dashboard",
+    "organizations": "Organizations",
+    "users": "User Management",
+    "riskRegister": "Risk Register",
+    "controls": "Controls",
+    "audit": "Audit",
+    "compliance": "Compliance",
+    "dataPrivacy": "Data Privacy",
+    "processes": "Processes",
+    "auditLog": "Audit Trail",
+    "accessLog": "Access Log",
+    "settings": "Settings",
+    "sections": {
+      "main": "Main Navigation",
+      "firstLine": "1st Line of Defense",
+      "secondLine": "2nd Line of Defense",
+      "thirdLine": "3rd Line of Defense",
+      "system": "System"
+    }
+  },
+  "orgSwitcher": {
+    "label": "Organization",
+    "switchTo": "Switch to",
+    "current": "Current organization",
+    "noOrgs": "No organizations available"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "empty": "No new notifications",
+    "markRead": "Mark as read",
+    "unread": "{count} unread",
+    "viewAll": "View all"
+  },
+  "profile": {
+    "title": "Edit Profile",
+    "name": "Name",
+    "email": "Email",
+    "language": "Language",
+    "avatar": "Avatar URL",
+    "save": "Save Profile",
+    "saved": "Profile saved",
+    "signOut": "Sign Out",
+    "languages": {
+      "de": "German",
+      "en": "English"
+    }
+  },
+  "dashboard": {
+    "title": "Dashboard",
+    "welcome": "Welcome to ARCTOS",
+    "widgets": {
+      "openRisks": "Open Risks",
+      "activeControls": "Active Controls",
+      "pendingFindings": "Pending Findings",
+      "complianceScore": "Compliance Score",
+      "upcomingAudits": "Upcoming Audits",
+      "recentChanges": "Recent Changes",
+      "myTasks": "My Tasks",
+      "notifications": "Notifications"
+    },
+    "placeholder": "Data will be available in Sprint 2"
+  },
+  "actions": {
+    "create": "Create",
+    "edit": "Edit",
+    "delete": "Delete",
+    "save": "Save",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close",
+    "search": "Search",
+    "filter": "Filter",
+    "export": "Export",
+    "refresh": "Refresh"
+  },
+  "status": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "draft": "Draft",
+    "inReview": "In Review",
+    "approved": "Approved",
+    "archived": "Archived"
+  },
+  "common": {
+    "loading": "Loading...",
+    "error": "Error",
+    "noData": "No data available",
+    "total": "Total",
+    "page": "Page",
+    "of": "of",
+    "showing": "Showing",
+    "entries": "entries"
+  }
 }

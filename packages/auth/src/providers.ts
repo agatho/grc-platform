@@ -5,8 +5,25 @@ import Credentials from "next-auth/providers/credentials";
 import { compare } from "bcryptjs";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { db } from "@grc/db";
-import { user, userOrganizationRole } from "@grc/db";
+import { user, userOrganizationRole, accessLog } from "@grc/db";
 import type { RoleAssignment } from "./types";
+
+/** Write an entry to the access_log table. */
+export async function logAccessEvent(params: {
+  userId?: string;
+  emailAttempted: string;
+  eventType: "login_success" | "login_failed" | "logout" | "password_change" | "session_expired";
+  authMethod?: "password" | "sso_azure_ad" | "sso_oidc" | "api_key" | "mfa_totp" | "mfa_webauthn";
+  failureReason?: string;
+}) {
+  await db.insert(accessLog).values({
+    userId: params.userId,
+    emailAttempted: params.emailAttempted,
+    eventType: params.eventType,
+    authMethod: params.authMethod ?? "password",
+    failureReason: params.failureReason,
+  });
+}
 
 async function loadRoles(userId: string): Promise<RoleAssignment[]> {
   const rows = await db
@@ -48,15 +65,35 @@ export const credentialsProvider = Credentials({
         ),
       );
 
-    if (!found?.passwordHash) return null;
+    if (!found?.passwordHash) {
+      await logAccessEvent({
+        emailAttempted: email,
+        eventType: "login_failed",
+        failureReason: "user_not_found",
+      });
+      return null;
+    }
 
     const valid = await compare(password, found.passwordHash);
-    if (!valid) return null;
+    if (!valid) {
+      await logAccessEvent({
+        userId: found.id,
+        emailAttempted: email,
+        eventType: "login_failed",
+        failureReason: "invalid_password",
+      });
+      return null;
+    }
 
-    // Update last login timestamp
+    // Update last login timestamp + log success
     await db.execute(
       sql`UPDATE "user" SET last_login_at = now() WHERE id = ${found.id}`,
     );
+    await logAccessEvent({
+      userId: found.id,
+      emailAttempted: email,
+      eventType: "login_success",
+    });
 
     const roles = await loadRoles(found.id);
 
