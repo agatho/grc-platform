@@ -20,6 +20,23 @@ export interface UserWithRoles {
   roles: { orgId: string; role: UserRole; lineOfDefense?: LineOfDefense }[];
 }
 
+export type TaskStatus = "open" | "in_progress" | "done" | "overdue" | "cancelled";
+export type TaskPriority = "low" | "medium" | "high" | "critical";
+
+export interface Task {
+  id: string;
+  orgId: string;
+  title: string;
+  description?: string;
+  status: TaskStatus;
+  priority: TaskPriority;
+  assigneeId?: string;
+  dueDate?: string;
+  sourceEntityType?: string;
+  sourceEntityId?: string;
+  createdAt: string;
+}
+
 export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
 
 export interface Invitation {
