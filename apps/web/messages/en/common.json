@@ -49,11 +49,14 @@
     "languages": {
       "de": "German",
       "en": "English"
-    }
+    },
+    "languageSwitched": "Language changed"
   },
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Welcome to ARCTOS",
+    "welcomeUser": "Welcome, {name}",
+    "comingSprint2": "Coming in Sprint 2",
     "widgets": {
       "openRisks": "Open Risks",
       "activeControls": "Active Controls",
@@ -64,7 +67,29 @@
       "myTasks": "My Tasks",
       "notifications": "Notifications"
     },
-    "placeholder": "Data will be available in Sprint 2"
+    "placeholder": "Data will be available in Sprint 2",
+    "recentChanges": {
+      "empty": "No recent changes",
+      "error": "Could not load recent changes"
+    },
+    "notifications": {
+      "empty": "No notifications",
+      "error": "Could not load notifications",
+      "markRead": "Mark as read"
+    },
+    "myTasks": {
+      "empty": "No tasks assigned"
+    },
+    "upcomingAudits": {
+      "empty": "No upcoming audits"
+    },
+    "timeAgo": {
+      "justNow": "just now",
+      "minutesAgo": "{count, plural, one {1 minute ago} other {# minutes ago}}",
+      "hoursAgo": "{count, plural, one {1 hour ago} other {# hours ago}}",
+      "yesterday": "yesterday",
+      "daysAgo": "{count, plural, one {1 day ago} other {# days ago}}"
+    }
   },
   "actions": {
     "create": "Create",
@@ -87,6 +112,80 @@
     "approved": "Approved",
     "archived": "Archived"
   },
+  "organizations": {
+    "title": "Organizations",
+    "create": "Create Organization",
+    "edit": "Edit Organization",
+    "delete": "Delete Organization",
+    "deleteConfirm": "Are you sure you want to delete this organization? This action can be reversed by an administrator.",
+    "deleted": "Organization deleted",
+    "saved": "Organization saved",
+    "tree": "Corporate Hierarchy",
+    "treeDescription": "Visual overview of your corporate group structure",
+    "name": "Name",
+    "shortName": "Short Name",
+    "type": "Type",
+    "country": "Country",
+    "status": "Status",
+    "createdAt": "Created At",
+    "parentOrg": "Parent Organization",
+    "parentOrgPlaceholder": "None (top-level)",
+    "legalForm": "Legal Form",
+    "dpoName": "DPO Name",
+    "dpoEmail": "DPO Email",
+    "isEu": "EU Member",
+    "actions": "Actions",
+    "searchPlaceholder": "Search by name...",
+    "noOrganizations": "No organizations found",
+    "types": {
+      "subsidiary": "Subsidiary",
+      "holding": "Holding",
+      "joint_venture": "Joint Venture",
+      "branch": "Branch"
+    },
+    "viewTree": "View Tree",
+    "backToList": "Back to List",
+    "expandAll": "Expand All",
+    "collapseAll": "Collapse All"
+  },
+  "users": {
+    "title": "User Management",
+    "assignRole": "Assign Role",
+    "revokeRole": "Revoke Role",
+    "revokeConfirm": "Remove role {role} from {user}?",
+    "lastLogin": "Last Login",
+    "noRoles": "No roles assigned",
+    "name": "Name",
+    "email": "Email",
+    "roles": "Roles",
+    "status": "Status",
+    "actions": "Actions",
+    "searchPlaceholder": "Search by name or email...",
+    "selectRole": "Select a role",
+    "lineOfDefense": "Line of Defense",
+    "selectLod": "Select line of defense",
+    "assignSuccess": "Role assigned successfully",
+    "assignError": "Failed to assign role",
+    "revokeSuccess": "Role revoked successfully",
+    "revokeError": "Failed to revoke role",
+    "loadError": "Failed to load users",
+    "never": "Never"
+  },
+  "roles": {
+    "admin": "Admin",
+    "risk_manager": "Risk Manager",
+    "control_owner": "Control Owner",
+    "auditor": "Auditor",
+    "dpo": "Data Protection Officer",
+    "process_owner": "Process Owner",
+    "viewer": "Viewer"
+  },
+  "lod": {
+    "first": "1st Line of Defense",
+    "second": "2nd Line of Defense",
+    "third": "3rd Line of Defense",
+    "none": "None"
+  },
   "common": {
     "loading": "Loading...",
     "error": "Error",
@@ -96,5 +195,72 @@
     "of": "of",
     "showing": "Showing",
     "entries": "entries"
+  },
+  "auditLog": {
+    "title": "Audit Trail",
+    "integrityCheck": "Integrity Check",
+    "chainIntact": "Hash Chain Intact",
+    "chainBroken": "Hash Chain Broken",
+    "checking": "Checking integrity...",
+    "changes": "Changes",
+    "changeDetail": "Change Details",
+    "oldValue": "Old",
+    "newValue": "New",
+    "timestamp": "Timestamp",
+    "user": "User",
+    "action": "Action",
+    "entityType": "Entity Type",
+    "entityTitle": "Entity Title",
+    "ipAddress": "IP Address",
+    "userAgent": "User Agent",
+    "sessionId": "Session ID",
+    "hash": "Hash",
+    "previousHash": "Previous Hash",
+    "metadata": "Metadata",
+    "allActions": "All Actions",
+    "allEntityTypes": "All Entity Types",
+    "searchEntity": "Search entity title...",
+    "brokenLinks": "Broken Links",
+    "chainLength": "Chain Length",
+    "totalEntries": "Total Entries",
+    "fieldName": "Field",
+    "noChanges": "No changes recorded"
+  },
+  "invitations": {
+    "title": "Invitations",
+    "invite": "Invite User",
+    "email": "Email Address",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "expired": "Expired",
+    "revoked": "Revoked",
+    "expiresAt": "Expires",
+    "invitedBy": "Invited By",
+    "sent": "Invitation sent",
+    "revoke": "Revoke",
+    "revokeConfirm": "Revoke invitation for {email}?",
+    "role": "Role",
+    "lineOfDefense": "Line of Defense",
+    "status": "Status",
+    "noInvitations": "No invitations found",
+    "sendInvitation": "Send Invitation",
+    "sending": "Sending...",
+    "revoking": "Revoking...",
+    "revokeSuccess": "Invitation revoked",
+    "revokeError": "Failed to revoke invitation",
+    "sendError": "Failed to send invitation"
+  },
+  "accessLog": {
+    "title": "Access Log",
+    "eventType": "Event Type",
+    "authMethod": "Auth Method",
+    "failureReason": "Failure Reason",
+    "email": "Email",
+    "ipAddress": "IP Address",
+    "timestamp": "Timestamp",
+    "allEventTypes": "All Event Types",
+    "userAgent": "User Agent",
+    "geoLocation": "Location",
+    "sessionId": "Session ID"
   }
 }
