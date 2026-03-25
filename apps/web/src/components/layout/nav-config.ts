@@ -7,6 +7,8 @@ import {
   Settings,
   ListTodo,
   Blocks,
+  Database,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@grc/shared";
@@ -38,6 +40,20 @@ export const navItems: NavItem[] = [
     labelKey: "nav.tasks",
     href: "/tasks",
     icon: ListTodo,
+    roles: "all",
+    section: "main",
+  },
+  {
+    labelKey: "nav.assets",
+    href: "/assets",
+    icon: Database,
+    roles: ["admin", "risk_manager", "control_owner", "auditor", "dpo"],
+    section: "main",
+  },
+  {
+    labelKey: "nav.workItems",
+    href: "/work-items",
+    icon: Layers,
     roles: "all",
     section: "main",
   },
