@@ -11,6 +11,7 @@
   "dependencies": {
     "hono": "^4.7",
     "@grc/db": "*",
+    "@grc/email": "*",
     "@grc/shared": "*",
     "svix": "^1.42"
   },
