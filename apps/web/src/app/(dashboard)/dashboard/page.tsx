@@ -22,7 +22,18 @@ import {
   Clock,
   Loader2,
   ArrowRight,
+  AlertTriangle,
+  User,
+  Activity,
 } from "lucide-react";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+} from "recharts";
+import { useModuleConfig } from "@/hooks/use-module-config";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -58,6 +69,25 @@ interface DashboardTask {
 interface PaginatedResponse<T> {
   data: T[];
   pagination: { page: number; limit: number; total: number; totalPages: number };
+}
+
+interface RiskDashboardSummary {
+  totalRisks: number;
+  byStatus: Record<string, number>;
+  byCategory: Record<string, number>;
+  appetiteExceededCount: number;
+  top10Risks: {
+    id: string;
+    title: string;
+    riskCategory: string;
+    status: string;
+    riskScoreResidual: number | null;
+    riskScoreInherent: number | null;
+    riskAppetiteExceeded: boolean;
+    ownerId: string | null;
+  }[];
+  kriSummary: { green: number; yellow: number; red: number };
+  heatMapCells: { likelihood: number | null; impact: number | null; count: number }[];
 }
 
 // ---------------------------------------------------------------------------
@@ -105,9 +135,93 @@ const statCards = [
 // Component
 // ---------------------------------------------------------------------------
 
+// ---------------------------------------------------------------------------
+// Compact Heat Map for Dashboard (240px)
+// ---------------------------------------------------------------------------
+
+function DashboardHeatMap({
+  cells,
+}: {
+  cells: { likelihood: number | null; impact: number | null; count: number }[];
+}) {
+  const cellSize = 40;
+  const gap = 3;
+  const labelW = 16;
+
+  function cellColor(l: number, i: number): string {
+    const score = l * i;
+    if (score >= 20) return "bg-red-500";
+    if (score >= 15) return "bg-orange-400";
+    if (score >= 10) return "bg-yellow-300";
+    if (score >= 5) return "bg-blue-200";
+    return "bg-green-200";
+  }
+
+  function getCellCount(l: number, i: number): number {
+    const cell = cells.find(
+      (c) => c.likelihood === l && c.impact === i,
+    );
+    return cell?.count ?? 0;
+  }
+
+  return (
+    <div style={{ width: 240 }} className="mx-auto">
+      {[5, 4, 3, 2, 1].map((l) => (
+        <div key={l} className="flex items-center gap-0.5 mb-0.5">
+          <span
+            className="text-[9px] text-gray-400 font-medium text-right"
+            style={{ width: labelW }}
+          >
+            {l}
+          </span>
+          {[1, 2, 3, 4, 5].map((i) => {
+            const count = getCellCount(l, i);
+            return (
+              <div
+                key={i}
+                className={`rounded-sm flex items-center justify-center text-[9px] font-bold ${cellColor(l, i)} ${count > 0 ? "text-white" : "text-transparent"}`}
+                style={{ width: cellSize, height: cellSize }}
+                title={`L${l} x I${i}: ${count} risk(s)`}
+              >
+                {count > 0 ? count : ""}
+              </div>
+            );
+          })}
+        </div>
+      ))}
+      <div className="flex items-center gap-0.5 mt-0.5">
+        <span style={{ width: labelW }} />
+        {[1, 2, 3, 4, 5].map((i) => (
+          <span
+            key={i}
+            className="text-[9px] text-gray-400 font-medium text-center"
+            style={{ width: cellSize }}
+          >
+            {i}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Status donut chart colors
+// ---------------------------------------------------------------------------
+
+const STATUS_COLORS: Record<string, string> = {
+  identified: "#3b82f6",
+  assessed: "#6366f1",
+  treated: "#22c55e",
+  accepted: "#f59e0b",
+  closed: "#9ca3af",
+};
+
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
+  const rt = useTranslations("risk.dashboard");
   const { data: session } = useSession();
+  const { isEnabled: ermEnabled } = useModuleConfig("erm");
 
   // State for real data widgets
   const [auditEntries, setAuditEntries] = useState<AuditLogEntry[]>([]);
@@ -121,6 +235,10 @@ export default function DashboardPage() {
   const [myTasks, setMyTasks] = useState<DashboardTask[]>([]);
   const [tasksLoading, setTasksLoading] = useState(true);
   const [tasksError, setTasksError] = useState(false);
+
+  // Risk dashboard summary
+  const [riskSummary, setRiskSummary] = useState<RiskDashboardSummary | null>(null);
+  const [riskSummaryLoading, setRiskSummaryLoading] = useState(true);
 
   // Fetch recent audit log entries
   useEffect(() => {
@@ -201,6 +319,31 @@ export default function DashboardPage() {
     return () => { cancelled = true; };
   }, []);
 
+  // Fetch risk dashboard summary (only when ERM module is enabled)
+  useEffect(() => {
+    if (!ermEnabled) {
+      setRiskSummaryLoading(false);
+      return;
+    }
+    let cancelled = false;
+    setRiskSummaryLoading(true);
+    fetch("/api/v1/risks/dashboard-summary")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed");
+        return r.json() as Promise<{ data: RiskDashboardSummary }>;
+      })
+      .then((res) => {
+        if (!cancelled) setRiskSummary(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setRiskSummary(null);
+      })
+      .finally(() => {
+        if (!cancelled) setRiskSummaryLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [ermEnabled]);
+
   // Mark notification as read
   async function markAsRead(id: string) {
     try {
@@ -229,23 +372,35 @@ export default function DashboardPage() {
 
       {/* ── Stat cards ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {statCards.map(({ key, icon: Icon, color, accent }) => (
-          <div
-            key={key}
-            className={`bg-white rounded-lg border border-gray-200 border-l-4 ${accent} p-5 flex items-start gap-4 shadow-sm`}
-          >
-            <div className={`p-2.5 rounded-lg ${color}`}>
-              <Icon size={20} />
+        {statCards.map(({ key, icon: Icon, color, accent }) => {
+          // Replace "openRisks" with real data when ERM is enabled
+          const isOpenRisks = key === "openRisks" && ermEnabled && riskSummary;
+          const displayValue = isOpenRisks ? String(riskSummary.totalRisks) : null;
+
+          return (
+            <div
+              key={key}
+              className={`bg-white rounded-lg border border-gray-200 border-l-4 ${accent} p-5 flex items-start gap-4 shadow-sm`}
+            >
+              <div className={`p-2.5 rounded-lg ${color}`}>
+                <Icon size={20} />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-sm font-medium text-gray-500 truncate">
+                  {t(`widgets.${key}`)}
+                </p>
+                {displayValue ? (
+                  <p className="text-2xl font-bold text-gray-900 mt-1">{displayValue}</p>
+                ) : (
+                  <>
+                    <p className="text-2xl font-bold text-gray-300 mt-1">&mdash;</p>
+                    <p className="text-xs text-gray-400 mt-1">{t("comingSprint2")}</p>
+                  </>
+                )}
+              </div>
             </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-gray-500 truncate">
-                {t(`widgets.${key}`)}
-              </p>
-              <p className="text-2xl font-bold text-gray-300 mt-1">&mdash;</p>
-              <p className="text-xs text-gray-400 mt-1">{t("comingSprint2")}</p>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* ── Widgets grid ────────────────────────────────────────── */}
@@ -486,6 +641,202 @@ export default function DashboardPage() {
         </div>
 
       </div>
+
+      {/* ── Risk Management Section (ERM module) ──────────────── */}
+      {ermEnabled && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShieldAlert size={20} className="text-orange-600" />
+              <h2 className="text-lg font-bold text-gray-900">{rt("sectionTitle")}</h2>
+            </div>
+            <Link
+              href="/risks"
+              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {rt("riskTitle")} <ArrowRight size={12} />
+            </Link>
+          </div>
+
+          {riskSummaryLoading ? (
+            <div className="flex items-center justify-center py-12">
+              <Loader2 size={20} className="animate-spin text-gray-400" />
+            </div>
+          ) : !riskSummary ? (
+            <div className="flex flex-col items-center justify-center py-12 text-gray-400">
+              <ShieldAlert size={32} className="mb-2 text-gray-300" />
+              <p className="text-sm">{rt("noRisks")}</p>
+            </div>
+          ) : (
+            <>
+              {/* Risk stat cards row */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                {/* Total Risks */}
+                <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-blue-400 p-5 shadow-sm">
+                  <p className="text-sm font-medium text-gray-500">{rt("totalRisks")}</p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">{riskSummary.totalRisks}</p>
+                </div>
+
+                {/* Appetite Exceeded */}
+                <div className={`bg-white rounded-lg border border-gray-200 border-l-4 ${riskSummary.appetiteExceededCount > 0 ? "border-l-red-500" : "border-l-green-400"} p-5 shadow-sm`}>
+                  <p className="text-sm font-medium text-gray-500">{rt("appetiteExceeded")}</p>
+                  <p className={`text-3xl font-bold mt-1 ${riskSummary.appetiteExceededCount > 0 ? "text-red-600" : "text-green-600"}`}>
+                    {riskSummary.appetiteExceededCount}
+                  </p>
+                  {riskSummary.appetiteExceededCount > 0 && (
+                    <p className="text-xs text-red-500 mt-1 flex items-center gap-1">
+                      <AlertTriangle size={11} />
+                      {rt("appetiteWarning")}
+                    </p>
+                  )}
+                </div>
+
+                {/* KRI Status */}
+                <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-amber-400 p-5 shadow-sm">
+                  <p className="text-sm font-medium text-gray-500">{rt("kriStatus")}</p>
+                  <div className="flex items-center gap-4 mt-2">
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-green-500" />
+                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.green}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-yellow-400" />
+                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.yellow}</span>
+                    </span>
+                    <span className="flex items-center gap-1.5">
+                      <span className="w-3 h-3 rounded-full bg-red-500" />
+                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.red}</span>
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Risk widgets row */}
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
+                {/* Compact Heat Map */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">{rt("heatMap")}</h3>
+                    <Link
+                      href="/risks"
+                      className="text-xs text-blue-600 hover:text-blue-800"
+                    >
+                      {rt("viewFullHeatMap")}
+                    </Link>
+                  </div>
+                  <div className="p-5 flex justify-center">
+                    <DashboardHeatMap cells={riskSummary.heatMapCells} />
+                  </div>
+                </div>
+
+                {/* Status Distribution Donut */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">{rt("statusDistribution")}</h3>
+                  </div>
+                  <div className="p-5">
+                    {Object.keys(riskSummary.byStatus).length === 0 ? (
+                      <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
+                        {rt("noRisks")}
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-4">
+                        <ResponsiveContainer width={160} height={160}>
+                          <PieChart>
+                            <Pie
+                              data={Object.entries(riskSummary.byStatus).map(([name, value]) => ({
+                                name,
+                                value,
+                              }))}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={40}
+                              outerRadius={70}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              {Object.entries(riskSummary.byStatus).map(([status]) => (
+                                <Cell key={status} fill={STATUS_COLORS[status] ?? "#d1d5db"} />
+                              ))}
+                            </Pie>
+                            <Tooltip
+                              contentStyle={{ fontSize: "12px", padding: "4px 8px" }}
+                            />
+                          </PieChart>
+                        </ResponsiveContainer>
+                        <div className="space-y-1.5">
+                          {Object.entries(riskSummary.byStatus).map(([status, count]) => (
+                            <div key={status} className="flex items-center gap-2 text-xs">
+                              <span
+                                className="w-2.5 h-2.5 rounded-sm"
+                                style={{ backgroundColor: STATUS_COLORS[status] ?? "#d1d5db" }}
+                              />
+                              <span className="text-gray-600 capitalize">{status.replace("_", " ")}</span>
+                              <span className="font-semibold text-gray-900">{count}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top 5 Risks by Score */}
+                <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
+                  <div className="px-5 py-4 border-b border-gray-100">
+                    <h3 className="text-sm font-semibold text-gray-900">{rt("topRisks")}</h3>
+                  </div>
+                  <div className="p-5">
+                    {riskSummary.top10Risks.length === 0 ? (
+                      <div className="flex items-center justify-center h-[200px] text-sm text-gray-400">
+                        {rt("noRisks")}
+                      </div>
+                    ) : (
+                      <ul className="space-y-1">
+                        {riskSummary.top10Risks.slice(0, 5).map((risk) => {
+                          const score = risk.riskScoreResidual;
+                          const scoreColor =
+                            score != null && score >= 20
+                              ? "bg-red-100 text-red-700"
+                              : score != null && score >= 15
+                                ? "bg-orange-100 text-orange-700"
+                                : score != null && score >= 10
+                                  ? "bg-yellow-100 text-yellow-700"
+                                  : "bg-blue-100 text-blue-700";
+
+                          return (
+                            <li key={risk.id}>
+                              <Link
+                                href={`/risks/${risk.id}`}
+                                className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-gray-50 transition-colors"
+                              >
+                                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${scoreColor}`}>
+                                  {score ?? "-"}
+                                </span>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium text-gray-900 truncate">
+                                    {risk.title}
+                                  </p>
+                                  <p className="text-xs text-gray-400 capitalize">
+                                    {risk.riskCategory}
+                                  </p>
+                                </div>
+                                {risk.riskAppetiteExceeded && (
+                                  <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
+                                )}
+                              </Link>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
     </div>
   );
 }

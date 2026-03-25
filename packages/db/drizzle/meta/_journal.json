@@ -43,6 +43,13 @@
       "when": 1774429511800,
       "tag": "0005_nostalgic_smiling_tiger",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1774448242879,
+      "tag": "0006_friendly_the_spike",
+      "breakpoints": true
     }
   ]
 }
