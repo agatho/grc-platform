@@ -329,6 +329,47 @@ export const notification = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
+// 1.8 Invitation — User invitation flow (S1-13)
+// ──────────────────────────────────────────────────────────────
+
+export const invitationStatusEnum = pgEnum("invitation_status", [
+  "pending",
+  "accepted",
+  "expired",
+  "revoked",
+]);
+
+export const invitation = pgTable(
+  "invitation",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    email: varchar("email", { length: 255 }).notNull(),
+    role: userRoleEnum("role").notNull(),
+    lineOfDefense: lineOfDefenseEnum("line_of_defense"),
+    token: varchar("token", { length: 255 }).notNull().unique(),
+    status: invitationStatusEnum("status").notNull().default("pending"),
+    invitedBy: uuid("invited_by").references(() => user.id),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    // Cross-cutting mandatory fields
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by"),
+    updatedBy: uuid("updated_by"),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+    deletedBy: uuid("deleted_by"),
+  },
+  (table) => [
+    index("inv_org_idx").on(table.orgId),
+    index("inv_email_idx").on(table.email),
+    index("inv_token_idx").on(table.token),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // Auth.js tables (ADR-007 rev.1) — session/account storage
 // ──────────────────────────────────────────────────────────────
 

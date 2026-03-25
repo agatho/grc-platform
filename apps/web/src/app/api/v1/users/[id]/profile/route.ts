@@ -1,7 +1,10 @@
+import { cookies } from "next/headers";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { withAuth, withAuditContext } from "@/lib/api";
+
+const LOCALE_COOKIE = "NEXT_LOCALE";
 
 const updateProfileSchema = z.object({
   name: z.string().min(1).max(255).optional(),
@@ -42,5 +45,17 @@ export async function PUT(
   });
 
   if (!updated) return Response.json({ error: "Not found" }, { status: 404 });
+
+  // When language changes, set the NEXT_LOCALE cookie so next-intl picks it up
+  if (d.language) {
+    const cookieStore = await cookies();
+    cookieStore.set(LOCALE_COOKIE, d.language, {
+      path: "/",
+      maxAge: 365 * 24 * 60 * 60, // 1 year
+      sameSite: "lax",
+      httpOnly: false, // needs to be readable by client-side i18n
+    });
+  }
+
   return Response.json({ data: updated });
 }

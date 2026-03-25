@@ -19,3 +19,20 @@ export interface UserWithRoles {
   name: string;
   roles: { orgId: string; role: UserRole; lineOfDefense?: LineOfDefense }[];
 }
+
+export type InvitationStatus = "pending" | "accepted" | "expired" | "revoked";
+
+export interface Invitation {
+  id: string;
+  orgId: string;
+  email: string;
+  role: UserRole;
+  lineOfDefense?: LineOfDefense;
+  token: string;
+  status: InvitationStatus;
+  invitedBy?: string;
+  expiresAt: string;
+  acceptedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}

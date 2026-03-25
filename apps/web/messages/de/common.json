@@ -49,11 +49,14 @@
     "languages": {
       "de": "Deutsch",
       "en": "Englisch"
-    }
+    },
+    "languageSwitched": "Sprache geändert"
   },
   "dashboard": {
     "title": "Dashboard",
     "welcome": "Willkommen bei ARCTOS",
+    "welcomeUser": "Willkommen, {name}",
+    "comingSprint2": "Kommt in Sprint 2",
     "widgets": {
       "openRisks": "Offene Risiken",
       "activeControls": "Aktive Kontrollen",
@@ -64,7 +67,29 @@
       "myTasks": "Meine Aufgaben",
       "notifications": "Benachrichtigungen"
     },
-    "placeholder": "Daten werden in Sprint 2 verfügbar"
+    "placeholder": "Daten werden in Sprint 2 verfügbar",
+    "recentChanges": {
+      "empty": "Keine aktuellen Änderungen",
+      "error": "Änderungen konnten nicht geladen werden"
+    },
+    "notifications": {
+      "empty": "Keine Benachrichtigungen",
+      "error": "Benachrichtigungen konnten nicht geladen werden",
+      "markRead": "Als gelesen markieren"
+    },
+    "myTasks": {
+      "empty": "Keine Aufgaben zugewiesen"
+    },
+    "upcomingAudits": {
+      "empty": "Keine anstehenden Audits"
+    },
+    "timeAgo": {
+      "justNow": "gerade eben",
+      "minutesAgo": "{count, plural, one {vor 1 Minute} other {vor # Minuten}}",
+      "hoursAgo": "{count, plural, one {vor 1 Stunde} other {vor # Stunden}}",
+      "yesterday": "gestern",
+      "daysAgo": "{count, plural, one {vor 1 Tag} other {vor # Tagen}}"
+    }
   },
   "actions": {
     "create": "Erstellen",
@@ -87,6 +112,80 @@
     "approved": "Genehmigt",
     "archived": "Archiviert"
   },
+  "organizations": {
+    "title": "Organisationen",
+    "create": "Organisation erstellen",
+    "edit": "Organisation bearbeiten",
+    "delete": "Organisation löschen",
+    "deleteConfirm": "Sind Sie sicher, dass Sie diese Organisation löschen möchten? Diese Aktion kann von einem Administrator rückgängig gemacht werden.",
+    "deleted": "Organisation gelöscht",
+    "saved": "Organisation gespeichert",
+    "tree": "Unternehmensstruktur",
+    "treeDescription": "Visuelle Übersicht Ihrer Konzernstruktur",
+    "name": "Name",
+    "shortName": "Kurzname",
+    "type": "Typ",
+    "country": "Land",
+    "status": "Status",
+    "createdAt": "Erstellt am",
+    "parentOrg": "Übergeordnete Organisation",
+    "parentOrgPlaceholder": "Keine (oberste Ebene)",
+    "legalForm": "Rechtsform",
+    "dpoName": "DSB Name",
+    "dpoEmail": "DSB E-Mail",
+    "isEu": "EU-Mitglied",
+    "actions": "Aktionen",
+    "searchPlaceholder": "Nach Name suchen...",
+    "noOrganizations": "Keine Organisationen gefunden",
+    "types": {
+      "subsidiary": "Tochtergesellschaft",
+      "holding": "Holding",
+      "joint_venture": "Joint Venture",
+      "branch": "Niederlassung"
+    },
+    "viewTree": "Baumansicht",
+    "backToList": "Zurück zur Liste",
+    "expandAll": "Alle aufklappen",
+    "collapseAll": "Alle zuklappen"
+  },
+  "users": {
+    "title": "Benutzerverwaltung",
+    "assignRole": "Rolle zuweisen",
+    "revokeRole": "Rolle entziehen",
+    "revokeConfirm": "Rolle {role} von {user} entfernen?",
+    "lastLogin": "Letzter Login",
+    "noRoles": "Keine Rollen zugewiesen",
+    "name": "Name",
+    "email": "E-Mail",
+    "roles": "Rollen",
+    "status": "Status",
+    "actions": "Aktionen",
+    "searchPlaceholder": "Nach Name oder E-Mail suchen...",
+    "selectRole": "Rolle auswählen",
+    "lineOfDefense": "Verteidigungslinie",
+    "selectLod": "Verteidigungslinie auswählen",
+    "assignSuccess": "Rolle erfolgreich zugewiesen",
+    "assignError": "Rolle konnte nicht zugewiesen werden",
+    "revokeSuccess": "Rolle erfolgreich entzogen",
+    "revokeError": "Rolle konnte nicht entzogen werden",
+    "loadError": "Benutzer konnten nicht geladen werden",
+    "never": "Nie"
+  },
+  "roles": {
+    "admin": "Administrator",
+    "risk_manager": "Risikomanager",
+    "control_owner": "Kontrollverantwortlicher",
+    "auditor": "Auditor",
+    "dpo": "Datenschutzbeauftragter",
+    "process_owner": "Prozessverantwortlicher",
+    "viewer": "Betrachter"
+  },
+  "lod": {
+    "first": "1. Verteidigungslinie",
+    "second": "2. Verteidigungslinie",
+    "third": "3. Verteidigungslinie",
+    "none": "Keine"
+  },
   "common": {
     "loading": "Laden...",
     "error": "Fehler",
@@ -96,5 +195,72 @@
     "of": "von",
     "showing": "Zeige",
     "entries": "Einträge"
+  },
+  "auditLog": {
+    "title": "Änderungshistorie",
+    "integrityCheck": "Integritätsprüfung",
+    "chainIntact": "Hash-Kette intakt",
+    "chainBroken": "Hash-Kette gebrochen",
+    "checking": "Integrität wird geprüft...",
+    "changes": "Änderungen",
+    "changeDetail": "Änderungsdetails",
+    "oldValue": "Alt",
+    "newValue": "Neu",
+    "timestamp": "Zeitstempel",
+    "user": "Benutzer",
+    "action": "Aktion",
+    "entityType": "Entitätstyp",
+    "entityTitle": "Entitätstitel",
+    "ipAddress": "IP-Adresse",
+    "userAgent": "User Agent",
+    "sessionId": "Sitzungs-ID",
+    "hash": "Hash",
+    "previousHash": "Vorheriger Hash",
+    "metadata": "Metadaten",
+    "allActions": "Alle Aktionen",
+    "allEntityTypes": "Alle Entitätstypen",
+    "searchEntity": "Entitätstitel suchen...",
+    "brokenLinks": "Unterbrochene Glieder",
+    "chainLength": "Kettenlänge",
+    "totalEntries": "Gesamteinträge",
+    "fieldName": "Feld",
+    "noChanges": "Keine Änderungen erfasst"
+  },
+  "invitations": {
+    "title": "Einladungen",
+    "invite": "Benutzer einladen",
+    "email": "E-Mail-Adresse",
+    "pending": "Ausstehend",
+    "accepted": "Angenommen",
+    "expired": "Abgelaufen",
+    "revoked": "Widerrufen",
+    "expiresAt": "Läuft ab",
+    "invitedBy": "Eingeladen von",
+    "sent": "Einladung gesendet",
+    "revoke": "Widerrufen",
+    "revokeConfirm": "Einladung für {email} widerrufen?",
+    "role": "Rolle",
+    "lineOfDefense": "Verteidigungslinie",
+    "status": "Status",
+    "noInvitations": "Keine Einladungen gefunden",
+    "sendInvitation": "Einladung senden",
+    "sending": "Wird gesendet...",
+    "revoking": "Wird widerrufen...",
+    "revokeSuccess": "Einladung widerrufen",
+    "revokeError": "Einladung konnte nicht widerrufen werden",
+    "sendError": "Einladung konnte nicht gesendet werden"
+  },
+  "accessLog": {
+    "title": "Zugriffsprotokoll",
+    "eventType": "Ereignistyp",
+    "authMethod": "Authentifizierungsmethode",
+    "failureReason": "Fehlergrund",
+    "email": "E-Mail",
+    "ipAddress": "IP-Adresse",
+    "timestamp": "Zeitstempel",
+    "allEventTypes": "Alle Ereignistypen",
+    "userAgent": "User Agent",
+    "geoLocation": "Standort",
+    "sessionId": "Sitzungs-ID"
   }
 }
