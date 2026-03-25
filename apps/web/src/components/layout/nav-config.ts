@@ -11,6 +11,7 @@ import {
   History,
   KeyRound,
   Settings,
+  ListTodo,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@grc/shared";
@@ -29,6 +30,13 @@ export const navItems: NavItem[] = [
     labelKey: "nav.dashboard",
     href: "/dashboard",
     icon: LayoutDashboard,
+    roles: "all",
+    section: "main",
+  },
+  {
+    labelKey: "nav.tasks",
+    href: "/tasks",
+    icon: ListTodo,
     roles: "all",
     section: "main",
   },

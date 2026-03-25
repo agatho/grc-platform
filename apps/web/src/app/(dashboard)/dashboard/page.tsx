@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -20,6 +21,7 @@ import {
   CheckCircle2,
   Clock,
   Loader2,
+  ArrowRight,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -43,6 +45,14 @@ interface NotificationEntry {
   type: string;
   isRead: boolean;
   createdAt: string;
+}
+
+interface DashboardTask {
+  id: string;
+  title: string;
+  priority: "low" | "medium" | "high" | "critical";
+  status: string;
+  dueDate: string | null;
 }
 
 interface PaginatedResponse<T> {
@@ -108,6 +118,10 @@ export default function DashboardPage() {
   const [notifLoading, setNotifLoading] = useState(true);
   const [notifError, setNotifError] = useState(false);
 
+  const [myTasks, setMyTasks] = useState<DashboardTask[]>([]);
+  const [tasksLoading, setTasksLoading] = useState(true);
+  const [tasksError, setTasksError] = useState(false);
+
   // Fetch recent audit log entries
   useEffect(() => {
     let cancelled = false;
@@ -159,6 +173,33 @@ export default function DashboardPage() {
   useEffect(() => {
     fetchNotifications();
   }, [fetchNotifications]);
+
+  // Fetch my tasks (next 5 due)
+  useEffect(() => {
+    let cancelled = false;
+    setTasksLoading(true);
+    fetch("/api/v1/tasks?view=my&limit=5")
+      .then((r) => {
+        if (!r.ok) throw new Error("Failed");
+        return r.json() as Promise<PaginatedResponse<DashboardTask>>;
+      })
+      .then((res) => {
+        if (!cancelled) {
+          setMyTasks(res.data);
+          setTasksError(false);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setMyTasks([]);
+          setTasksError(true);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setTasksLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, []);
 
   // Mark notification as read
   async function markAsRead(id: string) {
@@ -350,19 +391,81 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* ── My Tasks (placeholder) ────────────────────────────── */}
+        {/* ── My Tasks (real data) ──────────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
-          <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
-            <ListTodo size={18} className="text-indigo-600" />
-            <h2 className="text-sm font-semibold text-gray-900">
-              {t("widgets.myTasks")}
-            </h2>
+          <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
+            <div className="flex items-center gap-2">
+              <ListTodo size={18} className="text-indigo-600" />
+              <h2 className="text-sm font-semibold text-gray-900">
+                {t("widgets.myTasks")}
+              </h2>
+            </div>
+            <Link
+              href="/tasks"
+              className="flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800 font-medium"
+            >
+              {t("myTasks.viewAll")}
+              <ArrowRight size={12} />
+            </Link>
           </div>
 
-          <div className="flex flex-col items-center justify-center h-48 px-5 text-gray-400">
-            <ListTodo size={32} className="mb-2 text-gray-300" />
-            <p className="text-sm font-medium text-gray-500">{t("myTasks.empty")}</p>
-            <p className="text-xs text-gray-400 mt-1">{t("comingSprint2")}</p>
+          <div className="p-5">
+            {tasksLoading ? (
+              <div className="flex items-center justify-center h-48">
+                <Loader2 size={20} className="animate-spin text-gray-400" />
+              </div>
+            ) : tasksError ? (
+              <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                <ListTodo size={32} className="mb-2" />
+                <p className="text-sm">{t("myTasks.error")}</p>
+              </div>
+            ) : myTasks.length === 0 ? (
+              <div className="flex flex-col items-center justify-center h-48 text-gray-400">
+                <ListTodo size={32} className="mb-2 text-gray-300" />
+                <p className="text-sm font-medium text-gray-500">{t("myTasks.empty")}</p>
+              </div>
+            ) : (
+              <ul className="space-y-1">
+                {myTasks.map((task) => {
+                  const dueDateClass = (() => {
+                    if (!task.dueDate) return "text-gray-400";
+                    const diffDays = (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+                    if (diffDays < 0) return "text-red-600 font-medium";
+                    if (diffDays <= 3) return "text-orange-600 font-medium";
+                    return "text-gray-500";
+                  })();
+                  const priorityColor: Record<string, string> = {
+                    critical: "bg-red-100 text-red-700",
+                    high: "bg-orange-100 text-orange-700",
+                    medium: "bg-blue-100 text-blue-700",
+                    low: "bg-gray-100 text-gray-600",
+                  };
+                  return (
+                    <li key={task.id}>
+                      <Link
+                        href={`/tasks/${task.id}`}
+                        className="flex items-center gap-3 rounded-md px-2 py-2.5 hover:bg-gray-50 transition-colors"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {task.title}
+                          </p>
+                          {task.dueDate && (
+                            <p className={`text-xs mt-0.5 ${dueDateClass}`}>
+                              <Clock size={11} className="inline-block mr-1 -mt-0.5" />
+                              {new Date(task.dueDate).toLocaleDateString()}
+                            </p>
+                          )}
+                        </div>
+                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${priorityColor[task.priority] ?? ""}`}>
+                          {task.priority}
+                        </span>
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
         </div>
 
