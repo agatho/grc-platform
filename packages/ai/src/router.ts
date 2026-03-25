@@ -13,7 +13,6 @@ import type {
   AiCompletionRequest,
   AiCompletionResponse,
 } from "./types";
-import { callClaude } from "./providers/claude";
 import { callOpenAI } from "./providers/openai";
 import { callGemini } from "./providers/gemini";
 import { callOllama } from "./providers/ollama";
@@ -22,14 +21,12 @@ const PROVIDER_FNS: Record<
   AiProvider,
   (req: AiCompletionRequest) => Promise<AiCompletionResponse>
 > = {
-  claude: callClaude,
   openai: callOpenAI,
   gemini: callGemini,
   ollama: callOllama,
 };
 
 const PROVIDER_ENV_KEYS: Record<AiProvider, string> = {
-  claude: "ANTHROPIC_API_KEY",
   openai: "OPENAI_API_KEY",
   gemini: "GOOGLE_AI_API_KEY",
   ollama: "OLLAMA_BASE_URL",
@@ -38,10 +35,8 @@ const PROVIDER_ENV_KEYS: Record<AiProvider, string> = {
 /** Check which providers are configured via env vars. */
 export function getAvailableProviders(): AiProvider[] {
   const available: AiProvider[] = [];
-  if (process.env.ANTHROPIC_API_KEY) available.push("claude");
   if (process.env.OPENAI_API_KEY) available.push("openai");
   if (process.env.GOOGLE_AI_API_KEY) available.push("gemini");
-  // Ollama is always "available" locally but check explicit config
   if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_ENABLED === "true") {
     available.push("ollama");
   }
@@ -54,7 +49,7 @@ export function getDefaultProvider(): AiProvider {
   if (explicit && PROVIDER_FNS[explicit]) return explicit;
 
   const available = getAvailableProviders();
-  return available[0] ?? "claude";
+  return available[0] ?? "gemini";
 }
 
 /**
@@ -91,5 +86,4 @@ export async function aiComplete(
   return fn(request);
 }
 
-// Legacy export for backward compatibility
 export { aiComplete as aiRouter };
