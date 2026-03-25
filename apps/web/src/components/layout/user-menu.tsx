@@ -1,16 +1,26 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useCallback } from "react";
 import { useSession, signOut } from "next-auth/react";
 import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings, Globe } from "lucide-react";
+
+const LANGUAGES = [
+  { code: "de", label: "DE" },
+  { code: "en", label: "EN" },
+] as const;
 
 export function UserMenu() {
-  const { data: session } = useSession();
+  const { data: session, update } = useSession();
   const t = useTranslations("profile");
+  const router = useRouter();
   const [open, setOpen] = useState(false);
+  const [switchingLang, setSwitchingLang] = useState(false);
   const ref = useRef<HTMLDivElement>(null);
+
+  const currentLanguage = (session?.user as any)?.language ?? "de";
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -21,6 +31,31 @@ export function UserMenu() {
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
+
+  const handleLanguageSwitch = useCallback(
+    async (lang: string) => {
+      if (lang === currentLanguage || switchingLang || !session?.user?.id) return;
+      setSwitchingLang(true);
+      try {
+        const res = await fetch(`/api/v1/users/${session.user.id}/profile`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ language: lang }),
+        });
+        if (res.ok) {
+          // Refresh the session so the JWT picks up the new language
+          await update();
+          // Full page refresh to reload next-intl messages from the new locale cookie
+          router.refresh();
+        }
+      } catch {
+        // Silently fail — the user can retry
+      } finally {
+        setSwitchingLang(false);
+      }
+    },
+    [currentLanguage, switchingLang, session?.user?.id, update, router],
+  );
 
   const initials = (session?.user?.name ?? "U")
     .split(" ")
@@ -56,6 +91,30 @@ export function UserMenu() {
             <User size={14} />
             <span>{t("title")}</span>
           </Link>
+
+          {/* Language switcher */}
+          <div className="flex items-center gap-2 px-4 py-2 text-sm text-gray-700">
+            <Globe size={14} className="shrink-0" />
+            <span className="mr-auto">{t("language")}</span>
+            <div className="flex rounded-md border border-gray-200 overflow-hidden">
+              {LANGUAGES.map(({ code, label }) => (
+                <button
+                  key={code}
+                  onClick={() => handleLanguageSwitch(code)}
+                  disabled={switchingLang}
+                  className={`px-2 py-0.5 text-xs font-medium transition-colors ${
+                    currentLanguage === code
+                      ? "bg-blue-600 text-white"
+                      : "bg-white text-gray-600 hover:bg-gray-50"
+                  } ${switchingLang ? "opacity-50 cursor-not-allowed" : ""}`}
+                  aria-label={t(`languages.${code}`)}
+                  aria-pressed={currentLanguage === code}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          </div>
 
           <Link
             href="/settings"

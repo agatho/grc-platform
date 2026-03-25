@@ -28,3 +28,15 @@ export const assignRoleSchema = z.object({
   role: z.enum(["admin", "risk_manager", "control_owner", "auditor", "dpo", "viewer", "process_owner"]),
   lineOfDefense: z.enum(["first", "second", "third"]).optional(),
 });
+
+// Invitation schemas (S1-13)
+export const createInvitationSchema = z.object({
+  email: z.string().email(),
+  role: z.enum(["admin", "risk_manager", "control_owner", "auditor", "dpo", "viewer", "process_owner"]),
+  lineOfDefense: z.enum(["first", "second", "third"]).optional(),
+});
+
+export const acceptInvitationSchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  password: z.string().min(8).max(128).optional(),
+});
