@@ -46,7 +46,8 @@ jobs:
       - run: npm ci
 
       - name: ESLint
-        run: npx turbo lint
+        working-directory: apps/web
+        run: npx next lint
 
       - name: Prettier (format check)
         run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
