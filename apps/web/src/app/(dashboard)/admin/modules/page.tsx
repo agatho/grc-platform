@@ -289,14 +289,17 @@ export default function AdminModulesPage() {
     [],
   );
 
+  const currentOrgId = session?.user?.roles?.[0]?.orgId;
+
   const handleToggle = async (
     moduleKey: ModuleKey,
     newStatus: ModuleUiStatus,
   ) => {
+    if (!currentOrgId) return;
     setToggling(moduleKey);
     try {
       const res = await fetch(
-        `/api/v1/organizations/current/modules/${moduleKey}`,
+        `/api/v1/organizations/${currentOrgId}/modules/${moduleKey}`,
         {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
@@ -305,7 +308,8 @@ export default function AdminModulesPage() {
       );
 
       if (!res.ok) {
-        throw new Error(`HTTP ${res.status}`);
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error ?? `HTTP ${res.status}`);
       }
 
       const mod = configs.find((c) => c.moduleKey === moduleKey);
