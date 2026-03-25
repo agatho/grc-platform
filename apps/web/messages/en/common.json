@@ -925,7 +925,8 @@
       "editor": "BPMN Editor",
       "versions": "Versions",
       "risks": "Risks",
-      "history": "History"
+      "history": "History",
+      "comments": "Comments"
     },
     "status": {
       "draft": "Draft",
@@ -1108,6 +1109,61 @@
       "lastReviewed": "Last Reviewed",
       "cycleDays": "Cycle (days)",
       "reminderSent": "Reminder Sent"
+    }
+  },
+  "processGovernance": {
+    "governance": {
+      "title": "Process Governance",
+      "totalProcesses": "Total Processes",
+      "published": "Published",
+      "overdueReviews": "Overdue Reviews",
+      "pendingApprovals": "Pending Approvals",
+      "statusDistribution": "Status Distribution",
+      "monthlyActivity": "Modeling Activity",
+      "departmentDistribution": "Department Distribution",
+      "openTasks": "Open Tasks",
+      "roadmap": "Review Roadmap",
+      "quality": "Quality"
+    },
+    "compare": {
+      "title": "Version Comparison",
+      "added": "Added",
+      "removed": "Removed",
+      "modified": "Modified",
+      "attributeDiff": "Attribute Changes",
+      "version": "Version"
+    },
+    "comments": {
+      "title": "Comments",
+      "all": "All",
+      "open": "Open",
+      "resolved": "Resolved",
+      "resolve": "Resolve",
+      "addComment": "Add a comment...",
+      "reply": "Reply",
+      "delete": "Delete",
+      "noComments": "No comments yet"
+    },
+    "review": {
+      "title": "Review Schedule",
+      "enable": "Enable periodic review",
+      "interval": "Review Interval",
+      "reviewer": "Assigned Reviewer",
+      "nextReview": "Next Review",
+      "saved": "Review schedule saved"
+    },
+    "bulk": {
+      "selected": "{count} selected",
+      "changeStatus": "Change Status",
+      "assignOwner": "Assign Owner",
+      "export": "Export",
+      "clearSelection": "Clear",
+      "success": "{count} processes updated",
+      "partial": "{succeeded} updated, {failed} failed"
+    },
+    "gallery": {
+      "listView": "List View",
+      "galleryView": "Gallery View"
     }
   }
 }
