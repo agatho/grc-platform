@@ -112,6 +112,7 @@ export const notificationChannelEnum = pgEnum("notification_channel", [
   "in_app",
   "email",
   "teams",
+  "both",
 ]);
 
 // ──────────────────────────────────────────────────────────────
@@ -132,6 +133,13 @@ export const organization = pgTable(
     dpoName: varchar("dpo_name", { length: 255 }),
     dpoEmail: varchar("dpo_email", { length: 255 }),
     settings: jsonb("settings").default({}),
+    // Sprint 1.2: GDPR & DPO fields
+    orgCode: varchar("org_code", { length: 10 }).unique(),
+    isDataController: boolean("is_data_controller").notNull().default(false),
+    dpoUserId: uuid("dpo_user_id").references(() => user.id),
+    supervisoryAuthority: text("supervisory_authority"),
+    dataResidency: varchar("data_residency", { length: 2 }),
+    gdprSettings: jsonb("gdpr_settings").default({}),
     // Cross-cutting mandatory fields (Data_Model.md §Architecture)
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -160,6 +168,8 @@ export const user = pgTable("user", {
   language: varchar("language", { length: 5 }).notNull().default("de"),
   isActive: boolean("is_active").notNull().default(true),
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
+  // Sprint 1.2: notification preferences
+  notificationPreferences: jsonb("notification_preferences").default({}),
   // Cross-cutting mandatory fields
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -314,6 +324,14 @@ export const notification = pgTable(
     message: text("message"),
     isRead: boolean("is_read").notNull().default(false),
     channel: notificationChannelEnum("channel").notNull().default("in_app"),
+    // Sprint 1.2: email delivery & template fields
+    templateKey: varchar("template_key", { length: 100 }),
+    templateData: jsonb("template_data").default({}),
+    scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+    emailSentAt: timestamp("email_sent_at", { withTimezone: true }),
+    emailMessageId: varchar("email_message_id", { length: 255 }),
+    emailError: text("email_error"),
+    retryCount: integer("retry_count").notNull().default(0),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
