@@ -8,6 +8,7 @@ import type {
   AiCompletionResponse,
 } from "./types";
 import { callClaudeCli } from "./providers/claude-cli";
+import { callClaudeApi } from "./providers/claude-api";
 import { callOpenAI } from "./providers/openai";
 import { callGemini } from "./providers/gemini";
 import { callOllama } from "./providers/ollama";
@@ -17,6 +18,7 @@ const PROVIDER_FNS: Record<
   (req: AiCompletionRequest) => Promise<AiCompletionResponse>
 > = {
   claude_cli: callClaudeCli,
+  claude_api: callClaudeApi,
   openai: callOpenAI,
   gemini: callGemini,
   ollama: callOllama,
@@ -29,6 +31,7 @@ export function getAvailableProviders(): AiProvider[] {
   if (process.env.CLAUDE_CLI_ENABLED !== "false") {
     available.push("claude_cli");
   }
+  if (process.env.ANTHROPIC_API_KEY) available.push("claude_api");
   if (process.env.OPENAI_API_KEY) available.push("openai");
   if (process.env.GOOGLE_AI_API_KEY) available.push("gemini");
   if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_ENABLED === "true") {
