@@ -12,6 +12,10 @@ import {
   Leaf,
   Megaphone,
   Box,
+  Building2,
+  Database,
+  Server,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
 
@@ -34,6 +38,10 @@ const ICON_MAP: Record<string, LucideIcon> = {
   Leaf,
   Megaphone,
   Box,
+  Building2,
+  Database,
+  Server,
+  Layers,
 };
 
 /**
