@@ -2,16 +2,11 @@ import {
   LayoutDashboard,
   Building2,
   Users,
-  ShieldAlert,
-  ShieldCheck,
-  ClipboardCheck,
-  Scale,
-  Lock,
-  Workflow,
   History,
   KeyRound,
   Settings,
   ListTodo,
+  Blocks,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@grc/shared";
@@ -21,11 +16,17 @@ export interface NavItem {
   href: string;
   icon: LucideIcon;
   roles: UserRole[] | "all";
-  section: "main" | "firstLine" | "secondLine" | "thirdLine" | "system";
+  section: "main" | "system";
 }
 
+/**
+ * Platform nav items — always visible (not module-dependent).
+ *
+ * Module items (risks, controls, audit, compliance, data-privacy, processes, etc.)
+ * are now loaded dynamically from the module_config API via useAllModuleConfigs().
+ */
 export const navItems: NavItem[] = [
-  // Main
+  // ── Main ──────────────────────────────────────────────
   {
     labelKey: "nav.dashboard",
     href: "/dashboard",
@@ -41,55 +42,7 @@ export const navItems: NavItem[] = [
     section: "main",
   },
 
-  // 1st Line of Defense — operational management
-  {
-    labelKey: "nav.processes",
-    href: "/processes",
-    icon: Workflow,
-    roles: ["admin", "process_owner"],
-    section: "firstLine",
-  },
-  {
-    labelKey: "nav.controls",
-    href: "/controls",
-    icon: ShieldCheck,
-    roles: ["admin", "control_owner", "risk_manager"],
-    section: "firstLine",
-  },
-
-  // 2nd Line of Defense — oversight functions
-  {
-    labelKey: "nav.riskRegister",
-    href: "/risks",
-    icon: ShieldAlert,
-    roles: ["admin", "risk_manager"],
-    section: "secondLine",
-  },
-  {
-    labelKey: "nav.compliance",
-    href: "/compliance",
-    icon: Scale,
-    roles: ["admin", "risk_manager", "dpo"],
-    section: "secondLine",
-  },
-  {
-    labelKey: "nav.dataPrivacy",
-    href: "/data-privacy",
-    icon: Lock,
-    roles: ["admin", "dpo"],
-    section: "secondLine",
-  },
-
-  // 3rd Line of Defense — independent assurance
-  {
-    labelKey: "nav.audit",
-    href: "/audit",
-    icon: ClipboardCheck,
-    roles: ["admin", "auditor"],
-    section: "thirdLine",
-  },
-
-  // System
+  // ── System ────────────────────────────────────────────
   {
     labelKey: "nav.organizations",
     href: "/organizations",
@@ -101,6 +54,13 @@ export const navItems: NavItem[] = [
     labelKey: "nav.users",
     href: "/users",
     icon: Users,
+    roles: ["admin"],
+    section: "system",
+  },
+  {
+    labelKey: "nav.modules",
+    href: "/admin/modules",
+    icon: Blocks,
     roles: ["admin"],
     section: "system",
   },
@@ -127,18 +87,23 @@ export const navItems: NavItem[] = [
   },
 ];
 
-export const sectionOrder = [
-  "main",
-  "firstLine",
-  "secondLine",
-  "thirdLine",
-  "system",
-] as const;
+/**
+ * Section ordering.
+ * Dynamic module sections are inserted between "main" and "system" at render time.
+ */
+export const platformSectionOrder = ["main", "system"] as const;
 
 export const sectionLabelKeys: Record<string, string> = {
   main: "nav.sections.main",
+  system: "nav.sections.system",
+  // Dynamic module sections — keyed by nav_section from module_definition
+  risk: "nav.sections.risk",
+  compliance: "nav.sections.compliance",
+  audit: "nav.sections.audit",
+  esg: "nav.sections.esg",
+  legal: "nav.sections.legal",
+  // Legacy keys kept for backward compatibility
   firstLine: "nav.sections.firstLine",
   secondLine: "nav.sections.secondLine",
   thirdLine: "nav.sections.thirdLine",
-  system: "nav.sections.system",
 };

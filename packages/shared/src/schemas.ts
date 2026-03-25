@@ -104,6 +104,14 @@ export const createScheduledNotificationSchema = z.object({
   templateKey: z.string().max(100).optional(),
 });
 
+// Module config update schema (Sprint 1.3)
+export const updateModuleConfigSchema = z.object({
+  uiStatus: z
+    .enum(["disabled", "preview", "enabled", "maintenance"])
+    .optional(),
+  config: z.record(z.unknown()).optional(),
+});
+
 // Notification preferences schema (Sprint 1.2)
 export const updateNotificationPreferencesSchema = z.object({
   emailMode: z.enum(["immediate", "daily_digest", "disabled"]),

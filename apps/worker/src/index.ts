@@ -2,8 +2,15 @@ import { Hono } from "hono";
 import { processOverdueTasks } from "./crons/overdue-tasks";
 import { processScheduledNotifications } from "./crons/scheduled-notifications";
 import { processNotificationDigest } from "./crons/notification-digest";
+import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
+
+// ──────────────────────────────────────────────────────────────
+// Register module-aware background processes on startup
+// ──────────────────────────────────────────────────────────────
+
+const moduleCrons = registerModuleCrons();
 
 // ──────────────────────────────────────────────────────────────
 // Middleware: CRON_SECRET verification for /crons/* routes
@@ -85,5 +92,23 @@ app.post("/crons/notification-digest", async (c) => {
     return c.json({ success: false, error: message }, 500);
   }
 });
+
+// ──────────────────────────────────────────────────────────────
+// Module cron endpoints — one per background process
+// These run regardless of ui_status (data pipelines never stop)
+// ──────────────────────────────────────────────────────────────
+
+for (const [name, handler] of Object.entries(moduleCrons)) {
+  app.post(`/crons/modules/${name}`, async (c) => {
+    try {
+      const result = await handler();
+      return c.json({ success: true, cron: name, ...result });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[worker] module cron ${name} failed:`, message);
+      return c.json({ success: false, cron: name, error: message }, 500);
+    }
+  });
+}
 
 export default { port: 3001, fetch: app.fetch };
