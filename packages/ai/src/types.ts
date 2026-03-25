@@ -14,7 +14,7 @@
  * 4. Fallback: first available provider
  */
 
-export type AiProvider = "claude_cli" | "openai" | "gemini" | "ollama";
+export type AiProvider = "claude_cli" | "claude_api" | "openai" | "gemini" | "ollama";
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";
@@ -50,6 +50,7 @@ export interface AiProviderConfig {
 
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
   claude_cli: "claude-subscription",
+  claude_api: "claude-sonnet-4-20250514",
   openai: "gpt-4o",
   gemini: "gemini-2.0-flash",
   ollama: "llama3.1:8b",
