@@ -562,8 +562,8 @@
       "evidence_for": "Nachweis für",
       "related": "Verwandt"
     },
-    "history": "Historie",
-    "noHistory": "Keine Historie erfasst"
+    "history": "Verlauf",
+    "noHistory": "Keine Verlaufseinträge"
   },
   "tabs": {
     "close": "Tab schließen",
