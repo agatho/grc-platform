@@ -6,7 +6,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -- drizzle-kit migrate",
     "db:seed": "tsx src/seed.ts",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:rls": "vitest run --config vitest.rls.config.ts"
   },
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
@@ -16,8 +18,10 @@
     "postgres": "^3.4"
   },
   "devDependencies": {
+    "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.19",
-    "typescript": "^5.7"
+    "typescript": "^5.7",
+    "vitest": "^3.0"
   }
 }
