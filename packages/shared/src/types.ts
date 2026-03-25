@@ -309,6 +309,11 @@ export interface Process {
   currentVersion: number;
   isEssential: boolean;
   publishedAt?: string;
+  // Review cycle (Gap 2)
+  reviewDate?: string;
+  reviewCycleDays?: number;
+  lastReviewedAt?: string;
+  lastReviewedBy?: string;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

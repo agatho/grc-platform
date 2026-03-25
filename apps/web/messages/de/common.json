@@ -1078,6 +1078,36 @@
       "event": "Ereignis",
       "subprocess": "Teilprozess",
       "call_activity": "Aufrufaktivität"
+    },
+    "assets": {
+      "title": "Prozess-Assets",
+      "link": "Asset verknüpfen",
+      "unlink": "Asset-Verknüpfung lösen",
+      "noAssets": "Keine Assets mit diesem Prozess verknüpft"
+    },
+    "controls": {
+      "title": "Prozesskontrollen",
+      "link": "Kontrolle verknüpfen",
+      "unlink": "Kontrollverknüpfung lösen",
+      "noControls": "Keine Kontrollen mit diesem Prozess verknüpft",
+      "context": "Kontrollkontext",
+      "comingSprint4": "Vollständige Kontrolldetails verfügbar in Sprint 4"
+    },
+    "documents": {
+      "title": "Prozessdokumente",
+      "link": "Dokument verknüpfen",
+      "unlink": "Dokumentverknüpfung lösen",
+      "noDocuments": "Keine Dokumente mit diesem Prozess verknüpft",
+      "type": "Dokumenttyp",
+      "context": "Verknüpfungskontext",
+      "comingSprint4": "Dokumentenmanagement verfügbar in Sprint 4"
+    },
+    "review": {
+      "reviewDate": "Prüfdatum",
+      "reviewCycle": "Prüfzyklus",
+      "lastReviewed": "Zuletzt geprüft",
+      "cycleDays": "Zyklus (Tage)",
+      "reminderSent": "Erinnerung gesendet"
     }
   }
 }
