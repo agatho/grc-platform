@@ -285,3 +285,62 @@ export interface RiskAppetite {
   updatedBy?: string;
   deletedAt?: string;
 }
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 3: BPMN Process Modeling types
+// ──────────────────────────────────────────────────────────────
+
+export type ProcessNotation = "bpmn" | "value_chain" | "epc";
+export type ProcessStatus = "draft" | "in_review" | "approved" | "published" | "archived";
+export type StepType = "task" | "gateway" | "event" | "subprocess" | "call_activity";
+
+export interface Process {
+  id: string;
+  orgId: string;
+  parentProcessId?: string;
+  name: string;
+  description?: string;
+  level: number;
+  notation: ProcessNotation;
+  status: ProcessStatus;
+  processOwnerId?: string;
+  reviewerId?: string;
+  department?: string;
+  currentVersion: number;
+  isEssential: boolean;
+  publishedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletedBy?: string;
+}
+
+export interface ProcessVersion {
+  id: string;
+  processId: string;
+  orgId: string;
+  versionNumber: number;
+  bpmnXml?: string;
+  diagramJson?: unknown;
+  changeSummary?: string;
+  isCurrent: boolean;
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface ProcessStep {
+  id: string;
+  processId: string;
+  orgId: string;
+  bpmnElementId: string;
+  name?: string;
+  description?: string;
+  stepType: StepType;
+  responsibleRole?: string;
+  sequenceOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
