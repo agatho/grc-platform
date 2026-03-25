@@ -13,3 +13,4 @@ docs-private/
 
 # Claude Code local settings
 .claude/
+CLAUDE.md
