@@ -71,6 +71,13 @@
       "when": 1774476108324,
       "tag": "0009_old_taskmaster",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1774480906849,
+      "tag": "0010_absent_queen_noir",
+      "breakpoints": true
     }
   ]
 }

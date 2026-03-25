@@ -9,6 +9,7 @@ import {
   boolean,
   timestamp,
   integer,
+  date,
   jsonb,
   pgEnum,
   index,
@@ -69,6 +70,8 @@ export const process = pgTable(
     currentVersion: integer("current_version").notNull().default(1),
     isEssential: boolean("is_essential").notNull().default(false),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    // Gallery thumbnail (Sprint 3b)
+    galleryThumbnailPath: varchar("gallery_thumbnail_path", { length: 1000 }),
     // Review cycle (Gap 2)
     reviewDate: timestamp("review_date", { withTimezone: true }),
     reviewCycleDays: integer("review_cycle_days"),
@@ -113,6 +116,7 @@ export const processVersion = pgTable(
     bpmnXml: text("bpmn_xml"),
     diagramJson: jsonb("diagram_json"),
     changeSummary: text("change_summary"),
+    diffSummaryJson: jsonb("diff_summary_json"),
     isCurrent: boolean("is_current").notNull().default(false),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -280,7 +284,81 @@ export const processStepAsset = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
-// 3.8 ProcessDocument — Process ↔ Document link (Gap 4, Sprint 4 DMS hook)
+// 3.9 ProcessReviewSchedule — Review cycle governance (Sprint 3b)
+// ──────────────────────────────────────────────────────────────
+
+export const processReviewSchedule = pgTable(
+  "process_review_schedule",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => process.id, { onDelete: "cascade" }),
+    reviewIntervalMonths: integer("review_interval_months").notNull().default(12),
+    nextReviewDate: date("next_review_date").notNull(),
+    lastReminderSentAt: timestamp("last_reminder_sent_at", { withTimezone: true }),
+    assignedReviewerId: uuid("assigned_reviewer_id").references(() => user.id),
+    isActive: boolean("is_active").notNull().default(true),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+  },
+  (table) => [
+    index("prs_org_idx").on(table.orgId),
+    index("prs_next_review_idx").on(table.nextReviewDate),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 3.10 ProcessComment — Threaded comments on processes (Sprint 3b)
+// ──────────────────────────────────────────────────────────────
+
+export const processComment = pgTable(
+  "process_comment",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => process.id, { onDelete: "cascade" }),
+    entityType: varchar("entity_type", { length: 50 }).notNull().default("process"),
+    entityId: uuid("entity_id").notNull(),
+    content: text("content").notNull(),
+    isResolved: boolean("is_resolved").notNull().default(false),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    resolvedBy: uuid("resolved_by").references(() => user.id),
+    parentCommentId: uuid("parent_comment_id"),
+    mentionedUserIds: text("mentioned_user_ids").array().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => user.id),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("pc_org_idx").on(table.orgId),
+    index("pc_process_idx").on(table.processId),
+    index("pc_entity_idx").on(table.entityType, table.entityId),
+    index("pc_parent_idx").on(table.parentCommentId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 3.11 ProcessDocument — Process ↔ Document link (Gap 4, Sprint 4 DMS hook)
 // ──────────────────────────────────────────────────────────────
 
 export const processDocument = pgTable(

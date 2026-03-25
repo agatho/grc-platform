@@ -507,3 +507,108 @@ export const linkProcessDocumentSchema = z.object({
   documentType: z.enum(["policy", "procedure", "guideline", "sop", "form"]).optional(),
   linkContext: z.string().max(1000).optional(),
 });
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 3b: Process Governance schemas
+// ──────────────────────────────────────────────────────────────
+
+// ─── Comment CRUD ─────────────────────────────────────────────
+
+export const createCommentSchema = z.object({
+  processId: z.string().uuid(),
+  entityType: z.enum(["process", "process_step"]).default("process"),
+  entityId: z.string().uuid(),
+  content: z.string().min(1, "Comment cannot be empty").max(5000),
+  parentCommentId: z.string().uuid().optional(),
+  mentionedUserIds: z.array(z.string().uuid()).optional(),
+});
+
+export const updateCommentSchema = z.object({
+  content: z.string().min(1, "Comment cannot be empty").max(5000),
+  isResolved: z.boolean().optional(),
+});
+
+export const commentListQuerySchema = z.object({
+  processId: z.string().uuid(),
+  entityType: z.enum(["process", "process_step"]).optional(),
+  entityId: z.string().uuid().optional(),
+  isResolved: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
+  page: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1))
+    .default("1"),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .default("50"),
+});
+
+// ─── Review Schedule ──────────────────────────────────────────
+
+export const createReviewScheduleSchema = z.object({
+  processId: z.string().uuid(),
+  reviewIntervalMonths: z.number().int().min(1).max(60),
+  nextReviewDate: z.string().min(1, "Next review date is required"),
+  assignedReviewerId: z.string().uuid().optional(),
+  isActive: z.boolean().default(true),
+});
+
+// ─── Bulk Operations ──────────────────────────────────────────
+
+export const bulkActionSchema = z.discriminatedUnion("action", [
+  z.object({
+    action: z.literal("change_status"),
+    processIds: z.array(z.string().uuid()).min(1).max(100),
+    status: z.enum(processStatusValues),
+    comment: z.string().max(1000).optional(),
+  }),
+  z.object({
+    action: z.literal("assign_owner"),
+    processIds: z.array(z.string().uuid()).min(1).max(100),
+    processOwnerId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal("assign_reviewer"),
+    processIds: z.array(z.string().uuid()).min(1).max(100),
+    reviewerId: z.string().uuid(),
+  }),
+  z.object({
+    action: z.literal("change_department"),
+    processIds: z.array(z.string().uuid()).min(1).max(100),
+    department: z.string().max(255),
+  }),
+  z.object({
+    action: z.literal("delete"),
+    processIds: z.array(z.string().uuid()).min(1).max(100),
+  }),
+]);
+
+// ─── Version Compare ─────────────────────────────────────────
+
+export const versionCompareQuerySchema = z.object({
+  processId: z.string().uuid(),
+  versionA: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+  versionB: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1)),
+});
+
+// ─── BPMN Validation Config ──────────────────────────────────
+
+const validationRuleLevelValues = ["error", "warning", "disabled"] as const;
+
+export const bpmnValidationConfigSchema = z.object({
+  missingStartEvent: z.enum(validationRuleLevelValues).default("error"),
+  missingEndEvent: z.enum(validationRuleLevelValues).default("error"),
+  disconnectedElements: z.enum(validationRuleLevelValues).default("error"),
+  gatewayMissingDefault: z.enum(validationRuleLevelValues).default("warning"),
+});

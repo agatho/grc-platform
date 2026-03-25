@@ -67,6 +67,8 @@ import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
+import { ProcessComments } from "@/components/process/process-comments";
+import { ProcessReviewConfig } from "@/components/process/process-review-config";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
@@ -490,6 +492,7 @@ function ProcessDetailContent() {
           <TabsTrigger value="versions">{t("tabs.versions")}</TabsTrigger>
           <TabsTrigger value="risks">{t("tabs.risks")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
+          <TabsTrigger value="comments">{t("tabs.comments")}</TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -542,6 +545,17 @@ function ProcessDetailContent() {
         <TabsContent value="history">
           <HistoryTab history={history} loading={historyLoading} t={t} />
         </TabsContent>
+
+        {/* Comments Tab */}
+        <TabsContent value="comments">
+          <div className="mt-4">
+            <Card>
+              <CardContent className="p-6">
+                <ProcessComments processId={processId} />
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
       </Tabs>
     </div>
   );
@@ -559,6 +573,29 @@ function OverviewTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
+  const tGov = useTranslations("processGovernance");
+
+  // Validation state
+  const [validation, setValidation] = useState<{
+    isValid: boolean;
+    errorCount: number;
+    warningCount: number;
+  } | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/v1/processes/${process.id}/validate`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.data) {
+          setValidation({
+            isValid: json.data.isValid,
+            errorCount: json.data.errorCount,
+            warningCount: json.data.warningCount,
+          });
+        }
+      })
+      .catch(() => {});
+  }, [process.id]);
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-4">
@@ -662,6 +699,41 @@ function OverviewTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Review Schedule */}
+      <ProcessReviewConfig processId={process.id} />
+
+      {/* Validation Panel */}
+      {validation && (
+        <Card>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base flex items-center gap-2">
+              {validation.isValid ? (
+                <Badge className="bg-green-100 text-green-700 border-green-200">
+                  Valid
+                </Badge>
+              ) : (
+                <Badge variant="destructive">
+                  {validation.errorCount} Error{validation.errorCount !== 1 ? "s" : ""}
+                </Badge>
+              )}
+              {validation.warningCount > 0 && (
+                <Badge className="bg-yellow-100 text-yellow-700 border-yellow-200">
+                  {validation.warningCount} Warning{validation.warningCount !== 1 ? "s" : ""}
+                </Badge>
+              )}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Link
+              href={`/processes/${process.id}#editor`}
+              className="text-sm text-indigo-600 hover:underline"
+            >
+              View full validation details
+            </Link>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
