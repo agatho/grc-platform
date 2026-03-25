@@ -2,19 +2,18 @@
  * AI Provider Abstraction Layer (ADR-008)
  *
  * Supports multiple AI providers with automatic routing:
- * - Claude API (Anthropic) — default for reasoning tasks
- * - OpenAI (GPT-4o, GPT-4-turbo) — alternative cloud provider
- * - Google Gemini — alternative cloud provider
+ * - OpenAI (GPT-4o, GPT-4-turbo)
+ * - Google Gemini (Gemini 2.0 Flash)
  * - Ollama — local models for privacy-sensitive data (GDPR)
  *
  * Provider selection priority:
  * 1. Explicit provider param in request
  * 2. Org-level AI_PROVIDER setting
  * 3. Privacy router: personal data → Ollama, else → configured default
- * 4. Fallback: Claude API
+ * 4. Fallback: first available provider
  */
 
-export type AiProvider = "claude" | "openai" | "gemini" | "ollama";
+export type AiProvider = "openai" | "gemini" | "ollama";
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";
@@ -49,7 +48,6 @@ export interface AiProviderConfig {
 }
 
 export const DEFAULT_MODELS: Record<AiProvider, string> = {
-  claude: "claude-sonnet-4-20250514",
   openai: "gpt-4o",
   gemini: "gemini-2.0-flash",
   ollama: "llama3.1:8b",
