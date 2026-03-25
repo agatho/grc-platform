@@ -207,6 +207,9 @@ export interface Risk {
   financialImpactExpected?: string;
   riskAppetiteExceeded: boolean;
   reviewDate?: string;
+  // Catalog & Framework Layer hook (ADR-013)
+  catalogEntryId: string | null;
+  catalogSource: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;

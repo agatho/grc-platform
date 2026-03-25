@@ -266,6 +266,9 @@ export const createRiskSchema = z
     financialImpactMin: z.number().nonnegative().optional(),
     financialImpactMax: z.number().nonnegative().optional(),
     financialImpactExpected: z.number().nonnegative().optional(),
+    // Catalog & Framework Layer hook (ADR-013)
+    catalogEntryId: z.string().uuid().optional(),
+    catalogSource: z.string().max(50).optional(),
   })
   .refine(
     (data) => {
@@ -291,6 +294,9 @@ export const updateRiskSchema = z
     financialImpactExpected: z.number().nonnegative().nullable().optional(),
     treatmentStrategy: z.enum(treatmentStrategyValues).nullable().optional(),
     treatmentRationale: z.string().nullable().optional(),
+    // Catalog & Framework Layer hook (ADR-013)
+    catalogEntryId: z.string().uuid().nullable().optional(),
+    catalogSource: z.string().max(50).nullable().optional(),
   })
   .refine(
     (data) => {
