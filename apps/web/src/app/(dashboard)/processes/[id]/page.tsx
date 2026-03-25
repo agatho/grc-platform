@@ -5,15 +5,12 @@ import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
+import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
   ArrowLeft,
   FileText,
   User,
-  Save,
-  Download,
-  Undo2,
-  Redo2,
   Plus,
   Loader2,
   Pencil,
@@ -23,11 +20,9 @@ import {
   Circle,
   Layers,
   Clock,
-  Sparkles,
   Trash2,
   RotateCcw,
   Eye,
-  Lock,
   ExternalLink,
 } from "lucide-react";
 
@@ -64,7 +59,24 @@ import {
   PROCESS_STATUS_TRANSITIONS,
   PROCESS_TRANSITION_ROLES,
   TRANSITIONS_REQUIRING_COMMENT,
+  EMPTY_BPMN_XML,
 } from "@grc/shared";
+
+import type { BpmnEditorRef, RiskOverlayData } from "@/components/bpmn/bpmn-editor";
+import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
+import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
+import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
+import { useProcessStepRisks } from "@/hooks/use-processes";
+
+// Dynamic imports — bpmn-js does NOT work with SSR
+const BpmnEditorDynamic = dynamic(
+  () => import("@/components/bpmn/bpmn-editor").then((m) => ({ default: m.BpmnEditor })),
+  { ssr: false, loading: () => <div className="flex items-center justify-center min-h-[500px]"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div> },
+);
+const BpmnViewerDynamic = dynamic(
+  () => import("@/components/bpmn/bpmn-viewer").then((m) => ({ default: m.BpmnViewer })),
+  { ssr: false, loading: () => <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div> },
+);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -148,11 +160,7 @@ function ProcessDetailContent() {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("overview");
 
-  // Editor state
-  const [bpmnXml, setBpmnXml] = useState("");
-  const [originalXml, setOriginalXml] = useState("");
-  const [savingVersion, setSavingVersion] = useState(false);
-  const [changeSummary, setChangeSummary] = useState("");
+  // Editor state is now managed by EditorTab / useBpmnEditor
 
   // Risks state
   const [risks, setRisks] = useState<ProcessRisk[]>([]);
@@ -183,13 +191,6 @@ function ProcessDetailContent() {
       const json = await res.json();
       const data = json.data as ProcessDetail;
       setProcess(data);
-
-      // Set BPMN XML from current version
-      const currentVersion = data.versions?.find((v) => v.isCurrent);
-      if (currentVersion?.bpmnXml) {
-        setBpmnXml(currentVersion.bpmnXml);
-        setOriginalXml(currentVersion.bpmnXml);
-      }
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
@@ -310,31 +311,6 @@ function ProcessDetailContent() {
     }
   };
 
-  // Save BPMN version
-  const handleSaveVersion = async () => {
-    setSavingVersion(true);
-    try {
-      const res = await fetch(`/api/v1/processes/${processId}/versions`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          bpmnXml,
-          changeSummary: changeSummary.trim() || undefined,
-        }),
-      });
-      if (!res.ok) throw new Error("Save failed");
-      toast.success(t("editor.saved"));
-      setOriginalXml(bpmnXml);
-      setChangeSummary("");
-      void fetchProcess();
-    } catch {
-      toast.error("Failed to save version");
-    } finally {
-      setSavingVersion(false);
-    }
-  };
-
-  const hasUnsavedChanges = bpmnXml !== originalXml;
   const canEdit = userRole === "admin" || userRole === "process_owner";
 
   if (loading) {
@@ -525,14 +501,9 @@ function ProcessDetailContent() {
         <TabsContent value="editor">
           <EditorTab
             process={process}
-            bpmnXml={bpmnXml}
-            setBpmnXml={setBpmnXml}
-            hasUnsavedChanges={hasUnsavedChanges}
-            savingVersion={savingVersion}
-            changeSummary={changeSummary}
-            setChangeSummary={setChangeSummary}
-            onSave={handleSaveVersion}
+            processId={processId}
             canEdit={canEdit}
+            onVersionSaved={fetchProcess}
             t={t}
           />
         </TabsContent>
@@ -670,16 +641,16 @@ function OverviewTab({
         </CardHeader>
         <CardContent>
           {process.versions?.some((v) => v.bpmnXml) ? (
-            <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 min-h-[400px] overflow-auto">
-              <pre className="text-xs text-gray-600 whitespace-pre-wrap break-all font-mono">
-                {(
+            <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
+              <BpmnViewerDynamic
+                xml={
                   process.versions.find((v) => v.isCurrent)?.bpmnXml ??
                   process.versions[0]?.bpmnXml ??
                   ""
-                ).slice(0, 2000)}
-                {(process.versions.find((v) => v.isCurrent)?.bpmnXml ?? "")
-                  .length > 2000 && "\n... (truncated)"}
-              </pre>
+                }
+                className="h-full"
+                minHeight={400}
+              />
             </div>
           ) : (
             <div className="flex items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 min-h-[400px]">
@@ -705,133 +676,183 @@ function MetaRow({ label, value }: { label: string; value: string }) {
 }
 
 // ---------------------------------------------------------------------------
-// BPMN Editor Tab
+// BPMN Editor Tab — uses real bpmn-js Modeler / NavigatedViewer
 // ---------------------------------------------------------------------------
+
+interface SelectedElement {
+  id: string;
+  type: string;
+  name: string | null;
+}
 
 function EditorTab({
   process,
-  bpmnXml,
-  setBpmnXml,
-  hasUnsavedChanges,
-  savingVersion,
-  changeSummary,
-  setChangeSummary,
-  onSave,
+  processId,
   canEdit,
+  onVersionSaved,
   t,
 }: {
   process: ProcessDetail;
-  bpmnXml: string;
-  setBpmnXml: (xml: string) => void;
-  hasUnsavedChanges: boolean;
-  savingVersion: boolean;
-  changeSummary: string;
-  setChangeSummary: (s: string) => void;
-  onSave: () => void;
+  processId: string;
   canEdit: boolean;
+  onVersionSaved: () => void;
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
-  const [selectedElement, setSelectedElement] = useState<string | null>(null);
+  const readOnly = !canEdit;
+
+  // Get initial XML from current version
+  const initialXml = useMemo(() => {
+    const currentVersion = process.versions?.find((v) => v.isCurrent);
+    return currentVersion?.bpmnXml || EMPTY_BPMN_XML;
+  }, [process.versions]);
+
+  // BPMN editor hook
+  const {
+    editorRef,
+    hasChanges,
+    saving,
+    markChanged,
+    save,
+    exportXml,
+    exportSvg,
+    exportPng,
+    undo,
+    redo,
+  } = useBpmnEditor({
+    processId,
+    onSaved: onVersionSaved,
+  });
+
+  // Risk overlay data
+  const { overlayData, stepRisks, refetch: refetchRisks } = useProcessStepRisks(processId);
+
+  // Selected element for side panel
+  const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
+
+  // Find process step for selected element
+  const selectedStep = useMemo(() => {
+    if (!selectedElement) return null;
+    return (process.steps ?? []).find(
+      (s) => s.bpmnElementId === selectedElement.id,
+    ) ?? null;
+  }, [selectedElement, process.steps]);
+
+  // Find linked risks for selected step
+  const selectedStepRisks = useMemo(() => {
+    if (!selectedStep) return [];
+    const stepInfo = stepRisks.find((s) => s.processStepId === selectedStep.id);
+    return stepInfo?.risks ?? [];
+  }, [selectedStep, stepRisks]);
+
+  // Handle element click
+  const handleElementClick = useCallback(
+    (elementId: string, elementType: string, elementName: string | null) => {
+      // Click on canvas background closes panel
+      if (elementType === "bpmn:Process" || elementType === "bpmn:Collaboration") {
+        setSelectedElement(null);
+        return;
+      }
+      setSelectedElement({ id: elementId, type: elementType, name: elementName });
+    },
+    [],
+  );
+
+  // Handle save via BPMN XML
+  const handleSave = useCallback(
+    async (xml: string) => {
+      // Save via the hook which posts to /versions
+      await save();
+    },
+    [save],
+  );
+
+  // Handle risk unlink
+  const handleRiskUnlink = useCallback(
+    async (linkId: string) => {
+      try {
+        const res = await fetch(`/api/v1/processes/${processId}/risks/${linkId}`, {
+          method: "DELETE",
+        });
+        if (!res.ok) throw new Error("Unlink failed");
+        toast.success("Risk unlinked");
+        refetchRisks();
+      } catch {
+        toast.error("Failed to unlink risk");
+      }
+    },
+    [processId, refetchRisks],
+  );
+
+  // Handle responsible role change
+  const handleResponsibleRoleChange = useCallback(
+    async (role: string) => {
+      if (!selectedStep) return;
+      try {
+        await fetch(`/api/v1/processes/${processId}/steps/${selectedStep.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ responsibleRole: role || null }),
+        });
+      } catch {
+        // Silently fail — the field reverts on next fetch
+      }
+    },
+    [processId, selectedStep],
+  );
 
   return (
     <div className="mt-4 space-y-0">
       {/* Toolbar */}
-      <div className="flex items-center justify-between rounded-t-lg border border-gray-200 bg-gray-50 px-4 py-2">
-        <div className="flex items-center gap-2">
-          <Button
-            size="sm"
-            onClick={onSave}
-            disabled={!hasUnsavedChanges || savingVersion || !canEdit}
-          >
-            {savingVersion ? (
-              <Loader2 size={14} className="animate-spin" />
-            ) : (
-              <Save size={14} />
-            )}
-            {savingVersion
-              ? t("editor.saving")
-              : t("editor.save")}
-          </Button>
-          <Button variant="ghost" size="sm" disabled>
-            <Download size={14} />
-            {t("editor.export")}
-          </Button>
-          <div className="h-5 w-px bg-gray-300" />
-          <Button variant="ghost" size="sm" disabled>
-            <Undo2 size={14} />
-          </Button>
-          <Button variant="ghost" size="sm" disabled>
-            <Redo2 size={14} />
-          </Button>
-        </div>
-        <div className="flex items-center gap-3 text-sm">
-          <span className="text-gray-500">v{process.currentVersion}</span>
-          {hasUnsavedChanges && (
-            <span className="text-orange-600 font-medium">
-              {t("editor.unsavedChanges")}
-            </span>
-          )}
-          {!canEdit && (
-            <span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded text-xs font-medium">
-              {t("detail.readOnly")}
-            </span>
-          )}
-        </div>
-      </div>
+      <BpmnToolbar
+        version={process.currentVersion}
+        hasChanges={hasChanges}
+        readOnly={readOnly}
+        saving={saving}
+        onSave={() => void save()}
+        onExportXml={() => void exportXml()}
+        onExportSvg={() => void exportSvg()}
+        onExportPng={() => void exportPng()}
+        onUndo={undo}
+        onRedo={redo}
+        canUndo={editorRef.current?.canUndo() ?? false}
+        canRedo={editorRef.current?.canRedo() ?? false}
+      />
 
       {/* Editor area */}
-      <div className="flex border border-t-0 border-gray-200 rounded-b-lg overflow-hidden">
-        {/* Main canvas area - textarea for BPMN XML */}
-        <div className="flex-1 flex flex-col">
-          {/* Change summary input */}
-          {canEdit && (
-            <div className="border-b border-gray-100 px-4 py-2">
-              <input
-                type="text"
-                value={changeSummary}
-                onChange={(e) => setChangeSummary(e.target.value)}
-                placeholder={t("editor.changeSummaryPlaceholder")}
-                className="w-full text-sm border-0 bg-transparent focus:outline-none text-gray-600 placeholder-gray-400"
-              />
-            </div>
-          )}
-          <textarea
-            value={bpmnXml}
-            onChange={(e) => canEdit && setBpmnXml(e.target.value)}
-            readOnly={!canEdit}
-            className="flex-1 min-h-[500px] p-4 font-mono text-xs text-gray-700 bg-white resize-none focus:outline-none"
-            placeholder={t("editor.bpmnXmlPlaceholder")}
+      <div className="flex border border-t-0 border-gray-200 rounded-b-lg overflow-hidden" style={{ height: "calc(100vh - 380px)", minHeight: 500 }}>
+        {/* BPMN Canvas */}
+        <div className={cn("flex-1 relative", selectedElement ? "w-[70%]" : "w-full")}>
+          <BpmnEditorDynamic
+            ref={editorRef}
+            initialXml={initialXml}
+            readOnly={readOnly}
+            onSave={handleSave}
+            onElementClick={handleElementClick}
+            onChanged={markChanged}
+            riskOverlayData={overlayData}
+            className="h-full"
           />
         </div>
 
-        {/* Side panel */}
-        <div className="w-[320px] border-l border-gray-200 bg-gray-50 p-4">
-          <div className="space-y-4">
-            <div className="text-center text-sm text-gray-400 py-8">
-              <Layers className="mx-auto h-8 w-8 mb-2 text-gray-300" />
-              <p>{t("editor.noElementSelected")}</p>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
-                {t("editor.linkedRisks")}
-              </h4>
-              <p className="text-xs text-gray-400">
-                {t("editor.noElementSelected")}
-              </p>
-            </div>
-
-            <div className="border-t border-gray-200 pt-4">
-              <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2 flex items-center gap-1">
-                <Lock size={12} />
-                Controls
-              </h4>
-              <p className="text-xs text-gray-400">
-                {t("editor.controlsPlaceholder")}
-              </p>
-            </div>
+        {/* Side Panel */}
+        {selectedElement && (
+          <div className="w-[30%] min-w-[320px] max-w-[450px]">
+            <ShapeSidePanel
+              elementId={selectedElement.id}
+              elementType={selectedElement.type}
+              elementName={selectedElement.name}
+              processId={processId}
+              processStepId={selectedStep?.id}
+              linkedRisks={selectedStepRisks}
+              responsibleRole={selectedStep?.responsibleRole ?? undefined}
+              canEdit={canEdit}
+              onClose={() => setSelectedElement(null)}
+              onRiskLinked={() => refetchRisks()}
+              onRiskUnlinked={handleRiskUnlink}
+              onResponsibleRoleChange={handleResponsibleRoleChange}
+            />
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -976,16 +997,24 @@ function VersionsTab({
         open={viewingVersion !== null}
         onOpenChange={(open) => !open && setViewingVersion(null)}
       >
-        <DialogContent className="max-w-3xl max-h-[80vh]">
+        <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
               v{viewingVersion?.versionNumber} — {viewingVersion?.changeSummary ?? "BPMN XML"}
             </DialogTitle>
           </DialogHeader>
-          <div className="overflow-auto max-h-[60vh] rounded border border-gray-200 bg-gray-50 p-4">
-            <pre className="text-xs font-mono text-gray-600 whitespace-pre-wrap">
-              {viewingVersion?.bpmnXml ?? "No XML available"}
-            </pre>
+          <div className="overflow-hidden rounded border border-gray-200 bg-white" style={{ height: "60vh" }}>
+            {viewingVersion?.bpmnXml ? (
+              <BpmnViewerDynamic
+                xml={viewingVersion.bpmnXml}
+                className="h-full"
+                minHeight={400}
+              />
+            ) : (
+              <div className="flex items-center justify-center h-full text-sm text-gray-400">
+                No BPMN diagram available
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>

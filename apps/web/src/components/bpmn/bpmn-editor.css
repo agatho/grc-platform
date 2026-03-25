@@ -1,0 +1,24 @@
+/* bpmn-js styles — imported by BpmnEditor component */
+
+/* Import bpmn-js base CSS */
+@import "bpmn-js/dist/assets/diagram-js.css";
+@import "bpmn-js/dist/assets/bpmn-js.css";
+@import "bpmn-js/dist/assets/bpmn-font/css/bpmn-embedded.css";
+
+/* Container fills parent */
+.bjs-container {
+  height: 100%;
+  width: 100%;
+}
+
+/* Hide the bpmn.io powered-by badge */
+.bjs-powered-by {
+  display: none !important;
+}
+
+/* Minimap positioning */
+.djs-minimap {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+}
