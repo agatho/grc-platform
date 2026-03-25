@@ -138,6 +138,10 @@ export const risk = pgTable(
       .references(() => organization.id),
     workItemId: uuid("work_item_id")
       .references(() => workItem.id),
+    // Catalog & Framework Layer hook (ADR-013)
+    // No FK constraint in Sprint 2 — FK to risk_catalog_entry added in Sprint 4b
+    catalogEntryId: uuid("catalog_entry_id"),
+    catalogSource: varchar("catalog_source", { length: 50 }),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     riskCategory: riskCategoryEnum("risk_category").notNull(),
