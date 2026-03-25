@@ -429,6 +429,8 @@ export const createProcessSchema = z.object({
   department: z.string().max(255).optional().nullable(),
   notation: z.enum(processNotationValues).default("bpmn"),
   isEssential: z.boolean().default(false),
+  reviewDate: z.string().datetime().optional().nullable(),
+  reviewCycleDays: z.number().int().min(1).max(730).optional().nullable(),
 });
 
 export const updateProcessSchema = z.object({
@@ -440,6 +442,8 @@ export const updateProcessSchema = z.object({
   reviewerId: z.string().uuid().optional().nullable(),
   department: z.string().max(255).optional().nullable(),
   isEssential: z.boolean().optional(),
+  reviewDate: z.string().datetime().nullable().optional(),
+  reviewCycleDays: z.number().int().min(1).max(730).nullable().optional(),
 });
 
 // ─── Process Version ─────────────────────────────────────────
@@ -481,4 +485,25 @@ export const generateBpmnSchema = z.object({
 export const updateProcessStepSchema = z.object({
   responsibleRole: z.string().max(255).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
+});
+
+// ─── Asset Linkage (Gap 1) ────────────────────────────────────
+
+export const linkProcessAssetSchema = z.object({
+  assetId: z.string().uuid(),
+});
+
+// ─── Control Linkage (Gap 3) ──────────────────────────────────
+
+export const linkProcessControlSchema = z.object({
+  controlId: z.string().uuid(),
+  controlContext: z.string().max(1000).optional(),
+});
+
+// ─── Document Linkage (Gap 4) ─────────────────────────────────
+
+export const linkProcessDocumentSchema = z.object({
+  documentId: z.string().uuid(),
+  documentType: z.enum(["policy", "procedure", "guideline", "sop", "form"]).optional(),
+  linkContext: z.string().max(1000).optional(),
 });

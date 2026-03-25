@@ -16,6 +16,7 @@ import {
   type AnyPgColumn,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
+import { asset } from "./asset";
 
 // ──────────────────────────────────────────────────────────────
 // Enums
@@ -68,6 +69,11 @@ export const process = pgTable(
     currentVersion: integer("current_version").notNull().default(1),
     isEssential: boolean("is_essential").notNull().default(false),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    // Review cycle (Gap 2)
+    reviewDate: timestamp("review_date", { withTimezone: true }),
+    reviewCycleDays: integer("review_cycle_days"),
+    lastReviewedAt: timestamp("last_reviewed_at", { withTimezone: true }),
+    lastReviewedBy: uuid("last_reviewed_by").references(() => user.id),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -214,5 +220,89 @@ export const processStepControl = pgTable(
     index("process_step_control_step_idx").on(table.processStepId),
     index("process_step_control_control_idx").on(table.controlId),
     index("process_step_control_org_idx").on(table.orgId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 3.6 ProcessAsset — Process ↔ Asset join (Gap 1)
+// ──────────────────────────────────────────────────────────────
+
+export const processAsset = pgTable(
+  "process_asset",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => process.id, { onDelete: "cascade" }),
+    assetId: uuid("asset_id")
+      .notNull()
+      .references(() => asset.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+  },
+  (table) => [
+    index("process_asset_process_idx").on(table.processId),
+    index("process_asset_asset_idx").on(table.assetId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 3.7 ProcessStepAsset — ProcessStep ↔ Asset join (Gap 1)
+// ──────────────────────────────────────────────────────────────
+
+export const processStepAsset = pgTable(
+  "process_step_asset",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    processStepId: uuid("process_step_id")
+      .notNull()
+      .references(() => processStep.id, { onDelete: "cascade" }),
+    assetId: uuid("asset_id")
+      .notNull()
+      .references(() => asset.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+  },
+  (table) => [
+    index("process_step_asset_step_idx").on(table.processStepId),
+    index("process_step_asset_asset_idx").on(table.assetId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 3.8 ProcessDocument — Process ↔ Document link (Gap 4, Sprint 4 DMS hook)
+// ──────────────────────────────────────────────────────────────
+
+export const processDocument = pgTable(
+  "process_document",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => process.id, { onDelete: "cascade" }),
+    documentId: uuid("document_id").notNull(), // No FK yet — Sprint 4 adds it
+    documentType: varchar("document_type", { length: 50 }), // 'policy', 'procedure', 'guideline', 'sop', 'form'
+    linkContext: text("link_context"),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+  },
+  (table) => [
+    index("process_document_process_idx").on(table.processId),
+    index("process_document_document_idx").on(table.documentId),
   ],
 );

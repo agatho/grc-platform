@@ -1078,6 +1078,36 @@
       "event": "Event",
       "subprocess": "Subprocess",
       "call_activity": "Call Activity"
+    },
+    "assets": {
+      "title": "Process Assets",
+      "link": "Link Asset",
+      "unlink": "Unlink Asset",
+      "noAssets": "No assets linked to this process"
+    },
+    "controls": {
+      "title": "Process Controls",
+      "link": "Link Control",
+      "unlink": "Unlink Control",
+      "noControls": "No controls linked to this process",
+      "context": "Control Context",
+      "comingSprint4": "Full control details available in Sprint 4"
+    },
+    "documents": {
+      "title": "Process Documents",
+      "link": "Link Document",
+      "unlink": "Unlink Document",
+      "noDocuments": "No documents linked to this process",
+      "type": "Document Type",
+      "context": "Link Context",
+      "comingSprint4": "Document management available in Sprint 4"
+    },
+    "review": {
+      "reviewDate": "Review Date",
+      "reviewCycle": "Review Cycle",
+      "lastReviewed": "Last Reviewed",
+      "cycleDays": "Cycle (days)",
+      "reminderSent": "Reminder Sent"
     }
   }
 }

@@ -5,6 +5,7 @@ import { processNotificationDigest } from "./crons/notification-digest";
 import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
 import { processRiskReviewReminders } from "./crons/risk-review-reminder";
 import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-reminder";
+import { processReviewReminders } from "./crons/process-review-reminder";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -125,6 +126,17 @@ app.post("/crons/treatment-overdue-reminders", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] treatment-overdue-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/process-review-reminders", async (c) => {
+  try {
+    const result = await processReviewReminders();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] process-review-reminders cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
