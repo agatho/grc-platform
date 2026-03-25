@@ -16,13 +16,19 @@
     "processes": "Processes",
     "auditLog": "Audit Trail",
     "accessLog": "Access Log",
+    "modules": "Modules",
     "settings": "Settings",
     "sections": {
       "main": "Main Navigation",
       "firstLine": "1st Line of Defense",
       "secondLine": "2nd Line of Defense",
       "thirdLine": "3rd Line of Defense",
-      "system": "System"
+      "system": "System",
+      "risk": "Risk Management",
+      "compliance": "Compliance & Privacy",
+      "audit": "Audit & Assurance",
+      "esg": "ESG & Sustainability",
+      "legal": "Legal & Governance"
     }
   },
   "orgSwitcher": {
@@ -403,5 +409,30 @@
     "userAgent": "User Agent",
     "geoLocation": "Location",
     "sessionId": "Session ID"
+  },
+  "modules": {
+    "title": "Module Management",
+    "enable": "Enable",
+    "disable": "Disable",
+    "enabled": "Enabled",
+    "disabled": "Disabled",
+    "preview": "Preview",
+    "maintenance": "Maintenance",
+    "previewBanner": "This module is in preview — read-only access",
+    "teaser": {
+      "activate": "Activate Module",
+      "contact": "Contact Support",
+      "addon": "This module requires an add-on license"
+    },
+    "disableConfirm": "Disabling {name} will hide this module for all users of your organization. Your data is not deleted and can be reactivated at any time.",
+    "depNotMet": "Requires: {deps}",
+    "depSatisfied": "All dependencies met",
+    "activated": "{name} was activated",
+    "deactivated": "{name} was deactivated",
+    "license": {
+      "included": "Included",
+      "addon": "Add-on",
+      "enterprise": "Enterprise"
+    }
   }
 }

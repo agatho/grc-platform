@@ -16,13 +16,19 @@
     "processes": "Prozesse",
     "auditLog": "Änderungshistorie",
     "accessLog": "Zugriffsprotokoll",
+    "modules": "Module",
     "settings": "Einstellungen",
     "sections": {
       "main": "Hauptnavigation",
       "firstLine": "1. Verteidigungslinie",
       "secondLine": "2. Verteidigungslinie",
       "thirdLine": "3. Verteidigungslinie",
-      "system": "System"
+      "system": "System",
+      "risk": "Risikomanagement",
+      "compliance": "Compliance & Datenschutz",
+      "audit": "Audit & Assurance",
+      "esg": "ESG & Nachhaltigkeit",
+      "legal": "Recht & Governance"
     }
   },
   "orgSwitcher": {
@@ -403,5 +409,30 @@
     "userAgent": "User Agent",
     "geoLocation": "Standort",
     "sessionId": "Sitzungs-ID"
+  },
+  "modules": {
+    "title": "Modulverwaltung",
+    "enable": "Aktivieren",
+    "disable": "Deaktivieren",
+    "enabled": "Aktiviert",
+    "disabled": "Deaktiviert",
+    "preview": "Vorschau",
+    "maintenance": "Wartung",
+    "previewBanner": "Dieses Modul befindet sich in der Vorschau — nur Lesezugriff",
+    "teaser": {
+      "activate": "Modul aktivieren",
+      "contact": "Support kontaktieren",
+      "addon": "Dieses Modul erfordert eine Zusatzlizenz"
+    },
+    "disableConfirm": "Das Deaktivieren von {name} verbirgt dieses Modul für alle Benutzer Ihrer Organisation. Ihre Daten werden nicht gelöscht und können jederzeit reaktiviert werden.",
+    "depNotMet": "Erfordert: {deps}",
+    "depSatisfied": "Alle Abhängigkeiten erfüllt",
+    "activated": "{name} wurde aktiviert",
+    "deactivated": "{name} wurde deaktiviert",
+    "license": {
+      "included": "Enthalten",
+      "addon": "Zusatzmodul",
+      "enterprise": "Enterprise"
+    }
   }
 }
