@@ -57,6 +57,13 @@
       "when": 1774469473815,
       "tag": "0007_sudden_lila_cheney",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1774470654074,
+      "tag": "0008_special_magdalene",
+      "breakpoints": true
     }
   ]
 }
