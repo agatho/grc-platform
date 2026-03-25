@@ -925,7 +925,8 @@
       "editor": "BPMN-Editor",
       "versions": "Versionen",
       "risks": "Risiken",
-      "history": "Historie"
+      "history": "Historie",
+      "comments": "Kommentare"
     },
     "status": {
       "draft": "Entwurf",
@@ -1108,6 +1109,61 @@
       "lastReviewed": "Zuletzt geprüft",
       "cycleDays": "Zyklus (Tage)",
       "reminderSent": "Erinnerung gesendet"
+    }
+  },
+  "processGovernance": {
+    "governance": {
+      "title": "Prozess-Governance",
+      "totalProcesses": "Gesamtprozesse",
+      "published": "Veröffentlicht",
+      "overdueReviews": "Überfällige Prüfungen",
+      "pendingApprovals": "Ausstehende Genehmigungen",
+      "statusDistribution": "Statusverteilung",
+      "monthlyActivity": "Modellierungsaktivität",
+      "departmentDistribution": "Abteilungsverteilung",
+      "openTasks": "Offene Aufgaben",
+      "roadmap": "Prüf-Roadmap",
+      "quality": "Qualität"
+    },
+    "compare": {
+      "title": "Versionsvergleich",
+      "added": "Hinzugefügt",
+      "removed": "Entfernt",
+      "modified": "Geändert",
+      "attributeDiff": "Attributänderungen",
+      "version": "Version"
+    },
+    "comments": {
+      "title": "Kommentare",
+      "all": "Alle",
+      "open": "Offen",
+      "resolved": "Gelöst",
+      "resolve": "Lösen",
+      "addComment": "Kommentar hinzufügen...",
+      "reply": "Antworten",
+      "delete": "Löschen",
+      "noComments": "Noch keine Kommentare"
+    },
+    "review": {
+      "title": "Prüfplan",
+      "enable": "Periodische Prüfung aktivieren",
+      "interval": "Prüfintervall",
+      "reviewer": "Zugewiesener Prüfer",
+      "nextReview": "Nächste Prüfung",
+      "saved": "Prüfplan gespeichert"
+    },
+    "bulk": {
+      "selected": "{count} ausgewählt",
+      "changeStatus": "Status ändern",
+      "assignOwner": "Verantwortlichen zuweisen",
+      "export": "Exportieren",
+      "clearSelection": "Auswahl aufheben",
+      "success": "{count} Prozesse aktualisiert",
+      "partial": "{succeeded} aktualisiert, {failed} fehlgeschlagen"
+    },
+    "gallery": {
+      "listView": "Listenansicht",
+      "galleryView": "Galerieansicht"
     }
   }
 }
