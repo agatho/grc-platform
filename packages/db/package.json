@@ -14,8 +14,8 @@
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
-    "drizzle-orm": "^0.39",
-    "drizzle-zod": "^0.7",
+    "drizzle-orm": "^0.45",
+    "drizzle-zod": "^0.8",
     "postgres": "^3.4"
   },
   "devDependencies": {

@@ -28,7 +28,7 @@
     "@tanstack/react-table": "^8.21.3",
     "bpmn-js": "^18.13.2",
     "bpmn-js-properties-panel": "^5.53.0",
-    "lucide-react": "^0.470",
+    "lucide-react": "^0.577",
     "next": "^15.2",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.1",
