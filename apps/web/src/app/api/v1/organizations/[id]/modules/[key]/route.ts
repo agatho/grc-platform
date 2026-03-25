@@ -27,13 +27,8 @@ export async function PUT(
 
   const { id, key } = await params;
 
-  // Verify the requested org matches the user's current org context
-  if (id !== ctx.orgId) {
-    return Response.json(
-      { error: "Organization mismatch" },
-      { status: 403 },
-    );
-  }
+  // Use auth context org — the URL id may not match the cookie-based org
+  const orgId = ctx.orgId;
 
   // Validate moduleKey is a known key
   if (!MODULE_KEYS.includes(key as ModuleKey)) {
@@ -87,7 +82,7 @@ export async function PUT(
         .from(moduleConfig)
         .where(
           and(
-            eq(moduleConfig.orgId, id),
+            eq(moduleConfig.orgId, orgId),
             inArray(moduleConfig.moduleKey, requiredModules),
           ),
         );
@@ -134,7 +129,7 @@ export async function PUT(
         .from(moduleConfig)
         .where(
           and(
-            eq(moduleConfig.orgId, id),
+            eq(moduleConfig.orgId, orgId),
             inArray(moduleConfig.moduleKey, dependentKeys),
           ),
         );
@@ -188,7 +183,7 @@ export async function PUT(
       .set(setClauses)
       .where(
         and(
-          eq(moduleConfig.orgId, id),
+          eq(moduleConfig.orgId, orgId),
           eq(moduleConfig.moduleKey, moduleKey),
         ),
       )
@@ -224,7 +219,7 @@ export async function PUT(
       .from(userOrganizationRole)
       .where(
         and(
-          eq(userOrganizationRole.orgId, id),
+          eq(userOrganizationRole.orgId, orgId),
           eq(userOrganizationRole.role, "admin"),
           isNull(userOrganizationRole.deletedAt),
         ),
@@ -235,7 +230,7 @@ export async function PUT(
     if (adminUserIds.length > 0) {
       const notifRows = adminUserIds.map((userId) => ({
         userId,
-        orgId: id,
+        orgId: orgId,
         type: "status_change" as const,
         entityType: "module_config",
         title: `${displayName} was ${action} by ${userName}`,
