@@ -1,11 +1,5 @@
 /**
  * AI Provider Router (ADR-008)
- *
- * Selects the appropriate AI provider based on:
- * 1. Explicit provider in request
- * 2. AI_DEFAULT_PROVIDER env var
- * 3. Privacy routing: containsPersonalData → Ollama (local)
- * 4. Fallback: first available configured provider
  */
 
 import type {
@@ -13,6 +7,7 @@ import type {
   AiCompletionRequest,
   AiCompletionResponse,
 } from "./types";
+import { callClaudeCli } from "./providers/claude-cli";
 import { callOpenAI } from "./providers/openai";
 import { callGemini } from "./providers/gemini";
 import { callOllama } from "./providers/ollama";
@@ -21,20 +16,19 @@ const PROVIDER_FNS: Record<
   AiProvider,
   (req: AiCompletionRequest) => Promise<AiCompletionResponse>
 > = {
+  claude_cli: callClaudeCli,
   openai: callOpenAI,
   gemini: callGemini,
   ollama: callOllama,
 };
 
-const PROVIDER_ENV_KEYS: Record<AiProvider, string> = {
-  openai: "OPENAI_API_KEY",
-  gemini: "GOOGLE_AI_API_KEY",
-  ollama: "OLLAMA_BASE_URL",
-};
-
-/** Check which providers are configured via env vars. */
+/** Check which providers are configured/available. */
 export function getAvailableProviders(): AiProvider[] {
   const available: AiProvider[] = [];
+  // Claude CLI — check if the binary exists (subscription-based, no API key)
+  if (process.env.CLAUDE_CLI_ENABLED !== "false") {
+    available.push("claude_cli");
+  }
   if (process.env.OPENAI_API_KEY) available.push("openai");
   if (process.env.GOOGLE_AI_API_KEY) available.push("gemini");
   if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_ENABLED === "true") {
@@ -49,7 +43,7 @@ export function getDefaultProvider(): AiProvider {
   if (explicit && PROVIDER_FNS[explicit]) return explicit;
 
   const available = getAvailableProviders();
-  return available[0] ?? "gemini";
+  return available[0] ?? "claude_cli";
 }
 
 /**
@@ -57,7 +51,6 @@ export function getDefaultProvider(): AiProvider {
  *
  * Privacy routing: if containsPersonalData is true AND Ollama is available,
  * the request is routed to Ollama regardless of other settings.
- * This ensures GDPR compliance — no personal data leaves the infrastructure.
  */
 export async function aiComplete(
   request: AiCompletionRequest,
@@ -75,12 +68,6 @@ export async function aiComplete(
   const fn = PROVIDER_FNS[provider];
   if (!fn) {
     throw new Error(`Unknown AI provider: ${provider}`);
-  }
-
-  if (provider !== "ollama" && !process.env[PROVIDER_ENV_KEYS[provider]]) {
-    throw new Error(
-      `AI provider '${provider}' is not configured. Set ${PROVIDER_ENV_KEYS[provider]} in .env`,
-    );
   }
 
   return fn(request);
