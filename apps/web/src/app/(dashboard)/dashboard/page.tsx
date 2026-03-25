@@ -373,9 +373,31 @@ export default function DashboardPage() {
       {/* ── Stat cards ──────────────────────────────────────────── */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {statCards.map(({ key, icon: Icon, color, accent }) => {
-          // Replace "openRisks" with real data when ERM is enabled
-          const isOpenRisks = key === "openRisks" && ermEnabled && riskSummary;
-          const displayValue = isOpenRisks ? String(riskSummary.totalRisks) : null;
+          // Show real data when ERM is enabled
+          let displayValue: string | null = null;
+          let subtitle: string | null = null;
+          if (ermEnabled && riskSummary) {
+            if (key === "openRisks") {
+              displayValue = String(riskSummary.totalRisks);
+              subtitle = riskSummary.appetiteExceededCount > 0
+                ? `${riskSummary.appetiteExceededCount} ${t("risk.appetite.exceeded")}`
+                : null;
+            } else if (key === "activeControls") {
+              // Controls count from treatment actions
+              const treatedCount = riskSummary.byStatus?.treated ?? 0;
+              const closedCount = riskSummary.byStatus?.closed ?? 0;
+              displayValue = String(treatedCount + closedCount);
+            } else if (key === "pendingFindings") {
+              displayValue = String(riskSummary.appetiteExceededCount);
+              subtitle = riskSummary.appetiteExceededCount > 0 ? t("risk.appetite.exceeded") : null;
+            } else if (key === "complianceScore") {
+              const total = riskSummary.totalRisks || 1;
+              const closed = riskSummary.byStatus?.closed ?? 0;
+              const accepted = riskSummary.byStatus?.accepted ?? 0;
+              const score = Math.round(((closed + accepted) / total) * 100);
+              displayValue = `${score}%`;
+            }
+          }
 
           return (
             <div
@@ -390,12 +412,12 @@ export default function DashboardPage() {
                   {t(`widgets.${key}`)}
                 </p>
                 {displayValue ? (
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{displayValue}</p>
-                ) : (
                   <>
-                    <p className="text-2xl font-bold text-gray-300 mt-1">&mdash;</p>
-                    <p className="text-xs text-gray-400 mt-1">{t("comingSprint2")}</p>
+                    <p className="text-2xl font-bold text-gray-900 mt-1">{displayValue}</p>
+                    {subtitle && <p className="text-xs text-red-500 mt-1">{subtitle}</p>}
                   </>
+                ) : (
+                  <p className="text-2xl font-bold text-gray-300 mt-1">&mdash;</p>
                 )}
               </div>
             </div>
@@ -636,7 +658,6 @@ export default function DashboardPage() {
           <div className="flex flex-col items-center justify-center h-48 px-5 text-gray-400">
             <Calendar size={32} className="mb-2 text-gray-300" />
             <p className="text-sm font-medium text-gray-500">{t("upcomingAudits.empty")}</p>
-            <p className="text-xs text-gray-400 mt-1">{t("comingSprint2")}</p>
           </div>
         </div>
 
