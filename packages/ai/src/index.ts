@@ -4,6 +4,7 @@
 
 export { aiComplete, aiRouter, getAvailableProviders, getDefaultProvider } from "./router";
 export { callClaudeCli } from "./providers/claude-cli";
+export { callClaudeApi } from "./providers/claude-api";
 export { callOpenAI } from "./providers/openai";
 export { callGemini } from "./providers/gemini";
 export { callOllama } from "./providers/ollama";
