@@ -408,3 +408,77 @@ export const addKriMeasurementSchema = z.object({
   source: z.enum(["manual", "api_import", "calculated"]).default("manual"),
   notes: z.string().optional(),
 });
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 3: BPMN Process Modeling schemas
+// ──────────────────────────────────────────────────────────────
+
+const processNotationValues = ["bpmn", "value_chain", "epc"] as const;
+const processStatusValues = ["draft", "in_review", "approved", "published", "archived"] as const;
+const stepTypeValues = ["task", "gateway", "event", "subprocess", "call_activity"] as const;
+
+// ─── Process CRUD ────────────────────────────────────────────
+
+export const createProcessSchema = z.object({
+  name: z.string().min(3, "Name must be at least 3 characters").max(500),
+  description: z.string().max(5000).optional().nullable(),
+  level: z.number().int().min(1).max(10).default(1),
+  parentProcessId: z.string().uuid().optional().nullable(),
+  processOwnerId: z.string().uuid().optional().nullable(),
+  reviewerId: z.string().uuid().optional().nullable(),
+  department: z.string().max(255).optional().nullable(),
+  notation: z.enum(processNotationValues).default("bpmn"),
+  isEssential: z.boolean().default(false),
+});
+
+export const updateProcessSchema = z.object({
+  name: z.string().min(3).max(500).optional(),
+  description: z.string().max(5000).optional().nullable(),
+  level: z.number().int().min(1).max(10).optional(),
+  parentProcessId: z.string().uuid().optional().nullable(),
+  processOwnerId: z.string().uuid().optional().nullable(),
+  reviewerId: z.string().uuid().optional().nullable(),
+  department: z.string().max(255).optional().nullable(),
+  isEssential: z.boolean().optional(),
+});
+
+// ─── Process Version ─────────────────────────────────────────
+
+export const createVersionSchema = z.object({
+  bpmnXml: z.string().min(50, "BPMN XML too short to be valid"),
+  changeSummary: z.string().max(500).optional(),
+});
+
+// ─── Process Status Transition ───────────────────────────────
+
+export const transitionProcessStatusSchema = z.object({
+  status: z.enum(processStatusValues),
+  comment: z.string().max(1000).optional(),
+});
+
+// ─── Risk Linkage ────────────────────────────────────────────
+
+export const linkProcessRiskSchema = z.object({
+  riskId: z.string().uuid(),
+  riskContext: z.string().max(1000).optional(),
+});
+
+// ─── AI BPMN Generation ──────────────────────────────────────
+
+export const generateBpmnSchema = z.object({
+  name: z.string().min(3).max(200),
+  description: z
+    .string()
+    .min(50, "Description must be at least 50 characters for good results")
+    .max(2000),
+  industry: z
+    .enum(["manufacturing", "it_services", "financial_services", "healthcare", "generic"])
+    .default("generic"),
+});
+
+// ─── Process Step Update ─────────────────────────────────────
+
+export const updateProcessStepSchema = z.object({
+  responsibleRole: z.string().max(255).optional().nullable(),
+  description: z.string().max(2000).optional().nullable(),
+});
