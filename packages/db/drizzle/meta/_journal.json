@@ -36,6 +36,13 @@
       "when": 1774427501225,
       "tag": "0004_bright_patch",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1774429511800,
+      "tag": "0005_nostalgic_smiling_tiger",
+      "breakpoints": true
     }
   ]
 }

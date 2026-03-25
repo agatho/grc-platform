@@ -62,6 +62,8 @@ export const task = pgTable(
       .array()
       .default(sql`'{}'::text[]`),
     metadata: jsonb("metadata").default({}),
+    // Sprint 1.4: link to work_item (FK added in migration SQL)
+    workItemId: uuid("work_item_id"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
