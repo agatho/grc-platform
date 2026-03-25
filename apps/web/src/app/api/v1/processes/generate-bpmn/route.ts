@@ -2,7 +2,8 @@ import { generateBpmnSchema } from "@grc/shared";
 import { validateBpmnXml } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import Anthropic from "@anthropic-ai/sdk";
+import { aiComplete, getAvailableProviders, type AiProvider } from "@grc/ai";
+import { z } from "zod";
 
 // In-memory rate limit: 10 requests per hour per user
 const rateLimitMap = new Map<string, { count: number; resetAt: number }>();
@@ -40,7 +41,15 @@ Requirements:
 - Tasks should be 100x80, events 36x36, gateways 50x50
 - Ensure the XML is well-formed and parseable`;
 
-// POST /api/v1/processes/generate-bpmn — AI generate BPMN
+// Extended schema accepting optional provider
+const generateWithProviderSchema = z.object({
+  name: z.string().min(3).max(200),
+  description: z.string().min(50).max(2000),
+  industry: z.enum(["manufacturing", "it_services", "financial_services", "healthcare", "generic"]).optional(),
+  provider: z.enum(["claude", "openai", "gemini", "ollama"]).optional(),
+});
+
+// POST /api/v1/processes/generate-bpmn — AI generate BPMN (multi-provider)
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
@@ -48,7 +57,7 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = generateBpmnSchema.safeParse(await req.json());
+  const body = generateWithProviderSchema.safeParse(await req.json());
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -61,28 +70,28 @@ export async function POST(req: Request) {
     return Response.json(
       {
         error: "Rate limit exceeded",
-        message: "Maximum 10 BPMN generation requests per hour. Please try again later.",
+        message:
+          "Maximum 10 BPMN generation requests per hour. Please try again later.",
       },
       { status: 429 },
     );
   }
 
-  const { name, description, industry } = body.data;
+  const { name, description, industry, provider } = body.data;
 
   try {
-    const anthropic = new Anthropic();
-
-    const response = await anthropic.messages.create({
-      model: "claude-sonnet-4-20250514",
-      max_tokens: 8192,
-      system: SYSTEM_PROMPT,
+    const response = await aiComplete({
+      provider: provider as AiProvider | undefined,
+      maxTokens: 8192,
+      temperature: 0.3,
       messages: [
+        { role: "system", content: SYSTEM_PROMPT },
         {
           role: "user",
           content: `Generate a BPMN 2.0 XML diagram for the following process:
 
 Process Name: ${name}
-Industry: ${industry}
+Industry: ${industry ?? "generic"}
 Description: ${description}
 
 Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. Output ONLY the XML, nothing else.`,
@@ -90,16 +99,7 @@ Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. 
       ],
     });
 
-    // Extract text content from response
-    const textBlock = response.content.find((block) => block.type === "text");
-    if (!textBlock || textBlock.type !== "text") {
-      return Response.json(
-        { error: "AI did not return text content" },
-        { status: 500 },
-      );
-    }
-
-    let bpmnXml = textBlock.text.trim();
+    let bpmnXml = response.text.trim();
 
     // Strip markdown code fences if present
     if (bpmnXml.startsWith("```")) {
@@ -116,7 +116,7 @@ Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. 
         {
           error: "Generated BPMN XML failed validation",
           validationErrors: validation.errors,
-          bpmnXml, // Return it anyway so the user can fix it
+          bpmnXml,
         },
         { status: 422 },
       );
@@ -126,6 +126,9 @@ Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. 
       data: {
         bpmnXml,
         processName: name,
+        provider: response.provider,
+        model: response.model,
+        usage: response.usage,
       },
     });
   } catch (e) {
@@ -135,4 +138,18 @@ Generate a complete, valid BPMN 2.0 XML with proper diagram layout coordinates. 
       { status: 500 },
     );
   }
+}
+
+// GET /api/v1/processes/generate-bpmn — List available AI providers
+export async function GET(req: Request) {
+  const ctx = await withAuth();
+  if (ctx instanceof Response) return ctx;
+
+  return Response.json({
+    data: {
+      availableProviders: getAvailableProviders(),
+      defaultProvider:
+        process.env.AI_DEFAULT_PROVIDER ?? getAvailableProviders()[0] ?? "claude",
+    },
+  });
 }
