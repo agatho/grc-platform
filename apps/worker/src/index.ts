@@ -2,6 +2,9 @@ import { Hono } from "hono";
 import { processOverdueTasks } from "./crons/overdue-tasks";
 import { processScheduledNotifications } from "./crons/scheduled-notifications";
 import { processNotificationDigest } from "./crons/notification-digest";
+import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
+import { processRiskReviewReminders } from "./crons/risk-review-reminder";
+import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-reminder";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -89,6 +92,39 @@ app.post("/crons/notification-digest", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] notification-digest cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/kri-overdue-alerts", async (c) => {
+  try {
+    const result = await processKriOverdueAlerts();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] kri-overdue-alerts cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/risk-review-reminders", async (c) => {
+  try {
+    const result = await processRiskReviewReminders();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] risk-review-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/treatment-overdue-reminders", async (c) => {
+  try {
+    const result = await processTreatmentOverdueReminders();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] treatment-overdue-reminders cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
