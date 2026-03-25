@@ -64,6 +64,13 @@
       "when": 1774470654074,
       "tag": "0008_special_magdalene",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1774476108324,
+      "tag": "0009_old_taskmaster",
+      "breakpoints": true
     }
   ]
 }
