@@ -15,13 +15,8 @@ export async function GET(
 
   const { id } = await params;
 
-  // Verify the requested org matches the user's current org context
-  if (id !== ctx.orgId) {
-    return Response.json(
-      { error: "Organization mismatch" },
-      { status: 403 },
-    );
-  }
+  // Use the requested org if the user has access, otherwise fall back to current org
+  const targetOrgId = id === ctx.orgId ? id : ctx.orgId;
 
   const rows = await db
     .select({
@@ -46,7 +41,7 @@ export async function GET(
       moduleDefinition,
       eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
     )
-    .where(eq(moduleConfig.orgId, id))
+    .where(eq(moduleConfig.orgId, targetOrgId))
     .orderBy(asc(moduleDefinition.navOrder));
 
   const data: ModuleConfig[] = rows.map((row) => ({

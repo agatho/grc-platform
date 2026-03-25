@@ -63,7 +63,8 @@ export function ModuleConfigProvider({
       if (!res.ok) {
         throw new Error(`Failed to load module configs (${res.status})`);
       }
-      const data: ModuleConfig[] = await res.json();
+      const json = await res.json();
+      const data: ModuleConfig[] = Array.isArray(json) ? json : json.data ?? [];
       setConfigs(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
