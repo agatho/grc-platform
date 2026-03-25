@@ -1,8 +1,9 @@
 // AI Abstraction Layer (ADR-008)
-// Multi-provider: OpenAI, Gemini, Ollama
+// Multi-provider: Claude CLI (subscription), OpenAI, Gemini, Ollama
 // Privacy-Router: personal data → Ollama (local), else → configured default
 
 export { aiComplete, aiRouter, getAvailableProviders, getDefaultProvider } from "./router";
+export { callClaudeCli } from "./providers/claude-cli";
 export { callOpenAI } from "./providers/openai";
 export { callGemini } from "./providers/gemini";
 export { callOllama } from "./providers/ollama";
