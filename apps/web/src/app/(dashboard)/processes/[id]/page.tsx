@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
+import { useParams, useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
@@ -160,7 +160,15 @@ function ProcessDetailContent() {
   const [process, setProcess] = useState<ProcessDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const searchParams = useSearchParams();
+  const shapeParam = searchParams.get("shape");
+  const commentParam = searchParams.get("comment");
+  const tabParam = searchParams.get("tab");
+
+  // Deep link: ?tab=editor&shape=Activity_1 or ?tab=comments&comment=uuid
+  const [activeTab, setActiveTab] = useState(
+    tabParam ?? (shapeParam ? "editor" : commentParam ? "comments" : "overview"),
+  );
 
   // Editor state is now managed by EditorTab / useBpmnEditor
 
