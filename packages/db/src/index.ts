@@ -16,10 +16,11 @@ import * as dpmsSchema from "./schema/dpms";
 import * as auditMgmtSchema from "./schema/audit-mgmt";
 import * as tprmSchema from "./schema/tprm";
 import * as supplierPortalSchema from "./schema/supplier-portal";
+import * as esgSchema from "./schema/esg";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema },
 });
 
 export type Database = typeof db;
@@ -39,3 +40,4 @@ export * from "./schema/dpms";
 export * from "./schema/audit-mgmt";
 export * from "./schema/tprm";
 export * from "./schema/supplier-portal";
+export * from "./schema/esg";
