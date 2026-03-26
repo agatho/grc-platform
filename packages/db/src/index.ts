@@ -13,10 +13,11 @@ import * as catalogSchema from "./schema/catalog";
 import * as ismsSchema from "./schema/isms";
 import * as bcmsSchema from "./schema/bcms";
 import * as dpmsSchema from "./schema/dpms";
+import * as auditMgmtSchema from "./schema/audit-mgmt";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema },
 });
 
 export type Database = typeof db;
@@ -33,3 +34,4 @@ export * from "./schema/catalog";
 export * from "./schema/isms";
 export * from "./schema/bcms";
 export * from "./schema/dpms";
+export * from "./schema/audit-mgmt";

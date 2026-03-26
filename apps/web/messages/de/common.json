@@ -2483,5 +2483,196 @@
         "derogation": "Ausnahmetatbestand"
       }
     }
+  },
+  "auditMgmt": {
+    "title": "Audit Management",
+    "dashboard": "Dashboard - Audit-Uebersicht und KPIs",
+    "universe": "Audit-Universum",
+    "universeSubtitle": "Verzeichnis aller pruefbaren Objekte",
+    "plans": "Audit-Plaene",
+    "plansSubtitle": "Jaehrliche und periodische Audit-Planung",
+    "executions": "Audits",
+    "executionsSubtitle": "Audit-Durchfuehrung und Bewertung",
+    "findings": "Feststellungen",
+    "report": "Bericht",
+    "reports": "Berichte",
+
+    "planned": "Geplant",
+    "inProgress": "In Bearbeitung",
+    "completed": "Abgeschlossen",
+    "overdue": "Ueberfaellig",
+    "overdueAudits": "Audits sind ueberfaellig",
+    "universeCoverage": "Universum-Abdeckung",
+    "entitiesAudited": "Objekte geprueft",
+    "neverAudited": "Nie geprueft",
+    "neverAuditedEntities": "Objekte wurden noch nie auditiert",
+    "overdueEntities": "Objekte sind ueberfaellig",
+    "overdueLabel": "Ueberfaellig",
+    "findingsBreakdown": "Feststellungen nach Schweregrad",
+    "quickNav": "Schnellnavigation",
+    "viewUniverse": "Audit-Universum ansehen",
+
+    "name": "Name",
+    "entityType": "Objekttyp",
+    "riskScore": "Risikobewertung",
+    "lastAudit": "Letztes Audit",
+    "nextAuditDue": "Naechstes faellig",
+    "cycle": "Zyklus",
+    "gap": "Luecke",
+    "months": "Monate",
+    "days": "Tage",
+    "allTypes": "Alle Typen",
+    "allGaps": "Alle",
+    "allStatuses": "Alle Status",
+    "addEntry": "Eintrag hinzufuegen",
+    "emptyUniverse": "Noch keine Audit-Universum-Eintraege",
+    "searchPlaceholder": "Suchen...",
+    "searchAudits": "Audits durchsuchen...",
+    "auditCycle": "Audit-Zyklus (Monate)",
+    "notes": "Anmerkungen",
+    "save": "Speichern",
+
+    "entityTypes": {
+      "process": "Prozess",
+      "department": "Abteilung",
+      "itSystem": "IT-System",
+      "vendor": "Lieferant",
+      "custom": "Sonstige"
+    },
+
+    "createPlan": "Plan erstellen",
+    "year": "Jahr",
+    "description": "Beschreibung",
+    "totalPlannedDays": "Geplante Personentage",
+    "emptyPlans": "Noch keine Audit-Plaene",
+    "autoSuggest": "Auto-Vorschlag",
+    "suggestedAudits": "Vorgeschlagene Audits (sortiert nach Risiko und Zeit seit letztem Audit)",
+
+    "planStatus": {
+      "draft": "Entwurf",
+      "approved": "Genehmigt",
+      "active": "Aktiv",
+      "completed": "Abgeschlossen"
+    },
+
+    "planNotFound": "Audit-Plan nicht gefunden",
+    "backToPlans": "Zurueck zu Plaenen",
+    "approve": "Genehmigen",
+    "activate": "Aktivieren",
+    "revertToDraft": "Zurueck zu Entwurf",
+    "markCompleted": "Als abgeschlossen markieren",
+    "totalItems": "Gesamtpositionen",
+    "estimatedDaysTotal": "Geschaetzte Tage (gesamt)",
+    "planItems": "Plan-Positionen",
+    "addItem": "Position hinzufuegen",
+    "emptyItems": "Noch keine Positionen in diesem Plan",
+    "itemTitle": "Titel",
+    "scope": "Umfang",
+    "plannedStart": "Geplanter Beginn",
+    "plannedEnd": "Geplantes Ende",
+    "estimatedDays": "Geschaetzte Tage",
+    "status": "Status",
+
+    "createAudit": "Audit erstellen",
+    "auditTitle": "Audit-Titel",
+    "auditType": "Audit-Typ",
+    "emptyAudits": "Noch keine Audits",
+    "lead": "Leitender Pruefer",
+    "findingCount": "Anzahl Feststellungen",
+
+    "auditTypes": {
+      "internal": "Intern",
+      "external": "Extern",
+      "certification": "Zertifizierung",
+      "surveillance": "Ueberwachung",
+      "followUp": "Nachpruefung"
+    },
+
+    "auditStatus": {
+      "planned": "Geplant",
+      "preparation": "Vorbereitung",
+      "fieldwork": "Feldarbeit",
+      "reporting": "Berichterstattung",
+      "review": "Pruefung",
+      "completed": "Abgeschlossen",
+      "cancelled": "Abgebrochen"
+    },
+
+    "auditNotFound": "Audit nicht gefunden",
+    "backToAudits": "Zurueck zu Audits",
+    "advanceTo": "Weiter zu",
+
+    "tabs": {
+      "overview": "Uebersicht",
+      "checklists": "Checklisten",
+      "activities": "Aktivitaeten",
+      "findings": "Feststellungen",
+      "report": "Bericht"
+    },
+
+    "details": "Details",
+    "team": "Team",
+    "actualStart": "Tatsaechlicher Beginn",
+    "actualEnd": "Tatsaechliches Ende",
+    "conclusion": "Ergebnis",
+    "frameworks": "Frameworks im Geltungsbereich",
+
+    "conclusions": {
+      "conforming": "Konform",
+      "minor_nonconformity": "Geringfuegige Abweichung",
+      "major_nonconformity": "Wesentliche Abweichung",
+      "not_applicable": "Nicht zutreffend"
+    },
+
+    "generateChecklist": "Checkliste generieren",
+    "progress": "Fortschritt",
+    "question": "Frage",
+    "result": "Ergebnis",
+    "actions": "Aktionen",
+    "evaluate": "Bewerten",
+    "evaluateItem": "Checklisten-Punkt bewerten",
+    "selectResult": "Ergebnis auswaehlen...",
+    "emptyChecklist": "Keine Checklisten-Punkte",
+    "createFinding": "Feststellung erstellen",
+    "findingTitle": "Titel der Feststellung",
+    "findingSeverity": "Schweregrad",
+    "remediationDueDate": "Frist fuer Korrektur",
+    "findingsForAudit": "Feststellungen fuer dieses Audit",
+    "emptyFindings": "Noch keine Feststellungen fuer dieses Audit",
+
+    "results": {
+      "conforming": "Konform",
+      "nonconforming": "Abweichung",
+      "observation": "Beobachtung",
+      "not_applicable": "N/A",
+      "open": "Offen"
+    },
+
+    "severity": {
+      "significantNonconformity": "Wesentliche Abweichung",
+      "insignificantNonconformity": "Geringfuegige Abweichung",
+      "improvementRequirement": "Verbesserungsanforderung",
+      "recommendation": "Empfehlung",
+      "observation": "Beobachtung"
+    },
+
+    "activityLog": "Aktivitaetenprotokoll",
+    "addActivity": "Aktivitaet hinzufuegen",
+    "activityType": "Aktivitaetstyp",
+    "activityTitle": "Titel",
+    "durationMinutes": "Dauer (Minuten)",
+    "emptyActivities": "Noch keine Aktivitaeten erfasst",
+
+    "activityTypes": {
+      "interview": "Interview",
+      "documentReview": "Dokumentenpruefung",
+      "walkthrough": "Begehung",
+      "testing": "Tests",
+      "meeting": "Besprechung",
+      "other": "Sonstiges"
+    },
+
+    "viewReport": "Berichtsdokument ansehen",
+    "reportNotReady": "Der Bericht ist verfuegbar, sobald das Audit abgeschlossen ist"
   }
 }

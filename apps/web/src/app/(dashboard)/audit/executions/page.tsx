@@ -1,0 +1,246 @@
+"use client";
+
+import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import {
+  Loader2,
+  Plus,
+  RefreshCcw,
+  Search,
+} from "lucide-react";
+
+import { ModuleGate } from "@/components/module/module-gate";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import type { Audit } from "@grc/shared";
+
+interface AuditWithLead extends Audit {
+  leadAuditorName?: string | null;
+}
+
+export default function ExecutionsPage() {
+  return (
+    <ModuleGate moduleKey="audit">
+      <ExecutionsInner />
+    </ModuleGate>
+  );
+}
+
+function ExecutionsInner() {
+  const t = useTranslations("auditMgmt");
+  const router = useRouter();
+  const [audits, setAudits] = useState<AuditWithLead[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [dialogOpen, setDialogOpen] = useState(false);
+
+  const fetchAudits = useCallback(async () => {
+    setLoading(true);
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (statusFilter) params.set("status", statusFilter);
+      params.set("limit", "50");
+
+      const res = await fetch(`/api/v1/audit-mgmt/audits?${params}`);
+      if (res.ok) {
+        const json = await res.json();
+        setAudits(json.data ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [search, statusFilter]);
+
+  useEffect(() => {
+    void fetchAudits();
+  }, [fetchAudits]);
+
+  const handleCreate = async (formData: FormData) => {
+    const body = {
+      title: formData.get("title") as string,
+      description: formData.get("description") as string || undefined,
+      auditType: formData.get("auditType") as string,
+      plannedStart: formData.get("plannedStart") as string || undefined,
+      plannedEnd: formData.get("plannedEnd") as string || undefined,
+    };
+
+    const res = await fetch("/api/v1/audit-mgmt/audits", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body),
+    });
+
+    if (res.ok) {
+      setDialogOpen(false);
+      void fetchAudits();
+    }
+  };
+
+  const statusBadge = (status: string) => {
+    const map: Record<string, { className: string; label: string }> = {
+      planned: { className: "bg-gray-100 text-gray-700 border-gray-300", label: t("auditStatus.planned") },
+      preparation: { className: "bg-blue-100 text-blue-700 border-blue-300", label: t("auditStatus.preparation") },
+      fieldwork: { className: "bg-yellow-100 text-yellow-700 border-yellow-300", label: t("auditStatus.fieldwork") },
+      reporting: { className: "bg-orange-100 text-orange-700 border-orange-300", label: t("auditStatus.reporting") },
+      review: { className: "bg-purple-100 text-purple-700 border-purple-300", label: t("auditStatus.review") },
+      completed: { className: "bg-green-100 text-green-700 border-green-300", label: t("auditStatus.completed") },
+      cancelled: { className: "bg-red-100 text-red-700 border-red-300", label: t("auditStatus.cancelled") },
+    };
+    const config = map[status] ?? map.planned;
+    return <Badge className={config.className}>{config.label}</Badge>;
+  };
+
+  const auditTypeBadge = (type: string) => {
+    const map: Record<string, string> = {
+      internal: t("auditTypes.internal"),
+      external: t("auditTypes.external"),
+      certification: t("auditTypes.certification"),
+      surveillance: t("auditTypes.surveillance"),
+      follow_up: t("auditTypes.followUp"),
+    };
+    return <Badge variant="outline">{map[type] ?? type}</Badge>;
+  };
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">{t("executions")}</h1>
+          <p className="text-sm text-gray-500 mt-1">{t("executionsSubtitle")}</p>
+        </div>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={fetchAudits} disabled={loading}>
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
+          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus size={14} className="mr-1" />
+                {t("createAudit")}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t("createAudit")}</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleCreate(new FormData(e.currentTarget));
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="text-sm font-medium">{t("auditTitle")}</label>
+                  <Input name="title" required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">{t("description")}</label>
+                  <Input name="description" />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">{t("auditType")}</label>
+                  <select name="auditType" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                    <option value="internal">{t("auditTypes.internal")}</option>
+                    <option value="external">{t("auditTypes.external")}</option>
+                    <option value="certification">{t("auditTypes.certification")}</option>
+                    <option value="surveillance">{t("auditTypes.surveillance")}</option>
+                    <option value="follow_up">{t("auditTypes.followUp")}</option>
+                  </select>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">{t("plannedStart")}</label>
+                    <Input name="plannedStart" type="date" />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">{t("plannedEnd")}</label>
+                    <Input name="plannedEnd" type="date" />
+                  </div>
+                </div>
+                <Button type="submit" className="w-full">{t("save")}</Button>
+              </form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-3">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+          <Input
+            className="pl-9"
+            placeholder={t("searchAudits")}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <select
+          value={statusFilter}
+          onChange={(e) => setStatusFilter(e.target.value)}
+          className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+        >
+          <option value="">{t("allStatuses")}</option>
+          <option value="planned">{t("auditStatus.planned")}</option>
+          <option value="preparation">{t("auditStatus.preparation")}</option>
+          <option value="fieldwork">{t("auditStatus.fieldwork")}</option>
+          <option value="reporting">{t("auditStatus.reporting")}</option>
+          <option value="review">{t("auditStatus.review")}</option>
+          <option value="completed">{t("auditStatus.completed")}</option>
+          <option value="cancelled">{t("auditStatus.cancelled")}</option>
+        </select>
+      </div>
+
+      {/* List */}
+      {loading ? (
+        <div className="flex items-center justify-center h-32">
+          <Loader2 size={24} className="animate-spin text-gray-400" />
+        </div>
+      ) : audits.length === 0 ? (
+        <div className="text-center py-12 text-gray-400">{t("emptyAudits")}</div>
+      ) : (
+        <div className="space-y-3">
+          {audits.map((a) => (
+            <Link
+              key={a.id}
+              href={`/audit/executions/${a.id}`}
+              className="block rounded-lg border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow"
+            >
+              <div className="flex items-center justify-between">
+                <div>
+                  <h3 className="font-medium text-gray-900">{a.title}</h3>
+                  <p className="text-sm text-gray-500 mt-1">
+                    {a.leadAuditorName ? `${t("lead")}: ${a.leadAuditorName}` : ""}{" "}
+                    {a.plannedStart ? `| ${a.plannedStart}` : ""}{" "}
+                    {a.plannedEnd ? `- ${a.plannedEnd}` : ""}
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  {auditTypeBadge(a.auditType)}
+                  {statusBadge(a.status)}
+                  {(a.findingCount ?? 0) > 0 && (
+                    <Badge variant="destructive">{a.findingCount} {t("findings")}</Badge>
+                  )}
+                </div>
+              </div>
+            </Link>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
