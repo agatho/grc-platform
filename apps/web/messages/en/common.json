@@ -2483,5 +2483,196 @@
         "derogation": "Derogation"
       }
     }
+  },
+  "auditMgmt": {
+    "title": "Audit Management",
+    "dashboard": "Dashboard - Audit overview and KPIs",
+    "universe": "Audit Universe",
+    "universeSubtitle": "Registry of all auditable entities",
+    "plans": "Audit Plans",
+    "plansSubtitle": "Annual and periodic audit planning",
+    "executions": "Audit Executions",
+    "executionsSubtitle": "Audit fieldwork and evaluation",
+    "findings": "Findings",
+    "report": "Report",
+    "reports": "Reports",
+
+    "planned": "Planned",
+    "inProgress": "In Progress",
+    "completed": "Completed",
+    "overdue": "Overdue",
+    "overdueAudits": "audits are overdue",
+    "universeCoverage": "Universe Coverage",
+    "entitiesAudited": "entities audited",
+    "neverAudited": "Never audited",
+    "neverAuditedEntities": "entities have never been audited",
+    "overdueEntities": "entities are overdue",
+    "overdueLabel": "Overdue",
+    "findingsBreakdown": "Findings by Severity",
+    "quickNav": "Quick Navigation",
+    "viewUniverse": "View Audit Universe",
+
+    "name": "Name",
+    "entityType": "Entity Type",
+    "riskScore": "Risk Score",
+    "lastAudit": "Last Audit",
+    "nextAuditDue": "Next Due",
+    "cycle": "Cycle",
+    "gap": "Gap",
+    "months": "months",
+    "days": "days",
+    "allTypes": "All Types",
+    "allGaps": "All",
+    "allStatuses": "All Statuses",
+    "addEntry": "Add Entry",
+    "emptyUniverse": "No audit universe entries yet",
+    "searchPlaceholder": "Search...",
+    "searchAudits": "Search audits...",
+    "auditCycle": "Audit Cycle (months)",
+    "notes": "Notes",
+    "save": "Save",
+
+    "entityTypes": {
+      "process": "Process",
+      "department": "Department",
+      "itSystem": "IT System",
+      "vendor": "Vendor",
+      "custom": "Custom"
+    },
+
+    "createPlan": "Create Plan",
+    "year": "Year",
+    "description": "Description",
+    "totalPlannedDays": "Total Planned Days",
+    "emptyPlans": "No audit plans yet",
+    "autoSuggest": "Auto-Suggest",
+    "suggestedAudits": "Suggested Audits (sorted by risk and time since last audit)",
+
+    "planStatus": {
+      "draft": "Draft",
+      "approved": "Approved",
+      "active": "Active",
+      "completed": "Completed"
+    },
+
+    "planNotFound": "Audit plan not found",
+    "backToPlans": "Back to Plans",
+    "approve": "Approve",
+    "activate": "Activate",
+    "revertToDraft": "Revert to Draft",
+    "markCompleted": "Mark Completed",
+    "totalItems": "Total Items",
+    "estimatedDaysTotal": "Estimated Days (total)",
+    "planItems": "Plan Items",
+    "addItem": "Add Item",
+    "emptyItems": "No items in this plan yet",
+    "itemTitle": "Title",
+    "scope": "Scope",
+    "plannedStart": "Planned Start",
+    "plannedEnd": "Planned End",
+    "estimatedDays": "Estimated Days",
+    "status": "Status",
+
+    "createAudit": "Create Audit",
+    "auditTitle": "Audit Title",
+    "auditType": "Audit Type",
+    "emptyAudits": "No audits yet",
+    "lead": "Lead Auditor",
+    "findingCount": "Finding Count",
+
+    "auditTypes": {
+      "internal": "Internal",
+      "external": "External",
+      "certification": "Certification",
+      "surveillance": "Surveillance",
+      "followUp": "Follow-up"
+    },
+
+    "auditStatus": {
+      "planned": "Planned",
+      "preparation": "Preparation",
+      "fieldwork": "Fieldwork",
+      "reporting": "Reporting",
+      "review": "Review",
+      "completed": "Completed",
+      "cancelled": "Cancelled"
+    },
+
+    "auditNotFound": "Audit not found",
+    "backToAudits": "Back to Audits",
+    "advanceTo": "Advance to",
+
+    "tabs": {
+      "overview": "Overview",
+      "checklists": "Checklists",
+      "activities": "Activities",
+      "findings": "Findings",
+      "report": "Report"
+    },
+
+    "details": "Details",
+    "team": "Team",
+    "actualStart": "Actual Start",
+    "actualEnd": "Actual End",
+    "conclusion": "Conclusion",
+    "frameworks": "Frameworks in Scope",
+
+    "conclusions": {
+      "conforming": "Conforming",
+      "minor_nonconformity": "Minor Nonconformity",
+      "major_nonconformity": "Major Nonconformity",
+      "not_applicable": "Not Applicable"
+    },
+
+    "generateChecklist": "Generate Checklist",
+    "progress": "Progress",
+    "question": "Question",
+    "result": "Result",
+    "actions": "Actions",
+    "evaluate": "Evaluate",
+    "evaluateItem": "Evaluate Checklist Item",
+    "selectResult": "Select result...",
+    "emptyChecklist": "No checklist items",
+    "createFinding": "Create Finding",
+    "findingTitle": "Finding Title",
+    "findingSeverity": "Severity",
+    "remediationDueDate": "Remediation Due Date",
+    "findingsForAudit": "Findings for this Audit",
+    "emptyFindings": "No findings for this audit yet",
+
+    "results": {
+      "conforming": "Conforming",
+      "nonconforming": "Nonconforming",
+      "observation": "Observation",
+      "not_applicable": "N/A",
+      "open": "Open"
+    },
+
+    "severity": {
+      "significantNonconformity": "Significant Nonconformity",
+      "insignificantNonconformity": "Insignificant Nonconformity",
+      "improvementRequirement": "Improvement Requirement",
+      "recommendation": "Recommendation",
+      "observation": "Observation"
+    },
+
+    "activityLog": "Activity Log",
+    "addActivity": "Add Activity",
+    "activityType": "Activity Type",
+    "activityTitle": "Title",
+    "durationMinutes": "Duration (minutes)",
+    "emptyActivities": "No activities logged yet",
+
+    "activityTypes": {
+      "interview": "Interview",
+      "documentReview": "Document Review",
+      "walkthrough": "Walkthrough",
+      "testing": "Testing",
+      "meeting": "Meeting",
+      "other": "Other"
+    },
+
+    "viewReport": "View Report Document",
+    "reportNotReady": "Report is available once the audit is completed"
   }
 }
