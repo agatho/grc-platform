@@ -134,6 +134,13 @@
       "when": 1774541491994,
       "tag": "0018_sprint9_tprm_contracts",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1774549324144,
+      "tag": "0019_sprint9b_supplier_portal",
+      "breakpoints": true
     }
   ]
 }
