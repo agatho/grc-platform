@@ -1165,5 +1165,372 @@
       "listView": "Listenansicht",
       "galleryView": "Galerieansicht"
     }
+  },
+  "controls": {
+    "title": "Internes Kontrollsystem",
+    "register": "Kontrollregister",
+    "create": "Kontrolle erstellen",
+    "created": "Kontrolle erfolgreich erstellt",
+    "createError": "Kontrolle konnte nicht erstellt werden",
+    "loadError": "Kontrollen konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "backToList": "Zurueck zu Kontrollen",
+    "notFound": "Kontrolle nicht gefunden",
+    "searchPlaceholder": "Kontrollen suchen...",
+    "metadata": "Metadaten",
+    "form": {
+      "title": "Titel",
+      "titlePlaceholder": "Kontrolltitel eingeben...",
+      "titleRequired": "Titel ist erforderlich",
+      "description": "Beschreibung",
+      "descriptionPlaceholder": "Kontrolle beschreiben...",
+      "details": "Kontrolldetails",
+      "type": "Typ",
+      "frequency": "Haeufigkeit",
+      "automation": "Automatisierung",
+      "status": "Status",
+      "owner": "Verantwortlicher",
+      "ownerPlaceholder": "Verantwortlichen auswaehlen...",
+      "lod": "Verteidigungslinie",
+      "reviewDate": "Prueftermin",
+      "lastTested": "Zuletzt getestet",
+      "createdAt": "Erstellt",
+      "objective": "Ziel",
+      "testInstructions": "Testanweisungen"
+    },
+    "filter": {
+      "allStatuses": "Alle Status",
+      "allTypes": "Alle Typen",
+      "allFrequencies": "Alle Haeufigkeiten"
+    },
+    "empty": {
+      "noControls": "Keine Kontrollen gefunden",
+      "noResults": "Keine Ergebnisse fuer Ihre Filter"
+    },
+    "type": {
+      "preventive": "Praeventiv",
+      "detective": "Detektiv",
+      "corrective": "Korrektiv"
+    },
+    "frequency": {
+      "event_driven": "Ereignisgesteuert",
+      "continuous": "Fortlaufend",
+      "daily": "Taeglich",
+      "weekly": "Woechentlich",
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljaehrlich",
+      "annually": "Jaehrlich",
+      "ad_hoc": "Ad hoc"
+    },
+    "automation": {
+      "manual": "Manuell",
+      "semi_automated": "Teilautomatisiert",
+      "fully_automated": "Vollautomatisiert"
+    },
+    "status": {
+      "designed": "Entworfen",
+      "implemented": "Implementiert",
+      "effective": "Wirksam",
+      "ineffective": "Unwirksam",
+      "retired": "Ausser Betrieb"
+    },
+    "lod": {
+      "first": "1. Linie",
+      "second": "2. Linie",
+      "third": "3. Linie"
+    },
+    "assertions": {
+      "title": "COSO-Aussagen",
+      "completeness": "Vollstaendigkeit",
+      "accuracy": "Genauigkeit",
+      "obligations_and_rights": "Rechte & Pflichten",
+      "fraud_prevention": "Betrugspraevention",
+      "existence": "Existenz",
+      "valuation": "Bewertung",
+      "presentation": "Darstellung",
+      "safeguarding_of_assets": "Sicherung von Vermoegenswerten"
+    },
+    "tabs": {
+      "overview": "Uebersicht",
+      "tests": "Tests",
+      "findings": "Feststellungen",
+      "rcm": "RKM",
+      "history": "Historie"
+    },
+    "tests": {
+      "empty": "Keine Tests erfasst",
+      "typeLabel": "Testtyp",
+      "tester": "Pruefer",
+      "date": "Datum",
+      "sampleSize": "Stichprobengroesse",
+      "type": {
+        "design_effectiveness": "Designwirksamkeit (ToD)",
+        "operating_effectiveness": "Funktionswirksamkeit (ToE)"
+      },
+      "status": {
+        "planned": "Geplant",
+        "in_progress": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "result": {
+        "effective": "Wirksam",
+        "ineffective": "Unwirksam",
+        "partially_effective": "Teilweise wirksam",
+        "not_tested": "Nicht getestet"
+      }
+    },
+    "findings": {
+      "empty": "Keine Feststellungen verknuepft"
+    },
+    "campaigns": {
+      "title": "Testkampagnen",
+      "subtitle": "Kontrolltestkampagnen verwalten",
+      "create": "Kampagne erstellen",
+      "empty": "Keine Kampagnen gefunden",
+      "progress": "Fortschritt",
+      "tests": "Kampagnentests",
+      "status": {
+        "draft": "Entwurf",
+        "active": "Aktiv",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      }
+    },
+    "rcm": {
+      "title": "Risiko-Kontroll-Matrix",
+      "subtitle": "Kontrollen Risiken zuordnen und Abdeckung bewerten",
+      "empty": "Keine Risiko-Kontroll-Zuordnungen gefunden",
+      "riskColumn": "Risiko",
+      "gap": "Luecke (keine vollstaendige Abdeckung)",
+      "effectiveness": {
+        "full": "Vollstaendig abgedeckt",
+        "partial": "Teilweise abgedeckt",
+        "planned": "Geplant",
+        "none": "Nicht abgedeckt"
+      }
+    },
+    "evidence": {
+      "title": "Nachweisbrowser",
+      "subtitle": "Alle hochgeladenen Nachweise durchsuchen",
+      "items": "Eintraege",
+      "empty": "Keine Nachweise hochgeladen",
+      "category": {
+        "screenshot": "Screenshot",
+        "document": "Dokument",
+        "log_export": "Protokollexport",
+        "email": "E-Mail",
+        "certificate": "Zertifikat",
+        "report": "Bericht",
+        "photo": "Foto",
+        "config_export": "Konfigurationsexport",
+        "other": "Sonstiges"
+      }
+    },
+    "history": {
+      "empty": "Keine Historieneintraege"
+    }
+  },
+  "documents": {
+    "title": "Dokumentenmanagement",
+    "register": "Dokumentenablage",
+    "create": "Dokument erstellen",
+    "created": "Dokument erfolgreich erstellt",
+    "createError": "Dokument konnte nicht erstellt werden",
+    "loadError": "Dokumente konnten nicht geladen werden",
+    "retry": "Erneut versuchen",
+    "backToList": "Zurueck zu Dokumenten",
+    "notFound": "Dokument nicht gefunden",
+    "searchPlaceholder": "Dokumente suchen...",
+    "itemCount": "Dokumente",
+    "metadata": "Metadaten",
+    "form": {
+      "title": "Titel",
+      "titlePlaceholder": "Dokumenttitel eingeben...",
+      "titleRequired": "Titel ist erforderlich",
+      "details": "Dokumentdetails",
+      "category": "Kategorie",
+      "status": "Status",
+      "owner": "Verantwortlicher",
+      "ownerPlaceholder": "Verantwortlichen auswaehlen...",
+      "reviewer": "Pruefer",
+      "reviewerPlaceholder": "Pruefer auswaehlen...",
+      "content": "Inhalt",
+      "contentPlaceholder": "Dokumentinhalt schreiben (Markdown unterstuetzt)...",
+      "contentHint": "Markdown-Formatierung wird unterstuetzt",
+      "version": "Version",
+      "publishedAt": "Veroeffentlicht",
+      "expiresAt": "Ablaufdatum",
+      "tags": "Tags",
+      "tagsPlaceholder": "Kommagetrennte Tags...",
+      "acknowledgment": "Kenntnisnahme",
+      "requiresAcknowledgment": "Erfordert Benutzerkenntnisnahme"
+    },
+    "filter": {
+      "allStatuses": "Alle Status",
+      "allCategories": "Alle Kategorien"
+    },
+    "empty": {
+      "noDocuments": "Keine Dokumente gefunden",
+      "noResults": "Keine Ergebnisse fuer Ihre Filter"
+    },
+    "category": {
+      "policy": "Richtlinie",
+      "procedure": "Verfahren",
+      "guideline": "Leitfaden",
+      "template": "Vorlage",
+      "record": "Nachweis",
+      "tom": "TOM",
+      "dpa": "AVV",
+      "bcp": "BCP",
+      "soa": "SoA",
+      "other": "Sonstiges"
+    },
+    "status": {
+      "draft": "Entwurf",
+      "in_review": "In Pruefung",
+      "approved": "Genehmigt",
+      "published": "Veroeffentlicht",
+      "archived": "Archiviert",
+      "expired": "Abgelaufen"
+    },
+    "tabs": {
+      "content": "Inhalt",
+      "versions": "Versionen",
+      "entityLinks": "Verknuepfungen",
+      "acknowledgments": "Kenntnisnahmen",
+      "history": "Historie"
+    },
+    "content": {
+      "empty": "Kein Inhalt vorhanden"
+    },
+    "versions": {
+      "empty": "Keine Versionen erfasst",
+      "current": "Aktuell"
+    },
+    "entityLinks": {
+      "empty": "Keine Verknuepfungen"
+    },
+    "acknowledgments": {
+      "empty": "Keine Kenntnisnahmen erforderlich",
+      "complete": "abgeschlossen",
+      "sendReminder": "Erinnerung senden",
+      "reminderSent": "Erinnerung gesendet",
+      "reminderError": "Erinnerung konnte nicht gesendet werden",
+      "user": "Benutzer",
+      "version": "Version",
+      "date": "Datum",
+      "statusLabel": "Status",
+      "acknowledged": "Bestaetigt",
+      "pending": "Ausstehend"
+    },
+    "compliance": {
+      "title": "Kenntnisnahme-Compliance",
+      "subtitle": "Dokumentenkenntnisnahme-Compliance in Ihrer Organisation verfolgen",
+      "empty": "Keine Dokumente erfordern Kenntnisnahme",
+      "totalDocuments": "Dokumente gesamt",
+      "fullyCompliant": "Vollstaendig konform",
+      "averageRate": "Durchschnittliche Rate",
+      "perDocument": "Pro-Dokument-Verfolgung",
+      "acknowledged": "Bestaetigt",
+      "total": "Benutzer gesamt",
+      "rate": "Rate"
+    },
+    "search": {
+      "title": "Volltextsuche",
+      "subtitle": "Dokumente, Kontrollen und Feststellungen durchsuchen",
+      "placeholder": "Suchbegriff eingeben...",
+      "button": "Suchen",
+      "noResults": "Keine Ergebnisse gefunden",
+      "scopeAll": "Alle",
+      "scopeDocuments": "Dokumente",
+      "scopeControls": "Kontrollen",
+      "scopeFindings": "Feststellungen",
+      "group": {
+        "document": "Dokumente",
+        "control": "Kontrollen",
+        "finding": "Feststellungen"
+      }
+    },
+    "history": {
+      "empty": "Keine Historieneintraege"
+    }
+  },
+  "findings": {
+    "title": "Feststellungen-Dashboard",
+    "subtitle": "Kontrollfeststellungen verfolgen und verwalten",
+    "searchPlaceholder": "Feststellungen suchen...",
+    "backToList": "Zurueck zu Feststellungen",
+    "notFound": "Feststellung nicht gefunden",
+    "metadata": "Metadaten",
+    "form": {
+      "title": "Titel",
+      "severity": "Schweregrad",
+      "status": "Status",
+      "source": "Quelle",
+      "owner": "Verantwortlicher",
+      "dueDate": "Faelligkeitsdatum",
+      "description": "Beschreibung",
+      "remediationPlan": "Massnahmenplan",
+      "linkedControl": "Verknuepfte Kontrolle",
+      "createdAt": "Erstellt"
+    },
+    "filter": {
+      "allStatuses": "Alle Status"
+    },
+    "empty": {
+      "noFindings": "Keine Feststellungen gefunden"
+    },
+    "kpi": {
+      "total": "Feststellungen gesamt",
+      "open": "Offene Feststellungen",
+      "overdue": "Ueberfaellig"
+    },
+    "distribution": {
+      "title": "Schweregrad-Verteilung"
+    },
+    "severity": {
+      "observation": "Beobachtung",
+      "recommendation": "Empfehlung",
+      "improvement_requirement": "Verbesserungsbedarf",
+      "insignificant_nonconformity": "Unwesentliche Abweichung",
+      "significant_nonconformity": "Wesentliche Abweichung"
+    },
+    "status": {
+      "identified": "Identifiziert",
+      "in_remediation": "In Behebung",
+      "remediated": "Behoben",
+      "verified": "Verifiziert",
+      "accepted": "Akzeptiert",
+      "closed": "Geschlossen"
+    },
+    "source": {
+      "control_test": "Kontrolltest",
+      "audit": "Audit",
+      "incident": "Vorfall",
+      "self_assessment": "Selbstbewertung",
+      "external": "Extern"
+    },
+    "tabs": {
+      "overview": "Uebersicht",
+      "statusHistory": "Statusverlauf",
+      "verification": "Verifizierung",
+      "evidence": "Nachweise",
+      "history": "Historie"
+    },
+    "statusHistory": {
+      "empty": "Keine Statusaenderungen erfasst"
+    },
+    "verification": {
+      "remediatedAt": "Behoben am",
+      "verifiedAt": "Verifiziert am",
+      "verifiedBy": "Verifiziert von"
+    },
+    "evidence": {
+      "empty": "Keine Nachweise angehaengt"
+    },
+    "history": {
+      "empty": "Keine Historieneintraege"
+    }
   }
 }
