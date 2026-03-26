@@ -2674,5 +2674,262 @@
 
     "viewReport": "Berichtsdokument ansehen",
     "reportNotReady": "Der Bericht ist verfuegbar, sobald das Audit abgeschlossen ist"
+  },
+
+  "tprm": {
+    "title": "Drittparteien-Risikomanagement",
+    "description": "Lieferanten-Lebenszyklus, Due Diligence und Lieferkettenrisiko verwalten",
+    "viewVendors": "Lieferanten anzeigen",
+    "vendorRegister": "Lieferantenregister",
+    "vendors": "Lieferanten",
+    "createVendor": "Lieferant anlegen",
+    "searchVendors": "Lieferanten suchen...",
+    "pending": "ausstehend",
+
+    "kpi": {
+      "totalVendors": "Lieferanten gesamt",
+      "critical": "Kritisch (Tier 1)",
+      "assessmentDue": "Bewertung faellig",
+      "lksgRelevant": "LkSG-relevant"
+    },
+
+    "tierDistribution": "Lieferanten-Tier-Verteilung",
+    "ddQueue": "Due-Diligence-Warteschlange",
+    "noPendingDD": "Keine ausstehenden Frageboegen",
+    "overdueAssessments": "Ueberfaellige Bewertungen",
+
+    "tier": {
+      "critical": "Kritisch",
+      "important": "Wichtig",
+      "standard": "Standard",
+      "low_risk": "Niedrigrisiko"
+    },
+
+    "category": {
+      "it_services": "IT-Dienstleistungen",
+      "cloud_provider": "Cloud-Anbieter",
+      "consulting": "Beratung",
+      "facility": "Facility Management",
+      "logistics": "Logistik",
+      "raw_materials": "Rohstoffe",
+      "financial": "Finanzdienstleistungen",
+      "hr_services": "HR-Dienstleistungen",
+      "other": "Sonstiges"
+    },
+
+    "status": {
+      "prospect": "Interessent",
+      "onboarding": "Onboarding",
+      "active": "Aktiv",
+      "under_review": "In Pruefung",
+      "suspended": "Gesperrt",
+      "terminated": "Beendet"
+    },
+
+    "filter": {
+      "allTiers": "Alle Tiers",
+      "allCategories": "Alle Kategorien",
+      "allStatuses": "Alle Status"
+    },
+
+    "vendor": {
+      "name": "Lieferant",
+      "category": "Kategorie",
+      "tier": "Tier",
+      "status": "Status",
+      "country": "Land",
+      "owner": "Verantwortlicher",
+      "riskScore": "Risiko-Score",
+      "details": "Lieferantendetails",
+      "riskInfo": "Risikoinformationen",
+      "inherentScore": "Inhaerentes Risiko",
+      "residualScore": "Restrisiko",
+      "lastAssessment": "Letzte Bewertung",
+      "nextAssessment": "Naechste Bewertung",
+      "contacts": "Kontakte",
+      "noContacts": "Keine Kontakte vorhanden",
+      "noContracts": "Keine verknuepften Vertraege",
+      "notFound": "Lieferant nicht gefunden",
+      "website": "Webseite",
+      "taxId": "Steuernummer"
+    },
+
+    "tab": {
+      "overview": "Uebersicht",
+      "dueDiligence": "Due Diligence",
+      "riskAssessment": "Risikobewertung",
+      "contracts": "Vertraege",
+      "lksg": "LkSG"
+    },
+
+    "dd": {
+      "history": "Due-Diligence-Verlauf",
+      "send": "Fragebogen senden",
+      "sent": "Fragebogen erfolgreich gesendet",
+      "sendError": "Fragebogen konnte nicht gesendet werden",
+      "questionnaire": "Fragebogen",
+      "sentAt": "Gesendet",
+      "completedAt": "Abgeschlossen",
+      "riskScore": "Risiko-Score",
+      "noRecords": "Keine Due-Diligence-Eintraege"
+    },
+
+    "risk": {
+      "history": "Risikobewertungsverlauf",
+      "noAssessments": "Keine Risikobewertungen",
+      "inherent": "Inhaerentes",
+      "residual": "Rest"
+    },
+
+    "lksg": {
+      "title": "LkSG-Sorgfaltspflichten",
+      "subtitle": "Lieferkettensorgfaltspflichtengesetz-Compliance",
+      "relevantVendors": "LkSG-relevante Lieferanten",
+      "ofTotal": "von {total} Lieferanten gesamt",
+      "completedAssessments": "Abgeschlossene Bewertungen",
+      "highRisk": "Hohes / Kritisches Risiko",
+      "riskDistribution": "Risikoverteilung",
+      "vendorList": "LkSG-relevante Lieferanten",
+      "noVendors": "Keine LkSG-relevanten Lieferanten",
+      "assessments": "LkSG-Bewertungen",
+      "noAssessments": "Keine LkSG-Bewertungen",
+      "risk": {
+        "low": "Niedrig",
+        "medium": "Mittel",
+        "high": "Hoch",
+        "critical": "Kritisch"
+      }
+    },
+
+    "empty": {
+      "noVendors": "Keine Lieferanten gefunden"
+    }
+  },
+
+  "contracts": {
+    "title": "Vertragsmanagement",
+    "description": "Vertraege, Pflichten, SLAs und Nachtraege verwalten",
+    "viewContracts": "Vertraege anzeigen",
+    "contractRegister": "Vertragsregister",
+    "contracts": "Vertraege",
+    "createContract": "Vertrag anlegen",
+    "searchContracts": "Vertraege suchen...",
+    "expiringContracts": "Auslaufend (90 Tage)",
+    "noExpiring": "Keine auslaufenden Vertraege",
+    "overdueObligations": "Ueberfaellige Pflichten",
+    "noOverdue": "Keine ueberfaelligen Pflichten",
+    "slaBreaches": "Aktuelle SLA-Verletzungen",
+    "autoRenewal": "Automatische Verlaengerung",
+    "obligationsQueue": "Pflichten-Warteschlange",
+    "obligations": "Pflichten",
+    "slaMonitoring": "SLA-Monitoring",
+    "metrics": "Metriken",
+    "days": "Tage",
+    "yes": "Ja",
+    "no": "Nein",
+
+    "kpi": {
+      "activeContracts": "Aktive Vertraege",
+      "portfolioValue": "Portfolio-Jahreswert",
+      "expiringSoon": "Auslaufend (90T)",
+      "overdueObligations": "Ueberfaellige Pflichten"
+    },
+
+    "contract": {
+      "title": "Vertrag",
+      "vendor": "Lieferant",
+      "type": "Typ",
+      "status": "Status",
+      "annualValue": "Jahreswert",
+      "expiration": "Ablaufdatum",
+      "owner": "Verantwortlicher",
+      "details": "Vertragsdetails",
+      "number": "Vertragsnummer",
+      "effective": "Wirksamkeitsdatum",
+      "noticePeriod": "Kuendigungsfrist",
+      "autoRenewal": "Automatische Verlaengerung",
+      "financial": "Finanzielle Details",
+      "totalValue": "Gesamtwert",
+      "currency": "Waehrung",
+      "paymentTerms": "Zahlungsbedingungen",
+      "signed": "Unterschriftsdatum",
+      "description": "Beschreibung",
+      "notFound": "Vertrag nicht gefunden"
+    },
+
+    "type": {
+      "master_agreement": "Rahmenvertrag",
+      "service_agreement": "Dienstleistungsvertrag",
+      "nda": "Vertraulichkeitsvereinbarung",
+      "dpa": "Auftragsverarbeitungsvertrag",
+      "sla": "SLA-Vereinbarung",
+      "license": "Lizenzvertrag",
+      "maintenance": "Wartungsvertrag",
+      "consulting": "Beratungsvertrag",
+      "other": "Sonstiges"
+    },
+
+    "status": {
+      "draft": "Entwurf",
+      "negotiation": "Verhandlung",
+      "pending_approval": "Genehmigung ausstehend",
+      "active": "Aktiv",
+      "renewal": "Verlaengerung",
+      "expired": "Abgelaufen",
+      "terminated": "Beendet",
+      "archived": "Archiviert"
+    },
+
+    "filter": {
+      "allTypes": "Alle Typen",
+      "allStatuses": "Alle Status"
+    },
+
+    "tab": {
+      "overview": "Uebersicht",
+      "obligations": "Pflichten",
+      "sla": "SLA",
+      "amendments": "Nachtraege",
+      "documents": "Dokumente"
+    },
+
+    "obligation": {
+      "none": "Keine Pflichten vorhanden",
+      "due": "Faellig",
+      "responsible": "Verantwortlich",
+      "recurring": "Wiederkehrend"
+    },
+
+    "oblStatus": {
+      "pending": "Ausstehend",
+      "in_progress": "In Bearbeitung",
+      "completed": "Erledigt",
+      "overdue": "Ueberfaellig"
+    },
+
+    "sla": {
+      "none": "Keine SLA-Definitionen",
+      "target": "Zielwert",
+      "actual": "Istwert",
+      "latest": "Aktuell",
+      "breach": "SLA-Verletzung",
+      "ok": "OK",
+      "moreMeasurements": "weitere Messungen",
+      "totalMetrics": "SLA-Metriken gesamt",
+      "metOk": "Ziel erreicht",
+      "breaches": "Verletzungen"
+    },
+
+    "amendment": {
+      "none": "Keine Nachtraege"
+    },
+
+    "documents": {
+      "placeholder": "Dokumentenmanagement wird ueber das Dokumentenmodul verknuepft."
+    },
+
+    "empty": {
+      "noContracts": "Keine Vertraege gefunden"
+    }
   }
 }

@@ -9,6 +9,9 @@ import { processReviewReminders } from "./crons/process-review-reminder";
 import { processDsrSlaMonitor } from "./crons/dsr-sla-monitor";
 import { processBreach72hMonitor } from "./crons/breach-72h-monitor";
 import { processRopaReviewReminders } from "./crons/ropa-review-reminder";
+import { processContractExpiryMonitor } from "./crons/contract-expiry-monitor";
+import { processVendorReassessmentMonitor } from "./crons/vendor-reassessment-monitor";
+import { processSlaMeasurementReminder } from "./crons/sla-measurement-reminder";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -177,6 +180,43 @@ app.post("/crons/ropa-review-reminders", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] ropa-review-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// TPRM + Contract Management cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/contract-expiry-monitor", async (c) => {
+  try {
+    const result = await processContractExpiryMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] contract-expiry-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/vendor-reassessment-monitor", async (c) => {
+  try {
+    const result = await processVendorReassessmentMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] vendor-reassessment-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/sla-measurement-reminder", async (c) => {
+  try {
+    const result = await processSlaMeasurementReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] sla-measurement-reminder cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

@@ -1662,3 +1662,211 @@ export interface AuditEvidence {
   createdAt: string;
   createdBy?: string;
 }
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 9: TPRM + Contract Management types
+// ──────────────────────────────────────────────────────────────
+
+export type VendorStatus = "prospect" | "onboarding" | "active" | "under_review" | "suspended" | "terminated";
+export type VendorTier = "critical" | "important" | "standard" | "low_risk";
+export type VendorCategory = "it_services" | "cloud_provider" | "consulting" | "facility" | "logistics" | "raw_materials" | "financial" | "hr_services" | "other";
+export type DueDiligenceStatus = "pending" | "in_progress" | "completed" | "expired";
+export type ContractStatus = "draft" | "negotiation" | "pending_approval" | "active" | "renewal" | "expired" | "terminated" | "archived";
+export type ContractType = "master_agreement" | "service_agreement" | "nda" | "dpa" | "sla" | "license" | "maintenance" | "consulting" | "other";
+export type ObligationStatus = "pending" | "in_progress" | "completed" | "overdue";
+export type ObligationType = "deliverable" | "payment" | "reporting" | "compliance" | "audit_right";
+
+export interface Vendor {
+  id: string;
+  orgId: string;
+  workItemId?: string;
+  name: string;
+  legalName?: string;
+  description?: string;
+  category: VendorCategory;
+  tier: VendorTier;
+  status: VendorStatus;
+  country?: string;
+  address?: string;
+  website?: string;
+  taxId?: string;
+  inherentRiskScore?: number;
+  residualRiskScore?: number;
+  lastAssessmentDate?: string;
+  nextAssessmentDate?: string;
+  isLksgRelevant: boolean;
+  lksgTier?: string;
+  ownerId?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+}
+
+export interface VendorContact {
+  id: string;
+  vendorId: string;
+  orgId: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  role?: string;
+  isPrimary: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorRiskAssessment {
+  id: string;
+  vendorId: string;
+  orgId: string;
+  assessmentDate: string;
+  inherentRiskScore: number;
+  residualRiskScore: number;
+  confidentialityScore?: number;
+  integrityScore?: number;
+  availabilityScore?: number;
+  complianceScore?: number;
+  financialScore?: number;
+  reputationScore?: number;
+  controlsApplied?: unknown;
+  riskTrend?: string;
+  assessedBy?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface VendorDueDiligence {
+  id: string;
+  vendorId: string;
+  orgId: string;
+  questionnaireVersion?: string;
+  status: DueDiligenceStatus;
+  sentAt?: string;
+  completedAt?: string;
+  accessToken?: string;
+  responses?: unknown;
+  riskScore?: number;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface VendorDueDiligenceQuestion {
+  id: string;
+  orgId: string;
+  category: string;
+  questionText: string;
+  answerType: string;
+  riskWeighting?: string;
+  sortOrder: number;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface Contract {
+  id: string;
+  orgId: string;
+  workItemId?: string;
+  vendorId?: string;
+  title: string;
+  description?: string;
+  contractType: ContractType;
+  status: ContractStatus;
+  contractNumber?: string;
+  effectiveDate?: string;
+  expirationDate?: string;
+  noticePeriodDays?: number;
+  autoRenewal: boolean;
+  renewalPeriodMonths?: number;
+  totalValue?: string;
+  currency?: string;
+  annualValue?: string;
+  paymentTerms?: string;
+  documentId?: string;
+  ownerId?: string;
+  approverId?: string;
+  signedDate?: string;
+  signedBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+}
+
+export interface ContractObligation {
+  id: string;
+  contractId: string;
+  orgId: string;
+  title: string;
+  description?: string;
+  obligationType: ObligationType;
+  dueDate?: string;
+  recurring: boolean;
+  recurringIntervalMonths?: number;
+  status: ObligationStatus;
+  responsibleId?: string;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractAmendment {
+  id: string;
+  contractId: string;
+  orgId: string;
+  title: string;
+  description?: string;
+  effectiveDate?: string;
+  documentId?: string;
+  createdBy?: string;
+  createdAt: string;
+}
+
+export interface ContractSla {
+  id: string;
+  contractId: string;
+  orgId: string;
+  metricName: string;
+  targetValue: string;
+  unit: string;
+  measurementFrequency: string;
+  penaltyClause?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ContractSlaMeasurement {
+  id: string;
+  slaId: string;
+  orgId: string;
+  periodStart: string;
+  periodEnd: string;
+  actualValue: string;
+  isBreach: boolean;
+  notes?: string;
+  measuredBy?: string;
+  createdAt: string;
+}
+
+export interface LksgAssessment {
+  id: string;
+  vendorId: string;
+  orgId: string;
+  assessmentDate: string;
+  lksgTier: string;
+  riskAreas?: unknown;
+  mitigationPlans?: unknown;
+  status: string;
+  overallRiskLevel?: string;
+  assessedBy?: string;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  nextReviewDate?: string;
+  createdAt: string;
+  updatedAt: string;
+}
