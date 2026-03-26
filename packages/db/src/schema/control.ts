@@ -158,6 +158,9 @@ export const control = pgTable(
     objective: text("objective"),
     testInstructions: text("test_instructions"),
     reviewDate: date("review_date"),
+    // Catalog & Framework Layer hook (Sprint 4b)
+    // FK to control_catalog_entry added via migration SQL
+    catalogEntryId: uuid("catalog_entry_id"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
