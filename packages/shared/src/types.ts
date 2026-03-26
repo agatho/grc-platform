@@ -1870,3 +1870,122 @@ export interface LksgAssessment {
   createdAt: string;
   updatedAt: string;
 }
+
+// ─── Sprint 9b: Supplier Portal ──────────────────────────────
+
+export type QuestionnaireTemplateStatus = "draft" | "published" | "archived";
+export type QuestionType = "single_choice" | "multi_choice" | "text" | "yes_no" | "number" | "date" | "file_upload";
+export type DdSessionStatus = "invited" | "in_progress" | "submitted" | "expired" | "revoked";
+
+export interface QuestionOption {
+  value: string;
+  labelDe: string;
+  labelEn: string;
+  score: number;
+}
+
+export interface ConditionalRule {
+  questionId: string;
+  operator: "eq" | "neq" | "in" | "contains";
+  value: string | string[];
+}
+
+export interface QuestionnaireTemplate {
+  id: string;
+  orgId: string;
+  name: string;
+  description?: string;
+  version: number;
+  status: QuestionnaireTemplateStatus;
+  targetTier?: string;
+  targetTopics?: string[];
+  scoringModel?: Record<string, unknown>;
+  isDefault: boolean;
+  totalMaxScore: number;
+  estimatedMinutes: number;
+  createdBy?: string;
+  createdAt: string;
+  updatedAt: string;
+  deletedAt?: string;
+}
+
+export interface QuestionnaireSection {
+  id: string;
+  templateId: string;
+  titleDe: string;
+  titleEn: string;
+  descriptionDe?: string;
+  descriptionEn?: string;
+  sortOrder: number;
+  weight: string;
+  createdAt: string;
+}
+
+export interface QuestionnaireQuestion {
+  id: string;
+  sectionId: string;
+  questionType: QuestionType;
+  questionDe: string;
+  questionEn: string;
+  helpTextDe?: string;
+  helpTextEn?: string;
+  options?: QuestionOption[];
+  isRequired: boolean;
+  isEvidenceRequired: boolean;
+  conditionalOn?: ConditionalRule;
+  weight: string;
+  maxScore: number;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface DdSession {
+  id: string;
+  orgId: string;
+  vendorId: string;
+  dueDiligenceId?: string;
+  templateId: string;
+  templateVersion: number;
+  accessToken: string;
+  tokenExpiresAt: string;
+  tokenUsedAt?: string;
+  status: DdSessionStatus;
+  language: string;
+  progressPercent: number;
+  totalScore?: number;
+  maxPossibleScore?: number;
+  submittedAt?: string;
+  invitedAt: string;
+  lastReminderAt?: string;
+  supplierEmail: string;
+  supplierName?: string;
+  ipAddressLog?: string[];
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+export interface DdResponse {
+  id: string;
+  sessionId: string;
+  questionId: string;
+  answerText?: string;
+  answerChoice?: string[];
+  answerNumber?: string;
+  answerDate?: string;
+  answerBoolean?: boolean;
+  score?: number;
+  updatedAt: string;
+}
+
+export interface DdEvidence {
+  id: string;
+  sessionId: string;
+  questionId?: string;
+  fileName: string;
+  fileSize: number;
+  fileType: string;
+  storagePath: string;
+  virusScanStatus: string;
+  uploadedAt: string;
+}

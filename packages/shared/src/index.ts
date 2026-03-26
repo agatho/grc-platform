@@ -6,3 +6,4 @@ export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
 export * from "./fair-simulation";
+export * from "./dd-token";

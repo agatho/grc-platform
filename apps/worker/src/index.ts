@@ -12,6 +12,8 @@ import { processRopaReviewReminders } from "./crons/ropa-review-reminder";
 import { processContractExpiryMonitor } from "./crons/contract-expiry-monitor";
 import { processVendorReassessmentMonitor } from "./crons/vendor-reassessment-monitor";
 import { processSlaMeasurementReminder } from "./crons/sla-measurement-reminder";
+import { processDdReminder } from "./crons/dd-reminder";
+import { processDdExpiry } from "./crons/dd-expiry";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -217,6 +219,32 @@ app.post("/crons/sla-measurement-reminder", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] sla-measurement-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// DD Portal cron endpoints — Supplier Due Diligence
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/dd-reminder", async (c) => {
+  try {
+    const result = await processDdReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] dd-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/dd-expiry", async (c) => {
+  try {
+    const result = await processDdExpiry();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] dd-expiry cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

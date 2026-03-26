@@ -2042,3 +2042,137 @@ export const contractListQuerySchema = z.object({
   page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
   limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default("25"),
 });
+
+// ═══════════════════════════════════════════════════════════════
+// Sprint 9b: Supplier Portal & Questionnaire Designer
+// ═══════════════════════════════════════════════════════════════
+
+// ─── Question Option / Conditional ───────────────────────────
+
+export const questionOptionSchema = z.object({
+  value: z.string().min(1),
+  labelDe: z.string().min(1),
+  labelEn: z.string().min(1),
+  score: z.number().int().min(0).default(0),
+});
+
+export const conditionalSchema = z.object({
+  questionId: z.string().uuid(),
+  operator: z.enum(["eq", "neq", "in", "contains"]),
+  value: z.union([z.string(), z.array(z.string())]),
+});
+
+// ─── Questionnaire Template ──────────────────────────────────
+
+export const createTemplateSchema = z.object({
+  name: z.string().min(1).max(500),
+  description: z.string().max(2000).optional(),
+  targetTier: z.enum(["critical", "important", "standard", "low_risk"]).optional(),
+  targetTopics: z.array(z.string()).optional(),
+  estimatedMinutes: z.number().int().min(5).max(480).default(30),
+});
+
+export const updateTemplateSchema = createTemplateSchema.partial();
+
+export const publishTemplateSchema = z.object({
+  versionMessage: z.string().max(500).optional(),
+});
+
+// ─── Questionnaire Section ───────────────────────────────────
+
+export const createSectionSchema = z.object({
+  titleDe: z.string().min(1).max(500),
+  titleEn: z.string().min(1).max(500),
+  descriptionDe: z.string().max(2000).optional(),
+  descriptionEn: z.string().max(2000).optional(),
+  sortOrder: z.number().int().min(0),
+  weight: z.number().min(0).max(100).default(1),
+});
+
+export const updateSectionSchema = createSectionSchema.partial();
+
+// ─── Questionnaire Question ──────────────────────────────────
+
+export const createQuestionSchema = z.object({
+  questionType: z.enum(["single_choice", "multi_choice", "text", "yes_no", "number", "date", "file_upload"]),
+  questionDe: z.string().min(3).max(2000),
+  questionEn: z.string().min(3).max(2000),
+  helpTextDe: z.string().max(1000).optional(),
+  helpTextEn: z.string().max(1000).optional(),
+  options: z.array(questionOptionSchema).optional(),
+  isRequired: z.boolean().default(true),
+  isEvidenceRequired: z.boolean().default(false),
+  conditionalOn: conditionalSchema.optional(),
+  weight: z.number().min(0).max(100).default(1),
+  maxScore: z.number().int().min(0).default(0),
+  sortOrder: z.number().int().min(0),
+}).refine((data) => {
+  if (["single_choice", "multi_choice"].includes(data.questionType)) {
+    return data.options && data.options.length >= 2;
+  }
+  return true;
+}, { message: "Choice questions require at least 2 options" });
+
+export const updateQuestionSchema = z.object({
+  questionType: z.enum(["single_choice", "multi_choice", "text", "yes_no", "number", "date", "file_upload"]).optional(),
+  questionDe: z.string().min(3).max(2000).optional(),
+  questionEn: z.string().min(3).max(2000).optional(),
+  helpTextDe: z.string().max(1000).optional(),
+  helpTextEn: z.string().max(1000).optional(),
+  options: z.array(questionOptionSchema).optional(),
+  isRequired: z.boolean().optional(),
+  isEvidenceRequired: z.boolean().optional(),
+  conditionalOn: conditionalSchema.optional(),
+  weight: z.number().min(0).max(100).optional(),
+  maxScore: z.number().int().min(0).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+});
+
+// ─── DD Session / Invitation ─────────────────────────────────
+
+export const inviteVendorSchema = z.object({
+  templateId: z.string().uuid(),
+  supplierEmail: z.string().email(),
+  supplierName: z.string().min(1).max(500),
+  language: z.enum(["de", "en"]).default("de"),
+  deadline: z.string().datetime(),
+});
+
+export const extendSessionSchema = z.object({
+  newDeadline: z.string().datetime(),
+  reason: z.string().max(500).optional(),
+});
+
+// ─── Portal (Supplier-facing) ────────────────────────────────
+
+export const portalResponseSchema = z.object({
+  questionId: z.string().uuid(),
+  answerText: z.string().max(5000).optional(),
+  answerChoice: z.array(z.string()).optional(),
+  answerNumber: z.number().optional(),
+  answerDate: z.string().date().optional(),
+  answerBoolean: z.boolean().optional(),
+});
+
+export const portalSaveResponsesSchema = z.object({
+  responses: z.array(portalResponseSchema).min(1).max(200),
+});
+
+export const portalSubmitSchema = z.object({
+  confirmComplete: z.literal(true, { errorMap: () => ({ message: "Must confirm completion" }) }),
+});
+
+export const portalEvidenceUploadSchema = z.object({
+  questionId: z.string().uuid().optional(),
+  fileName: z.string().min(1).max(500),
+  fileType: z.enum([
+    "application/pdf",
+    "application/msword",
+    "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    "application/vnd.ms-excel",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    "image/png",
+    "image/jpeg",
+  ]),
+  fileSize: z.number().int().min(1).max(25 * 1024 * 1024),
+});
