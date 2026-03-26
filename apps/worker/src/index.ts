@@ -6,6 +6,9 @@ import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
 import { processRiskReviewReminders } from "./crons/risk-review-reminder";
 import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-reminder";
 import { processReviewReminders } from "./crons/process-review-reminder";
+import { processDsrSlaMonitor } from "./crons/dsr-sla-monitor";
+import { processBreach72hMonitor } from "./crons/breach-72h-monitor";
+import { processRopaReviewReminders } from "./crons/ropa-review-reminder";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -137,6 +140,43 @@ app.post("/crons/process-review-reminders", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] process-review-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// DPMS cron endpoints — Data Protection Management System
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/dsr-sla-monitor", async (c) => {
+  try {
+    const result = await processDsrSlaMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] dsr-sla-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/breach-72h-monitor", async (c) => {
+  try {
+    const result = await processBreach72hMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] breach-72h-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/ropa-review-reminders", async (c) => {
+  try {
+    const result = await processRopaReviewReminders();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] ropa-review-reminders cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
