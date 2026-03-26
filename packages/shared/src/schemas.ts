@@ -1029,3 +1029,125 @@ export const createIncidentTimelineEntrySchema = z.object({
   description: z.string().min(1).max(5000),
   occurredAt: z.string().datetime().optional(),
 });
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 5b: ISMS Assessment schemas
+// ──────────────────────────────────────────────────────────────
+
+const assessmentStatusValues = ["planning", "in_progress", "review", "completed", "cancelled"] as const;
+const assessmentScopeTypeValues = ["full", "department", "asset_group", "custom"] as const;
+const evalResultValues = ["effective", "partially_effective", "ineffective", "not_applicable", "not_evaluated"] as const;
+const riskDecisionValues = ["accept", "mitigate", "transfer", "avoid", "pending"] as const;
+const soaApplicabilityValues = ["applicable", "not_applicable", "partially_applicable"] as const;
+const soaImplementationValues = ["implemented", "partially_implemented", "planned", "not_implemented"] as const;
+const reviewStatusValues = ["planned", "in_progress", "completed", "cancelled"] as const;
+
+const maturityScale = z.number().int().min(1).max(5);
+
+// ─── Assessment Run ────────────────────────────────────────────
+
+export const createAssessmentRunSchema = z
+  .object({
+    name: z.string().min(1).max(500),
+    description: z.string().max(5000).optional(),
+    scopeType: z.enum(assessmentScopeTypeValues).default("full"),
+    scopeFilter: z.record(z.unknown()).optional(),
+    framework: z.string().max(100).default("iso27001"),
+    periodStart: z.string().min(1),
+    periodEnd: z.string().min(1),
+    leadAssessorId: z.string().uuid().optional(),
+  })
+  .refine(
+    (data) => data.periodEnd >= data.periodStart,
+    { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
+  );
+
+// ─── Control Evaluation ────────────────────────────────────────
+
+export const submitControlEvalSchema = z.object({
+  controlId: z.string().uuid(),
+  assetId: z.string().uuid().optional(),
+  result: z.enum(evalResultValues),
+  evidence: z.string().max(10000).optional(),
+  notes: z.string().max(5000).optional(),
+  evidenceDocumentIds: z.array(z.string().uuid()).default([]),
+  currentMaturity: maturityScale.optional(),
+  targetMaturity: maturityScale.optional(),
+});
+
+// ─── Risk Evaluation ───────────────────────────────────────────
+
+export const submitRiskEvalSchema = z.object({
+  riskScenarioId: z.string().uuid(),
+  residualLikelihood: z.number().int().min(1).max(5).optional(),
+  residualImpact: z.number().int().min(1).max(5).optional(),
+  decision: z.enum(riskDecisionValues),
+  justification: z.string().max(5000).optional(),
+});
+
+// ─── SoA (Statement of Applicability) ──────────────────────────
+
+export const updateSoaEntrySchema = z.object({
+  controlId: z.string().uuid().nullable().optional(),
+  applicability: z.enum(soaApplicabilityValues).optional(),
+  applicabilityJustification: z.string().max(5000).optional(),
+  implementation: z.enum(soaImplementationValues).optional(),
+  implementationNotes: z.string().max(5000).optional(),
+  responsibleId: z.string().uuid().nullable().optional(),
+});
+
+export const bulkUpdateSoaSchema = z.object({
+  entries: z
+    .array(
+      z.object({
+        catalogEntryId: z.string().uuid(),
+        controlId: z.string().uuid().nullable().optional(),
+        applicability: z.enum(soaApplicabilityValues).optional(),
+        applicabilityJustification: z.string().max(5000).optional(),
+        implementation: z.enum(soaImplementationValues).optional(),
+        implementationNotes: z.string().max(5000).optional(),
+        responsibleId: z.string().uuid().nullable().optional(),
+      }),
+    )
+    .min(1)
+    .max(200),
+});
+
+// ─── Management Review ─────────────────────────────────────────
+
+export const createManagementReviewSchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(10000).optional(),
+  reviewDate: z.string().min(1),
+  chairId: z.string().uuid().optional(),
+  participantIds: z.array(z.string().uuid()).default([]),
+  nextReviewDate: z.string().optional(),
+});
+
+export const updateManagementReviewSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(10000).optional(),
+  reviewDate: z.string().optional(),
+  status: z.enum(reviewStatusValues).optional(),
+  chairId: z.string().uuid().nullable().optional(),
+  participantIds: z.array(z.string().uuid()).optional(),
+  changesInContext: z.string().max(10000).optional(),
+  performanceFeedback: z.string().max(10000).optional(),
+  riskAssessmentResults: z.string().max(10000).optional(),
+  auditResults: z.string().max(10000).optional(),
+  improvementOpportunities: z.string().max(10000).optional(),
+  decisions: z.record(z.unknown()).optional(),
+  actionItems: z.record(z.unknown()).optional(),
+  minutes: z.string().max(50000).optional(),
+  nextReviewDate: z.string().nullable().optional(),
+});
+
+// ─── Maturity Rating ───────────────────────────────────────────
+
+export const rateMaturitySchema = z.object({
+  controlId: z.string().uuid(),
+  assessmentRunId: z.string().uuid().optional(),
+  currentMaturity: maturityScale,
+  targetMaturity: maturityScale,
+  justification: z.string().max(5000).optional(),
+});

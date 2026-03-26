@@ -1767,5 +1767,227 @@
     "addEntry": "Add Entry",
     "timelineEntryAdded": "Timeline entry added",
     "incidentNotFound": "Incident not found"
+  },
+  "ismsAssessment": {
+    "assessment": {
+      "title": "ISMS Assessments",
+      "subtitle": "Manage assessment cycles for your information security management system",
+      "create": "Create Assessment",
+      "wizard": "Assessment Wizard",
+      "name": "Name",
+      "namePlaceholder": "e.g. ISO 27001:2022 Full Assessment Q3/2026",
+      "description": "Description",
+      "framework": "Framework",
+      "scopeType": "Scope Type",
+      "periodStart": "Period Start",
+      "periodEnd": "Period End",
+      "progress": "Assessment Progress",
+      "totalEvaluations": "Total Evaluations",
+      "completed": "Completed",
+      "continue": "Continue Assessment",
+      "latest": "Latest Assessment",
+      "empty": "No assessments found",
+      "notFound": "Assessment not found",
+      "next": "Next",
+      "back": "Back",
+      "assetsSelected": "assets selected",
+      "noAssets": "No assets available",
+      "scope": {
+        "full": "Full",
+        "department": "Department",
+        "assetGroup": "Asset Group",
+        "custom": "Custom"
+      },
+      "statuses": {
+        "planning": "Planning",
+        "in_progress": "In Progress",
+        "review": "Review",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "tabs": {
+        "overview": "Overview",
+        "evaluations": "Evaluations",
+        "risks": "Risk Evaluations"
+      },
+      "steps": {
+        "assets": "Select Assets",
+        "controls": "Evaluate Controls",
+        "risks": "Risk Scenarios"
+      },
+      "step1": "Step 1: Select Assets in Scope",
+      "step2": "Step 2: Evaluate Controls",
+      "step3": "Step 3: Review Risk Scenarios"
+    },
+    "evaluation": {
+      "result": "Result",
+      "control": "Control",
+      "evidence": "Evidence",
+      "evidencePlaceholder": "Describe the evidence supporting this evaluation...",
+      "notes": "Notes",
+      "controls": "controls",
+      "evaluations": "evaluations",
+      "evaluated": "evaluated",
+      "assessedAt": "Assessed At",
+      "empty": "No evaluations submitted yet",
+      "effective": "Effective",
+      "partiallyEffective": "Partially Effective",
+      "ineffective": "Ineffective",
+      "notApplicable": "Not Applicable",
+      "notEvaluated": "Not Evaluated",
+      "saveAndNext": "Save & Next",
+      "skip": "Skip",
+      "uploadDocument": "Upload Document",
+      "results": {
+        "effective": "Effective",
+        "partially_effective": "Partially Effective",
+        "ineffective": "Ineffective",
+        "not_applicable": "N/A",
+        "not_evaluated": "Not Evaluated"
+      }
+    },
+    "maturity": {
+      "title": "Maturity Analysis",
+      "gapAnalysis": "Gap Analysis",
+      "radar": "Radar Chart",
+      "radarDescription": "Average maturity per domain (current vs. target)",
+      "timeline": "Timeline",
+      "current": "Current",
+      "target": "Target",
+      "gap": "Gap",
+      "control": "Control",
+      "department": "Department",
+      "severity": "Priority",
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "level1": "Initial",
+      "level2": "Managed",
+      "level3": "Defined",
+      "level4": "Quantitatively Managed",
+      "level5": "Optimizing",
+      "avgCurrent": "Avg. Current",
+      "avgTarget": "Avg. Target",
+      "avgGap": "Avg. Gap",
+      "totalControls": "Controls",
+      "noGaps": "No gaps found — all controls meet their target maturity",
+      "noData": "No maturity data available"
+    },
+    "soa": {
+      "title": "Statement of Applicability (SoA)",
+      "generate": "Generate SoA",
+      "export": "Export CSV",
+      "controls": "Controls",
+      "applicable": "Applicable",
+      "notApplicable": "Not Applicable",
+      "partiallyApplicable": "Partially Applicable",
+      "implementation": "Implementation",
+      "implementationPct": "Implementation %",
+      "notImplementedApplicable": "Not implemented (applicable)",
+      "implemented": "Implemented",
+      "partiallyImplemented": "Partially Implemented",
+      "planned": "Planned",
+      "notImplemented": "Not Implemented",
+      "justification": "Justification",
+      "notes": "Notes",
+      "linkedControl": "Linked Control",
+      "responsible": "Responsible",
+      "reference": "Reference",
+      "controlName": "Control",
+      "editEntry": "Edit SoA Entry",
+      "empty": "No SoA entries found. Generate from ISO 27002 catalog.",
+      "searchPlaceholder": "Search controls...",
+      "applicabilityValues": {
+        "applicable": "Applicable",
+        "not_applicable": "Not Applicable",
+        "partially_applicable": "Partially Applicable"
+      },
+      "implementationValues": {
+        "implemented": "Implemented",
+        "partially_implemented": "Partially Implemented",
+        "planned": "Planned",
+        "not_implemented": "Not Implemented"
+      },
+      "filters": {
+        "all": "All",
+        "applicable": "Applicable",
+        "not_applicable": "Not Applicable",
+        "not_implemented": "Not Implemented"
+      }
+    },
+    "review": {
+      "title": "Management Review",
+      "subtitle": "ISO 27001 Clause 9.3 Management Reviews",
+      "create": "Plan Review",
+      "titleField": "Title",
+      "date": "Review Date",
+      "nextReview": "Next Review",
+      "last": "Last Review",
+      "noneYet": "No reviews yet",
+      "empty": "No management reviews found",
+      "notFound": "Review not found",
+      "complete": "Complete Review",
+      "inputs": "Inputs",
+      "decisions": "Decisions",
+      "actionItems": "Action Items",
+      "minutes": "Minutes",
+      "minutesLabel": "Meeting Minutes",
+      "minutesPlaceholder": "Record the meeting minutes here...",
+      "changesInContext": "Changes in Context",
+      "changesInContextPlaceholder": "Describe changes in external/internal context...",
+      "performance": "Performance Feedback",
+      "auditResults": "Audit Results",
+      "improvements": "Improvement Opportunities",
+      "addDecision": "Add Decision",
+      "addAction": "Add Action Item",
+      "noActions": "No action items yet",
+      "actionTitle": "Action",
+      "responsible": "Responsible",
+      "dueDate": "Due Date",
+      "actionStatus": "Status",
+      "statuses": {
+        "planned": "Planned",
+        "in_progress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "tabs": {
+        "inputs": "Inputs",
+        "decisions": "Decisions",
+        "actions": "Actions",
+        "minutes": "Minutes"
+      },
+      "actionStatuses": {
+        "open": "Open",
+        "in_progress": "In Progress",
+        "completed": "Completed"
+      }
+    },
+    "riskEval": {
+      "residualLikelihood": "Residual Likelihood",
+      "residualImpact": "Residual Impact",
+      "residualRisk": "Residual Risk",
+      "decision": "Decision",
+      "justification": "Justification",
+      "scenario": "Risk Scenario",
+      "scenariosEvaluated": "Scenarios Evaluated",
+      "noDescription": "No description",
+      "empty": "No risk evaluations yet",
+      "decisions": {
+        "accept": "Accept",
+        "mitigate": "Mitigate",
+        "transfer": "Transfer",
+        "avoid": "Avoid",
+        "pending": "Pending"
+      }
+    },
+    "complianceScore": {
+      "title": "ISMS Overview",
+      "label": "ISMS Compliance Score"
+    },
+    "actions": {
+      "cancel": "Cancel",
+      "save": "Save"
+    }
   }
 }
