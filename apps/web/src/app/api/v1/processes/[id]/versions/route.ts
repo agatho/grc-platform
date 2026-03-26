@@ -5,7 +5,7 @@ import {
   processStep,
 } from "@grc/db";
 import { createVersionSchema } from "@grc/shared";
-import { parseBpmnXml } from "@grc/shared";
+import { parseBpmnXml, computeBpmnDiff } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
@@ -64,6 +64,21 @@ export async function POST(
 
   const newVersionNumber = existing.currentVersion + 1;
 
+  // Compute diff against previous version (S3b-06)
+  let diffSummaryJson: Record<string, unknown> | null = null;
+  const prevVersions = await db
+    .select({ bpmnXml: processVersion.bpmnXml })
+    .from(processVersion)
+    .where(and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)))
+    .limit(1);
+  if (prevVersions[0]?.bpmnXml) {
+    try {
+      diffSummaryJson = computeBpmnDiff(prevVersions[0].bpmnXml, body.data.bpmnXml) as unknown as Record<string, unknown>;
+    } catch {
+      // Diff computation failed — store null, not blocking
+    }
+  }
+
   const result = await withAuditContext(ctx, async (tx) => {
     // Mark all existing versions as not current
     await tx
@@ -71,7 +86,7 @@ export async function POST(
       .set({ isCurrent: false })
       .where(eq(processVersion.processId, id));
 
-    // Create new version
+    // Create new version with pre-computed diff
     const [version] = await tx
       .insert(processVersion)
       .values({
@@ -80,6 +95,7 @@ export async function POST(
         versionNumber: newVersionNumber,
         bpmnXml: body.data.bpmnXml,
         changeSummary: body.data.changeSummary,
+        diffSummaryJson,
         isCurrent: true,
         createdBy: ctx.userId,
       })
