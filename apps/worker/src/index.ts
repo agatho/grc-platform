@@ -14,6 +14,9 @@ import { processVendorReassessmentMonitor } from "./crons/vendor-reassessment-mo
 import { processSlaMeasurementReminder } from "./crons/sla-measurement-reminder";
 import { processDdReminder } from "./crons/dd-reminder";
 import { processDdExpiry } from "./crons/dd-expiry";
+import { processEsgCompletenessCheck } from "./crons/esg-completeness-check";
+import { processEsgTargetStatus } from "./crons/esg-target-status";
+import { processEsgEmissionAggregate } from "./crons/esg-emission-aggregate";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -245,6 +248,43 @@ app.post("/crons/dd-expiry", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] dd-expiry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// ESG/CSRD cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/esg-completeness-check", async (c) => {
+  try {
+    const result = await processEsgCompletenessCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] esg-completeness-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/esg-target-status", async (c) => {
+  try {
+    const result = await processEsgTargetStatus();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] esg-target-status cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/esg-emission-aggregate", async (c) => {
+  try {
+    const result = await processEsgEmissionAggregate();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] esg-emission-aggregate cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
