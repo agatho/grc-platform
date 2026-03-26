@@ -1165,5 +1165,372 @@
       "listView": "List View",
       "galleryView": "Gallery View"
     }
+  },
+  "controls": {
+    "title": "Internal Control System",
+    "register": "Control Register",
+    "create": "Create Control",
+    "created": "Control created successfully",
+    "createError": "Failed to create control",
+    "loadError": "Failed to load controls",
+    "retry": "Retry",
+    "backToList": "Back to Controls",
+    "notFound": "Control not found",
+    "searchPlaceholder": "Search controls...",
+    "metadata": "Metadata",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Enter control title...",
+      "titleRequired": "Title is required",
+      "description": "Description",
+      "descriptionPlaceholder": "Describe the control...",
+      "details": "Control Details",
+      "type": "Type",
+      "frequency": "Frequency",
+      "automation": "Automation",
+      "status": "Status",
+      "owner": "Owner",
+      "ownerPlaceholder": "Select owner...",
+      "lod": "Line of Defense",
+      "reviewDate": "Review Date",
+      "lastTested": "Last Tested",
+      "createdAt": "Created",
+      "objective": "Objective",
+      "testInstructions": "Test Instructions"
+    },
+    "filter": {
+      "allStatuses": "All Statuses",
+      "allTypes": "All Types",
+      "allFrequencies": "All Frequencies"
+    },
+    "empty": {
+      "noControls": "No controls found",
+      "noResults": "No results match your filters"
+    },
+    "type": {
+      "preventive": "Preventive",
+      "detective": "Detective",
+      "corrective": "Corrective"
+    },
+    "frequency": {
+      "event_driven": "Event-driven",
+      "continuous": "Continuous",
+      "daily": "Daily",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "annually": "Annually",
+      "ad_hoc": "Ad hoc"
+    },
+    "automation": {
+      "manual": "Manual",
+      "semi_automated": "Semi-automated",
+      "fully_automated": "Fully Automated"
+    },
+    "status": {
+      "designed": "Designed",
+      "implemented": "Implemented",
+      "effective": "Effective",
+      "ineffective": "Ineffective",
+      "retired": "Retired"
+    },
+    "lod": {
+      "first": "1st Line",
+      "second": "2nd Line",
+      "third": "3rd Line"
+    },
+    "assertions": {
+      "title": "COSO Assertions",
+      "completeness": "Completeness",
+      "accuracy": "Accuracy",
+      "obligations_and_rights": "Obligations & Rights",
+      "fraud_prevention": "Fraud Prevention",
+      "existence": "Existence",
+      "valuation": "Valuation",
+      "presentation": "Presentation",
+      "safeguarding_of_assets": "Safeguarding of Assets"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "tests": "Tests",
+      "findings": "Findings",
+      "rcm": "RCM",
+      "history": "History"
+    },
+    "tests": {
+      "empty": "No tests recorded",
+      "typeLabel": "Test Type",
+      "tester": "Tester",
+      "date": "Date",
+      "sampleSize": "Sample Size",
+      "type": {
+        "design_effectiveness": "Design Effectiveness (ToD)",
+        "operating_effectiveness": "Operating Effectiveness (ToE)"
+      },
+      "status": {
+        "planned": "Planned",
+        "in_progress": "In Progress",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      },
+      "result": {
+        "effective": "Effective",
+        "ineffective": "Ineffective",
+        "partially_effective": "Partially Effective",
+        "not_tested": "Not Tested"
+      }
+    },
+    "findings": {
+      "empty": "No findings linked"
+    },
+    "campaigns": {
+      "title": "Test Campaigns",
+      "subtitle": "Manage control testing campaigns",
+      "create": "Create Campaign",
+      "empty": "No campaigns found",
+      "progress": "Progress",
+      "tests": "Campaign Tests",
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "completed": "Completed",
+        "cancelled": "Cancelled"
+      }
+    },
+    "rcm": {
+      "title": "Risk-Control Matrix",
+      "subtitle": "Map controls to risks and assess coverage",
+      "empty": "No risk-control mappings found",
+      "riskColumn": "Risk",
+      "gap": "Gap (no full coverage)",
+      "effectiveness": {
+        "full": "Full Coverage",
+        "partial": "Partial Coverage",
+        "planned": "Planned",
+        "none": "No Coverage"
+      }
+    },
+    "evidence": {
+      "title": "Evidence Browser",
+      "subtitle": "Browse all uploaded evidence",
+      "items": "items",
+      "empty": "No evidence uploaded",
+      "category": {
+        "screenshot": "Screenshot",
+        "document": "Document",
+        "log_export": "Log Export",
+        "email": "Email",
+        "certificate": "Certificate",
+        "report": "Report",
+        "photo": "Photo",
+        "config_export": "Config Export",
+        "other": "Other"
+      }
+    },
+    "history": {
+      "empty": "No history entries"
+    }
+  },
+  "documents": {
+    "title": "Document Management",
+    "register": "Document Repository",
+    "create": "Create Document",
+    "created": "Document created successfully",
+    "createError": "Failed to create document",
+    "loadError": "Failed to load documents",
+    "retry": "Retry",
+    "backToList": "Back to Documents",
+    "notFound": "Document not found",
+    "searchPlaceholder": "Search documents...",
+    "itemCount": "documents",
+    "metadata": "Metadata",
+    "form": {
+      "title": "Title",
+      "titlePlaceholder": "Enter document title...",
+      "titleRequired": "Title is required",
+      "details": "Document Details",
+      "category": "Category",
+      "status": "Status",
+      "owner": "Owner",
+      "ownerPlaceholder": "Select owner...",
+      "reviewer": "Reviewer",
+      "reviewerPlaceholder": "Select reviewer...",
+      "content": "Content",
+      "contentPlaceholder": "Write document content (Markdown supported)...",
+      "contentHint": "Markdown formatting is supported",
+      "version": "Version",
+      "publishedAt": "Published",
+      "expiresAt": "Expiry Date",
+      "tags": "Tags",
+      "tagsPlaceholder": "Comma-separated tags...",
+      "acknowledgment": "Acknowledgment",
+      "requiresAcknowledgment": "Requires user acknowledgment"
+    },
+    "filter": {
+      "allStatuses": "All Statuses",
+      "allCategories": "All Categories"
+    },
+    "empty": {
+      "noDocuments": "No documents found",
+      "noResults": "No results match your filters"
+    },
+    "category": {
+      "policy": "Policy",
+      "procedure": "Procedure",
+      "guideline": "Guideline",
+      "template": "Template",
+      "record": "Record",
+      "tom": "TOM",
+      "dpa": "DPA",
+      "bcp": "BCP",
+      "soa": "SoA",
+      "other": "Other"
+    },
+    "status": {
+      "draft": "Draft",
+      "in_review": "In Review",
+      "approved": "Approved",
+      "published": "Published",
+      "archived": "Archived",
+      "expired": "Expired"
+    },
+    "tabs": {
+      "content": "Content",
+      "versions": "Versions",
+      "entityLinks": "Entity Links",
+      "acknowledgments": "Acknowledgments",
+      "history": "History"
+    },
+    "content": {
+      "empty": "No content available"
+    },
+    "versions": {
+      "empty": "No versions recorded",
+      "current": "Current"
+    },
+    "entityLinks": {
+      "empty": "No entity links"
+    },
+    "acknowledgments": {
+      "empty": "No acknowledgments required",
+      "complete": "complete",
+      "sendReminder": "Send Reminder",
+      "reminderSent": "Reminder sent",
+      "reminderError": "Failed to send reminder",
+      "user": "User",
+      "version": "Version",
+      "date": "Date",
+      "statusLabel": "Status",
+      "acknowledged": "Acknowledged",
+      "pending": "Pending"
+    },
+    "compliance": {
+      "title": "Acknowledgment Compliance",
+      "subtitle": "Track document acknowledgment compliance across your organization",
+      "empty": "No documents require acknowledgment",
+      "totalDocuments": "Total Documents",
+      "fullyCompliant": "Fully Compliant",
+      "averageRate": "Average Rate",
+      "perDocument": "Per-Document Tracking",
+      "acknowledged": "Acknowledged",
+      "total": "Total Users",
+      "rate": "Rate"
+    },
+    "search": {
+      "title": "Full-Text Search",
+      "subtitle": "Search across documents, controls, and findings",
+      "placeholder": "Enter search query...",
+      "button": "Search",
+      "noResults": "No results found",
+      "scopeAll": "All",
+      "scopeDocuments": "Documents",
+      "scopeControls": "Controls",
+      "scopeFindings": "Findings",
+      "group": {
+        "document": "Documents",
+        "control": "Controls",
+        "finding": "Findings"
+      }
+    },
+    "history": {
+      "empty": "No history entries"
+    }
+  },
+  "findings": {
+    "title": "Findings Dashboard",
+    "subtitle": "Track and manage control findings",
+    "searchPlaceholder": "Search findings...",
+    "backToList": "Back to Findings",
+    "notFound": "Finding not found",
+    "metadata": "Metadata",
+    "form": {
+      "title": "Title",
+      "severity": "Severity",
+      "status": "Status",
+      "source": "Source",
+      "owner": "Owner",
+      "dueDate": "Due Date",
+      "description": "Description",
+      "remediationPlan": "Remediation Plan",
+      "linkedControl": "Linked Control",
+      "createdAt": "Created"
+    },
+    "filter": {
+      "allStatuses": "All Statuses"
+    },
+    "empty": {
+      "noFindings": "No findings found"
+    },
+    "kpi": {
+      "total": "Total Findings",
+      "open": "Open Findings",
+      "overdue": "Overdue"
+    },
+    "distribution": {
+      "title": "Severity Distribution"
+    },
+    "severity": {
+      "observation": "Observation",
+      "recommendation": "Recommendation",
+      "improvement_requirement": "Improvement Requirement",
+      "insignificant_nonconformity": "Insignificant Nonconformity",
+      "significant_nonconformity": "Significant Nonconformity"
+    },
+    "status": {
+      "identified": "Identified",
+      "in_remediation": "In Remediation",
+      "remediated": "Remediated",
+      "verified": "Verified",
+      "accepted": "Accepted",
+      "closed": "Closed"
+    },
+    "source": {
+      "control_test": "Control Test",
+      "audit": "Audit",
+      "incident": "Incident",
+      "self_assessment": "Self-Assessment",
+      "external": "External"
+    },
+    "tabs": {
+      "overview": "Overview",
+      "statusHistory": "Status History",
+      "verification": "Verification",
+      "evidence": "Evidence",
+      "history": "History"
+    },
+    "statusHistory": {
+      "empty": "No status changes recorded"
+    },
+    "verification": {
+      "remediatedAt": "Remediated At",
+      "verifiedAt": "Verified At",
+      "verifiedBy": "Verified By"
+    },
+    "evidence": {
+      "empty": "No evidence attached"
+    },
+    "history": {
+      "empty": "No history entries"
+    }
   }
 }
