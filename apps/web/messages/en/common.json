@@ -2674,5 +2674,262 @@
 
     "viewReport": "View Report Document",
     "reportNotReady": "Report is available once the audit is completed"
+  },
+
+  "tprm": {
+    "title": "Third-Party Risk Management",
+    "description": "Manage vendor lifecycle, due diligence, and supply chain risk",
+    "viewVendors": "View Vendors",
+    "vendorRegister": "Vendor Register",
+    "vendors": "vendors",
+    "createVendor": "Add Vendor",
+    "searchVendors": "Search vendors...",
+    "pending": "pending",
+
+    "kpi": {
+      "totalVendors": "Total Vendors",
+      "critical": "Critical (Tier 1)",
+      "assessmentDue": "Assessment Due",
+      "lksgRelevant": "LkSG Relevant"
+    },
+
+    "tierDistribution": "Vendor Tier Distribution",
+    "ddQueue": "Due Diligence Queue",
+    "noPendingDD": "No pending questionnaires",
+    "overdueAssessments": "Overdue Assessments",
+
+    "tier": {
+      "critical": "Critical",
+      "important": "Important",
+      "standard": "Standard",
+      "low_risk": "Low Risk"
+    },
+
+    "category": {
+      "it_services": "IT Services",
+      "cloud_provider": "Cloud Provider",
+      "consulting": "Consulting",
+      "facility": "Facility Management",
+      "logistics": "Logistics",
+      "raw_materials": "Raw Materials",
+      "financial": "Financial Services",
+      "hr_services": "HR Services",
+      "other": "Other"
+    },
+
+    "status": {
+      "prospect": "Prospect",
+      "onboarding": "Onboarding",
+      "active": "Active",
+      "under_review": "Under Review",
+      "suspended": "Suspended",
+      "terminated": "Terminated"
+    },
+
+    "filter": {
+      "allTiers": "All Tiers",
+      "allCategories": "All Categories",
+      "allStatuses": "All Statuses"
+    },
+
+    "vendor": {
+      "name": "Vendor",
+      "category": "Category",
+      "tier": "Tier",
+      "status": "Status",
+      "country": "Country",
+      "owner": "Owner",
+      "riskScore": "Risk Score",
+      "details": "Vendor Details",
+      "riskInfo": "Risk Information",
+      "inherentScore": "Inherent Risk Score",
+      "residualScore": "Residual Risk Score",
+      "lastAssessment": "Last Assessment",
+      "nextAssessment": "Next Assessment",
+      "contacts": "Contacts",
+      "noContacts": "No contacts added",
+      "noContracts": "No linked contracts",
+      "notFound": "Vendor not found",
+      "website": "Website",
+      "taxId": "Tax ID"
+    },
+
+    "tab": {
+      "overview": "Overview",
+      "dueDiligence": "Due Diligence",
+      "riskAssessment": "Risk Assessment",
+      "contracts": "Contracts",
+      "lksg": "LkSG"
+    },
+
+    "dd": {
+      "history": "Due Diligence History",
+      "send": "Send Questionnaire",
+      "sent": "Questionnaire sent successfully",
+      "sendError": "Failed to send questionnaire",
+      "questionnaire": "Questionnaire",
+      "sentAt": "Sent",
+      "completedAt": "Completed",
+      "riskScore": "Risk Score",
+      "noRecords": "No due diligence records"
+    },
+
+    "risk": {
+      "history": "Risk Assessment History",
+      "noAssessments": "No risk assessments",
+      "inherent": "Inherent",
+      "residual": "Residual"
+    },
+
+    "lksg": {
+      "title": "LkSG Supply Chain Due Diligence",
+      "subtitle": "German Supply Chain Due Diligence Act compliance",
+      "relevantVendors": "LkSG-relevant vendors",
+      "ofTotal": "of {total} total vendors",
+      "completedAssessments": "Completed Assessments",
+      "highRisk": "High / Critical Risk",
+      "riskDistribution": "Risk Level Distribution",
+      "vendorList": "LkSG-Relevant Vendors",
+      "noVendors": "No LkSG-relevant vendors",
+      "assessments": "LkSG Assessments",
+      "noAssessments": "No LkSG assessments",
+      "risk": {
+        "low": "Low",
+        "medium": "Medium",
+        "high": "High",
+        "critical": "Critical"
+      }
+    },
+
+    "empty": {
+      "noVendors": "No vendors found"
+    }
+  },
+
+  "contracts": {
+    "title": "Contract Management",
+    "description": "Manage contracts, obligations, SLAs, and amendments",
+    "viewContracts": "View Contracts",
+    "contractRegister": "Contract Register",
+    "contracts": "contracts",
+    "createContract": "Add Contract",
+    "searchContracts": "Search contracts...",
+    "expiringContracts": "Expiring Soon (90 days)",
+    "noExpiring": "No contracts expiring soon",
+    "overdueObligations": "Overdue Obligations",
+    "noOverdue": "No overdue obligations",
+    "slaBreaches": "Recent SLA Breaches",
+    "autoRenewal": "Auto-Renewal",
+    "obligationsQueue": "Obligations Queue",
+    "obligations": "obligations",
+    "slaMonitoring": "SLA Monitoring",
+    "metrics": "metrics",
+    "days": "days",
+    "yes": "Yes",
+    "no": "No",
+
+    "kpi": {
+      "activeContracts": "Active Contracts",
+      "portfolioValue": "Portfolio Value (Annual)",
+      "expiringSoon": "Expiring (90d)",
+      "overdueObligations": "Overdue Obligations"
+    },
+
+    "contract": {
+      "title": "Contract",
+      "vendor": "Vendor",
+      "type": "Type",
+      "status": "Status",
+      "annualValue": "Annual Value",
+      "expiration": "Expiration",
+      "owner": "Owner",
+      "details": "Contract Details",
+      "number": "Contract Number",
+      "effective": "Effective Date",
+      "noticePeriod": "Notice Period",
+      "autoRenewal": "Auto-Renewal",
+      "financial": "Financial Details",
+      "totalValue": "Total Value",
+      "currency": "Currency",
+      "paymentTerms": "Payment Terms",
+      "signed": "Signed Date",
+      "description": "Description",
+      "notFound": "Contract not found"
+    },
+
+    "type": {
+      "master_agreement": "Master Agreement",
+      "service_agreement": "Service Agreement",
+      "nda": "NDA",
+      "dpa": "DPA",
+      "sla": "SLA Agreement",
+      "license": "License",
+      "maintenance": "Maintenance",
+      "consulting": "Consulting",
+      "other": "Other"
+    },
+
+    "status": {
+      "draft": "Draft",
+      "negotiation": "Negotiation",
+      "pending_approval": "Pending Approval",
+      "active": "Active",
+      "renewal": "Renewal",
+      "expired": "Expired",
+      "terminated": "Terminated",
+      "archived": "Archived"
+    },
+
+    "filter": {
+      "allTypes": "All Types",
+      "allStatuses": "All Statuses"
+    },
+
+    "tab": {
+      "overview": "Overview",
+      "obligations": "Obligations",
+      "sla": "SLA",
+      "amendments": "Amendments",
+      "documents": "Documents"
+    },
+
+    "obligation": {
+      "none": "No obligations",
+      "due": "Due",
+      "responsible": "Responsible",
+      "recurring": "Recurring"
+    },
+
+    "oblStatus": {
+      "pending": "Pending",
+      "in_progress": "In Progress",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    },
+
+    "sla": {
+      "none": "No SLA definitions",
+      "target": "Target",
+      "actual": "Actual",
+      "latest": "Latest",
+      "breach": "Breach",
+      "ok": "OK",
+      "moreMeasurements": "more measurements",
+      "totalMetrics": "Total SLA Metrics",
+      "metOk": "Meeting Target",
+      "breaches": "Breaches"
+    },
+
+    "amendment": {
+      "none": "No amendments"
+    },
+
+    "documents": {
+      "placeholder": "Document management will be linked via the document module."
+    },
+
+    "empty": {
+      "noContracts": "No contracts found"
+    }
   }
 }
