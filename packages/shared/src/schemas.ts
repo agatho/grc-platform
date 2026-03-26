@@ -892,3 +892,140 @@ export const createDocumentEntityLinkSchema = z.object({
   entityId: z.string().uuid(),
   linkDescription: z.string().optional(),
 });
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 5a: ISMS — Assets, Protection Requirements & Incidents
+// ──────────────────────────────────────────────────────────────
+
+export const protectionLevel = z.enum(["normal", "high", "very_high"]);
+export const incidentSeverity = z.enum(["low", "medium", "high", "critical"]);
+export const incidentStatus = z.enum([
+  "detected",
+  "triaged",
+  "contained",
+  "eradicated",
+  "recovered",
+  "lessons_learned",
+  "closed",
+]);
+export const dependencyType = z.enum(["uses", "produces", "manages", "depends_on"]);
+export const ismsObjectCriticality = z.enum(["low", "medium", "high", "critical"]);
+
+// ─── Asset Classification (PRQ) ─────────────────────────────
+
+export const classifyAssetSchema = z.object({
+  confidentialityLevel: protectionLevel,
+  confidentialityReason: z.string().max(2000).optional(),
+  integrityLevel: protectionLevel,
+  integrityReason: z.string().max(2000).optional(),
+  availabilityLevel: protectionLevel,
+  availabilityReason: z.string().max(2000).optional(),
+  reviewDate: z.string().date().optional(),
+});
+
+// ─── Process-Asset Linkage (EAM) ────────────────────────────
+
+export const createProcessAssetSchema = z.object({
+  processId: z.string().uuid(),
+  assetId: z.string().uuid(),
+  dependencyType: dependencyType.default("uses"),
+  criticality: ismsObjectCriticality.default("medium"),
+  notes: z.string().max(2000).optional(),
+});
+
+// ─── Threats ─────────────────────────────────────────────────
+
+export const createThreatSchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(5000).optional(),
+  threatCategory: z.string().max(100).optional(),
+  likelihoodRating: z.number().int().min(1).max(5).optional(),
+  catalogEntryId: z.string().uuid().optional(),
+});
+
+// ─── Vulnerabilities ─────────────────────────────────────────
+
+export const createVulnerabilitySchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(5000).optional(),
+  cveReference: z.string().max(50).optional(),
+  affectedAssetId: z.string().uuid().optional(),
+  severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  mitigationControlId: z.string().uuid().optional(),
+});
+
+// ─── Risk Scenarios ──────────────────────────────────────────
+
+export const createRiskScenarioSchema = z.object({
+  threatId: z.string().uuid(),
+  vulnerabilityId: z.string().uuid().optional(),
+  assetId: z.string().uuid(),
+  riskId: z.string().uuid().optional(),
+  description: z.string().max(5000).optional(),
+});
+
+// ─── Security Incidents ──────────────────────────────────────
+
+export const createIncidentSchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(10000).optional(),
+  severity: incidentSeverity.default("medium"),
+  incidentType: z.string().max(100).optional(),
+  detectedAt: z.string().datetime().optional(),
+  assignedTo: z.string().uuid().optional(),
+  affectedAssetIds: z.array(z.string().uuid()).default([]),
+  affectedProcessIds: z.array(z.string().uuid()).default([]),
+  isDataBreach: z.boolean().default(false),
+});
+
+export const updateIncidentSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(10000).optional(),
+  severity: incidentSeverity.optional(),
+  incidentType: z.string().max(100).optional(),
+  assignedTo: z.string().uuid().nullable().optional(),
+  affectedAssetIds: z.array(z.string().uuid()).optional(),
+  affectedProcessIds: z.array(z.string().uuid()).optional(),
+  isDataBreach: z.boolean().optional(),
+  rootCause: z.string().max(10000).optional(),
+  remediationActions: z.string().max(10000).optional(),
+  lessonsLearned: z.string().max(10000).optional(),
+});
+
+// ─── Incident Status Transition ──────────────────────────────
+
+export const incidentStatusTransitions: Record<string, string[]> = {
+  detected: ["triaged"],
+  triaged: ["contained", "eradicated"],
+  contained: ["eradicated"],
+  eradicated: ["recovered"],
+  recovered: ["lessons_learned"],
+  lessons_learned: ["closed"],
+  closed: ["detected"], // reopen
+};
+
+export function isValidIncidentTransition(from: string, to: string): boolean {
+  return incidentStatusTransitions[from]?.includes(to) ?? false;
+}
+
+export const incidentStatusTransitionSchema = z.object({
+  status: incidentStatus,
+});
+
+// ─── Incident Timeline ───────────────────────────────────────
+
+export const createIncidentTimelineEntrySchema = z.object({
+  actionType: z.enum([
+    "detection",
+    "triage",
+    "containment",
+    "communication",
+    "escalation",
+    "recovery",
+    "eradication",
+    "lessons_learned",
+    "other",
+  ]),
+  description: z.string().min(1).max(5000),
+  occurredAt: z.string().datetime().optional(),
+});
