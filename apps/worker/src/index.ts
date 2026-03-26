@@ -17,6 +17,10 @@ import { processDdExpiry } from "./crons/dd-expiry";
 import { processEsgCompletenessCheck } from "./crons/esg-completeness-check";
 import { processEsgTargetStatus } from "./crons/esg-target-status";
 import { processEsgEmissionAggregate } from "./crons/esg-emission-aggregate";
+import { processCesRecompute } from "./crons/ces-recompute";
+import { processExecutiveKpiSnapshot } from "./crons/executive-kpi-snapshot";
+import { processRegulatoryFeedFetcher } from "./crons/regulatory-feed-fetcher";
+import { processRegulatoryRelevanceScorer } from "./crons/regulatory-relevance-scorer";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -285,6 +289,54 @@ app.post("/crons/esg-emission-aggregate", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] esg-emission-aggregate cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 11: CCM + AI Intelligence cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/ces-recompute", async (c) => {
+  try {
+    const result = await processCesRecompute();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] ces-recompute cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/executive-kpi-snapshot", async (c) => {
+  try {
+    const result = await processExecutiveKpiSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] executive-kpi-snapshot cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/regulatory-feed-fetcher", async (c) => {
+  try {
+    const result = await processRegulatoryFeedFetcher();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] regulatory-feed-fetcher cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/regulatory-relevance-scorer", async (c) => {
+  try {
+    const result = await processRegulatoryRelevanceScorer();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] regulatory-relevance-scorer cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

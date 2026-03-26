@@ -3272,5 +3272,100 @@
       "off_track": "Nicht im Plan",
       "achieved": "Erreicht"
     }
+  },
+  "intelligence": {
+    "ces": {
+      "heatmapTitle": "CES-Heatmap",
+      "heatmapDescription": "Verteilung der Kontrolleffektivitaet nach Kontrolltyp und Frequenz",
+      "refresh": "Aktualisieren",
+      "heatmapMatrixTitle": "Effektivitaetsmatrix",
+      "heatmapMatrixDescription": "Zellenfarbe = durchschnittlicher CES, Groesse = Anzahl Kontrollen. Klicken fuer Details.",
+      "controlType": "Kontrolltyp",
+      "legend": "Legende",
+      "type": {
+        "preventive": "Praeventiv",
+        "detective": "Detektiv",
+        "corrective": "Korrektiv"
+      },
+      "freq": {
+        "event_driven": "Ereignisgesteuert",
+        "continuous": "Kontinuierlich",
+        "daily": "Taeglich",
+        "weekly": "Woechentlich",
+        "monthly": "Monatlich",
+        "quarterly": "Quartalsweise",
+        "annually": "Jaehrlich",
+        "ad_hoc": "Ad hoc"
+      }
+    },
+    "findingAnalytics": {
+      "title": "Finding-Analyse",
+      "description": "Reaktionszeit, SLA-Einhaltung und Altersverteilung fuer Findings",
+      "refresh": "Aktualisieren",
+      "slaConfig": "SLA-Konfiguration",
+      "ttrTitle": "Reaktionszeit (TTR)",
+      "ttrDescription": "Durchschnittliche Behebungszeit nach Schweregrad (rote Linie = SLA-Ziel)",
+      "slaTitle": "SLA-Einhaltung",
+      "slaDescription": "Anteil der fristgerecht behobenen Findings",
+      "agingTitle": "Finding-Altersverteilung",
+      "agingDescription": "Offene Findings gruppiert nach Alter und Schweregrad",
+      "slaConfigTitle": "SLA-Konfiguration",
+      "slaConfigDescription": "Maximale Tage zur Behebung von Findings nach Schweregrad festlegen",
+      "days": "Tage",
+      "saveSla": "SLA-Konfiguration speichern",
+      "noData": "Keine Finding-Daten verfuegbar"
+    },
+    "regulatory": {
+      "title": "Regulatorische Intelligenz",
+      "description": "Regulatorische Updates mit KI-bewerteter Relevanz fuer Ihre Organisation",
+      "refresh": "Aktualisieren",
+      "filters": "Filter",
+      "source": "Quelle",
+      "allSources": "Alle Quellen",
+      "relevance": "Relevanz",
+      "allRelevance": "Alle Relevanzstufen",
+      "highOnly": "Nur hoch (70+)",
+      "mediumPlus": "Mittel+ (40+)",
+      "noItems": "Keine regulatorischen Eintraege gefunden",
+      "summary": "Zusammenfassung",
+      "aiReasoning": "KI-Begruendung",
+      "affectedModules": "Betroffene Module",
+      "previous": "Zurueck",
+      "next": "Weiter"
+    },
+    "executive": {
+      "title": "Management-Dashboard",
+      "description": "Moduluebergreifende KPI-Uebersicht mit Trendanalyse",
+      "refresh": "Aktualisieren",
+      "avgCes": "Durchschn. Kontrolleffektivitaet",
+      "riskScore": "Residualrisiko-Score",
+      "openFindings": "Offene Findings",
+      "auditSla": "Audit-SLA",
+      "esgCompleteness": "ESG-Vollstaendigkeit",
+      "belowThreshold": "unter Schwellenwert",
+      "aboveAppetite": "ueber Risikoappetit",
+      "compliance": "Einhaltungsquote",
+      "datapoints": "der ESRS-Datenpunkte",
+      "trend": "Trend",
+      "noTrendData": "Noch keine Trenddaten verfuegbar"
+    },
+    "aiUsage": {
+      "title": "KI-Nutzung",
+      "description": "KI-Prompt-Nutzung, Token-Verbrauch, Kostenerfassung und Cache-Performance",
+      "refresh": "Aktualisieren",
+      "totalCalls": "Gesamtaufrufe",
+      "totalTokens": "Gesamt-Tokens",
+      "totalCost": "Gesamtkosten",
+      "cacheHitRate": "Cache-Trefferquote",
+      "byTemplate": "Nutzung nach Vorlage",
+      "byTemplateDescription": "Aufschluesselung der KI-Nutzung nach Prompt-Vorlage",
+      "byModel": "Nutzung nach Modell",
+      "template": "Vorlage",
+      "calls": "Aufrufe",
+      "tokens": "Tokens",
+      "cost": "Kosten",
+      "avgLatency": "Durchschn. Latenz",
+      "noData": "Keine KI-Nutzungsdaten verfuegbar"
+    }
   }
 }
