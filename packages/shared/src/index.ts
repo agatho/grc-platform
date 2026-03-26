@@ -5,3 +5,4 @@ export * from "./process-status";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
+export * from "./fair-simulation";
