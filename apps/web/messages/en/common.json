@@ -3272,5 +3272,100 @@
       "off_track": "Off Track",
       "achieved": "Achieved"
     }
+  },
+  "intelligence": {
+    "ces": {
+      "heatmapTitle": "CES Heatmap",
+      "heatmapDescription": "Control Effectiveness Score distribution by control type and frequency",
+      "refresh": "Refresh",
+      "heatmapMatrixTitle": "Effectiveness Matrix",
+      "heatmapMatrixDescription": "Cell color = average CES, size = number of controls. Click to view controls.",
+      "controlType": "Control Type",
+      "legend": "Legend",
+      "type": {
+        "preventive": "Preventive",
+        "detective": "Detective",
+        "corrective": "Corrective"
+      },
+      "freq": {
+        "event_driven": "Event-Driven",
+        "continuous": "Continuous",
+        "daily": "Daily",
+        "weekly": "Weekly",
+        "monthly": "Monthly",
+        "quarterly": "Quarterly",
+        "annually": "Annually",
+        "ad_hoc": "Ad Hoc"
+      }
+    },
+    "findingAnalytics": {
+      "title": "Finding Analytics",
+      "description": "Time-to-Resolution, SLA compliance, and aging distribution for findings",
+      "refresh": "Refresh",
+      "slaConfig": "SLA Config",
+      "ttrTitle": "Time-to-Resolution",
+      "ttrDescription": "Average resolution time by severity (red line = SLA target)",
+      "slaTitle": "SLA Compliance",
+      "slaDescription": "Percentage of findings resolved within SLA window",
+      "agingTitle": "Finding Aging Distribution",
+      "agingDescription": "Open findings grouped by age bucket and severity",
+      "slaConfigTitle": "SLA Configuration",
+      "slaConfigDescription": "Set the maximum number of days to resolve findings by severity",
+      "days": "days",
+      "saveSla": "Save SLA Configuration",
+      "noData": "No finding data available"
+    },
+    "regulatory": {
+      "title": "Regulatory Intelligence",
+      "description": "Regulatory updates with AI-scored relevance for your organization",
+      "refresh": "Refresh",
+      "filters": "Filters",
+      "source": "Source",
+      "allSources": "All Sources",
+      "relevance": "Relevance",
+      "allRelevance": "All Relevance",
+      "highOnly": "High Only (70+)",
+      "mediumPlus": "Medium+ (40+)",
+      "noItems": "No regulatory items found",
+      "summary": "Summary",
+      "aiReasoning": "AI Reasoning",
+      "affectedModules": "Affected Modules",
+      "previous": "Previous",
+      "next": "Next"
+    },
+    "executive": {
+      "title": "Executive Dashboard",
+      "description": "Cross-module KPI overview with trend analysis",
+      "refresh": "Refresh",
+      "avgCes": "Avg. Control Effectiveness",
+      "riskScore": "Residual Risk Score",
+      "openFindings": "Open Findings",
+      "auditSla": "Audit SLA",
+      "esgCompleteness": "ESG Completeness",
+      "belowThreshold": "below threshold",
+      "aboveAppetite": "above appetite",
+      "compliance": "compliance rate",
+      "datapoints": "of ESRS datapoints",
+      "trend": "Trend",
+      "noTrendData": "No trend data available yet"
+    },
+    "aiUsage": {
+      "title": "AI Usage",
+      "description": "AI prompt usage, token consumption, cost tracking, and cache performance",
+      "refresh": "Refresh",
+      "totalCalls": "Total Calls",
+      "totalTokens": "Total Tokens",
+      "totalCost": "Total Cost",
+      "cacheHitRate": "Cache Hit Rate",
+      "byTemplate": "Usage by Template",
+      "byTemplateDescription": "Breakdown of AI usage per prompt template",
+      "byModel": "Usage by Model",
+      "template": "Template",
+      "calls": "Calls",
+      "tokens": "Tokens",
+      "cost": "Cost",
+      "avgLatency": "Avg. Latency",
+      "noData": "No AI usage data available"
+    }
   }
 }

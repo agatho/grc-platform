@@ -10,6 +10,7 @@
     "test": "vitest"
   },
   "dependencies": {
+    "@grc/ai": "*",
     "@grc/auth": "*",
     "@grc/db": "*",
     "@grc/shared": "*",
