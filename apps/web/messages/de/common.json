@@ -1767,5 +1767,227 @@
     "addEntry": "Eintrag hinzufuegen",
     "timelineEntryAdded": "Verlaufseintrag hinzugefuegt",
     "incidentNotFound": "Vorfall nicht gefunden"
+  },
+  "ismsAssessment": {
+    "assessment": {
+      "title": "ISMS Assessments",
+      "subtitle": "Bewertungszyklen fuer Ihr Informationssicherheitsmanagementsystem verwalten",
+      "create": "Assessment erstellen",
+      "wizard": "Assessment-Assistent",
+      "name": "Name",
+      "namePlaceholder": "z.B. ISO 27001:2022 Vollstaendige Bewertung Q3/2026",
+      "description": "Beschreibung",
+      "framework": "Framework",
+      "scopeType": "Scope-Typ",
+      "periodStart": "Zeitraum Beginn",
+      "periodEnd": "Zeitraum Ende",
+      "progress": "Fortschritt",
+      "totalEvaluations": "Evaluierungen gesamt",
+      "completed": "Abgeschlossen",
+      "continue": "Assessment fortsetzen",
+      "latest": "Letztes Assessment",
+      "empty": "Keine Assessments gefunden",
+      "notFound": "Assessment nicht gefunden",
+      "next": "Weiter",
+      "back": "Zurueck",
+      "assetsSelected": "Assets ausgewaehlt",
+      "noAssets": "Keine Assets verfuegbar",
+      "scope": {
+        "full": "Vollstaendig",
+        "department": "Abteilung",
+        "assetGroup": "Asset-Gruppe",
+        "custom": "Manuell"
+      },
+      "statuses": {
+        "planning": "Planung",
+        "in_progress": "In Bearbeitung",
+        "review": "Review",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "tabs": {
+        "overview": "Uebersicht",
+        "evaluations": "Evaluierungen",
+        "risks": "Risiko-Bewertungen"
+      },
+      "steps": {
+        "assets": "Assets auswaehlen",
+        "controls": "Kontrollen bewerten",
+        "risks": "Risiko-Szenarien"
+      },
+      "step1": "Schritt 1: Assets im Scope auswaehlen",
+      "step2": "Schritt 2: Kontrollen bewerten",
+      "step3": "Schritt 3: Risiko-Szenarien ueberpruefen"
+    },
+    "evaluation": {
+      "result": "Ergebnis",
+      "control": "Kontrolle",
+      "evidence": "Evidenz/Nachweis",
+      "evidencePlaceholder": "Beschreiben Sie die Nachweise fuer diese Bewertung...",
+      "notes": "Anmerkungen",
+      "controls": "Kontrollen",
+      "evaluations": "Evaluierungen",
+      "evaluated": "bewertet",
+      "assessedAt": "Bewertet am",
+      "empty": "Noch keine Evaluierungen eingereicht",
+      "effective": "Wirksam",
+      "partiallyEffective": "Teilweise wirksam",
+      "ineffective": "Unwirksam",
+      "notApplicable": "Nicht anwendbar",
+      "notEvaluated": "Nicht bewertet",
+      "saveAndNext": "Speichern & Weiter",
+      "skip": "Ueberspringen",
+      "uploadDocument": "Datei hochladen",
+      "results": {
+        "effective": "Wirksam",
+        "partially_effective": "Teilweise",
+        "ineffective": "Unwirksam",
+        "not_applicable": "N/A",
+        "not_evaluated": "Nicht bewertet"
+      }
+    },
+    "maturity": {
+      "title": "Reifegrad-Analyse",
+      "gapAnalysis": "Gap-Analyse",
+      "radar": "Radar-Diagramm",
+      "radarDescription": "Durchschnittlicher Reifegrad pro Domaene (Aktuell vs. Ziel)",
+      "timeline": "Zeitverlauf",
+      "current": "Aktuell",
+      "target": "Ziel",
+      "gap": "Gap",
+      "control": "Kontrolle",
+      "department": "Abteilung",
+      "severity": "Prioritaet",
+      "critical": "Kritisch",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "level1": "Initial",
+      "level2": "Managed",
+      "level3": "Defined",
+      "level4": "Quantitatively Managed",
+      "level5": "Optimizing",
+      "avgCurrent": "Durchschn. Aktuell",
+      "avgTarget": "Durchschn. Ziel",
+      "avgGap": "Durchschn. Gap",
+      "totalControls": "Kontrollen",
+      "noGaps": "Keine Gaps gefunden — alle Kontrollen erreichen ihren Ziel-Reifegrad",
+      "noData": "Keine Reifegraddaten verfuegbar"
+    },
+    "soa": {
+      "title": "Erklaerung zur Anwendbarkeit (SoA)",
+      "generate": "SoA generieren",
+      "export": "CSV exportieren",
+      "controls": "Kontrollen",
+      "applicable": "Anwendbar",
+      "notApplicable": "Nicht anwendbar",
+      "partiallyApplicable": "Teilweise anwendbar",
+      "implementation": "Umsetzung",
+      "implementationPct": "Umsetzungsgrad",
+      "notImplementedApplicable": "Nicht umgesetzt (anwendbar)",
+      "implemented": "Umgesetzt",
+      "partiallyImplemented": "Teilweise umgesetzt",
+      "planned": "Geplant",
+      "notImplemented": "Nicht umgesetzt",
+      "justification": "Begruendung",
+      "notes": "Anmerkungen",
+      "linkedControl": "Verknuepfte Kontrolle",
+      "responsible": "Verantwortlich",
+      "reference": "Referenz",
+      "controlName": "Kontrolle",
+      "editEntry": "SoA-Eintrag bearbeiten",
+      "empty": "Keine SoA-Eintraege gefunden. Aus ISO 27002-Katalog generieren.",
+      "searchPlaceholder": "Kontrollen suchen...",
+      "applicabilityValues": {
+        "applicable": "Anwendbar",
+        "not_applicable": "Nicht anwendbar",
+        "partially_applicable": "Teilweise anwendbar"
+      },
+      "implementationValues": {
+        "implemented": "Umgesetzt",
+        "partially_implemented": "Teilweise umgesetzt",
+        "planned": "Geplant",
+        "not_implemented": "Nicht umgesetzt"
+      },
+      "filters": {
+        "all": "Alle",
+        "applicable": "Anwendbar",
+        "not_applicable": "Nicht anwendbar",
+        "not_implemented": "Nicht umgesetzt"
+      }
+    },
+    "review": {
+      "title": "Management Review",
+      "subtitle": "ISO 27001 Klausel 9.3 Management Reviews",
+      "create": "Review planen",
+      "titleField": "Titel",
+      "date": "Review-Datum",
+      "nextReview": "Naechstes Review",
+      "last": "Letztes Review",
+      "noneYet": "Noch keine Reviews",
+      "empty": "Keine Management Reviews gefunden",
+      "notFound": "Review nicht gefunden",
+      "complete": "Review abschliessen",
+      "inputs": "Eingaben",
+      "decisions": "Entscheidungen",
+      "actionItems": "Massnahmen",
+      "minutes": "Protokoll",
+      "minutesLabel": "Sitzungsprotokoll",
+      "minutesPlaceholder": "Protokollieren Sie die Sitzung hier...",
+      "changesInContext": "Veraenderungen im Kontext",
+      "changesInContextPlaceholder": "Beschreiben Sie Veraenderungen im externen/internen Kontext...",
+      "performance": "Leistungsrueckmeldung",
+      "auditResults": "Audit-Ergebnisse",
+      "improvements": "Verbesserungsmoeglichkeiten",
+      "addDecision": "Entscheidung hinzufuegen",
+      "addAction": "Massnahme hinzufuegen",
+      "noActions": "Noch keine Massnahmen",
+      "actionTitle": "Massnahme",
+      "responsible": "Verantwortlich",
+      "dueDate": "Frist",
+      "actionStatus": "Status",
+      "statuses": {
+        "planned": "Geplant",
+        "in_progress": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "cancelled": "Abgebrochen"
+      },
+      "tabs": {
+        "inputs": "Eingaben",
+        "decisions": "Entscheidungen",
+        "actions": "Massnahmen",
+        "minutes": "Protokoll"
+      },
+      "actionStatuses": {
+        "open": "Offen",
+        "in_progress": "In Arbeit",
+        "completed": "Erledigt"
+      }
+    },
+    "riskEval": {
+      "residualLikelihood": "Residuale Eintrittswahrscheinlichkeit",
+      "residualImpact": "Residuale Auswirkung",
+      "residualRisk": "Residuales Risiko",
+      "decision": "Entscheidung",
+      "justification": "Begruendung",
+      "scenario": "Risiko-Szenario",
+      "scenariosEvaluated": "Szenarien bewertet",
+      "noDescription": "Keine Beschreibung",
+      "empty": "Noch keine Risiko-Bewertungen",
+      "decisions": {
+        "accept": "Akzeptieren",
+        "mitigate": "Mitigieren",
+        "transfer": "Transferieren",
+        "avoid": "Vermeiden",
+        "pending": "Ausstehend"
+      }
+    },
+    "complianceScore": {
+      "title": "ISMS Uebersicht",
+      "label": "ISMS Compliance Score"
+    },
+    "actions": {
+      "cancel": "Abbrechen",
+      "save": "Speichern"
+    }
   }
 }

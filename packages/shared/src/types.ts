@@ -892,3 +892,158 @@ export interface IncidentTimelineEntry {
   addedBy: string;
   createdAt: string;
 }
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 5b: ISMS Assessment types
+// ──────────────────────────────────────────────────────────────
+
+export type AssessmentStatus = "planning" | "in_progress" | "review" | "completed" | "cancelled";
+export type AssessmentScopeType = "full" | "department" | "asset_group" | "custom";
+export type EvalResult = "effective" | "partially_effective" | "ineffective" | "not_applicable" | "not_evaluated";
+export type RiskDecision = "accept" | "mitigate" | "transfer" | "avoid" | "pending";
+export type SoaApplicability = "applicable" | "not_applicable" | "partially_applicable";
+export type SoaImplementation = "implemented" | "partially_implemented" | "planned" | "not_implemented";
+export type ReviewStatus = "planned" | "in_progress" | "completed" | "cancelled";
+
+export interface AssessmentRun {
+  id: string;
+  orgId: string;
+  name: string;
+  description?: string;
+  status: AssessmentStatus;
+  scopeType: AssessmentScopeType;
+  scopeFilter?: unknown;
+  framework: string;
+  periodStart?: string;
+  periodEnd?: string;
+  leadAssessorId?: string;
+  completionPercentage: number;
+  completedEvaluations: number;
+  totalEvaluations: number;
+  completedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+export interface AssessmentControlEval {
+  id: string;
+  orgId: string;
+  assessmentRunId: string;
+  controlId: string;
+  assetId?: string;
+  result: EvalResult;
+  evidence?: string;
+  notes?: string;
+  evidenceDocumentIds: string[];
+  currentMaturity?: number;
+  targetMaturity?: number;
+  assessedBy?: string;
+  assessedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface AssessmentRiskEval {
+  id: string;
+  orgId: string;
+  assessmentRunId: string;
+  riskScenarioId: string;
+  residualLikelihood?: number;
+  residualImpact?: number;
+  decision: RiskDecision;
+  justification?: string;
+  evaluatedBy?: string;
+  evaluatedAt?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ControlMaturity {
+  id: string;
+  orgId: string;
+  controlId: string;
+  assessmentRunId?: string;
+  currentMaturity: number;
+  targetMaturity: number;
+  justification?: string;
+  assessedBy?: string;
+  assessedAt: string;
+  createdAt: string;
+}
+
+export interface SoaEntry {
+  id: string;
+  orgId: string;
+  catalogEntryId: string;
+  controlId?: string;
+  applicability: SoaApplicability;
+  applicabilityJustification?: string;
+  implementation: SoaImplementation;
+  implementationNotes?: string;
+  responsibleId?: string;
+  lastReviewed?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface ManagementReview {
+  id: string;
+  orgId: string;
+  title: string;
+  description?: string;
+  reviewDate: string;
+  status: ReviewStatus;
+  chairId?: string;
+  participantIds: string[];
+  changesInContext?: string;
+  performanceFeedback?: string;
+  riskAssessmentResults?: string;
+  auditResults?: string;
+  improvementOpportunities?: string;
+  decisions?: unknown;
+  actionItems?: unknown;
+  minutes?: string;
+  nextReviewDate?: string;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string;
+}
+
+// ─── Sprint 5b: Computed / Dashboard types ───────────────────
+
+export interface IsmsComplianceScore {
+  totalControls: number;
+  effective: number;
+  partiallyEffective: number;
+  ineffective: number;
+  notEvaluated: number;
+  compliancePercentage: number;
+}
+
+export interface SoaStats {
+  total: number;
+  applicable: number;
+  notApplicable: number;
+  partiallyApplicable: number;
+  implemented: number;
+  partiallyImplemented: number;
+  planned: number;
+  notImplemented: number;
+  implementationPercentage: number;
+}
+
+export interface MaturityGapRow {
+  controlId: string;
+  controlTitle: string;
+  currentMaturity: number;
+  targetMaturity: number;
+  gap: number;
+  department?: string;
+}
+
+export interface RadarDataPoint {
+  axis: string;
+  current: number;
+  target: number;
+}
