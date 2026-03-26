@@ -7,10 +7,12 @@ import * as taskSchema from "./schema/task";
 import * as moduleSchema from "./schema/module";
 import * as assetSchema from "./schema/asset";
 import * as workItemSchema from "./schema/work-item";
+import * as controlSchema from "./schema/control";
+import * as documentSchema from "./schema/document";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema },
 });
 
 export type Database = typeof db;
@@ -21,3 +23,5 @@ export * from "./schema/task";
 export * from "./schema/module";
 export * from "./schema/asset";
 export * from "./schema/work-item";
+export * from "./schema/control";
+export * from "./schema/document";

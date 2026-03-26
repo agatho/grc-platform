@@ -9,12 +9,11 @@ import {
   Loader2,
   Search,
   RefreshCcw,
-  ShieldCheck,
+  FileText,
 } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -25,29 +24,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type {
-  ControlType,
-  ControlFrequency,
-  ControlStatus,
-  AutomationLevel,
-} from "@grc/shared";
+import type { DocumentCategory, DocumentStatus } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
 // ---------------------------------------------------------------------------
 
-interface ControlRow {
+interface DocumentRow {
   id: string;
   title: string;
-  controlType: ControlType;
-  frequency: ControlFrequency;
-  automationLevel: AutomationLevel;
-  status: ControlStatus;
-  assertions: string[];
-  ownerId?: string;
+  category: DocumentCategory;
+  status: DocumentStatus;
+  currentVersion: number;
   ownerName?: string;
-  department?: string;
-  lastTestedAt?: string;
+  publishedAt?: string;
+  acknowledgmentPct?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -56,47 +47,58 @@ interface ControlRow {
 // Constants
 // ---------------------------------------------------------------------------
 
-const STATUSES: ControlStatus[] = [
-  "designed",
-  "implemented",
-  "effective",
-  "ineffective",
-  "retired",
+const CATEGORIES: DocumentCategory[] = [
+  "policy",
+  "procedure",
+  "guideline",
+  "template",
+  "record",
+  "tom",
+  "dpa",
+  "bcp",
+  "soa",
+  "other",
 ];
 
-const TYPES: ControlType[] = ["preventive", "detective", "corrective"];
-
-const FREQUENCIES: ControlFrequency[] = [
-  "event_driven",
-  "continuous",
-  "daily",
-  "weekly",
-  "monthly",
-  "quarterly",
-  "annually",
-  "ad_hoc",
+const STATUSES: DocumentStatus[] = [
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived",
+  "expired",
 ];
 
 // ---------------------------------------------------------------------------
 // Helpers
 // ---------------------------------------------------------------------------
 
-function typeBadgeClass(type: ControlType): string {
-  const map: Record<ControlType, string> = {
-    preventive: "bg-blue-100 text-blue-800 border-blue-200",
-    detective: "bg-amber-100 text-amber-800 border-amber-200",
-    corrective: "bg-purple-100 text-purple-800 border-purple-200",
+function categoryBadgeClass(category: DocumentCategory): string {
+  const map: Record<DocumentCategory, string> = {
+    policy: "bg-indigo-100 text-indigo-800 border-indigo-200",
+    procedure: "bg-blue-100 text-blue-800 border-blue-200",
+    guideline: "bg-cyan-100 text-cyan-800 border-cyan-200",
+    template: "bg-violet-100 text-violet-800 border-violet-200",
+    record: "bg-amber-100 text-amber-800 border-amber-200",
+    tom: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    dpa: "bg-teal-100 text-teal-800 border-teal-200",
+    bcp: "bg-orange-100 text-orange-800 border-orange-200",
+    soa: "bg-red-100 text-red-800 border-red-200",
+    other: "bg-gray-100 text-gray-700 border-gray-200",
   };
-  return map[type] ?? "bg-gray-100 text-gray-600 border-gray-200";
+  return map[category] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function automationBadgeClass(level: AutomationLevel): string {
-  const map: Record<AutomationLevel, string> = {
-    manual: "bg-gray-100 text-gray-700 border-gray-200",
-    semi_automated: "bg-cyan-100 text-cyan-800 border-cyan-200",
-    fully_automated: "bg-emerald-100 text-emerald-800 border-emerald-200",
+function statusBadgeClass(status: DocumentStatus): string {
+  const map: Record<DocumentStatus, string> = {
+    draft: "bg-gray-100 text-gray-700 border-gray-200",
+    in_review: "bg-blue-100 text-blue-800 border-blue-200",
+    approved: "bg-emerald-100 text-emerald-800 border-emerald-200",
+    published: "bg-green-100 text-green-800 border-green-200",
+    archived: "bg-slate-200 text-slate-600 border-slate-300",
+    expired: "bg-red-100 text-red-800 border-red-200",
   };
-  return map[level] ?? "bg-gray-100 text-gray-600 border-gray-200";
+  return map[status] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
 function formatDate(dateStr?: string): string {
@@ -108,27 +110,26 @@ function formatDate(dateStr?: string): string {
 // Main Page
 // ---------------------------------------------------------------------------
 
-export default function ControlsPage() {
+export default function DocumentsPage() {
   return (
-    <ModuleGate moduleKey="ics">
-      <ControlsPageInner />
+    <ModuleGate moduleKey="dms">
+      <DocumentsPageInner />
     </ModuleGate>
   );
 }
 
-function ControlsPageInner() {
-  const t = useTranslations("controls");
+function DocumentsPageInner() {
+  const t = useTranslations("documents");
   const router = useRouter();
 
-  const [controls, setControls] = useState<ControlRow[]>([]);
+  const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
   // Filters
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
-  const [typeFilter, setTypeFilter] = useState<string>("__all__");
-  const [frequencyFilter, setFrequencyFilter] = useState<string>("__all__");
+  const [categoryFilter, setCategoryFilter] = useState<string>("__all__");
 
   const [debouncedSearch, setDebouncedSearch] = useState("");
   useEffect(() => {
@@ -136,49 +137,42 @@ function ControlsPageInner() {
     return () => clearTimeout(timer);
   }, [searchQuery]);
 
-  const fetchControls = useCallback(async () => {
+  const fetchDocuments = useCallback(async () => {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/v1/controls?limit=500&sortBy=title&sortDir=asc");
-      if (!res.ok) throw new Error("Failed to fetch controls");
+      const res = await fetch("/api/v1/documents?limit=500&sortBy=title&sortDir=asc");
+      if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      setControls(json.data ?? []);
+      setDocuments(json.data ?? []);
     } catch {
       setError(true);
-      setControls([]);
+      setDocuments([]);
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    void fetchControls();
-  }, [fetchControls]);
+    void fetchDocuments();
+  }, [fetchDocuments]);
 
-  const filteredControls = useMemo(() => {
-    let result = controls;
+  const filtered = useMemo(() => {
+    let result = documents;
     if (debouncedSearch) {
       const q = debouncedSearch.toLowerCase();
-      result = result.filter(
-        (c) =>
-          c.title.toLowerCase().includes(q) ||
-          c.department?.toLowerCase().includes(q),
-      );
+      result = result.filter((d) => d.title.toLowerCase().includes(q));
     }
     if (statusFilter !== "__all__") {
-      result = result.filter((c) => c.status === statusFilter);
+      result = result.filter((d) => d.status === statusFilter);
     }
-    if (typeFilter !== "__all__") {
-      result = result.filter((c) => c.controlType === typeFilter);
-    }
-    if (frequencyFilter !== "__all__") {
-      result = result.filter((c) => c.frequency === frequencyFilter);
+    if (categoryFilter !== "__all__") {
+      result = result.filter((d) => d.category === categoryFilter);
     }
     return result;
-  }, [controls, debouncedSearch, statusFilter, typeFilter, frequencyFilter]);
+  }, [documents, debouncedSearch, statusFilter, categoryFilter]);
 
-  const columns: ColumnDef<ControlRow, unknown>[] = useMemo(
+  const columns: ColumnDef<DocumentRow, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "title",
@@ -187,7 +181,7 @@ function ControlsPageInner() {
         ),
         cell: ({ row }) => (
           <Link
-            href={`/controls/${row.original.id}`}
+            href={`/documents/${row.original.id}`}
             className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
           >
             {row.original.title}
@@ -195,35 +189,14 @@ function ControlsPageInner() {
         ),
       },
       {
-        accessorKey: "controlType",
-        header: t("form.type"),
+        accessorKey: "category",
+        header: t("form.category"),
         cell: ({ row }) => (
           <Badge
             variant="outline"
-            className={typeBadgeClass(row.original.controlType)}
+            className={categoryBadgeClass(row.original.category)}
           >
-            {t(`type.${row.original.controlType}`)}
-          </Badge>
-        ),
-      },
-      {
-        accessorKey: "frequency",
-        header: t("form.frequency"),
-        cell: ({ row }) => (
-          <span className="text-sm text-gray-700">
-            {t(`frequency.${row.original.frequency}`)}
-          </span>
-        ),
-      },
-      {
-        accessorKey: "automationLevel",
-        header: t("form.automation"),
-        cell: ({ row }) => (
-          <Badge
-            variant="outline"
-            className={automationBadgeClass(row.original.automationLevel)}
-          >
-            {t(`automation.${row.original.automationLevel}`)}
+            {t(`category.${row.original.category}`)}
           </Badge>
         ),
       },
@@ -232,7 +205,11 @@ function ControlsPageInner() {
         header: ({ column }) => (
           <SortableHeader column={column}>{t("form.status")}</SortableHeader>
         ),
-        cell: ({ row }) => <ControlStatusBadge status={row.original.status} />,
+        cell: ({ row }) => (
+          <Badge variant="outline" className={statusBadgeClass(row.original.status)}>
+            {t(`status.${row.original.status}`)}
+          </Badge>
+        ),
       },
       {
         id: "owner",
@@ -253,21 +230,49 @@ function ControlsPageInner() {
         },
       },
       {
-        accessorKey: "lastTestedAt",
+        accessorKey: "currentVersion",
+        header: t("form.version"),
+        cell: ({ row }) => (
+          <span className="font-mono text-xs text-gray-600">
+            v{row.original.currentVersion}
+          </span>
+        ),
+      },
+      {
+        accessorKey: "publishedAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>{t("form.lastTested")}</SortableHeader>
+          <SortableHeader column={column}>{t("form.publishedAt")}</SortableHeader>
         ),
         cell: ({ row }) => (
           <span className="text-sm text-gray-600">
-            {formatDate(row.original.lastTestedAt)}
+            {formatDate(row.original.publishedAt)}
           </span>
         ),
+      },
+      {
+        id: "acknowledgment",
+        header: t("form.acknowledgment"),
+        cell: ({ row }) => {
+          const pct = row.original.acknowledgmentPct;
+          if (pct == null) return <span className="text-gray-400">{"\u2014"}</span>;
+          return (
+            <div className="flex items-center gap-2">
+              <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
+                <div
+                  className={`h-full rounded-full ${pct >= 80 ? "bg-emerald-500" : pct >= 50 ? "bg-yellow-500" : "bg-red-500"}`}
+                  style={{ width: `${pct}%` }}
+                />
+              </div>
+              <span className="text-xs text-gray-600">{pct}%</span>
+            </div>
+          );
+        },
       },
     ],
     [t],
   );
 
-  if (loading && controls.length === 0) {
+  if (loading && documents.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
         <Loader2 size={24} className="animate-spin text-gray-400" />
@@ -282,19 +287,19 @@ function ControlsPageInner() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t("register")}</h1>
           <p className="text-sm text-gray-500 mt-1">
-            {t("title")} &mdash; {filteredControls.length} {t("register")}
+            {t("title")} &mdash; {filtered.length} {t("itemCount")}
           </p>
         </div>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
-            onClick={() => fetchControls()}
+            onClick={() => fetchDocuments()}
             disabled={loading}
           >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
-          <Button size="sm" onClick={() => router.push("/controls/new")}>
+          <Button size="sm" onClick={() => router.push("/documents/new")}>
             <Plus size={16} />
             {t("create")}
           </Button>
@@ -331,29 +336,15 @@ function ControlsPageInner() {
           </SelectContent>
         </Select>
 
-        <Select value={typeFilter} onValueChange={setTypeFilter}>
+        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
           <SelectTrigger className="w-[140px] h-8 text-xs">
-            <SelectValue placeholder={t("form.type")} />
+            <SelectValue placeholder={t("form.category")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">{t("filter.allTypes")}</SelectItem>
-            {TYPES.map((tt) => (
-              <SelectItem key={tt} value={tt}>
-                {t(`type.${tt}`)}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-
-        <Select value={frequencyFilter} onValueChange={setFrequencyFilter}>
-          <SelectTrigger className="w-[150px] h-8 text-xs">
-            <SelectValue placeholder={t("form.frequency")} />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="__all__">{t("filter.allFrequencies")}</SelectItem>
-            {FREQUENCIES.map((f) => (
-              <SelectItem key={f} value={f}>
-                {t(`frequency.${f}`)}
+            <SelectItem value="__all__">{t("filter.allCategories")}</SelectItem>
+            {CATEGORIES.map((c) => (
+              <SelectItem key={c} value={c}>
+                {t(`category.${c}`)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -363,14 +354,9 @@ function ControlsPageInner() {
       {/* Error */}
       {error && (
         <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-          <ShieldCheck size={32} className="mb-2" />
+          <FileText size={32} className="mb-2" />
           <p className="text-sm">{t("loadError")}</p>
-          <Button
-            variant="outline"
-            size="sm"
-            className="mt-2"
-            onClick={() => fetchControls()}
-          >
+          <Button variant="outline" size="sm" className="mt-2" onClick={() => fetchDocuments()}>
             {t("retry")}
           </Button>
         </div>
@@ -379,19 +365,19 @@ function ControlsPageInner() {
       {/* Table */}
       {!error && (
         <>
-          {filteredControls.length === 0 && !loading ? (
+          {filtered.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
               <Search size={28} className="text-gray-300 mb-3" />
               <p className="text-sm font-medium text-gray-500">
-                {debouncedSearch || statusFilter !== "__all__" || typeFilter !== "__all__"
+                {debouncedSearch || statusFilter !== "__all__" || categoryFilter !== "__all__"
                   ? t("empty.noResults")
-                  : t("empty.noControls")}
+                  : t("empty.noDocuments")}
               </p>
             </div>
           ) : (
             <DataTable
               columns={columns}
-              data={filteredControls}
+              data={filtered}
               searchKey="title"
               searchPlaceholder={t("searchPlaceholder")}
               pageSize={15}
