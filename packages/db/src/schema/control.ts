@@ -305,6 +305,8 @@ export const finding = pgTable(
       .references(() => risk.id),
     taskId: uuid("task_id")
       .references(() => task.id),
+    // Sprint 8: FK to audit table (added via migration SQL, no import to avoid circular dep)
+    auditId: uuid("audit_id"),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     severity: findingSeverityEnum("severity").notNull(),
