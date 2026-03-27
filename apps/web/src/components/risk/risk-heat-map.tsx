@@ -80,7 +80,7 @@ export function RiskHeatMap({
 
   // Listen for resize
   if (typeof window !== "undefined") {
-    // eslint-disable-next-line react-hooks/rules-of-hooks
+    
     useMemo(() => {
       const handleResize = () => setWindowWidth(window.innerWidth);
       window.addEventListener("resize", handleResize);

@@ -47,8 +47,7 @@ jobs:
 
       - name: ESLint
         working-directory: apps/web
-        run: npx next lint || true
-        # Note: next lint has circular JSON issue with eslint-config-next — non-blocking
+        run: npx eslint . --no-error-on-unmatched-pattern
 
       - name: Prettier (format check)
         run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore

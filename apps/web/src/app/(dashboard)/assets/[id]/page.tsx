@@ -398,7 +398,7 @@ export default function AssetDetailPage() {
             : "Database",
       });
     }
-  }, [asset]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [asset]);
 
   const handleCiaUpdate = async (field: string, value: number | null) => {
     if (!asset) return;

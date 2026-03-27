@@ -6,7 +6,7 @@
     "dev": "next dev --turbo",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest"
   },
   "dependencies": {
@@ -40,6 +40,7 @@
     "sonner": "^2.0.7"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3.3.5",
     "@testing-library/react": "^16.1",
     "@types/node": "^22",
     "@types/react": "^19.0",
@@ -47,6 +48,7 @@
     "eslint-config-next": "^16.2.1",
     "tailwindcss": "^4.0",
     "typescript": "^5.7",
+    "typescript-eslint": "^8.57.2",
     "vitest": "^3.0"
   }
 }

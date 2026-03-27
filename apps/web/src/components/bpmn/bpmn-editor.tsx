@@ -197,7 +197,7 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
         }
       };
       // Only mount once — readOnly and initialXml are treated as initial values
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      
     }, []);
 
     // Apply risk overlays when data changes
@@ -309,7 +309,7 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           },
         };
       },
-      // eslint-disable-next-line react-hooks/exhaustive-deps
+      
       [loading],
     );
 

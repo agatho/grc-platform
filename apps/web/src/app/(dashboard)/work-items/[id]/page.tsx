@@ -649,7 +649,7 @@ export default function WorkItemDetailPage() {
         icon: item.typeIcon,
       });
     }
-  }, [item]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [item]);
 
   const handleTransition = async (newStatus: string) => {
     setTransitioning(true);

@@ -40,7 +40,7 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
         setOrgs(list);
       })
       .catch(() => {});
-  }, [session]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [session]);
 
   // Close on outside click
   useEffect(() => {
