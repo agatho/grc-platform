@@ -169,6 +169,13 @@
       "when": 1774642736100,
       "tag": "0023_same_celestials",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1774644167852,
+      "tag": "0024_sprint13a_branding",
+      "breakpoints": true
     }
   ]
 }
