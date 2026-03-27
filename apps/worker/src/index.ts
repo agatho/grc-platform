@@ -35,6 +35,7 @@ import { processPlaybookSuggestion } from "./crons/playbook-suggestion";
 import { processCalendarDigest } from "./crons/calendar-digest";
 import { processCalendarOverdueCheck } from "./crons/calendar-overdue-check";
 import { processDashboardCleanup } from "./crons/dashboard-cleanup";
+import { processScheduledExport } from "./crons/scheduled-export";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -536,6 +537,21 @@ app.post("/crons/dashboard-cleanup", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] dashboard-cleanup cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 19: Bulk Import/Export cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/scheduled-export", async (c) => {
+  try {
+    const result = await processScheduledExport();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] scheduled-export cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
