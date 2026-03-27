@@ -11,6 +11,7 @@ import {
   Shield,
   FileText,
   Activity,
+  BookOpen,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -20,6 +21,7 @@ import { BreachCountdown } from "@/components/isms/breach-countdown";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { PlaybookTab } from "@/components/isms/playbook-tab";
 import type { SecurityIncident, IncidentTimelineEntry, IncidentStatus } from "@grc/shared";
 
 const STATUS_ORDER: IncidentStatus[] = [
@@ -205,6 +207,9 @@ function IncidentDetailInner() {
           <TabsTrigger value="assets" className="gap-1.5">
             <Shield size={14} /> {t("affectedAssets")}
           </TabsTrigger>
+          <TabsTrigger value="playbook" className="gap-1.5">
+            <BookOpen size={14} /> Playbook
+          </TabsTrigger>
           <TabsTrigger value="rootcause" className="gap-1.5">
             {t("rootCause")}
           </TabsTrigger>
@@ -325,6 +330,11 @@ function IncidentDetailInner() {
               </div>
             )}
           </div>
+        </TabsContent>
+
+        {/* Playbook */}
+        <TabsContent value="playbook" className="mt-4">
+          <PlaybookTab incidentId={incidentId} />
         </TabsContent>
 
         {/* Root Cause */}
