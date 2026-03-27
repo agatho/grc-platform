@@ -32,14 +32,15 @@ cd ../.. && npm run dev
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | Next.js 15, React 19, Tailwind CSS 4, shadcn/ui, Recharts, bpmn-js |
-| Backend | Node.js 22, TypeScript 5, Hono.js (Worker) |
-| Database | PostgreSQL 16, Drizzle ORM, RLS, pgcrypto |
+| Frontend | Next.js 15.5, React 19.2, Tailwind CSS 4.2, shadcn/ui, Recharts 2.15, bpmn-js 18, Lucide 1.7 |
+| Backend | Node.js 22, TypeScript 6, Hono.js 4.12 (Worker) |
+| Database | PostgreSQL 16, Drizzle ORM 0.45, RLS, pgcrypto |
 | Auth | Auth.js v5 (self-hosted) + Custom RBAC + Three Lines of Defense |
-| Email | Resend SDK + React Email templates (DE/EN) |
-| AI | Claude API (BPMN generation) |
-| Monorepo | Turborepo + npm workspaces |
-| CI/CD | GitHub Actions (lint, test, build, CodeQL, Dependabot) |
+| Email | Resend 6.9 SDK + React Email templates (27 templates, DE/EN) |
+| AI | Claude CLI (subscription) + Claude API + OpenAI + Gemini + Ollama |
+| Testing | Vitest 4.1, 302 unit tests + 16 integration tests |
+| Monorepo | Turborepo 2.8 + npm workspaces |
+| CI/CD | GitHub Actions (ESLint, TypeScript, tests, CodeQL v4, Dependabot) |
 
 ## Project Structure
 
@@ -142,17 +143,83 @@ ARCTOS uses a feature-gate architecture. Each module can be independently enable
 - Process ↔ risk, asset, control, document linkages
 - Automated process review cycle reminders
 
+### Sprint 4 — Internal Controls + Document Management
+- Control register with COSO assertions, ToD/ToE testing, test campaigns
+- Finding management (5-level severity taxonomy)
+- Risk-Control Matrix (RCM) with effectiveness ratings
+- Document repository with versioning, acknowledgments, full-text search
+
+### Sprint 4b — Catalog & Framework Layer
+- Risk catalogs (Cambridge v2, NIST CSF 2, BSI, WEF) + control catalogs (ISO 27002, CIS v8)
+- 487 catalog entries + 88 cross-framework mappings
+- FAIR Monte Carlo risk simulation
+- Methodology selector (ISO 31000, COSO, FAIR, Hybrid)
+
+### Sprint 5a/5b — ISMS (Information Security)
+- Asset protection requirements (CIA classification)
+- Threats, vulnerabilities, risk scenarios
+- Security incidents with 72h GDPR breach countdown
+- ISMS assessment wizard (controls + risk evaluation)
+- Control maturity (1-5 CMMI scale) + Statement of Applicability
+- Management review (ISO 27001 clause 9.3)
+
+### Sprint 6 — Business Continuity (BCMS)
+- Business Impact Analysis with financial tiers + qualitative dimensions
+- BCP with procedures, resources, approval workflow
+- Crisis management with immutable log + team composition
+- Recovery strategies (6 types) + BC exercises
+
+### Sprint 7 — Data Protection (DPMS)
+- RoPA register (GDPR Art. 30) with annual review
+- DPIA wizard (5-step, Art. 35 trigger assessment)
+- DSR tracking (30-day SLA with daily monitor)
+- Data breach management (72h countdown, hourly monitor)
+- Transfer Impact Assessment (Schrems II)
+
+### Sprint 8 — Audit Management
+- Audit universe with risk-based priority planning
+- Checklist auto-generation from controls in scope
+- 7-step audit workflow with finding creation
+- Findings use shared entity (source='audit')
+
+### Sprint 9/9b — TPRM + Contracts + Supplier Portal
+- Vendor management with tier classification + due diligence
+- Contract lifecycle (8 states) with SLA monitoring
+- LkSG supply chain compliance
+- External supplier portal with token-based questionnaires
+
+### Sprint 10 — ESG/CSRD (Sustainability)
+- Double materiality assessment with stakeholder voting
+- ESRS datapoint registry + metrics + measurements
+- Scope 1/2/3 emission tracking + target progress
+- ESRS annual report with completeness check
+
+### Sprint 11 — CCM + AI Intelligence
+- Control Effectiveness Score (CES) engine
+- Residual risk auto-computation from CES
+- Finding analytics (TTR, SLA, aging)
+- AI-powered control suggestions, RCM gap analysis, root cause patterns
+- Regulatory intelligence feed (BSI, EUR-Lex, BaFin)
+- Executive dashboard with 12-month trends
+
+### Sprint 12 — Whistleblowing (HinSchG)
+- Anonymous reporting with AES-256-GCM encryption
+- Token-based mailbox (6-month validity)
+- 7-day acknowledge + 3-month response deadlines
+- Ombudsperson-only case access (admin sees statistics only)
+
 ## Database
 
-- **39 tables** across 10 Drizzle migrations
+- **~142 tables** across 23 Drizzle migrations
 - **RLS** on all business tables (org_id isolation)
 - **Audit triggers** with SHA-256 hash chain on all entity tables
-- **Append-only rules** on 3 log tables (audit_log, access_log, data_export_log)
+- **Append-only rules** on log tables (audit_log, access_log, data_export_log, crisis_log)
+- **487 catalog entries** + 88 cross-framework mappings + 20 ESRS datapoints
 
 ## Testing
 
 ```bash
-# Unit tests (318 total)
+# Unit tests (302 total)
 npx turbo test
 
 # Integration tests (RLS + audit triggers)
@@ -163,10 +230,10 @@ npx vitest run --config vitest.rls.config.ts
 
 | Package | Tests | Coverage |
 |---------|-------|----------|
-| @grc/shared | 179 | Zod schemas, BPMN parser, status transitions |
+| @grc/shared | 179 | Zod schemas, BPMN parser, status transitions, CES |
 | @grc/auth | 57 | RBAC middleware, provider helpers, Azure AD |
 | @grc/web | 40 | Date/number format utilities |
-| @grc/email | 26 | EmailService, retry logic, templates |
+| @grc/email | 26 | EmailService, retry logic, 27 templates |
 | @grc/db (integration) | 16 | RLS isolation, audit triggers, hash chain |
 
 ## Security

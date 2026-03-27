@@ -15,15 +15,15 @@
   "dependencies": {
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
-    "drizzle-orm": "^0.45",
-    "drizzle-zod": "^0.8",
-    "postgres": "^3.4"
+    "drizzle-orm": "^0.45.1",
+    "drizzle-zod": "^0.8.3",
+    "postgres": "^3.4.8"
   },
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
-    "tsx": "^4.19",
+    "tsx": "^4.21.0",
     "typescript": "^5.7",
-    "vitest": "^3.0"
+    "vitest": "^4.1.2"
   }
 }

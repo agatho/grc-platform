@@ -7,9 +7,9 @@ const { mockResendSend } = vi.hoisted(() => ({
 }));
 
 vi.mock("resend", () => ({
-  Resend: vi.fn().mockImplementation(() => ({
-    emails: { send: mockResendSend },
-  })),
+  Resend: class MockResend {
+    emails = { send: mockResendSend };
+  },
 }));
 
 import { EmailService } from "../src/EmailService";
