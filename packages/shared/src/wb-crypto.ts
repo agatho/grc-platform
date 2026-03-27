@@ -6,7 +6,13 @@ import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypt
 const ALGO = "aes-256-gcm";
 
 function getKey(): Buffer {
-  const keyHex = process.env.WB_ENCRYPTION_KEY || "0".repeat(64);
+  const keyHex = process.env.WB_ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64) {
+    throw new Error(
+      "SECURITY: WB_ENCRYPTION_KEY must be set to a 64-character hex string (32 bytes). " +
+      "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+    );
+  }
   return Buffer.from(keyHex, "hex");
 }
 
