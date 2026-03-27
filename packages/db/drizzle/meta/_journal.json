@@ -155,6 +155,13 @@
       "when": 1774560855275,
       "tag": "0021_sprint11_ccm_intelligence",
       "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1774585077959,
+      "tag": "0022_sprint12_whistleblowing",
+      "breakpoints": true
     }
   ]
 }
