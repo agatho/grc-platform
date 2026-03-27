@@ -27,7 +27,7 @@ describe("RLS Cross-Tenant Isolation", () => {
     await adminDb.client.unsafe(`
       DO $$ BEGIN
         IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grc_app') THEN
-          CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_pass';
+          CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_dev_password';
         END IF;
       END $$;
       GRANT USAGE ON SCHEMA public TO grc_app;
