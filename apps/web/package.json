@@ -33,16 +33,19 @@
     "next": "^15.5.14",
     "next-auth": "^5.0.0-beta.30",
     "next-intl": "^4.1",
+    "papaparse": "^5.5.3",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "react-grid-layout": "^1.5.3",
     "recharts": "3.8.1",
-    "sonner": "^2.0.7"
+    "sonner": "^2.0.7",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
     "@testing-library/react": "^16.3.2",
     "@types/node": "^22.19.15",
+    "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.14",
     "@types/react-grid-layout": "^2.1.0",
     "@vitest/coverage-v8": "^4.1.2",

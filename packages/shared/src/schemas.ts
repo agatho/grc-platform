@@ -20,3 +20,4 @@ export * from "./schemas/policy-acknowledgment";
 export * from "./schemas/playbook";
 export * from "./schemas/calendar";
 export * from "./schemas/dashboard";
+export * from "./schemas/import-export";

@@ -20,6 +20,10 @@
     "assets": "Assets",
     "workItems": "Arbeitsobjekte",
     "settings": "Einstellungen",
+    "import": "Datenimport",
+    "importHistory": "Import-Verlauf",
+    "importTemplates": "Import-Vorlagen",
+    "importMappings": "Gespeicherte Zuordnungen",
     "sections": {
       "main": "Hauptnavigation",
       "firstLine": "1. Verteidigungslinie",

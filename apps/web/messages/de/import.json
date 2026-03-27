@@ -1,0 +1,128 @@
+{
+  "title": "Datenimport",
+  "subtitle": "Daten aus CSV- oder Excel-Dateien importieren",
+  "history": {
+    "title": "Import-Verlauf",
+    "subtitle": "Uebersicht aller bisherigen Importvorgaenge",
+    "noJobs": "Noch keine Importvorgaenge vorhanden",
+    "columns": {
+      "date": "Datum",
+      "entityType": "Entitaetstyp",
+      "fileName": "Dateiname",
+      "totalRows": "Gesamt",
+      "importedRows": "Importiert",
+      "errorRows": "Fehler",
+      "status": "Status",
+      "creator": "Ersteller"
+    }
+  },
+  "templates": {
+    "title": "Import-Vorlagen",
+    "subtitle": "CSV-Vorlagen mit korrekten Spaltenkoepfen und 3 Beispieldatensaetzen herunterladen",
+    "download": "Vorlage herunterladen",
+    "info": "Enthaelt 3 Beispielzeilen",
+    "requiredFields": "Pflichtfelder"
+  },
+  "mappings": {
+    "title": "Gespeicherte Zuordnungen",
+    "subtitle": "Haeufig verwendete Spaltenzuordnungen verwalten",
+    "noMappings": "Keine gespeicherten Zuordnungen vorhanden",
+    "load": "Laden",
+    "delete": "Loeschen",
+    "save": "Zuordnung speichern",
+    "saveName": "Name der Zuordnung"
+  },
+  "wizard": {
+    "step1": {
+      "title": "Datei hochladen",
+      "entityType": "Entitaetstyp waehlen",
+      "dropzone": "Datei hierher ziehen oder klicken zum Auswaehlen",
+      "dropzoneHint": "CSV, Excel (.xlsx, .xls) — max. 10 MB",
+      "downloadTemplate": "Vorlage herunterladen",
+      "loadMapping": "Vorherige Zuordnung laden",
+      "next": "Weiter"
+    },
+    "step2": {
+      "title": "Spalten zuordnen",
+      "csvHeader": "CSV-Spalte",
+      "arktosField": "ARCTOS-Feld",
+      "autoDetected": "Automatisch erkannt",
+      "unmapped": "Nicht zugeordnet",
+      "required": "Pflichtfeld",
+      "preview": "Vorschau (erste 3 Zeilen)",
+      "saveMapping": "Zuordnung speichern",
+      "mappingName": "Name der Zuordnung",
+      "next": "Weiter",
+      "back": "Zurueck"
+    },
+    "step3": {
+      "title": "Validierung & Vorschau",
+      "summary": "{total} Zeilen erkannt, {valid} gueltig, {errors} Fehler",
+      "errorTable": "Fehler",
+      "validRows": "Gueltige Zeilen",
+      "row": "Zeile",
+      "field": "Feld",
+      "error": "Fehler",
+      "duplicates": "Duplikate",
+      "fkResolution": "Referenzaufloesung",
+      "dryRun": "Simulation (kein Import)",
+      "import": "Importieren",
+      "back": "Zurueck"
+    },
+    "step4": {
+      "title": "Ergebnis",
+      "success": "{count} {entityType} erfolgreich importiert",
+      "failed": "{count} uebersprungen",
+      "resultTable": "Ergebnistabelle",
+      "row": "Zeile",
+      "status": "Status",
+      "entityId": "Element-ID",
+      "error": "Fehler",
+      "downloadErrors": "Fehler-CSV herunterladen",
+      "importAnother": "Weitere Datei importieren",
+      "goToEntity": "Zum {entityType}"
+    }
+  },
+  "entityTypes": {
+    "risk": "Risiken",
+    "control": "Kontrollen",
+    "asset": "Assets",
+    "vendor": "Lieferanten",
+    "contract": "Vertraege",
+    "incident": "Vorfaelle",
+    "process": "Prozesse",
+    "ropa_entry": "VVT-Eintraege"
+  },
+  "status": {
+    "uploaded": "Hochgeladen",
+    "mapping": "Zuordnung",
+    "validating": "Wird validiert",
+    "validated": "Validiert",
+    "executing": "Wird importiert",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen"
+  },
+  "export": {
+    "title": "Exportieren",
+    "csv": "CSV",
+    "xlsx": "Excel (.xlsx)",
+    "pdf": "PDF",
+    "downloading": "Export wird erstellt...",
+    "success": "Export erfolgreich ({count} Datensaetze)",
+    "schedules": {
+      "title": "Geplante Exporte",
+      "subtitle": "Automatische Exporte konfigurieren",
+      "create": "Neuen Export planen",
+      "name": "Bezeichnung",
+      "entityTypes": "Entitaetstypen",
+      "format": "Format",
+      "schedule": "Zeitplan",
+      "recipients": "Empfaenger",
+      "lastRun": "Letzte Ausfuehrung",
+      "active": "Aktiv",
+      "inactive": "Inaktiv",
+      "delete": "Loeschen",
+      "weekly": "Woechentlich (Montag 06:00)"
+    }
+  }
+}

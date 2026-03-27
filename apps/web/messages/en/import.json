@@ -1,0 +1,128 @@
+{
+  "title": "Data Import",
+  "subtitle": "Import data from CSV or Excel files",
+  "history": {
+    "title": "Import History",
+    "subtitle": "Overview of all previous import operations",
+    "noJobs": "No import operations yet",
+    "columns": {
+      "date": "Date",
+      "entityType": "Entity Type",
+      "fileName": "File Name",
+      "totalRows": "Total",
+      "importedRows": "Imported",
+      "errorRows": "Errors",
+      "status": "Status",
+      "creator": "Creator"
+    }
+  },
+  "templates": {
+    "title": "Import Templates",
+    "subtitle": "Download CSV templates with correct column headers and 3 example records",
+    "download": "Download Template",
+    "info": "Contains 3 example rows",
+    "requiredFields": "Required Fields"
+  },
+  "mappings": {
+    "title": "Saved Mappings",
+    "subtitle": "Manage frequently used column mappings",
+    "noMappings": "No saved mappings available",
+    "load": "Load",
+    "delete": "Delete",
+    "save": "Save Mapping",
+    "saveName": "Mapping Name"
+  },
+  "wizard": {
+    "step1": {
+      "title": "Upload File",
+      "entityType": "Select Entity Type",
+      "dropzone": "Drag and drop file here or click to select",
+      "dropzoneHint": "CSV, Excel (.xlsx, .xls) — max 10 MB",
+      "downloadTemplate": "Download Template",
+      "loadMapping": "Load Previous Mapping",
+      "next": "Next"
+    },
+    "step2": {
+      "title": "Map Columns",
+      "csvHeader": "CSV Column",
+      "arktosField": "ARCTOS Field",
+      "autoDetected": "Auto-detected",
+      "unmapped": "Unmapped",
+      "required": "Required",
+      "preview": "Preview (first 3 rows)",
+      "saveMapping": "Save Mapping",
+      "mappingName": "Mapping Name",
+      "next": "Next",
+      "back": "Back"
+    },
+    "step3": {
+      "title": "Validation & Preview",
+      "summary": "{total} rows detected, {valid} valid, {errors} errors",
+      "errorTable": "Errors",
+      "validRows": "Valid Rows",
+      "row": "Row",
+      "field": "Field",
+      "error": "Error",
+      "duplicates": "Duplicates",
+      "fkResolution": "Reference Resolution",
+      "dryRun": "Dry Run (no import)",
+      "import": "Import",
+      "back": "Back"
+    },
+    "step4": {
+      "title": "Result",
+      "success": "{count} {entityType} successfully imported",
+      "failed": "{count} skipped",
+      "resultTable": "Result Table",
+      "row": "Row",
+      "status": "Status",
+      "entityId": "Element ID",
+      "error": "Error",
+      "downloadErrors": "Download Error CSV",
+      "importAnother": "Import Another File",
+      "goToEntity": "Go to {entityType}"
+    }
+  },
+  "entityTypes": {
+    "risk": "Risks",
+    "control": "Controls",
+    "asset": "Assets",
+    "vendor": "Vendors",
+    "contract": "Contracts",
+    "incident": "Incidents",
+    "process": "Processes",
+    "ropa_entry": "RoPA Entries"
+  },
+  "status": {
+    "uploaded": "Uploaded",
+    "mapping": "Mapping",
+    "validating": "Validating",
+    "validated": "Validated",
+    "executing": "Importing",
+    "completed": "Completed",
+    "failed": "Failed"
+  },
+  "export": {
+    "title": "Export",
+    "csv": "CSV",
+    "xlsx": "Excel (.xlsx)",
+    "pdf": "PDF",
+    "downloading": "Creating export...",
+    "success": "Export successful ({count} records)",
+    "schedules": {
+      "title": "Scheduled Exports",
+      "subtitle": "Configure automatic exports",
+      "create": "Schedule New Export",
+      "name": "Name",
+      "entityTypes": "Entity Types",
+      "format": "Format",
+      "schedule": "Schedule",
+      "recipients": "Recipients",
+      "lastRun": "Last Run",
+      "active": "Active",
+      "inactive": "Inactive",
+      "delete": "Delete",
+      "weekly": "Weekly (Monday 06:00)"
+    }
+  }
+}
