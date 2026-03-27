@@ -4,9 +4,9 @@
 import Credentials from "next-auth/providers/credentials";
 import MicrosoftEntraID from "next-auth/providers/microsoft-entra-id";
 import { compare } from "bcryptjs";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull, sql, inArray } from "drizzle-orm";
 import { db } from "@grc/db";
-import { user, userOrganizationRole, accessLog } from "@grc/db";
+import { user, userOrganizationRole, accessLog, ssoConfig } from "@grc/db";
 import type { RoleAssignment } from "./types";
 import type { Provider } from "next-auth/providers";
 
@@ -69,6 +69,31 @@ export function extractRequestInfo(request?: Request | { headers?: Headers }): {
   return { ipAddress, userAgent };
 }
 
+/**
+ * Sprint 20: Check if any org in the given list enforces SSO.
+ * Returns true if at least one org has SSO enforcement enabled.
+ */
+async function checkSsoEnforcement(orgIds: string[]): Promise<boolean> {
+  if (!orgIds.length) return false;
+  try {
+    const result = await db
+      .select({ enforceSSO: ssoConfig.enforceSSO })
+      .from(ssoConfig)
+      .where(
+        and(
+          inArray(ssoConfig.orgId, orgIds),
+          eq(ssoConfig.enforceSSO, true),
+          eq(ssoConfig.isActive, true),
+          isNull(ssoConfig.deletedAt),
+        ),
+      );
+    return result.length > 0;
+  } catch {
+    // If sso_config table doesn't exist yet, no enforcement
+    return false;
+  }
+}
+
 export const credentialsProvider = Credentials({
   id: "credentials",
   name: "Email & Password",
@@ -106,6 +131,28 @@ export const credentialsProvider = Credentials({
       return null;
     }
 
+    // Sprint 20: Check SSO enforcement for user's orgs
+    // If any org enforces SSO, only admins can use local login
+    const roles = await loadRoles(found.id);
+    const orgIds = [...new Set(roles.map((r) => r.orgId))];
+    if (orgIds.length > 0) {
+      const ssoEnforced = await checkSsoEnforcement(orgIds);
+      if (ssoEnforced) {
+        const isAdmin = roles.some((r) => r.role === "admin");
+        if (!isAdmin) {
+          await logAccessEvent({
+            userId: found.id,
+            emailAttempted: email,
+            eventType: "login_failed",
+            failureReason: "sso_enforced",
+            ipAddress,
+            userAgent,
+          });
+          return null;
+        }
+      }
+    }
+
     const valid = await compare(password, found.passwordHash);
     if (!valid) {
       await logAccessEvent({
@@ -130,8 +177,6 @@ export const credentialsProvider = Credentials({
       ipAddress,
       userAgent,
     });
-
-    const roles = await loadRoles(found.id);
 
     return {
       id: found.id,

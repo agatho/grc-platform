@@ -36,6 +36,8 @@ import { processCalendarDigest } from "./crons/calendar-digest";
 import { processCalendarOverdueCheck } from "./crons/calendar-overdue-check";
 import { processDashboardCleanup } from "./crons/dashboard-cleanup";
 import { processScheduledExport } from "./crons/scheduled-export";
+import { processScimSyncCleanup } from "./crons/scim-sync-cleanup";
+import { processScimTokenAudit } from "./crons/scim-token-audit";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -552,6 +554,32 @@ app.post("/crons/scheduled-export", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] scheduled-export cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 20: Identity / SCIM cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/scim-sync-cleanup", async (c) => {
+  try {
+    const result = await processScimSyncCleanup();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] scim-sync-cleanup cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/scim-token-audit", async (c) => {
+  try {
+    const result = await processScimTokenAudit();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] scim-token-audit cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

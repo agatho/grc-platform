@@ -5,7 +5,10 @@
   "exports": {
     ".": "./src/index.ts",
     "./providers": "./src/providers.ts",
-    "./context": "./src/context.ts"
+    "./context": "./src/context.ts",
+    "./saml": "./src/saml/index.ts",
+    "./oidc": "./src/oidc/index.ts",
+    "./scim": "./src/scim/index.ts"
   },
   "scripts": {
     "test": "vitest run"

@@ -21,3 +21,4 @@ export * from "./schemas/playbook";
 export * from "./schemas/calendar";
 export * from "./schemas/dashboard";
 export * from "./schemas/import-export";
+export * from "./schemas/identity";

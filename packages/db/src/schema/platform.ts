@@ -173,6 +173,10 @@ export const user = pgTable("user", {
   // Sprint 17: iCal token for calendar subscription
   icalToken: varchar("ical_token", { length: 128 }),
   icalTokenCreatedAt: timestamp("ical_token_created_at", { withTimezone: true }),
+  // Sprint 20: Identity provider fields (SSO/SCIM)
+  externalId: varchar("external_id", { length: 200 }),
+  identityProvider: varchar("identity_provider", { length: 50 }).default("local"),
+  lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   // Cross-cutting mandatory fields
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
