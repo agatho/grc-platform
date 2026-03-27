@@ -11,14 +11,14 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@grc/db": "*",
-    "@grc/shared": "*",
+    "@grc/db": "^0.1.0",
+    "@grc/shared": "^0.1.0",
     "@types/bcryptjs": "^2.4.6",
     "bcryptjs": "^3.0.3",
     "next-auth": "^5.0.0-beta.30"
   },
   "devDependencies": {
     "typescript": "^5.7",
-    "vitest": "^3.0"
+    "vitest": "^4.1.2"
   }
 }

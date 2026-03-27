@@ -256,7 +256,7 @@ function MetricDetailInner() {
                 <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
                 <Tooltip
                   contentStyle={{ fontSize: 12, borderRadius: 8 }}
-                  formatter={(val: number) => [`${val} ${metric.unit}`, t("value")]}
+                  formatter={(val: unknown) => [`${val} ${metric.unit}`, t("value")] as const}
                 />
                 <Line
                   type="monotone"
