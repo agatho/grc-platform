@@ -17,3 +17,6 @@ export * as moduleConfigCache from "./cache/module-config-cache";
 
 // Module guard middleware (Node.js only)
 export { requireModule } from "./middleware/module-guard";
+
+// Sprint 20: SSO + SCIM services (Node.js only)
+export { resolveRole, groupRoleMappingToEntries } from "./role-mapping";
