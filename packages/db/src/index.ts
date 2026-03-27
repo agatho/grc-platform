@@ -23,10 +23,11 @@ import * as budgetSchema from "./schema/budget";
 import * as brandingSchema from "./schema/branding";
 import * as rcsaSchema from "./schema/rcsa";
 import * as policyAcknowledgmentSchema from "./schema/policy-acknowledgment";
+import * as playbookSchema from "./schema/playbook";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema },
 });
 
 export type Database = typeof db;
@@ -53,3 +54,4 @@ export * from "./schema/budget";
 export * from "./schema/branding";
 export * from "./schema/rcsa";
 export * from "./schema/policy-acknowledgment";
+export * from "./schema/playbook";

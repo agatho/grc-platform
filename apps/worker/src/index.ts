@@ -30,6 +30,8 @@ import { processRcsaOverdueCheck } from "./crons/rcsa-overdue-check";
 import { processPolicyReminder } from "./crons/policy-reminder";
 import { processPolicyOverdueEscalation } from "./crons/policy-overdue-escalation";
 import { processPolicyVersionCheck } from "./crons/policy-version-check";
+import { processPlaybookPhaseEscalation } from "./crons/playbook-phase-escalation";
+import { processPlaybookSuggestion } from "./crons/playbook-suggestion";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -464,6 +466,32 @@ app.post("/crons/policy-version-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] policy-version-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 16: Playbook Incident Response cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/playbook-phase-escalation", async (c) => {
+  try {
+    const result = await processPlaybookPhaseEscalation();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] playbook-phase-escalation cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/playbook-suggestion", async (c) => {
+  try {
+    const result = await processPlaybookSuggestion();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] playbook-suggestion cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
