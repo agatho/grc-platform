@@ -34,6 +34,7 @@ import { processPlaybookPhaseEscalation } from "./crons/playbook-phase-escalatio
 import { processPlaybookSuggestion } from "./crons/playbook-suggestion";
 import { processCalendarDigest } from "./crons/calendar-digest";
 import { processCalendarOverdueCheck } from "./crons/calendar-overdue-check";
+import { processDashboardCleanup } from "./crons/dashboard-cleanup";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -520,6 +521,21 @@ app.post("/crons/calendar-overdue-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] calendar-overdue-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 18: Custom Dashboards cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/dashboard-cleanup", async (c) => {
+  try {
+    const result = await processDashboardCleanup();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] dashboard-cleanup cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
