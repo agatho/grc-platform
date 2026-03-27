@@ -3769,5 +3769,154 @@
     "widgetDocumentRecent": "Aktuelle Dokumente",
     "widgetWbStatistics": "Hinweisgeber-Statistiken",
     "widgetAssetOverview": "Asset-Uebersicht"
+  },
+  "rcsa": {
+    "title": "Risiko- & Kontroll-Selbstbewertung",
+    "description": "Periodische Selbstbewertung von Risiken und Kontrollen durch 1st-Line-Manager",
+    "campaign": {
+      "create": "Neue Kampagne",
+      "createTitle": "RCSA-Kampagne erstellen",
+      "backToList": "Zurueck zu Kampagnen",
+      "empty": "Noch keine Kampagnen. Erstellen Sie Ihre erste RCSA-Kampagne.",
+      "notFound": "Kampagne nicht gefunden",
+      "name": "Kampagnenname",
+      "namePlaceholder": "z.B. Q1 2026 Selbstbewertung",
+      "descriptionLabel": "Beschreibung",
+      "periodStart": "Zeitraum Beginn",
+      "periodEnd": "Zeitraum Ende",
+      "period": "Zeitraum",
+      "frequency": "Frequenz",
+      "departments": "Abteilungen",
+      "departmentPlaceholder": "Abteilungsname eingeben",
+      "roles": "Zielrollen",
+      "scope": "Umfang",
+      "cesWeight": "CES-Gewichtung",
+      "cesWeightHint": "Gewichtung der RCSA-Ergebnisse im Control Effectiveness Score (0-50%)",
+      "reminderDays": "Erinnerung Tage vor Frist",
+      "participants": "Teilnehmer",
+      "completed": "abgeschlossen",
+      "deadline": "Frist",
+      "launch": "Starten",
+      "close": "Kampagne schliessen",
+      "saveDraft": "Als Entwurf speichern",
+      "launchNow": "Jetzt starten",
+      "reviewTitle": "Pruefen & Starten",
+      "statusAll": "Alle",
+      "status": {
+        "draft": "Entwurf",
+        "active": "Aktiv",
+        "closed": "Geschlossen",
+        "archived": "Archiviert"
+      },
+      "freq": {
+        "quarterly": "Vierteljaehrlich",
+        "semi_annual": "Halbjaehrlich",
+        "annual": "Jaehrlich"
+      },
+      "step": {
+        "basics": "Grunddaten",
+        "scope": "Umfang",
+        "config": "Konfiguration",
+        "review": "Pruefen"
+      },
+      "role": {
+        "risk_owner": "Alle Risikoverantwortlichen",
+        "control_owner": "Alle Kontrollverantwortlichen"
+      }
+    },
+    "tab": {
+      "overview": "Uebersicht",
+      "results": "Ergebnisse",
+      "discrepancies": "Abweichungen",
+      "participants": "Teilnehmer",
+      "trend": "Trend"
+    },
+    "kpi": {
+      "participationRate": "Teilnahmequote",
+      "totalAssignments": "Gesamtzuweisungen",
+      "completed": "Abgeschlossen",
+      "overdue": "Ueberfaellig"
+    },
+    "results": {
+      "notAvailable": "Ergebnisse noch nicht verfuegbar. Schliessen Sie die Kampagne, um Ergebnisse zu berechnen.",
+      "riskSummary": "Zusammenfassung Risikobewertung",
+      "controlSummary": "Zusammenfassung Kontrollwirksamkeit",
+      "avgLikelihood": "Durchschn. Eintrittswahrscheinlichkeit",
+      "avgImpact": "Durchschn. Auswirkung",
+      "riskTrend": "Risikotrend",
+      "increasing": "Steigend",
+      "stable": "Stabil",
+      "decreasing": "Sinkend",
+      "effective": "Wirksam",
+      "partial": "Teilweise wirksam",
+      "ineffective": "Unwirksam"
+    },
+    "discrepancies": {
+      "empty": "Keine Abweichungen gefunden.",
+      "entity": "Entitaet",
+      "rcsaRating": "RCSA-Bewertung (1st Line)",
+      "auditRating": "Audit-Bewertung (3rd Line)",
+      "type": "Abweichungstyp",
+      "overconfident": "Ueberbewertet",
+      "underconfident": "Unterbewertet"
+    },
+    "participants": {
+      "empty": "Keine Teilnehmer gefunden.",
+      "name": "Name",
+      "assigned": "Zugewiesen",
+      "completed": "Abgeschlossen",
+      "overdue": "Ueberfaellig",
+      "lastActivity": "Letzte Aktivitaet"
+    },
+    "trend": {
+      "noData": "Keine Vergleichsdaten verfuegbar. Dies ist die erste Kampagne.",
+      "comparingWith": "Vergleich mit vorheriger Kampagne",
+      "completionRate": "Abschlussrate",
+      "avgLikelihood": "Durchschn. Eintrittswahrsch.",
+      "avgImpact": "Durchschn. Auswirkung",
+      "controlsEffective": "Wirksame Kontrollen",
+      "discrepancies": "Abweichungen"
+    },
+    "myAssessments": {
+      "title": "Meine Bewertungen",
+      "completed": "abgeschlossen",
+      "empty": "Sie haben keine offenen Bewertungen.",
+      "riskAssessments": "Risikobewertungen",
+      "controlAssessments": "Kontrollbewertungen",
+      "submit": "Bewertung abgeben"
+    },
+    "risk": {
+      "stillRelevant": "Ist dieses Risiko noch relevant?",
+      "likelihood": "Eintrittswahrscheinlichkeit",
+      "impact": "Auswirkung",
+      "trend": "Trend",
+      "trend_increasing": "Steigend",
+      "trend_stable": "Stabil",
+      "trend_decreasing": "Sinkend"
+    },
+    "control": {
+      "effectiveness": "Kontrollwirksamkeit",
+      "operating": "Ist die Kontrolle tatsaechlich in Betrieb?",
+      "weaknesses": "Identifizierte Schwachstellen",
+      "eff_effective": "Wirksam",
+      "eff_partially_effective": "Teilweise",
+      "eff_ineffective": "Unwirksam"
+    },
+    "status": {
+      "submitted": "Eingereicht",
+      "pending": "Ausstehend",
+      "overdue": "Ueberfaellig"
+    },
+    "common": {
+      "yes": "Ja",
+      "no": "Nein",
+      "add": "Hinzufuegen",
+      "back": "Zurueck",
+      "next": "Weiter",
+      "days": "Tage",
+      "daysLeft": "Tage verbleibend",
+      "comment": "Kommentar",
+      "confidence": "Konfidenzgrad"
+    }
   }
 }
