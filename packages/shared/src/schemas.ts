@@ -13,3 +13,4 @@ export * from "./schemas/tprm";
 export * from "./schemas/esg";
 export * from "./schemas/intelligence";
 export * from "./schemas/whistleblowing";
+export * from "./schemas/budget";

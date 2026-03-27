@@ -19,10 +19,11 @@ import * as supplierPortalSchema from "./schema/supplier-portal";
 import * as esgSchema from "./schema/esg";
 import * as intelligenceSchema from "./schema/intelligence";
 import * as whistleblowingSchema from "./schema/whistleblowing";
+import * as budgetSchema from "./schema/budget";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema },
 });
 
 export type Database = typeof db;
@@ -45,3 +46,4 @@ export * from "./schema/supplier-portal";
 export * from "./schema/esg";
 export * from "./schema/intelligence";
 export * from "./schema/whistleblowing";
+export * from "./schema/budget";
