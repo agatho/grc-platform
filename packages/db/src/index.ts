@@ -22,10 +22,11 @@ import * as whistleblowingSchema from "./schema/whistleblowing";
 import * as budgetSchema from "./schema/budget";
 import * as brandingSchema from "./schema/branding";
 import * as rcsaSchema from "./schema/rcsa";
+import * as policyAcknowledgmentSchema from "./schema/policy-acknowledgment";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema },
 });
 
 export type Database = typeof db;
@@ -51,3 +52,4 @@ export * from "./schema/whistleblowing";
 export * from "./schema/budget";
 export * from "./schema/branding";
 export * from "./schema/rcsa";
+export * from "./schema/policy-acknowledgment";

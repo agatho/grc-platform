@@ -27,6 +27,9 @@ import { processRoiCalculation } from "./crons/roi-calculation";
 import { processMonthlyReportGenerator } from "./crons/monthly-report-generator";
 import { processRcsaReminder } from "./crons/rcsa-reminder";
 import { processRcsaOverdueCheck } from "./crons/rcsa-overdue-check";
+import { processPolicyReminder } from "./crons/policy-reminder";
+import { processPolicyOverdueEscalation } from "./crons/policy-overdue-escalation";
+import { processPolicyVersionCheck } from "./crons/policy-version-check";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -424,6 +427,43 @@ app.post("/crons/rcsa-overdue-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] rcsa-overdue-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 15: Policy Acknowledgment Portal cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/policy-reminder", async (c) => {
+  try {
+    const result = await processPolicyReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] policy-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/policy-overdue-escalation", async (c) => {
+  try {
+    const result = await processPolicyOverdueEscalation();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] policy-overdue-escalation cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/policy-version-check", async (c) => {
+  try {
+    const result = await processPolicyVersionCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] policy-version-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
