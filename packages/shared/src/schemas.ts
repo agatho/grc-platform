@@ -16,3 +16,4 @@ export * from "./schemas/whistleblowing";
 export * from "./schemas/budget";
 export * from "./schemas/branding";
 export * from "./schemas/rcsa";
+export * from "./schemas/policy-acknowledgment";

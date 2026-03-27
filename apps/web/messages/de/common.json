@@ -3918,5 +3918,153 @@
       "comment": "Kommentar",
       "confidence": "Konfidenzgrad"
     }
+  },
+  "policies": {
+    "loading": "Laden...",
+    "notFound": "Nicht gefunden",
+    "mandatory": "Pflicht",
+    "optional": "Freiwillig",
+    "yes": "Ja",
+    "no": "Nein",
+    "status": {
+      "draft": "Entwurf",
+      "active": "Aktiv",
+      "closed": "Geschlossen"
+    },
+    "ackStatus": {
+      "pending": "Ausstehend",
+      "acknowledged": "Bestaetigt",
+      "overdue": "Ueberfaellig",
+      "failed_quiz": "Quiz nicht bestanden"
+    },
+    "filter": {
+      "status": "Status",
+      "all": "Alle"
+    },
+    "distributions": {
+      "title": "Richtlinienverteilungen",
+      "description": "Verwalten Sie die Verteilung von Richtlinien an Mitarbeiter",
+      "create": "Neue Verteilung"
+    },
+    "distribution": {
+      "title": "Titel",
+      "document": "Dokument",
+      "deadline": "Frist",
+      "status": "Status",
+      "mandatory": "Pflicht",
+      "compliance": "Compliance-Rate",
+      "recipients": "Empfaenger",
+      "details": "Details",
+      "activate": "Aktivieren",
+      "close": "Schliessen",
+      "exportPdf": "PDF-Bericht",
+      "distributedAt": "Verteilt am",
+      "acknowledgments": "Bestaetigungen",
+      "sendReminders": "Erinnerungen senden",
+      "noAcknowledgments": "Keine Bestaetigungen vorhanden"
+    },
+    "create": {
+      "title": "Richtlinienverteilung erstellen",
+      "description": "Erstellen Sie eine neue Richtlinienverteilung fuer Ihre Organisation",
+      "steps": {
+        "selectPolicy": "Richtlinie waehlen",
+        "targetAudience": "Zielgruppe",
+        "configuration": "Konfiguration",
+        "review": "Zusammenfassung"
+      },
+      "selectPolicyDesc": "Waehlen Sie ein veroeffentlichtes Dokument aus dem DMS",
+      "document": "Dokument",
+      "selectDocument": "Dokument auswaehlen",
+      "version": "Version",
+      "category": "Kategorie",
+      "distributionTitle": "Verteilungstitel",
+      "distributionTitlePlaceholder": "z.B. IT-Sicherheitsrichtlinie Q1 2026",
+      "targetDesc": "Definieren Sie die Zielgruppe fuer diese Richtlinie",
+      "allEmployees": "Alle Mitarbeiter",
+      "departments": "Abteilungen",
+      "addDepartment": "Abteilung hinzufuegen",
+      "roles": "Rollen",
+      "selectRole": "Rolle auswaehlen",
+      "configDesc": "Konfigurieren Sie Frist, Quiz und Erinnerungen",
+      "deadline": "Frist",
+      "mandatoryReading": "Pflichtlektuere",
+      "enableQuiz": "Quiz aktivieren",
+      "passThreshold": "Mindestpunktzahl",
+      "question": "Frage",
+      "questionPlaceholder": "Frage eingeben",
+      "option": "Option",
+      "addOption": "Option hinzufuegen",
+      "addQuestion": "Frage hinzufuegen",
+      "questions": "Fragen",
+      "reminderDays": "Erinnerungstage vor Frist",
+      "reminderDaysHelp": "Kommagetrennte Tage, z.B. 7, 3, 1",
+      "reviewDesc": "Pruefen Sie die Zusammenfassung vor dem Versand",
+      "target": "Zielgruppe",
+      "back": "Zurueck",
+      "next": "Weiter",
+      "saveAsDraft": "Als Entwurf speichern",
+      "sendNow": "Jetzt senden"
+    },
+    "kpi": {
+      "totalRecipients": "Empfaenger gesamt",
+      "acknowledged": "Bestaetigt",
+      "overdue": "Ueberfaellig",
+      "complianceRate": "Compliance-Rate"
+    },
+    "myPolicies": {
+      "title": "Meine Richtlinien",
+      "description": "Richtlinien, die Ihre Bestaetigung erfordern",
+      "overdue": "Ueberfaellig",
+      "open": "Offen",
+      "acknowledged": "Bestaetigt",
+      "collapse": "Einklappen",
+      "expand": "Ausklappen",
+      "empty": "Keine Richtlinien zugewiesen",
+      "emptyDesc": "Es gibt derzeit keine Richtlinien, die Ihre Bestaetigung erfordern.",
+      "quiz": "Quiz",
+      "acknowledgedOn": "Bestaetigt am",
+      "daysRemaining": "Tage verbleibend",
+      "readAndAcknowledge": "Lesen & Bestaetigen",
+      "failedQuiz": "Quiz nicht bestanden",
+      "backToList": "Zurueck zur Liste"
+    },
+    "acknowledge": {
+      "documentContent": "Dokumentinhalt",
+      "noContent": "Kein Inhalt verfuegbar",
+      "confirmRead": "Ich habe die Richtlinie gelesen und verstanden",
+      "minReadTime": "Bitte lesen Sie noch {seconds} Sekunden weiter",
+      "readTime": "Lesezeit",
+      "submit": "Bestaetigen",
+      "success": "Erfolgreich bestaetigt",
+      "successDesc": "Ihre Bestaetigung wurde gespeichert. Die digitale Signatur dient als Nachweis.",
+      "quizFailed": "Quiz nicht bestanden",
+      "quizFailedDesc": "Sie haben {score}% erreicht. Erforderlich sind {threshold}%.",
+      "date": "Bestaetigt am",
+      "signatureHash": "Digitale Signatur"
+    },
+    "quiz": {
+      "title": "Verstaendnisfragen",
+      "description": "Beantworten Sie die folgenden Fragen. Mindestens {threshold}% muessen korrekt sein.",
+      "score": "Ergebnis",
+      "passed": "Bestanden",
+      "failed": "Nicht bestanden"
+    },
+    "compliance": {
+      "title": "Compliance-Dashboard",
+      "description": "Ueberblick ueber die Richtlinien-Compliance der Organisation",
+      "noData": "Keine Daten verfuegbar",
+      "activeDistributions": "Aktive Verteilungen",
+      "avgComplianceRate": "Durchschnittliche Compliance-Rate",
+      "overdueAcknowledgments": "Ueberfaellige Bestaetigungen",
+      "quizFailureRate": "Quiz-Durchfallquote",
+      "perPolicy": "Compliance nach Richtlinie",
+      "perPolicyDesc": "Sortiert nach niedrigster Compliance-Rate",
+      "perDepartment": "Compliance nach Abteilung",
+      "perDepartmentDesc": "Uebersicht der Compliance-Rate pro Abteilung",
+      "acknowledged": "bestaetigt",
+      "overdueShort": "ueberfaellig",
+      "noActiveDistributions": "Keine aktiven Verteilungen",
+      "noDepartmentData": "Keine Abteilungsdaten verfuegbar"
+    }
   }
 }

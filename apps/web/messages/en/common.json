@@ -3918,5 +3918,153 @@
       "comment": "Comment",
       "confidence": "Confidence Level"
     }
+  },
+  "policies": {
+    "loading": "Loading...",
+    "notFound": "Not found",
+    "mandatory": "Mandatory",
+    "optional": "Optional",
+    "yes": "Yes",
+    "no": "No",
+    "status": {
+      "draft": "Draft",
+      "active": "Active",
+      "closed": "Closed"
+    },
+    "ackStatus": {
+      "pending": "Pending",
+      "acknowledged": "Acknowledged",
+      "overdue": "Overdue",
+      "failed_quiz": "Quiz Failed"
+    },
+    "filter": {
+      "status": "Status",
+      "all": "All"
+    },
+    "distributions": {
+      "title": "Policy Distributions",
+      "description": "Manage the distribution of policies to employees",
+      "create": "New Distribution"
+    },
+    "distribution": {
+      "title": "Title",
+      "document": "Document",
+      "deadline": "Deadline",
+      "status": "Status",
+      "mandatory": "Mandatory",
+      "compliance": "Compliance Rate",
+      "recipients": "Recipients",
+      "details": "Details",
+      "activate": "Activate",
+      "close": "Close",
+      "exportPdf": "PDF Report",
+      "distributedAt": "Distributed at",
+      "acknowledgments": "Acknowledgments",
+      "sendReminders": "Send Reminders",
+      "noAcknowledgments": "No acknowledgments yet"
+    },
+    "create": {
+      "title": "Create Policy Distribution",
+      "description": "Create a new policy distribution for your organization",
+      "steps": {
+        "selectPolicy": "Select Policy",
+        "targetAudience": "Target Audience",
+        "configuration": "Configuration",
+        "review": "Review"
+      },
+      "selectPolicyDesc": "Select a published document from the DMS",
+      "document": "Document",
+      "selectDocument": "Select document",
+      "version": "Version",
+      "category": "Category",
+      "distributionTitle": "Distribution Title",
+      "distributionTitlePlaceholder": "e.g. IT Security Policy Q1 2026",
+      "targetDesc": "Define the target audience for this policy",
+      "allEmployees": "All employees",
+      "departments": "Departments",
+      "addDepartment": "Add department",
+      "roles": "Roles",
+      "selectRole": "Select role",
+      "configDesc": "Configure deadline, quiz, and reminders",
+      "deadline": "Deadline",
+      "mandatoryReading": "Mandatory reading",
+      "enableQuiz": "Enable quiz",
+      "passThreshold": "Pass threshold",
+      "question": "Question",
+      "questionPlaceholder": "Enter question",
+      "option": "Option",
+      "addOption": "Add option",
+      "addQuestion": "Add question",
+      "questions": "questions",
+      "reminderDays": "Reminder days before deadline",
+      "reminderDaysHelp": "Comma-separated days, e.g. 7, 3, 1",
+      "reviewDesc": "Review the summary before sending",
+      "target": "Target Audience",
+      "back": "Back",
+      "next": "Next",
+      "saveAsDraft": "Save as Draft",
+      "sendNow": "Send Now"
+    },
+    "kpi": {
+      "totalRecipients": "Total Recipients",
+      "acknowledged": "Acknowledged",
+      "overdue": "Overdue",
+      "complianceRate": "Compliance Rate"
+    },
+    "myPolicies": {
+      "title": "My Policies",
+      "description": "Policies that require your acknowledgment",
+      "overdue": "Overdue",
+      "open": "Open",
+      "acknowledged": "Acknowledged",
+      "collapse": "Collapse",
+      "expand": "Expand",
+      "empty": "No policies assigned",
+      "emptyDesc": "There are currently no policies that require your acknowledgment.",
+      "quiz": "Quiz",
+      "acknowledgedOn": "Acknowledged on",
+      "daysRemaining": "days remaining",
+      "readAndAcknowledge": "Read & Acknowledge",
+      "failedQuiz": "Quiz failed",
+      "backToList": "Back to list"
+    },
+    "acknowledge": {
+      "documentContent": "Document Content",
+      "noContent": "No content available",
+      "confirmRead": "I have read and understood the policy",
+      "minReadTime": "Please continue reading for {seconds} more seconds",
+      "readTime": "Reading time",
+      "submit": "Acknowledge",
+      "success": "Successfully acknowledged",
+      "successDesc": "Your acknowledgment has been saved. The digital signature serves as proof.",
+      "quizFailed": "Quiz not passed",
+      "quizFailedDesc": "You scored {score}%. Required: {threshold}%.",
+      "date": "Acknowledged on",
+      "signatureHash": "Digital Signature"
+    },
+    "quiz": {
+      "title": "Comprehension Questions",
+      "description": "Answer the following questions. At least {threshold}% must be correct.",
+      "score": "Score",
+      "passed": "Passed",
+      "failed": "Failed"
+    },
+    "compliance": {
+      "title": "Compliance Dashboard",
+      "description": "Overview of the organization's policy compliance",
+      "noData": "No data available",
+      "activeDistributions": "Active Distributions",
+      "avgComplianceRate": "Avg. Compliance Rate",
+      "overdueAcknowledgments": "Overdue Acknowledgments",
+      "quizFailureRate": "Quiz Failure Rate",
+      "perPolicy": "Compliance per Policy",
+      "perPolicyDesc": "Sorted by lowest compliance rate",
+      "perDepartment": "Compliance per Department",
+      "perDepartmentDesc": "Overview of compliance rate per department",
+      "acknowledged": "acknowledged",
+      "overdueShort": "overdue",
+      "noActiveDistributions": "No active distributions",
+      "noDepartmentData": "No department data available"
+    }
   }
 }
