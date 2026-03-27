@@ -22,6 +22,9 @@ import { processExecutiveKpiSnapshot } from "./crons/executive-kpi-snapshot";
 import { processRegulatoryFeedFetcher } from "./crons/regulatory-feed-fetcher";
 import { processRegulatoryRelevanceScorer } from "./crons/regulatory-relevance-scorer";
 import { processWbDeadlineMonitor } from "./crons/wb-deadline-monitor";
+import { processBudgetForecast } from "./crons/budget-forecast";
+import { processRoiCalculation } from "./crons/roi-calculation";
+import { processMonthlyReportGenerator } from "./crons/monthly-report-generator";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -356,6 +359,43 @@ app.post("/crons/wb-deadline-monitor", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] wb-deadline-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 13: GRC Budget cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/budget-forecast", async (c) => {
+  try {
+    const result = await processBudgetForecast();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] budget-forecast cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/roi-calculation", async (c) => {
+  try {
+    const result = await processRoiCalculation();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] roi-calculation cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/monthly-report-generator", async (c) => {
+  try {
+    const result = await processMonthlyReportGenerator();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] monthly-report-generator cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
