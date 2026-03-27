@@ -199,7 +199,7 @@ function ProcessLandscape() {
     if (treeData.length > 0 && expandedIds.size === 0) {
       setExpandedIds(new Set(treeData.map((n) => n.id)));
     }
-  }, [treeData]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [treeData]);
 
   // Bulk selection
   const toggleSelection = useCallback((id: string) => {
