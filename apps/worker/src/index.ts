@@ -25,6 +25,8 @@ import { processWbDeadlineMonitor } from "./crons/wb-deadline-monitor";
 import { processBudgetForecast } from "./crons/budget-forecast";
 import { processRoiCalculation } from "./crons/roi-calculation";
 import { processMonthlyReportGenerator } from "./crons/monthly-report-generator";
+import { processRcsaReminder } from "./crons/rcsa-reminder";
+import { processRcsaOverdueCheck } from "./crons/rcsa-overdue-check";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -396,6 +398,32 @@ app.post("/crons/monthly-report-generator", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] monthly-report-generator cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 14: RCSA cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/rcsa-reminder", async (c) => {
+  try {
+    const result = await processRcsaReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] rcsa-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/rcsa-overdue-check", async (c) => {
+  try {
+    const result = await processRcsaOverdueCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] rcsa-overdue-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
