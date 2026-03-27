@@ -15,3 +15,4 @@ export * from "./types/intelligence";
 export * from "./types/whistleblowing";
 export * from "./types/budget";
 export * from "./types/branding";
+export * from "./types/rcsa";

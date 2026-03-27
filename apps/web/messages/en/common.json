@@ -3769,5 +3769,154 @@
     "widgetDocumentRecent": "Recent Documents",
     "widgetWbStatistics": "Whistleblowing Stats",
     "widgetAssetOverview": "Asset Overview"
+  },
+  "rcsa": {
+    "title": "Risk & Control Self-Assessment",
+    "description": "Periodic self-assessment of risks and controls by 1st line managers",
+    "campaign": {
+      "create": "New Campaign",
+      "createTitle": "Create RCSA Campaign",
+      "backToList": "Back to Campaigns",
+      "empty": "No campaigns yet. Create your first RCSA campaign.",
+      "notFound": "Campaign not found",
+      "name": "Campaign Name",
+      "namePlaceholder": "e.g. Q1 2026 Self-Assessment",
+      "descriptionLabel": "Description",
+      "periodStart": "Period Start",
+      "periodEnd": "Period End",
+      "period": "Period",
+      "frequency": "Frequency",
+      "departments": "Departments",
+      "departmentPlaceholder": "Enter department name",
+      "roles": "Target Roles",
+      "scope": "Scope",
+      "cesWeight": "CES Weight",
+      "cesWeightHint": "Weight of RCSA results in the Control Effectiveness Score (0-50%)",
+      "reminderDays": "Reminder Days Before Deadline",
+      "participants": "participants",
+      "completed": "completed",
+      "deadline": "Deadline",
+      "launch": "Launch",
+      "close": "Close Campaign",
+      "saveDraft": "Save as Draft",
+      "launchNow": "Launch Now",
+      "reviewTitle": "Review & Launch",
+      "statusAll": "All",
+      "status": {
+        "draft": "Draft",
+        "active": "Active",
+        "closed": "Closed",
+        "archived": "Archived"
+      },
+      "freq": {
+        "quarterly": "Quarterly",
+        "semi_annual": "Semi-Annual",
+        "annual": "Annual"
+      },
+      "step": {
+        "basics": "Basics",
+        "scope": "Scope",
+        "config": "Configuration",
+        "review": "Review"
+      },
+      "role": {
+        "risk_owner": "All Risk Owners",
+        "control_owner": "All Control Owners"
+      }
+    },
+    "tab": {
+      "overview": "Overview",
+      "results": "Results",
+      "discrepancies": "Discrepancies",
+      "participants": "Participants",
+      "trend": "Trend"
+    },
+    "kpi": {
+      "participationRate": "Participation Rate",
+      "totalAssignments": "Total Assignments",
+      "completed": "Completed",
+      "overdue": "Overdue"
+    },
+    "results": {
+      "notAvailable": "Results not yet available. Close the campaign to compute results.",
+      "riskSummary": "Risk Assessment Summary",
+      "controlSummary": "Control Effectiveness Summary",
+      "avgLikelihood": "Avg. Likelihood",
+      "avgImpact": "Avg. Impact",
+      "riskTrend": "Risk Trend",
+      "increasing": "Increasing",
+      "stable": "Stable",
+      "decreasing": "Decreasing",
+      "effective": "Effective",
+      "partial": "Partially Effective",
+      "ineffective": "Ineffective"
+    },
+    "discrepancies": {
+      "empty": "No discrepancies found.",
+      "entity": "Entity",
+      "rcsaRating": "RCSA Rating (1st Line)",
+      "auditRating": "Audit Rating (3rd Line)",
+      "type": "Discrepancy Type",
+      "overconfident": "Overconfident",
+      "underconfident": "Underconfident"
+    },
+    "participants": {
+      "empty": "No participants found.",
+      "name": "Name",
+      "assigned": "Assigned",
+      "completed": "Completed",
+      "overdue": "Overdue",
+      "lastActivity": "Last Activity"
+    },
+    "trend": {
+      "noData": "No comparison data available. This is the first campaign.",
+      "comparingWith": "Comparing with previous campaign",
+      "completionRate": "Completion Rate",
+      "avgLikelihood": "Avg. Likelihood",
+      "avgImpact": "Avg. Impact",
+      "controlsEffective": "Effective Controls",
+      "discrepancies": "Discrepancies"
+    },
+    "myAssessments": {
+      "title": "My Assessments",
+      "completed": "completed",
+      "empty": "You have no pending assessments.",
+      "riskAssessments": "Risk Assessments",
+      "controlAssessments": "Control Assessments",
+      "submit": "Submit Assessment"
+    },
+    "risk": {
+      "stillRelevant": "Is this risk still relevant?",
+      "likelihood": "Likelihood",
+      "impact": "Impact",
+      "trend": "Trend",
+      "trend_increasing": "Increasing",
+      "trend_stable": "Stable",
+      "trend_decreasing": "Decreasing"
+    },
+    "control": {
+      "effectiveness": "Control Effectiveness",
+      "operating": "Is the control actually operating?",
+      "weaknesses": "Identified Weaknesses",
+      "eff_effective": "Effective",
+      "eff_partially_effective": "Partial",
+      "eff_ineffective": "Ineffective"
+    },
+    "status": {
+      "submitted": "Submitted",
+      "pending": "Pending",
+      "overdue": "Overdue"
+    },
+    "common": {
+      "yes": "Yes",
+      "no": "No",
+      "add": "Add",
+      "back": "Back",
+      "next": "Next",
+      "days": "days",
+      "daysLeft": "days left",
+      "comment": "Comment",
+      "confidence": "Confidence Level"
+    }
   }
 }
