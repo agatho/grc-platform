@@ -21,6 +21,7 @@ import { processCesRecompute } from "./crons/ces-recompute";
 import { processExecutiveKpiSnapshot } from "./crons/executive-kpi-snapshot";
 import { processRegulatoryFeedFetcher } from "./crons/regulatory-feed-fetcher";
 import { processRegulatoryRelevanceScorer } from "./crons/regulatory-relevance-scorer";
+import { processWbDeadlineMonitor } from "./crons/wb-deadline-monitor";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -337,6 +338,21 @@ app.post("/crons/regulatory-relevance-scorer", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] regulatory-relevance-scorer cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 12: Whistleblowing cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/wb-deadline-monitor", async (c) => {
+  try {
+    const result = await processWbDeadlineMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] wb-deadline-monitor cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
