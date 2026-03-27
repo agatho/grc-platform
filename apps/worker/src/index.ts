@@ -44,7 +44,10 @@ app.use("/crons/*", async (c, next) => {
     return c.json({ error: "CRON_SECRET not configured on server" }, 500);
   }
 
-  if (secret !== expected) {
+  // Constant-time comparison to prevent timing attacks
+  const secretBuf = Buffer.from(secret ?? "");
+  const expectedBuf = Buffer.from(expected);
+  if (secretBuf.length !== expectedBuf.length || !require("crypto").timingSafeEqual(secretBuf, expectedBuf)) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 

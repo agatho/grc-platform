@@ -160,7 +160,7 @@ export function BpmnViewer({
 
         const html = document.createElement("div");
         html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
-        html.innerHTML = `<span>${item.riskCount}</span><span>&middot;</span><span>${item.highestScore}</span>`;
+        html.textContent = `${item.riskCount} · ${item.highestScore}`;
         html.style.transform = "translate(50%, -50%)";
 
         overlays.add(item.bpmnElementId, "risk-badge", {
