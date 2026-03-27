@@ -38,7 +38,7 @@ cd ../.. && npm run dev
 | Auth | Auth.js v5 (self-hosted) + Custom RBAC + Three Lines of Defense |
 | Email | Resend 6.9 SDK + React Email templates (27 templates, DE/EN) |
 | AI | Claude CLI (subscription) + Claude API + OpenAI + Gemini + Ollama |
-| Testing | Vitest 4.1, 302 unit tests + 16 integration tests |
+| Testing | Vitest 4.1, 662 unit tests + 16 integration tests |
 | Monorepo | Turborepo 2.8 + npm workspaces |
 | CI/CD | GitHub Actions (ESLint, TypeScript, tests, CodeQL v4, Dependabot) |
 
@@ -219,7 +219,7 @@ ARCTOS uses a feature-gate architecture. Each module can be independently enable
 ## Testing
 
 ```bash
-# Unit tests (302 total)
+# Unit tests (662 total)
 npx turbo test
 
 # Integration tests (RLS + audit triggers)
@@ -230,7 +230,7 @@ npx vitest run --config vitest.rls.config.ts
 
 | Package | Tests | Coverage |
 |---------|-------|----------|
-| @grc/shared | 179 | Zod schemas, BPMN parser, status transitions, CES |
+| @grc/shared | 539 | Zod schemas, BPMN parser, status transitions, CES, all Sprint 4-12 schemas |
 | @grc/auth | 57 | RBAC middleware, provider helpers, Azure AD |
 | @grc/web | 40 | Date/number format utilities |
 | @grc/email | 26 | EmailService, retry logic, 27 templates |
