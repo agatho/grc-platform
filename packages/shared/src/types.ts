@@ -13,3 +13,4 @@ export * from "./types/tprm";
 export * from "./types/esg";
 export * from "./types/intelligence";
 export * from "./types/whistleblowing";
+export * from "./types/budget";
