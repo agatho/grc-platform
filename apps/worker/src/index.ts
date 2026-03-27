@@ -32,6 +32,8 @@ import { processPolicyOverdueEscalation } from "./crons/policy-overdue-escalatio
 import { processPolicyVersionCheck } from "./crons/policy-version-check";
 import { processPlaybookPhaseEscalation } from "./crons/playbook-phase-escalation";
 import { processPlaybookSuggestion } from "./crons/playbook-suggestion";
+import { processCalendarDigest } from "./crons/calendar-digest";
+import { processCalendarOverdueCheck } from "./crons/calendar-overdue-check";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -492,6 +494,32 @@ app.post("/crons/playbook-suggestion", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] playbook-suggestion cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 17: Compliance Calendar cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/calendar-digest", async (c) => {
+  try {
+    const result = await processCalendarDigest();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] calendar-digest cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/calendar-overdue-check", async (c) => {
+  try {
+    const result = await processCalendarOverdueCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] calendar-overdue-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

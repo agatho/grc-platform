@@ -170,6 +170,9 @@ export const user = pgTable("user", {
   lastLoginAt: timestamp("last_login_at", { withTimezone: true }),
   // Sprint 1.2: notification preferences
   notificationPreferences: jsonb("notification_preferences").default({}),
+  // Sprint 17: iCal token for calendar subscription
+  icalToken: varchar("ical_token", { length: 128 }),
+  icalTokenCreatedAt: timestamp("ical_token_created_at", { withTimezone: true }),
   // Cross-cutting mandatory fields
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

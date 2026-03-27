@@ -18,3 +18,4 @@ export * from "./schemas/branding";
 export * from "./schemas/rcsa";
 export * from "./schemas/policy-acknowledgment";
 export * from "./schemas/playbook";
+export * from "./schemas/calendar";
