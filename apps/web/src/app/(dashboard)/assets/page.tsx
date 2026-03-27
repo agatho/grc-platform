@@ -392,7 +392,7 @@ export default function AssetsPage() {
       href: "/assets",
       icon: "Database",
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const toggleNode = (id: string) => {
     setExpanded((prev) => {

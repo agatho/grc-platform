@@ -82,7 +82,7 @@ function CompareContent() {
       })
       .catch(() => setVersions([]))
       .finally(() => setVersionsLoading(false));
-  }, [processId]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [processId]);
 
   // Fetch comparison
   const fetchComparison = useCallback(async () => {

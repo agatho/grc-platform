@@ -366,7 +366,7 @@ export default function WorkItemsPage() {
       href: "/work-items",
       icon: "Layers",
     });
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   // Filter logic
   const filtered = workItems.filter((wi) => {
