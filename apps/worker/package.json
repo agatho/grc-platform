@@ -9,16 +9,16 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
-    "hono": "^4.7",
-    "@grc/ai": "*",
-    "@grc/db": "*",
-    "@grc/email": "*",
-    "@grc/shared": "*",
-    "svix": "^1.42"
+    "@grc/ai": "^0.1.0",
+    "@grc/db": "^0.1.0",
+    "@grc/email": "^0.1.0",
+    "@grc/shared": "^0.1.0",
+    "hono": "^4.12.9",
+    "svix": "^1.89.0"
   },
   "devDependencies": {
+    "tsx": "^4.21.0",
     "typescript": "^5.7",
-    "tsx": "^4.19",
-    "vitest": "^3.0"
+    "vitest": "^4.1.2"
   }
 }
