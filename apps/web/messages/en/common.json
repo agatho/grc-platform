@@ -4152,5 +4152,95 @@
       "noActiveDistributions": "No active distributions",
       "noDepartmentData": "No department data available"
     }
+  },
+  "calendar": {
+    "title": "Compliance Calendar",
+    "description": "Cross-module calendar aggregating all GRC deadlines",
+    "filters": "Filters",
+    "createEvent": "Create Event",
+    "today": "Today",
+    "more": "more",
+    "overdue": "Overdue",
+    "noEvents": "No events in this period",
+    "upcomingTitle": "Upcoming Deadlines",
+    "viewAll": "View all",
+    "noUpcoming": "No upcoming deadlines this week",
+    "moduleFilter": "Modules",
+    "clearFilters": "Clear all",
+    "capacityLegend": "Capacity Heatmap",
+    "eventTitle": "Title",
+    "eventTitlePlaceholder": "e.g. NIS2 Workshop",
+    "eventDescription": "Description",
+    "startDate": "Start",
+    "endDate": "End",
+    "allDay": "All-day event",
+    "eventType": "Event Type",
+    "recurrence": "Recurrence",
+    "save": "Save",
+    "views": {
+      "month": "Month",
+      "week": "Week",
+      "day": "Day",
+      "agenda": "Agenda"
+    },
+    "weekdays": {
+      "mon": "Mon",
+      "tue": "Tue",
+      "wed": "Wed",
+      "thu": "Thu",
+      "fri": "Fri",
+      "sat": "Sat",
+      "sun": "Sun"
+    },
+    "types": {
+      "meeting": "Meeting",
+      "workshop": "Workshop",
+      "review": "Review",
+      "training": "Training",
+      "deadline": "Deadline",
+      "other": "Other"
+    },
+    "recurrences": {
+      "none": "None",
+      "weekly": "Weekly",
+      "monthly": "Monthly",
+      "quarterly": "Quarterly",
+      "annually": "Annually"
+    },
+    "capacity": {
+      "none": "0 events",
+      "low": "1-2 events",
+      "medium": "3-5 events",
+      "high": "6+ events"
+    }
+  },
+  "calendarSettings": {
+    "title": "Calendar Settings",
+    "description": "Configure iCal subscription for external calendar integration",
+    "icalSubscription": "iCal Subscription",
+    "icalDescription": "Subscribe to your compliance calendar from Outlook, Google Calendar, or any iCal-compatible application.",
+    "generateToken": "Generate Subscription URL",
+    "regenerateToken": "Regenerate Token",
+    "revokeToken": "Revoke Token",
+    "revokeConfirmTitle": "Revoke iCal Token?",
+    "revokeConfirmDescription": "This will immediately invalidate the current subscription URL. External calendars will no longer receive updates.",
+    "revokeConfirm": "Revoke",
+    "cancel": "Cancel",
+    "noTokenYet": "No subscription URL has been generated yet. Generate one to subscribe from an external calendar.",
+    "tokenWarning": "Important: Save this URL now",
+    "tokenWarningDetail": "The token will only be shown once. Copy the URL and add it to your external calendar application.",
+    "tokenCreated": "Token created",
+    "setupInstructions": "Setup Instructions",
+    "setupDescription": "How to add the ARCTOS compliance calendar to your calendar application.",
+    "outlookSetup": "Microsoft Outlook",
+    "outlookStep1": "Open Outlook and go to Calendar view",
+    "outlookStep2": "Click 'Add calendar' > 'From internet'",
+    "outlookStep3": "Paste the subscription URL",
+    "outlookStep4": "Click 'OK' — the calendar will sync automatically",
+    "googleSetup": "Google Calendar",
+    "googleStep1": "Open Google Calendar settings",
+    "googleStep2": "Click 'Add other calendars' > 'From URL'",
+    "googleStep3": "Paste the subscription URL",
+    "googleStep4": "Click 'Add calendar' — it may take a few hours to sync"
   }
 }

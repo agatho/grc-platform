@@ -4152,5 +4152,95 @@
       "noActiveDistributions": "Keine aktiven Verteilungen",
       "noDepartmentData": "Keine Abteilungsdaten verfuegbar"
     }
+  },
+  "calendar": {
+    "title": "Compliance-Kalender",
+    "description": "Moduluebergreifender Kalender mit allen GRC-Fristen",
+    "filters": "Filter",
+    "createEvent": "Termin erstellen",
+    "today": "Heute",
+    "more": "weitere",
+    "overdue": "Ueberfaellig",
+    "noEvents": "Keine Termine in diesem Zeitraum",
+    "upcomingTitle": "Anstehende Fristen",
+    "viewAll": "Alle anzeigen",
+    "noUpcoming": "Keine anstehenden Fristen diese Woche",
+    "moduleFilter": "Module",
+    "clearFilters": "Alle zuruecksetzen",
+    "capacityLegend": "Kapazitaets-Heatmap",
+    "eventTitle": "Titel",
+    "eventTitlePlaceholder": "z.B. NIS2-Workshop",
+    "eventDescription": "Beschreibung",
+    "startDate": "Beginn",
+    "endDate": "Ende",
+    "allDay": "Ganztaegig",
+    "eventType": "Terminart",
+    "recurrence": "Wiederholung",
+    "save": "Speichern",
+    "views": {
+      "month": "Monat",
+      "week": "Woche",
+      "day": "Tag",
+      "agenda": "Agenda"
+    },
+    "weekdays": {
+      "mon": "Mo",
+      "tue": "Di",
+      "wed": "Mi",
+      "thu": "Do",
+      "fri": "Fr",
+      "sat": "Sa",
+      "sun": "So"
+    },
+    "types": {
+      "meeting": "Meeting",
+      "workshop": "Workshop",
+      "review": "Review",
+      "training": "Schulung",
+      "deadline": "Frist",
+      "other": "Sonstiges"
+    },
+    "recurrences": {
+      "none": "Keine",
+      "weekly": "Woechentlich",
+      "monthly": "Monatlich",
+      "quarterly": "Vierteljaehrlich",
+      "annually": "Jaehrlich"
+    },
+    "capacity": {
+      "none": "0 Termine",
+      "low": "1-2 Termine",
+      "medium": "3-5 Termine",
+      "high": "6+ Termine"
+    }
+  },
+  "calendarSettings": {
+    "title": "Kalender-Einstellungen",
+    "description": "iCal-Abonnement fuer externe Kalender-Integration konfigurieren",
+    "icalSubscription": "iCal-Abonnement",
+    "icalDescription": "Abonnieren Sie Ihren Compliance-Kalender aus Outlook, Google Calendar oder jeder iCal-kompatiblen Anwendung.",
+    "generateToken": "Abonnement-URL generieren",
+    "regenerateToken": "Token erneuern",
+    "revokeToken": "Token widerrufen",
+    "revokeConfirmTitle": "iCal-Token widerrufen?",
+    "revokeConfirmDescription": "Dies macht die aktuelle Abonnement-URL sofort ungueltig. Externe Kalender erhalten keine Updates mehr.",
+    "revokeConfirm": "Widerrufen",
+    "cancel": "Abbrechen",
+    "noTokenYet": "Es wurde noch keine Abonnement-URL generiert. Erstellen Sie eine, um den Kalender extern zu abonnieren.",
+    "tokenWarning": "Wichtig: URL jetzt speichern",
+    "tokenWarningDetail": "Das Token wird nur einmal angezeigt. Kopieren Sie die URL und fuegen Sie sie in Ihre externe Kalender-Anwendung ein.",
+    "tokenCreated": "Token erstellt",
+    "setupInstructions": "Einrichtungsanleitung",
+    "setupDescription": "So fuegen Sie den ARCTOS Compliance-Kalender zu Ihrer Kalender-Anwendung hinzu.",
+    "outlookSetup": "Microsoft Outlook",
+    "outlookStep1": "Oeffnen Sie Outlook und wechseln Sie zur Kalenderansicht",
+    "outlookStep2": "Klicken Sie auf 'Kalender hinzufuegen' > 'Aus dem Internet'",
+    "outlookStep3": "Fuegen Sie die Abonnement-URL ein",
+    "outlookStep4": "Klicken Sie auf 'OK' — der Kalender wird automatisch synchronisiert",
+    "googleSetup": "Google Calendar",
+    "googleStep1": "Oeffnen Sie die Google Calendar-Einstellungen",
+    "googleStep2": "Klicken Sie auf 'Andere Kalender' > 'Per URL'",
+    "googleStep3": "Fuegen Sie die Abonnement-URL ein",
+    "googleStep4": "Klicken Sie auf 'Kalender hinzufuegen' — die Synchronisierung kann einige Stunden dauern"
   }
 }
