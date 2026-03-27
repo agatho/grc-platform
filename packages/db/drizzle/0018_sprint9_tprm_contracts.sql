@@ -203,7 +203,7 @@ CREATE TABLE "vendor_risk_assessment" (
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-ALTER TABLE "finding" ADD COLUMN "audit_id" uuid;--> statement-breakpoint
+-- ALTER TABLE "finding" ADD COLUMN "audit_id" uuid; -- already added in 0017--> statement-breakpoint
 ALTER TABLE "contract" ADD CONSTRAINT "contract_org_id_organization_id_fk" FOREIGN KEY ("org_id") REFERENCES "public"."organization"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contract" ADD CONSTRAINT "contract_work_item_id_work_item_id_fk" FOREIGN KEY ("work_item_id") REFERENCES "public"."work_item"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
 ALTER TABLE "contract" ADD CONSTRAINT "contract_vendor_id_vendor_id_fk" FOREIGN KEY ("vendor_id") REFERENCES "public"."vendor"("id") ON DELETE no action ON UPDATE no action;--> statement-breakpoint
