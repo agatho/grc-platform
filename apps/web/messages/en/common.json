@@ -20,6 +20,10 @@
     "assets": "Assets",
     "workItems": "Work Items",
     "settings": "Settings",
+    "import": "Data Import",
+    "importHistory": "Import History",
+    "importTemplates": "Import Templates",
+    "importMappings": "Saved Mappings",
     "sections": {
       "main": "Main Navigation",
       "firstLine": "1st Line of Defense",
