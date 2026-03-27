@@ -252,9 +252,9 @@ function ContractDetailInner() {
                       </div>
                     </div>
                     {latest && (
-                      <div className={`flex items-center justify-between rounded px-3 py-1.5 text-xs ${Boolean(latest.isBreach) ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+                      <div className={`flex items-center justify-between rounded px-3 py-1.5 text-xs ${latest.isBreach ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
                         <span>{t("sla.latest")}: {String(latest.actualValue)}{String(sla.unit)}</span>
-                        <span>{Boolean(latest.isBreach) ? t("sla.breach") : t("sla.ok")}</span>
+                        <span>{latest.isBreach ? t("sla.breach") : t("sla.ok")}</span>
                         <span>{String(latest.periodEnd)}</span>
                       </div>
                     )}
