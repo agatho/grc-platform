@@ -1,0 +1,51 @@
+{
+  "maturityOverview": "Reifegrad-Modell Uebersicht",
+  "maturityDescription": "CMMI-basiertes 5-Stufen-Reifegradmodell ueber alle GRC-Module",
+  "viewScorecard": "Scorecard anzeigen",
+  "newAssessment": "Neue Bewertung",
+  "target": "Ziel",
+  "lastCalculated": "Zuletzt berechnet",
+  "overview": {
+    "title": "Reifegrad-Uebersicht",
+    "description": "Reifegrade ueber alle Module anzeigen",
+    "currentLevel": "Aktueller Reifegrad",
+    "targetLevel": "Ziel-Reifegrad"
+  },
+  "assessments": {
+    "title": "Reifegrad-Bewertungen",
+    "description": "Reifegradevaluierungen pro Modul durchfuehren und pruefen",
+    "create": "Neue Bewertung",
+    "module": "Modul",
+    "status": "Status",
+    "score": "Bewertung",
+    "assessor": "Bewerter"
+  },
+  "roadmap": {
+    "title": "Reifegrad-Roadmap",
+    "description": "Verbesserungsmassnahmen zur Erreichung des Ziel-Reifegrads planen",
+    "addItem": "Roadmap-Element hinzufuegen",
+    "fromLevel": "Von Stufe",
+    "toLevel": "Zu Stufe"
+  },
+  "benchmarks": {
+    "title": "Branchen-Benchmarks",
+    "description": "Vergleichen Sie Ihren Reifegrad mit anonymisierten Branchenbenchmarks",
+    "submitData": "Benchmark-Daten einreichen",
+    "consentRequired": "Zustimmung erforderlich fuer anonymisierte Datenuebermittlung",
+    "industry": "Branche",
+    "orgSize": "Organisationsgroesse"
+  },
+  "scorecard": {
+    "title": "Reifegrad-Scorecard",
+    "description": "Vorstandstaugliche Reifegrad-Scorecard mit optionalem Benchmark-Vergleich",
+    "compareBenchmark": "Mit Benchmark vergleichen",
+    "includeHistory": "Verlauf einbeziehen"
+  },
+  "levels": {
+    "initial": "Initial",
+    "managed": "Gesteuert",
+    "defined": "Definiert",
+    "quantitatively_managed": "Quantitativ gesteuert",
+    "optimizing": "Optimierend"
+  }
+}

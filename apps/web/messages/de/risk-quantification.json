@@ -1,0 +1,50 @@
+{
+  "title": "Risikoquantifizierungs-Dashboard",
+  "description": "Integrierte FAIR + Monte-Carlo-Risikoquantifizierung mit VaR-Aggregation",
+  "runCalculation": "Berechnung starten",
+  "valueAtRisk": "Value at Risk (P95)",
+  "p95Confidence": "95% Konfidenzniveau",
+  "riskAppetite": "Risikoappetit",
+  "viewThresholds": "Schwellenwerte anzeigen",
+  "sensitivityAnalysis": "Sensitivitaetsanalyse",
+  "tornadoDiagram": "Tornado-Diagramm",
+  "executiveSummary": "Zusammenfassung",
+  "boardReport": "Vorstandsbericht",
+  "configuration": "Konfiguration",
+  "methodology": "Methodik",
+  "iterations": "Iterationen",
+  "confidence": "Konfidenz",
+  "currency": "Waehrung",
+  "recentCalculations": "Letzte Berechnungen",
+  "noCalculations": "Noch keine Berechnungen. Starten Sie Ihre erste VaR-Berechnung.",
+  "allEntities": "Alle Einheiten",
+  "risks": "Risiken",
+  "cards": {
+    "expectedLoss": "Erwarteter Verlust",
+    "varP95": "Value at Risk (P95)",
+    "appetiteStatus": "Appetit-Status",
+    "exceeding": "Appetit ueberschritten"
+  },
+  "appetite": {
+    "title": "Risikoappetit-Schwellenwerte",
+    "description": "Risikoappetit vs. tatsaechliche Exposition verfolgen",
+    "addThreshold": "Schwellenwert hinzufuegen",
+    "name": "Name",
+    "category": "Kategorie",
+    "appetiteAmount": "Appetit-Betrag",
+    "toleranceAmount": "Toleranz-Betrag",
+    "currentExposure": "Aktuelle Exposition",
+    "status": "Status"
+  },
+  "sensitivity": {
+    "title": "Sensitivitaetsanalyse",
+    "description": "Analysieren Sie, wie Parameteraenderungen das Gesamtrisiko beeinflussen",
+    "newAnalysis": "Neue Analyse"
+  },
+  "summaries": {
+    "title": "Zusammenfassungen",
+    "description": "Erstellen Sie vorstandstaugliche 1-Seiten-Risikozusammenfassungen",
+    "create": "Zusammenfassung erstellen",
+    "exportPptx": "PPTX exportieren"
+  }
+}

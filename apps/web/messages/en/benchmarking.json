@@ -1,0 +1,51 @@
+{
+  "maturityOverview": "Maturity Model Overview",
+  "maturityDescription": "CMMI-based 5-level maturity model across all GRC modules",
+  "viewScorecard": "View Scorecard",
+  "newAssessment": "New Assessment",
+  "target": "Target",
+  "lastCalculated": "Last calculated",
+  "overview": {
+    "title": "Maturity Overview",
+    "description": "View maturity levels across all modules",
+    "currentLevel": "Current Level",
+    "targetLevel": "Target Level"
+  },
+  "assessments": {
+    "title": "Maturity Assessments",
+    "description": "Conduct and review maturity assessments per module",
+    "create": "New Assessment",
+    "module": "Module",
+    "status": "Status",
+    "score": "Score",
+    "assessor": "Assessor"
+  },
+  "roadmap": {
+    "title": "Maturity Roadmap",
+    "description": "Plan improvement actions to reach target maturity levels",
+    "addItem": "Add Roadmap Item",
+    "fromLevel": "From Level",
+    "toLevel": "To Level"
+  },
+  "benchmarks": {
+    "title": "Industry Benchmarks",
+    "description": "Compare your maturity against anonymized industry benchmarks",
+    "submitData": "Submit Benchmark Data",
+    "consentRequired": "Consent is required to submit anonymized data",
+    "industry": "Industry",
+    "orgSize": "Organization Size"
+  },
+  "scorecard": {
+    "title": "Maturity Scorecard",
+    "description": "Board-ready maturity scorecard with optional benchmark comparison",
+    "compareBenchmark": "Compare with Benchmark",
+    "includeHistory": "Include History"
+  },
+  "levels": {
+    "initial": "Initial",
+    "managed": "Managed",
+    "defined": "Defined",
+    "quantitatively_managed": "Quantitatively Managed",
+    "optimizing": "Optimizing"
+  }
+}

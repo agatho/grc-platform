@@ -77,3 +77,13 @@ export * from "./schemas/ai-act";
 export * from "./schemas/tax-cms";
 export * from "./schemas/horizon-scanner";
 export * from "./schemas/cert-wizard";
+// Sprint 77: Embedded BI und Report Builder
+export * from "./schemas/bi-reporting";
+// Sprint 78: GRC Benchmarking und Maturity Model
+export * from "./schemas/benchmarking";
+// Sprint 79: Unified Risk Quantification Dashboard
+export * from "./schemas/risk-quantification";
+// Sprint 80: Multi-Region Deployment und Data Sovereignty
+export * from "./schemas/data-sovereignty";
+// Sprint 81: Role-Based Experience Redesign
+export * from "./schemas/role-dashboards";
