@@ -27,3 +27,4 @@ export * from "./types/board-kpi";
 export * from "./types/fair";
 export * from "./types/isms-intelligence";
 export * from "./types/compliance-culture";
+export * from "./types/automation";

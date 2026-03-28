@@ -1,0 +1,140 @@
+{
+  "title": "Workflow Automation",
+  "subtitle": "Define and manage IF/THEN rules for automated GRC actions",
+  "createRule": "New Rule",
+  "fromTemplate": "From Template",
+  "executions": "executions",
+  "errors": "errors",
+  "viewExecutionLog": "View Execution Log",
+
+  "dashboard": {
+    "activeRules": "Active Rules",
+    "total": "total",
+    "executions24h": "Executions (24h)",
+    "last24h": "Last 24 hours",
+    "successRate": "Success Rate",
+    "errorRate": "Error Rate",
+    "topRules": "Top Rules by Executions"
+  },
+
+  "ruleList": {
+    "title": "All Rules",
+    "empty": "No automation rules created yet. Start from a template or create a new rule."
+  },
+
+  "triggerTypes": {
+    "entity_change": "Entity Change",
+    "deadline_expired": "Deadline Expired",
+    "score_threshold": "Score Threshold",
+    "periodic": "Periodic"
+  },
+
+  "actionTypes": {
+    "create_task": "Create Task",
+    "send_notification": "Notification",
+    "send_email": "Send Email",
+    "change_status": "Change Status",
+    "escalate": "Escalation",
+    "trigger_webhook": "Trigger Webhook"
+  },
+
+  "categories": {
+    "risk_management": "Risk Management",
+    "control_testing": "Control Testing",
+    "vendor_management": "Vendor Management",
+    "audit": "Audit",
+    "data_protection": "Data Protection",
+    "compliance": "Compliance",
+    "isms": "ISMS",
+    "esg": "ESG"
+  },
+
+  "triggerConfig": {
+    "title": "Trigger Configuration",
+    "entityType": "Entity Type",
+    "selectEntity": "Select entity type...",
+    "events": "Events",
+    "field": "Field (optional)",
+    "fieldPlaceholder": "e.g. residual_score",
+    "schedule": "Schedule",
+    "selectSchedule": "Select schedule...",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly"
+  },
+
+  "conditionBuilder": {
+    "title": "Conditions (IF)",
+    "selectField": "Select field...",
+    "value": "Value",
+    "addCondition": "Condition",
+    "addGroup": "Group (AND/OR)",
+    "clickToToggle": "Click to toggle"
+  },
+
+  "actionConfig": {
+    "title": "Actions (THEN)",
+    "addAction": "Add action:",
+    "taskTitle": "Task title (e.g. Review risk: {entity.title})",
+    "selectRole": "Select role...",
+    "deadlineDays": "Days",
+    "message": "Message",
+    "templateKey": "Email template key",
+    "newStatus": "New status",
+    "escalationMessage": "Escalation message",
+    "webhookId": "Webhook ID",
+    "variableHint": "Variables: {entity.title}, {entity.score}, {entity.status}"
+  },
+
+  "designer": {
+    "createTitle": "New Automation Rule",
+    "editTitle": "Edit Rule",
+    "subtitle": "Configure trigger, conditions, and actions",
+    "ruleName": "Enter rule name...",
+    "ruleDescription": "Description (optional)...",
+    "advancedSettings": "Advanced Settings",
+    "cooldownMinutes": "Cooldown (minutes)",
+    "maxExecutionsPerHour": "Max executions per hour",
+    "save": "Save",
+    "saveAndActivate": "Save & Activate",
+    "dryRun": "Test (Dry Run)",
+    "activate": "Activate",
+    "deactivate": "Deactivate",
+    "delete": "Delete",
+    "confirmDelete": "Are you sure you want to delete this rule?",
+    "saveFailed": "Save failed",
+    "testResult": "Test Result",
+    "conditionsMatched": "All conditions matched — actions would be executed.",
+    "conditionsNotMatched": "Conditions not matched — no actions.",
+    "wouldExecute": "The following actions would be executed"
+  },
+
+  "executionLog": {
+    "title": "Execution Log",
+    "totalExecutions": "total executions",
+    "allStatuses": "All Statuses",
+    "empty": "No executions yet.",
+    "conditionsMatched": "Conditions Matched",
+    "entityId": "Entity ID",
+    "actionsExecuted": "Actions Executed",
+    "prev": "Previous",
+    "next": "Next",
+    "statuses": {
+      "success": "Success",
+      "partial_failure": "Partial Failure",
+      "failure": "Failed",
+      "skipped_cooldown": "Skipped (Cooldown)",
+      "skipped_ratelimit": "Skipped (Rate Limit)",
+      "dry_run": "Dry Run"
+    }
+  },
+
+  "templates": {
+    "title": "Template Gallery",
+    "subtitle": "Pre-configured best-practice rules as a starting point",
+    "allCategories": "All",
+    "empty": "No templates found.",
+    "builtIn": "Built-in",
+    "useTemplate": "Use Template"
+  }
+}
