@@ -1,0 +1,22 @@
+{
+  "title": "Mobile Application",
+  "subtitle": "Manage mobile devices, push notifications, and offline sync",
+  "stats": {
+    "devices": "Active Devices",
+    "notifications": "Unread Notifications",
+    "biometric": "Biometric Enabled",
+    "scanning": "QR/Barcode Scan",
+    "available": "Available"
+  },
+  "devices": {
+    "title": "Registered Devices",
+    "subtitle": "Manage mobile devices connected to your account",
+    "empty": "No devices registered yet",
+    "active": "Active",
+    "inactive": "Inactive"
+  },
+  "notifications": {
+    "title": "Recent Push Notifications",
+    "empty": "No push notifications yet"
+  }
+}

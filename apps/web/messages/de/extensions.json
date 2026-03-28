@@ -1,0 +1,23 @@
+{
+  "title": "Erweiterungen",
+  "subtitle": "Plattform mit Plugins und Integrationen erweitern",
+  "marketplace": "Marktplatz",
+  "marketplaceSubtitle": "Erweiterungen aus dem Marktplatz durchsuchen und installieren",
+  "marketplaceSearch": "Erweiterungen suchen...",
+  "allPricing": "Alle Preismodelle",
+  "install": "Installieren",
+  "pricing": {
+    "free": "Kostenlos",
+    "freemium": "Freemium",
+    "paid": "Kostenpflichtig"
+  },
+  "installed": {
+    "title": "Installierte Erweiterungen",
+    "empty": "Noch keine Erweiterungen installiert",
+    "browseMarketplace": "Marktplatz durchsuchen"
+  },
+  "featured": {
+    "title": "Empfohlene Erweiterungen",
+    "unknown": "Unbekannter Autor"
+  }
+}

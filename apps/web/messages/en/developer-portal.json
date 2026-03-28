@@ -1,0 +1,35 @@
+{
+  "title": "Developer Portal",
+  "subtitle": "Manage API keys, developer apps, and explore the API",
+  "createApiKey": "Create API Key",
+  "playground": "API Playground",
+  "playgroundSubtitle": "Test API endpoints interactively",
+  "request": "Request",
+  "response": "Response",
+  "send": "Send",
+  "stats": {
+    "totalRequests": "Total Requests (30d)",
+    "avgResponseTime": "Avg Response Time",
+    "successRate": "Success Rate",
+    "apiKeys": "Active API Keys"
+  },
+  "nav": {
+    "apiKeys": "API Keys",
+    "apiKeysDesc": "Create and manage API keys with scoped permissions",
+    "developerApps": "Developer Apps",
+    "developerAppsDesc": "Register OAuth2 applications for third-party integrations",
+    "playground": "API Playground",
+    "playgroundDesc": "Test API endpoints interactively with saved snippets"
+  },
+  "apiKeysTable": {
+    "title": "API Keys",
+    "name": "Name",
+    "key": "Key",
+    "status": "Status",
+    "lastUsed": "Last Used",
+    "rateLimit": "Rate Limit",
+    "actions": "Actions",
+    "empty": "No API keys created yet",
+    "neverUsed": "Never used"
+  }
+}

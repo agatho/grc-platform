@@ -1,0 +1,23 @@
+{
+  "title": "Extensions",
+  "subtitle": "Extend the platform with plugins and integrations",
+  "marketplace": "Marketplace",
+  "marketplaceSubtitle": "Browse and install extensions from the marketplace",
+  "marketplaceSearch": "Search extensions...",
+  "allPricing": "All Pricing",
+  "install": "Install",
+  "pricing": {
+    "free": "Free",
+    "freemium": "Freemium",
+    "paid": "Paid"
+  },
+  "installed": {
+    "title": "Installed Extensions",
+    "empty": "No extensions installed yet",
+    "browseMarketplace": "Browse Marketplace"
+  },
+  "featured": {
+    "title": "Featured Extensions",
+    "unknown": "Unknown Author"
+  }
+}

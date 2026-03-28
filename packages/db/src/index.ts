@@ -62,10 +62,15 @@ import * as eamGovernanceSchema from "./schema/eam-governance";
 import * as riskEvaluationSchema from "./schema/risk-evaluation";
 import * as incidentTimelineSchema from "./schema/incident-timeline";
 import * as processRaciSchema from "./schema/process-raci";
+import * as apiPlatformSchema from "./schema/api-platform";
+import * as extensionSchema from "./schema/extension";
+import * as onboardingSchema from "./schema/onboarding";
+import * as mobileSchema from "./schema/mobile";
+import * as saasMeteringSchema from "./schema/saas-metering";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema },
 });
 
 export type Database = typeof db;
@@ -131,3 +136,8 @@ export * from "./schema/eam-governance";
 export * from "./schema/risk-evaluation";
 export * from "./schema/incident-timeline";
 export * from "./schema/process-raci";
+export * from "./schema/api-platform";
+export * from "./schema/extension";
+export * from "./schema/onboarding";
+export * from "./schema/mobile";
+export * from "./schema/saas-metering";
