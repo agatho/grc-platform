@@ -1,0 +1,64 @@
+{
+  "title": "AI Assistant",
+  "configureProvider": "Configure an AI provider in Settings to enable AI features. All EAM features work without AI.",
+  "setupAi": "Setup AI Provider",
+  "providerConfig": "AI Provider Configuration",
+  "loading": "Loading...",
+  "provider": {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "azure_openai": "Azure OpenAI",
+    "ollama": "Ollama (Local)",
+    "mistral": "Mistral",
+    "custom": "Custom (OpenAI-compatible)"
+  },
+  "settings": {
+    "title": "AI Provider Settings",
+    "selectProvider": "Select Provider",
+    "apiKey": "API Key",
+    "model": "Model",
+    "baseUrl": "Base URL",
+    "maxTokens": "Max Tokens",
+    "temperature": "Temperature",
+    "testConnection": "Test Connection",
+    "saveConfig": "Save Configuration",
+    "connectionValid": "Connection valid",
+    "connectionInvalid": "Connection invalid",
+    "lastValidated": "Last validated"
+  },
+  "prompts": {
+    "title": "Prompt Templates",
+    "objectGeneration": "Object Generation",
+    "descriptionGeneration": "Description Generation",
+    "translation": "Translation",
+    "ragSystem": "RAG System",
+    "customize": "Customize",
+    "resetDefault": "Reset to Default",
+    "systemDefault": "System Default",
+    "orgOverride": "Organization Override"
+  },
+  "features": {
+    "generate": "Generate",
+    "generateDescription": "Generate Description",
+    "generateObjects": "AI-Powered Editor",
+    "translateField": "Translate",
+    "translationMode": "Translation Mode",
+    "askAi": "Ask AI",
+    "onlyShowSuggested": "Only show suggested"
+  },
+  "chat": {
+    "title": "EAM Chatbot",
+    "placeholder": "Ask about your architecture...",
+    "send": "Send",
+    "references": "Related Objects",
+    "newSession": "New Session"
+  },
+  "suggestions": {
+    "title": "Suggested for You",
+    "eolApproaching": "EOL approaching",
+    "openCves": "Open CVEs",
+    "unassessed": "Needs assessment",
+    "recentlyModified": "Recently modified",
+    "dismiss": "Dismiss"
+  }
+}

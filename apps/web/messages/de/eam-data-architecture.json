@@ -1,0 +1,68 @@
+{
+  "title": "Datenarchitektur",
+  "create": "Erstellen",
+  "loading": "Wird geladen...",
+  "dataObjects": {
+    "title": "Datenobjekte",
+    "create": "Datenobjekt erstellen",
+    "name": "Name",
+    "category": "Kategorie",
+    "classification": "Klassifizierung",
+    "owner": "Eigentümer-Anwendung",
+    "qualityScore": "Qualitätsbewertung",
+    "hierarchy": "Hierarchie",
+    "crudMatrix": "CRUD-Matrix",
+    "lineage": "Datenherkunft",
+    "categories": {
+      "master_data": "Stammdaten",
+      "transaction_data": "Transaktionsdaten",
+      "reference_data": "Referenzdaten",
+      "analytical_data": "Analysedaten"
+    },
+    "classifications": {
+      "public": "Öffentlich",
+      "internal": "Intern",
+      "confidential": "Vertraulich",
+      "restricted": "Eingeschränkt"
+    }
+  },
+  "contexts": {
+    "title": "Architektur-Kontexte",
+    "create": "Kontext erstellen",
+    "asIs": "IST-Zustand",
+    "toBe": "SOLL-Zustand",
+    "scenario": "Szenario",
+    "historical": "Historisch",
+    "default": "Standardkontext",
+    "promote": "Als Standard festlegen",
+    "compare": "Kontexte vergleichen",
+    "attributes": "Kontextattribute",
+    "override": "Überschreiben",
+    "useGlobal": "Globalen Wert verwenden",
+    "draft": "Entwurf",
+    "active": "Aktiv",
+    "archived": "Archiviert"
+  },
+  "orgUnits": {
+    "title": "Organisationseinheiten",
+    "create": "Organisationseinheit erstellen",
+    "abbreviation": "Abkürzung",
+    "location": "Standort",
+    "head": "Leitung",
+    "headCount": "Mitarbeiterzahl",
+    "applicationMatrix": "Anwendungsnutzungsmatrix"
+  },
+  "businessContexts": {
+    "title": "Geschäftskontexte",
+    "create": "Geschäftskontext erstellen",
+    "capability": "Fähigkeit",
+    "process": "Prozess",
+    "orgUnit": "Organisationseinheit",
+    "applications": "Anwendungen"
+  },
+  "diagrams": {
+    "itComponents": "IT-Komponentendiagramm",
+    "dataObjects": "Datenobjektdiagramm",
+    "fourLayer": "4-Schichten-Architekturübersicht"
+  }
+}

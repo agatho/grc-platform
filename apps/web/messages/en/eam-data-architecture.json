@@ -1,0 +1,68 @@
+{
+  "title": "Data Architecture",
+  "create": "Create",
+  "loading": "Loading...",
+  "dataObjects": {
+    "title": "Data Objects",
+    "create": "Create Data Object",
+    "name": "Name",
+    "category": "Category",
+    "classification": "Classification",
+    "owner": "Owner Application",
+    "qualityScore": "Quality Score",
+    "hierarchy": "Hierarchy",
+    "crudMatrix": "CRUD Matrix",
+    "lineage": "Data Lineage",
+    "categories": {
+      "master_data": "Master Data",
+      "transaction_data": "Transaction Data",
+      "reference_data": "Reference Data",
+      "analytical_data": "Analytical Data"
+    },
+    "classifications": {
+      "public": "Public",
+      "internal": "Internal",
+      "confidential": "Confidential",
+      "restricted": "Restricted"
+    }
+  },
+  "contexts": {
+    "title": "Architecture Contexts",
+    "create": "Create Context",
+    "asIs": "AS-IS",
+    "toBe": "TO-BE",
+    "scenario": "Scenario",
+    "historical": "Historical",
+    "default": "Default Context",
+    "promote": "Promote to Default",
+    "compare": "Compare Contexts",
+    "attributes": "Context Attributes",
+    "override": "Override",
+    "useGlobal": "Use Global Value",
+    "draft": "Draft",
+    "active": "Active",
+    "archived": "Archived"
+  },
+  "orgUnits": {
+    "title": "Organizational Units",
+    "create": "Create Org Unit",
+    "abbreviation": "Abbreviation",
+    "location": "Location",
+    "head": "Head",
+    "headCount": "Head Count",
+    "applicationMatrix": "Application Usage Matrix"
+  },
+  "businessContexts": {
+    "title": "Business Contexts",
+    "create": "Create Business Context",
+    "capability": "Capability",
+    "process": "Process",
+    "orgUnit": "Org Unit",
+    "applications": "Applications"
+  },
+  "diagrams": {
+    "itComponents": "IT Component Diagram",
+    "dataObjects": "Data Object Diagram",
+    "fourLayer": "4-Layer Architecture Overview"
+  }
+}

@@ -1,0 +1,95 @@
+{
+  "title": "EAM-Governance",
+  "status": {
+    "draft": "Entwurf",
+    "pending_review": "Prüfung ausstehend",
+    "approved": "Genehmigt",
+    "published": "Veröffentlicht",
+    "rejected": "Abgelehnt",
+    "archived": "Archiviert"
+  },
+  "actions": {
+    "publish": "Veröffentlichen",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "archive": "Archivieren",
+    "changeToSuggestion": "Als Vorschlag ändern"
+  },
+  "roles": {
+    "author": "Autor",
+    "examiner": "Prüfer",
+    "responsible": "Verantwortlicher"
+  },
+  "bulkActions": {
+    "bulkPublish": "Ausgewählte veröffentlichen",
+    "bulkApprove": "Alle genehmigen",
+    "bulkReject": "Alle ablehnen",
+    "bulkArchive": "Alle archivieren"
+  },
+  "predecessor": {
+    "title": "Vorgänger",
+    "successor": "Nachfolger",
+    "setPredecessor": "Vorgänger festlegen"
+  },
+  "detail": {
+    "generalInfo": "Allgemeine Informationen",
+    "eamAttributes": "EAM-Attribute",
+    "relations": "Beziehungen",
+    "lifecycle": "Lebenszyklus",
+    "itManagement": "IT-Management",
+    "protectionRequirement": "Schutzbedarf",
+    "personalDataProcessing": "Verarbeitung personenbezogener Daten",
+    "systemAttributes": "Systemattribute"
+  },
+  "protectionReq": {
+    "confidentiality": "Vertraulichkeit",
+    "integrity": "Integrität",
+    "availability": "Verfügbarkeit",
+    "authenticity": "Authentizität",
+    "reliability": "Zuverlässigkeit",
+    "notAssessed": "Nicht bewertet",
+    "editInIsms": "Im ISMS-Modul bearbeiten"
+  },
+  "personalData": {
+    "processesPersonalData": "Verarbeitet personenbezogene Daten",
+    "detail": "Details zu personenbezogenen Daten",
+    "yes": "Ja",
+    "no": "Nein"
+  },
+  "occurrences": {
+    "title": "Vorkommen",
+    "inDiagrams": "In Diagrammen",
+    "inProcesses": "In Prozessen",
+    "inContexts": "In Kontexten"
+  },
+  "bpmn": {
+    "placeApplication": "Anwendung platzieren",
+    "placeItComponent": "IT-Komponente platzieren",
+    "placeDataObject": "Datenobjekt platzieren",
+    "selectFromCatalog": "Aus EAM-Katalog auswählen",
+    "matrixView": "Matrixansicht"
+  },
+  "biExport": {
+    "title": "BI-Export",
+    "apiKeys": "API-Schlüssel",
+    "createKey": "API-Schlüssel erstellen",
+    "documentation": "Power BI Verbindungsanleitung"
+  },
+  "excelImport": {
+    "title": "Excel-Import",
+    "upload": "Excel-Datei hochladen",
+    "mapColumns": "Spalten zuordnen",
+    "preview": "Änderungen vorschau",
+    "apply": "Import anwenden",
+    "newObjects": "Neue Objekte",
+    "updatedObjects": "Aktualisierte Objekte",
+    "ambiguous": "Uneindeutige Zuordnungen"
+  },
+  "lifecycleBar": {
+    "planning": "Planung",
+    "implementing": "Implementierung",
+    "active": "Aktiv",
+    "phaseOut": "Auslaufen",
+    "retired": "Außer Betrieb"
+  }
+}

@@ -1,0 +1,69 @@
+{
+  "title": "EAM Catalog",
+  "action": "Add Object",
+  "loading": "Loading...",
+  "tabs": {
+    "list": "List",
+    "dashboard": "Dashboard",
+    "lifecycle": "Lifecycle Roadmap",
+    "eamDashboard": "EAM Dashboards"
+  },
+  "filters": {
+    "objectType": "Object Type",
+    "search": "Search catalog...",
+    "keywords": "Keywords",
+    "lifecycle": "Lifecycle Status",
+    "category": "Category",
+    "manufacturer": "Manufacturer",
+    "functionalFit": "Functional Fit",
+    "technicalFit": "Technical Fit",
+    "criticality": "Business Criticality",
+    "personalData": "Personal Data Processing",
+    "clearAll": "Clear All Filters"
+  },
+  "objectTypes": {
+    "application": "Application",
+    "business_capability": "Business Capability",
+    "it_component": "IT Component",
+    "data_object": "Data Object",
+    "provider": "Provider",
+    "interface": "Interface"
+  },
+  "options": {
+    "title": "Options",
+    "exportExcel": "Export to Excel",
+    "importExcel": "Import from Excel",
+    "bulkPublish": "Bulk Publication",
+    "aiEditor": "AI-Powered Editor",
+    "translationMode": "Translation Mode"
+  },
+  "homepage": {
+    "title": "EAM Home",
+    "addWidget": "Add Widget",
+    "editLayout": "Edit Layout",
+    "resetLayout": "Reset to Default",
+    "quickActions": "Quick Actions",
+    "searchCatalog": "Search Catalog",
+    "askAi": "Ask AI",
+    "recentObjects": "Recent Objects",
+    "pendingReviews": "Pending Reviews"
+  },
+  "keywords": {
+    "title": "Keyword Management",
+    "create": "Create Keyword",
+    "merge": "Merge Keywords",
+    "usageCount": "Usage Count",
+    "hierarchy": "Keyword Hierarchy"
+  },
+  "widgets": {
+    "donutCategory": "Application Categories",
+    "donutLifecycle": "Portfolio Lifecycle",
+    "healthScore": "Architecture Health Score",
+    "recentChanges": "Recent Changes",
+    "capabilityMap": "Capability Map",
+    "costSummary": "Cost Summary",
+    "riskCount": "Risk Count",
+    "cveCount": "CVE Alerts",
+    "keywordCloud": "Keyword Cloud"
+  }
+}
