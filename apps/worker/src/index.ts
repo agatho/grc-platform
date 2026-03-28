@@ -48,6 +48,7 @@ import { processFairAppetiteCheck } from "./crons/fair-appetite-check";
 import { processCveFeedSync } from "./crons/cve-feed-sync";
 import { processCCIMonthlyAggregation } from "./crons/cci-monthly-aggregation";
 import { processQueryCacheWarmer } from "./crons/query-cache-warmer";
+import { initAutomationEngine, getAutomationEngine } from "./crons/automation-engine-init";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -57,6 +58,9 @@ const app = new Hono();
 // ──────────────────────────────────────────────────────────────
 
 const moduleCrons = registerModuleCrons();
+
+// Sprint 28: Initialize Automation Engine (subscribes to Event Bus)
+initAutomationEngine();
 
 // ──────────────────────────────────────────────────────────────
 // Middleware: CRON_SECRET verification for /crons/* routes
@@ -745,5 +749,18 @@ for (const [name, handler] of Object.entries(moduleCrons)) {
     }
   });
 }
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 28: Automation Engine health check
+// ──────────────────────────────────────────────────────────────
+
+app.get("/automation/health", (c) => {
+  const engine = getAutomationEngine();
+  return c.json({
+    status: engine ? "ok" : "not_initialized",
+    service: "automation-engine",
+    timestamp: new Date().toISOString(),
+  });
+});
 
 export default { port: 3001, fetch: app.fetch };

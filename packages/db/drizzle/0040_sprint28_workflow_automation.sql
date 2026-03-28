@@ -1,0 +1,250 @@
+-- Sprint 28: GRC Workflow Automation Engine (Low-Code/No-Code)
+-- Migration 373–379 (combined)
+-- automation_rule, automation_rule_execution, automation_rule_template
+-- RLS, audit triggers, indexes, 10 seed templates
+
+-- ──────────────────────────────────────────────────────────────
+-- 373: Create automation_rule
+-- ──────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS "automation_rule" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "org_id" uuid NOT NULL REFERENCES "organization"("id"),
+  "name" varchar(500) NOT NULL,
+  "description" text,
+  "is_active" boolean NOT NULL DEFAULT false,
+  "trigger_type" varchar(30) NOT NULL CHECK ("trigger_type" IN ('entity_change', 'deadline_expired', 'score_threshold', 'periodic')),
+  "trigger_config" jsonb NOT NULL,
+  "conditions" jsonb NOT NULL,
+  "actions" jsonb NOT NULL,
+  "cooldown_minutes" integer DEFAULT 60,
+  "max_executions_per_hour" integer DEFAULT 100,
+  "execution_count" integer DEFAULT 0,
+  "last_executed_at" timestamptz,
+  "created_by" uuid REFERENCES "user"("id"),
+  "created_at" timestamptz NOT NULL DEFAULT now(),
+  "updated_at" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "ar_org_idx" ON "automation_rule" ("org_id", "is_active");
+CREATE INDEX IF NOT EXISTS "ar_trigger_idx" ON "automation_rule" ("trigger_type");
+
+-- ──────────────────────────────────────────────────────────────
+-- 374: Create automation_rule_execution
+-- ──────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS "automation_rule_execution" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "rule_id" uuid NOT NULL REFERENCES "automation_rule"("id") ON DELETE CASCADE,
+  "org_id" uuid NOT NULL,
+  "triggered_by_event_id" uuid,
+  "entity_type" varchar(50),
+  "entity_id" uuid,
+  "conditions_matched" boolean NOT NULL,
+  "actions_executed" jsonb DEFAULT '[]',
+  "status" varchar(20) NOT NULL CHECK ("status" IN ('success', 'partial_failure', 'failure', 'skipped_cooldown', 'skipped_ratelimit', 'dry_run')),
+  "duration_ms" integer,
+  "error_message" text,
+  "executed_at" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "are_rule_idx" ON "automation_rule_execution" ("rule_id");
+CREATE INDEX IF NOT EXISTS "are_date_idx" ON "automation_rule_execution" ("org_id", "executed_at");
+CREATE INDEX IF NOT EXISTS "are_status_idx" ON "automation_rule_execution" ("status");
+
+-- ──────────────────────────────────────────────────────────────
+-- 375: Create automation_rule_template
+-- ──────────────────────────────────────────────────────────────
+
+CREATE TABLE IF NOT EXISTS "automation_rule_template" (
+  "id" uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  "name" varchar(500) NOT NULL,
+  "description" text,
+  "category" varchar(50) NOT NULL,
+  "trigger_type" varchar(30) NOT NULL,
+  "trigger_config" jsonb NOT NULL,
+  "conditions" jsonb NOT NULL,
+  "actions" jsonb NOT NULL,
+  "is_built_in" boolean NOT NULL DEFAULT true,
+  "org_id" uuid REFERENCES "organization"("id"),
+  "created_at" timestamptz NOT NULL DEFAULT now()
+);
+
+CREATE INDEX IF NOT EXISTS "art_category_idx" ON "automation_rule_template" ("category");
+CREATE INDEX IF NOT EXISTS "art_org_idx" ON "automation_rule_template" ("org_id");
+
+-- ──────────────────────────────────────────────────────────────
+-- 376: RLS policies for Sprint 28 tables
+-- ──────────────────────────────────────────────────────────────
+
+ALTER TABLE "automation_rule" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "automation_rule_org_isolation" ON "automation_rule";
+CREATE POLICY "automation_rule_org_isolation" ON "automation_rule"
+  USING ("org_id"::text = current_setting('app.current_org_id', true));
+
+ALTER TABLE "automation_rule_execution" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "automation_rule_execution_org_isolation" ON "automation_rule_execution";
+CREATE POLICY "automation_rule_execution_org_isolation" ON "automation_rule_execution"
+  USING ("org_id"::text = current_setting('app.current_org_id', true));
+
+ALTER TABLE "automation_rule_template" ENABLE ROW LEVEL SECURITY;
+
+DROP POLICY IF EXISTS "automation_rule_template_org_isolation" ON "automation_rule_template";
+CREATE POLICY "automation_rule_template_org_isolation" ON "automation_rule_template"
+  USING ("org_id" IS NULL OR "org_id"::text = current_setting('app.current_org_id', true));
+
+-- ──────────────────────────────────────────────────────────────
+-- 377: Audit triggers for Sprint 28 tables
+-- ──────────────────────────────────────────────────────────────
+
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_proc WHERE proname = 'audit_trigger_func') THEN
+    DROP TRIGGER IF EXISTS "automation_rule_audit" ON "automation_rule";
+    CREATE TRIGGER "automation_rule_audit"
+      AFTER INSERT OR UPDATE OR DELETE ON "automation_rule"
+      FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+
+    DROP TRIGGER IF EXISTS "automation_rule_execution_audit" ON "automation_rule_execution";
+    CREATE TRIGGER "automation_rule_execution_audit"
+      AFTER INSERT OR UPDATE OR DELETE ON "automation_rule_execution"
+      FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+
+    DROP TRIGGER IF EXISTS "automation_rule_template_audit" ON "automation_rule_template";
+    CREATE TRIGGER "automation_rule_template_audit"
+      AFTER INSERT OR UPDATE OR DELETE ON "automation_rule_template"
+      FOR EACH ROW EXECUTE FUNCTION audit_trigger_func();
+  END IF;
+END $$;
+
+-- ──────────────────────────────────────────────────────────────
+-- 378: Seed 10 default rule templates (best-practice rules)
+-- ──────────────────────────────────────────────────────────────
+
+INSERT INTO "automation_rule_template" ("name", "description", "category", "trigger_type", "trigger_config", "conditions", "actions", "is_built_in")
+VALUES
+  -- 1. Risk over appetite
+  (
+    'Risiko ueber Risikoappetit',
+    'Wenn ein Risiko den definierten Risikoappetit ueberschreitet, wird automatisch eine Aufgabe erstellt und an den CISO eskaliert.',
+    'risk_management',
+    'entity_change',
+    '{"entityType": "risk", "events": ["updated"], "field": "residual_score"}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "residual_score", "op": ">", "value": 15}]}'::jsonb,
+    '[{"type": "create_task", "config": {"title": "Risikobehandlung erforderlich: {entity.title}", "assigneeRole": "risk_manager", "deadlineDays": 14}}, {"type": "escalate", "config": {"targetRole": "admin", "message": "Risiko {entity.title} ueberschreitet Risikoappetit (Score: {entity.residual_score})"}}]'::jsonb,
+    true
+  ),
+  -- 2. Control test overdue
+  (
+    'Control-Test ueberfaellig',
+    'Wenn ein Control laenger als 90 Tage nicht getestet wurde, wird eine Aufgabe fuer den Control Owner erstellt.',
+    'control_testing',
+    'entity_change',
+    '{"entityType": "control", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "last_tested_at", "op": "days_since", "value": 90}]}'::jsonb,
+    '[{"type": "create_task", "config": {"title": "Control-Test ueberfaellig: {entity.title}", "assigneeRole": "control_owner", "deadlineDays": 7}}, {"type": "send_notification", "config": {"role": "control_owner", "message": "Control {entity.title} wurde seit ueber 90 Tagen nicht getestet."}}]'::jsonb,
+    true
+  ),
+  -- 3. Critical vendor DD expired
+  (
+    'Kritischer Vendor DD abgelaufen',
+    'Wenn die Due Diligence eines kritischen Vendors abgelaufen ist, wird eine neue DD-Session angestossen.',
+    'vendor_management',
+    'entity_change',
+    '{"entityType": "vendor", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "tier", "op": "=", "value": "critical"}, {"field": "last_dd_at", "op": "days_since", "value": 365}]}'::jsonb,
+    '[{"type": "create_task", "config": {"title": "Due Diligence erneuern: {entity.name}", "assigneeRole": "admin", "deadlineDays": 30}}, {"type": "send_email", "config": {"templateKey": "vendor_dd_reminder", "recipientRole": "admin"}}]'::jsonb,
+    true
+  ),
+  -- 4. Significant finding
+  (
+    'Signifikantes Finding',
+    'Wenn ein Finding mit Schweregrad signifikant oder hoeher erstellt wird, erfolgt eine Eskalation an das Audit-Team.',
+    'audit',
+    'entity_change',
+    '{"entityType": "finding", "events": ["created", "updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "severity", "op": "=", "value": "significant"}]}'::jsonb,
+    '[{"type": "create_task", "config": {"title": "Signifikantes Finding pruefen: {entity.title}", "assigneeRole": "auditor", "deadlineDays": 7}}, {"type": "escalate", "config": {"targetRole": "auditor", "message": "Signifikantes Finding: {entity.title}"}}]'::jsonb,
+    true
+  ),
+  -- 5. DSR deadline warning
+  (
+    'DSR Frist-Warnung',
+    'Wenn die Frist fuer eine Betroffenenanfrage in weniger als 7 Tagen ablaeuft, wird eine Benachrichtigung gesendet.',
+    'data_protection',
+    'entity_change',
+    '{"entityType": "dsr", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "deadline", "op": "days_since", "value": -7}]}'::jsonb,
+    '[{"type": "send_notification", "config": {"role": "dpo", "message": "DSR-Frist in weniger als 7 Tagen: {entity.title}"}}]'::jsonb,
+    true
+  ),
+  -- 6. Breach 72h deadline
+  (
+    'Breach 72h Meldefrist',
+    'Wenn die Meldefrist eines Datenschutzvorfalls in weniger als 24 Stunden ablaeuft, wird an den DPO eskaliert.',
+    'data_protection',
+    'entity_change',
+    '{"entityType": "data_breach", "events": ["created", "updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "notification_deadline", "op": "days_since", "value": -1}]}'::jsonb,
+    '[{"type": "escalate", "config": {"targetRole": "dpo", "message": "DRINGEND: Meldefrist fuer Datenschutzvorfall {entity.title} laeuft in weniger als 24h ab!"}}]'::jsonb,
+    true
+  ),
+  -- 7. Policy not acknowledged
+  (
+    'Richtlinie nicht bestaetigt',
+    'Wenn eine Richtlinie ueberfaellige Bestaetigungen hat, wird eine Erinnerungs-E-Mail gesendet.',
+    'compliance',
+    'entity_change',
+    '{"entityType": "document", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "overdue_count", "op": ">", "value": 0}]}'::jsonb,
+    '[{"type": "send_email", "config": {"templateKey": "policy_ack_reminder", "recipientRole": "viewer"}}]'::jsonb,
+    true
+  ),
+  -- 8. CES under 50
+  (
+    'CES unter 50',
+    'Wenn der Control Effectiveness Score eines Controls unter 50 faellt, wird eine Aufgabe fuer den Control Owner erstellt.',
+    'control_testing',
+    'entity_change',
+    '{"entityType": "control", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "ces", "op": "<", "value": 50}]}'::jsonb,
+    '[{"type": "create_task", "config": {"title": "CES kritisch ({entity.ces}): {entity.title}", "assigneeRole": "control_owner", "deadlineDays": 14}}]'::jsonb,
+    true
+  ),
+  -- 9. New critical incident
+  (
+    'Neuer kritischer Vorfall',
+    'Wenn ein Vorfall mit Schweregrad Emergency oder hoeher erstellt wird, wird ein Playbook vorgeschlagen.',
+    'isms',
+    'entity_change',
+    '{"entityType": "incident", "events": ["created"]}'::jsonb,
+    '{"operator": "OR", "rules": [{"field": "severity", "op": "=", "value": "emergency"}, {"field": "severity", "op": "=", "value": "critical"}]}'::jsonb,
+    '[{"type": "send_notification", "config": {"role": "admin", "message": "Kritischer Vorfall erstellt: {entity.title}. Bitte Playbook pruefen."}}, {"type": "create_task", "config": {"title": "Incident Response: {entity.title}", "assigneeRole": "admin", "deadlineDays": 1}}]'::jsonb,
+    true
+  ),
+  -- 10. ESG data incomplete
+  (
+    'ESG Daten unvollstaendig',
+    'Wenn die ESG-Datenvollstaendigkeit unter 80% liegt und die Deadline in weniger als 90 Tagen ist, wird benachrichtigt.',
+    'esg',
+    'entity_change',
+    '{"entityType": "esg_metric", "events": ["updated"]}'::jsonb,
+    '{"operator": "AND", "rules": [{"field": "completeness", "op": "<", "value": 80}, {"field": "deadline", "op": "days_since", "value": -90}]}'::jsonb,
+    '[{"type": "send_notification", "config": {"role": "admin", "message": "ESG-Daten unvollstaendig ({entity.completeness}%). Deadline in weniger als 90 Tagen."}}]'::jsonb,
+    true
+  );
+
+-- ──────────────────────────────────────────────────────────────
+-- 379: Additional composite indexes for performance
+-- ──────────────────────────────────────────────────────────────
+
+CREATE INDEX IF NOT EXISTS "ar_org_active_trigger_idx"
+  ON "automation_rule" ("org_id", "is_active", "trigger_type");
+
+CREATE INDEX IF NOT EXISTS "are_rule_status_idx"
+  ON "automation_rule_execution" ("rule_id", "status");
+
+CREATE INDEX IF NOT EXISTS "are_entity_idx"
+  ON "automation_rule_execution" ("entity_type", "entity_id");
