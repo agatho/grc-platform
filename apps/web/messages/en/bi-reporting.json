@@ -1,0 +1,77 @@
+{
+  "title": "BI Report Builder",
+  "description": "Create drag-and-drop reports and dashboards across all GRC modules",
+  "createReport": "Create Report",
+  "editReport": "Edit Report",
+  "searchPlaceholder": "Search reports...",
+  "allStatuses": "All Statuses",
+  "noReports": "No reports found. Create your first report to get started.",
+  "draft": "Draft",
+  "published": "Published",
+  "archived": "Archived",
+  "template": "Template",
+  "designerDescription": "Drag widgets onto the canvas to build your report",
+  "preview": "Preview",
+  "save": "Save",
+  "reportSettings": "Report Settings",
+  "reportName": "Report Name",
+  "reportNamePlaceholder": "Enter report name",
+  "moduleScope": "Module Scope",
+  "canvas": "Canvas",
+  "dragWidgets": "Add widgets from the palette to build your report",
+  "widgetPalette": "Widget Palette",
+  "widgets": {
+    "kpiCard": "KPI Card",
+    "barChart": "Bar Chart",
+    "lineChart": "Line Chart",
+    "donutChart": "Donut Chart",
+    "heatmap": "Heatmap",
+    "table": "Data Table",
+    "textBlock": "Text Block",
+    "radarChart": "Radar Chart",
+    "gauge": "Gauge",
+    "treemap": "Treemap"
+  },
+  "designer": {
+    "title": "Report Designer",
+    "preview": "Preview",
+    "save": "Save",
+    "widgetPalette": "Widget Palette",
+    "reportName": "Report Name",
+    "description": "Description",
+    "dropHint": "Add widgets from the palette",
+    "properties": "Properties",
+    "widgetTitle": "Widget Title",
+    "dataSource": "Data Source",
+    "selectWidget": "Select a widget to edit properties"
+  },
+  "dataSources": {
+    "title": "Data Sources",
+    "description": "Manage data warehouse layers for BI reports"
+  },
+  "queries": {
+    "title": "SQL Queries",
+    "description": "Build and validate read-only queries"
+  },
+  "shares": {
+    "title": "Shared Dashboards",
+    "description": "Manage public sharing links for dashboards"
+  },
+  "scheduled": {
+    "title": "Scheduled Reports",
+    "description": "Automate recurring report delivery via email"
+  },
+  "executions": {
+    "title": "Report History",
+    "description": "View generated report execution history"
+  },
+  "brandConfig": {
+    "title": "Brand Configuration",
+    "description": "Configure white-label branding for report exports"
+  },
+  "status": {
+    "draft": "Draft",
+    "published": "Published",
+    "archived": "Archived"
+  }
+}

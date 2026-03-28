@@ -1,0 +1,77 @@
+{
+  "title": "BI Report Builder",
+  "description": "Erstellen Sie Drag-and-Drop-Berichte und Dashboards ueber alle GRC-Module",
+  "createReport": "Bericht erstellen",
+  "editReport": "Bericht bearbeiten",
+  "searchPlaceholder": "Berichte suchen...",
+  "allStatuses": "Alle Status",
+  "noReports": "Keine Berichte gefunden. Erstellen Sie Ihren ersten Bericht.",
+  "draft": "Entwurf",
+  "published": "Veroeffentlicht",
+  "archived": "Archiviert",
+  "template": "Vorlage",
+  "designerDescription": "Ziehen Sie Widgets auf die Leinwand, um Ihren Bericht zu erstellen",
+  "preview": "Vorschau",
+  "save": "Speichern",
+  "reportSettings": "Berichtseinstellungen",
+  "reportName": "Berichtsname",
+  "reportNamePlaceholder": "Berichtsnamen eingeben",
+  "moduleScope": "Modulbereich",
+  "canvas": "Leinwand",
+  "dragWidgets": "Fuegen Sie Widgets aus der Palette hinzu",
+  "widgetPalette": "Widget-Palette",
+  "widgets": {
+    "kpiCard": "KPI-Karte",
+    "barChart": "Balkendiagramm",
+    "lineChart": "Liniendiagramm",
+    "donutChart": "Kreisdiagramm",
+    "heatmap": "Heatmap",
+    "table": "Datentabelle",
+    "textBlock": "Textblock",
+    "radarChart": "Radardiagramm",
+    "gauge": "Tachometer",
+    "treemap": "Baumdiagramm"
+  },
+  "designer": {
+    "title": "Berichts-Designer",
+    "preview": "Vorschau",
+    "save": "Speichern",
+    "widgetPalette": "Widget-Palette",
+    "reportName": "Berichtsname",
+    "description": "Beschreibung",
+    "dropHint": "Fuegen Sie Widgets aus der Palette hinzu",
+    "properties": "Eigenschaften",
+    "widgetTitle": "Widget-Titel",
+    "dataSource": "Datenquelle",
+    "selectWidget": "Waehlen Sie ein Widget aus, um Eigenschaften zu bearbeiten"
+  },
+  "dataSources": {
+    "title": "Datenquellen",
+    "description": "Verwalten Sie Data-Warehouse-Schichten fuer BI-Berichte"
+  },
+  "queries": {
+    "title": "SQL-Abfragen",
+    "description": "Erstellen und validieren Sie schreibgeschuetzte Abfragen"
+  },
+  "shares": {
+    "title": "Geteilte Dashboards",
+    "description": "Verwalten Sie oeffentliche Freigabelinks fuer Dashboards"
+  },
+  "scheduled": {
+    "title": "Geplante Berichte",
+    "description": "Automatisieren Sie wiederkehrende Berichtszustellung per E-Mail"
+  },
+  "executions": {
+    "title": "Berichtsverlauf",
+    "description": "Generierte Berichte und deren Ausfuehrungsverlauf anzeigen"
+  },
+  "brandConfig": {
+    "title": "Marken-Konfiguration",
+    "description": "Konfigurieren Sie White-Label-Branding fuer Berichtsexporte"
+  },
+  "status": {
+    "draft": "Entwurf",
+    "published": "Veroeffentlicht",
+    "archived": "Archiviert"
+  }
+}

@@ -85,6 +85,16 @@ import { processDoraIncidentDeadlineMonitor } from "./crons/dora-incident-deadli
 import { processHorizonScannerFetch } from "./crons/horizon-scanner-fetch";
 // Sprint 76: Cert Wizard
 import { processCertReadinessCheck } from "./crons/cert-readiness-check";
+// Sprint 77: Embedded BI und Report Builder
+import { processBiReportScheduler } from "./crons/bi-report-scheduler";
+// Sprint 78: GRC Benchmarking und Maturity Model
+import { processMaturityAutoCalculator } from "./crons/maturity-auto-calculator";
+import { processBenchmarkAggregator } from "./crons/benchmark-aggregator";
+// Sprint 79: Unified Risk Quantification Dashboard
+import { processVarCalculationRunner } from "./crons/var-calculation-runner";
+// Sprint 80: Multi-Region Deployment und Data Sovereignty
+import { processSovereigntyComplianceChecker } from "./crons/sovereignty-compliance-checker";
+import { processReplicationMonitor } from "./crons/replication-monitor";
 
 const app = new Hono();
 
@@ -1129,6 +1139,88 @@ app.post("/crons/cert-readiness-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] cert-readiness-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 77: Embedded BI cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/bi-report-scheduler", async (c) => {
+  try {
+    const result = await processBiReportScheduler();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] bi-report-scheduler cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 78: Benchmarking cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/maturity-auto-calculator", async (c) => {
+  try {
+    const result = await processMaturityAutoCalculator();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] maturity-auto-calculator cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/benchmark-aggregator", async (c) => {
+  try {
+    const result = await processBenchmarkAggregator();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] benchmark-aggregator cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 79: Risk Quantification cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/var-calculation-runner", async (c) => {
+  try {
+    const result = await processVarCalculationRunner();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] var-calculation-runner cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 80: Data Sovereignty cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/sovereignty-compliance-checker", async (c) => {
+  try {
+    const result = await processSovereigntyComplianceChecker();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] sovereignty-compliance-checker cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/replication-monitor", async (c) => {
+  try {
+    const result = await processReplicationMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] replication-monitor cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

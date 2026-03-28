@@ -1,0 +1,50 @@
+{
+  "regionsTitle": "Data Regions",
+  "regionsDescription": "Manage multi-region infrastructure and data residency",
+  "addRegion": "Add Region",
+  "regionCode": "Region Code",
+  "name": "Name",
+  "location": "Location",
+  "provider": "Provider",
+  "status": "Status",
+  "tenants": "Tenants",
+  "default": "Default",
+  "tenantConfig": {
+    "title": "Tenant Configuration",
+    "description": "Configure region assignment and data classification for your organization",
+    "primaryRegion": "Primary Region",
+    "backupRegion": "Backup Region",
+    "regionLocked": "Region Locked",
+    "dataClassification": "Data Classification",
+    "lockReason": "Lock Reason"
+  },
+  "residencyRules": {
+    "title": "Data Residency Rules",
+    "description": "Define rules governing where data can be stored and processed",
+    "addRule": "Add Rule",
+    "ruleType": "Rule Type",
+    "allowedRegions": "Allowed Regions",
+    "deniedRegions": "Denied Regions",
+    "complianceFramework": "Compliance Framework",
+    "enforced": "Enforced",
+    "violationAction": "Violation Action"
+  },
+  "replications": {
+    "title": "Cross-Region Replication",
+    "description": "Configure cross-region data replication with GDPR safeguards",
+    "addReplication": "Add Replication",
+    "sourceRegion": "Source Region",
+    "targetRegion": "Target Region",
+    "type": "Type",
+    "lastSync": "Last Sync",
+    "lag": "Lag (seconds)"
+  },
+  "auditLog": {
+    "title": "Sovereignty Audit Log",
+    "description": "Immutable log of all data sovereignty events and violations",
+    "eventType": "Event Type",
+    "isViolation": "Violations Only",
+    "from": "From",
+    "to": "To"
+  }
+}

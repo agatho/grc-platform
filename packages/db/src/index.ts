@@ -82,10 +82,20 @@ import * as aiActSchema from "./schema/ai-act";
 import * as taxCmsSchema from "./schema/tax-cms";
 import * as horizonScannerSchema from "./schema/horizon-scanner";
 import * as certWizardSchema from "./schema/cert-wizard";
+// Sprint 77: Embedded BI und Report Builder
+import * as biReportingSchema from "./schema/bi-reporting";
+// Sprint 78: GRC Benchmarking und Maturity Model
+import * as benchmarkingSchema from "./schema/benchmarking";
+// Sprint 79: Unified Risk Quantification Dashboard
+import * as riskQuantificationSchema from "./schema/risk-quantification";
+// Sprint 80: Multi-Region Deployment und Data Sovereignty
+import * as dataSovereigntySchema from "./schema/data-sovereignty";
+// Sprint 81: Role-Based Experience Redesign
+import * as roleDashboardsSchema from "./schema/role-dashboards";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema, ...biReportingSchema, ...benchmarkingSchema, ...riskQuantificationSchema, ...dataSovereigntySchema, ...roleDashboardsSchema },
 });
 
 export type Database = typeof db;
@@ -171,3 +181,13 @@ export * from "./schema/ai-act";
 export * from "./schema/tax-cms";
 export * from "./schema/horizon-scanner";
 export * from "./schema/cert-wizard";
+// Sprint 77: Embedded BI und Report Builder
+export * from "./schema/bi-reporting";
+// Sprint 78: GRC Benchmarking und Maturity Model
+export * from "./schema/benchmarking";
+// Sprint 79: Unified Risk Quantification Dashboard
+export * from "./schema/risk-quantification";
+// Sprint 80: Multi-Region Deployment und Data Sovereignty
+export * from "./schema/data-sovereignty";
+// Sprint 81: Role-Based Experience Redesign
+export * from "./schema/role-dashboards";
