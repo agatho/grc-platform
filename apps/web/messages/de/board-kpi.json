@@ -1,0 +1,84 @@
+{
+  "riskAppetite": {
+    "title": "Risikoappetit-Framework",
+    "subtitle": "Schwellenwerte pro Risikokategorie und automatische Erkennung von Überschreitungen",
+    "of": "von",
+    "withinAppetite": "Kategorien innerhalb des Risikoappetits",
+    "chartTitle": "Risikoappetit vs. Residualrisiko",
+    "avg": "Durchschnitt",
+    "threshold": "Schwellenwert",
+    "breaches": "Überschreitungen",
+    "breachList": "Aktuelle Überschreitungen",
+    "noBreaches": "Keine Überschreitungen des Risikoappetits erkannt",
+    "noThresholds": "Noch keine Schwellenwerte konfiguriert. Bitte unter Admin > Board-KPIs einrichten.",
+    "risk": "Risiko",
+    "category": "Kategorie",
+    "residual": "Residual",
+    "delta": "Delta",
+    "owner": "Risikoeigner",
+    "categories": {
+      "strategic": "Strategisch",
+      "operational": "Operativ",
+      "financial": "Finanziell",
+      "compliance": "Compliance",
+      "cyber": "Cyber",
+      "reputational": "Reputation",
+      "esg": "ESG"
+    }
+  },
+  "assurance": {
+    "title": "Assurance Confidence Score",
+    "subtitle": "Zuverlässigkeit der Compliance-Aussage pro Modul",
+    "overallScore": "Gesamt-Assurance-Score",
+    "drilldown": "Detail-Analyse",
+    "recommendations": "Verbesserungsvorschläge",
+    "noTrendData": "Noch keine Trenddaten vorhanden. Mindestens 4 Wochen Snapshots erforderlich.",
+    "noModules": "Keine aktiven Module gefunden",
+    "factors": {
+      "evidenceAge": "Evidenz-Aktualität",
+      "testCoverage": "Testabdeckung",
+      "dataQuality": "Datenqualität",
+      "assessmentSource": "Bewertungsquelle",
+      "automationLevel": "Automatisierungsgrad"
+    }
+  },
+  "posture": {
+    "title": "Security Posture Score",
+    "subtitle": "Aggregierter Sicherheitsindex für die Vorstandskommunikation",
+    "factorBreakdown": "Faktor-Aufschlüsselung",
+    "weight": "Gewicht",
+    "trendImproving": "Verbesserung",
+    "trendDeclining": "Verschlechterung",
+    "trendStable": "Stabil",
+    "vsQuarter": "vs. Vorquartal",
+    "noTrendData": "Noch keine Trenddaten vorhanden. Mindestens 4 Wochen Snapshots erforderlich.",
+    "factors": {
+      "assetCoverage": "Asset-Abdeckung",
+      "maturity": "Reifegradindex",
+      "ces": "Kontrolleffektivität (CES)",
+      "vulnExposure": "Schwachstellen-Exposition",
+      "incidentTTR": "Incident-Reaktionszeit",
+      "freshness": "Bewertungsaktualität",
+      "soaCompleteness": "SoA-Vollständigkeit"
+    },
+    "domains": {
+      "organizational": "Organisatorisch",
+      "people": "Personal",
+      "physical": "Physisch",
+      "technological": "Technologisch"
+    }
+  },
+  "config": {
+    "title": "Board-KPI Konfiguration",
+    "subtitle": "Risikoappetit-Schwellenwerte, Assurance-Gewichtung und Posture-Gewichtung",
+    "appetiteThresholds": "Risikoappetit-Schwellenwerte",
+    "threshold": "Schwellenwert",
+    "escalationRole": "Eskalationsrolle",
+    "actions": "Aktionen",
+    "save": "Speichern",
+    "assuranceWeights": "Assurance-Gewichtung",
+    "assuranceWeightsDesc": "Gewichtung der fünf Assurance-Faktoren (Summe muss 100% ergeben)",
+    "postureWeights": "Posture-Gewichtung",
+    "postureWeightsDesc": "Gewichtung der sieben Security-Posture-Faktoren (Summe muss 100% ergeben)"
+  }
+}
