@@ -37,3 +37,8 @@ export * from "./types/abac";
 export * from "./types/agents";
 export * from "./types/eam";
 export * from "./types/eam-advanced";
+export * from "./types/platform-advanced";
+export * from "./types/erm-advanced";
+export * from "./types/ics-advanced";
+export * from "./types/bcms-advanced";
+export * from "./types/dpms-advanced";
