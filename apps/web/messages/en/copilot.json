@@ -1,0 +1,42 @@
+{
+  "title": "GRC Copilot",
+  "description": "AI-powered assistant for GRC queries across all modules",
+  "newConversation": "New Conversation",
+  "messages": "messages",
+  "startConversation": "Start Conversation",
+  "welcomeTitle": "Welcome to GRC Copilot",
+  "welcomeDescription": "Ask questions about risks, controls, compliance, and more.",
+  "inputPlaceholder": "Ask a question about your GRC data...",
+  "sending": "Sending...",
+  "templates": {
+    "title": "Prompt Templates",
+    "description": "Manage reusable prompt templates for common GRC queries",
+    "create": "Create Template",
+    "noDescription": "No description",
+    "edit": "Edit",
+    "delete": "Delete"
+  },
+  "rag": {
+    "title": "RAG Sources",
+    "reindex": "Reindex",
+    "status": "Indexing Status",
+    "lastIndexed": "Last Indexed"
+  },
+  "actions": {
+    "title": "Suggested Actions",
+    "accept": "Accept",
+    "dismiss": "Dismiss",
+    "execute": "Execute"
+  },
+  "feedback": {
+    "helpful": "Helpful",
+    "notHelpful": "Not helpful"
+  },
+  "usage": {
+    "title": "Usage Statistics",
+    "totalConversations": "Total Conversations",
+    "uniqueUsers": "Unique Users",
+    "totalMessages": "Total Messages",
+    "totalTokens": "Total Tokens"
+  }
+}

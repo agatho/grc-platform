@@ -1,0 +1,41 @@
+{
+  "title": "Regulatorische Aenderungsintelligenz",
+  "description": "KI-gestuetztes regulatorisches Monitoring und Auswirkungsanalyse",
+  "manageSources": "Quellen verwalten",
+  "calendar": "Kalender",
+  "activeSources": "Aktive Quellen",
+  "totalChanges": "Aenderungen gesamt",
+  "newChanges": "Neue Aenderungen",
+  "criticalChanges": "Kritische Aenderungen",
+  "pendingAssessments": "Offene Bewertungen",
+  "recentChanges": "Letzte Aenderungen",
+  "upcomingDeadlines": "Anstehende Fristen",
+  "sources": {
+    "title": "Regulatorische Quellen",
+    "add": "Quelle hinzufuegen",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "type": "Typ",
+    "jurisdiction": "Rechtsordnung",
+    "frequency": "Abruffrequenz",
+    "detected": "Erkannte Aenderungen"
+  },
+  "changes": {
+    "title": "Regulatorische Aenderungen",
+    "effective": "Gueltig ab"
+  },
+  "calendar": {
+    "title": "Regulatorischer Kalender",
+    "addEvent": "Ereignis hinzufuegen"
+  },
+  "impact": {
+    "title": "Auswirkungsanalyse",
+    "level": "Auswirkungsstufe",
+    "areas": "Betroffene Bereiche",
+    "actions": "Erforderliche Massnahmen"
+  },
+  "digest": {
+    "title": "Regulatorischer Digest",
+    "generate": "Digest generieren"
+  }
+}

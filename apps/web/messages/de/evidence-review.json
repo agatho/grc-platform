@@ -1,0 +1,42 @@
+{
+  "title": "KI-Evidenzpruefung",
+  "description": "Autonomer Evidenzanalyse-Agent fuer Compliance-Verifizierung",
+  "newJob": "Neuer Pruefauftrag",
+  "totalReviewed": "Gesamt geprueft",
+  "compliant": "Konform",
+  "nonCompliant": "Nicht konform",
+  "openGaps": "Offene Luecken",
+  "avgConfidence": "Durchschn. Konfidenz",
+  "recentJobs": "Letzte Auftraege",
+  "topGaps": "Wichtigste Luecken",
+  "artifacts": "Artefakte",
+  "jobDetail": "Details zum Evidenzpruefauftrag",
+  "results": "Ergebnisse",
+  "gaps": "Luecken",
+  "confidence": "Konfidenz",
+  "status": {
+    "pending": "Ausstehend",
+    "running": "Laufend",
+    "completed": "Abgeschlossen",
+    "failed": "Fehlgeschlagen",
+    "cancelled": "Abgebrochen"
+  },
+  "classification": {
+    "compliant": "Konform",
+    "partially_compliant": "Teilweise konform",
+    "non_compliant": "Nicht konform",
+    "inconclusive": "Nicht eindeutig"
+  },
+  "gapType": {
+    "missing_evidence": "Fehlende Evidenz",
+    "outdated": "Veraltet",
+    "incomplete": "Unvollstaendig",
+    "quality_issue": "Qualitaetsproblem"
+  },
+  "gapStatus": {
+    "open": "Offen",
+    "acknowledged": "Bestaetigt",
+    "remediated": "Behoben",
+    "false_positive": "Falsch-Positiv"
+  }
+}

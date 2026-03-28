@@ -1,0 +1,47 @@
+{
+  "title": "Praediktive Risikointelligenz",
+  "description": "ML-basierte Risikovorhersagen, Anomalieerkennung und Fruehwarnsystem",
+  "models": "Modelle",
+  "radar": "Risikoradar",
+  "anomalies": "Anomalien",
+  "activeModels": "Aktive Modelle",
+  "totalPredictions": "Vorhersagen gesamt",
+  "earlyWarnings": "Fruehwarnungen",
+  "criticalAnomalies": "Kritische Anomalien",
+  "avgAccuracy": "Durchschn. Genauigkeit",
+  "topEarlyWarnings": "Wichtigste Fruehwarnungen",
+  "topAnomalies": "Wichtigste Anomalien",
+  "models": {
+    "title": "Vorhersagemodelle",
+    "create": "Modell erstellen",
+    "type": "Modelltyp",
+    "algorithm": "Algorithmus",
+    "target": "Zielmetrik",
+    "accuracy": "Genauigkeit",
+    "samples": "Trainingsdaten",
+    "train": "Trainieren"
+  },
+  "anomalies": {
+    "title": "Anomalieerkennung",
+    "deviation": "Abweichung",
+    "investigate": "Untersuchen",
+    "resolve": "Beheben"
+  },
+  "radar": {
+    "title": "Praediktiver Risikoradar",
+    "description": "Visuelle Uebersicht der vorhergesagten Risikoentwicklungen ueber alle Entitaeten",
+    "current": "Aktuell",
+    "predicted": "Vorhergesagt",
+    "noData": "Keine Vorhersagedaten verfuegbar. Erstellen und trainieren Sie ein Modell, um Vorhersagen zu generieren."
+  },
+  "predictions": {
+    "title": "Vorhersagen",
+    "horizon": "Horizont",
+    "confidence": "Konfidenz",
+    "trend": "Trend"
+  },
+  "correlations": {
+    "title": "Korrelationsanalyse",
+    "strength": "Korrelationsstaerke"
+  }
+}

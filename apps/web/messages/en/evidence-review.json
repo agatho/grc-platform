@@ -1,0 +1,42 @@
+{
+  "title": "AI Evidence Review",
+  "description": "Autonomous evidence analysis agent for compliance verification",
+  "newJob": "New Review Job",
+  "totalReviewed": "Total Reviewed",
+  "compliant": "Compliant",
+  "nonCompliant": "Non-Compliant",
+  "openGaps": "Open Gaps",
+  "avgConfidence": "Avg. Confidence",
+  "recentJobs": "Recent Jobs",
+  "topGaps": "Top Gaps",
+  "artifacts": "artifacts",
+  "jobDetail": "Evidence Review Job Details",
+  "results": "Results",
+  "gaps": "Gaps",
+  "confidence": "Confidence",
+  "status": {
+    "pending": "Pending",
+    "running": "Running",
+    "completed": "Completed",
+    "failed": "Failed",
+    "cancelled": "Cancelled"
+  },
+  "classification": {
+    "compliant": "Compliant",
+    "partially_compliant": "Partially Compliant",
+    "non_compliant": "Non-Compliant",
+    "inconclusive": "Inconclusive"
+  },
+  "gapType": {
+    "missing_evidence": "Missing Evidence",
+    "outdated": "Outdated",
+    "incomplete": "Incomplete",
+    "quality_issue": "Quality Issue"
+  },
+  "gapStatus": {
+    "open": "Open",
+    "acknowledged": "Acknowledged",
+    "remediated": "Remediated",
+    "false_positive": "False Positive"
+  }
+}

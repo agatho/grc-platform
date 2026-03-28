@@ -1,0 +1,41 @@
+{
+  "title": "Regulatory Change Intelligence",
+  "description": "AI-powered regulatory monitoring and impact assessment",
+  "manageSources": "Manage Sources",
+  "calendar": "Calendar",
+  "activeSources": "Active Sources",
+  "totalChanges": "Total Changes",
+  "newChanges": "New Changes",
+  "criticalChanges": "Critical Changes",
+  "pendingAssessments": "Pending Assessments",
+  "recentChanges": "Recent Changes",
+  "upcomingDeadlines": "Upcoming Deadlines",
+  "sources": {
+    "title": "Regulatory Sources",
+    "add": "Add Source",
+    "active": "Active",
+    "inactive": "Inactive",
+    "type": "Type",
+    "jurisdiction": "Jurisdiction",
+    "frequency": "Fetch Frequency",
+    "detected": "Changes Detected"
+  },
+  "changes": {
+    "title": "Regulatory Changes",
+    "effective": "Effective"
+  },
+  "calendar": {
+    "title": "Regulatory Calendar",
+    "addEvent": "Add Event"
+  },
+  "impact": {
+    "title": "Impact Assessment",
+    "level": "Impact Level",
+    "areas": "Impact Areas",
+    "actions": "Required Actions"
+  },
+  "digest": {
+    "title": "Regulatory Digest",
+    "generate": "Generate Digest"
+  }
+}

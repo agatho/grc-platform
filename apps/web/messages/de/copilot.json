@@ -1,0 +1,42 @@
+{
+  "title": "GRC Copilot",
+  "description": "KI-gestuetzter Assistent fuer GRC-Abfragen ueber alle Module",
+  "newConversation": "Neue Unterhaltung",
+  "messages": "Nachrichten",
+  "startConversation": "Unterhaltung starten",
+  "welcomeTitle": "Willkommen beim GRC Copilot",
+  "welcomeDescription": "Stellen Sie Fragen zu Risiken, Kontrollen, Compliance und mehr.",
+  "inputPlaceholder": "Stellen Sie eine Frage zu Ihren GRC-Daten...",
+  "sending": "Wird gesendet...",
+  "templates": {
+    "title": "Prompt-Vorlagen",
+    "description": "Verwaltung wiederverwendbarer Prompt-Vorlagen fuer haeufige GRC-Abfragen",
+    "create": "Vorlage erstellen",
+    "noDescription": "Keine Beschreibung",
+    "edit": "Bearbeiten",
+    "delete": "Loeschen"
+  },
+  "rag": {
+    "title": "RAG-Quellen",
+    "reindex": "Neu indexieren",
+    "status": "Indexierungsstatus",
+    "lastIndexed": "Zuletzt indexiert"
+  },
+  "actions": {
+    "title": "Vorgeschlagene Aktionen",
+    "accept": "Akzeptieren",
+    "dismiss": "Ablehnen",
+    "execute": "Ausfuehren"
+  },
+  "feedback": {
+    "helpful": "Hilfreich",
+    "notHelpful": "Nicht hilfreich"
+  },
+  "usage": {
+    "title": "Nutzungsstatistiken",
+    "totalConversations": "Gesamte Unterhaltungen",
+    "uniqueUsers": "Eindeutige Benutzer",
+    "totalMessages": "Gesamte Nachrichten",
+    "totalTokens": "Gesamte Tokens"
+  }
+}

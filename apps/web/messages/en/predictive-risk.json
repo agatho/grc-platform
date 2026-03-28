@@ -1,0 +1,47 @@
+{
+  "title": "Predictive Risk Intelligence",
+  "description": "ML-based risk predictions, anomaly detection, and early warning system",
+  "models": "Models",
+  "radar": "Risk Radar",
+  "anomalies": "Anomalies",
+  "activeModels": "Active Models",
+  "totalPredictions": "Total Predictions",
+  "earlyWarnings": "Early Warnings",
+  "criticalAnomalies": "Critical Anomalies",
+  "avgAccuracy": "Avg. Accuracy",
+  "topEarlyWarnings": "Top Early Warnings",
+  "topAnomalies": "Top Anomalies",
+  "models": {
+    "title": "Prediction Models",
+    "create": "Create Model",
+    "type": "Model Type",
+    "algorithm": "Algorithm",
+    "target": "Target Metric",
+    "accuracy": "Accuracy",
+    "samples": "Training Samples",
+    "train": "Train"
+  },
+  "anomalies": {
+    "title": "Anomaly Detection",
+    "deviation": "deviation",
+    "investigate": "Investigate",
+    "resolve": "Resolve"
+  },
+  "radar": {
+    "title": "Predictive Risk Radar",
+    "description": "Visual overview of predicted risk developments across all entities",
+    "current": "Current",
+    "predicted": "Predicted",
+    "noData": "No prediction data available. Create and train a model to generate predictions."
+  },
+  "predictions": {
+    "title": "Predictions",
+    "horizon": "Horizon",
+    "confidence": "Confidence",
+    "trend": "Trend"
+  },
+  "correlations": {
+    "title": "Correlation Analysis",
+    "strength": "Correlation Strength"
+  }
+}
