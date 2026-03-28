@@ -24,3 +24,4 @@ export * from "./types/identity";
 export * from "./types/translation";
 export * from "./types/event-bus";
 export * from "./types/board-kpi";
+export * from "./types/fair";
