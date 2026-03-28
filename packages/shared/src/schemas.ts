@@ -39,3 +39,8 @@ export * from "./schemas/abac";
 export * from "./schemas/agents";
 export * from "./schemas/eam";
 export * from "./schemas/eam-advanced";
+export * from "./schemas/platform-advanced";
+export * from "./schemas/erm-advanced";
+export * from "./schemas/ics-advanced";
+export * from "./schemas/bcms-advanced";
+export * from "./schemas/dpms-advanced";
