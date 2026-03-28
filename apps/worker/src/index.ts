@@ -60,6 +60,19 @@ import { processInterfaceHealthCheck } from "./crons/interface-health-check";
 import { processArchitectureHealthSnapshot } from "./crons/architecture-health-snapshot";
 import { processTechRadarMigrationAlerts } from "./crons/tech-radar-migration-alerts";
 import { registerModuleCrons } from "./lib/module-aware-cron";
+// Sprint 43: Audit Advanced
+import { processContinuousAuditRunner } from "./crons/continuous-audit-runner";
+import { processExternalShareExpiry } from "./crons/external-share-expiry";
+// Sprint 44: TPRM Advanced
+import { processScorecardRecomputer } from "./crons/scorecard-recomputer";
+import { processSubProcessorReviewDeadline } from "./crons/sub-processor-review-deadline";
+// Sprint 45: ESG Advanced
+import { processEsgCollectionReminder } from "./crons/esg-collection-reminder";
+// Sprint 46: Whistleblowing Advanced
+import { processWbRetaliationCheck } from "./crons/wb-retaliation-check";
+import { processWbOmbudspersonExpiry } from "./crons/wb-ombudsperson-expiry";
+// Sprint 47: BPM Advanced
+import { processKpiThresholdAlert } from "./crons/kpi-threshold-alert";
 
 const app = new Hono();
 
@@ -901,6 +914,114 @@ app.get("/automation/health", (c) => {
     service: "automation-engine",
     timestamp: new Date().toISOString(),
   });
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 43: Audit Advanced cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/continuous-audit-runner", async (c) => {
+  try {
+    const result = await processContinuousAuditRunner();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] continuous-audit-runner cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/external-share-expiry", async (c) => {
+  try {
+    const result = await processExternalShareExpiry();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] external-share-expiry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 44: TPRM Advanced cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/scorecard-recomputer", async (c) => {
+  try {
+    const result = await processScorecardRecomputer();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] scorecard-recomputer cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/sub-processor-review-deadline", async (c) => {
+  try {
+    const result = await processSubProcessorReviewDeadline();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] sub-processor-review-deadline cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 45: ESG Advanced cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/esg-collection-reminder", async (c) => {
+  try {
+    const result = await processEsgCollectionReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] esg-collection-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 46: Whistleblowing Advanced cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/wb-retaliation-check", async (c) => {
+  try {
+    const result = await processWbRetaliationCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] wb-retaliation-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/wb-ombudsperson-expiry", async (c) => {
+  try {
+    const result = await processWbOmbudspersonExpiry();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] wb-ombudsperson-expiry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 47: BPM Advanced cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/kpi-threshold-alert", async (c) => {
+  try {
+    const result = await processKpiThresholdAlert();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] kpi-threshold-alert cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
 });
 
 export default { port: 3001, fetch: app.fetch };
