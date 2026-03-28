@@ -1,0 +1,29 @@
+{
+  "title": "Risiko-Propagation",
+  "description": "Modellieren Sie, wie Risiken sich ueber Unternehmensstrukturen ausbreiten",
+  "heatmap": "Heatmap",
+  "addRelationship": "Beziehung hinzufuegen",
+  "defineRelationship": "Propagationsbeziehung definieren",
+  "targetOrg": "Ziel-Organisation",
+  "orgIdPlaceholder": "Organisations-ID eingeben",
+  "relationshipType": "Beziehungstyp",
+  "couplingStrength": "Kopplungsstaerke",
+  "save": "Speichern",
+  "relationships": "Beziehungen",
+  "source": "Quelle",
+  "target": "Ziel",
+  "type": "Typ",
+  "strength": "Staerke",
+  "noRelationships": "Noch keine Propagationsbeziehungen definiert",
+  "simulationResult": "Simulationsergebnis",
+  "affectedEntities": "Betroffene Entitaeten",
+  "maxDepth": "Max. Tiefe",
+  "level": "Ebene",
+  "relTypes": {
+    "shared_it": "Gemeinsame IT",
+    "shared_vendor": "Gemeinsamer Lieferant",
+    "shared_process": "Gemeinsamer Prozess",
+    "financial_dependency": "Finanzielle Abhaengigkeit",
+    "data_flow": "Datenfluss"
+  }
+}

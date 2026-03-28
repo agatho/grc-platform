@@ -37,10 +37,13 @@ import * as ismsIntelligenceSchema from "./schema/isms-intelligence";
 import * as complianceCultureSchema from "./schema/compliance-culture";
 import * as automationSchema from "./schema/automation";
 import * as reportingSchema from "./schema/reporting";
+import * as regulatorySimulatorSchema from "./schema/regulatory-simulator";
+import * as riskPropagationSchema from "./schema/risk-propagation";
+import * as auditAnalyticsSchema from "./schema/audit-analytics";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema },
 });
 
 export type Database = typeof db;
@@ -81,3 +84,6 @@ export * from "./schema/isms-intelligence";
 export * from "./schema/compliance-culture";
 export * from "./schema/automation";
 export * from "./schema/reporting";
+export * from "./schema/regulatory-simulator";
+export * from "./schema/risk-propagation";
+export * from "./schema/audit-analytics";

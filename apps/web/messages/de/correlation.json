@@ -1,0 +1,18 @@
+{
+  "title": "Vorfallkorrelation",
+  "description": "Erkennen Sie automatisch Zusammenhaenge zwischen Sicherheitsvorfaellen",
+  "days": "Tage",
+  "year": "Jahr",
+  "runAnalysis": "Analyse starten",
+  "detectedCorrelations": "Erkannte Korrelationen",
+  "noCorrelations": "Noch keine Korrelationen erkannt",
+  "incidents": "Vorfaelle",
+  "detectedPatterns": "Erkannte Muster",
+  "noPatterns": "Keine Muster erkannt",
+  "occurrences": "Vorkommen",
+  "correlationDetail": "Korrelationsdetail",
+  "reasoning": "Begruendung",
+  "sharedFactors": "Gemeinsame Faktoren",
+  "correlatedIncidents": "Korrelierte Vorfaelle",
+  "notFound": "Korrelation nicht gefunden"
+}
