@@ -1,0 +1,50 @@
+{
+  "title": "NIS2 Compliance Tracker",
+  "subtitle": "Status der NIS2-Anforderungen gemaess Art. 21 Abs. 2",
+  "overallStatus": "NIS2 Gesamtstatus",
+  "requirements": "Anforderungen",
+  "requirementsCatalog": "NIS2 Anforderungskatalog",
+  "requirementsDescription": "Art. 21 Abs. 2 lit. a-j: 10 Massnahmenbereiche",
+  "reportingTracker": "Meldepflichten",
+  "missing": "fehlend",
+  "evidenceComplete": "Evidenz vollstaendig",
+  "status": {
+    "compliant": "Konform",
+    "partiallyCompliant": "Teilweise konform",
+    "nonCompliant": "Nicht konform"
+  },
+  "chapters": {
+    "risk_management": "Risikomanagement",
+    "incident_handling": "Vorfallbewaeltigung",
+    "business_continuity": "Business Continuity",
+    "supply_chain": "Lieferkettensicherheit",
+    "acquisition_security": "Beschaffungssicherheit",
+    "vulnerability_mgmt": "Schwachstellenmanagement",
+    "effectiveness": "Wirksamkeitsbewertung",
+    "cyber_hygiene": "Cyberhygiene",
+    "cryptography": "Kryptografie",
+    "access_control": "Zugangskontrolle"
+  },
+  "timeline": "NIS2 Zeitstrahl",
+  "milestones": {
+    "registration": "Registrierungspflicht",
+    "implementation": "Umsetzungsfrist",
+    "firstNotification": "Erste Meldepflicht"
+  },
+  "reporting": {
+    "title": "NIS2 Meldepflichten (Art. 23)",
+    "subtitle": "Fruehwarnung, Vollmeldung und Abschlussbericht fuer Sicherheitsvorfaelle",
+    "total": "Gesamt",
+    "overdue": "Ueberfaellig",
+    "pending": "Ausstehend",
+    "submitted": "Eingereicht",
+    "reports": "Meldungen",
+    "noReports": "Keine NIS2-Meldungen vorhanden",
+    "art23Title": "Art. 23 Meldepflichten - Zeitliche Abfolge",
+    "earlyWarning": "Fruehwarnung",
+    "fullNotification": "Vollmeldung",
+    "finalReport": "Abschlussbericht",
+    "month": "Monat",
+    "deadline": "Frist"
+  }
+}

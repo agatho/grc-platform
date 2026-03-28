@@ -42,6 +42,8 @@ import { processWebhookRetryJob } from "./crons/webhook-retry";
 import { processRiskAppetiteCheck } from "./crons/risk-appetite-check";
 import { processAssuranceSnapshot } from "./crons/assurance-snapshot";
 import { processPostureSnapshot } from "./crons/posture-snapshot";
+import { processNis2DeadlineMonitor } from "./crons/nis2-deadline-monitor";
+import { processCertReadinessSnapshot } from "./crons/cert-readiness-snapshot";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -636,6 +638,32 @@ app.post("/crons/posture-snapshot", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] posture-snapshot cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 24: NIS2 + Certification Readiness cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/nis2-deadline-monitor", async (c) => {
+  try {
+    const result = await processNis2DeadlineMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] nis2-deadline-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/cert-readiness-snapshot", async (c) => {
+  try {
+    const result = await processCertReadinessSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] cert-readiness-snapshot cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
