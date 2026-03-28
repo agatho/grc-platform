@@ -1,0 +1,32 @@
+{
+  "title": "Tax CMS & Financial Compliance",
+  "description": "IDW PS 980 Tax CMS, Tax Risk Register, GoBD Archive & ICFR Controls",
+  "elements": "CMS Elements",
+  "risks": "Tax Risks",
+  "gobdArchive": "GoBD Archive",
+  "totalElements": "CMS Elements",
+  "avgMaturity": "Avg. Maturity",
+  "totalTaxRisks": "Tax Risks",
+  "criticalRisks": "Critical Risks",
+  "gobdCompliance": "GoBD Compliant",
+  "keyControlsEffective": "Key Controls Effective",
+  "activeAudits": "Active Audits",
+  "totalExposure": "Total Exposure",
+  "nav": {
+    "dashboard": "Dashboard",
+    "elements": "IDW PS 980 Elements",
+    "risks": "Tax Risk Register",
+    "gobdArchives": "GoBD Archive",
+    "icfrControls": "ICFR Controls",
+    "auditPreps": "Audit Preparation"
+  },
+  "elementTypes": {
+    "culture": "Tax CMS Culture",
+    "goals": "Tax CMS Goals",
+    "risks": "Tax Risks",
+    "program": "Tax CMS Program",
+    "org_structure": "Organization",
+    "communication": "Communication",
+    "monitoring": "Monitoring"
+  }
+}

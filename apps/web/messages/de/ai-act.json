@@ -1,0 +1,31 @@
+{
+  "title": "EU AI Act Governance",
+  "description": "KI-System-Inventar, Risikoklassifizierung, Konformitaetsbewertungen & menschliche Aufsicht",
+  "systems": "KI-Systeme",
+  "oversight": "Aufsicht",
+  "totalSystems": "KI-Systeme gesamt",
+  "highRiskSystems": "Hochrisiko-Systeme",
+  "unacceptableSystems": "Unzulaessiges Risiko",
+  "pendingAssessments": "Ausstehende Bewertungen",
+  "oversightLogs30d": "Aufsichtsprotokolle (30T)",
+  "transparencyEntries": "Transparenzeintraege",
+  "friasPending": "FRIAs ausstehend",
+  "systemInventory": "KI-System-Inventar",
+  "addSystem": "KI-System registrieren",
+  "noSystems": "Noch keine KI-Systeme registriert",
+  "nav": {
+    "dashboard": "Dashboard",
+    "systems": "KI-Systeme",
+    "conformityAssessments": "Konformitaetsbewertungen",
+    "oversightLogs": "Menschliche Aufsicht",
+    "transparency": "Transparenzregister",
+    "frias": "FRIAs",
+    "frameworkMappings": "Framework-Zuordnungen"
+  },
+  "riskClassification": {
+    "unacceptable": "Unzulaessig",
+    "high": "Hoch",
+    "limited": "Begrenzt",
+    "minimal": "Minimal"
+  }
+}

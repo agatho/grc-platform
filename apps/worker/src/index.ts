@@ -79,6 +79,12 @@ import { processEamPortfolioHealthCheck } from "./crons/eam-portfolio-health-che
 // Sprint 51: EAM AI
 import { processEamSuggestionCompute } from "./crons/eam-suggestion-compute";
 import { processEamTranslationReminder } from "./crons/eam-translation-reminder";
+// Sprint 72: DORA Compliance
+import { processDoraIncidentDeadlineMonitor } from "./crons/dora-incident-deadline-monitor";
+// Sprint 75: Horizon Scanner
+import { processHorizonScannerFetch } from "./crons/horizon-scanner-fetch";
+// Sprint 76: Cert Wizard
+import { processCertReadinessCheck } from "./crons/cert-readiness-check";
 
 const app = new Hono();
 
@@ -1078,6 +1084,51 @@ app.post("/crons/eam-translation-reminder", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] eam-translation-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 72: DORA Compliance cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/dora-incident-deadline-monitor", async (c) => {
+  try {
+    const result = await processDoraIncidentDeadlineMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] dora-incident-deadline-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 75: Horizon Scanner cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/horizon-scanner-fetch", async (c) => {
+  try {
+    const result = await processHorizonScannerFetch();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] horizon-scanner-fetch cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 76: Cert Wizard cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/cert-readiness-check", async (c) => {
+  try {
+    const result = await processCertReadinessCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] cert-readiness-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

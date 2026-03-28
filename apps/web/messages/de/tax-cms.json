@@ -1,0 +1,32 @@
+{
+  "title": "Tax CMS & Financial Compliance",
+  "description": "IDW PS 980 Tax-CMS, Steuerliches Risikoregister, GoBD-Archiv & ICFR-Kontrollen",
+  "elements": "CMS-Elemente",
+  "risks": "Steuerrisiken",
+  "gobdArchive": "GoBD-Archiv",
+  "totalElements": "CMS-Elemente",
+  "avgMaturity": "Durchschn. Reifegrad",
+  "totalTaxRisks": "Steuerrisiken",
+  "criticalRisks": "Kritische Risiken",
+  "gobdCompliance": "GoBD-konform",
+  "keyControlsEffective": "Schluesselkontrollen wirksam",
+  "activeAudits": "Aktive Pruefungen",
+  "totalExposure": "Gesamtrisiko",
+  "nav": {
+    "dashboard": "Dashboard",
+    "elements": "IDW PS 980 Elemente",
+    "risks": "Steuerliches Risikoregister",
+    "gobdArchives": "GoBD-Archiv",
+    "icfrControls": "ICFR-Kontrollen",
+    "auditPreps": "Betriebspruefungs-Vorbereitung"
+  },
+  "elementTypes": {
+    "culture": "Tax-CMS-Kultur",
+    "goals": "Tax-CMS-Ziele",
+    "risks": "Steuerrisiken",
+    "program": "Tax-CMS-Programm",
+    "org_structure": "Organisation",
+    "communication": "Kommunikation",
+    "monitoring": "Ueberwachung"
+  }
+}

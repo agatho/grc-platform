@@ -1,0 +1,42 @@
+{
+  "title": "DORA-Compliance",
+  "description": "Digital Operational Resilience Act — IKT-Risiko, Vorfaelle, Dienstleister & Tests",
+  "ictRisks": "IKT-Risiken",
+  "incidents": "Vorfaelle",
+  "providers": "Dienstleister",
+  "totalIctRisks": "IKT-Risiken gesamt",
+  "criticalRisks": "Kritische Risiken",
+  "openIncidents": "Offene Vorfaelle",
+  "majorIncidents": "Schwerwiegende Vorfaelle",
+  "totalProviders": "Dienstleister gesamt",
+  "criticalProviders": "Kritische Dienstleister",
+  "pendingReports": "Ausstehende Meldungen",
+  "nis2Compliance": "NIS2-Compliance",
+  "viewAll": "Alle anzeigen",
+  "noUpcomingTests": "Keine anstehenden TLPT-Tests geplant",
+  "noRecentSharing": "Keine aktuellen Informationsaustausch-Eintraege",
+  "ictRiskRegister": "IKT-Risikoregister (DORA Art. 6-16)",
+  "addRisk": "IKT-Risiko hinzufuegen",
+  "noRisks": "Noch keine IKT-Risiken erfasst",
+  "incidentRegister": "IKT-Vorfallsregister",
+  "reportIncident": "Vorfall melden",
+  "noIncidents": "Keine IKT-Vorfaelle gemeldet",
+  "detected": "Erkannt",
+  "providerRegister": "IKT-Drittanbieter-Register (Art. 28)",
+  "addProvider": "Dienstleister hinzufuegen",
+  "noProviders": "Keine IKT-Dienstleister erfasst",
+  "nav": {
+    "dashboard": "Dashboard",
+    "ictRisks": "IKT-Risikoregister",
+    "tlptPlans": "TLPT-Plaene",
+    "ictIncidents": "IKT-Vorfaelle",
+    "ictProviders": "IKT-Dienstleister",
+    "informationSharing": "Informationsaustausch",
+    "nis2CrossRef": "DORA-NIS2-Kreuzreferenz"
+  },
+  "reporting": {
+    "initialDue": "Erstmeldung faellig (4h)",
+    "intermediateDue": "Zwischenmeldung faellig (72h)",
+    "finalDue": "Abschlussbericht faellig (1 Monat)"
+  }
+}

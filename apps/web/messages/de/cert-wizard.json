@@ -1,0 +1,32 @@
+{
+  "title": "Zertifizierungs- & Audit-Vorbereitungs-Assistent",
+  "description": "Reifegradbewertungen, Evidenzpakete & Mock-Audits fuer ISO 27001, BSI, NIS2, SOC 2, TISAX",
+  "assessments": "Bewertungen",
+  "evidencePackages": "Evidenzpakete",
+  "mockAudits": "Mock-Audits",
+  "totalAssessments": "Bewertungen gesamt",
+  "avgReadiness": "Durchschn. Reifegrad",
+  "completedMockAudits": "Abgeschlossene Mock-Audits",
+  "avgMockScore": "Durchschn. Mock-Bewertung",
+  "nav": {
+    "dashboard": "Dashboard",
+    "assessments": "Reifegadbewertungen",
+    "evidencePackages": "Evidenzpakete",
+    "mockAudits": "Mock-Audits"
+  },
+  "frameworks": {
+    "iso_27001": "ISO 27001",
+    "bsi_grundschutz": "BSI IT-Grundschutz",
+    "nis2": "NIS2",
+    "soc2_type2": "SOC 2 Type II",
+    "tisax": "TISAX",
+    "iso_22301": "ISO 22301",
+    "iso_9001": "ISO 9001"
+  },
+  "auditTypes": {
+    "stage_1": "Stage 1 Audit",
+    "stage_2": "Stage 2 Audit",
+    "surveillance": "Ueberwachungsaudit",
+    "recertification": "Rezertifizierung"
+  }
+}

@@ -1,0 +1,40 @@
+"use client";
+import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
+import Link from "next/link";
+import { Brain, Eye, FileCheck, Scale } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import type { AiActDashboard } from "@grc/shared";
+
+export default function AiActDashboardPage() {
+  const t = useTranslations("aiAct");
+  const [data, setData] = useState<AiActDashboard | null>(null);
+  const [loading, setLoading] = useState(true);
+  const fetchData = useCallback(async () => { setLoading(true); try { const res = await fetch("/api/v1/ai-act/dashboard"); if (res.ok) setData((await res.json()).data); } finally { setLoading(false); } }, []);
+  useEffect(() => { void fetchData(); }, [fetchData]);
+  if (loading || !data) return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+
+  return (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div><h1 className="text-2xl font-bold">{t("title")}</h1><p className="text-muted-foreground">{t("description")}</p></div>
+        <div className="flex gap-2">
+          <Link href="/ai-act/systems"><Button variant="outline"><Brain className="h-4 w-4 mr-2" />{t("systems")}</Button></Link>
+          <Link href="/ai-act/oversight-logs"><Button variant="outline"><Eye className="h-4 w-4 mr-2" />{t("oversight")}</Button></Link>
+        </div>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("totalSystems")}</p><p className="text-2xl font-bold">{data.totalSystems}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("highRiskSystems")}</p><p className="text-2xl font-bold text-orange-600">{data.highRiskSystems}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("unacceptableSystems")}</p><p className="text-2xl font-bold text-red-600">{data.unacceptableSystems}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("pendingAssessments")}</p><p className="text-2xl font-bold text-yellow-600">{data.pendingAssessments}</p></CardContent></Card>
+      </div>
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("oversightLogs30d")}</p><p className="text-2xl font-bold">{data.oversightLogs30d}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("transparencyEntries")}</p><p className="text-2xl font-bold">{data.transparencyEntries}</p></CardContent></Card>
+        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("friasPending")}</p><p className="text-2xl font-bold text-yellow-600">{data.friasPending}</p></CardContent></Card>
+      </div>
+    </div>
+  );
+}
