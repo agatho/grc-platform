@@ -13,3 +13,4 @@ export * from "./wb-crypto";
 export * from "./color-utils";
 export * from "./utils/language-resolver";
 export * from "./utils/xliff";
+export * from "./board-kpi";
