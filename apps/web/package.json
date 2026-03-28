@@ -13,6 +13,7 @@
     "@grc/ai": "^0.1.0",
     "@grc/auth": "^0.1.0",
     "@grc/db": "^0.1.0",
+    "@grc/events": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@grc/ui": "^0.1.0",
     "@radix-ui/react-avatar": "^1.1.11",

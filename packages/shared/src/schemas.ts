@@ -23,3 +23,4 @@ export * from "./schemas/dashboard";
 export * from "./schemas/import-export";
 export * from "./schemas/identity";
 export * from "./schemas/translation";
+export * from "./schemas/event-bus";

@@ -1,0 +1,12 @@
+{
+  "name": "@grc/events",
+  "version": "0.1.0",
+  "main": "src/index.ts",
+  "dependencies": {
+    "@grc/db": "*",
+    "@grc/shared": "*"
+  },
+  "devDependencies": {
+    "typescript": "^5.7"
+  }
+}
