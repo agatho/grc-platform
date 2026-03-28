@@ -1,0 +1,41 @@
+{
+  "title": "Billing & Subscription",
+  "subtitle": "Manage your subscription plan, usage, and invoices",
+  "changePlan": "Change Plan",
+  "currentPlan": "Current Plan",
+  "contactSales": "Contact Sales",
+  "month": "month",
+  "year": "year",
+  "periodEnds": "Period ends",
+  "noPlan": "No active subscription",
+  "choosePlan": "Choose a Plan",
+  "usage": {
+    "title": "Current Usage",
+    "period": "Billing Period"
+  },
+  "invoices": {
+    "title": "Recent Invoices",
+    "number": "Invoice #",
+    "status": "Status",
+    "period": "Period",
+    "total": "Total",
+    "empty": "No invoices yet"
+  },
+  "plans": {
+    "title": "Choose Your Plan",
+    "subtitle": "Select the plan that fits your organization",
+    "monthly": "Monthly",
+    "yearly": "Yearly",
+    "save20": "Save 20%",
+    "popular": "Most Popular",
+    "custom": "Custom Pricing",
+    "unlimited": "Unlimited",
+    "users": "Users",
+    "organizations": "Organizations",
+    "storage": "Storage",
+    "apiCalls": "API Calls/Month",
+    "trialDays": "days free trial",
+    "subscribe": "Subscribe",
+    "contactSales": "Contact Sales"
+  }
+}

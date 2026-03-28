@@ -1,0 +1,28 @@
+{
+  "title": "Einrichtungsassistent",
+  "welcome": "Willkommen auf der Plattform",
+  "welcomeDesc": "Richten Sie Ihre Organisation mit dem gefuehrten Einrichtungsassistenten ein.",
+  "startSetup": "Einrichtung starten",
+  "stepOf": "Schritt {current} von {total}",
+  "skip": "Einrichtung ueberspringen",
+  "next": "Naechster Schritt",
+  "finish": "Einrichtung abschliessen",
+  "step": "Schritt",
+  "steps": {
+    "welcome": "Willkommen auf der Plattform. Dieser Assistent fuehrt Sie durch die Ersteinrichtung.",
+    "org_profile": "Erzaehlen Sie uns von Ihrer Organisation, damit wir die Plattform anpassen koennen.",
+    "frameworks": "Waehlen Sie die fuer Ihre Organisation relevanten Compliance-Frameworks aus.",
+    "modules": "Waehlen Sie die Module aus, die Sie aktivieren moechten.",
+    "users": "Laden Sie Teammitglieder ein, um auf der Plattform zusammenzuarbeiten.",
+    "templates": "Wenden Sie Compliance-Vorlagenpakete an, um Kontrollen und Richtlinien vorzubefuellen.",
+    "sample_data": "Laden Sie optional Beispieldaten, um die Plattformfunktionen zu erkunden.",
+    "complete": "Ihre Einrichtung ist abgeschlossen. Sie koennen jetzt die Plattform nutzen."
+  },
+  "templates": {
+    "title": "Vorlagenbibliothek",
+    "subtitle": "Vorgefertigte Compliance-Vorlagenpakete fuer die schnelle Einrichtung",
+    "items": "Elemente",
+    "recommended": "Empfohlen",
+    "apply": "Anwenden"
+  }
+}
