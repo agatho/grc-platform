@@ -1,0 +1,41 @@
+{
+  "title": "External Stakeholder Portals",
+  "description": "Configure and manage external access portals for vendors, auditors, and board members",
+  "viewSessions": "View Sessions",
+  "noConfigs": "No portal configurations found",
+  "active": "Active",
+  "inactive": "Inactive",
+  "mfaRequired": "MFA Required",
+  "notFound": "Portal configuration not found",
+  "backToPortals": "Back to Portals",
+  "settings": "Settings",
+  "sessionTimeout": "Session Timeout",
+  "languages": "Languages",
+  "detailDescription": "Description",
+  "yes": "Yes",
+  "no": "No",
+  "sessionsTitle": "Portal Sessions",
+  "sessionsDescription": "Active and historical external access sessions",
+  "noSessions": "No sessions found",
+  "expiresAt": "Expires",
+  "types": {
+    "vendor": "Vendor Portal",
+    "auditor": "Auditor Portal",
+    "board_member": "Board Member Portal",
+    "whistleblower": "Whistleblower Portal",
+    "custom": "Custom Portal"
+  },
+  "branding": {
+    "title": "Custom Branding",
+    "primaryColor": "Primary Color",
+    "secondaryColor": "Secondary Color",
+    "fontFamily": "Font Family"
+  },
+  "questionnaire": {
+    "title": "Questionnaire Responses",
+    "submitted": "Submitted",
+    "inProgress": "In Progress",
+    "accepted": "Accepted",
+    "rejected": "Rejected"
+  }
+}

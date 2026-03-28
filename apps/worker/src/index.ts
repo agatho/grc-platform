@@ -95,6 +95,16 @@ import { processVarCalculationRunner } from "./crons/var-calculation-runner";
 // Sprint 80: Multi-Region Deployment und Data Sovereignty
 import { processSovereigntyComplianceChecker } from "./crons/sovereignty-compliance-checker";
 import { processReplicationMonitor } from "./crons/replication-monitor";
+// Sprint 82: Integration Marketplace
+import { processMarketplaceSecurityScanner } from "./crons/marketplace-security-scanner";
+// Sprint 83: External Stakeholder Portals
+import { processPortalSessionExpiry } from "./crons/portal-session-expiry";
+// Sprint 84: GRC Academy und Awareness
+import { processAcademyOverdueCheck } from "./crons/academy-overdue-check";
+// Sprint 85: Simulation und Scenario Engine
+import { processSimulationRunner } from "./crons/simulation-runner";
+// Sprint 86: Community Edition und Open-Source Packaging
+import { processCommunityLicenseCheck } from "./crons/community-license-check";
 
 const app = new Hono();
 
@@ -1221,6 +1231,81 @@ app.post("/crons/replication-monitor", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] replication-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 82: Marketplace cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/marketplace-security-scanner", async (c) => {
+  try {
+    const result = await processMarketplaceSecurityScanner();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] marketplace-security-scanner cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 83: Portal cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/portal-session-expiry", async (c) => {
+  try {
+    const result = await processPortalSessionExpiry();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] portal-session-expiry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 84: Academy cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/academy-overdue-check", async (c) => {
+  try {
+    const result = await processAcademyOverdueCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] academy-overdue-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 85: Simulation cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/simulation-runner", async (c) => {
+  try {
+    const result = await processSimulationRunner();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] simulation-runner cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 86: Community cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/community-license-check", async (c) => {
+  try {
+    const result = await processCommunityLicenseCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] community-license-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
