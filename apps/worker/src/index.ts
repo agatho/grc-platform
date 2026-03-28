@@ -49,6 +49,8 @@ import { processCveFeedSync } from "./crons/cve-feed-sync";
 import { processCCIMonthlyAggregation } from "./crons/cci-monthly-aggregation";
 import { processQueryCacheWarmer } from "./crons/query-cache-warmer";
 import { initAutomationEngine, getAutomationEngine } from "./crons/automation-engine-init";
+import { processReportScheduler } from "./crons/report-scheduler";
+import { processThreatFeedSync } from "./crons/threat-feed-sync";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -728,6 +730,32 @@ app.post("/crons/query-cache-warmer", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] query-cache-warmer cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 30: Report Engine + Threat Landscape cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/report-scheduler", async (c) => {
+  try {
+    const result = await processReportScheduler();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] report-scheduler cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/threat-feed-sync", async (c) => {
+  try {
+    const result = await processThreatFeedSync();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] threat-feed-sync cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

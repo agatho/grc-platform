@@ -29,3 +29,4 @@ export * from "./types/isms-intelligence";
 export * from "./types/compliance-culture";
 export * from "./types/automation";
 export * from "./types/graph";
+export * from "./types/reporting";
