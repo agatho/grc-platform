@@ -1,0 +1,58 @@
+{
+  "title": "GRC Academy",
+  "description": "Training, awareness, and compliance courses for your organization",
+  "activeCourses": "Active Courses",
+  "completionRate": "Completion Rate",
+  "overdue": "Overdue",
+  "certificatesIssued": "Certificates Issued",
+  "inProgress": "In Progress",
+  "mandatoryCourses": "Mandatory Courses",
+  "totalEnrollments": "Total Enrollments",
+  "avgProgress": "Average Progress",
+  "notFound": "Course not found",
+  "backToCourses": "Back to Courses",
+  "mandatory": "Mandatory",
+  "passingScore": "Passing Score",
+  "version": "Version",
+  "complete": "complete",
+  "dueDate": "Due Date",
+  "completedAt": "Completed",
+  "courses": {
+    "title": "Courses",
+    "description": "Browse and manage compliance training courses"
+  },
+  "enrollments": {
+    "title": "Enrollments",
+    "description": "View training assignments and progress",
+    "empty": "No enrollments found"
+  },
+  "certificates": {
+    "title": "Certificates",
+    "description": "Training completion certificates",
+    "empty": "No certificates issued yet",
+    "issuedAt": "Issued",
+    "expiresAt": "Expires",
+    "downloadPdf": "Download PDF"
+  },
+  "lessons": {
+    "title": "Lessons",
+    "empty": "No lessons available"
+  },
+  "courseTypes": {
+    "gdpr": "GDPR Awareness",
+    "info_security": "Information Security",
+    "anti_corruption": "Anti-Corruption",
+    "nis2": "NIS2 Compliance",
+    "dora": "DORA Compliance",
+    "esg": "ESG Awareness",
+    "phishing": "Phishing Prevention",
+    "code_of_conduct": "Code of Conduct",
+    "aml": "Anti-Money Laundering",
+    "data_classification": "Data Classification",
+    "incident_response": "Incident Response",
+    "bcm": "Business Continuity",
+    "whistleblowing": "Whistleblowing Awareness",
+    "it_security": "IT Security",
+    "custom": "Custom Training"
+  }
+}

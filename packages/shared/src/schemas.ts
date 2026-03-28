@@ -87,3 +87,13 @@ export * from "./schemas/risk-quantification";
 export * from "./schemas/data-sovereignty";
 // Sprint 81: Role-Based Experience Redesign
 export * from "./schemas/role-dashboards";
+// Sprint 82: Integration Marketplace
+export * from "./schemas/marketplace";
+// Sprint 83: External Stakeholder Portals
+export * from "./schemas/stakeholder-portal";
+// Sprint 84: GRC Academy und Awareness
+export * from "./schemas/academy";
+// Sprint 85: Simulation und Scenario Engine
+export * from "./schemas/simulation";
+// Sprint 86: Community Edition und Open-Source Packaging
+export * from "./schemas/community";

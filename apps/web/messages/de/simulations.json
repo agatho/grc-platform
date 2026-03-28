@@ -1,0 +1,37 @@
+{
+  "title": "Simulations-Engine",
+  "description": "What-If-Szenariomodellierung, Monte-Carlo-Simulationen und Auswirkungsanalyse",
+  "noScenarios": "Keine Szenarien gefunden",
+  "comparisons": "Vergleiche",
+  "notFound": "Szenario nicht gefunden",
+  "backToScenarios": "Zurueck zu Szenarien",
+  "runSimulation": "Simulation starten",
+  "parameters": "Parameter",
+  "noParameters": "Keine Parameter konfiguriert",
+  "runs": "Simulationslaeufe",
+  "noRuns": "Noch keine Laeufe ausgefuehrt",
+  "iterations": "Iterationen",
+  "min": "Min",
+  "max": "Max",
+  "scenarios": "Szenarien",
+  "comparisonsTitle": "Szenario-Vergleiche",
+  "comparisonsDescription": "AS-IS vs TO-BE Szenarien nebeneinander vergleichen",
+  "noComparisons": "Noch keine Vergleiche erstellt",
+  "types": {
+    "what_if": "Was-waere-wenn-Analyse",
+    "bpm_cost_time": "BPM Kosten/Zeit",
+    "business_impact": "Geschaeftsauswirkung",
+    "monte_carlo": "Monte Carlo",
+    "supplier_cascade": "Lieferanten-Kaskade",
+    "custom": "Individuell"
+  },
+  "tags": {
+    "as_is": "IST-Zustand",
+    "to_be_a": "SOLL A",
+    "to_be_b": "SOLL B",
+    "to_be_c": "SOLL C",
+    "best_case": "Bester Fall",
+    "worst_case": "Schlimmster Fall",
+    "most_likely": "Wahrscheinlichster Fall"
+  }
+}

@@ -92,10 +92,20 @@ import * as riskQuantificationSchema from "./schema/risk-quantification";
 import * as dataSovereigntySchema from "./schema/data-sovereignty";
 // Sprint 81: Role-Based Experience Redesign
 import * as roleDashboardsSchema from "./schema/role-dashboards";
+// Sprint 82: Integration Marketplace
+import * as marketplaceSchema from "./schema/marketplace";
+// Sprint 83: External Stakeholder Portals
+import * as stakeholderPortalSchema from "./schema/stakeholder-portal";
+// Sprint 84: GRC Academy und Awareness
+import * as academySchema from "./schema/academy";
+// Sprint 85: Simulation und Scenario Engine
+import * as simulationSchema from "./schema/simulation";
+// Sprint 86: Community Edition und Open-Source Packaging
+import * as communitySchema from "./schema/community";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema, ...biReportingSchema, ...benchmarkingSchema, ...riskQuantificationSchema, ...dataSovereigntySchema, ...roleDashboardsSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema, ...biReportingSchema, ...benchmarkingSchema, ...riskQuantificationSchema, ...dataSovereigntySchema, ...roleDashboardsSchema, ...marketplaceSchema, ...stakeholderPortalSchema, ...academySchema, ...simulationSchema, ...communitySchema },
 });
 
 export type Database = typeof db;
@@ -191,3 +201,13 @@ export * from "./schema/risk-quantification";
 export * from "./schema/data-sovereignty";
 // Sprint 81: Role-Based Experience Redesign
 export * from "./schema/role-dashboards";
+// Sprint 82: Integration Marketplace
+export * from "./schema/marketplace";
+// Sprint 83: External Stakeholder Portals
+export * from "./schema/stakeholder-portal";
+// Sprint 84: GRC Academy und Awareness
+export * from "./schema/academy";
+// Sprint 85: Simulation und Scenario Engine
+export * from "./schema/simulation";
+// Sprint 86: Community Edition und Open-Source Packaging
+export * from "./schema/community";
