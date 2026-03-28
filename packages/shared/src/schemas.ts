@@ -62,3 +62,8 @@ export * from "./schemas/extension";
 export * from "./schemas/onboarding";
 export * from "./schemas/mobile";
 export * from "./schemas/saas-metering";
+export * from "./schemas/evidence-connector";
+export * from "./schemas/cloud-connector";
+export * from "./schemas/identity-saas-connector";
+export * from "./schemas/devops-connector";
+export * from "./schemas/framework-mapping";

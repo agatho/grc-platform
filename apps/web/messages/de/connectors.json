@@ -1,0 +1,109 @@
+{
+  "title": "Evidence-Konnektoren",
+  "subtitle": "Automatische Evidenz-Sammlung aus Cloud-, Identitaets-, DevOps- und IT-Systemen",
+  "addConnector": "Konnektor hinzufuegen",
+
+  "dashboard": {
+    "totalConnectors": "Konnektoren gesamt",
+    "active": "aktiv",
+    "healthy": "Gesund",
+    "degraded": "beeintraechtigt",
+    "testsRun24h": "Tests (24h)",
+    "last24h": "Letzte 24 Stunden",
+    "passRate": "Bestehensrate",
+    "artifacts": "Artefakte",
+    "stale": "veraltet"
+  },
+
+  "nav": {
+    "cloud": "Cloud-Infrastruktur",
+    "cloudDesc": "AWS, Azure, GCP Sicherheitstests",
+    "identity": "Identitaet & SaaS",
+    "identityDesc": "Entra ID, Google Workspace, M365",
+    "devops": "DevOps & IT",
+    "devopsDesc": "Git, Issue-Tracking, Endgeraete",
+    "frameworks": "Framework-Mappings",
+    "frameworksDesc": "Framework-uebergreifende Compliance-Abdeckung"
+  },
+
+  "connectorList": {
+    "title": "Alle Konnektoren",
+    "empty": "Noch keine Konnektoren konfiguriert. Fuegen Sie einen Konnektor hinzu, um automatisch Evidenzen zu sammeln."
+  },
+
+  "statuses": {
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "error": "Fehler",
+    "disabled": "Deaktiviert",
+    "pending_setup": "Einrichtung ausstehend"
+  },
+
+  "cloud": {
+    "title": "Cloud-Infrastruktur-Konnektoren",
+    "subtitle": "Automatische Sicherheitstests fuer AWS, Azure und GCP",
+    "connectors": "Konnektoren",
+    "criticalFindings": "kritische Befunde",
+    "notConfigured": "Nicht konfiguriert",
+    "totalTests": "Tests gesamt",
+    "passRate": "Bestehensrate"
+  },
+
+  "identity": {
+    "title": "Identitaets- & SaaS-Konnektoren",
+    "subtitle": "Identity-Provider, SaaS-Plattformen und HR-Systeme ueberwachen",
+    "totalUsers": "Benutzer gesamt",
+    "mfaCompliance": "MFA-Compliance",
+    "staleAccounts": "Inaktive Konten",
+    "privilegedAccounts": "Privilegierte Konten",
+    "pendingReviews": "Ausstehende Reviews",
+    "saasCompliance": "SaaS-Compliance"
+  },
+
+  "devops": {
+    "title": "DevOps & IT-Konnektoren",
+    "subtitle": "Git-Sicherheit, Issue-Tracking-SLA, Endgeraete- und Netzwerk-Compliance",
+    "repos": "Repositories",
+    "branchProtection": "Branch-Schutz",
+    "codeReview": "Code-Review-Abdeckung",
+    "criticalFindings": "Kritische Befunde",
+    "endpointCompliance": "Endgeraete-Compliance",
+    "firewallCompliance": "Firewall-Compliance"
+  },
+
+  "frameworks": {
+    "title": "Cross-Framework Mapping Engine",
+    "subtitle": "Einmal bewerten, ueberall compliant — Abdeckung ueber 10+ Frameworks",
+    "runGapAnalysis": "Lueckenanalyse",
+    "heatmap": "Abdeckungs-Heatmap",
+    "overallCoverage": "Gesamtabdeckung",
+    "acrossFrameworks": "ueber {count} Frameworks",
+    "frameworksTracked": "Frameworks erfasst",
+    "lastAnalysis": "Letzte Analyse",
+    "noAnalysis": "Noch keine Analyse durchgefuehrt",
+    "coverageByFramework": "Abdeckung je Framework",
+    "noData": "Noch keine Framework-Abdeckungsdaten. Fuehren Sie eine Lueckenanalyse durch.",
+    "gaps": "Luecken",
+    "topGaps": "Groesste Compliance-Luecken"
+  },
+
+  "heatmap": {
+    "title": "Abdeckungs-Heatmap",
+    "subtitle": "Visuelle Uebersicht der Compliance-Abdeckung ueber Frameworks und Kategorien",
+    "framework": "Framework",
+    "overall": "Gesamt",
+    "noData": "Keine Heatmap-Daten verfuegbar. Fuehren Sie zuerst Lueckenanalysen durch.",
+    "legend": "Legende"
+  },
+
+  "gapAnalysis": {
+    "title": "Lueckenanalyse",
+    "subtitle": "Compliance-Luecken je Framework identifizieren und Massnahmen priorisieren",
+    "runForFramework": "Analyse fuer Framework starten",
+    "results": "Analyseergebnisse",
+    "noResults": "Noch keine Lueckenanalysen durchgefuehrt. Waehlen Sie oben ein Framework.",
+    "controls": "Kontrollen",
+    "covered": "abgedeckt",
+    "missing": "fehlend"
+  }
+}
