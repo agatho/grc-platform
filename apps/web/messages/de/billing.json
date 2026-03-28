@@ -1,0 +1,41 @@
+{
+  "title": "Abrechnung & Abonnement",
+  "subtitle": "Abonnementplan, Nutzung und Rechnungen verwalten",
+  "changePlan": "Plan aendern",
+  "currentPlan": "Aktueller Plan",
+  "contactSales": "Vertrieb kontaktieren",
+  "month": "Monat",
+  "year": "Jahr",
+  "periodEnds": "Laufzeit endet",
+  "noPlan": "Kein aktives Abonnement",
+  "choosePlan": "Plan waehlen",
+  "usage": {
+    "title": "Aktuelle Nutzung",
+    "period": "Abrechnungszeitraum"
+  },
+  "invoices": {
+    "title": "Letzte Rechnungen",
+    "number": "Rechnung Nr.",
+    "status": "Status",
+    "period": "Zeitraum",
+    "total": "Gesamt",
+    "empty": "Noch keine Rechnungen"
+  },
+  "plans": {
+    "title": "Waehlen Sie Ihren Plan",
+    "subtitle": "Waehlen Sie den Plan, der zu Ihrer Organisation passt",
+    "monthly": "Monatlich",
+    "yearly": "Jaehrlich",
+    "save20": "20% sparen",
+    "popular": "Am beliebtesten",
+    "custom": "Individuelle Preise",
+    "unlimited": "Unbegrenzt",
+    "users": "Benutzer",
+    "organizations": "Organisationen",
+    "storage": "Speicher",
+    "apiCalls": "API-Aufrufe/Monat",
+    "trialDays": "Tage kostenlose Testphase",
+    "subscribe": "Abonnieren",
+    "contactSales": "Vertrieb kontaktieren"
+  }
+}

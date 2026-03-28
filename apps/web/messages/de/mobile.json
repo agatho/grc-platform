@@ -1,0 +1,22 @@
+{
+  "title": "Mobile Anwendung",
+  "subtitle": "Mobile Geraete, Push-Benachrichtigungen und Offline-Synchronisierung verwalten",
+  "stats": {
+    "devices": "Aktive Geraete",
+    "notifications": "Ungelesene Benachrichtigungen",
+    "biometric": "Biometrie aktiviert",
+    "scanning": "QR/Barcode-Scan",
+    "available": "Verfuegbar"
+  },
+  "devices": {
+    "title": "Registrierte Geraete",
+    "subtitle": "Mit Ihrem Konto verbundene Mobilgeraete verwalten",
+    "empty": "Noch keine Geraete registriert",
+    "active": "Aktiv",
+    "inactive": "Inaktiv"
+  },
+  "notifications": {
+    "title": "Letzte Push-Benachrichtigungen",
+    "empty": "Noch keine Push-Benachrichtigungen"
+  }
+}

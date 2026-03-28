@@ -57,3 +57,8 @@ export * from "./schemas/eam-governance";
 export * from "./schemas/risk-evaluation";
 export * from "./schemas/grc-ux";
 export * from "./schemas/bpm-derived";
+export * from "./schemas/api-platform";
+export * from "./schemas/extension";
+export * from "./schemas/onboarding";
+export * from "./schemas/mobile";
+export * from "./schemas/saas-metering";

@@ -1,0 +1,28 @@
+{
+  "title": "Setup Wizard",
+  "welcome": "Welcome to the Platform",
+  "welcomeDesc": "Get started by setting up your organization with a guided setup wizard.",
+  "startSetup": "Start Setup",
+  "stepOf": "Step {current} of {total}",
+  "skip": "Skip Setup",
+  "next": "Next Step",
+  "finish": "Complete Setup",
+  "step": "Step",
+  "steps": {
+    "welcome": "Welcome to the platform. This wizard will guide you through the initial setup.",
+    "org_profile": "Tell us about your organization so we can tailor the platform to your needs.",
+    "frameworks": "Select the compliance frameworks relevant to your organization.",
+    "modules": "Choose which modules you would like to activate.",
+    "users": "Invite team members to collaborate on the platform.",
+    "templates": "Apply compliance template packs to pre-populate controls and policies.",
+    "sample_data": "Optionally load sample data to explore the platform features.",
+    "complete": "Your setup is complete. You can now start using the platform."
+  },
+  "templates": {
+    "title": "Template Library",
+    "subtitle": "Pre-built compliance template packs for quick setup",
+    "items": "items",
+    "recommended": "Recommended",
+    "apply": "Apply"
+  }
+}
