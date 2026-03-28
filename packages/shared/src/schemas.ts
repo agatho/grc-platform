@@ -44,3 +44,8 @@ export * from "./schemas/erm-advanced";
 export * from "./schemas/ics-advanced";
 export * from "./schemas/bcms-advanced";
 export * from "./schemas/dpms-advanced";
+export * from "./schemas/audit-advanced";
+export * from "./schemas/tprm-advanced";
+export * from "./schemas/esg-advanced";
+export * from "./schemas/whistleblowing-advanced";
+export * from "./schemas/bpm-advanced";

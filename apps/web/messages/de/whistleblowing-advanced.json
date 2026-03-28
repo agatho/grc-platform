@@ -1,0 +1,62 @@
+{
+  "title": "Hinweisgebersystem Erweitert",
+  "investigation": {
+    "title": "Ermittlungsmanagement",
+    "phase": { "intake": "Eingang", "triage": "Triage", "investigation": "Ermittlung", "decision": "Entscheidung", "resolution": "Lösung", "closed": "Geschlossen" },
+    "priority": { "low": "Niedrig", "medium": "Mittel", "high": "Hoch", "critical": "Kritisch" },
+    "assignInvestigator": "Ermittler zuweisen",
+    "outcome": { "substantiated": "Begründet", "unsubstantiated": "Unbegründet", "inconclusive": "Nicht schlüssig", "partially_substantiated": "Teilweise begründet" },
+    "timeline": "Ermittlungszeitleiste",
+    "report": "Ermittlungsbericht",
+    "hinschg": { "acknowledgmentDeadline": "Eingangsbestätigungsfrist (7 Tage)", "feedbackDeadline": "Rückmeldefrist (3 Monate)", "overdue": "Überfällig" }
+  },
+  "evidence": {
+    "title": "Beweismittelverwaltung",
+    "upload": "Beweis hochladen",
+    "source": { "reporter_upload": "Hinweisgeber-Upload", "investigator_upload": "Ermittler-Upload", "system_generated": "Systemgeneriert", "interview_recording": "Befragungsaufzeichnung" },
+    "chainOfCustody": "Beweismittelkette",
+    "permanentWarning": "Beweismittel können nicht gelöscht werden. Sie können nur durch neue Beweismittel ersetzt werden.",
+    "superseded": "Ersetzt"
+  },
+  "interview": {
+    "title": "Befragungsdokumentation",
+    "interviewee": "Befragte Person",
+    "date": "Befragungsdatum",
+    "consent": "Einwilligung dokumentiert"
+  },
+  "protection": {
+    "title": "Hinweisgeberschutz",
+    "case": "Schutzfall",
+    "status": { "active": "Aktive Überwachung", "monitoring": "Überwachung", "concluded": "Abgeschlossen" },
+    "event": "Beschäftigungsereignis",
+    "eventType": { "role_change": "Rollenwechsel", "salary_change": "Gehaltsänderung", "performance_review": "Leistungsbeurteilung", "disciplinary": "Disziplinarmassnahme", "assignment_change": "Aufgabenänderung", "location_change": "Standortwechsel", "termination": "Kündigung" },
+    "flag": { "normal": "Normal", "suspicious": "Verdächtig", "critical": "Kritisch" },
+    "retaliationAlert": "Vergeltungsalarm",
+    "dashboard": "Schutz-Dashboard"
+  },
+  "intake": {
+    "title": "Mehrkanal-Eingang",
+    "telephone": "Telefonischer Hinweis",
+    "postal": "Postalischer Hinweis",
+    "walkIn": "Persönlicher Hinweis",
+    "channel": { "web_form": "Webformular", "telephone": "Telefon", "postal": "Post", "walk_in": "Persönlich", "ombudsperson": "Ombudsperson" },
+    "analytics": "Kanalanalyse"
+  },
+  "routing": {
+    "title": "Fallweiterleitung",
+    "autoRoute": "Automatisch weiterleiten",
+    "rules": "Weiterleitungsregeln",
+    "conflictCheck": "Interessenkonfliktprüfung",
+    "conflictWarning": "Möglicher Interessenkonflikt erkannt",
+    "workloadBalance": "Arbeitsbelastungsausgleich"
+  },
+  "ombudsperson": {
+    "title": "Ombudsperson-Portal",
+    "invite": "Ombudsperson einladen",
+    "assignment": "Fallzuweisung",
+    "scope": { "full_investigation": "Vollständige Ermittlung", "consultation": "Nur Beratung" },
+    "workspace": "Ombudsperson-Arbeitsbereich",
+    "activityLog": "Aktivitätsprotokoll",
+    "expiry": "Zugriff läuft ab"
+  }
+}
