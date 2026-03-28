@@ -306,11 +306,10 @@ export default function AcknowledgePolicyPage() {
           <CardContent>
             <div
               ref={contentRef}
-              className="prose prose-sm max-w-none max-h-[60vh] overflow-y-auto rounded-md border p-4"
-              dangerouslySetInnerHTML={{
-                __html: policy.documentContent ?? `<p>${t("acknowledge.noContent")}</p>`,
-              }}
-            />
+              className="prose prose-sm max-w-none max-h-[60vh] overflow-y-auto rounded-md border p-4 whitespace-pre-wrap"
+            >
+              {policy.documentContent ?? t("acknowledge.noContent")}
+            </div>
           </CardContent>
         </Card>
 
