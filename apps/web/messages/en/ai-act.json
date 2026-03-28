@@ -1,0 +1,31 @@
+{
+  "title": "EU AI Act Governance",
+  "description": "AI System Inventory, Risk Classification, Conformity Assessments & Human Oversight",
+  "systems": "AI Systems",
+  "oversight": "Oversight",
+  "totalSystems": "Total AI Systems",
+  "highRiskSystems": "High-Risk Systems",
+  "unacceptableSystems": "Unacceptable Risk",
+  "pendingAssessments": "Pending Assessments",
+  "oversightLogs30d": "Oversight Logs (30d)",
+  "transparencyEntries": "Transparency Entries",
+  "friasPending": "FRIAs Pending",
+  "systemInventory": "AI System Inventory",
+  "addSystem": "Register AI System",
+  "noSystems": "No AI systems registered yet",
+  "nav": {
+    "dashboard": "Dashboard",
+    "systems": "AI Systems",
+    "conformityAssessments": "Conformity Assessments",
+    "oversightLogs": "Human Oversight",
+    "transparency": "Transparency Register",
+    "frias": "FRIAs",
+    "frameworkMappings": "Framework Mappings"
+  },
+  "riskClassification": {
+    "unacceptable": "Unacceptable",
+    "high": "High",
+    "limited": "Limited",
+    "minimal": "Minimal"
+  }
+}

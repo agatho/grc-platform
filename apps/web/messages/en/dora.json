@@ -1,0 +1,42 @@
+{
+  "title": "DORA Compliance",
+  "description": "Digital Operational Resilience Act — ICT Risk, Incidents, Providers & Testing",
+  "ictRisks": "ICT Risks",
+  "incidents": "Incidents",
+  "providers": "Providers",
+  "totalIctRisks": "Total ICT Risks",
+  "criticalRisks": "Critical Risks",
+  "openIncidents": "Open Incidents",
+  "majorIncidents": "Major Incidents",
+  "totalProviders": "Total Providers",
+  "criticalProviders": "Critical Providers",
+  "pendingReports": "Pending Reports",
+  "nis2Compliance": "NIS2 Compliance",
+  "viewAll": "View All",
+  "noUpcomingTests": "No upcoming TLPT tests scheduled",
+  "noRecentSharing": "No recent information sharing entries",
+  "ictRiskRegister": "ICT Risk Register (DORA Art. 6-16)",
+  "addRisk": "Add ICT Risk",
+  "noRisks": "No ICT risks registered yet",
+  "incidentRegister": "ICT Incident Register",
+  "reportIncident": "Report Incident",
+  "noIncidents": "No ICT incidents reported",
+  "detected": "Detected",
+  "providerRegister": "ICT Third-Party Provider Register (Art. 28)",
+  "addProvider": "Add Provider",
+  "noProviders": "No ICT providers registered",
+  "nav": {
+    "dashboard": "Dashboard",
+    "ictRisks": "ICT Risk Register",
+    "tlptPlans": "TLPT Plans",
+    "ictIncidents": "ICT Incidents",
+    "ictProviders": "ICT Providers",
+    "informationSharing": "Information Sharing",
+    "nis2CrossRef": "DORA-NIS2 Cross-Reference"
+  },
+  "reporting": {
+    "initialDue": "Initial Report Due (4h)",
+    "intermediateDue": "Intermediate Report Due (72h)",
+    "finalDue": "Final Report Due (1 Month)"
+  }
+}

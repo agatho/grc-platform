@@ -1,0 +1,31 @@
+{
+  "title": "Regulatorischer Horizon Scanner",
+  "description": "Echtzeit-Monitoring regulatorischer Aenderungen aus 50+ Quellen mit NLP-Klassifizierung",
+  "sources": "Quellen",
+  "items": "Scan-Eintraege",
+  "calendar": "Kalender",
+  "activeSources": "Aktive Quellen",
+  "totalItems": "Eintraege gesamt",
+  "newItems": "Neue Eintraege",
+  "criticalItems": "Kritische Eintraege",
+  "pendingAssessments": "Ausstehende Bewertungen",
+  "totalSources": "Quellen gesamt",
+  "nav": {
+    "dashboard": "Dashboard",
+    "sources": "Regulatorische Quellen",
+    "items": "Scan-Eintraege",
+    "impactAssessments": "Auswirkungsbewertungen",
+    "calendar": "Regulatorischer Kalender"
+  },
+  "sourceTypes": {
+    "eu_oj": "EU-Amtsblatt",
+    "bsi": "BSI",
+    "bafin": "BaFin",
+    "enisa": "ENISA",
+    "eba": "EBA",
+    "esma": "ESMA",
+    "cert": "CERT",
+    "national_gazette": "Bundesanzeiger",
+    "custom": "Benutzerdefiniert"
+  }
+}

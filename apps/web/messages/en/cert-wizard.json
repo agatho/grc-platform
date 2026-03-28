@@ -1,0 +1,32 @@
+{
+  "title": "Certification & Audit Prep Wizard",
+  "description": "Readiness assessments, evidence packages & mock audits for ISO 27001, BSI, NIS2, SOC 2, TISAX",
+  "assessments": "Assessments",
+  "evidencePackages": "Evidence Packages",
+  "mockAudits": "Mock Audits",
+  "totalAssessments": "Total Assessments",
+  "avgReadiness": "Avg. Readiness",
+  "completedMockAudits": "Completed Mock Audits",
+  "avgMockScore": "Avg. Mock Score",
+  "nav": {
+    "dashboard": "Dashboard",
+    "assessments": "Readiness Assessments",
+    "evidencePackages": "Evidence Packages",
+    "mockAudits": "Mock Audits"
+  },
+  "frameworks": {
+    "iso_27001": "ISO 27001",
+    "bsi_grundschutz": "BSI IT-Grundschutz",
+    "nis2": "NIS2",
+    "soc2_type2": "SOC 2 Type II",
+    "tisax": "TISAX",
+    "iso_22301": "ISO 22301",
+    "iso_9001": "ISO 9001"
+  },
+  "auditTypes": {
+    "stage_1": "Stage 1 Audit",
+    "stage_2": "Stage 2 Audit",
+    "surveillance": "Surveillance Audit",
+    "recertification": "Recertification"
+  }
+}

@@ -63,3 +63,8 @@ export * from "./types/evidence-review";
 export * from "./types/regulatory-change";
 export * from "./types/control-testing-agent";
 export * from "./types/predictive-risk";
+export * from "./types/dora";
+export * from "./types/ai-act";
+export * from "./types/tax-cms";
+export * from "./types/horizon-scanner";
+export * from "./types/cert-wizard";
