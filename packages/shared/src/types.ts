@@ -33,3 +33,7 @@ export * from "./types/reporting";
 export * from "./types/regulatory-simulator";
 export * from "./types/risk-propagation";
 export * from "./types/audit-analytics";
+export * from "./types/abac";
+export * from "./types/agents";
+export * from "./types/eam";
+export * from "./types/eam-advanced";

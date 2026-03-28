@@ -1,0 +1,57 @@
+{
+  "title": "GRC-Agenten",
+  "dashboard": "Agenten-Dashboard",
+  "activeAgents": "Aktive Agenten",
+  "lastScan": "Letzter Scan",
+  "openRecommendations": "Offene Empfehlungen",
+  "criticalAlerts": "Kritische Warnungen",
+  "activate": "Aktivieren",
+  "deactivate": "Deaktivieren",
+  "configure": "Konfigurieren",
+  "runNow": "Jetzt ausfuehren",
+  "status": {
+    "idle": "Bereit",
+    "running": "Laeuft",
+    "error": "Fehler",
+    "disabled": "Deaktiviert"
+  },
+  "types": {
+    "evidence_review": "Evidenz-Pruefung",
+    "compliance_monitor": "Compliance-Monitor",
+    "vendor_signal": "Lieferanten-Signal",
+    "sla_monitor": "SLA-Monitor"
+  },
+  "config": {
+    "title": "Agentenkonfiguration",
+    "scanFrequency": "Scan-Frequenz",
+    "thresholds": "Schwellenwerte",
+    "evidenceAgeDays": "Maximales Evidenzalter (Tage)",
+    "qualityThreshold": "Qualitaetsschwelle",
+    "relevanceScore": "Relevanzschwelle",
+    "leadTimeDays": "Vorlaufzeit (Tage)"
+  },
+  "recommendations": {
+    "title": "Empfehlungen",
+    "accept": "Akzeptieren",
+    "dismiss": "Ablehnen",
+    "createTask": "Aufgabe erstellen",
+    "pending": "Ausstehend",
+    "accepted": "Akzeptiert",
+    "dismissed": "Abgelehnt",
+    "severity": {
+      "info": "Information",
+      "warning": "Warnung",
+      "critical": "Kritisch"
+    },
+    "dismissReason": "Ablehnungsgrund"
+  },
+  "log": {
+    "title": "Ausfuehrungsprotokoll",
+    "phase": "Phase",
+    "itemsFound": "Gefundene Elemente",
+    "duration": "Dauer",
+    "tokensUsed": "AI-Token verwendet",
+    "observedData": "Beobachtete Daten",
+    "evaluation": "Bewertung"
+  }
+}
