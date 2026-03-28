@@ -51,6 +51,8 @@ import { processQueryCacheWarmer } from "./crons/query-cache-warmer";
 import { initAutomationEngine, getAutomationEngine } from "./crons/automation-engine-init";
 import { processReportScheduler } from "./crons/report-scheduler";
 import { processThreatFeedSync } from "./crons/threat-feed-sync";
+import { processRiskPredictionWeekly } from "./crons/risk-prediction-weekly";
+import { processAnalyticsCleanup } from "./crons/analytics-cleanup";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -777,6 +779,32 @@ for (const [name, handler] of Object.entries(moduleCrons)) {
     }
   });
 }
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 33: Risk Prediction + Analytics Cleanup
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/risk-prediction-weekly", async (c) => {
+  try {
+    const result = await processRiskPredictionWeekly();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] risk-prediction-weekly cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/analytics-cleanup", async (c) => {
+  try {
+    const result = await processAnalyticsCleanup();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] analytics-cleanup cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
 
 // ──────────────────────────────────────────────────────────────
 // Sprint 28: Automation Engine health check

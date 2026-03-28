@@ -1,0 +1,17 @@
+{
+  "title": "Praediktive Risikointelligenz",
+  "description": "ML-basierte Vorhersage, welche Risiken in den naechsten 90 Tagen eskalieren werden",
+  "retrainModel": "Modell neu trainieren",
+  "escalationRanking": "Eskalations-Ranking",
+  "noPredictions": "Noch keine Vorhersagen berechnet",
+  "risk": "Risiko",
+  "probability": "Wahrscheinlichkeit",
+  "topFactor": "Hauptfaktor",
+  "trend": "Trend",
+  "confidence": "Konfidenz",
+  "modelVersion": "Modell-Version",
+  "algorithm": "Algorithmus",
+  "whyEscalation": "Warum Eskalation?",
+  "escalationProbability": "Eskalationswahrscheinlichkeit",
+  "topFactors": "Top-3 Einflussfaktoren"
+}
