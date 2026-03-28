@@ -67,3 +67,8 @@ export * from "./schemas/cloud-connector";
 export * from "./schemas/identity-saas-connector";
 export * from "./schemas/devops-connector";
 export * from "./schemas/framework-mapping";
+export * from "./schemas/copilot-chat";
+export * from "./schemas/evidence-review";
+export * from "./schemas/regulatory-change";
+export * from "./schemas/control-testing-agent";
+export * from "./schemas/predictive-risk";

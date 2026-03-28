@@ -1,0 +1,42 @@
+{
+  "title": "AI Control Testing",
+  "description": "Automated control testing with AI-generated scripts and checklists",
+  "scripts": "Test Scripts",
+  "checklists": "Checklists",
+  "activeScripts": "Active Scripts",
+  "passRate": "Pass Rate",
+  "failRate": "Fail Rate",
+  "learningPatterns": "Learning Patterns",
+  "recentExecutions": "Recent Executions",
+  "execution": "Execution",
+  "inProgress": "In Progress",
+  "scripts": {
+    "title": "Test Scripts",
+    "create": "Create Script",
+    "aiGenerate": "AI Generate",
+    "active": "Active",
+    "inactive": "Inactive",
+    "run": "Run",
+    "aiGenerated": "AI Generated"
+  },
+  "checklists": {
+    "title": "Test Checklists",
+    "create": "Create Checklist",
+    "aiGenerate": "AI Generate",
+    "items": "items",
+    "due": "Due"
+  },
+  "executions": {
+    "title": "Test Executions",
+    "findings": "findings"
+  },
+  "learning": {
+    "title": "Learning Patterns",
+    "patternTypes": {
+      "common_failure": "Common Failure",
+      "effective_test": "Effective Test",
+      "false_positive": "False Positive",
+      "improvement": "Improvement"
+    }
+  }
+}
