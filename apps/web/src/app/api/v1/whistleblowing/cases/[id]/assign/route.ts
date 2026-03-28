@@ -11,7 +11,7 @@ interface RouteParams {
 }
 
 export async function PUT(req: Request, { params }: RouteParams) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth("admin", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("whistleblowing", ctx.orgId, req.method);

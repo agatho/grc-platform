@@ -60,7 +60,8 @@ export async function validateDdToken(
   await db
     .update(ddSession)
     .set({
-      ipAddressLog: sql`array_append(ip_address_log, ${ip})`,
+      // GDPR: hash IP before storing (no plaintext IPs in DB)
+      ipAddressLog: sql`array_append(ip_address_log, ${require("crypto").createHash("sha256").update(ip).digest("hex")})`,
       status: newStatus,
       updatedAt: new Date(),
     })
