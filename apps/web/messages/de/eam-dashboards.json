@@ -1,0 +1,122 @@
+{
+  "title": "EAM-Dashboards",
+  "costManagement": {
+    "title": "Kostenmanagement-Dashboard",
+    "totalApps": "Anwendungen gesamt",
+    "totalAppCost": "Jährliche Anwendungskosten",
+    "totalComponents": "IT-Komponenten",
+    "totalComponentCost": "Jährliche Komponentenkosten",
+    "appCostByCategory": "Anwendungskosten nach Kategorie",
+    "infraCostByProvider": "IT-Komponentenkosten nach Anbieter",
+    "appCostTable": "Anwendungskosten-Details",
+    "componentCostTable": "IT-Komponentenkosten-Details",
+    "treemapPlaceholder": "D3.js-Treemap-Visualisierung wird hier dargestellt",
+    "loadingData": "Daten werden geladen...",
+    "costTrend": "Kostentrend",
+    "yearOverYear": "Jahresvergleich"
+  },
+  "portfolio": {
+    "title": "Portfolio-Optimierungs-Dashboard",
+    "category": "Kategorie",
+    "functionalFit": "Funktionale Eignung",
+    "technicalFit": "Technische Eignung",
+    "lifecycle": "Lebenszyklus-Status",
+    "criticality": "Geschäftskritikalität",
+    "time": "TIME-Klassifizierung",
+    "sixR": "6R-Strategie",
+    "insufficientFit": "Unzureichende funktionale Eignung",
+    "approachingEol": "EOL-Annäherung",
+    "unassessed": "Nicht bewertet (12+ Monate)",
+    "noSixR": "Keine 6R-Entscheidung",
+    "healthIndicators": "Portfolio-Gesundheitsindikatoren",
+    "detailTable": "Portfolio-Detailtabelle",
+    "bubbleChart": "TIME-Blasendiagramm",
+    "sixROverview": "6R-Strategieübersicht"
+  },
+  "assessment": {
+    "title": "Anwendungsbewertung",
+    "functionalFit": "Funktionale Eignung",
+    "technicalFit": "Technische Eignung",
+    "sixRStrategy": "6R-Strategie",
+    "businessCriticality": "Geschäftskritikalität",
+    "timeClassification": "TIME-Klassifizierung",
+    "businessValue": "Geschäftswert",
+    "technicalCondition": "Technischer Zustand",
+    "justification": "Begründung",
+    "assessSelected": "Ausgewählte bewerten",
+    "history": "Bewertungshistorie",
+    "lastAssessed": "Letzte Bewertung",
+    "assessedBy": "Bewertet von",
+    "dimensionChanged": "geändert von {old} zu {new}",
+    "bulkAssessment": "Massenbewertung",
+    "applyToApps": "Auf {count} Anwendungen anwenden"
+  },
+  "capabilityLifecycle": {
+    "standardView": "Standardansicht",
+    "lifecycleView": "Lebenszyklusansicht",
+    "active": "Aktiv",
+    "transforming": "In Transformation",
+    "retiring": "Auslaufend",
+    "planned": "Geplant"
+  },
+  "visualization": "Visualisierung",
+  "visualizationPlaceholder": "D3.js-Visualisierung wird hier dargestellt",
+  "riskManagement": {
+    "title": "EAM-Risiko-Dashboard",
+    "totalRisks": "Risiken gesamt",
+    "criticalRisks": "Kritische Risiken",
+    "appsWithRisks": "Anwendungen mit Risiken",
+    "riskCategory": "Risikokategorie-Verteilung",
+    "riskRating": "Risikobewertungsverteilung",
+    "risksPerApp": "Risiken pro Anwendung"
+  },
+  "vulnerabilityMonitor": {
+    "title": "Schwachstellen-Monitor",
+    "totalCves": "CVEs gesamt",
+    "criticalUnpatched": "Kritisch ungepatcht",
+    "highUnpatched": "Hoch ungepatcht",
+    "patchedPct": "Gepatcht",
+    "perApplication": "Schwachstellen pro Anwendung"
+  },
+  "businessAlignment": {
+    "title": "Geschäftsausrichtung",
+    "coverageScore": "Abdeckungsgrad",
+    "heatmap": "Fähigkeitsabdeckung Heatmap"
+  },
+  "technicalAlignment": {
+    "title": "Technische Ausrichtung",
+    "standardPct": "Standardkonformität",
+    "nonStandard": "Nicht-Standard-Technologien"
+  },
+  "insightGrid": {
+    "title": "Insight Grid",
+    "timeline": "Zeitleiste",
+    "coloring": "Farbmodus",
+    "lifecycle": "Lebenszyklus",
+    "time": "TIME-Klassifizierung",
+    "sixR": "6R-Strategie",
+    "criticality": "Geschäftskritikalität",
+    "filters": "Filter",
+    "settings": "Einstellungen",
+    "export": "Exportieren",
+    "showEmpty": "Leere Zellen anzeigen"
+  },
+  "roadmap": {
+    "title": "Anwendungs-Roadmap",
+    "groupBy": "Gruppieren nach",
+    "timeRange": "Zeitraum",
+    "exportPdf": "PDF exportieren",
+    "todayMarker": "Heute"
+  },
+  "contextDiagram": {
+    "title": "Kontextdiagramm",
+    "sectors": "Sektoren",
+    "business": "Geschäft",
+    "organization": "Organisation",
+    "integration": "Integration",
+    "data": "Daten",
+    "technology": "Technologie",
+    "risk": "Risiko",
+    "provider": "Anbieter"
+  }
+}
