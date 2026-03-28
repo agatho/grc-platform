@@ -21,3 +21,4 @@ export * from "./types/calendar";
 export * from "./types/dashboard";
 export * from "./types/import-export";
 export * from "./types/identity";
+export * from "./types/translation";
