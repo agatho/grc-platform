@@ -35,13 +35,13 @@ function PageInner() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold">{t("materiality.title")}</h1>
+        <h1 className="text-2xl font-bold">{t("carbon.title")}</h1>
       </div>
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              {t("materiality.title")}
+              {t("carbon.title")}
             </CardTitle>
           </CardHeader>
           <CardContent>

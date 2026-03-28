@@ -1,5 +1,5 @@
-import { db, materialityAssessment } from "@grc/db";
-import { createMaterialityAssessmentSchema } from "@grc/shared";
+import { db, emissionSource } from "@grc/db";
+import { createEmissionSourceSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, desc } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
@@ -9,9 +9,8 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
-  const url = new URL(req.url);
-  const { limit, offset } = paginate(url.searchParams);
-  const rows = await db.select().from(materialityAssessment).where(eq(materialityAssessment.orgId, ctx.orgId)).orderBy(desc(materialityAssessment.reportingPeriodYear)).limit(limit).offset(offset);
+  const { limit, offset } = paginate(new URL(req.url).searchParams);
+  const rows = await db.select().from(emissionSource).where(eq(emissionSource.orgId, ctx.orgId)).orderBy(desc(emissionSource.createdAt)).limit(limit).offset(offset);
   return paginatedResponse(rows, rows.length, limit, offset);
 }
 
@@ -20,10 +19,10 @@ export async function POST(req: Request) {
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
-  const body = createMaterialityAssessmentSchema.safeParse(await req.json());
+  const body = createEmissionSourceSchema.safeParse(await req.json());
   if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
   const created = await withAuditContext(ctx, async (tx) => {
-    const [row] = await tx.insert(materialityAssessment).values({ orgId: ctx.orgId, reportingPeriodYear: body.data.reportingPeriodYear, financialThreshold: body.data.financialThreshold ?? { scoreThreshold: 50 }, impactThreshold: body.data.impactThreshold ?? { scoreThreshold: 50 }, createdBy: ctx.userId }).returning();
+    const [row] = await tx.insert(emissionSource).values({ orgId: ctx.orgId, ...body.data }).returning();
     return row;
   });
   return Response.json({ data: created }, { status: 201 });

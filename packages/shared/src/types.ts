@@ -42,3 +42,8 @@ export * from "./types/erm-advanced";
 export * from "./types/ics-advanced";
 export * from "./types/bcms-advanced";
 export * from "./types/dpms-advanced";
+export * from "./types/audit-advanced";
+export * from "./types/tprm-advanced";
+export * from "./types/esg-advanced";
+export * from "./types/whistleblowing-advanced";
+export * from "./types/bpm-advanced";

@@ -1,0 +1,62 @@
+{
+  "title": "ESG Erweitert",
+  "materiality": {
+    "title": "Doppelte Wesentlichkeitsanalyse",
+    "assessment": "Bewertung",
+    "iro": "IRO-Identifikation",
+    "iroTypes": { "impact": "Auswirkung", "risk": "Risiko", "opportunity": "Chance" },
+    "esrsTopics": { "E1": "Klimawandel", "E2": "Umweltverschmutzung", "E3": "Wasser- und Meeresressourcen", "E4": "Biodiversität", "E5": "Ressourcennutzung und Kreislaufwirtschaft", "S1": "Eigene Belegschaft", "S2": "Arbeitskräfte in der Wertschöpfungskette", "S3": "Betroffene Gemeinschaften", "S4": "Verbraucher und Endnutzer", "G1": "Geschäftsgebaren", "G2": "Unternehmensführung" },
+    "financialMateriality": "Finanzielle Wesentlichkeit",
+    "impactMateriality": "Auswirkungswesentlichkeit",
+    "matrix": "Wesentlichkeitsmatrix",
+    "stakeholder": "Stakeholder-Einbindung",
+    "finalize": "Bewertung abschliessen",
+    "finalizeWarning": "Nach Abschluss kann die Bewertung nicht mehr bearbeitet werden",
+    "isMaterial": "Wesentlich",
+    "activatedDisclosures": "Aktivierte ESRS-Angabepflichten"
+  },
+  "carbon": {
+    "title": "CO2-Fussabdruck-Rechner",
+    "sources": "Emissionsquellen",
+    "activityData": "Aktivitätsdaten",
+    "factors": "Emissionsfaktoren",
+    "customFactor": "Eigenen Faktor hinzufügen",
+    "scope": { "1": "Scope 1 (Direkt)", "2": "Scope 2 (Indirekt Energie)", "3": "Scope 3 (Wertschöpfungskette)" },
+    "dataQuality": { "measured": "Gemessen", "calculated": "Berechnet", "estimated": "Geschätzt" },
+    "dualReporting": "Scope 2 Duale Berichterstattung",
+    "locationBased": "Standortbasiert",
+    "marketBased": "Marktbasiert",
+    "dashboard": "CO2-Dashboard",
+    "intensity": "Intensitätskennzahlen",
+    "sbtiPathway": "SBTi-Zielpfad"
+  },
+  "esrs": {
+    "title": "ESRS-Angabevorlagen",
+    "template": "Vorlage",
+    "dataPoints": "Datenpunkte",
+    "autoPopulated": "Automatisch befüllt",
+    "manualInput": "Manuelle Eingabe",
+    "narrative": "Narrativer Abschnitt",
+    "export": "Angabepaket exportieren"
+  },
+  "collection": {
+    "title": "Datenerhebung",
+    "campaign": "Erhebungskampagne",
+    "assignment": "Zuweisung",
+    "submit": "Daten einreichen",
+    "review": "Einreichung prüfen",
+    "progress": "Erhebungsfortschritt",
+    "validation": { "error": "Fehler (blockiert Einreichung)", "warning": "Warnung (Prüfung empfohlen)" },
+    "myAssignments": "Meine Zuweisungen"
+  },
+  "supplyChain": {
+    "title": "Lieferketten-ESG",
+    "assessment": "Lieferanten-ESG-Bewertung",
+    "questionnaire": "ESG-Fragebogen",
+    "riskClassification": { "low": "Geringes Risiko", "medium": "Mittleres Risiko", "high": "Hohes Risiko", "critical": "Kritisches Risiko" },
+    "correctiveAction": "Korrekturmassnahme",
+    "lksg": "LkSG-Sorgfaltspflichten",
+    "dashboard": "Lieferketten-ESG-Dashboard",
+    "riskMap": "Geographische Risikokarte"
+  }
+}
