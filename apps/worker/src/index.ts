@@ -44,6 +44,7 @@ import { processAssuranceSnapshot } from "./crons/assurance-snapshot";
 import { processPostureSnapshot } from "./crons/posture-snapshot";
 import { processNis2DeadlineMonitor } from "./crons/nis2-deadline-monitor";
 import { processCertReadinessSnapshot } from "./crons/cert-readiness-snapshot";
+import { processFairAppetiteCheck } from "./crons/fair-appetite-check";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -664,6 +665,21 @@ app.post("/crons/cert-readiness-snapshot", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] cert-readiness-snapshot cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 25: FAIR Monte Carlo appetite check
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/fair-appetite-check", async (c) => {
+  try {
+    const result = await processFairAppetiteCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] fair-appetite-check cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
