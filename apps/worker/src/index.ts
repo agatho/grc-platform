@@ -53,6 +53,12 @@ import { processReportScheduler } from "./crons/report-scheduler";
 import { processThreatFeedSync } from "./crons/threat-feed-sync";
 import { processRiskPredictionWeekly } from "./crons/risk-prediction-weekly";
 import { processAnalyticsCleanup } from "./crons/analytics-cleanup";
+import { processAgentScheduler } from "./crons/agent-scheduler";
+import { processEamRuleEvaluator } from "./crons/eam-rule-evaluator";
+import { processEamLifecycleMonitor } from "./crons/eam-lifecycle-monitor";
+import { processInterfaceHealthCheck } from "./crons/interface-health-check";
+import { processArchitectureHealthSnapshot } from "./crons/architecture-health-snapshot";
+import { processTechRadarMigrationAlerts } from "./crons/tech-radar-migration-alerts";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -802,6 +808,84 @@ app.post("/crons/analytics-cleanup", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] analytics-cleanup cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 35: Agent Scheduler
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/agent-scheduler", async (c) => {
+  try {
+    const result = await processAgentScheduler();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] agent-scheduler cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 36: EAM Rule Evaluator + Lifecycle Monitor
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/eam-rule-evaluator", async (c) => {
+  try {
+    const result = await processEamRuleEvaluator();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-rule-evaluator cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/eam-lifecycle-monitor", async (c) => {
+  try {
+    const result = await processEamLifecycleMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-lifecycle-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 37: Interface Health + Architecture Health + Tech Radar
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/interface-health-check", async (c) => {
+  try {
+    const result = await processInterfaceHealthCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] interface-health-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/architecture-health-snapshot", async (c) => {
+  try {
+    const result = await processArchitectureHealthSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] architecture-health-snapshot cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/tech-radar-migration-alerts", async (c) => {
+  try {
+    const result = await processTechRadarMigrationAlerts();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] tech-radar-migration-alerts cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

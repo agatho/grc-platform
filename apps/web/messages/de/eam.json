@@ -1,0 +1,136 @@
+{
+  "title": "Enterprise Architecture Management",
+  "dashboard": "EAM Dashboard",
+  "elements": "Architekturelemente",
+  "createElement": "Element erstellen",
+  "relationships": "Beziehungen",
+  "createRelationship": "Beziehung erstellen",
+  "layers": {
+    "business": "Geschaeftsschicht",
+    "application": "Anwendungsschicht",
+    "technology": "Technologieschicht"
+  },
+  "types": {
+    "business_capability": "Geschaeftsfaehigkeit",
+    "business_service": "Geschaeftsdienst",
+    "business_function": "Geschaeftsfunktion",
+    "application": "Anwendung",
+    "app_service": "Anwendungsdienst",
+    "app_interface": "Anwendungsschnittstelle",
+    "app_component": "Anwendungskomponente",
+    "data_object": "Datenobjekt",
+    "server": "Server",
+    "network": "Netzwerk",
+    "cloud_service": "Cloud-Dienst",
+    "database": "Datenbank",
+    "infrastructure_service": "Infrastrukturdienst"
+  },
+  "relationshipTypes": {
+    "realizes": "Realisiert",
+    "serves": "Bedient",
+    "runs_on": "Laeuft auf",
+    "accesses": "Zugriff auf",
+    "flows_to": "Fliesst zu",
+    "composes": "Besteht aus",
+    "depends_on": "Abhaengig von",
+    "deployed_on": "Deployed auf",
+    "uses": "Nutzt"
+  },
+  "capabilities": {
+    "title": "Geschaeftsfaehigkeiten",
+    "createCapability": "Faehigkeit erstellen",
+    "maturityLevel": "Reifegrad",
+    "strategicImportance": "Strategische Bedeutung",
+    "core": "Kern",
+    "supporting": "Unterstuetzend",
+    "commodity": "Standard"
+  },
+  "portfolio": {
+    "title": "Anwendungsportfolio",
+    "registerApp": "Anwendung registrieren",
+    "quadrantView": "Quadrantenansicht",
+    "timelineView": "Zeitachsenansicht",
+    "listView": "Listenansicht",
+    "timeClassification": "TIME-Klassifizierung",
+    "tolerate": "Tolerieren",
+    "invest": "Investieren",
+    "migrate": "Migrieren",
+    "eliminate": "Eliminieren",
+    "businessValue": "Geschaeftswert",
+    "technicalCondition": "Technischer Zustand",
+    "annualCost": "Jaehrliche Kosten",
+    "userCount": "Benutzeranzahl",
+    "plannedEol": "Geplantes Lebensende",
+    "approachingEol": "Nahendes Lebensende"
+  },
+  "diagram": {
+    "title": "Architekturdiagramm",
+    "layerFilter": "Schichtfilter",
+    "exportSvg": "Als SVG exportieren",
+    "exportPng": "Als PNG exportieren",
+    "autoLayout": "Automatisches Layout",
+    "resetZoom": "Zoom zuruecksetzen"
+  },
+  "spof": {
+    "title": "Single Points of Failure",
+    "detected": "Erkannte SPOFs"
+  },
+  "nis2": {
+    "title": "NIS2-Abhaengigkeitskarte",
+    "essentialServices": "Wesentliche Dienste"
+  },
+  "rules": {
+    "title": "Architekturregeln",
+    "createRule": "Regel erstellen",
+    "violations": "Verstoesse",
+    "acknowledge": "Bestaetigen",
+    "resolve": "Beheben",
+    "falsePositive": "Falsch-positiv"
+  },
+  "import": {
+    "title": "Import / Export",
+    "archimateImport": "ArchiMate-Import",
+    "archimateExport": "ArchiMate-Export",
+    "csvImport": "CSV-Import",
+    "preview": "Vorschau"
+  },
+  "dataFlows": {
+    "title": "Datenfluesse",
+    "createFlow": "Datenfluss erstellen",
+    "personalData": "Personenbezogene Daten",
+    "crossBorder": "Grenzueberschreitend",
+    "gdprReport": "DSGVO-Bericht",
+    "legalBasis": "Rechtsgrundlage",
+    "safeguard": "Schutznahmnahme",
+    "encryption": "Verschluesselung"
+  },
+  "techRadar": {
+    "title": "Technologie-Radar",
+    "addTechnology": "Technologie hinzufuegen",
+    "adopt": "Uebernehmen",
+    "trial": "Testen",
+    "assess": "Bewerten",
+    "hold": "Halten",
+    "holdWarning": "Technologien im HOLD-Ring mit aktiven Anwendungen"
+  },
+  "changeRequests": {
+    "title": "Aenderungsantraege",
+    "createRequest": "Antrag erstellen",
+    "submit": "Einreichen",
+    "vote": "Abstimmen",
+    "approve": "Genehmigen",
+    "reject": "Ablehnen",
+    "defer": "Zurueckstellen",
+    "impact": "Auswirkungsanalyse"
+  },
+  "health": {
+    "title": "Architektur-Gesundheit",
+    "overallScore": "Gesamtbewertung",
+    "portfolioAge": "Portfolioalter",
+    "techCurrency": "Technologieaktualitaet",
+    "integrationComplexity": "Integrationskomplexitaet",
+    "ruleCompliance": "Regelkonformitaet",
+    "dataFlowCompliance": "Datenfluss-Konformitaet",
+    "technicalDebt": "Technische Schulden"
+  }
+}

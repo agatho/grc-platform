@@ -35,3 +35,7 @@ export * from "./schemas/reporting";
 export * from "./schemas/regulatory-simulator";
 export * from "./schemas/risk-propagation";
 export * from "./schemas/audit-analytics";
+export * from "./schemas/abac";
+export * from "./schemas/agents";
+export * from "./schemas/eam";
+export * from "./schemas/eam-advanced";
