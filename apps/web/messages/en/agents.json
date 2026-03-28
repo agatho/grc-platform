@@ -1,0 +1,57 @@
+{
+  "title": "GRC Agents",
+  "dashboard": "Agent Dashboard",
+  "activeAgents": "Active Agents",
+  "lastScan": "Last Scan",
+  "openRecommendations": "Open Recommendations",
+  "criticalAlerts": "Critical Alerts",
+  "activate": "Activate",
+  "deactivate": "Deactivate",
+  "configure": "Configure",
+  "runNow": "Run Now",
+  "status": {
+    "idle": "Idle",
+    "running": "Running",
+    "error": "Error",
+    "disabled": "Disabled"
+  },
+  "types": {
+    "evidence_review": "Evidence Review",
+    "compliance_monitor": "Compliance Monitor",
+    "vendor_signal": "Vendor Signal",
+    "sla_monitor": "SLA Monitor"
+  },
+  "config": {
+    "title": "Agent Configuration",
+    "scanFrequency": "Scan Frequency",
+    "thresholds": "Thresholds",
+    "evidenceAgeDays": "Max Evidence Age (Days)",
+    "qualityThreshold": "Quality Threshold",
+    "relevanceScore": "Relevance Score",
+    "leadTimeDays": "Lead Time (Days)"
+  },
+  "recommendations": {
+    "title": "Recommendations",
+    "accept": "Accept",
+    "dismiss": "Dismiss",
+    "createTask": "Create Task",
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "dismissed": "Dismissed",
+    "severity": {
+      "info": "Information",
+      "warning": "Warning",
+      "critical": "Critical"
+    },
+    "dismissReason": "Dismiss Reason"
+  },
+  "log": {
+    "title": "Execution Log",
+    "phase": "Phase",
+    "itemsFound": "Items Found",
+    "duration": "Duration",
+    "tokensUsed": "AI Tokens Used",
+    "observedData": "Observed Data",
+    "evaluation": "Evaluation"
+  }
+}

@@ -1,0 +1,136 @@
+{
+  "title": "Enterprise Architecture Management",
+  "dashboard": "EAM Dashboard",
+  "elements": "Architecture Elements",
+  "createElement": "Create Element",
+  "relationships": "Relationships",
+  "createRelationship": "Create Relationship",
+  "layers": {
+    "business": "Business Layer",
+    "application": "Application Layer",
+    "technology": "Technology Layer"
+  },
+  "types": {
+    "business_capability": "Business Capability",
+    "business_service": "Business Service",
+    "business_function": "Business Function",
+    "application": "Application",
+    "app_service": "Application Service",
+    "app_interface": "Application Interface",
+    "app_component": "Application Component",
+    "data_object": "Data Object",
+    "server": "Server",
+    "network": "Network",
+    "cloud_service": "Cloud Service",
+    "database": "Database",
+    "infrastructure_service": "Infrastructure Service"
+  },
+  "relationshipTypes": {
+    "realizes": "Realizes",
+    "serves": "Serves",
+    "runs_on": "Runs On",
+    "accesses": "Accesses",
+    "flows_to": "Flows To",
+    "composes": "Composes",
+    "depends_on": "Depends On",
+    "deployed_on": "Deployed On",
+    "uses": "Uses"
+  },
+  "capabilities": {
+    "title": "Business Capabilities",
+    "createCapability": "Create Capability",
+    "maturityLevel": "Maturity Level",
+    "strategicImportance": "Strategic Importance",
+    "core": "Core",
+    "supporting": "Supporting",
+    "commodity": "Commodity"
+  },
+  "portfolio": {
+    "title": "Application Portfolio",
+    "registerApp": "Register Application",
+    "quadrantView": "Quadrant View",
+    "timelineView": "Timeline View",
+    "listView": "List View",
+    "timeClassification": "TIME Classification",
+    "tolerate": "Tolerate",
+    "invest": "Invest",
+    "migrate": "Migrate",
+    "eliminate": "Eliminate",
+    "businessValue": "Business Value",
+    "technicalCondition": "Technical Condition",
+    "annualCost": "Annual Cost",
+    "userCount": "User Count",
+    "plannedEol": "Planned EOL",
+    "approachingEol": "Approaching EOL"
+  },
+  "diagram": {
+    "title": "Architecture Diagram",
+    "layerFilter": "Layer Filter",
+    "exportSvg": "Export as SVG",
+    "exportPng": "Export as PNG",
+    "autoLayout": "Auto Layout",
+    "resetZoom": "Reset Zoom"
+  },
+  "spof": {
+    "title": "Single Points of Failure",
+    "detected": "Detected SPOFs"
+  },
+  "nis2": {
+    "title": "NIS2 Dependency Map",
+    "essentialServices": "Essential Services"
+  },
+  "rules": {
+    "title": "Architecture Rules",
+    "createRule": "Create Rule",
+    "violations": "Violations",
+    "acknowledge": "Acknowledge",
+    "resolve": "Resolve",
+    "falsePositive": "False Positive"
+  },
+  "import": {
+    "title": "Import / Export",
+    "archimateImport": "ArchiMate Import",
+    "archimateExport": "ArchiMate Export",
+    "csvImport": "CSV Import",
+    "preview": "Preview"
+  },
+  "dataFlows": {
+    "title": "Data Flows",
+    "createFlow": "Create Data Flow",
+    "personalData": "Personal Data",
+    "crossBorder": "Cross-Border",
+    "gdprReport": "GDPR Report",
+    "legalBasis": "Legal Basis",
+    "safeguard": "Safeguard",
+    "encryption": "Encryption"
+  },
+  "techRadar": {
+    "title": "Technology Radar",
+    "addTechnology": "Add Technology",
+    "adopt": "Adopt",
+    "trial": "Trial",
+    "assess": "Assess",
+    "hold": "Hold",
+    "holdWarning": "Technologies in HOLD ring with active applications"
+  },
+  "changeRequests": {
+    "title": "Change Requests",
+    "createRequest": "Create Request",
+    "submit": "Submit",
+    "vote": "Vote",
+    "approve": "Approve",
+    "reject": "Reject",
+    "defer": "Defer",
+    "impact": "Impact Analysis"
+  },
+  "health": {
+    "title": "Architecture Health",
+    "overallScore": "Overall Score",
+    "portfolioAge": "Portfolio Age",
+    "techCurrency": "Technology Currency",
+    "integrationComplexity": "Integration Complexity",
+    "ruleCompliance": "Rule Compliance",
+    "dataFlowCompliance": "Data Flow Compliance",
+    "technicalDebt": "Technical Debt"
+  }
+}
