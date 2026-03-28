@@ -17,3 +17,11 @@ export type {
 } from "./types";
 export { DEFAULT_MODELS } from "./types";
 export { buildTranslatePrompt, buildBatchTranslatePrompt, parseBatchTranslateResponse } from "./prompts/translate";
+export {
+  buildSoaGapPrompt,
+  buildMaturityRoadmapPrompt,
+  parseSoaGapResponse,
+  parseMaturityRoadmapResponse,
+  type ParsedSoaGap,
+  type ParsedRoadmapAction,
+} from "./prompts/isms-intelligence";

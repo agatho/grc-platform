@@ -1,0 +1,74 @@
+{
+  "title": "CVE Intelligence Dashboard",
+  "subtitle": "Automated vulnerability intelligence from public CVE feeds",
+  "feed": "CVE Feed",
+  "matches": "CVE-Asset Matches",
+  "dashboard": "Dashboard",
+  "kpi": {
+    "openMatches": "Open Matches",
+    "criticalCves": "Critical CVEs",
+    "affectedAssets": "Affected Assets",
+    "meanRemediation": "Mean Remediation",
+    "days": "days",
+    "newLast7Days": "new last 7 days",
+    "totalInFeed": "total in feed"
+  },
+  "table": {
+    "cveId": "CVE ID",
+    "cvssScore": "CVSS",
+    "severity": "Severity",
+    "title": "Title",
+    "affectedAssets": "Affected Assets",
+    "status": "Status",
+    "publishedAt": "Published",
+    "matchedAt": "Matched",
+    "assetName": "Asset",
+    "matchedCpe": "Matched CPE",
+    "actions": "Actions"
+  },
+  "status": {
+    "new": "New",
+    "acknowledged": "Acknowledged",
+    "mitigated": "Mitigated",
+    "not_applicable": "Not Applicable"
+  },
+  "severity": {
+    "critical": "Critical",
+    "high": "High",
+    "medium": "Medium",
+    "low": "Low",
+    "none": "None"
+  },
+  "actions": {
+    "acknowledge": "Acknowledge",
+    "markMitigated": "Mark Mitigated",
+    "markNotApplicable": "Not Applicable",
+    "convertToVulnerability": "Adopt as Vulnerability",
+    "syncNow": "Sync Now",
+    "bulkAcknowledge": "Bulk Acknowledge",
+    "bulkMarkAnalysis": "Mark In Analysis",
+    "viewOnNvd": "View on NVD"
+  },
+  "filters": {
+    "allStatuses": "All Statuses",
+    "allSeverities": "All Severities",
+    "searchPlaceholder": "Search CVE ID or title...",
+    "dateRange": "Date Range"
+  },
+  "cpe": {
+    "title": "CPE Identifiers",
+    "assignCpe": "Assign CPE",
+    "removeCpe": "Remove CPE",
+    "cpePlaceholder": "cpe:2.3:a:vendor:product:version:*",
+    "assignSuccess": "CPE assigned successfully",
+    "removeSuccess": "CPE removed",
+    "affectedBanner": "{count} new CVEs affect this asset"
+  },
+  "empty": "No CVE matches found. Assign CPE identifiers to your assets to start monitoring.",
+  "emptyFeed": "No CVEs in feed. Run a sync to fetch the latest vulnerabilities.",
+  "lastSync": "Last sync",
+  "ago": "ago",
+  "convertSuccess": "Vulnerability created from CVE",
+  "acknowledgeSuccess": "Match acknowledged",
+  "rateLimited": "Please wait before syncing again"
+}

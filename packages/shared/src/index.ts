@@ -16,6 +16,7 @@ export * from "./utils/xliff";
 export * from "./board-kpi";
 export * from "./nis2-compliance";
 export * from "./utils/distributions";
+export * from "./cpe-matcher";
 export {
   runFAIRSimulation as runFAIRMonteCarlo,
   buildHistogram,

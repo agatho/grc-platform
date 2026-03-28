@@ -1,0 +1,74 @@
+{
+  "title": "CVE Intelligence Dashboard",
+  "subtitle": "Automatische Schwachstellen-Intelligenz aus oeffentlichen CVE-Feeds",
+  "feed": "CVE-Feed",
+  "matches": "CVE-Asset-Zuordnungen",
+  "dashboard": "Dashboard",
+  "kpi": {
+    "openMatches": "Offene Zuordnungen",
+    "criticalCves": "Kritische CVEs",
+    "affectedAssets": "Betroffene Assets",
+    "meanRemediation": "Mittlere Behebungszeit",
+    "days": "Tage",
+    "newLast7Days": "neu in 7 Tagen",
+    "totalInFeed": "gesamt im Feed"
+  },
+  "table": {
+    "cveId": "CVE-ID",
+    "cvssScore": "CVSS",
+    "severity": "Schweregrad",
+    "title": "Titel",
+    "affectedAssets": "Betroffene Assets",
+    "status": "Status",
+    "publishedAt": "Veroeffentlicht",
+    "matchedAt": "Zugeordnet",
+    "assetName": "Asset",
+    "matchedCpe": "Zugeordnete CPE",
+    "actions": "Aktionen"
+  },
+  "status": {
+    "new": "Neu",
+    "acknowledged": "Bestaetigt",
+    "mitigated": "Behoben",
+    "not_applicable": "Nicht anwendbar"
+  },
+  "severity": {
+    "critical": "Kritisch",
+    "high": "Hoch",
+    "medium": "Mittel",
+    "low": "Niedrig",
+    "none": "Keine"
+  },
+  "actions": {
+    "acknowledge": "Bestaetigen",
+    "markMitigated": "Als behoben markieren",
+    "markNotApplicable": "Nicht anwendbar",
+    "convertToVulnerability": "Als Schwachstelle uebernehmen",
+    "syncNow": "Jetzt synchronisieren",
+    "bulkAcknowledge": "Massenbestaetigung",
+    "bulkMarkAnalysis": "In Analyse markieren",
+    "viewOnNvd": "Auf NVD ansehen"
+  },
+  "filters": {
+    "allStatuses": "Alle Status",
+    "allSeverities": "Alle Schweregrade",
+    "searchPlaceholder": "CVE-ID oder Titel suchen...",
+    "dateRange": "Zeitraum"
+  },
+  "cpe": {
+    "title": "CPE-Kennungen",
+    "assignCpe": "CPE zuweisen",
+    "removeCpe": "CPE entfernen",
+    "cpePlaceholder": "cpe:2.3:a:hersteller:produkt:version:*",
+    "assignSuccess": "CPE erfolgreich zugewiesen",
+    "removeSuccess": "CPE entfernt",
+    "affectedBanner": "{count} neue CVEs betreffen dieses Asset"
+  },
+  "empty": "Keine CVE-Zuordnungen gefunden. Weisen Sie Ihren Assets CPE-Kennungen zu, um das Monitoring zu starten.",
+  "emptyFeed": "Keine CVEs im Feed. Fuehren Sie eine Synchronisation durch.",
+  "lastSync": "Letzte Synchronisation",
+  "ago": "her",
+  "convertSuccess": "Schwachstelle aus CVE erstellt",
+  "acknowledgeSuccess": "Zuordnung bestaetigt",
+  "rateLimited": "Bitte warten Sie vor einer erneuten Synchronisation"
+}
