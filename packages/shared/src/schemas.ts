@@ -27,3 +27,4 @@ export * from "./schemas/event-bus";
 export * from "./schemas/board-kpi";
 export * from "./schemas/nis2-certification";
 export * from "./schemas/fair";
+export * from "./schemas/isms-intelligence";
