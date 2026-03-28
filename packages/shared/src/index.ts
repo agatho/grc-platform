@@ -14,3 +14,4 @@ export * from "./color-utils";
 export * from "./utils/language-resolver";
 export * from "./utils/xliff";
 export * from "./board-kpi";
+export * from "./nis2-compliance";
