@@ -1,0 +1,50 @@
+{
+  "title": "NIS2 Compliance Tracker",
+  "subtitle": "Status of NIS2 requirements per Art. 21 Para. 2",
+  "overallStatus": "NIS2 Overall Status",
+  "requirements": "Requirements",
+  "requirementsCatalog": "NIS2 Requirements Catalog",
+  "requirementsDescription": "Art. 21 Para. 2 lit. a-j: 10 measure areas",
+  "reportingTracker": "Notification Obligations",
+  "missing": "missing",
+  "evidenceComplete": "Evidence complete",
+  "status": {
+    "compliant": "Compliant",
+    "partiallyCompliant": "Partially Compliant",
+    "nonCompliant": "Non-Compliant"
+  },
+  "chapters": {
+    "risk_management": "Risk Management",
+    "incident_handling": "Incident Handling",
+    "business_continuity": "Business Continuity",
+    "supply_chain": "Supply Chain Security",
+    "acquisition_security": "Acquisition Security",
+    "vulnerability_mgmt": "Vulnerability Management",
+    "effectiveness": "Effectiveness Assessment",
+    "cyber_hygiene": "Cyber Hygiene",
+    "cryptography": "Cryptography",
+    "access_control": "Access Control"
+  },
+  "timeline": "NIS2 Timeline",
+  "milestones": {
+    "registration": "Registration Obligation",
+    "implementation": "Implementation Deadline",
+    "firstNotification": "First Notification Obligation"
+  },
+  "reporting": {
+    "title": "NIS2 Notification Obligations (Art. 23)",
+    "subtitle": "Early warning, full notification and final report for security incidents",
+    "total": "Total",
+    "overdue": "Overdue",
+    "pending": "Pending",
+    "submitted": "Submitted",
+    "reports": "Reports",
+    "noReports": "No NIS2 reports found",
+    "art23Title": "Art. 23 Notification Obligations - Timeline",
+    "earlyWarning": "Early Warning",
+    "fullNotification": "Full Notification",
+    "finalReport": "Final Report",
+    "month": "Month",
+    "deadline": "Deadline"
+  }
+}
