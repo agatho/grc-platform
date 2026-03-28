@@ -1,0 +1,29 @@
+{
+  "title": "Risk Propagation",
+  "description": "Model how risks cascade across corporate structures",
+  "heatmap": "Heatmap",
+  "addRelationship": "Add Relationship",
+  "defineRelationship": "Define Propagation Relationship",
+  "targetOrg": "Target Organization",
+  "orgIdPlaceholder": "Enter organization ID",
+  "relationshipType": "Relationship Type",
+  "couplingStrength": "Coupling Strength",
+  "save": "Save",
+  "relationships": "Relationships",
+  "source": "Source",
+  "target": "Target",
+  "type": "Type",
+  "strength": "Strength",
+  "noRelationships": "No propagation relationships defined yet",
+  "simulationResult": "Simulation Result",
+  "affectedEntities": "Affected Entities",
+  "maxDepth": "Max Depth",
+  "level": "Level",
+  "relTypes": {
+    "shared_it": "Shared IT",
+    "shared_vendor": "Shared Vendor",
+    "shared_process": "Shared Process",
+    "financial_dependency": "Financial Dependency",
+    "data_flow": "Data Flow"
+  }
+}

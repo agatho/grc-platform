@@ -1,0 +1,18 @@
+{
+  "title": "Incident Correlation",
+  "description": "Automatically detect connections between security incidents",
+  "days": "days",
+  "year": "year",
+  "runAnalysis": "Run Analysis",
+  "detectedCorrelations": "Detected Correlations",
+  "noCorrelations": "No correlations detected yet",
+  "incidents": "incidents",
+  "detectedPatterns": "Detected Patterns",
+  "noPatterns": "No patterns detected",
+  "occurrences": "occurrences",
+  "correlationDetail": "Correlation Detail",
+  "reasoning": "Reasoning",
+  "sharedFactors": "Shared Factors",
+  "correlatedIncidents": "Correlated Incidents",
+  "notFound": "Correlation not found"
+}

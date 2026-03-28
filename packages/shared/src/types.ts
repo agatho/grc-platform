@@ -30,3 +30,6 @@ export * from "./types/compliance-culture";
 export * from "./types/automation";
 export * from "./types/graph";
 export * from "./types/reporting";
+export * from "./types/regulatory-simulator";
+export * from "./types/risk-propagation";
+export * from "./types/audit-analytics";

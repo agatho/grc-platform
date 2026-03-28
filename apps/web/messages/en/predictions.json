@@ -1,0 +1,17 @@
+{
+  "title": "Predictive Risk Intelligence",
+  "description": "ML-based prediction of which risks will escalate in the next 90 days",
+  "retrainModel": "Retrain Model",
+  "escalationRanking": "Escalation Ranking",
+  "noPredictions": "No predictions computed yet",
+  "risk": "Risk",
+  "probability": "Probability",
+  "topFactor": "Top Factor",
+  "trend": "Trend",
+  "confidence": "Confidence",
+  "modelVersion": "Model Version",
+  "algorithm": "Algorithm",
+  "whyEscalation": "Why Escalation?",
+  "escalationProbability": "Escalation Probability",
+  "topFactors": "Top 3 Contributing Factors"
+}

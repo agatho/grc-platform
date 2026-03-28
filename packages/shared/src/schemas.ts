@@ -32,3 +32,6 @@ export * from "./schemas/compliance-culture";
 export * from "./schemas/automation";
 export * from "./schemas/graph";
 export * from "./schemas/reporting";
+export * from "./schemas/regulatory-simulator";
+export * from "./schemas/risk-propagation";
+export * from "./schemas/audit-analytics";
