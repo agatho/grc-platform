@@ -8,7 +8,7 @@ import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth("admin", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("whistleblowing", ctx.orgId, req.method);
