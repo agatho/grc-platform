@@ -54,3 +54,6 @@ export * from "./schemas/eam-data-architecture";
 export * from "./schemas/eam-ai";
 export * from "./schemas/eam-catalog";
 export * from "./schemas/eam-governance";
+export * from "./schemas/risk-evaluation";
+export * from "./schemas/grc-ux";
+export * from "./schemas/bpm-derived";
