@@ -39,6 +39,9 @@ import { processScheduledExport } from "./crons/scheduled-export";
 import { processScimSyncCleanup } from "./crons/scim-sync-cleanup";
 import { processScimTokenAudit } from "./crons/scim-token-audit";
 import { processWebhookRetryJob } from "./crons/webhook-retry";
+import { processRiskAppetiteCheck } from "./crons/risk-appetite-check";
+import { processAssuranceSnapshot } from "./crons/assurance-snapshot";
+import { processPostureSnapshot } from "./crons/posture-snapshot";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -596,6 +599,43 @@ app.post("/crons/webhook-retry", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] webhook-retry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 23: Board KPIs cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/risk-appetite-check", async (c) => {
+  try {
+    const result = await processRiskAppetiteCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] risk-appetite-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/assurance-snapshot", async (c) => {
+  try {
+    const result = await processAssuranceSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] assurance-snapshot cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/posture-snapshot", async (c) => {
+  try {
+    const result = await processPostureSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] posture-snapshot cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

@@ -1,0 +1,84 @@
+{
+  "riskAppetite": {
+    "title": "Risk Appetite Framework",
+    "subtitle": "Thresholds per risk category and automatic breach detection",
+    "of": "of",
+    "withinAppetite": "categories within risk appetite",
+    "chartTitle": "Risk Appetite vs. Residual Risk",
+    "avg": "Average",
+    "threshold": "Threshold",
+    "breaches": "breaches",
+    "breachList": "Current Breaches",
+    "noBreaches": "No risk appetite breaches detected",
+    "noThresholds": "No thresholds configured yet. Please set up under Admin > Board KPIs.",
+    "risk": "Risk",
+    "category": "Category",
+    "residual": "Residual",
+    "delta": "Delta",
+    "owner": "Risk Owner",
+    "categories": {
+      "strategic": "Strategic",
+      "operational": "Operational",
+      "financial": "Financial",
+      "compliance": "Compliance",
+      "cyber": "Cyber",
+      "reputational": "Reputational",
+      "esg": "ESG"
+    }
+  },
+  "assurance": {
+    "title": "Assurance Confidence Score",
+    "subtitle": "Reliability of compliance statements per module",
+    "overallScore": "Overall Assurance Score",
+    "drilldown": "Detailed Analysis",
+    "recommendations": "Improvement Suggestions",
+    "noTrendData": "No trend data available yet. At least 4 weeks of snapshots required.",
+    "noModules": "No active modules found",
+    "factors": {
+      "evidenceAge": "Evidence Freshness",
+      "testCoverage": "Test Coverage",
+      "dataQuality": "Data Quality",
+      "assessmentSource": "Assessment Source",
+      "automationLevel": "Automation Level"
+    }
+  },
+  "posture": {
+    "title": "Security Posture Score",
+    "subtitle": "Aggregated security index for board communication",
+    "factorBreakdown": "Factor Breakdown",
+    "weight": "Weight",
+    "trendImproving": "Improving",
+    "trendDeclining": "Declining",
+    "trendStable": "Stable",
+    "vsQuarter": "vs. Previous Quarter",
+    "noTrendData": "No trend data available yet. At least 4 weeks of snapshots required.",
+    "factors": {
+      "assetCoverage": "Asset Coverage",
+      "maturity": "Maturity Index",
+      "ces": "Control Effectiveness (CES)",
+      "vulnExposure": "Vulnerability Exposure",
+      "incidentTTR": "Incident Response Time",
+      "freshness": "Assessment Freshness",
+      "soaCompleteness": "SoA Completeness"
+    },
+    "domains": {
+      "organizational": "Organizational",
+      "people": "People",
+      "physical": "Physical",
+      "technological": "Technological"
+    }
+  },
+  "config": {
+    "title": "Board KPI Configuration",
+    "subtitle": "Risk appetite thresholds, assurance weighting, and posture weighting",
+    "appetiteThresholds": "Risk Appetite Thresholds",
+    "threshold": "Threshold",
+    "escalationRole": "Escalation Role",
+    "actions": "Actions",
+    "save": "Save",
+    "assuranceWeights": "Assurance Weighting",
+    "assuranceWeightsDesc": "Weighting of the five assurance factors (must sum to 100%)",
+    "postureWeights": "Posture Weighting",
+    "postureWeightsDesc": "Weighting of the seven security posture factors (must sum to 100%)"
+  }
+}
