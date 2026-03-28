@@ -1,0 +1,97 @@
+{
+  "soaGap": {
+    "title": "KI Gap-Analyse",
+    "subtitle": "KI-gestuetzte Analyse Ihrer Anwendbarkeitserklaerung gegen Framework-Anforderungen",
+    "startAnalysis": "Gap-Analyse starten",
+    "analyzing": "Kontrollen werden gegen Framework-Anforderungen analysiert...",
+    "noResults": "Noch keine Gap-Analyse-Ergebnisse. Klicken Sie auf 'Gap-Analyse starten'.",
+    "rateLimited": "Bitte warten Sie 5 Minuten zwischen den Analysen.",
+    "aiNotice": "KI-Vorschlaege basieren auf Textvergleich. Bitte ueberpruefen Sie jeden Vorschlag manuell vor der Annahme.",
+    "table": {
+      "controlRef": "Kontrollreferenz",
+      "controlTitle": "Kontrolle",
+      "gapType": "Lueckentyp",
+      "confidence": "Konfidenz",
+      "reasoning": "KI-Begruendung",
+      "priority": "Prioritaet",
+      "status": "Status",
+      "actions": "Bewertung"
+    },
+    "gapType": {
+      "not_covered": "Nicht abgedeckt",
+      "partial": "Teilweise",
+      "full": "Vollstaendig"
+    },
+    "priority": {
+      "critical": "Kritisch",
+      "high": "Hoch",
+      "medium": "Mittel",
+      "low": "Niedrig"
+    },
+    "status": {
+      "pending": "Ausstehend",
+      "accepted": "Akzeptiert",
+      "rejected": "Abgelehnt"
+    },
+    "actions": {
+      "accept": "Akzeptieren",
+      "reject": "Ablehnen"
+    },
+    "filters": {
+      "all": "Alle",
+      "gapsOnly": "Nur Luecken",
+      "highConfidence": "Hohe Konfidenz (>80%)",
+      "pending": "Ausstehend"
+    },
+    "summary": {
+      "totalGaps": "Gesamt-Luecken",
+      "notCovered": "Nicht abgedeckt",
+      "partial": "Teilweise",
+      "full": "Vollstaendig"
+    }
+  },
+  "roadmap": {
+    "title": "KI Reifegradentwicklung",
+    "subtitle": "KI-generierter Verbesserungsplan basierend auf aktuellem Reifegrad",
+    "generateRoadmap": "Roadmap generieren",
+    "generating": "Reifegraddaten werden analysiert und Roadmap wird erstellt...",
+    "noResults": "Noch keine Roadmap generiert. Klicken Sie auf 'Roadmap generieren'.",
+    "rateLimited": "Bitte warten Sie 5 Minuten zwischen den Generierungen.",
+    "aiNotice": "Diese Roadmap wurde KI-generiert. Ueberpruefen und passen Sie die Prioritaeten an Ihren organisatorischen Kontext an.",
+    "exportPdf": "Als PDF exportieren",
+    "quickWins": "Quick Wins",
+    "totalActions": "Massnahmen gesamt",
+    "timeline": "Zeitstrahl",
+    "list": "Listenansicht",
+    "card": {
+      "domain": "Bereich",
+      "currentLevel": "Aktuell",
+      "targetLevel": "Ziel",
+      "effort": "Aufwand",
+      "effortFte": "VZAe-Monate",
+      "priority": "Prioritaet",
+      "quarter": "Quartal",
+      "quickWin": "Quick Win",
+      "dependencies": "Abhaengigkeiten"
+    },
+    "effort": {
+      "S": "Klein (<1 VZAe-Monat)",
+      "M": "Mittel (1-3 VZAe-Monate)",
+      "L": "Gross (>3 VZAe-Monate)"
+    },
+    "status": {
+      "proposed": "Vorgeschlagen",
+      "in_progress": "In Bearbeitung",
+      "completed": "Abgeschlossen",
+      "dismissed": "Verworfen"
+    },
+    "targetMaturity": "Ziel-Reifegrad",
+    "quarters": {
+      "Q1": "Q1",
+      "Q2": "Q2",
+      "Q3": "Q3",
+      "Q4": "Q4",
+      "Unassigned": "Nicht zugeordnet"
+    }
+  }
+}

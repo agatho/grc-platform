@@ -45,6 +45,7 @@ import { processPostureSnapshot } from "./crons/posture-snapshot";
 import { processNis2DeadlineMonitor } from "./crons/nis2-deadline-monitor";
 import { processCertReadinessSnapshot } from "./crons/cert-readiness-snapshot";
 import { processFairAppetiteCheck } from "./crons/fair-appetite-check";
+import { processCveFeedSync } from "./crons/cve-feed-sync";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -680,6 +681,21 @@ app.post("/crons/fair-appetite-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] fair-appetite-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 26: ISMS Intelligence cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/cve-feed-sync", async (c) => {
+  try {
+    const result = await processCveFeedSync();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] cve-feed-sync cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
