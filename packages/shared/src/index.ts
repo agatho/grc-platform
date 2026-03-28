@@ -11,3 +11,5 @@ export * from "./esg-calculations";
 export * from "./ces";
 export * from "./wb-crypto";
 export * from "./color-utils";
+export * from "./utils/language-resolver";
+export * from "./utils/xliff";
