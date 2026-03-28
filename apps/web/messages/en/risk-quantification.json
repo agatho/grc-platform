@@ -1,0 +1,50 @@
+{
+  "title": "Risk Quantification Dashboard",
+  "description": "Unified FAIR + Monte Carlo risk quantification with VaR aggregation",
+  "runCalculation": "Run Calculation",
+  "valueAtRisk": "Value at Risk (P95)",
+  "p95Confidence": "95% confidence level",
+  "riskAppetite": "Risk Appetite",
+  "viewThresholds": "View Thresholds",
+  "sensitivityAnalysis": "Sensitivity Analysis",
+  "tornadoDiagram": "Tornado Diagram",
+  "executiveSummary": "Executive Summary",
+  "boardReport": "Board Report",
+  "configuration": "Configuration",
+  "methodology": "Methodology",
+  "iterations": "Iterations",
+  "confidence": "Confidence",
+  "currency": "Currency",
+  "recentCalculations": "Recent Calculations",
+  "noCalculations": "No calculations yet. Run your first VaR calculation.",
+  "allEntities": "All Entities",
+  "risks": "risks",
+  "cards": {
+    "expectedLoss": "Expected Loss",
+    "varP95": "Value at Risk (P95)",
+    "appetiteStatus": "Appetite Status",
+    "exceeding": "Exceeding Appetite"
+  },
+  "appetite": {
+    "title": "Risk Appetite Thresholds",
+    "description": "Track risk appetite vs actual exposure",
+    "addThreshold": "Add Threshold",
+    "name": "Name",
+    "category": "Category",
+    "appetiteAmount": "Appetite Amount",
+    "toleranceAmount": "Tolerance Amount",
+    "currentExposure": "Current Exposure",
+    "status": "Status"
+  },
+  "sensitivity": {
+    "title": "Sensitivity Analysis",
+    "description": "Analyze how parameter changes impact overall risk",
+    "newAnalysis": "New Analysis"
+  },
+  "summaries": {
+    "title": "Executive Summaries",
+    "description": "Create board-ready 1-page risk summaries",
+    "create": "Create Summary",
+    "exportPptx": "Export PPTX"
+  }
+}

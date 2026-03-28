@@ -1,0 +1,50 @@
+{
+  "regionsTitle": "Datenregionen",
+  "regionsDescription": "Verwalten Sie Multi-Region-Infrastruktur und Datenresidenz",
+  "addRegion": "Region hinzufuegen",
+  "regionCode": "Regionscode",
+  "name": "Name",
+  "location": "Standort",
+  "provider": "Anbieter",
+  "status": "Status",
+  "tenants": "Mandanten",
+  "default": "Standard",
+  "tenantConfig": {
+    "title": "Mandanten-Konfiguration",
+    "description": "Konfigurieren Sie die Regionszuordnung und Datenklassifizierung",
+    "primaryRegion": "Primaere Region",
+    "backupRegion": "Backup-Region",
+    "regionLocked": "Region gesperrt",
+    "dataClassification": "Datenklassifizierung",
+    "lockReason": "Sperrgrund"
+  },
+  "residencyRules": {
+    "title": "Datenresidenz-Regeln",
+    "description": "Definieren Sie Regeln, wo Daten gespeichert und verarbeitet werden duerfen",
+    "addRule": "Regel hinzufuegen",
+    "ruleType": "Regeltyp",
+    "allowedRegions": "Erlaubte Regionen",
+    "deniedRegions": "Verbotene Regionen",
+    "complianceFramework": "Compliance-Framework",
+    "enforced": "Durchgesetzt",
+    "violationAction": "Verstossaktion"
+  },
+  "replications": {
+    "title": "Cross-Region-Replikation",
+    "description": "Konfigurieren Sie Cross-Region-Datenreplikation mit DSGVO-Schutzmassnahmen",
+    "addReplication": "Replikation hinzufuegen",
+    "sourceRegion": "Quellregion",
+    "targetRegion": "Zielregion",
+    "type": "Typ",
+    "lastSync": "Letzte Synchronisation",
+    "lag": "Verzoegerung (Sekunden)"
+  },
+  "auditLog": {
+    "title": "Souveraenitaets-Auditprotokoll",
+    "description": "Unveraenderliches Protokoll aller Datensouveraenitaetsereignisse und Verstoesse",
+    "eventType": "Ereignistyp",
+    "isViolation": "Nur Verstoesse",
+    "from": "Von",
+    "to": "Bis"
+  }
+}
