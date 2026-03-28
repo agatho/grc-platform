@@ -17,6 +17,9 @@ export * from "./board-kpi";
 export * from "./nis2-compliance";
 export * from "./utils/distributions";
 export * from "./cpe-matcher";
+export * from "./cci";
+export { DashboardCache } from "./cache";
+export type { CacheAdapter, CacheMetrics } from "./cache";
 export {
   runFAIRSimulation as runFAIRMonteCarlo,
   buildHistogram,

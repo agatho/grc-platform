@@ -46,6 +46,8 @@ import { processNis2DeadlineMonitor } from "./crons/nis2-deadline-monitor";
 import { processCertReadinessSnapshot } from "./crons/cert-readiness-snapshot";
 import { processFairAppetiteCheck } from "./crons/fair-appetite-check";
 import { processCveFeedSync } from "./crons/cve-feed-sync";
+import { processCCIMonthlyAggregation } from "./crons/cci-monthly-aggregation";
+import { processQueryCacheWarmer } from "./crons/query-cache-warmer";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -696,6 +698,32 @@ app.post("/crons/cve-feed-sync", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] cve-feed-sync cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 27: CCI + Performance cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/cci-monthly-aggregation", async (c) => {
+  try {
+    const result = await processCCIMonthlyAggregation();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] cci-monthly-aggregation cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/query-cache-warmer", async (c) => {
+  try {
+    const result = await processQueryCacheWarmer();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] query-cache-warmer cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
