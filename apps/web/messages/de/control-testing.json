@@ -1,0 +1,42 @@
+{
+  "title": "KI-Kontrollpruefung",
+  "description": "Automatisierte Kontrollpruefung mit KI-generierten Skripten und Checklisten",
+  "scripts": "Testskripte",
+  "checklists": "Checklisten",
+  "activeScripts": "Aktive Skripte",
+  "passRate": "Bestehensquote",
+  "failRate": "Durchfallquote",
+  "learningPatterns": "Lernmuster",
+  "recentExecutions": "Letzte Ausfuehrungen",
+  "execution": "Ausfuehrung",
+  "inProgress": "In Bearbeitung",
+  "scripts": {
+    "title": "Testskripte",
+    "create": "Skript erstellen",
+    "aiGenerate": "KI-Generierung",
+    "active": "Aktiv",
+    "inactive": "Inaktiv",
+    "run": "Ausfuehren",
+    "aiGenerated": "KI-generiert"
+  },
+  "checklists": {
+    "title": "Pruefchecklisten",
+    "create": "Checkliste erstellen",
+    "aiGenerate": "KI-Generierung",
+    "items": "Punkte",
+    "due": "Faellig"
+  },
+  "executions": {
+    "title": "Testausfuehrungen",
+    "findings": "Feststellungen"
+  },
+  "learning": {
+    "title": "Lernmuster",
+    "patternTypes": {
+      "common_failure": "Haeufiger Fehler",
+      "effective_test": "Effektiver Test",
+      "false_positive": "Falsch-Positiv",
+      "improvement": "Verbesserung"
+    }
+  }
+}

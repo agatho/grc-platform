@@ -58,3 +58,8 @@ export * from "./types/cloud-connector";
 export * from "./types/identity-saas-connector";
 export * from "./types/devops-connector";
 export * from "./types/framework-mapping";
+export * from "./types/copilot-chat";
+export * from "./types/evidence-review";
+export * from "./types/regulatory-change";
+export * from "./types/control-testing-agent";
+export * from "./types/predictive-risk";
