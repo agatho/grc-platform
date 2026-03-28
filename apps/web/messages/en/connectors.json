@@ -1,0 +1,109 @@
+{
+  "title": "Evidence Connectors",
+  "subtitle": "Automated evidence collection from cloud, identity, DevOps, and IT systems",
+  "addConnector": "Add Connector",
+
+  "dashboard": {
+    "totalConnectors": "Total Connectors",
+    "active": "active",
+    "healthy": "Healthy",
+    "degraded": "degraded",
+    "testsRun24h": "Tests (24h)",
+    "last24h": "Last 24 hours",
+    "passRate": "Pass Rate",
+    "artifacts": "Artifacts",
+    "stale": "stale"
+  },
+
+  "nav": {
+    "cloud": "Cloud Infrastructure",
+    "cloudDesc": "AWS, Azure, GCP security tests",
+    "identity": "Identity & SaaS",
+    "identityDesc": "Entra ID, Google Workspace, M365",
+    "devops": "DevOps & IT",
+    "devopsDesc": "Git, issue tracking, endpoints",
+    "frameworks": "Framework Mappings",
+    "frameworksDesc": "Cross-framework compliance coverage"
+  },
+
+  "connectorList": {
+    "title": "All Connectors",
+    "empty": "No connectors configured yet. Add a connector to start collecting evidence automatically."
+  },
+
+  "statuses": {
+    "active": "Active",
+    "inactive": "Inactive",
+    "error": "Error",
+    "disabled": "Disabled",
+    "pending_setup": "Pending Setup"
+  },
+
+  "cloud": {
+    "title": "Cloud Infrastructure Connectors",
+    "subtitle": "Automated security tests for AWS, Azure, and GCP",
+    "connectors": "connectors",
+    "criticalFindings": "critical findings",
+    "notConfigured": "Not configured",
+    "totalTests": "Total Tests",
+    "passRate": "Pass Rate"
+  },
+
+  "identity": {
+    "title": "Identity & SaaS Connectors",
+    "subtitle": "Monitor identity providers, SaaS platforms, and HR systems",
+    "totalUsers": "Total Users",
+    "mfaCompliance": "MFA Compliance",
+    "staleAccounts": "Stale Accounts",
+    "privilegedAccounts": "Privileged Accounts",
+    "pendingReviews": "Pending Reviews",
+    "saasCompliance": "SaaS Compliance"
+  },
+
+  "devops": {
+    "title": "DevOps & IT Connectors",
+    "subtitle": "Git security, issue tracking SLA, endpoint and network compliance",
+    "repos": "Repositories",
+    "branchProtection": "Branch Protection",
+    "codeReview": "Code Review Coverage",
+    "criticalFindings": "Critical Findings",
+    "endpointCompliance": "Endpoint Compliance",
+    "firewallCompliance": "Firewall Compliance"
+  },
+
+  "frameworks": {
+    "title": "Cross-Framework Mapping Engine",
+    "subtitle": "Assess once, comply everywhere — coverage across 10+ frameworks",
+    "runGapAnalysis": "Gap Analysis",
+    "heatmap": "Coverage Heatmap",
+    "overallCoverage": "Overall Coverage",
+    "acrossFrameworks": "across {count} frameworks",
+    "frameworksTracked": "Frameworks Tracked",
+    "lastAnalysis": "Last Analysis",
+    "noAnalysis": "No analysis run yet",
+    "coverageByFramework": "Coverage by Framework",
+    "noData": "No framework coverage data yet. Run a gap analysis to get started.",
+    "gaps": "gaps",
+    "topGaps": "Top Compliance Gaps"
+  },
+
+  "heatmap": {
+    "title": "Coverage Heatmap",
+    "subtitle": "Visual overview of compliance coverage across frameworks and categories",
+    "framework": "Framework",
+    "overall": "Overall",
+    "noData": "No heatmap data available. Run gap analyses first.",
+    "legend": "Legend"
+  },
+
+  "gapAnalysis": {
+    "title": "Gap Analysis",
+    "subtitle": "Identify compliance gaps per framework and prioritize remediation actions",
+    "runForFramework": "Run Analysis for Framework",
+    "results": "Analysis Results",
+    "noResults": "No gap analyses run yet. Select a framework above to analyze.",
+    "controls": "controls",
+    "covered": "covered",
+    "missing": "missing"
+  }
+}

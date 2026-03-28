@@ -53,3 +53,8 @@ export * from "./types/eam-data-architecture";
 export * from "./types/eam-ai";
 export * from "./types/eam-catalog";
 export * from "./types/eam-governance";
+export * from "./types/evidence-connector";
+export * from "./types/cloud-connector";
+export * from "./types/identity-saas-connector";
+export * from "./types/devops-connector";
+export * from "./types/framework-mapping";
