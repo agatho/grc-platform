@@ -31,3 +31,4 @@ export * from "./schemas/isms-intelligence";
 export * from "./schemas/compliance-culture";
 export * from "./schemas/automation";
 export * from "./schemas/graph";
+export * from "./schemas/reporting";
