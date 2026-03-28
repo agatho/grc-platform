@@ -38,6 +38,7 @@ import { processDashboardCleanup } from "./crons/dashboard-cleanup";
 import { processScheduledExport } from "./crons/scheduled-export";
 import { processScimSyncCleanup } from "./crons/scim-sync-cleanup";
 import { processScimTokenAudit } from "./crons/scim-token-audit";
+import { processWebhookRetryJob } from "./crons/webhook-retry";
 import { registerModuleCrons } from "./lib/module-aware-cron";
 
 const app = new Hono();
@@ -580,6 +581,21 @@ app.post("/crons/scim-token-audit", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] scim-token-audit cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 22: Webhook retry cron endpoint
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/webhook-retry", async (c) => {
+  try {
+    const result = await processWebhookRetryJob();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] webhook-retry cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

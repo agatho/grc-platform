@@ -22,3 +22,4 @@ export * from "./types/dashboard";
 export * from "./types/import-export";
 export * from "./types/identity";
 export * from "./types/translation";
+export * from "./types/event-bus";
