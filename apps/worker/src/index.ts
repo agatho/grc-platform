@@ -73,6 +73,12 @@ import { processWbRetaliationCheck } from "./crons/wb-retaliation-check";
 import { processWbOmbudspersonExpiry } from "./crons/wb-ombudsperson-expiry";
 // Sprint 47: BPM Advanced
 import { processKpiThresholdAlert } from "./crons/kpi-threshold-alert";
+// Sprint 48: EAM Dashboards
+import { processEamAssessmentReminder } from "./crons/eam-assessment-reminder";
+import { processEamPortfolioHealthCheck } from "./crons/eam-portfolio-health-check";
+// Sprint 51: EAM AI
+import { processEamSuggestionCompute } from "./crons/eam-suggestion-compute";
+import { processEamTranslationReminder } from "./crons/eam-translation-reminder";
 
 const app = new Hono();
 
@@ -1020,6 +1026,58 @@ app.post("/crons/kpi-threshold-alert", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] kpi-threshold-alert cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 48: EAM Dashboard cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/eam-assessment-reminder", async (c) => {
+  try {
+    const result = await processEamAssessmentReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-assessment-reminder cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/eam-portfolio-health-check", async (c) => {
+  try {
+    const result = await processEamPortfolioHealthCheck();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-portfolio-health-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Sprint 51: EAM AI cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/eam-suggestion-compute", async (c) => {
+  try {
+    const result = await processEamSuggestionCompute();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-suggestion-compute cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/eam-translation-reminder", async (c) => {
+  try {
+    const result = await processEamTranslationReminder();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] eam-translation-reminder cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

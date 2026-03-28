@@ -1,0 +1,69 @@
+{
+  "title": "EAM-Katalog",
+  "action": "Objekt hinzufügen",
+  "loading": "Wird geladen...",
+  "tabs": {
+    "list": "Liste",
+    "dashboard": "Dashboard",
+    "lifecycle": "Lebenszyklus-Roadmap",
+    "eamDashboard": "EAM-Dashboards"
+  },
+  "filters": {
+    "objectType": "Objekttyp",
+    "search": "Katalog durchsuchen...",
+    "keywords": "Schlüsselwörter",
+    "lifecycle": "Lebenszyklus-Status",
+    "category": "Kategorie",
+    "manufacturer": "Hersteller",
+    "functionalFit": "Funktionale Eignung",
+    "technicalFit": "Technische Eignung",
+    "criticality": "Geschäftskritikalität",
+    "personalData": "Personenbezogene Daten",
+    "clearAll": "Alle Filter zurücksetzen"
+  },
+  "objectTypes": {
+    "application": "Anwendung",
+    "business_capability": "Geschäftsfähigkeit",
+    "it_component": "IT-Komponente",
+    "data_object": "Datenobjekt",
+    "provider": "Anbieter",
+    "interface": "Schnittstelle"
+  },
+  "options": {
+    "title": "Optionen",
+    "exportExcel": "Excel exportieren",
+    "importExcel": "Excel importieren",
+    "bulkPublish": "Massenveröffentlichung",
+    "aiEditor": "KI-gestützter Editor",
+    "translationMode": "Übersetzungsmodus"
+  },
+  "homepage": {
+    "title": "EAM-Startseite",
+    "addWidget": "Widget hinzufügen",
+    "editLayout": "Layout bearbeiten",
+    "resetLayout": "Auf Standard zurücksetzen",
+    "quickActions": "Schnellaktionen",
+    "searchCatalog": "Katalog durchsuchen",
+    "askAi": "KI fragen",
+    "recentObjects": "Letzte Objekte",
+    "pendingReviews": "Ausstehende Prüfungen"
+  },
+  "keywords": {
+    "title": "Schlüsselwort-Verwaltung",
+    "create": "Schlüsselwort erstellen",
+    "merge": "Schlüsselwörter zusammenführen",
+    "usageCount": "Verwendungsanzahl",
+    "hierarchy": "Schlüsselwort-Hierarchie"
+  },
+  "widgets": {
+    "donutCategory": "Anwendungskategorien",
+    "donutLifecycle": "Portfolio-Lebenszyklus",
+    "healthScore": "Architektur-Gesundheitswert",
+    "recentChanges": "Letzte Änderungen",
+    "capabilityMap": "Fähigkeitenkarte",
+    "costSummary": "Kostenübersicht",
+    "riskCount": "Risikoanzahl",
+    "cveCount": "CVE-Warnungen",
+    "keywordCloud": "Schlüsselwort-Wolke"
+  }
+}

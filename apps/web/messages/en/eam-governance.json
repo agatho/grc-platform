@@ -1,0 +1,95 @@
+{
+  "title": "EAM Governance",
+  "status": {
+    "draft": "Draft",
+    "pending_review": "Pending Review",
+    "approved": "Approved",
+    "published": "Published",
+    "rejected": "Rejected",
+    "archived": "Archived"
+  },
+  "actions": {
+    "publish": "Publish",
+    "approve": "Approve",
+    "reject": "Reject",
+    "archive": "Archive",
+    "changeToSuggestion": "Change to Suggestion"
+  },
+  "roles": {
+    "author": "Author",
+    "examiner": "Examiner",
+    "responsible": "Responsible"
+  },
+  "bulkActions": {
+    "bulkPublish": "Publish Selected",
+    "bulkApprove": "Approve All",
+    "bulkReject": "Reject All",
+    "bulkArchive": "Archive All"
+  },
+  "predecessor": {
+    "title": "Predecessor",
+    "successor": "Successor",
+    "setPredecessor": "Set Predecessor"
+  },
+  "detail": {
+    "generalInfo": "General Information",
+    "eamAttributes": "EAM Attributes",
+    "relations": "Relations",
+    "lifecycle": "Lifecycle",
+    "itManagement": "IT Management",
+    "protectionRequirement": "Protection Requirement",
+    "personalDataProcessing": "Personal Data Processing",
+    "systemAttributes": "System Attributes"
+  },
+  "protectionReq": {
+    "confidentiality": "Confidentiality",
+    "integrity": "Integrity",
+    "availability": "Availability",
+    "authenticity": "Authenticity",
+    "reliability": "Reliability",
+    "notAssessed": "Not assessed",
+    "editInIsms": "Edit in ISMS module"
+  },
+  "personalData": {
+    "processesPersonalData": "Processes Personal Data",
+    "detail": "Personal Data Detail",
+    "yes": "Yes",
+    "no": "No"
+  },
+  "occurrences": {
+    "title": "Occurrences",
+    "inDiagrams": "In Diagrams",
+    "inProcesses": "In Processes",
+    "inContexts": "In Contexts"
+  },
+  "bpmn": {
+    "placeApplication": "Place Application",
+    "placeItComponent": "Place IT Component",
+    "placeDataObject": "Place Data Object",
+    "selectFromCatalog": "Select from EAM Catalog",
+    "matrixView": "Matrix View"
+  },
+  "biExport": {
+    "title": "BI Export",
+    "apiKeys": "API Keys",
+    "createKey": "Create API Key",
+    "documentation": "Power BI Connection Guide"
+  },
+  "excelImport": {
+    "title": "Excel Import",
+    "upload": "Upload Excel File",
+    "mapColumns": "Map Columns",
+    "preview": "Preview Changes",
+    "apply": "Apply Import",
+    "newObjects": "New Objects",
+    "updatedObjects": "Updated Objects",
+    "ambiguous": "Ambiguous Matches"
+  },
+  "lifecycleBar": {
+    "planning": "Planning",
+    "implementing": "Implementing",
+    "active": "Active",
+    "phaseOut": "Phase-Out",
+    "retired": "Retired"
+  }
+}

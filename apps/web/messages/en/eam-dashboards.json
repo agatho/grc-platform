@@ -1,0 +1,122 @@
+{
+  "title": "EAM Dashboards",
+  "costManagement": {
+    "title": "Cost Management Dashboard",
+    "totalApps": "Total Applications",
+    "totalAppCost": "Annual Application Costs",
+    "totalComponents": "IT Components",
+    "totalComponentCost": "Annual Component Costs",
+    "appCostByCategory": "Application Costs by Category",
+    "infraCostByProvider": "IT Component Costs by Provider",
+    "appCostTable": "Application Cost Details",
+    "componentCostTable": "IT Component Cost Details",
+    "treemapPlaceholder": "D3.js Treemap visualization renders here",
+    "loadingData": "Loading data...",
+    "costTrend": "Cost Trend",
+    "yearOverYear": "Year over Year"
+  },
+  "portfolio": {
+    "title": "Portfolio Optimization Dashboard",
+    "category": "Category",
+    "functionalFit": "Functional Fit",
+    "technicalFit": "Technical Fit",
+    "lifecycle": "Lifecycle Status",
+    "criticality": "Business Criticality",
+    "time": "TIME Classification",
+    "sixR": "6R Strategy",
+    "insufficientFit": "Insufficient Functional Fit",
+    "approachingEol": "Approaching EOL",
+    "unassessed": "Unassessed (12+ months)",
+    "noSixR": "No 6R Decision",
+    "healthIndicators": "Portfolio Health Indicators",
+    "detailTable": "Portfolio Detail Table",
+    "bubbleChart": "TIME Bubble Chart",
+    "sixROverview": "6R Strategy Overview"
+  },
+  "assessment": {
+    "title": "Application Assessment",
+    "functionalFit": "Functional Fit",
+    "technicalFit": "Technical Fit",
+    "sixRStrategy": "6R Strategy",
+    "businessCriticality": "Business Criticality",
+    "timeClassification": "TIME Classification",
+    "businessValue": "Business Value",
+    "technicalCondition": "Technical Condition",
+    "justification": "Justification",
+    "assessSelected": "Assess Selected",
+    "history": "Assessment History",
+    "lastAssessed": "Last Assessed",
+    "assessedBy": "Assessed By",
+    "dimensionChanged": "changed from {old} to {new}",
+    "bulkAssessment": "Bulk Assessment",
+    "applyToApps": "Apply to {count} applications"
+  },
+  "capabilityLifecycle": {
+    "standardView": "Standard View",
+    "lifecycleView": "Lifecycle View",
+    "active": "Active",
+    "transforming": "Transforming",
+    "retiring": "Retiring",
+    "planned": "Planned"
+  },
+  "visualization": "Visualization",
+  "visualizationPlaceholder": "D3.js visualization renders here",
+  "riskManagement": {
+    "title": "EAM Risk Dashboard",
+    "totalRisks": "Total Risks",
+    "criticalRisks": "Critical Risks",
+    "appsWithRisks": "Applications with Risks",
+    "riskCategory": "Risk Category Distribution",
+    "riskRating": "Risk Rating Distribution",
+    "risksPerApp": "Risks per Application"
+  },
+  "vulnerabilityMonitor": {
+    "title": "Vulnerability Monitor",
+    "totalCves": "Total CVEs",
+    "criticalUnpatched": "Critical Unpatched",
+    "highUnpatched": "High Unpatched",
+    "patchedPct": "Patched",
+    "perApplication": "Vulnerabilities per Application"
+  },
+  "businessAlignment": {
+    "title": "Business Alignment",
+    "coverageScore": "Coverage Score",
+    "heatmap": "Capability Coverage Heatmap"
+  },
+  "technicalAlignment": {
+    "title": "Technical Alignment",
+    "standardPct": "Standard Compliance",
+    "nonStandard": "Non-Standard Technologies"
+  },
+  "insightGrid": {
+    "title": "Insight Grid",
+    "timeline": "Timeline",
+    "coloring": "Coloring Mode",
+    "lifecycle": "Lifecycle",
+    "time": "TIME Classification",
+    "sixR": "6R Strategy",
+    "criticality": "Business Criticality",
+    "filters": "Filters",
+    "settings": "Settings",
+    "export": "Export",
+    "showEmpty": "Show Empty Cells"
+  },
+  "roadmap": {
+    "title": "Application Roadmap",
+    "groupBy": "Group By",
+    "timeRange": "Time Range",
+    "exportPdf": "Export PDF",
+    "todayMarker": "Today"
+  },
+  "contextDiagram": {
+    "title": "Context Diagram",
+    "sectors": "Sectors",
+    "business": "Business",
+    "organization": "Organization",
+    "integration": "Integration",
+    "data": "Data",
+    "technology": "Technology",
+    "risk": "Risk",
+    "provider": "Provider"
+  }
+}

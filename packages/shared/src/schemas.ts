@@ -49,3 +49,8 @@ export * from "./schemas/tprm-advanced";
 export * from "./schemas/esg-advanced";
 export * from "./schemas/whistleblowing-advanced";
 export * from "./schemas/bpm-advanced";
+export * from "./schemas/eam-dashboards";
+export * from "./schemas/eam-data-architecture";
+export * from "./schemas/eam-ai";
+export * from "./schemas/eam-catalog";
+export * from "./schemas/eam-governance";

@@ -1,0 +1,64 @@
+{
+  "title": "KI-Assistent",
+  "configureProvider": "Konfigurieren Sie einen KI-Anbieter in den Einstellungen, um KI-Funktionen zu aktivieren. Alle EAM-Funktionen funktionieren ohne KI.",
+  "setupAi": "KI-Anbieter einrichten",
+  "providerConfig": "KI-Anbieter-Konfiguration",
+  "loading": "Wird geladen...",
+  "provider": {
+    "openai": "OpenAI",
+    "anthropic": "Anthropic",
+    "azure_openai": "Azure OpenAI",
+    "ollama": "Ollama (Lokal)",
+    "mistral": "Mistral",
+    "custom": "Benutzerdefiniert (OpenAI-kompatibel)"
+  },
+  "settings": {
+    "title": "KI-Anbieter-Einstellungen",
+    "selectProvider": "Anbieter wählen",
+    "apiKey": "API-Schlüssel",
+    "model": "Modell",
+    "baseUrl": "Basis-URL",
+    "maxTokens": "Max. Tokens",
+    "temperature": "Temperatur",
+    "testConnection": "Verbindung testen",
+    "saveConfig": "Konfiguration speichern",
+    "connectionValid": "Verbindung gültig",
+    "connectionInvalid": "Verbindung ungültig",
+    "lastValidated": "Zuletzt validiert"
+  },
+  "prompts": {
+    "title": "Prompt-Vorlagen",
+    "objectGeneration": "Objektgenerierung",
+    "descriptionGeneration": "Beschreibungsgenerierung",
+    "translation": "Übersetzung",
+    "ragSystem": "RAG-System",
+    "customize": "Anpassen",
+    "resetDefault": "Auf Standard zurücksetzen",
+    "systemDefault": "Systemstandard",
+    "orgOverride": "Organisations-Anpassung"
+  },
+  "features": {
+    "generate": "Generieren",
+    "generateDescription": "Beschreibung generieren",
+    "generateObjects": "KI-gestützter Editor",
+    "translateField": "Übersetzen",
+    "translationMode": "Übersetzungsmodus",
+    "askAi": "KI fragen",
+    "onlyShowSuggested": "Nur Vorschläge anzeigen"
+  },
+  "chat": {
+    "title": "EAM-Chatbot",
+    "placeholder": "Fragen Sie nach Ihrer Architektur...",
+    "send": "Senden",
+    "references": "Verwandte Objekte",
+    "newSession": "Neue Sitzung"
+  },
+  "suggestions": {
+    "title": "Vorgeschlagen für Sie",
+    "eolApproaching": "EOL nähert sich",
+    "openCves": "Offene CVEs",
+    "unassessed": "Bewertung erforderlich",
+    "recentlyModified": "Kürzlich geändert",
+    "dismiss": "Verwerfen"
+  }
+}
