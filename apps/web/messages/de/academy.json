@@ -1,0 +1,58 @@
+{
+  "title": "GRC Akademie",
+  "description": "Schulungen, Awareness und Compliance-Kurse fuer Ihre Organisation",
+  "activeCourses": "Aktive Kurse",
+  "completionRate": "Abschlussrate",
+  "overdue": "Ueberfaellig",
+  "certificatesIssued": "Zertifikate ausgestellt",
+  "inProgress": "In Bearbeitung",
+  "mandatoryCourses": "Pflichtschulungen",
+  "totalEnrollments": "Gesamt-Anmeldungen",
+  "avgProgress": "Durchschnittlicher Fortschritt",
+  "notFound": "Kurs nicht gefunden",
+  "backToCourses": "Zurueck zu Kursen",
+  "mandatory": "Pflicht",
+  "passingScore": "Bestehensgrenze",
+  "version": "Version",
+  "complete": "abgeschlossen",
+  "dueDate": "Faelligkeitsdatum",
+  "completedAt": "Abgeschlossen",
+  "courses": {
+    "title": "Kurse",
+    "description": "Compliance-Schulungskurse durchsuchen und verwalten"
+  },
+  "enrollments": {
+    "title": "Anmeldungen",
+    "description": "Schulungszuweisungen und Fortschritt anzeigen",
+    "empty": "Keine Anmeldungen gefunden"
+  },
+  "certificates": {
+    "title": "Zertifikate",
+    "description": "Schulungsabschlusszertifikate",
+    "empty": "Noch keine Zertifikate ausgestellt",
+    "issuedAt": "Ausgestellt",
+    "expiresAt": "Laeuft ab",
+    "downloadPdf": "PDF herunterladen"
+  },
+  "lessons": {
+    "title": "Lektionen",
+    "empty": "Keine Lektionen verfuegbar"
+  },
+  "courseTypes": {
+    "gdpr": "DSGVO-Awareness",
+    "info_security": "Informationssicherheit",
+    "anti_corruption": "Antikorruption",
+    "nis2": "NIS2-Compliance",
+    "dora": "DORA-Compliance",
+    "esg": "ESG-Awareness",
+    "phishing": "Phishing-Praevention",
+    "code_of_conduct": "Verhaltenskodex",
+    "aml": "Geldwaeschebekaempfung",
+    "data_classification": "Datenklassifizierung",
+    "incident_response": "Vorfallreaktion",
+    "bcm": "Geschaeftskontinuitaet",
+    "whistleblowing": "Hinweisgeber-Awareness",
+    "it_security": "IT-Sicherheit",
+    "custom": "Individuelle Schulung"
+  }
+}

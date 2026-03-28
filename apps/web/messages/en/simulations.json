@@ -1,0 +1,37 @@
+{
+  "title": "Simulation Engine",
+  "description": "What-If scenario modeling, Monte Carlo simulations, and impact analysis",
+  "noScenarios": "No scenarios found",
+  "comparisons": "Comparisons",
+  "notFound": "Scenario not found",
+  "backToScenarios": "Back to Scenarios",
+  "runSimulation": "Run Simulation",
+  "parameters": "Parameters",
+  "noParameters": "No parameters configured",
+  "runs": "Simulation Runs",
+  "noRuns": "No runs executed yet",
+  "iterations": "iterations",
+  "min": "Min",
+  "max": "Max",
+  "scenarios": "scenarios",
+  "comparisonsTitle": "Scenario Comparisons",
+  "comparisonsDescription": "Compare AS-IS vs TO-BE scenarios side by side",
+  "noComparisons": "No comparisons created yet",
+  "types": {
+    "what_if": "What-If Analysis",
+    "bpm_cost_time": "BPM Cost/Time",
+    "business_impact": "Business Impact",
+    "monte_carlo": "Monte Carlo",
+    "supplier_cascade": "Supplier Cascade",
+    "custom": "Custom"
+  },
+  "tags": {
+    "as_is": "AS-IS",
+    "to_be_a": "TO-BE A",
+    "to_be_b": "TO-BE B",
+    "to_be_c": "TO-BE C",
+    "best_case": "Best Case",
+    "worst_case": "Worst Case",
+    "most_likely": "Most Likely"
+  }
+}
