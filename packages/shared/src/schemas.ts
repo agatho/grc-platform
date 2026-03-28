@@ -30,3 +30,4 @@ export * from "./schemas/fair";
 export * from "./schemas/isms-intelligence";
 export * from "./schemas/compliance-culture";
 export * from "./schemas/automation";
+export * from "./schemas/graph";
