@@ -1,0 +1,23 @@
+{
+  "title": "Performance Dashboard",
+  "description": "Monitor cache performance, slow queries, and database optimization status.",
+  "refresh": "Refresh",
+  "clearCache": "Clear Cache",
+  "clearCacheConfirmTitle": "Clear Dashboard Cache?",
+  "clearCacheConfirmDescription": "This will invalidate all cached dashboard data for your organization. Dashboards may load slower temporarily while the cache is rebuilt.",
+  "cancel": "Cancel",
+  "confirm": "Clear Cache",
+  "hitRate": "Cache Hit Rate",
+  "cachedKeys": "Cached Keys",
+  "memoryUsed": "Memory Used",
+  "savedQueries": "Saved DB Queries",
+  "slowQueries": "Slow Queries",
+  "slowQueriesDescription": "Top 20 queries exceeding {threshold}ms average execution time.",
+  "query": "Query",
+  "avgDuration": "Avg Duration",
+  "callCount": "Calls",
+  "tables": "Tables",
+  "status": "Status",
+  "indexRecommended": "Index Recommended",
+  "noSlowQueries": "No slow queries detected. Database performance is within acceptable limits."
+}

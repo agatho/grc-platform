@@ -26,3 +26,4 @@ export * from "./types/event-bus";
 export * from "./types/board-kpi";
 export * from "./types/fair";
 export * from "./types/isms-intelligence";
+export * from "./types/compliance-culture";

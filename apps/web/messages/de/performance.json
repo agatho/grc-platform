@@ -1,0 +1,23 @@
+{
+  "title": "Performance-Dashboard",
+  "description": "Cache-Performance, langsame Abfragen und Datenbank-Optimierungsstatus ueberwachen.",
+  "refresh": "Aktualisieren",
+  "clearCache": "Cache leeren",
+  "clearCacheConfirmTitle": "Dashboard-Cache leeren?",
+  "clearCacheConfirmDescription": "Dies invalidiert alle zwischengespeicherten Dashboard-Daten Ihrer Organisation. Dashboards laden moeglicherweise voruebergehend langsamer, waehrend der Cache neu aufgebaut wird.",
+  "cancel": "Abbrechen",
+  "confirm": "Cache leeren",
+  "hitRate": "Cache-Trefferquote",
+  "cachedKeys": "Gespeicherte Schluessel",
+  "memoryUsed": "Speicherverbrauch",
+  "savedQueries": "Eingesparte DB-Abfragen",
+  "slowQueries": "Langsame Abfragen",
+  "slowQueriesDescription": "Top 20 Abfragen mit durchschnittlicher Ausfuehrungszeit ueber {threshold}ms.",
+  "query": "Abfrage",
+  "avgDuration": "Durchschn. Dauer",
+  "callCount": "Aufrufe",
+  "tables": "Tabellen",
+  "status": "Status",
+  "indexRecommended": "Index empfohlen",
+  "noSlowQueries": "Keine langsamen Abfragen erkannt. Die Datenbankleistung liegt im akzeptablen Bereich."
+}
