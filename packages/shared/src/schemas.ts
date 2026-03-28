@@ -72,3 +72,8 @@ export * from "./schemas/evidence-review";
 export * from "./schemas/regulatory-change";
 export * from "./schemas/control-testing-agent";
 export * from "./schemas/predictive-risk";
+export * from "./schemas/dora";
+export * from "./schemas/ai-act";
+export * from "./schemas/tax-cms";
+export * from "./schemas/horizon-scanner";
+export * from "./schemas/cert-wizard";

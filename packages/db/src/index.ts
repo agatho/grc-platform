@@ -77,10 +77,15 @@ import * as evidenceReviewSchema from "./schema/evidence-review";
 import * as regulatoryChangeSchema from "./schema/regulatory-change";
 import * as controlTestingAgentSchema from "./schema/control-testing-agent";
 import * as predictiveRiskSchema from "./schema/predictive-risk";
+import * as doraSchema from "./schema/dora";
+import * as aiActSchema from "./schema/ai-act";
+import * as taxCmsSchema from "./schema/tax-cms";
+import * as horizonScannerSchema from "./schema/horizon-scanner";
+import * as certWizardSchema from "./schema/cert-wizard";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema },
 });
 
 export type Database = typeof db;
@@ -161,3 +166,8 @@ export * from "./schema/evidence-review";
 export * from "./schema/regulatory-change";
 export * from "./schema/control-testing-agent";
 export * from "./schema/predictive-risk";
+export * from "./schema/dora";
+export * from "./schema/ai-act";
+export * from "./schema/tax-cms";
+export * from "./schema/horizon-scanner";
+export * from "./schema/cert-wizard";
