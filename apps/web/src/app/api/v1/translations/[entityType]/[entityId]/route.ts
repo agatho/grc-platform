@@ -40,14 +40,13 @@ export async function GET(
   const locale = url.searchParams.get("locale");
 
   // Fetch entity with raw JSONB fields
-  const fieldSelects = translatableFields.map((f) => `"${f}"`).join(", ");
-  const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-    ? ""
-    : `AND org_id = '${ctx.orgId}'`;
+  // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists above
+  const fieldSelects = translatableFields.map((f) => sql.raw(`"${f}"`));
+  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
 
-  const result = await db.execute(sql.raw(
-    `SELECT id, ${fieldSelects} FROM "${tableName}" WHERE id = '${entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-  ));
+  const result = isCatalogTable
+    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
+    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
 
   const rows = result as unknown as Record<string, unknown>[];
   if (!rows || rows.length === 0) {
@@ -143,14 +142,13 @@ export async function PUT(
   }
 
   // Verify entity exists
-  const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-    ? ""
-    : `AND org_id = '${ctx.orgId}'`;
+  // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
+  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const fieldSelects = translatableFields.map((f) => sql.raw(`"${f}"`));
 
-  const fieldSelects = translatableFields.map((f) => `"${f}"`).join(", ");
-  const existingResult = await db.execute(sql.raw(
-    `SELECT id, ${fieldSelects} FROM "${tableName}" WHERE id = '${entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-  ));
+  const existingResult = isCatalogTable
+    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
+    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
 
   const existingRows = existingResult as unknown as Record<string, unknown>[];
   if (!existingRows || existingRows.length === 0) {
@@ -159,23 +157,25 @@ export async function PUT(
 
   const existing = existingRows[0];
 
-  // Update each translated field
-  const updates: string[] = [];
+  // Update each translated field using parameterized queries
+  const updateParts: ReturnType<typeof sql>[] = [];
   for (const [field, value] of Object.entries(body.data.fields)) {
+    if (!translatableFields.includes(field)) continue; // extra safety
     const sanitizedValue = sanitizeTranslation(value);
     const currentField = existing[field] as Record<string, string> | null;
     const merged = mergeTranslation(currentField, locale, sanitizedValue);
-    updates.push(`"${field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb`);
+    updateParts.push(sql`${sql.raw(`"${field}"`)} = ${JSON.stringify(merged)}::jsonb`);
   }
 
-  updates.push(`updated_at = now()`);
-  updates.push(`updated_by = '${ctx.userId}'`);
+  updateParts.push(sql`updated_at = now()`);
+  updateParts.push(sql`updated_by = ${ctx.userId}`);
 
   await withAuditContext(ctx, async (tx) => {
     // Update entity fields
-    await tx.execute(sql.raw(
-      `UPDATE "${tableName}" SET ${updates.join(", ")} WHERE id = '${entityId}' ${orgFilter}`,
-    ));
+    const updateQuery = isCatalogTable
+      ? sql`UPDATE ${sql.raw(`"${tableName}"`)} SET ${sql.join(updateParts, sql`, `)} WHERE id = ${entityId}`
+      : sql`UPDATE ${sql.raw(`"${tableName}"`)} SET ${sql.join(updateParts, sql`, `)} WHERE id = ${entityId} AND org_id = ${ctx.orgId}`;
+    await tx.execute(updateQuery);
 
     // Upsert translation_status records
     for (const [field, value] of Object.entries(body.data.fields)) {
