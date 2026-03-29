@@ -19,13 +19,23 @@ export async function POST(req: Request) {
     .where(and(eq(biQuery.id, body.queryId), eq(biQuery.orgId, ctx.orgId)));
   if (!queryDef) return Response.json({ error: "Query not found" }, { status: 404 });
 
-  // Validate query is read-only (basic check)
-  const normalizedSql = queryDef.sqlText.trim().toUpperCase();
-  const forbidden = ["INSERT", "UPDATE", "DELETE", "DROP", "ALTER", "CREATE", "TRUNCATE", "GRANT", "REVOKE"];
-  for (const kw of forbidden) {
-    if (normalizedSql.startsWith(kw)) {
-      return Response.json({ error: "Only SELECT queries are allowed" }, { status: 400 });
-    }
+  // Validate query is read-only — strict approach
+  const trimmedSql = queryDef.sqlText.trim();
+  const normalizedSql = trimmedSql.toUpperCase();
+
+  // Must start with SELECT
+  if (!normalizedSql.startsWith("SELECT")) {
+    return Response.json({ error: "Only SELECT queries are allowed" }, { status: 400 });
+  }
+
+  // Block semicolons (no multi-statement)
+  if (trimmedSql.includes(";")) {
+    return Response.json({ error: "Multi-statement queries are not allowed" }, { status: 400 });
+  }
+
+  // Block comment sequences that could hide malicious SQL
+  if (trimmedSql.includes("/*") || trimmedSql.includes("*/") || trimmedSql.includes("--")) {
+    return Response.json({ error: "SQL comments are not allowed" }, { status: 400 });
   }
 
   try {
@@ -35,7 +45,7 @@ export async function POST(req: Request) {
       SET TRANSACTION READ ONLY;
     `);
 
-    const queryResult = await db.execute(sql.raw(`${queryDef.sqlText} LIMIT ${body.limit}`));
+    const queryResult = await db.execute(sql`${sql.raw(trimmedSql)} LIMIT ${body.limit}`);
 
     // Update query status to validated
     await db.update(biQuery).set({ status: "validated", lastValidatedAt: new Date() })

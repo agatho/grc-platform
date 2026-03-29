@@ -49,14 +49,13 @@ export async function POST(req: Request) {
   }
 
   // Fetch entity
-  const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-    ? ""
-    : `AND org_id = '${ctx.orgId}'`;
+  // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
+  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const fieldSelects = allTranslatableFields.map((f) => sql.raw(`"${f}"`));
 
-  const fieldSelects = allTranslatableFields.map((f) => `"${f}"`).join(", ");
-  const entityResult = await db.execute(sql.raw(
-    `SELECT id, ${fieldSelects} FROM "${tableName}" WHERE id = '${entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-  ));
+  const entityResult = isCatalogTable
+    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
+    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
 
   const entityRows = entityResult as unknown as Record<string, unknown>[];
   if (!entityRows || entityRows.length === 0) {
@@ -145,9 +144,11 @@ export async function POST(req: Request) {
         const currentField = entity[field] as Record<string, string> | null;
         const merged = mergeTranslation(currentField, targetLang, translatedText);
 
-        await tx.execute(sql.raw(
-          `UPDATE "${tableName}" SET "${field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${entityId}' ${orgFilter}`,
-        ));
+        // Field name validated against TRANSLATABLE_FIELDS whitelist above
+        const updateQuery = isCatalogTable
+          ? sql`UPDATE ${sql.raw(`"${tableName}"`)} SET ${sql.raw(`"${field}"`)} = ${JSON.stringify(merged)}::jsonb, updated_at = now(), updated_by = ${ctx.userId} WHERE id = ${entityId}`
+          : sql`UPDATE ${sql.raw(`"${tableName}"`)} SET ${sql.raw(`"${field}"`)} = ${JSON.stringify(merged)}::jsonb, updated_at = now(), updated_by = ${ctx.userId} WHERE id = ${entityId} AND org_id = ${ctx.orgId}`;
+        await tx.execute(updateQuery);
 
         // Upsert translation_status
         const hash = computeSourceHash(translatedText);
