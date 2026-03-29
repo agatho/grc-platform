@@ -59,17 +59,19 @@ export async function GET(req: Request) {
     const titleField = fields[0]; // First field is always the title/name
 
     // Query entities that have missing or outdated translations for the target locale
-    const entities = await db.execute(sql.raw(`
+    // Table/field names validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
+    const queryLimit = limit + 10;
+    const entities = await db.execute(sql`
       SELECT
         e.id,
-        e."${titleField}" as raw_title,
+        e.${sql.raw(`"${titleField}"`)} as raw_title,
         e.updated_at
-      FROM "${tableName}" e
-      WHERE e.org_id = '${ctx.orgId}'
+      FROM ${sql.raw(`"${tableName}"`)} e
+      WHERE e.org_id = ${ctx.orgId}
         AND e.deleted_at IS NULL
       ORDER BY e.updated_at DESC
-      LIMIT ${limit + 10}
-    `));
+      LIMIT ${queryLimit}
+    `);
 
     const rows = entities as unknown as Array<{
       id: string;

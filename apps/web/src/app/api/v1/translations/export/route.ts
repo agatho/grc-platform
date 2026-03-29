@@ -46,26 +46,29 @@ export async function GET(req: Request) {
     return Response.json({ error: "Entity type not translatable" }, { status: 400 });
   }
 
-  // Build entity filter
-  let entityFilter = "";
+  // Build parameterized query
+  // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
+  const fieldSelects = fields.map((f) => sql.raw(`"${f}"`));
+  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+
+  const conditions: ReturnType<typeof sql>[] = [sql`deleted_at IS NULL`];
+  if (!isCatalogTable) {
+    conditions.push(sql`org_id = ${ctx.orgId}`);
+  }
   if (entityIds) {
-    const ids = entityIds.split(",").map((id) => `'${id.trim()}'`).join(",");
-    entityFilter = `AND id IN (${ids})`;
+    const idArray = entityIds.split(",").map((id) => id.trim());
+    conditions.push(sql`id = ANY(${idArray})`);
   }
 
-  const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-    ? ""
-    : `AND org_id = '${ctx.orgId}'`;
+  const whereClause = sql.join(conditions, sql` AND `);
 
-  const fieldSelects = fields.map((f) => `"${f}"`).join(", ");
-
-  const result = await db.execute(sql.raw(`
-    SELECT id, ${fieldSelects}
-    FROM "${tableName}"
-    WHERE deleted_at IS NULL ${orgFilter} ${entityFilter}
+  const result = await db.execute(sql`
+    SELECT id, ${sql.join(fieldSelects, sql`, `)}
+    FROM ${sql.raw(`"${tableName}"`)}
+    WHERE ${whereClause}
     ORDER BY created_at DESC
     LIMIT 5000
-  `));
+  `);
 
   const entities = result as unknown as Array<Record<string, unknown>>;
 
