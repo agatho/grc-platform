@@ -1310,4 +1310,72 @@ app.post("/crons/community-license-check", async (c) => {
   }
 });
 
+// ── Sprint 57-86 crons (batch registration) ─────────────────
+import { processAnomalyDetection } from "./crons/anomaly-detection-runner";
+import { checkApiKeyExpiry } from "./crons/api-key-expiry-check";
+import { cloudComplianceSnapshotJob } from "./crons/cloud-compliance-snapshot";
+import { connectorHealthMonitor } from "./crons/connector-health-monitor";
+import { connectorScheduleRunner } from "./crons/connector-schedule-runner";
+import { processConsentMetrics } from "./crons/consent-metrics-updater";
+import { processControlTestLearning } from "./crons/control-test-learning-updater";
+import { processControlTestScheduler } from "./crons/control-test-scheduler";
+import { processCopilotRagIndexer } from "./crons/copilot-rag-indexer";
+import { processDeficiencyEscalation } from "./crons/deficiency-escalation";
+import { processEmergingRiskReviews } from "./crons/emerging-risk-review";
+import { evidenceFreshnessCheck } from "./crons/evidence-freshness-check";
+import { processEvidenceReviewJobs } from "./crons/evidence-review-processor";
+import { frameworkCoverageSnapshotJob } from "./crons/framework-coverage-snapshot";
+import { processImportJobs } from "./crons/import-job-processor";
+import { generateInvoices } from "./crons/invoice-generation";
+import { pluginHealthCheck } from "./crons/plugin-health-check";
+import { processPredictiveRiskTrainer } from "./crons/predictive-risk-trainer";
+import { processPushNotifications } from "./crons/push-notification-sender";
+import { processRegulatoryDigest } from "./crons/regulatory-digest-generator";
+import { processRegulatorySources } from "./crons/regulatory-source-fetcher";
+import { processResilienceScoreSnapshot } from "./crons/resilience-score-snapshot";
+import { processRetentionMonitoring } from "./crons/retention-monitoring";
+import { processTranslationStalenessCheck } from "./crons/translation-staleness-check";
+import { aggregateUsage } from "./crons/usage-aggregation";
+
+const batchCrons: Record<string, () => Promise<unknown>> = {
+  "anomaly-detection": processAnomalyDetection,
+  "api-key-expiry": checkApiKeyExpiry,
+  "cloud-compliance-snapshot": cloudComplianceSnapshotJob,
+  "connector-health-monitor": connectorHealthMonitor,
+  "connector-schedule-runner": connectorScheduleRunner,
+  "consent-metrics": processConsentMetrics,
+  "control-test-learning": processControlTestLearning,
+  "control-test-scheduler": processControlTestScheduler,
+  "copilot-rag-indexer": processCopilotRagIndexer,
+  "deficiency-escalation": processDeficiencyEscalation,
+  "emerging-risk-review": processEmergingRiskReviews,
+  "evidence-freshness": evidenceFreshnessCheck,
+  "evidence-review": processEvidenceReviewJobs,
+  "framework-coverage": frameworkCoverageSnapshotJob,
+  "import-jobs": processImportJobs,
+  "invoice-generation": generateInvoices,
+  "plugin-health": pluginHealthCheck,
+  "predictive-risk-trainer": processPredictiveRiskTrainer,
+  "push-notifications": processPushNotifications,
+  "regulatory-digest": processRegulatoryDigest,
+  "regulatory-sources": processRegulatorySources,
+  "resilience-score": processResilienceScoreSnapshot,
+  "retention-monitoring": processRetentionMonitoring,
+  "translation-staleness": processTranslationStalenessCheck,
+  "usage-aggregation": aggregateUsage,
+};
+
+for (const [name, handler] of Object.entries(batchCrons)) {
+  app.post(`/crons/${name}`, async (c) => {
+    try {
+      const result = await handler();
+      return c.json({ success: true, ...(result as object) });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`[worker] ${name} cron failed:`, message);
+      return c.json({ success: false, error: message }, 500);
+    }
+  });
+}
+
 export default { port: 3001, fetch: app.fetch };
