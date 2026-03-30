@@ -102,6 +102,7 @@ export const credentialsProvider = Credentials({
     password: { label: "Password", type: "password" },
   },
   async authorize(credentials, request) {
+   try {
     const email = credentials?.email as string | undefined;
     const password = credentials?.password as string | undefined;
     if (!email || !password) return null;
@@ -185,6 +186,10 @@ export const credentialsProvider = Credentials({
       language: found.language,
       roles,
     };
+   } catch (err) {
+    console.error("[auth] authorize error:", err instanceof Error ? err.message : err);
+    return null;
+   }
   },
 });
 

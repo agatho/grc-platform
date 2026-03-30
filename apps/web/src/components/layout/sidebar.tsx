@@ -1,20 +1,30 @@
 "use client";
 
+import { useState, useMemo, useCallback, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
-import { useTranslations, useLocale } from "next-intl";
-import { PanelLeftClose, PanelLeft } from "lucide-react";
+import { useTranslations } from "next-intl";
 import {
-  navItems,
-  platformSectionOrder,
-  sectionLabelKeys,
-  type NavItem,
+  PanelLeftClose,
+  PanelLeft,
+  Search,
+  Star,
+  ChevronDown,
+  ChevronRight,
+  Settings,
+  X,
+} from "lucide-react";
+import {
+  NAV_GROUPS,
+  getAllFlatNavItems,
 } from "./nav-config";
-import { useAllModuleConfigs } from "@/hooks/use-module-config";
-import { getLucideIcon } from "@/components/module/icon-map";
+import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import type { UserRole } from "@grc/shared";
-import type { ModuleConfig } from "@grc/shared";
+
+// ──────────────────────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────────────────────
 
 interface SidebarProps {
   collapsed: boolean;
@@ -22,89 +32,241 @@ interface SidebarProps {
   currentOrgId: string | null;
 }
 
-// ── Helpers ──────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────────────────────
 
-function useVisiblePlatformItems(orgId: string | null): NavItem[] {
+function useUserRoles(orgId: string | null): UserRole[] {
   const { data: session } = useSession();
-  const roles: UserRole[] =
-    session?.user?.roles
-      ?.filter((r) => r.orgId === orgId)
-      .map((r) => r.role) ?? [];
-
-  return navItems.filter(
-    (item) => item.roles === "all" || item.roles.some((r) => roles.includes(r)),
+  return useMemo(
+    () =>
+      session?.user?.roles
+        ?.filter((r) => r.orgId === orgId)
+        .map((r) => r.role) ?? [],
+    [session?.user?.roles, orgId],
   );
 }
 
-/** Group module configs by navSection, sorted by navOrder */
-function groupModulesBySection(
-  modules: ModuleConfig[],
-): { section: string; items: ModuleConfig[] }[] {
-  const accessible = modules.filter(
-    (m) => m.uiStatus === "enabled" || m.uiStatus === "preview",
-  );
-
-  const sectionMap = new Map<string, ModuleConfig[]>();
-  for (const mod of accessible) {
-    const section = mod.navSection ?? "modules";
-    if (!sectionMap.has(section)) {
-      sectionMap.set(section, []);
-    }
-    sectionMap.get(section)!.push(mod);
-  }
-
-  // Sort items within each section by navOrder
-  const groups: { section: string; items: ModuleConfig[] }[] = [];
-  for (const [section, items] of sectionMap) {
-    items.sort((a, b) => a.navOrder - b.navOrder);
-    groups.push({ section, items });
-  }
-
-  // Sort sections in a stable order
-  const sectionPriority: Record<string, number> = {
-    risk: 1,
-    compliance: 2,
-    audit: 3,
-    esg: 4,
-    legal: 5,
-  };
-  groups.sort(
-    (a, b) =>
-      (sectionPriority[a.section] ?? 99) - (sectionPriority[b.section] ?? 99),
-  );
-
-  return groups;
+function isItemVisible(roles: UserRole[], itemRoles: UserRole[] | "all"): boolean {
+  if (itemRoles === "all") return true;
+  return itemRoles.some((r) => roles.includes(r));
 }
 
-// ── Component ────────────────────────────────────────────────────────
+// ──────────────────────────────────────────────────────────────
+// Sub-components
+// ──────────────────────────────────────────────────────────────
+
+function SidebarSearchBox({
+  query,
+  onChange,
+  onClear,
+  placeholder,
+}: {
+  query: string;
+  onChange: (v: string) => void;
+  onClear: () => void;
+  placeholder: string;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  return (
+    <div className="relative mx-2 mb-2">
+      <Search
+        size={14}
+        className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"
+      />
+      <input
+        ref={inputRef}
+        type="text"
+        value={query}
+        onChange={(e) => onChange(e.target.value)}
+        placeholder={placeholder}
+        className="w-full pl-8 pr-7 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+      />
+      {query && (
+        <button
+          onClick={onClear}
+          className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
+          aria-label="Clear search"
+        >
+          <X size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+function NavItemLink({
+  href,
+  icon: Icon,
+  label,
+  active,
+  collapsed,
+  pinned,
+  onTogglePin,
+  showPin,
+}: {
+  href: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  label: string;
+  active: boolean;
+  collapsed: boolean;
+  pinned: boolean;
+  onTogglePin?: () => void;
+  showPin: boolean;
+}) {
+  const [hovered, setHovered] = useState(false);
+
+  return (
+    <li
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
+      className="relative"
+    >
+      <Link
+        href={href}
+        title={collapsed ? label : undefined}
+        className={`flex items-center gap-2.5 mx-2 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+          active
+            ? "bg-blue-50 text-blue-700"
+            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+        }`}
+      >
+        <Icon size={16} className="shrink-0" />
+        {!collapsed && <span className="truncate flex-1">{label}</span>}
+      </Link>
+      {/* Pin/unpin button on hover */}
+      {showPin && !collapsed && (hovered || pinned) && onTogglePin && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onTogglePin();
+          }}
+          className={`absolute right-3 top-1/2 -translate-y-1/2 p-0.5 rounded transition-colors ${
+            pinned
+              ? "text-amber-500 hover:text-amber-600"
+              : "text-gray-300 hover:text-gray-500"
+          }`}
+          aria-label={pinned ? "Unpin from favorites" : "Pin to favorites"}
+        >
+          <Star size={12} className={pinned ? "fill-current" : ""} />
+        </button>
+      )}
+    </li>
+  );
+}
+
+function CollapsibleGroup({
+  groupKey,
+  label,
+  icon: Icon,
+  isCollapsed: groupCollapsed,
+  onToggle,
+  sidebarCollapsed,
+  children,
+}: {
+  groupKey: string;
+  label: string;
+  icon: React.ComponentType<{ size?: number; className?: string }>;
+  isCollapsed: boolean;
+  onToggle: () => void;
+  sidebarCollapsed: boolean;
+  children: React.ReactNode;
+}) {
+  if (sidebarCollapsed) {
+    // When sidebar is collapsed, show just a divider
+    return (
+      <div className="mb-1">
+        <div className="mx-3 my-2 border-t border-gray-100" />
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div className="mb-1">
+      <button
+        onClick={onToggle}
+        className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
+        aria-expanded={!groupCollapsed}
+      >
+        {groupCollapsed ? (
+          <ChevronRight size={12} className="shrink-0" />
+        ) : (
+          <ChevronDown size={12} className="shrink-0" />
+        )}
+        <Icon size={12} className="shrink-0" />
+        <span className="truncate">{label}</span>
+      </button>
+      {!groupCollapsed && <ul>{children}</ul>}
+    </div>
+  );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Main Sidebar
+// ──────────────────────────────────────────────────────────────
 
 export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
-  const locale = useLocale();
-  const platformItems = useVisiblePlatformItems(currentOrgId);
-  const { configs: moduleConfigs } = useAllModuleConfigs();
+  const roles = useUserRoles(currentOrgId);
+  const { isPinned, togglePin, isGroupCollapsed, toggleGroupCollapse } =
+    useNavPreferences();
 
-  // Platform items grouped by section
-  const platformGroups = platformSectionOrder
-    .map((section) => ({
-      section,
-      label: t(sectionLabelKeys[section]),
-      items: platformItems.filter((i) => i.section === section),
-    }))
-    .filter((g) => g.items.length > 0);
+  const [searchQuery, setSearchQuery] = useState("");
 
-  // Dynamic module sections
-  const moduleGroups = groupModulesBySection(moduleConfigs);
+  // Build the flat list for search
+  const allItems = useMemo(() => getAllFlatNavItems(), []);
+
+  // Filter items by role
+  const visibleItems = useMemo(
+    () => allItems.filter((item) => isItemVisible(roles, item.roles)),
+    [allItems, roles],
+  );
+
+  // Pinned items
+  const pinnedItems = useMemo(
+    () =>
+      visibleItems.filter((item) => isPinned(item.href)),
+    [visibleItems, isPinned],
+  );
+
+  // Search results
+  const searchResults = useMemo(() => {
+    if (!searchQuery.trim()) return null;
+    const q = searchQuery.toLowerCase();
+    return visibleItems.filter((item) => {
+      const label = t(item.labelKey).toLowerCase();
+      const href = item.href.toLowerCase();
+      return label.includes(q) || href.includes(q);
+    });
+  }, [searchQuery, visibleItems, t]);
+
+  const isActive = useCallback(
+    (href: string) => pathname === href || pathname.startsWith(href + "/"),
+    [pathname],
+  );
+
+  // Grouped items by group key, filtered by role
+  const groupedNav = useMemo(() => {
+    return NAV_GROUPS.map((group) => {
+      const items = group.items.filter((item) =>
+        isItemVisible(roles, item.roles),
+      );
+      return { ...group, items };
+    }).filter((group) => group.items.length > 0);
+  }, [roles]);
 
   return (
     <aside
       className={`${
-        collapsed ? "w-16" : "w-64"
+        collapsed ? "w-16" : "w-72"
       } hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-200`}
     >
       {/* Logo + collapse toggle */}
-      <div className="flex items-center justify-between h-16 px-4 border-b border-gray-200">
+      <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200">
         {!collapsed && (
           <span className="text-lg font-bold text-slate-900 tracking-tight">
             ARCTOS
@@ -119,131 +281,134 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
         </button>
       </div>
 
-      {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-3">
-        {/* ── "main" section ── */}
-        {platformGroups
-          .filter((g) => g.section === "main")
-          .map(({ section, items: sectionItems }) => (
-            <div key={section} className="mb-1">
-              <ul>
-                {sectionItems.map((item) => {
-                  const active =
-                    pathname === item.href ||
-                    pathname.startsWith(item.href + "/");
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        title={collapsed ? t(item.labelKey) : undefined}
-                        className={`flex items-center gap-3 mx-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          active
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon size={18} className="shrink-0" />
-                        {!collapsed && <span>{t(item.labelKey)}</span>}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+      {/* Search box */}
+      {!collapsed && (
+        <div className="pt-3 pb-1">
+          <SidebarSearchBox
+            query={searchQuery}
+            onChange={setSearchQuery}
+            onClear={() => setSearchQuery("")}
+            placeholder={t("nav.search")}
+          />
+        </div>
+      )}
 
-        {/* ── Dynamic module sections ── */}
-        {moduleGroups.map(({ section, items: moduleItems }) => (
-          <div key={section} className="mb-1">
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto py-1">
+        {/* ── Search results mode ── */}
+        {searchResults !== null ? (
+          <div>
             {!collapsed && (
-              <p className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                {sectionLabelKeys[section]
-                  ? t(sectionLabelKeys[section])
-                  : section}
+              <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+                {t("nav.searchResults", { count: searchResults.length })}
               </p>
             )}
-            {collapsed && (
-              <div className="mx-3 my-2 border-t border-gray-100" />
-            )}
             <ul>
-              {moduleItems.map((mod) => {
-                const active =
-                  pathname === mod.navPath ||
-                  pathname.startsWith(mod.navPath + "/");
-                const Icon = getLucideIcon(mod.icon);
-                const displayName =
-                  locale === "de" ? mod.displayNameDe : mod.displayNameEn;
-                return (
-                  <li key={mod.moduleKey}>
-                    <Link
-                      href={mod.navPath}
-                      title={collapsed ? displayName : undefined}
-                      className={`flex items-center gap-3 mx-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                        active
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                      }`}
-                    >
-                      <Icon size={18} className="shrink-0" />
-                      {!collapsed && (
-                        <span className="flex items-center gap-2">
-                          {displayName}
-                          {mod.uiStatus === "preview" && (
-                            <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                              {t("modules.preview")}
-                            </span>
-                          )}
-                        </span>
-                      )}
-                    </Link>
-                  </li>
-                );
-              })}
+              {searchResults.map((item) => (
+                <NavItemLink
+                  key={item.href}
+                  href={item.href}
+                  icon={item.icon}
+                  label={t(item.labelKey)}
+                  active={isActive(item.href)}
+                  collapsed={collapsed}
+                  pinned={isPinned(item.href)}
+                  onTogglePin={() => togglePin(item.href)}
+                  showPin
+                />
+              ))}
+              {searchResults.length === 0 && !collapsed && (
+                <li className="px-4 py-3 text-sm text-gray-400">
+                  {t("nav.noResults")}
+                </li>
+              )}
             </ul>
           </div>
-        ))}
+        ) : (
+          <>
+            {/* ── Favorites / Pinned section ── */}
+            {pinnedItems.length > 0 && (
+              <div className="mb-2">
+                {!collapsed && (
+                  <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                    <Star size={10} className="text-amber-500 fill-amber-500" />
+                    {t("nav.favorites")}
+                  </p>
+                )}
+                {collapsed && (
+                  <div className="mx-3 my-1 border-t border-amber-100" />
+                )}
+                <ul>
+                  {pinnedItems.map((item) => (
+                    <NavItemLink
+                      key={`pin-${item.href}`}
+                      href={item.href}
+                      icon={item.icon}
+                      label={t(item.labelKey)}
+                      active={isActive(item.href)}
+                      collapsed={collapsed}
+                      pinned
+                      onTogglePin={() => togglePin(item.href)}
+                      showPin
+                    />
+                  ))}
+                </ul>
+                {!collapsed && (
+                  <div className="mx-4 mt-2 border-b border-gray-100" />
+                )}
+              </div>
+            )}
 
-        {/* ── "system" section ── */}
-        {platformGroups
-          .filter((g) => g.section === "system")
-          .map(({ section, label, items: sectionItems }) => (
-            <div key={section} className="mb-1">
-              {!collapsed && (
-                <p className="px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                  {label}
-                </p>
-              )}
-              {collapsed && (
-                <div className="mx-3 my-2 border-t border-gray-100" />
-              )}
-              <ul>
-                {sectionItems.map((item) => {
-                  const active =
-                    pathname === item.href ||
-                    pathname.startsWith(item.href + "/");
-                  const Icon = item.icon;
-                  return (
-                    <li key={item.href}>
-                      <Link
-                        href={item.href}
-                        title={collapsed ? t(item.labelKey) : undefined}
-                        className={`flex items-center gap-3 mx-2 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
-                          active
-                            ? "bg-blue-50 text-blue-700"
-                            : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
-                        }`}
-                      >
-                        <Icon size={18} className="shrink-0" />
-                        {!collapsed && <span>{t(item.labelKey)}</span>}
-                      </Link>
-                    </li>
-                  );
-                })}
-              </ul>
-            </div>
-          ))}
+            {/* ── Grouped collapsible sections ── */}
+            {groupedNav.map((group) => (
+              <CollapsibleGroup
+                key={group.key}
+                groupKey={group.key}
+                label={t(group.labelKeyEn)}
+                icon={group.icon}
+                isCollapsed={isGroupCollapsed(group.key)}
+                onToggle={() => toggleGroupCollapse(group.key)}
+                sidebarCollapsed={collapsed}
+              >
+                {group.items.map((item) => (
+                  <NavItemLink
+                    key={item.href}
+                    href={item.href}
+                    icon={item.icon}
+                    label={t(item.labelKey)}
+                    active={isActive(item.href)}
+                    collapsed={collapsed}
+                    pinned={isPinned(item.href)}
+                    onTogglePin={() => togglePin(item.href)}
+                    showPin
+                  />
+                ))}
+              </CollapsibleGroup>
+            ))}
+          </>
+        )}
       </nav>
+
+      {/* Bottom section — settings shortcut when sidebar is collapsed */}
+      {collapsed && (
+        <div className="border-t border-gray-200 py-2">
+          <ul>
+            <li>
+              <Link
+                href="/settings"
+                title={t("nav.grouped.settings")}
+                className={`flex items-center justify-center mx-2 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
+                  isActive("/settings")
+                    ? "bg-blue-50 text-blue-700"
+                    : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                }`}
+              >
+                <Settings size={16} />
+              </Link>
+            </li>
+          </ul>
+        </div>
+      )}
     </aside>
   );
 }
