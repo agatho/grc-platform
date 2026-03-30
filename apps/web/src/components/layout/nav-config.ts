@@ -9,9 +9,41 @@ import {
   Blocks,
   Database,
   Layers,
+  ShieldAlert,
+  ShieldCheck,
+  ClipboardCheck,
+  FileText,
+  Shield,
+  LifeBuoy,
+  Lock,
+  Handshake,
+  FileSignature,
+  Workflow,
+  Leaf,
+  Megaphone,
+  Calendar,
+  BarChart3,
+  Bot,
+  Store,
+  GraduationCap,
+  Upload,
+  LineChart,
+  Network,
+  Search,
+  Target,
+  Scale,
+  AlertTriangle,
+  Landmark,
+  Receipt,
+  Globe,
+  Server,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@grc/shared";
+
+// ──────────────────────────────────────────────────────────────
+// Types
+// ──────────────────────────────────────────────────────────────
 
 export interface NavItem {
   labelKey: string;
@@ -19,7 +51,243 @@ export interface NavItem {
   icon: LucideIcon;
   roles: UserRole[] | "all";
   section: "main" | "system";
+  /** Used for grouped sidebar to place items in a group */
+  group?: string;
+  /** Optional sub-module key for module-gated items */
+  moduleKey?: string;
 }
+
+export type NavGroupKey =
+  | "governance"
+  | "riskSecurity"
+  | "compliancePrivacy"
+  | "thirdParties"
+  | "processesArchitecture"
+  | "platform";
+
+export interface NavGroupItem {
+  labelKey: string;
+  href: string;
+  icon: LucideIcon;
+  roles: UserRole[] | "all";
+  /** Module key if this item is module-gated */
+  moduleKey?: string;
+  /** Parent module within the group (for sub-sections) */
+  parentModule?: string;
+}
+
+export interface NavGroup {
+  key: NavGroupKey;
+  labelKeyDe: string;
+  labelKeyEn: string;
+  icon: LucideIcon;
+  order: number;
+  items: NavGroupItem[];
+}
+
+// ──────────────────────────────────────────────────────────────
+// Navigation Groups — 6 collapsible sections
+// ──────────────────────────────────────────────────────────────
+
+export const NAV_GROUPS: NavGroup[] = [
+  // ── GOVERNANCE ──
+  {
+    key: "governance",
+    labelKeyDe: "nav.groups.governance",
+    labelKeyEn: "nav.groups.governance",
+    icon: Shield,
+    order: 1,
+    items: [
+      // ERM
+      { labelKey: "nav.grouped.risks", href: "/risks", icon: ShieldAlert, roles: ["admin", "risk_manager", "auditor"], moduleKey: "erm", parentModule: "erm" },
+      { labelKey: "nav.grouped.kris", href: "/risks/kris", icon: LineChart, roles: ["admin", "risk_manager"], moduleKey: "erm", parentModule: "erm" },
+      { labelKey: "nav.grouped.riskGroup", href: "/risks/group", icon: Layers, roles: ["admin", "risk_manager"], moduleKey: "erm", parentModule: "erm" },
+      { labelKey: "nav.grouped.riskAppetite", href: "/erm/risk-appetite", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "erm", parentModule: "erm" },
+      { labelKey: "nav.grouped.fair", href: "/erm/fair", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "erm", parentModule: "erm" },
+      // ICS
+      { labelKey: "nav.grouped.controls", href: "/controls", icon: ShieldCheck, roles: ["admin", "risk_manager", "control_owner", "auditor"], moduleKey: "ics", parentModule: "ics" },
+      { labelKey: "nav.grouped.controlCampaigns", href: "/controls/campaigns", icon: ClipboardCheck, roles: ["admin", "risk_manager", "control_owner"], moduleKey: "ics", parentModule: "ics" },
+      { labelKey: "nav.grouped.controlFindings", href: "/controls/findings", icon: AlertTriangle, roles: ["admin", "risk_manager", "control_owner", "auditor"], moduleKey: "ics", parentModule: "ics" },
+      { labelKey: "nav.grouped.rcm", href: "/controls/rcm", icon: Network, roles: ["admin", "risk_manager"], moduleKey: "ics", parentModule: "ics" },
+      { labelKey: "nav.grouped.evidence", href: "/controls/evidence", icon: FileText, roles: ["admin", "control_owner", "auditor"], moduleKey: "ics", parentModule: "ics" },
+      { labelKey: "nav.grouped.heatmap", href: "/controls/heatmap", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "ics", parentModule: "ics" },
+      // Audit
+      { labelKey: "nav.grouped.audit", href: "/audit", icon: ClipboardCheck, roles: ["admin", "auditor"], moduleKey: "audit", parentModule: "audit" },
+      { labelKey: "nav.grouped.auditUniverse", href: "/audit/universe", icon: Globe, roles: ["admin", "auditor"], moduleKey: "audit", parentModule: "audit" },
+      { labelKey: "nav.grouped.auditPlans", href: "/audit/plans", icon: Calendar, roles: ["admin", "auditor"], moduleKey: "audit", parentModule: "audit" },
+      { labelKey: "nav.grouped.auditExecutions", href: "/audit/executions", icon: ListTodo, roles: ["admin", "auditor"], moduleKey: "audit", parentModule: "audit" },
+      { labelKey: "nav.grouped.auditFindings", href: "/audit/findings", icon: AlertTriangle, roles: ["admin", "auditor"], moduleKey: "audit", parentModule: "audit" },
+      // Budget
+      { labelKey: "nav.grouped.budget", href: "/budget", icon: Receipt, roles: ["admin", "risk_manager"], parentModule: "budget" },
+      { labelKey: "nav.grouped.budgetCosts", href: "/budget/costs", icon: Receipt, roles: ["admin", "risk_manager"], parentModule: "budget" },
+      { labelKey: "nav.grouped.budgetTime", href: "/budget/time", icon: Calendar, roles: ["admin", "risk_manager"], parentModule: "budget" },
+      { labelKey: "nav.grouped.budgetRoi", href: "/budget/roi", icon: BarChart3, roles: ["admin", "risk_manager"], parentModule: "budget" },
+      // Compliance
+      { labelKey: "nav.grouped.regulatory", href: "/compliance/regulatory", icon: Scale, roles: ["admin", "risk_manager", "auditor"], parentModule: "compliance" },
+      { labelKey: "nav.grouped.complianceCulture", href: "/compliance/culture", icon: Users, roles: ["admin", "risk_manager"], parentModule: "compliance" },
+      { labelKey: "nav.grouped.assurance", href: "/assurance", icon: ShieldCheck, roles: ["admin", "auditor"], parentModule: "compliance" },
+      // RCSA
+      { labelKey: "nav.grouped.rcsa", href: "/rcsa", icon: ClipboardCheck, roles: ["admin", "risk_manager", "control_owner"], parentModule: "rcsa" },
+      { labelKey: "nav.grouped.rcsaMyAssessments", href: "/rcsa/my-assessments", icon: ListTodo, roles: "all", parentModule: "rcsa" },
+    ],
+  },
+
+  // ── RISK & SECURITY ──
+  {
+    key: "riskSecurity",
+    labelKeyDe: "nav.groups.riskSecurity",
+    labelKeyEn: "nav.groups.riskSecurity",
+    icon: Shield,
+    order: 2,
+    items: [
+      // ISMS
+      { labelKey: "nav.grouped.isms", href: "/isms", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsAssets", href: "/isms/assets", icon: Database, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsThreats", href: "/isms/threats", icon: AlertTriangle, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsVulnerabilities", href: "/isms/vulnerabilities", icon: ShieldAlert, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsIncidents", href: "/isms/incidents", icon: AlertTriangle, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsAssessments", href: "/isms/assessments", icon: ClipboardCheck, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsMaturity", href: "/isms/maturity", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsSoa", href: "/isms/soa", icon: FileText, roles: ["admin", "risk_manager", "auditor"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsReviews", href: "/isms/reviews", icon: ClipboardCheck, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsPosture", href: "/isms/posture", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsNis2", href: "/isms/nis2", icon: Scale, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsCertifications", href: "/isms/certifications", icon: ShieldCheck, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsCve", href: "/isms/cve", icon: ShieldAlert, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      { labelKey: "nav.grouped.ismsPlaybooks", href: "/isms/playbooks", icon: FileText, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
+      // BCMS
+      { labelKey: "nav.grouped.bcms", href: "/bcms", icon: LifeBuoy, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsBia", href: "/bcms/bia", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsPlans", href: "/bcms/plans", icon: FileText, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsCrisis", href: "/bcms/crisis", icon: AlertTriangle, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsStrategies", href: "/bcms/strategies", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsExercises", href: "/bcms/exercises", icon: ListTodo, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      { labelKey: "nav.grouped.bcmsResilience", href: "/bcms/resilience", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "bcms", parentModule: "bcms" },
+      // Predictive Risk
+      { labelKey: "nav.grouped.predictiveRisk", href: "/predictive-risk", icon: LineChart, roles: ["admin", "risk_manager"], parentModule: "predictive-risk" },
+    ],
+  },
+
+  // ── COMPLIANCE & PRIVACY ──
+  {
+    key: "compliancePrivacy",
+    labelKeyDe: "nav.groups.compliancePrivacy",
+    labelKeyEn: "nav.groups.compliancePrivacy",
+    icon: Lock,
+    order: 3,
+    items: [
+      // DPMS
+      { labelKey: "nav.grouped.dpms", href: "/dpms", icon: Lock, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsRopa", href: "/dpms/ropa", icon: FileText, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsDpia", href: "/dpms/dpia", icon: ClipboardCheck, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsDsr", href: "/dpms/dsr", icon: Users, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsBreaches", href: "/dpms/breaches", icon: AlertTriangle, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsTia", href: "/dpms/tia", icon: Globe, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsConsent", href: "/dpms/consent", icon: ShieldCheck, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      { labelKey: "nav.grouped.dpmsRetention", href: "/dpms/retention", icon: Calendar, roles: ["admin", "dpo"], moduleKey: "dpms", parentModule: "dpms" },
+      // ESG
+      { labelKey: "nav.grouped.esg", href: "/esg", icon: Leaf, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgMateriality", href: "/esg/materiality", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgDatapoints", href: "/esg/datapoints", icon: Database, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgMetrics", href: "/esg/metrics", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgEmissions", href: "/esg/emissions", icon: Globe, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgTargets", href: "/esg/targets", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      { labelKey: "nav.grouped.esgReport", href: "/esg/report", icon: FileText, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
+      // DORA
+      { labelKey: "nav.grouped.dora", href: "/dora", icon: Shield, roles: ["admin", "risk_manager"], parentModule: "dora" },
+      // AI Act
+      { labelKey: "nav.grouped.aiAct", href: "/ai-act", icon: Bot, roles: ["admin", "risk_manager", "dpo"], parentModule: "ai-act" },
+      // Tax CMS
+      { labelKey: "nav.grouped.taxCms", href: "/tax-cms", icon: Landmark, roles: ["admin"], parentModule: "tax-cms" },
+      // Whistleblowing
+      { labelKey: "nav.grouped.whistleblowingCases", href: "/whistleblowing/cases", icon: Megaphone, roles: ["admin", "auditor", "dpo"], moduleKey: "whistleblowing", parentModule: "whistleblowing" },
+      { labelKey: "nav.grouped.whistleblowingStats", href: "/whistleblowing/statistics", icon: BarChart3, roles: ["admin", "auditor", "dpo"], moduleKey: "whistleblowing", parentModule: "whistleblowing" },
+    ],
+  },
+
+  // ── THIRD PARTIES ──
+  {
+    key: "thirdParties",
+    labelKeyDe: "nav.groups.thirdParties",
+    labelKeyEn: "nav.groups.thirdParties",
+    icon: Handshake,
+    order: 4,
+    items: [
+      // TPRM
+      { labelKey: "nav.grouped.tprm", href: "/tprm", icon: Handshake, roles: ["admin", "risk_manager"], moduleKey: "tprm", parentModule: "tprm" },
+      { labelKey: "nav.grouped.tprmVendors", href: "/tprm/vendors", icon: Building2, roles: ["admin", "risk_manager"], moduleKey: "tprm", parentModule: "tprm" },
+      { labelKey: "nav.grouped.tprmLksg", href: "/tprm/lksg", icon: Scale, roles: ["admin", "risk_manager"], moduleKey: "tprm", parentModule: "tprm" },
+      { labelKey: "nav.grouped.tprmScorecards", href: "/tprm/scorecards", icon: BarChart3, roles: ["admin", "risk_manager"], moduleKey: "tprm", parentModule: "tprm" },
+      { labelKey: "nav.grouped.tprmConcentration", href: "/tprm/concentration", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "tprm", parentModule: "tprm" },
+      // Contracts
+      { labelKey: "nav.grouped.contracts", href: "/contracts", icon: FileSignature, roles: ["admin", "risk_manager"], moduleKey: "contract", parentModule: "contract" },
+      { labelKey: "nav.grouped.contractsList", href: "/contracts/list", icon: FileText, roles: ["admin", "risk_manager"], moduleKey: "contract", parentModule: "contract" },
+      { labelKey: "nav.grouped.contractsObligations", href: "/contracts/obligations", icon: ListTodo, roles: ["admin", "risk_manager"], moduleKey: "contract", parentModule: "contract" },
+      { labelKey: "nav.grouped.contractsSla", href: "/contracts/sla", icon: ClipboardCheck, roles: ["admin", "risk_manager"], moduleKey: "contract", parentModule: "contract" },
+    ],
+  },
+
+  // ── PROCESSES & ARCHITECTURE ──
+  {
+    key: "processesArchitecture",
+    labelKeyDe: "nav.groups.processesArchitecture",
+    labelKeyEn: "nav.groups.processesArchitecture",
+    icon: Workflow,
+    order: 5,
+    items: [
+      // BPM
+      { labelKey: "nav.grouped.processes", href: "/processes", icon: Workflow, roles: ["admin", "process_owner", "risk_manager"], moduleKey: "bpm", parentModule: "bpm" },
+      { labelKey: "nav.grouped.processGovernance", href: "/processes/governance", icon: Shield, roles: ["admin", "process_owner"], moduleKey: "bpm", parentModule: "bpm" },
+      { labelKey: "nav.grouped.bpmMining", href: "/bpm/mining", icon: Search, roles: ["admin", "process_owner"], moduleKey: "bpm", parentModule: "bpm" },
+      { labelKey: "nav.grouped.bpmKpis", href: "/bpm/kpis", icon: BarChart3, roles: ["admin", "process_owner"], moduleKey: "bpm", parentModule: "bpm" },
+      { labelKey: "nav.grouped.bpmMaturity", href: "/bpm/maturity", icon: LineChart, roles: ["admin", "process_owner"], moduleKey: "bpm", parentModule: "bpm" },
+      // EAM
+      { labelKey: "nav.grouped.eam", href: "/eam", icon: Server, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamDiagram", href: "/eam/diagram", icon: Network, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamCapabilities", href: "/eam/capabilities", icon: Layers, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamApplications", href: "/eam/applications", icon: Database, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamTechRadar", href: "/eam/tech-radar", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamDataFlows", href: "/eam/data-flows", icon: Network, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      { labelKey: "nav.grouped.eamGovernance", href: "/eam/governance", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "eam", parentModule: "eam" },
+      // Documents
+      { labelKey: "nav.grouped.documents", href: "/documents", icon: FileText, roles: "all", moduleKey: "dms", parentModule: "dms" },
+      { labelKey: "nav.grouped.documentsCompliance", href: "/documents/compliance", icon: ShieldCheck, roles: ["admin", "risk_manager", "auditor"], moduleKey: "dms", parentModule: "dms" },
+    ],
+  },
+
+  // ── PLATFORM ──
+  {
+    key: "platform",
+    labelKeyDe: "nav.groups.platform",
+    labelKeyEn: "nav.groups.platform",
+    icon: LayoutDashboard,
+    order: 6,
+    items: [
+      { labelKey: "nav.grouped.dashboard", href: "/dashboard", icon: LayoutDashboard, roles: "all", parentModule: "platform" },
+      { labelKey: "nav.grouped.calendar", href: "/calendar", icon: Calendar, roles: "all", parentModule: "platform" },
+      { labelKey: "nav.grouped.reports", href: "/reports", icon: BarChart3, roles: ["admin", "risk_manager", "auditor"], parentModule: "platform" },
+      { labelKey: "nav.grouped.copilot", href: "/copilot", icon: Bot, roles: "all", parentModule: "platform" },
+      { labelKey: "nav.grouped.marketplace", href: "/marketplace", icon: Store, roles: ["admin"], parentModule: "platform" },
+      { labelKey: "nav.grouped.extensions", href: "/extensions", icon: Blocks, roles: ["admin"], parentModule: "platform" },
+      { labelKey: "nav.grouped.academy", href: "/academy", icon: GraduationCap, roles: "all", parentModule: "platform" },
+      { labelKey: "nav.grouped.import", href: "/import", icon: Upload, roles: ["admin", "risk_manager"], parentModule: "platform" },
+      { labelKey: "nav.grouped.executive", href: "/executive", icon: LineChart, roles: ["admin"], parentModule: "platform" },
+      { labelKey: "nav.grouped.graph", href: "/graph", icon: Network, roles: ["admin", "risk_manager"], parentModule: "platform" },
+      { labelKey: "nav.grouped.search", href: "/search", icon: Search, roles: "all", parentModule: "platform" },
+      // Settings / Admin
+      { labelKey: "nav.grouped.settings", href: "/settings", icon: Settings, roles: ["admin"], parentModule: "settings" },
+      { labelKey: "nav.grouped.organizations", href: "/organizations", icon: Building2, roles: ["admin"], parentModule: "settings" },
+      { labelKey: "nav.grouped.users", href: "/users", icon: Users, roles: ["admin"], parentModule: "settings" },
+      { labelKey: "nav.grouped.modules", href: "/admin/modules", icon: Blocks, roles: ["admin"], parentModule: "settings" },
+      { labelKey: "nav.grouped.auditLog", href: "/audit-log", icon: History, roles: ["admin", "auditor", "dpo"], parentModule: "settings" },
+      { labelKey: "nav.grouped.accessLog", href: "/access-log", icon: KeyRound, roles: ["admin"], parentModule: "settings" },
+    ],
+  },
+];
+
+// ──────────────────────────────────────────────────────────────
+// Flat list for search + backward compatibility
+// ──────────────────────────────────────────────────────────────
 
 /**
  * Platform nav items — always visible (not module-dependent).
@@ -123,3 +391,35 @@ export const sectionLabelKeys: Record<string, string> = {
   secondLine: "nav.sections.secondLine",
   thirdLine: "nav.sections.thirdLine",
 };
+
+// ──────────────────────────────────────────────────────────────
+// Helper: build a flat searchable list from all groups
+// ──────────────────────────────────────────────────────────────
+
+export interface FlatNavEntry {
+  groupKey: NavGroupKey;
+  labelKey: string;
+  href: string;
+  icon: LucideIcon;
+  roles: UserRole[] | "all";
+  moduleKey?: string;
+  parentModule?: string;
+}
+
+export function getAllFlatNavItems(): FlatNavEntry[] {
+  const flat: FlatNavEntry[] = [];
+  for (const group of NAV_GROUPS) {
+    for (const item of group.items) {
+      flat.push({
+        groupKey: group.key,
+        labelKey: item.labelKey,
+        href: item.href,
+        icon: item.icon,
+        roles: item.roles,
+        moduleKey: item.moduleKey,
+        parentModule: item.parentModule,
+      });
+    }
+  }
+  return flat;
+}

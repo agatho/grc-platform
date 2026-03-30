@@ -211,3 +211,5 @@ export * from "./schema/academy";
 export * from "./schema/simulation";
 // Sprint 86: Community Edition und Open-Source Packaging
 export * from "./schema/community";
+// Navigation preferences (sidebar favorites + collapsed groups)
+export * from "./schema/nav-preference";
