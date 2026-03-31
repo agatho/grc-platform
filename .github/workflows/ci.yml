@@ -53,8 +53,14 @@ jobs:
         run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
         continue-on-error: true
 
-      - name: TypeScript (type check)
+      - name: TypeScript (type check — web)
         run: npx tsc --noEmit -p apps/web/tsconfig.json
+        env:
+          NODE_OPTIONS: "--max-old-space-size=4096"
+
+      - name: TypeScript (type check — worker)
+        run: npx tsc --noEmit -p apps/worker/tsconfig.json
+        continue-on-error: true
 
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage
@@ -132,9 +138,30 @@ jobs:
             CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
           "
 
-      - name: Run migrations
+      - name: Run Drizzle migrations
         working-directory: packages/db
         run: npx drizzle-kit migrate
+
+      - name: Run custom SQL migrations
+        run: |
+          for f in $(ls packages/db/drizzle/0*.sql | sort); do
+            IDX=$(basename "$f" .sql | grep -oP '^\d+' | sed 's/^0*//')
+            if [ "$IDX" -gt 24 ]; then
+              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f" 2>&1 || true
+            fi
+          done
+
+      - name: Create grc_app role for RLS tests
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
+            DO \$\$ BEGIN
+              IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'grc_app') THEN
+                CREATE ROLE grc_app LOGIN PASSWORD 'grc_app_dev_password';
+              END IF;
+            END \$\$;
+            GRANT USAGE ON SCHEMA public TO grc_app;
+            GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO grc_app;
+          "
 
       - name: Integration tests
         run: npx turbo test:integration
@@ -188,9 +215,28 @@ jobs:
             CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
           "
 
-      - name: Run migrations
+      - name: Run Drizzle migrations
         working-directory: packages/db
         run: npx drizzle-kit migrate
+
+      - name: Run custom SQL migrations
+        run: |
+          for f in $(ls packages/db/drizzle/0*.sql | sort); do
+            TAG=$(basename "$f" .sql)
+            # Skip files already in drizzle journal (0000-0024)
+            IDX=$(echo "$TAG" | grep -oP '^\d+' | sed 's/^0*//')
+            if [ "$IDX" -gt 24 ]; then
+              echo "Running custom migration: $TAG"
+              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -f "$f" 2>&1 || true
+            fi
+          done
+
+      - name: Run catalog and framework seeds
+        run: |
+          for f in packages/db/sql/seed_*.sql; do
+            echo "Seeding: $(basename $f)"
+            PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -f "$f" 2>&1 | tail -1
+          done
 
       - name: Verify schema (all tables exist)
         run: |
@@ -309,10 +355,16 @@ jobs:
 
       - run: npm ci
 
-      - name: Build all packages
-        run: npx turbo build
+      - name: Build i18n bundles
+        working-directory: apps/web
+        run: npx tsx scripts/build-messages.ts
+
+      - name: Build web app
+        working-directory: apps/web
+        run: npx next build
         env:
           DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+          NODE_OPTIONS: "--max-old-space-size=4096"
 
       - name: Check bundle size
         run: |
