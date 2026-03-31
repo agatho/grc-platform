@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { ArrowLeft, Loader2 } from "lucide-react";
@@ -68,12 +68,23 @@ export default function CreateControlPage() {
   );
 }
 
+interface BudgetOption {
+  id: string;
+  name: string;
+  budgetType: string;
+  grcArea: string | null;
+  totalAmount: string;
+  currency: string;
+  status: string;
+}
+
 function CreateControlInner() {
   const t = useTranslations("controls");
   const tActions = useTranslations("actions");
   const router = useRouter();
 
   const [saving, setSaving] = useState(false);
+  const [budgets, setBudgets] = useState<BudgetOption[]>([]);
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -83,7 +94,19 @@ function CreateControlInner() {
     lineOfDefense: "first" as string,
     ownerId: "",
     assertions: [] as string[],
+    costOnetime: "",
+    costAnnual: "",
+    effortHours: "",
+    budgetId: "",
+    costNote: "",
   });
+
+  useEffect(() => {
+    fetch("/api/v1/budgets?limit=100")
+      .then((r) => r.json())
+      .then((json) => setBudgets(json.data ?? []))
+      .catch(() => {});
+  }, []);
 
   const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -107,10 +130,17 @@ function CreateControlInner() {
 
     setSaving(true);
     try {
+      const payload = {
+        ...form,
+        costOnetime: form.costOnetime ? parseFloat(form.costOnetime) : undefined,
+        costAnnual: form.costAnnual ? parseFloat(form.costAnnual) : undefined,
+        effortHours: form.effortHours ? parseFloat(form.effortHours) : undefined,
+        budgetId: form.budgetId || undefined,
+      };
       const res = await fetch("/api/v1/controls", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify(payload),
       });
       if (!res.ok) throw new Error("Failed to create control");
       const json = await res.json();
@@ -278,6 +308,103 @@ function CreateControlInner() {
                   </div>
                 ))}
               </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Cost Tracking */}
+        <Card className="mt-4">
+          <CardHeader>
+            <CardTitle className="text-base">{t("costTracking.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("costTracking.costOnetime")}
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.costOnetime}
+                    onChange={(e) => updateField("costOnetime", e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    EUR
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("costTracking.costAnnual")}
+                </label>
+                <div className="relative mt-1">
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={form.costAnnual}
+                    onChange={(e) => updateField("costAnnual", e.target.value)}
+                    placeholder="0.00"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 pr-12 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                  />
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-gray-400">
+                    EUR
+                  </span>
+                </div>
+              </div>
+              <div>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("costTracking.effortHours")}
+                </label>
+                <input
+                  type="number"
+                  min="0"
+                  step="0.5"
+                  value={form.effortHours}
+                  onChange={(e) => updateField("effortHours", e.target.value)}
+                  placeholder="0"
+                  className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                {t("costTracking.budget")}
+              </label>
+              <Select
+                value={form.budgetId}
+                onValueChange={(v) => updateField("budgetId", v)}
+              >
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder={t("costTracking.budgetPlaceholder")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {budgets.map((b) => (
+                    <SelectItem key={b.id} value={b.id}>
+                      {b.name} ({b.currency} {parseFloat(b.totalAmount).toLocaleString()})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium text-gray-700">
+                {t("costTracking.costNote")}
+              </label>
+              <textarea
+                value={form.costNote}
+                onChange={(e) => updateField("costNote", e.target.value)}
+                placeholder={t("costTracking.costNotePlaceholder")}
+                rows={2}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              />
             </div>
           </CardContent>
         </Card>

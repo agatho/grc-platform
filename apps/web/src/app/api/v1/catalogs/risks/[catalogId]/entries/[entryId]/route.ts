@@ -1,8 +1,8 @@
-import { db, riskCatalogEntry } from "@grc/db";
+import { db, catalogEntry } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
-// GET /api/v1/catalogs/risks/[catalogId]/entries/[entryId] — Risk catalog entry detail
+// GET /api/v1/catalogs/risks/[catalogId]/entries/[entryId] — Catalog entry detail
 export async function GET(
   _req: Request,
   { params }: { params: Promise<{ catalogId: string; entryId: string }> },
@@ -14,11 +14,11 @@ export async function GET(
 
   const [entry] = await db
     .select()
-    .from(riskCatalogEntry)
+    .from(catalogEntry)
     .where(
       and(
-        eq(riskCatalogEntry.id, entryId),
-        eq(riskCatalogEntry.catalogId, catalogId),
+        eq(catalogEntry.id, entryId),
+        eq(catalogEntry.catalogId, catalogId),
       ),
     );
 
@@ -29,12 +29,12 @@ export async function GET(
   // Fetch children for tree context
   const children = await db
     .select()
-    .from(riskCatalogEntry)
+    .from(catalogEntry)
     .where(
       and(
-        eq(riskCatalogEntry.parentEntryId, entryId),
-        eq(riskCatalogEntry.catalogId, catalogId),
-        eq(riskCatalogEntry.isActive, true),
+        eq(catalogEntry.parentEntryId, entryId),
+        eq(catalogEntry.catalogId, catalogId),
+        eq(catalogEntry.status, "active"),
       ),
     );
 

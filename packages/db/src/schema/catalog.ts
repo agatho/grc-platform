@@ -21,6 +21,58 @@ import { sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 
 // ──────────────────────────────────────────────────────────────
+// Generic catalog + catalog_entry — used by all seed data
+// ──────────────────────────────────────────────────────────────
+
+export const catalog = pgTable(
+  "catalog",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    name: varchar("name", { length: 500 }).notNull(),
+    description: text("description"),
+    catalogType: varchar("catalog_type", { length: 20 }).notNull(),
+    scope: varchar("scope", { length: 20 }).notNull().default("platform"),
+    source: varchar("source", { length: 100 }).notNull(),
+    version: varchar("version", { length: 50 }),
+    language: varchar("language", { length: 5 }).default("de"),
+    isActive: boolean("is_active").notNull().default(true),
+    targetModules: text("target_modules")
+      .array()
+      .default(sql`'{}'::text[]`),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
+  },
+  (table) => [
+    index("catalog_type_idx").on(table.catalogType),
+    index("catalog_source_idx").on(table.source),
+  ],
+);
+
+export const catalogEntry = pgTable(
+  "catalog_entry",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    catalogId: uuid("catalog_id")
+      .notNull()
+      .references(() => catalog.id, { onDelete: "cascade" }),
+    parentEntryId: uuid("parent_entry_id"),
+    code: varchar("code", { length: 50 }).notNull(),
+    name: varchar("name", { length: 500 }).notNull(),
+    description: text("description"),
+    level: integer("level").notNull().default(0),
+    sortOrder: integer("sort_order").notNull().default(0),
+    status: varchar("status", { length: 20 }).notNull().default("active"),
+    metadata: jsonb("metadata"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    unique("catalog_entry_catalog_code_uniq").on(table.catalogId, table.code),
+    index("ce_catalog_idx").on(table.catalogId),
+    index("ce_parent_idx").on(table.parentEntryId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // Enums
 // ──────────────────────────────────────────────────────────────
 

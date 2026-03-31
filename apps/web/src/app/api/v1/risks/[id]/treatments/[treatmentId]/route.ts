@@ -102,6 +102,12 @@ export async function PUT(
       updateValues.expectedRiskReduction = body.data.expectedRiskReduction?.toString();
     if (body.data.costEstimate !== undefined)
       updateValues.costEstimate = body.data.costEstimate?.toString();
+    if (body.data.costAnnual !== undefined)
+      updateValues.costAnnual = body.data.costAnnual?.toString() ?? null;
+    if (body.data.effortHours !== undefined)
+      updateValues.effortHours = body.data.effortHours?.toString() ?? null;
+    if (body.data.budgetId !== undefined) updateValues.budgetId = body.data.budgetId;
+    if (body.data.costNote !== undefined) updateValues.costNote = body.data.costNote;
     if (body.data.status !== undefined) updateValues.status = body.data.status;
     if (body.data.dueDate !== undefined) updateValues.dueDate = body.data.dueDate;
 

@@ -1,9 +1,9 @@
-import { db, controlCatalogEntry } from "@grc/db";
+import { db, catalogEntry } from "@grc/db";
 import { eq, and, count, asc, ilike, or, isNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 
-// GET /api/v1/catalogs/controls/[catalogId]/entries — List control catalog entries
+// GET /api/v1/catalogs/controls/[catalogId]/entries — List catalog entries
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ catalogId: string }> },
@@ -14,20 +14,20 @@ export async function GET(
   const { catalogId } = await params;
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [eq(controlCatalogEntry.catalogId, catalogId)];
+  const conditions: SQL[] = [eq(catalogEntry.catalogId, catalogId)];
 
   // Level filter
   const levelParam = searchParams.get("level");
   if (levelParam) {
-    conditions.push(eq(controlCatalogEntry.level, Number(levelParam)));
+    conditions.push(eq(catalogEntry.level, Number(levelParam)));
   }
 
   // Parent filter
   const parentEntryId = searchParams.get("parentEntryId");
   if (parentEntryId === "null" || parentEntryId === "root") {
-    conditions.push(isNull(controlCatalogEntry.parentEntryId));
+    conditions.push(isNull(catalogEntry.parentEntryId));
   } else if (parentEntryId) {
-    conditions.push(eq(controlCatalogEntry.parentEntryId, parentEntryId));
+    conditions.push(eq(catalogEntry.parentEntryId, parentEntryId));
   }
 
   // Search
@@ -36,9 +36,8 @@ export async function GET(
     const pattern = `%${search}%`;
     conditions.push(
       or(
-        ilike(controlCatalogEntry.code, pattern),
-        ilike(controlCatalogEntry.titleDe, pattern),
-        ilike(controlCatalogEntry.titleEn, pattern),
+        ilike(catalogEntry.code, pattern),
+        ilike(catalogEntry.name, pattern),
       )!,
     );
   }
@@ -46,7 +45,7 @@ export async function GET(
   // Active filter
   const includeInactive = searchParams.get("includeInactive") === "true";
   if (!includeInactive) {
-    conditions.push(eq(controlCatalogEntry.isActive, true));
+    conditions.push(eq(catalogEntry.status, "active"));
   }
 
   const where = and(...conditions);
@@ -54,12 +53,12 @@ export async function GET(
   const [items, [{ value: total }]] = await Promise.all([
     db
       .select()
-      .from(controlCatalogEntry)
+      .from(catalogEntry)
       .where(where)
-      .orderBy(asc(controlCatalogEntry.sortOrder), asc(controlCatalogEntry.code))
+      .orderBy(asc(catalogEntry.sortOrder), asc(catalogEntry.code))
       .limit(limit)
       .offset(offset),
-    db.select({ value: count() }).from(controlCatalogEntry).where(where),
+    db.select({ value: count() }).from(catalogEntry).where(where),
   ]);
 
   return paginatedResponse(items, total, page, limit);

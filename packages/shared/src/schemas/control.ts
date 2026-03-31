@@ -58,6 +58,12 @@ export const createControlSchema = z.object({
   objective: z.string().optional(),
   testInstructions: z.string().optional(),
   reviewDate: z.string().optional(),
+  // Cost tracking
+  costOnetime: z.number().nonnegative().optional(),
+  costAnnual: z.number().nonnegative().optional(),
+  effortHours: z.number().nonnegative().optional(),
+  budgetId: z.string().uuid().optional(),
+  costNote: z.string().optional(),
 });
 
 export const updateControlSchema = z.object({
@@ -72,6 +78,12 @@ export const updateControlSchema = z.object({
   objective: z.string().optional(),
   testInstructions: z.string().optional(),
   reviewDate: z.string().nullable().optional(),
+  // Cost tracking
+  costOnetime: z.number().nonnegative().nullable().optional(),
+  costAnnual: z.number().nonnegative().nullable().optional(),
+  effortHours: z.number().nonnegative().nullable().optional(),
+  budgetId: z.string().uuid().nullable().optional(),
+  costNote: z.string().nullable().optional(),
 });
 
 export const controlStatusTransitionSchema = z.object({

@@ -1,6 +1,6 @@
 import { db, grcBudget } from "@grc/db";
 import { createBudgetSchema } from "@grc/shared";
-import { eq, and, count, desc } from "drizzle-orm";
+import { eq, and, count, desc, isNull } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -8,7 +8,7 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 
-// POST /api/v1/budget — Create yearly budget
+// POST /api/v1/budget — Create budget (hierarchical)
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
@@ -21,21 +21,23 @@ export async function POST(req: Request) {
     );
   }
 
-  // Check for duplicate year
-  const [existing] = await db
-    .select({ id: grcBudget.id })
-    .from(grcBudget)
-    .where(
-      and(
-        eq(grcBudget.orgId, ctx.orgId),
-        eq(grcBudget.year, body.data.year),
-      ),
-    );
-  if (existing) {
-    return Response.json(
-      { error: `Budget for year ${body.data.year} already exists` },
-      { status: 409 },
-    );
+  // If parentBudgetId provided, verify it exists and belongs to same org
+  if (body.data.parentBudgetId) {
+    const [parent] = await db
+      .select({ id: grcBudget.id })
+      .from(grcBudget)
+      .where(
+        and(
+          eq(grcBudget.id, body.data.parentBudgetId),
+          eq(grcBudget.orgId, ctx.orgId),
+        ),
+      );
+    if (!parent) {
+      return Response.json(
+        { error: "Parent budget not found" },
+        { status: 404 },
+      );
+    }
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -43,9 +45,16 @@ export async function POST(req: Request) {
       .insert(grcBudget)
       .values({
         orgId: ctx.orgId,
+        name: body.data.name,
+        budgetType: body.data.budgetType,
+        grcArea: body.data.grcArea,
         year: body.data.year,
+        periodStart: body.data.periodStart,
+        periodEnd: body.data.periodEnd,
         totalAmount: body.data.totalAmount.toString(),
         currency: body.data.currency,
+        ownerId: body.data.ownerId,
+        parentBudgetId: body.data.parentBudgetId,
         notes: body.data.notes,
         createdBy: ctx.userId,
       })
@@ -56,14 +65,20 @@ export async function POST(req: Request) {
   return Response.json({ data: created }, { status: 201 });
 }
 
-// GET /api/v1/budget — List all budgets
+// GET /api/v1/budget — List budgets, optionally filtered by parentId
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
-  const { page, limit, offset } = paginate(req);
+  const { page, limit, offset, searchParams } = paginate(req);
+  const parentId = searchParams.get("parentId");
+  const rootOnly = searchParams.get("rootOnly") === "true";
 
-  const conditions = eq(grcBudget.orgId, ctx.orgId);
+  const conditions = parentId
+    ? and(eq(grcBudget.orgId, ctx.orgId), eq(grcBudget.parentBudgetId, parentId))
+    : rootOnly
+      ? and(eq(grcBudget.orgId, ctx.orgId), isNull(grcBudget.parentBudgetId))
+      : eq(grcBudget.orgId, ctx.orgId);
 
   const [items, [{ value: total }]] = await Promise.all([
     db
