@@ -1,9 +1,9 @@
-import { db, riskCatalogEntry } from "@grc/db";
+import { db, catalogEntry } from "@grc/db";
 import { eq, and, count, asc, ilike, or, isNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 
-// GET /api/v1/catalogs/risks/[catalogId]/entries — List risk catalog entries
+// GET /api/v1/catalogs/risks/[catalogId]/entries — List catalog entries
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ catalogId: string }> },
@@ -14,20 +14,20 @@ export async function GET(
   const { catalogId } = await params;
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [eq(riskCatalogEntry.catalogId, catalogId)];
+  const conditions: SQL[] = [eq(catalogEntry.catalogId, catalogId)];
 
   // Level filter
   const levelParam = searchParams.get("level");
   if (levelParam) {
-    conditions.push(eq(riskCatalogEntry.level, Number(levelParam)));
+    conditions.push(eq(catalogEntry.level, Number(levelParam)));
   }
 
   // Parent filter (for tree browsing)
   const parentEntryId = searchParams.get("parentEntryId");
   if (parentEntryId === "null" || parentEntryId === "root") {
-    conditions.push(isNull(riskCatalogEntry.parentEntryId));
+    conditions.push(isNull(catalogEntry.parentEntryId));
   } else if (parentEntryId) {
-    conditions.push(eq(riskCatalogEntry.parentEntryId, parentEntryId));
+    conditions.push(eq(catalogEntry.parentEntryId, parentEntryId));
   }
 
   // Search
@@ -36,9 +36,8 @@ export async function GET(
     const pattern = `%${search}%`;
     conditions.push(
       or(
-        ilike(riskCatalogEntry.code, pattern),
-        ilike(riskCatalogEntry.titleDe, pattern),
-        ilike(riskCatalogEntry.titleEn, pattern),
+        ilike(catalogEntry.code, pattern),
+        ilike(catalogEntry.name, pattern),
       )!,
     );
   }
@@ -46,7 +45,7 @@ export async function GET(
   // Only active entries by default
   const includeInactive = searchParams.get("includeInactive") === "true";
   if (!includeInactive) {
-    conditions.push(eq(riskCatalogEntry.isActive, true));
+    conditions.push(eq(catalogEntry.status, "active"));
   }
 
   const where = and(...conditions);
@@ -54,12 +53,12 @@ export async function GET(
   const [items, [{ value: total }]] = await Promise.all([
     db
       .select()
-      .from(riskCatalogEntry)
+      .from(catalogEntry)
       .where(where)
-      .orderBy(asc(riskCatalogEntry.sortOrder), asc(riskCatalogEntry.code))
+      .orderBy(asc(catalogEntry.sortOrder), asc(catalogEntry.code))
       .limit(limit)
       .offset(offset),
-    db.select({ value: count() }).from(riskCatalogEntry).where(where),
+    db.select({ value: count() }).from(catalogEntry).where(where),
   ]);
 
   return paginatedResponse(items, total, page, limit);

@@ -1,4 +1,4 @@
-import { db, orgActiveCatalog, riskCatalog, controlCatalog } from "@grc/db";
+import { db, orgActiveCatalog, catalog } from "@grc/db";
 import { activateCatalogSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -22,24 +22,20 @@ export async function GET(
     .from(orgActiveCatalog)
     .where(eq(orgActiveCatalog.orgId, orgId));
 
-  // Enrich with catalog names
+  // Enrich with catalog names from generic catalog table
   const enriched = await Promise.all(
     activeCatalogs.map(async (ac) => {
       let catalogName = "Unknown";
-      if (ac.catalogType === "risk") {
-        const [cat] = await db
-          .select({ name: riskCatalog.name })
-          .from(riskCatalog)
-          .where(eq(riskCatalog.id, ac.catalogId));
-        if (cat) catalogName = cat.name;
-      } else if (ac.catalogType === "control") {
-        const [cat] = await db
-          .select({ name: controlCatalog.name })
-          .from(controlCatalog)
-          .where(eq(controlCatalog.id, ac.catalogId));
-        if (cat) catalogName = cat.name;
+      let targetModules: string[] = [];
+      const [cat] = await db
+        .select({ name: catalog.name, targetModules: catalog.targetModules })
+        .from(catalog)
+        .where(eq(catalog.id, ac.catalogId));
+      if (cat) {
+        catalogName = cat.name;
+        targetModules = cat.targetModules ?? [];
       }
-      return { ...ac, catalogName };
+      return { ...ac, catalogName, targetModules };
     }),
   );
 

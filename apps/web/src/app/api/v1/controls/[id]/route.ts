@@ -44,6 +44,12 @@ export async function GET(
       objective: control.objective,
       testInstructions: control.testInstructions,
       reviewDate: control.reviewDate,
+      costOnetime: control.costOnetime,
+      costAnnual: control.costAnnual,
+      effortHours: control.effortHours,
+      costCurrency: control.costCurrency,
+      budgetId: control.budgetId,
+      costNote: control.costNote,
       createdAt: control.createdAt,
       updatedAt: control.updatedAt,
       createdBy: control.createdBy,
@@ -131,6 +137,11 @@ export async function PUT(
     if (body.data.objective !== undefined) updateValues.objective = body.data.objective;
     if (body.data.testInstructions !== undefined) updateValues.testInstructions = body.data.testInstructions;
     if (body.data.reviewDate !== undefined) updateValues.reviewDate = body.data.reviewDate;
+    if (body.data.costOnetime !== undefined) updateValues.costOnetime = body.data.costOnetime?.toString() ?? null;
+    if (body.data.costAnnual !== undefined) updateValues.costAnnual = body.data.costAnnual?.toString() ?? null;
+    if (body.data.effortHours !== undefined) updateValues.effortHours = body.data.effortHours?.toString() ?? null;
+    if (body.data.budgetId !== undefined) updateValues.budgetId = body.data.budgetId;
+    if (body.data.costNote !== undefined) updateValues.costNote = body.data.costNote;
 
     const [row] = await tx
       .update(control)

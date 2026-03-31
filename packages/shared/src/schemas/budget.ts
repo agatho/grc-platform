@@ -2,7 +2,8 @@ import { z } from "zod";
 
 // Sprint 13: GRC Budget, Cost Tracking & ROI schemas
 
-const budgetStatusValues = ["draft", "submitted", "approved"] as const;
+const budgetStatusValues = ["draft", "submitted", "approved", "closed"] as const;
+const budgetTypeValues = ["management_system", "department", "project", "custom"] as const;
 const grcAreaValues = ["erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general"] as const;
 const costCategoryValues = ["personnel", "external", "tools", "training", "measures", "certification"] as const;
 const costTypeValues = ["planned", "actual", "forecast"] as const;
@@ -11,16 +12,30 @@ const roiMethodValues = ["ale_reduction", "penalty_avoidance", "incident_prevent
 // ─── Budget CRUD ────────────────────────────────────────────
 
 export const createBudgetSchema = z.object({
+  name: z.string().min(1).max(500),
+  budgetType: z.enum(budgetTypeValues).default("management_system"),
+  grcArea: z.enum(grcAreaValues).optional(),
   year: z.number().int().min(2020).max(2099),
+  periodStart: z.string().date().optional(),
+  periodEnd: z.string().date().optional(),
   totalAmount: z.number().nonnegative(),
   currency: z.string().length(3).default("EUR"),
+  ownerId: z.string().uuid().optional(),
+  parentBudgetId: z.string().uuid().optional(),
   notes: z.string().max(2000).optional(),
 });
 
 export const updateBudgetSchema = z.object({
+  name: z.string().min(1).max(500).optional(),
+  budgetType: z.enum(budgetTypeValues).optional(),
+  grcArea: z.enum(grcAreaValues).optional(),
+  periodStart: z.string().date().optional(),
+  periodEnd: z.string().date().optional(),
   totalAmount: z.number().nonnegative().optional(),
   currency: z.string().length(3).optional(),
   status: z.enum(budgetStatusValues).optional(),
+  ownerId: z.string().uuid().optional(),
+  parentBudgetId: z.string().uuid().nullable().optional(),
   notes: z.string().max(2000).optional(),
 });
 

@@ -1,6 +1,7 @@
 // GRC Budget, Cost Tracking & ROI types (Sprint 13)
 
-export type BudgetStatus = "draft" | "submitted" | "approved";
+export type BudgetStatus = "draft" | "submitted" | "approved" | "closed";
+export type BudgetType = "management_system" | "department" | "project" | "custom";
 export type GrcArea = "erm" | "isms" | "ics" | "dpms" | "audit" | "tprm" | "bcms" | "esg" | "general";
 export type CostCategory = "personnel" | "external" | "tools" | "training" | "measures" | "certification";
 export type CostType = "planned" | "actual" | "forecast";
@@ -9,16 +10,39 @@ export type RoiMethod = "ale_reduction" | "penalty_avoidance" | "incident_preven
 export interface GrcBudget {
   id: string;
   orgId: string;
+  name: string;
+  budgetType: BudgetType;
+  grcArea?: GrcArea | null;
   year: number;
+  periodStart?: string | null;
+  periodEnd?: string | null;
   totalAmount: string;
   currency: string;
   status: BudgetStatus;
-  approvedBy?: string;
-  approvedAt?: string;
-  notes?: string;
-  createdBy?: string;
+  ownerId?: string | null;
+  parentBudgetId?: string | null;
+  approvedBy?: string | null;
+  approvedAt?: string | null;
+  notes?: string | null;
+  createdBy?: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface BudgetUsage {
+  budgetId: string;
+  orgId: string;
+  budgetName: string;
+  budgetType: BudgetType;
+  grcArea?: GrcArea | null;
+  plannedAmount: string;
+  currency: string;
+  totalOnetime: string;
+  totalAnnual: string;
+  totalEffortHours: string;
+  totalUsed: string;
+  remaining: string;
+  entityCount: number;
 }
 
 export interface GrcBudgetLine {

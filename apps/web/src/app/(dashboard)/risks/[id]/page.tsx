@@ -408,9 +408,16 @@ function RiskDetailContent() {
     description: "",
     dueDate: "",
     costEstimate: "",
+    costAnnual: "",
+    effortHours: "",
+    budgetId: "",
+    costNote: "",
     status: "planned" as TreatmentStatus,
   });
   const [savingTreatment, setSavingTreatment] = useState(false);
+  const [treatmentBudgets, setTreatmentBudgets] = useState<
+    Array<{ id: string; name: string; currency: string; totalAmount: string }>
+  >([]);
 
   // Add measurement form
   const [measKriId, setMeasKriId] = useState<string | null>(null);
@@ -531,6 +538,10 @@ function RiskDetailContent() {
     void fetchKris();
     void fetchAuditLog();
     void fetchLinkages();
+    fetch("/api/v1/budgets?limit=100")
+      .then((r) => r.json())
+      .then((json) => setTreatmentBudgets(json.data ?? []))
+      .catch(() => {});
   }, [fetchRisk, fetchKris, fetchAuditLog, fetchLinkages]);
 
   // ---------------------------------------------------------------------------
@@ -574,6 +585,14 @@ function RiskDetailContent() {
           costEstimate: treatmentForm.costEstimate
             ? parseFloat(treatmentForm.costEstimate)
             : undefined,
+          costAnnual: treatmentForm.costAnnual
+            ? parseFloat(treatmentForm.costAnnual)
+            : undefined,
+          effortHours: treatmentForm.effortHours
+            ? parseFloat(treatmentForm.effortHours)
+            : undefined,
+          budgetId: treatmentForm.budgetId || undefined,
+          costNote: treatmentForm.costNote || undefined,
         }),
       });
       if (res.ok) {
@@ -582,6 +601,10 @@ function RiskDetailContent() {
           description: "",
           dueDate: "",
           costEstimate: "",
+          costAnnual: "",
+          effortHours: "",
+          budgetId: "",
+          costNote: "",
           status: "planned",
         });
         await fetchRisk();
@@ -1192,6 +1215,77 @@ function RiskDetailContent() {
                     </option>
                   ))}
                 </select>
+
+                {/* Cost Tracking Section */}
+                <div className="border-t border-gray-200 pt-3 mt-1">
+                  <p className="text-xs font-medium text-gray-500 uppercase tracking-wide mb-2">
+                    {t("costTracking.title")}
+                  </p>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="relative">
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={treatmentForm.costAnnual}
+                        onChange={(e) =>
+                          setTreatmentForm((f) => ({
+                            ...f,
+                            costAnnual: e.target.value,
+                          }))
+                        }
+                        placeholder={t("costTracking.costAnnual")}
+                        className="w-full rounded-lg border border-gray-300 px-3 py-2 pr-12 text-sm"
+                      />
+                      <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                        EUR
+                      </span>
+                    </div>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.5"
+                      value={treatmentForm.effortHours}
+                      onChange={(e) =>
+                        setTreatmentForm((f) => ({
+                          ...f,
+                          effortHours: e.target.value,
+                        }))
+                      }
+                      placeholder={t("costTracking.effortHours")}
+                      className="rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <select
+                    value={treatmentForm.budgetId}
+                    onChange={(e) =>
+                      setTreatmentForm((f) => ({
+                        ...f,
+                        budgetId: e.target.value,
+                      }))
+                    }
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">{t("costTracking.budgetPlaceholder")}</option>
+                    {treatmentBudgets.map((b) => (
+                      <option key={b.id} value={b.id}>
+                        {b.name} ({b.currency} {parseFloat(b.totalAmount).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+                  <textarea
+                    value={treatmentForm.costNote}
+                    onChange={(e) =>
+                      setTreatmentForm((f) => ({
+                        ...f,
+                        costNote: e.target.value,
+                      }))
+                    }
+                    placeholder={t("costTracking.costNotePlaceholder")}
+                    rows={2}
+                    className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
               </div>
               <DialogFooter>
                 <button

@@ -2,17 +2,14 @@ import { db, catalog } from "@grc/db";
 import { eq, count, desc, ilike, or, and, arrayContains } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 
-// GET /api/v1/catalogs/controls — List control catalogs (from generic catalog table)
+// GET /api/v1/catalogs — List ALL catalogs (not filtered by type)
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions = [
-    eq(catalog.isActive, true),
-    eq(catalog.catalogType, "control"),
-  ];
+  const conditions = [eq(catalog.isActive, true)];
 
   const search = searchParams.get("search");
   if (search) {
@@ -23,6 +20,11 @@ export async function GET(req: Request) {
         ilike(catalog.source, pattern),
       )!,
     );
+  }
+
+  const catalogType = searchParams.get("type");
+  if (catalogType) {
+    conditions.push(eq(catalog.catalogType, catalogType));
   }
 
   const source = searchParams.get("source");
