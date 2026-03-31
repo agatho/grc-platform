@@ -161,7 +161,8 @@
       "modules": "Module Configuration",
       "auditLog": "Audit Trail",
       "accessLog": "Access Log",
-      "catalogs": "Catalogs & Frameworks"
+      "catalogs": "Catalogs & Frameworks",
+      "frameworkCoverage": "Framework Coverage"
     }
   },
   "orgSwitcher": {
