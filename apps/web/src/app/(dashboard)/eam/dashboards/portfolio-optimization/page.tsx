@@ -1,8 +1,8 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ModuleGate } from "@/components/module-gate";
-import { Card, CardContent, CardHeader, CardTitle } from "@grc/ui/card";
+import { ModuleGate } from "@/components/module/module-gate";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEffect, useState } from "react";
 
 export default function PortfolioOptimizationPage() {

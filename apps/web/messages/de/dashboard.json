@@ -57,9 +57,13 @@
   "templateCiso": "CISO-Uebersicht",
   "templateRiskManager": "Risikomanager",
   "templateAuditor": "Pruefer",
-  "error.notFound": "Nicht gefunden",
-  "error.forbidden": "Keine Berechtigung",
-  "success.created": "Dashboard erstellt",
-  "success.updated": "Dashboard aktualisiert",
-  "success.deleted": "Dashboard geloescht"
+  "error": {
+    "notFound": "Nicht gefunden",
+    "forbidden": "Keine Berechtigung"
+  },
+  "success": {
+    "created": "Dashboard erstellt",
+    "updated": "Dashboard aktualisiert",
+    "deleted": "Dashboard geloescht"
+  }
 }

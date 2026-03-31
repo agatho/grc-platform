@@ -25,6 +25,14 @@ export const budgetStatusEnum = pgEnum("budget_status", [
   "draft",
   "submitted",
   "approved",
+  "closed",
+]);
+
+export const budgetTypeEnum = pgEnum("budget_type", [
+  "management_system",
+  "department",
+  "project",
+  "custom",
 ]);
 
 export const grcAreaEnum = pgEnum("grc_area", [
@@ -62,7 +70,7 @@ export const roiMethodEnum = pgEnum("roi_method", [
 ]);
 
 // ──────────────────────────────────────────────────────────────
-// 13.1 GRC Budget — Yearly budget per organization
+// 13.1 GRC Budget — Hierarchical named budgets
 // ──────────────────────────────────────────────────────────────
 
 export const grcBudget = pgTable(
@@ -72,10 +80,17 @@ export const grcBudget = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
+    name: varchar("name", { length: 500 }).notNull(),
+    budgetType: budgetTypeEnum("budget_type").notNull().default("management_system"),
+    grcArea: grcAreaEnum("grc_area"),
     year: integer("year").notNull(),
+    periodStart: date("period_start"),
+    periodEnd: date("period_end"),
     totalAmount: numeric("total_amount", { precision: 15, scale: 2 }).notNull(),
     currency: varchar("currency", { length: 3 }).notNull().default("EUR"),
     status: budgetStatusEnum("status").notNull().default("draft"),
+    ownerId: uuid("owner_id").references(() => user.id),
+    parentBudgetId: uuid("parent_budget_id"),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     notes: text("notes"),
@@ -89,6 +104,10 @@ export const grcBudget = pgTable(
   },
   (table) => [
     uniqueIndex("gb_org_year_idx").on(table.orgId, table.year),
+    index("gb_org_type_idx").on(table.orgId, table.budgetType),
+    index("gb_parent_idx").on(table.parentBudgetId),
+    index("gb_owner_idx").on(table.ownerId),
+    index("gb_org_area_idx").on(table.orgId, table.grcArea),
   ],
 );
 
@@ -162,6 +181,7 @@ export const grcCostEntry = pgTable(
     index("gce_entity_idx").on(table.entityType, table.entityId),
     index("gce_period_idx").on(table.orgId, table.periodStart),
     index("gce_category_idx").on(table.orgId, table.costCategory),
+    index("gce_budget_idx").on(table.budgetId),
   ],
 );
 

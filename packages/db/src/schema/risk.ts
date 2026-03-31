@@ -207,6 +207,11 @@ export const riskTreatment = pgTable(
       .references(() => user.id),
     expectedRiskReduction: numeric("expected_risk_reduction", { precision: 5, scale: 2 }),
     costEstimate: numeric("cost_estimate", { precision: 15, scale: 2 }),
+    costAnnual: numeric("cost_annual", { precision: 15, scale: 2 }),
+    effortHours: numeric("effort_hours", { precision: 8, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 }).default("EUR"),
+    budgetId: uuid("budget_id"),
+    costNote: text("cost_note"),
     status: treatmentStatusEnum("status").notNull().default("planned"),
     dueDate: date("due_date"),
     // Cross-cutting mandatory fields

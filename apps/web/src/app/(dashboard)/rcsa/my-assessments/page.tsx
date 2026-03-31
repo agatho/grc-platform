@@ -329,7 +329,7 @@ function RiskCard({
 
           <Button
             onClick={onSubmit}
-            disabled={submitting || !form.riskStillRelevant === undefined || !form.likelihoodAssessment || !form.riskTrend}
+            disabled={submitting || form.riskStillRelevant === undefined || !form.likelihoodAssessment || !form.riskTrend}
             className="w-full"
           >
             {submitting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Check size={14} className="mr-1" />}

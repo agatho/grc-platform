@@ -57,9 +57,13 @@
   "templateCiso": "CISO Overview",
   "templateRiskManager": "Risk Manager",
   "templateAuditor": "Auditor",
-  "error.notFound": "Not found",
-  "error.forbidden": "Access denied",
-  "success.created": "Dashboard created",
-  "success.updated": "Dashboard updated",
-  "success.deleted": "Dashboard deleted"
+  "error": {
+    "notFound": "Not found",
+    "forbidden": "Access denied"
+  },
+  "success": {
+    "created": "Dashboard created",
+    "updated": "Dashboard updated",
+    "deleted": "Dashboard deleted"
+  }
 }

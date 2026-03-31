@@ -11,6 +11,7 @@ import {
   date,
   integer,
   bigint,
+  numeric,
   pgEnum,
   index,
   unique,
@@ -161,6 +162,13 @@ export const control = pgTable(
     // Catalog & Framework Layer hook (Sprint 4b)
     // FK to control_catalog_entry added via migration SQL
     catalogEntryId: uuid("catalog_entry_id"),
+    // Cost tracking
+    costOnetime: numeric("cost_onetime", { precision: 15, scale: 2 }),
+    costAnnual: numeric("cost_annual", { precision: 15, scale: 2 }),
+    effortHours: numeric("effort_hours", { precision: 8, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 }).default("EUR"),
+    budgetId: uuid("budget_id"),
+    costNote: text("cost_note"),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
