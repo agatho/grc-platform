@@ -370,7 +370,7 @@ jobs:
         continue-on-error: true
 
       - name: Check for leaked secrets
-        uses: trufflesecurity/trufflehog@v3.94.0
+        uses: trufflesecurity/trufflehog@v3.94.1
         with:
           extra_args: --only-verified --results=verified
 
