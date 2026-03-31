@@ -1,4 +1,4 @@
-import { db, soaEntry, controlCatalogEntry } from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
@@ -41,29 +41,29 @@ export async function GET(req: Request) {
       lastReviewed: soaEntry.lastReviewed,
       createdAt: soaEntry.createdAt,
       updatedAt: soaEntry.updatedAt,
-      catalogCode: controlCatalogEntry.code,
-      catalogTitleDe: controlCatalogEntry.titleDe,
-      catalogTitleEn: controlCatalogEntry.titleEn,
+      catalogCode: catalogEntry.code,
+      catalogTitleDe: catalogEntry.nameDe,
+      catalogTitleEn: catalogEntry.name,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id));
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id));
 
   if (search) {
     conditions.push(
-      sql`(${controlCatalogEntry.titleDe} ilike ${'%' + search + '%'} or ${controlCatalogEntry.titleEn} ilike ${'%' + search + '%'} or ${controlCatalogEntry.code} ilike ${'%' + search + '%'})`,
+      sql`(${catalogEntry.nameDe} ilike ${'%' + search + '%'} or ${catalogEntry.name} ilike ${'%' + search + '%'} or ${catalogEntry.code} ilike ${'%' + search + '%'})`,
     );
   }
 
   const rows = await baseQuery
     .where(and(...conditions))
-    .orderBy(controlCatalogEntry.sortOrder)
+    .orderBy(catalogEntry.sortOrder)
     .limit(limit)
     .offset(offset);
 
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(and(...conditions));
 
   // Stats
@@ -104,9 +104,9 @@ export async function POST(req: Request) {
   const result = await withAuditContext(ctx, async (tx) => {
     // Get all control catalog entries from ISO 27002 catalogs
     const catalogEntries = await tx
-      .select({ id: controlCatalogEntry.id })
-      .from(controlCatalogEntry)
-      .where(eq(controlCatalogEntry.isActive, true));
+      .select({ id: catalogEntry.id })
+      .from(catalogEntry)
+      .where(eq(catalogEntry.status, "active"));
 
     let created = 0;
     let skipped = 0;

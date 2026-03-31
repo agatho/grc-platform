@@ -1,4 +1,4 @@
-import { db, soaEntry, controlCatalogEntry } from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { updateSoaEntrySchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
@@ -31,14 +31,14 @@ export async function GET(
       lastReviewed: soaEntry.lastReviewed,
       createdAt: soaEntry.createdAt,
       updatedAt: soaEntry.updatedAt,
-      catalogCode: controlCatalogEntry.code,
-      catalogTitleDe: controlCatalogEntry.titleDe,
-      catalogTitleEn: controlCatalogEntry.titleEn,
-      catalogDescriptionDe: controlCatalogEntry.descriptionDe,
-      catalogDescriptionEn: controlCatalogEntry.descriptionEn,
+      catalogCode: catalogEntry.code,
+      catalogTitleDe: catalogEntry.nameDe,
+      catalogTitleEn: catalogEntry.name,
+      catalogDescriptionDe: catalogEntry.descriptionDe,
+      catalogDescriptionEn: catalogEntry.description,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(and(eq(soaEntry.id, id), eq(soaEntry.orgId, ctx.orgId)));
 
   if (!row) {

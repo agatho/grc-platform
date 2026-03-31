@@ -1,4 +1,4 @@
-import { db, soaEntry, controlCatalogEntry } from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -24,13 +24,13 @@ export async function GET(req: Request) {
   // Get SoA entries joined with catalog entries for control code
   const soaEntries = await db
     .select({
-      code: controlCatalogEntry.code,
+      code: catalogEntry.code,
       implementation: soaEntry.implementation,
     })
     .from(soaEntry)
     .innerJoin(
-      controlCatalogEntry,
-      eq(controlCatalogEntry.id, soaEntry.catalogEntryId),
+      catalogEntry,
+      eq(catalogEntry.id, soaEntry.catalogEntryId),
     )
     .where(eq(soaEntry.orgId, ctx.orgId));
 

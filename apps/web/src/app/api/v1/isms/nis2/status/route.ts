@@ -1,7 +1,7 @@
 import {
   db,
   soaEntry,
-  controlCatalogEntry,
+  catalogEntry,
   control,
   controlMaturity,
 } from "@grc/db";
@@ -30,14 +30,14 @@ export async function GET(req: Request) {
     // Find catalog entries matching the ISO mapping codes
     const catalogEntries = await db
       .select({
-        id: controlCatalogEntry.id,
-        code: controlCatalogEntry.code,
+        id: catalogEntry.id,
+        code: catalogEntry.code,
       })
-      .from(controlCatalogEntry)
+      .from(catalogEntry)
       .where(
         and(
-          inArray(controlCatalogEntry.code, reqDef.isoMapping),
-          eq(controlCatalogEntry.isActive, true),
+          inArray(catalogEntry.code, reqDef.isoMapping),
+          eq(catalogEntry.status, "active"),
         ),
       );
 
@@ -48,12 +48,12 @@ export async function GET(req: Request) {
     if (catalogIds.length > 0) {
       const soaRows = await db
         .select({
-          catalogCode: controlCatalogEntry.code,
+          catalogCode: catalogEntry.code,
           controlId: soaEntry.controlId,
           implementation: soaEntry.implementation,
         })
         .from(soaEntry)
-        .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+        .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
         .where(
           and(
             eq(soaEntry.orgId, ctx.orgId),
