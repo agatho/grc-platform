@@ -1,9 +1,9 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import { ModuleGate } from "@/components/module-gate";
-import { Card, CardContent, CardHeader, CardTitle } from "@grc/ui/card";
-import { Button } from "@grc/ui/button";
+import { ModuleGate } from "@/components/module/module-gate";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { useEffect, useState } from "react";
 
 export default function EamAiPage() {

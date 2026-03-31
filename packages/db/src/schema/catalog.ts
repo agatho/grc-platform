@@ -52,6 +52,9 @@ export const riskCatalog = pgTable(
     entryCount: integer("entry_count").notNull().default(0),
     isSystem: boolean("is_system").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    targetModules: text("target_modules")
+      .array()
+      .default(sql`'{}'::text[]`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
@@ -112,6 +115,9 @@ export const controlCatalog = pgTable(
     entryCount: integer("entry_count").notNull().default(0),
     isSystem: boolean("is_system").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
+    targetModules: text("target_modules")
+      .array()
+      .default(sql`'{}'::text[]`),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

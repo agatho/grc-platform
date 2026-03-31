@@ -41,11 +41,15 @@
       "legal": "Recht & Governance"
     },
     "groups": {
-      "governance": "Governance",
-      "riskSecurity": "Risiko & Sicherheit",
-      "compliancePrivacy": "Compliance & Datenschutz",
-      "thirdParties": "Drittparteien",
-      "processesArchitecture": "Prozesse & Architektur",
+      "erm": "Risikomanagement",
+      "isms": "Informationssicherheit",
+      "icsAudit": "Kontrollen & Audit",
+      "bcms": "Business Continuity",
+      "dpms": "Datenschutz",
+      "tprmContracts": "Drittparteien & Verträge",
+      "bpmArchitecture": "Prozesse & Architektur",
+      "esg": "ESG & Nachhaltigkeit",
+      "whistleblowing": "Hinweisgebersystem",
       "platform": "Plattform"
     },
     "grouped": {
@@ -84,6 +88,7 @@
       "ismsSoa": "Erklärung zur Anwendbarkeit",
       "ismsReviews": "Managementbewertungen",
       "ismsPosture": "Sicherheitslage",
+      "ismsProtectionNeeds": "Schutzbedarf",
       "ismsNis2": "NIS2-Compliance",
       "ismsCertifications": "Zertifizierungen",
       "ismsCve": "CVE-Tracking",
@@ -155,7 +160,8 @@
       "users": "Benutzerverwaltung",
       "modules": "Modulkonfiguration",
       "auditLog": "Änderungshistorie",
-      "accessLog": "Zugriffsprotokoll"
+      "accessLog": "Zugriffsprotokoll",
+      "catalogs": "Kataloge & Frameworks"
     }
   },
   "orgSwitcher": {
@@ -1661,10 +1667,10 @@
   "catalogs": {
     "title": "Kataloge",
     "description": "Risikokataloge, Kontrollkataloge und allgemeine Objekte verwalten",
-    "risks": "Risikokataloge",
-    "controls": "Kontrollkataloge",
-    "objects": "Objektkatalog",
-    "lifecycle": "Lebenszyklus",
+    "risksTitle": "Risikokataloge",
+    "controlsTitle": "Kontrollkataloge",
+    "objectsTitle": "Objektkatalog",
+    "lifecycleTitle": "Lebenszyklus",
     "riskCatalogs": "Risikokataloge",
     "controlCatalogs": "Kontrollkataloge",
     "objectCatalog": "Objektkatalog",

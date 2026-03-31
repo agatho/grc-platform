@@ -13,6 +13,7 @@ import {
   boolean,
   date,
   timestamp,
+  numeric,
   index,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
@@ -306,6 +307,13 @@ export const dpiaMeasure = pgTable(
     implementationTimeline: varchar("implementation_timeline", {
       length: 255,
     }),
+    // Cost tracking
+    costOnetime: numeric("cost_onetime", { precision: 15, scale: 2 }),
+    costAnnual: numeric("cost_annual", { precision: 15, scale: 2 }),
+    effortHours: numeric("effort_hours", { precision: 8, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 }).default("EUR"),
+    budgetId: uuid("budget_id"),
+    costNote: text("cost_note"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
