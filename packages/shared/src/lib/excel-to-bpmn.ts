@@ -1,5 +1,5 @@
 // Sprint 56: Excel-to-BPMN Converter
-// Parses an Excel file and generates valid BPMN 2.0 XML
+// Parses an Excel file (via ExcelJS) and generates valid BPMN 2.0 XML
 
 import type { ExcelImportResult } from "../schemas/bpm-derived";
 
@@ -32,10 +32,11 @@ const REQUIRED_COLUMNS = [
 export async function convertExcelToBPMN(
   buffer: ArrayBuffer,
 ): Promise<ExcelImportResult> {
-  // Dynamic import of xlsx (SheetJS) to keep bundling optional
-  const XLSX = await import("xlsx");
-  const workbook = XLSX.read(buffer, { type: "array" });
-  const sheet = workbook.Sheets[workbook.SheetNames[0]];
+  // Dynamic import of exceljs to keep bundling optional
+  const ExcelJS = await import("exceljs");
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(Buffer.from(buffer));
+  const sheet = wb.worksheets[0];
 
   if (!sheet) {
     return {
@@ -47,7 +48,28 @@ export async function convertExcelToBPMN(
     };
   }
 
-  const rawData = XLSX.utils.sheet_to_json<Record<string, string>>(sheet);
+  // Convert worksheet rows to array of key-value objects (matching sheet_to_json behavior)
+  const rawData: Record<string, string>[] = [];
+  const headerRow = sheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = String(cell.value ?? "").trim();
+  });
+
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header row
+    const record: Record<string, string> = {};
+    row.eachCell((cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) {
+        record[header] = String(cell.value ?? "").trim();
+      }
+    });
+    // Only include rows that have at least one non-empty value
+    if (Object.values(record).some((v) => v !== "")) {
+      rawData.push(record);
+    }
+  });
   const warnings: string[] = [];
   const errors: string[] = [];
 

@@ -161,7 +161,8 @@
       "modules": "Modulkonfiguration",
       "auditLog": "Änderungshistorie",
       "accessLog": "Zugriffsprotokoll",
-      "catalogs": "Kataloge & Frameworks"
+      "catalogs": "Kataloge & Frameworks",
+      "frameworkCoverage": "Framework-Abdeckung"
     }
   },
   "orgSwitcher": {

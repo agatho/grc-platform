@@ -1,9 +1,10 @@
-// Sprint 30: Excel Renderer — SheetJS XLSX generation
+// Sprint 30: Excel Renderer — ExcelJS workbook generation
 // Renders resolved sections into formatted Excel workbook
 
 import type { ReportSectionConfig } from "@grc/shared";
 import type { TableData, ChartData, KPIData } from "../section-data-fetcher";
 import type { ResolvedSection } from "./pdf-renderer";
+import ExcelJS from "exceljs";
 
 /**
  * Render resolved sections as an Excel workbook buffer.
@@ -11,22 +12,26 @@ import type { ResolvedSection } from "./pdf-renderer";
 export async function renderExcel(
   sections: ResolvedSection[],
 ): Promise<Buffer> {
-  const XLSX = await import("xlsx");
-  const wb = XLSX.utils.book_new();
+  const wb = new ExcelJS.Workbook();
 
   let sheetIndex = 0;
 
   // KPI summary sheet if any KPI sections exist
   const kpiSections = sections.filter((s) => s.type === "kpi" && s.value);
   if (kpiSections.length > 0) {
-    const kpiRows = kpiSections.map((s) => ({
-      Metric: s.value!.label,
-      Value: s.value!.value,
-      Trend: s.value!.trend || "",
-    }));
-    const ws = XLSX.utils.json_to_sheet(kpiRows);
-    applyColumnWidths(ws, [30, 15, 10]);
-    XLSX.utils.book_append_sheet(wb, ws, "KPI Summary");
+    const ws = wb.addWorksheet("KPI Summary");
+    ws.columns = [
+      { header: "Metric", key: "Metric", width: 30 },
+      { header: "Value", key: "Value", width: 15 },
+      { header: "Trend", key: "Trend", width: 10 },
+    ];
+    for (const s of kpiSections) {
+      ws.addRow({
+        Metric: s.value!.label,
+        Value: s.value!.value,
+        Trend: s.value!.trend || "",
+      });
+    }
     sheetIndex++;
   }
 
@@ -38,17 +43,18 @@ export async function renderExcel(
         const sheetName = sanitizeSheetName(
           section.config.label || `Data ${sheetIndex + 1}`,
         );
-        const ws = XLSX.utils.json_to_sheet(tableData.rows);
-        // Override headers
-        if (tableData.headers.length > 0) {
-          for (let i = 0; i < tableData.headers.length; i++) {
-            const cell = XLSX.utils.encode_cell({ r: 0, c: i });
-            if (ws[cell]) {
-              ws[cell].v = tableData.headers[i];
-            }
-          }
+        const ws = wb.addWorksheet(sheetName);
+
+        // Determine columns from first row keys
+        const keys = Object.keys(tableData.rows[0]);
+        ws.columns = keys.map((key, i) => ({
+          header: tableData.headers[i] ?? key,
+          key,
+        }));
+
+        for (const row of tableData.rows) {
+          ws.addRow(row);
         }
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
         sheetIndex++;
       }
     }
@@ -59,15 +65,21 @@ export async function renderExcel(
         const sheetName = sanitizeSheetName(
           section.config.label || `Chart ${sheetIndex + 1}`,
         );
-        const rows = chartData.labels.map((label, i) => {
-          const row: Record<string, unknown> = { Label: label };
+        const ws = wb.addWorksheet(sheetName);
+
+        const datasetLabels = chartData.datasets.map((ds) => ds.label);
+        ws.columns = [
+          { header: "Label", key: "Label" },
+          ...datasetLabels.map((label) => ({ header: label, key: label })),
+        ];
+
+        for (let i = 0; i < chartData.labels.length; i++) {
+          const row: Record<string, unknown> = { Label: chartData.labels[i] };
           for (const ds of chartData.datasets) {
             row[ds.label] = ds.data[i] ?? 0;
           }
-          return row;
-        });
-        const ws = XLSX.utils.json_to_sheet(rows);
-        XLSX.utils.book_append_sheet(wb, ws, sheetName);
+          ws.addRow(row);
+        }
         sheetIndex++;
       }
     }
@@ -83,23 +95,28 @@ export async function renderExcel(
     (s) => s.type === "title" || s.type === "text",
   );
   if (textSections.length > 0) {
-    const textRows = textSections.map((s) => ({
-      Type: s.type,
-      Content: s.content || s.config.text || "",
-    }));
-    const ws = XLSX.utils.json_to_sheet(textRows);
-    applyColumnWidths(ws, [10, 80]);
-    XLSX.utils.book_append_sheet(wb, ws, "Content");
+    const ws = wb.addWorksheet("Content");
+    ws.columns = [
+      { header: "Type", key: "Type", width: 10 },
+      { header: "Content", key: "Content", width: 80 },
+    ];
+    for (const s of textSections) {
+      ws.addRow({
+        Type: s.type,
+        Content: s.content || s.config.text || "",
+      });
+    }
   }
 
   // If no sheets were created, add a placeholder
-  if (wb.SheetNames.length === 0) {
-    const ws = XLSX.utils.json_to_sheet([{ Message: "No data available" }]);
-    XLSX.utils.book_append_sheet(wb, ws, "Report");
+  if (wb.worksheets.length === 0) {
+    const ws = wb.addWorksheet("Report");
+    ws.columns = [{ header: "Message", key: "Message" }];
+    ws.addRow({ Message: "No data available" });
   }
 
-  const buffer = XLSX.write(wb, { type: "buffer", bookType: "xlsx" });
-  return Buffer.from(buffer);
+  const arrayBuffer = await wb.xlsx.writeBuffer();
+  return Buffer.from(arrayBuffer);
 }
 
 /**
@@ -110,14 +127,4 @@ function sanitizeSheetName(name: string): string {
     .replace(/[\\/*?\[\]:]/g, "")
     .substring(0, 31)
     .trim() || "Sheet";
-}
-
-/**
- * Apply column widths to worksheet
- */
-function applyColumnWidths(
-  ws: Record<string, unknown>,
-  widths: number[],
-): void {
-  (ws as Record<string, unknown>)["!cols"] = widths.map((w) => ({ wch: w }));
 }

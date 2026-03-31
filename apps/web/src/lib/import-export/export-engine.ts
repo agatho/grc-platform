@@ -1,4 +1,4 @@
-// Sprint 19: Generic export engine — CSV + Excel (xlsx) + filter passthrough
+// Sprint 19: Generic export engine — CSV + Excel (ExcelJS) + filter passthrough
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
@@ -120,41 +120,38 @@ function generateCsvExport(
 }
 
 /**
- * Generate Excel export buffer using SheetJS.
+ * Generate Excel export buffer using ExcelJS.
  */
 async function generateExcelExport(
   data: Record<string, unknown>[],
   def: EntityDefinition,
   baseFileName: string,
 ): Promise<ExportResult> {
-  const XLSX = await import("xlsx");
+  const ExcelJS = await import("exceljs");
+  const workbook = new ExcelJS.Workbook();
+  const worksheet = workbook.addWorksheet(def.key);
 
-  // Map data to export columns
-  const sheetData = data.map((row) => {
+  // Set up columns with headers and widths
+  worksheet.columns = def.exportColumns.map((col) => ({
+    header: col.header,
+    key: col.key,
+    width: Math.max(col.header.length, 15),
+  }));
+
+  // Map and add rows
+  for (const row of data) {
     const mapped: Record<string, unknown> = {};
     for (const col of def.exportColumns) {
       const snakeKey = col.key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
       const value = row[col.key] ?? row[snakeKey] ?? "";
-      mapped[col.header] =
+      mapped[col.key] =
         typeof value === "string" ? sanitizeCsvValue(value) : value;
     }
-    return mapped;
-  });
+    worksheet.addRow(mapped);
+  }
 
-  const worksheet = XLSX.utils.json_to_sheet(sheetData);
-  const workbook = XLSX.utils.book_new();
-  XLSX.utils.book_append_sheet(workbook, worksheet, def.key);
-
-  // Set column widths
-  const colWidths = def.exportColumns.map((col) => ({
-    wch: Math.max(col.header.length, 15),
-  }));
-  worksheet["!cols"] = colWidths;
-
-  const buffer = XLSX.write(workbook, {
-    type: "buffer",
-    bookType: "xlsx",
-  }) as Buffer;
+  const arrayBuffer = await workbook.xlsx.writeBuffer();
+  const buffer = Buffer.from(arrayBuffer);
 
   return {
     data: buffer,
