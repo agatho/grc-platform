@@ -23,7 +23,7 @@ import { organization, user } from "./platform";
 import { asset } from "./asset";
 import { risk } from "./risk";
 import { workItem } from "./work-item";
-import { riskCatalogEntry, controlCatalogEntry } from "./catalog";
+import { catalogEntry } from "./catalog";
 import { control } from "./control";
 
 // ──────────────────────────────────────────────────────────────
@@ -122,7 +122,7 @@ export const threat = pgTable(
       .notNull()
       .references(() => organization.id),
     catalogEntryId: uuid("catalog_entry_id").references(
-      () => riskCatalogEntry.id,
+      () => catalogEntry.id,
     ),
     code: varchar("code", { length: 50 }),
     title: varchar("title", { length: 500 }).notNull(),
@@ -525,7 +525,7 @@ export const soaEntry = pgTable(
       .references(() => organization.id),
     catalogEntryId: uuid("catalog_entry_id")
       .notNull()
-      .references(() => controlCatalogEntry.id),
+      .references(() => catalogEntry.id),
     controlId: uuid("control_id").references(() => control.id),
     applicability: soaApplicabilityEnum("applicability")
       .notNull()

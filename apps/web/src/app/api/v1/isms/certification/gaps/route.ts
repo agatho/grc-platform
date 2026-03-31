@@ -1,7 +1,7 @@
 import {
   db,
   soaEntry,
-  controlCatalogEntry,
+  catalogEntry,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, or } from "drizzle-orm";
@@ -27,13 +27,13 @@ export async function GET(req: Request) {
       implementation: soaEntry.implementation,
       implementationNotes: soaEntry.implementationNotes,
       responsibleId: soaEntry.responsibleId,
-      catalogCode: controlCatalogEntry.code,
-      catalogTitleDe: controlCatalogEntry.titleDe,
-      catalogTitleEn: controlCatalogEntry.titleEn,
-      catalogLevel: controlCatalogEntry.level,
+      catalogCode: catalogEntry.code,
+      catalogTitleDe: catalogEntry.nameDe,
+      catalogTitleEn: catalogEntry.name,
+      catalogLevel: catalogEntry.level,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(
       and(
         eq(soaEntry.orgId, ctx.orgId),
@@ -51,7 +51,7 @@ export async function GET(req: Request) {
     .orderBy(
       // Priority: not_implemented first, then planned, then partially_implemented
       sql`CASE ${soaEntry.implementation} WHEN 'not_implemented' THEN 1 WHEN 'planned' THEN 2 WHEN 'partially_implemented' THEN 3 ELSE 4 END`,
-      controlCatalogEntry.sortOrder,
+      catalogEntry.sortOrder,
     )
     .limit(limit)
     .offset(offset);

@@ -1,4 +1,4 @@
-import { db, soaEntry, controlCatalogEntry } from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -13,9 +13,9 @@ export async function GET(req: Request) {
 
   const rows = await db
     .select({
-      catalogCode: controlCatalogEntry.code,
-      catalogTitleDe: controlCatalogEntry.titleDe,
-      catalogTitleEn: controlCatalogEntry.titleEn,
+      catalogCode: catalogEntry.code,
+      catalogTitleDe: catalogEntry.nameDe,
+      catalogTitleEn: catalogEntry.name,
       applicability: soaEntry.applicability,
       applicabilityJustification: soaEntry.applicabilityJustification,
       implementation: soaEntry.implementation,
@@ -23,9 +23,9 @@ export async function GET(req: Request) {
       lastReviewed: soaEntry.lastReviewed,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(eq(soaEntry.orgId, ctx.orgId))
-    .orderBy(controlCatalogEntry.sortOrder);
+    .orderBy(catalogEntry.sortOrder);
 
   // Build CSV
   const headers = [

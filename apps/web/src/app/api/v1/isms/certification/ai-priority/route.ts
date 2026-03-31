@@ -1,7 +1,7 @@
 import {
   db,
   soaEntry,
-  controlCatalogEntry,
+  catalogEntry,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, or } from "drizzle-orm";
@@ -27,14 +27,14 @@ export async function POST(req: Request) {
   // Get top gaps (not implemented controls)
   const gaps = await db
     .select({
-      catalogCode: controlCatalogEntry.code,
-      catalogTitleDe: controlCatalogEntry.titleDe,
-      catalogTitleEn: controlCatalogEntry.titleEn,
+      catalogCode: catalogEntry.code,
+      catalogTitleDe: catalogEntry.nameDe,
+      catalogTitleEn: catalogEntry.name,
       implementation: soaEntry.implementation,
-      catalogLevel: controlCatalogEntry.level,
+      catalogLevel: catalogEntry.level,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(
       and(
         eq(soaEntry.orgId, ctx.orgId),
@@ -48,7 +48,7 @@ export async function POST(req: Request) {
         ),
       ),
     )
-    .orderBy(controlCatalogEntry.sortOrder)
+    .orderBy(catalogEntry.sortOrder)
     .limit(50);
 
   // Rule-based prioritization (deterministic, no external AI call needed)
