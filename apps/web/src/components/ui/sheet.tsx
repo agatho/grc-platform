@@ -54,4 +54,16 @@ function SheetFooter({ children, className }: { children: React.ReactNode; class
   return <DialogFooter className={className}>{children}</DialogFooter>;
 }
 
-export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter };
+function SheetTrigger({ children, asChild, className }: { children: React.ReactNode; asChild?: boolean; className?: string }) {
+  return <div className={className}>{children}</div>;
+}
+
+function SheetDescription({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <p className={`text-sm text-muted-foreground ${className ?? ""}`}>{children}</p>;
+}
+
+function SheetClose({ children, className }: { children: React.ReactNode; className?: string }) {
+  return <div className={className}>{children}</div>;
+}
+
+export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetTrigger, SheetDescription, SheetClose };

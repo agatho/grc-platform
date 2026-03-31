@@ -41,11 +41,15 @@
       "legal": "Legal & Governance"
     },
     "groups": {
-      "governance": "Governance",
-      "riskSecurity": "Risk & Security",
-      "compliancePrivacy": "Compliance & Privacy",
-      "thirdParties": "Third Parties",
-      "processesArchitecture": "Processes & Architecture",
+      "erm": "Enterprise Risk Management",
+      "isms": "Information Security",
+      "icsAudit": "Controls & Audit",
+      "bcms": "Business Continuity",
+      "dpms": "Data Protection",
+      "tprmContracts": "Third Parties & Contracts",
+      "bpmArchitecture": "Processes & Architecture",
+      "esg": "ESG & Sustainability",
+      "whistleblowing": "Whistleblowing",
       "platform": "Platform"
     },
     "grouped": {
@@ -84,6 +88,7 @@
       "ismsSoa": "Statement of Applicability",
       "ismsReviews": "Management Reviews",
       "ismsPosture": "Security Posture",
+      "ismsProtectionNeeds": "Protection Needs",
       "ismsNis2": "NIS2 Compliance",
       "ismsCertifications": "Certifications",
       "ismsCve": "CVE Tracking",
@@ -155,7 +160,8 @@
       "users": "User Management",
       "modules": "Module Configuration",
       "auditLog": "Audit Trail",
-      "accessLog": "Access Log"
+      "accessLog": "Access Log",
+      "catalogs": "Catalogs & Frameworks"
     }
   },
   "orgSwitcher": {
@@ -1661,10 +1667,10 @@
   "catalogs": {
     "title": "Catalogs",
     "description": "Browse risk catalogs, control catalogs, and manage general objects",
-    "risks": "Risk Catalogs",
-    "controls": "Control Catalogs",
-    "objects": "Object Catalog",
-    "lifecycle": "Lifecycle",
+    "risksTitle": "Risk Catalogs",
+    "controlsTitle": "Control Catalogs",
+    "objectsTitle": "Object Catalog",
+    "lifecycleTitle": "Lifecycle",
     "riskCatalogs": "Risk Catalogs",
     "controlCatalogs": "Control Catalogs",
     "objectCatalog": "Object Catalog",

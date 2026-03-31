@@ -67,7 +67,7 @@ export default function CatalogHubPage() {
                     <Icon className="h-6 w-6" />
                   </div>
                   <h3 className="text-lg font-semibold text-gray-900 group-hover:text-blue-600">
-                    {t(section.key)}
+                    {t(`${section.key}Title`)}
                   </h3>
                   <p className="mt-1 text-sm text-gray-500">
                     {t(`${section.key}Description`)}

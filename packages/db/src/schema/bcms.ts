@@ -397,6 +397,10 @@ export const continuityStrategy = pgTable(
       scale: 2,
     }),
     annualCostEur: numeric("annual_cost_eur", { precision: 15, scale: 2 }),
+    effortHours: numeric("effort_hours", { precision: 8, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 }).default("EUR"),
+    budgetId: uuid("budget_id"),
+    costNote: text("cost_note"),
     // Resource requirements
     requiredStaff: integer("required_staff"),
     requiredSystems: text("required_systems"),
