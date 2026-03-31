@@ -1,4 +1,4 @@
-import { db, soaAiSuggestion, soaEntry, controlCatalogEntry, control, asset, risk } from "@grc/db";
+import { db, soaAiSuggestion, soaEntry, catalogEntry, control, asset, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -43,14 +43,14 @@ export async function POST(req: Request) {
   // Gather SoA data
   const soaRows = await db
     .select({
-      controlRef: controlCatalogEntry.code,
-      controlTitle: controlCatalogEntry.titleEn,
+      controlRef: catalogEntry.code,
+      controlTitle: catalogEntry.name,
       applicability: soaEntry.applicability,
       implementation: soaEntry.implementation,
       controlId: soaEntry.controlId,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
     .where(eq(soaEntry.orgId, ctx.orgId));
 
   if (soaRows.length === 0) {

@@ -11,7 +11,7 @@ import {
   vulnerability,
   securityIncident,
   soaEntry,
-  controlCatalogEntry,
+  catalogEntry,
   organization,
 } from "@grc/db";
 import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
@@ -168,13 +168,13 @@ async function computeDomainScores(
 
   const soaEntries = await db
     .select({
-      code: controlCatalogEntry.code,
+      code: catalogEntry.code,
       implementation: soaEntry.implementation,
     })
     .from(soaEntry)
     .innerJoin(
-      controlCatalogEntry,
-      eq(controlCatalogEntry.id, soaEntry.catalogEntryId),
+      catalogEntry,
+      eq(catalogEntry.id, soaEntry.catalogEntryId),
     )
     .where(eq(soaEntry.orgId, orgId));
 
