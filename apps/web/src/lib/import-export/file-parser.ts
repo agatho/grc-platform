@@ -61,35 +61,51 @@ function parseCsv(buffer: Buffer): ParsedFileResult {
 }
 
 async function parseExcel(buffer: Buffer): Promise<ParsedFileResult> {
-  // Dynamic import for xlsx to avoid bundling issues
-  const XLSX = await import("xlsx");
-  const workbook = XLSX.read(buffer, { type: "buffer" });
-  const firstSheetName = workbook.SheetNames[0];
-  if (!firstSheetName) {
+  // Dynamic import for exceljs to avoid bundling issues
+  const ExcelJS = await import("exceljs");
+  const wb = new ExcelJS.Workbook();
+  await wb.xlsx.load(buffer);
+
+  const sheet = wb.worksheets[0];
+  if (!sheet) {
     throw new Error("Excel file contains no sheets");
   }
 
-  const sheet = workbook.Sheets[firstSheetName];
-  const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, {
-    defval: "",
-    raw: false,
+  // Extract headers from first row
+  const headerRow = sheet.getRow(1);
+  const headers: string[] = [];
+  headerRow.eachCell((cell, colNumber) => {
+    headers[colNumber] = String(cell.value ?? "").trim();
   });
 
-  if (jsonData.length === 0) {
+  if (headers.length === 0) {
     return { headers: [], rows: [], previewRows: [] };
   }
 
-  // Convert all values to strings
-  const headers = Object.keys(jsonData[0]);
-  const rows = jsonData.map((row) => {
+  // Extract data rows
+  const rows: Record<string, string>[] = [];
+  sheet.eachRow((row, rowNumber) => {
+    if (rowNumber === 1) return; // skip header
     const stringRow: Record<string, string> = {};
-    for (const [key, value] of Object.entries(row)) {
-      stringRow[key.trim()] = String(value ?? "").trim();
+    row.eachCell((cell, colNumber) => {
+      const header = headers[colNumber];
+      if (header) {
+        stringRow[header] = String(cell.value ?? "").trim();
+      }
+    });
+    // Fill missing headers with empty string (equivalent to defval: "")
+    for (const h of headers) {
+      if (h && !(h in stringRow)) {
+        stringRow[h] = "";
+      }
     }
-    return stringRow;
+    rows.push(stringRow);
   });
 
   const previewRows = rows.slice(0, 5);
 
-  return { headers, rows, previewRows };
+  // Filter out sparse array entries from headers
+  const cleanHeaders = headers.filter(Boolean);
+
+  return { headers: cleanHeaders, rows, previewRows };
 }

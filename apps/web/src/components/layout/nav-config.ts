@@ -260,6 +260,7 @@ export const NAV_GROUPS: NavGroup[] = [
       // Documents
       { labelKey: "nav.grouped.documents", href: "/documents", icon: FileText, roles: "all", moduleKey: "dms", parentModule: "dms" },
       { labelKey: "nav.grouped.documentsCompliance", href: "/documents/compliance", icon: ShieldCheck, roles: ["admin", "risk_manager", "auditor"], moduleKey: "dms", parentModule: "dms" },
+      { labelKey: "nav.grouped.catalogs", href: "/catalogs?module=bpm", icon: BookOpen, roles: ["admin", "process_owner", "risk_manager"], parentModule: "bpm" },
     ],
   },
 
@@ -280,6 +281,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.esgReport", href: "/esg/report", icon: FileText, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
       // Tax CMS — regulatory compliance under sustainability
       { labelKey: "nav.grouped.taxCms", href: "/tax-cms", icon: Landmark, roles: ["admin"], parentModule: "tax-cms" },
+      { labelKey: "nav.grouped.catalogs", href: "/catalogs?module=esg", icon: BookOpen, roles: ["admin", "risk_manager"], moduleKey: "esg", parentModule: "esg" },
     ],
   },
 
@@ -315,6 +317,9 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.executive", href: "/executive", icon: LineChart, roles: ["admin"], parentModule: "platform" },
       { labelKey: "nav.grouped.graph", href: "/graph", icon: Network, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.search", href: "/search", icon: Search, roles: "all", parentModule: "platform" },
+      // Catalogs & Framework Coverage
+      { labelKey: "nav.grouped.catalogs", href: "/catalogs", icon: BookOpen, roles: ["admin", "risk_manager", "auditor"], parentModule: "platform" },
+      { labelKey: "nav.grouped.frameworkCoverage", href: "/catalogs/mappings", icon: Network, roles: ["admin", "risk_manager", "auditor"], parentModule: "platform" },
       // Compliance cross-cutting
       { labelKey: "nav.grouped.regulatory", href: "/compliance/regulatory", icon: Scale, roles: ["admin", "risk_manager", "auditor"], parentModule: "compliance" },
       { labelKey: "nav.grouped.complianceCulture", href: "/compliance/culture", icon: Users, roles: ["admin", "risk_manager"], parentModule: "compliance" },
