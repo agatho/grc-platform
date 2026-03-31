@@ -102,6 +102,11 @@ export async function POST(req: Request) {
         objective: body.data.objective,
         testInstructions: body.data.testInstructions,
         reviewDate: body.data.reviewDate,
+        costOnetime: body.data.costOnetime?.toString(),
+        costAnnual: body.data.costAnnual?.toString(),
+        effortHours: body.data.effortHours?.toString(),
+        budgetId: body.data.budgetId,
+        costNote: body.data.costNote,
         createdBy: ctx.userId,
         updatedBy: ctx.userId,
       })

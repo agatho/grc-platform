@@ -933,6 +933,16 @@
         "in_progress": "In Progress",
         "completed": "Completed",
         "cancelled": "Cancelled"
+      },
+      "costTracking": {
+        "title": "Cost Tracking",
+        "costOnetime": "Cost (one-time)",
+        "costAnnual": "Cost (annual)",
+        "effortHours": "Effort (hours)",
+        "budget": "Budget",
+        "budgetPlaceholder": "Select budget...",
+        "costNote": "Cost Note",
+        "costNotePlaceholder": "Notes on cost estimation..."
       }
     },
     "kri": {
@@ -1460,6 +1470,16 @@
     },
     "history": {
       "empty": "No history entries"
+    },
+    "costTracking": {
+      "title": "Cost Tracking",
+      "costOnetime": "Cost (one-time)",
+      "costAnnual": "Cost (annual)",
+      "effortHours": "Effort (hours)",
+      "budget": "Budget",
+      "budgetPlaceholder": "Select budget...",
+      "costNote": "Cost Note",
+      "costNotePlaceholder": "Notes on cost estimation..."
     }
   },
   "documents": {
@@ -1764,7 +1784,13 @@
       "confirmDeactivate": "Are you sure you want to deactivate this catalog?",
       "noCatalogs": "No catalogs activated for this organization",
       "inheritedFromParent": "Inherited from parent",
-      "activate": "Activate"
+      "activate": "Activate",
+      "filterByModule": "Filter by Module",
+      "allModules": "All Modules",
+      "searchCatalogs": "Search",
+      "searchPlaceholder": "Search catalogs...",
+      "noMatchingCatalogs": "No catalogs match the current filters",
+      "targetModules": "Target Modules"
     },
     "entry": {
       "code": "Code",
@@ -1779,10 +1805,28 @@
       "implementation": "Implementation Guidance",
       "controlType": "Control Type",
       "frequency": "Frequency"
+    },
+    "mappings": {
+      "frameworkCoverage": "Framework Coverage",
+      "frameworkCoverageDescription": "Visualize cross-framework mappings to understand how controls and requirements align across standards",
+      "implementOnce": "Implement once, satisfy many",
+      "implementOnceDetail": "By implementing {control}, you can satisfy {requirements} requirements across {frameworks} frameworks",
+      "searchEntries": "Search entries...",
+      "selectCatalog": "Select a catalog",
+      "noEntries": "No entries found",
+      "selectEntryToViewMappings": "Select an entry to view mappings",
+      "selectEntryToViewMappingsDetail": "Choose a catalog entry from the left panel to see how it maps to other frameworks",
+      "noMappingsFound": "No mappings found",
+      "noMappingsFoundDetail": "This entry does not have any cross-framework mappings yet",
+      "mappingSummary": "{mappings} mappings across {frameworks} frameworks",
+      "mapping": "mapping",
+      "mappings": "mappings",
+      "frameworks": "Frameworks"
     }
   },
   "isms": {
     "title": "Information Security Management",
+    "protectionNeeds": "Protection Needs",
     "dashboard": "ISMS Dashboard",
     "assets": "Asset Classification",
     "classification": "Protection Requirement Analysis",
@@ -1862,6 +1906,15 @@
     "saveClassification": "Save Classification",
     "classificationSaved": "Classification saved successfully",
     "classificationError": "Failed to save classification",
+    "protectionNeedsDescription": "Aggregated protection requirements (Schutzbedarf) per information asset based on C/I/A classification",
+    "biaIntegrationTitle": "BIA Integration",
+    "biaIntegrationDescription": "Business Impact Analysis (BIA) results from BCMS feed into availability protection needs. Assets linked to critical business processes automatically receive elevated availability ratings based on BIA impact assessments.",
+    "protectionClass": "Protection Class",
+    "protectionHigh": "High Protection",
+    "protectionVeryHigh": "Very High Protection",
+    "noAssetsFound": "No assets found",
+    "allSources": "All Sources",
+    "source": "Source",
     "backToAssets": "Back to Assets",
     "backToIncidents": "Back to Incidents",
     "normalDescription": "Minor damage, no personal data affected",
@@ -3706,17 +3759,45 @@
     "subtitle": "Budget planning, cost tracking & ROI analysis",
     "overview": "Budget Overview",
     "createBudget": "Create New Budget",
+    "name": "Budget Name",
+    "namePlaceholder": "e.g. ISMS Budget 2026",
+    "budgetType": "Budget Type",
+    "grcArea": "GRC Area",
+    "owner": "Owner",
+    "parentBudget": "Parent Budget",
+    "parentBudgetNone": "None (top-level)",
+    "period": "Period",
+    "periodStart": "Period Start",
+    "periodEnd": "Period End",
     "year": "Year",
     "totalAmount": "Total Amount",
+    "planned": "Planned",
+    "used": "Used",
+    "remaining": "Remaining",
+    "entities": "Linked Entities",
     "status": "Status",
     "approvedBy": "Approved By",
     "approvedAt": "Approved At",
     "notes": "Notes",
     "noBudgets": "No budgets found. Create your first budget to get started.",
+    "children": "Sub-Budgets",
+    "noChildren": "No sub-budgets",
+    "expand": "Expand",
+    "collapse": "Collapse",
+    "hierarchy": "Hierarchy",
+    "flatView": "Flat View",
+    "treeView": "Tree View",
     "statusLabels": {
       "draft": "Draft",
       "submitted": "Submitted",
-      "approved": "Approved"
+      "approved": "Approved",
+      "closed": "Closed"
+    },
+    "typeLabels": {
+      "management_system": "Management System",
+      "department": "Department",
+      "project": "Project",
+      "custom": "Custom"
     },
     "actions": {
       "submit": "Submit for Approval",

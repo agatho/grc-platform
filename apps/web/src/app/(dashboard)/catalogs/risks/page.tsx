@@ -16,10 +16,10 @@ interface RiskCatalog {
   id: string;
   name: string;
   description: string | null;
+  catalogType: string;
   version: string | null;
   source: string;
-  language: string;
-  entryCount: number;
+  targetModules: string[];
 }
 
 interface RiskCatalogEntry {
@@ -27,16 +27,11 @@ interface RiskCatalogEntry {
   catalogId: string;
   parentEntryId: string | null;
   code: string;
-  titleDe: string;
-  titleEn: string | null;
-  descriptionDe: string | null;
-  descriptionEn: string | null;
+  name: string;
+  description: string | null;
   level: number;
-  riskCategory: string | null;
-  defaultLikelihood: number | null;
-  defaultImpact: number | null;
   sortOrder: number;
-  isActive: boolean;
+  status: string;
 }
 
 export default function RiskCatalogBrowserPage() {
@@ -151,11 +146,11 @@ export default function RiskCatalogBrowserPage() {
           >
             <span className="font-mono text-xs text-gray-500">{entry.code}</span>
             <span className="text-sm font-medium text-gray-900">
-              {entry.titleDe}
+              {entry.name}
             </span>
-            {entry.riskCategory && (
+            {(entry as any).riskCategory && (
               <Badge variant="outline" className="text-xs">
-                {entry.riskCategory}
+                {(entry as any).riskCategory}
               </Badge>
             )}
           </button>
@@ -278,18 +273,18 @@ export default function RiskCatalogBrowserPage() {
                 <label className="text-xs font-medium text-gray-500">
                   {t("entry.title")}
                 </label>
-                <p className="text-sm font-medium">{selectedEntry.titleDe}</p>
+                <p className="text-sm font-medium">{selectedEntry.name}</p>
                 {selectedEntry.titleEn && (
                   <p className="text-sm text-gray-500">{selectedEntry.titleEn}</p>
                 )}
               </div>
-              {selectedEntry.descriptionDe && (
+              {selectedEntry.description && (
                 <div>
                   <label className="text-xs font-medium text-gray-500">
                     {t("entry.description")}
                   </label>
                   <p className="text-sm text-gray-600">
-                    {selectedEntry.descriptionDe}
+                    {selectedEntry.description}
                   </p>
                 </div>
               )}
@@ -300,28 +295,28 @@ export default function RiskCatalogBrowserPage() {
                   </label>
                   <p className="text-sm">{selectedEntry.level}</p>
                 </div>
-                {selectedEntry.riskCategory && (
+                {(selectedEntry as any).riskCategory && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.category")}
                     </label>
-                    <p className="text-sm">{selectedEntry.riskCategory}</p>
+                    <p className="text-sm">{(selectedEntry as any).riskCategory}</p>
                   </div>
                 )}
-                {selectedEntry.defaultLikelihood != null && (
+                {(selectedEntry as any).defaultLikelihood != null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.likelihood")}
                     </label>
-                    <p className="text-sm">{selectedEntry.defaultLikelihood}</p>
+                    <p className="text-sm">{(selectedEntry as any).defaultLikelihood}</p>
                   </div>
                 )}
-                {selectedEntry.defaultImpact != null && (
+                {(selectedEntry as any).defaultImpact != null && (
                   <div>
                     <label className="text-xs font-medium text-gray-500">
                       {t("entry.impact")}
                     </label>
-                    <p className="text-sm">{selectedEntry.defaultImpact}</p>
+                    <p className="text-sm">{(selectedEntry as any).defaultImpact}</p>
                   </div>
                 )}
               </div>

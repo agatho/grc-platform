@@ -139,6 +139,11 @@ export const createRiskTreatmentSchema = z.object({
   costEstimate: z.number().nonnegative().optional(),
   status: z.enum(treatmentStatusValues).default("planned"),
   dueDate: z.string().optional(),
+  // Cost tracking
+  costAnnual: z.number().nonnegative().optional(),
+  effortHours: z.number().nonnegative().optional(),
+  budgetId: z.string().uuid().optional(),
+  costNote: z.string().optional(),
 });
 
 export const updateRiskTreatmentSchema = createRiskTreatmentSchema.partial();

@@ -933,6 +933,16 @@
         "in_progress": "In Bearbeitung",
         "completed": "Abgeschlossen",
         "cancelled": "Abgebrochen"
+      },
+      "costTracking": {
+        "title": "Kostenerfassung",
+        "costOnetime": "Kosten (einmalig)",
+        "costAnnual": "Kosten (jaehrlich)",
+        "effortHours": "Aufwand (Stunden)",
+        "budget": "Budget",
+        "budgetPlaceholder": "Budget auswaehlen...",
+        "costNote": "Kostennotiz",
+        "costNotePlaceholder": "Anmerkungen zur Kostenschaetzung..."
       }
     },
     "kri": {
@@ -1460,6 +1470,16 @@
     },
     "history": {
       "empty": "Keine Historieneintraege"
+    },
+    "costTracking": {
+      "title": "Kostenerfassung",
+      "costOnetime": "Kosten (einmalig)",
+      "costAnnual": "Kosten (jaehrlich)",
+      "effortHours": "Aufwand (Stunden)",
+      "budget": "Budget",
+      "budgetPlaceholder": "Budget auswaehlen...",
+      "costNote": "Kostennotiz",
+      "costNotePlaceholder": "Anmerkungen zur Kostenschaetzung..."
     }
   },
   "documents": {
@@ -1764,7 +1784,13 @@
       "confirmDeactivate": "Sind Sie sicher, dass Sie diesen Katalog deaktivieren moechten?",
       "noCatalogs": "Keine Kataloge fuer diese Organisation aktiviert",
       "inheritedFromParent": "Von uebergeordneter Org. geerbt",
-      "activate": "Aktivieren"
+      "activate": "Aktivieren",
+      "filterByModule": "Nach Modul filtern",
+      "allModules": "Alle Module",
+      "searchCatalogs": "Suche",
+      "searchPlaceholder": "Kataloge durchsuchen...",
+      "noMatchingCatalogs": "Keine Kataloge entsprechen den aktuellen Filtern",
+      "targetModules": "Zielmodule"
     },
     "entry": {
       "code": "Code",
@@ -1779,10 +1805,28 @@
       "implementation": "Umsetzungshinweise",
       "controlType": "Kontrolltyp",
       "frequency": "Haeufigkeit"
+    },
+    "mappings": {
+      "frameworkCoverage": "Framework-Abdeckung",
+      "frameworkCoverageDescription": "Visualisieren Sie Cross-Framework-Mappings, um zu verstehen, wie Kontrollen und Anforderungen ueber Standards hinweg zusammenpassen",
+      "implementOnce": "Einmal implementieren, viele erfuellen",
+      "implementOnceDetail": "Durch die Implementierung von {control} koennen Sie {requirements} Anforderungen in {frameworks} Frameworks erfuellen",
+      "searchEntries": "Eintraege suchen...",
+      "selectCatalog": "Katalog auswaehlen",
+      "noEntries": "Keine Eintraege gefunden",
+      "selectEntryToViewMappings": "Eintrag auswaehlen",
+      "selectEntryToViewMappingsDetail": "Waehlen Sie einen Katalogeintrag im linken Bereich, um dessen Zuordnungen zu anderen Frameworks zu sehen",
+      "noMappingsFound": "Keine Zuordnungen gefunden",
+      "noMappingsFoundDetail": "Dieser Eintrag hat noch keine Cross-Framework-Zuordnungen",
+      "mappingSummary": "{mappings} Zuordnungen ueber {frameworks} Frameworks",
+      "mapping": "Zuordnung",
+      "mappings": "Zuordnungen",
+      "frameworks": "Frameworks"
     }
   },
   "isms": {
     "title": "Informationssicherheitsmanagement",
+    "protectionNeeds": "Schutzbedarf",
     "dashboard": "ISMS Dashboard",
     "assets": "Asset-Klassifizierung",
     "classification": "Schutzbedarfsfeststellung",
@@ -1862,6 +1906,15 @@
     "saveClassification": "Klassifizierung speichern",
     "classificationSaved": "Klassifizierung erfolgreich gespeichert",
     "classificationError": "Klassifizierung konnte nicht gespeichert werden",
+    "protectionNeedsDescription": "Aggregierte Schutzbedarfsfeststellung pro Informationswert basierend auf C/I/A-Klassifizierung",
+    "biaIntegrationTitle": "BIA-Integration",
+    "biaIntegrationDescription": "Ergebnisse der Business-Impact-Analyse (BIA) aus dem BCMS fliessen in den Verfuegbarkeits-Schutzbedarf ein. Assets, die mit kritischen Geschaeftsprozessen verknuepft sind, erhalten automatisch erhoehte Verfuegbarkeitsbewertungen basierend auf BIA-Auswirkungsanalysen.",
+    "protectionClass": "Schutzklasse",
+    "protectionHigh": "Hoher Schutzbedarf",
+    "protectionVeryHigh": "Sehr hoher Schutzbedarf",
+    "noAssetsFound": "Keine Assets gefunden",
+    "allSources": "Alle Quellen",
+    "source": "Quelle",
     "backToAssets": "Zurueck zu Assets",
     "backToIncidents": "Zurueck zu Vorfaellen",
     "normalDescription": "Geringfuegiger Schaden, keine personenbezogenen Daten",
@@ -3706,17 +3759,45 @@
     "subtitle": "Budgetplanung, Kostenverfolgung & ROI-Analyse",
     "overview": "Budget-Uebersicht",
     "createBudget": "Neues Budget erstellen",
+    "name": "Budgetname",
+    "namePlaceholder": "z.B. ISMS Budget 2026",
+    "budgetType": "Budgettyp",
+    "grcArea": "GRC-Bereich",
+    "owner": "Verantwortlicher",
+    "parentBudget": "Uebergeordnetes Budget",
+    "parentBudgetNone": "Keines (oberste Ebene)",
+    "period": "Zeitraum",
+    "periodStart": "Beginn",
+    "periodEnd": "Ende",
     "year": "Jahr",
     "totalAmount": "Gesamtbetrag",
+    "planned": "Geplant",
+    "used": "Verwendet",
+    "remaining": "Verbleibend",
+    "entities": "Verknuepfte Objekte",
     "status": "Status",
     "approvedBy": "Genehmigt von",
     "approvedAt": "Genehmigt am",
     "notes": "Anmerkungen",
     "noBudgets": "Keine Budgets gefunden. Erstellen Sie Ihr erstes Budget.",
+    "children": "Unterbudgets",
+    "noChildren": "Keine Unterbudgets",
+    "expand": "Aufklappen",
+    "collapse": "Zuklappen",
+    "hierarchy": "Hierarchie",
+    "flatView": "Flache Ansicht",
+    "treeView": "Baumansicht",
     "statusLabels": {
       "draft": "Entwurf",
       "submitted": "Eingereicht",
-      "approved": "Genehmigt"
+      "approved": "Genehmigt",
+      "closed": "Geschlossen"
+    },
+    "typeLabels": {
+      "management_system": "Managementsystem",
+      "department": "Abteilung",
+      "project": "Projekt",
+      "custom": "Benutzerdefiniert"
     },
     "actions": {
       "submit": "Zur Genehmigung einreichen",
