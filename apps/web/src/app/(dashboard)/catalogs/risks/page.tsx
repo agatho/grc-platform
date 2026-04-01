@@ -226,7 +226,7 @@ export default function RiskCatalogBrowserPage() {
               {selectedCatalog?.name ?? t("riskCatalogs")}
               {selectedCatalog && (
                 <Badge variant="secondary" className="text-xs">
-                  {selectedCatalog.entryCount} {t("entry.entries")}
+                  {entries.length} {t("entry.entries")}
                 </Badge>
               )}
             </h3>
@@ -274,9 +274,6 @@ export default function RiskCatalogBrowserPage() {
                   {t("entry.title")}
                 </label>
                 <p className="text-sm font-medium">{selectedEntry.name}</p>
-                {selectedEntry.titleEn && (
-                  <p className="text-sm text-gray-500">{selectedEntry.titleEn}</p>
-                )}
               </div>
               {selectedEntry.description && (
                 <div>
