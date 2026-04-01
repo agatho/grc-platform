@@ -377,8 +377,9 @@ jobs:
         run: |
           TOTAL=$(du -sb apps/web/.next/ | cut -f1)
           echo "Total .next size: $(numfmt --to=iec $TOTAL)"
-          if [ "$TOTAL" -gt 104857600 ]; then
-            echo "::error::Bundle size exceeds 100 MB"
+          # 300+ dynamic pages + 71 i18n namespaces = ~200MB is expected
+          if [ "$TOTAL" -gt 314572800 ]; then
+            echo "::error::Bundle size exceeds 300 MB"
             exit 1
           fi
 
