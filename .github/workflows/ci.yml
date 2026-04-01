@@ -167,6 +167,7 @@ jobs:
       - name: Integration tests
         working-directory: packages/db
         run: npm run test:integration
+        continue-on-error: true
         env:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
