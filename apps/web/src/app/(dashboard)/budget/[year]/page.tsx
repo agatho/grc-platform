@@ -378,6 +378,7 @@ function StatusBadge({ status, t }: { status: BudgetStatus; t: (key: string) => 
     draft: "bg-gray-100 text-gray-700",
     submitted: "bg-yellow-100 text-yellow-700",
     approved: "bg-green-100 text-green-700",
+    closed: "bg-blue-100 text-blue-700",
   };
   return (
     <Badge variant="outline" className={`${colors[status]} text-xs`}>
