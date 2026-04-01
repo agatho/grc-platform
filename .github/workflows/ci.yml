@@ -165,12 +165,16 @@ jobs:
           "
 
       - name: Integration tests
-        run: npx turbo test:integration
+        working-directory: packages/db
+        run: npm run test:integration
         env:
-          TEST_ENV: ci
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
       - name: RLS isolation tests
-        run: npx turbo test:rls
+        working-directory: packages/db
+        run: npm run test:rls
+        env:
+          DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
   # ────────────────────────────────────────────────
   # 4. Database migration & integrity verification
