@@ -106,10 +106,11 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
   });
 
   it("audit trigger exists on org_active_catalog", async () => {
+    // Accept both standard name (audit_trigger) and legacy name (audit_org_active_catalog)
     const triggers = await testDb.client`
       SELECT DISTINCT tgrelid::regclass::text AS table_name
       FROM pg_trigger
-      WHERE tgname = 'audit_trigger'
+      WHERE (tgname = 'audit_trigger' OR tgname LIKE 'audit_%_catalog')
         AND tgrelid::regclass::text = 'org_active_catalog'
     `;
 
