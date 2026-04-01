@@ -375,11 +375,14 @@ jobs:
 
       - name: Check bundle size
         run: |
+          # Check client-side JS bundle (not full .next directory which includes server chunks)
+          STATIC=$(du -sb apps/web/.next/static/ 2>/dev/null | cut -f1 || echo "0")
           TOTAL=$(du -sb apps/web/.next/ | cut -f1)
-          echo "Total .next size: $(numfmt --to=iec $TOTAL)"
-          # 300+ dynamic pages + 71 i18n namespaces = ~200MB is expected
-          if [ "$TOTAL" -gt 314572800 ]; then
-            echo "::error::Bundle size exceeds 300 MB"
+          echo "Client JS bundle: $(numfmt --to=iec $STATIC)"
+          echo "Total .next directory: $(numfmt --to=iec $TOTAL)"
+          # Client bundle should stay under 50 MB
+          if [ "$STATIC" -gt 52428800 ]; then
+            echo "::error::Client JS bundle exceeds 50 MB"
             exit 1
           fi
 
