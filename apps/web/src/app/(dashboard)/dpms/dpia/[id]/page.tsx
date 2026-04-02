@@ -3,14 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, CheckCircle, Plus } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Plus, AlertTriangle, ShieldCheck } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Dpia, DpiaRisk, DpiaMeasure } from "@grc/shared";
 
-const WIZARD_STEPS = ["description", "necessity", "risks", "measures", "signOff"] as const;
+const WIZARD_STEPS = ["prescreen", "description", "necessity", "risks", "measures", "signOff"] as const;
 type WizardStep = typeof WIZARD_STEPS[number];
 
 const STATUS_COLORS: Record<string, string> = {
@@ -21,6 +21,13 @@ const STATUS_COLORS: Record<string, string> = {
   approved: "bg-green-100 text-green-700",
   rejected: "bg-red-100 text-red-700",
 };
+
+interface CriteriaCatalogEntry {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+}
 
 export default function DpiaDetailPage() {
   return (
@@ -42,8 +49,13 @@ function DpiaDetailInner() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<DpiaDetailData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeStep, setActiveStep] = useState<WizardStep>("description");
+  const [activeStep, setActiveStep] = useState<WizardStep>("prescreen");
   const [signingOff, setSigningOff] = useState(false);
+
+  // Pre-screening state
+  const [criteria, setCriteria] = useState<CriteriaCatalogEntry[]>([]);
+  const [criteriaLoading, setCriteriaLoading] = useState(false);
+  const [checkedCriteria, setCheckedCriteria] = useState<Set<string>>(new Set());
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -58,9 +70,34 @@ function DpiaDetailInner() {
     }
   }, [id]);
 
+  const fetchCriteria = useCallback(async () => {
+    setCriteriaLoading(true);
+    try {
+      const res = await fetch("/api/v1/dpms/templates?source=arctos_dpia_criteria");
+      if (res.ok) {
+        const json = await res.json();
+        setCriteria(json.data ?? []);
+      }
+    } finally {
+      setCriteriaLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     void fetchData();
-  }, [fetchData]);
+    void fetchCriteria();
+  }, [fetchData, fetchCriteria]);
+
+  const toggleCriterion = (code: string) => {
+    setCheckedCriteria((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  };
+
+  const dpiaRequired = checkedCriteria.size >= 2;
 
   const handleSignOff = async () => {
     setSigningOff(true);
@@ -126,6 +163,92 @@ function DpiaDetailInner() {
 
       {/* Step Content */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
+        {activeStep === "prescreen" && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="font-semibold text-gray-900">{t("dpia.prescreen.title")}</h2>
+              {checkedCriteria.size > 0 && (
+                <Badge
+                  variant="outline"
+                  className={`text-xs ${
+                    dpiaRequired
+                      ? "bg-red-50 text-red-700 border-red-200"
+                      : "bg-green-50 text-green-700 border-green-200"
+                  }`}
+                >
+                  {checkedCriteria.size} / {criteria.length} {t("dpia.prescreen.criteriaMatched")}
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-gray-600">{t("dpia.prescreen.description")}</p>
+
+            {/* DPIA Required indicator */}
+            {checkedCriteria.size > 0 && (
+              <div
+                className={`rounded-lg p-4 flex items-center gap-3 ${
+                  dpiaRequired
+                    ? "bg-red-50 border border-red-200"
+                    : "bg-green-50 border border-green-200"
+                }`}
+              >
+                {dpiaRequired ? (
+                  <>
+                    <AlertTriangle className="h-5 w-5 text-red-600 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-red-800">{t("dpia.prescreen.dpiaRequired")}</p>
+                      <p className="text-sm text-red-700">{t("dpia.prescreen.dpiaRequiredHint")}</p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-5 w-5 text-green-600 flex-shrink-0" />
+                    <div>
+                      <p className="font-medium text-green-800">{t("dpia.prescreen.dpiaNotRequired")}</p>
+                      <p className="text-sm text-green-700">{t("dpia.prescreen.dpiaNotRequiredHint")}</p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
+            {/* Criteria checklist */}
+            {criteriaLoading ? (
+              <div className="flex items-center gap-2 py-4 text-sm text-gray-400">
+                <Loader2 size={14} className="animate-spin" />
+                {t("dpia.prescreen.loading")}
+              </div>
+            ) : criteria.length === 0 ? (
+              <p className="text-sm text-gray-400 py-4">{t("dpia.prescreen.noCriteria")}</p>
+            ) : (
+              <div className="space-y-2">
+                {criteria.map((criterion) => (
+                  <label
+                    key={criterion.id}
+                    className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                      checkedCriteria.has(criterion.code)
+                        ? "bg-blue-50 border-blue-200"
+                        : "border-gray-200 hover:bg-gray-50"
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={checkedCriteria.has(criterion.code)}
+                      onChange={() => toggleCriterion(criterion.code)}
+                      className="h-4 w-4 rounded text-blue-600 mt-0.5"
+                    />
+                    <div>
+                      <span className="text-sm font-medium text-gray-900">{criterion.title}</span>
+                      {criterion.description && (
+                        <p className="text-xs text-gray-500 mt-0.5">{criterion.description}</p>
+                      )}
+                    </div>
+                  </label>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
         {activeStep === "description" && (
           <div className="space-y-4">
             <h2 className="font-semibold text-gray-900">{t("dpia.steps.description")}</h2>
