@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, Download, RefreshCcw, FileCheck } from "lucide-react";
+import { Loader2, Download, RefreshCcw, FileCheck, ShieldCheck } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -64,6 +64,8 @@ function SoaInner() {
   const [filter, setFilter] = useState<string>("all");
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState<string | null>(null);
+  const [populating, setPopulating] = useState(false);
+  const [populateResult, setPopulateResult] = useState<{ created: number; skipped: number } | null>(null);
   const [editForm, setEditForm] = useState<{
     applicability: SoaApplicability;
     implementation: SoaImplementation;
@@ -100,6 +102,21 @@ function SoaInner() {
     void fetchData();
   };
 
+  const handlePopulateFromAnnexA = async () => {
+    setPopulating(true);
+    setPopulateResult(null);
+    try {
+      const res = await fetch("/api/v1/isms/soa/populate", { method: "POST" });
+      if (res.ok) {
+        const json = await res.json();
+        setPopulateResult({ created: json.created ?? 0, skipped: json.skipped ?? 0 });
+        void fetchData();
+      }
+    } finally {
+      setPopulating(false);
+    }
+  };
+
   const handleExport = () => {
     window.open("/api/v1/isms/soa/export", "_blank");
   };
@@ -130,6 +147,10 @@ function SoaInner() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold text-gray-900">{t("soa.title")}</h1>
         <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handlePopulateFromAnnexA} disabled={populating}>
+            {populating ? <Loader2 size={14} className="mr-1 animate-spin" /> : <ShieldCheck size={14} className="mr-1" />}
+            {t("soa.populateAnnexA")}
+          </Button>
           <Button variant="outline" size="sm" onClick={handleGenerate}>
             <RefreshCcw size={14} className="mr-1" /> {t("soa.generate")}
           </Button>
@@ -138,6 +159,21 @@ function SoaInner() {
           </Button>
         </div>
       </div>
+
+      {/* Populate Result */}
+      {populateResult && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 flex items-center justify-between">
+          <p className="text-sm text-green-800">
+            {t("soa.populateResult", { created: populateResult.created, skipped: populateResult.skipped })}
+          </p>
+          <button
+            onClick={() => setPopulateResult(null)}
+            className="text-green-600 hover:text-green-800 text-sm font-medium"
+          >
+            {t("actions.dismiss")}
+          </button>
+        </div>
+      )}
 
       {/* Stats Bar */}
       {stats && (

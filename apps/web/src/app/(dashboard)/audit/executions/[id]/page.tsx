@@ -14,6 +14,8 @@ import {
   XCircle,
   AlertTriangle,
   MinusCircle,
+  BookOpen,
+  ChevronDown,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -261,6 +263,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const [items, setItems] = useState<AuditChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [importing, setImporting] = useState(false);
+  const [importMenuOpen, setImportMenuOpen] = useState(false);
+  const [importResult, setImportResult] = useState<{ count: number; source: string } | null>(null);
   const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(null);
   const [createFindingItem, setCreateFindingItem] = useState<AuditChecklistItem | null>(null);
 
@@ -315,6 +320,47 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       }
     } finally {
       setGenerating(false);
+    }
+  };
+
+  const FRAMEWORK_SOURCES = [
+    { key: "iia_standards_2024", labelKey: "importIia" },
+    { key: "isae3402_soc2", labelKey: "importSoc2" },
+    { key: "cobit_2019", labelKey: "importCobit" },
+  ] as const;
+
+  const handleImportFromFramework = async (source: string, labelKey: string) => {
+    setImporting(true);
+    setImportMenuOpen(false);
+    setImportResult(null);
+    try {
+      const templateRes = await fetch(`/api/v1/audit-mgmt/templates?source=${source}`);
+      if (!templateRes.ok) return;
+      const templateJson = await templateRes.json();
+      const entries: Array<{ question: string; reference?: string }> = templateJson.data ?? [];
+
+      let created = 0;
+      for (const entry of entries) {
+        const body = {
+          question: entry.question ?? entry.reference ?? "",
+          reference: entry.reference,
+        };
+        const res = await fetch(
+          `/api/v1/audit-mgmt/audits/${auditId}/checklists`,
+          {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(body),
+          },
+        );
+        if (res.ok) created++;
+      }
+
+      setImportResult({ count: created, source: labelKey });
+      void fetchChecklists();
+      if (selectedChecklist) void fetchItems(selectedChecklist);
+    } finally {
+      setImporting(false);
     }
   };
 
@@ -401,16 +447,65 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             </Button>
           ))}
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleGenerate}
-          disabled={generating}
-        >
-          <Sparkles size={14} className={`mr-1 ${generating ? "animate-spin" : ""}`} />
-          {t("generateChecklist")}
-        </Button>
+        <div className="flex gap-2">
+          {/* Import from Framework dropdown */}
+          <div className="relative">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportMenuOpen(!importMenuOpen)}
+              disabled={importing}
+            >
+              {importing ? (
+                <Loader2 size={14} className="mr-1 animate-spin" />
+              ) : (
+                <BookOpen size={14} className="mr-1" />
+              )}
+              {t("importFromFramework")}
+              <ChevronDown size={12} className="ml-1" />
+            </Button>
+            {importMenuOpen && (
+              <div className="absolute right-0 top-full mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+                {FRAMEWORK_SOURCES.map((fw) => (
+                  <button
+                    key={fw.key}
+                    type="button"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    onClick={() => handleImportFromFramework(fw.key, fw.labelKey)}
+                  >
+                    {t(fw.labelKey)}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleGenerate}
+            disabled={generating}
+          >
+            <Sparkles size={14} className={`mr-1 ${generating ? "animate-spin" : ""}`} />
+            {t("generateChecklist")}
+          </Button>
+        </div>
       </div>
+
+      {/* Import Result */}
+      {importResult && (
+        <div className="rounded-lg border border-green-200 bg-green-50 p-3 flex items-center justify-between">
+          <p className="text-sm text-green-800">
+            {t("importResult", { count: importResult.count, source: t(importResult.source) })}
+          </p>
+          <button
+            onClick={() => setImportResult(null)}
+            className="text-green-600 hover:text-green-800 text-sm font-medium"
+          >
+            {t("dismiss")}
+          </button>
+        </div>
+      )}
 
       {selectedChecklist && (
         <>

@@ -359,7 +359,8 @@
     "search": "Suchen",
     "filter": "Filtern",
     "export": "Exportieren",
-    "refresh": "Aktualisieren"
+    "refresh": "Aktualisieren",
+    "dismiss": "Verwerfen"
   },
   "status": {
     "active": "Aktiv",
@@ -2179,6 +2180,8 @@
         "planned": "Geplant",
         "not_implemented": "Nicht umgesetzt"
       },
+      "populateAnnexA": "Aus ISO 27001 Anhang A befuellen",
+      "populateResult": "{created} Eintraege erstellt, {skipped} vorhandene uebersprungen",
       "filters": {
         "all": "Alle",
         "applicable": "Anwendbar",
@@ -2577,7 +2580,15 @@
         "vital_interest": "Lebenswichtiges Interesse",
         "public_interest": "Oeffentliches Interesse",
         "legitimate_interest": "Berecht. Interesse"
-      }
+      },
+      "createDescription": "Neue Verarbeitungstaetigkeit mit katalogbasierter Rechtsgrundlage und Datenkategorien anlegen.",
+      "titlePlaceholder": "z.B. Gehaltsabrechnung Mitarbeiter",
+      "purposePlaceholder": "Zweck der Verarbeitungstaetigkeit beschreiben...",
+      "selectLegalBasis": "Rechtsgrundlage waehlen...",
+      "selectCategories": "Anwendbare Datenkategorien aus dem DSGVO-Katalog auswaehlen",
+      "loadingCatalog": "Katalogeintraege werden geladen...",
+      "noCatalogCategories": "Keine Katalog-Datenkategorien verfuegbar",
+      "cancel": "Abbrechen"
     },
     "dpia": {
       "title": "Datenschutz-Folgenabschaetzung",
@@ -2612,7 +2623,8 @@
         "necessity": "Erforderlichkeit",
         "risks": "Risiken",
         "measures": "Massnahmen",
-        "signOff": "DPO-Freigabe"
+        "signOff": "DPO-Freigabe",
+        "prescreen": "Vorabpruefung"
       },
       "status": {
         "draft": "Entwurf",
@@ -2621,6 +2633,17 @@
         "pending_dpo_review": "DPO-Pruefung ausstehend",
         "approved": "Genehmigt",
         "rejected": "Abgelehnt"
+      },
+      "prescreen": {
+        "title": "Vorabpruefung: DSGVO Art. 35 Kriterien",
+        "description": "Pruefen Sie, welche der folgenden Hochrisiko-Kriterien auf diese Verarbeitungstaetigkeit zutreffen. Wenn 2 oder mehr Kriterien erfuellt sind, ist eine DSFA gemaess EDSA-Leitlinien erforderlich.",
+        "criteriaMatched": "Kriterien erfuellt",
+        "dpiaRequired": "DSFA erforderlich",
+        "dpiaRequiredHint": "2 oder mehr Kriterien sind erfuellt. Eine vollstaendige Datenschutz-Folgenabschaetzung muss durchgefuehrt werden.",
+        "dpiaNotRequired": "DSFA voraussichtlich nicht erforderlich",
+        "dpiaNotRequiredHint": "Weniger als 2 Kriterien erfuellt. Eine DSFA kann je nach Kontext dennoch ratsam sein.",
+        "loading": "DSFA-Kriterien werden geladen...",
+        "noCriteria": "Keine DSFA-Kriterien im Katalog verfuegbar"
       }
     },
     "dsr": {
@@ -2767,7 +2790,6 @@
     "findings": "Feststellungen",
     "report": "Bericht",
     "reports": "Berichte",
-
     "planned": "Geplant",
     "inProgress": "In Bearbeitung",
     "completed": "Abgeschlossen",
@@ -2782,7 +2804,6 @@
     "findingsBreakdown": "Feststellungen nach Schweregrad",
     "quickNav": "Schnellnavigation",
     "viewUniverse": "Audit-Universum ansehen",
-
     "name": "Name",
     "entityType": "Objekttyp",
     "riskScore": "Risikobewertung",
@@ -2802,7 +2823,6 @@
     "auditCycle": "Audit-Zyklus (Monate)",
     "notes": "Anmerkungen",
     "save": "Speichern",
-
     "entityTypes": {
       "process": "Prozess",
       "department": "Abteilung",
@@ -2810,7 +2830,6 @@
       "vendor": "Lieferant",
       "custom": "Sonstige"
     },
-
     "createPlan": "Plan erstellen",
     "year": "Jahr",
     "description": "Beschreibung",
@@ -2818,14 +2837,12 @@
     "emptyPlans": "Noch keine Audit-Plaene",
     "autoSuggest": "Auto-Vorschlag",
     "suggestedAudits": "Vorgeschlagene Audits (sortiert nach Risiko und Zeit seit letztem Audit)",
-
     "planStatus": {
       "draft": "Entwurf",
       "approved": "Genehmigt",
       "active": "Aktiv",
       "completed": "Abgeschlossen"
     },
-
     "planNotFound": "Audit-Plan nicht gefunden",
     "backToPlans": "Zurueck zu Plaenen",
     "approve": "Genehmigen",
@@ -2843,14 +2860,12 @@
     "plannedEnd": "Geplantes Ende",
     "estimatedDays": "Geschaetzte Tage",
     "status": "Status",
-
     "createAudit": "Audit erstellen",
     "auditTitle": "Audit-Titel",
     "auditType": "Audit-Typ",
     "emptyAudits": "Noch keine Audits",
     "lead": "Leitender Pruefer",
     "findingCount": "Anzahl Feststellungen",
-
     "auditTypes": {
       "internal": "Intern",
       "external": "Extern",
@@ -2858,7 +2873,6 @@
       "surveillance": "Ueberwachung",
       "followUp": "Nachpruefung"
     },
-
     "auditStatus": {
       "planned": "Geplant",
       "preparation": "Vorbereitung",
@@ -2868,11 +2882,9 @@
       "completed": "Abgeschlossen",
       "cancelled": "Abgebrochen"
     },
-
     "auditNotFound": "Audit nicht gefunden",
     "backToAudits": "Zurueck zu Audits",
     "advanceTo": "Weiter zu",
-
     "tabs": {
       "overview": "Uebersicht",
       "checklists": "Checklisten",
@@ -2880,22 +2892,25 @@
       "findings": "Feststellungen",
       "report": "Bericht"
     },
-
     "details": "Details",
     "team": "Team",
     "actualStart": "Tatsaechlicher Beginn",
     "actualEnd": "Tatsaechliches Ende",
     "conclusion": "Ergebnis",
     "frameworks": "Frameworks im Geltungsbereich",
-
     "conclusions": {
       "conforming": "Konform",
       "minor_nonconformity": "Geringfuegige Abweichung",
       "major_nonconformity": "Wesentliche Abweichung",
       "not_applicable": "Nicht zutreffend"
     },
-
     "generateChecklist": "Checkliste generieren",
+    "importFromFramework": "Aus Framework importieren",
+    "importIia": "IIA-Standards",
+    "importSoc2": "SOC 2-Kriterien",
+    "importCobit": "COBIT",
+    "importResult": "{count} Checklisten-Punkte aus {source} importiert",
+    "dismiss": "Verwerfen",
     "progress": "Fortschritt",
     "question": "Frage",
     "result": "Ergebnis",
@@ -2910,7 +2925,6 @@
     "remediationDueDate": "Frist fuer Korrektur",
     "findingsForAudit": "Feststellungen fuer dieses Audit",
     "emptyFindings": "Noch keine Feststellungen fuer dieses Audit",
-
     "results": {
       "conforming": "Konform",
       "nonconforming": "Abweichung",
@@ -2918,7 +2932,6 @@
       "not_applicable": "N/A",
       "open": "Offen"
     },
-
     "severity": {
       "significantNonconformity": "Wesentliche Abweichung",
       "insignificantNonconformity": "Geringfuegige Abweichung",
@@ -2926,14 +2939,12 @@
       "recommendation": "Empfehlung",
       "observation": "Beobachtung"
     },
-
     "activityLog": "Aktivitaetenprotokoll",
     "addActivity": "Aktivitaet hinzufuegen",
     "activityType": "Aktivitaetstyp",
     "activityTitle": "Titel",
     "durationMinutes": "Dauer (Minuten)",
     "emptyActivities": "Noch keine Aktivitaeten erfasst",
-
     "activityTypes": {
       "interview": "Interview",
       "documentReview": "Dokumentenpruefung",
@@ -2942,11 +2953,9 @@
       "meeting": "Besprechung",
       "other": "Sonstiges"
     },
-
     "viewReport": "Berichtsdokument ansehen",
     "reportNotReady": "Der Bericht ist verfuegbar, sobald das Audit abgeschlossen ist"
   },
-
   "tprm": {
     "title": "Drittparteien-Risikomanagement",
     "description": "Lieferanten-Lebenszyklus, Due Diligence und Lieferkettenrisiko verwalten",
@@ -2956,26 +2965,22 @@
     "createVendor": "Lieferant anlegen",
     "searchVendors": "Lieferanten suchen...",
     "pending": "ausstehend",
-
     "kpi": {
       "totalVendors": "Lieferanten gesamt",
       "critical": "Kritisch (Tier 1)",
       "assessmentDue": "Bewertung faellig",
       "lksgRelevant": "LkSG-relevant"
     },
-
     "tierDistribution": "Lieferanten-Tier-Verteilung",
     "ddQueue": "Due-Diligence-Warteschlange",
     "noPendingDD": "Keine ausstehenden Frageboegen",
     "overdueAssessments": "Ueberfaellige Bewertungen",
-
     "tier": {
       "critical": "Kritisch",
       "important": "Wichtig",
       "standard": "Standard",
       "low_risk": "Niedrigrisiko"
     },
-
     "category": {
       "it_services": "IT-Dienstleistungen",
       "cloud_provider": "Cloud-Anbieter",
@@ -2987,7 +2992,6 @@
       "hr_services": "HR-Dienstleistungen",
       "other": "Sonstiges"
     },
-
     "status": {
       "prospect": "Interessent",
       "onboarding": "Onboarding",
@@ -2996,13 +3000,11 @@
       "suspended": "Gesperrt",
       "terminated": "Beendet"
     },
-
     "filter": {
       "allTiers": "Alle Tiers",
       "allCategories": "Alle Kategorien",
       "allStatuses": "Alle Status"
     },
-
     "vendor": {
       "name": "Lieferant",
       "category": "Kategorie",
@@ -3024,7 +3026,6 @@
       "website": "Webseite",
       "taxId": "Steuernummer"
     },
-
     "tab": {
       "overview": "Uebersicht",
       "dueDiligence": "Due Diligence",
@@ -3032,7 +3033,6 @@
       "contracts": "Vertraege",
       "lksg": "LkSG"
     },
-
     "dd": {
       "history": "Due-Diligence-Verlauf",
       "send": "Fragebogen senden",
@@ -3044,14 +3044,12 @@
       "riskScore": "Risiko-Score",
       "noRecords": "Keine Due-Diligence-Eintraege"
     },
-
     "risk": {
       "history": "Risikobewertungsverlauf",
       "noAssessments": "Keine Risikobewertungen",
       "inherent": "Inhaerentes",
       "residual": "Rest"
     },
-
     "lksg": {
       "title": "LkSG-Sorgfaltspflichten",
       "subtitle": "Lieferkettensorgfaltspflichtengesetz-Compliance",
@@ -3071,12 +3069,10 @@
         "critical": "Kritisch"
       }
     },
-
     "empty": {
       "noVendors": "Keine Lieferanten gefunden"
     }
   },
-
   "contracts": {
     "title": "Vertragsmanagement",
     "description": "Vertraege, Pflichten, SLAs und Nachtraege verwalten",
@@ -3098,14 +3094,12 @@
     "days": "Tage",
     "yes": "Ja",
     "no": "Nein",
-
     "kpi": {
       "activeContracts": "Aktive Vertraege",
       "portfolioValue": "Portfolio-Jahreswert",
       "expiringSoon": "Auslaufend (90T)",
       "overdueObligations": "Ueberfaellige Pflichten"
     },
-
     "contract": {
       "title": "Vertrag",
       "vendor": "Lieferant",
@@ -3127,7 +3121,6 @@
       "description": "Beschreibung",
       "notFound": "Vertrag nicht gefunden"
     },
-
     "type": {
       "master_agreement": "Rahmenvertrag",
       "service_agreement": "Dienstleistungsvertrag",
@@ -3139,7 +3132,6 @@
       "consulting": "Beratungsvertrag",
       "other": "Sonstiges"
     },
-
     "status": {
       "draft": "Entwurf",
       "negotiation": "Verhandlung",
@@ -3150,12 +3142,10 @@
       "terminated": "Beendet",
       "archived": "Archiviert"
     },
-
     "filter": {
       "allTypes": "Alle Typen",
       "allStatuses": "Alle Status"
     },
-
     "tab": {
       "overview": "Uebersicht",
       "obligations": "Pflichten",
@@ -3163,21 +3153,18 @@
       "amendments": "Nachtraege",
       "documents": "Dokumente"
     },
-
     "obligation": {
       "none": "Keine Pflichten vorhanden",
       "due": "Faellig",
       "responsible": "Verantwortlich",
       "recurring": "Wiederkehrend"
     },
-
     "oblStatus": {
       "pending": "Ausstehend",
       "in_progress": "In Bearbeitung",
       "completed": "Erledigt",
       "overdue": "Ueberfaellig"
     },
-
     "sla": {
       "none": "Keine SLA-Definitionen",
       "target": "Zielwert",
@@ -3190,20 +3177,16 @@
       "metOk": "Ziel erreicht",
       "breaches": "Verletzungen"
     },
-
     "amendment": {
       "none": "Keine Nachtraege"
     },
-
     "documents": {
       "placeholder": "Dokumentenmanagement wird ueber das Dokumentenmodul verknuepft."
     },
-
     "empty": {
       "noContracts": "Keine Vertraege gefunden"
     }
   },
-
   "questionnaire": {
     "title": "Fragebogen-Designer",
     "templates": "Vorlagen",
@@ -3270,9 +3253,22 @@
       "draft": "Entwurf",
       "published": "Veroeffentlicht",
       "archived": "Archiviert"
+    },
+    "importFramework": {
+      "button": "Aus Framework importieren",
+      "title": "Abschnitte aus Framework importieren",
+      "description": "Vordefinierte Abschnitte und Fragen aus einem Compliance-Framework-Katalog in diese Fragebogenvorlage importieren.",
+      "selectFramework": "Framework auswaehlen",
+      "chooseFramework": "Framework waehlen...",
+      "loading": "Framework-Eintraege werden geladen...",
+      "selectSections": "Zu importierende Abschnitte auswaehlen",
+      "selected": "ausgewaehlt",
+      "noEntries": "Keine Eintraege fuer dieses Framework gefunden",
+      "cancel": "Abbrechen",
+      "importButton": "Abschnitte importieren",
+      "imported": "Importiert"
     }
   },
-
   "portal": {
     "title": "Lieferantenportal",
     "welcome": "Willkommen zum Due-Diligence-Fragebogen",
@@ -3323,7 +3319,6 @@
     "exportPdf": "PDF exportieren",
     "comparison": "Vergleich mit vorheriger Bewertung"
   },
-
   "ddResults": {
     "title": "Due-Diligence-Ergebnisse",
     "overallScore": "Gesamtpunktzahl",
@@ -3339,7 +3334,6 @@
     "declined": "Verschlechtert",
     "unchanged": "Unveraendert"
   },
-
   "esg": {
     "title": "ESG & Nachhaltigkeit",
     "dashboard": "ESG Dashboard — Wichtige Kennzahlen auf einen Blick",
@@ -3354,7 +3348,7 @@
     "consolidation": "Konzernkonsolidierung",
     "entity": "Einheit",
     "total": "Gesamt",
-    "co2e": "CO\u2082e (t)",
+    "co2e": "CO₂e (t)",
     "vsLastYear": "ggue. Vorjahr",
     "noData": "Keine Daten verfuegbar",
     "quickNav": "Schnellnavigation",
@@ -3470,7 +3464,7 @@
       "scope3": "Scope 3 — Wertschoepfungskette",
       "activityData": "Aktivitaetsdaten",
       "emissionFactor": "Emissionsfaktor",
-      "totalCo2e": "Gesamt CO\u2082e",
+      "totalCo2e": "Gesamt CO₂e",
       "category": "Kategorie",
       "comparison": "Jahresvergleich",
       "currentYear": "Aktuelles Jahr",

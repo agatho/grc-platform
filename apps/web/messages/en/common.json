@@ -359,7 +359,8 @@
     "search": "Search",
     "filter": "Filter",
     "export": "Export",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "dismiss": "Dismiss"
   },
   "status": {
     "active": "Active",
@@ -2179,6 +2180,8 @@
         "planned": "Planned",
         "not_implemented": "Not Implemented"
       },
+      "populateAnnexA": "Populate from ISO 27001 Annex A",
+      "populateResult": "Created {created} entries, skipped {skipped} existing",
       "filters": {
         "all": "All",
         "applicable": "Applicable",
@@ -2577,7 +2580,15 @@
         "vital_interest": "Vital Interest",
         "public_interest": "Public Interest",
         "legitimate_interest": "Legitimate Interest"
-      }
+      },
+      "createDescription": "Create a new processing activity record with catalog-based legal basis and data categories.",
+      "titlePlaceholder": "e.g., Employee payroll processing",
+      "purposePlaceholder": "Describe the purpose of the processing activity...",
+      "selectLegalBasis": "Select a legal basis...",
+      "selectCategories": "Select applicable data categories from the GDPR catalog",
+      "loadingCatalog": "Loading catalog entries...",
+      "noCatalogCategories": "No catalog categories available",
+      "cancel": "Cancel"
     },
     "dpia": {
       "title": "Data Protection Impact Assessment",
@@ -2612,7 +2623,8 @@
         "necessity": "Necessity",
         "risks": "Risks",
         "measures": "Measures",
-        "signOff": "DPO Sign-Off"
+        "signOff": "DPO Sign-Off",
+        "prescreen": "Pre-Screen"
       },
       "status": {
         "draft": "Draft",
@@ -2621,6 +2633,17 @@
         "pending_dpo_review": "Pending DPO Review",
         "approved": "Approved",
         "rejected": "Rejected"
+      },
+      "prescreen": {
+        "title": "Pre-screen: GDPR Art. 35 Criteria",
+        "description": "Check which of the following high-risk criteria apply to this processing activity. If 2 or more criteria are met, a DPIA is required per EDPB guidelines.",
+        "criteriaMatched": "criteria matched",
+        "dpiaRequired": "DPIA Required",
+        "dpiaRequiredHint": "2 or more criteria are met. A full Data Protection Impact Assessment must be conducted.",
+        "dpiaNotRequired": "DPIA Likely Not Required",
+        "dpiaNotRequiredHint": "Fewer than 2 criteria matched. A DPIA may still be advisable depending on context.",
+        "loading": "Loading DPIA criteria...",
+        "noCriteria": "No DPIA criteria available in the catalog"
       }
     },
     "dsr": {
@@ -2767,7 +2790,6 @@
     "findings": "Findings",
     "report": "Report",
     "reports": "Reports",
-
     "planned": "Planned",
     "inProgress": "In Progress",
     "completed": "Completed",
@@ -2782,7 +2804,6 @@
     "findingsBreakdown": "Findings by Severity",
     "quickNav": "Quick Navigation",
     "viewUniverse": "View Audit Universe",
-
     "name": "Name",
     "entityType": "Entity Type",
     "riskScore": "Risk Score",
@@ -2802,7 +2823,6 @@
     "auditCycle": "Audit Cycle (months)",
     "notes": "Notes",
     "save": "Save",
-
     "entityTypes": {
       "process": "Process",
       "department": "Department",
@@ -2810,7 +2830,6 @@
       "vendor": "Vendor",
       "custom": "Custom"
     },
-
     "createPlan": "Create Plan",
     "year": "Year",
     "description": "Description",
@@ -2818,14 +2837,12 @@
     "emptyPlans": "No audit plans yet",
     "autoSuggest": "Auto-Suggest",
     "suggestedAudits": "Suggested Audits (sorted by risk and time since last audit)",
-
     "planStatus": {
       "draft": "Draft",
       "approved": "Approved",
       "active": "Active",
       "completed": "Completed"
     },
-
     "planNotFound": "Audit plan not found",
     "backToPlans": "Back to Plans",
     "approve": "Approve",
@@ -2843,14 +2860,12 @@
     "plannedEnd": "Planned End",
     "estimatedDays": "Estimated Days",
     "status": "Status",
-
     "createAudit": "Create Audit",
     "auditTitle": "Audit Title",
     "auditType": "Audit Type",
     "emptyAudits": "No audits yet",
     "lead": "Lead Auditor",
     "findingCount": "Finding Count",
-
     "auditTypes": {
       "internal": "Internal",
       "external": "External",
@@ -2858,7 +2873,6 @@
       "surveillance": "Surveillance",
       "followUp": "Follow-up"
     },
-
     "auditStatus": {
       "planned": "Planned",
       "preparation": "Preparation",
@@ -2868,11 +2882,9 @@
       "completed": "Completed",
       "cancelled": "Cancelled"
     },
-
     "auditNotFound": "Audit not found",
     "backToAudits": "Back to Audits",
     "advanceTo": "Advance to",
-
     "tabs": {
       "overview": "Overview",
       "checklists": "Checklists",
@@ -2880,22 +2892,25 @@
       "findings": "Findings",
       "report": "Report"
     },
-
     "details": "Details",
     "team": "Team",
     "actualStart": "Actual Start",
     "actualEnd": "Actual End",
     "conclusion": "Conclusion",
     "frameworks": "Frameworks in Scope",
-
     "conclusions": {
       "conforming": "Conforming",
       "minor_nonconformity": "Minor Nonconformity",
       "major_nonconformity": "Major Nonconformity",
       "not_applicable": "Not Applicable"
     },
-
     "generateChecklist": "Generate Checklist",
+    "importFromFramework": "Import from Framework",
+    "importIia": "IIA Standards",
+    "importSoc2": "SOC 2 Criteria",
+    "importCobit": "COBIT",
+    "importResult": "Imported {count} checklist items from {source}",
+    "dismiss": "Dismiss",
     "progress": "Progress",
     "question": "Question",
     "result": "Result",
@@ -2910,7 +2925,6 @@
     "remediationDueDate": "Remediation Due Date",
     "findingsForAudit": "Findings for this Audit",
     "emptyFindings": "No findings for this audit yet",
-
     "results": {
       "conforming": "Conforming",
       "nonconforming": "Nonconforming",
@@ -2918,7 +2932,6 @@
       "not_applicable": "N/A",
       "open": "Open"
     },
-
     "severity": {
       "significantNonconformity": "Significant Nonconformity",
       "insignificantNonconformity": "Insignificant Nonconformity",
@@ -2926,14 +2939,12 @@
       "recommendation": "Recommendation",
       "observation": "Observation"
     },
-
     "activityLog": "Activity Log",
     "addActivity": "Add Activity",
     "activityType": "Activity Type",
     "activityTitle": "Title",
     "durationMinutes": "Duration (minutes)",
     "emptyActivities": "No activities logged yet",
-
     "activityTypes": {
       "interview": "Interview",
       "documentReview": "Document Review",
@@ -2942,11 +2953,9 @@
       "meeting": "Meeting",
       "other": "Other"
     },
-
     "viewReport": "View Report Document",
     "reportNotReady": "Report is available once the audit is completed"
   },
-
   "tprm": {
     "title": "Third-Party Risk Management",
     "description": "Manage vendor lifecycle, due diligence, and supply chain risk",
@@ -2956,26 +2965,22 @@
     "createVendor": "Add Vendor",
     "searchVendors": "Search vendors...",
     "pending": "pending",
-
     "kpi": {
       "totalVendors": "Total Vendors",
       "critical": "Critical (Tier 1)",
       "assessmentDue": "Assessment Due",
       "lksgRelevant": "LkSG Relevant"
     },
-
     "tierDistribution": "Vendor Tier Distribution",
     "ddQueue": "Due Diligence Queue",
     "noPendingDD": "No pending questionnaires",
     "overdueAssessments": "Overdue Assessments",
-
     "tier": {
       "critical": "Critical",
       "important": "Important",
       "standard": "Standard",
       "low_risk": "Low Risk"
     },
-
     "category": {
       "it_services": "IT Services",
       "cloud_provider": "Cloud Provider",
@@ -2987,7 +2992,6 @@
       "hr_services": "HR Services",
       "other": "Other"
     },
-
     "status": {
       "prospect": "Prospect",
       "onboarding": "Onboarding",
@@ -2996,13 +3000,11 @@
       "suspended": "Suspended",
       "terminated": "Terminated"
     },
-
     "filter": {
       "allTiers": "All Tiers",
       "allCategories": "All Categories",
       "allStatuses": "All Statuses"
     },
-
     "vendor": {
       "name": "Vendor",
       "category": "Category",
@@ -3024,7 +3026,6 @@
       "website": "Website",
       "taxId": "Tax ID"
     },
-
     "tab": {
       "overview": "Overview",
       "dueDiligence": "Due Diligence",
@@ -3032,7 +3033,6 @@
       "contracts": "Contracts",
       "lksg": "LkSG"
     },
-
     "dd": {
       "history": "Due Diligence History",
       "send": "Send Questionnaire",
@@ -3044,14 +3044,12 @@
       "riskScore": "Risk Score",
       "noRecords": "No due diligence records"
     },
-
     "risk": {
       "history": "Risk Assessment History",
       "noAssessments": "No risk assessments",
       "inherent": "Inherent",
       "residual": "Residual"
     },
-
     "lksg": {
       "title": "LkSG Supply Chain Due Diligence",
       "subtitle": "German Supply Chain Due Diligence Act compliance",
@@ -3071,12 +3069,10 @@
         "critical": "Critical"
       }
     },
-
     "empty": {
       "noVendors": "No vendors found"
     }
   },
-
   "contracts": {
     "title": "Contract Management",
     "description": "Manage contracts, obligations, SLAs, and amendments",
@@ -3098,14 +3094,12 @@
     "days": "days",
     "yes": "Yes",
     "no": "No",
-
     "kpi": {
       "activeContracts": "Active Contracts",
       "portfolioValue": "Portfolio Value (Annual)",
       "expiringSoon": "Expiring (90d)",
       "overdueObligations": "Overdue Obligations"
     },
-
     "contract": {
       "title": "Contract",
       "vendor": "Vendor",
@@ -3127,7 +3121,6 @@
       "description": "Description",
       "notFound": "Contract not found"
     },
-
     "type": {
       "master_agreement": "Master Agreement",
       "service_agreement": "Service Agreement",
@@ -3139,7 +3132,6 @@
       "consulting": "Consulting",
       "other": "Other"
     },
-
     "status": {
       "draft": "Draft",
       "negotiation": "Negotiation",
@@ -3150,12 +3142,10 @@
       "terminated": "Terminated",
       "archived": "Archived"
     },
-
     "filter": {
       "allTypes": "All Types",
       "allStatuses": "All Statuses"
     },
-
     "tab": {
       "overview": "Overview",
       "obligations": "Obligations",
@@ -3163,21 +3153,18 @@
       "amendments": "Amendments",
       "documents": "Documents"
     },
-
     "obligation": {
       "none": "No obligations",
       "due": "Due",
       "responsible": "Responsible",
       "recurring": "Recurring"
     },
-
     "oblStatus": {
       "pending": "Pending",
       "in_progress": "In Progress",
       "completed": "Completed",
       "overdue": "Overdue"
     },
-
     "sla": {
       "none": "No SLA definitions",
       "target": "Target",
@@ -3190,20 +3177,16 @@
       "metOk": "Meeting Target",
       "breaches": "Breaches"
     },
-
     "amendment": {
       "none": "No amendments"
     },
-
     "documents": {
       "placeholder": "Document management will be linked via the document module."
     },
-
     "empty": {
       "noContracts": "No contracts found"
     }
   },
-
   "questionnaire": {
     "title": "Questionnaire Designer",
     "templates": "Templates",
@@ -3270,9 +3253,22 @@
       "draft": "Draft",
       "published": "Published",
       "archived": "Archived"
+    },
+    "importFramework": {
+      "button": "Import from Framework",
+      "title": "Import Sections from Framework",
+      "description": "Import pre-defined sections and questions from a compliance framework catalog into this questionnaire template.",
+      "selectFramework": "Select Framework",
+      "chooseFramework": "Choose a framework...",
+      "loading": "Loading framework entries...",
+      "selectSections": "Select Sections to Import",
+      "selected": "selected",
+      "noEntries": "No entries found for this framework",
+      "cancel": "Cancel",
+      "importButton": "Import Sections",
+      "imported": "Imported"
     }
   },
-
   "portal": {
     "title": "Supplier Portal",
     "welcome": "Welcome to the Due Diligence Questionnaire",
@@ -3323,7 +3319,6 @@
     "exportPdf": "Export PDF",
     "comparison": "Comparison with Previous"
   },
-
   "ddResults": {
     "title": "Due Diligence Results",
     "overallScore": "Overall Score",
@@ -3339,7 +3334,6 @@
     "declined": "Declined",
     "unchanged": "Unchanged"
   },
-
   "esg": {
     "title": "ESG & Sustainability",
     "dashboard": "ESG Dashboard — Key metrics at a glance",
@@ -3354,7 +3348,7 @@
     "consolidation": "Group Consolidation",
     "entity": "Entity",
     "total": "Total",
-    "co2e": "CO\u2082e (t)",
+    "co2e": "CO₂e (t)",
     "vsLastYear": "vs. last year",
     "noData": "No data available",
     "quickNav": "Quick Navigation",
@@ -3470,7 +3464,7 @@
       "scope3": "Scope 3 — Value Chain",
       "activityData": "Activity Data",
       "emissionFactor": "Emission Factor",
-      "totalCo2e": "Total CO\u2082e",
+      "totalCo2e": "Total CO₂e",
       "category": "Category",
       "comparison": "Year Comparison",
       "currentYear": "Current Year",
