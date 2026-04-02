@@ -1,6 +1,10 @@
 {
   "title": "FAIR Analysis",
+  "description": "Factor Analysis of Information Risk — Monte Carlo Quantification",
   "subtitle": "Factor Analysis of Information Risk — Monte Carlo Quantification",
+  "portfolioDesc": "View your organization's risk portfolio with annualized loss expectancy values",
+  "compareDesc": "Compare FAIR quantification results across multiple risks side by side",
+  "topRisksDesc": "Ranked list of top risks by annual loss expectancy for executive reporting",
   "notEnabled": "FAIR Quantification Not Enabled",
   "notEnabledDesc": "Your organization is currently using qualitative risk assessment (5x5 matrix). FAIR quantification provides financial risk values in EUR.",
   "enableInSettings": "An administrator can enable FAIR or Hybrid methodology in the organization settings.",
