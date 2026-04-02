@@ -1,6 +1,10 @@
 {
   "title": "FAIR-Analyse",
+  "description": "Factor Analysis of Information Risk — Monte-Carlo-Quantifizierung",
   "subtitle": "Factor Analysis of Information Risk — Monte-Carlo-Quantifizierung",
+  "portfolioDesc": "Risikoportfolio mit annualisierten Verlusterwartungswerten anzeigen",
+  "compareDesc": "FAIR-Quantifizierungsergebnisse mehrerer Risiken nebeneinander vergleichen",
+  "topRisksDesc": "Rangliste der Top-Risiken nach jaehrlicher Verlusterwartung fuer die Geschaeftsleitung",
   "notEnabled": "FAIR-Quantifizierung nicht aktiviert",
   "notEnabledDesc": "Ihre Organisation verwendet derzeit die qualitative Risikobewertung (5x5-Matrix). Die FAIR-Quantifizierung liefert finanzielle Risikowerte in EUR.",
   "enableInSettings": "Ein Administrator kann FAIR oder die Hybrid-Methodik in den Organisationseinstellungen aktivieren.",
