@@ -115,7 +115,7 @@ export const createProcessorAgreementSchema = z.object({
   agreementDocumentId: z.string().uuid().optional(),
 });
 
-export const updateChecklistSchema = z.object({
+export const updateDpmsChecklistSchema = z.object({
   checklist: z.array(z.object({
     requirement: z.string(),
     status: z.enum(["compliant", "partial", "missing"]),
@@ -124,7 +124,7 @@ export const updateChecklistSchema = z.object({
   })).length(16),
 });
 
-export const createSubProcessorNotificationSchema = z.object({
+export const createDpmsSubProcessorNotificationSchema = z.object({
   notificationType: z.enum(["new_sub_processor", "changed_sub_processor", "removed_sub_processor"]),
   subProcessorName: z.string().min(1).max(500),
   subProcessorCountry: z.string().max(5).optional(),

@@ -41,7 +41,7 @@ export const updateMarketplacePublisherSchema = createMarketplacePublisherSchema
 // Listing CRUD
 // ──────────────────────────────────────────────────────────────
 
-export const createMarketplaceListingSchema = z.object({
+export const createMktplaceListingSchema = z.object({
   publisherId: z.string().uuid(),
   categoryId: z.string().uuid(),
   name: z.string().min(1).max(500),
@@ -59,7 +59,7 @@ export const createMarketplaceListingSchema = z.object({
   documentationUrl: z.string().url().max(2000).optional(),
 });
 
-export const updateMarketplaceListingSchema = createMarketplaceListingSchema.partial();
+export const updateMktplaceListingSchema = createMktplaceListingSchema.partial();
 
 export const listMarketplaceListingsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -158,7 +158,7 @@ export const listMarketplaceCategoriesQuerySchema = z.object({
 // ──────────────────────────────────────────────────────────────
 
 export type CreateMarketplacePublisherInput = z.infer<typeof createMarketplacePublisherSchema>;
-export type CreateMarketplaceListingInput = z.infer<typeof createMarketplaceListingSchema>;
+export type CreateMktplaceListingInput = z.infer<typeof createMktplaceListingSchema>;
 export type CreateMarketplaceVersionInput = z.infer<typeof createMarketplaceVersionSchema>;
 export type CreateMarketplaceReviewInput = z.infer<typeof createMarketplaceReviewSchema>;
 export type InstallListingInput = z.infer<typeof installListingSchema>;

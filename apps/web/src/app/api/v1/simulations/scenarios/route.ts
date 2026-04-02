@@ -1,4 +1,4 @@
-import { db, simulationScenario } from "@grc/db";
+import { db, scenarioEngineScenario } from "@grc/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createSimulationScenarioSchema, listSimulationScenariosQuerySchema } from "@grc/shared";
@@ -9,16 +9,16 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const query = listSimulationScenariosQuerySchema.parse(Object.fromEntries(url.searchParams));
-  const conditions: ReturnType<typeof eq>[] = [eq(simulationScenario.orgId, ctx.orgId)];
-  if (query.simulationType) conditions.push(eq(simulationScenario.simulationType, query.simulationType));
-  if (query.tag) conditions.push(eq(simulationScenario.tag, query.tag));
-  if (query.status) conditions.push(eq(simulationScenario.status, query.status));
+  const conditions: ReturnType<typeof eq>[] = [eq(scenarioEngineScenario.orgId, ctx.orgId)];
+  if (query.simulationType) conditions.push(eq(scenarioEngineScenario.simulationType, query.simulationType));
+  if (query.tag) conditions.push(eq(scenarioEngineScenario.tag, query.tag));
+  if (query.status) conditions.push(eq(scenarioEngineScenario.status, query.status));
 
   const offset = (query.page - 1) * query.limit;
   const [rows, [{ total }]] = await Promise.all([
-    db.select().from(simulationScenario).where(and(...conditions))
-      .orderBy(desc(simulationScenario.createdAt)).limit(query.limit).offset(offset),
-    db.select({ total: sql<number>`count(*)::int` }).from(simulationScenario).where(and(...conditions)),
+    db.select().from(scenarioEngineScenario).where(and(...conditions))
+      .orderBy(desc(scenarioEngineScenario.createdAt)).limit(query.limit).offset(offset),
+    db.select({ total: sql<number>`count(*)::int` }).from(scenarioEngineScenario).where(and(...conditions)),
   ]);
 
   return Response.json({
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const body = createSimulationScenarioSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(simulationScenario).values({
+    const [created] = await tx.insert(scenarioEngineScenario).values({
       orgId: ctx.orgId, ...body, createdBy: ctx.userId,
     }).returning();
     return created;

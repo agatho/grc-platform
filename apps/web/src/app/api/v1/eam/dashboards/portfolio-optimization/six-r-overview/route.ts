@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     ORDER BY count DESC
   `);
 
-  const rows = (result.rows ?? result) as Array<{ strategy: string; count: number }>;
+  const rows = result as unknown as Array<{ strategy: string; count: number }>;
   const data = rows.map((r) => ({
     strategy: r.strategy,
     count: r.count,

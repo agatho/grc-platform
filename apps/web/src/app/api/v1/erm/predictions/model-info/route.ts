@@ -1,4 +1,4 @@
-import { db, riskPredictionModel } from "@grc/db";
+import { db, auditRiskPredictionModel } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -13,9 +13,9 @@ export async function GET(req: Request) {
 
   const [model] = await db
     .select()
-    .from(riskPredictionModel)
-    .where(eq(riskPredictionModel.orgId, ctx.orgId))
-    .orderBy(desc(riskPredictionModel.trainedAt))
+    .from(auditRiskPredictionModel)
+    .where(eq(auditRiskPredictionModel.orgId, ctx.orgId))
+    .orderBy(desc(auditRiskPredictionModel.trainedAt))
     .limit(1);
 
   if (!model) {

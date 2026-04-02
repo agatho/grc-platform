@@ -1,6 +1,6 @@
 // Sprint 85: Simulation und Scenario Engine
-// 5 entities: simulation_scenario, simulation_run, simulation_parameter,
-// simulation_result, simulation_comparison
+// 5 entities: scenario_engine_scenario, simulation_run, simulation_parameter,
+// simulation_run_result, simulation_comparison
 
 import {
   pgTable,
@@ -52,11 +52,11 @@ export const simulationScenarioTagEnum = pgEnum("simulation_scenario_tag", [
 ]);
 
 // ──────────────────────────────────────────────────────────────
-// 85.1 SimulationScenario — Scenario definitions
+// 85.1 ScenarioEngineScenario — Scenario definitions
 // ──────────────────────────────────────────────────────────────
 
-export const simulationScenario = pgTable(
-  "simulation_scenario",
+export const scenarioEngineScenario = pgTable(
+  "scenario_engine_scenario",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")
@@ -76,10 +76,10 @@ export const simulationScenario = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("ss_org_idx").on(t.orgId),
-    index("ss_type_idx").on(t.orgId, t.simulationType),
-    index("ss_status_idx").on(t.orgId, t.status),
-    index("ss_tag_idx").on(t.orgId, t.tag),
+    index("ses_org_idx").on(t.orgId),
+    index("ses_type_idx").on(t.orgId, t.simulationType),
+    index("ses_status_idx").on(t.orgId, t.status),
+    index("ses_tag_idx").on(t.orgId, t.tag),
   ],
 );
 
@@ -96,7 +96,7 @@ export const simulationRun = pgTable(
       .references(() => organization.id),
     scenarioId: uuid("scenario_id")
       .notNull()
-      .references(() => simulationScenario.id, { onDelete: "cascade" }),
+      .references(() => scenarioEngineScenario.id, { onDelete: "cascade" }),
     runNumber: integer("run_number").notNull().default(1),
     iterations: integer("iterations").notNull().default(10000),
     confidenceLevel: numeric("confidence_level", { precision: 5, scale: 2 }).notNull().default("95.00"),
@@ -128,7 +128,7 @@ export const simulationParameter = pgTable(
       .references(() => organization.id),
     scenarioId: uuid("scenario_id")
       .notNull()
-      .references(() => simulationScenario.id, { onDelete: "cascade" }),
+      .references(() => scenarioEngineScenario.id, { onDelete: "cascade" }),
     parameterKey: varchar("parameter_key", { length: 200 }).notNull(),
     displayName: varchar("display_name", { length: 300 }).notNull(),
     parameterType: varchar("parameter_type", { length: 50 }).notNull().default("number"),
@@ -147,11 +147,11 @@ export const simulationParameter = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
-// 85.4 SimulationResult — Output data per run
+// 85.4 SimulationRunResult — Output metric data per simulation run
 // ──────────────────────────────────────────────────────────────
 
-export const simulationResult = pgTable(
-  "simulation_result",
+export const simulationRunResult = pgTable(
+  "simulation_run_result",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")

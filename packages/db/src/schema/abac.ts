@@ -142,7 +142,7 @@ export const simulationScenarioRelations = relations(
       references: [process.id],
     }),
     activityParams: many(simulationActivityParam),
-    results: many(simulationResult),
+    results: many(processSimulationResult),
   }),
 );
 
@@ -199,8 +199,8 @@ export const simulationActivityParamRelations = relations(
 // Simulation Result
 // ──────────────────────────────────────────────────────────────
 
-export const simulationResult = pgTable(
-  "simulation_result",
+export const processSimulationResult = pgTable(
+  "process_simulation_result",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     scenarioId: uuid("scenario_id")
@@ -223,15 +223,15 @@ export const simulationResult = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    scenarioIdx: index("sim_result_scenario_idx").on(table.scenarioId),
+    scenarioIdx: index("psim_result_scenario_idx").on(table.scenarioId),
   }),
 );
 
-export const simulationResultRelations = relations(
-  simulationResult,
+export const processSimulationResultRelations = relations(
+  processSimulationResult,
   ({ one }) => ({
     scenario: one(simulationScenario, {
-      fields: [simulationResult.scenarioId],
+      fields: [processSimulationResult.scenarioId],
       references: [simulationScenario.id],
     }),
   }),

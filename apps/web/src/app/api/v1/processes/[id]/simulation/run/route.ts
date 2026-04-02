@@ -1,4 +1,4 @@
-import { db, simulationScenario, simulationActivityParam, simulationResult } from "@grc/db";
+import { db, simulationScenario, simulationActivityParam, processSimulationResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -123,7 +123,7 @@ export async function POST(
   // Store result
   const result = await withAuditContext(ctx, async (tx) => {
     const [stored] = await tx
-      .insert(simulationResult)
+      .insert(processSimulationResult)
       .values({
         scenarioId,
         orgId: ctx.orgId,

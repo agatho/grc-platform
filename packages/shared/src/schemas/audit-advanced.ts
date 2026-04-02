@@ -92,7 +92,7 @@ export const createResourceAllocationSchema = z.object({
 export const updateResourceAllocationSchema = createResourceAllocationSchema.partial();
 
 // ─── Time Entries ───────────────────────────────────────────
-export const createTimeEntrySchema = z.object({
+export const createAuditTimeEntrySchema = z.object({
   auditId: z.string().uuid(),
   workDate: z.string().date(),
   hours: z.number().min(0.25).max(24),

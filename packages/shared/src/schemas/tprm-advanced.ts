@@ -82,7 +82,7 @@ export const createSlaDefinitionSchema = z.object({
 export const updateSlaDefinitionSchema = createSlaDefinitionSchema.partial();
 
 // ─── SLA Measurement ────────────────────────────────────────
-export const createSlaMeasurementSchema = z.object({
+export const createTprmSlaMeasurementSchema = z.object({
   slaDefinitionId: z.string().uuid(),
   periodStart: z.string().date(),
   periodEnd: z.string().date(),
@@ -144,7 +144,7 @@ export const createSubProcessorSchema = z.object({
 export const updateSubProcessorSchema = createSubProcessorSchema.partial();
 
 // ─── Sub-Processor Notification ─────────────────────────────
-export const createSubProcessorNotificationSchema = z.object({
+export const createTprmSubProcessorNotificationSchema = z.object({
   vendorId: z.string().uuid(),
   notificationType: z.enum(["add", "remove", "change"]),
   subProcessorName: z.string().min(1).max(500),

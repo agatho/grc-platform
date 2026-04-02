@@ -18,7 +18,7 @@ import {
   Globe,
   X,
 } from "lucide-react";
-import type { BrandingResponse, ReportTemplate } from "@grc/shared";
+import type { BrandingResponse, BrandingReportTemplate } from "@grc/shared";
 import {
   computeContrastForeground,
   computeDarkModeColor,
@@ -84,7 +84,7 @@ const COLOR_FIELDS: ColorField[] = [
 ];
 
 const REPORT_TEMPLATES: {
-  value: ReportTemplate;
+  value: BrandingReportTemplate;
   labelKey: string;
   descKey: string;
 }[] = [
@@ -131,7 +131,7 @@ export default function BrandingSettingsPage() {
     backgroundColor: "#ffffff",
     darkModePrimaryColor: "" as string | null,
     darkModeAccentColor: "" as string | null,
-    reportTemplate: "standard" as ReportTemplate,
+    reportTemplate: "standard" as BrandingReportTemplate,
     confidentialityNotice: "CONFIDENTIAL -- For internal use only",
     inheritFromParent: true,
     customCss: "" as string | null,

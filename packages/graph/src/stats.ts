@@ -1,6 +1,7 @@
 // Sprint 29: Graph statistics — node counts, edge counts, orphans, hubs
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type {
   GraphStats,
   OrphanEntity,
@@ -9,12 +10,17 @@ import type {
 } from "./types";
 import { HUB_CONNECTION_THRESHOLD } from "./types";
 
+/** Type-safe wrapper for db.execute with sql template literals */
+function execSql(query: SQL<unknown>) {
+  return db.execute(query as unknown as Parameters<typeof db.execute>[0]);
+}
+
 /**
  * Get overall graph statistics for an organization.
  */
 export async function getGraphStats(orgId: string): Promise<GraphStats> {
   // Node counts by type (union of source and target types)
-  const nodeCountRows = await db.execute(sql`
+  const nodeCountRows = await execSql(sql`
     WITH all_nodes AS (
       SELECT source_type as entity_type, source_id as entity_id FROM entity_reference WHERE org_id = ${orgId}::uuid
       UNION
@@ -27,7 +33,7 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
   `);
 
   // Edge counts by relationship
-  const edgeCountRows = await db.execute(sql`
+  const edgeCountRows = await execSql(sql`
     SELECT relationship, COUNT(*)::int as count
     FROM entity_reference
     WHERE org_id = ${orgId}::uuid
@@ -36,7 +42,7 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
   `);
 
   // Total counts
-  const [totals] = await db.execute(sql`
+  const [totals] = await execSql(sql`
     WITH all_nodes AS (
       SELECT source_type as entity_type, source_id as entity_id FROM entity_reference WHERE org_id = ${orgId}::uuid
       UNION
@@ -48,7 +54,7 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
   `) as unknown as [{ total_nodes: number; total_edges: number }];
 
   // Orphan count: entities in only one direction with no return references
-  const [orphanResult] = await db.execute(sql`
+  const [orphanResult] = await execSql(sql`
     WITH all_entities AS (
       SELECT source_type as entity_type, source_id as entity_id FROM entity_reference WHERE org_id = ${orgId}::uuid
       UNION
@@ -69,7 +75,7 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
   `) as unknown as [{ orphan_count: number }];
 
   // Hub count
-  const [hubResult] = await db.execute(sql`
+  const [hubResult] = await execSql(sql`
     WITH connection_counts AS (
       SELECT entity_id, COUNT(*) as conn_count
       FROM (
@@ -118,7 +124,7 @@ export async function findOrphans(orgId: string): Promise<{
   processesWithoutControls: OrphanEntity[];
 }> {
   // Risks that have no 'mitigates' edge pointing to them
-  const risksWithoutControls = await db.execute(sql`
+  const risksWithoutControls = await execSql(sql`
     SELECT r.id::text as entity_id, 'risk' as entity_type, r.title as entity_name, r.element_id
     FROM risk r
     WHERE r.org_id = ${orgId}::uuid
@@ -134,7 +140,7 @@ export async function findOrphans(orgId: string): Promise<{
   `);
 
   // Controls that have no 'tested_by' edge
-  const controlsWithoutTests = await db.execute(sql`
+  const controlsWithoutTests = await execSql(sql`
     SELECT c.id::text as entity_id, 'control' as entity_type, c.title as entity_name, c.element_id
     FROM control c
     WHERE c.org_id = ${orgId}::uuid
@@ -150,7 +156,7 @@ export async function findOrphans(orgId: string): Promise<{
   `);
 
   // Assets without protection requirements (no incoming edges at all)
-  const assetsWithoutProtection = await db.execute(sql`
+  const assetsWithoutProtection = await execSql(sql`
     SELECT a.id::text as entity_id, 'asset' as entity_type, a.name as entity_name, a.element_id
     FROM asset a
     WHERE a.org_id = ${orgId}::uuid
@@ -167,7 +173,7 @@ export async function findOrphans(orgId: string): Promise<{
   `);
 
   // Processes without controls
-  const processesWithoutControls = await db.execute(sql`
+  const processesWithoutControls = await execSql(sql`
     SELECT p.id::text as entity_id, 'process' as entity_type, p.name as entity_name, p.element_id
     FROM process p
     WHERE p.org_id = ${orgId}::uuid
@@ -207,7 +213,7 @@ export async function getHubs(
   orgId: string,
   limit: number = 20,
 ): Promise<HubEntity[]> {
-  const rows = await db.execute(sql`
+  const rows = await execSql(sql`
     WITH connection_counts AS (
       SELECT
         entity_id,
@@ -271,7 +277,7 @@ export async function getHubs(
  * Dependency matrix: count of edges between each pair of entity types.
  */
 export async function getDependencyMatrix(orgId: string): Promise<DependencyMatrixEntry[]> {
-  const rows = await db.execute(sql`
+  const rows = await execSql(sql`
     SELECT
       source_type,
       target_type,
@@ -306,7 +312,7 @@ export async function searchEntities(
 ): Promise<Array<{ entityId: string; entityType: string; name: string; elementId?: string }>> {
   const searchTerm = `%${query}%`;
 
-  const rows = await db.execute(sql`
+  const rows = await execSql(sql`
     SELECT id::text as entity_id, 'risk' as entity_type, title as name, element_id
     FROM risk WHERE org_id = ${orgId}::uuid AND (title ILIKE ${searchTerm} OR element_id ILIKE ${searchTerm})
     UNION ALL

@@ -7,7 +7,7 @@ export type ArchitectureType =
   | "server" | "network" | "cloud_service" | "database" | "infrastructure_service";
 export type ArchRelationshipType = "realizes" | "serves" | "runs_on" | "accesses" | "flows_to" | "composes" | "depends_on" | "deployed_on" | "uses";
 export type ElementStatus = "planned" | "active" | "phase_out" | "retired";
-export type Criticality = "critical" | "important" | "normal" | "low";
+export type EamCriticality = "critical" | "important" | "normal" | "low";
 export type LifecycleStatus = "planned" | "active" | "phase_out" | "end_of_life" | "retired";
 export type TimeClassification = "tolerate" | "invest" | "migrate" | "eliminate";
 export type LicenseType = "saas" | "on_premise" | "hybrid" | "open_source";
@@ -27,7 +27,7 @@ export interface ArchitectureElement {
   owner?: string;
   department?: string;
   status: ElementStatus;
-  criticality: Criticality;
+  criticality: EamCriticality;
   tags?: string[];
   metadata?: Record<string, unknown>;
   createdBy?: string;
@@ -121,7 +121,7 @@ export interface DiagramNode {
   layer: ArchitectureLayer;
   type: ArchitectureType;
   status: ElementStatus;
-  criticality: Criticality;
+  criticality: EamCriticality;
   x?: number;
   y?: number;
 }

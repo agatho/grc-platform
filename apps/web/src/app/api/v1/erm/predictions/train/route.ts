@@ -1,4 +1,4 @@
-import { db, riskPredictionModel } from "@grc/db";
+import { db, auditRiskPredictionModel } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { trainModelSchema } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -31,7 +31,7 @@ export async function POST(req: Request) {
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
-      .insert(riskPredictionModel)
+      .insert(auditRiskPredictionModel)
       .values({
         orgId: ctx.orgId,
         version,

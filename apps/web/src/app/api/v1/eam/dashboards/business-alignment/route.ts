@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     ORDER BY ae_cap.name
   `);
 
-  const rows = (result.rows ?? result) as Array<{ capability_id: string; capability_name: string; application_count: number }>;
+  const rows = result as unknown as Array<{ capability_id: string; capability_name: string; application_count: number }>;
   const total = rows.length || 1;
   const covered = rows.filter((r) => r.application_count > 0).length;
 

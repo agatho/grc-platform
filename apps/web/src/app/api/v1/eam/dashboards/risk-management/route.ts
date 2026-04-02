@@ -41,9 +41,9 @@ export async function GET(req: Request) {
 
   return Response.json({
     data: {
-      kpis: ((totalResult.rows ?? totalResult) as Array<Record<string, number>>)[0],
-      categoryDistribution: categoryDist.rows ?? categoryDist,
-      ratingDistribution: ratingDist.rows ?? ratingDist,
+      kpis: (totalResult as unknown as Array<Record<string, number>>)[0],
+      categoryDistribution: categoryDist,
+      ratingDistribution: ratingDist,
     },
   });
 }

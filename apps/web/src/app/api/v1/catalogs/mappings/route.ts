@@ -48,7 +48,7 @@ export async function GET(req: Request) {
         ORDER BY tc.name, tce.code
       `);
 
-      const data = (result.rows ?? result).map((row: any) => ({
+      const data = (result as any[]).map((row: any) => ({
         sourceEntry: {
           code: row.source_code,
           name: row.source_name,
@@ -99,7 +99,7 @@ export async function GET(req: Request) {
       LIMIT 500
     `);
 
-    const data = (result.rows ?? result).map((row: any) => ({
+    const data = (result as any[]).map((row: any) => ({
       sourceEntry: {
         code: row.source_code,
         name: row.source_name,

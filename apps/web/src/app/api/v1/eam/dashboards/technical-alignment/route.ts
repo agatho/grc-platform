@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     ORDER BY app_count DESC
   `);
 
-  const rows = (result.rows ?? result) as Array<{
+  const rows = result as unknown as Array<{
     ring: string; app_count: number; technology_name: string; technology_id: string;
   }>;
 

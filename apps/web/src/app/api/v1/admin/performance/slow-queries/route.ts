@@ -26,7 +26,7 @@ export async function GET(req: Request) {
       LIMIT 20
     `);
 
-    queries = (result.rows ?? []).map((row: Record<string, unknown>) => {
+    queries = (result as Record<string, unknown>[]).map((row: Record<string, unknown>) => {
       const queryText = String(row.query ?? "");
       // Extract table names from query
       const tableMatches = queryText.match(/(?:FROM|JOIN|UPDATE|INTO)\s+"?(\w+)"?/gi) ?? [];

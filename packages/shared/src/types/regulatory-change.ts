@@ -6,7 +6,7 @@ export type RegulatoryClassification = "critical" | "major" | "minor" | "informa
 export type RegulatoryChangeStatus = "new" | "under_review" | "assessed" | "acknowledged" | "not_applicable";
 export type ImpactLevel = "critical" | "high" | "medium" | "low" | "none";
 export type ImpactAssessmentStatus = "draft" | "in_review" | "approved" | "rejected";
-export type CalendarEventType = "compliance_deadline" | "enforcement_date" | "consultation_end" | "reporting_deadline";
+export type RegulatoryCalendarEventType = "compliance_deadline" | "enforcement_date" | "consultation_end" | "reporting_deadline";
 export type CalendarPriority = "critical" | "high" | "medium" | "low";
 export type DigestType = "daily" | "weekly" | "monthly";
 
@@ -99,7 +99,7 @@ export interface RegulatoryCalendarEvent {
   changeId?: string;
   title: string;
   description?: string;
-  eventType: CalendarEventType;
+  eventType: RegulatoryCalendarEventType;
   eventDate: string;
   jurisdiction?: string;
   framework?: string;

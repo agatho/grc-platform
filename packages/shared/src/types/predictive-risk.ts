@@ -1,4 +1,5 @@
 // Sprint 71: Predictive Risk Intelligence Types
+import type { RadarDataPoint } from "./isms";
 
 export type PredictionModelType = "anomaly_detection" | "trend_forecast" | "correlation" | "score_prediction" | "early_warning";
 export type PredictionAlgorithm = "arima" | "prophet" | "isolation_forest" | "random_forest" | "neural_net" | "ensemble";
@@ -6,7 +7,7 @@ export type PredictionTargetMetric = "risk_score" | "kri_value" | "incident_coun
 export type PredictionModelStatus = "untrained" | "training" | "active" | "degraded" | "archived";
 export type PredictionType = "score_forecast" | "trend" | "threshold_breach" | "correlation";
 export type PredictionEntityType = "risk" | "kri" | "control" | "process";
-export type TrendDirection = "increasing" | "stable" | "decreasing";
+export type PredictiveTrendDirection = "increasing" | "stable" | "decreasing";
 export type RiskLevel = "critical" | "high" | "medium" | "low";
 export type AnomalyType = "spike" | "drop" | "pattern_break" | "drift" | "outlier";
 export type AnomalySeverity = "critical" | "high" | "medium" | "low";
@@ -57,7 +58,7 @@ export interface RiskPrediction {
   confidenceInterval: ConfidenceInterval;
   predictionHorizonDays: number;
   confidence: number;
-  trendDirection?: TrendDirection;
+  trendDirection?: PredictiveTrendDirection;
   trendStrength?: number;
   riskLevel?: RiskLevel;
   earlyWarning: boolean;
@@ -124,15 +125,8 @@ export interface PredictiveRiskDashboard {
   topEarlyWarnings: RiskPrediction[];
 }
 
-export interface RadarDataPoint {
-  entityType: PredictionEntityType;
-  entityId: string;
-  entityName: string;
-  currentValue: number;
-  predictedValue: number;
-  riskLevel: RiskLevel;
-  trendDirection: TrendDirection;
-}
+// RadarDataPoint is defined in isms.ts and re-exported from there
+// with optional predictive-risk fields (entityType, entityId, etc.)
 
 export interface TrendDataPoint {
   date: string;

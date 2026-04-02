@@ -11,6 +11,8 @@ export interface Organization {
   country: string;
   isEu: boolean;
   parentOrgId?: string;
+  hierarchyLevel?: number;
+  hierarchyPath?: string;
 }
 
 export interface UserWithRoles {
