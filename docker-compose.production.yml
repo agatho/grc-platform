@@ -1,0 +1,74 @@
+# ============================================================================
+# ARCTOS GRC Platform — Production Stack
+# Usage: docker compose -f docker-compose.production.yml up -d
+# ============================================================================
+
+services:
+  # ── PostgreSQL + TimescaleDB ──────────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: grc
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-grc_prod_password}
+      POSTGRES_DB: grc_platform
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grc -d grc_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - arctos
+
+  # ── Redis ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - arctos
+
+  # ── ARCTOS Web App ────────────────────────────────────────────
+  web:
+    image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-web:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:-grc_prod_password}@postgres:5432/grc_platform
+      AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env}
+      CRON_SECRET: ${CRON_SECRET:-change-me}
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      RUN_SEEDS: ${RUN_SEEDS:-false}
+      # Optional
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - arctos
+
+volumes:
+  pgdata:
+
+networks:
+  arctos:
+    driver: bridge
