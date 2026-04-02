@@ -21,6 +21,7 @@ import {
   Type,
   CheckSquare,
   CircleDot,
+  Download,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -34,6 +35,14 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -86,6 +95,20 @@ interface Template {
   sections: Section[];
 }
 
+interface ImportCatalogEntry {
+  id: string;
+  code: string;
+  title: string;
+  description?: string;
+  level: number;
+  parentCode?: string;
+}
+
+const IMPORT_FRAMEWORKS = [
+  { value: "vda_isa_tisax", label: "TISAX (VDA ISA 6.0)", labelDe: "TISAX (VDA ISA 6.0)" },
+  { value: "eu_dora", label: "DORA ICT Third-Party", labelDe: "DORA IKT-Drittparteien" },
+] as const;
+
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700 border-gray-200",
   published: "bg-green-100 text-green-700 border-green-200",
@@ -135,6 +158,14 @@ function QuestionnaireEditInner() {
   const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
   const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+
+  // Import from Framework state
+  const [importOpen, setImportOpen] = useState(false);
+  const [importFramework, setImportFramework] = useState<string>("");
+  const [importEntries, setImportEntries] = useState<ImportCatalogEntry[]>([]);
+  const [importLoading, setImportLoading] = useState(false);
+  const [importSelectedSections, setImportSelectedSections] = useState<Set<string>>(new Set());
+  const [importing, setImporting] = useState(false);
 
   // ──────────────────────────────────────────────────────────────
   // Fetch template
@@ -323,6 +354,98 @@ function QuestionnaireEditInner() {
   );
 
   // ──────────────────────────────────────────────────────────────
+  // Import from Framework
+  // ──────────────────────────────────────────────────────────────
+
+  const handleFrameworkChange = useCallback(async (source: string) => {
+    setImportFramework(source);
+    setImportEntries([]);
+    setImportSelectedSections(new Set());
+    if (!source) return;
+    setImportLoading(true);
+    try {
+      const res = await fetch(`/api/v1/tprm/templates?source=${encodeURIComponent(source)}`);
+      if (res.ok) {
+        const json = await res.json();
+        setImportEntries(json.data ?? []);
+        // Pre-select all top-level sections
+        const sections = (json.data ?? []).filter((e: ImportCatalogEntry) => e.level === 0);
+        setImportSelectedSections(new Set(sections.map((s: ImportCatalogEntry) => s.code)));
+      }
+    } catch {
+      toast.error("Failed to load framework entries");
+    } finally {
+      setImportLoading(false);
+    }
+  }, []);
+
+  const toggleImportSection = useCallback((code: string) => {
+    setImportSelectedSections((prev) => {
+      const next = new Set(prev);
+      if (next.has(code)) next.delete(code);
+      else next.add(code);
+      return next;
+    });
+  }, []);
+
+  const handleImportSections = useCallback(() => {
+    if (!template || importEntries.length === 0) return;
+    setImporting(true);
+
+    const sections = importEntries.filter((e) => e.level === 0 && importSelectedSections.has(e.code));
+    const newSections: Section[] = sections.map((section, sIdx) => {
+      const questions = importEntries
+        .filter((e) => e.level >= 1 && e.parentCode === section.code)
+        .map((q, qIdx): Question => ({
+          id: `temp-import-q-${Date.now()}-${sIdx}-${qIdx}`,
+          sectionId: `temp-import-s-${Date.now()}-${sIdx}`,
+          questionType: "text",
+          questionDe: q.title,
+          questionEn: q.title,
+          helpTextDe: q.description ?? "",
+          helpTextEn: q.description ?? "",
+          options: [],
+          isRequired: true,
+          isEvidenceRequired: false,
+          conditionalOn: null,
+          weight: "1.0",
+          maxScore: 0,
+          sortOrder: qIdx,
+        }));
+
+      return {
+        id: `temp-import-s-${Date.now()}-${sIdx}`,
+        templateId: template.id,
+        titleDe: section.title,
+        titleEn: section.title,
+        descriptionDe: section.description ?? "",
+        descriptionEn: section.description ?? "",
+        sortOrder: template.sections.length + sIdx,
+        weight: "1.0",
+        questions,
+      };
+    });
+
+    setTemplate({
+      ...template,
+      sections: [...template.sections, ...newSections],
+    });
+    setExpandedSections((prev) => {
+      const next = new Set(prev);
+      for (const s of newSections) next.add(s.id);
+      return next;
+    });
+
+    toast.success(
+      `${t("importFramework.imported")} ${newSections.length} ${t("sections")}, ${newSections.reduce((n, s) => n + s.questions.length, 0)} ${t("questions")}`,
+    );
+    setImporting(false);
+    setImportOpen(false);
+    setImportFramework("");
+    setImportEntries([]);
+  }, [template, importEntries, importSelectedSections, t]);
+
+  // ──────────────────────────────────────────────────────────────
   // Selected items
   // ──────────────────────────────────────────────────────────────
 
@@ -379,6 +502,19 @@ function QuestionnaireEditInner() {
         >
           {t(`status.${template.status}`)}
         </Badge>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => {
+            setImportOpen(true);
+            setImportFramework("");
+            setImportEntries([]);
+            setImportSelectedSections(new Set());
+          }}
+        >
+          <Download size={14} />
+          {t("importFramework.button")}
+        </Button>
         <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
           {saving ? (
             <Loader2 size={14} className="animate-spin" />
@@ -1144,6 +1280,111 @@ function QuestionnaireEditInner() {
           )}
         </div>
       </div>
+
+      {/* Import from Framework Dialog */}
+      <Dialog open={importOpen} onOpenChange={setImportOpen}>
+        <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>{t("importFramework.title")}</DialogTitle>
+            <DialogDescription>{t("importFramework.description")}</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-5">
+            {/* Framework selector */}
+            <div>
+              <label className="text-xs font-medium text-gray-700">{t("importFramework.selectFramework")}</label>
+              <select
+                value={importFramework}
+                onChange={(e) => void handleFrameworkChange(e.target.value)}
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
+              >
+                <option value="">{t("importFramework.chooseFramework")}</option>
+                {IMPORT_FRAMEWORKS.map((fw) => (
+                  <option key={fw.value} value={fw.value}>
+                    {fw.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* Loading */}
+            {importLoading && (
+              <div className="flex items-center gap-2 py-4 text-sm text-gray-400">
+                <Loader2 size={14} className="animate-spin" />
+                {t("importFramework.loading")}
+              </div>
+            )}
+
+            {/* Section selection */}
+            {!importLoading && importEntries.length > 0 && (
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-medium text-gray-700">
+                    {t("importFramework.selectSections")}
+                  </label>
+                  <span className="text-xs text-gray-500">
+                    {importSelectedSections.size} / {importEntries.filter((e) => e.level === 0).length} {t("importFramework.selected")}
+                  </span>
+                </div>
+                <div className="space-y-1.5 max-h-64 overflow-y-auto rounded-md border border-gray-200 p-3">
+                  {importEntries
+                    .filter((e) => e.level === 0)
+                    .map((section) => {
+                      const childCount = importEntries.filter(
+                        (e) => e.level >= 1 && e.parentCode === section.code,
+                      ).length;
+                      return (
+                        <label
+                          key={section.id}
+                          className={`flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-colors ${
+                            importSelectedSections.has(section.code)
+                              ? "bg-blue-50 border-blue-200"
+                              : "border-gray-200 hover:bg-gray-50"
+                          }`}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={importSelectedSections.has(section.code)}
+                            onChange={() => toggleImportSection(section.code)}
+                            className="h-4 w-4 rounded text-blue-600 mt-0.5"
+                          />
+                          <div className="flex-1">
+                            <span className="text-sm font-medium text-gray-900">{section.title}</span>
+                            {section.description && (
+                              <p className="text-xs text-gray-500 mt-0.5">{section.description}</p>
+                            )}
+                            <p className="text-xs text-gray-400 mt-0.5">
+                              {childCount} {t("questions").toLowerCase()}
+                            </p>
+                          </div>
+                        </label>
+                      );
+                    })}
+                </div>
+              </div>
+            )}
+
+            {!importLoading && importFramework && importEntries.length === 0 && (
+              <p className="text-sm text-gray-400 py-4">{t("importFramework.noEntries")}</p>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" size="sm" onClick={() => setImportOpen(false)}>
+              {t("importFramework.cancel")}
+            </Button>
+            <Button
+              size="sm"
+              onClick={handleImportSections}
+              disabled={importing || importSelectedSections.size === 0}
+            >
+              {importing && <Loader2 size={14} className="animate-spin mr-1" />}
+              <Download size={14} className="mr-1" />
+              {t("importFramework.importButton")} ({importSelectedSections.size})
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
