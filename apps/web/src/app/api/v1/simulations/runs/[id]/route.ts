@@ -1,4 +1,4 @@
-import { db, simulationRun, simulationResult } from "@grc/db";
+import { db, simulationRun, simulationRunResult } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -11,8 +11,8 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
     .where(and(eq(simulationRun.id, id), eq(simulationRun.orgId, ctx.orgId)));
   if (!run) return Response.json({ error: "Not found" }, { status: 404 });
 
-  const results = await db.select().from(simulationResult)
-    .where(eq(simulationResult.runId, id));
+  const results = await db.select().from(simulationRunResult)
+    .where(eq(simulationRunResult.runId, id));
 
   return Response.json({ data: { ...run, results } });
 }

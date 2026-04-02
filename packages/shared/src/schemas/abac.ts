@@ -43,7 +43,7 @@ export const simulationResourceSchema = z.object({
   costPerHour: z.number().min(0),
 });
 
-export const createSimulationScenarioSchema = z.object({
+export const createAbacSimulationScenarioSchema = z.object({
   name: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
   caseCount: z.number().int().min(10).max(100000).default(1000),
@@ -51,7 +51,7 @@ export const createSimulationScenarioSchema = z.object({
   resourceConfig: z.array(simulationResourceSchema).max(50).default([]),
 });
 
-export const updateSimulationScenarioSchema = createSimulationScenarioSchema.partial();
+export const updateAbacSimulationScenarioSchema = createAbacSimulationScenarioSchema.partial();
 
 export const simulationActivityParamSchema = z.object({
   activityId: z.string().min(1).max(200),

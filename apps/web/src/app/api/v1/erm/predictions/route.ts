@@ -1,4 +1,4 @@
-import { db, riskPrediction } from "@grc/db";
+import { db, auditRiskPrediction } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, desc } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
@@ -14,13 +14,13 @@ export async function GET(req: Request) {
   const { page, limit, offset, searchParams } = paginate(req);
   const minProbability = searchParams.get("minProbability");
 
-  const conditions = [eq(riskPrediction.orgId, ctx.orgId)];
+  const conditions = [eq(auditRiskPrediction.orgId, ctx.orgId)];
 
   const rows = await db
     .select()
-    .from(riskPrediction)
-    .where(eq(riskPrediction.orgId, ctx.orgId))
-    .orderBy(desc(riskPrediction.escalationProbability))
+    .from(auditRiskPrediction)
+    .where(eq(auditRiskPrediction.orgId, ctx.orgId))
+    .orderBy(desc(auditRiskPrediction.escalationProbability))
     .limit(limit)
     .offset(offset);
 
@@ -30,9 +30,9 @@ export async function GET(req: Request) {
     : rows;
 
   const allRows = await db
-    .select({ id: riskPrediction.id })
-    .from(riskPrediction)
-    .where(eq(riskPrediction.orgId, ctx.orgId));
+    .select({ id: auditRiskPrediction.id })
+    .from(auditRiskPrediction)
+    .where(eq(auditRiskPrediction.orgId, ctx.orgId));
 
   return paginatedResponse(filtered, allRows.length, page, limit);
 }

@@ -48,7 +48,7 @@ export const listVarCalculationsQuerySchema = z.object({
 // Risk Appetite Threshold
 // ──────────────────────────────────────────────────────────────
 
-export const createRiskAppetiteThresholdSchema = z.object({
+export const createRqRiskAppetiteThresholdSchema = z.object({
   name: z.string().min(1).max(300),
   category: z.string().max(100).optional(),
   appetiteAmount: z.number().min(0),
@@ -56,7 +56,7 @@ export const createRiskAppetiteThresholdSchema = z.object({
   alertEnabled: z.boolean().default(true),
 });
 
-export const updateRiskAppetiteThresholdSchema = createRiskAppetiteThresholdSchema.partial();
+export const updateRqRiskAppetiteThresholdSchema = createRqRiskAppetiteThresholdSchema.partial();
 
 export const listRiskAppetiteThresholdsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -136,7 +136,7 @@ export const exportBoardPresentationSchema = z.object({
 
 export type UpsertRiskQuantConfigInput = z.infer<typeof upsertRiskQuantConfigSchema>;
 export type TriggerVarCalculationInput = z.infer<typeof triggerVarCalculationSchema>;
-export type CreateRiskAppetiteThresholdInput = z.infer<typeof createRiskAppetiteThresholdSchema>;
+export type CreateRiskAppetiteThresholdInput = z.infer<typeof createRqRiskAppetiteThresholdSchema>;
 export type CreateSensitivityAnalysisInput = z.infer<typeof createSensitivityAnalysisSchema>;
 export type CreateRiskExecutiveSummaryInput = z.infer<typeof createRiskExecutiveSummarySchema>;
 export type ExportBoardPresentationInput = z.infer<typeof exportBoardPresentationSchema>;

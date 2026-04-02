@@ -27,7 +27,7 @@ export async function GET(req: Request) {
       GROUP BY ${sql.raw(dim)}
       ORDER BY count DESC
     `);
-    distributions[dim] = (result.rows ?? result) as Array<{ value: string; count: number }>;
+    distributions[dim] = result as unknown as Array<{ value: string; count: number }>;
   }
 
   return Response.json({ data: distributions });

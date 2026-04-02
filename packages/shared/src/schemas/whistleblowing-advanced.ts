@@ -39,7 +39,7 @@ export const recordDecisionSchema = z.object({
 });
 
 // ─── Evidence ───────────────────────────────────────────────
-export const createEvidenceSchema = z.object({
+export const createWbEvidenceSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
   fileUrl: z.string().max(2000).optional(),

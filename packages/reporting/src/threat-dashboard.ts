@@ -89,7 +89,7 @@ export async function getThreatHeatmap(
     ORDER BY scenario_count DESC
   `);
 
-  return (rows.rows as Array<Record<string, unknown>>).map((row) => {
+  return (rows as unknown as Array<Record<string, unknown>>).map((row) => {
     const count = row.scenario_count as number;
     let color: ThreatHeatmapCell["color"] = "white";
     if (count >= 6) color = "red";
@@ -130,7 +130,7 @@ export async function getTopThreats(
     LIMIT ${limit}
   `);
 
-  return (rows.rows as Array<Record<string, unknown>>).map((row) => ({
+  return (rows as unknown as Array<Record<string, unknown>>).map((row) => ({
     threatId: row.threat_id as string,
     title: row.title as string,
     code: (row.code as string) || null,
@@ -185,7 +185,7 @@ export async function getThreatTrends(
     ORDER BY m.month
   `);
 
-  return (rows.rows as Array<Record<string, unknown>>).map((row) => ({
+  return (rows as unknown as Array<Record<string, unknown>>).map((row) => ({
     month: row.month as string,
     newThreats: row.new_threats as number,
     mitigatedThreats: row.mitigated_threats as number,
@@ -215,7 +215,7 @@ export async function getControlCoverage(
     ORDER BY total_vulnerabilities DESC
   `);
 
-  return (rows.rows as Array<Record<string, unknown>>).map((row) => {
+  return (rows as unknown as Array<Record<string, unknown>>).map((row) => {
     const total = row.total_vulnerabilities as number;
     const covered = row.covered_vulnerabilities as number;
     return {

@@ -17,7 +17,7 @@ export type AcrChangeType = "add_element" | "remove_element" | "modify_element" 
 export type AcrStatus = "draft" | "submitted" | "under_review" | "approved" | "rejected" | "deferred";
 export type AcrRiskAssessment = "low" | "medium" | "high" | "critical";
 export type VoteChoice = "approve" | "reject" | "defer" | "abstain";
-export type CloudProvider = "aws" | "azure" | "gcp";
+export type EamCloudProvider = "aws" | "azure" | "gcp";
 
 export interface DataFlow {
   id: string;
@@ -152,7 +152,7 @@ export interface ArchitectureHealthSnapshot {
 
 export interface CloudServiceCatalogEntry {
   id: string;
-  provider: CloudProvider;
+  provider: EamCloudProvider;
   serviceName: string;
   category: string;
   description?: string;

@@ -119,7 +119,7 @@ export const riskVarCalculation = pgTable(
 // 79.3 RiskAppetiteThreshold — Appetite vs Actual tracking
 // ──────────────────────────────────────────────────────────────
 
-export const riskAppetiteThreshold = pgTable(
+export const rqRiskAppetiteThreshold = pgTable(
   "risk_appetite_threshold",
   {
     id: uuid("id").primaryKey().defaultRandom(),

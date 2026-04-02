@@ -1,4 +1,4 @@
-import { db, simulationResult } from "@grc/db";
+import { db, processSimulationResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -18,8 +18,8 @@ export async function GET(
 
   const [result] = await db
     .select()
-    .from(simulationResult)
-    .where(and(eq(simulationResult.id, runId), eq(simulationResult.orgId, ctx.orgId)));
+    .from(processSimulationResult)
+    .where(and(eq(processSimulationResult.id, runId), eq(processSimulationResult.orgId, ctx.orgId)));
 
   if (!result) {
     return Response.json({ error: "Result not found" }, { status: 404 });

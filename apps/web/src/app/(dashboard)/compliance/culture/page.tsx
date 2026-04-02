@@ -218,7 +218,7 @@ export default function CCIDashboardPage() {
               </div>
               <div className="flex items-center gap-2">
                 <TrendIcon trend={trend} />
-                {delta !== null && (
+                {delta != null && (
                   <span
                     className={`text-sm font-medium ${
                       delta > 0

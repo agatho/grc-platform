@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     ORDER BY ap.annual_cost DESC
   `);
 
-  const rows = (result.rows ?? result) as Array<{ id: string; name: string; category: string; annual_cost: string }>;
+  const rows = result as unknown as Array<{ id: string; name: string; category: string; annual_cost: string }>;
   const categoryMap: Record<string, { name: string; value: number; children: { name: string; value: number; id: string }[] }> = {};
 
   for (const row of rows) {

@@ -3,7 +3,7 @@ import { z } from "zod";
 // Sprint 45: ESG Advanced — Zod Schemas
 
 // ─── Materiality Assessment ─────────────────────────────────
-export const createMaterialityAssessmentSchema = z.object({
+export const createEsgAdvMaterialityAssessmentSchema = z.object({
   reportingPeriodYear: z.number().int().min(2020).max(2100),
   financialThreshold: z.object({
     scoreThreshold: z.number().int().min(0).max(100).default(50),
@@ -13,7 +13,7 @@ export const createMaterialityAssessmentSchema = z.object({
   }).optional(),
 });
 
-export const updateMaterialityAssessmentSchema = createMaterialityAssessmentSchema.partial();
+export const updateEsgAdvMaterialityAssessmentSchema = createEsgAdvMaterialityAssessmentSchema.partial();
 
 // ─── Materiality IRO ────────────────────────────────────────
 export const ESRS_TOPICS = ["E1", "E2", "E3", "E4", "E5", "S1", "S2", "S3", "S4", "G1", "G2"] as const;

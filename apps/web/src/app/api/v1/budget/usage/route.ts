@@ -21,7 +21,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const data = (rows.rows ?? rows).map((r: any) => ({
+  const data = (rows as any[]).map((r: any) => ({
     budgetId: r.budget_id,
     orgId: r.org_id,
     budgetName: r.budget_name,

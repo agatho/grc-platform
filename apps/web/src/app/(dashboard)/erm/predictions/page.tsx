@@ -22,7 +22,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { RiskPrediction, PredictionFactor, RiskPredictionModel } from "@grc/shared";
+import type { AuditRiskPrediction, PredictionFactor, AuditRiskPredictionModel } from "@grc/shared";
 
 export default function PredictionsPage() {
   return (
@@ -34,10 +34,10 @@ export default function PredictionsPage() {
 
 function PredictionsInner() {
   const t = useTranslations("predictions");
-  const [predictions, setPredictions] = useState<RiskPrediction[]>([]);
+  const [predictions, setPredictions] = useState<AuditRiskPrediction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPrediction, setSelectedPrediction] = useState<RiskPrediction | null>(null);
-  const [modelInfo, setModelInfo] = useState<RiskPredictionModel | null>(null);
+  const [selectedPrediction, setSelectedPrediction] = useState<AuditRiskPrediction | null>(null);
+  const [modelInfo, setModelInfo] = useState<AuditRiskPredictionModel | null>(null);
   const [retraining, setRetraining] = useState(false);
 
   useEffect(() => {

@@ -140,6 +140,9 @@ export const organization = pgTable(
     supervisoryAuthority: text("supervisory_authority"),
     dataResidency: varchar("data_residency", { length: 2 }),
     gdprSettings: jsonb("gdpr_settings").default({}),
+    // Hierarchy fields for org tree
+    hierarchyLevel: integer("hierarchy_level").default(0),
+    hierarchyPath: text("hierarchy_path"),
     // Cross-cutting mandatory fields (Data_Model.md §Architecture)
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),

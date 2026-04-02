@@ -1,11 +1,11 @@
 // Sprint 52: EAM UX & Unified Catalog types
 
-export type CatalogObjectType = "application" | "business_capability" | "it_component" | "data_object" | "provider" | "interface";
+export type EamCatalogObjectType = "application" | "business_capability" | "it_component" | "data_object" | "provider" | "interface";
 export type CatalogTab = "list" | "dashboard" | "lifecycle" | "eam_dashboard";
-export type WidgetType = "donut_category" | "donut_lifecycle" | "donut_fit" | "capability_map" | "context_diagram" | "health_score" | "cost_summary" | "risk_count" | "cve_count" | "keyword_cloud" | "recent_changes" | "lifecycle_countdown";
+export type EamWidgetType = "donut_category" | "donut_lifecycle" | "donut_fit" | "capability_map" | "context_diagram" | "health_score" | "cost_summary" | "risk_count" | "cve_count" | "keyword_cloud" | "recent_changes" | "lifecycle_countdown";
 
 export interface CatalogFilters {
-  objectTypes: CatalogObjectType[];
+  objectTypes: EamCatalogObjectType[];
   search?: string;
   keywords?: string[];
   lifecycleStatus?: string[];
@@ -25,7 +25,7 @@ export interface CatalogItem {
   id: string;
   name: string;
   description: string | null;
-  objectType: CatalogObjectType;
+  objectType: EamCatalogObjectType;
   keywords: string[];
   lifecycleStatus: string | null;
   category: string | null;
@@ -72,13 +72,13 @@ export interface HomepageLayout {
 }
 
 export interface HomepageWidget {
-  widgetType: WidgetType;
+  widgetType: EamWidgetType;
   position: { x: number; y: number; w: number; h: number };
   config?: Record<string, unknown>;
 }
 
-export interface WidgetDefinition {
-  type: WidgetType;
+export interface EamWidgetDefinition {
+  type: EamWidgetType;
   label: string;
   description: string;
   defaultSize: { w: number; h: number };

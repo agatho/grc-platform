@@ -1,4 +1,4 @@
-import { db, simulationResult } from "@grc/db";
+import { db, processSimulationResult } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -24,16 +24,16 @@ export async function GET(
 
   const [resultA] = await db
     .select()
-    .from(simulationResult)
-    .where(and(eq(simulationResult.scenarioId, scenarioA), eq(simulationResult.orgId, ctx.orgId)))
-    .orderBy(simulationResult.executedAt)
+    .from(processSimulationResult)
+    .where(and(eq(processSimulationResult.scenarioId, scenarioA), eq(processSimulationResult.orgId, ctx.orgId)))
+    .orderBy(processSimulationResult.executedAt)
     .limit(1);
 
   const [resultB] = await db
     .select()
-    .from(simulationResult)
-    .where(and(eq(simulationResult.scenarioId, scenarioB), eq(simulationResult.orgId, ctx.orgId)))
-    .orderBy(simulationResult.executedAt)
+    .from(processSimulationResult)
+    .where(and(eq(processSimulationResult.scenarioId, scenarioB), eq(processSimulationResult.orgId, ctx.orgId)))
+    .orderBy(processSimulationResult.executedAt)
     .limit(1);
 
   if (!resultA || !resultB) {

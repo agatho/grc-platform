@@ -267,4 +267,12 @@ export interface RadarDataPoint {
   axis: string;
   current: number;
   target: number;
+  // Predictive-risk radar fields (optional for ISMS maturity usage)
+  entityType?: string;
+  entityId?: string;
+  entityName?: string;
+  currentValue?: number;
+  predictedValue?: number;
+  riskLevel?: string;
+  trendDirection?: string;
 }

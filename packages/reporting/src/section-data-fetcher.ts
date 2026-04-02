@@ -129,7 +129,7 @@ async function fetchRiskRegisterTable(ctx: FetchContext): Promise<TableData> {
       "Residual I",
       "Status",
     ],
-    rows: rows.rows as Array<Record<string, unknown>>,
+    rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
 
@@ -167,7 +167,7 @@ async function fetchRiskByCategory(ctx: FetchContext): Promise<ChartData> {
     ORDER BY cnt DESC
     LIMIT 10
   `);
-  const data = rows.rows as Array<{ category: string; cnt: number }>;
+  const data = rows as unknown as Array<{ category: string; cnt: number }>;
   return {
     labels: data.map((r) => r.category || "Uncategorized"),
     datasets: [
@@ -188,7 +188,7 @@ async function fetchRiskTrend(ctx: FetchContext): Promise<ChartData> {
     GROUP BY month
     ORDER BY month
   `);
-  const data = rows.rows as Array<{ month: string; cnt: number }>;
+  const data = rows as unknown as Array<{ month: string; cnt: number }>;
   return {
     labels: data.map((r) => r.month),
     datasets: [
@@ -225,7 +225,7 @@ async function fetchControlEffectivenessTable(
       "Test Frequency",
       "Last Test",
     ],
-    rows: rows.rows as Array<Record<string, unknown>>,
+    rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
 
@@ -267,7 +267,7 @@ async function fetchCESDistribution(ctx: FetchContext): Promise<ChartData> {
     GROUP BY bucket
     ORDER BY cnt DESC
   `);
-  const data = rows.rows as Array<{ bucket: string; cnt: number }>;
+  const data = rows as unknown as Array<{ bucket: string; cnt: number }>;
   return {
     labels: data.map((r) => r.bucket),
     datasets: [{ label: "Controls", data: data.map((r) => r.cnt) }],
@@ -289,7 +289,7 @@ async function fetchIncidentsTable(ctx: FetchContext): Promise<TableData> {
   `);
   return {
     headers: ["ID", "Title", "Severity", "Status", "Detected", "Category"],
-    rows: rows.rows as Array<Record<string, unknown>>,
+    rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
 
@@ -303,7 +303,7 @@ async function fetchThreatsTable(ctx: FetchContext): Promise<TableData> {
   `);
   return {
     headers: ["Code", "Title", "Category", "Likelihood"],
-    rows: rows.rows as Array<Record<string, unknown>>,
+    rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
 
@@ -319,7 +319,7 @@ async function fetchVulnerabilitiesTable(
   `);
   return {
     headers: ["Title", "Severity", "Status", "CVSS"],
-    rows: rows.rows as Array<Record<string, unknown>>,
+    rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
 
@@ -365,7 +365,7 @@ async function fetchIncidentBySeverity(
     GROUP BY severity
     ORDER BY cnt DESC
   `);
-  const data = rows.rows as Array<{ severity: string; cnt: number }>;
+  const data = rows as unknown as Array<{ severity: string; cnt: number }>;
   return {
     labels: data.map((r) => r.severity),
     datasets: [{ label: "Incidents", data: data.map((r) => r.cnt) }],

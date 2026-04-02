@@ -1,6 +1,6 @@
 // Sprint 13a: Branding & Dashboard Layout types
 
-export type ReportTemplate = "standard" | "formal" | "minimal";
+export type BrandingReportTemplate = "standard" | "formal" | "minimal";
 
 export interface OrgBranding {
   id: string;
@@ -14,7 +14,7 @@ export interface OrgBranding {
   darkModeAccentColor: string | null;
   logoPath: string | null;
   faviconPath: string | null;
-  reportTemplate: ReportTemplate;
+  reportTemplate: BrandingReportTemplate;
   confidentialityNotice: string | null;
   customCss: string | null;
   inheritFromParent: boolean;
@@ -35,7 +35,7 @@ export interface BrandingResponse {
   faviconUrl: string | null;
   darkModePrimaryColor: string | null;
   darkModeAccentColor: string | null;
-  reportTemplate: ReportTemplate;
+  reportTemplate: BrandingReportTemplate;
   confidentialityNotice: string | null;
   inheritFromParent: boolean;
   isInherited: boolean;
