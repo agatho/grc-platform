@@ -45,15 +45,15 @@ const RadioGroupItem = React.forwardRef<HTMLInputElement, RadioGroupItemProps>(
         type="button"
         role="radio"
         aria-checked={checked}
-        className={`aspect-square h-4 w-4 rounded-full border border-primary text-primary ring-offset-background focus:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
-          checked ? "bg-primary" : ""
+        className={`aspect-square h-4 w-4 rounded-full border border-gray-300 text-blue-600 ring-offset-background transition-all duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/20 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${
+          checked ? "bg-blue-600 border-blue-600" : ""
         } ${className ?? ""}`}
         onClick={() => context.onValueChange?.(value)}
         {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
       >
         {checked && (
           <span className="flex items-center justify-center">
-            <span className="h-2 w-2 rounded-full bg-primary-foreground" />
+            <span className="h-2 w-2 rounded-full bg-white" />
           </span>
         )}
       </button>

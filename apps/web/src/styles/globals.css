@@ -1,1 +1,153 @@
 @import "tailwindcss";
+
+/* ── ARCTOS Design System ── */
+
+@theme {
+  /* Override Tailwind's gray with warm stone-tinted neutrals */
+  --color-gray-50:  oklch(0.985 0.002 75);
+  --color-gray-100: oklch(0.968 0.003 75);
+  --color-gray-200: oklch(0.930 0.005 75);
+  --color-gray-300: oklch(0.870 0.007 75);
+  --color-gray-400: oklch(0.710 0.010 75);
+  --color-gray-500: oklch(0.556 0.012 75);
+  --color-gray-600: oklch(0.446 0.012 75);
+  --color-gray-700: oklch(0.373 0.010 75);
+  --color-gray-800: oklch(0.268 0.008 75);
+  --color-gray-900: oklch(0.205 0.006 75);
+  --color-gray-950: oklch(0.145 0.005 75);
+
+  /* Alias slate to gray so shadcn components match page colors */
+  --color-slate-50:  var(--color-gray-50);
+  --color-slate-100: var(--color-gray-100);
+  --color-slate-200: var(--color-gray-200);
+  --color-slate-300: var(--color-gray-300);
+  --color-slate-400: var(--color-gray-400);
+  --color-slate-500: var(--color-gray-500);
+  --color-slate-600: var(--color-gray-600);
+  --color-slate-700: var(--color-gray-700);
+  --color-slate-800: var(--color-gray-800);
+  --color-slate-900: var(--color-gray-900);
+  --color-slate-950: var(--color-gray-950);
+
+  /* Override blue with deep midnight navy */
+  --color-blue-50:  oklch(0.970 0.018 250);
+  --color-blue-100: oklch(0.940 0.035 250);
+  --color-blue-200: oklch(0.885 0.062 250);
+  --color-blue-300: oklch(0.800 0.100 250);
+  --color-blue-400: oklch(0.680 0.150 252);
+  --color-blue-500: oklch(0.560 0.185 255);
+  --color-blue-600: oklch(0.468 0.185 258);
+  --color-blue-700: oklch(0.392 0.160 258);
+  --color-blue-800: oklch(0.320 0.120 258);
+  --color-blue-900: oklch(0.260 0.080 258);
+  --color-blue-950: oklch(0.185 0.050 260);
+
+  /* Custom shadows with warm tint */
+  --shadow-sm: 0 1px 2px oklch(0.2 0.01 75 / 0.06);
+  --shadow: 0 1px 3px oklch(0.2 0.01 75 / 0.08), 0 1px 2px oklch(0.2 0.01 75 / 0.04);
+  --shadow-md: 0 4px 6px oklch(0.2 0.01 75 / 0.07), 0 2px 4px oklch(0.2 0.01 75 / 0.04);
+  --shadow-lg: 0 10px 15px oklch(0.2 0.01 75 / 0.08), 0 4px 6px oklch(0.2 0.01 75 / 0.04);
+  --shadow-xl: 0 20px 25px oklch(0.2 0.01 75 / 0.10), 0 8px 10px oklch(0.2 0.01 75 / 0.04);
+
+  /* Font families (variables set by next/font in layout.tsx) */
+  --font-sans: var(--font-geist-sans, ui-sans-serif), system-ui, -apple-system, sans-serif;
+  --font-mono: var(--font-geist-mono, ui-monospace), SFMono-Regular, monospace;
+}
+
+/* ── Obsidian (Dark) Theme ── */
+.dark {
+  --color-gray-50:  oklch(0.178 0.006 260);
+  --color-gray-100: oklch(0.205 0.007 260);
+  --color-gray-200: oklch(0.250 0.009 260);
+  --color-gray-300: oklch(0.340 0.011 260);
+  --color-gray-400: oklch(0.500 0.012 260);
+  --color-gray-500: oklch(0.620 0.010 260);
+  --color-gray-600: oklch(0.720 0.008 260);
+  --color-gray-700: oklch(0.810 0.006 260);
+  --color-gray-800: oklch(0.900 0.004 260);
+  --color-gray-900: oklch(0.945 0.002 260);
+  --color-gray-950: oklch(0.975 0.001 260);
+
+  --color-blue-50:  oklch(0.210 0.040 250);
+  --color-blue-100: oklch(0.250 0.060 250);
+  --color-blue-200: oklch(0.320 0.090 250);
+  --color-blue-300: oklch(0.420 0.130 250);
+  --color-blue-400: oklch(0.540 0.170 250);
+  --color-blue-500: oklch(0.640 0.195 248);
+  --color-blue-600: oklch(0.700 0.185 246);
+  --color-blue-700: oklch(0.760 0.160 244);
+  --color-blue-800: oklch(0.830 0.120 244);
+  --color-blue-900: oklch(0.900 0.060 244);
+  --color-blue-950: oklch(0.950 0.030 244);
+
+  --shadow-sm: 0 1px 2px oklch(0 0 0 / 0.3);
+  --shadow: 0 1px 3px oklch(0 0 0 / 0.4), 0 1px 2px oklch(0 0 0 / 0.2);
+  --shadow-md: 0 4px 6px oklch(0 0 0 / 0.3), 0 2px 4px oklch(0 0 0 / 0.15);
+  --shadow-lg: 0 10px 15px oklch(0 0 0 / 0.35), 0 4px 6px oklch(0 0 0 / 0.15);
+}
+
+/* ── Polar (High Contrast) Theme ── */
+.high-contrast {
+  --color-gray-50:  oklch(1.0 0 0);
+  --color-gray-100: oklch(0.965 0 0);
+  --color-gray-200: oklch(0.800 0 0);
+  --color-gray-300: oklch(0.650 0 0);
+  --color-gray-400: oklch(0.500 0 0);
+  --color-gray-500: oklch(0.380 0 0);
+  --color-gray-600: oklch(0.280 0 0);
+  --color-gray-700: oklch(0.180 0 0);
+  --color-gray-800: oklch(0.100 0 0);
+  --color-gray-900: oklch(0.050 0 0);
+  --color-gray-950: oklch(0.0 0 0);
+
+  --color-blue-600: oklch(0.400 0.220 260);
+  --color-blue-700: oklch(0.350 0.220 260);
+}
+
+/* ── Surface overrides for bg-white ── */
+@layer utilities {
+  .bg-white {
+    background-color: var(--color-surface, #ffffff);
+  }
+}
+
+:root {
+  --color-surface: #ffffff;
+}
+
+.dark {
+  --color-surface: oklch(0.178 0.006 260);
+}
+
+.high-contrast {
+  --color-surface: #ffffff;
+}
+
+/* ── Base layer: fonts & features ── */
+@layer base {
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  h1, h2, h3, h4 {
+    font-family: var(--font-heading, var(--font-sans));
+    letter-spacing: -0.02em;
+  }
+
+  /* Tabular numbers in data contexts */
+  td, th, .tabular-nums {
+    font-feature-settings: "tnum";
+    font-variant-numeric: tabular-nums;
+  }
+}
+
+/* ── Utility classes ── */
+@layer utilities {
+  .hover-lift {
+    transition: transform 200ms cubic-bezier(0.16, 1, 0.3, 1), box-shadow 200ms cubic-bezier(0.16, 1, 0.3, 1);
+  }
+  .hover-lift:hover {
+    transform: translateY(-1px);
+  }
+}

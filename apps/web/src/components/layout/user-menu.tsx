@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { User, LogOut, Settings, Globe } from "lucide-react";
+import { ThemeSwitcher } from "./theme-switcher";
 
 const LANGUAGES = [
   { code: "de", label: "DE" },
@@ -115,6 +116,10 @@ export function UserMenu() {
               ))}
             </div>
           </div>
+
+          <div className="border-t border-gray-100" />
+          <ThemeSwitcher />
+          <div className="border-t border-gray-100" />
 
           <Link
             href="/settings"

@@ -6,6 +6,7 @@ import { Sidebar } from "@/components/layout/sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import { TabBar } from "@/components/layout/tab-bar";
+import { PageTransition } from "@/components/ui/page-transition";
 import { ModuleConfigProvider } from "@/hooks/use-module-config";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { TabProvider } from "@/hooks/use-tab-navigation";
@@ -40,7 +41,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
                 currentOrgId={currentOrgId}
               />
               <TabBar />
-              <main className="flex-1 overflow-y-auto p-4 md:p-6">{children}</main>
+              <main className="flex-1 overflow-y-auto p-4 md:p-6">
+                <PageTransition>{children}</PageTransition>
+              </main>
             </div>
           </div>
         </TabProvider>
