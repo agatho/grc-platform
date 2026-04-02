@@ -35,14 +35,14 @@ COPY . .
 # Build i18n bundles
 RUN npx tsx apps/web/scripts/build-messages.ts
 
-# Build Next.js with standalone output
+# Build Next.js with standalone output (run from root so hoisted deps are found)
 ENV NODE_OPTIONS="--max-old-space-size=4096"
 ENV AUTH_SECRET="build-placeholder"
 ENV AUTH_TRUST_HOST="true"
 ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 ENV NEXT_TELEMETRY_DISABLED=1
 
-RUN cd apps/web && npx next build
+RUN cd apps/web && NODE_PATH=/app/node_modules npx next build
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
 FROM node:22-alpine AS runner
