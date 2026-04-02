@@ -12,7 +12,7 @@ interface HeaderProps {
 
 export function Header({ onMobileMenuToggle, currentOrgId }: HeaderProps) {
   return (
-    <header className="h-14 bg-white border-b border-gray-200 flex items-center justify-between px-4 md:px-6">
+    <header className="h-14 bg-white/90 backdrop-blur-xl border-b border-gray-200/30 flex items-center justify-between px-4 md:px-6">
       <div className="flex items-center gap-3">
         {/* Mobile hamburger */}
         <button

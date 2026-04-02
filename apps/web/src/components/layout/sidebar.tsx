@@ -81,7 +81,7 @@ function SidebarSearchBox({
         value={query}
         onChange={(e) => onChange(e.target.value)}
         placeholder={placeholder}
-        className="w-full pl-8 pr-7 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+        className="w-full pl-8 pr-7 py-1.5 text-sm bg-gray-50 border border-gray-200 rounded-md text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 shadow-inner shadow-gray-100/50"
       />
       {query && (
         <button
@@ -128,7 +128,7 @@ function NavItemLink({
         title={collapsed ? label : undefined}
         className={`flex items-center gap-2.5 mx-2 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
           active
-            ? "bg-blue-50 text-blue-700"
+            ? "relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-blue-600 before:rounded-full bg-blue-50 text-blue-700 font-medium"
             : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
         }`}
       >
@@ -188,7 +188,7 @@ function CollapsibleGroup({
     <div className="mb-1">
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
+        className="flex items-center gap-2 w-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
         aria-expanded={!groupCollapsed}
       >
         {groupCollapsed ? (
@@ -263,7 +263,7 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
     <aside
       className={`${
         collapsed ? "w-16" : "w-72"
-      } hidden md:flex flex-col bg-white border-r border-gray-200 transition-all duration-200`}
+      } hidden md:flex flex-col bg-white/85 backdrop-blur-xl border-r border-gray-200/50 transition-all duration-200`}
     >
       {/* Logo + collapse toggle */}
       <div className="flex items-center justify-between h-14 px-4 border-b border-gray-200">
@@ -399,7 +399,7 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
                 title={t("nav.grouped.settings")}
                 className={`flex items-center justify-center mx-2 px-2.5 py-1.5 rounded-md text-[13px] font-medium transition-colors ${
                   isActive("/settings")
-                    ? "bg-blue-50 text-blue-700"
+                    ? "relative before:absolute before:left-0 before:top-1 before:bottom-1 before:w-0.5 before:bg-blue-600 before:rounded-full bg-blue-50 text-blue-700 font-medium"
                     : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
                 }`}
               >
