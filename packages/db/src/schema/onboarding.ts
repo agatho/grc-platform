@@ -142,7 +142,7 @@ export const templatePackItem = pgTable(
 // 59.5 ImportJob — Bulk import job tracking
 // ──────────────────────────────────────────────────────────────
 
-export const importJob = pgTable(
+export const onboardingImportJob = pgTable(
   "import_job",
   {
     id: uuid("id").primaryKey().defaultRandom(),

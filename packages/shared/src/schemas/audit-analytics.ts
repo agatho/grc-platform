@@ -66,6 +66,6 @@ export const createFindingFromAnalysisSchema = z.object({
 // Prediction
 // ──────────────────────────────────────────────────────────────
 
-export const trainModelSchema = z.object({
+export const trainAuditAnalyticsModelSchema = z.object({
   algorithm: z.enum(["linear_regression", "arima"]).optional().default("linear_regression"),
 });

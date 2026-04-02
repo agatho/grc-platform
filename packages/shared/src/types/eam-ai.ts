@@ -63,13 +63,13 @@ export interface PromptTemplate {
   orgId: string | null;
   templateKey: string;
   templateText: string;
-  variables: PromptVariable[];
+  variables: EamPromptVariable[];
   version: number;
   isActive: boolean;
   isCustom: boolean;
 }
 
-export interface PromptVariable {
+export interface EamPromptVariable {
   name: string;
   type: string;
   description?: string;

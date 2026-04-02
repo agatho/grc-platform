@@ -83,6 +83,7 @@ export const architectureElement = pgTable(
     criticality: varchar("criticality", { length: 20 }).default("normal"),
     tags: text("tags").array(),
     metadata: jsonb("metadata").default("{}"),
+    governanceStatus: varchar("governance_status", { length: 20 }).default("draft"),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -267,6 +268,7 @@ export const applicationPortfolio = pgTable(
     hasApi: boolean("has_api").default(false),
     authMethod: varchar("auth_method", { length: 50 }),
     dataClassification: varchar("data_classification", { length: 20 }),
+    sixRStrategy: varchar("six_r_strategy", { length: 20 }),
   },
   (table) => ({
     elementIdx: uniqueIndex("ap_element_idx").on(table.elementId),

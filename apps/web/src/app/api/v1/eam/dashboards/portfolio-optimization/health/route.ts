@@ -24,7 +24,7 @@ export async function GET(req: Request) {
     WHERE ae.org_id = ${ctx.orgId} AND ae.status != 'retired'
   `);
 
-  const row = ((result.rows ?? result) as Array<Record<string, number>>)[0];
+  const row = (result as unknown as Array<Record<string, number>>)[0];
   const total = row?.total ?? 1;
 
   return Response.json({

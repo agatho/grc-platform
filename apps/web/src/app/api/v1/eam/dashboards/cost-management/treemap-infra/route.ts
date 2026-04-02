@@ -22,7 +22,7 @@ export async function GET(req: Request) {
     ORDER BY (ae.metadata->>'annual_cost')::numeric DESC
   `);
 
-  const rows = (result.rows ?? result) as Array<{ id: string; name: string; provider_name: string; annual_cost: string }>;
+  const rows = result as unknown as Array<{ id: string; name: string; provider_name: string; annual_cost: string }>;
   const providerMap: Record<string, { name: string; value: number; children: { name: string; value: number; id: string }[] }> = {};
 
   for (const row of rows) {

@@ -1,4 +1,4 @@
-import { db, riskPrediction } from "@grc/db";
+import { db, auditRiskPrediction } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -18,14 +18,14 @@ export async function GET(
 
   const [row] = await db
     .select()
-    .from(riskPrediction)
+    .from(auditRiskPrediction)
     .where(
       and(
-        eq(riskPrediction.riskId, riskId),
-        eq(riskPrediction.orgId, ctx.orgId),
+        eq(auditRiskPrediction.riskId, riskId),
+        eq(auditRiskPrediction.orgId, ctx.orgId),
       ),
     )
-    .orderBy(desc(riskPrediction.computedAt))
+    .orderBy(desc(auditRiskPrediction.computedAt))
     .limit(1);
 
   if (!row) {

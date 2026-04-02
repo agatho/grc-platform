@@ -163,7 +163,7 @@ export interface PredictionFactor {
   weight: number;
 }
 
-export interface RiskPrediction {
+export interface AuditRiskPrediction {
   id: string;
   orgId: string;
   riskId: string;
@@ -188,7 +188,7 @@ export interface TrainingMetrics {
   sampleSize: number;
 }
 
-export interface RiskPredictionModel {
+export interface AuditRiskPredictionModel {
   id: string;
   orgId: string;
   version: string;

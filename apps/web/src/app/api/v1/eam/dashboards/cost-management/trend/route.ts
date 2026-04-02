@@ -24,5 +24,5 @@ export async function GET(req: Request) {
     ORDER BY total_annual_cost DESC
   `);
 
-  return Response.json({ data: { categories: result.rows ?? result } });
+  return Response.json({ data: { categories: result } });
 }

@@ -1,4 +1,4 @@
-import { db, simulationRun, simulationScenario } from "@grc/db";
+import { db, simulationRun, scenarioEngineScenario } from "@grc/db";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { startSimulationRunSchema } from "@grc/shared";
@@ -28,8 +28,8 @@ export async function POST(req: Request) {
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Update scenario status
-    await tx.update(simulationScenario).set({ status: "running", updatedAt: new Date() })
-      .where(eq(simulationScenario.id, body.scenarioId));
+    await tx.update(scenarioEngineScenario).set({ status: "running", updatedAt: new Date() })
+      .where(eq(scenarioEngineScenario.id, body.scenarioId));
 
     const [created] = await tx.insert(simulationRun).values({
       orgId: ctx.orgId,

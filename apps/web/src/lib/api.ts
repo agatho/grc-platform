@@ -60,12 +60,14 @@ export async function withAuditContext<T>(
   });
 }
 
-/** Parse pagination params from request. */
-export function paginate(req: Request) {
-  const url = new URL(req.url);
-  const page = Math.max(1, Number(url.searchParams.get("page")) || 1);
-  const limit = Math.min(100, Math.max(1, Number(url.searchParams.get("limit")) || 20));
-  return { page, limit, offset: (page - 1) * limit, searchParams: url.searchParams };
+/** Parse pagination params from request or search params. */
+export function paginate(reqOrParams: Request | URLSearchParams) {
+  const searchParams = reqOrParams instanceof Request
+    ? new URL(reqOrParams.url).searchParams
+    : reqOrParams;
+  const page = Math.max(1, Number(searchParams.get("page")) || 1);
+  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 20));
+  return { page, limit, offset: (page - 1) * limit, searchParams };
 }
 
 /** Build a paginated JSON response. */

@@ -75,7 +75,7 @@ export const impactAssessmentQuerySchema = z.object({
 
 // ─── Regulatory Calendar ─────────────────────────────────────
 
-export const createCalendarEventSchema = z.object({
+export const createRegulatoryCalendarEventSchema = z.object({
   changeId: z.string().uuid().optional(),
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
@@ -88,7 +88,7 @@ export const createCalendarEventSchema = z.object({
   assigneeId: z.string().uuid().optional(),
 });
 
-export const updateCalendarEventSchema = z.object({
+export const updateRegulatoryCalendarEventSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().max(5000).optional(),
   eventDate: z.string().optional(),

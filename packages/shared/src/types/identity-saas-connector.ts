@@ -1,6 +1,6 @@
 // Sprint 64: Identity und SaaS Connectors types
 
-export type IdentityProvider = "entra_id" | "google_workspace" | "okta" | "generic_oidc" | "hr_system";
+export type SaasIdentityProvider = "entra_id" | "google_workspace" | "okta" | "generic_oidc" | "hr_system";
 
 export type IdentityTestCategory =
   | "mfa_enforcement"
@@ -37,7 +37,7 @@ export interface IdentityConnectorConfig {
   id: string;
   orgId: string;
   connectorId: string;
-  identityProvider: IdentityProvider;
+  identityProvider: SaasIdentityProvider;
   tenantId?: string | null;
   domain?: string | null;
   syncEnabled: boolean;

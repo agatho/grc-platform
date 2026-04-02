@@ -86,7 +86,7 @@ export async function GET(req: Request) {
         relationshipType: r.relationshipType,
         description: r.description,
       })),
-      riskReferences: riskRefs.rows ?? riskRefs,
+      riskReferences: riskRefs,
     },
   });
 }

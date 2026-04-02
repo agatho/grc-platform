@@ -2,7 +2,8 @@
 
 export const MODULE_KEYS = [
   'erm', 'bpm', 'ics', 'dms', 'isms', 'bcms',
-  'dpms', 'audit', 'tprm', 'contract', 'esg', 'whistleblowing', 'reporting', 'eam', 'academy', 'community'
+  'dpms', 'audit', 'tprm', 'contract', 'esg', 'whistleblowing', 'reporting', 'eam', 'academy', 'community',
+  'marketplace', 'simulations', 'portals'
 ] as const;
 
 export type ModuleKey = typeof MODULE_KEYS[number];

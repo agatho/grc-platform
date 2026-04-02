@@ -1,8 +1,14 @@
 // Sprint 29: Recursive CTE graph traversal with cycle detection
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type { GraphResult, GraphEdge, GraphNode, RawTraversalRow } from "./types";
 import { MAX_GRAPH_DEPTH, DEFAULT_GRAPH_DEPTH } from "./types";
+
+/** Type-safe wrapper for db.execute with sql template literals */
+function execSql(query: SQL<unknown>) {
+  return db.execute(query as unknown as Parameters<typeof db.execute>[0]);
+}
 
 /**
  * Get a subgraph around a starting entity using PostgreSQL recursive CTE.
@@ -22,7 +28,7 @@ export async function getSubgraph(
 ): Promise<GraphResult> {
   const effectiveDepth = Math.min(Math.max(1, maxDepth), MAX_GRAPH_DEPTH);
 
-  const rows = await db.execute(sql`
+  const rows = await execSql(sql`
     WITH RECURSIVE graph AS (
       -- Base case: all edges connected to start entity
       SELECT
@@ -86,7 +92,7 @@ export async function getAllEdges(
   orgId: string,
   limit: number = 5000,
 ): Promise<{ sourceId: string; sourceType: string; targetId: string; targetType: string; relationship: string; weight: number }[]> {
-  const rows = await db.execute(sql`
+  const rows = await execSql(sql`
     SELECT
       source_id::text as source_id,
       source_type,

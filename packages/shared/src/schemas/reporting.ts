@@ -1,35 +1,12 @@
 import { z } from "zod";
+import {
+  reportModuleScopeValues,
+  reportOutputFormatValues,
+  reportSectionTypeValues,
+  threatFeedTypeValues,
+} from "../types/reporting";
 
 // Sprint 30: Report Engine + Threat Landscape Dashboard Zod schemas
-
-// ──────────────────────────────────────────────────────────────
-// Enums
-// ──────────────────────────────────────────────────────────────
-
-export const reportModuleScopeValues = [
-  "erm",
-  "ics",
-  "isms",
-  "audit",
-  "dpms",
-  "esg",
-  "bcms",
-  "tprm",
-  "all",
-] as const;
-
-export const reportOutputFormatValues = ["pdf", "xlsx"] as const;
-
-export const reportSectionTypeValues = [
-  "title",
-  "text",
-  "table",
-  "chart",
-  "kpi",
-  "page_break",
-] as const;
-
-export const threatFeedTypeValues = ["rss", "atom", "json"] as const;
 
 // ──────────────────────────────────────────────────────────────
 // Section Config

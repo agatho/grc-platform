@@ -22,5 +22,5 @@ export async function GET(req: Request) {
     ORDER BY risk_count DESC
   `);
 
-  return Response.json({ data: result.rows ?? result });
+  return Response.json({ data: result });
 }

@@ -89,7 +89,7 @@ export const archiMateImportSchema = z.object({
   preview: z.boolean().default(false),
 });
 
-export const csvImportSchema = z.object({
+export const eamCsvImportSchema = z.object({
   data: z.array(z.record(z.string())).min(1).max(1000),
   mapping: z.record(z.string()),
 });

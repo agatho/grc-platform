@@ -15,6 +15,7 @@ import {
   index,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
+import { riskPrediction } from "./predictive-risk";
 
 // ──────────────────────────────────────────────────────────────
 // 33.1 AuditAnalyticsImport — Imported ERP/accounting data
@@ -101,8 +102,8 @@ export const auditAnalyticsTemplate = pgTable(
 // 33.4 RiskPrediction — ML predictions per risk
 // ──────────────────────────────────────────────────────────────
 
-export const riskPrediction = pgTable(
-  "risk_prediction",
+export const auditRiskPrediction = pgTable(
+  "audit_risk_prediction",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")
@@ -126,8 +127,8 @@ export const riskPrediction = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    orgRiskIdx: index("rp_org_risk_idx").on(table.orgId, table.riskId),
-    probIdx: index("rp_prob_idx").on(table.orgId, table.escalationProbability),
+    orgRiskIdx: index("arp_org_risk_idx").on(table.orgId, table.riskId),
+    probIdx: index("arp_prob_idx").on(table.orgId, table.escalationProbability),
   }),
 );
 
@@ -135,8 +136,8 @@ export const riskPrediction = pgTable(
 // 33.5 RiskPredictionModel — Model metadata and training metrics
 // ──────────────────────────────────────────────────────────────
 
-export const riskPredictionModel = pgTable(
-  "risk_prediction_model",
+export const auditRiskPredictionModel = pgTable(
+  "audit_risk_prediction_model",
   {
     id: uuid("id").primaryKey().defaultRandom(),
     orgId: uuid("org_id")
@@ -151,7 +152,7 @@ export const riskPredictionModel = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    orgIdx: index("rpm_org_idx").on(table.orgId),
+    orgIdx: index("arpm_org_idx").on(table.orgId),
   }),
 );
 

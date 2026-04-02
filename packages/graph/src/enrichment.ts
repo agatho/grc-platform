@@ -1,7 +1,13 @@
 // Sprint 29: Batch entity enrichment — one query per entity type, never N+1
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import type { SQL } from "drizzle-orm";
 import type { GraphNode, GraphResult } from "./types";
+
+/** Type-safe wrapper for db.execute with sql template literals */
+function execSql(query: SQL<unknown>) {
+  return db.execute(query as unknown as Parameters<typeof db.execute>[0]);
+}
 
 interface EntityDetail {
   id: string;
@@ -61,7 +67,7 @@ export async function enrichGraphNodes(graph: GraphResult): Promise<GraphResult>
           tableConfig.elementIdCol ? `${tableConfig.elementIdCol} as element_id` : `NULL as element_id`,
         ].join(", ");
 
-        const rows = await db.execute(
+        const rows = await execSql(
           sql.raw(`SELECT ${selectCols} FROM ${tableConfig.table} WHERE id IN (${idList})`),
         );
 
@@ -115,7 +121,7 @@ export async function getEntityName(
   if (!tableConfig) return `${entityType}:${entityId.slice(0, 8)}`;
 
   try {
-    const rows = await db.execute(
+    const rows = await execSql(
       sql.raw(
         `SELECT ${tableConfig.nameCol} as name FROM ${tableConfig.table} WHERE id = '${entityId}' LIMIT 1`,
       ),

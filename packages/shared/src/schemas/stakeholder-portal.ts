@@ -77,7 +77,7 @@ export const reviewQuestionnaireSchema = z.object({
 // Evidence Upload
 // ──────────────────────────────────────────────────────────────
 
-export const portalEvidenceUploadSchema = z.object({
+export const stakeholderPortalEvidenceUploadSchema = z.object({
   sessionId: z.string().uuid(),
   fileName: z.string().min(1).max(500),
   fileSize: z.number().int().min(1).max(104857600),
