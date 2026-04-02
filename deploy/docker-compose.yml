@@ -1,0 +1,95 @@
+# ============================================================================
+# ARCTOS GRC Platform — Ready-to-Deploy Stack
+#
+# Usage:
+#   1. Copy this file + .env.sample to your server
+#   2. Rename .env.sample to .env and fill in the values
+#   3. docker compose up -d
+#   4. Open http://your-server:3000
+#   5. Login: admin@arctos.dev / admin123
+#
+# First run: set RUN_SEEDS=true in .env to populate demo data
+# ============================================================================
+
+services:
+  # ── Database ──────────────────────────────────────────────────
+  postgres:
+    image: timescale/timescaledb:latest-pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: grc
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: grc_platform
+      POSTGRES_INITDB_ARGS: "--auth-host=scram-sha-256"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./init-extensions.sql:/docker-entrypoint-initdb.d/01-extensions.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U grc -d grc_platform"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - internal
+
+  # ── Cache ─────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: redis-server --requirepass ${REDIS_PASSWORD:-arctos-redis}
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD:-arctos-redis}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - internal
+
+  # ── ARCTOS Web Application ────────────────────────────────────
+  web:
+    image: ghcr.io/agatho/grc-platform/grc-web:${IMAGE_TAG:-latest}
+    restart: unless-stopped
+    ports:
+      - "${PORT:-3000}:3000"
+    environment:
+      # Required
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD}@postgres:5432/grc_platform
+      AUTH_SECRET: ${AUTH_SECRET}
+      AUTH_URL: ${AUTH_URL:-http://localhost:3000}
+      AUTH_TRUST_HOST: "true"
+      WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY}
+      CRON_SECRET: ${CRON_SECRET}
+      NODE_ENV: production
+      REDIS_URL: redis://:${REDIS_PASSWORD:-arctos-redis}@redis:6379
+      # First run — set to true, then change to false after first startup
+      RUN_SEEDS: ${RUN_SEEDS:-false}
+      # Optional — AI features
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      GOOGLE_AI_API_KEY: ${GOOGLE_AI_API_KEY:-}
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-}
+      # Optional — Email
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      RESEND_FROM_EMAIL: ${RESEND_FROM_EMAIL:-noreply@arctos.local}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      # Optional — SSO
+      AZURE_AD_CLIENT_ID: ${AZURE_AD_CLIENT_ID:-}
+      AZURE_AD_CLIENT_SECRET: ${AZURE_AD_CLIENT_SECRET:-}
+      AZURE_AD_TENANT_ID: ${AZURE_AD_TENANT_ID:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - internal
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  internal:
+    driver: bridge
