@@ -2,6 +2,21 @@
   "title": "Dashboards",
   "welcomeUser": "Welcome, {name}",
   "welcome": "Here is your GRC overview for today.",
+  "widgets": {
+    "openRisks": "Open Risks",
+    "activeControls": "Active Controls",
+    "pendingFindings": "Pending Findings",
+    "complianceScore": "Compliance Score",
+    "recentChanges": "Recent Changes",
+    "notifications": "Notifications",
+    "myTasks": "My Tasks",
+    "upcomingAudits": "Upcoming Audits"
+  },
+  "risk": {
+    "appetite": {
+      "exceeded": "exceeding appetite"
+    }
+  },
   "subtitle": "Create and manage your custom GRC dashboards",
   "createDashboard": "New Dashboard",
   "dashboardName": "Name",
@@ -15,7 +30,31 @@
   "orgDefaults": "Org Defaults",
   "orgDefault": "Org Default",
   "all": "All",
-  "widgets": "Widgets",
+  "myTasks": {
+    "viewAll": "View all tasks",
+    "empty": "No tasks assigned to you",
+    "error": "Failed to load tasks"
+  },
+  "notifications": {
+    "empty": "No new notifications",
+    "error": "Failed to load notifications",
+    "markRead": "Mark as read"
+  },
+  "recentChanges": {
+    "empty": "No recent changes",
+    "error": "Failed to load changes"
+  },
+  "upcomingAudits": {
+    "empty": "No upcoming audits"
+  },
+  "timeAgo": {
+    "justNow": "just now",
+    "minutesAgo": "{count}m ago",
+    "hoursAgo": "{count}h ago",
+    "yesterday": "yesterday",
+    "daysAgo": "{count}d ago"
+  },
+  "widgetsTitle": "Widgets",
   "edit": "Edit",
   "duplicate": "Duplicate",
   "delete": "Delete",

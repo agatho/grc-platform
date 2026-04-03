@@ -2,6 +2,21 @@
   "title": "Dashboards",
   "welcomeUser": "Willkommen, {name}",
   "welcome": "Hier ist Ihre GRC-Uebersicht fuer heute.",
+  "widgets": {
+    "openRisks": "Offene Risiken",
+    "activeControls": "Aktive Kontrollen",
+    "pendingFindings": "Offene Feststellungen",
+    "complianceScore": "Compliance-Score",
+    "recentChanges": "Letzte Aenderungen",
+    "notifications": "Benachrichtigungen",
+    "myTasks": "Meine Aufgaben",
+    "upcomingAudits": "Anstehende Audits"
+  },
+  "risk": {
+    "appetite": {
+      "exceeded": "ueber Risikoappetit"
+    }
+  },
   "subtitle": "Erstellen und verwalten Sie Ihre individuellen GRC-Dashboards",
   "createDashboard": "Neues Dashboard",
   "dashboardName": "Name",
@@ -15,7 +30,31 @@
   "orgDefaults": "Org-Standard",
   "orgDefault": "Org-Standard",
   "all": "Alle",
-  "widgets": "Widgets",
+  "myTasks": {
+    "viewAll": "Alle Aufgaben anzeigen",
+    "empty": "Keine Aufgaben zugewiesen",
+    "error": "Aufgaben konnten nicht geladen werden"
+  },
+  "notifications": {
+    "empty": "Keine neuen Benachrichtigungen",
+    "error": "Benachrichtigungen konnten nicht geladen werden",
+    "markRead": "Als gelesen markieren"
+  },
+  "recentChanges": {
+    "empty": "Keine aktuellen Aenderungen",
+    "error": "Aenderungen konnten nicht geladen werden"
+  },
+  "upcomingAudits": {
+    "empty": "Keine anstehenden Audits"
+  },
+  "timeAgo": {
+    "justNow": "gerade eben",
+    "minutesAgo": "vor {count} Min.",
+    "hoursAgo": "vor {count} Std.",
+    "yesterday": "gestern",
+    "daysAgo": "vor {count} Tagen"
+  },
+  "widgetsTitle": "Widgets",
   "edit": "Bearbeiten",
   "duplicate": "Duplizieren",
   "delete": "Loeschen",
