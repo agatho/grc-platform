@@ -30,10 +30,8 @@ export async function GET(req: Request) {
     return Response.json({ data: [] });
   }
 
-  // Use raw SQL to bypass RLS for cross-org summary
+  // Cross-org summary query (superuser grc bypasses RLS)
   const result = await db.transaction(async (tx) => {
-    await tx.execute(sql`SET LOCAL app.bypass_rls = 'true'`);
-
     const rows = await tx.execute(sql`
       SELECT
         o.id AS org_id,
@@ -61,7 +59,7 @@ export async function GET(req: Request) {
         FROM kri
         WHERE kri.org_id = o.id AND kri.deleted_at IS NULL
       ) k ON true
-      WHERE o.id = ANY(${orgIds})
+      WHERE o.id IN (${sql.join(orgIds.map(id => sql`${id}`), sql`, `)})
         AND o.deleted_at IS NULL
       ORDER BY r.total_risks DESC
     `);
