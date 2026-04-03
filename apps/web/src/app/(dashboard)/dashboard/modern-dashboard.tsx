@@ -275,9 +275,9 @@ export function ModernDashboard({
       </div>
 
       {/* ── Asymmetric bento: left 60% + right 40% ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-5 gap-4">
-        {/* ── LEFT COLUMN (3/5 = 60%) ── */}
-        <div className="lg:col-span-3 space-y-4">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+        {/* ── LEFT COLUMN (2/3 ≈ 66%) ── */}
+        <div className="lg:col-span-2 space-y-5">
           {/* Hero card — compliance ring */}
           {ermEnabled && (
             <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 via-white to-blue-50/30 p-6">
@@ -400,8 +400,8 @@ export function ModernDashboard({
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN (2/5 = 40%) ── */}
-        <div className="lg:col-span-2 space-y-4">
+        {/* ── RIGHT COLUMN (1/3 ≈ 33%) ── */}
+        <div className="space-y-5">
           {/* ── Tasks as checklist ── */}
           <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
