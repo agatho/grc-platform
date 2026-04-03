@@ -43,5 +43,10 @@
   "correlations": {
     "title": "Korrelationsanalyse",
     "strength": "Korrelationsstaerke"
+  },
+  "emptyState": {
+    "title": "Noch keine Vorhersagemodelle",
+    "description": "Erstellen und trainieren Sie ein Vorhersagemodell, um Risikovorhersagen, Anomalieerkennung und Fruehwarnungen zu generieren.",
+    "createModel": "Erstes Modell erstellen"
   }
 }

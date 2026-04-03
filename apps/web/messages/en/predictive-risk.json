@@ -43,5 +43,10 @@
   "correlations": {
     "title": "Correlation Analysis",
     "strength": "Correlation Strength"
+  },
+  "emptyState": {
+    "title": "No Predictive Models Yet",
+    "description": "Create and train a prediction model to start generating risk forecasts, anomaly detection, and early warnings.",
+    "createModel": "Create First Model"
   }
 }
