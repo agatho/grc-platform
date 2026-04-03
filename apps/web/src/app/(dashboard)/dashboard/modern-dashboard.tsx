@@ -274,10 +274,10 @@ export function ModernDashboard({
         ))}
       </div>
 
-      {/* ── Asymmetric bento: left 60% + right 40% ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* ── LEFT COLUMN (2/3 ≈ 66%) ── */}
-        <div className="lg:col-span-2 space-y-5">
+      {/* ── Bento grid — mixed card sizes fill the width ── */}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+        {/* ── Hero card spans full width ── */}
+        <div className="md:col-span-2 space-y-5">
           {/* Hero card — compliance ring */}
           {ermEnabled && (
             <div className="relative overflow-hidden rounded-2xl border border-gray-200 bg-gradient-to-br from-gray-50 via-white to-blue-50/30 p-6">
@@ -334,9 +334,12 @@ export function ModernDashboard({
             </div>
           )}
 
-          {/* ── Activity timeline (not boxed in a card) ── */}
-          <div>
-            <div className="flex items-center justify-between mb-3 px-1">
+        </div>
+
+        {/* ── Activity timeline — fills left half below hero ── */}
+        <div>
+          <div className="rounded-2xl border border-gray-200 bg-white p-5">
+            <div className="flex items-center justify-between mb-3">
               <h2 className="text-sm font-semibold text-gray-900">{t("widgets.recentChanges")}</h2>
               <Link href="/audit-log" className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-0.5">
                 {t("myTasks.viewAll")} <ArrowRight size={10} />
@@ -400,7 +403,7 @@ export function ModernDashboard({
           </div>
         </div>
 
-        {/* ── RIGHT COLUMN (1/3 ≈ 33%) ── */}
+        {/* ── Tasks + notifications — fills right half below hero ── */}
         <div className="space-y-5">
           {/* ── Tasks as checklist ── */}
           <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
