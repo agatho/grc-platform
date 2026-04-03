@@ -23,56 +23,6 @@ import {
 import { requireModule } from "@grc/auth";
 import type { SQL } from "drizzle-orm";
 
-// GET /api/v1/kris -- List KRIs for org
-export async function GET(req: Request) {
-  const ctx = await withAuth();
-  if (ctx instanceof Response) return ctx;
-
-  const { page, limit, offset, searchParams } = paginate(req);
-
-  const conditions: SQL[] = [
-    eq(kri.orgId, ctx.orgId),
-  ];
-
-  const riskId = searchParams.get("riskId");
-  if (riskId) {
-    conditions.push(eq(kri.riskId, riskId));
-  }
-
-  const where = and(...conditions);
-
-  const [items, [{ value: total }]] = await Promise.all([
-    db
-      .select({
-        id: kri.id,
-        orgId: kri.orgId,
-        riskId: kri.riskId,
-        name: kri.name,
-        description: kri.description,
-        unit: kri.unit,
-        direction: kri.direction,
-        thresholdGreen: kri.thresholdGreen,
-        thresholdYellow: kri.thresholdYellow,
-        thresholdRed: kri.thresholdRed,
-        measurementFrequency: kri.measurementFrequency,
-        currentAlertStatus: kri.currentAlertStatus,
-        currentValue: kri.currentValue,
-        trend: kri.trend,
-        lastMeasuredAt: kri.lastMeasuredAt,
-        createdAt: kri.createdAt,
-        riskTitle: risk.title,
-      })
-      .from(kri)
-      .leftJoin(risk, eq(kri.riskId, risk.id))
-      .where(where)
-      .orderBy(desc(kri.createdAt))
-      .limit(limit)
-      .offset(offset),
-    db.select({ value: count() }).from(kri).where(where),
-  ]);
-
-  return paginatedResponse(items, total, page, limit);
-}
 
 // POST /api/v1/kris -- Create KRI
 export async function POST(req: Request) {
