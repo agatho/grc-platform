@@ -1,5 +1,7 @@
 {
   "title": "Dashboards",
+  "welcomeUser": "Welcome, {name}",
+  "welcome": "Here is your GRC overview for today.",
   "subtitle": "Create and manage your custom GRC dashboards",
   "createDashboard": "New Dashboard",
   "dashboardName": "Name",
