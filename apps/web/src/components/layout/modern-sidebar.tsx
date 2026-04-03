@@ -227,12 +227,9 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
   const roles = useUserRoles(currentOrgId);
   const { isPinned, togglePin } = useNavPreferences();
 
-  const [hovered, setHovered] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const sidebarRef = useRef<HTMLElement>(null);
-
-  // The modern sidebar is collapsed by default and expands on hover
-  const expanded = hovered;
 
   // Build the flat list for search
   const allItems = useMemo(() => getAllFlatNavItems(), []);
@@ -270,17 +267,19 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
     <>
       <aside
         ref={sidebarRef}
-        onMouseEnter={() => setHovered(true)}
-        onMouseLeave={() => setHovered(false)}
         className={`${
           expanded ? "w-64" : "w-14"
-        } hidden md:flex flex-col bg-white/95 backdrop-blur-xl shadow-lg shadow-gray-200/50 transition-all duration-200 ease-out z-30 relative`}
+        } hidden md:flex flex-col bg-white/95 backdrop-blur-xl shadow-lg shadow-gray-200/50 transition-all duration-300 ease-out z-30 relative`}
       >
-        {/* Logo area */}
+        {/* Logo area — click to toggle */}
         <div className="flex items-center h-14 px-3">
-          <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold shrink-0">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-600 to-indigo-700 text-white text-xs font-bold shrink-0 hover:shadow-md transition-shadow cursor-pointer"
+            title={expanded ? "Collapse sidebar" : "Expand sidebar"}
+          >
             A
-          </div>
+          </button>
           {expanded && (
             <span className="ml-3 text-lg font-bold text-slate-900 tracking-tight whitespace-nowrap">
               ARCTOS
