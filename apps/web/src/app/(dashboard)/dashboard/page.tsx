@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useLayout } from "@/hooks/use-layout-preference";
+import { ModernDashboard } from "./modern-dashboard";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -359,6 +361,34 @@ export default function DashboardPage() {
   }
 
   const userName = session?.user?.name ?? "";
+  const { layout } = useLayout();
+
+  // Helper to pass to modern dashboard
+  const timeAgoFn = (date: string) => timeAgo(date, t);
+
+  if (layout === "modern") {
+    return (
+      <ModernDashboard
+        userName={userName}
+        t={(key: string, values?: Record<string, unknown>) => t(key, values)}
+        rt={(key: string, values?: Record<string, unknown>) => rt(key, values)}
+        ermEnabled={ermEnabled}
+        auditEntries={auditEntries}
+        auditLoading={auditLoading}
+        auditError={auditError}
+        notifications={notifications}
+        notifLoading={notifLoading}
+        notifError={notifError}
+        myTasks={myTasks}
+        tasksLoading={tasksLoading}
+        tasksError={tasksError}
+        riskSummary={riskSummary}
+        riskSummaryLoading={riskSummaryLoading}
+        markAsRead={markAsRead}
+        timeAgo={timeAgoFn}
+      />
+    );
+  }
 
   return (
     <div className="space-y-6">
