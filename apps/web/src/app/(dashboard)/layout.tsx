@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useSession } from "next-auth/react";
 import { Sidebar } from "@/components/layout/sidebar";
+import { ModernSidebar } from "@/components/layout/modern-sidebar";
 import { Header } from "@/components/layout/header";
 import { MobileSidebar } from "@/components/layout/mobile-sidebar";
 import { TabBar } from "@/components/layout/tab-bar";
@@ -10,11 +11,13 @@ import { TabBar } from "@/components/layout/tab-bar";
 import { ModuleConfigProvider } from "@/hooks/use-module-config";
 import { NavPreferencesProvider } from "@/hooks/use-nav-preferences";
 import { TabProvider } from "@/hooks/use-tab-navigation";
+import { LayoutProvider, useLayout } from "@/hooks/use-layout-preference";
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardShell({ children }: { children: React.ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
   const { data: session } = useSession();
+  const { layout } = useLayout();
 
   // Derive current org from first role or null
   const currentOrgId = session?.user?.roles?.[0]?.orgId ?? null;
@@ -24,11 +27,19 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
       <NavPreferencesProvider>
         <TabProvider>
           <div className="flex h-screen bg-gray-50">
-            <Sidebar
-              collapsed={sidebarCollapsed}
-              onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
-              currentOrgId={currentOrgId}
-            />
+            {layout === "modern" ? (
+              <ModernSidebar
+                collapsed={sidebarCollapsed}
+                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                currentOrgId={currentOrgId}
+              />
+            ) : (
+              <Sidebar
+                collapsed={sidebarCollapsed}
+                onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+                currentOrgId={currentOrgId}
+              />
+            )}
             <MobileSidebar
               open={mobileOpen}
               onClose={() => setMobileOpen(false)}
@@ -49,5 +60,13 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </TabProvider>
       </NavPreferencesProvider>
     </ModuleConfigProvider>
+  );
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <LayoutProvider>
+      <DashboardShell>{children}</DashboardShell>
+    </LayoutProvider>
   );
 }
