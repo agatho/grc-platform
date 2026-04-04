@@ -1621,7 +1621,19 @@
     "noFile": "No file attached",
     "fileInfo": "File Information",
     "replaceFile": "Replace File",
-    "dragOrClick": "Drag & drop a file or click to browse"
+    "dragOrClick": "Drag & drop a file or click to browse",
+    "categories": {
+      "risk_assessment": "Risk Assessment",
+      "audit_report": "Audit Report",
+      "contract": "Contract",
+      "training_material": "Training Material",
+      "process_description": "Process Description",
+      "evidence": "Evidence",
+      "meeting_minutes": "Meeting Minutes",
+      "management_review": "Management Review",
+      "certificate": "Certificate",
+      "regulation": "Regulation"
+    }
   },
   "findings": {
     "title": "Findings Dashboard",

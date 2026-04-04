@@ -1621,7 +1621,19 @@
     "noFile": "Keine Datei angehaengt",
     "fileInfo": "Dateiinformationen",
     "replaceFile": "Datei ersetzen",
-    "dragOrClick": "Datei hierher ziehen oder klicken zum Durchsuchen"
+    "dragOrClick": "Datei hierher ziehen oder klicken zum Durchsuchen",
+    "categories": {
+      "risk_assessment": "Risikobewertung",
+      "audit_report": "Pruefbericht",
+      "contract": "Vertrag",
+      "training_material": "Schulungsmaterial",
+      "process_description": "Prozessbeschreibung",
+      "evidence": "Nachweis",
+      "meeting_minutes": "Sitzungsprotokoll",
+      "management_review": "Managementbewertung",
+      "certificate": "Zertifikat",
+      "regulation": "Verordnung"
+    }
   },
   "findings": {
     "title": "Feststellungen-Dashboard",
