@@ -18,3 +18,4 @@ apps/web/messages/en.json
 # Claude Code local settings
 .claude/
 CLAUDE.md
+uploads/
