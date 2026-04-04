@@ -19,7 +19,7 @@ export default function RetentionDashboardPage() {
 }
 
 function RetentionDashboardInner() {
-  const t = useTranslations("dpms-advanced");
+  const t = useTranslations("dpmsAdvanced");
   const [schedules, setSchedules] = useState<RetentionSchedule[]>([]);
   const [loading, setLoading] = useState(true);
 

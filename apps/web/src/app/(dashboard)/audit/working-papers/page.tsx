@@ -29,7 +29,7 @@ export default function WorkingPapersPage() {
 }
 
 function WorkingPapersInner() {
-  const t = useTranslations("audit-advanced");
+  const t = useTranslations("auditAdvanced");
   const [papers, setPapers] = useState<WorkingPaper[]>([]);
   const [loading, setLoading] = useState(true);
 

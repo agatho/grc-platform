@@ -16,7 +16,7 @@ export default function Page() {
 }
 
 function PageInner() {
-  const t = useTranslations("tprm-advanced");
+  const t = useTranslations("tprmAdvanced");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

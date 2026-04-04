@@ -17,7 +17,7 @@ export default function ResilienceDashboardPage() {
 }
 
 function ResilienceDashboardInner() {
-  const t = useTranslations("bcms-advanced");
+  const t = useTranslations("bcmsAdvanced");
   const [loading, setLoading] = useState(true);
   const [score, setScore] = useState<ResilienceScore | null>(null);
 

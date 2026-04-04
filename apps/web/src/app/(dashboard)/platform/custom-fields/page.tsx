@@ -19,7 +19,7 @@ export default function CustomFieldsPage() {
 }
 
 function CustomFieldsInner() {
-  const t = useTranslations("platform-advanced");
+  const t = useTranslations("platformAdvanced");
   const [fields, setFields] = useState<CustomFieldDefinition[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedEntity, setSelectedEntity] = useState("risk");

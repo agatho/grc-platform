@@ -16,7 +16,7 @@ export default function Page() {
 }
 
 function PageInner() {
-  const t = useTranslations("bpm-advanced");
+  const t = useTranslations("bpmAdvanced");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
