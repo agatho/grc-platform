@@ -74,7 +74,7 @@ export const riskEvaluationLog = pgTable(
   },
   (table) => [
     index("rel_risk_idx").on(table.riskId),
-    index("rel_org_idx").on(table.orgId),
+    index("reval_org_idx").on(table.orgId),
   ],
 );
 

@@ -169,7 +169,7 @@ export const reportSchedule = pgTable(
       .defaultNow(),
   },
   (t) => [
-    index("rs_org_idx").on(t.orgId),
+    index("rsched_org_idx").on(t.orgId),
     index("rs_next_run_idx").on(t.isActive, t.nextRunAt),
   ],
 );

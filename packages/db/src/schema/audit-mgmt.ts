@@ -325,6 +325,6 @@ export const auditEvidence = pgTable(
   },
   (table) => [
     index("ae_audit_idx").on(table.auditId),
-    index("ae_org_idx").on(table.orgId),
+    index("aev_org_idx").on(table.orgId),
   ],
 );

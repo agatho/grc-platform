@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev --turbo",
     "prebuild": "tsx scripts/build-messages.ts",
-    "build": "next build",
+    "build": "NODE_OPTIONS='--max-old-space-size=4096' next build",
     "start": "next start",
     "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest",

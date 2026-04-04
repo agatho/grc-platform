@@ -188,8 +188,8 @@ export const emergingRisk = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("er_org_idx").on(table.orgId),
-    index("er_status_idx").on(table.orgId, table.status),
+    index("erev_org_idx").on(table.orgId),
+    index("erev_status_idx").on(table.orgId, table.status),
   ],
 );
 

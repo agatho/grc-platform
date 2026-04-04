@@ -88,7 +88,7 @@ export const policyAcknowledgment = pgTable(
   (table) => [
     uniqueIndex("pa_dist_user_idx").on(table.distributionId, table.userId),
     index("pa_user_idx").on(table.userId, table.status),
-    index("pa_org_idx").on(table.orgId),
+    index("pack_org_idx").on(table.orgId),
     index("pa_org_status_idx").on(table.orgId, table.status),
   ],
 );
@@ -114,6 +114,6 @@ export const policyQuizResponse = pgTable(
   },
   (table) => [
     index("pqr_ack_idx").on(table.acknowledgmentId),
-    index("pqr_org_idx").on(table.orgId),
+    index("pqra_org_idx").on(table.orgId),
   ],
 );

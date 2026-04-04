@@ -44,7 +44,7 @@ export const complianceCultureSnapshot = pgTable(
       table.orgEntityId,
       table.period,
     ),
-    index("ccs_org_idx").on(table.orgId),
+    index("cci_org_idx").on(table.orgId),
     index("ccs_period_idx").on(table.orgId, table.period),
   ],
 );

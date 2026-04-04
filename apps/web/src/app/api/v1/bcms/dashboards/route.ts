@@ -1,6 +1,6 @@
-import { db } from "@grc/db";
+import { db, customDashboard } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { sql } from "drizzle-orm";
+import { eq, and, asc, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/bcms/dashboards — BCM dashboard views
@@ -18,12 +18,16 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("bcms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const dashboards = await db.execute(
-    sql`SELECT id, name, key, module, layout, is_system, created_at
-        FROM dashboard_widget_config
-        WHERE module = 'bcms'
-        ORDER BY created_at ASC`,
-  );
+  const dashboards = await db
+    .select()
+    .from(customDashboard)
+    .where(
+      and(
+        eq(customDashboard.orgId, ctx.orgId),
+        isNull(customDashboard.deletedAt),
+      ),
+    )
+    .orderBy(asc(customDashboard.createdAt));
 
   return Response.json({ data: dashboards });
 }

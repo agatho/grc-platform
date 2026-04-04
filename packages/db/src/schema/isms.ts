@@ -390,7 +390,7 @@ export const assessmentRun = pgTable(
     createdBy: uuid("created_by").references(() => user.id),
   },
   (t) => [
-    index("ar_org_idx").on(t.orgId),
+    index("arun_org_idx").on(t.orgId),
     index("ar_status_idx").on(t.orgId, t.status),
     index("ar_lead_idx").on(t.leadAssessorId),
   ],
@@ -506,7 +506,7 @@ export const controlMaturity = pgTable(
   },
   (t) => [
     unique("cm_control_run_uniq").on(t.controlId, t.assessmentRunId),
-    index("cm_org_idx").on(t.orgId),
+    index("cmat_org_idx").on(t.orgId),
     index("cm_control_idx").on(t.controlId),
     index("cm_run_idx").on(t.assessmentRunId),
   ],

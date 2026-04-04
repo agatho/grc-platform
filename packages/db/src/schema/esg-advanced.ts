@@ -144,7 +144,7 @@ export const emissionSource = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("es_org_idx").on(table.orgId),
+    index("emis_org_idx").on(table.orgId),
     index("es_scope_idx").on(table.orgId, table.scope),
   ],
 );

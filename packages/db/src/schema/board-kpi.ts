@@ -42,7 +42,7 @@ export const riskAppetiteThreshold = pgTable(
   },
   (table) => [
     uniqueIndex("rat_org_cat_idx").on(table.orgId, table.riskCategory),
-    index("rat_org_idx").on(table.orgId),
+    index("brat_org_idx").on(table.orgId),
   ],
 );
 
