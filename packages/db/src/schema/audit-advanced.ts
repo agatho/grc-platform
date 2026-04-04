@@ -178,7 +178,7 @@ export const auditorProfile = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("ap_org_idx").on(table.orgId),
+    index("aap_org_idx").on(table.orgId),
     uniqueIndex("ap_user_idx").on(table.userId),
   ],
 );

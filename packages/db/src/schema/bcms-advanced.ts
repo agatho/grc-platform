@@ -236,8 +236,8 @@ export const recoveryProcedure = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("rp_org_idx").on(table.orgId),
-    index("rp_entity_idx").on(table.entityType, table.entityId),
+    index("rprc_org_idx").on(table.orgId),
+    index("rprc_entity_idx").on(table.entityType, table.entityId),
     index("rp_review_idx").on(table.orgId, table.nextReviewDate),
   ],
 );

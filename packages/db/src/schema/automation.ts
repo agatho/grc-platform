@@ -46,7 +46,7 @@ export const automationRule = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("ar_org_idx").on(table.orgId, table.isActive),
+    index("aur_org_idx").on(table.orgId, table.isActive),
     index("ar_trigger_idx").on(table.triggerType),
   ],
 );

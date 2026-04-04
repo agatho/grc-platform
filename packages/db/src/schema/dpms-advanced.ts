@@ -51,7 +51,7 @@ export const retentionSchedule = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("rs_org_idx").on(table.orgId),
+    index("rsch_org_idx").on(table.orgId),
     index("rs_category_idx").on(table.orgId, table.dataCategory),
   ],
 );
@@ -135,7 +135,7 @@ export const deletionRequest = pgTable(
   },
   (table) => [
     index("dr_org_idx").on(table.orgId),
-    index("dr_status_idx").on(table.orgId, table.status),
+    index("drun_status_idx").on(table.orgId, table.status),
     index("dr_schedule_idx").on(table.scheduleId),
   ],
 );
@@ -188,9 +188,9 @@ export const transferImpactAssessment = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("tia_org_idx").on(table.orgId),
+    index("tiaa_org_idx").on(table.orgId),
     index("tia_flow_idx").on(table.dataFlowId),
-    index("tia_country_idx").on(table.recipientCountry),
+    index("tiaa_country_idx").on(table.recipientCountry),
     index("tia_status_idx").on(table.orgId, table.status),
   ],
 );
@@ -393,7 +393,7 @@ export const consentType = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("ct_org_idx").on(table.orgId),
+    index("cnsnt_org_idx").on(table.orgId),
     index("ct_purpose_idx").on(table.orgId, table.purpose),
   ],
 );

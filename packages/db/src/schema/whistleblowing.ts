@@ -73,7 +73,7 @@ export const wbReport = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
-    index("wr_org_idx").on(table.orgId),
+    index("wbr_org_idx").on(table.orgId),
     uniqueIndex("wr_token_idx").on(table.reportToken),
   ],
 );

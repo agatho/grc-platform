@@ -46,7 +46,7 @@ export const regulationSimulation = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    orgIdx: index("rs_org_idx").on(table.orgId),
+    orgIdx: index("rsim_org_idx").on(table.orgId),
     scenarioIdx: index("rs_scenario_idx").on(table.orgId, table.scenarioType),
   }),
 );

@@ -152,6 +152,10 @@ jobs:
             fi
           done
 
+      - name: Create missing schema tables
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/create-missing-tables.ts
+
       - name: Create grc_app role for RLS tests
         run: |
           PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
@@ -237,6 +241,10 @@ jobs:
               PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -f "$f" 2>&1 || true
             fi
           done
+
+      - name: Create missing schema tables
+        working-directory: packages/db
+        run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform" npx tsx src/create-missing-tables.ts
 
       - name: Run catalog and framework seeds
         run: |

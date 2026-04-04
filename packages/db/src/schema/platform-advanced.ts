@@ -121,7 +121,7 @@ export const searchIndex = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("si_org_idx").on(table.orgId),
+    index("sii_org_idx").on(table.orgId),
     uniqueIndex("si_entity_idx").on(table.entityType, table.entityId),
   ],
 );
