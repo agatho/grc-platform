@@ -350,7 +350,7 @@ export const processComment = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    index("pc_org_idx").on(table.orgId),
+    index("pcmt_org_idx").on(table.orgId),
     index("pc_process_idx").on(table.processId),
     index("pc_entity_idx").on(table.entityType, table.entityId),
     index("pc_parent_idx").on(table.parentCommentId),

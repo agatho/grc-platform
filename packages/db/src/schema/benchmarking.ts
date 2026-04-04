@@ -134,7 +134,7 @@ export const maturityAssessment = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("ma_org_idx").on(t.orgId),
+    index("bma_org_idx").on(t.orgId),
     index("ma_module_idx").on(t.orgId, t.moduleKey),
     index("ma_status_idx").on(t.orgId, t.status),
   ],

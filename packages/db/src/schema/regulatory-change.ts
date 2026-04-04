@@ -48,7 +48,7 @@ export const regulatorySource = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    orgIdx: index("rs_org_idx").on(table.orgId),
+    orgIdx: index("rcs_org_idx").on(table.orgId),
     jurisdictionIdx: index("rs_jurisdiction_idx").on(table.jurisdiction),
     activeIdx: index("rs_active_idx").on(table.isActive),
   }),

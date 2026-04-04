@@ -88,7 +88,7 @@ export const academyCourse = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("ac_org_idx").on(t.orgId),
+    index("acad_org_idx").on(t.orgId),
     index("ac_type_idx").on(t.orgId, t.courseType),
     index("ac_mandatory_idx").on(t.orgId, t.isMandatory),
   ],
@@ -119,7 +119,7 @@ export const academyLesson = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("al_org_idx").on(t.orgId),
+    index("ales_org_idx").on(t.orgId),
     index("al_course_idx").on(t.courseId),
   ],
 );
@@ -154,10 +154,10 @@ export const academyEnrollment = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("ae_org_idx").on(t.orgId),
+    index("aenr_org_idx").on(t.orgId),
     index("ae_user_idx").on(t.userId),
     index("ae_course_idx").on(t.courseId),
-    index("ae_status_idx").on(t.orgId, t.status),
+    index("aenr_status_idx").on(t.orgId, t.status),
     unique("ae_user_course").on(t.userId, t.courseId),
   ],
 );

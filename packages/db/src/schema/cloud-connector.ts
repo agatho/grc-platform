@@ -49,7 +49,7 @@ export const cloudTestSuite = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("cts_org_idx").on(table.orgId),
+    index("clts_org_idx").on(table.orgId),
     index("cts_connector_idx").on(table.connectorId),
     index("cts_provider_idx").on(table.provider),
   ],

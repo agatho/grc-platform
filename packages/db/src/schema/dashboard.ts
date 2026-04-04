@@ -82,7 +82,7 @@ export const customDashboard = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
-    index("cd_org_idx").on(table.orgId),
+    index("cdash_org_idx").on(table.orgId),
     index("cd_user_idx").on(table.userId),
     index("cd_default_idx").on(table.orgId, table.isDefault),
   ],

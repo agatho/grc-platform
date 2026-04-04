@@ -51,8 +51,8 @@ export const rcsaCampaign = pgTable(
       .defaultNow(),
   },
   (table) => [
-    index("rc_org_idx").on(table.orgId),
-    index("rc_status_idx").on(table.orgId, table.status),
+    index("rcsa_org_idx").on(table.orgId),
+    index("rcsa_status_idx").on(table.orgId, table.status),
   ],
 );
 

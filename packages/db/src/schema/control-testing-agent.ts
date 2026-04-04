@@ -108,9 +108,9 @@ export const controlTestExecution = pgTable(
   },
   (table) => ({
     scriptIdx: index("cte_script_idx").on(table.scriptId),
-    orgIdx: index("cte_org_idx").on(table.orgId),
+    orgIdx: index("ctex_org_idx").on(table.orgId),
     controlIdx: index("cte_control_idx").on(table.orgId, table.controlId),
-    statusIdx: index("cte_status_idx").on(table.orgId, table.status),
+    statusIdx: index("ctex_status_idx").on(table.orgId, table.status),
     dateIdx: index("cte_date_idx").on(table.orgId, table.createdAt),
   }),
 );

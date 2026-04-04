@@ -72,7 +72,7 @@ export const roleDashboardConfig = pgTable(
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (t) => [
-    index("rdc_org_idx").on(t.orgId),
+    index("rdcfg_org_idx").on(t.orgId),
     index("rdc_type_idx").on(t.orgId, t.dashboardType),
     unique("rdc_org_type_default").on(t.orgId, t.dashboardType, t.isDefault),
   ],
