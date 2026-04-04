@@ -19,11 +19,11 @@
 
 -- Step 2: Add evaluation_phase enum and columns to risk table
 DO $$ BEGIN
-  CREATE TYPE evaluation_phase AS ENUM ('identification','analysis','evaluation','treatment','monitoring','closed');
+  CREATE TYPE evaluation_phase AS ENUM ('assignment','gross_evaluation','net_evaluation','approval','active');
 EXCEPTION WHEN duplicate_object THEN NULL;
 END $$;
 
-ALTER TABLE risk ADD COLUMN IF NOT EXISTS evaluation_phase evaluation_phase NOT NULL DEFAULT 'identification';
+ALTER TABLE risk ADD COLUMN IF NOT EXISTS evaluation_phase evaluation_phase NOT NULL DEFAULT 'assignment';
 ALTER TABLE risk ADD COLUMN IF NOT EXISTS next_evaluation_date DATE;
 ALTER TABLE risk ADD COLUMN IF NOT EXISTS evaluation_cycle_days INTEGER DEFAULT 90;
 
