@@ -9,8 +9,17 @@ import {
   Shield,
   Loader2,
   X,
+  Link2,
+  Trash2,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 
 interface ControlCatalog {
   id: string;
@@ -52,6 +61,72 @@ export default function ControlCatalogBrowserPage() {
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(false);
+
+  // Assignment state
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assignEntityType, setAssignEntityType] = useState("control");
+  const [entityOptions, setEntityOptions] = useState<Array<{ id: string; title: string }>>([]);
+  const [entitySearch, setEntitySearch] = useState("");
+  const [loadingEntities, setLoadingEntities] = useState(false);
+  const [assignments, setAssignments] = useState<Array<{ id: string; entityType: string; entityId: string }>>([]);
+  const [assigning, setAssigning] = useState(false);
+
+  const ENTITY_TYPES = [
+    { value: "control", label: "Control" },
+    { value: "risk", label: "Risk" },
+    { value: "asset", label: "Asset" },
+    { value: "process", label: "Process" },
+    { value: "finding", label: "Finding" },
+  ];
+
+  const loadEntities = useCallback(async (type: string, q: string) => {
+    setLoadingEntities(true);
+    const endpoints: Record<string, string> = {
+      risk: "/api/v1/risks", control: "/api/v1/controls", asset: "/api/v1/assets",
+      process: "/api/v1/processes", finding: "/api/v1/findings",
+    };
+    const ep = endpoints[type];
+    if (!ep) { setLoadingEntities(false); return; }
+    const params = new URLSearchParams({ limit: "50" });
+    if (q) params.set("search", q);
+    const res = await fetch(`${ep}?${params}`);
+    if (res.ok) {
+      const json = await res.json();
+      setEntityOptions((json.data ?? []).map((e: any) => ({ id: e.id, title: e.title ?? e.name ?? e.id })));
+    }
+    setLoadingEntities(false);
+  }, []);
+
+  const loadAssignments = useCallback(async (entryId: string) => {
+    const res = await fetch(`/api/v1/catalog-references?catalogEntryId=${entryId}`);
+    if (res.ok) setAssignments((await res.json()).data ?? []);
+  }, []);
+
+  const assignEntry = useCallback(async (entityType: string, entityId: string) => {
+    if (!selectedEntry) return;
+    setAssigning(true);
+    await fetch("/api/v1/catalog-references", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ catalogEntryId: selectedEntry.id, entityType, entityId }),
+    });
+    await loadAssignments(selectedEntry.id);
+    setAssigning(false);
+  }, [selectedEntry, loadAssignments]);
+
+  const removeAssignment = useCallback(async (refId: string) => {
+    await fetch(`/api/v1/catalog-references?id=${refId}`, { method: "DELETE" });
+    if (selectedEntry) await loadAssignments(selectedEntry.id);
+  }, [selectedEntry, loadAssignments]);
+
+  useEffect(() => {
+    if (selectedEntry) loadAssignments(selectedEntry.id);
+    else setAssignments([]);
+  }, [selectedEntry, loadAssignments]);
+
+  useEffect(() => {
+    if (assignDialogOpen) loadEntities(assignEntityType, entitySearch);
+  }, [assignDialogOpen, assignEntityType, entitySearch, loadEntities]);
 
   useEffect(() => {
     (async () => {
@@ -318,10 +393,99 @@ export default function ControlCatalogBrowserPage() {
                   </div>
                 )}
               </div>
+
+              {/* Assign button */}
+              <div className="pt-2 border-t">
+                <Button size="sm" className="w-full" onClick={() => setAssignDialogOpen(true)}>
+                  <Link2 className="h-4 w-4 mr-2" />{t("assign.title")}
+                </Button>
+              </div>
+
+              {/* Existing assignments */}
+              <div className="pt-2 border-t">
+                <label className="text-xs font-medium text-gray-500">
+                  {t("assign.assignedEntities")} ({assignments.length})
+                </label>
+                {assignments.length === 0 ? (
+                  <p className="text-xs text-gray-400 mt-1">{t("assign.noAssignments")}</p>
+                ) : (
+                  <div className="mt-1 space-y-1">
+                    {assignments.map((a) => (
+                      <div key={a.id} className="flex items-center justify-between rounded bg-gray-50 px-2 py-1.5 text-xs">
+                        <div>
+                          <Badge variant="outline" className="text-[10px] mr-1">{a.entityType}</Badge>
+                          <span className="text-gray-600">{a.entityId.substring(0, 8)}...</span>
+                        </div>
+                        <button onClick={() => removeAssignment(a.id)} className="text-gray-400 hover:text-red-500">
+                          <Trash2 className="h-3 w-3" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
           </div>
         )}
       </div>
+
+      {/* Assignment Dialog */}
+      <Dialog open={assignDialogOpen} onOpenChange={setAssignDialogOpen}>
+        <DialogContent className="max-w-lg">
+          <DialogHeader>
+            <DialogTitle>{t("assign.title")}</DialogTitle>
+            <p className="text-sm text-muted-foreground">{t("assign.description")}</p>
+          </DialogHeader>
+          {selectedEntry && (
+            <div className="rounded bg-gray-50 px-3 py-2 text-sm">
+              <span className="font-mono text-xs text-gray-500">{selectedEntry.code}</span>{" "}
+              <span className="font-medium">{selectedEntry.titleDe}</span>
+            </div>
+          )}
+          <div className="space-y-3">
+            <div>
+              <label className="text-sm font-medium">{t("assign.entityType")}</label>
+              <select className="mt-1 w-full rounded-md border px-3 py-2 text-sm" value={assignEntityType}
+                onChange={(e) => { setAssignEntityType(e.target.value); setEntitySearch(""); }}>
+                {ENTITY_TYPES.map((et) => (<option key={et.value} value={et.value}>{et.label}</option>))}
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("assign.selectEntity")}</label>
+              <div className="relative mt-1">
+                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+                <input type="text" placeholder={t("assign.searchEntity")} value={entitySearch}
+                  onChange={(e) => setEntitySearch(e.target.value)}
+                  className="w-full rounded-md border pl-9 pr-3 py-2 text-sm" />
+              </div>
+            </div>
+            <div className="max-h-60 overflow-y-auto rounded border">
+              {loadingEntities ? (
+                <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin" /></div>
+              ) : entityOptions.length === 0 ? (
+                <p className="py-4 text-center text-sm text-gray-500">{t("assign.noEntities")}</p>
+              ) : (
+                entityOptions.map((entity) => {
+                  const isAssigned = assignments.some((a) => a.entityType === assignEntityType && a.entityId === entity.id);
+                  return (
+                    <div key={entity.id} className="flex items-center justify-between border-b px-3 py-2 last:border-0 hover:bg-gray-50">
+                      <span className="text-sm truncate flex-1 mr-2">{entity.title}</span>
+                      {isAssigned ? (
+                        <Badge variant="secondary" className="text-[10px] shrink-0">{t("assign.alreadyAssigned")}</Badge>
+                      ) : (
+                        <Button size="sm" variant="outline" disabled={assigning}
+                          onClick={() => assignEntry(assignEntityType, entity.id)} className="shrink-0">
+                          <Link2 className="h-3 w-3 mr-1" />{t("assign.assignButton")}
+                        </Button>
+                      )}
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
