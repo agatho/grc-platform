@@ -16,6 +16,9 @@ import {
   CheckCircle2,
   Send,
   RotateCcw,
+  Upload,
+  Download,
+  File,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -235,6 +238,59 @@ function DocumentDetailInner() {
                 ) : (
                   <p className="text-sm text-gray-400 text-center py-8">{t("content.empty")}</p>
                 )}
+
+                {/* File attachment section */}
+                <div className="mt-6 pt-4 border-t">
+                  {(doc as any).fileName ? (
+                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
+                      <div className="flex items-center gap-3">
+                        <File size={20} className="text-blue-500" />
+                        <div>
+                          <p className="text-sm font-medium">{(doc as any).fileName}</p>
+                          <p className="text-xs text-gray-500">
+                            {(doc as any).mimeType} &middot; {((doc as any).fileSize / 1024).toFixed(0)} KB
+                          </p>
+                        </div>
+                      </div>
+                      <a
+                        href={`/api/v1/documents/${docId}/download`}
+                        className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                      >
+                        <Download size={14} />
+                        {t("download")}
+                      </a>
+                    </div>
+                  ) : null}
+                  <div className="mt-3">
+                    <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 py-4 hover:border-primary/50 hover:bg-gray-50 transition-colors">
+                      <Upload size={20} className="text-gray-400" />
+                      <span className="text-xs text-gray-500">{t("dragOrClick")}</span>
+                      <input
+                        type="file"
+                        className="hidden"
+                        accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.png,.jpg,.jpeg,.svg,.json,.xml"
+                        onChange={async (e) => {
+                          const file = e.target.files?.[0];
+                          if (!file) return;
+                          const fd = new FormData();
+                          fd.append("file", file);
+                          const res = await fetch(`/api/v1/documents/${docId}/upload`, {
+                            method: "POST",
+                            body: fd,
+                          });
+                          if (res.ok) {
+                            toast.success(t("uploadSuccess"));
+                            fetchData();
+                          } else {
+                            const err = await res.json().catch(() => ({}));
+                            toast.error(err.error ?? "Upload failed");
+                          }
+                          e.target.value = "";
+                        }}
+                      />
+                    </label>
+                  </div>
+                </div>
               </CardContent>
             </Card>
             <Card>

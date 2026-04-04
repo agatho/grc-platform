@@ -35,6 +35,7 @@ import {
 } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -744,6 +745,10 @@ function RiskDetailContent() {
           <TabsTrigger value="kris">{t("tabs.kris")}</TabsTrigger>
           <TabsTrigger value="linkages">{t("tabs.linkages")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText size={14} className="mr-1.5" />
+            {t("tabs.documents")}
+          </TabsTrigger>
         </TabsList>
 
         {/* ══════ Overview Tab ══════ */}
@@ -1634,6 +1639,11 @@ function RiskDetailContent() {
               </div>
             </div>
           )}
+        </TabsContent>
+
+        {/* ══════ Documents Tab ══════ */}
+        <TabsContent value="documents" className="space-y-4 mt-4">
+          <EntityDocumentsPanel entityType="risk" entityId={riskId} />
         </TabsContent>
       </Tabs>
     </div>

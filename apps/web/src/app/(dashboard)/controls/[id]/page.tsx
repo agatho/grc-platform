@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
 import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
 import { Badge } from "@/components/ui/badge";
@@ -242,6 +243,10 @@ function ControlDetailInner() {
           </TabsTrigger>
           <TabsTrigger value="rcm">{t("tabs.rcm")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText size={14} className="mr-1.5" />
+            {t("tabs.documents")}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -505,6 +510,11 @@ function ControlDetailInner() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Documents Tab */}
+        <TabsContent value="documents" className="mt-4">
+          <EntityDocumentsPanel entityType="control" entityId={controlId} />
         </TabsContent>
       </Tabs>
     </div>
