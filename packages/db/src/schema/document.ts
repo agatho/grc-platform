@@ -32,6 +32,16 @@ export const documentCategoryEnum = pgEnum("document_category", [
   "dpa",
   "bcp",
   "soa",
+  "risk_assessment",
+  "audit_report",
+  "contract",
+  "training_material",
+  "process_description",
+  "evidence",
+  "meeting_minutes",
+  "management_review",
+  "certificate",
+  "regulation",
   "other",
 ]);
 
