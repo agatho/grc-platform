@@ -1824,6 +1824,26 @@
       "mapping": "mapping",
       "mappings": "mappings",
       "frameworks": "Frameworks"
+    },
+    "assign": {
+      "title": "Assign to Entity",
+      "description": "Link this catalog entry to a risk, control, or other entity",
+      "entityType": "Entity Type",
+      "selectEntity": "Select Entity",
+      "searchEntity": "Search entities...",
+      "noEntities": "No entities found",
+      "assignButton": "Assign",
+      "assignAll": "Assign All Visible",
+      "removeAssignment": "Remove Assignment",
+      "success": "Catalog entry assigned successfully",
+      "removed": "Assignment removed",
+      "alreadyAssigned": "Already assigned to this entity",
+      "assignedEntities": "Assigned Entities",
+      "noAssignments": "No entities assigned to this catalog entry",
+      "bulkAssign": "Bulk Assign",
+      "bulkDescription": "Assign this catalog entry to multiple entities at once",
+      "selectedCount": "{count} selected",
+      "assignedCount": "{count} assigned"
     }
   },
   "isms": {

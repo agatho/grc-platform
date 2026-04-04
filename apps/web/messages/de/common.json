@@ -1824,6 +1824,26 @@
       "mapping": "Zuordnung",
       "mappings": "Zuordnungen",
       "frameworks": "Frameworks"
+    },
+    "assign": {
+      "title": "Entitaet zuweisen",
+      "description": "Diesen Katalogeintrag mit einem Risiko, einer Kontrolle oder einer anderen Entitaet verknuepfen",
+      "entityType": "Entitaetstyp",
+      "selectEntity": "Entitaet auswaehlen",
+      "searchEntity": "Entitaeten suchen...",
+      "noEntities": "Keine Entitaeten gefunden",
+      "assignButton": "Zuweisen",
+      "assignAll": "Alle sichtbaren zuweisen",
+      "removeAssignment": "Zuweisung entfernen",
+      "success": "Katalogeintrag erfolgreich zugewiesen",
+      "removed": "Zuweisung entfernt",
+      "alreadyAssigned": "Bereits dieser Entitaet zugewiesen",
+      "assignedEntities": "Zugewiesene Entitaeten",
+      "noAssignments": "Keine Entitaeten diesem Katalogeintrag zugewiesen",
+      "bulkAssign": "Mehrfachzuweisung",
+      "bulkDescription": "Diesen Katalogeintrag mehreren Entitaeten gleichzeitig zuweisen",
+      "selectedCount": "{count} ausgewaehlt",
+      "assignedCount": "{count} zugewiesen"
     }
   },
   "isms": {
