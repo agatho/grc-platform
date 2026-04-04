@@ -16,7 +16,7 @@ export default function Page() {
 }
 
 function PageInner() {
-  const t = useTranslations("esg-advanced");
+  const t = useTranslations("esgAdvanced");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

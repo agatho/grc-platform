@@ -57,7 +57,7 @@ export default function AiRoadmapPage() {
 }
 
 function AiRoadmapInner() {
-  const t = useTranslations("isms-intelligence.roadmap");
+  const t = useTranslations("ismsIntelligence.roadmap");
   const [data, setData] = useState<RoadmapData | null>(null);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);

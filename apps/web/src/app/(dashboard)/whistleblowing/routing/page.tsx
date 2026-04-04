@@ -16,7 +16,7 @@ export default function Page() {
 }
 
 function PageInner() {
-  const t = useTranslations("whistleblowing-advanced");
+  const t = useTranslations("whistleblowingAdvanced");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -19,7 +19,7 @@ export default function EmergingRisksPage() {
 }
 
 function EmergingRisksInner() {
-  const t = useTranslations("erm-advanced");
+  const t = useTranslations("ermAdvanced");
   const [risks, setRisks] = useState<EmergingRisk[]>([]);
   const [loading, setLoading] = useState(true);
 

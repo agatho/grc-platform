@@ -54,7 +54,7 @@ export default function SoaAiGapAnalysisPage() {
 }
 
 function AiGapAnalysisInner() {
-  const t = useTranslations("isms-intelligence.soaGap");
+  const t = useTranslations("ismsIntelligence.soaGap");
   const [data, setData] = useState<GapAnalysisData | null>(null);
   const [loading, setLoading] = useState(true);
   const [analyzing, setAnalyzing] = useState(false);
