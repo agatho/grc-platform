@@ -1607,7 +1607,21 @@
     },
     "history": {
       "empty": "No history entries"
-    }
+    },
+    "attachDocument": "Attach Document",
+    "noLinkedDocuments": "No documents linked to this entity yet",
+    "searchDocuments": "Search documents...",
+    "noDocumentsFound": "No documents found",
+    "alreadyLinked": "Already linked",
+    "attach": "Attach",
+    "download": "Download",
+    "upload": "Upload File",
+    "uploadDescription": "Upload a file attachment (PDF, Word, Excel, images — max 50MB)",
+    "uploadSuccess": "File uploaded successfully",
+    "noFile": "No file attached",
+    "fileInfo": "File Information",
+    "replaceFile": "Replace File",
+    "dragOrClick": "Drag & drop a file or click to browse"
   },
   "findings": {
     "title": "Findings Dashboard",

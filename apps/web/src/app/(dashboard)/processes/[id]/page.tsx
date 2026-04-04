@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
 import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -501,6 +502,10 @@ function ProcessDetailContent() {
           <TabsTrigger value="risks">{t("tabs.risks")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
           <TabsTrigger value="comments">{t("tabs.comments")}</TabsTrigger>
+          <TabsTrigger value="documents">
+            <FileText size={14} className="mr-1.5" />
+            {t("tabs.documents")}
+          </TabsTrigger>
         </TabsList>
 
         {/* Overview Tab */}
@@ -562,6 +567,13 @@ function ProcessDetailContent() {
                 <ProcessComments processId={processId} />
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* Documents Tab */}
+        <TabsContent value="documents">
+          <div className="mt-4">
+            <EntityDocumentsPanel entityType="process" entityId={processId} />
           </div>
         </TabsContent>
       </Tabs>
