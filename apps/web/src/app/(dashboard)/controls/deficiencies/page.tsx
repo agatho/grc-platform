@@ -19,7 +19,7 @@ export default function DeficienciesPage() {
 }
 
 function DeficienciesInner() {
-  const t = useTranslations("ics-advanced");
+  const t = useTranslations("icsAdvanced");
   const [items, setItems] = useState<ControlDeficiency[]>([]);
   const [loading, setLoading] = useState(true);
 

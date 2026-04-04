@@ -16,7 +16,7 @@ export default function Page() {
 }
 
 function PageInner() {
-  const t = useTranslations("audit-advanced");
+  const t = useTranslations("auditAdvanced");
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {

@@ -18,7 +18,7 @@ export default function ConsentDashboardPage() {
 }
 
 function ConsentDashboardInner() {
-  const t = useTranslations("dpms-advanced");
+  const t = useTranslations("dpmsAdvanced");
   const [types, setTypes] = useState<ConsentType[]>([]);
   const [loading, setLoading] = useState(true);
 

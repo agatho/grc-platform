@@ -18,7 +18,7 @@ export default function CCMDashboardPage() {
 }
 
 function CCMDashboardInner() {
-  const t = useTranslations("ics-advanced");
+  const t = useTranslations("icsAdvanced");
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<CCMDashboardData | null>(null);
 
