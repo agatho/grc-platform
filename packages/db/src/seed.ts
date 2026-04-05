@@ -280,6 +280,31 @@ async function seed() {
         });
       }
     }
+
+    // ── Seed missing module_definitions (Sprint 1-3 modules) ──────────
+    // These are not covered by sql/seed_module_definitions_sprint4_9.sql
+    console.log("  Seeding core module definitions...");
+    await tx.execute(sql`
+      INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, nav_order, license_tier)
+      VALUES
+        ('erm', 'Enterprise Risk Management', 'Enterprise Risk Management', 'shield-alert', 20, 'included'),
+        ('bpm', 'Prozessmanagement', 'Process Management', 'workflow', 30, 'included'),
+        ('esg', 'ESG & Nachhaltigkeit', 'ESG & Sustainability', 'leaf', 100, 'included'),
+        ('whistleblowing', 'Hinweisgebersystem', 'Whistleblowing', 'megaphone', 110, 'included')
+      ON CONFLICT (module_key) DO NOTHING
+    `);
+
+    // ── Auto-enable ALL modules for ALL organizations ─────────────────
+    console.log("  Enabling all modules for all organizations...");
+    const enableResult = await tx.execute(sql`
+      INSERT INTO module_config (id, org_id, module_key, ui_status, is_data_active, config, enabled_at, created_at, updated_at)
+      SELECT gen_random_uuid(), o.id, md.module_key, 'enabled', true, '{}', now(), now(), now()
+      FROM organization o
+      CROSS JOIN module_definition md
+      WHERE o.deleted_at IS NULL
+      ON CONFLICT ON CONSTRAINT module_config_org_module_uq DO NOTHING
+    `);
+    console.log(`  Module configs enabled: ${enableResult.count} rows`);
   });
 
   console.log("Seed complete.");
