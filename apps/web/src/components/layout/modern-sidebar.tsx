@@ -120,7 +120,7 @@ function SearchOverlay({
               const Icon = item.icon;
               const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
               return (
-                <li key={item.href}>
+                <li key={`${item.groupKey}-${item.labelKey}`}>
                   <Link
                     href={item.href}
                     onClick={onClose}
@@ -358,7 +358,7 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
                 <ul className="space-y-0.5">
                   {group.items.map((item) => (
                     <ModernNavItem
-                      key={item.href}
+                      key={`${group.key}-${item.labelKey}`}
                       href={item.href}
                       icon={item.icon}
                       label={t(item.labelKey)}
