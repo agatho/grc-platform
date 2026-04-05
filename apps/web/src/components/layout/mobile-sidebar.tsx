@@ -137,7 +137,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                 {searchResults.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <li key={item.href} className="relative group">
+                    <li key={`${item.groupKey}-${item.href}`} className="relative group">
                       <Link
                         href={item.href}
                         onClick={onClose}
@@ -244,7 +244,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                       {group.items.map((item) => {
                         const Icon = item.icon;
                         return (
-                          <li key={item.href} className="relative group/item">
+                          <li key={`${group.key}-${item.labelKey}`} className="relative group/item">
                             <Link
                               href={item.href}
                               onClick={onClose}

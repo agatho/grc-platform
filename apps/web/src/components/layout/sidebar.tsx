@@ -306,7 +306,7 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
             <ul>
               {searchResults.map((item) => (
                 <NavItemLink
-                  key={item.href}
+                  key={`${item.groupKey}-${item.href}`}
                   href={item.href}
                   icon={item.icon}
                   label={t(item.labelKey)}
@@ -372,7 +372,7 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
               >
                 {group.items.map((item) => (
                   <NavItemLink
-                    key={item.href}
+                    key={`${group.key}-${item.labelKey}`}
                     href={item.href}
                     icon={item.icon}
                     label={t(item.labelKey)}
