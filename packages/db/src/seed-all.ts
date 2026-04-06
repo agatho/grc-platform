@@ -38,6 +38,7 @@ const DEMO_SEEDS = [
   "seed_demo_06_kris.sql",        // KRIs + measurements
   "seed_demo_07_tasks_findings.sql", // tasks, findings
   "seed_demo_10_control_tests.sql",  // control test runs
+  "seed_demo_11_extended.sql",       // 15 additional risks, 10 controls, 5 findings
 ];
 
 // Hardcoded UUIDs used in the demo SQL files (from original LXC deployment)
