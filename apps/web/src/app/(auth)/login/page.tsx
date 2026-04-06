@@ -341,7 +341,7 @@ export default function LoginPage() {
       </div>
 
       {/* Right panel — form */}
-      <div className="flex flex-1 items-center justify-center bg-gray-50 px-6 py-12">
+      <div className="flex flex-1 items-center justify-center overflow-y-auto bg-gray-50 px-6 py-12">
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
