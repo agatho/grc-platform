@@ -452,7 +452,7 @@ export default function DashboardPage() {
                     {subtitle && <p className="text-xs text-red-500 mt-1">{subtitle}</p>}
                   </>
                 ) : (
-                  <p className="text-2xl font-bold text-gray-300 mt-1">&mdash;</p>
+                  <p className="text-2xl font-bold text-gray-400 dark:text-gray-500 mt-1">&mdash;</p>
                 )}
               </div>
             </div>
@@ -572,7 +572,7 @@ export default function DashboardPage() {
                   >
                     <div className="mt-0.5">
                       {notif.isRead ? (
-                        <CheckCircle2 size={16} className="text-gray-300" />
+                        <CheckCircle2 size={16} className="text-gray-400 dark:text-gray-500" />
                       ) : (
                         <div className="h-2 w-2 mt-1.5 rounded-full bg-amber-500" />
                       )}
@@ -633,7 +633,7 @@ export default function DashboardPage() {
               </div>
             ) : myTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-                <ListTodo size={32} className="mb-2 text-gray-300" />
+                <ListTodo size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
                 <p className="text-sm font-medium text-gray-500">{t("myTasks.empty")}</p>
               </div>
             ) : (
@@ -691,7 +691,7 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col items-center justify-center h-48 px-5 text-gray-400">
-            <Calendar size={32} className="mb-2 text-gray-300" />
+            <Calendar size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
             <p className="text-sm font-medium text-gray-500">{t("upcomingAudits.empty")}</p>
           </div>
         </div>
@@ -720,7 +720,7 @@ export default function DashboardPage() {
             </div>
           ) : !riskSummary ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <ShieldAlert size={32} className="mb-2 text-gray-300" />
+              <ShieldAlert size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
               <p className="text-sm">{rt("noRisks")}</p>
             </div>
           ) : (

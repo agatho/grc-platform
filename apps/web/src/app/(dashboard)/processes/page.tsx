@@ -317,7 +317,7 @@ function ProcessLandscape() {
             </div>
           ) : filteredFlatNodes.length === 0 ? (
             <div className="text-center py-12">
-              <Workflow className="mx-auto h-12 w-12 text-gray-300" />
+              <Workflow className="mx-auto h-12 w-12 text-gray-400" />
               <p className="mt-3 text-sm text-gray-500">{t("empty.title")}</p>
             </div>
           ) : (
@@ -500,7 +500,7 @@ function ProcessLandscape() {
             ) : (
               <div className="flex h-full items-center justify-center p-12">
                 <div className="text-center space-y-3">
-                  <Workflow className="mx-auto h-12 w-12 text-gray-300" />
+                  <Workflow className="mx-auto h-12 w-12 text-gray-400" />
                   <p className="text-sm text-gray-500">{t("empty.selectProcess")}</p>
                   {totalCount === 0 && (
                     <Link href="/processes/new">

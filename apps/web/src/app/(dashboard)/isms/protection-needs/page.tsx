@@ -295,7 +295,7 @@ function ProtectionNeedsInner() {
                   colSpan={6}
                   className="px-4 py-12 text-center text-gray-400"
                 >
-                  <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <ShieldCheck className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   {t("noAssetsFound")}
                 </td>
               </tr>

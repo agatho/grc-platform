@@ -440,7 +440,7 @@ function DdResultsInner() {
                           </td>
                           <td className="py-2 text-gray-600 max-w-xs truncate">
                             {q.answer || (
-                              <span className="text-gray-300 italic">
+                              <span className="text-gray-400 italic">
                                 {t("noAnswer")}
                               </span>
                             )}
@@ -466,7 +466,7 @@ function DdResultsInner() {
                                 className="inline text-blue-500"
                               />
                             ) : (
-                              <span className="text-gray-300">-</span>
+                              <span className="text-gray-400">-</span>
                             )}
                           </td>
                         </tr>

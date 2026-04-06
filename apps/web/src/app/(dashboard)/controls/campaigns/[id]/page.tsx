@@ -146,7 +146,7 @@ function CampaignDetailInner() {
           {t("backToList")}
         </Button>
         <div className="flex flex-col items-center justify-center py-12">
-          <ClipboardList size={32} className="text-gray-300 mb-3" />
+          <ClipboardList size={32} className="text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">{t("notFound")}</p>
         </div>
       </div>

@@ -193,7 +193,7 @@ function IsmsAssetsInner() {
             {filtered.length === 0 ? (
               <tr>
                 <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
-                  <Shield className="h-8 w-8 mx-auto mb-2 text-gray-300" />
+                  <Shield className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   {t("noAssets")}
                 </td>
               </tr>

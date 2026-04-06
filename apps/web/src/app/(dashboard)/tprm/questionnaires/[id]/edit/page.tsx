@@ -558,7 +558,7 @@ function QuestionnaireEditInner() {
                       setSelectedQuestionId(null);
                     }}
                   >
-                    <GripVertical size={12} className="text-gray-300 flex-shrink-0" />
+                    <GripVertical size={12} className="text-gray-400 flex-shrink-0" />
                     <button
                       type="button"
                       onClick={(e) => {
@@ -615,7 +615,7 @@ function QuestionnaireEditInner() {
                               <span className="text-[10px] text-red-400">*</span>
                             )}
                             {q.isEvidenceRequired && (
-                              <Upload size={10} className="text-gray-300" />
+                              <Upload size={10} className="text-gray-400" />
                             )}
                           </div>
                         );

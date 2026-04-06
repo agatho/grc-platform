@@ -287,7 +287,7 @@ export function ModernDashboard({
                 <div className="relative flex-shrink-0">
                   {riskSummaryLoading ? (
                     <div className="flex items-center justify-center" style={{ width: 140, height: 140 }}>
-                      <Loader2 size={24} className="animate-spin text-gray-300" />
+                      <Loader2 size={24} className="animate-spin text-gray-400 dark:text-gray-500" />
                     </div>
                   ) : (
                     <>
@@ -347,7 +347,7 @@ export function ModernDashboard({
             </div>
             {auditLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 size={18} className="animate-spin text-gray-300" />
+                <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
               </div>
             ) : auditError ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -427,7 +427,7 @@ export function ModernDashboard({
             <div className="divide-y divide-gray-50">
               {tasksLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 size={18} className="animate-spin text-gray-300" />
+                  <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
                 </div>
               ) : tasksError ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -436,7 +436,7 @@ export function ModernDashboard({
                 </div>
               ) : myTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <ListTodo size={24} className="mb-2 text-gray-300" />
+                  <ListTodo size={24} className="mb-2 text-gray-400 dark:text-gray-500" />
                   <p className="text-xs">{t("myTasks.empty")}</p>
                 </div>
               ) : (
@@ -512,7 +512,7 @@ export function ModernDashboard({
             <div className="divide-y divide-gray-50">
               {notifLoading ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 size={18} className="animate-spin text-gray-300" />
+                  <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
                 </div>
               ) : notifError ? (
                 <div className="flex flex-col items-center justify-center py-10 text-gray-400">

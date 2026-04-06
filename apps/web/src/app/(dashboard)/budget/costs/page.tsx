@@ -152,7 +152,7 @@ export default function CostListPage() {
           </div>
         ) : costs.length === 0 ? (
           <div className="p-12 text-center">
-            <DollarSign className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+            <DollarSign className="mx-auto h-12 w-12 text-gray-400 mb-4" />
             <p className="text-sm text-gray-400">{t("costs.noCosts")}</p>
           </div>
         ) : (

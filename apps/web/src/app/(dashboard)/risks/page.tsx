@@ -120,23 +120,23 @@ const STRATEGIES: TreatmentStrategy[] = [
 
 function categoryBadgeClass(category: RiskCategory): string {
   const map: Record<RiskCategory, string> = {
-    strategic: "bg-indigo-100 text-indigo-800 border-indigo-200",
-    operational: "bg-blue-100 text-blue-800 border-blue-200",
-    financial: "bg-emerald-100 text-emerald-800 border-emerald-200",
-    compliance: "bg-violet-100 text-violet-800 border-violet-200",
-    cyber: "bg-red-100 text-red-800 border-red-200",
-    reputational: "bg-orange-100 text-orange-800 border-orange-200",
-    esg: "bg-teal-100 text-teal-800 border-teal-200",
+    strategic: "bg-indigo-100 text-indigo-900 border-indigo-200",
+    operational: "bg-blue-100 text-blue-900 border-blue-200",
+    financial: "bg-emerald-100 text-emerald-900 border-emerald-200",
+    compliance: "bg-violet-100 text-violet-900 border-violet-200",
+    cyber: "bg-red-100 text-red-900 border-red-200",
+    reputational: "bg-orange-100 text-orange-900 border-orange-200",
+    esg: "bg-teal-100 text-teal-900 border-teal-200",
   };
   return map[category] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
 function strategyBadgeClass(strategy: TreatmentStrategy): string {
   const map: Record<TreatmentStrategy, string> = {
-    mitigate: "bg-blue-50 text-blue-700 border-blue-200",
-    accept: "bg-yellow-50 text-yellow-700 border-yellow-200",
-    transfer: "bg-purple-50 text-purple-700 border-purple-200",
-    avoid: "bg-red-50 text-red-700 border-red-200",
+    mitigate: "bg-blue-50 text-blue-800 border-blue-200",
+    accept: "bg-yellow-50 text-yellow-800 border-yellow-200",
+    transfer: "bg-purple-50 text-purple-800 border-purple-200",
+    avoid: "bg-red-50 text-red-800 border-red-200",
   };
   return map[strategy] ?? "bg-gray-50 text-gray-600 border-gray-200";
 }
@@ -920,7 +920,7 @@ function EmptyState({
 }) {
   return (
     <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-      <Search size={28} className="text-gray-300 mb-3" />
+      <Search size={28} className="text-gray-400 mb-3" />
       <p className="text-sm font-medium text-gray-500">
         {hasFilters ? t("empty.noResults") : t("empty.noRisks")}
       </p>
