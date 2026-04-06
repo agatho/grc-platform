@@ -29,12 +29,10 @@ psql -U postgres -c "CREATE DATABASE grc_platform OWNER grc;"
 psql -U postgres -d grc_platform -c "CREATE EXTENSION IF NOT EXISTS pgcrypto;"
 psql -U postgres -d grc_platform -c "CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";"
 
-# 5. Run migrations (from packages/db directory)
+# 5. Run migrations (2-pass for dependency resolution)
 cd packages/db
-DATABASE_URL="postgresql://grc:grc_dev_password@localhost:5432/grc_platform" npx drizzle-kit migrate
+DATABASE_URL="postgresql://grc:grc_dev_password@localhost:5432/grc_platform" npx tsx src/migrate-all.ts
 cd ../..
-# Or alternatively, apply all SQL files:
-# for f in packages/db/drizzle/*.sql; do psql -U grc -d grc_platform -f "$f"; done
 
 # 6. Seed base data (organizations, users, modules)
 npm run db:seed

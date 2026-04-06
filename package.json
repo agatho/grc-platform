@@ -13,6 +13,7 @@
     "setup": "bash scripts/setup.sh",
     "db:generate": "turbo db:generate --filter=@grc/db",
     "db:migrate": "turbo db:migrate --filter=@grc/db",
+    "db:migrate-all": "turbo db:migrate-all --filter=@grc/db",
     "db:seed": "turbo db:seed --filter=@grc/db",
     "db:seed:demo": "bash scripts/seed-demo.sh",
     "format": "prettier --write \"**/*.{ts,tsx,js,json,md}\""
