@@ -4,11 +4,11 @@
   "main": "src/index.ts",
   "scripts": {
     "db:generate": "drizzle-kit generate",
-    "db:migrate": "dotenv -- drizzle-kit migrate",
+    "db:migrate": "dotenv -e ../../.env -e ../../apps/web/.env.local -- drizzle-kit migrate",
     "db:seed": "tsx src/seed.ts",
     "db:seed-risk": "tsx src/seed-risk.ts",
     "db:seed-all": "tsx src/seed-all.ts",
-    "db:sync": "dotenv -- tsx src/create-missing-tables.ts",
+    "db:sync": "dotenv -e ../../.env -e ../../apps/web/.env.local -- tsx src/create-missing-tables.ts",
     "db:studio": "drizzle-kit studio",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:rls": "vitest run --config vitest.rls.config.ts"
