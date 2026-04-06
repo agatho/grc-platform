@@ -123,13 +123,13 @@ const statusColors: Record<RiskStatus, string> = {
 };
 
 const categoryColors: Record<RiskCategory, string> = {
-  strategic: "bg-purple-100 text-purple-700",
-  operational: "bg-orange-100 text-orange-700",
-  financial: "bg-emerald-100 text-emerald-700",
-  compliance: "bg-blue-100 text-blue-700",
-  cyber: "bg-red-100 text-red-700",
-  reputational: "bg-pink-100 text-pink-700",
-  esg: "bg-teal-100 text-teal-700",
+  strategic: "bg-purple-100 text-purple-900",
+  operational: "bg-orange-100 text-orange-900",
+  financial: "bg-emerald-100 text-emerald-900",
+  compliance: "bg-blue-100 text-blue-900",
+  cyber: "bg-red-100 text-red-900",
+  reputational: "bg-pink-100 text-pink-900",
+  esg: "bg-teal-100 text-teal-900",
 };
 
 const treatmentStatusColors: Record<TreatmentStatus, string> = {

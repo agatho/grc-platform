@@ -450,7 +450,7 @@ function LinksTab({
         <Card>
           <CardContent className="flex items-center justify-center h-24 pt-6">
             <div className="text-center">
-              <Link2 size={24} className="mx-auto text-gray-300 mb-2" />
+              <Link2 size={24} className="mx-auto text-gray-400 mb-2" />
               <p className="text-sm text-gray-400">{t("noLinks")}</p>
             </div>
           </CardContent>
@@ -545,7 +545,7 @@ function HistoryTab({
       <Card>
         <CardContent className="flex items-center justify-center h-24 pt-6">
           <div className="text-center">
-            <History size={24} className="mx-auto text-gray-300 mb-2" />
+            <History size={24} className="mx-auto text-gray-400 mb-2" />
             <p className="text-sm text-gray-400">{t("noHistory")}</p>
           </div>
         </CardContent>

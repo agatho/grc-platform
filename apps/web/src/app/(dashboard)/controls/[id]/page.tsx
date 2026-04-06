@@ -195,7 +195,7 @@ function ControlDetailInner() {
           {t("backToList")}
         </Button>
         <div className="flex flex-col items-center justify-center py-12">
-          <ShieldCheck size={32} className="text-gray-300 mb-3" />
+          <ShieldCheck size={32} className="text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">{t("notFound")}</p>
         </div>
       </div>
@@ -347,7 +347,7 @@ function ControlDetailInner() {
         <TabsContent value="tests" className="mt-4">
           {tests.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <FileText size={28} className="text-gray-300 mb-3" />
+              <FileText size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("tests.empty")}</p>
             </div>
           ) : (
@@ -406,7 +406,7 @@ function ControlDetailInner() {
         <TabsContent value="findings" className="mt-4">
           {findings.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <AlertTriangle size={28} className="text-gray-300 mb-3" />
+              <AlertTriangle size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("findings.empty")}</p>
             </div>
           ) : (
@@ -437,7 +437,7 @@ function ControlDetailInner() {
         <TabsContent value="rcm" className="mt-4">
           {linkedRisks.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <Link2 size={28} className="text-gray-300 mb-3" />
+              <Link2 size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("rcm.empty")}</p>
             </div>
           ) : (
@@ -475,7 +475,7 @@ function ControlDetailInner() {
         <TabsContent value="history" className="mt-4">
           {auditLog.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <Activity size={28} className="text-gray-300 mb-3" />
+              <Activity size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("history.empty")}</p>
             </div>
           ) : (

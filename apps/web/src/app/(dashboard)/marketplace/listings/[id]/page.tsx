@@ -195,7 +195,7 @@ function ListingDetail() {
                 <div className="flex items-center gap-2">
                   <div className="flex">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={12} className={i < r.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-300"} />
+                      <Star key={i} size={12} className={i < r.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
                     ))}
                   </div>
                   {r.title && <span className="text-sm font-medium">{r.title}</span>}

@@ -367,7 +367,7 @@ function DocumentsPageInner() {
         <>
           {filtered.length === 0 && !loading ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <Search size={28} className="text-gray-300 mb-3" />
+              <Search size={28} className="text-gray-400 mb-3" />
               <p className="text-sm font-medium text-gray-500">
                 {debouncedSearch || statusFilter !== "__all__" || categoryFilter !== "__all__"
                   ? t("empty.noResults")

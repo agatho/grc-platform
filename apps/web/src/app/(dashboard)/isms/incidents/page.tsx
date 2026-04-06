@@ -154,7 +154,7 @@ function IncidentsInner() {
       <div className="space-y-2">
         {filtered.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-            <AlertTriangle size={28} className="text-gray-300 mb-3" />
+            <AlertTriangle size={28} className="text-gray-400 mb-3" />
             <p className="text-sm text-gray-500">{t("noIncidents")}</p>
           </div>
         ) : (

@@ -130,7 +130,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
         <nav className="flex-1 overflow-y-auto py-1">
           {searchResults !== null ? (
             <div>
-              <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              <p className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                 {t("nav.searchResults", { count: searchResults.length })}
               </p>
               <ul>
@@ -182,7 +182,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
               {/* Favorites */}
               {pinnedItems.length > 0 && (
                 <div className="mb-2">
-                  <p className="px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 flex items-center gap-1.5">
+                  <p className="px-4 py-1.5 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 flex items-center gap-1.5">
                     <Star size={10} className="text-amber-500 fill-amber-500" />
                     {t("nav.favorites")}
                   </p>
@@ -228,7 +228,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                 <div key={group.key} className="mb-1">
                   <button
                     onClick={() => toggleGroupCollapse(group.key)}
-                    className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
+                    className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-600 transition-colors"
                     aria-expanded={!isGroupCollapsed(group.key)}
                   >
                     {isGroupCollapsed(group.key) ? (

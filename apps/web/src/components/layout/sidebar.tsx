@@ -178,25 +178,26 @@ function CollapsibleGroup({
     // When sidebar is collapsed, show just a divider
     return (
       <div className="mb-1">
-        <div className="mx-3 my-2 border-t border-gray-100" />
+        <div className="mx-3 my-3 border-t border-gray-200 dark:border-gray-700" />
         {children}
       </div>
     );
   }
 
   return (
-    <div className="mb-1">
+    <div className="mb-1 mt-1">
+      <div className="mx-3 mt-2 mb-1 border-t border-gray-200 dark:border-gray-700" />
       <button
         onClick={onToggle}
-        className="flex items-center gap-2 w-full px-4 py-1.5 text-[11px] font-semibold uppercase tracking-wider text-gray-400 hover:text-gray-600 transition-colors"
+        className="flex items-center gap-2 w-full px-4 py-2 text-[11px] font-bold uppercase tracking-wider text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
         aria-expanded={!groupCollapsed}
       >
         {groupCollapsed ? (
-          <ChevronRight size={12} className="shrink-0" />
+          <ChevronRight size={12} className="shrink-0 text-gray-400" />
         ) : (
-          <ChevronDown size={12} className="shrink-0" />
+          <ChevronDown size={12} className="shrink-0 text-gray-400" />
         )}
-        <Icon size={12} className="shrink-0" />
+        <Icon size={12} className="shrink-0 text-blue-500/60" />
         <span className="truncate">{label}</span>
       </button>
       {!groupCollapsed && <ul>{children}</ul>}
