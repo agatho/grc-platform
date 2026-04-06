@@ -14,8 +14,8 @@
     "@grc/email": "^0.1.0",
     "@grc/events": "^0.1.0",
     "@grc/shared": "^0.1.0",
-    "hono": "^4.12.9",
-    "svix": "^1.89.0"
+    "hono": "^4.12.10",
+    "svix": "^1.90.0"
   },
   "devDependencies": {
     "tsx": "^4.21.0",
