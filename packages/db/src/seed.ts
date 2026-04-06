@@ -305,6 +305,42 @@ async function seed() {
       ON CONFLICT ON CONSTRAINT module_config_org_module_uq DO NOTHING
     `);
     console.log(`  Module configs enabled: ${enableResult.count} rows`);
+
+    // ── Seed demo users with different roles ──────────────────
+    console.log("  Seeding demo users (risk_manager, auditor, control_owner)...");
+    const demoPassword = await hash("arctos2026!", 12);
+
+    const demoUsers = [
+      { name: "Lisa Schneider", email: "risk.manager@arctos.dev", role: "risk_manager" as const, lod: "second" as const, dept: "Risk Management" },
+      { name: "Dr. Michael Braun", email: "auditor@arctos.dev", role: "auditor" as const, lod: "third" as const, dept: "Internal Audit" },
+      { name: "Sarah Keller", email: "control.owner@arctos.dev", role: "control_owner" as const, lod: "first" as const, dept: "IT Operations" },
+      { name: "Thomas Fischer", email: "process.owner@arctos.dev", role: "process_owner" as const, lod: "first" as const, dept: "Operations" },
+    ];
+
+    for (const demo of demoUsers) {
+      const [demoUser] = await tx
+        .insert(user)
+        .values({
+          name: demo.name,
+          email: demo.email,
+          passwordHash: demoPassword,
+          language: "de",
+          isActive: true,
+        })
+        .onConflictDoNothing()
+        .returning({ id: user.id });
+
+      if (demoUser) {
+        await tx.insert(userOrganizationRole).values({
+          userId: demoUser.id,
+          orgId: holding.id,
+          role: demo.role,
+          lineOfDefense: demo.lod,
+          department: demo.dept,
+        }).onConflictDoNothing();
+        console.log(`    ${demo.role}: ${demoUser.id} (${demo.email})`);
+      }
+    }
   });
 
   console.log("Seed complete.");
