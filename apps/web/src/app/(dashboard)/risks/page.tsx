@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
 import {
   Plus,
@@ -192,12 +192,18 @@ function RisksPageInner() {
   const [ownerFilter, setOwnerFilter] = useState<string>("__all__");
   const [appetiteOnly, setAppetiteOnly] = useState(false);
 
-  // Heat map state
+  // Heat map state — initialize from URL query params (e.g. ?likelihood=3&impact=4)
+  const searchParams = useSearchParams();
+  const initialHeatCell = useMemo(() => {
+    const l = Number(searchParams.get("likelihood"));
+    const i = Number(searchParams.get("impact"));
+    return l > 0 && i > 0 ? { likelihood: l, impact: i } : null;
+  }, [searchParams]);
   const [heatMapMode, setHeatMapMode] = useState<"inherent" | "residual">("residual");
   const [selectedHeatCell, setSelectedHeatCell] = useState<{
     likelihood: number;
     impact: number;
-  } | null>(null);
+  } | null>(initialHeatCell);
 
   // Bulk selection
   const [selectedRows, setSelectedRows] = useState<Set<string>>(new Set());
