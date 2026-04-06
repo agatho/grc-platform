@@ -5,6 +5,7 @@
   "scripts": {
     "db:generate": "drizzle-kit generate",
     "db:migrate": "dotenv -e ../../.env -e ../../apps/web/.env.local -- drizzle-kit migrate",
+    "db:migrate-all": "tsx src/migrate-all.ts",
     "db:seed": "tsx src/seed.ts",
     "db:seed-risk": "tsx src/seed-risk.ts",
     "db:seed-all": "tsx src/seed-all.ts",
