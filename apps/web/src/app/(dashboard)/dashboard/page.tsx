@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useLayout } from "@/hooks/use-layout-preference";
 import { ModernDashboard } from "./modern-dashboard";
 import {
@@ -146,6 +147,7 @@ function DashboardHeatMap({
 }: {
   cells: { likelihood: number | null; impact: number | null; count: number }[];
 }) {
+  const router = useRouter();
   const cellSize = 40;
   const gap = 3;
   const labelW = 16;
@@ -181,9 +183,12 @@ function DashboardHeatMap({
             return (
               <div
                 key={i}
-                className={`rounded-sm flex items-center justify-center text-[9px] font-bold ${cellColor(l, i)} ${count > 0 ? "text-white" : "text-transparent"}`}
+                role={count > 0 ? "button" : undefined}
+                tabIndex={count > 0 ? 0 : undefined}
+                onClick={count > 0 ? () => router.push(`/risks?likelihood=${l}&impact=${i}`) : undefined}
+                className={`rounded-sm flex items-center justify-center text-[9px] font-bold ${cellColor(l, i)} ${count > 0 ? "text-white cursor-pointer hover:ring-2 hover:ring-white/60 hover:scale-105 transition-transform" : "text-transparent"}`}
                 style={{ width: cellSize, height: cellSize }}
-                title={`L${l} x I${i}: ${count} risk(s)`}
+                title={`L${l} × I${i}: ${count} risk(s)`}
               >
                 {count > 0 ? count : ""}
               </div>

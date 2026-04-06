@@ -49,11 +49,14 @@ npm run dev
 
 ## Login Credentials
 
-| User | Email | Password | Role |
-|------|-------|----------|------|
-| Platform Admin | `admin@arctos.dev` | `admin123` | Admin (all orgs) |
-| DPO ARC-TX | `dpo.arctx@arctos.dev` | `arctos2026!` | DPO (Arctis Textil) |
-| DPO ARC-WW | `dpo.arcww@arctos.dev` | `arctos2026!` | DPO (Borealis Workwear) |
+| User | Email | Password | Role | LoD |
+|------|-------|----------|------|-----|
+| Platform Admin | `admin@arctos.dev` | `admin123` | Admin (all orgs) | — |
+| Lisa Schneider | `risk.manager@arctos.dev` | `arctos2026!` | Risk Manager | 2nd |
+| Dr. Michael Braun | `auditor@arctos.dev` | `arctos2026!` | Auditor | 3rd |
+| Sarah Keller | `control.owner@arctos.dev` | `arctos2026!` | Control Owner | 1st |
+| Thomas Fischer | `process.owner@arctos.dev` | `arctos2026!` | Process Owner | 1st |
+| DPO ARC-TX | `dpo.arctx@arctos.dev` | `arctos2026!` | DPO (Arctis Textil) | 2nd |
 
 ## Demo Data Overview
 
