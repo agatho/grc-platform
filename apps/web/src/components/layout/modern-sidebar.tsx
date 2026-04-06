@@ -311,7 +311,7 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
           {pinnedItems.length > 0 && (
             <div className="mb-1">
               {expanded ? (
-                <p className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-gray-300">
+                <p className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
                   <Star size={9} className="inline-block mr-1 text-amber-400 fill-amber-400 -mt-0.5" />
                   {t("nav.favorites")}
                 </p>
@@ -344,15 +344,15 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
                 {/* Group separator */}
                 {expanded ? (
                   <div className="flex items-center gap-2 px-4 py-1.5">
-                    <div className="flex-1 border-t border-gray-100" />
-                    <span className="text-[10px] font-semibold uppercase tracking-widest text-gray-300 whitespace-nowrap flex items-center gap-1">
+                    <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400 whitespace-nowrap flex items-center gap-1">
                       <GroupIcon size={10} className="shrink-0" />
                       {t(group.labelKeyEn)}
                     </span>
-                    <div className="flex-1 border-t border-gray-100" />
+                    <div className="flex-1 border-t border-gray-200 dark:border-gray-700" />
                   </div>
                 ) : (
-                  <div className="mx-3 my-2 border-t border-gray-100/60" />
+                  <div className="mx-3 my-2 border-t border-gray-200/80 dark:border-gray-700" />
                 )}
 
                 <ul className="space-y-0.5">
@@ -375,7 +375,7 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
         </nav>
 
         {/* Bottom: user avatar + settings */}
-        <div className="border-t border-gray-100 py-2 px-2 space-y-1">
+        <div className="border-t border-gray-200 dark:border-gray-700 py-2 px-2 space-y-1">
           {/* Settings */}
           <Link
             href="/settings"

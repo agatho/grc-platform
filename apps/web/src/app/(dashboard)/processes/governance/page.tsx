@@ -486,7 +486,7 @@ function RoadmapTab({
   if (items.length === 0) {
     return (
       <div className="text-center py-12">
-        <Calendar className="mx-auto h-8 w-8 text-gray-300" />
+        <Calendar className="mx-auto h-8 w-8 text-gray-400" />
         <p className="mt-2 text-sm text-gray-500">No upcoming reviews scheduled</p>
       </div>
     );
@@ -546,7 +546,7 @@ function QualityTab({
     <div className="mt-4">
       <Card>
         <CardContent className="py-12 text-center">
-          <BarChart3 className="mx-auto h-10 w-10 text-gray-300" />
+          <BarChart3 className="mx-auto h-10 w-10 text-gray-400" />
           <p className="mt-3 text-sm text-gray-500">
             {t("governance.quality")} &mdash; Coming soon
           </p>

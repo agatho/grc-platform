@@ -148,7 +148,7 @@ function CaseListInner() {
         </div>
       ) : cases.length === 0 ? (
         <div className="text-center py-16">
-          <Shield className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+          <Shield className="h-12 w-12 text-gray-400 mx-auto mb-4" />
           <p className="text-gray-500">{t("noCases")}</p>
         </div>
       ) : (

@@ -149,7 +149,7 @@ export default function TemplateGalleryPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
           <LayoutTemplate
             size={32}
-            className="mx-auto text-gray-300 mb-3"
+            className="mx-auto text-gray-400 mb-3"
           />
           <p className="text-sm text-gray-400">
             {t("templates.empty")}

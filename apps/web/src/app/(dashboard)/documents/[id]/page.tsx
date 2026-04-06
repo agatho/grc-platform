@@ -175,7 +175,7 @@ function DocumentDetailInner() {
           {t("backToList")}
         </Button>
         <div className="flex flex-col items-center justify-center py-12">
-          <FileText size={32} className="text-gray-300 mb-3" />
+          <FileText size={32} className="text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">{t("notFound")}</p>
         </div>
       </div>
@@ -327,7 +327,7 @@ function DocumentDetailInner() {
         <TabsContent value="versions" className="mt-4">
           {versions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <GitBranch size={28} className="text-gray-300 mb-3" />
+              <GitBranch size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("versions.empty")}</p>
             </div>
           ) : (
@@ -374,7 +374,7 @@ function DocumentDetailInner() {
         <TabsContent value="entityLinks" className="mt-4">
           {entityLinks.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <Link2 size={28} className="text-gray-300 mb-3" />
+              <Link2 size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("entityLinks.empty")}</p>
             </div>
           ) : (
@@ -422,7 +422,7 @@ function DocumentDetailInner() {
 
           {acknowledgments.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <CheckCircle2 size={28} className="text-gray-300 mb-3" />
+              <CheckCircle2 size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("acknowledgments.empty")}</p>
             </div>
           ) : (
@@ -467,7 +467,7 @@ function DocumentDetailInner() {
         <TabsContent value="history" className="mt-4">
           {auditLog.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-              <Activity size={28} className="text-gray-300 mb-3" />
+              <Activity size={28} className="text-gray-400 mb-3" />
               <p className="text-sm text-gray-500">{t("history.empty")}</p>
             </div>
           ) : (

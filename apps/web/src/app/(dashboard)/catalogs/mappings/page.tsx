@@ -388,7 +388,7 @@ export default function CrossFrameworkMappingsPage() {
           {!selectedEntry ? (
             <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12">
               <div className="text-center">
-                <GitCompareArrows className="mx-auto h-12 w-12 text-gray-300" />
+                <GitCompareArrows className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-600">
                   {t("mappings.selectEntryToViewMappings")}
                 </h3>
@@ -404,7 +404,7 @@ export default function CrossFrameworkMappingsPage() {
           ) : mappings.length === 0 ? (
             <div className="flex h-full items-center justify-center rounded-lg border border-dashed border-gray-300 bg-gray-50 p-12">
               <div className="text-center">
-                <Info className="mx-auto h-12 w-12 text-gray-300" />
+                <Info className="mx-auto h-12 w-12 text-gray-400" />
                 <h3 className="mt-4 text-lg font-medium text-gray-600">
                   {t("mappings.noMappingsFound")}
                 </h3>

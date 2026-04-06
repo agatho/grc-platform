@@ -490,7 +490,7 @@ export default function BrandingSettingsPage() {
                     className="h-8 w-8 object-contain"
                   />
                 ) : (
-                  <Globe className="h-6 w-6 text-gray-300" />
+                  <Globe className="h-6 w-6 text-gray-400" />
                 )}
               </div>
               <label

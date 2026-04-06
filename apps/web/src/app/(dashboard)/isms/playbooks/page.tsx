@@ -166,7 +166,7 @@ function PlaybooksInner() {
       {/* Card Grid */}
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
-          <BookOpen size={28} className="text-gray-300 mb-3" />
+          <BookOpen size={28} className="text-gray-400 mb-3" />
           <p className="text-sm text-gray-500">{t("noPlaybooks")}</p>
           <p className="text-xs text-gray-400 mt-1">{t("createFirst")}</p>
         </div>

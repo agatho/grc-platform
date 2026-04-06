@@ -140,7 +140,7 @@ export default function MyAssessmentsPage() {
 
       {assignments.length === 0 && (
         <div className="text-center py-16">
-          <ClipboardCheck className="mx-auto h-12 w-12 text-gray-300" />
+          <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-sm text-gray-500">{t("myAssessments.empty")}</p>
         </div>
       )}

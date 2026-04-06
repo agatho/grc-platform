@@ -408,7 +408,7 @@ export default function BudgetOverviewPage() {
       {/* Budget List */}
       {budgets.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <Wallet className="mx-auto h-12 w-12 text-gray-300 mb-4" />
+          <Wallet className="mx-auto h-12 w-12 text-gray-400 mb-4" />
           <p className="text-sm text-gray-400">{t("noBudgets")}</p>
         </div>
       ) : treeView ? (

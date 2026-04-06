@@ -230,7 +230,7 @@ function SoaInner() {
         </div>
       ) : rows.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <FileCheck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <FileCheck className="h-12 w-12 mx-auto mb-3 text-gray-400" />
           <p>{t("soa.empty")}</p>
           <Button variant="outline" size="sm" className="mt-3" onClick={handleGenerate}>
             {t("soa.generate")}

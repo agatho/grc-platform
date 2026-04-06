@@ -93,7 +93,7 @@ function AssessmentListInner() {
         </div>
       ) : assessments.length === 0 ? (
         <div className="text-center py-12 text-gray-400">
-          <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-gray-300" />
+          <ClipboardCheck className="h-12 w-12 mx-auto mb-3 text-gray-400" />
           <p>{t("assessment.empty")}</p>
         </div>
       ) : (

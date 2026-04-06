@@ -280,7 +280,7 @@ function CompareContent() {
         </>
       ) : (
         <div className="text-center py-12">
-          <GitCompare className="mx-auto h-8 w-8 text-gray-300" />
+          <GitCompare className="mx-auto h-8 w-8 text-gray-400" />
           <p className="mt-2 text-sm text-gray-500">
             Select two different versions to compare
           </p>
