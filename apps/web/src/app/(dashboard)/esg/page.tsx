@@ -175,9 +175,9 @@ function EsgDashboardInner() {
             </Link>
           </div>
           <div className="space-y-3">
-            <ScopeBar label={t("scopes.scope1")} value={d?.scopeEmissions.scope1 ?? 0} total={totalEmissions} color="bg-red-400" />
-            <ScopeBar label={t("scopes.scope2Location")} value={d?.scopeEmissions.scope2 ?? 0} total={totalEmissions} color="bg-orange-400" />
-            <ScopeBar label={t("scopes.scope3")} value={d?.scopeEmissions.scope3 ?? 0} total={totalEmissions} color="bg-yellow-400" />
+            <ScopeBar label={t("scopes.scope1")} value={d?.scopeEmissions?.scope1 ?? 0} total={totalEmissions} color="bg-red-400" />
+            <ScopeBar label={t("scopes.scope2Location")} value={d?.scopeEmissions?.scope2 ?? 0} total={totalEmissions} color="bg-orange-400" />
+            <ScopeBar label={t("scopes.scope3")} value={d?.scopeEmissions?.scope3 ?? 0} total={totalEmissions} color="bg-yellow-400" />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
             <span className="text-sm font-medium text-gray-700">{t("total")}: {totalEmissions.toLocaleString()} {t("co2e")}</span>
