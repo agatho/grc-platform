@@ -11,16 +11,16 @@ import { Badge } from "@/components/ui/badge";
 import type { BcExercise, BcExerciseFinding, ExerciseResult } from "@grc/shared";
 
 const RESULT_COLORS: Record<string, string> = {
-  successful: "bg-green-100 text-green-700",
-  partially_successful: "bg-yellow-100 text-yellow-700",
-  failed: "bg-red-100 text-red-700",
+  successful: "bg-green-100 text-green-900",
+  partially_successful: "bg-yellow-100 text-yellow-900",
+  failed: "bg-red-100 text-red-900",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  major: "bg-orange-100 text-orange-700",
-  minor: "bg-yellow-100 text-yellow-700",
-  observation: "bg-blue-100 text-blue-700",
+  critical: "bg-red-100 text-red-900",
+  major: "bg-orange-100 text-orange-900",
+  minor: "bg-yellow-100 text-yellow-900",
+  observation: "bg-blue-100 text-blue-900",
 };
 
 export default function ExerciseDetailPage() {
@@ -253,7 +253,7 @@ function ExerciseDetailInner() {
             <div>
               <dt className="text-xs font-medium text-gray-500">{t("common.status")}</dt>
               <dd className="mt-1">
-                <Badge variant="outline" className={exercise.status === "completed" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}>
+                <Badge variant="outline" className={exercise.status === "completed" ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-600"}>
                   {t(`exercise.status.${exercise.status}`)}
                 </Badge>
               </dd>

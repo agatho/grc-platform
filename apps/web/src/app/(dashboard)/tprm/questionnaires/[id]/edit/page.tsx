@@ -111,8 +111,8 @@ const IMPORT_FRAMEWORKS = [
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700 border-gray-200",
-  published: "bg-green-100 text-green-700 border-green-200",
-  archived: "bg-yellow-100 text-yellow-700 border-yellow-200",
+  published: "bg-green-100 text-green-900 border-green-200",
+  archived: "bg-yellow-100 text-yellow-900 border-yellow-200",
 };
 
 const QUESTION_TYPES = [

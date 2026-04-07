@@ -152,7 +152,7 @@ function CrisisDetailInner() {
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
               <span className="font-bold text-red-800 text-lg">{crisis.name}</span>
-              <Badge variant="outline" className="bg-red-100 text-red-700 ml-2">
+              <Badge variant="outline" className="bg-red-100 text-red-900 ml-2">
                 {crisis.severity.replace(/_/g, " ")}
               </Badge>
             </div>
@@ -180,7 +180,7 @@ function CrisisDetailInner() {
               {t(`crisis.categories.${crisis.category}`)} | {crisis.severity.replace(/_/g, " ")}
             </p>
           </div>
-          <Badge variant="outline" className={crisis.status === "resolved" ? "bg-green-100 text-green-700" : "bg-gray-100 text-gray-600"}>
+          <Badge variant="outline" className={crisis.status === "resolved" ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-600"}>
             {t(`crisis.status.${crisis.status}`)}
           </Badge>
         </div>
@@ -280,11 +280,11 @@ function CrisisDetailInner() {
                   <div className="flex flex-col items-center">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
                       entry.entryType === "status_change"
-                        ? "bg-red-100 text-red-700"
+                        ? "bg-red-100 text-red-900"
                         : entry.entryType === "decision"
-                          ? "bg-purple-100 text-purple-700"
+                          ? "bg-purple-100 text-purple-900"
                           : entry.entryType === "communication"
-                            ? "bg-blue-100 text-blue-700"
+                            ? "bg-blue-100 text-blue-900"
                             : "bg-gray-100 text-gray-600"
                     }`}>
                       {LOG_TYPE_ICONS[entry.entryType] ?? "?"}

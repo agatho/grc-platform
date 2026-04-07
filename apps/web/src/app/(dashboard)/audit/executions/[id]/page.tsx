@@ -118,12 +118,12 @@ function ExecutionDetailInner() {
   const statusBadge = (status: string) => {
     const map: Record<string, { className: string; label: string }> = {
       planned: { className: "bg-gray-100 text-gray-700", label: t("auditStatus.planned") },
-      preparation: { className: "bg-blue-100 text-blue-700", label: t("auditStatus.preparation") },
-      fieldwork: { className: "bg-yellow-100 text-yellow-700", label: t("auditStatus.fieldwork") },
-      reporting: { className: "bg-orange-100 text-orange-700", label: t("auditStatus.reporting") },
-      review: { className: "bg-purple-100 text-purple-700", label: t("auditStatus.review") },
-      completed: { className: "bg-green-100 text-green-700", label: t("auditStatus.completed") },
-      cancelled: { className: "bg-red-100 text-red-700", label: t("auditStatus.cancelled") },
+      preparation: { className: "bg-blue-100 text-blue-900", label: t("auditStatus.preparation") },
+      fieldwork: { className: "bg-yellow-100 text-yellow-900", label: t("auditStatus.fieldwork") },
+      reporting: { className: "bg-orange-100 text-orange-900", label: t("auditStatus.reporting") },
+      review: { className: "bg-purple-100 text-purple-900", label: t("auditStatus.review") },
+      completed: { className: "bg-green-100 text-green-900", label: t("auditStatus.completed") },
+      cancelled: { className: "bg-red-100 text-red-900", label: t("auditStatus.cancelled") },
     };
     const config = map[status] ?? map.planned;
     return <Badge className={config.className}>{config.label}</Badge>;
@@ -852,10 +852,10 @@ function FindingsTab({ auditId }: { auditId: string }) {
 
   const severityBadge = (severity: string) => {
     const map: Record<string, string> = {
-      significant_nonconformity: "bg-red-100 text-red-700",
-      insignificant_nonconformity: "bg-orange-100 text-orange-700",
-      improvement_requirement: "bg-yellow-100 text-yellow-700",
-      recommendation: "bg-blue-100 text-blue-700",
+      significant_nonconformity: "bg-red-100 text-red-900",
+      insignificant_nonconformity: "bg-orange-100 text-orange-900",
+      improvement_requirement: "bg-yellow-100 text-yellow-900",
+      recommendation: "bg-blue-100 text-blue-900",
       observation: "bg-gray-100 text-gray-700",
     };
     return <Badge className={map[severity] ?? "bg-gray-100 text-gray-700"}>{t(`severity.${severity.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())}`)}</Badge>;

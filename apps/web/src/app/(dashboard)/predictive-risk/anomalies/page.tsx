@@ -10,16 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RiskAnomalyDetection } from "@grc/shared";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  high: "bg-orange-100 text-orange-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  low: "bg-blue-100 text-blue-700",
+  critical: "bg-red-100 text-red-900",
+  high: "bg-orange-100 text-orange-900",
+  medium: "bg-yellow-100 text-yellow-900",
+  low: "bg-blue-100 text-blue-900",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  new: "bg-blue-100 text-blue-700",
-  investigating: "bg-yellow-100 text-yellow-700",
-  resolved: "bg-green-100 text-green-700",
+  new: "bg-blue-100 text-blue-900",
+  investigating: "bg-yellow-100 text-yellow-900",
+  resolved: "bg-green-100 text-green-900",
   false_positive: "bg-gray-100 text-gray-500",
 };
 

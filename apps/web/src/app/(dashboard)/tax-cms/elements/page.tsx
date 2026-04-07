@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxCmsElement } from "@grc/shared";
 
-const MATURITY_COLORS = ["bg-gray-100 text-gray-700", "bg-red-100 text-red-700", "bg-orange-100 text-orange-700", "bg-yellow-100 text-yellow-700", "bg-blue-100 text-blue-700", "bg-green-100 text-green-700"];
+const MATURITY_COLORS = ["bg-gray-100 text-gray-700", "bg-red-100 text-red-900", "bg-orange-100 text-orange-900", "bg-yellow-100 text-yellow-900", "bg-blue-100 text-blue-900", "bg-green-100 text-green-900"];
 
 export default function TaxCmsElementsPage() {
   const t = useTranslations("taxCms");

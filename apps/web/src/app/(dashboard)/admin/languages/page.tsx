@@ -254,12 +254,12 @@ export default function LanguageConfigPage() {
                     </TableCell>
                     <TableCell>
                       {lang.isPrimary ? (
-                        <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                        <Badge className="bg-amber-100 text-amber-900 border-amber-200">
                           <Star className="mr-1 h-3 w-3" />
                           {t("primary")}
                         </Badge>
                       ) : (
-                        <Badge className="bg-green-100 text-green-700 border-green-200">
+                        <Badge className="bg-green-100 text-green-900 border-green-200">
                           <Check className="mr-1 h-3 w-3" />
                           {t("active")}
                         </Badge>

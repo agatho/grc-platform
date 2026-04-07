@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { TaxIcfrControl } from "@grc/shared";
 
-const RESULT_COLORS: Record<string, string> = { effective: "bg-green-100 text-green-700", partially_effective: "bg-yellow-100 text-yellow-700", not_effective: "bg-red-100 text-red-700", not_tested: "bg-gray-100 text-gray-700" };
+const RESULT_COLORS: Record<string, string> = { effective: "bg-green-100 text-green-900", partially_effective: "bg-yellow-100 text-yellow-900", not_effective: "bg-red-100 text-red-900", not_tested: "bg-gray-100 text-gray-700" };
 
 export default function TaxIcfrControlsPage() {
   const t = useTranslations("taxCms");

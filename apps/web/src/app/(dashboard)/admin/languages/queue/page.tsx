@@ -265,18 +265,18 @@ export default function TranslationQueuePage() {
                     </TableCell>
                     <TableCell>
                       {item.missingLanguages.length > 0 && (
-                        <Badge className="bg-red-100 text-red-700 border-red-200 mr-1">
+                        <Badge className="bg-red-100 text-red-900 border-red-200 mr-1">
                           {t("missing")}
                         </Badge>
                       )}
                       {item.outdatedLanguages.length > 0 && (
-                        <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+                        <Badge className="bg-amber-100 text-amber-900 border-amber-200">
                           {t("outdated")}
                         </Badge>
                       )}
                       {item.missingLanguages.length === 0 &&
                         item.outdatedLanguages.length === 0 && (
-                          <Badge className="bg-green-100 text-green-700 border-green-200">
+                          <Badge className="bg-green-100 text-green-900 border-green-200">
                             {t("translated")}
                           </Badge>
                         )}

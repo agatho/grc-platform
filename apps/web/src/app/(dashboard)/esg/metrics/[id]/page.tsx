@@ -305,7 +305,7 @@ function MetricDetailInner() {
                   <td className="px-4 py-3 text-gray-600">{m.source ?? "-"}</td>
                   <td className="px-4 py-3 text-center">
                     {m.verifiedAt ? (
-                      <Badge className="bg-green-100 text-green-700 text-[10px]">
+                      <Badge className="bg-green-100 text-green-900 text-[10px]">
                         <CheckCircle size={10} className="mr-1" />
                         {t("metrics.verified")}
                       </Badge>
@@ -345,9 +345,9 @@ function MetricDetailInner() {
 
 function QualityBadge({ quality, t }: { quality: string; t: (key: string) => string }) {
   const colors: Record<string, string> = {
-    measured: "bg-green-100 text-green-700",
-    estimated: "bg-yellow-100 text-yellow-700",
-    calculated: "bg-blue-100 text-blue-700",
+    measured: "bg-green-100 text-green-900 border-green-300",
+    estimated: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    calculated: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
     <Badge variant="outline" className={`${colors[quality] ?? ""} text-[10px]`}>

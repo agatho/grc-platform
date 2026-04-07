@@ -230,9 +230,9 @@ function RiskCard({
         </div>
         <div className="flex items-center gap-2">
           {isSubmitted ? (
-            <Badge className="bg-green-100 text-green-700"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
+            <Badge className="bg-green-100 text-green-900"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
           ) : (
-            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}>
+            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-700"}>
               <Clock size={12} className="mr-1" />
               {daysLeft > 0 ? `${daysLeft} ${t("common.daysLeft")}` : t("status.overdue")}
             </Badge>
@@ -375,9 +375,9 @@ function ControlCard({
         </div>
         <div className="flex items-center gap-2">
           {isSubmitted ? (
-            <Badge className="bg-green-100 text-green-700"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
+            <Badge className="bg-green-100 text-green-900"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
           ) : (
-            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-700"}>
+            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-700"}>
               <Clock size={12} className="mr-1" />
               {daysLeft > 0 ? `${daysLeft} ${t("common.daysLeft")}` : t("status.overdue")}
             </Badge>

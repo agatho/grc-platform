@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { HorizonScanItem } from "@grc/shared";
 
-const CLASS_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-700", high: "bg-orange-100 text-orange-700", medium: "bg-yellow-100 text-yellow-700", low: "bg-blue-100 text-blue-700", informational: "bg-gray-100 text-gray-700" };
+const CLASS_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-900", high: "bg-orange-100 text-orange-900", medium: "bg-yellow-100 text-yellow-900", low: "bg-blue-100 text-blue-900", informational: "bg-gray-100 text-gray-700" };
 
 export default function HorizonScanItemsPage() {
   const t = useTranslations("horizonScanner");

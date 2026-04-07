@@ -91,12 +91,12 @@ function ExecutionsInner() {
   const statusBadge = (status: string) => {
     const map: Record<string, { className: string; label: string }> = {
       planned: { className: "bg-gray-100 text-gray-700 border-gray-300", label: t("auditStatus.planned") },
-      preparation: { className: "bg-blue-100 text-blue-700 border-blue-300", label: t("auditStatus.preparation") },
-      fieldwork: { className: "bg-yellow-100 text-yellow-700 border-yellow-300", label: t("auditStatus.fieldwork") },
-      reporting: { className: "bg-orange-100 text-orange-700 border-orange-300", label: t("auditStatus.reporting") },
-      review: { className: "bg-purple-100 text-purple-700 border-purple-300", label: t("auditStatus.review") },
-      completed: { className: "bg-green-100 text-green-700 border-green-300", label: t("auditStatus.completed") },
-      cancelled: { className: "bg-red-100 text-red-700 border-red-300", label: t("auditStatus.cancelled") },
+      preparation: { className: "bg-blue-100 text-blue-900 border-blue-300", label: t("auditStatus.preparation") },
+      fieldwork: { className: "bg-yellow-100 text-yellow-900 border-yellow-300", label: t("auditStatus.fieldwork") },
+      reporting: { className: "bg-orange-100 text-orange-900 border-orange-300", label: t("auditStatus.reporting") },
+      review: { className: "bg-purple-100 text-purple-900 border-purple-300", label: t("auditStatus.review") },
+      completed: { className: "bg-green-100 text-green-900 border-green-300", label: t("auditStatus.completed") },
+      cancelled: { className: "bg-red-100 text-red-900 border-red-300", label: t("auditStatus.cancelled") },
     };
     const config = map[status] ?? map.planned;
     return <Badge className={config.className}>{config.label}</Badge>;

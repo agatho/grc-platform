@@ -260,7 +260,7 @@ export default function RoiDashboardPage() {
             <button
               type="button"
               onClick={() => setPerspective("cfo")}
-              className={`px-4 py-2 text-sm ${perspective === "cfo" ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-500 hover:bg-gray-50"}`}
+              className={`px-4 py-2 text-sm ${perspective === "cfo" ? "bg-blue-100 text-blue-900 font-medium" : "text-gray-500 hover:bg-gray-50"}`}
             >
               <Briefcase size={14} className="inline mr-1" />
               {t("roi.cfoPerspective")}
@@ -268,7 +268,7 @@ export default function RoiDashboardPage() {
             <button
               type="button"
               onClick={() => setPerspective("ciso")}
-              className={`px-4 py-2 text-sm ${perspective === "ciso" ? "bg-orange-100 text-orange-700 font-medium" : "text-gray-500 hover:bg-gray-50"}`}
+              className={`px-4 py-2 text-sm ${perspective === "ciso" ? "bg-orange-100 text-orange-900 font-medium" : "text-gray-500 hover:bg-gray-50"}`}
             >
               <Shield size={14} className="inline mr-1" />
               {t("roi.cisoPerspective")}

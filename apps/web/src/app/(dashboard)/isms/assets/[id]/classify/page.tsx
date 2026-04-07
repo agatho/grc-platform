@@ -171,7 +171,7 @@ function ClassifyInner() {
               i === step
                 ? "bg-blue-600 text-white"
                 : i < step
-                  ? "bg-blue-100 text-blue-700"
+                  ? "bg-blue-100 text-blue-900"
                   : "bg-gray-100 text-gray-500"
             }`}
           >

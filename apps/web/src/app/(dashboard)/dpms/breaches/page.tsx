@@ -11,19 +11,19 @@ import { Badge } from "@/components/ui/badge";
 import type { DataBreach } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
-  detected: "bg-red-100 text-red-700",
-  assessing: "bg-orange-100 text-orange-700",
-  notifying_dpa: "bg-yellow-100 text-yellow-700",
-  notifying_individuals: "bg-blue-100 text-blue-700",
-  remediation: "bg-teal-100 text-teal-700",
+  detected: "bg-red-100 text-red-900",
+  assessing: "bg-orange-100 text-orange-900",
+  notifying_dpa: "bg-yellow-100 text-yellow-900",
+  notifying_individuals: "bg-blue-100 text-blue-900",
+  remediation: "bg-teal-100 text-teal-900",
   closed: "bg-gray-100 text-gray-500",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-orange-100 text-orange-700",
-  critical: "bg-red-100 text-red-700",
+  low: "bg-green-100 text-green-900",
+  medium: "bg-yellow-100 text-yellow-900",
+  high: "bg-orange-100 text-orange-900",
+  critical: "bg-red-100 text-red-900",
 };
 
 export default function BreachListPage() {
@@ -155,7 +155,7 @@ function BreachListInner() {
                     <td className="px-4 py-3">
                       {!isClosed && !item.dpaNotifiedAt && (
                         <span className={`text-xs font-medium px-2 py-1 rounded ${
-                          isOverdue ? "bg-red-100 text-red-700" : hoursRemaining <= 24 ? "bg-orange-100 text-orange-700" : "bg-yellow-100 text-yellow-700"
+                          isOverdue ? "bg-red-100 text-red-900" : hoursRemaining <= 24 ? "bg-orange-100 text-orange-900" : "bg-yellow-100 text-yellow-900"
                         }`}>
                           {isOverdue ? t("breaches.expired") : `${hoursRemaining}h`}
                         </span>

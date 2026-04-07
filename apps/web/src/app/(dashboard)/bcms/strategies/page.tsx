@@ -11,11 +11,11 @@ import { Badge } from "@/components/ui/badge";
 import type { ContinuityStrategy } from "@grc/shared";
 
 const STRATEGY_COLORS: Record<string, string> = {
-  active_active: "bg-green-100 text-green-700",
-  active_passive: "bg-blue-100 text-blue-700",
-  cold_standby: "bg-yellow-100 text-yellow-700",
-  manual_workaround: "bg-orange-100 text-orange-700",
-  outsource: "bg-purple-100 text-purple-700",
+  active_active: "bg-green-100 text-green-900",
+  active_passive: "bg-blue-100 text-blue-900",
+  cold_standby: "bg-yellow-100 text-yellow-900",
+  manual_workaround: "bg-orange-100 text-orange-900",
+  outsource: "bg-purple-100 text-purple-900",
   do_nothing: "bg-gray-100 text-gray-600",
 };
 

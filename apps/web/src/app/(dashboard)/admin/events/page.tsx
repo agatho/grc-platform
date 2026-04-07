@@ -33,10 +33,10 @@ import type { EventLogEntry } from "@grc/shared";
 // ── Event type styling ────────────────────────────────────────
 
 const EVENT_TYPE_STYLES: Record<string, string> = {
-  "entity.created": "bg-green-100 text-green-700",
-  "entity.updated": "bg-blue-100 text-blue-700",
-  "entity.deleted": "bg-red-100 text-red-700",
-  "entity.status_changed": "bg-amber-100 text-amber-700",
+  "entity.created": "bg-green-100 text-green-900",
+  "entity.updated": "bg-blue-100 text-blue-900",
+  "entity.deleted": "bg-red-100 text-red-900",
+  "entity.status_changed": "bg-amber-100 text-amber-900",
 };
 
 const ENTITY_TYPES = [

@@ -179,12 +179,12 @@ function SlaMonitoringInner() {
                   </span>
                 )}
                 {s.latestBreach === true && (
-                  <Badge variant="outline" className="bg-red-100 text-red-700 border-red-200 text-xs">
+                  <Badge variant="outline" className="bg-red-100 text-red-900 border-red-200 text-xs">
                     {t("sla.breach")}
                   </Badge>
                 )}
                 {s.latestBreach === false && (
-                  <Badge variant="outline" className="bg-green-100 text-green-700 border-green-200 text-xs">
+                  <Badge variant="outline" className="bg-green-100 text-green-900 border-green-200 text-xs">
                     {t("sla.ok")}
                   </Badge>
                 )}

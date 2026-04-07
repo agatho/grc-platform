@@ -10,16 +10,16 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RegulatoryChange } from "@grc/shared";
 
 const CLASSIFICATION_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  major: "bg-orange-100 text-orange-700",
-  minor: "bg-yellow-100 text-yellow-700",
-  informational: "bg-blue-100 text-blue-700",
+  critical: "bg-red-100 text-red-900",
+  major: "bg-orange-100 text-orange-900",
+  minor: "bg-yellow-100 text-yellow-900",
+  informational: "bg-blue-100 text-blue-900",
 };
 
 const STATUS_COLORS: Record<string, string> = {
-  new: "bg-blue-100 text-blue-700",
-  under_review: "bg-yellow-100 text-yellow-700",
-  assessed: "bg-green-100 text-green-700",
+  new: "bg-blue-100 text-blue-900",
+  under_review: "bg-yellow-100 text-yellow-900",
+  assessed: "bg-green-100 text-green-900",
   acknowledged: "bg-gray-100 text-gray-700",
   not_applicable: "bg-gray-100 text-gray-500",
 };

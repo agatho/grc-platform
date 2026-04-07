@@ -266,10 +266,10 @@ function NavCard({ href, label, count }: { href: string; label: string; count?: 
 
 function ExerciseTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    tabletop: "bg-blue-100 text-blue-700",
-    walkthrough: "bg-green-100 text-green-700",
-    functional: "bg-yellow-100 text-yellow-700",
-    full_simulation: "bg-red-100 text-red-700",
+    tabletop: "bg-blue-100 text-blue-900",
+    walkthrough: "bg-green-100 text-green-900",
+    functional: "bg-yellow-100 text-yellow-900",
+    full_simulation: "bg-red-100 text-red-900",
   };
   return (
     <Badge variant="outline" className={`${colors[type] ?? "bg-gray-100 text-gray-600"} text-[10px]`}>

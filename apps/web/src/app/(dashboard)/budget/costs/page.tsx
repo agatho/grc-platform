@@ -68,9 +68,9 @@ export default function CostListPage() {
   const totalPages = Math.ceil(total / 20);
 
   const typeColors: Record<CostType, string> = {
-    planned: "bg-blue-100 text-blue-700",
-    actual: "bg-green-100 text-green-700",
-    forecast: "bg-orange-100 text-orange-700",
+    planned: "bg-blue-100 text-blue-900",
+    actual: "bg-green-100 text-green-900",
+    forecast: "bg-orange-100 text-orange-900",
   };
 
   return (

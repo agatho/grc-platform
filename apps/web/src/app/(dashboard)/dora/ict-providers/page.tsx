@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DoraIctProvider } from "@grc/shared";
 
-const CRIT_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-700", important: "bg-orange-100 text-orange-700", standard: "bg-blue-100 text-blue-700" };
+const CRIT_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-900", important: "bg-orange-100 text-orange-900", standard: "bg-blue-100 text-blue-900" };
 
 export default function DoraIctProvidersPage() {
   const t = useTranslations("dora");

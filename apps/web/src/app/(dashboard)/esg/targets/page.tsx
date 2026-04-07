@@ -176,7 +176,7 @@ function TargetsInner() {
                     {t(`targets.types.${target.targetType}`)}
                   </Badge>
                   {target.sbtiAligned && (
-                    <Badge className="bg-blue-100 text-blue-700 text-[10px]">
+                    <Badge className="bg-blue-100 text-blue-900 text-[10px]">
                       <Award size={10} className="mr-0.5" />
                       SBTi
                     </Badge>
@@ -193,10 +193,10 @@ function TargetsInner() {
 
 function TargetStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
   const colors: Record<string, string> = {
-    on_track: "bg-green-100 text-green-700",
-    at_risk: "bg-yellow-100 text-yellow-700",
-    off_track: "bg-red-100 text-red-700",
-    achieved: "bg-blue-100 text-blue-700",
+    on_track: "bg-green-100 text-green-900",
+    at_risk: "bg-yellow-100 text-yellow-900",
+    off_track: "bg-red-100 text-red-900",
+    achieved: "bg-blue-100 text-blue-900",
   };
   return (
     <Badge variant="outline" className={`${colors[status] ?? ""} text-[10px]`}>

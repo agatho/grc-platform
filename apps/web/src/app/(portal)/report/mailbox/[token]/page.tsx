@@ -163,13 +163,13 @@ export default function MailboxPage() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setLanguage("de")}
-            className={`px-3 py-1 text-sm rounded-md ${language === "de" ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
+            className={`px-3 py-1 text-sm rounded-md ${language === "de" ? "bg-blue-100 text-blue-900 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
           >
             DE
           </button>
           <button
             onClick={() => setLanguage("en")}
-            className={`px-3 py-1 text-sm rounded-md ${language === "en" ? "bg-blue-100 text-blue-700 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
+            className={`px-3 py-1 text-sm rounded-md ${language === "en" ? "bg-blue-100 text-blue-900 font-medium" : "text-gray-500 hover:bg-gray-100"}`}
           >
             EN
           </button>

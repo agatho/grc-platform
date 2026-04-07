@@ -29,9 +29,9 @@ import type {
 // ── Status badge config ───────────────────────────────────────
 
 const STATUS_STYLES: Record<string, { color: string; icon: typeof Check }> = {
-  delivered: { color: "bg-green-100 text-green-700", icon: CheckCircle2 },
-  failed: { color: "bg-red-100 text-red-700", icon: XCircle },
-  retrying: { color: "bg-amber-100 text-amber-700", icon: RefreshCw },
+  delivered: { color: "bg-green-100 text-green-900", icon: CheckCircle2 },
+  failed: { color: "bg-red-100 text-red-900", icon: XCircle },
+  retrying: { color: "bg-amber-100 text-amber-900", icon: RefreshCw },
   pending: { color: "bg-gray-100 text-gray-500", icon: Clock },
 };
 
@@ -109,7 +109,7 @@ export default function WebhookDetailPage() {
             variant={webhook.isActive ? "default" : "secondary"}
             className={
               webhook.isActive
-                ? "bg-green-100 text-green-700"
+                ? "bg-green-100 text-green-900"
                 : "bg-gray-100 text-gray-500"
             }
           >

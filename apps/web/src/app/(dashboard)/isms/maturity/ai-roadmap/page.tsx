@@ -20,15 +20,15 @@ import { Badge } from "@/components/ui/badge";
 import type { MaturityRoadmapAction } from "@grc/shared";
 
 const effortStyles: Record<string, string> = {
-  S: "bg-green-100 text-green-700",
-  M: "bg-yellow-100 text-yellow-700",
-  L: "bg-red-100 text-red-700",
+  S: "bg-green-100 text-green-900",
+  M: "bg-yellow-100 text-yellow-900",
+  L: "bg-red-100 text-red-900",
 };
 
 const statusStyles: Record<string, string> = {
-  proposed: "bg-blue-100 text-blue-700",
-  in_progress: "bg-yellow-100 text-yellow-700",
-  completed: "bg-green-100 text-green-700",
+  proposed: "bg-blue-100 text-blue-900",
+  in_progress: "bg-yellow-100 text-yellow-900",
+  completed: "bg-green-100 text-green-900",
   dismissed: "bg-gray-100 text-gray-500",
 };
 
