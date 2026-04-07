@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AiSystem } from "@grc/shared";
 
-const RISK_COLORS: Record<string, string> = { unacceptable: "bg-red-100 text-red-700", high: "bg-orange-100 text-orange-700", limited: "bg-yellow-100 text-yellow-700", minimal: "bg-green-100 text-green-700" };
+const RISK_COLORS: Record<string, string> = { unacceptable: "bg-red-100 text-red-900", high: "bg-orange-100 text-orange-900", limited: "bg-yellow-100 text-yellow-900", minimal: "bg-green-100 text-green-900" };
 
 export default function AiSystemsPage() {
   const t = useTranslations("aiAct");

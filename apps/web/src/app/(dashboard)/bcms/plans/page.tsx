@@ -12,11 +12,11 @@ import type { Bcp } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  in_review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
+  in_review: "bg-yellow-100 text-yellow-900",
+  approved: "bg-blue-100 text-blue-900",
+  published: "bg-green-100 text-green-900",
   archived: "bg-gray-50 text-gray-400",
-  superseded: "bg-orange-100 text-orange-700",
+  superseded: "bg-orange-100 text-orange-900",
 };
 
 export default function BcpListPage() {

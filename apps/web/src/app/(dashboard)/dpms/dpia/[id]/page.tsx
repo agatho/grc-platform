@@ -15,11 +15,11 @@ type WizardStep = typeof WIZARD_STEPS[number];
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-teal-100 text-teal-700",
-  pending_dpo_review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
+  in_progress: "bg-blue-100 text-blue-900",
+  completed: "bg-teal-100 text-teal-900",
+  pending_dpo_review: "bg-yellow-100 text-yellow-900",
+  approved: "bg-green-100 text-green-900",
+  rejected: "bg-red-100 text-red-900",
 };
 
 interface CriteriaCatalogEntry {
@@ -149,7 +149,7 @@ function DpiaDetailInner() {
             onClick={() => setActiveStep(step)}
             className={`flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg transition-colors ${
               activeStep === step
-                ? "bg-blue-100 text-blue-700"
+                ? "bg-blue-100 text-blue-900"
                 : "bg-gray-50 text-gray-500 hover:bg-gray-100"
             }`}
           >

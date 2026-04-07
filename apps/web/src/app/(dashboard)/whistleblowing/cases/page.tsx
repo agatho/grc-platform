@@ -28,43 +28,43 @@ export default function WbCasesPage() {
 
 const STATUS_COLORS: Record<string, string> = {
   received: "bg-gray-100 text-gray-700",
-  acknowledged: "bg-blue-100 text-blue-700",
-  investigating: "bg-yellow-100 text-yellow-700",
-  resolved: "bg-green-100 text-green-700",
+  acknowledged: "bg-blue-100 text-blue-900",
+  investigating: "bg-yellow-100 text-yellow-900",
+  resolved: "bg-green-100 text-green-900",
   closed: "bg-gray-200 text-gray-600",
 };
 
 const PRIORITY_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  high: "bg-orange-100 text-orange-700",
-  medium: "bg-yellow-100 text-yellow-700",
+  critical: "bg-red-100 text-red-900",
+  high: "bg-orange-100 text-orange-900",
+  medium: "bg-yellow-100 text-yellow-900",
   low: "bg-gray-100 text-gray-600",
 };
 
 const CATEGORY_COLORS: Record<string, string> = {
-  fraud: "bg-red-100 text-red-700",
-  corruption: "bg-orange-100 text-orange-700",
-  discrimination: "bg-purple-100 text-purple-700",
-  privacy: "bg-violet-100 text-violet-700",
-  environmental: "bg-green-100 text-green-700",
-  health_safety: "bg-amber-100 text-amber-700",
+  fraud: "bg-red-100 text-red-900",
+  corruption: "bg-orange-100 text-orange-900",
+  discrimination: "bg-purple-100 text-purple-900",
+  privacy: "bg-violet-100 text-violet-900",
+  environmental: "bg-green-100 text-green-900",
+  health_safety: "bg-amber-100 text-amber-900",
   other: "bg-gray-100 text-gray-600",
 };
 
 function deadlineBadge(deadline: string, completedAt?: string | null): React.ReactNode {
   if (completedAt) {
-    return <Badge className="bg-green-100 text-green-700 text-xs">OK</Badge>;
+    return <Badge className="bg-green-100 text-green-900 text-xs">OK</Badge>;
   }
   const days = Math.ceil(
     (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
   );
   if (days < 0) {
-    return <Badge className="bg-red-100 text-red-700 text-xs">Overdue</Badge>;
+    return <Badge className="bg-red-100 text-red-900 text-xs">Overdue</Badge>;
   }
   if (days <= 3) {
-    return <Badge className="bg-yellow-100 text-yellow-700 text-xs">{days}d</Badge>;
+    return <Badge className="bg-yellow-100 text-yellow-900 text-xs">{days}d</Badge>;
   }
-  return <Badge className="bg-green-100 text-green-700 text-xs">{days}d</Badge>;
+  return <Badge className="bg-green-100 text-green-900 text-xs">{days}d</Badge>;
 }
 
 function CaseListInner() {

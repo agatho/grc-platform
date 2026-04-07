@@ -376,9 +376,9 @@ function MatrixRow({
 function StatusBadge({ status, t }: { status: BudgetStatus; t: (key: string) => string }) {
   const colors: Record<BudgetStatus, string> = {
     draft: "bg-gray-100 text-gray-700",
-    submitted: "bg-yellow-100 text-yellow-700",
-    approved: "bg-green-100 text-green-700",
-    closed: "bg-blue-100 text-blue-700",
+    submitted: "bg-yellow-100 text-yellow-900",
+    approved: "bg-green-100 text-green-900",
+    closed: "bg-blue-100 text-blue-900",
   };
   return (
     <Badge variant="outline" className={`${colors[status]} text-xs`}>

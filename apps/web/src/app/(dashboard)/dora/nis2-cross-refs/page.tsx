@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DoraNis2CrossRef } from "@grc/shared";
 
-const COMP_COLORS: Record<string, string> = { compliant: "bg-green-100 text-green-700", partially_compliant: "bg-yellow-100 text-yellow-700", non_compliant: "bg-red-100 text-red-700", not_assessed: "bg-gray-100 text-gray-700" };
+const COMP_COLORS: Record<string, string> = { compliant: "bg-green-100 text-green-900", partially_compliant: "bg-yellow-100 text-yellow-900", non_compliant: "bg-red-100 text-red-900", not_assessed: "bg-gray-100 text-gray-700" };
 
 export default function DoraNis2CrossRefsPage() {
   const t = useTranslations("dora");

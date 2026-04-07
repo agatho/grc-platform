@@ -11,10 +11,10 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { RegulatoryChangeDashboard } from "@grc/shared";
 
 const CLASSIFICATION_COLORS: Record<string, string> = {
-  critical: "bg-red-100 text-red-700",
-  major: "bg-orange-100 text-orange-700",
-  minor: "bg-yellow-100 text-yellow-700",
-  informational: "bg-blue-100 text-blue-700",
+  critical: "bg-red-100 text-red-900",
+  major: "bg-orange-100 text-orange-900",
+  minor: "bg-yellow-100 text-yellow-900",
+  informational: "bg-blue-100 text-blue-900",
 };
 
 export default function RegulatoryDashboardPage() {

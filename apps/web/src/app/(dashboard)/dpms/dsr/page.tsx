@@ -11,12 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import type { Dsr } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
-  received: "bg-blue-100 text-blue-700",
-  verified: "bg-teal-100 text-teal-700",
-  processing: "bg-yellow-100 text-yellow-700",
-  response_sent: "bg-green-100 text-green-700",
+  received: "bg-blue-100 text-blue-900",
+  verified: "bg-teal-100 text-teal-900",
+  processing: "bg-yellow-100 text-yellow-900",
+  response_sent: "bg-green-100 text-green-900",
   closed: "bg-gray-100 text-gray-500",
-  rejected: "bg-red-100 text-red-700",
+  rejected: "bg-red-100 text-red-900",
 };
 
 function getSlaColor(daysRemaining: number): string {

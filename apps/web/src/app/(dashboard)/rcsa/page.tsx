@@ -47,8 +47,8 @@ export default function RcsaCampaignsPage() {
 
   const statusColors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
-    active: "bg-blue-100 text-blue-700",
-    closed: "bg-green-100 text-green-700",
+    active: "bg-blue-100 text-blue-900",
+    closed: "bg-green-100 text-green-900",
     archived: "bg-gray-200 text-gray-500",
   };
 

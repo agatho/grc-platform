@@ -23,20 +23,20 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  negotiation: "bg-blue-100 text-blue-700",
-  pending_approval: "bg-yellow-100 text-yellow-700",
-  active: "bg-green-100 text-green-700",
-  renewal: "bg-orange-100 text-orange-700",
-  expired: "bg-red-100 text-red-700",
+  negotiation: "bg-blue-100 text-blue-900",
+  pending_approval: "bg-yellow-100 text-yellow-900",
+  active: "bg-green-100 text-green-900",
+  renewal: "bg-orange-100 text-orange-900",
+  expired: "bg-red-100 text-red-900",
   terminated: "bg-red-200 text-red-800",
   archived: "bg-gray-200 text-gray-500",
 };
 
 const OBL_STATUS_COLORS: Record<string, string> = {
   pending: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
-  overdue: "bg-red-100 text-red-700",
+  in_progress: "bg-blue-100 text-blue-900",
+  completed: "bg-green-100 text-green-900",
+  overdue: "bg-red-100 text-red-900",
 };
 
 export default function ContractDetailPage() {

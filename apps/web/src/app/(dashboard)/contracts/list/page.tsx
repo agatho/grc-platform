@@ -44,11 +44,11 @@ interface ContractRow {
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  negotiation: "bg-blue-100 text-blue-700",
-  pending_approval: "bg-yellow-100 text-yellow-700",
-  active: "bg-green-100 text-green-700",
-  renewal: "bg-orange-100 text-orange-700",
-  expired: "bg-red-100 text-red-700",
+  negotiation: "bg-blue-100 text-blue-900",
+  pending_approval: "bg-yellow-100 text-yellow-900",
+  active: "bg-green-100 text-green-900",
+  renewal: "bg-orange-100 text-orange-900",
+  expired: "bg-red-100 text-red-900",
   terminated: "bg-red-200 text-red-800",
   archived: "bg-gray-200 text-gray-500",
 };

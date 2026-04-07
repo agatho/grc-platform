@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { HorizonCalendarEvent } from "@grc/shared";
 
-const PRIO_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-700", high: "bg-orange-100 text-orange-700", medium: "bg-yellow-100 text-yellow-700", low: "bg-blue-100 text-blue-700" };
+const PRIO_COLORS: Record<string, string> = { critical: "bg-red-100 text-red-900", high: "bg-orange-100 text-orange-900", medium: "bg-yellow-100 text-yellow-900", low: "bg-blue-100 text-blue-900" };
 
 export default function HorizonCalendarPage() {
   const t = useTranslations("horizonScanner");

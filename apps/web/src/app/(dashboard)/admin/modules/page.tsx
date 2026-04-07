@@ -29,13 +29,13 @@ import type { ModuleConfig, ModuleKey, ModuleUiStatus } from "@grc/shared";
 
 const statusBadgeStyles: Record<ModuleUiStatus, string> = {
   enabled:
-    "bg-green-100 text-green-700 border-green-200",
+    "bg-green-100 text-green-900 border-green-200",
   preview:
-    "bg-amber-100 text-amber-700 border-amber-200",
+    "bg-amber-100 text-amber-900 border-amber-200",
   disabled:
     "bg-gray-100 text-gray-500 border-gray-200",
   maintenance:
-    "bg-red-100 text-red-700 border-red-200",
+    "bg-red-100 text-red-900 border-red-200",
 };
 
 const licenseBadgeStyles: Record<string, string> = {
@@ -358,7 +358,7 @@ export default function AdminModulesPage() {
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700">
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-900">
           <Blocks size={20} />
         </div>
         <div>

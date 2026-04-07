@@ -12,16 +12,16 @@ import type { CrisisScenario } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   standby: "bg-gray-100 text-gray-700",
-  activated: "bg-red-100 text-red-700",
-  resolved: "bg-green-100 text-green-700",
-  post_mortem: "bg-purple-100 text-purple-700",
+  activated: "bg-red-100 text-red-900",
+  resolved: "bg-green-100 text-green-900",
+  post_mortem: "bg-purple-100 text-purple-900",
 };
 
 const SEVERITY_COLORS: Record<string, string> = {
-  level_1_incident: "bg-blue-100 text-blue-700",
-  level_2_emergency: "bg-yellow-100 text-yellow-700",
-  level_3_crisis: "bg-orange-100 text-orange-700",
-  level_4_catastrophe: "bg-red-100 text-red-700",
+  level_1_incident: "bg-blue-100 text-blue-900",
+  level_2_emergency: "bg-yellow-100 text-yellow-900",
+  level_3_crisis: "bg-orange-100 text-orange-900",
+  level_4_catastrophe: "bg-red-100 text-red-900",
 };
 
 export default function CrisisListPage() {

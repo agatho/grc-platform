@@ -12,11 +12,11 @@ import type { Bcp, BcpProcedure, BcpResource } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  in_review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-blue-100 text-blue-700",
-  published: "bg-green-100 text-green-700",
+  in_review: "bg-yellow-100 text-yellow-900",
+  approved: "bg-blue-100 text-blue-900",
+  published: "bg-green-100 text-green-900",
   archived: "bg-gray-50 text-gray-400",
-  superseded: "bg-orange-100 text-orange-700",
+  superseded: "bg-orange-100 text-orange-900",
 };
 
 const RESOURCE_TYPE_LABELS: Record<string, string> = {
@@ -220,7 +220,7 @@ function BcpDetailInner() {
                 <div key={proc.id} className="rounded-lg border border-gray-200 bg-white p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
-                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-sm shrink-0">
+                      <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-900 font-bold text-sm shrink-0">
                         {proc.stepNumber}
                       </span>
                       <div>

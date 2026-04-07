@@ -12,9 +12,9 @@ import { Badge } from "@/components/ui/badge";
 import type { AssessmentRun, AssessmentControlEval, AssessmentRiskEval, EvalResult } from "@grc/shared";
 
 const RESULT_COLORS: Record<EvalResult, string> = {
-  effective: "bg-green-100 text-green-700",
-  partially_effective: "bg-yellow-100 text-yellow-700",
-  ineffective: "bg-red-100 text-red-700",
+  effective: "bg-green-100 text-green-900",
+  partially_effective: "bg-yellow-100 text-yellow-900",
+  ineffective: "bg-red-100 text-red-900",
   not_applicable: "bg-gray-100 text-gray-600",
   not_evaluated: "bg-gray-50 text-gray-400",
 };
@@ -194,7 +194,7 @@ function AssessmentDetailInner() {
                     <td className="px-4 py-3 text-center">{re.residualLikelihood ?? "-"}</td>
                     <td className="px-4 py-3 text-center">{re.residualImpact ?? "-"}</td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={re.decision === "pending" ? "bg-gray-100 text-gray-500" : "bg-blue-100 text-blue-700"}>
+                      <Badge variant="outline" className={re.decision === "pending" ? "bg-gray-100 text-gray-500" : "bg-blue-100 text-blue-900"}>
                         {t(`riskEval.decisions.${re.decision}`)}
                       </Badge>
                     </td>

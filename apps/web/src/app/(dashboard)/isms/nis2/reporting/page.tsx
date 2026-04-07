@@ -210,10 +210,10 @@ function NIS2ReportingInner() {
 
 function ReportTypeBadge({ type }: { type: string }) {
   const colors: Record<string, string> = {
-    early_warning: "bg-red-100 text-red-700 border-red-200",
-    full_notification: "bg-yellow-100 text-yellow-700 border-yellow-200",
-    intermediate_report: "bg-blue-100 text-blue-700 border-blue-200",
-    final_report: "bg-green-100 text-green-700 border-green-200",
+    early_warning: "bg-red-100 text-red-900 border-red-200",
+    full_notification: "bg-yellow-100 text-yellow-900 border-yellow-200",
+    intermediate_report: "bg-blue-100 text-blue-900 border-blue-200",
+    final_report: "bg-green-100 text-green-900 border-green-200",
   };
   const labels: Record<string, string> = {
     early_warning: "Fruehwarnung",
@@ -238,9 +238,9 @@ function ReportStatusBadge({ status, isOverdue }: { status: string; isOverdue: b
   }
   const colors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
-    submitted: "bg-blue-100 text-blue-700",
-    acknowledged: "bg-green-100 text-green-700",
-    rejected: "bg-red-100 text-red-700",
+    submitted: "bg-blue-100 text-blue-900",
+    acknowledged: "bg-green-100 text-green-900",
+    rejected: "bg-red-100 text-red-900",
   };
   return (
     <Badge variant="outline" className={`text-[10px] ${colors[status] ?? ""}`}>

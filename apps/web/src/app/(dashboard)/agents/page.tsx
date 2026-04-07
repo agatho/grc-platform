@@ -11,9 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AgentDashboard } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
-  idle: "bg-green-100 text-green-700",
-  running: "bg-blue-100 text-blue-700",
-  error: "bg-red-100 text-red-700",
+  idle: "bg-green-100 text-green-900",
+  running: "bg-blue-100 text-blue-900",
+  error: "bg-red-100 text-red-900",
   disabled: "bg-gray-100 text-gray-500",
 };
 

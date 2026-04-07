@@ -157,7 +157,7 @@ function BiaWizardInner() {
             {t("bia.progress")}: {assessedCount}/{totalCount} {t("bia.processCount")} ({progressPct}%)
           </p>
         </div>
-        <Badge variant="outline" className={`${form.isEssential ? "bg-red-100 text-red-700" : "bg-gray-100 text-gray-600"}`}>
+        <Badge variant="outline" className={`${form.isEssential ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-600"}`}>
           {form.isEssential ? "Essential" : "Standard"}
         </Badge>
       </div>
@@ -178,7 +178,7 @@ function BiaWizardInner() {
                 idx === currentIndex
                   ? "bg-blue-600 text-white"
                   : imp.rtoHours != null
-                    ? "bg-green-100 text-green-700"
+                    ? "bg-green-100 text-green-900"
                     : "bg-gray-100 text-gray-600"
               }`}
             >

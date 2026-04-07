@@ -13,9 +13,9 @@ import type { BiaAssessment } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
+  in_progress: "bg-blue-100 text-blue-900",
+  review: "bg-yellow-100 text-yellow-900",
+  approved: "bg-green-100 text-green-900",
   archived: "bg-gray-50 text-gray-400",
 };
 

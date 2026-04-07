@@ -201,7 +201,7 @@ function CertificationsInner() {
             <div className="space-y-3">
               {priorities.map((p) => (
                 <div key={p.rank} className="flex items-start gap-2">
-                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-700 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
+                  <div className="w-5 h-5 rounded-full bg-blue-100 text-blue-900 flex items-center justify-center text-[10px] font-bold shrink-0 mt-0.5">
                     {p.rank}
                   </div>
                   <div>

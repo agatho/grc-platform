@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AiFrameworkMappingEntry } from "@grc/shared";
 
-const STATUS_COLORS: Record<string, string> = { implemented: "bg-green-100 text-green-700", in_progress: "bg-yellow-100 text-yellow-700", not_started: "bg-gray-100 text-gray-700", not_applicable: "bg-blue-100 text-blue-700" };
+const STATUS_COLORS: Record<string, string> = { implemented: "bg-green-100 text-green-900", in_progress: "bg-yellow-100 text-yellow-900", not_started: "bg-gray-100 text-gray-700", not_applicable: "bg-blue-100 text-blue-900" };
 
 export default function AiFrameworkMappingsPage() {
   const t = useTranslations("aiAct");

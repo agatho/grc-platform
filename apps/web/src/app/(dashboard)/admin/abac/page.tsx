@@ -11,9 +11,9 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AbacPolicy } from "@grc/shared";
 
 const ACCESS_COLORS: Record<string, string> = {
-  read: "bg-blue-100 text-blue-700",
-  write: "bg-green-100 text-green-700",
-  none: "bg-red-100 text-red-700",
+  read: "bg-blue-100 text-blue-900",
+  write: "bg-green-100 text-green-900",
+  none: "bg-red-100 text-red-900",
 };
 
 export default function AbacPoliciesPage() {

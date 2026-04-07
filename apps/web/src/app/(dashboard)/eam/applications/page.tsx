@@ -12,18 +12,18 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { ApplicationWithPortfolio } from "@grc/shared";
 
 const LIFECYCLE_COLORS: Record<string, string> = {
-  planned: "bg-blue-100 text-blue-700",
-  active: "bg-green-100 text-green-700",
-  phase_out: "bg-yellow-100 text-yellow-700",
-  end_of_life: "bg-red-100 text-red-700",
+  planned: "bg-blue-100 text-blue-900",
+  active: "bg-green-100 text-green-900",
+  phase_out: "bg-yellow-100 text-yellow-900",
+  end_of_life: "bg-red-100 text-red-900",
   retired: "bg-gray-100 text-gray-500",
 };
 
 const TIME_COLORS: Record<string, string> = {
-  tolerate: "bg-blue-100 text-blue-700",
-  invest: "bg-green-100 text-green-700",
-  migrate: "bg-yellow-100 text-yellow-700",
-  eliminate: "bg-red-100 text-red-700",
+  tolerate: "bg-blue-100 text-blue-900",
+  invest: "bg-green-100 text-green-900",
+  migrate: "bg-yellow-100 text-yellow-900",
+  eliminate: "bg-red-100 text-red-900",
 };
 
 export default function ApplicationsPage() {

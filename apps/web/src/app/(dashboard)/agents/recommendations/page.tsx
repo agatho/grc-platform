@@ -10,9 +10,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { AgentRecommendation } from "@grc/shared";
 
 const SEVERITY_COLORS: Record<string, string> = {
-  info: "bg-blue-100 text-blue-700",
-  warning: "bg-yellow-100 text-yellow-700",
-  critical: "bg-red-100 text-red-700",
+  info: "bg-blue-100 text-blue-900",
+  warning: "bg-yellow-100 text-yellow-900",
+  critical: "bg-red-100 text-red-900",
 };
 
 export default function RecommendationsPage() {
