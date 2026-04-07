@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, Search, Plus, RefreshCcw, Zap, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -178,16 +179,16 @@ function ThreatsInner() {
           </div>
         ) : (
           filtered.map((th) => (
+            <Link key={th.id} href={`/isms/threats/${th.id}`}>
             <div
-              key={th.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50"
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Zap size={16} className="text-yellow-600 shrink-0" />
                 {th.code && (
                   <span className="font-mono text-xs text-gray-400 shrink-0">{th.code}</span>
                 )}
-                <span className="text-sm font-medium text-gray-900 truncate">{th.title}</span>
+                <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{th.title}</span>
                 {th.threatCategory && (
                   <Badge variant="outline" className="text-[10px] shrink-0">
                     {th.threatCategory}
@@ -200,11 +201,12 @@ function ThreatsInner() {
                 )}
               </div>
               {!th.isSystem && (
-                <Button variant="ghost" size="sm" onClick={() => handleDelete(th.id)}>
+                <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); handleDelete(th.id); }}>
                   <Trash2 size={14} className="text-gray-400" />
                 </Button>
               )}
             </div>
+            </Link>
           ))
         )}
       </div>
