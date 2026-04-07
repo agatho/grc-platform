@@ -418,14 +418,14 @@
       "isDataControllerYes": "This organization is a data controller",
       "isDataControllerNo": "This organization is not a data controller",
       "supervisoryAuthority": "Supervisory Authority",
-      "supervisoryAuthorityPlaceholder": "e.g. Bayerisches Landesamt für Datenschutzaufsicht",
+      "supervisoryAuthorityPlaceholder": "e.g. Bayerisches Landesamt fÃ¼r Datenschutzaufsicht",
       "dataResidency": "Data Residency",
       "selectCountry": "Select country",
       "dpoUser": "Data Protection Officer",
       "selectDpo": "Select DPO",
       "noDpoUsers": "No users with DPO role found",
       "noDpoUsersHint": "Assign the DPO role to a user first in User Management",
-      "gdprInfo": "Diese Angaben werden für das Datenschutz-Verarbeitungsverzeichnis (Art. 30 DSGVO) verwendet.",
+      "gdprInfo": "Diese Angaben werden fÃ¼r das Datenschutz-Verarbeitungsverzeichnis (Art. 30 DSGVO) verwendet.",
       "saved": "GDPR settings saved",
       "saveError": "Failed to save GDPR settings"
     }
@@ -553,7 +553,7 @@
     "disabled": "Disabled",
     "preview": "Preview",
     "maintenance": "Maintenance",
-    "previewBanner": "This module is in preview — read-only access",
+    "previewBanner": "This module is in preview â€” read-only access",
     "teaser": {
       "activate": "Activate Module",
       "contact": "Contact Support",
@@ -1616,7 +1616,7 @@
     "attach": "Attach",
     "download": "Download",
     "upload": "Upload File",
-    "uploadDescription": "Upload a file attachment (PDF, Word, Excel, images — max 50MB)",
+    "uploadDescription": "Upload a file attachment (PDF, Word, Excel, images â€” max 50MB)",
     "uploadSuccess": "File uploaded successfully",
     "noFile": "No file attached",
     "fileInfo": "File Information",
@@ -1782,7 +1782,7 @@
       "selectMethodology": "Select Methodology",
       "iso_31000": "ISO 31000 standard risk matrix approach",
       "coso_erm": "COSO Enterprise Risk Management framework",
-      "fair": "Factor Analysis of Information Risk — quantitative approach",
+      "fair": "Factor Analysis of Information Risk â€” quantitative approach",
       "custom": "Combine multiple methodologies with custom configuration",
       "matrixSize": "Risk Matrix Size",
       "matrixSizeDescription": "Define the dimensions of your likelihood-impact matrix",
@@ -2188,7 +2188,7 @@
       "avgTarget": "Avg. Target",
       "avgGap": "Avg. Gap",
       "totalControls": "Controls",
-      "noGaps": "No gaps found — all controls meet their target maturity",
+      "noGaps": "No gaps found â€” all controls meet their target maturity",
       "noData": "No maturity data available"
     },
     "soa": {
@@ -2572,7 +2572,7 @@
     "quickNav": "Quick Navigation",
     "ropa": {
       "title": "Record of Processing Activities",
-      "subtitle": "Art. 30 GDPR — Processing activities register",
+      "subtitle": "Art. 30 GDPR â€” Processing activities register",
       "create": "Create Processing Activity",
       "searchPlaceholder": "Search processing activities...",
       "allStatuses": "All Statuses",
@@ -2638,7 +2638,7 @@
     },
     "dpia": {
       "title": "Data Protection Impact Assessment",
-      "subtitle": "Art. 35 GDPR — DPIAs for high-risk processing",
+      "subtitle": "Art. 35 GDPR â€” DPIAs for high-risk processing",
       "create": "Create DPIA",
       "searchPlaceholder": "Search DPIAs...",
       "allStatuses": "All Statuses",
@@ -2694,7 +2694,7 @@
     },
     "dsr": {
       "title": "Data Subject Requests",
-      "subtitle": "GDPR Art. 15-21 — Manage data subject requests",
+      "subtitle": "GDPR Art. 15-21 â€” Manage data subject requests",
       "create": "Create DSR",
       "searchPlaceholder": "Search by subject name...",
       "allStatuses": "All Statuses",
@@ -2745,7 +2745,7 @@
     },
     "breaches": {
       "title": "Data Breaches",
-      "subtitle": "Art. 33/34 GDPR — Breach notification management",
+      "subtitle": "Art. 33/34 GDPR â€” Breach notification management",
       "create": "Report Breach",
       "searchPlaceholder": "Search breaches...",
       "allStatuses": "All Statuses",
@@ -2798,7 +2798,7 @@
     },
     "tia": {
       "title": "Transfer Impact Assessments",
-      "subtitle": "Schrems II — Third-country transfer assessments",
+      "subtitle": "Schrems II â€” Third-country transfer assessments",
       "create": "Create TIA",
       "searchPlaceholder": "Search TIAs...",
       "allRisks": "All Risk Levels",
@@ -3382,7 +3382,7 @@
   },
   "esg": {
     "title": "ESG & Sustainability",
-    "dashboard": "ESG Dashboard — Key metrics at a glance",
+    "dashboard": "ESG Dashboard â€” Key metrics at a glance",
     "refresh": "Refresh",
     "totalMetrics": "Total Metrics",
     "activeTargets": "Active Targets",
@@ -3394,7 +3394,7 @@
     "consolidation": "Group Consolidation",
     "entity": "Entity",
     "total": "Total",
-    "co2e": "CO₂e (t)",
+    "co2e": "COâ‚‚e (t)",
     "vsLastYear": "vs. last year",
     "noData": "No data available",
     "quickNav": "Quick Navigation",
@@ -3504,13 +3504,13 @@
     "emissions": {
       "title": "Scope Emissions",
       "subtitle": "GHG emissions tracking by scope",
-      "scope1": "Scope 1 — Direct",
-      "scope2Location": "Scope 2 — Location-Based",
-      "scope2Market": "Scope 2 — Market-Based",
-      "scope3": "Scope 3 — Value Chain",
+      "scope1": "Scope 1 â€” Direct",
+      "scope2Location": "Scope 2 â€” Location-Based",
+      "scope2Market": "Scope 2 â€” Market-Based",
+      "scope3": "Scope 3 â€” Value Chain",
       "activityData": "Activity Data",
       "emissionFactor": "Emission Factor",
-      "totalCo2e": "Total CO₂e",
+      "totalCo2e": "Total COâ‚‚e",
       "category": "Category",
       "comparison": "Year Comparison",
       "currentYear": "Current Year",
@@ -3723,7 +3723,7 @@
     "contactEmail": "Contact Email",
     "caseNotFound": "Case not found",
     "statisticsTitle": "Whistleblowing Statistics",
-    "statisticsSubtitle": "Anonymized KPIs — no case content visible",
+    "statisticsSubtitle": "Anonymized KPIs â€” no case content visible",
     "noStatistics": "No statistics available",
     "totalYtd": "Reports YTD",
     "previousYear": "Previous Year",
@@ -4489,12 +4489,12 @@
     "outlookStep1": "Open Outlook and go to Calendar view",
     "outlookStep2": "Click 'Add calendar' > 'From internet'",
     "outlookStep3": "Paste the subscription URL",
-    "outlookStep4": "Click 'OK' — the calendar will sync automatically",
+    "outlookStep4": "Click 'OK' â€” the calendar will sync automatically",
     "googleSetup": "Google Calendar",
     "googleStep1": "Open Google Calendar settings",
     "googleStep2": "Click 'Add other calendars' > 'From URL'",
     "googleStep3": "Paste the subscription URL",
-    "googleStep4": "Click 'Add calendar' — it may take a few hours to sync"
+    "googleStep4": "Click 'Add calendar' â€” it may take a few hours to sync"
   },
   "platform": {
     "whereUsed": {
@@ -4647,5 +4647,6 @@
       "postureWeights": "Posture Weighting",
       "postureWeightsDesc": "Weighting of the seven security posture factors (must sum to 100%)"
     }
-  }
+  },
+  "loading": "Loading..."
 }
