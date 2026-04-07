@@ -178,8 +178,8 @@ function IncidentsInner() {
                       variant="outline"
                       className={`text-[10px] shrink-0 ${
                         hrs !== null && hrs < 24
-                          ? "bg-red-100 text-red-700 border-red-300"
-                          : "bg-yellow-100 text-yellow-700 border-yellow-300"
+                          ? "bg-red-100 text-red-900 border-red-300"
+                          : "bg-yellow-100 text-yellow-900 border-yellow-300"
                       }`}
                     >
                       <Clock size={10} className="mr-0.5" />

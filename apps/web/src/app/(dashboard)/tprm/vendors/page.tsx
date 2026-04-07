@@ -49,10 +49,10 @@ const TIER_COLORS: Record<string, string> = {
 
 const STATUS_COLORS: Record<string, string> = {
   prospect: "bg-gray-100 text-gray-700",
-  onboarding: "bg-blue-100 text-blue-700",
-  active: "bg-green-100 text-green-700",
-  under_review: "bg-yellow-100 text-yellow-700",
-  suspended: "bg-red-100 text-red-700",
+  onboarding: "bg-blue-100 text-blue-900",
+  active: "bg-green-100 text-green-900",
+  under_review: "bg-yellow-100 text-yellow-900",
+  suspended: "bg-red-100 text-red-900",
   terminated: "bg-gray-200 text-gray-500",
 };
 

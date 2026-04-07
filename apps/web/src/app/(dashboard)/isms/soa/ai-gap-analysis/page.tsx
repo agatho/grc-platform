@@ -20,21 +20,21 @@ import { Badge } from "@/components/ui/badge";
 import type { SoaAiSuggestion } from "@grc/shared";
 
 const gapTypeStyles: Record<string, string> = {
-  not_covered: "bg-red-100 text-red-700",
-  partial: "bg-yellow-100 text-yellow-700",
-  full: "bg-green-100 text-green-700",
+  not_covered: "bg-red-100 text-red-900",
+  partial: "bg-yellow-100 text-yellow-900",
+  full: "bg-green-100 text-green-900",
 };
 
 const priorityStyles: Record<string, string> = {
   critical: "bg-red-100 text-red-800",
   high: "bg-orange-100 text-orange-800",
-  medium: "bg-yellow-100 text-yellow-700",
+  medium: "bg-yellow-100 text-yellow-900",
   low: "bg-gray-100 text-gray-600",
 };
 
 const statusStyles: Record<string, string> = {
-  pending: "bg-blue-100 text-blue-700",
-  accepted: "bg-green-100 text-green-700",
+  pending: "bg-blue-100 text-blue-900",
+  accepted: "bg-green-100 text-green-900",
   rejected: "bg-gray-100 text-gray-500",
 };
 

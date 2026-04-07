@@ -11,8 +11,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import type { BusinessCapability } from "@grc/shared";
 
 const IMPORTANCE_COLORS: Record<string, string> = {
-  core: "bg-red-100 text-red-700",
-  supporting: "bg-blue-100 text-blue-700",
+  core: "bg-red-100 text-red-900",
+  supporting: "bg-blue-100 text-blue-900",
   commodity: "bg-gray-100 text-gray-700",
 };
 

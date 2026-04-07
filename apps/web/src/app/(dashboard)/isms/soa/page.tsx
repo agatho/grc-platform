@@ -36,16 +36,16 @@ interface SoaStats {
 }
 
 const APPLICABILITY_COLORS: Record<SoaApplicability, string> = {
-  applicable: "bg-green-100 text-green-700",
+  applicable: "bg-green-100 text-green-900",
   not_applicable: "bg-gray-100 text-gray-500",
-  partially_applicable: "bg-yellow-100 text-yellow-700",
+  partially_applicable: "bg-yellow-100 text-yellow-900",
 };
 
 const IMPLEMENTATION_COLORS: Record<SoaImplementation, string> = {
-  implemented: "bg-green-100 text-green-700",
-  partially_implemented: "bg-yellow-100 text-yellow-700",
-  planned: "bg-blue-100 text-blue-700",
-  not_implemented: "bg-red-100 text-red-700",
+  implemented: "bg-green-100 text-green-900",
+  partially_implemented: "bg-yellow-100 text-yellow-900",
+  planned: "bg-blue-100 text-blue-900",
+  not_implemented: "bg-red-100 text-red-900",
 };
 
 export default function SoaPage() {

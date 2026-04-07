@@ -10,10 +10,10 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const RING_COLORS: Record<string, string> = {
-  adopt: "bg-green-100 text-green-700 border-green-300",
-  trial: "bg-emerald-100 text-emerald-700 border-emerald-300",
-  assess: "bg-yellow-100 text-yellow-700 border-yellow-300",
-  hold: "bg-red-100 text-red-700 border-red-300",
+  adopt: "bg-green-100 text-green-900 border-green-300",
+  trial: "bg-emerald-100 text-emerald-900 border-emerald-300",
+  assess: "bg-yellow-100 text-yellow-900 border-yellow-300",
+  hold: "bg-red-100 text-red-900 border-red-300",
 };
 
 export default function TechRadarPage() {

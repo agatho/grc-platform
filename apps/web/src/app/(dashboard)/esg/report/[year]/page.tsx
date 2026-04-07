@@ -182,9 +182,9 @@ function ReportYearInner() {
                   <div
                     className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
                       isPast
-                        ? "bg-green-100 text-green-700"
+                        ? "bg-green-100 text-green-900"
                         : isActive
-                          ? "bg-blue-100 text-blue-700 ring-2 ring-blue-300"
+                          ? "bg-blue-100 text-blue-900 ring-2 ring-blue-300"
                           : "bg-gray-100 text-gray-400"
                     }`}
                   >
@@ -247,7 +247,7 @@ function ReportYearInner() {
                 const color =
                   item.percentage >= 80 ? "bg-green-500" : item.percentage >= 50 ? "bg-yellow-500" : "bg-red-500";
                 const statusColor =
-                  item.percentage >= 80 ? "bg-green-100 text-green-700" : item.percentage >= 50 ? "bg-yellow-100 text-yellow-700" : "bg-red-100 text-red-700";
+                  item.percentage >= 80 ? "bg-green-100 text-green-900" : item.percentage >= 50 ? "bg-yellow-100 text-yellow-900" : "bg-red-100 text-red-900";
                 return (
                   <tr key={item.standard} className="hover:bg-gray-50">
                     <td className="px-4 py-3 font-medium text-gray-900">{item.standard}</td>
@@ -312,9 +312,9 @@ function ReportYearInner() {
 function ReportStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
   const colors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
-    in_review: "bg-yellow-100 text-yellow-700",
-    approved: "bg-green-100 text-green-700",
-    published: "bg-blue-100 text-blue-700",
+    in_review: "bg-yellow-100 text-yellow-900",
+    approved: "bg-green-100 text-green-900",
+    published: "bg-blue-100 text-blue-900",
   };
   return (
     <Badge variant="outline" className={`${colors[status] ?? ""} text-xs`}>

@@ -645,8 +645,8 @@ function BudgetRow({
 function StatusBadge({ status, t }: { status: BudgetStatus; t: (key: string) => string }) {
   const colors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
-    submitted: "bg-yellow-100 text-yellow-700",
-    approved: "bg-green-100 text-green-700",
+    submitted: "bg-yellow-100 text-yellow-900",
+    approved: "bg-green-100 text-green-900",
     closed: "bg-slate-200 text-slate-600",
   };
   return (

@@ -13,18 +13,18 @@ import type { ArchitectureChangeRequest } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  submitted: "bg-blue-100 text-blue-700",
-  under_review: "bg-yellow-100 text-yellow-700",
-  approved: "bg-green-100 text-green-700",
-  rejected: "bg-red-100 text-red-700",
-  deferred: "bg-purple-100 text-purple-700",
+  submitted: "bg-blue-100 text-blue-900",
+  under_review: "bg-yellow-100 text-yellow-900",
+  approved: "bg-green-100 text-green-900",
+  rejected: "bg-red-100 text-red-900",
+  deferred: "bg-purple-100 text-purple-900",
 };
 
 const RISK_COLORS: Record<string, string> = {
-  low: "bg-green-100 text-green-700",
-  medium: "bg-yellow-100 text-yellow-700",
-  high: "bg-orange-100 text-orange-700",
-  critical: "bg-red-100 text-red-700",
+  low: "bg-green-100 text-green-900",
+  medium: "bg-yellow-100 text-yellow-900",
+  high: "bg-orange-100 text-orange-900",
+  critical: "bg-red-100 text-red-900",
 };
 
 export default function ChangeRequestsPage() {

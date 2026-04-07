@@ -136,14 +136,14 @@ function DatapointsInner() {
                     <td className="px-4 py-3 text-gray-600">{dp.unit ?? "-"}</td>
                     <td className="px-4 py-3 text-center">
                       {dp.isMandatory ? (
-                        <Badge className="bg-red-100 text-red-700 text-[10px]">{t("datapoints.mandatory")}</Badge>
+                        <Badge className="bg-red-100 text-red-900 text-[10px]">{t("datapoints.mandatory")}</Badge>
                       ) : (
                         <span className="text-xs text-gray-400">{t("datapoints.optional")}</span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
                       {dp.hasMetric ? (
-                        <Badge className="bg-green-100 text-green-700 text-[10px]">
+                        <Badge className="bg-green-100 text-green-900 text-[10px]">
                           <Link2 size={10} className="mr-1" />
                           {t("datapoints.metricAssigned")}
                         </Badge>

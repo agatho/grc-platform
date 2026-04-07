@@ -11,8 +11,8 @@ import type { ControlTestChecklist } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
+  in_progress: "bg-blue-100 text-blue-900",
+  completed: "bg-green-100 text-green-900",
   archived: "bg-gray-100 text-gray-500",
 };
 

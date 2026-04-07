@@ -89,9 +89,9 @@ const TIER_COLORS: Record<string, string> = {
 };
 
 const SCAN_COLORS: Record<string, string> = {
-  clean: "bg-green-100 text-green-700",
+  clean: "bg-green-100 text-green-900",
   pending: "bg-gray-100 text-gray-600",
-  infected: "bg-red-100 text-red-700",
+  infected: "bg-red-100 text-red-900",
 };
 
 // ──────────────────────────────────────────────────────────────

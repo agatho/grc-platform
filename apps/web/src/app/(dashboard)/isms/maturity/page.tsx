@@ -145,9 +145,9 @@ function MaturityInner() {
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge variant="outline" className={
-                        row.gap >= 3 ? "bg-red-100 text-red-700" :
-                        row.gap >= 2 ? "bg-orange-100 text-orange-700" :
-                        "bg-yellow-100 text-yellow-700"
+                        row.gap >= 3 ? "bg-red-100 text-red-900" :
+                        row.gap >= 2 ? "bg-orange-100 text-orange-900" :
+                        "bg-yellow-100 text-yellow-900"
                       }>
                         {row.gap >= 3 ? t("maturity.critical") : row.gap >= 2 ? t("maturity.high") : t("maturity.medium")}
                       </Badge>
@@ -211,7 +211,7 @@ function MaturityInner() {
 }
 
 function MaturityBadge({ level }: { level: number }) {
-  const colors = ["", "bg-red-100 text-red-700", "bg-orange-100 text-orange-700", "bg-yellow-100 text-yellow-700", "bg-blue-100 text-blue-700", "bg-green-100 text-green-700"];
+  const colors = ["", "bg-red-100 text-red-900", "bg-orange-100 text-orange-900", "bg-yellow-100 text-yellow-900", "bg-blue-100 text-blue-900", "bg-green-100 text-green-900"];
   return (
     <Badge variant="outline" className={colors[level] ?? ""}>
       {level}

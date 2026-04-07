@@ -341,26 +341,26 @@ function ScopeBar({ label, value, total, color }: { label: string; value: number
 
 function QualityBadge({ quality }: { quality: string }) {
   const colors: Record<string, string> = {
-    measured: "bg-green-100 text-green-700",
-    estimated: "bg-yellow-100 text-yellow-700",
-    calculated: "bg-blue-100 text-blue-700",
+    measured: "bg-green-100 text-green-900 border-green-300",
+    estimated: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    calculated: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
-    <Badge variant="outline" className={`${colors[quality] ?? ""} text-xs`}>
+    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${colors[quality] ?? "bg-gray-100 text-gray-700 border-gray-300"}`}>
       {quality}
-    </Badge>
+    </span>
   );
 }
 
 function TargetStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
   const colors: Record<string, string> = {
-    on_track: "bg-green-100 text-green-700",
-    at_risk: "bg-yellow-100 text-yellow-700",
-    off_track: "bg-red-100 text-red-700",
-    achieved: "bg-blue-100 text-blue-700",
+    on_track: "bg-green-100 text-green-900 border-green-300",
+    at_risk: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    off_track: "bg-red-100 text-red-900 border-red-300",
+    achieved: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
-    <Badge variant="outline" className={`${colors[status] ?? ""} text-[10px]`}>
+    <Badge variant="outline" className={`${colors[status] ?? "text-gray-700"} text-[10px]`}>
       {t(`targetStatus.${status}`)}
     </Badge>
   );

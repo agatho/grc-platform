@@ -216,7 +216,7 @@ function MaterialityYearInner() {
                   <td className="px-4 py-3 text-right text-gray-700">{tp.financialScore?.toFixed(1) ?? "-"}</td>
                   <td className="px-4 py-3 text-right text-gray-700">{tp.stakeholderConsensus?.toFixed(1) ?? "-"}</td>
                   <td className="px-4 py-3 text-center">
-                    {tp.isMaterial === true && <Badge className="bg-green-100 text-green-700 text-[10px]">Yes</Badge>}
+                    {tp.isMaterial === true && <Badge className="bg-green-100 text-green-900 text-[10px]">Yes</Badge>}
                     {tp.isMaterial === false && <Badge className="bg-gray-100 text-gray-500 text-[10px]">No</Badge>}
                     {tp.isMaterial == null && <span className="text-gray-400">-</span>}
                   </td>

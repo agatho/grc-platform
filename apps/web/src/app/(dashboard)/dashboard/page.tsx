@@ -647,9 +647,9 @@ export default function DashboardPage() {
                     return "text-gray-500";
                   })();
                   const priorityColor: Record<string, string> = {
-                    critical: "bg-red-100 text-red-700 dark:bg-red-900/40 dark:text-red-300",
-                    high: "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300",
-                    medium: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300",
+                    critical: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-300",
+                    high: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-300",
+                    medium: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300",
                     low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
                   };
                   return (
@@ -853,12 +853,12 @@ export default function DashboardPage() {
                           const score = risk.riskScoreResidual;
                           const scoreColor =
                             score != null && score >= 20
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-red-100 text-red-900"
                               : score != null && score >= 15
-                                ? "bg-orange-100 text-orange-700"
+                                ? "bg-orange-100 text-orange-900"
                                 : score != null && score >= 10
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-blue-100 text-blue-700";
+                                  ? "bg-yellow-100 text-yellow-900"
+                                  : "bg-blue-100 text-blue-900";
 
                           return (
                             <li key={risk.id}>

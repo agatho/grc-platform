@@ -99,10 +99,10 @@ export default function AutomationOverviewPage() {
   };
 
   const triggerBadgeColor: Record<string, string> = {
-    entity_change: "bg-blue-100 text-blue-700",
-    deadline_expired: "bg-orange-100 text-orange-700",
-    score_threshold: "bg-red-100 text-red-700",
-    periodic: "bg-purple-100 text-purple-700",
+    entity_change: "bg-blue-100 text-blue-900",
+    deadline_expired: "bg-orange-100 text-orange-900",
+    score_threshold: "bg-red-100 text-red-900",
+    periodic: "bg-purple-100 text-purple-900",
   };
 
   if (loading && !stats) {

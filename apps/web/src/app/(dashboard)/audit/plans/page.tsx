@@ -105,9 +105,9 @@ function PlansInner() {
   const statusBadge = (status: string) => {
     const map: Record<string, { className: string; label: string }> = {
       draft: { className: "bg-gray-100 text-gray-700 border-gray-300", label: t("planStatus.draft") },
-      approved: { className: "bg-green-100 text-green-700 border-green-300", label: t("planStatus.approved") },
-      active: { className: "bg-blue-100 text-blue-700 border-blue-300", label: t("planStatus.active") },
-      completed: { className: "bg-purple-100 text-purple-700 border-purple-300", label: t("planStatus.completed") },
+      approved: { className: "bg-green-100 text-green-900 border-green-300", label: t("planStatus.approved") },
+      active: { className: "bg-blue-100 text-blue-900 border-blue-300", label: t("planStatus.active") },
+      completed: { className: "bg-purple-100 text-purple-900 border-purple-300", label: t("planStatus.completed") },
     };
     const config = map[status] ?? map.draft;
     return <Badge className={config.className}>{config.label}</Badge>;

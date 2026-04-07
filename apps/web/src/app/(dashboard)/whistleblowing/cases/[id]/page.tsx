@@ -337,13 +337,13 @@ function CaseDetailInner() {
                   <span className="text-sm text-gray-600">{t("sla7d")}</span>
                 </div>
                 {caseRow.acknowledgedAt ? (
-                  <Badge className="bg-green-100 text-green-700 text-xs">{t("completed")}</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">{t("completed")}</Badge>
                 ) : daysUntilAck > 3 ? (
-                  <Badge className="bg-green-100 text-green-700 text-xs">{daysUntilAck}d</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">{daysUntilAck}d</Badge>
                 ) : daysUntilAck > 0 ? (
-                  <Badge className="bg-yellow-100 text-yellow-700 text-xs">{daysUntilAck}d</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">{daysUntilAck}d</Badge>
                 ) : (
-                  <Badge className="bg-red-100 text-red-700 text-xs">{t("overdue")}</Badge>
+                  <Badge className="bg-red-100 text-red-900 text-xs">{t("overdue")}</Badge>
                 )}
               </div>
 
@@ -366,13 +366,13 @@ function CaseDetailInner() {
                   <span className="text-sm text-gray-600">{t("sla3m")}</span>
                 </div>
                 {caseRow.resolvedAt ? (
-                  <Badge className="bg-green-100 text-green-700 text-xs">{t("completed")}</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">{t("completed")}</Badge>
                 ) : daysUntilResponse > 14 ? (
-                  <Badge className="bg-green-100 text-green-700 text-xs">{daysUntilResponse}d</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">{daysUntilResponse}d</Badge>
                 ) : daysUntilResponse > 0 ? (
-                  <Badge className="bg-yellow-100 text-yellow-700 text-xs">{daysUntilResponse}d</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">{daysUntilResponse}d</Badge>
                 ) : (
-                  <Badge className="bg-red-100 text-red-700 text-xs">{t("overdue")}</Badge>
+                  <Badge className="bg-red-100 text-red-900 text-xs">{t("overdue")}</Badge>
                 )}
               </div>
             </div>

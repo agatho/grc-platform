@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DoraIctIncident } from "@grc/shared";
 
-const CLASS_COLORS: Record<string, string> = { major: "bg-red-100 text-red-700", significant: "bg-orange-100 text-orange-700", minor: "bg-yellow-100 text-yellow-700" };
+const CLASS_COLORS: Record<string, string> = { major: "bg-red-100 text-red-900", significant: "bg-orange-100 text-orange-900", minor: "bg-yellow-100 text-yellow-900" };
 
 export default function DoraIctIncidentsPage() {
   const t = useTranslations("dora");

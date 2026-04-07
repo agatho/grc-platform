@@ -142,9 +142,9 @@ function MetricsInner() {
 
 function QualityBadge({ quality, t }: { quality: string; t: (key: string) => string }) {
   const colors: Record<string, string> = {
-    measured: "bg-green-100 text-green-700",
-    estimated: "bg-yellow-100 text-yellow-700",
-    calculated: "bg-blue-100 text-blue-700",
+    measured: "bg-green-100 text-green-900 border-green-300",
+    estimated: "bg-yellow-100 text-yellow-900 border-yellow-300",
+    calculated: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
     <Badge variant="outline" className={`${colors[quality] ?? ""} text-[10px]`}>

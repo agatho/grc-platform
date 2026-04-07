@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AiConformityAssessment } from "@grc/shared";
 
-const RESULT_COLORS: Record<string, string> = { pass: "bg-green-100 text-green-700", fail: "bg-red-100 text-red-700", conditional: "bg-yellow-100 text-yellow-700", pending: "bg-gray-100 text-gray-700" };
+const RESULT_COLORS: Record<string, string> = { pass: "bg-green-100 text-green-900", fail: "bg-red-100 text-red-900", conditional: "bg-yellow-100 text-yellow-900", pending: "bg-gray-100 text-gray-700" };
 
 export default function AiConformityAssessmentsPage() {
   const t = useTranslations("aiAct");

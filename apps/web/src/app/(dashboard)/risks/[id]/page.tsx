@@ -115,10 +115,10 @@ interface LinkageItem {
 // ---------------------------------------------------------------------------
 
 const statusColors: Record<RiskStatus, string> = {
-  identified: "bg-blue-100 text-blue-700",
-  assessed: "bg-indigo-100 text-indigo-700",
-  treated: "bg-green-100 text-green-700",
-  accepted: "bg-amber-100 text-amber-700",
+  identified: "bg-blue-100 text-blue-900",
+  assessed: "bg-indigo-100 text-indigo-900",
+  treated: "bg-green-100 text-green-900",
+  accepted: "bg-amber-100 text-amber-900",
   closed: "bg-gray-100 text-gray-600",
 };
 
@@ -134,8 +134,8 @@ const categoryColors: Record<RiskCategory, string> = {
 
 const treatmentStatusColors: Record<TreatmentStatus, string> = {
   planned: "bg-gray-100 text-gray-700",
-  in_progress: "bg-blue-100 text-blue-700",
-  completed: "bg-green-100 text-green-700",
+  in_progress: "bg-blue-100 text-blue-900",
+  completed: "bg-green-100 text-green-900",
   cancelled: "bg-red-100 text-red-600",
 };
 
@@ -150,11 +150,11 @@ function scoreBadge(score: number | null | undefined): {
   color: string;
 } {
   if (score == null) return { label: "-", color: "bg-gray-100 text-gray-500" };
-  if (score >= 20) return { label: String(score), color: "bg-red-100 text-red-700" };
-  if (score >= 15) return { label: String(score), color: "bg-orange-100 text-orange-700" };
-  if (score >= 10) return { label: String(score), color: "bg-yellow-100 text-yellow-700" };
-  if (score >= 5) return { label: String(score), color: "bg-blue-100 text-blue-700" };
-  return { label: String(score), color: "bg-green-100 text-green-700" };
+  if (score >= 20) return { label: String(score), color: "bg-red-100 text-red-900" };
+  if (score >= 15) return { label: String(score), color: "bg-orange-100 text-orange-900" };
+  if (score >= 10) return { label: String(score), color: "bg-yellow-100 text-yellow-900" };
+  if (score >= 5) return { label: String(score), color: "bg-blue-100 text-blue-900" };
+  return { label: String(score), color: "bg-green-100 text-green-900" };
 }
 
 function formatCurrency(value: string | null | undefined): string {

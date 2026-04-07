@@ -11,9 +11,9 @@ import type { RiskPredictionModel } from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   untrained: "bg-gray-100 text-gray-700",
-  training: "bg-blue-100 text-blue-700",
-  active: "bg-green-100 text-green-700",
-  degraded: "bg-orange-100 text-orange-700",
+  training: "bg-blue-100 text-blue-900",
+  active: "bg-green-100 text-green-900",
+  degraded: "bg-orange-100 text-orange-900",
   archived: "bg-gray-100 text-gray-500",
 };
 

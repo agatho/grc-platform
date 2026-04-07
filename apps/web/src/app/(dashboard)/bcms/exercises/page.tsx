@@ -11,25 +11,25 @@ import { Badge } from "@/components/ui/badge";
 import type { BcExercise } from "@grc/shared";
 
 const TYPE_COLORS: Record<string, string> = {
-  tabletop: "bg-blue-100 text-blue-700",
-  walkthrough: "bg-green-100 text-green-700",
-  functional: "bg-yellow-100 text-yellow-700",
-  full_simulation: "bg-red-100 text-red-700",
+  tabletop: "bg-blue-100 text-blue-900",
+  walkthrough: "bg-green-100 text-green-900",
+  functional: "bg-yellow-100 text-yellow-900",
+  full_simulation: "bg-red-100 text-red-900",
 };
 
 const STATUS_COLORS: Record<string, string> = {
   planned: "bg-gray-100 text-gray-700",
-  preparation: "bg-blue-100 text-blue-700",
-  executing: "bg-orange-100 text-orange-700",
-  evaluation: "bg-yellow-100 text-yellow-700",
-  completed: "bg-green-100 text-green-700",
-  cancelled: "bg-red-100 text-red-700",
+  preparation: "bg-blue-100 text-blue-900",
+  executing: "bg-orange-100 text-orange-900",
+  evaluation: "bg-yellow-100 text-yellow-900",
+  completed: "bg-green-100 text-green-900",
+  cancelled: "bg-red-100 text-red-900",
 };
 
 const RESULT_COLORS: Record<string, string> = {
-  successful: "bg-green-100 text-green-700",
-  partially_successful: "bg-yellow-100 text-yellow-700",
-  failed: "bg-red-100 text-red-700",
+  successful: "bg-green-100 text-green-900",
+  partially_successful: "bg-yellow-100 text-yellow-900",
+  failed: "bg-red-100 text-red-900",
 };
 
 export default function ExerciseListPage() {

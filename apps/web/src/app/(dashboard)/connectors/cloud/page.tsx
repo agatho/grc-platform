@@ -48,9 +48,9 @@ export default function CloudConnectorsPage() {
   }
 
   const providerColor: Record<string, string> = {
-    aws: "bg-orange-100 text-orange-700 border-orange-200",
-    azure: "bg-blue-100 text-blue-700 border-blue-200",
-    gcp: "bg-red-100 text-red-700 border-red-200",
+    aws: "bg-orange-100 text-orange-900 border-orange-200",
+    azure: "bg-blue-100 text-blue-900 border-blue-200",
+    gcp: "bg-red-100 text-red-900 border-red-200",
   };
 
   return (

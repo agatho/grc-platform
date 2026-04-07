@@ -350,12 +350,12 @@ function GroupRiskContent() {
                         <span
                           className={`inline-flex items-center justify-center w-8 h-8 rounded-full text-xs font-bold ${
                             org.avgScore >= 15
-                              ? "bg-red-100 text-red-700"
+                              ? "bg-red-100 text-red-900"
                               : org.avgScore >= 10
-                                ? "bg-orange-100 text-orange-700"
+                                ? "bg-orange-100 text-orange-900"
                                 : org.avgScore >= 5
-                                  ? "bg-yellow-100 text-yellow-700"
-                                  : "bg-green-100 text-green-700"
+                                  ? "bg-yellow-100 text-yellow-900"
+                                  : "bg-green-100 text-green-900"
                           }`}
                         >
                           {typeof org.avgScore === "number"
