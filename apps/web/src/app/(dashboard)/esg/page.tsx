@@ -95,10 +95,10 @@ function EsgDashboardInner() {
 
   const d = data;
   const totalEmissions =
-    (d?.scopeEmissions.scope1 ?? 0) +
-    (d?.scopeEmissions.scope2 ?? 0) +
-    (d?.scopeEmissions.scope3 ?? 0);
-  const emissionDelta = d?.scopeEmissions.totalPreviousYear
+    (d?.scopeEmissions?.scope1 ?? 0) +
+    (d?.scopeEmissions?.scope2 ?? 0) +
+    (d?.scopeEmissions?.scope3 ?? 0);
+  const emissionDelta = d?.scopeEmissions?.totalPreviousYear
     ? totalEmissions - d.scopeEmissions.totalPreviousYear
     : 0;
 
