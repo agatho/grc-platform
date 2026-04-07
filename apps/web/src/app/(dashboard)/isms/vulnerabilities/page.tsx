@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, Search, Plus, RefreshCcw, Bug, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
+import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -167,13 +168,13 @@ function VulnerabilitiesInner() {
           </div>
         ) : (
           filtered.map((v) => (
+            <Link key={v.id} href={`/isms/vulnerabilities/${v.id}`}>
             <div
-              key={v.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50"
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 <Bug size={16} className="text-orange-600 shrink-0" />
-                <span className="text-sm font-medium text-gray-900 truncate">{v.title}</span>
+                <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{v.title}</span>
                 {v.cveReference && (
                   <Badge variant="outline" className="font-mono text-[10px] shrink-0">
                     {v.cveReference}
@@ -189,10 +190,11 @@ function VulnerabilitiesInner() {
                   {v.status}
                 </Badge>
               </div>
-              <Button variant="ghost" size="sm" onClick={() => handleDelete(v.id)}>
+              <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); handleDelete(v.id); }}>
                 <Trash2 size={14} className="text-gray-400" />
               </Button>
             </div>
+            </Link>
           ))
         )}
       </div>
