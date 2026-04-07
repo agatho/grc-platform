@@ -199,9 +199,15 @@ function IsmsAssetsInner() {
               </tr>
             ) : (
               filtered.map((a) => (
-                <tr key={a.id} className="hover:bg-gray-50">
+                <tr
+                  key={a.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => window.location.href = `/isms/assets/${a.id}`}
+                >
                   <td className="px-4 py-3">
-                    <span className="font-medium text-gray-900">{a.name}</span>
+                    <Link href={`/isms/assets/${a.id}`} className="font-medium text-blue-700 hover:text-blue-900 hover:underline">
+                      {a.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className="text-[10px]">{a.assetTier}</Badge>
@@ -218,7 +224,7 @@ function IsmsAssetsInner() {
                   <td className="px-4 py-3 text-center">
                     <ProtectionLevelBadge level={a.overallProtection} />
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
                     <Link href={`/isms/assets/${a.id}/classify`}>
                       <Button variant="outline" size="sm">
                         {t("classify")}
