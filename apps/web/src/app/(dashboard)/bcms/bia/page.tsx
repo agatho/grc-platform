@@ -127,8 +127,12 @@ function BiaListInner() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/bcms/bia/${item.id}`)}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{item.name}</td>
+                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/bcms/bia/${item.id}`)}>
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/bcms/bia/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                      {item.name}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className={STATUS_COLORS[item.status]}>
                       {t(`bia.status.${item.status}`)}

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Plus, X } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -219,8 +220,12 @@ function RopaListInner() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/dpms/ropa/${item.id}`)}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{item.title}</td>
+                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/dpms/ropa/${item.id}`)}>
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/dpms/ropa/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                      {item.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3 text-gray-600 truncate max-w-xs">{item.purpose}</td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className="text-xs">

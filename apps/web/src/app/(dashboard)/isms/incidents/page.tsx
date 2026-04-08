@@ -164,13 +164,13 @@ function IncidentsInner() {
               <Link
                 key={inc.id}
                 href={`/isms/incidents/${inc.id}`}
-                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-blue-50 hover:border-blue-200 transition-colors"
+                className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-blue-50 hover:border-blue-200 cursor-pointer transition-colors"
               >
                 <div className="flex items-center gap-3 min-w-0">
                   <span className="font-mono text-xs text-gray-400 shrink-0">
                     {inc.elementId}
                   </span>
-                  <span className="text-sm font-medium text-gray-900 truncate">
+                  <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
                     {inc.title}
                   </span>
                   {inc.isDataBreach && (

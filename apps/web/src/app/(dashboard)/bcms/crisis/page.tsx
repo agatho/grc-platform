@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Plus, AlertTriangle } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -155,12 +156,14 @@ function CrisisListInner() {
               {items.map((item) => (
                 <tr
                   key={item.id}
-                  className={`cursor-pointer ${item.status === "activated" ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
+                  className={`cursor-pointer transition-colors ${item.status === "activated" ? "bg-red-50 hover:bg-red-100" : "hover:bg-gray-50"}`}
                   onClick={() => router.push(`/bcms/crisis/${item.id}`)}
                 >
-                  <td className="px-4 py-3 font-medium text-gray-900">
+                  <td className="px-4 py-3 font-medium">
                     {item.status === "activated" && <AlertTriangle className="inline h-4 w-4 text-red-500 mr-1" />}
-                    {item.name}
+                    <Link href={`/bcms/crisis/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                      {item.name}
+                    </Link>
                   </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className="text-[10px]">

@@ -123,7 +123,7 @@ function CampaignsPageInner() {
                   <CardContent className="py-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900">{c.name}</span>
+                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">{c.name}</span>
                         <Badge variant="outline" className={statusBadgeClass(c.status)}>
                           {t(`campaigns.status.${c.status}`)}
                         </Badge>
