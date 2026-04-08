@@ -56,6 +56,10 @@ export default function RiskCatalogBrowserPage() {
   const [loading, setLoading] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(false);
 
+  // Catalog activation state
+  const [activating, setActivating] = useState(false);
+  const [activatedCatalogs, setActivatedCatalogs] = useState<Set<string>>(new Set());
+
   // Assignment state
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignEntityType, setAssignEntityType] = useState("risk");
@@ -146,7 +150,34 @@ export default function RiskCatalogBrowserPage() {
     if (assignDialogOpen) loadEntities(assignEntityType, entitySearch);
   }, [assignDialogOpen, assignEntityType, entitySearch, loadEntities]);
 
-  // Fetch catalogs
+  // Activate catalog for current org
+  const activateCatalog = useCallback(async (catalogId: string, catalogType: string) => {
+    setActivating(true);
+    try {
+      const sessionRes = await fetch("/api/auth/session");
+      const session = await sessionRes.json();
+      const orgId = session?.user?.roles?.[0]?.orgId;
+      if (!orgId) return;
+
+      const res = await fetch(`/api/v1/organizations/${orgId}/active-catalogs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          catalogId,
+          catalogType: catalogType || "risk",
+          enforcementLevel: "recommended",
+        }),
+      });
+
+      if (res.ok || res.status === 201 || res.status === 409) {
+        setActivatedCatalogs((prev) => new Set([...prev, catalogId]));
+      }
+    } finally {
+      setActivating(false);
+    }
+  }, []);
+
+  // Fetch catalogs + active status
   useEffect(() => {
     (async () => {
       const res = await fetch("/api/v1/catalogs/risks?limit=100");
@@ -155,6 +186,22 @@ export default function RiskCatalogBrowserPage() {
       if (json.data?.length > 0) {
         setSelectedCatalog(json.data[0]);
       }
+
+      // Load active catalogs for current org
+      try {
+        const sessionRes = await fetch("/api/auth/session");
+        const session = await sessionRes.json();
+        const orgId = session?.user?.roles?.[0]?.orgId;
+        if (orgId) {
+          const activeRes = await fetch(`/api/v1/organizations/${orgId}/active-catalogs`);
+          if (activeRes.ok) {
+            const activeJson = await activeRes.json();
+            const activeIds = new Set((activeJson.data ?? []).map((a: any) => a.catalogId));
+            setActivatedCatalogs(activeIds as Set<string>);
+          }
+        }
+      } catch { /* ignore */ }
+
       setLoading(false);
     })();
   }, []);
@@ -293,6 +340,30 @@ export default function RiskCatalogBrowserPage() {
             </option>
           ))}
         </select>
+
+        {/* Activate catalog button */}
+        {selectedCatalog && (
+          activatedCatalogs.has(selectedCatalog.id) ? (
+            <Badge variant="outline" className="bg-green-100 text-green-900 border-green-300 text-xs whitespace-nowrap">
+              ✓ Aktiviert
+            </Badge>
+          ) : (
+            <Button
+              variant="default"
+              size="sm"
+              disabled={activating}
+              onClick={() => activateCatalog(selectedCatalog.id, selectedCatalog.catalogType)}
+              className="whitespace-nowrap"
+            >
+              {activating ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              ) : (
+                <Link2 className="h-4 w-4 mr-1" />
+              )}
+              Katalog aktivieren
+            </Button>
+          )
+        )}
 
         {/* Search */}
         <div className="relative flex-1 max-w-md">
