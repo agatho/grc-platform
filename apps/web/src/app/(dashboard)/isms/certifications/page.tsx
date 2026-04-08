@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -225,16 +226,16 @@ function CertificationsInner() {
       {/* Certification Cards Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {CERTIFICATIONS.map((cert) => (
-          <div
+          <Link
             key={cert.id}
-            className="rounded-lg border border-gray-200 bg-white p-6 hover:shadow-md transition-shadow cursor-pointer"
-            onClick={() => router.push(`/isms/certifications/${cert.id}`)}
+            href={`/isms/certifications/${cert.id}`}
+            className="rounded-lg border border-gray-200 bg-white p-6 hover:shadow-md transition-shadow cursor-pointer transition-colors block"
           >
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
                 <Award className="h-8 w-8 text-blue-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-gray-900">{cert.name}</h3>
+                  <h3 className="text-base font-semibold text-blue-700 hover:text-blue-900">{cert.name}</h3>
                   <Badge variant="outline" className="text-[10px] mt-1">
                     {t("notStarted")}
                   </Badge>
@@ -251,7 +252,7 @@ function CertificationsInner() {
             <p className="text-xs text-gray-400 mt-2">
               {cert.id === "iso27001" ? `${score}%` : "0%"} {t("ready")}
             </p>
-          </div>
+          </Link>
         ))}
       </div>
 

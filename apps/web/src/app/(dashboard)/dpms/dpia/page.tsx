@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -101,14 +102,13 @@ function DpiaListInner() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((item) => (
-            <button
-              type="button"
+            <Link
               key={item.id}
-              onClick={() => router.push(`/dpms/dpia/${item.id}`)}
-              className="rounded-lg border border-gray-200 bg-white p-4 text-left hover:shadow-sm transition-shadow"
+              href={`/dpms/dpia/${item.id}`}
+              className="rounded-lg border border-gray-200 bg-white p-4 text-left hover:shadow-sm transition-shadow cursor-pointer transition-colors block"
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-gray-900 truncate">{item.title}</h3>
+                <h3 className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{item.title}</h3>
                 <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.status] ?? ""}`}>
                   {item.status.replace(/_/g, " ")}
                 </Badge>
@@ -117,7 +117,7 @@ function DpiaListInner() {
                 {item.dpoConsultationRequired ? t("dpia.consultationRequired") : t("dpia.noConsultation")}
               </p>
               <p className="text-xs text-gray-400 mt-2">{new Date(item.updatedAt).toLocaleDateString()}</p>
-            </button>
+            </Link>
           ))}
         </div>
       )}

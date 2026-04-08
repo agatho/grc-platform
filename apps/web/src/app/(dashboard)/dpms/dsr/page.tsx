@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -139,8 +140,12 @@ function DsrListInner() {
                 const isClosed = item.status === "closed" || item.status === "rejected";
 
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/dpms/dsr/${item.id}`)}>
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.subjectName ?? "-"}</td>
+                  <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/dpms/dsr/${item.id}`)}>
+                    <td className="px-4 py-3 font-medium">
+                      <Link href={`/dpms/dsr/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                        {item.subjectName ?? "-"}
+                      </Link>
+                    </td>
                     <td className="px-4 py-3">
                       <Badge variant="outline" className="text-xs">{item.requestType}</Badge>
                     </td>
