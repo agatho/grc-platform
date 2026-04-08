@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, Plus, Calendar, List } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -185,8 +186,12 @@ function ExerciseListInner() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((ex) => (
-                <tr key={ex.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/bcms/exercises/${ex.id}`)}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{ex.title}</td>
+                <tr key={ex.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/bcms/exercises/${ex.id}`)}>
+                  <td className="px-4 py-3 font-medium">
+                    <Link href={`/bcms/exercises/${ex.id}`} className="text-blue-700 hover:text-blue-900">
+                      {ex.title}
+                    </Link>
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className={TYPE_COLORS[ex.exerciseType]}>
                       {t(`exercise.type.${ex.exerciseType}`)}
@@ -224,20 +229,19 @@ function ExerciseListInner() {
                 </h3>
                 <div className="space-y-2">
                   {exercises.map((ex) => (
-                    <button
+                    <Link
                       key={ex.id}
-                      type="button"
-                      onClick={() => router.push(`/bcms/exercises/${ex.id}`)}
-                      className="w-full flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2 hover:bg-blue-50 transition-colors text-left"
+                      href={`/bcms/exercises/${ex.id}`}
+                      className="w-full flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors text-left"
                     >
                       <div className="flex items-center gap-2">
                         <Badge variant="outline" className={TYPE_COLORS[ex.exerciseType] + " text-[10px]"}>
                           {t(`exercise.type.${ex.exerciseType}`)}
                         </Badge>
-                        <span className="text-sm font-medium text-gray-900">{ex.title}</span>
+                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">{ex.title}</span>
                       </div>
                       <span className="text-xs text-gray-500">{ex.plannedDate}</span>
-                    </button>
+                    </Link>
                   ))}
                 </div>
               </div>

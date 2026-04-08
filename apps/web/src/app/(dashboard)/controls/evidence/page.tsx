@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
+import Link from "next/link";
 import {
   Loader2,
   RefreshCcw,
@@ -143,14 +144,15 @@ function EvidencePageInner() {
       ) : viewMode === "list" ? (
         <div className="space-y-2">
           {evidence.map((e) => (
-            <div
+            <Link
               key={e.id}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 transition-colors"
+              href={`/controls/evidence/${e.id}`}
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 cursor-pointer transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
                 {categoryIcon(e.category)}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{e.fileName}</p>
+                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{e.fileName}</p>
                   <p className="text-xs text-gray-500">
                     {e.entityType} | {formatDate(e.createdAt)}
                     {e.fileSize ? ` | ${formatFileSize(e.fileSize)}` : ""}
@@ -160,24 +162,26 @@ function EvidencePageInner() {
               <Badge variant="outline" className={categoryBadgeClass(e.category)}>
                 {t(`evidence.category.${e.category}`)}
               </Badge>
-            </div>
+            </Link>
           ))}
         </div>
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {evidence.map((e) => (
-            <Card key={e.id} className="hover:border-blue-300 transition-colors cursor-pointer">
-              <CardContent className="py-4 text-center">
-                <div className="flex justify-center mb-2">
-                  {categoryIcon(e.category)}
-                </div>
-                <p className="text-sm font-medium text-gray-900 truncate">{e.fileName}</p>
-                <Badge variant="outline" className={`mt-2 ${categoryBadgeClass(e.category)}`}>
-                  {t(`evidence.category.${e.category}`)}
-                </Badge>
-                <p className="text-[10px] text-gray-400 mt-1">{formatDate(e.createdAt)}</p>
-              </CardContent>
-            </Card>
+            <Link key={e.id} href={`/controls/evidence/${e.id}`} className="block">
+              <Card className="hover:border-blue-300 transition-colors cursor-pointer">
+                <CardContent className="py-4 text-center">
+                  <div className="flex justify-center mb-2">
+                    {categoryIcon(e.category)}
+                  </div>
+                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{e.fileName}</p>
+                  <Badge variant="outline" className={`mt-2 ${categoryBadgeClass(e.category)}`}>
+                    {t(`evidence.category.${e.category}`)}
+                  </Badge>
+                  <p className="text-[10px] text-gray-400 mt-1">{formatDate(e.createdAt)}</p>
+                </CardContent>
+              </Card>
+            </Link>
           ))}
         </div>
       )}
