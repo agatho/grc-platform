@@ -24,6 +24,7 @@ import {
   Inbox,
   Activity,
   Link2,
+  ShieldCheck,
 } from "lucide-react";
 import {
   LineChart,
@@ -391,6 +392,7 @@ function RiskDetailContent() {
   const [frameworkMappings, setFrameworkMappings] = useState<LinkageItem[]>([]);
   const [processLinks, setProcessLinks] = useState<LinkageItem[]>([]);
   const [assetLinks, setAssetLinks] = useState<LinkageItem[]>([]);
+  const [controlLinks, setControlLinks] = useState<Array<{ id: string; linkId: string; title: string; status: string; controlType: string }>>([]);
   const [linkagesLoading, setLinkagesLoading] = useState(true);
 
   // Assessment editing
@@ -509,10 +511,11 @@ function RiskDetailContent() {
   const fetchLinkages = useCallback(async () => {
     setLinkagesLoading(true);
     try {
-      const [fmRes, plRes, alRes] = await Promise.all([
+      const [fmRes, plRes, alRes, clRes] = await Promise.all([
         fetch(`/api/v1/risks/${riskId}/framework-mappings?limit=50`),
         fetch(`/api/v1/risks/${riskId}/process-links?limit=50`),
         fetch(`/api/v1/risks/${riskId}/asset-links?limit=50`),
+        fetch(`/api/v1/controls?riskId=${riskId}&limit=50`).catch(() => null),
       ]);
 
       if (fmRes.ok) {
@@ -526,6 +529,17 @@ function RiskDetailContent() {
       if (alRes.ok) {
         const alJson = await alRes.json();
         setAssetLinks(alJson.data ?? []);
+      }
+      if (clRes?.ok) {
+        const clJson = await clRes.json();
+        const controls = (clJson.data ?? []).map((c: any) => ({
+          id: c.id,
+          linkId: c.linkId ?? c.id,
+          title: c.title ?? "Kontrolle",
+          status: c.status ?? "designed",
+          controlType: c.controlType ?? "preventive",
+        }));
+        setControlLinks(controls);
       }
     } catch {
       // Ignore
@@ -1514,6 +1528,47 @@ function RiskDetailContent() {
                             </span>
                           )}
                         </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Control Links */}
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-sm">
+                      Verknüpfte Kontrollen
+                    </CardTitle>
+                    <Link href={`/controls/new?riskId=${riskId}`}>
+                      <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
+                        <Plus size={12} />
+                        Kontrolle zuweisen
+                      </button>
+                    </Link>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {controlLinks.length === 0 ? (
+                    <p className="text-sm text-gray-400">Keine Kontrollen verknüpft</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {controlLinks.map((ctrl) => (
+                        <Link
+                          key={ctrl.id}
+                          href={`/controls/${ctrl.id}`}
+                          className="flex items-center justify-between rounded-md bg-gray-50 px-3 py-2 hover:bg-blue-50 transition-colors"
+                        >
+                          <div className="flex items-center gap-2">
+                            <ShieldCheck size={14} className="text-green-600" />
+                            <span className="text-sm font-medium text-gray-900">{ctrl.title}</span>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge variant="outline" className="text-xs">{ctrl.controlType}</Badge>
+                            <Badge variant="outline" className="text-xs">{ctrl.status}</Badge>
+                          </div>
+                        </Link>
                       ))}
                     </div>
                   )}
