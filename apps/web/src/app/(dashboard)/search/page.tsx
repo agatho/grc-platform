@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
@@ -14,6 +14,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { Tag, X as XIcon } from "lucide-react";
 import {
   Select,
   SelectContent,
@@ -86,14 +87,26 @@ function SearchPageInner() {
   const [results, setResults] = useState<SearchResult[]>([]);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
+  const [tagFilter, setTagFilter] = useState<string[]>([]);
+  const [availableTags, setAvailableTags] = useState<Array<{ name: string; color: string; category: string | null }>>([]);
+  const [showTagPicker, setShowTagPicker] = useState(false);
+
+  // Fetch available tags on mount
+  useEffect(() => {
+    fetch("/api/v1/tags?limit=50")
+      .then((r) => r.json())
+      .then((json) => setAvailableTags((json.data ?? []).map((t: any) => ({ name: t.name, color: t.color, category: t.category }))))
+      .catch(() => {});
+  }, []);
 
   const handleSearch = useCallback(async () => {
-    if (!query.trim()) return;
+    if (!query.trim() && tagFilter.length === 0) return;
     setLoading(true);
     setSearched(true);
     try {
-      const params = new URLSearchParams({ q: query });
+      const params = new URLSearchParams({ q: query || "*" });
       if (scope !== "all") params.set("scope", scope);
+      if (tagFilter.length > 0) params.set("tags", tagFilter.join(","));
       const res = await fetch(`/api/v1/search?${params.toString()}`);
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
@@ -155,6 +168,43 @@ function SearchPageInner() {
           {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
           {t("search.button")}
         </Button>
+      </div>
+
+      {/* Tag Filter */}
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="text-xs text-gray-500 flex items-center gap-1"><Tag size={12} /> Tags:</span>
+        {tagFilter.map((tag) => (
+          <Badge key={tag} variant="outline" className="text-xs bg-blue-100 text-blue-900 border-blue-300 gap-1 pr-1">
+            {tag}
+            <button onClick={() => setTagFilter((prev) => prev.filter((t) => t !== tag))} className="ml-0.5 rounded-full hover:bg-blue-200 p-0.5">
+              <XIcon size={10} />
+            </button>
+          </Badge>
+        ))}
+        <div className="relative">
+          <button
+            onClick={() => setShowTagPicker(!showTagPicker)}
+            className="text-xs text-blue-600 hover:text-blue-800 flex items-center gap-1"
+          >
+            + Tag hinzufügen
+          </button>
+          {showTagPicker && (
+            <div className="absolute z-50 mt-1 w-48 rounded-md border border-gray-200 bg-white shadow-lg max-h-48 overflow-y-auto">
+              {availableTags
+                .filter((t) => !tagFilter.includes(t.name))
+                .map((t) => (
+                  <button
+                    key={t.name}
+                    onClick={() => { setTagFilter((prev) => [...prev, t.name]); setShowTagPicker(false); }}
+                    className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50"
+                  >
+                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                    {t.name}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Results */}
