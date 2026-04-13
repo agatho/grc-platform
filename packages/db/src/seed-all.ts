@@ -60,6 +60,13 @@ const DEMO_SEEDS = [
   "seed_demo_10_control_tests.sql",  // control test runs
   "seed_demo_11_extended.sql",       // 15 additional risks, 10 controls, 5 findings
   "seed_tag_definitions.sql",        // predefined tag definitions per org
+  "seed_emission_factors_eu.sql",    // EU emission factors (DE/AT/CH/EU/UK/FR/NL/PL/IT/ES)
+  "seed_catalog_issb_ifrs.sql",      // ISSB/IFRS S1+S2 sustainability standards
+  "seed_catalog_gri_2021.sql",       // GRI Standards 2021
+  "seed_catalog_tcfd.sql",           // TCFD Recommendations
+  "seed_catalog_eu_taxonomy.sql",    // EU Taxonomy for Sustainable Activities
+  "seed_catalog_coso_icif.sql",      // COSO ICIF 2013 Internal Control Framework
+  "seed_catalog_cdp.sql",            // CDP Climate Change Questionnaire 2024
 ];
 
 // Hardcoded UUIDs used in the demo SQL files (from original LXC deployment)
