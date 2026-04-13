@@ -59,6 +59,7 @@ const DEMO_SEEDS = [
   "seed_demo_07_tasks_findings.sql", // tasks, findings
   "seed_demo_10_control_tests.sql",  // control test runs
   "seed_demo_11_extended.sql",       // 15 additional risks, 10 controls, 5 findings
+  "seed_tag_definitions.sql",        // predefined tag definitions per org
 ];
 
 // Hardcoded UUIDs used in the demo SQL files (from original LXC deployment)
