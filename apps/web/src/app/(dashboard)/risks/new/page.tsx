@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
 import {
@@ -11,6 +11,7 @@ import {
   Check,
   Save,
   ArrowLeft,
+  BookOpen,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -56,6 +57,8 @@ interface FormData {
   // Step 3
   treatmentStrategy: TreatmentStrategy | "";
   treatmentRationale: string;
+  // Catalog reference (optional, set when creating from catalog)
+  catalogEntryId?: string;
 }
 
 interface OrgUser {
@@ -132,7 +135,20 @@ function NewRiskForm() {
   const tActions = useTranslations("actions");
   const router = useRouter();
 
-  const [form, setForm] = useState<FormData>(EMPTY_FORM);
+  // Pre-fill from catalog entry query params
+  const searchParams = useSearchParams();
+  const catalogEntryId = searchParams.get("catalogEntryId");
+  const catalogName = searchParams.get("catalogName");
+  const catalogCode = searchParams.get("catalogCode");
+
+  const initialForm = useMemo<FormData>(() => {
+    if (catalogName) {
+      return { ...EMPTY_FORM, title: catalogName, catalogEntryId: catalogEntryId ?? undefined } as FormData;
+    }
+    return EMPTY_FORM;
+  }, [catalogName, catalogEntryId]);
+
+  const [form, setForm] = useState<FormData>(initialForm);
   const [step, setStep] = useState(1);
   const [saving, setSaving] = useState(false);
   const [orgUsers, setOrgUsers] = useState<OrgUser[]>([]);
@@ -218,6 +234,7 @@ function NewRiskForm() {
         payload.treatmentStrategy = form.treatmentStrategy;
       if (form.treatmentRationale.trim())
         payload.treatmentRationale = form.treatmentRationale.trim();
+      if (form.catalogEntryId) payload.catalogEntryId = form.catalogEntryId;
 
       const res = await fetch("/api/v1/risks", {
         method: "POST",
@@ -270,6 +287,7 @@ function NewRiskForm() {
       if (form.residualLikelihood)
         payload.residualLikelihood = form.residualLikelihood;
       if (form.residualImpact) payload.residualImpact = form.residualImpact;
+      if (form.catalogEntryId) payload.catalogEntryId = form.catalogEntryId;
 
       const res = await fetch("/api/v1/risks", {
         method: "POST",
@@ -305,6 +323,19 @@ function NewRiskForm() {
         <ArrowLeft size={14} />
         {t("backToList")}
       </Link>
+
+      {/* Catalog source banner */}
+      {catalogCode && catalogName && (
+        <div className="rounded-lg border border-blue-200 bg-blue-50 px-4 py-3 flex items-center gap-3">
+          <BookOpen size={18} className="text-blue-600 shrink-0" />
+          <div>
+            <p className="text-sm font-medium text-blue-900">
+              Aus Katalog: <span className="font-mono">{catalogCode}</span> — {catalogName}
+            </p>
+            <p className="text-xs text-blue-700 mt-0.5">Titel und Beschreibung wurden vorausgefüllt</p>
+          </div>
+        </div>
+      )}
 
       {/* Header */}
       <div>
