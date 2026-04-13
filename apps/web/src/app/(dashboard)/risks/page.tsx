@@ -20,6 +20,7 @@ import Link from "next/link";
 import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { CatalogWorkqueue } from "@/components/catalog/catalog-workqueue";
 import { RiskHeatMap, type HeatMapCell } from "@/components/risk/risk-heat-map";
 import { RiskScoreBadge } from "@/components/risk/risk-score-badge";
 import { RiskStatusBadge } from "@/components/risk/risk-status-badge";
@@ -572,6 +573,9 @@ function RisksPageInner() {
 
   return (
     <div className="space-y-6">
+      {/* Catalog Workqueue */}
+      <CatalogWorkqueue catalogType="risk" createRoute="/risks/new" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

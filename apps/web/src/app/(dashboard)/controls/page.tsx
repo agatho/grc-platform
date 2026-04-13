@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { CatalogWorkqueue } from "@/components/catalog/catalog-workqueue";
 import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -277,6 +278,9 @@ function ControlsPageInner() {
 
   return (
     <div className="space-y-6">
+      {/* Catalog Workqueue */}
+      <CatalogWorkqueue catalogType="control" createRoute="/controls/new" />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
