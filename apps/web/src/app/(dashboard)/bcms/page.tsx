@@ -13,6 +13,7 @@ import {
   ClipboardCheck,
   Clock,
   FileWarning,
+  ArrowRight,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -36,6 +37,14 @@ function BcmsDashboardInner() {
   const [data, setData] = useState<BcmsDashboard | null>(null);
   const [activeCrises, setActiveCrises] = useState<CrisisScenario[]>([]);
   const [upcomingExercises, setUpcomingExercises] = useState<BcExercise[]>([]);
+  const [bcRiskStats, setBcRiskStats] = useState<{
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    total: number;
+    syncedToErm: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
@@ -58,6 +67,31 @@ function BcmsDashboardInner() {
       if (exRes.ok) {
         const json = await exRes.json();
         setUpcomingExercises(json.data ?? []);
+      }
+
+      // Fetch BC risk stats
+      try {
+        const riskRes = await fetch("/api/v1/bcms/crisis?limit=200");
+        if (riskRes.ok) {
+          const riskJson = await riskRes.json();
+          const scenarios = (riskJson.data ?? []) as Array<{ riskScore?: number | null; ermRiskId?: string | null }>;
+          let critical = 0, high = 0, medium = 0, low = 0, syncedToErm = 0;
+          for (const s of scenarios) {
+            const score = s.riskScore ?? 0;
+            if (score >= 20) critical++;
+            else if (score >= 15) high++;
+            else if (score >= 9) medium++;
+            else if (score > 0) low++;
+            if (s.ermRiskId) syncedToErm++;
+          }
+          setBcRiskStats({
+            critical, high, medium, low,
+            total: critical + high + medium + low,
+            syncedToErm,
+          });
+        }
+      } catch {
+        // non-critical
       }
     } finally {
       setLoading(false);
@@ -202,6 +236,45 @@ function BcmsDashboardInner() {
             </div>
           )}
         </div>
+
+        {/* BC-Risiken (ERM Bridge) */}
+        {bcRiskStats && bcRiskStats.total > 0 && (
+          <div className="rounded-lg border border-gray-200 bg-white p-6">
+            <div className="flex items-center justify-between mb-4">
+              <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+                <Shield className="h-4 w-4 text-blue-600" />
+                BC-Risiken
+              </h2>
+              <Link href="/bcms/crisis" className="text-sm text-blue-600 hover:text-blue-800">
+                Krisenszenarien
+              </Link>
+            </div>
+            <div className="grid grid-cols-2 lg:grid-cols-5 gap-3">
+              <div className="rounded-lg bg-red-50 border border-red-200 p-3 text-center">
+                <p className="text-2xl font-bold text-red-700">{bcRiskStats.critical}</p>
+                <p className="text-xs text-red-600">Kritisch</p>
+              </div>
+              <div className="rounded-lg bg-orange-50 border border-orange-200 p-3 text-center">
+                <p className="text-2xl font-bold text-orange-700">{bcRiskStats.high}</p>
+                <p className="text-xs text-orange-600">Hoch</p>
+              </div>
+              <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-3 text-center">
+                <p className="text-2xl font-bold text-yellow-700">{bcRiskStats.medium}</p>
+                <p className="text-xs text-yellow-600">Mittel</p>
+              </div>
+              <div className="rounded-lg bg-green-50 border border-green-200 p-3 text-center">
+                <p className="text-2xl font-bold text-green-700">{bcRiskStats.low}</p>
+                <p className="text-xs text-green-600">Niedrig</p>
+              </div>
+              <div className="rounded-lg bg-blue-50 border border-blue-200 p-3 text-center">
+                <p className="text-2xl font-bold text-blue-700">{bcRiskStats.syncedToErm}</p>
+                <p className="text-xs text-blue-600 flex items-center justify-center gap-1">
+                  <ArrowRight size={10} /> Im ERM
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Quick Navigation */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">

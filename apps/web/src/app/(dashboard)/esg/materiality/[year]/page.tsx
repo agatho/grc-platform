@@ -3,12 +3,24 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, RefreshCcw, ArrowLeft, CheckCircle } from "lucide-react";
+import { Loader2, RefreshCcw, ArrowLeft, CheckCircle, ArrowRight, Shield } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { EsgMaterialityAssessment, EsgMaterialityTopic, EsgMaterialityVote } from "@grc/shared";
+
+interface MaterialityIroItem {
+  id: string;
+  esrsTopic: string;
+  iroType: string;
+  title: string;
+  financialMaterialityScore: number | null;
+  impactMaterialityScore: number | null;
+  isMaterial: boolean;
+  ermRiskId: string | null;
+  ermSyncedAt: string | null;
+}
 
 export default function MaterialityYearPage() {
   return (
@@ -28,6 +40,8 @@ function MaterialityYearInner() {
   const [topics, setTopics] = useState<EsgMaterialityTopic[]>([]);
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
   const [votes, setVotes] = useState<EsgMaterialityVote[]>([]);
+  const [iroItems, setIroItems] = useState<MaterialityIroItem[]>([]);
+  const [syncingErm, setSyncingErm] = useState(false);
   const [loading, setLoading] = useState(true);
 
   const fetchData = useCallback(async () => {
@@ -44,6 +58,17 @@ function MaterialityYearInner() {
       if (tRes.ok) {
         const json = await tRes.json();
         setTopics(json.data ?? []);
+      }
+
+      // Fetch IRO items for ERM bridge
+      try {
+        const iroRes = await fetch(`/api/v1/esg/materiality/${year}/iro`);
+        if (iroRes.ok) {
+          const iroJson = await iroRes.json();
+          setIroItems(iroJson.data ?? []);
+        }
+      } catch {
+        // non-critical
       }
     } finally {
       setLoading(false);
@@ -66,6 +91,16 @@ function MaterialityYearInner() {
       setVotes([]);
     }
   }, []);
+
+  const handleErmSync = async () => {
+    setSyncingErm(true);
+    try {
+      const res = await fetch("/api/v1/esg/erm-sync", { method: "POST" });
+      if (res.ok) await fetchData();
+    } finally {
+      setSyncingErm(false);
+    }
+  };
 
   const handleFinalize = async () => {
     if (!assessment) return;
@@ -231,6 +266,70 @@ function MaterialityYearInner() {
           </table>
         </div>
       </div>
+
+      {/* IRO Risk Items — ERM Bridge */}
+      {iroItems.filter((iro) => iro.iroType === "risk" && iro.isMaterial).length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Shield size={16} className="text-blue-600" />
+              Wesentliche Risiken (IRO) — ERM-Verknuepfung
+            </h2>
+            <Button
+              size="sm"
+              variant="outline"
+              className="border-blue-300 text-blue-700 hover:bg-blue-50"
+              onClick={handleErmSync}
+              disabled={syncingErm}
+            >
+              {syncingErm ? <Loader2 size={14} className="animate-spin mr-1" /> : <ArrowRight size={14} className="mr-1" />}
+              Alle ins ERM synchronisieren
+            </Button>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50">
+                <tr>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ESRS</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Risiko-Titel</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Finanz-Score</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Impact-Score</th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">ERM-Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {iroItems
+                  .filter((iro) => iro.iroType === "risk" && iro.isMaterial)
+                  .map((iro) => (
+                    <tr key={iro.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3">
+                        <Badge variant="outline" className="text-[10px]">{iro.esrsTopic}</Badge>
+                      </td>
+                      <td className="px-4 py-3 font-medium text-gray-900">{iro.title}</td>
+                      <td className="px-4 py-3 text-right text-gray-700">
+                        {iro.financialMaterialityScore ?? "-"}
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-700">
+                        {iro.impactMaterialityScore ?? "-"}
+                      </td>
+                      <td className="px-4 py-3 text-center">
+                        {iro.ermRiskId ? (
+                          <Badge variant="outline" className="text-blue-600 border-blue-200 text-[10px]">
+                            <ArrowRight size={10} className="mr-1" /> Im ERM
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline" className="text-gray-400 border-gray-200 text-[10px]">
+                            Ausstehend
+                          </Badge>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
 
       {/* Voting Panel */}
       {selectedTopic && (
