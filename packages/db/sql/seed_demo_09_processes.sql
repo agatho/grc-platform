@@ -27,7 +27,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Incident-Response-Prozess',
-  'Strukturierter Prozess zur Erkennung, Eindaemmung und Behebung von Sicherheitsvorfaellen. Umfasst Eskalationsstufen, Kommunikationswege und Post-Incident-Analyse gemaess ISO 27001 A.5.24.',
+  'Strukturierter Prozess zur Erkennung, Eindaemmung und Behebung von Sicherheitsvorfaellen. Umfasst Eskalationsstufen, Kommunikationswege und Post-Incident-Analyse gemäß ISO 27001 A.5.24.',
   1,
   'bpmn',
   'published',
@@ -46,7 +46,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C02',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Change-Management-Prozess',
-  'Kontrollierter Prozess fuer die Planung, Genehmigung und Umsetzung von Aenderungen an IT-Systemen und -Infrastruktur. Minimiert Ausfallrisiken durch strukturierte Bewertung und Freigabe.',
+  'Kontrollierter Prozess für die Planung, Genehmigung und Umsetzung von Änderungen an IT-Systemen und -Infrastruktur. Minimiert Ausfallrisiken durch strukturierte Bewertung und Freigabe.',
   1,
   'bpmn',
   'approved',
@@ -64,7 +64,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Lieferanten-Onboarding-Prozess',
-  'Standardisierter Prozess zur Aufnahme neuer Lieferanten mit Sorgfaltspruefung, Risikobewertung und Vertragspruefung. Stellt Compliance mit ISO 27001, NIS2 und LkSG sicher.',
+  'Standardisierter Prozess zur Aufnahme neuer Lieferanten mit Sorgfaltsprüfung, Risikobewertung und Vertragsprüfung. Stellt Compliance mit ISO 27001, NIS2 und LkSG sicher.',
   1,
   'bpmn',
   'in_review',
@@ -87,7 +87,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Initiale Version des Incident-Response-Prozesses mit 4 Phasen gemaess NIST SP 800-61.',
+  'Initiale Version des Incident-Response-Prozesses mit 4 Phasen gemäß NIST SP 800-61.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -111,7 +111,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Initiale Version des Lieferanten-Onboarding-Prozesses mit Due-Diligence-Pruefung.',
+  'Initiale Version des Lieferanten-Onboarding-Prozesses mit Due-Diligence-Prüfung.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -130,7 +130,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_IR_DetectTriage',
   'Erkennung und Triage',
-  'Sicherheitsvorfall erkennen, Schweregrad bestimmen und Erstbewertung durchfuehren. Entscheidung ueber Eskalationsstufe und Aktivierung des Incident-Response-Teams.',
+  'Sicherheitsvorfall erkennen, Schweregrad bestimmen und Erstbewertung durchführen. Entscheidung über Eskalationsstufe und Aktivierung des Incident-Response-Teams.',
   'task',
   'SOC-Analyst',
   1
@@ -158,7 +158,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_IR_Recover',
   'Wiederherstellung',
-  'Betroffene Systeme aus gesicherten Backups wiederherstellen, Integritaetspruefung durchfuehren und schrittweise Wiederinbetriebnahme mit erhoehtem Monitoring.',
+  'Betroffene Systeme aus gesicherten Backups wiederherstellen, Integritätsprüfung durchführen und schrittweise Wiederinbetriebnahme mit erhöhtem Monitoring.',
   'task',
   'IT-Betrieb',
   3
@@ -172,7 +172,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_IR_LessonsLearned',
   'Nachbereitung und Lessons Learned',
-  'Post-Incident-Review mit allen Beteiligten. Dokumentation der Ursachen, Massnahmen und Verbesserungsvorschlaege. Aktualisierung des Incident-Response-Plans bei Bedarf.',
+  'Post-Incident-Review mit allen Beteiligten. Dokumentation der Ursachen, Maßnahmen und Verbesserungsvorschlaege. Aktualisierung des Incident-Response-Plans bei Bedarf.',
   'task',
   'CISO',
   4
@@ -188,7 +188,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_CM_Request',
   'Change-Request erstellen',
-  'Aenderungsantrag mit Beschreibung, Begruendung, betroffenen Systemen und gewuenschtem Zeitfenster erfassen. Kategorie (Standard, Normal, Emergency) zuweisen.',
+  'Änderungsantrag mit Beschreibung, Begruendung, betroffenen Systemen und gewuenschtem Zeitfenster erfassen. Kategorie (Standard, Normal, Emergency) zuweisen.',
   'task',
   'Antragsteller',
   1
@@ -202,7 +202,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_CM_Assessment',
   'Bewertung und Risikoanalyse',
-  'Technische Machbarkeit pruefen, Risikoanalyse durchfuehren und Auswirkungen auf bestehende Systeme und SLAs bewerten. Rollback-Plan erstellen.',
+  'Technische Machbarkeit prüfen, Risikoanalyse durchführen und Auswirkungen auf bestehende Systeme und SLAs bewerten. Rollback-Plan erstellen.',
   'task',
   'Change-Manager',
   2
@@ -216,7 +216,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_CM_Approval',
   'Freigabe durch CAB',
-  'Change Advisory Board (CAB) prueft und genehmigt den Aenderungsantrag. Bei Hochrisiko-Changes zusaetzliche Freigabe durch IT-Leitung erforderlich.',
+  'Change Advisory Board (CAB) prueft und genehmigt den Änderungsantrag. Bei Hochrisiko-Changes zusaetzliche Freigabe durch IT-Leitung erforderlich.',
   'gateway',
   'CAB',
   3
@@ -230,7 +230,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_CM_Implementation',
   'Umsetzung und Validierung',
-  'Aenderung im geplanten Wartungsfenster umsetzen, Funktionstests durchfuehren und Ergebnis dokumentieren. Bei Fehlschlag Rollback-Plan aktivieren.',
+  'Änderung im geplanten Wartungsfenster umsetzen, Funktionstests durchführen und Ergebnis dokumentieren. Bei Fehlschlag Rollback-Plan aktivieren.',
   'task',
   'IT-Betrieb',
   4
@@ -245,8 +245,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_SO_DueDiligence',
-  'Sorgfaltspruefung (Due Diligence)',
-  'Prüfung der Unternehmensstruktur, Bonitaet, Zertifizierungen (ISO 27001, SOC 2) und Referenzen des potenziellen Lieferanten. LkSG-Compliance pruefen.',
+  'Sorgfaltsprüfung (Due Diligence)',
+  'Prüfung der Unternehmensstruktur, Bonitaet, Zertifizierungen (ISO 27001, SOC 2) und Referenzen des potenziellen Lieferanten. LkSG-Compliance prüfen.',
   'task',
   'Beschaffung',
   1
@@ -260,7 +260,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_SO_RiskAssessment',
   'Risikobewertung',
-  'Sicherheitsfragebogen auswerten, Datenschutz-Folgenabschaetzung bei personenbezogenen Daten, geopolitische Risiken und Abhaengigkeiten bewerten.',
+  'Sicherheitsfragebogen auswerten, Datenschutz-Folgenabschätzung bei personenbezogenen Daten, geopolitische Risiken und Abhängigkeiten bewerten.',
   'task',
   'Risikomanagement',
   2
@@ -273,8 +273,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000C03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_SO_ContractReview',
-  'Vertragspruefung',
-  'Vertragsentwurf mit Sicherheitsanforderungen, SLAs, Datenschutzklauseln (AVV), Auditrechten und Kuendigungsbedingungen pruefen und verhandeln.',
+  'Vertragsprüfung',
+  'Vertragsentwurf mit Sicherheitsanforderungen, SLAs, Datenschutzklauseln (AVV), Auditrechten und Kuendigungsbedingungen prüfen und verhandeln.',
   'task',
   'Rechtsabteilung',
   3
@@ -288,7 +288,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Task_SO_Approval',
   'Freigabe und Onboarding',
-  'Finale Freigabe durch Abteilungsleitung und CISO. Lieferant im Vendor-Management-System anlegen, Zugaenge einrichten und Erstschulung durchfuehren.',
+  'Finale Freigabe durch Abteilungsleitung und CISO. Lieferant im Vendor-Management-System anlegen, Zugänge einrichten und Erstschulung durchführen.',
   'gateway',
   'CISO / Abteilungsleitung',
   4

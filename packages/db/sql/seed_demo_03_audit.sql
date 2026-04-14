@@ -35,7 +35,7 @@ VALUES (
   12,
   '2026-03-15',
   1,
-  'Zentraler Bereich fuer Informationssicherheit und IT-Betrieb. Hohes Risikoprofil aufgrund kritischer Infrastrukturverantwortung.',
+  'Zentraler Bereich für Informationssicherheit und IT-Betrieb. Hohes Risikoprofil aufgrund kritischer Infrastrukturverantwortung.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -51,7 +51,7 @@ VALUES (
   12,
   '2026-06-01',
   2,
-  'Geschaeftskritisches System fuer Finanzbuchhaltung, Einkauf und Logistik. Verarbeitet personenbezogene Daten und Finanztransaktionen.',
+  'Geschäftskritisches System für Finanzbuchhaltung, Einkauf und Logistik. Verarbeitet personenbezogene Daten und Finanztransaktionen.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -83,7 +83,7 @@ VALUES (
   12,
   '2026-06-30',
   2,
-  'Primaerer Cloud-Anbieter fuer Produktivumgebungen. Noch kein Lieferantenaudit durchgefuehrt — Erstaudit geplant fuer Q2 2026.',
+  'Primärer Cloud-Anbieter für Produktivumgebungen. Noch kein Lieferantenaudit durchgeführt — Erstaudit geplant für Q2 2026.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -99,7 +99,7 @@ VALUES (
   12,
   '2026-09-01',
   2,
-  'Verantwortlich fuer Rechnungswesen, Controlling und Treasury. Hohe regulatorische Anforderungen (HGB, IFRS, Steuerrecht).',
+  'Verantwortlich für Rechnungswesen, Controlling und Treasury. Hohe regulatorische Anforderungen (HGB, IFRS, Steuerrecht).',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -113,7 +113,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Auditplan 2026',
   2026,
-  'Jaehrlicher Auditplan fuer das Geschaeftsjahr 2026. Umfasst ISO 27001 Voraudit, NIS2-Gap-Analyse und geplante Lieferantenaudits.',
+  'Jährlicher Auditplan für das Geschäftsjahr 2026. Umfasst ISO 27001 Voraudit, NIS2-Gap-Analyse und geplante Lieferantenaudits.',
   'active',
   45,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -133,7 +133,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000610',
   'd0000000-0000-0000-0000-000000000601', -- IT-Abteilung
   'ISO 27001 Voraudit',
-  'Internes Voraudit zur Vorbereitung der ISO 27001 Erstzertifizierung. Pruefung aller Annex-A-Kontrollen mit Fokus auf A.5, A.6, A.8. Scope: IT-Abteilung und unterstuetzende Prozesse.',
+  'Internes Voraudit zur Vorbereitung der ISO 27001 Erstzertifizierung. Prüfung aller Annex-A-Kontrollen mit Fokus auf A.5, A.6, A.8. Scope: IT-Abteilung und unterstuetzende Prozesse.',
   '2026-01-20',
   '2026-02-28',
   20,
@@ -149,7 +149,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000610',
   'd0000000-0000-0000-0000-000000000601', -- IT-Abteilung
   'NIS2 Gap-Analyse',
-  'Gap-Analyse der aktuellen Sicherheitsmassnahmen gegenueber den Anforderungen der NIS2-Richtlinie (EU 2022/2555). Identifikation von Handlungsbedarf in den Bereichen Risikomanagement, Incident Response und Lieferkettensicherheit.',
+  'Gap-Analyse der aktuellen Sicherheitsmaßnahmen gegenueber den Anforderungen der NIS2-Richtlinie (EU 2022/2555). Identifikation von Handlungsbedarf in den Bereichen Risikomanagement, Incident Response und Lieferkettensicherheit.',
   '2026-03-01',
   '2026-03-31',
   15,
@@ -171,10 +171,10 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000620',
   'ISO 27001 Voraudit — Q1 2026',
-  'Internes Voraudit zur Bewertung der Zertifizierungsreife. Pruefung der ISMS-Dokumentation, technischer Kontrollen und organisatorischer Massnahmen gegen ISO 27001:2022 Annex A.',
+  'Internes Voraudit zur Bewertung der Zertifizierungsreife. Prüfung der ISMS-Dokumentation, technischer Kontrollen und organisatorischer Maßnahmen gegen ISO 27001:2022 Annex A.',
   'internal',
   'completed',
-  'Pruefung aller implementierten Annex-A-Kontrollen der IT-Abteilung einschliesslich Zugriffskontrolle, Backup, Verschluesselung und Awareness-Programm.',
+  'Prüfung aller implementierten Annex-A-Kontrollen der IT-Abteilung einschließlich Zugriffskontrolle, Backup, Verschlüsselung und Awareness-Programm.',
   ARRAY['ISO 27001:2022'],
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-20',
@@ -251,10 +251,10 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000640',
   'd0000000-0000-0000-0000-000000000202', -- CTL-002 Zugriffskontrolle
-  'Ist ein rollenbasiertes Zugriffskontrollsystem implementiert und werden Berechtigungen regelmaessig rezertifiziert?',
+  'Ist ein rollenbasiertes Zugriffskontrollsystem implementiert und werden Berechtigungen regelmäßig rezertifiziert?',
   'RBAC-Konfiguration, Rezertifizierungsprotokolle, Onboarding/Offboarding-Checklisten',
   'nonconforming',
-  'RBAC implementiert, jedoch letzte Rezertifizierung ueberfaellig (> 6 Monate). Drei verwaiste Admin-Konten gefunden.',
+  'RBAC implementiert, jedoch letzte Rezertifizierung überfällig (> 6 Monate). Drei verwaiste Admin-Konten gefunden.',
   1,
   '2026-02-05 14:00:00+01',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -267,10 +267,10 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000640',
   'd0000000-0000-0000-0000-000000000203', -- CTL-003 Backup
-  'Werden taegliche Backups durchgefuehrt und regelmaessige Wiederherstellungstests dokumentiert?',
+  'Werden tägliche Backups durchgeführt und regelmäßige Wiederherstellungstests dokumentiert?',
   'Backup-Logs, Wiederherstellungstestprotokolle, RTO/RPO-Dokumentation',
   'nonconforming',
-  'Backups laufen automatisiert, Wiederherstellungstests jedoch nur fuer 2 von 5 kritischen Systemen dokumentiert. RTO/RPO-Dokumentation unvollstaendig.',
+  'Backups laufen automatisiert, Wiederherstellungstests jedoch nur für 2 von 5 kritischen Systemen dokumentiert. RTO/RPO-Dokumentation unvollständig.',
   2,
   '2026-02-07 10:30:00+01',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -283,10 +283,10 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000640',
   'd0000000-0000-0000-0000-000000000204', -- CTL-004 Vulnerability Mgmt
-  'Werden regelmaessige Schwachstellenscans durchgefuehrt und kritische Schwachstellen zeitnah behoben?',
+  'Werden regelmäßige Schwachstellenscans durchgeführt und kritische Schwachstellen zeitnah behoben?',
   'Scan-Reports, Patch-Protokolle, CVSS-Tracking',
   'conforming',
-  'Woechentliche Scans nachgewiesen. Kritische Schwachstellen (CVSS >= 9.0) wurden innerhalb von 72h gepatcht. Patch-Compliance bei 97%.',
+  'Wöchentliche Scans nachgewiesen. Kritische Schwachstellen (CVSS >= 9.0) wurden innerhalb von 72h gepatcht. Patch-Compliance bei 97%.',
   3,
   '2026-02-10 09:00:00+01',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -299,8 +299,8 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000640',
   'd0000000-0000-0000-0000-000000000206', -- CTL-006 Encryption
-  'Werden Daten at-rest und in-transit verschluesselt und wird ein zentrales Key-Management eingesetzt?',
-  'Verschluesselungskonfiguration, Key-Management-Dokumentation, TLS-Zertifikate',
+  'Werden Daten at-rest und in-transit verschlüsselt und wird ein zentrales Key-Management eingesetzt?',
+  'Verschlüsselungskonfiguration, Key-Management-Dokumentation, TLS-Zertifikate',
   'conforming',
   'AES-256 at-rest und TLS 1.3 in-transit nachgewiesen. HSM-basiertes Key-Management implementiert.',
   4,
@@ -315,10 +315,10 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000640',
   'd0000000-0000-0000-0000-000000000207', -- CTL-007 Awareness
-  'Werden alle Mitarbeiter regelmaessig in Informationssicherheit geschult und Phishing-Simulationen durchgefuehrt?',
+  'Werden alle Mitarbeiter regelmäßig in Informationssicherheit geschult und Phishing-Simulationen durchgeführt?',
   'Schulungsnachweise, Teilnahmelisten, Phishing-Simulationsergebnisse',
   'observation',
-  'Jaehrliche Schulung wird durchgefuehrt, Teilnahmequote jedoch nur 78% (Ziel: 95%). Phishing-Simulationen zeigen 12% Klickrate — Verbesserungspotenzial bei Fachabteilungen.',
+  'Jährliche Schulung wird durchgeführt, Teilnahmequote jedoch nur 78% (Ziel: 95%). Phishing-Simulationen zeigen 12% Klickrate — Verbesserungspotenzial bei Fachabteilungen.',
   5,
   '2026-02-14 15:00:00+01',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -332,7 +332,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000655',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000641',
-  'Sind Risikomanagement-Massnahmen gemaess Art. 21 NIS2 implementiert, einschliesslich Risikoanalyse, Incident-Management und Business Continuity?',
+  'Sind Risikomanagement-Maßnahmen gemäß Art. 21 NIS2 implementiert, einschließlich Risikoanalyse, Incident-Management und Business Continuity?',
   'Risikoregister, Incident-Response-Plan, BCP-Dokumentation, Management-Review-Protokolle',
   'conforming',
   'Risikoregister mit 5 identifizierten Cyberrisiken vorhanden. Incident-Response-Prozess dokumentiert. BCP in Erstellung.',
@@ -347,7 +347,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000656',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000641',
-  'Sind Meldeprozesse gemaess Art. 23 NIS2 etabliert (Fruehwarnung 24h, Vorfallmeldung 72h, Abschlussbericht 1 Monat)?',
+  'Sind Meldeprozesse gemäß Art. 23 NIS2 etabliert (Fruehwarnung 24h, Vorfallmeldung 72h, Abschlussbericht 1 Monat)?',
   'Meldeprozess-Dokumentation, Eskalationsmatrix, BSI-Kontaktdaten, Testmeldungen',
   NULL,
   NULL,
@@ -360,7 +360,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000657',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000641',
-  'Werden Sicherheitsaspekte in der Lieferkette systematisch bewertet, einschliesslich Bewertung kritischer IKT-Dienstleister?',
+  'Werden Sicherheitsaspekte in der Lieferkette systematisch bewertet, einschließlich Bewertung kritischer IKT-Dienstleister?',
   'Lieferantenbewertungen, Sicherheitsanforderungen in Vertraegen, Due-Diligence-Berichte',
   NULL,
   NULL,
@@ -379,11 +379,11 @@ VALUES (
   'd0000000-0000-0000-0000-000000000630',
   'opening_meeting',
   'Eroeffnungsbesprechung ISO 27001 Voraudit',
-  'Vorstellung des Auditteams, Pruefungsumfang und Zeitplan. Abstimmung der Ansprechpartner je Fachbereich.',
+  'Vorstellung des Auditteams, Prüfungsumfang und Zeitplan. Abstimmung der Ansprechpartner je Fachbereich.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-20 09:00:00+01',
   60,
-  'Teilnehmer: CISO, IT-Leiter, Datenschutzbeauftragter, GRC-Koordinator. Scope bestaetigt.'
+  'Teilnehmer: CISO, IT-Leiter, Datenschutzbeauftragter, GRC-Koordinator. Scope bestätigt.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- AA-002: Document review
@@ -393,12 +393,12 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000630',
   'document_review',
-  'Dokumentenpruefung ISMS-Richtlinien',
-  'Sichtung und Bewertung der ISMS-Dokumentation: Informationssicherheitsrichtlinie, Zugriffskontrollrichtlinie, Backup-Konzept, Verschluesselungsrichtlinie und Awareness-Programm.',
+  'Dokumentenprüfung ISMS-Richtlinien',
+  'Sichtung und Bewertung der ISMS-Dokumentation: Informationssicherheitsrichtlinie, Zugriffskontrollrichtlinie, Backup-Konzept, Verschlüsselungsrichtlinie und Awareness-Programm.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-22 09:00:00+01',
   480,
-  'IS-Richtlinie aktuell und freigegeben. Backup-Konzept teilweise veraltet — RTO/RPO fuer 3 Systeme fehlend.'
+  'IS-Richtlinie aktuell und freigegeben. Backup-Konzept teilweise veraltet — RTO/RPO für 3 Systeme fehlend.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- AA-003: Interviews
@@ -409,11 +409,11 @@ VALUES (
   'd0000000-0000-0000-0000-000000000630',
   'interview',
   'Interviews mit Kontrolleigentueemern',
-  'Einzelinterviews mit den Verantwortlichen fuer Zugriffskontrolle, Backup, Schwachstellenmanagement, Verschluesselung und Awareness-Programm.',
+  'Einzelinterviews mit den Verantwortlichen für Zugriffskontrolle, Backup, Schwachstellenmanagement, Verschlüsselung und Awareness-Programm.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-02-03 09:00:00+01',
   600,
-  '5 Interviews durchgefuehrt. Hauptthemen: Rezertifizierungsrueckstand bei Zugriffsrechten, unvollstaendige Wiederherstellungstests, niedrige Awareness-Teilnahmequote.'
+  '5 Interviews durchgeführt. Hauptthemen: Rezertifizierungsrueckstand bei Zugriffsrechten, unvollständige Wiederherstellungstests, niedrige Awareness-Teilnahmequote.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- AA-004: Closing meeting
@@ -424,11 +424,11 @@ VALUES (
   'd0000000-0000-0000-0000-000000000630',
   'closing_meeting',
   'Abschlussbesprechung ISO 27001 Voraudit',
-  'Praesentation der Auditergebnisse: 1 wesentliche Nichtkonformitaet (Zugriffskontrolle), 1 geringfuegige Nichtkonformitaet (Backup-Dokumentation), 1 Beobachtung (Awareness). Massnahmenplan vereinbart.',
+  'Praesentation der Auditergebnisse: 1 wesentliche Nichtkonformitaet (Zugriffskontrolle), 1 geringfuegige Nichtkonformitaet (Backup-Dokumentation), 1 Beobachtung (Awareness). Maßnahmenplan vereinbart.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-02-25 14:00:00+01',
   90,
-  'Geschaeftsfuehrung informiert. Massnahmenplan mit Fristen bis 30.06.2026 vereinbart. Zertifizierungsaudit fuer Q3 2026 angestrebt.'
+  'Geschäftsführung informiert. Maßnahmenplan mit Fristen bis 30.06.2026 vereinbart. Zertifizierungsaudit für Q3 2026 angestrebt.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -443,13 +443,13 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000630',
   'd0000000-0000-0000-0000-000000000202', -- CTL-002 Zugriffskontrolle
-  'Ueberfaellige Rezertifizierung und verwaiste Admin-Konten',
-  'Die vierteljährliche Rezertifizierung von Zugriffsrechten wurde seit ueber 6 Monaten nicht durchgefuehrt. Bei der Stichprobe wurden 3 verwaiste Administratorkonten identifiziert, die seit dem Austritt der jeweiligen Mitarbeiter nicht deaktiviert wurden. Dies stellt ein erhebliches Risiko fuer unbefugten Zugriff dar.',
+  'Überfällige Rezertifizierung und verwaiste Admin-Konten',
+  'Die vierteljährliche Rezertifizierung von Zugriffsrechten wurde seit ueber 6 Monaten nicht durchgeführt. Bei der Stichprobe wurden 3 verwaiste Administratorkonten identifiziert, die seit dem Austritt der jeweiligen Mitarbeiter nicht deaktiviert wurden. Dies stellt ein erhebliches Risiko für unbefugten Zugriff dar.',
   'significant_nonconformity',
   'in_remediation',
   'audit',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  '1. Sofortige Deaktivierung der 3 verwaisten Admin-Konten. 2. Durchfuehrung einer vollstaendigen Rezertifizierung aller privilegierten Konten bis 31.03.2026. 3. Implementierung einer automatisierten Offboarding-Pruefung im IAM-System. 4. Einrichtung eines monatlichen Reports ueber inaktive Konten.',
+  '1. Sofortige Deaktivierung der 3 verwaisten Admin-Konten. 2. Durchfuehrung einer vollständigen Rezertifizierung aller privilegierten Konten bis 31.03.2026. 3. Implementierung einer automatisierten Offboarding-Prüfung im IAM-System. 4. Einrichtung eines monatlichen Reports ueber inaktive Konten.',
   '2026-04-30',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -462,13 +462,13 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000630',
   'd0000000-0000-0000-0000-000000000203', -- CTL-003 Backup
-  'Unvollstaendige Backup-Wiederherstellungsdokumentation',
-  'Wiederherstellungstests sind nur fuer 2 von 5 kritischen Systemen dokumentiert. Die RTO/RPO-Definitionen fuer die Systeme Lagerverwaltung, CRM und Dokumentenmanagementsystem fehlen. Die tatsaechlichen Backups laufen ordnungsgemaess.',
+  'Unvollständige Backup-Wiederherstellungsdokumentation',
+  'Wiederherstellungstests sind nur für 2 von 5 kritischen Systemen dokumentiert. Die RTO/RPO-Definitionen für die Systeme Lagerverwaltung, CRM und Dokumentenmanagementsystem fehlen. Die tatsaechlichen Backups laufen ordnungsgemäß.',
   'insignificant_nonconformity',
   'in_remediation',
   'audit',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  '1. Erstellung der fehlenden RTO/RPO-Definitionen fuer Lagerverwaltung, CRM und DMS. 2. Durchfuehrung und Dokumentation von Wiederherstellungstests fuer alle 5 kritischen Systeme. 3. Aufnahme der Wiederherstellungstests in den monatlichen IT-Operations-Kalender.',
+  '1. Erstellung der fehlenden RTO/RPO-Definitionen für Lagerverwaltung, CRM und DMS. 2. Durchfuehrung und Dokumentation von Wiederherstellungstests für alle 5 kritischen Systeme. 3. Aufnahme der Wiederherstellungstests in den monatlichen IT-Operations-Kalender.',
   '2026-05-31',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -482,12 +482,12 @@ VALUES (
   'd0000000-0000-0000-0000-000000000630',
   'd0000000-0000-0000-0000-000000000207', -- CTL-007 Awareness
   'Niedrige Teilnahmequote bei Security-Awareness-Schulungen',
-  'Die Teilnahmequote an der jaehrlichen Security-Awareness-Schulung liegt bei 78% und damit unter dem Zielwert von 95%. Die Phishing-Simulation zeigt eine Klickrate von 12%, wobei besonders die Fachabteilungen Finanzen und HR auffaellig sind.',
+  'Die Teilnahmequote an der jährlichen Security-Awareness-Schulung liegt bei 78% und damit unter dem Zielwert von 95%. Die Phishing-Simulation zeigt eine Klickrate von 12%, wobei besonders die Fachabteilungen Finanzen und HR auffaellig sind.',
   'observation',
   'identified',
   'audit',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  '1. Einfuehrung verpflichtender Schulungstermine mit Eskalation an Abteilungsleiter bei Nichtteilnahme. 2. Gezielte Phishing-Awareness-Kampagne fuer Finanzen und HR. 3. Gamification-Elemente in der E-Learning-Plattform aktivieren.',
+  '1. Einfuehrung verpflichtender Schulungstermine mit Eskalation an Abteilungsleiter bei Nichtteilnahme. 2. Gezielte Phishing-Awareness-Kampagne für Finanzen und HR. 3. Gamification-Elemente in der E-Learning-Plattform aktivieren.',
   '2026-06-30',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;

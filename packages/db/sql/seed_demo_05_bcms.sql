@@ -30,7 +30,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000801',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'BIA 2026 Q1 IT-Kernprozesse',
-  'Business-Impact-Analyse der geschaeftskritischen IT-Prozesse fuer Q1 2026. Umfasst ERP-Betrieb, E-Mail-Infrastruktur und Kundenportal. Ziel: Aktualisierung der RTO/RPO-Werte und Identifikation neuer Abhaengigkeiten nach Cloud-Migration.',
+  'Business-Impact-Analyse der geschäftskritischen IT-Prozesse für Q1 2026. Umfasst ERP-Betrieb, E-Mail-Infrastruktur und Kundenportal. Ziel: Aktualisierung der RTO/RPO-Werte und Identifikation neuer Abhängigkeiten nach Cloud-Migration.',
   'approved',
   '2026-01-01',
   '2026-03-31',
@@ -47,7 +47,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000802',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'BIA 2026 Q2 Verwaltung',
-  'Business-Impact-Analyse der administrativen Kernprozesse: Finanzbuchhaltung, Personalverwaltung, Einkauf und Vertragsmanagement. Fokus auf Abhaengigkeiten zu externen Dienstleistern (DATEV, Banken).',
+  'Business-Impact-Analyse der administrativen Kernprozesse: Finanzbuchhaltung, Personalverwaltung, Einkauf und Vertragsmanagement. Fokus auf Abhängigkeiten zu externen Dienstleistern (DATEV, Banken).',
   'in_progress',
   '2026-04-01',
   '2026-06-30',
@@ -165,13 +165,13 @@ VALUES (
   'd0000000-0000-0000-0000-000000000820',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'IT-Notfallplan Meridian Holdings',
-  'Umfassender IT-Notfallplan fuer die Wiederherstellung geschaeftskritischer IT-Systeme nach einem Totalausfall. Deckt die Szenarien Ransomware, Rechenzentrumsausfall und Cloud-Provider-Ausfall ab. Basiert auf den Ergebnissen der BIA Q1 2026.',
+  'Umfassender IT-Notfallplan für die Wiederherstellung geschäftskritischer IT-Systeme nach einem Totalausfall. Deckt die Szenarien Ransomware, Rechenzentrumsausfall und Cloud-Provider-Ausfall ab. Basiert auf den Ergebnissen der BIA Q1 2026.',
   'approved',
   3,
-  'Alle geschaeftskritischen IT-Systeme der Meridian Holdings: ERP, E-Mail/Collaboration, Kundenportal, Finanzsysteme. Gilt fuer den Hauptstandort und das DR-Rechenzentrum Frankfurt.',
+  'Alle geschäftskritischen IT-Systeme der Meridian Holdings: ERP, E-Mail/Collaboration, Kundenportal, Finanzsysteme. Gilt für den Hauptstandort und das DR-Rechenzentrum Frankfurt.',
   ARRAY['d0000000-0000-0000-0000-000000000c01', 'd0000000-0000-0000-0000-000000000c02', 'd0000000-0000-0000-0000-000000000c03']::uuid[],
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Aktivierung bei: (1) Ausfall von 2+ geschaeftskritischen Systemen > 1h, (2) Ransomware-Befall mit Verschluesselung, (3) physischer Standortausfall, (4) Erklaerung durch Krisenstab.',
+  'Aktivierung bei: (1) Ausfall von 2+ geschäftskritischen Systemen > 1h, (2) Ransomware-Befall mit Verschlüsselung, (3) physischer Standortausfall, (4) Erklärung durch Krisenstab.',
   'IT-Leiter oder CISO (Stellvertretung: CTO)',
   '2026-02-15',
   '2026-08-15',
@@ -194,7 +194,7 @@ INSERT INTO bcp_procedure (id, bcp_id, org_id, step_number, title, description,
    'crisis_lead', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', 30,
    'Notfall-Kommunikationskanal (Signal), Krisenhandbuch, Kontaktliste',
    'Vorfall erkannt und erstgemeldet',
-   'Krisenstab vollstaendig besetzt, Eskalationsstufe festgelegt, Erstmeldung an Geschaeftsfuehrung erfolgt'),
+   'Krisenstab vollständig besetzt, Eskalationsstufe festgelegt, Erstmeldung an Geschäftsführung erfolgt'),
 
   ('d0000000-0000-0000-0000-000000000831', 'd0000000-0000-0000-0000-000000000820', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
    2, 'Betroffene Systeme isolieren und Schaden begrenzen',
@@ -206,11 +206,11 @@ INSERT INTO bcp_procedure (id, bcp_id, org_id, step_number, title, description,
 
   ('d0000000-0000-0000-0000-000000000832', 'd0000000-0000-0000-0000-000000000820', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
    3, 'DR-Umgebung aktivieren und Kernsysteme wiederherstellen',
-   'Aktivierung der Disaster-Recovery-Umgebung am Standort Frankfurt. Wiederherstellung der priorisierten Systeme (ERP, E-Mail, VPN) aus aktuellen Backups gemaess RTO-Vorgaben.',
+   'Aktivierung der Disaster-Recovery-Umgebung am Standort Frankfurt. Wiederherstellung der priorisierten Systeme (ERP, E-Mail, VPN) aus aktuellen Backups gemäß RTO-Vorgaben.',
    'technical', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', 240,
    'DR-Standort Frankfurt, Offline-Backup-Medien, DR-Runbooks, Lizenzschluessel',
    'Isolation abgeschlossen, saubere Backups identifiziert',
-   'ERP erreichbar (RTO 4h), E-Mail funktional (RTO 2h), VPN fuer Remote-Zugriff aktiv'),
+   'ERP erreichbar (RTO 4h), E-Mail funktional (RTO 2h), VPN für Remote-Zugriff aktiv'),
 
   ('d0000000-0000-0000-0000-000000000833', 'd0000000-0000-0000-0000-000000000820', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
    4, 'Stakeholder-Kommunikation und Meldepflichten',
@@ -222,11 +222,11 @@ INSERT INTO bcp_procedure (id, bcp_id, org_id, step_number, title, description,
 
   ('d0000000-0000-0000-0000-000000000834', 'd0000000-0000-0000-0000-000000000820', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
    5, 'Normalbetrieb wiederherstellen und Lessons Learned',
-   'Schrittweise Rueckfuehrung der Systeme in den Normalbetrieb am Primaerstandort. Integritaetspruefung aller wiederhergestellten Daten. Durchfuehrung eines Post-Incident-Reviews mit allen Beteiligten.',
+   'Schrittweise Rückführung der Systeme in den Normalbetrieb am Primärstandort. Integritätsprüfung aller wiederhergestellten Daten. Durchführung eines Post-Incident-Reviews mit allen Beteiligten.',
    'crisis_lead', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', 480,
-   'Primaerstandort bereinigt, alle Systeme im DR-Betrieb stabil',
+   'Primärstandort bereinigt, alle Systeme im DR-Betrieb stabil',
    'DR-Betrieb stabil seit mindestens 24h, Forensik abgeschlossen',
-   'Alle Systeme am Primaerstandort wiederhergestellt, Datenintegritaet bestaetigt, Lessons-Learned-Bericht erstellt')
+   'Alle Systeme am Primärstandort wiederhergestellt, Datenintegritaet bestätigt, Lessons-Learned-Bericht erstellt')
 ON CONFLICT (id) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -243,18 +243,18 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000c01',
   'active_passive',
-  'Active-Passive DR fuer ERP und Kernsysteme',
-  'Disaster-Recovery-Strategie mit Active-Passive-Replikation der geschaeftskritischen Systeme zum DR-Standort Frankfurt. Asynchrone Datenbankreplikation (RPO 1h), vorkonfigurierte VMs im Standby. Automatisiertes Failover fuer DNS und Load-Balancing.',
+  'Active-Passive DR für ERP und Kernsysteme',
+  'Disaster-Recovery-Strategie mit Active-Passive-Replikation der geschäftskritischen Systeme zum DR-Standort Frankfurt. Asynchrone Datenbankreplikation (RPO 1h), vorkonfigurierte VMs im Standby. Automatisiertes Failover für DNS und Load-Balancing.',
   4, 3,
   120000.00, 48000.00,
   240.00, 'EUR',
-  'Einmalig: DR-Infrastruktur aufbauen. Jaehrlich: Colocation Frankfurt, Replikationslizenzen, halbjährliche DR-Tests.',
+  'Einmalig: DR-Infrastruktur aufbauen. Jährlich: Colocation Frankfurt, Replikationslizenzen, halbjährliche DR-Tests.',
   3,
   'DR-Server (3x Dell PowerEdge), Replikationssoftware, VPN-Konzentrator, DNS-Failover',
   'Colocation Frankfurt — RZ Interxion FRA1',
   true,
   '2026-02-15',
-  'Strategie nach BIA Q1 2026 aktualisiert. RTO-Ziel von 8h auf 4h verschaerft aufgrund gestiegener Geschaeftskritikalitaet des ERP-Systems.',
+  'Strategie nach BIA Q1 2026 aktualisiert. RTO-Ziel von 8h auf 4h verschaerft aufgrund gestiegener Geschäftskritikalitaet des ERP-Systems.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -269,13 +269,13 @@ VALUES (
   'd0000000-0000-0000-0000-000000000850',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Ransomware-Grossangriff',
-  'Szenario: Grossflaechiger Ransomware-Angriff mit Verschluesselung mehrerer Produktivsysteme. Moegliche Datenexfiltration. Erfordert sofortige Aktivierung des Krisenstabs und Einschaltung externer Forensik.',
+  'Szenario: Grossflaechiger Ransomware-Angriff mit Verschlüsselung mehrerer Produktivsysteme. Moegliche Datenexfiltration. Erfordert sofortige Aktivierung des Krisenstabs und Einschaltung externer Forensik.',
   'cyber_attack',
   'level_3_crisis',
   'standby',
   '[{"level": 1, "trigger": "Einzelnes System betroffen", "action": "IT-Incident-Response-Team aktivieren", "authority": "IT-Leiter"},
     {"level": 2, "trigger": "Mehrere Systeme, laterale Ausbreitung", "action": "Krisenstab einberufen, Netzwerksegmentierung", "authority": "CISO"},
-    {"level": 3, "trigger": "Geschaeftskritische Systeme betroffen, Datenexfiltration", "action": "Externe Forensik, Aufsichtsbehoerde, Geschaeftsfuehrung", "authority": "CEO"}]'::jsonb,
+    {"level": 3, "trigger": "Geschäftskritische Systeme betroffen, Datenexfiltration", "action": "Externe Forensik, Aufsichtsbehoerde, Geschäftsführung", "authority": "CEO"}]'::jsonb,
   'DRINGEND — Sicherheitsvorfall bei Meridian Holdings
 
 Sehr geehrte Damen und Herren,
@@ -283,7 +283,7 @@ Sehr geehrte Damen und Herren,
 wir informieren Sie, dass ein Sicherheitsvorfall festgestellt wurde. Unser Krisenteam arbeitet mit Hochdruck an der Eindaemmung und Behebung.
 
 Aktuelle Lage: [STATUS]
-Naechstes Update: [ZEITPUNKT]
+Nächstes Update: [ZEITPUNKT]
 
 Bei Rueckfragen wenden Sie sich bitte an: krisen-hotline@meridian-holdings.example',
   'd0000000-0000-0000-0000-000000000820',
@@ -296,8 +296,8 @@ INSERT INTO crisis_scenario (id, org_id, name, description, category, severity, 
 VALUES (
   'd0000000-0000-0000-0000-000000000851',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Rechenzentrumsausfall — Primaerstandort',
-  'Szenario: Totalausfall des primaeren Rechenzentrums durch Stromausfall, Kuehlung oder physischen Schaden (Brand, Wasser). Failover auf DR-Standort Frankfurt erforderlich.',
+  'Rechenzentrumsausfall — Primärstandort',
+  'Szenario: Totalausfall des primären Rechenzentrums durch Stromausfall, Kühlung oder physischen Schaden (Brand, Wasser). Failover auf DR-Standort Frankfurt erforderlich.',
   'it_outage',
   'level_2_emergency',
   'standby',
@@ -307,7 +307,7 @@ VALUES (
 
 Sehr geehrte Kolleginnen und Kollegen,
 
-aufgrund eines Rechenzentrumsproblems sind aktuell einige IT-Systeme eingeschraenkt verfuegbar. Wir arbeiten an der Wiederherstellung.
+aufgrund eines Rechenzentrumsproblems sind aktuell einige IT-Systeme eingeschraenkt verfügbar. Wir arbeiten an der Wiederherstellung.
 
 Betroffene Systeme: [SYSTEME]
 Voraussichtliche Wiederherstellung: [ZEITPUNKT]
@@ -329,8 +329,8 @@ INSERT INTO bc_exercise (id, org_id, title, description, exercise_type, status,
 VALUES (
   'd0000000-0000-0000-0000-000000000860',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Tabletop-Uebung Ransomware-Szenario Q1 2026',
-  'Planspiel-Uebung zur Validierung des IT-Notfallplans anhand des Ransomware-Szenarios. Teilnehmer: Krisenstab, IT-Leitung, CISO, DSB, Kommunikation. Durchgespielt werden Erkennung, Eindaemmung, Wiederherstellung und Meldepflichten.',
+  'Tabletop-Übung Ransomware-Szenario Q1 2026',
+  'Planspiel-Übung zur Validierung des IT-Notfallplans anhand des Ransomware-Szenarios. Teilnehmer: Krisenstab, IT-Leitung, CISO, DSB, Kommunikation. Durchgespielt werden Erkennung, Eindaemmung, Wiederherstellung und Meldepflichten.',
   'tabletop',
   'completed',
   'd0000000-0000-0000-0000-000000000850',
@@ -342,9 +342,9 @@ VALUES (
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '[{"objective": "Krisenstab-Alarmierung innerhalb 15 Minuten", "result": "achieved", "notes": "Alarmierung nach 12 Minuten abgeschlossen"},
     {"objective": "Netzwerksegmentierung innerhalb 30 Minuten", "result": "achieved", "notes": "Firewall-Regeln waren vorbereitet, Umsetzung in 22 Minuten"},
-    {"objective": "DR-Failover ERP innerhalb RTO (4h)", "result": "partially_achieved", "notes": "Failover nach 4h 35min — Lizenzaktivierung am DR-Standort dauerte laenger als geplant"},
+    {"objective": "DR-Failover ERP innerhalb RTO (4h)", "result": "partially_achieved", "notes": "Failover nach 4h 35min — Lizenzaktivierung am DR-Standort dauerte länger als geplant"},
     {"objective": "72h-Meldung an Aufsichtsbehoerde rechtzeitig", "result": "achieved", "notes": "Meldevorlage war vorbereitet, Prozess klar definiert"}]'::jsonb,
-  'Schwachstelle bei Lizenzaktivierung am DR-Standort identifiziert — Offline-Lizenzschluessel muessen kuenftig am DR-Standort hinterlegt werden. Kommunikationsvorlagen fuer Kunden waren nicht aktuell. Insgesamt gute Reaktionszeiten, Krisenstab-Koordination funktioniert.',
+  'Schwachstelle bei Lizenzaktivierung am DR-Standort identifiziert — Offline-Lizenzschluessel muessen kuenftig am DR-Standort hinterlegt werden. Kommunikationsvorlagen für Kunden waren nicht aktuell. Insgesamt gute Reaktionszeiten, Krisenstab-Koordination funktioniert.',
   'partially_successful',
   '2026-02-15T17:00:00Z',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'

@@ -32,7 +32,7 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001003', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Nichteinhaltung der NIS2-Meldepflichten', 'Fehlende Prozesse fuer die 24h-Meldepflicht bei Sicherheitsvorfaellen.',
+   'Nichteinhaltung der NIS2-Meldepflichten', 'Fehlende Prozesse für die 24h-Meldepflicht bei Sicherheitsvorfaellen.',
    'compliance', 'erm', 'identified', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    3, 4, 3, 4, 12, 12, 'mitigate', '2026-07-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
@@ -44,25 +44,25 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001005', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Reputationsverlust durch Datenleck', 'Oeffentliches Bekanntwerden eines Datenverlusts fuehrt zu Vertrauensverlust bei Kunden.',
+   'Reputationsverlust durch Datenleck', 'Öffentliches Bekanntwerden eines Datenverlusts führt zu Vertrauensverlust bei Kunden.',
    'reputational', 'erm', 'identified', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    2, 4, 2, 3, 8, 6, 'accept', '2026-09-30',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001006', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Regulatorische Aenderungen im EU AI Act', 'Neue Pflichten fuer KI-Systeme erfordern Anpassungen in der Compliance-Strategie.',
+   'Regulatorische Änderungen im EU AI Act', 'Neue Pflichten für KI-Systeme erfordern Anpassungen in der Compliance-Strategie.',
    'compliance', 'erm', 'identified', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    3, 3, 2, 3, 9, 6, 'mitigate', '2026-12-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001007', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Abhaengigkeit von einzelnem Cloud-Provider', 'Vendor Lock-in bei kritischen SaaS-Diensten ohne Exit-Strategie.',
+   'Abhängigkeit von einzelnem Cloud-Provider', 'Vendor Lock-in bei kritischen SaaS-Diensten ohne Exit-Strategie.',
    'strategic', 'erm', 'assessed', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    3, 3, 2, 2, 9, 4, 'transfer', '2026-09-30',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001008', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Fehlendes Schwachstellenmanagement', 'Keine regelmaessigen Vulnerability Scans der externen Angriffsoberflaeche.',
+   'Fehlendes Schwachstellenmanagement', 'Keine regelmäßigen Vulnerability Scans der externen Angriffsoberflaeche.',
    'cyber', 'isms', 'treated', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    4, 3, 2, 2, 12, 4, 'mitigate', '2026-07-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
@@ -74,13 +74,13 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001010', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Verlust der ISO 27001 Zertifizierung', 'Nichtbestehen des naechsten Ueberwachungsaudits durch ungenuegend dokumentierte Kontrollen.',
+   'Verlust der ISO 27001 Zertifizierung', 'Nichtbestehen des nächsten Überwachungsaudits durch ungenuegend dokumentierte Kontrollen.',
    'compliance', 'isms', 'assessed', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    2, 4, 1, 3, 8, 3, 'mitigate', '2026-10-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001011', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Betrugsrisiko im Beschaffungsprozess', 'Ungenuegend gepruefte Lieferantenrechnungen und fehlende Vier-Augen-Kontrolle.',
+   'Betrugsrisiko im Beschaffungsprozess', 'Ungenuegend geprüfte Lieferantenrechnungen und fehlende Vier-Augen-Kontrolle.',
    'financial', 'erm', 'identified', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    2, 3, 1, 2, 6, 2, 'mitigate', '2026-09-30',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
@@ -92,7 +92,7 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001013', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'DORA-Compliance fuer kritische IKT-Dienste', 'Anforderungen an digitale Betriebsstabilitaet im Finanzsektor nicht vollstaendig umgesetzt.',
+   'DORA-Compliance für kritische IKT-Dienste', 'Anforderungen an digitale Betriebsstabilitaet im Finanzsektor nicht vollständig umgesetzt.',
    'compliance', 'erm', 'identified', '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
    3, 3, 3, 3, 9, 9, 'mitigate', '2026-12-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
@@ -129,12 +129,12 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001103', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Security Awareness Training', 'Quartalmaessige Phishing-Simulation und E-Learning-Module fuer alle Mitarbeiter.',
+   'Security Awareness Training', 'Quartalmaessige Phishing-Simulation und E-Learning-Module für alle Mitarbeiter.',
    'preventive', 'quarterly', 'effective',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001104', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Vulnerability Scanning (extern)', 'Woechentliche automatisierte Schwachstellenscans der externen Angriffsflaeche.',
+   'Vulnerability Scanning (extern)', 'Wöchentliche automatisierte Schwachstellenscans der externen Angriffsfläche.',
    'detective', 'weekly', 'effective',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
@@ -149,7 +149,7 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001107', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Multi-Cloud Exit-Strategie', 'Dokumentierte Migrationspfade und Datenportabilitaet fuer kritische SaaS-Dienste.',
+   'Multi-Cloud Exit-Strategie', 'Dokumentierte Migrationspfade und Datenportabilitaet für kritische SaaS-Dienste.',
    'preventive', 'annually', 'designed',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
@@ -159,7 +159,7 @@ VALUES
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001109', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Supplier Security Assessment', 'Jaehrliche Sicherheitsbewertung kritischer IT-Lieferanten nach TISAX-Standard.',
+   'Supplier Security Assessment', 'Jährliche Sicherheitsbewertung kritischer IT-Lieferanten nach TISAX-Standard.',
    'detective', 'annually', 'implemented',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
@@ -178,14 +178,14 @@ INSERT INTO finding (id, org_id, title, description, severity, status, source,
   control_id, owner_id, remediation_due_date, created_by, updated_by)
 VALUES
   ('d0000000-0000-0000-0000-000000001201', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'PAM-Loesung nicht fuer alle Adminkonten ausgerollt',
+   'PAM-Loesung nicht für alle Adminkonten ausgerollt',
    'Bei der Kontrolltestung wurde festgestellt, dass 12 von 45 Administratorkonten nicht im PAM-System erfasst sind.',
    'significant_nonconformity', 'identified', 'control_test', 'd0000000-0000-0000-0000-000000001102',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '2026-07-31',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
 
   ('d0000000-0000-0000-0000-000000001202', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-   'Patch-SLA von 72h wird regelmaessig ueberschritten',
+   'Patch-SLA von 72h wird regelmäßig ueberschritten',
    'In Q1/2026 wurden 23% der kritischen Patches erst nach mehr als 7 Tagen eingespielt.',
    'improvement_requirement', 'identified', 'control_test', 'd0000000-0000-0000-0000-000000001101',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '2026-08-31',
@@ -193,7 +193,7 @@ VALUES
 
   ('d0000000-0000-0000-0000-000000001203', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
    'NIS2-Meldeprozess nicht getestet',
-   'Der 24h-Meldeprozess wurde seit Inkrafttreten nicht in einer Uebung getestet.',
+   'Der 24h-Meldeprozess wurde seit Inkrafttreten nicht in einer Übung getestet.',
    'significant_nonconformity', 'in_remediation', 'audit', 'd0000000-0000-0000-0000-000000001105',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '2026-06-30',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf', '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
