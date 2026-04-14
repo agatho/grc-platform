@@ -13,9 +13,12 @@ import {
 // Types
 // ──────────────────────────────────────────────────────────────
 
+export type SidebarMode = "full" | "condensed";
+
 export interface NavPreferences {
   pinnedRoutes: string[];
   collapsedGroups: string[];
+  sidebarMode: SidebarMode;
 }
 
 interface NavPreferencesContextValue {
@@ -25,12 +28,24 @@ interface NavPreferencesContextValue {
   isPinned: (route: string) => boolean;
   toggleGroupCollapse: (groupKey: string) => void;
   isGroupCollapsed: (groupKey: string) => boolean;
+  /** Expand only the given group, collapse all others */
+  setActiveGroup: (groupKey: string) => void;
+  /** Current sidebar mode */
+  sidebarMode: SidebarMode;
+  /** Toggle sidebar mode between full and condensed */
+  toggleSidebarMode: () => void;
 }
 
 const DEFAULT_PREFS: NavPreferences = {
   pinnedRoutes: [],
   collapsedGroups: [],
+  sidebarMode: "condensed",
 };
+
+// Groups are collapsed by default — only the active group is expanded.
+// collapsedGroups tracks explicitly OPENED groups (inverted logic).
+// When no user prefs exist, we auto-expand only the group matching the current path.
+const ALL_GROUP_KEYS = ["erm", "isms", "icsAudit", "bcms", "dpms", "tprmContracts", "bpmArchitecture", "esg", "whistleblowing", "platform"];
 
 const MAX_PINS = 8;
 
@@ -44,7 +59,10 @@ const NavPreferencesContext = createContext<NavPreferencesContextValue>({
   togglePin: () => {},
   isPinned: () => false,
   toggleGroupCollapse: () => {},
-  isGroupCollapsed: () => false,
+  isGroupCollapsed: () => true,
+  setActiveGroup: () => {},
+  sidebarMode: "condensed",
+  toggleSidebarMode: () => {},
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -71,6 +89,7 @@ export function NavPreferencesProvider({ children }: NavPreferencesProviderProps
             setPrefs({
               pinnedRoutes: json.data.pinnedRoutes ?? [],
               collapsedGroups: json.data.collapsedGroups ?? [],
+              sidebarMode: json.data.sidebarMode ?? "condensed",
             });
           }
         }
@@ -121,32 +140,73 @@ export function NavPreferencesProvider({ children }: NavPreferencesProviderProps
     [prefs.pinnedRoutes],
   );
 
+  // NEW LOGIC: Groups are collapsed by default. collapsedGroups now tracks
+  // which groups are EXPANDED (despite the field name, for backward compat).
+  // If collapsedGroups is empty (fresh user), all groups start collapsed.
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
+
+  // Sync expanded state from loaded prefs
+  useEffect(() => {
+    if (!loading && prefs.collapsedGroups.length > 0) {
+      // Legacy: collapsedGroups used to mean "collapsed". Now we invert:
+      // all groups EXCEPT those in collapsedGroups are expanded.
+      // But for new accordion behavior, treat them as expanded groups.
+      setExpandedGroups(new Set(prefs.collapsedGroups));
+    }
+  }, [loading, prefs.collapsedGroups]);
+
   const toggleGroupCollapse = useCallback(
     (groupKey: string) => {
-      setPrefs((prev) => {
-        const isCollapsed = prev.collapsedGroups.includes(groupKey);
-        let next: string[];
-        if (isCollapsed) {
-          next = prev.collapsedGroups.filter((g) => g !== groupKey);
+      setExpandedGroups((prev) => {
+        const next = new Set(prev);
+        if (next.has(groupKey)) {
+          next.delete(groupKey);
         } else {
-          next = [...prev.collapsedGroups, groupKey];
+          next.add(groupKey);
         }
-        const updated = { ...prev, collapsedGroups: next };
+        // Persist (store expanded groups in collapsedGroups field for backward compat)
+        const updated = { ...prefs, collapsedGroups: Array.from(next) };
         void persist(updated);
-        return updated;
+        return next;
       });
     },
-    [persist],
+    [persist, prefs],
   );
 
   const isGroupCollapsed = useCallback(
-    (groupKey: string) => prefs.collapsedGroups.includes(groupKey),
-    [prefs.collapsedGroups],
+    (groupKey: string) => !expandedGroups.has(groupKey),
+    [expandedGroups],
   );
+
+  const setActiveGroup = useCallback(
+    (groupKey: string) => {
+      setExpandedGroups((prev) => {
+        if (prev.has(groupKey)) return prev;
+        const next = new Set<string>();
+        next.add(groupKey);
+        return next;
+      });
+    },
+    [],
+  );
+
+  const toggleSidebarMode = useCallback(() => {
+    setPrefs((prev) => {
+      const newMode: SidebarMode = prev.sidebarMode === "condensed" ? "full" : "condensed";
+      const updated = { ...prev, sidebarMode: newMode };
+      void persist(updated);
+      return updated;
+    });
+  }, [persist]);
 
   return (
     <NavPreferencesContext.Provider
-      value={{ prefs, loading, togglePin, isPinned, toggleGroupCollapse, isGroupCollapsed }}
+      value={{
+        prefs, loading, togglePin, isPinned, toggleGroupCollapse,
+        isGroupCollapsed, setActiveGroup,
+        sidebarMode: prefs.sidebarMode,
+        toggleSidebarMode,
+      }}
     >
       {children}
     </NavPreferencesContext.Provider>
