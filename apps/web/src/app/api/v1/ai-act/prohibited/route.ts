@@ -52,6 +52,43 @@ export async function POST(req: Request) {
       VALUES (${ctx.orgId}, ${ai_system_id}, ${social_scoring ?? false}, ${real_time_biometric ?? false}, ${emotion_recognition ?? false}, ${predictive_policing ?? false}, ${untargeted_scraping ?? false}, ${subliminal_manipulation ?? false}, ${exploiting_vulnerabilities ?? false}, ${biometric_categorization ?? false}, ${isProhibited ? 'prohibited' : 'clear'}, ${ctx.userId}, ${ctx.userId})
       RETURNING *
     `);
+
+    // Art. 5 Auto-Blocking: When any prohibited practice is detected,
+    // automatically set the linked AI system to non_compliant
+    if (isProhibited) {
+      const prohibitedPractices: string[] = [];
+      if (social_scoring) prohibitedPractices.push("Social Scoring");
+      if (real_time_biometric) prohibitedPractices.push("Biometrische Echtzeit-Fernidentifizierung");
+      if (emotion_recognition) prohibitedPractices.push("Emotionserkennung");
+      if (predictive_policing) prohibitedPractices.push("Predictive Policing");
+      if (untargeted_scraping) prohibitedPractices.push("Ungezieltes Scraping");
+      if (subliminal_manipulation) prohibitedPractices.push("Unterschwellige Manipulation");
+      if (exploiting_vulnerabilities) prohibitedPractices.push("Ausnutzung von Schwachstellen");
+      if (biometric_categorization) prohibitedPractices.push("Biometrische Kategorisierung");
+
+      const blockNote = `[Art. 5 Auto-Blockierung] Verbotene Praxis erkannt: ${prohibitedPractices.join(", ")}. System automatisch als nicht konform markiert am ${new Date().toISOString()}.`;
+
+      await tx.execute(sql`
+        UPDATE ai_system
+        SET status = 'non_compliant',
+            updated_at = now()
+        WHERE id = ${ai_system_id}
+          AND org_id = ${ctx.orgId}
+      `);
+
+      // Add a note to the system's technical documentation for traceability
+      await tx.execute(sql`
+        UPDATE ai_system
+        SET technical_documentation = jsonb_set(
+          COALESCE(technical_documentation, '{}'::jsonb),
+          '{prohibited_practice_block}',
+          to_jsonb(${blockNote}::text)
+        )
+        WHERE id = ${ai_system_id}
+          AND org_id = ${ctx.orgId}
+      `);
+    }
+
     return res.rows[0];
   });
   return Response.json({ data: result }, { status: 201 });

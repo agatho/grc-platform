@@ -32,21 +32,10 @@ export default function AiActDashboardPage() {
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("unacceptableSystems")}</p><p className="text-2xl font-bold text-red-600">{data.unacceptableSystems}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("pendingAssessments")}</p><p className="text-2xl font-bold text-yellow-600">{data.pendingAssessments}</p></CardContent></Card>
       </div>
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("oversightLogs30d")}</p><p className="text-2xl font-bold">{data.oversightLogs30d}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("transparencyEntries")}</p><p className="text-2xl font-bold">{data.transparencyEntries}</p></CardContent></Card>
         <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("friasPending")}</p><p className="text-2xl font-bold text-yellow-600">{data.friasPending}</p></CardContent></Card>
-        {/* Art. 18-19: Dokumentation faellig */}
-        <Card className={data.documentationDue > 0 ? "border-orange-400 bg-orange-50 dark:bg-orange-950/20" : ""}>
-          <CardContent className="p-4">
-            <div className="flex items-center gap-2">
-              {data.documentationDue > 0 && <FileWarning className="h-4 w-4 text-orange-600" />}
-              <p className="text-sm text-muted-foreground">Dokumentation faellig</p>
-            </div>
-            <p className={`text-2xl font-bold ${data.documentationDue > 0 ? "text-orange-600" : ""}`}>{data.documentationDue}</p>
-            {data.documentationDue > 0 && <p className="text-xs text-orange-600 mt-1">Pruefung ueberfaellig oder Ablauf in 90 Tagen</p>}
-          </CardContent>
-        </Card>
       </div>
     </div>
   );

@@ -173,6 +173,7 @@ export interface AiActDashboard {
   oversightLogs30d: number;
   transparencyEntries: number;
   friasPending: number;
+  documentationDue: number;
   frameworkCompliance: Record<string, number>;
   systemsByRisk: Record<AiRiskClassification, number>;
   recentOversightLogs: AiHumanOversightLog[];
