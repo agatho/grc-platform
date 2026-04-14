@@ -9,6 +9,7 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const SCOPE3_CATEGORIES = [
   { num: 1, key: "purchased_goods", icon: ShoppingBag, label: "Eingekaufte Güter und Dienstleistungen", labelEn: "Purchased Goods & Services", upstream: true },
@@ -40,6 +41,7 @@ export default function Scope3CategoriesPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       <div className="flex items-center gap-4">
         <Link href="/esg/emissions">
           <ArrowLeft size={18} className="text-gray-500 hover:text-gray-700" />

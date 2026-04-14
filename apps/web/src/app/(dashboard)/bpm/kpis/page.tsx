@@ -5,11 +5,13 @@ import { useTranslations } from "next-intl";
 import { Loader2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function Page() {
   return (
     <ModuleGate moduleKey="bpm">
+      <ModuleTabNav />
       <PageInner />
     </ModuleGate>
   );

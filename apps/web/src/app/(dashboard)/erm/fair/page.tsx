@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import Link from "next/link";
 import { BarChart3, GitCompare, TrendingUp } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const sections = [
   { href: "/erm/fair/portfolio", icon: BarChart3, key: "portfolio" },
@@ -16,6 +17,7 @@ export default function FairPage() {
 
   return (
     <ModuleGate moduleKey="erm">
+      <ModuleTabNav />
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>

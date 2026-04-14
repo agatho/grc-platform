@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus, X } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -36,6 +37,7 @@ interface CatalogOption {
 export default function RopaListPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <RopaListInner />
     </ModuleGate>
   );

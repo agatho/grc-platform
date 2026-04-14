@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { RcsaCampaignWithStats } from "@grc/shared";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 export default function RcsaCampaignsPage() {
   const t = useTranslations("rcsa");
@@ -54,6 +55,7 @@ export default function RcsaCampaignsPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

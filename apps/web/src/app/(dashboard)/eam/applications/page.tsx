@@ -6,6 +6,7 @@ import Link from "next/link";
 import { Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -29,6 +30,7 @@ const TIME_COLORS: Record<string, string> = {
 export default function ApplicationsPage() {
   return (
     <ModuleGate moduleKey="eam">
+      <ModuleTabNav />
       <ApplicationsInner />
     </ModuleGate>
   );

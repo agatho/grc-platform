@@ -27,6 +27,7 @@ import {
 } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
@@ -110,6 +111,7 @@ const URGENCY_STYLES: Record<string, { bg: string; text: string; border: string 
 export default function GovernancePage() {
   return (
     <ModuleGate moduleKey="bpm">
+      <ModuleTabNav />
       <GovernanceCockpit />
     </ModuleGate>
   );

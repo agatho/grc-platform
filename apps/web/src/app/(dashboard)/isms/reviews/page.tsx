@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Plus, Loader2, CalendarCheck } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { ManagementReview, ReviewStatus } from "@grc/shared";
@@ -21,6 +22,7 @@ const STATUS_COLORS: Record<ReviewStatus, string> = {
 export default function ReviewsPage() {
   return (
     <ModuleGate moduleKey="isms">
+      <ModuleTabNav />
       <ReviewsInner />
     </ModuleGate>
   );

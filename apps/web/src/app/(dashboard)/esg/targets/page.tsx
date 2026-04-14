@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Plus, Award } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { EsgTarget } from "@grc/shared";
@@ -17,6 +18,7 @@ interface TargetRow extends EsgTarget {
 export default function TargetsPage() {
   return (
     <ModuleGate moduleKey="esg">
+      <ModuleTabNav />
       <TargetsInner />
     </ModuleGate>
   );

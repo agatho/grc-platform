@@ -1,4 +1,4 @@
-import { db, soaEntry, catalogEntry } from "@grc/db";
+import { db, soaEntry, catalogEntry, controlCatalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
@@ -41,29 +41,29 @@ export async function GET(req: Request) {
       lastReviewed: soaEntry.lastReviewed,
       createdAt: soaEntry.createdAt,
       updatedAt: soaEntry.updatedAt,
-      catalogCode: catalogEntry.code,
-      catalogTitleDe: catalogEntry.nameDe,
-      catalogTitleEn: catalogEntry.name,
+      catalogCode: controlCatalogEntry.code,
+      catalogTitleDe: controlCatalogEntry.titleDe,
+      catalogTitleEn: controlCatalogEntry.titleEn,
     })
     .from(soaEntry)
-    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id));
+    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id));
 
   if (search) {
     conditions.push(
-      sql`(${catalogEntry.nameDe} ilike ${'%' + search + '%'} or ${catalogEntry.name} ilike ${'%' + search + '%'} or ${catalogEntry.code} ilike ${'%' + search + '%'})`,
+      sql`(${controlCatalogEntry.titleDe} ilike ${'%' + search + '%'} or ${controlCatalogEntry.titleEn} ilike ${'%' + search + '%'} or ${controlCatalogEntry.code} ilike ${'%' + search + '%'})`,
     );
   }
 
   const rows = await baseQuery
     .where(and(...conditions))
-    .orderBy(catalogEntry.sortOrder)
+    .orderBy(controlCatalogEntry.sortOrder)
     .limit(limit)
     .offset(offset);
 
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(soaEntry)
-    .leftJoin(catalogEntry, eq(soaEntry.catalogEntryId, catalogEntry.id))
+    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
     .where(and(...conditions));
 
   // Stats

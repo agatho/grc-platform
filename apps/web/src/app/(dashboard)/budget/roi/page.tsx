@@ -22,6 +22,7 @@ import type {
   BudgetCutScenarioResult,
   GrcArea,
 } from "@grc/shared";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 interface RoiDashboardData {
   topRoi: RoiOverviewItem[];
@@ -102,6 +103,7 @@ export default function RoiDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

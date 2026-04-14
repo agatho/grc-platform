@@ -21,6 +21,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import {
   ProcessStatusBadge,
   ProcessStatusDot,
@@ -71,6 +72,7 @@ type ViewMode = "list" | "gallery";
 export default function ProcessesPage() {
   return (
     <ModuleGate moduleKey="bpm">
+      <ModuleTabNav />
       <ProcessLandscape />
     </ModuleGate>
   );

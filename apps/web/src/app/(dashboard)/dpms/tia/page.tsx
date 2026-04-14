@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, Plus, Globe } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Tia } from "@grc/shared";
@@ -26,6 +27,7 @@ const LEGAL_BASIS_LABELS: Record<string, string> = {
 export default function TiaListPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <TiaListInner />
     </ModuleGate>
   );
