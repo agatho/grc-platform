@@ -28,7 +28,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000D01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'ICS Q1 2026 Testlauf',
-  'Regelmaessiger ICS-Testlauf fuer Q1 2026. Umfasst Design- und Wirksamkeitspruefungen der Kernkontrollen im Bereich Informationssicherheit.',
+  'Regelmäßiger ICS-Testlauf für Q1 2026. Umfasst Design- und Wirksamkeitsprüfungen der Kernkontrollen im Bereich Informationssicherheit.',
   'completed',
   '2026-01-01',
   '2026-03-31',
@@ -42,7 +42,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000D02',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'ICS Q2 2026 Testlauf',
-  'Laufender ICS-Testlauf fuer Q2 2026. Fokus auf Verschluesselungskontrollen und Awareness-Massnahmen.',
+  'Laufender ICS-Testlauf für Q2 2026. Fokus auf Verschlüsselungskontrollen und Awareness-Maßnahmen.',
   'active',
   '2026-04-01',
   '2026-06-30',
@@ -68,7 +68,7 @@ VALUES (
   '2026-02-15',
   1,
   'Aktuelle IS-Richtlinie Version 3.2 vom 10.01.2026',
-  'Die Informationssicherheitsrichtlinie ist aktuell, von der Geschaeftsfuehrung freigegeben und deckt alle relevanten Bereiche gemaess ISO 27001 ab. Design ist wirksam.',
+  'Die Informationssicherheitsrichtlinie ist aktuell, von der Geschäftsführung freigegeben und deckt alle relevanten Bereiche gemäß ISO 27001 ab. Design ist wirksam.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -86,7 +86,7 @@ VALUES (
   '2026-03-10',
   25,
   'Stichprobe von 25 Benutzerkonten aus AD und IAM-System',
-  'Bei 3 von 25 geprueften Konten wurden veraltete Berechtigungen festgestellt, die nach Abteilungswechsel nicht entzogen wurden. Rezertifizierungsprozess greift nicht vollstaendig.',
+  'Bei 3 von 25 geprüften Konten wurden veraltete Berechtigungen festgestellt, die nach Abteilungswechsel nicht entzogen wurden. Rezertifizierungsprozess greift nicht vollständig.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -103,8 +103,8 @@ VALUES (
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-03-05',
   5,
-  'Wiederherstellungstests fuer 5 kritische Systeme (ERP, E-Mail, Fileserver, DB-Cluster, CRM)',
-  'Alle 5 Wiederherstellungstests erfolgreich innerhalb der definierten RTO-Ziele abgeschlossen. Backup-Integritaet durch Checksummen verifiziert.',
+  'Wiederherstellungstests für 5 kritische Systeme (ERP, E-Mail, Fileserver, DB-Cluster, CRM)',
+  'Alle 5 Wiederherstellungstests erfolgreich innerhalb der definierten RTO-Ziele abgeschlossen. Backup-Integrität durch Checksummen verifiziert.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -135,12 +135,12 @@ INSERT INTO control_test (id, org_id, control_id, campaign_id, test_type, status
 VALUES (
   'd0000000-0000-0000-0000-000000000D21',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'd0000000-0000-0000-0000-000000000206', -- CTL-006 Verschluesselungsrichtlinie
+  'd0000000-0000-0000-0000-000000000206', -- CTL-006 Verschlüsselungsrichtlinie
   'd0000000-0000-0000-0000-000000000D02', -- Q2 Campaign
   'design_effectiveness',
   'planned',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Geplant: Pruefung der Verschluesselungsrichtlinie gegen BSI TR-02102 und aktuelle Best Practices',
+  'Geplant: Prüfung der Verschlüsselungsrichtlinie gegen BSI TR-02102 und aktuelle Best Practices',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 

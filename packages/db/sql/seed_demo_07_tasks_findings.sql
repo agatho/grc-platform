@@ -29,7 +29,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000A01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Review IS-Richtlinie 2026',
-  'Jaehrliche Ueberpruefung und Aktualisierung der Informationssicherheitsrichtlinie. Abstimmung mit Geschaeftsfuehrung und Freigabe bis Ende Januar.',
+  'Jährliche Ueberprüfung und Aktualisierung der Informationssicherheitsrichtlinie. Abstimmung mit Geschäftsführung und Freigabe bis Ende Januar.',
   'done',
   'high',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -80,13 +80,13 @@ VALUES (
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
--- TASK-004: DSFA Cloud-Payroll durchfuehren (in_progress)
+-- TASK-004: DSFA Cloud-Payroll durchführen (in_progress)
 INSERT INTO task (id, org_id, title, description, status, priority, assignee_id, due_date, source_entity_type, source_entity_id, tags, created_by)
 VALUES (
   'd0000000-0000-0000-0000-000000000A04',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'DSFA Cloud-Payroll durchfuehren',
-  'Datenschutz-Folgenabschaetzung fuer die geplante Migration der Gehaltsabrechnung in die Cloud. Bewertung der Risiken fuer Beschaeftigtendaten gemaess Art. 35 DSGVO.',
+  'DSFA Cloud-Payroll durchführen',
+  'Datenschutz-Folgenabschätzung für die geplante Migration der Gehaltsabrechnung in die Cloud. Bewertung der Risiken für Beschäftigtendaten gemäß Art. 35 DSGVO.',
   'in_progress',
   'high',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -103,7 +103,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000A05',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Lieferantenbewertung CloudNova',
-  'Jaehrliche Sicherheitsbewertung des Cloud-Infrastruktur-Anbieters CloudNova. Umfasst Fragebogenauswertung, SOC2-Report-Analyse und Vertragspruefung.',
+  'Jährliche Sicherheitsbewertung des Cloud-Infrastruktur-Anbieters CloudNova. Umfasst Fragebogenauswertung, SOC2-Report-Analyse und Vertragsprüfung.',
   'in_progress',
   'medium',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -120,7 +120,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000A06',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'BIA-Ergebnisse Verwaltung abschliessen',
-  'Abschluss der Business-Impact-Analyse fuer den Bereich Verwaltung. RTO/RPO-Werte mit Fachbereich abstimmen und in BCMS-Tool dokumentieren.',
+  'Abschluss der Business-Impact-Analyse für den Bereich Verwaltung. RTO/RPO-Werte mit Fachbereich abstimmen und in BCMS-Tool dokumentieren.',
   'in_progress',
   'medium',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -154,7 +154,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000A08',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'NIS2 Gap Assessment abschliessen',
-  'Fertigstellung der NIS2-Gap-Analyse mit Identifikation aller offenen Massnahmen. Bericht an Geschaeftsfuehrung vorbereiten und Massnahmenplan erstellen.',
+  'Fertigstellung der NIS2-Gap-Analyse mit Identifikation aller offenen Maßnahmen. Bericht an Geschäftsführung vorbereiten und Maßnahmenplan erstellen.',
   'open',
   'high',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -165,20 +165,20 @@ VALUES (
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
--- TASK-009: Incident-Response-Uebung planen (open)
+-- TASK-009: Incident-Response-Übung planen (open)
 INSERT INTO task (id, org_id, title, description, status, priority, assignee_id, due_date, source_entity_type, source_entity_id, tags, created_by)
 VALUES (
   'd0000000-0000-0000-0000-000000000A09',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Incident-Response-Uebung planen',
-  'Planung und Vorbereitung der jaehrlichen Incident-Response-Tabletop-Uebung. Szenario: Ransomware-Angriff auf Produktionssysteme. Teilnehmerkreis und Ablauf definieren.',
+  'Incident-Response-Übung planen',
+  'Planung und Vorbereitung der jährlichen Incident-Response-Tabletop-Übung. Szenario: Ransomware-Angriff auf Produktionssysteme. Teilnehmerkreis und Ablauf definieren.',
   'open',
   'medium',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-06-15 23:59:59+02',
   'control',
   'd0000000-0000-0000-0000-000000000205',
-  ARRAY['incident-response', 'uebung', 'tabletop'],
+  ARRAY['incident-response', 'übung', 'tabletop'],
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -188,7 +188,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000A10',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'LkSG-Risikoanalyse FloorClean',
-  'Durchfuehrung der Risikoanalyse gemaess Lieferkettensorgfaltspflichtengesetz (LkSG) fuer den Reinigungsdienstleister FloorClean. Bewertung menschenrechtlicher und umweltbezogener Risiken.',
+  'Durchfuehrung der Risikoanalyse gemäß Lieferkettensorgfaltspflichtengesetz (LkSG) für den Reinigungsdienstleister FloorClean. Bewertung menschenrechtlicher und umweltbezogener Risiken.',
   'open',
   'low',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -211,7 +211,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000202', -- CTL-002 Zugriffskontrollmanagement
   'd0000000-0000-0000-0000-000000000D12', -- CT-002 Access Control test
   'Veraltete Benutzerkonten nach Abteilungswechsel',
-  'Bei der Q1-Kontrolltestung der Zugriffskontrolle wurden 3 von 25 geprueften Konten mit veralteten Berechtigungen identifiziert. Mitarbeiter hatten nach einem Abteilungswechsel weiterhin Zugriff auf Ressourcen der vorherigen Abteilung. Der automatisierte Rezertifizierungsprozess erfasst Abteilungswechsel nicht zuverlaessig.',
+  'Bei der Q1-Kontrolltestung der Zugriffskontrolle wurden 3 von 25 geprüften Konten mit veralteten Berechtigungen identifiziert. Mitarbeiter hatten nach einem Abteilungswechsel weiterhin Zugriff auf Ressourcen der vorherigen Abteilung. Der automatisierte Rezertifizierungsprozess erfasst Abteilungswechsel nicht zuverlässig.',
   'insignificant_nonconformity',
   'in_remediation',
   'control_test',
@@ -226,14 +226,14 @@ INSERT INTO finding (id, org_id, control_id, title, description, severity, statu
 VALUES (
   'd0000000-0000-0000-0000-000000000A52',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'd0000000-0000-0000-0000-000000000206', -- CTL-006 Verschluesselungsrichtlinie
-  'Fehlende Verschluesselung auf Legacy-Fileserver',
-  'Im Rahmen eines Self-Assessments wurde festgestellt, dass der Legacy-Fileserver (FS-LEGACY-01) keine Verschluesselung at-rest implementiert hat. Der Server speichert vertrauliche Personaldokumente und Vertragsdaten. Die Verschluesselungsrichtlinie (CTL-006) wird fuer dieses System nicht eingehalten.',
+  'd0000000-0000-0000-0000-000000000206', -- CTL-006 Verschlüsselungsrichtlinie
+  'Fehlende Verschlüsselung auf Legacy-Fileserver',
+  'Im Rahmen eines Self-Assessments wurde festgestellt, dass der Legacy-Fileserver (FS-LEGACY-01) keine Verschlüsselung at-rest implementiert hat. Der Server speichert vertrauliche Personaldokumente und Vertragsdaten. Die Verschlüsselungsrichtlinie (CTL-006) wird für dieses System nicht eingehalten.',
   'improvement_requirement',
   'identified',
   'self_assessment',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Option A: Migration der Daten auf verschluesselten Storage innerhalb von 60 Tagen. Option B: Aktivierung von BitLocker/LUKS auf dem bestehenden Server mit geplanter Downtime.',
+  'Option A: Migration der Daten auf verschlüsselten Storage innerhalb von 60 Tagen. Option B: Aktivierung von BitLocker/LUKS auf dem bestehenden Server mit geplanter Downtime.',
   '2026-06-30',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;

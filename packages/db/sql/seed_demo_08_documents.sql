@@ -31,7 +31,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Informationssicherheitsrichtlinie',
-  'Zentrale Richtlinie zur Informationssicherheit. Definiert Geltungsbereich, Verantwortlichkeiten, Sicherheitsziele und Grundsaetze fuer den Umgang mit Informationswerten. Gilt fuer alle Mitarbeiter, Auftragnehmer und Dienstleister.',
+  'Zentrale Richtlinie zur Informationssicherheit. Definiert Geltungsbereich, Verantwortlichkeiten, Sicherheitsziele und Grundsaetze für den Umgang mit Informationswerten. Gilt für alle Mitarbeiter, Auftragnehmer und Dienstleister.',
   'policy',
   'published',
   1,
@@ -75,7 +75,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Backup-Richtlinie',
-  'Richtlinie fuer die Datensicherung und Wiederherstellung. Beschreibt 3-2-1-Backup-Strategie, Aufbewahrungsfristen, RTO/RPO-Ziele pro Systemklasse, Verschluesselung der Backup-Medien und monatliche Wiederherstellungstests.',
+  'Richtlinie für die Datensicherung und Wiederherstellung. Beschreibt 3-2-1-Backup-Strategie, Aufbewahrungsfristen, RTO/RPO-Ziele pro Systemklasse, Verschlüsselung der Backup-Medien und monatliche Wiederherstellungstests.',
   'policy',
   'published',
   1,
@@ -97,7 +97,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B04',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Incident-Response-Plan',
-  'Detaillierter Plan zur Behandlung von Sicherheitsvorfaellen. Definiert Eskalationsstufen (P1-P4), Kommunikationswege, Rollen im Incident-Response-Team, Meldepflichten gemaess NIS2 und DSGVO sowie Post-Incident-Review-Prozess.',
+  'Detaillierter Plan zur Behandlung von Sicherheitsvorfaellen. Definiert Eskalationsstufen (P1-P4), Kommunikationswege, Rollen im Incident-Response-Team, Meldepflichten gemäß NIS2 und DSGVO sowie Post-Incident-Review-Prozess.',
   'procedure',
   'approved',
   1,
@@ -118,7 +118,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B05',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Business-Continuity-Plan',
-  'Uebergeordneter Notfallplan zur Sicherstellung des Geschaeftsbetriebs. Enthaelt BIA-Ergebnisse, Wiederanlaufplaene fuer kritische Prozesse, Krisenstabsorganisation, Kommunikationsplaene und Uebungskalender gemaess ISO 22301.',
+  'Uebergeordneter Notfallplan zur Sicherstellung des Geschäftsbetriebs. Enthält BIA-Ergebnisse, Wiederanlaufplaene für kritische Prozesse, Krisenstabsorganisation, Kommunikationsplaene und Übungskalender gemäß ISO 22301.',
   'procedure',
   'approved',
   1,
@@ -139,7 +139,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B06',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'DSFA-Vorlage',
-  'Standardvorlage fuer Datenschutz-Folgenabschaetzungen gemaess Art. 35 DSGVO. Enthaelt strukturierte Abschnitte fuer Verarbeitungsbeschreibung, Notwendigkeitspruefung, Risikobewertung, Massnahmenplanung und Konsultationsverfahren.',
+  'Standardvorlage für Datenschutz-Folgenabschätzungen gemäß Art. 35 DSGVO. Enthält strukturierte Abschnitte für Verarbeitungsbeschreibung, Notwendigkeitsprüfung, Risikobewertung, Maßnahmenplanung und Konsultationsverfahren.',
   'template',
   'published',
   1,
@@ -161,7 +161,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B07',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Lieferantenbewertungsvorlage',
-  'Standardisierte Vorlage fuer die Sicherheitsbewertung von IT-Dienstleistern und Lieferanten. Umfasst Fragenkatalog zu Informationssicherheit, Datenschutz, BCM, Zertifizierungen und Subunternehmer-Management.',
+  'Standardisierte Vorlage für die Sicherheitsbewertung von IT-Dienstleistern und Lieferanten. Umfasst Fragenkatalog zu Informationssicherheit, Datenschutz, BCM, Zertifizierungen und Subunternehmer-Management.',
   'template',
   'published',
   1,
@@ -183,7 +183,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B08',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Datenklassifizierungsrichtlinie',
-  'Richtlinie zur Klassifizierung von Informationswerten nach Vertraulichkeit, Integritaet und Verfuegbarkeit. Definiert vier Schutzklassen (oeffentlich, intern, vertraulich, streng vertraulich) mit zugehoerigen Handhabungsvorschriften und Kennzeichnungspflichten.',
+  'Richtlinie zur Klassifizierung von Informationswerten nach Vertraulichkeit, Integrität und Verfügbarkeit. Definiert vier Schutzklassen (öffentlich, intern, vertraulich, streng vertraulich) mit zugehörigen Handhabungsvorschriften und Kennzeichnungspflichten.',
   'policy',
   'in_review',
   1,
@@ -206,8 +206,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B01',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Zentrale Richtlinie zur Informationssicherheit. Definiert Geltungsbereich, Verantwortlichkeiten, Sicherheitsziele und Grundsaetze fuer den Umgang mit Informationswerten.',
-  'Erstversion der Informationssicherheitsrichtlinie. Freigabe durch Geschaeftsfuehrung.',
+  'Zentrale Richtlinie zur Informationssicherheit. Definiert Geltungsbereich, Verantwortlichkeiten, Sicherheitsziele und Grundsaetze für den Umgang mit Informationswerten.',
+  'Erstversion der Informationssicherheitsrichtlinie. Freigabe durch Geschäftsführung.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -230,7 +230,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B03',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Richtlinie fuer die Datensicherung und Wiederherstellung. Beschreibt 3-2-1-Backup-Strategie, RTO/RPO-Ziele und monatliche Wiederherstellungstests.',
+  'Richtlinie für die Datensicherung und Wiederherstellung. Beschreibt 3-2-1-Backup-Strategie, RTO/RPO-Ziele und monatliche Wiederherstellungstests.',
   'Erstversion der Backup-Richtlinie. Basierend auf BSI-Grundschutz-Empfehlungen.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -254,7 +254,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B05',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Uebergeordneter Notfallplan zur Sicherstellung des Geschaeftsbetriebs. BIA-Ergebnisse, Wiederanlaufplaene und Krisenstabsorganisation.',
+  'Uebergeordneter Notfallplan zur Sicherstellung des Geschäftsbetriebs. BIA-Ergebnisse, Wiederanlaufplaene und Krisenstabsorganisation.',
   'Erstversion des Business-Continuity-Plans. ISO 22301-konform aufgebaut.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -266,7 +266,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B06',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Standardvorlage fuer Datenschutz-Folgenabschaetzungen gemaess Art. 35 DSGVO. Strukturierte Abschnitte fuer alle DSFA-Phasen.',
+  'Standardvorlage für Datenschutz-Folgenabschätzungen gemäß Art. 35 DSGVO. Strukturierte Abschnitte für alle DSFA-Phasen.',
   'Erstversion der DSFA-Vorlage. Abgestimmt mit DSB und Rechtsabteilung.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -278,7 +278,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B07',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Standardisierte Vorlage fuer die Sicherheitsbewertung von IT-Dienstleistern. Fragenkatalog zu IS, Datenschutz, BCM und Zertifizierungen.',
+  'Standardisierte Vorlage für die Sicherheitsbewertung von IT-Dienstleistern. Fragenkatalog zu IS, Datenschutz, BCM und Zertifizierungen.',
   'Erstversion der Lieferantenbewertungsvorlage. Harmonisiert mit TISAX-Anforderungen.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -290,8 +290,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B08',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1,
-  'Richtlinie zur Klassifizierung von Informationswerten. Vier Schutzklassen mit zugehoerigen Handhabungsvorschriften.',
-  'Erstversion der Datenklassifizierungsrichtlinie. Review durch CISO und DSB laeuft.',
+  'Richtlinie zur Klassifizierung von Informationswerten. Vier Schutzklassen mit zugehörigen Handhabungsvorschriften.',
+  'Erstversion der Datenklassifizierungsrichtlinie. Review durch CISO und DSB läuft.',
   true,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -308,7 +308,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B01',
   'control',
   'd0000000-0000-0000-0000-000000000201',
-  'Richtliniendokument fuer Control A.5.1 Informationssicherheitsrichtlinie',
+  'Richtliniendokument für Control A.5.1 Informationssicherheitsrichtlinie',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -320,7 +320,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B02',
   'control',
   'd0000000-0000-0000-0000-000000000202',
-  'Richtliniendokument fuer Control A.5.15 Zugriffskontrollmanagement',
+  'Richtliniendokument für Control A.5.15 Zugriffskontrollmanagement',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -332,7 +332,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B03',
   'control',
   'd0000000-0000-0000-0000-000000000203',
-  'Richtliniendokument fuer Control A.8.13 Datensicherung und Wiederherstellung',
+  'Richtliniendokument für Control A.8.13 Datensicherung und Wiederherstellung',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -344,7 +344,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000B05',
   'bcp',
   'd0000000-0000-0000-0000-000000000830',
-  'Dokumentierter Business-Continuity-Plan fuer den uebergeordneten BCP',
+  'Dokumentierter Business-Continuity-Plan für den uebergeordneten BCP',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 

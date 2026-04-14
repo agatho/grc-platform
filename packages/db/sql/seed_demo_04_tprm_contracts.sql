@@ -32,7 +32,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'CloudNova GmbH',
   'CloudNova Infrastruktur GmbH',
-  'Primaerer Cloud-Infrastruktur-Anbieter fuer Produktiv- und Staging-Umgebungen. Betreibt dedizierte Kubernetes-Cluster in deutschen Rechenzentren (Frankfurt, Nuernberg).',
+  'Primärer Cloud-Infrastruktur-Anbieter für Produktiv- und Staging-Umgebungen. Betreibt dedizierte Kubernetes-Cluster in deutschen Rechenzentren (Frankfurt, Nürnberg).',
   'cloud_provider',
   'critical',
   'active',
@@ -58,7 +58,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'SalesTech CRM',
   'SalesTech Solutions GmbH',
-  'SaaS-Anbieter fuer Customer-Relationship-Management. EU-Hosting mit Rechenzentren in Irland und Deutschland. SOC 2 Type II zertifiziert.',
+  'SaaS-Anbieter für Customer-Relationship-Management. EU-Hosting mit Rechenzentren in Irland und Deutschland. SOC 2 Type II zertifiziert.',
   'it_services',
   'important',
   'active',
@@ -84,7 +84,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'PayPilot AG',
   'PayPilot Personaldienstleistungen AG',
-  'Dienstleister fuer Lohn- und Gehaltsabrechnung sowie Personaladministration. Verarbeitet sensible Mitarbeiterdaten inklusive Gehalts- und Steuerinformationen.',
+  'Dienstleister für Lohn- und Gehaltsabrechnung sowie Personaladministration. Verarbeitet sensible Mitarbeiterdaten inklusive Gehalts- und Steuerinformationen.',
   'hr_services',
   'critical',
   'active',
@@ -110,7 +110,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'FloorClean GmbH',
   'FloorClean Gebaeudeservice GmbH',
-  'Facility-Management-Dienstleister fuer Gebaeudereinigung, Winterdienst und Gruenpflege. Setzt Subunternehmer ein — LkSG-relevant aufgrund von Beschaeftigungsrisiken in der Lieferkette.',
+  'Facility-Management-Dienstleister für Gebaeudereinigung, Winterdienst und Gruenpflege. Setzt Subunternehmer ein — LkSG-relevant aufgrund von Beschaeftigungsrisiken in der Lieferkette.',
   'facility',
   'standard',
   'active',
@@ -135,7 +135,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'ITConsult Partners',
   'ITConsult Partners Beratungsgesellschaft mbH',
-  'IT-Beratungsunternehmen mit Schwerpunkt Informationssicherheit, Cloud-Architektur und GRC-Implementierung. Stellt externe Berater fuer ISMS-Aufbau und ISO 27001 Zertifizierungsvorbereitung.',
+  'IT-Beratungsunternehmen mit Schwerpunkt Informationssicherheit, Cloud-Architektur und GRC-Implementierung. Stellt externe Berater für ISMS-Aufbau und ISO 27001 Zertifizierungsvorbereitung.',
   'consulting',
   'important',
   'active',
@@ -234,7 +234,7 @@ VALUES (
   3, 4, 3,
   'stable',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Hohe Abhaengigkeit aufgrund Primaer-Hosting. Verfuegbarkeitsrisiko am hoechsten bewertet. ISO 27001 und SOC 2 Zertifizierungen vorhanden. Restrisiko durch Single-Provider-Abhaengigkeit.'
+  'Hohe Abhängigkeit aufgrund Primär-Hosting. Verfügbarkeitsrisiko am höchsten bewertet. ISO 27001 und SOC 2 Zertifizierungen vorhanden. Restrisiko durch Single-Provider-Abhängigkeit.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- VRA-002: SalesTech CRM
@@ -253,7 +253,7 @@ VALUES (
   3, 2, 2,
   'improving',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Mittleres Risikoprofil. EU-Hosting bestaetigt. SOC 2 Type II Report liegt vor. Verbesserung durch kueerzlich implementierte MFA fuer alle Administratoren.'
+  'Mittleres Risikoprofil. EU-Hosting bestätigt. SOC 2 Type II Report liegt vor. Verbesserung durch kueerzlich implementierte MFA für alle Administratoren.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- VRA-003: PayPilot AG
@@ -272,7 +272,7 @@ VALUES (
   4, 3, 4,
   'stable',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Hohes Vertraulichkeitsrisiko durch Verarbeitung sensibler Gehaltsdaten. AV-Vertrag gemaess Art. 28 DSGVO abgeschlossen. Jaehrlicher ISAE 3402 Bericht wird geliefert.'
+  'Hohes Vertraulichkeitsrisiko durch Verarbeitung sensibler Gehaltsdaten. AV-Vertrag gemäß Art. 28 DSGVO abgeschlossen. Jährlicher ISAE 3402 Bericht wird geliefert.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -290,7 +290,7 @@ VALUES (
   'completed',
   '2025-12-01 09:00:00+01',
   '2025-12-20 16:30:00+01',
-  '{"information_security": {"iso27001_certified": true, "soc2_report": true, "penetration_test_frequency": "quarterly", "encryption_at_rest": "AES-256", "encryption_in_transit": "TLS 1.3"}, "data_protection": {"dpa_signed": true, "data_location": "EU (Frankfurt, Nuernberg)", "sub_processors": 3, "breach_notification_hours": 24}, "business_continuity": {"rto_hours": 4, "rpo_hours": 1, "backup_frequency": "hourly", "disaster_recovery_tested": true}}',
+  '{"information_security": {"iso27001_certified": true, "soc2_report": true, "penetration_test_frequency": "quarterly", "encryption_at_rest": "AES-256", "encryption_in_transit": "TLS 1.3"}, "data_protection": {"dpa_signed": true, "data_location": "EU (Frankfurt, Nürnberg)", "sub_processors": 3, "breach_notification_hours": 24}, "business_continuity": {"rto_hours": 4, "rpo_hours": 1, "backup_frequency": "hourly", "disaster_recovery_tested": true}}',
   35,
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-10 11:00:00+01'
@@ -310,7 +310,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000701',
   'Rahmenvertrag Cloud-Infrastruktur CloudNova',
-  'Rahmenvertrag fuer dedizierte Cloud-Infrastruktur inklusive Managed Kubernetes, Objektspeicher und Datenbankservices. Umfasst SLA mit Verfuegbarkeitsgarantien und Incident-Response-Zeiten.',
+  'Rahmenvertrag für dedizierte Cloud-Infrastruktur inklusive Managed Kubernetes, Objektspeicher und Datenbankservices. Umfasst SLA mit Verfügbarkeitsgarantien und Incident-Response-Zeiten.',
   'master_agreement',
   'active',
   'CON-2025-001',
@@ -339,7 +339,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000703',
   'Dienstleistungsvertrag Lohn- und Gehaltsabrechnung',
-  'Vertrag ueber die Erbringung von Lohn- und Gehaltsabrechnungsdienstleistungen fuer alle Konzerngesellschaften. Umfasst monatliche Abrechnung, Meldewesen und Jahresabschlussarbeiten.',
+  'Vertrag ueber die Erbringung von Lohn- und Gehaltsabrechnungsdienstleistungen für alle Konzerngesellschaften. Umfasst monatliche Abrechnung, Meldewesen und Jahresabschlussarbeiten.',
   'service_agreement',
   'active',
   'CON-2024-008',
@@ -368,7 +368,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000705',
   'Beratungsvertrag ISMS-Aufbau und ISO 27001 Zertifizierung',
-  'Beratungsvertrag fuer die Unterstuetzung beim Aufbau des ISMS und der Vorbereitung der ISO 27001 Erstzertifizierung. Umfasst Gap-Analyse, Dokumentationserstellung, interne Audits und Zertifizierungsbegleitung.',
+  'Beratungsvertrag für die Unterstuetzung beim Aufbau des ISMS und der Vorbereitung der ISO 27001 Erstzertifizierung. Umfasst Gap-Analyse, Dokumentationserstellung, interne Audits und Zertifizierungsbegleitung.',
   'consulting',
   'active',
   'CON-2025-012',
@@ -395,11 +395,11 @@ VALUES (
   'd0000000-0000-0000-0000-000000000750',
   'd0000000-0000-0000-0000-000000000740',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Infrastruktur-Verfuegbarkeit',
+  'Infrastruktur-Verfügbarkeit',
   99.9000,
   'percent',
   'monthly',
-  'Bei Unterschreitung der 99,9% Verfuegbarkeit: Gutschrift von 10% der Monatspauschale pro 0,1% Unterschreitung, maximal 30% der Monatspauschale.'
+  'Bei Unterschreitung der 99,9% Verfügbarkeit: Gutschrift von 10% der Monatspauschale pro 0,1% Unterschreitung, maximal 30% der Monatspauschale.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- SLA-002: CloudNova Response Time
@@ -412,7 +412,7 @@ VALUES (
   15.0000,
   'minutes',
   'monthly',
-  'Bei Ueberschreitung der 15-Minuten-Reaktionszeit fuer Severity-1-Vorfaelle: Gutschrift von 500 EUR pro Vorfall.'
+  'Bei Ueberschreitung der 15-Minuten-Reaktionszeit für Severity-1-Vorfaelle: Gutschrift von 500 EUR pro Vorfall.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- SLA-003: PayPilot Payroll Accuracy
@@ -434,11 +434,11 @@ VALUES (
   'd0000000-0000-0000-0000-000000000753',
   'd0000000-0000-0000-0000-000000000742',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Berater-Verfuegbarkeit',
+  'Berater-Verfügbarkeit',
   90.0000,
   'percent',
   'quarterly',
-  'Bei Unterschreitung der zugesicherten Beratertage um mehr als 10%: Verlaengerung der Vertragslaufzeit um die ausgefallenen Tage ohne Mehrkosten.'
+  'Bei Unterschreitung der zugesicherten Beratertage um mehr als 10%: Verlängerung der Vertragslaufzeit um die ausgefallenen Tage ohne Mehrkosten.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- ─────────────────────────────────────────────────────────────────────────────
@@ -525,7 +525,7 @@ VALUES (
   '2026-02-28',
   99.6000,
   false,
-  '6 Abrechnungsfehler bei 1.500 Abrechnungen (0,4%). Erhoehte Fehlerrate durch Tarifumstellung zum 01.02. Innerhalb SLA, aber Trend beobachten.',
+  '6 Abrechnungsfehler bei 1.500 Abrechnungen (0,4%). Erhöhte Fehlerrate durch Tarifumstellung zum 01.02. Innerhalb SLA, aber Trend beobachten.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -540,8 +540,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000770',
   'd0000000-0000-0000-0000-000000000740',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Jaehrliches Sicherheitsaudit CloudNova',
-  'CloudNova ist verpflichtet, jaehrlich einen unabhaengigen Sicherheitsauditbericht (SOC 2 Type II oder ISO 27001 Zertifikat) vorzulegen. Der Bericht muss innerhalb von 90 Tagen nach Auditabschluss bereitgestellt werden.',
+  'Jährliches Sicherheitsaudit CloudNova',
+  'CloudNova ist verpflichtet, jährlich einen unabhängigen Sicherheitsauditbericht (SOC 2 Type II oder ISO 27001 Zertifikat) vorzulegen. Der Bericht muss innerhalb von 90 Tagen nach Auditabschluss bereitgestellt werden.',
   'audit_right',
   '2026-06-30',
   true,
@@ -558,7 +558,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000741',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Monatlicher Abrechnungsqualitaetsbericht',
-  'PayPilot liefert bis zum 10. Werktag des Folgemonats einen Qualitaetsbericht mit Fehlerquote, Korrekturmassnahmen und Statistiken zur Abrechnungsgenauigkeit.',
+  'PayPilot liefert bis zum 10. Werktag des Folgemonats einen Qualitaetsbericht mit Fehlerquote, Korrekturmaßnahmen und Statistiken zur Abrechnungsgenauigkeit.',
   'reporting',
   '2026-04-14',
   true,
@@ -575,7 +575,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000742',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Quartalsweise Fortschrittsbewertung ISMS-Aufbau',
-  'ITConsult Partners praesentiert quartalsweise den Fortschritt des ISMS-Aufbaus mit Meilensteinbericht, Risiken und Empfehlungen. Naechster Review: Q1 2026 Abschluss.',
+  'ITConsult Partners praesentiert quartalsweise den Fortschritt des ISMS-Aufbaus mit Meilensteinbericht, Risiken und Empfehlungen. Nächster Review: Q1 2026 Abschluss.',
   'deliverable',
   '2026-04-15',
   true,
@@ -598,7 +598,7 @@ VALUES (
   '2026-02-01',
   'direct',
   '[{"area": "Arbeitnehmerrechte", "risk_level": "medium", "description": "Einsatz von Subunternehmern in der Gebaeudereinigung mit potenziellen Risiken bei Mindestlohn und Arbeitszeiten."}, {"area": "Arbeitsschutz", "risk_level": "low", "description": "Umgang mit Reinigungschemikalien erfordert Schulungen und Schutzausruestung."}, {"area": "Diskriminierung", "risk_level": "low", "description": "Diversitaet in der Belegschaft vorhanden, keine Hinweise auf systematische Diskriminierung."}]',
-  '[{"area": "Arbeitnehmerrechte", "measure": "Vertragliche Verpflichtung zur Einhaltung des Mindestlohngesetzes durch Subunternehmer. Stichprobenartige Kontrollen der Lohnabrechnungen.", "deadline": "2026-06-30", "status": "in_progress"}, {"area": "Arbeitsschutz", "measure": "Nachweis der jaehrlichen Unterweisung aller Mitarbeiter im Umgang mit Gefahrstoffen.", "deadline": "2026-04-30", "status": "completed"}]',
+  '[{"area": "Arbeitnehmerrechte", "measure": "Vertragliche Verpflichtung zur Einhaltung des Mindestlohngesetzes durch Subunternehmer. Stichprobenartige Kontrollen der Lohnabrechnungen.", "deadline": "2026-06-30", "status": "in_progress"}, {"area": "Arbeitsschutz", "measure": "Nachweis der jährlichen Unterweisung aller Mitarbeiter im Umgang mit Gefahrstoffen.", "deadline": "2026-04-30", "status": "completed"}]',
   'completed',
   'medium',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',

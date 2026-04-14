@@ -35,7 +35,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000101',
   'Mean Time to Patch Critical Vulns',
-  'Durchschnittliche Zeit in Stunden bis zur Behebung kritischer Schwachstellen (CVSS >= 9.0) auf produktiven Systemen. Zielwert: unter 72 Stunden gemaess interner Patch-Policy.',
+  'Durchschnittliche Zeit in Stunden bis zur Behebung kritischer Schwachstellen (CVSS >= 9.0) auf produktiven Systemen. Zielwert: unter 72 Stunden gemäß interner Patch-Policy.',
   'hours',
   'desc',
   72.00, 168.00, 168.01,
@@ -58,7 +58,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000102',
   'Single-Source Supplier Count',
-  'Anzahl kritischer IT-Dienstleister und -Lieferanten ohne qualifizierten Zweitlieferanten. Jeder Single-Source-Lieferant stellt ein Klumpenrisiko fuer die Lieferkette dar.',
+  'Anzahl kritischer IT-Dienstleister und -Lieferanten ohne qualifizierten Zweitlieferanten. Jeder Single-Source-Lieferant stellt ein Klumpenrisiko für die Lieferkette dar.',
   'count',
   'asc',
   2.00, 4.00, 4.01,
@@ -81,7 +81,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000103',
   'Open GDPR Findings',
-  'Anzahl offener Feststellungen aus Datenschutz-Audits und -Pruefungen mit Status identified oder in_remediation. Umfasst interne und externe Pruefungsergebnisse.',
+  'Anzahl offener Feststellungen aus Datenschutz-Audits und -Prüfungen mit Status identified oder in_remediation. Umfasst interne und externe Prüfungsergebnisse.',
   'count',
   'asc',
   1.00, 3.00, 3.01,
@@ -104,7 +104,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000104',
   'Key Position Vacancy Rate',
-  'Prozentsatz unbesetzter Schluesselstellen in den Bereichen Informationssicherheit, Datenschutz und IT-Architektur. Beruecksichtigt auch Positionen mit gekuendigten Stelleninhabern.',
+  'Prozentsatz unbesetzter Schlüsselstellen in den Bereichen Informationssicherheit, Datenschutz und IT-Architektur. Berücksichtigt auch Positionen mit gekündigten Stelleninhabern.',
   'percent',
   'asc',
   5.00, 10.00, 10.01,
@@ -127,7 +127,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000105',
   'Cloud SLA Breach Count',
-  'Anzahl SLA-Verletzungen durch den primaeren Cloud-/SaaS-Anbieter im Berichtszeitraum. Umfasst Verfuegbarkeit, Performance und Support-Reaktionszeiten gemaess Rahmenvertrag.',
+  'Anzahl SLA-Verletzungen durch den primären Cloud-/SaaS-Anbieter im Berichtszeitraum. Umfasst Verfügbarkeit, Performance und Support-Reaktionszeiten gemäß Rahmenvertrag.',
   'count',
   'asc',
   0.00, 2.00, 2.01,
@@ -160,7 +160,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000901',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   98.00, '2025-11-01 10:00:00+01', 'manual',
-  'Verbesserung durch Einfuehrung des automatisierten Patch-Deployments fuer Testumgebungen.',
+  'Verbesserung durch Einfuehrung des automatisierten Patch-Deployments für Testumgebungen.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -222,7 +222,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000902',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   3.00, '2025-11-01 10:00:00+01', 'manual',
-  'Keine Veraenderung. Evaluierung Zweitlieferant Firewall laeuft.',
+  'Keine Veränderung. Evaluierung Zweitlieferant Firewall läuft.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -242,7 +242,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000902',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   3.00, '2026-01-01 10:00:00+01', 'manual',
-  'Weiterhin 3. PoC fuer Firewall-Alternative abgeschlossen, Entscheidung steht aus.',
+  'Weiterhin 3. PoC für Firewall-Alternative abgeschlossen, Entscheidung steht aus.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -252,7 +252,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000902',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   3.00, '2026-02-01 10:00:00+01', 'manual',
-  'Stabil bei 3. Budget fuer Zweitlieferant-Qualifizierung in Q2 genehmigt.',
+  'Stabil bei 3. Budget für Zweitlieferant-Qualifizierung in Q2 genehmigt.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -262,7 +262,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000902',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   3.00, '2026-03-01 10:00:00+01', 'manual',
-  'Unveraendert. Reduktion auf 2 fuer Q3 2026 angestrebt.',
+  'Unveraendert. Reduktion auf 2 für Q3 2026 angestrebt.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -336,7 +336,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000904',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   8.00, '2025-10-01 10:00:00+02', 'manual',
-  'Baseline: 2 von 25 Schluesselstellen vakant (1x Security Architect, 1x SOC Analyst).',
+  'Baseline: 2 von 25 Schlüsselstellen vakant (1x Security Architect, 1x SOC Analyst).',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -346,7 +346,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000904',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   8.00, '2025-11-01 10:00:00+01', 'manual',
-  'Unveraendert. Bewerbungsgespraeche fuer beide Stellen laufen.',
+  'Unveraendert. Bewerbungsgespraeche für beide Stellen laufen.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -386,7 +386,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000904',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   8.00, '2026-03-01 10:00:00+01', 'manual',
-  'Stabil. Vertragsunterschrift Security Architect erwartet fuer April.',
+  'Stabil. Vertragsunterschrift Security Architect erwartet für April.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -398,7 +398,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000905',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   0.00, '2025-10-01 10:00:00+02', 'manual',
-  'Kein SLA-Verstoss im Oktober. Alle Verfuegbarkeitsziele eingehalten.',
+  'Kein SLA-Verstoss im Oktober. Alle Verfügbarkeitsziele eingehalten.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -408,7 +408,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000905',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   0.00, '2025-11-01 10:00:00+01', 'manual',
-  'Kein SLA-Verstoss. Geplante Wartungsfenster ordnungsgemaess durchgefuehrt.',
+  'Kein SLA-Verstoss. Geplante Wartungsfenster ordnungsgemäß durchgeführt.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -448,7 +448,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000905',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   1.00, '2026-03-01 10:00:00+01', 'manual',
-  'Erster SLA-Verstoss: 4h-Ausfall E-Mail-Service am 12.03. ueberschritt 99.9% Verfuegbarkeitsziel. Eskalation an Provider-Management.',
+  'Erster SLA-Verstoss: 4h-Ausfall E-Mail-Service am 12.03. ueberschritt 99.9% Verfügbarkeitsziel. Eskalation an Provider-Management.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
