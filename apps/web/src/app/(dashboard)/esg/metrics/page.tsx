@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { Loader2, RefreshCcw, Search, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { EsrsMetric } from "@grc/shared";
@@ -20,6 +21,7 @@ interface MetricRow extends EsrsMetric {
 export default function MetricsPage() {
   return (
     <ModuleGate moduleKey="esg">
+      <ModuleTabNav />
       <MetricsInner />
     </ModuleGate>
   );

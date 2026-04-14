@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
@@ -388,6 +389,7 @@ function GroupRiskContent() {
 export default function GroupRiskPage() {
   return (
     <ModuleGate moduleKey="erm">
+      <ModuleTabNav />
       <GroupRiskContent />
     </ModuleGate>
   );

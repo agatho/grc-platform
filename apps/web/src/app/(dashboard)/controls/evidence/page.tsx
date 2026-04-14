@@ -15,6 +15,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -66,6 +67,7 @@ function formatFileSize(bytes?: number): string {
 export default function EvidencePage() {
   return (
     <ModuleGate moduleKey="ics">
+      <ModuleTabNav />
       <EvidencePageInner />
     </ModuleGate>
   );

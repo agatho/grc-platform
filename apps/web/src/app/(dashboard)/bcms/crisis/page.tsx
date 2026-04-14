@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus, AlertTriangle } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CrisisScenario } from "@grc/shared";
@@ -28,6 +29,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 export default function CrisisListPage() {
   return (
     <ModuleGate moduleKey="bcms">
+      <ModuleTabNav />
       <CrisisListInner />
     </ModuleGate>
   );

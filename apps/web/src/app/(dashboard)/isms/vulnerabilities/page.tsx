@@ -7,6 +7,7 @@ import { toast } from "sonner";
 
 import Link from "next/link";
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -37,6 +38,7 @@ const severityStyles: Record<string, string> = {
 export default function VulnerabilitiesPage() {
   return (
     <ModuleGate moduleKey="isms">
+      <ModuleTabNav />
       <VulnerabilitiesInner />
     </ModuleGate>
   );

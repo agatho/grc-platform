@@ -14,6 +14,22 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 /* ------------------------------------------------------------------ */
 /*  Types                                                              */
@@ -45,25 +61,76 @@ interface TaxonomySummary {
 }
 
 /* ------------------------------------------------------------------ */
-/*  Mock fetch (returns empty data until API exists)                    */
+/*  API fetch                                                          */
 /* ------------------------------------------------------------------ */
 
 async function fetchTaxonomyData(): Promise<{
   activities: TaxonomyActivity[];
   summary: TaxonomySummary;
 }> {
-  // TODO: Replace with actual API call to /api/v1/esg/taxonomy
+  const res = await fetch("/api/v1/esg/taxonomy?limit=100");
+  if (!res.ok) {
+    return {
+      activities: [],
+      summary: {
+        eligibleCount: 0,
+        alignedCount: 0,
+        alignmentRate: 0,
+        totalTurnoverAligned: 0,
+        totalCapexAligned: 0,
+        totalOpexAligned: 0,
+      },
+    };
+  }
+  const json = await res.json();
   return {
-    activities: [],
-    summary: {
-      eligibleCount: 0,
-      alignedCount: 0,
-      alignmentRate: 0,
-      totalTurnoverAligned: 0,
-      totalCapexAligned: 0,
-      totalOpexAligned: 0,
-    },
+    activities: (json.data ?? []).map((row: Record<string, unknown>) => ({
+      id: row.id as string,
+      activityName: row.activityName as string,
+      naceCode: row.naceCode as string,
+      objective: row.objective as string,
+      eligible: row.eligible as boolean,
+      aligned: row.aligned as boolean,
+      substantialContribution: row.substantialContribution as boolean,
+      dnsh: row.dnsh as boolean,
+      minimumSafeguards: row.minimumSafeguards as boolean,
+      turnoverAligned: Number(row.turnoverAligned ?? 0),
+      capexAligned: Number(row.capexAligned ?? 0),
+      opexAligned: Number(row.opexAligned ?? 0),
+      status: row.status as TaxonomyActivity["status"],
+    })),
+    summary: json.summary
+      ? {
+          eligibleCount: Number(json.summary.eligibleCount ?? 0),
+          alignedCount: Number(json.summary.alignedCount ?? 0),
+          alignmentRate: Number(json.summary.alignmentRate ?? 0),
+          totalTurnoverAligned: Number(json.summary.totalTurnoverAligned ?? 0),
+          totalCapexAligned: Number(json.summary.totalCapexAligned ?? 0),
+          totalOpexAligned: Number(json.summary.totalOpexAligned ?? 0),
+        }
+      : {
+          eligibleCount: 0,
+          alignedCount: 0,
+          alignmentRate: 0,
+          totalTurnoverAligned: 0,
+          totalCapexAligned: 0,
+          totalOpexAligned: 0,
+        },
   };
+}
+
+async function createTaxonomyActivity(data: {
+  activityName: string;
+  naceCode?: string;
+  objectiveId: string;
+  reportingYear: number;
+}): Promise<boolean> {
+  const res = await fetch("/api/v1/esg/taxonomy", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.ok;
 }
 
 /* ------------------------------------------------------------------ */
@@ -83,6 +150,8 @@ function TaxonomyInner() {
   const [activities, setActivities] = useState<TaxonomyActivity[]>([]);
   const [summary, setSummary] = useState<TaxonomySummary | null>(null);
   const [loading, setLoading] = useState(true);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -98,6 +167,23 @@ function TaxonomyInner() {
   useEffect(() => {
     void loadData();
   }, [loadData]);
+
+  const handleCreate = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    setSaving(true);
+    const formData = new FormData(e.currentTarget);
+    const ok = await createTaxonomyActivity({
+      activityName: formData.get("activityName") as string,
+      naceCode: (formData.get("naceCode") as string) || undefined,
+      objectiveId: formData.get("objectiveId") as string,
+      reportingYear: Number(formData.get("reportingYear")) || new Date().getFullYear(),
+    });
+    setSaving(false);
+    if (ok) {
+      setDialogOpen(false);
+      void loadData();
+    }
+  };
 
   if (loading && !summary) {
     return (
@@ -132,10 +218,58 @@ function TaxonomyInner() {
               className={loading ? "animate-spin" : ""}
             />
           </Button>
-          <Button size="sm">
-            <Plus size={14} className="mr-1" />
-            Aktivit&auml;t hinzuf&uuml;gen
-          </Button>
+          <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus size={14} className="mr-1" />
+                Aktivit&auml;t hinzuf&uuml;gen
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Neue Taxonomie-Aktivit&auml;t</DialogTitle>
+              </DialogHeader>
+              <form onSubmit={handleCreate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="activityName">Aktivit&auml;tsname</Label>
+                  <Input id="activityName" name="activityName" required placeholder="z.B. Stromerzeugung aus Windkraft" />
+                </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="naceCode">NACE-Code</Label>
+                    <Input id="naceCode" name="naceCode" placeholder="z.B. D35.1.1" />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="reportingYear">Berichtsjahr</Label>
+                    <Input id="reportingYear" name="reportingYear" type="number" defaultValue={new Date().getFullYear()} min={2020} max={2035} />
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="objectiveId">Umweltziel</Label>
+                  <Select name="objectiveId" defaultValue="climate_mitigation">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="climate_mitigation">Klimaschutz</SelectItem>
+                      <SelectItem value="climate_adaptation">Klimaanpassung</SelectItem>
+                      <SelectItem value="water">Wasser</SelectItem>
+                      <SelectItem value="circular_economy">Kreislaufwirtschaft</SelectItem>
+                      <SelectItem value="pollution">Umweltverschmutzung</SelectItem>
+                      <SelectItem value="biodiversity">Biodiversit&auml;t</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="flex justify-end gap-2 pt-2">
+                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+                  <Button type="submit" disabled={saving}>
+                    {saving && <Loader2 size={14} className="mr-1 animate-spin" />}
+                    Erstellen
+                  </Button>
+                </div>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 

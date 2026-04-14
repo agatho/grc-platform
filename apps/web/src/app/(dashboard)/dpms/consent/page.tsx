@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, Shield, Users, TrendingDown } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ConsentType } from "@grc/shared";
@@ -12,6 +13,7 @@ import type { ConsentType } from "@grc/shared";
 export default function ConsentDashboardPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <ConsentDashboardInner />
     </ModuleGate>
   );

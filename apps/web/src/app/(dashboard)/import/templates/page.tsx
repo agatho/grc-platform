@@ -24,6 +24,7 @@ import {
 import {
   Tooltip,
   TooltipContent,
+  TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
 
@@ -82,6 +83,7 @@ export default function ImportTemplatesPage() {
   const t = useTranslations("import");
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-bold">{t("templates.title")}</h1>
@@ -140,5 +142,6 @@ export default function ImportTemplatesPage() {
         })}
       </div>
     </div>
+    </TooltipProvider>
   );
 }

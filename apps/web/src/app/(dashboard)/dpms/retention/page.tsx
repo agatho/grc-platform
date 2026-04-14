@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Plus, Loader2, Clock, AlertTriangle, Trash2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +14,7 @@ import type { RetentionSchedule } from "@grc/shared";
 export default function RetentionDashboardPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <RetentionDashboardInner />
     </ModuleGate>
   );

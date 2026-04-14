@@ -6,6 +6,7 @@ import { Brain, Eye, FileCheck, Scale } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AiActDashboard } from "@grc/shared";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 export default function AiActDashboardPage() {
   const t = useTranslations("aiAct");
@@ -17,6 +18,7 @@ export default function AiActDashboardPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       <div className="flex items-center justify-between">
         <div><h1 className="text-2xl font-bold">{t("title")}</h1><p className="text-muted-foreground">{t("description")}</p></div>
         <div className="flex gap-2">

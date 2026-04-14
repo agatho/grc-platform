@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -19,6 +20,7 @@ const RING_COLORS: Record<string, string> = {
 export default function TechRadarPage() {
   return (
     <ModuleGate moduleKey="eam">
+      <ModuleTabNav />
       <TechRadarInner />
     </ModuleGate>
   );

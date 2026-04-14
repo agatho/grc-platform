@@ -14,6 +14,7 @@ import {
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ const STATUSES = ["draft", "negotiation", "pending_approval", "active", "renewal
 export default function ContractListPage() {
   return (
     <ModuleGate moduleKey="contract">
+      <ModuleTabNav />
       <ContractListInner />
     </ModuleGate>
   );

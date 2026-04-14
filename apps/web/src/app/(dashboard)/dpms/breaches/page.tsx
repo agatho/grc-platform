@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { DataBreach } from "@grc/shared";
@@ -30,6 +31,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 export default function BreachListPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <BreachListInner />
     </ModuleGate>
   );

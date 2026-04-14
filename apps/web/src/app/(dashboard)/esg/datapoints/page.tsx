@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Search, Link2 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { EsrsDatapointDefinition } from "@grc/shared";
@@ -17,6 +18,7 @@ interface DatapointRow extends EsrsDatapointDefinition {
 export default function DatapointsPage() {
   return (
     <ModuleGate moduleKey="esg">
+      <ModuleTabNav />
       <DatapointsInner />
     </ModuleGate>
   );

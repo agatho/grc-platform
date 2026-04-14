@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { ProtectionLevelBadge } from "@/components/isms/protection-level-badge";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -85,6 +86,7 @@ const SOURCE_LABELS: Record<ProtectionSource, { en: string; de: string }> = {
 export default function IsmsProtectionNeedsPage() {
   return (
     <ModuleGate moduleKey="isms">
+      <ModuleTabNav />
       <ProtectionNeedsInner />
     </ModuleGate>
   );
