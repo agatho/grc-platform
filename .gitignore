@@ -3,6 +3,10 @@ node_modules/
 dist/
 .turbo/
 *.env
+
+# Claude Code agent temp files
+*.tmp.*
+test-results/
 *.env.local
 .DS_Store
 coverage/
