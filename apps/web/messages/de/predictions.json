@@ -1,6 +1,6 @@
 {
-  "title": "Praediktive Risikointelligenz",
-  "description": "ML-basierte Vorhersage, welche Risiken in den naechsten 90 Tagen eskalieren werden",
+  "title": "Prädiktive Risikointelligenz",
+  "description": "ML-basierte Vorhersage, welche Risiken in den nächsten 90 Tagen eskalieren werden",
   "retrainModel": "Modell neu trainieren",
   "escalationRanking": "Eskalations-Ranking",
   "noPredictions": "Noch keine Vorhersagen berechnet",

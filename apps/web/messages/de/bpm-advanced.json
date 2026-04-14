@@ -38,7 +38,7 @@
     "levels": { "1": "Initial", "2": "Gemanagt", "3": "Definiert", "4": "Quantitativ gemanagt", "5": "Optimierend" },
     "overallLevel": "Gesamtreifegrad",
     "targetLevel": "Zielreifegrad",
-    "gapActions": "Verbesserungsmassnahmen",
+    "gapActions": "Verbesserungsmaßnahmen",
     "dashboard": "Reifegrad-Dashboard",
     "roadmap": "Verbesserungs-Roadmap"
   },

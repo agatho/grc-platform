@@ -1,26 +1,26 @@
 {
   "title": "Einrichtungsassistent",
   "welcome": "Willkommen auf der Plattform",
-  "welcomeDesc": "Richten Sie Ihre Organisation mit dem gefuehrten Einrichtungsassistenten ein.",
+  "welcomeDesc": "Richten Sie Ihre Organisation mit dem geführten Einrichtungsassistenten ein.",
   "startSetup": "Einrichtung starten",
   "stepOf": "Schritt {current} von {total}",
-  "skip": "Einrichtung ueberspringen",
-  "next": "Naechster Schritt",
-  "finish": "Einrichtung abschliessen",
+  "skip": "Einrichtung überspringen",
+  "next": "Nächster Schritt",
+  "finish": "Einrichtung abschließen",
   "step": "Schritt",
   "steps": {
-    "welcome": "Willkommen auf der Plattform. Dieser Assistent fuehrt Sie durch die Ersteinrichtung.",
-    "org_profile": "Erzaehlen Sie uns von Ihrer Organisation, damit wir die Plattform anpassen koennen.",
-    "frameworks": "Waehlen Sie die fuer Ihre Organisation relevanten Compliance-Frameworks aus.",
-    "modules": "Waehlen Sie die Module aus, die Sie aktivieren moechten.",
+    "welcome": "Willkommen auf der Plattform. Dieser Assistent führt Sie durch die Ersteinrichtung.",
+    "org_profile": "Erzaehlen Sie uns von Ihrer Organisation, damit wir die Plattform anpassen können.",
+    "frameworks": "Wählen Sie die für Ihre Organisation relevanten Compliance-Frameworks aus.",
+    "modules": "Wählen Sie die Module aus, die Sie aktivieren möchten.",
     "users": "Laden Sie Teammitglieder ein, um auf der Plattform zusammenzuarbeiten.",
-    "templates": "Wenden Sie Compliance-Vorlagenpakete an, um Kontrollen und Richtlinien vorzubefuellen.",
+    "templates": "Wenden Sie Compliance-Vorlagenpakete an, um Kontrollen und Richtlinien vorzubefüllen.",
     "sample_data": "Laden Sie optional Beispieldaten, um die Plattformfunktionen zu erkunden.",
-    "complete": "Ihre Einrichtung ist abgeschlossen. Sie koennen jetzt die Plattform nutzen."
+    "complete": "Ihre Einrichtung ist abgeschlossen. Sie können jetzt die Plattform nutzen."
   },
   "templates": {
     "title": "Vorlagenbibliothek",
-    "subtitle": "Vorgefertigte Compliance-Vorlagenpakete fuer die schnelle Einrichtung",
+    "subtitle": "Vorgefertigte Compliance-Vorlagenpakete für die schnelle Einrichtung",
     "items": "Elemente",
     "recommended": "Empfohlen",
     "apply": "Anwenden"

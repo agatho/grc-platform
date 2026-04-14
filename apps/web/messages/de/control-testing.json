@@ -1,14 +1,14 @@
 {
-  "title": "KI-Kontrollpruefung",
-  "description": "Automatisierte Kontrollpruefung mit KI-generierten Skripten und Checklisten",
+  "title": "KI-Kontrollprüfung",
+  "description": "Automatisierte Kontrollprüfung mit KI-generierten Skripten und Checklisten",
   "scripts": "Testskripte",
   "checklists": "Checklisten",
   "activeScripts": "Aktive Skripte",
   "passRate": "Bestehensquote",
   "failRate": "Durchfallquote",
   "learningPatterns": "Lernmuster",
-  "recentExecutions": "Letzte Ausfuehrungen",
-  "execution": "Ausfuehrung",
+  "recentExecutions": "Letzte Ausführungen",
+  "execution": "Ausführung",
   "inProgress": "In Bearbeitung",
   "scripts": {
     "title": "Testskripte",
@@ -16,24 +16,24 @@
     "aiGenerate": "KI-Generierung",
     "active": "Aktiv",
     "inactive": "Inaktiv",
-    "run": "Ausfuehren",
+    "run": "Ausführen",
     "aiGenerated": "KI-generiert"
   },
   "checklists": {
-    "title": "Pruefchecklisten",
+    "title": "Prüfchecklisten",
     "create": "Checkliste erstellen",
     "aiGenerate": "KI-Generierung",
     "items": "Punkte",
-    "due": "Faellig"
+    "due": "Fällig"
   },
   "executions": {
-    "title": "Testausfuehrungen",
+    "title": "Testausführungen",
     "findings": "Feststellungen"
   },
   "learning": {
     "title": "Lernmuster",
     "patternTypes": {
-      "common_failure": "Haeufiger Fehler",
+      "common_failure": "Häufiger Fehler",
       "effective_test": "Effektiver Test",
       "false_positive": "Falsch-Positiv",
       "improvement": "Verbesserung"

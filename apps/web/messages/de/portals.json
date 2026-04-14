@@ -1,13 +1,13 @@
 {
   "title": "Externe Stakeholder-Portale",
-  "description": "Externe Zugangsportale fuer Lieferanten, Pruefer und Vorstandsmitglieder konfigurieren und verwalten",
+  "description": "Externe Zugangsportale für Lieferanten, Prüfer und Vorstandsmitglieder konfigurieren und verwalten",
   "viewSessions": "Sitzungen anzeigen",
   "noConfigs": "Keine Portal-Konfigurationen gefunden",
   "active": "Aktiv",
   "inactive": "Inaktiv",
   "mfaRequired": "MFA erforderlich",
   "notFound": "Portal-Konfiguration nicht gefunden",
-  "backToPortals": "Zurueck zu Portalen",
+  "backToPortals": "Zurück zu Portalen",
   "settings": "Einstellungen",
   "sessionTimeout": "Sitzungs-Timeout",
   "languages": "Sprachen",
@@ -20,15 +20,15 @@
   "expiresAt": "Laeuft ab",
   "types": {
     "vendor": "Lieferanten-Portal",
-    "auditor": "Pruefer-Portal",
+    "auditor": "Prüfer-Portal",
     "board_member": "Vorstands-Portal",
     "whistleblower": "Hinweisgeber-Portal",
     "custom": "Benutzerdefiniertes Portal"
   },
   "branding": {
     "title": "Benutzerdefiniertes Branding",
-    "primaryColor": "Primaerfarbe",
-    "secondaryColor": "Sekundaerfarbe",
+    "primaryColor": "Primärfarbe",
+    "secondaryColor": "Sekundärfarbe",
     "fontFamily": "Schriftart"
   },
   "questionnaire": {

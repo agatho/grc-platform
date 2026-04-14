@@ -1,19 +1,19 @@
 {
-  "maturityOverview": "Reifegrad-Modell Uebersicht",
-  "maturityDescription": "CMMI-basiertes 5-Stufen-Reifegradmodell ueber alle GRC-Module",
+  "maturityOverview": "Reifegrad-Modell Übersicht",
+  "maturityDescription": "CMMI-basiertes 5-Stufen-Reifegradmodell über alle GRC-Module",
   "viewScorecard": "Scorecard anzeigen",
   "newAssessment": "Neue Bewertung",
   "target": "Ziel",
   "lastCalculated": "Zuletzt berechnet",
   "overview": {
-    "title": "Reifegrad-Uebersicht",
-    "description": "Reifegrade ueber alle Module anzeigen",
+    "title": "Reifegrad-Übersicht",
+    "description": "Reifegrade über alle Module anzeigen",
     "currentLevel": "Aktueller Reifegrad",
     "targetLevel": "Ziel-Reifegrad"
   },
   "assessments": {
     "title": "Reifegrad-Bewertungen",
-    "description": "Reifegradevaluierungen pro Modul durchfuehren und pruefen",
+    "description": "Reifegradevaluierungen pro Modul durchführen und prüfen",
     "create": "Neue Bewertung",
     "module": "Modul",
     "status": "Status",
@@ -22,7 +22,7 @@
   },
   "roadmap": {
     "title": "Reifegrad-Roadmap",
-    "description": "Verbesserungsmassnahmen zur Erreichung des Ziel-Reifegrads planen",
+    "description": "Verbesserungsmaßnahmen zur Erreichung des Ziel-Reifegrads planen",
     "addItem": "Roadmap-Element hinzufuegen",
     "fromLevel": "Von Stufe",
     "toLevel": "Zu Stufe"
@@ -31,9 +31,9 @@
     "title": "Branchen-Benchmarks",
     "description": "Vergleichen Sie Ihren Reifegrad mit anonymisierten Branchenbenchmarks",
     "submitData": "Benchmark-Daten einreichen",
-    "consentRequired": "Zustimmung erforderlich fuer anonymisierte Datenuebermittlung",
+    "consentRequired": "Zustimmung erforderlich für anonymisierte Datenübermittlung",
     "industry": "Branche",
-    "orgSize": "Organisationsgroesse"
+    "orgSize": "Organisationsgröße"
   },
   "scorecard": {
     "title": "Reifegrad-Scorecard",

@@ -10,7 +10,7 @@
     "impactMateriality": "Auswirkungswesentlichkeit",
     "matrix": "Wesentlichkeitsmatrix",
     "stakeholder": "Stakeholder-Einbindung",
-    "finalize": "Bewertung abschliessen",
+    "finalize": "Bewertung abschließen",
     "finalizeWarning": "Nach Abschluss kann die Bewertung nicht mehr bearbeitet werden",
     "isMaterial": "Wesentlich",
     "activatedDisclosures": "Aktivierte ESRS-Angabepflichten"
@@ -54,7 +54,7 @@
     "assessment": "Lieferanten-ESG-Bewertung",
     "questionnaire": "ESG-Fragebogen",
     "riskClassification": { "low": "Geringes Risiko", "medium": "Mittleres Risiko", "high": "Hohes Risiko", "critical": "Kritisches Risiko" },
-    "correctiveAction": "Korrekturmassnahme",
+    "correctiveAction": "Korrekturmaßnahme",
     "lksg": "LkSG-Sorgfaltspflichten",
     "dashboard": "Lieferketten-ESG-Dashboard",
     "riskMap": "Geographische Risikokarte"
