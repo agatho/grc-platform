@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, Clock, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -97,20 +98,22 @@ function IncidentsPageInner() {
       </div>
       <div className="space-y-2">
         {rows.map((inc) => (
-          <Card key={inc.id}><CardContent className="p-4 flex items-center justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <p className="font-medium">{inc.incident_code ? `${inc.incident_code} - ` : ""}{inc.title}</p>
-                {inc.is_serious && <AlertTriangle className="h-4 w-4 text-red-600" />}
+          <Link key={inc.id} href={`/ai-act/incidents/${inc.id}`}>
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer"><CardContent className="p-4 flex items-center justify-between">
+              <div>
+                <div className="flex items-center gap-2">
+                  <p className="font-medium">{inc.incident_code ? `${inc.incident_code} - ` : ""}{inc.title}</p>
+                  {inc.is_serious && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                </div>
+                <p className="text-sm text-muted-foreground">Erkannt: {new Date(inc.detected_at).toLocaleDateString("de-DE")}</p>
               </div>
-              <p className="text-sm text-muted-foreground">Erkannt: {new Date(inc.detected_at).toLocaleDateString("de-DE")}</p>
-            </div>
-            <div className="flex gap-2">
-              <Badge className={SEVERITY_COLORS[inc.severity] ?? ""}>{inc.severity}</Badge>
-              {inc.authority_deadline && getDeadlineBadge(inc.authority_deadline)}
-              <Badge variant="outline">{inc.status}</Badge>
-            </div>
-          </CardContent></Card>
+              <div className="flex gap-2">
+                <Badge className={SEVERITY_COLORS[inc.severity] ?? ""}>{inc.severity}</Badge>
+                {inc.authority_deadline && getDeadlineBadge(inc.authority_deadline)}
+                <Badge variant="outline">{inc.status}</Badge>
+              </div>
+            </CardContent></Card>
+          </Link>
         ))}
         {rows.length === 0 && <p className="text-muted-foreground text-center py-8">Keine KI-Vorfalle gemeldet</p>}
       </div>

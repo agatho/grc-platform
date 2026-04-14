@@ -21,7 +21,7 @@ interface ProtectionLevelBadgeProps {
 
 export function ProtectionLevelBadge({
   level,
-  locale = "en",
+  locale = "de",
   className = "",
 }: ProtectionLevelBadgeProps) {
   if (!level) {

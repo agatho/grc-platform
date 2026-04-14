@@ -1,0 +1,64 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "A" [ref=e5] [cursor=pointer]
+      - button "Navigation durchsuchen..." [ref=e7]:
+        - img [ref=e9]
+      - navigation [ref=e12]:
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - link "Meine Bewertungen" [ref=e17] [cursor=pointer]:
+              - /url: /rcsa/my-assessments
+              - img [ref=e19]
+        - list [ref=e24]:
+          - listitem [ref=e25]:
+            - link "Dokumente" [ref=e26] [cursor=pointer]:
+              - /url: /documents
+              - img [ref=e28]
+        - list [ref=e33]:
+          - listitem [ref=e34]:
+            - link "Dashboard" [ref=e35] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e37]
+          - listitem [ref=e42]:
+            - link "Kalender" [ref=e43] [cursor=pointer]:
+              - /url: /calendar
+              - img [ref=e45]
+          - listitem [ref=e47]:
+            - link "Copilot" [ref=e48] [cursor=pointer]:
+              - /url: /copilot
+              - img [ref=e50]
+          - listitem [ref=e53]:
+            - link "Akademie" [ref=e54] [cursor=pointer]:
+              - /url: /academy
+              - img [ref=e56]
+          - listitem [ref=e59]:
+            - link "Globale Suche" [ref=e60] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e62]
+      - generic [ref=e65]:
+        - link "Einstellungen" [ref=e66] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e68]
+        - generic [ref=e72]: U
+    - generic [ref=e73]:
+      - banner [ref=e74]:
+        - generic [ref=e76]:
+          - img [ref=e77]
+          - generic [ref=e81]: Organisation
+        - generic [ref=e82]:
+          - button "Benachrichtigungen" [ref=e84]:
+            - img [ref=e85]
+          - button "User menu" [ref=e89]:
+            - generic [ref=e90]: U
+      - main [ref=e91]:
+        - generic [ref=e92]:
+          - img [ref=e94]
+          - heading "ics" [level=2] [ref=e97]
+  - button "Open Next.js Dev Tools" [ref=e103] [cursor=pointer]:
+    - img [ref=e104]
+  - alert [ref=e107]
+```
