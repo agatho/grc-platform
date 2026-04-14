@@ -11,7 +11,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
-import { Loader2, ArrowLeft, Save, AlertTriangle } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Loader2, ArrowLeft, Save, AlertTriangle, ClipboardCheck } from "lucide-react";
 import Link from "next/link";
 
 interface GpaiModel {
@@ -38,6 +39,37 @@ interface GpaiModel {
   release_date: string | null;
   created_at: string;
   updated_at: string;
+}
+
+// Art. 56 Code of Practice checklist items
+const ART56_CHECKLIST = [
+  { key: "transparency_obligations", label: "Transparenzpflichten gemaess Art. 53 eingehalten" },
+  { key: "copyright_policy", label: "Urheberrechtsrichtlinie und Zusammenfassung der Trainingsdaten dokumentiert" },
+  { key: "risk_identification", label: "Systemische Risiken identifiziert und bewertet" },
+  { key: "risk_mitigation", label: "Risikominderungsmassnahmen implementiert" },
+  { key: "incident_reporting", label: "Verfahren zur Meldung schwerwiegender Vorfaelle eingerichtet" },
+  { key: "cybersecurity_measures", label: "Angemessene Cybersicherheitsmassnahmen umgesetzt" },
+  { key: "energy_reporting", label: "Energieverbrauch und Rechenressourcen dokumentiert" },
+] as const;
+
+interface CodeOfPracticeData {
+  adherenceDate?: string;
+  checklist?: Record<string, boolean>;
+  notes?: string;
+}
+
+function parseCodeOfPracticeNotes(raw: string | null): CodeOfPracticeData {
+  if (!raw) return {};
+  try {
+    return JSON.parse(raw) as CodeOfPracticeData;
+  } catch {
+    // Legacy plain-text notes — migrate gracefully
+    return { notes: raw };
+  }
+}
+
+function serializeCodeOfPracticeNotes(data: CodeOfPracticeData): string {
+  return JSON.stringify(data);
 }
 
 function GpaiDetailInner() {
@@ -231,17 +263,82 @@ function GpaiDetailInner() {
         </CardContent>
       </Card>
 
-      {/* Verhaltenskodex (Art. 55) */}
+      {/* Verhaltenskodex (Art. 56) — Code of Practice Workflow */}
       <Card>
-        <CardHeader><CardTitle>Verhaltenskodex (Art. 55)</CardTitle></CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-3">
-            <Switch checked={form.code_of_practice_adherence ?? false} onCheckedChange={(v) => set("code_of_practice_adherence", v)} />
-            <Label>Einhaltung Verhaltenskodex</Label>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <ClipboardCheck className="h-5 w-5" />
+            Verhaltenskodex (Art. 56)
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Adherence toggle + date */}
+          <div className="flex items-center gap-6">
+            <div className="flex items-center gap-3">
+              <Switch checked={form.code_of_practice_adherence ?? false} onCheckedChange={(v) => set("code_of_practice_adherence", v)} />
+              <Label className="font-medium">Einhaltung Verhaltenskodex</Label>
+            </div>
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground">Datum der Zusage:</Label>
+              <Input
+                type="date"
+                className="w-44"
+                value={parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null).adherenceDate ?? ""}
+                onChange={(e) => {
+                  const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                  set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, adherenceDate: e.target.value }));
+                }}
+              />
+            </div>
           </div>
+
+          {/* Art. 56 Requirements Checklist */}
+          <div>
+            <Label className="font-medium mb-3 block">Anforderungen nach Art. 56 AI Act</Label>
+            <div className="space-y-3 rounded-md border p-4">
+              {ART56_CHECKLIST.map((item) => {
+                const copData = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                const checked = copData.checklist?.[item.key] ?? false;
+                return (
+                  <div key={item.key} className="flex items-start gap-3">
+                    <Checkbox
+                      id={`cop-${item.key}`}
+                      checked={checked}
+                      onCheckedChange={(v) => {
+                        const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                        const newChecklist = { ...(existing.checklist ?? {}), [item.key]: !!v };
+                        set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, checklist: newChecklist }));
+                      }}
+                    />
+                    <label htmlFor={`cop-${item.key}`} className="text-sm leading-tight cursor-pointer">
+                      {item.label}
+                    </label>
+                  </div>
+                );
+              })}
+            </div>
+            <p className="text-xs text-muted-foreground mt-2">
+              {(() => {
+                const copData = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                const total = ART56_CHECKLIST.length;
+                const done = ART56_CHECKLIST.filter((i) => copData.checklist?.[i.key]).length;
+                return `${done} von ${total} Anforderungen erfuellt`;
+              })()}
+            </p>
+          </div>
+
+          {/* Notes */}
           <div>
             <Label>Anmerkungen zum Verhaltenskodex</Label>
-            <Textarea value={form.code_of_practice_notes ?? ""} onChange={(e) => set("code_of_practice_notes", e.target.value)} rows={3} />
+            <Textarea
+              value={parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null).notes ?? ""}
+              onChange={(e) => {
+                const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, notes: e.target.value }));
+              }}
+              rows={3}
+              placeholder="Weitere Anmerkungen zur Einhaltung des Verhaltenskodex..."
+            />
           </div>
         </CardContent>
       </Card>
