@@ -1,0 +1,455 @@
+-- =============================================================================
+-- ARCTOS Demo Data Seed — Key Risk Indicators (KRIs) & Measurements
+-- 5 KRIs linked to existing risks (0101-0105)
+-- 30 KRI measurements (6 per KRI, monthly Oct 2025 - Mar 2026)
+-- =============================================================================
+-- Idempotent: uses INSERT ... ON CONFLICT DO NOTHING
+-- Deterministic UUIDs: d0000000-0000-0000-0000-0000000009XX pattern
+-- Depends on: seed_demo_data.sql (risks 0101-0105)
+-- =============================================================================
+
+BEGIN;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- Session config for audit triggers
+-- ─────────────────────────────────────────────────────────────────────────────
+
+SELECT set_config('app.current_org_id', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', true);
+SELECT set_config('app.current_user_id', '8c148f0a-f558-4a9f-8886-a3d7096da6cf', true);
+SELECT set_config('app.current_user_email', 'admin@arctos.dev', true);
+SELECT set_config('app.current_user_name', 'Platform Admin', true);
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 1. Key Risk Indicators (5 KRIs)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- KRI-001: Mean Time to Patch Critical Vulns (RSK-001 Ransomware)
+-- Direction: desc (lower is better), Trend: improving (120h → 65h)
+INSERT INTO kri (id, org_id, risk_id, name, description, unit, direction,
+  threshold_green, threshold_yellow, threshold_red,
+  current_value, current_alert_status, trend,
+  measurement_frequency, last_measured_at, alert_enabled,
+  created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  'd0000000-0000-0000-0000-000000000101',
+  'Mean Time to Patch Critical Vulns',
+  'Durchschnittliche Zeit in Stunden bis zur Behebung kritischer Schwachstellen (CVSS >= 9.0) auf produktiven Systemen. Zielwert: unter 72 Stunden gemäß interner Patch-Policy.',
+  'hours',
+  'desc',
+  72.00, 168.00, 168.01,
+  65.00, 'green', 'improving',
+  'monthly',
+  '2026-03-01 10:00:00+01',
+  true,
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- KRI-002: Single-Source Supplier Count (RSK-002 Supply Chain)
+-- Direction: asc (lower is better), Trend: stable (3)
+INSERT INTO kri (id, org_id, risk_id, name, description, unit, direction,
+  threshold_green, threshold_yellow, threshold_red,
+  current_value, current_alert_status, trend,
+  measurement_frequency, last_measured_at, alert_enabled,
+  created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  'd0000000-0000-0000-0000-000000000102',
+  'Single-Source Supplier Count',
+  'Anzahl kritischer IT-Dienstleister und -Lieferanten ohne qualifizierten Zweitlieferanten. Jeder Single-Source-Lieferant stellt ein Klumpenrisiko für die Lieferkette dar.',
+  'count',
+  'asc',
+  2.00, 4.00, 4.01,
+  3.00, 'yellow', 'stable',
+  'monthly',
+  '2026-03-01 10:00:00+01',
+  true,
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- KRI-003: Open GDPR Findings (RSK-003 GDPR violation)
+-- Direction: asc (lower is better), Trend: improving (4 → 2)
+INSERT INTO kri (id, org_id, risk_id, name, description, unit, direction,
+  threshold_green, threshold_yellow, threshold_red,
+  current_value, current_alert_status, trend,
+  measurement_frequency, last_measured_at, alert_enabled,
+  created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  'd0000000-0000-0000-0000-000000000103',
+  'Open GDPR Findings',
+  'Anzahl offener Feststellungen aus Datenschutz-Audits und -Prüfungen mit Status identified oder in_remediation. Umfasst interne und externe Prüfungsergebnisse.',
+  'count',
+  'asc',
+  1.00, 3.00, 3.01,
+  2.00, 'yellow', 'improving',
+  'monthly',
+  '2026-03-01 10:00:00+01',
+  true,
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- KRI-004: Key Position Vacancy Rate (RSK-004 Key Personnel)
+-- Direction: asc (lower is better), Trend: stable (8%)
+INSERT INTO kri (id, org_id, risk_id, name, description, unit, direction,
+  threshold_green, threshold_yellow, threshold_red,
+  current_value, current_alert_status, trend,
+  measurement_frequency, last_measured_at, alert_enabled,
+  created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  'd0000000-0000-0000-0000-000000000104',
+  'Key Position Vacancy Rate',
+  'Prozentsatz unbesetzter Schlüsselstellen in den Bereichen Informationssicherheit, Datenschutz und IT-Architektur. Berücksichtigt auch Positionen mit gekuendigten Stelleninhabern.',
+  'percent',
+  'asc',
+  5.00, 10.00, 10.01,
+  8.00, 'yellow', 'stable',
+  'monthly',
+  '2026-03-01 10:00:00+01',
+  true,
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- KRI-005: Cloud SLA Breach Count (RSK-005 Cloud Provider)
+-- Direction: asc (lower is better), Trend: worsening (0 → 1)
+INSERT INTO kri (id, org_id, risk_id, name, description, unit, direction,
+  threshold_green, threshold_yellow, threshold_red,
+  current_value, current_alert_status, trend,
+  measurement_frequency, last_measured_at, alert_enabled,
+  created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  'd0000000-0000-0000-0000-000000000105',
+  'Cloud SLA Breach Count',
+  'Anzahl SLA-Verletzungen durch den primaeren Cloud-/SaaS-Anbieter im Berichtszeitraum. Umfasst Verfügbarkeit, Performance und Support-Reaktionszeiten gemäß Rahmenvertrag.',
+  'count',
+  'asc',
+  0.00, 2.00, 2.01,
+  1.00, 'yellow', 'worsening',
+  'monthly',
+  '2026-03-01 10:00:00+01',
+  true,
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ─────────────────────────────────────────────────────────────────────────────
+-- 2. KRI Measurements (30 entries: 6 per KRI, monthly Oct 2025 - Mar 2026)
+-- ─────────────────────────────────────────────────────────────────────────────
+
+-- ── KRI-001: Mean Time to Patch (improving: 120 → 98 → 88 → 80 → 72 → 65) ──
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000910',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  120.00, '2025-10-01 10:00:00+02', 'manual',
+  'Baseline-Messung. 3 kritische CVEs im Oktober, durchschnittliche Patch-Zeit 120h.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000911',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  98.00, '2025-11-01 10:00:00+01', 'manual',
+  'Verbesserung durch Einfuehrung des automatisierten Patch-Deployments für Testumgebungen.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000912',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  88.00, '2025-12-01 10:00:00+01', 'manual',
+  'Weiterer Rueckgang durch priorisierte Patch-Zyklen und reduzierten Change-Freeze.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000913',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  80.00, '2026-01-01 10:00:00+01', 'manual',
+  'Erstmals unter 96h-Marke. EDR-Rollout beschleunigt Erkennung kritischer Luecken.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000914',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  72.00, '2026-02-01 10:00:00+01', 'manual',
+  'Zielwert 72h erstmals erreicht. Automatisiertes Deployment auf Produktionssystemen live.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000915',
+  'd0000000-0000-0000-0000-000000000901',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  65.00, '2026-03-01 10:00:00+01', 'manual',
+  'Unter Zielwert. Prozessoptimierung zeigt nachhaltige Wirkung.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ── KRI-002: Single-Source Supplier Count (stable: 3 → 3 → 3 → 3 → 3 → 3) ──
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000920',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2025-10-01 10:00:00+02', 'manual',
+  'Baseline: 3 Single-Source-Lieferanten (Firewall-Appliance, SIEM-Lizenz, DC-Hosting).',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000921',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2025-11-01 10:00:00+01', 'manual',
+  'Keine Veränderung. Evaluierung Zweitlieferant Firewall laeuft.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000922',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2025-12-01 10:00:00+01', 'manual',
+  'Unveraendert. Firewall-Zweitlieferant in PoC-Phase.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000923',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2026-01-01 10:00:00+01', 'manual',
+  'Weiterhin 3. PoC für Firewall-Alternative abgeschlossen, Entscheidung steht aus.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000924',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2026-02-01 10:00:00+01', 'manual',
+  'Stabil bei 3. Budget für Zweitlieferant-Qualifizierung in Q2 genehmigt.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000925',
+  'd0000000-0000-0000-0000-000000000902',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2026-03-01 10:00:00+01', 'manual',
+  'Unveraendert. Reduktion auf 2 für Q3 2026 angestrebt.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ── KRI-003: Open GDPR Findings (improving: 4 → 4 → 3 → 3 → 2 → 2) ──
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000930',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  4.00, '2025-10-01 10:00:00+02', 'manual',
+  'Baseline: 4 offene Findings aus externem Datenschutz-Audit (2x Loeschkonzept, 1x DSFA, 1x Auftragsverarbeitung).',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000931',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  4.00, '2025-11-01 10:00:00+01', 'manual',
+  'Weiterhin 4 offen. Loeschkonzept-Findings in Bearbeitung.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000932',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2025-12-01 10:00:00+01', 'manual',
+  'Loeschkonzept-Finding 1 geschlossen (automatisierte Loeschroutinen implementiert).',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000933',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  3.00, '2026-01-01 10:00:00+01', 'manual',
+  'Stabil bei 3. DSFA-Prozess wird ueberarbeitet.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000934',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  2.00, '2026-02-01 10:00:00+01', 'manual',
+  'Auftragsverarbeitungs-Finding geschlossen (AVV-Vorlagen aktualisiert).',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000935',
+  'd0000000-0000-0000-0000-000000000903',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  2.00, '2026-03-01 10:00:00+01', 'manual',
+  'Verbleibend: 1x Loeschkonzept (Altsystem), 1x DSFA-Prozess. Ziel: 0 bis Q3 2026.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ── KRI-004: Key Position Vacancy Rate (stable: 8 → 8 → 12 → 8 → 8 → 8) ──
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000940',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  8.00, '2025-10-01 10:00:00+02', 'manual',
+  'Baseline: 2 von 25 Schlüsselstellen vakant (1x Security Architect, 1x SOC Analyst).',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000941',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  8.00, '2025-11-01 10:00:00+01', 'manual',
+  'Unveraendert. Bewerbungsgespraeche für beide Stellen laufen.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000942',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  12.00, '2025-12-01 10:00:00+01', 'manual',
+  'Anstieg auf 12%: zusaetzliche Kuendigung DPO-Stellvertreter. 3 von 25 Stellen offen.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000943',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  8.00, '2026-01-01 10:00:00+01', 'manual',
+  'Rueckgang auf 8%: SOC Analyst besetzt. Noch 2 offene Stellen.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000944',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  8.00, '2026-02-01 10:00:00+01', 'manual',
+  'Stabil bei 8%. Security Architect und DPO-Stellvertreter weiterhin in Besetzung.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000945',
+  'd0000000-0000-0000-0000-000000000904',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  8.00, '2026-03-01 10:00:00+01', 'manual',
+  'Stabil. Vertragsunterschrift Security Architect erwartet für April.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+-- ── KRI-005: Cloud SLA Breach Count (worsening: 0 → 0 → 0 → 0 → 0 → 1) ──
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000950',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  0.00, '2025-10-01 10:00:00+02', 'manual',
+  'Kein SLA-Verstoss im Oktober. Alle Verfügbarkeitsziele eingehalten.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000951',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  0.00, '2025-11-01 10:00:00+01', 'manual',
+  'Kein SLA-Verstoss. Geplante Wartungsfenster ordnungsgemäß durchgeführt.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000952',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  0.00, '2025-12-01 10:00:00+01', 'manual',
+  'Kein SLA-Verstoss. Minor Incident am 15.12. wurde innerhalb SLA-Fenster behoben.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000953',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  0.00, '2026-01-01 10:00:00+01', 'manual',
+  'Kein SLA-Verstoss. Jahreswechsel ohne Vorkommnisse.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000954',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  0.00, '2026-02-01 10:00:00+01', 'manual',
+  'Kein SLA-Verstoss. Performance-Degradation am 22.02. blieb unter SLA-Schwelle.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+INSERT INTO kri_measurement (id, kri_id, org_id, value, measured_at, source, notes, created_by)
+VALUES (
+  'd0000000-0000-0000-0000-000000000955',
+  'd0000000-0000-0000-0000-000000000905',
+  'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
+  1.00, '2026-03-01 10:00:00+01', 'manual',
+  'Erster SLA-Verstoss: 4h-Ausfall E-Mail-Service am 12.03. ueberschritt 99.9% Verfügbarkeitsziel. Eskalation an Provider-Management.',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
+) ON CONFLICT (id) DO NOTHING;
+
+COMMIT;

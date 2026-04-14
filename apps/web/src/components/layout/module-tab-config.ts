@@ -76,6 +76,7 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.reviews", href: "/isms/reviews", match: "prefix" },
       { labelKey: "nav.tabs.posture", href: "/isms/posture" },
       { labelKey: "nav.tabs.certifications", href: "/isms/certifications", match: "prefix" },
+      { labelKey: "nav.tabs.cap", href: "/isms/cap", match: "prefix" },
     ],
   },
   {
@@ -101,6 +102,7 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "isms-core",
     tabs: [
       { labelKey: "nav.tabs.ismsOverview", href: "/isms", match: "exact" },
+      { labelKey: "nav.tabs.ismsRisks", href: "/isms/risks", match: "prefix" },
       { labelKey: "nav.tabs.assets", href: "/isms/assets", match: "prefix" },
       { labelKey: "nav.tabs.protectionNeeds", href: "/isms/protection-needs" },
     ],

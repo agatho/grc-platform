@@ -1,0 +1,512 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "A" [ref=e5] [cursor=pointer]
+      - button "Navigation durchsuchen..." [ref=e7]:
+        - img [ref=e9]
+      - navigation [ref=e12]:
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - link "Risikoregister" [ref=e17] [cursor=pointer]:
+              - /url: /risks
+              - img [ref=e19]
+          - listitem [ref=e21]:
+            - link "Risikoindikatoren (KRI)" [ref=e22] [cursor=pointer]:
+              - /url: /risks/kris
+              - img [ref=e24]
+          - listitem [ref=e27]:
+            - link "Risikogruppen" [ref=e28] [cursor=pointer]:
+              - /url: /risks/group
+              - img [ref=e30]
+          - listitem [ref=e34]:
+            - link "Risikoappetit" [ref=e35] [cursor=pointer]:
+              - /url: /erm/risk-appetite
+              - img [ref=e37]
+          - listitem [ref=e41]:
+            - link "FAIR-Analyse" [ref=e42] [cursor=pointer]:
+              - /url: /erm/fair
+              - img [ref=e44]
+          - listitem [ref=e46]:
+            - link "RCSA" [ref=e47] [cursor=pointer]:
+              - /url: /rcsa
+              - img [ref=e49]
+          - listitem [ref=e53]:
+            - link "Meine Bewertungen" [ref=e54] [cursor=pointer]:
+              - /url: /rcsa/my-assessments
+              - img [ref=e56]
+          - listitem [ref=e59]:
+            - link "Prädiktive Risikoanalyse" [ref=e60] [cursor=pointer]:
+              - /url: /predictive-risk
+              - img [ref=e62]
+          - listitem [ref=e65]:
+            - link "Heatmap" [ref=e66] [cursor=pointer]:
+              - /url: /controls/heatmap
+              - img [ref=e68]
+          - listitem [ref=e70]:
+            - link "Budgetübersicht" [ref=e71] [cursor=pointer]:
+              - /url: /budget
+              - img [ref=e73]
+          - listitem [ref=e76]:
+            - link "Kostenerfassung" [ref=e77] [cursor=pointer]:
+              - /url: /budget/costs
+              - img [ref=e79]
+          - listitem [ref=e82]:
+            - link "Zeiterfassung" [ref=e83] [cursor=pointer]:
+              - /url: /budget/time
+              - img [ref=e85]
+          - listitem [ref=e87]:
+            - link "ROI-Analyse" [ref=e88] [cursor=pointer]:
+              - /url: /budget/roi
+              - img [ref=e90]
+          - listitem [ref=e92]:
+            - link "Kataloge & Frameworks" [ref=e93] [cursor=pointer]:
+              - /url: /catalogs?module=erm
+              - img [ref=e95]
+        - list [ref=e99]:
+          - listitem [ref=e100]:
+            - link "ISMS-Übersicht" [ref=e101] [cursor=pointer]:
+              - /url: /isms
+              - img [ref=e103]
+          - listitem [ref=e105]:
+            - link "Informationswerte" [ref=e106] [cursor=pointer]:
+              - /url: /isms/assets
+              - img [ref=e108]
+          - listitem [ref=e112]:
+            - link "Schutzbedarf" [ref=e113] [cursor=pointer]:
+              - /url: /isms/protection-needs
+              - img [ref=e115]
+          - listitem [ref=e118]:
+            - link "Bedrohungen" [ref=e119] [cursor=pointer]:
+              - /url: /isms/threats
+              - img [ref=e121]
+          - listitem [ref=e123]:
+            - link "Schwachstellen" [ref=e124] [cursor=pointer]:
+              - /url: /isms/vulnerabilities
+              - img [ref=e126]
+          - listitem [ref=e128]:
+            - link "Sicherheitsvorfälle" [ref=e129] [cursor=pointer]:
+              - /url: /isms/incidents
+              - img [ref=e131]
+          - listitem [ref=e133]:
+            - link "ISMS-Bewertungen" [ref=e134] [cursor=pointer]:
+              - /url: /isms/assessments
+              - img [ref=e136]
+          - listitem [ref=e140]:
+            - link "Reifegradmodell" [ref=e141] [cursor=pointer]:
+              - /url: /isms/maturity
+              - img [ref=e143]
+          - listitem [ref=e145]:
+            - link "Erklärung zur Anwendbarkeit" [ref=e146] [cursor=pointer]:
+              - /url: /isms/soa
+              - img [ref=e148]
+          - listitem [ref=e151]:
+            - link "Managementbewertungen" [ref=e152] [cursor=pointer]:
+              - /url: /isms/reviews
+              - img [ref=e154]
+          - listitem [ref=e158]:
+            - link "Sicherheitslage" [ref=e159] [cursor=pointer]:
+              - /url: /isms/posture
+              - img [ref=e161]
+          - listitem [ref=e163]:
+            - link "Zertifizierungen" [ref=e164] [cursor=pointer]:
+              - /url: /isms/certifications
+              - img [ref=e166]
+          - listitem [ref=e169]:
+            - link "CVE-Tracking" [ref=e170] [cursor=pointer]:
+              - /url: /isms/cve
+              - img [ref=e172]
+          - listitem [ref=e174]:
+            - link "Incident-Playbooks" [ref=e175] [cursor=pointer]:
+              - /url: /isms/playbooks
+              - img [ref=e177]
+          - listitem [ref=e180]:
+            - link "NIS2-Compliance" [ref=e181] [cursor=pointer]:
+              - /url: /isms/nis2
+              - img [ref=e183]
+          - listitem [ref=e187]:
+            - link "DORA" [ref=e188] [cursor=pointer]:
+              - /url: /dora
+              - img [ref=e190]
+          - listitem [ref=e192]:
+            - link "KI-Verordnung" [ref=e193] [cursor=pointer]:
+              - /url: /ai-act
+              - img [ref=e195]
+          - listitem [ref=e198]:
+            - link "Kataloge & Frameworks" [ref=e199] [cursor=pointer]:
+              - /url: /catalogs?module=isms
+              - img [ref=e201]
+        - list [ref=e205]:
+          - listitem [ref=e206]:
+            - link "Kontrollen" [ref=e207] [cursor=pointer]:
+              - /url: /controls
+              - img [ref=e209]
+          - listitem [ref=e212]:
+            - link "Testkampagnen" [ref=e213] [cursor=pointer]:
+              - /url: /controls/campaigns
+              - img [ref=e215]
+          - listitem [ref=e219]:
+            - link "Kontrollfeststellungen" [ref=e220] [cursor=pointer]:
+              - /url: /controls/findings
+              - img [ref=e222]
+          - listitem [ref=e224]:
+            - link "Risiko-Kontroll-Matrix" [ref=e225] [cursor=pointer]:
+              - /url: /controls/rcm
+              - img [ref=e227]
+          - listitem [ref=e232]:
+            - link "Nachweise" [ref=e233] [cursor=pointer]:
+              - /url: /controls/evidence
+              - img [ref=e235]
+          - listitem [ref=e238]:
+            - link "Audit-Management" [ref=e239] [cursor=pointer]:
+              - /url: /audit
+              - img [ref=e241]
+          - listitem [ref=e245]:
+            - link "Audit-Universum" [ref=e246] [cursor=pointer]:
+              - /url: /audit/universe
+              - img [ref=e248]
+          - listitem [ref=e251]:
+            - link "Auditpläne" [ref=e252] [cursor=pointer]:
+              - /url: /audit/plans
+              - img [ref=e254]
+          - listitem [ref=e256]:
+            - link "Audit-Durchführungen" [ref=e257] [cursor=pointer]:
+              - /url: /audit/executions
+              - img [ref=e259]
+          - listitem [ref=e262]:
+            - link "Audit-Feststellungen" [ref=e263] [cursor=pointer]:
+              - /url: /controls/findings
+              - img [ref=e265]
+          - listitem [ref=e267]:
+            - link "Kataloge & Frameworks" [ref=e268] [cursor=pointer]:
+              - /url: /catalogs?module=ics,audit
+              - img [ref=e270]
+        - list [ref=e274]:
+          - listitem [ref=e275]:
+            - link "BCMS-Übersicht" [ref=e276] [cursor=pointer]:
+              - /url: /bcms
+              - img [ref=e278]
+          - listitem [ref=e285]:
+            - link "Business-Impact-Analyse" [ref=e286] [cursor=pointer]:
+              - /url: /bcms/bia
+              - img [ref=e288]
+          - listitem [ref=e290]:
+            - link "Kontinuitätspläne" [ref=e291] [cursor=pointer]:
+              - /url: /bcms/plans
+              - img [ref=e293]
+          - listitem [ref=e296]:
+            - link "Krisenszenarien" [ref=e297] [cursor=pointer]:
+              - /url: /bcms/crisis
+              - img [ref=e299]
+          - listitem [ref=e301]:
+            - link "Kontinuitätsstrategien" [ref=e302] [cursor=pointer]:
+              - /url: /bcms/strategies
+              - img [ref=e304]
+          - listitem [ref=e308]:
+            - link "BC-Übungen" [ref=e309] [cursor=pointer]:
+              - /url: /bcms/exercises
+              - img [ref=e311]
+          - listitem [ref=e314]:
+            - link "Resilienz-Dashboard" [ref=e315] [cursor=pointer]:
+              - /url: /bcms/resilience
+              - img [ref=e317]
+          - listitem [ref=e319]:
+            - link "Kataloge & Frameworks" [ref=e320] [cursor=pointer]:
+              - /url: /catalogs?module=bcms
+              - img [ref=e322]
+        - list [ref=e326]:
+          - listitem [ref=e327]:
+            - link "Datenschutz-Übersicht" [ref=e328] [cursor=pointer]:
+              - /url: /dpms
+              - img [ref=e330]
+          - listitem [ref=e333]:
+            - link "Verarbeitungsverzeichnis" [ref=e334] [cursor=pointer]:
+              - /url: /dpms/ropa
+              - img [ref=e336]
+          - listitem [ref=e339]:
+            - link "Datenschutz-Folgenabschätzung" [ref=e340] [cursor=pointer]:
+              - /url: /dpms/dpia
+              - img [ref=e342]
+          - listitem [ref=e346]:
+            - link "Betroffenenanfragen" [ref=e347] [cursor=pointer]:
+              - /url: /dpms/dsr
+              - img [ref=e349]
+          - listitem [ref=e354]:
+            - link "Datenpannen" [ref=e355] [cursor=pointer]:
+              - /url: /dpms/breaches
+              - img [ref=e357]
+          - listitem [ref=e359]:
+            - link "Transfer-Folgenabschätzung" [ref=e360] [cursor=pointer]:
+              - /url: /dpms/tia
+              - img [ref=e362]
+          - listitem [ref=e365]:
+            - link "Einwilligungsverwaltung" [ref=e366] [cursor=pointer]:
+              - /url: /dpms/consent
+              - img [ref=e368]
+          - listitem [ref=e371]:
+            - link "Aufbewahrungsrichtlinien" [ref=e372] [cursor=pointer]:
+              - /url: /dpms/retention
+              - img [ref=e374]
+          - listitem [ref=e376]:
+            - link "Kataloge & Frameworks" [ref=e377] [cursor=pointer]:
+              - /url: /catalogs?module=dpms
+              - img [ref=e379]
+        - list [ref=e383]:
+          - listitem [ref=e384]:
+            - link "TPRM-Übersicht" [ref=e385] [cursor=pointer]:
+              - /url: /tprm
+              - img [ref=e387]
+          - listitem [ref=e392]:
+            - link "Lieferanten" [ref=e393] [cursor=pointer]:
+              - /url: /tprm/vendors
+              - img [ref=e395]
+          - listitem [ref=e399]:
+            - link "LkSG-Bewertung" [ref=e400] [cursor=pointer]:
+              - /url: /tprm/lksg
+              - img [ref=e402]
+          - listitem [ref=e406]:
+            - link "Lieferanten-Scorecards" [ref=e407] [cursor=pointer]:
+              - /url: /tprm/scorecards
+              - img [ref=e409]
+          - listitem [ref=e411]:
+            - link "Konzentrationsrisiko" [ref=e412] [cursor=pointer]:
+              - /url: /tprm/concentration
+              - img [ref=e414]
+          - listitem [ref=e418]:
+            - link "Vertragsübersicht" [ref=e419] [cursor=pointer]:
+              - /url: /contracts
+              - img [ref=e421]
+          - listitem [ref=e425]:
+            - link "Vertragsliste" [ref=e426] [cursor=pointer]:
+              - /url: /contracts/list
+              - img [ref=e428]
+          - listitem [ref=e431]:
+            - link "Pflichten" [ref=e432] [cursor=pointer]:
+              - /url: /contracts/obligations
+              - img [ref=e434]
+          - listitem [ref=e437]:
+            - link "SLA-Monitoring" [ref=e438] [cursor=pointer]:
+              - /url: /contracts/sla
+              - img [ref=e440]
+          - listitem [ref=e444]:
+            - link "Kataloge & Frameworks" [ref=e445] [cursor=pointer]:
+              - /url: /catalogs?module=tprm,contract
+              - img [ref=e447]
+        - list [ref=e451]:
+          - listitem [ref=e452]:
+            - link "Prozessregister" [ref=e453] [cursor=pointer]:
+              - /url: /processes
+              - img [ref=e455]
+          - listitem [ref=e459]:
+            - link "Prozess-Governance" [ref=e460] [cursor=pointer]:
+              - /url: /processes/governance
+              - img [ref=e462]
+          - listitem [ref=e464]:
+            - link "Process Mining" [ref=e465] [cursor=pointer]:
+              - /url: /bpm/mining
+              - img [ref=e467]
+          - listitem [ref=e470]:
+            - link "Prozess-KPIs" [ref=e471] [cursor=pointer]:
+              - /url: /bpm/kpis
+              - img [ref=e473]
+          - listitem [ref=e475]:
+            - link "BPM-Reifegrad" [ref=e476] [cursor=pointer]:
+              - /url: /bpm/maturity
+              - img [ref=e478]
+          - listitem [ref=e481]:
+            - link "Enterprise-Architektur" [ref=e482] [cursor=pointer]:
+              - /url: /eam
+              - img [ref=e484]
+          - listitem [ref=e487]:
+            - link "Architekturdiagramme" [ref=e488] [cursor=pointer]:
+              - /url: /eam/diagram
+              - img [ref=e490]
+          - listitem [ref=e495]:
+            - link "Capability Map" [ref=e496] [cursor=pointer]:
+              - /url: /eam/capabilities
+              - img [ref=e498]
+          - listitem [ref=e502]:
+            - link "Anwendungsportfolio" [ref=e503] [cursor=pointer]:
+              - /url: /eam/applications
+              - img [ref=e505]
+          - listitem [ref=e509]:
+            - link "Technologie-Radar" [ref=e510] [cursor=pointer]:
+              - /url: /eam/tech-radar
+              - img [ref=e512]
+          - listitem [ref=e516]:
+            - link "Datenflüsse" [ref=e517] [cursor=pointer]:
+              - /url: /eam/data-flows
+              - img [ref=e519]
+          - listitem [ref=e524]:
+            - link "EA-Governance" [ref=e525] [cursor=pointer]:
+              - /url: /eam/governance
+              - img [ref=e527]
+          - listitem [ref=e529]:
+            - link "Dokumente" [ref=e530] [cursor=pointer]:
+              - /url: /documents
+              - img [ref=e532]
+          - listitem [ref=e535]:
+            - link "Compliance-Dokumente" [ref=e536] [cursor=pointer]:
+              - /url: /documents/compliance
+              - img [ref=e538]
+          - listitem [ref=e541]:
+            - link "Kataloge & Frameworks" [ref=e542] [cursor=pointer]:
+              - /url: /catalogs?module=bpm
+              - img [ref=e544]
+        - list [ref=e548]:
+          - listitem [ref=e549]:
+            - link "ESG-Übersicht" [ref=e550] [cursor=pointer]:
+              - /url: /esg
+              - img [ref=e552]
+          - listitem [ref=e555]:
+            - link "Wesentlichkeitsanalyse" [ref=e556] [cursor=pointer]:
+              - /url: /esg/materiality
+              - img [ref=e558]
+          - listitem [ref=e562]:
+            - link "ESG-Datenpunkte" [ref=e563] [cursor=pointer]:
+              - /url: /esg/datapoints
+              - img [ref=e565]
+          - listitem [ref=e569]:
+            - link "ESG-Kennzahlen" [ref=e570] [cursor=pointer]:
+              - /url: /esg/metrics
+              - img [ref=e572]
+          - listitem [ref=e574]:
+            - link "Emissionen" [ref=e575] [cursor=pointer]:
+              - /url: /esg/emissions
+              - img [ref=e577]
+          - listitem [ref=e580]:
+            - link "ESG-Ziele" [ref=e581] [cursor=pointer]:
+              - /url: /esg/targets
+              - img [ref=e583]
+          - listitem [ref=e587]:
+            - link "ESG-Bericht" [ref=e588] [cursor=pointer]:
+              - /url: /esg/report
+              - img [ref=e590]
+          - listitem [ref=e593]:
+            - link "Tax CMS" [ref=e594] [cursor=pointer]:
+              - /url: /tax-cms
+              - img [ref=e596]
+          - listitem [ref=e598]:
+            - link "Kataloge & Frameworks" [ref=e599] [cursor=pointer]:
+              - /url: /catalogs?module=esg
+              - img [ref=e601]
+        - list [ref=e605]:
+          - listitem [ref=e606]:
+            - link "Hinweisgeberfälle" [ref=e607] [cursor=pointer]:
+              - /url: /whistleblowing/cases
+              - img [ref=e609]
+          - listitem [ref=e612]:
+            - link "Hinweisgeber-Statistiken" [ref=e613] [cursor=pointer]:
+              - /url: /whistleblowing/statistics
+              - img [ref=e615]
+        - list [ref=e619]:
+          - listitem [ref=e620]:
+            - link "Dashboard" [ref=e621] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e623]
+          - listitem [ref=e628]:
+            - link "Kalender" [ref=e629] [cursor=pointer]:
+              - /url: /calendar
+              - img [ref=e631]
+          - listitem [ref=e633]:
+            - link "Berichte" [ref=e634] [cursor=pointer]:
+              - /url: /reports
+              - img [ref=e636]
+          - listitem [ref=e638]:
+            - link "Copilot" [ref=e639] [cursor=pointer]:
+              - /url: /copilot
+              - img [ref=e641]
+          - listitem [ref=e644]:
+            - link "Marktplatz" [ref=e645] [cursor=pointer]:
+              - /url: /marketplace
+              - img [ref=e647]
+          - listitem [ref=e651]:
+            - link "Erweiterungen" [ref=e652] [cursor=pointer]:
+              - /url: /extensions
+              - img [ref=e654]
+          - listitem [ref=e657]:
+            - link "Akademie" [ref=e658] [cursor=pointer]:
+              - /url: /academy
+              - img [ref=e660]
+          - listitem [ref=e663]:
+            - link "Import / Export" [ref=e664] [cursor=pointer]:
+              - /url: /import
+              - img [ref=e666]
+          - listitem [ref=e669]:
+            - link "Executive-Ansicht" [ref=e670] [cursor=pointer]:
+              - /url: /executive
+              - img [ref=e672]
+          - listitem [ref=e675]:
+            - link "Wissensgraph" [ref=e676] [cursor=pointer]:
+              - /url: /graph
+              - img [ref=e678]
+          - listitem [ref=e683]:
+            - link "Globale Suche" [ref=e684] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e686]
+          - listitem [ref=e689]:
+            - link "Kataloge & Frameworks" [ref=e690] [cursor=pointer]:
+              - /url: /catalogs
+              - img [ref=e692]
+          - listitem [ref=e694]:
+            - link "Framework-Abdeckung" [ref=e695] [cursor=pointer]:
+              - /url: /catalogs/mappings
+              - img [ref=e697]
+          - listitem [ref=e702]:
+            - link "Regulatorische Compliance" [ref=e703] [cursor=pointer]:
+              - /url: /compliance/regulatory
+              - img [ref=e705]
+          - listitem [ref=e709]:
+            - link "Compliance-Kultur" [ref=e710] [cursor=pointer]:
+              - /url: /compliance/culture
+              - img [ref=e712]
+          - listitem [ref=e717]:
+            - link "Assurance" [ref=e718] [cursor=pointer]:
+              - /url: /assurance
+              - img [ref=e720]
+          - listitem [ref=e723]:
+            - link "Einstellungen" [ref=e724] [cursor=pointer]:
+              - /url: /settings
+              - img [ref=e726]
+          - listitem [ref=e729]:
+            - link "Organisationen" [ref=e730] [cursor=pointer]:
+              - /url: /organizations
+              - img [ref=e732]
+          - listitem [ref=e736]:
+            - link "Benutzerverwaltung" [ref=e737] [cursor=pointer]:
+              - /url: /users
+              - img [ref=e739]
+          - listitem [ref=e744]:
+            - link "Modulkonfiguration" [ref=e745] [cursor=pointer]:
+              - /url: /admin/modules
+              - img [ref=e747]
+          - listitem [ref=e750]:
+            - link "Änderungshistorie" [ref=e751] [cursor=pointer]:
+              - /url: /audit-log
+              - img [ref=e753]
+          - listitem [ref=e757]:
+            - link "Zugriffsprotokoll" [ref=e758] [cursor=pointer]:
+              - /url: /access-log
+              - img [ref=e760]
+      - generic [ref=e763]:
+        - link "Einstellungen" [ref=e764] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e766]
+        - generic [ref=e770]: P
+    - generic [ref=e771]:
+      - banner [ref=e772]:
+        - generic [ref=e774]:
+          - img [ref=e775]
+          - generic [ref=e779]: Organisation
+        - generic [ref=e780]:
+          - button "Benachrichtigungen" [ref=e782]:
+            - img [ref=e783]
+          - button "User menu" [ref=e787]:
+            - generic [ref=e788]: PA
+      - main [ref=e789]
+  - button "Open Next.js Dev Tools" [ref=e797] [cursor=pointer]:
+    - img [ref=e798]
+  - alert [ref=e801]
+```
