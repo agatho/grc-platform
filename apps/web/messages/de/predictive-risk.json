@@ -1,5 +1,5 @@
 {
-  "title": "Praediktive Risikointelligenz",
+  "title": "Prädiktive Risikointelligenz",
   "description": "ML-basierte Risikovorhersagen, Anomalieerkennung und Fruehwarnsystem",
   "models": "Modelle",
   "radar": "Risikoradar",
@@ -28,11 +28,11 @@
     "resolve": "Beheben"
   },
   "radar": {
-    "title": "Praediktiver Risikoradar",
-    "description": "Visuelle Uebersicht der vorhergesagten Risikoentwicklungen ueber alle Entitaeten",
+    "title": "Prädiktiver Risikoradar",
+    "description": "Visuelle Übersicht der vorhergesagten Risikoentwicklungen über alle Entitäten",
     "current": "Aktuell",
     "predicted": "Vorhergesagt",
-    "noData": "Keine Vorhersagedaten verfuegbar. Erstellen und trainieren Sie ein Modell, um Vorhersagen zu generieren."
+    "noData": "Keine Vorhersagedaten verfügbar. Erstellen und trainieren Sie ein Modell, um Vorhersagen zu generieren."
   },
   "predictions": {
     "title": "Vorhersagen",
@@ -42,7 +42,7 @@
   },
   "correlations": {
     "title": "Korrelationsanalyse",
-    "strength": "Korrelationsstaerke"
+    "strength": "Korrelationsstärke"
   },
   "emptyState": {
     "title": "Noch keine Vorhersagemodelle",

@@ -1,26 +1,26 @@
 {
   "soaGap": {
     "title": "KI Gap-Analyse",
-    "subtitle": "KI-gestuetzte Analyse Ihrer Anwendbarkeitserklaerung gegen Framework-Anforderungen",
+    "subtitle": "KI-gestützte Analyse Ihrer Anwendbarkeitserklärung gegen Framework-Anforderungen",
     "startAnalysis": "Gap-Analyse starten",
     "analyzing": "Kontrollen werden gegen Framework-Anforderungen analysiert...",
     "noResults": "Noch keine Gap-Analyse-Ergebnisse. Klicken Sie auf 'Gap-Analyse starten'.",
     "rateLimited": "Bitte warten Sie 5 Minuten zwischen den Analysen.",
-    "aiNotice": "KI-Vorschlaege basieren auf Textvergleich. Bitte ueberpruefen Sie jeden Vorschlag manuell vor der Annahme.",
+    "aiNotice": "KI-Vorschläge basieren auf Textvergleich. Bitte überprüfen Sie jeden Vorschlag manuell vor der Annahme.",
     "table": {
       "controlRef": "Kontrollreferenz",
       "controlTitle": "Kontrolle",
       "gapType": "Lueckentyp",
       "confidence": "Konfidenz",
-      "reasoning": "KI-Begruendung",
-      "priority": "Prioritaet",
+      "reasoning": "KI-Begründung",
+      "priority": "Priorität",
       "status": "Status",
       "actions": "Bewertung"
     },
     "gapType": {
       "not_covered": "Nicht abgedeckt",
       "partial": "Teilweise",
-      "full": "Vollstaendig"
+      "full": "Vollständig"
     },
     "priority": {
       "critical": "Kritisch",
@@ -47,7 +47,7 @@
       "totalGaps": "Gesamt-Luecken",
       "notCovered": "Nicht abgedeckt",
       "partial": "Teilweise",
-      "full": "Vollstaendig"
+      "full": "Vollständig"
     }
   },
   "roadmap": {
@@ -57,10 +57,10 @@
     "generating": "Reifegraddaten werden analysiert und Roadmap wird erstellt...",
     "noResults": "Noch keine Roadmap generiert. Klicken Sie auf 'Roadmap generieren'.",
     "rateLimited": "Bitte warten Sie 5 Minuten zwischen den Generierungen.",
-    "aiNotice": "Diese Roadmap wurde KI-generiert. Ueberpruefen und passen Sie die Prioritaeten an Ihren organisatorischen Kontext an.",
+    "aiNotice": "Diese Roadmap wurde KI-generiert. Überprüfen und passen Sie die Prioritäten an Ihren organisatorischen Kontext an.",
     "exportPdf": "Als PDF exportieren",
     "quickWins": "Quick Wins",
-    "totalActions": "Massnahmen gesamt",
+    "totalActions": "Maßnahmen gesamt",
     "timeline": "Zeitstrahl",
     "list": "Listenansicht",
     "card": {
@@ -69,10 +69,10 @@
       "targetLevel": "Ziel",
       "effort": "Aufwand",
       "effortFte": "VZAe-Monate",
-      "priority": "Prioritaet",
+      "priority": "Priorität",
       "quarter": "Quartal",
       "quickWin": "Quick Win",
-      "dependencies": "Abhaengigkeiten"
+      "dependencies": "Abhängigkeiten"
     },
     "effort": {
       "S": "Klein (<1 VZAe-Monat)",

@@ -1,20 +1,20 @@
 {
   "title": "Workflow-Automatisierung",
-  "subtitle": "WENN/DANN-Regeln fuer automatische GRC-Aktionen definieren und verwalten",
+  "subtitle": "WENN/DANN-Regeln für automatische GRC-Aktionen definieren und verwalten",
   "createRule": "Neue Regel",
   "fromTemplate": "Aus Vorlage",
-  "executions": "Ausfuehrungen",
+  "executions": "Ausführungen",
   "errors": "Fehler",
-  "viewExecutionLog": "Ausfuehrungsprotokoll anzeigen",
+  "viewExecutionLog": "Ausführungsprotokoll anzeigen",
 
   "dashboard": {
     "activeRules": "Aktive Regeln",
     "total": "gesamt",
-    "executions24h": "Ausfuehrungen (24h)",
+    "executions24h": "Ausführungen (24h)",
     "last24h": "Letzte 24 Stunden",
     "successRate": "Erfolgsrate",
     "errorRate": "Fehlerrate",
-    "topRules": "Top-Regeln nach Ausfuehrungen"
+    "topRules": "Top-Regeln nach Ausführungen"
   },
 
   "ruleList": {
@@ -23,7 +23,7 @@
   },
 
   "triggerTypes": {
-    "entity_change": "Entitaetsaenderung",
+    "entity_change": "Entitätsänderung",
     "deadline_expired": "Frist abgelaufen",
     "score_threshold": "Score-Schwellenwert",
     "periodic": "Periodisch"
@@ -33,9 +33,9 @@
     "create_task": "Aufgabe erstellen",
     "send_notification": "Benachrichtigung",
     "send_email": "E-Mail senden",
-    "change_status": "Status aendern",
+    "change_status": "Status ändern",
     "escalate": "Eskalation",
-    "trigger_webhook": "Webhook ausloesen"
+    "trigger_webhook": "Webhook auslösen"
   },
 
   "categories": {
@@ -51,21 +51,21 @@
 
   "triggerConfig": {
     "title": "Trigger-Konfiguration",
-    "entityType": "Entitaetstyp",
-    "selectEntity": "Entitaetstyp waehlen...",
+    "entityType": "Entitätstyp",
+    "selectEntity": "Entitätstyp wählen...",
     "events": "Ereignisse",
     "field": "Feld (optional)",
     "fieldPlaceholder": "z.B. residual_score",
     "schedule": "Zeitplan",
-    "selectSchedule": "Zeitplan waehlen...",
-    "daily": "Taeglich",
-    "weekly": "Woechentlich",
+    "selectSchedule": "Zeitplan wählen...",
+    "daily": "Täglich",
+    "weekly": "Wöchentlich",
     "monthly": "Monatlich"
   },
 
   "conditionBuilder": {
     "title": "Bedingungen (WENN)",
-    "selectField": "Feld waehlen...",
+    "selectField": "Feld wählen...",
     "value": "Wert",
     "addCondition": "Bedingung",
     "addGroup": "Gruppe (UND/ODER)",
@@ -75,8 +75,8 @@
   "actionConfig": {
     "title": "Aktionen (DANN)",
     "addAction": "Aktion hinzufuegen:",
-    "taskTitle": "Aufgabentitel (z.B. Risiko pruefen: {entity.title})",
-    "selectRole": "Rolle waehlen...",
+    "taskTitle": "Aufgabentitel (z.B. Risiko prüfen: {entity.title})",
+    "selectRole": "Rolle wählen...",
     "deadlineDays": "Tage",
     "message": "Nachricht",
     "templateKey": "E-Mail-Template-Key",
@@ -94,37 +94,37 @@
     "ruleDescription": "Beschreibung (optional)...",
     "advancedSettings": "Erweiterte Einstellungen",
     "cooldownMinutes": "Cooldown (Minuten)",
-    "maxExecutionsPerHour": "Max. Ausfuehrungen pro Stunde",
+    "maxExecutionsPerHour": "Max. Ausführungen pro Stunde",
     "save": "Speichern",
     "saveAndActivate": "Speichern & Aktivieren",
     "dryRun": "Testen (Dry Run)",
     "activate": "Aktivieren",
     "deactivate": "Deaktivieren",
-    "delete": "Loeschen",
-    "confirmDelete": "Moechten Sie diese Regel wirklich loeschen?",
+    "delete": "Löschen",
+    "confirmDelete": "Möchten Sie diese Regel wirklich löschen?",
     "saveFailed": "Speichern fehlgeschlagen",
     "testResult": "Testergebnis",
-    "conditionsMatched": "Alle Bedingungen erfuellt - Aktionen wuerden ausgefuehrt.",
-    "conditionsNotMatched": "Bedingungen nicht erfuellt - keine Aktionen.",
-    "wouldExecute": "Folgende Aktionen wuerden ausgefuehrt"
+    "conditionsMatched": "Alle Bedingungen erfüllt - Aktionen würden ausgeführt.",
+    "conditionsNotMatched": "Bedingungen nicht erfüllt - keine Aktionen.",
+    "wouldExecute": "Folgende Aktionen würden ausgeführt"
   },
 
   "executionLog": {
-    "title": "Ausfuehrungsprotokoll",
-    "totalExecutions": "Ausfuehrungen gesamt",
+    "title": "Ausführungsprotokoll",
+    "totalExecutions": "Ausführungen gesamt",
     "allStatuses": "Alle Status",
-    "empty": "Noch keine Ausfuehrungen vorhanden.",
-    "conditionsMatched": "Bedingungen erfuellt",
-    "entityId": "Entitaets-ID",
-    "actionsExecuted": "Ausgefuehrte Aktionen",
-    "prev": "Zurueck",
+    "empty": "Noch keine Ausführungen vorhanden.",
+    "conditionsMatched": "Bedingungen erfüllt",
+    "entityId": "Entitäts-ID",
+    "actionsExecuted": "Ausgeführte Aktionen",
+    "prev": "Zurück",
     "next": "Weiter",
     "statuses": {
       "success": "Erfolgreich",
       "partial_failure": "Teilweise fehlgeschlagen",
       "failure": "Fehlgeschlagen",
-      "skipped_cooldown": "Uebersprungen (Cooldown)",
-      "skipped_ratelimit": "Uebersprungen (Rate-Limit)",
+      "skipped_cooldown": "Übersprungen (Cooldown)",
+      "skipped_ratelimit": "Übersprungen (Rate-Limit)",
       "dry_run": "Dry Run"
     }
   },

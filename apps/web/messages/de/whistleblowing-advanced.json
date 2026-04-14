@@ -29,7 +29,7 @@
     "case": "Schutzfall",
     "status": { "active": "Aktive Überwachung", "monitoring": "Überwachung", "concluded": "Abgeschlossen" },
     "event": "Beschäftigungsereignis",
-    "eventType": { "role_change": "Rollenwechsel", "salary_change": "Gehaltsänderung", "performance_review": "Leistungsbeurteilung", "disciplinary": "Disziplinarmassnahme", "assignment_change": "Aufgabenänderung", "location_change": "Standortwechsel", "termination": "Kündigung" },
+    "eventType": { "role_change": "Rollenwechsel", "salary_change": "Gehaltsänderung", "performance_review": "Leistungsbeurteilung", "disciplinary": "Disziplinarmaßnahme", "assignment_change": "Aufgabenänderung", "location_change": "Standortwechsel", "termination": "Kündigung" },
     "flag": { "normal": "Normal", "suspicious": "Verdächtig", "critical": "Kritisch" },
     "retaliationAlert": "Vergeltungsalarm",
     "dashboard": "Schutz-Dashboard"

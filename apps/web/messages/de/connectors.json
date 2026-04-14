@@ -1,13 +1,13 @@
 {
   "title": "Evidence-Konnektoren",
-  "subtitle": "Automatische Evidenz-Sammlung aus Cloud-, Identitaets-, DevOps- und IT-Systemen",
+  "subtitle": "Automatische Evidenz-Sammlung aus Cloud-, Identitäts-, DevOps- und IT-Systemen",
   "addConnector": "Konnektor hinzufuegen",
 
   "dashboard": {
     "totalConnectors": "Konnektoren gesamt",
     "active": "aktiv",
     "healthy": "Gesund",
-    "degraded": "beeintraechtigt",
+    "degraded": "beeinträchtigt",
     "testsRun24h": "Tests (24h)",
     "last24h": "Letzte 24 Stunden",
     "passRate": "Bestehensrate",
@@ -18,12 +18,12 @@
   "nav": {
     "cloud": "Cloud-Infrastruktur",
     "cloudDesc": "AWS, Azure, GCP Sicherheitstests",
-    "identity": "Identitaet & SaaS",
+    "identity": "Identität & SaaS",
     "identityDesc": "Entra ID, Google Workspace, M365",
     "devops": "DevOps & IT",
-    "devopsDesc": "Git, Issue-Tracking, Endgeraete",
+    "devopsDesc": "Git, Issue-Tracking, Endgeräte",
     "frameworks": "Framework-Mappings",
-    "frameworksDesc": "Framework-uebergreifende Compliance-Abdeckung"
+    "frameworksDesc": "Framework-übergreifende Compliance-Abdeckung"
   },
 
   "connectorList": {
@@ -41,7 +41,7 @@
 
   "cloud": {
     "title": "Cloud-Infrastruktur-Konnektoren",
-    "subtitle": "Automatische Sicherheitstests fuer AWS, Azure und GCP",
+    "subtitle": "Automatische Sicherheitstests für AWS, Azure und GCP",
     "connectors": "Konnektoren",
     "criticalFindings": "kritische Befunde",
     "notConfigured": "Nicht konfiguriert",
@@ -50,8 +50,8 @@
   },
 
   "identity": {
-    "title": "Identitaets- & SaaS-Konnektoren",
-    "subtitle": "Identity-Provider, SaaS-Plattformen und HR-Systeme ueberwachen",
+    "title": "Identitäts- & SaaS-Konnektoren",
+    "subtitle": "Identity-Provider, SaaS-Plattformen und HR-Systeme überwachen",
     "totalUsers": "Benutzer gesamt",
     "mfaCompliance": "MFA-Compliance",
     "staleAccounts": "Inaktive Konten",
@@ -62,46 +62,46 @@
 
   "devops": {
     "title": "DevOps & IT-Konnektoren",
-    "subtitle": "Git-Sicherheit, Issue-Tracking-SLA, Endgeraete- und Netzwerk-Compliance",
+    "subtitle": "Git-Sicherheit, Issue-Tracking-SLA, Endgeräte- und Netzwerk-Compliance",
     "repos": "Repositories",
     "branchProtection": "Branch-Schutz",
     "codeReview": "Code-Review-Abdeckung",
     "criticalFindings": "Kritische Befunde",
-    "endpointCompliance": "Endgeraete-Compliance",
+    "endpointCompliance": "Endgeräte-Compliance",
     "firewallCompliance": "Firewall-Compliance"
   },
 
   "frameworks": {
     "title": "Cross-Framework Mapping Engine",
-    "subtitle": "Einmal bewerten, ueberall compliant — Abdeckung ueber 10+ Frameworks",
+    "subtitle": "Einmal bewerten, überall compliant — Abdeckung über 10+ Frameworks",
     "runGapAnalysis": "Lueckenanalyse",
     "heatmap": "Abdeckungs-Heatmap",
     "overallCoverage": "Gesamtabdeckung",
-    "acrossFrameworks": "ueber {count} Frameworks",
+    "acrossFrameworks": "über {count} Frameworks",
     "frameworksTracked": "Frameworks erfasst",
     "lastAnalysis": "Letzte Analyse",
-    "noAnalysis": "Noch keine Analyse durchgefuehrt",
+    "noAnalysis": "Noch keine Analyse durchgeführt",
     "coverageByFramework": "Abdeckung je Framework",
-    "noData": "Noch keine Framework-Abdeckungsdaten. Fuehren Sie eine Lueckenanalyse durch.",
+    "noData": "Noch keine Framework-Abdeckungsdaten. Führen Sie eine Lueckenanalyse durch.",
     "gaps": "Luecken",
     "topGaps": "Groesste Compliance-Luecken"
   },
 
   "heatmap": {
     "title": "Abdeckungs-Heatmap",
-    "subtitle": "Visuelle Uebersicht der Compliance-Abdeckung ueber Frameworks und Kategorien",
+    "subtitle": "Visuelle Übersicht der Compliance-Abdeckung über Frameworks und Kategorien",
     "framework": "Framework",
     "overall": "Gesamt",
-    "noData": "Keine Heatmap-Daten verfuegbar. Fuehren Sie zuerst Lueckenanalysen durch.",
+    "noData": "Keine Heatmap-Daten verfügbar. Führen Sie zuerst Lueckenanalysen durch.",
     "legend": "Legende"
   },
 
   "gapAnalysis": {
     "title": "Lueckenanalyse",
-    "subtitle": "Compliance-Luecken je Framework identifizieren und Massnahmen priorisieren",
-    "runForFramework": "Analyse fuer Framework starten",
+    "subtitle": "Compliance-Luecken je Framework identifizieren und Maßnahmen priorisieren",
+    "runForFramework": "Analyse für Framework starten",
     "results": "Analyseergebnisse",
-    "noResults": "Noch keine Lueckenanalysen durchgefuehrt. Waehlen Sie oben ein Framework.",
+    "noResults": "Noch keine Lueckenanalysen durchgeführt. Wählen Sie oben ein Framework.",
     "controls": "Kontrollen",
     "covered": "abgedeckt",
     "missing": "fehlend"

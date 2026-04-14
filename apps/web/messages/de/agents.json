@@ -8,7 +8,7 @@
   "activate": "Aktivieren",
   "deactivate": "Deaktivieren",
   "configure": "Konfigurieren",
-  "runNow": "Jetzt ausfuehren",
+  "runNow": "Jetzt ausführen",
   "status": {
     "idle": "Bereit",
     "running": "Laeuft",
@@ -16,7 +16,7 @@
     "disabled": "Deaktiviert"
   },
   "types": {
-    "evidence_review": "Evidenz-Pruefung",
+    "evidence_review": "Evidenz-Prüfung",
     "compliance_monitor": "Compliance-Monitor",
     "vendor_signal": "Lieferanten-Signal",
     "sla_monitor": "SLA-Monitor"
@@ -26,7 +26,7 @@
     "scanFrequency": "Scan-Frequenz",
     "thresholds": "Schwellenwerte",
     "evidenceAgeDays": "Maximales Evidenzalter (Tage)",
-    "qualityThreshold": "Qualitaetsschwelle",
+    "qualityThreshold": "Qualitätsschwelle",
     "relevanceScore": "Relevanzschwelle",
     "leadTimeDays": "Vorlaufzeit (Tage)"
   },
@@ -46,7 +46,7 @@
     "dismissReason": "Ablehnungsgrund"
   },
   "log": {
-    "title": "Ausfuehrungsprotokoll",
+    "title": "Ausführungsprotokoll",
     "phase": "Phase",
     "itemsFound": "Gefundene Elemente",
     "duration": "Dauer",

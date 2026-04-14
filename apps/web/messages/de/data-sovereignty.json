@@ -12,7 +12,7 @@
   "tenantConfig": {
     "title": "Mandanten-Konfiguration",
     "description": "Konfigurieren Sie die Regionszuordnung und Datenklassifizierung",
-    "primaryRegion": "Primaere Region",
+    "primaryRegion": "Primäre Region",
     "backupRegion": "Backup-Region",
     "regionLocked": "Region gesperrt",
     "dataClassification": "Datenklassifizierung",
@@ -31,7 +31,7 @@
   },
   "replications": {
     "title": "Cross-Region-Replikation",
-    "description": "Konfigurieren Sie Cross-Region-Datenreplikation mit DSGVO-Schutzmassnahmen",
+    "description": "Konfigurieren Sie Cross-Region-Datenreplikation mit DSGVO-Schutzmaßnahmen",
     "addReplication": "Replikation hinzufuegen",
     "sourceRegion": "Quellregion",
     "targetRegion": "Zielregion",
@@ -41,7 +41,7 @@
   },
   "auditLog": {
     "title": "Souveraenitaets-Auditprotokoll",
-    "description": "Unveraenderliches Protokoll aller Datensouveraenitaetsereignisse und Verstoesse",
+    "description": "Unveränderliches Protokoll aller Datensouveraenitaetsereignisse und Verstoesse",
     "eventType": "Ereignistyp",
     "isViolation": "Nur Verstoesse",
     "from": "Von",

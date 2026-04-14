@@ -1,13 +1,13 @@
 {
   "title": "BI Report Builder",
-  "description": "Erstellen Sie Drag-and-Drop-Berichte und Dashboards ueber alle GRC-Module",
+  "description": "Erstellen Sie Drag-and-Drop-Berichte und Dashboards über alle GRC-Module",
   "createReport": "Bericht erstellen",
   "editReport": "Bericht bearbeiten",
   "searchPlaceholder": "Berichte suchen...",
   "allStatuses": "Alle Status",
   "noReports": "Keine Berichte gefunden. Erstellen Sie Ihren ersten Bericht.",
   "draft": "Entwurf",
-  "published": "Veroeffentlicht",
+  "published": "Veröffentlicht",
   "archived": "Archiviert",
   "template": "Vorlage",
   "designerDescription": "Ziehen Sie Widgets auf die Leinwand, um Ihren Bericht zu erstellen",
@@ -43,11 +43,11 @@
     "properties": "Eigenschaften",
     "widgetTitle": "Widget-Titel",
     "dataSource": "Datenquelle",
-    "selectWidget": "Waehlen Sie ein Widget aus, um Eigenschaften zu bearbeiten"
+    "selectWidget": "Wählen Sie ein Widget aus, um Eigenschaften zu bearbeiten"
   },
   "dataSources": {
     "title": "Datenquellen",
-    "description": "Verwalten Sie Data-Warehouse-Schichten fuer BI-Berichte"
+    "description": "Verwalten Sie Data-Warehouse-Schichten für BI-Berichte"
   },
   "queries": {
     "title": "SQL-Abfragen",
@@ -55,7 +55,7 @@
   },
   "shares": {
     "title": "Geteilte Dashboards",
-    "description": "Verwalten Sie oeffentliche Freigabelinks fuer Dashboards"
+    "description": "Verwalten Sie öffentliche Freigabelinks für Dashboards"
   },
   "scheduled": {
     "title": "Geplante Berichte",
@@ -63,15 +63,15 @@
   },
   "executions": {
     "title": "Berichtsverlauf",
-    "description": "Generierte Berichte und deren Ausfuehrungsverlauf anzeigen"
+    "description": "Generierte Berichte und deren Ausführungsverlauf anzeigen"
   },
   "brandConfig": {
     "title": "Marken-Konfiguration",
-    "description": "Konfigurieren Sie White-Label-Branding fuer Berichtsexporte"
+    "description": "Konfigurieren Sie White-Label-Branding für Berichtsexporte"
   },
   "status": {
     "draft": "Entwurf",
-    "published": "Veroeffentlicht",
+    "published": "Veröffentlicht",
     "archived": "Archiviert"
   }
 }

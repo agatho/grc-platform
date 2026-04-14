@@ -4,12 +4,12 @@
   "noScenarios": "Keine Szenarien gefunden",
   "comparisons": "Vergleiche",
   "notFound": "Szenario nicht gefunden",
-  "backToScenarios": "Zurueck zu Szenarien",
+  "backToScenarios": "Zurück zu Szenarien",
   "runSimulation": "Simulation starten",
   "parameters": "Parameter",
   "noParameters": "Keine Parameter konfiguriert",
   "runs": "Simulationslaeufe",
-  "noRuns": "Noch keine Laeufe ausgefuehrt",
+  "noRuns": "Noch keine Laeufe ausgeführt",
   "iterations": "Iterationen",
   "min": "Min",
   "max": "Max",
@@ -20,7 +20,7 @@
   "types": {
     "what_if": "Was-waere-wenn-Analyse",
     "bpm_cost_time": "BPM Kosten/Zeit",
-    "business_impact": "Geschaeftsauswirkung",
+    "business_impact": "Geschäftsauswirkung",
     "monte_carlo": "Monte Carlo",
     "supplier_cascade": "Lieferanten-Kaskade",
     "custom": "Individuell"

@@ -7,7 +7,7 @@
   "ineffectiveControls": "Unwirksame Kontrollen",
   "topRisks": "Top-Risiken",
   "cfoDashboard": "CFO-Dashboard",
-  "cfoDescription": "Finanzielle Risikoexposition, Auditaufwand und GRC-ROI-Uebersicht",
+  "cfoDescription": "Finanzielle Risikoexposition, Auditaufwand und GRC-ROI-Übersicht",
   "expectedLossP50": "Erwarteter Verlust (P50)",
   "varP95": "Value at Risk (P95)",
   "openFindings": "Offene Feststellungen",
@@ -18,9 +18,9 @@
   "controlsCompliant": "Kontrollen konform",
   "maturityRadar": "Reifegrad-Radar",
   "topFiveRisks": "Top 5 Risiken",
-  "topFiveRisksDescription": "Wichtigste Risiken in verstaendlicher Sprache fuer den Vorstand",
+  "topFiveRisksDescription": "Wichtigste Risiken in verstaendlicher Sprache für den Vorstand",
   "auditorDashboard": "Auditor-Dashboard",
-  "auditorDescription": "Feststellungsuebersicht, Evidenzqualitaet und Auditfortschritt",
+  "auditorDescription": "Feststellungsübersicht, Evidenzqualität und Auditfortschritt",
   "totalEvidence": "Gesamte Nachweise",
   "withAttachment": "Mit Anhang",
   "recentEvidence": "Aktuelle Nachweise",
@@ -29,14 +29,14 @@
   "departmentManagerDashboard": "Abteilungsleiter-Dashboard",
   "departmentManagerDescription": "Ihre Aufgaben, Risiken und Kontrollen auf einen Blick",
   "openTasks": "Offene Aufgaben",
-  "overdue": "Ueberfaellig",
+  "overdue": "Überfällig",
   "completedTasks": "Abgeschlossene Aufgaben",
   "myRisks": "Meine Risiken",
-  "highPriority": "Hohe Prioritaet",
+  "highPriority": "Hohe Priorität",
   "myControls": "Meine Kontrollen",
   "effective": "Wirksam",
   "config": {
     "title": "Dashboard-Konfiguration",
-    "description": "Rollenbasierte Dashboards fuer Ihre Organisation konfigurieren"
+    "description": "Rollenbasierte Dashboards für Ihre Organisation konfigurieren"
   }
 }
