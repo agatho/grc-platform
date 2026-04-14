@@ -1,0 +1,121 @@
+# Page snapshot
+
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - complementary [ref=e3]:
+      - button "A" [ref=e5] [cursor=pointer]
+      - button "Navigation durchsuchen..." [ref=e7]:
+        - img [ref=e9]
+      - navigation [ref=e12]:
+        - list [ref=e15]:
+          - listitem [ref=e16]:
+            - link "Meine Bewertungen" [ref=e17] [cursor=pointer]:
+              - /url: /rcsa/my-assessments
+              - img [ref=e19]
+        - list [ref=e24]:
+          - listitem [ref=e25]:
+            - link "Dokumente" [ref=e26] [cursor=pointer]:
+              - /url: /documents
+              - img [ref=e28]
+        - list [ref=e33]:
+          - listitem [ref=e34]:
+            - link "Dashboard" [ref=e35] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e37]
+          - listitem [ref=e42]:
+            - link "Kalender" [ref=e43] [cursor=pointer]:
+              - /url: /calendar
+              - img [ref=e45]
+          - listitem [ref=e47]:
+            - link "Copilot" [ref=e48] [cursor=pointer]:
+              - /url: /copilot
+              - img [ref=e50]
+          - listitem [ref=e53]:
+            - link "Akademie" [ref=e54] [cursor=pointer]:
+              - /url: /academy
+              - img [ref=e56]
+          - listitem [ref=e59]:
+            - link "Globale Suche" [ref=e60] [cursor=pointer]:
+              - /url: /search
+              - img [ref=e62]
+      - generic [ref=e65]:
+        - link "Einstellungen" [ref=e66] [cursor=pointer]:
+          - /url: /settings
+          - img [ref=e68]
+        - generic [ref=e72]: U
+    - generic [ref=e73]:
+      - banner [ref=e74]:
+        - generic [ref=e76]:
+          - img [ref=e77]
+          - generic [ref=e81]: Organisation
+        - generic [ref=e82]:
+          - button "Benachrichtigungen" [ref=e84]:
+            - img [ref=e85]
+          - button "User menu" [ref=e89]:
+            - generic [ref=e90]: U
+      - main [ref=e91]:
+        - generic [ref=e92]:
+          - generic [ref=e93]:
+            - generic [ref=e94]:
+              - heading "Dashboards" [level=1] [ref=e95]
+              - paragraph [ref=e96]: Hier ist Ihre GRC-Uebersicht fuer heute.
+            - generic [ref=e97]:
+              - link "Risk" [ref=e98] [cursor=pointer]:
+                - /url: /risks/new
+                - img [ref=e99]
+                - text: Risk
+              - link "Control" [ref=e100] [cursor=pointer]:
+                - /url: /controls/new
+                - img [ref=e101]
+                - text: Control
+              - link "Audit" [ref=e102] [cursor=pointer]:
+                - /url: /audits
+                - img [ref=e103]
+                - text: Audit
+              - link "Report" [ref=e104] [cursor=pointer]:
+                - /url: /reports
+                - img [ref=e105]
+                - text: Report
+          - generic [ref=e106]:
+            - generic [ref=e107]:
+              - paragraph [ref=e108]: Offene Risiken
+              - generic [ref=e110]: —
+            - generic [ref=e111]:
+              - paragraph [ref=e112]: Aktive Kontrollen
+              - generic [ref=e114]: —
+            - generic [ref=e115]:
+              - paragraph [ref=e116]: Offene Feststellungen
+              - generic [ref=e118]: —
+            - generic [ref=e119]:
+              - paragraph [ref=e120]: Compliance-Score
+              - generic [ref=e122]: —
+          - generic [ref=e123]:
+            - generic [ref=e125]:
+              - generic [ref=e126]:
+                - heading "Letzte Aenderungen" [level=2] [ref=e127]
+                - link "Alle Aufgaben anzeigen" [ref=e128] [cursor=pointer]:
+                  - /url: /audit-log
+                  - text: Alle Aufgaben anzeigen
+                  - img [ref=e129]
+              - img [ref=e132]
+            - generic [ref=e134]:
+              - generic [ref=e135]:
+                - generic [ref=e136]:
+                  - generic [ref=e137]:
+                    - img [ref=e138]
+                    - heading "Meine Aufgaben" [level=2] [ref=e141]
+                  - link "Alle Aufgaben anzeigen" [ref=e142] [cursor=pointer]:
+                    - /url: /tasks
+                    - text: Alle Aufgaben anzeigen
+                    - img [ref=e143]
+                - img [ref=e147]
+              - generic [ref=e149]:
+                - generic [ref=e150]:
+                  - img [ref=e151]
+                  - heading "Benachrichtigungen" [level=2] [ref=e154]
+                - img [ref=e157]
+  - button "Open Next.js Dev Tools" [ref=e164] [cursor=pointer]:
+    - img [ref=e165]
+  - alert [ref=e168]
+```

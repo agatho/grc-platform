@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -25,10 +26,12 @@ export default function AiSystemsPage() {
       </div>
       <div className="space-y-2">
         {rows.map((sys) => (
-          <Card key={sys.id}><CardContent className="p-4 flex items-center justify-between">
-            <div><p className="font-medium">{sys.systemCode} - {sys.name}</p><p className="text-sm text-muted-foreground">{sys.aiTechnique} | {sys.providerOrDeployer}</p></div>
-            <div className="flex gap-2"><Badge className={RISK_COLORS[sys.riskClassification] ?? ""}>{sys.riskClassification}</Badge><Badge variant="outline">{sys.status}</Badge></div>
-          </CardContent></Card>
+          <Link key={sys.id} href={`/ai-act/systems/${sys.id}`}>
+            <Card className="hover:border-primary/50 transition-colors cursor-pointer"><CardContent className="p-4 flex items-center justify-between">
+              <div><p className="font-medium">{sys.systemCode} - {sys.name}</p><p className="text-sm text-muted-foreground">{sys.aiTechnique} | {sys.providerOrDeployer}</p></div>
+              <div className="flex gap-2"><Badge className={RISK_COLORS[sys.riskClassification] ?? ""}>{sys.riskClassification}</Badge><Badge variant="outline">{sys.status}</Badge></div>
+            </CardContent></Card>
+          </Link>
         ))}
         {rows.length === 0 && <p className="text-muted-foreground text-center py-8">{t("noSystems")}</p>}
       </div>

@@ -2,6 +2,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Plus, AlertTriangle } from "lucide-react";
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
@@ -96,25 +97,27 @@ function CorrectiveActionsInner() {
       </div>
       <div className="space-y-2">
         {rows.map((a) => (
-          <Card key={a.id} className={(a.is_recall || a.is_withdrawal) ? "border-red-300" : ""}>
-            <CardContent className="p-4 flex items-center justify-between">
-              <div>
-                <div className="flex items-center gap-2">
-                  <p className="font-medium">{a.title}</p>
-                  {(a.is_recall || a.is_withdrawal) && <AlertTriangle className="h-4 w-4 text-red-600" />}
+          <Link key={a.id} href={`/ai-act/corrective-actions/${a.id}`}>
+            <Card className={`hover:border-primary/50 transition-colors cursor-pointer ${(a.is_recall || a.is_withdrawal) ? "border-red-300" : ""}`}>
+              <CardContent className="p-4 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">{a.title}</p>
+                    {(a.is_recall || a.is_withdrawal) && <AlertTriangle className="h-4 w-4 text-red-600" />}
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    {a.action_type}{a.due_date ? ` | Fallig: ${new Date(a.due_date).toLocaleDateString("de-DE")}` : ""}
+                  </p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {a.action_type}{a.due_date ? ` | Fallig: ${new Date(a.due_date).toLocaleDateString("de-DE")}` : ""}
-                </p>
-              </div>
-              <div className="flex gap-2">
-                {a.is_recall && <Badge className="bg-red-600 text-white">Ruckruf</Badge>}
-                {a.is_withdrawal && <Badge className="bg-red-600 text-white">Rucknahme</Badge>}
-                <Badge className={PRIORITY_COLORS[a.priority] ?? ""}>{a.priority}</Badge>
-                <Badge className={STATUS_COLORS[a.status] ?? ""} variant="outline">{a.status}</Badge>
-              </div>
-            </CardContent>
-          </Card>
+                <div className="flex gap-2">
+                  {a.is_recall && <Badge className="bg-red-600 text-white">Ruckruf</Badge>}
+                  {a.is_withdrawal && <Badge className="bg-red-600 text-white">Rucknahme</Badge>}
+                  <Badge className={PRIORITY_COLORS[a.priority] ?? ""}>{a.priority}</Badge>
+                  <Badge className={STATUS_COLORS[a.status] ?? ""} variant="outline">{a.status}</Badge>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
         ))}
         {rows.length === 0 && <p className="text-muted-foreground text-center py-8">Keine Korrekturmasnahmen vorhanden</p>}
       </div>

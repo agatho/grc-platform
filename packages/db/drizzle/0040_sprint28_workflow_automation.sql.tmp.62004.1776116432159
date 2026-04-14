@@ -127,7 +127,7 @@ INSERT INTO "automation_rule_template" ("name", "description", "category", "trig
 VALUES
   -- 1. Risk over appetite
   (
-    'Risiko über Risikoappetit',
+    'Risiko ueber Risikoappetit',
     'Wenn ein Risiko den definierten Risikoappetit ueberschreitet, wird automatisch eine Aufgabe erstellt und an den CISO eskaliert.',
     'risk_management',
     'entity_change',
@@ -139,18 +139,18 @@ VALUES
   -- 2. Control test overdue
   (
     'Control-Test überfällig',
-    'Wenn ein Control länger als 90 Tage nicht getestet wurde, wird eine Aufgabe für den Control Owner erstellt.',
+    'Wenn ein Control länger als 90 Tage nicht getestet wurde, wird eine Aufgabe fuer den Control Owner erstellt.',
     'control_testing',
     'entity_change',
     '{"entityType": "control", "events": ["updated"]}'::jsonb,
     '{"operator": "AND", "rules": [{"field": "last_tested_at", "op": "days_since", "value": 90}]}'::jsonb,
-    '[{"type": "create_task", "config": {"title": "Control-Test überfällig: {entity.title}", "assigneeRole": "control_owner", "deadlineDays": 7}}, {"type": "send_notification", "config": {"role": "control_owner", "message": "Control {entity.title} wurde seit über 90 Tagen nicht getestet."}}]'::jsonb,
+    '[{"type": "create_task", "config": {"title": "Control-Test überfällig: {entity.title}", "assigneeRole": "control_owner", "deadlineDays": 7}}, {"type": "send_notification", "config": {"role": "control_owner", "message": "Control {entity.title} wurde seit ueber 90 Tagen nicht getestet."}}]'::jsonb,
     true
   ),
   -- 3. Critical vendor DD expired
   (
     'Kritischer Vendor DD abgelaufen',
-    'Wenn die Due Diligence eines kritischen Vendors abgelaufen ist, wird eine neue DD-Session angestoßen.',
+    'Wenn die Due Diligence eines kritischen Vendors abgelaufen ist, wird eine neue DD-Session angestossen.',
     'vendor_management',
     'entity_change',
     '{"entityType": "vendor", "events": ["updated"]}'::jsonb,
@@ -172,7 +172,7 @@ VALUES
   -- 5. DSR deadline warning
   (
     'DSR Frist-Warnung',
-    'Wenn die Frist für eine Betroffenenanfrage in weniger als 7 Tagen abläuft, wird eine Benachrichtigung gesendet.',
+    'Wenn die Frist fuer eine Betroffenenanfrage in weniger als 7 Tagen ablaeuft, wird eine Benachrichtigung gesendet.',
     'data_protection',
     'entity_change',
     '{"entityType": "dsr", "events": ["updated"]}'::jsonb,
@@ -183,18 +183,18 @@ VALUES
   -- 6. Breach 72h deadline
   (
     'Breach 72h Meldefrist',
-    'Wenn die Meldefrist eines Datenschutzvorfalls in weniger als 24 Stunden abläuft, wird an den DPO eskaliert.',
+    'Wenn die Meldefrist eines Datenschutzvorfalls in weniger als 24 Stunden ablaeuft, wird an den DPO eskaliert.',
     'data_protection',
     'entity_change',
     '{"entityType": "data_breach", "events": ["created", "updated"]}'::jsonb,
     '{"operator": "AND", "rules": [{"field": "notification_deadline", "op": "days_since", "value": -1}]}'::jsonb,
-    '[{"type": "escalate", "config": {"targetRole": "dpo", "message": "DRINGEND: Meldefrist für Datenschutzvorfall {entity.title} läuft in weniger als 24h ab!"}}]'::jsonb,
+    '[{"type": "escalate", "config": {"targetRole": "dpo", "message": "DRINGEND: Meldefrist fuer Datenschutzvorfall {entity.title} laeuft in weniger als 24h ab!"}}]'::jsonb,
     true
   ),
   -- 7. Policy not acknowledged
   (
     'Richtlinie nicht bestaetigt',
-    'Wenn eine Richtlinie überfällige Bestätigungen hat, wird eine Erinnerungs-E-Mail gesendet.',
+    'Wenn eine Richtlinie überfällige Bestaetigungen hat, wird eine Erinnerungs-E-Mail gesendet.',
     'compliance',
     'entity_change',
     '{"entityType": "document", "events": ["updated"]}'::jsonb,
@@ -205,7 +205,7 @@ VALUES
   -- 8. CES under 50
   (
     'CES unter 50',
-    'Wenn der Control Effectiveness Score eines Controls unter 50 fällt, wird eine Aufgabe für den Control Owner erstellt.',
+    'Wenn der Control Effectiveness Score eines Controls unter 50 faellt, wird eine Aufgabe fuer den Control Owner erstellt.',
     'control_testing',
     'entity_change',
     '{"entityType": "control", "events": ["updated"]}'::jsonb,
