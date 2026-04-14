@@ -111,10 +111,26 @@ const RETRY_DELAYS = [1_000, 5_000, 30_000];
 const MAX_ATTEMPTS = 3;
 
 export class EmailService {
-  private resend: Resend;
+  private _resend: Resend | null = null;
 
-  constructor(apiKey?: string) {
-    this.resend = new Resend(apiKey ?? process.env.RESEND_API_KEY);
+  private get resend(): Resend {
+    if (!this._resend) {
+      const key = process.env.RESEND_API_KEY;
+      if (!key || key === "re_test_placeholder") {
+        // Return a dummy Resend instance that won't be used (send() checks EMAIL_ENABLED)
+        this._resend = new Resend("re_dummy_key_for_dev");
+      } else {
+        this._resend = new Resend(key);
+      }
+    }
+    return this._resend;
+  }
+
+  constructor(_apiKey?: string) {
+    // Lazy init — Resend client created on first use, not at import time
+    if (_apiKey) {
+      this._resend = new Resend(_apiKey);
+    }
   }
 
   /**
