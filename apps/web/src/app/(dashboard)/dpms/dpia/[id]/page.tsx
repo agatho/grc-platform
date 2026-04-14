@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, CheckCircle, Plus, AlertTriangle, ShieldCheck } from "lucide-react";
+import { Loader2, ArrowLeft, CheckCircle, Plus, AlertTriangle, ShieldCheck, Save } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -37,8 +37,19 @@ export default function DpiaDetailPage() {
   );
 }
 
+interface DpiaRiskExtended extends DpiaRisk {
+  numericLikelihood?: number | null;
+  numericImpact?: number | null;
+  riskScore?: number | null;
+  ermRiskId?: string | null;
+  numeric_likelihood?: number | null;
+  numeric_impact?: number | null;
+  risk_score?: number | null;
+  erm_risk_id?: string | null;
+}
+
 interface DpiaDetailData extends Dpia {
-  risks: DpiaRisk[];
+  risks: DpiaRiskExtended[];
   measures: DpiaMeasure[];
   signOffName?: string;
 }
@@ -266,28 +277,12 @@ function DpiaDetailInner() {
         )}
 
         {activeStep === "risks" && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <h2 className="font-semibold text-gray-900">{t("dpia.steps.risks")}</h2>
-              <span className="text-sm text-gray-500">{data.risks.length} {t("dpia.risksCount")}</span>
-            </div>
-            {data.risks.length === 0 ? (
-              <p className="text-sm text-gray-400">{t("dpia.noRisks")}</p>
-            ) : (
-              <div className="space-y-3">
-                {data.risks.map((risk) => (
-                  <div key={risk.id} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
-                    <p className="text-sm text-gray-900">{risk.riskDescription}</p>
-                    <div className="flex gap-3 mt-2">
-                      <Badge variant="outline" className="text-[10px]">{t("dpia.severity")}: {risk.severity}</Badge>
-                      <Badge variant="outline" className="text-[10px]">{t("dpia.likelihood")}: {risk.likelihood}</Badge>
-                      <Badge variant="outline" className="text-[10px]">{t("dpia.impact")}: {risk.impact}</Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <DpiaRiskStep
+            risks={data.risks}
+            dpiaId={data.id}
+            t={t}
+            onUpdated={fetchData}
+          />
         )}
 
         {activeStep === "measures" && (
@@ -380,6 +375,247 @@ function FieldRow({ label, value }: { label: string; value: string }) {
     <div>
       <dt className="text-xs font-medium text-gray-500">{label}</dt>
       <dd className="text-sm text-gray-900 mt-0.5">{value}</dd>
+    </div>
+  );
+}
+
+// ── Numeric Risk Scoring Step ────────────────────────────────
+
+const SCORE_LABELS: Record<number, string> = {
+  1: "Sehr gering",
+  2: "Gering",
+  3: "Mittel",
+  4: "Hoch",
+  5: "Sehr hoch",
+};
+
+function riskScoreColor(score: number): string {
+  if (score >= 20) return "bg-red-600 text-white";
+  if (score >= 12) return "bg-orange-500 text-white";
+  if (score >= 6) return "bg-yellow-400 text-yellow-900";
+  return "bg-green-400 text-green-900";
+}
+
+function riskScoreLabel(score: number): string {
+  if (score >= 20) return "Kritisch";
+  if (score >= 12) return "Hoch";
+  if (score >= 6) return "Mittel";
+  return "Gering";
+}
+
+function DpiaRiskStep({
+  risks,
+  dpiaId,
+  t,
+  onUpdated,
+}: {
+  risks: DpiaRiskExtended[];
+  dpiaId: string;
+  t: ReturnType<typeof useTranslations>;
+  onUpdated: () => void;
+}) {
+  // Local state for numeric edits keyed by risk.id
+  const [edits, setEdits] = useState<
+    Record<string, { likelihood: number; impact: number }>
+  >({});
+  const [saving, setSaving] = useState<string | null>(null);
+
+  const getNumericLikelihood = (risk: DpiaRiskExtended): number =>
+    risk.numericLikelihood ?? risk.numeric_likelihood ?? 0;
+  const getNumericImpact = (risk: DpiaRiskExtended): number =>
+    risk.numericImpact ?? risk.numeric_impact ?? 0;
+  const getRiskScore = (risk: DpiaRiskExtended): number =>
+    risk.riskScore ?? risk.risk_score ?? 0;
+
+  const getEdit = (risk: DpiaRiskExtended) =>
+    edits[risk.id] ?? {
+      likelihood: getNumericLikelihood(risk) || 3,
+      impact: getNumericImpact(risk) || 3,
+    };
+
+  const setEdit = (riskId: string, field: "likelihood" | "impact", value: number) => {
+    setEdits((prev) => ({
+      ...prev,
+      [riskId]: { ...getEditById(riskId, prev), [field]: value },
+    }));
+  };
+
+  const getEditById = (
+    riskId: string,
+    current: Record<string, { likelihood: number; impact: number }>,
+  ) => {
+    if (current[riskId]) return current[riskId];
+    const risk = risks.find((r) => r.id === riskId);
+    if (!risk) return { likelihood: 3, impact: 3 };
+    return {
+      likelihood: getNumericLikelihood(risk) || 3,
+      impact: getNumericImpact(risk) || 3,
+    };
+  };
+
+  const handleSave = async (riskId: string) => {
+    const edit = edits[riskId];
+    if (!edit) return;
+
+    setSaving(riskId);
+    try {
+      await fetch(`/api/v1/dpms/dpia/${dpiaId}/risks/${riskId}/numeric-score`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          numericLikelihood: edit.likelihood,
+          numericImpact: edit.impact,
+        }),
+      });
+      onUpdated();
+    } finally {
+      setSaving(null);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h2 className="font-semibold text-gray-900">{t("dpia.steps.risks")}</h2>
+        <span className="text-sm text-gray-500">
+          {risks.length} {t("dpia.risksCount")}
+        </span>
+      </div>
+      {risks.length === 0 ? (
+        <p className="text-sm text-gray-400">{t("dpia.noRisks")}</p>
+      ) : (
+        <div className="space-y-4">
+          {risks.map((risk) => {
+            const edit = getEdit(risk);
+            const computedScore = edit.likelihood * edit.impact;
+            const existingScore = getRiskScore(risk);
+            const hasChanged =
+              edit.likelihood !== (getNumericLikelihood(risk) || 3) ||
+              edit.impact !== (getNumericImpact(risk) || 3);
+
+            return (
+              <div
+                key={risk.id}
+                className="rounded-lg border border-gray-200 bg-white p-4 space-y-3"
+              >
+                <p className="text-sm text-gray-900 font-medium">
+                  {risk.riskDescription}
+                </p>
+
+                {/* Existing string-based badges */}
+                <div className="flex flex-wrap gap-2">
+                  <Badge variant="outline" className="text-[10px]">
+                    {t("dpia.severity")}: {risk.severity}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {t("dpia.likelihood")}: {risk.likelihood}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {t("dpia.impact")}: {risk.impact}
+                  </Badge>
+                  {(risk.erm_risk_id || risk.ermRiskId) && (
+                    <Badge
+                      variant="outline"
+                      className="text-[10px] bg-green-50 text-green-700 border-green-200"
+                    >
+                      Im ERM synchronisiert
+                    </Badge>
+                  )}
+                </div>
+
+                {/* Numeric Scoring */}
+                <div className="rounded-lg bg-gray-50 border border-gray-100 p-3 space-y-3">
+                  <p className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    Numerische Bewertung
+                  </p>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Likelihood */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Eintrittswahrscheinlichkeit (1-5)
+                      </label>
+                      <select
+                        value={edit.likelihood}
+                        onChange={(e) =>
+                          setEdit(risk.id, "likelihood", Number(e.target.value))
+                        }
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      >
+                        {[1, 2, 3, 4, 5].map((v) => (
+                          <option key={v} value={v}>
+                            {v} - {SCORE_LABELS[v]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Impact */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Auswirkung (1-5)
+                      </label>
+                      <select
+                        value={edit.impact}
+                        onChange={(e) =>
+                          setEdit(risk.id, "impact", Number(e.target.value))
+                        }
+                        className="w-full rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                      >
+                        {[1, 2, 3, 4, 5].map((v) => (
+                          <option key={v} value={v}>
+                            {v} - {SCORE_LABELS[v]}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* Computed Score */}
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">
+                        Risiko-Score
+                      </label>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <span
+                          className={`inline-flex items-center justify-center rounded-md px-3 py-1.5 text-sm font-bold min-w-[3rem] ${riskScoreColor(computedScore)}`}
+                        >
+                          {computedScore}
+                        </span>
+                        <span className="text-xs text-gray-500">
+                          {riskScoreLabel(computedScore)}
+                        </span>
+                        {existingScore > 0 && existingScore !== computedScore && (
+                          <span className="text-xs text-gray-400">
+                            (gespeichert: {existingScore})
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Save Button */}
+                  {hasChanged && (
+                    <div className="flex justify-end">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleSave(risk.id)}
+                        disabled={saving === risk.id}
+                      >
+                        {saving === risk.id ? (
+                          <Loader2 size={12} className="animate-spin mr-1" />
+                        ) : (
+                          <Save size={12} className="mr-1" />
+                        )}
+                        Bewertung speichern
+                      </Button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

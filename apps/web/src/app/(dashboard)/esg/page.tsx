@@ -13,6 +13,8 @@ import {
   FileCheck,
   TrendingDown,
   Database,
+  Shield,
+  ArrowRight,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -68,6 +70,10 @@ function EsgDashboardInner() {
   const t = useTranslations("esg");
   const router = useRouter();
   const [data, setData] = useState<EsgDashboardData | null>(null);
+  const [esgErmStats, setEsgErmStats] = useState<{
+    totalMaterialRisks: number;
+    syncedToErm: number;
+  } | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
@@ -77,6 +83,17 @@ function EsgDashboardInner() {
       if (res.ok) {
         const json = await res.json();
         setData(json.data);
+      }
+
+      // Fetch ESG ERM sync stats
+      try {
+        const ermRes = await fetch("/api/v1/esg/erm-stats");
+        if (ermRes.ok) {
+          const ermJson = await ermRes.json();
+          setEsgErmStats(ermJson.data);
+        }
+      } catch {
+        // non-critical
       }
     } finally {
       setLoading(false);
@@ -267,6 +284,38 @@ function EsgDashboardInner() {
           </div>
         )}
       </div>
+
+      {/* ESG-Risiken im ERM */}
+      {esgErmStats && esgErmStats.totalMaterialRisks > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <h2 className="text-base font-semibold text-gray-900 flex items-center gap-2">
+              <Shield className="h-4 w-4 text-blue-600" />
+              ESG-Risiken im ERM
+            </h2>
+            <Link href="/esg/materiality" className="text-sm text-blue-600 hover:text-blue-800">
+              Wesentlichkeitsanalyse
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center">
+              <p className="text-3xl font-bold text-gray-900">{esgErmStats.totalMaterialRisks}</p>
+              <p className="text-xs text-gray-500 mt-1">Wesentliche ESG-Risiken (IRO)</p>
+            </div>
+            <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
+              <p className="text-3xl font-bold text-blue-700">{esgErmStats.syncedToErm}</p>
+              <p className="text-xs text-blue-600 mt-1 flex items-center justify-center gap-1">
+                <ArrowRight size={10} /> Im ERM-Register synchronisiert
+              </p>
+            </div>
+          </div>
+          {esgErmStats.syncedToErm < esgErmStats.totalMaterialRisks && (
+            <p className="text-xs text-amber-600 mt-3">
+              {esgErmStats.totalMaterialRisks - esgErmStats.syncedToErm} Risiken noch nicht synchronisiert.
+            </p>
+          )}
+        </div>
+      )}
 
       {/* Quick Navigation */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">

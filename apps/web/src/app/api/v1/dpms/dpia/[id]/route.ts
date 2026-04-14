@@ -7,7 +7,7 @@ import {
 } from "@grc/db";
 import { updateDpiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/dpms/dpia/:id — Full DPIA detail
@@ -54,16 +54,26 @@ export async function GET(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  const [risks, measures] = await Promise.all([
-    db
-      .select()
-      .from(dpiaRisk)
-      .where(and(eq(dpiaRisk.dpiaId, id), eq(dpiaRisk.orgId, ctx.orgId))),
+  // Use raw SQL for risks to include migration-only numeric columns
+  const [risksResult, measures] = await Promise.all([
+    db.execute(sql`
+      SELECT id, org_id AS "orgId", dpia_id AS "dpiaId",
+             risk_description AS "riskDescription",
+             severity, likelihood, impact,
+             numeric_likelihood, numeric_impact, risk_score,
+             erm_risk_id, erm_synced_at,
+             created_at AS "createdAt"
+      FROM dpia_risk
+      WHERE dpia_id = ${id}::uuid AND org_id = ${ctx.orgId}
+      ORDER BY created_at
+    `),
     db
       .select()
       .from(dpiaMeasure)
       .where(and(eq(dpiaMeasure.dpiaId, id), eq(dpiaMeasure.orgId, ctx.orgId))),
   ]);
+
+  const risks = risksResult.rows ?? [];
 
   return Response.json({ data: { ...row, risks, measures } });
 }

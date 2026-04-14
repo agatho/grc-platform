@@ -13,6 +13,8 @@ import {
   Clock,
   Globe,
   UserCheck,
+  Link2,
+  ShieldAlert,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -37,14 +39,23 @@ function DpmsDashboardInner() {
   const [activeBreaches, setActiveBreaches] = useState<DataBreach[]>([]);
   const [urgentDsrs, setUrgentDsrs] = useState<Dsr[]>([]);
   const [loading, setLoading] = useState(true);
+  const [privacyRisks, setPrivacyRisks] = useState<{
+    total: number;
+    critical: number;
+    high: number;
+    medium: number;
+    low: number;
+    syncedToErm: number;
+  } | null>(null);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const [dashRes, breachRes, dsrRes] = await Promise.all([
+      const [dashRes, breachRes, dsrRes, riskRes] = await Promise.all([
         fetch("/api/v1/dpms/dashboard"),
         fetch("/api/v1/dpms/breaches?status=detected,assessing,notifying_dpa&limit=5"),
         fetch("/api/v1/dpms/dsr?sla=at_risk&limit=5"),
+        fetch("/api/v1/dpms/erm-sync?check=true"),
       ]);
 
       if (dashRes.ok) {
@@ -58,6 +69,10 @@ function DpmsDashboardInner() {
       if (dsrRes.ok) {
         const json = await dsrRes.json();
         setUrgentDsrs(json.data ?? []);
+      }
+      if (riskRes.ok) {
+        const json = await riskRes.json();
+        setPrivacyRisks(json.data ?? null);
       }
     } finally {
       setLoading(false);
@@ -175,6 +190,46 @@ function DpmsDashboardInner() {
           </div>
         </div>
       </div>
+
+      {/* Datenschutz-Risiken (Privacy Risk Aggregation) */}
+      {privacyRisks && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-2">
+              <ShieldAlert className="h-5 w-5 text-purple-600" />
+              <h2 className="text-base font-semibold text-gray-900">Datenschutz-Risiken</h2>
+            </div>
+            <div className="flex items-center gap-2">
+              <Badge variant="outline" className="text-xs bg-green-50 text-green-700 border-green-200">
+                <Link2 size={10} className="mr-1" />
+                {privacyRisks.syncedToErm} im ERM
+              </Badge>
+            </div>
+          </div>
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+            <div className="rounded-lg bg-gray-50 p-3 text-center">
+              <p className="text-lg font-bold text-gray-900">{privacyRisks.total}</p>
+              <p className="text-xs text-gray-500">Gesamt</p>
+            </div>
+            <div className="rounded-lg bg-red-50 border border-red-100 p-3 text-center">
+              <p className="text-lg font-bold text-red-700">{privacyRisks.critical}</p>
+              <p className="text-xs text-red-600">Kritisch (20-25)</p>
+            </div>
+            <div className="rounded-lg bg-orange-50 border border-orange-100 p-3 text-center">
+              <p className="text-lg font-bold text-orange-700">{privacyRisks.high}</p>
+              <p className="text-xs text-orange-600">Hoch (12-19)</p>
+            </div>
+            <div className="rounded-lg bg-yellow-50 border border-yellow-100 p-3 text-center">
+              <p className="text-lg font-bold text-yellow-700">{privacyRisks.medium}</p>
+              <p className="text-xs text-yellow-600">Mittel (6-11)</p>
+            </div>
+            <div className="rounded-lg bg-green-50 border border-green-100 p-3 text-center">
+              <p className="text-lg font-bold text-green-700">{privacyRisks.low}</p>
+              <p className="text-xs text-green-600">Gering (1-5)</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Bottom Row: Urgent DSRs + Navigation */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
