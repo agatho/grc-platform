@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { DpmsDashboard, DataBreach, Dsr } from "@grc/shared";
@@ -23,6 +24,7 @@ import type { DpmsDashboard, DataBreach, Dsr } from "@grc/shared";
 export default function DpmsPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <DpmsDashboardInner />
     </ModuleGate>
   );

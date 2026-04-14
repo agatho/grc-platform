@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -38,6 +39,7 @@ interface AuditDashboard {
 export default function AuditPage() {
   return (
     <ModuleGate moduleKey="audit">
+      <ModuleTabNav />
       <AuditDashboardInner />
     </ModuleGate>
   );

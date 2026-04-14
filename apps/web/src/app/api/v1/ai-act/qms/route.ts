@@ -1,0 +1,56 @@
+import { db } from "@grc/db";
+import { requireModule } from "@grc/auth";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
+import { sql } from "drizzle-orm";
+
+export async function GET(req: Request) {
+  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+  if (ctx instanceof Response) return ctx;
+  const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const { limit, offset, searchParams } = paginate(req);
+  const aiSystemId = searchParams.get("ai_system_id");
+
+  let query = sql`SELECT * FROM ai_provider_qms WHERE org_id = ${ctx.orgId}`;
+  let countQuery = sql`SELECT count(*)::int AS count FROM ai_provider_qms WHERE org_id = ${ctx.orgId}`;
+
+  if (aiSystemId) {
+    query = sql`${query} AND ai_system_id = ${aiSystemId}`;
+    countQuery = sql`${countQuery} AND ai_system_id = ${aiSystemId}`;
+  }
+
+  query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
+
+  const [rows, countResult] = await Promise.all([
+    db.execute(query),
+    db.execute(countQuery),
+  ]);
+  return Response.json({
+    data: rows.rows,
+    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number((countResult.rows[0] as any)?.count ?? 0) },
+  });
+}
+
+export async function POST(req: Request) {
+  const ctx = await withAuth("admin", "risk_manager", "dpo");
+  if (ctx instanceof Response) return ctx;
+  const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const body = await req.json();
+  const { ai_system_id, risk_management_procedure, data_governance_procedure, technical_documentation_procedure, record_keeping_procedure, transparency_procedure, human_oversight_procedure, accuracy_procedure, cybersecurity_procedure, conformity_procedure, post_market_procedure, overall_maturity, next_audit_date } = body;
+  if (!ai_system_id) {
+    return Response.json({ error: "ai_system_id is required" }, { status: 422 });
+  }
+
+  const result = await withAuditContext(ctx, async (tx) => {
+    const res = await tx.execute(sql`
+      INSERT INTO ai_provider_qms (org_id, ai_system_id, risk_management_procedure, data_governance_procedure, technical_documentation_procedure, record_keeping_procedure, transparency_procedure, human_oversight_procedure, accuracy_procedure, cybersecurity_procedure, conformity_procedure, post_market_procedure, overall_maturity, next_audit_date, assessed_by, created_by)
+      VALUES (${ctx.orgId}, ${ai_system_id}, ${risk_management_procedure ?? false}, ${data_governance_procedure ?? false}, ${technical_documentation_procedure ?? false}, ${record_keeping_procedure ?? false}, ${transparency_procedure ?? false}, ${human_oversight_procedure ?? false}, ${accuracy_procedure ?? false}, ${cybersecurity_procedure ?? false}, ${conformity_procedure ?? false}, ${post_market_procedure ?? false}, ${overall_maturity ?? 0}, ${next_audit_date ?? null}, ${ctx.userId}, ${ctx.userId})
+      RETURNING *
+    `);
+    return res.rows[0];
+  });
+  return Response.json({ data: result }, { status: 201 });
+}

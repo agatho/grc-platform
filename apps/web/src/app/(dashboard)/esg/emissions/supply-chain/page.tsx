@@ -5,6 +5,7 @@ import Link from "next/link";
 import { ArrowLeft, Globe, TrendingUp, AlertTriangle, Truck, Factory } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 interface HotspotRegion {
   region: string;
@@ -48,6 +49,7 @@ export default function SupplyChainEmissionsPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       <div className="flex items-center gap-4">
         <Link href="/esg/emissions">
           <ArrowLeft size={18} className="text-gray-500 hover:text-gray-700" />

@@ -6,6 +6,7 @@ import { Loader2, RefreshCcw, Grid3X3 } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -97,6 +98,7 @@ export default function CesHeatmapPage() {
 
   return (
     <ModuleGate moduleKey="ics">
+      <ModuleTabNav />
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>

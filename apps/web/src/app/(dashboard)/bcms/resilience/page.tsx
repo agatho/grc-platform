@@ -5,12 +5,14 @@ import { useTranslations } from "next-intl";
 import { Loader2, Activity } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { ResilienceScore } from "@grc/shared";
 
 export default function ResilienceDashboardPage() {
   return (
     <ModuleGate moduleKey="bcms">
+      <ModuleTabNav />
       <ResilienceDashboardInner />
     </ModuleGate>
   );

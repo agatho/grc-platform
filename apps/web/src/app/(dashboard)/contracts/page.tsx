@@ -15,6 +15,7 @@ import {
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -48,6 +49,7 @@ interface ContractDashboard {
 export default function ContractsDashboardPage() {
   return (
     <ModuleGate moduleKey="contract">
+      <ModuleTabNav />
       <ContractsDashboardInner />
     </ModuleGate>
   );

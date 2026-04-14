@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus, Calendar, List } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BcExercise } from "@grc/shared";
@@ -36,6 +37,7 @@ const RESULT_COLORS: Record<string, string> = {
 export default function ExerciseListPage() {
   return (
     <ModuleGate moduleKey="bcms">
+      <ModuleTabNav />
       <ExerciseListInner />
     </ModuleGate>
   );

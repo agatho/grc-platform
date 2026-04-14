@@ -43,6 +43,7 @@ import type {
   GrcArea,
   BudgetUsage,
 } from "@grc/shared";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const BUDGET_TYPES: BudgetType[] = ["management_system", "department", "project", "custom"];
 const GRC_AREAS: GrcArea[] = ["erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general"];
@@ -192,6 +193,7 @@ export default function BudgetOverviewPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>

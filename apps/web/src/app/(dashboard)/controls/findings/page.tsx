@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
@@ -93,6 +94,7 @@ function statusBadgeClass(status: FindingStatus): string {
 export default function FindingsPage() {
   return (
     <ModuleGate moduleKey="ics">
+      <ModuleTabNav />
       <FindingsPageInner />
     </ModuleGate>
   );

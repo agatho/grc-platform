@@ -317,7 +317,7 @@ export default function DdPortalPage() {
         <div className="text-center space-y-3">
           <h1 className="text-2xl font-bold text-gray-900">
             {lang === "de"
-              ? `Fragebogen fuer ${session.vendorName}`
+              ? `Fragebogen für ${session.vendorName}`
               : `Questionnaire for ${session.vendorName}`}
           </h1>
           <p className="text-gray-600">{session.templateName}</p>
@@ -360,7 +360,7 @@ export default function DdPortalPage() {
         <div className="rounded-lg border border-blue-100 bg-blue-50 p-4">
           <p className="text-sm text-blue-800">
             {lang === "de"
-              ? "Ihre Antworten werden vertraulich behandelt und ausschliesslich fuer den Lieferantenbewertungsprozess verwendet."
+              ? "Ihre Antworten werden vertraulich behandelt und ausschließlich für den Lieferantenbewertungsprozess verwendet."
               : "Your responses will be treated confidentially and used solely for the vendor assessment process."}
           </p>
         </div>

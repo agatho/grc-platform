@@ -25,6 +25,7 @@ import {
 } from "recharts";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -660,6 +661,7 @@ function KriDashboardContent() {
 export default function KriDashboardPage() {
   return (
     <ModuleGate moduleKey="erm">
+      <ModuleTabNav />
       <KriDashboardContent />
     </ModuleGate>
   );

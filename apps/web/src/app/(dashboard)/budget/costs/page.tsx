@@ -19,6 +19,7 @@ import type {
   CostCategory,
   CostType,
 } from "@grc/shared";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const GRC_AREAS: GrcArea[] = [
   "erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general",
@@ -75,6 +76,7 @@ export default function CostListPage() {
 
   return (
     <div className="space-y-6">
+      <ModuleTabNav />
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">

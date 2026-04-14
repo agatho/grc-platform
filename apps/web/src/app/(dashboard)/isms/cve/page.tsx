@@ -18,6 +18,7 @@ import {
 import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -67,6 +68,7 @@ interface CveMatch {
 export default function CveDashboardPage() {
   return (
     <ModuleGate moduleKey="isms">
+      <ModuleTabNav />
       <CveDashboardInner />
     </ModuleGate>
   );

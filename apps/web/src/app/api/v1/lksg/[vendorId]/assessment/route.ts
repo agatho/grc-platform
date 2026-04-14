@@ -72,6 +72,56 @@ export async function POST(
   return Response.json({ data: created }, { status: 201 });
 }
 
+// PUT /api/v1/lksg/:vendorId/assessment — Update latest LkSG assessment
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ vendorId: string }> },
+) {
+  const ctx = await withAuth("admin", "risk_manager", "dpo");
+  if (ctx instanceof Response) return ctx;
+
+  const moduleCheck = await requireModule("tprm", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+
+  const { vendorId } = await params;
+
+  const body = updateLksgAssessmentSchema.safeParse(await req.json());
+  if (!body.success) {
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
+  }
+
+  // Find the latest assessment for this vendor
+  const [existing] = await db
+    .select({ id: lksgAssessment.id })
+    .from(lksgAssessment)
+    .where(
+      and(eq(lksgAssessment.vendorId, vendorId), eq(lksgAssessment.orgId, ctx.orgId)),
+    )
+    .orderBy(desc(lksgAssessment.createdAt))
+    .limit(1);
+
+  if (!existing) {
+    return Response.json({ error: "No assessment found" }, { status: 404 });
+  }
+
+  const updated = await withAuditContext(ctx, async (tx) => {
+    const [row] = await tx
+      .update(lksgAssessment)
+      .set({
+        ...body.data,
+        updatedAt: new Date(),
+      })
+      .where(eq(lksgAssessment.id, existing.id))
+      .returning();
+    return row;
+  });
+
+  return Response.json({ data: updated });
+}
+
 // GET /api/v1/lksg/:vendorId/assessment — List assessments for vendor
 export async function GET(
   req: Request,

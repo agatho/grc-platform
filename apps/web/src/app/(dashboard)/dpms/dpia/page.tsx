@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Dpia } from "@grc/shared";
@@ -23,6 +24,7 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DpiaListPage() {
   return (
     <ModuleGate moduleKey="dpms">
+      <ModuleTabNav />
       <DpiaListInner />
     </ModuleGate>
   );

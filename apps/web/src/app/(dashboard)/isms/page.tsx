@@ -18,6 +18,7 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { ProtectionLevelBadge } from "@/components/isms/protection-level-badge";
 import { IncidentSeverityBadge } from "@/components/isms/incident-severity-badge";
 import { Button } from "@/components/ui/button";
@@ -89,6 +90,7 @@ interface ReviewSummary {
 export default function IsmsPage() {
   return (
     <ModuleGate moduleKey="isms">
+      <ModuleTabNav />
       <IsmsDashboardInner />
     </ModuleGate>
   );

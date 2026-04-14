@@ -7,6 +7,7 @@ import Link from "next/link";
 import { Loader2, Plus, RefreshCcw, ClipboardList } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -53,6 +54,7 @@ function formatDate(dateStr: string): string {
 export default function CampaignsPage() {
   return (
     <ModuleGate moduleKey="ics">
+      <ModuleTabNav />
       <CampaignsPageInner />
     </ModuleGate>
   );
