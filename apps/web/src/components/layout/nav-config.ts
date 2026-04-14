@@ -147,6 +147,13 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.ismsNis2", href: "/isms/nis2", icon: Scale, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
       { labelKey: "nav.grouped.dora", href: "/dora", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
       { labelKey: "nav.grouped.aiAct", href: "/ai-act", icon: Bot, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActGpai", href: "/ai-act/gpai", icon: Bot, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActIncidents", href: "/ai-act/incidents", icon: AlertTriangle, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActProhibited", href: "/ai-act/prohibited", icon: ShieldAlert, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActQms", href: "/ai-act/qms", icon: ClipboardCheck, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActCorrective", href: "/ai-act/corrective-actions", icon: ListTodo, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActAuthority", href: "/ai-act/authority", icon: Landmark, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
+      { labelKey: "nav.grouped.aiActPenalties", href: "/ai-act/penalties", icon: Scale, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms-regulatory" },
       { labelKey: "nav.grouped.catalogs", href: "/catalogs?module=isms", icon: BookOpen, roles: ["admin", "risk_manager"], moduleKey: "isms", parentModule: "isms" },
     ],
   },
@@ -455,6 +462,122 @@ export interface FlatNavEntry {
   moduleKey?: string;
   parentModule?: string;
 }
+
+// ──────────────────────────────────────────────────────────────
+// Condensed Navigation — reduced sidebar with tab groups
+// ──────────────────────────────────────────────────────────────
+
+export interface CondensedNavItem {
+  labelKey: string;
+  href: string;
+  icon: LucideIcon;
+  roles: UserRole[] | "all";
+  moduleKey?: string;
+  /** Links to a tab group in module-tab-config.ts */
+  tabGroupKey?: string;
+}
+
+export const NAV_GROUPS_CONDENSED: NavGroup[] = [
+  {
+    key: "erm", labelKeyDe: "nav.groups.erm", labelKeyEn: "nav.groups.erm",
+    icon: ShieldAlert, order: 1,
+    items: [
+      { labelKey: "nav.condensed.risks", href: "/risks", icon: ShieldAlert, roles: ["admin", "risk_manager", "auditor"], moduleKey: "erm" },
+      { labelKey: "nav.condensed.riskAssessment", href: "/erm/risk-appetite", icon: Target, roles: ["admin", "risk_manager"], moduleKey: "erm" },
+      { labelKey: "nav.condensed.budget", href: "/budget", icon: Receipt, roles: ["admin", "risk_manager"] },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=erm", icon: BookOpen, roles: ["admin", "risk_manager"], moduleKey: "erm" },
+    ],
+  },
+  {
+    key: "isms", labelKeyDe: "nav.groups.isms", labelKeyEn: "nav.groups.isms",
+    icon: Shield, order: 2,
+    items: [
+      { labelKey: "nav.condensed.ismsSecurity", href: "/isms", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "isms" },
+      { labelKey: "nav.condensed.ismsThreats", href: "/isms/threats", icon: AlertTriangle, roles: ["admin", "risk_manager"], moduleKey: "isms" },
+      { labelKey: "nav.condensed.ismsAssessments", href: "/isms/assessments", icon: ClipboardCheck, roles: ["admin", "risk_manager"], moduleKey: "isms" },
+      { labelKey: "nav.condensed.ismsRegulatory", href: "/isms/nis2", icon: Scale, roles: ["admin", "risk_manager"], moduleKey: "isms" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=isms", icon: BookOpen, roles: ["admin", "risk_manager"], moduleKey: "isms" },
+    ],
+  },
+  {
+    key: "icsAudit", labelKeyDe: "nav.groups.icsAudit", labelKeyEn: "nav.groups.icsAudit",
+    icon: ClipboardCheck, order: 3,
+    items: [
+      { labelKey: "nav.condensed.controlsIcs", href: "/controls", icon: ShieldCheck, roles: ["admin", "risk_manager", "control_owner", "auditor"], moduleKey: "ics" },
+      { labelKey: "nav.condensed.audit", href: "/audit", icon: ClipboardCheck, roles: ["admin", "auditor"], moduleKey: "audit" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=ics,audit", icon: BookOpen, roles: ["admin", "risk_manager", "auditor"] },
+    ],
+  },
+  {
+    key: "bcms", labelKeyDe: "nav.groups.bcms", labelKeyEn: "nav.groups.bcms",
+    icon: LifeBuoy, order: 4,
+    items: [
+      { labelKey: "nav.condensed.bcmsCore", href: "/bcms", icon: LifeBuoy, roles: ["admin", "risk_manager"], moduleKey: "bcms" },
+      { labelKey: "nav.condensed.bcmsResilience", href: "/bcms/strategies", icon: Shield, roles: ["admin", "risk_manager"], moduleKey: "bcms" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=bcms", icon: BookOpen, roles: ["admin", "risk_manager"], moduleKey: "bcms" },
+    ],
+  },
+  {
+    key: "dpms", labelKeyDe: "nav.groups.dpms", labelKeyEn: "nav.groups.dpms",
+    icon: Lock, order: 5,
+    items: [
+      { labelKey: "nav.condensed.dpmsCore", href: "/dpms", icon: Lock, roles: ["admin", "dpo"], moduleKey: "dpms" },
+      { labelKey: "nav.condensed.dpmsIncidents", href: "/dpms/breaches", icon: AlertTriangle, roles: ["admin", "dpo"], moduleKey: "dpms" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=dpms", icon: BookOpen, roles: ["admin", "dpo"], moduleKey: "dpms" },
+    ],
+  },
+  {
+    key: "tprmContracts", labelKeyDe: "nav.groups.tprmContracts", labelKeyEn: "nav.groups.tprmContracts",
+    icon: Handshake, order: 6,
+    items: [
+      { labelKey: "nav.condensed.tprmVendors", href: "/tprm", icon: Handshake, roles: ["admin", "risk_manager"], moduleKey: "tprm" },
+      { labelKey: "nav.condensed.tprmContracts", href: "/contracts", icon: FileSignature, roles: ["admin", "risk_manager"], moduleKey: "contract" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=tprm,contract", icon: BookOpen, roles: ["admin", "risk_manager"] },
+    ],
+  },
+  {
+    key: "bpmArchitecture", labelKeyDe: "nav.groups.bpmArchitecture", labelKeyEn: "nav.groups.bpmArchitecture",
+    icon: Workflow, order: 7,
+    items: [
+      { labelKey: "nav.condensed.bpmProcesses", href: "/processes", icon: Workflow, roles: ["admin", "process_owner", "risk_manager"], moduleKey: "bpm" },
+      { labelKey: "nav.condensed.bpmArchitecture", href: "/eam", icon: Server, roles: ["admin", "risk_manager"], moduleKey: "eam" },
+      { labelKey: "nav.condensed.bpmDocuments", href: "/documents", icon: FileText, roles: "all", moduleKey: "dms" },
+      { labelKey: "nav.condensed.catalogs", href: "/catalogs?module=bpm", icon: BookOpen, roles: ["admin", "process_owner", "risk_manager"] },
+    ],
+  },
+  {
+    key: "esg", labelKeyDe: "nav.groups.esg", labelKeyEn: "nav.groups.esg",
+    icon: Leaf, order: 8,
+    items: [
+      { labelKey: "nav.condensed.esgCore", href: "/esg", icon: Leaf, roles: ["admin", "risk_manager"], moduleKey: "esg" },
+      { labelKey: "nav.condensed.esgEmissions", href: "/esg/emissions", icon: Globe, roles: ["admin", "risk_manager"], moduleKey: "esg" },
+      { labelKey: "nav.condensed.taxCms", href: "/tax-cms", icon: Landmark, roles: ["admin"] },
+    ],
+  },
+  {
+    key: "whistleblowing", labelKeyDe: "nav.groups.whistleblowing", labelKeyEn: "nav.groups.whistleblowing",
+    icon: Megaphone, order: 9,
+    items: [
+      { labelKey: "nav.grouped.whistleblowingCases", href: "/whistleblowing/cases", icon: Megaphone, roles: ["admin", "whistleblowing_officer"], moduleKey: "whistleblowing" },
+      { labelKey: "nav.grouped.whistleblowingStats", href: "/whistleblowing/statistics", icon: BarChart3, roles: ["admin", "whistleblowing_officer"], moduleKey: "whistleblowing" },
+    ],
+  },
+  {
+    key: "platform", labelKeyDe: "nav.groups.platform", labelKeyEn: "nav.groups.platform",
+    icon: LayoutDashboard, order: 10,
+    items: [
+      { labelKey: "nav.condensed.platformDashboard", href: "/dashboard", icon: LayoutDashboard, roles: "all" },
+      { labelKey: "nav.condensed.platformTools", href: "/copilot", icon: Bot, roles: "all" },
+      { labelKey: "nav.condensed.platformData", href: "/import", icon: Upload, roles: ["admin", "risk_manager"] },
+      { labelKey: "nav.condensed.platformCatalogs", href: "/catalogs", icon: BookOpen, roles: ["admin", "risk_manager", "auditor"] },
+      { labelKey: "nav.condensed.platformAdmin", href: "/settings", icon: Settings, roles: ["admin"] },
+    ],
+  },
+];
+
+// ──────────────────────────────────────────────────────────────
+// Helper: build a flat searchable list from all groups
+// ──────────────────────────────────────────────────────────────
 
 export function getAllFlatNavItems(): FlatNavEntry[] {
   const flat: FlatNavEntry[] = [];
