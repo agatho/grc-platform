@@ -17,6 +17,7 @@ import {
 } from "lucide-react";
 import {
   NAV_GROUPS,
+  NAV_GROUPS_CONDENSED,
   getAllFlatNavItems,
 } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
@@ -213,8 +214,43 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
   const roles = useUserRoles(currentOrgId);
-  const { isPinned, togglePin, isGroupCollapsed, toggleGroupCollapse } =
+  const { isPinned, togglePin, isGroupCollapsed, toggleGroupCollapse, setActiveGroup, sidebarMode, toggleSidebarMode } =
     useNavPreferences();
+
+  // Auto-expand the group that contains the current route
+  const activeGroupKey = useMemo(() => {
+    for (const group of NAV_GROUPS) {
+      for (const item of group.items) {
+        if (pathname === item.href || pathname.startsWith(item.href + "/")) {
+          return group.key;
+        }
+      }
+    }
+    // Fallback: check URL prefix patterns
+    const prefixMap: Record<string, string> = {
+      "/risks": "erm", "/erm": "erm", "/rcsa": "erm", "/predictive-risk": "erm",
+      "/budget": "erm", "/controls/heatmap": "erm",
+      "/isms": "isms", "/dora": "isms", "/ai-act": "isms",
+      "/controls": "icsAudit", "/audit": "icsAudit", "/control-testing": "icsAudit",
+      "/bcms": "bcms",
+      "/dpms": "dpms",
+      "/tprm": "tprmContracts", "/contracts": "tprmContracts",
+      "/processes": "bpmArchitecture", "/bpm": "bpmArchitecture", "/eam": "bpmArchitecture", "/documents": "bpmArchitecture",
+      "/esg": "esg", "/tax-cms": "esg",
+      "/whistleblowing": "whistleblowing",
+    };
+    for (const [prefix, group] of Object.entries(prefixMap)) {
+      if (pathname.startsWith(prefix)) return group;
+    }
+    return "platform";
+  }, [pathname]);
+
+  // Auto-expand active group on route change
+  useMemo(() => {
+    if (activeGroupKey) {
+      setActiveGroup(activeGroupKey);
+    }
+  }, [activeGroupKey, setActiveGroup]);
 
   const [searchQuery, setSearchQuery] = useState("");
 
@@ -251,14 +287,16 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
   );
 
   // Grouped items by group key, filtered by role
+  // Use condensed or full groups based on sidebar mode
   const groupedNav = useMemo(() => {
-    return NAV_GROUPS.map((group) => {
+    const source = sidebarMode === "condensed" ? NAV_GROUPS_CONDENSED : NAV_GROUPS;
+    return source.map((group) => {
       const items = group.items.filter((item) =>
         isItemVisible(roles, item.roles),
       );
       return { ...group, items };
     }).filter((group) => group.items.length > 0);
-  }, [roles]);
+  }, [roles, sidebarMode]);
 
   return (
     <aside
@@ -360,39 +398,78 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
               </div>
             )}
 
-            {/* ── Grouped collapsible sections ── */}
-            {groupedNav.map((group) => (
-              <CollapsibleGroup
-                key={group.key}
-                groupKey={group.key}
-                label={t(group.labelKeyEn)}
-                icon={group.icon}
-                isCollapsed={isGroupCollapsed(group.key)}
-                onToggle={() => toggleGroupCollapse(group.key)}
-                sidebarCollapsed={collapsed}
-              >
-                {group.items.map((item) => (
-                  <NavItemLink
-                    key={`${group.key}-${item.labelKey}`}
-                    href={item.href}
-                    icon={item.icon}
-                    label={t(item.labelKey)}
-                    active={isActive(item.href)}
-                    collapsed={collapsed}
-                    pinned={isPinned(item.href)}
-                    onTogglePin={() => togglePin(item.href)}
-                    showPin
-                  />
-                ))}
-              </CollapsibleGroup>
-            ))}
+            {/* ── Grouped collapsible sections with sub-sections ── */}
+            {groupedNav.map((group) => {
+              // Group items by parentModule for sub-sections
+              const subSections: { key: string; items: typeof group.items }[] = [];
+              let currentSection = "";
+              let currentItems: typeof group.items = [];
+
+              for (const item of group.items) {
+                const section = item.parentModule || group.key;
+                if (section !== currentSection && currentItems.length > 0) {
+                  subSections.push({ key: currentSection, items: currentItems });
+                  currentItems = [];
+                }
+                currentSection = section;
+                currentItems.push(item);
+              }
+              if (currentItems.length > 0) {
+                subSections.push({ key: currentSection, items: currentItems });
+              }
+
+              const showSubSectionDividers = subSections.length > 1 && !collapsed;
+
+              return (
+                <CollapsibleGroup
+                  key={group.key}
+                  groupKey={group.key}
+                  label={t(group.labelKeyEn)}
+                  icon={group.icon}
+                  isCollapsed={isGroupCollapsed(group.key)}
+                  onToggle={() => toggleGroupCollapse(group.key)}
+                  sidebarCollapsed={collapsed}
+                >
+                  {subSections.map((section, sIdx) => (
+                    <div key={section.key}>
+                      {showSubSectionDividers && sIdx > 0 && (
+                        <div className="mx-5 my-1.5 border-t border-gray-100" />
+                      )}
+                      {section.items.map((item) => (
+                        <NavItemLink
+                          key={`${group.key}-${item.labelKey}`}
+                          href={item.href}
+                          icon={item.icon}
+                          label={t(item.labelKey)}
+                          active={isActive(item.href)}
+                          collapsed={collapsed}
+                          pinned={isPinned(item.href)}
+                          onTogglePin={() => togglePin(item.href)}
+                          showPin
+                        />
+                      ))}
+                    </div>
+                  ))}
+                </CollapsibleGroup>
+              );
+            })}
           </>
         )}
       </nav>
 
-      {/* Bottom section — settings shortcut when sidebar is collapsed */}
-      {collapsed && (
-        <div className="border-t border-gray-200 py-2">
+      {/* Bottom section — mode toggle + settings */}
+      <div className="border-t border-gray-200 py-2">
+        {!collapsed && (
+          <button
+            onClick={toggleSidebarMode}
+            className="flex items-center gap-2 w-full px-4 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
+            title={sidebarMode === "condensed" ? "Alle Menüpunkte anzeigen" : "Kompakte Ansicht"}
+          >
+            <ChevronRight size={10} className={sidebarMode === "condensed" ? "" : "rotate-90"} />
+            {sidebarMode === "condensed" ? "Vollständiges Menü" : "Kompaktes Menü"}
+          </button>
+        )}
+        {collapsed && (
           <ul>
             <li>
               <Link
@@ -408,8 +485,8 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
               </Link>
             </li>
           </ul>
-        </div>
-      )}
+        )}
+      </div>
     </aside>
   );
 }
