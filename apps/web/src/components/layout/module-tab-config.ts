@@ -174,6 +174,7 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "tprm-vendors",
     tabs: [
       { labelKey: "nav.tabs.tprmOverview", href: "/tprm", match: "exact" },
+      { labelKey: "nav.tabs.tprmRisks", href: "/tprm/risks" },
       { labelKey: "nav.tabs.vendors", href: "/tprm/vendors", match: "prefix" },
       { labelKey: "nav.tabs.lksg", href: "/tprm/lksg" },
       { labelKey: "nav.tabs.scorecards", href: "/tprm/scorecards" },
