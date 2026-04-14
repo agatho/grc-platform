@@ -2,7 +2,7 @@
 
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. 74 entities, 29 catalog frameworks (2,020 entries), 15 modules, 86 sprints completed.
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. 74 entities, 31 catalog frameworks (~2,100 entries), 15 modules, 88 migrations completed.
 
 ## Tech Stack
 
@@ -93,13 +93,21 @@ arctos/
 
 | Feature | Status |
 |---------|--------|
+| **Accordion-Sidebar + Horizontal Tab-Navigation** (118→35 items, 27 tab groups) | ✅ Done |
+| **EU AI Act Full Compliance** (13 DB tables, 14 pages, GPAI/Incidents/Prohibited/QMS/Corrective/Authority/Penalties) | ✅ Done |
+| **ISMS IS-Risikoszenarien** (ISO 27005: Threat×Vuln×Asset → Bewertung → ERM-Sync) | ✅ Done |
+| **ISMS CAP-Modul** (ISO 27001 Kap. 10: Nichtkonformitäten + Korrekturmaßnahmen) | ✅ Done |
+| **Risk Acceptance** (ISO 27005 Kap. 10: Formale Akzeptanz + Authority Matrix) | ✅ Done |
+| **ISO 27005 Kataloge** (31 Bedrohungen + 23 Schwachstellen) | ✅ Done |
+| **SoA mit 93 Annex A Kontrollen** (control_catalog_entry verknüpft) | ✅ Done |
 | Management-system sidebar navigation (10 groups) | ✅ Done |
 | Hierarchical budget model + cost fields on entities | ✅ Done |
-| 29 catalog frameworks (2,020 entries) + target_modules | ✅ Done |
+| 31 catalog frameworks (~2,100 entries) + target_modules | ✅ Done |
 | 401 cross-framework mappings + Framework Coverage UI | ✅ Done |
 | ISMS Protection Needs (Schutzbedarf from BIA) | ✅ Done |
 | Unified catalog API (generic catalog table) | ✅ Done |
 | Catalog activation UI with module filtering | ✅ Done |
+| **Normenbasierte Testpläne** (ISO 27001, ISO 31000, COSO/IIA, ISO 22301, DSGVO, ISO 27036, CSRD) | ✅ Done |
 
 ## Sidebar Navigation (Management-System Grouping)
 
@@ -108,7 +116,7 @@ The sidebar is organized into 10 management-system groups (not abstract categori
 | # | Group Key | Label | Contents |
 |---|-----------|-------|----------|
 | 1 | `erm` | Enterprise Risk Management | Risks, KRIs, Risk Groups, Appetite, FAIR, RCSA, Predictive, Heatmap, Budget/ROI/RONI, Catalogs |
-| 2 | `isms` | Information Security | ISMS Overview, Assets, Protection Needs, Threats, Vulns, Incidents, Assessments, Maturity, SoA, Reviews, Posture, Certifications, CVE, Playbooks, NIS2, DORA, AI Act, Catalogs |
+| 2 | `isms` | Information Security | ISMS Overview, **IS-Risiken**, Assets, Protection Needs, Threats, Vulns, Incidents, Assessments, Maturity, SoA, **CAP**, Reviews, Posture, Certifications, CVE, Playbooks, NIS2, DORA, **AI Act (14 Seiten)**, Catalogs |
 | 3 | `icsAudit` | Controls & Audit | Controls, Test Campaigns, Control Findings, RCM, Evidence, Audit, Universe, Plans, Executions, Audit Findings, Catalogs |
 | 4 | `bcms` | Business Continuity | BCMS Overview, BIA, Plans, Crisis, Strategies, Exercises, Resilience, Catalogs |
 | 5 | `dpms` | Data Protection | Privacy Overview, RoPA, DPIA, DSR, Breaches, TIA, Consent, Retention, Catalogs |
@@ -163,6 +171,8 @@ Config: `apps/web/src/components/layout/nav-config.ts`
 | 27 | ISO 22301:2019 | Control | 32 | bcms |
 | 28 | ESRS / CSRD | Control | 96 | esg |
 | 29 | OWASP ASVS v4.0.3 | Control | 106 | isms |
+| 30 | ISO 27005:2022 Bedrohungen | Risk | 31 | isms, erm |
+| 31 | ISO 27005:2022 Schwachstellen | Risk | 23 | isms, erm |
 
 ### Cross-Framework Mappings (401 total)
 - ISO 27001 Annex A ↔ ISO 27002:2022 (93 — 1:1 equivalence)

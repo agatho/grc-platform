@@ -1,6 +1,6 @@
-import { db, riskScenario, threat, vulnerability, asset } from "@grc/db";
+import { db, riskScenario } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/isms/risk-scenarios/[id]
@@ -16,33 +16,31 @@ export async function GET(
 
   const { id } = await params;
 
-  const rows = await db
-    .select({
-      id: riskScenario.id,
-      orgId: riskScenario.orgId,
-      riskId: riskScenario.riskId,
-      threatId: riskScenario.threatId,
-      vulnerabilityId: riskScenario.vulnerabilityId,
-      assetId: riskScenario.assetId,
-      description: riskScenario.description,
-      createdAt: riskScenario.createdAt,
-      threatTitle: threat.title,
-      threatCategory: threat.threatCategory,
-      vulnerabilityTitle: vulnerability.title,
-      assetName: asset.name,
-    })
-    .from(riskScenario)
-    .leftJoin(threat, eq(riskScenario.threatId, threat.id))
-    .leftJoin(vulnerability, eq(riskScenario.vulnerabilityId, vulnerability.id))
-    .leftJoin(asset, eq(riskScenario.assetId, asset.id))
-    .where(and(eq(riskScenario.id, id), eq(riskScenario.orgId, ctx.orgId)))
-    .limit(1);
+  // Raw SQL to include all columns from migration 0087 (ALTER TABLE additions)
+  const result = await db.execute(sql`
+    SELECT
+      rs.*,
+      t.title as threat_title,
+      t.threat_category,
+      v.title as vulnerability_title,
+      v.severity as vulnerability_severity,
+      a.name as asset_name,
+      a.tier as asset_tier,
+      ou.name as owner_name
+    FROM risk_scenario rs
+    LEFT JOIN threat t ON t.id = rs.threat_id
+    LEFT JOIN vulnerability v ON v.id = rs.vulnerability_id
+    LEFT JOIN asset a ON a.id = rs.asset_id
+    LEFT JOIN "user" ou ON ou.id = rs.owner_id
+    WHERE rs.id = ${id} AND rs.org_id = ${ctx.orgId}
+    LIMIT 1
+  `);
 
-  if (rows.length === 0) {
+  if (result.rows.length === 0) {
     return Response.json({ error: "Risk scenario not found" }, { status: 404 });
   }
 
-  return Response.json({ data: rows[0] });
+  return Response.json({ data: result.rows[0] });
 }
 
 // DELETE /api/v1/isms/risk-scenarios/[id]
