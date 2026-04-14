@@ -9,8 +9,8 @@
   "totalTaxRisks": "Steuerrisiken",
   "criticalRisks": "Kritische Risiken",
   "gobdCompliance": "GoBD-konform",
-  "keyControlsEffective": "Schluesselkontrollen wirksam",
-  "activeAudits": "Aktive Pruefungen",
+  "keyControlsEffective": "Schlüsselkontrollen wirksam",
+  "activeAudits": "Aktive Prüfungen",
   "totalExposure": "Gesamtrisiko",
   "nav": {
     "dashboard": "Dashboard",
@@ -18,7 +18,7 @@
     "risks": "Steuerliches Risikoregister",
     "gobdArchives": "GoBD-Archiv",
     "icfrControls": "ICFR-Kontrollen",
-    "auditPreps": "Betriebspruefungs-Vorbereitung"
+    "auditPreps": "Betriebsprüfungs-Vorbereitung"
   },
   "elementTypes": {
     "culture": "Tax-CMS-Kultur",
@@ -27,6 +27,6 @@
     "program": "Tax-CMS-Programm",
     "org_structure": "Organisation",
     "communication": "Kommunikation",
-    "monitoring": "Ueberwachung"
+    "monitoring": "Überwachung"
   }
 }

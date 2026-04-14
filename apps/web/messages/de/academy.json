@@ -1,21 +1,21 @@
 {
   "title": "GRC Akademie",
-  "description": "Schulungen, Awareness und Compliance-Kurse fuer Ihre Organisation",
+  "description": "Schulungen, Awareness und Compliance-Kurse für Ihre Organisation",
   "activeCourses": "Aktive Kurse",
   "completionRate": "Abschlussrate",
-  "overdue": "Ueberfaellig",
+  "overdue": "Überfällig",
   "certificatesIssued": "Zertifikate ausgestellt",
   "inProgress": "In Bearbeitung",
   "mandatoryCourses": "Pflichtschulungen",
   "totalEnrollments": "Gesamt-Anmeldungen",
   "avgProgress": "Durchschnittlicher Fortschritt",
   "notFound": "Kurs nicht gefunden",
-  "backToCourses": "Zurueck zu Kursen",
+  "backToCourses": "Zurück zu Kursen",
   "mandatory": "Pflicht",
   "passingScore": "Bestehensgrenze",
   "version": "Version",
   "complete": "abgeschlossen",
-  "dueDate": "Faelligkeitsdatum",
+  "dueDate": "Fälligkeitsdatum",
   "completedAt": "Abgeschlossen",
   "courses": {
     "title": "Kurse",
@@ -36,7 +36,7 @@
   },
   "lessons": {
     "title": "Lektionen",
-    "empty": "Keine Lektionen verfuegbar"
+    "empty": "Keine Lektionen verfügbar"
   },
   "courseTypes": {
     "gdpr": "DSGVO-Awareness",
@@ -50,7 +50,7 @@
     "aml": "Geldwaeschebekaempfung",
     "data_classification": "Datenklassifizierung",
     "incident_response": "Vorfallreaktion",
-    "bcm": "Geschaeftskontinuitaet",
+    "bcm": "Geschäftskontinuität",
     "whistleblowing": "Hinweisgeber-Awareness",
     "it_security": "IT-Sicherheit",
     "custom": "Individuelle Schulung"

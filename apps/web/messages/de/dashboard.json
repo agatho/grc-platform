@@ -1,26 +1,26 @@
 {
   "title": "Dashboards",
   "welcomeUser": "Willkommen, {name}",
-  "welcome": "Hier ist Ihre GRC-Uebersicht fuer heute.",
+  "welcome": "Hier ist Ihre GRC-Übersicht für heute.",
   "widgets": {
     "openRisks": "Offene Risiken",
     "activeControls": "Aktive Kontrollen",
     "pendingFindings": "Offene Feststellungen",
     "complianceScore": "Compliance-Score",
-    "recentChanges": "Letzte Aenderungen",
+    "recentChanges": "Letzte Änderungen",
     "notifications": "Benachrichtigungen",
     "myTasks": "Meine Aufgaben",
     "upcomingAudits": "Anstehende Audits"
   },
   "risk": {
     "appetite": {
-      "exceeded": "ueber Risikoappetit"
+      "exceeded": "über Risikoappetit"
     }
   },
   "subtitle": "Erstellen und verwalten Sie Ihre individuellen GRC-Dashboards",
   "createDashboard": "Neues Dashboard",
   "dashboardName": "Name",
-  "dashboardNamePlaceholder": "z.B. CISO-Uebersicht",
+  "dashboardNamePlaceholder": "z.B. CISO-Übersicht",
   "description": "Beschreibung",
   "descriptionPlaceholder": "Optionale Beschreibung des Dashboards",
   "visibility": "Sichtbarkeit",
@@ -41,8 +41,8 @@
     "markRead": "Als gelesen markieren"
   },
   "recentChanges": {
-    "empty": "Keine aktuellen Aenderungen",
-    "error": "Aenderungen konnten nicht geladen werden"
+    "empty": "Keine aktuellen Änderungen",
+    "error": "Änderungen konnten nicht geladen werden"
   },
   "upcomingAudits": {
     "empty": "Keine anstehenden Audits"
@@ -57,7 +57,7 @@
   "widgetsTitle": "Widgets",
   "edit": "Bearbeiten",
   "duplicate": "Duplizieren",
-  "delete": "Loeschen",
+  "delete": "Löschen",
   "cancel": "Abbrechen",
   "create": "Erstellen",
   "save": "Speichern",
@@ -65,11 +65,11 @@
   "apply": "Anwenden",
   "remove": "Entfernen",
   "exportPdf": "PDF-Export",
-  "confirmDelete": "Dashboard wirklich loeschen?",
+  "confirmDelete": "Dashboard wirklich löschen?",
   "noDashboards": "Keine Dashboards vorhanden",
   "createFirst": "Erstes Dashboard erstellen",
   "dashboardNotFound": "Dashboard nicht gefunden",
-  "backToList": "Zurueck zur Uebersicht",
+  "backToList": "Zurück zur Übersicht",
   "noWidgets": "Noch keine Widgets hinzugefuegt",
   "addWidgets": "Widgets hinzufuegen",
   "lastUpdated": "Zuletzt aktualisiert",
@@ -86,7 +86,7 @@
   "timeRangeMonth": "Monat",
   "timeRangeQuarter": "Quartal",
   "timeRangeYear": "Jahr",
-  "maxEntries": "Max. Eintraege",
+  "maxEntries": "Max. Einträge",
   "showTrend": "Trend anzeigen",
   "showLegend": "Legende anzeigen",
   "preview": "Vorschau",
@@ -95,9 +95,9 @@
   "pdfPortrait": "A4 Hochformat",
   "pdfGenerate": "PDF generieren",
   "fromTemplate": "Aus Vorlage",
-  "templateCiso": "CISO-Uebersicht",
+  "templateCiso": "CISO-Übersicht",
   "templateRiskManager": "Risikomanager",
-  "templateAuditor": "Pruefer",
+  "templateAuditor": "Prüfer",
   "error": {
     "notFound": "Nicht gefunden",
     "forbidden": "Keine Berechtigung"
@@ -105,6 +105,6 @@
   "success": {
     "created": "Dashboard erstellt",
     "updated": "Dashboard aktualisiert",
-    "deleted": "Dashboard geloescht"
+    "deleted": "Dashboard gelöscht"
   }
 }

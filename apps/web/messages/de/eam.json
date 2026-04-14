@@ -6,14 +6,14 @@
   "relationships": "Beziehungen",
   "createRelationship": "Beziehung erstellen",
   "layers": {
-    "business": "Geschaeftsschicht",
+    "business": "Geschäftsschicht",
     "application": "Anwendungsschicht",
     "technology": "Technologieschicht"
   },
   "types": {
-    "business_capability": "Geschaeftsfaehigkeit",
-    "business_service": "Geschaeftsdienst",
-    "business_function": "Geschaeftsfunktion",
+    "business_capability": "Geschäftsfähigkeit",
+    "business_service": "Geschäftsdienst",
+    "business_function": "Geschäftsfunktion",
     "application": "Anwendung",
     "app_service": "Anwendungsdienst",
     "app_interface": "Anwendungsschnittstelle",
@@ -32,17 +32,17 @@
     "accesses": "Zugriff auf",
     "flows_to": "Fliesst zu",
     "composes": "Besteht aus",
-    "depends_on": "Abhaengig von",
+    "depends_on": "Abhängig von",
     "deployed_on": "Deployed auf",
     "uses": "Nutzt"
   },
   "capabilities": {
-    "title": "Geschaeftsfaehigkeiten",
-    "createCapability": "Faehigkeit erstellen",
+    "title": "Geschäftsfähigkeiten",
+    "createCapability": "Fähigkeit erstellen",
     "maturityLevel": "Reifegrad",
     "strategicImportance": "Strategische Bedeutung",
     "core": "Kern",
-    "supporting": "Unterstuetzend",
+    "supporting": "Unterstützend",
     "commodity": "Standard"
   },
   "portfolio": {
@@ -56,9 +56,9 @@
     "invest": "Investieren",
     "migrate": "Migrieren",
     "eliminate": "Eliminieren",
-    "businessValue": "Geschaeftswert",
+    "businessValue": "Geschäftswert",
     "technicalCondition": "Technischer Zustand",
-    "annualCost": "Jaehrliche Kosten",
+    "annualCost": "Jährliche Kosten",
     "userCount": "Benutzeranzahl",
     "plannedEol": "Geplantes Lebensende",
     "approachingEol": "Nahendes Lebensende"
@@ -69,21 +69,21 @@
     "exportSvg": "Als SVG exportieren",
     "exportPng": "Als PNG exportieren",
     "autoLayout": "Automatisches Layout",
-    "resetZoom": "Zoom zuruecksetzen"
+    "resetZoom": "Zoom zurücksetzen"
   },
   "spof": {
     "title": "Single Points of Failure",
     "detected": "Erkannte SPOFs"
   },
   "nis2": {
-    "title": "NIS2-Abhaengigkeitskarte",
+    "title": "NIS2-Abhängigkeitskarte",
     "essentialServices": "Wesentliche Dienste"
   },
   "rules": {
     "title": "Architekturregeln",
     "createRule": "Regel erstellen",
     "violations": "Verstoesse",
-    "acknowledge": "Bestaetigen",
+    "acknowledge": "Bestätigen",
     "resolve": "Beheben",
     "falsePositive": "Falsch-positiv"
   },
@@ -98,29 +98,29 @@
     "title": "Datenfluesse",
     "createFlow": "Datenfluss erstellen",
     "personalData": "Personenbezogene Daten",
-    "crossBorder": "Grenzueberschreitend",
+    "crossBorder": "Grenzüberschreitend",
     "gdprReport": "DSGVO-Bericht",
     "legalBasis": "Rechtsgrundlage",
     "safeguard": "Schutznahmnahme",
-    "encryption": "Verschluesselung"
+    "encryption": "Verschlüsselung"
   },
   "techRadar": {
     "title": "Technologie-Radar",
     "addTechnology": "Technologie hinzufuegen",
-    "adopt": "Uebernehmen",
+    "adopt": "Übernehmen",
     "trial": "Testen",
     "assess": "Bewerten",
     "hold": "Halten",
     "holdWarning": "Technologien im HOLD-Ring mit aktiven Anwendungen"
   },
   "changeRequests": {
-    "title": "Aenderungsantraege",
+    "title": "Änderungsantraege",
     "createRequest": "Antrag erstellen",
     "submit": "Einreichen",
     "vote": "Abstimmen",
     "approve": "Genehmigen",
     "reject": "Ablehnen",
-    "defer": "Zurueckstellen",
+    "defer": "Zurückstellen",
     "impact": "Auswirkungsanalyse"
   },
   "health": {
@@ -128,9 +128,9 @@
     "overallScore": "Gesamtbewertung",
     "portfolioAge": "Portfolioalter",
     "techCurrency": "Technologieaktualitaet",
-    "integrationComplexity": "Integrationskomplexitaet",
-    "ruleCompliance": "Regelkonformitaet",
-    "dataFlowCompliance": "Datenfluss-Konformitaet",
+    "integrationComplexity": "Integrationskomplexität",
+    "ruleCompliance": "Regelkonformität",
+    "dataFlowCompliance": "Datenfluss-Konformität",
     "technicalDebt": "Technische Schulden"
   }
 }

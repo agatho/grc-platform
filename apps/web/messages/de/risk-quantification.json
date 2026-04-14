@@ -6,7 +6,7 @@
   "p95Confidence": "95% Konfidenzniveau",
   "riskAppetite": "Risikoappetit",
   "viewThresholds": "Schwellenwerte anzeigen",
-  "sensitivityAnalysis": "Sensitivitaetsanalyse",
+  "sensitivityAnalysis": "Sensitivitätsanalyse",
   "tornadoDiagram": "Tornado-Diagramm",
   "executiveSummary": "Zusammenfassung",
   "boardReport": "Vorstandsbericht",
@@ -14,7 +14,7 @@
   "methodology": "Methodik",
   "iterations": "Iterationen",
   "confidence": "Konfidenz",
-  "currency": "Waehrung",
+  "currency": "Währung",
   "recentCalculations": "Letzte Berechnungen",
   "noCalculations": "Noch keine Berechnungen. Starten Sie Ihre erste VaR-Berechnung.",
   "allEntities": "Alle Einheiten",
@@ -23,7 +23,7 @@
     "expectedLoss": "Erwarteter Verlust",
     "varP95": "Value at Risk (P95)",
     "appetiteStatus": "Appetit-Status",
-    "exceeding": "Appetit ueberschritten"
+    "exceeding": "Appetit überschritten"
   },
   "appetite": {
     "title": "Risikoappetit-Schwellenwerte",
@@ -37,8 +37,8 @@
     "status": "Status"
   },
   "sensitivity": {
-    "title": "Sensitivitaetsanalyse",
-    "description": "Analysieren Sie, wie Parameteraenderungen das Gesamtrisiko beeinflussen",
+    "title": "Sensitivitätsanalyse",
+    "description": "Analysieren Sie, wie Parameteränderungen das Gesamtrisiko beeinflussen",
     "newAnalysis": "Neue Analyse"
   },
   "summaries": {

@@ -1,7 +1,7 @@
 {
   "title": "Entwickler-Portal",
-  "subtitle": "API-Schluessel, Entwickler-Apps und API-Dokumentation verwalten",
-  "createApiKey": "API-Schluessel erstellen",
+  "subtitle": "API-Schlüssel, Entwickler-Apps und API-Dokumentation verwalten",
+  "createApiKey": "API-Schlüssel erstellen",
   "playground": "API-Spielplatz",
   "playgroundSubtitle": "API-Endpunkte interaktiv testen",
   "request": "Anfrage",
@@ -11,25 +11,25 @@
     "totalRequests": "Anfragen gesamt (30T)",
     "avgResponseTime": "Durchschn. Antwortzeit",
     "successRate": "Erfolgsrate",
-    "apiKeys": "Aktive API-Schluessel"
+    "apiKeys": "Aktive API-Schlüssel"
   },
   "nav": {
-    "apiKeys": "API-Schluessel",
-    "apiKeysDesc": "API-Schluessel mit Berechtigungen erstellen und verwalten",
+    "apiKeys": "API-Schlüssel",
+    "apiKeysDesc": "API-Schlüssel mit Berechtigungen erstellen und verwalten",
     "developerApps": "Entwickler-Apps",
-    "developerAppsDesc": "OAuth2-Anwendungen fuer Drittanbieter-Integrationen registrieren",
+    "developerAppsDesc": "OAuth2-Anwendungen für Drittanbieter-Integrationen registrieren",
     "playground": "API-Spielplatz",
     "playgroundDesc": "API-Endpunkte interaktiv mit gespeicherten Snippets testen"
   },
   "apiKeysTable": {
-    "title": "API-Schluessel",
+    "title": "API-Schlüssel",
     "name": "Name",
-    "key": "Schluessel",
+    "key": "Schlüssel",
     "status": "Status",
     "lastUsed": "Zuletzt verwendet",
     "rateLimit": "Ratenlimit",
     "actions": "Aktionen",
-    "empty": "Noch keine API-Schluessel erstellt",
+    "empty": "Noch keine API-Schlüssel erstellt",
     "neverUsed": "Noch nie verwendet"
   }
 }

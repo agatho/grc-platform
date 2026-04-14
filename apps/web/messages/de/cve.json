@@ -1,6 +1,6 @@
 {
   "title": "CVE Intelligence Dashboard",
-  "subtitle": "Automatische Schwachstellen-Intelligenz aus oeffentlichen CVE-Feeds",
+  "subtitle": "Automatische Schwachstellen-Intelligenz aus öffentlichen CVE-Feeds",
   "feed": "CVE-Feed",
   "matches": "CVE-Asset-Zuordnungen",
   "dashboard": "Dashboard",
@@ -20,7 +20,7 @@
     "title": "Titel",
     "affectedAssets": "Betroffene Assets",
     "status": "Status",
-    "publishedAt": "Veroeffentlicht",
+    "publishedAt": "Veröffentlicht",
     "matchedAt": "Zugeordnet",
     "assetName": "Asset",
     "matchedCpe": "Zugeordnete CPE",
@@ -28,7 +28,7 @@
   },
   "status": {
     "new": "Neu",
-    "acknowledged": "Bestaetigt",
+    "acknowledged": "Bestätigt",
     "mitigated": "Behoben",
     "not_applicable": "Nicht anwendbar"
   },
@@ -40,12 +40,12 @@
     "none": "Keine"
   },
   "actions": {
-    "acknowledge": "Bestaetigen",
+    "acknowledge": "Bestätigen",
     "markMitigated": "Als behoben markieren",
     "markNotApplicable": "Nicht anwendbar",
-    "convertToVulnerability": "Als Schwachstelle uebernehmen",
+    "convertToVulnerability": "Als Schwachstelle übernehmen",
     "syncNow": "Jetzt synchronisieren",
-    "bulkAcknowledge": "Massenbestaetigung",
+    "bulkAcknowledge": "Massenbestätigung",
     "bulkMarkAnalysis": "In Analyse markieren",
     "viewOnNvd": "Auf NVD ansehen"
   },
@@ -65,10 +65,10 @@
     "affectedBanner": "{count} neue CVEs betreffen dieses Asset"
   },
   "empty": "Keine CVE-Zuordnungen gefunden. Weisen Sie Ihren Assets CPE-Kennungen zu, um das Monitoring zu starten.",
-  "emptyFeed": "Keine CVEs im Feed. Fuehren Sie eine Synchronisation durch.",
+  "emptyFeed": "Keine CVEs im Feed. Führen Sie eine Synchronisation durch.",
   "lastSync": "Letzte Synchronisation",
   "ago": "her",
   "convertSuccess": "Schwachstelle aus CVE erstellt",
-  "acknowledgeSuccess": "Zuordnung bestaetigt",
+  "acknowledgeSuccess": "Zuordnung bestätigt",
   "rateLimited": "Bitte warten Sie vor einer erneuten Synchronisation"
 }

@@ -3,11 +3,11 @@
   "subtitle": "Daten aus CSV- oder Excel-Dateien importieren",
   "history": {
     "title": "Import-Verlauf",
-    "subtitle": "Uebersicht aller bisherigen Importvorgaenge",
+    "subtitle": "Übersicht aller bisherigen Importvorgaenge",
     "noJobs": "Noch keine Importvorgaenge vorhanden",
     "columns": {
       "date": "Datum",
-      "entityType": "Entitaetstyp",
+      "entityType": "Entitätstyp",
       "fileName": "Dateiname",
       "totalRows": "Gesamt",
       "importedRows": "Importiert",
@@ -25,18 +25,18 @@
   },
   "mappings": {
     "title": "Gespeicherte Zuordnungen",
-    "subtitle": "Haeufig verwendete Spaltenzuordnungen verwalten",
+    "subtitle": "Häufig verwendete Spaltenzuordnungen verwalten",
     "noMappings": "Keine gespeicherten Zuordnungen vorhanden",
     "load": "Laden",
-    "delete": "Loeschen",
+    "delete": "Löschen",
     "save": "Zuordnung speichern",
     "saveName": "Name der Zuordnung"
   },
   "wizard": {
     "step1": {
       "title": "Datei hochladen",
-      "entityType": "Entitaetstyp waehlen",
-      "dropzone": "Datei hierher ziehen oder klicken zum Auswaehlen",
+      "entityType": "Entitätstyp wählen",
+      "dropzone": "Datei hierher ziehen oder klicken zum Auswählen",
       "dropzoneHint": "CSV, Excel (.xlsx, .xls) — max. 10 MB",
       "downloadTemplate": "Vorlage herunterladen",
       "loadMapping": "Vorherige Zuordnung laden",
@@ -53,26 +53,26 @@
       "saveMapping": "Zuordnung speichern",
       "mappingName": "Name der Zuordnung",
       "next": "Weiter",
-      "back": "Zurueck"
+      "back": "Zurück"
     },
     "step3": {
       "title": "Validierung & Vorschau",
-      "summary": "{total} Zeilen erkannt, {valid} gueltig, {errors} Fehler",
+      "summary": "{total} Zeilen erkannt, {valid} gültig, {errors} Fehler",
       "errorTable": "Fehler",
-      "validRows": "Gueltige Zeilen",
+      "validRows": "Gültige Zeilen",
       "row": "Zeile",
       "field": "Feld",
       "error": "Fehler",
       "duplicates": "Duplikate",
-      "fkResolution": "Referenzaufloesung",
+      "fkResolution": "Referenzauflösung",
       "dryRun": "Simulation (kein Import)",
       "import": "Importieren",
-      "back": "Zurueck"
+      "back": "Zurück"
     },
     "step4": {
       "title": "Ergebnis",
       "success": "{count} {entityType} erfolgreich importiert",
-      "failed": "{count} uebersprungen",
+      "failed": "{count} übersprungen",
       "resultTable": "Ergebnistabelle",
       "row": "Zeile",
       "status": "Status",
@@ -88,10 +88,10 @@
     "control": "Kontrollen",
     "asset": "Assets",
     "vendor": "Lieferanten",
-    "contract": "Vertraege",
-    "incident": "Vorfaelle",
+    "contract": "Verträge",
+    "incident": "Vorfälle",
     "process": "Prozesse",
-    "ropa_entry": "VVT-Eintraege"
+    "ropa_entry": "VVT-Einträge"
   },
   "status": {
     "uploaded": "Hochgeladen",
@@ -114,15 +114,15 @@
       "subtitle": "Automatische Exporte konfigurieren",
       "create": "Neuen Export planen",
       "name": "Bezeichnung",
-      "entityTypes": "Entitaetstypen",
+      "entityTypes": "Entitätstypen",
       "format": "Format",
       "schedule": "Zeitplan",
-      "recipients": "Empfaenger",
-      "lastRun": "Letzte Ausfuehrung",
+      "recipients": "Empfänger",
+      "lastRun": "Letzte Ausführung",
       "active": "Aktiv",
       "inactive": "Inaktiv",
-      "delete": "Loeschen",
-      "weekly": "Woechentlich (Montag 06:00)"
+      "delete": "Löschen",
+      "weekly": "Wöchentlich (Montag 06:00)"
     }
   }
 }

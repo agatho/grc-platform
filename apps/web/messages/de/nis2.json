@@ -1,13 +1,13 @@
 {
   "title": "NIS2 Compliance Tracker",
-  "subtitle": "Status der NIS2-Anforderungen gemaess Art. 21 Abs. 2",
+  "subtitle": "Status der NIS2-Anforderungen gemäß Art. 21 Abs. 2",
   "overallStatus": "NIS2 Gesamtstatus",
   "requirements": "Anforderungen",
   "requirementsCatalog": "NIS2 Anforderungskatalog",
-  "requirementsDescription": "Art. 21 Abs. 2 lit. a-j: 10 Massnahmenbereiche",
+  "requirementsDescription": "Art. 21 Abs. 2 lit. a-j: 10 Maßnahmenbereiche",
   "reportingTracker": "Meldepflichten",
   "missing": "fehlend",
-  "evidenceComplete": "Evidenz vollstaendig",
+  "evidenceComplete": "Evidenz vollständig",
   "status": {
     "compliant": "Konform",
     "partiallyCompliant": "Teilweise konform",
@@ -33,9 +33,9 @@
   },
   "reporting": {
     "title": "NIS2 Meldepflichten (Art. 23)",
-    "subtitle": "Fruehwarnung, Vollmeldung und Abschlussbericht fuer Sicherheitsvorfaelle",
+    "subtitle": "Fruehwarnung, Vollmeldung und Abschlussbericht für Sicherheitsvorfälle",
     "total": "Gesamt",
-    "overdue": "Ueberfaellig",
+    "overdue": "Überfällig",
     "pending": "Ausstehend",
     "submitted": "Eingereicht",
     "reports": "Meldungen",
