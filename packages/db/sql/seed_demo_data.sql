@@ -132,7 +132,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000101',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Ransomware-Angriff auf kritische Systeme',
-  'Ein gezielter Ransomware-Angriff verschluesselt produktionskritische Systeme und fuehrt zu mehrtaegigem Betriebsausfall. Risiko erhoehter Angriffsflaeche durch zunehmende Digitalisierung.',
+  'Ein gezielter Ransomware-Angriff verschlüsselt produktionskritische Systeme und führt zu mehrtägigem Betriebsausfall. Risiko erhöhter Angriffsfläche durch zunehmende Digitalisierung.',
   'cyber',
   'isms',
   'assessed',
@@ -158,7 +158,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000102',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Lieferkettenunterbrechung kritischer IT-Dienstleister',
-  'Ausfall oder Verzoegerung bei der Lieferung von IT-Hardware, Software-Lizenzen oder Managed Services durch geopolitische Spannungen oder Insolvenz eines Schluessellieferanten.',
+  'Ausfall oder Verzögerung bei der Lieferung von IT-Hardware, Software-Lizenzen oder Managed Services durch geopolitische Spannungen oder Insolvenz eines Schlüssellieferanten.',
   'operational',
   'erm',
   'assessed',
@@ -184,7 +184,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000103',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'DSGVO-Verstoss durch Datenpanne',
-  'Unbefugter Zugriff auf personenbezogene Daten von Kunden oder Mitarbeitern mit Meldepflicht an die Aufsichtsbehoerde. Potenzielle Bussgelder bis 4% des Jahresumsatzes gemaess Art. 83 DSGVO.',
+  'Unbefugter Zugriff auf personenbezogene Daten von Kunden oder Mitarbeitern mit Meldepflicht an die Aufsichtsbehoerde. Potenzielle Bussgelder bis 4% des Jahresumsatzes gemäß Art. 83 DSGVO.',
   'compliance',
   'erm',
   'assessed',
@@ -209,8 +209,8 @@ INSERT INTO risk (id, org_id, title, description, risk_category, risk_source, st
 VALUES (
   'd0000000-0000-0000-0000-000000000104',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Verlust von Schluessel-Personal (CISO, DPO, IT-Architekten)',
-  'Abwanderung oder laengerer Ausfall von Wissenstraegern in Schluesselrollen der Informationssicherheit und Compliance fuehrt zu Wissensverlust und Verzoegerung kritischer Projekte.',
+  'Verlust von Schlüssel-Personal (CISO, DPO, IT-Architekten)',
+  'Abwanderung oder längerer Ausfall von Wissensträgern in Schlüsselrollen der Informationssicherheit und Compliance führt zu Wissensverlust und Verzögerung kritischer Projekte.',
   'operational',
   'erm',
   'identified',
@@ -235,8 +235,8 @@ INSERT INTO risk (id, org_id, title, description, risk_category, risk_source, st
 VALUES (
   'd0000000-0000-0000-0000-000000000105',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Ausfall des primaeren Cloud-Providers',
-  'Grossflaechiger Ausfall des primaeren Cloud-/SaaS-Anbieters fuehrt zu mehrstuendigem bis mehrtaegigem Ausfall geschaeftskritischer Anwendungen. Betrifft ERP, E-Mail und Collaboration-Tools.',
+  'Ausfall des primären Cloud-Providers',
+  'Großflächiger Ausfall des primären Cloud-/SaaS-Anbieters führt zu mehrstündigem bis mehrtägigem Ausfall geschäftskritischer Anwendungen. Betrifft ERP, E-Mail und Collaboration-Tools.',
   'cyber',
   'isms',
   'assessed',
@@ -264,7 +264,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000201',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Informationssicherheitsrichtlinie',
-  'Zentrale IS-Richtlinie mit regelmaessiger Ueberpruefung und Freigabe durch die Geschaeftsfuehrung. Umfasst Geltungsbereich, Verantwortlichkeiten und Grundsaetze der Informationssicherheit.',
+  'Zentrale IS-Richtlinie mit regelmäßiger Ueberprüfung und Freigabe durch die Geschäftsführung. Umfasst Geltungsbereich, Verantwortlichkeiten und Grundsaetze der Informationssicherheit.',
   'preventive',
   'annually',
   'manual',
@@ -274,7 +274,7 @@ VALUES (
   '7a9e6de7-66a8-41a1-9c82-049bbc8429e2', -- A.5.1
   NULL, 5000.00, 'EUR',
   'd0000000-0000-0000-0000-000000000002', -- ISMS Budget
-  'Jaehrliche Ueberpruefung und Aktualisierung durch CISO-Team',
+  'Jährliche Ueberprüfung und Aktualisierung durch CISO-Team',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -310,7 +310,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000203',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Datensicherung und Wiederherstellung',
-  'Automatisierte taegliche Backups aller kritischen Systeme mit 3-2-1-Strategie. Monatliche Wiederherstellungstests und dokumentierte RTO/RPO-Ziele pro System.',
+  'Automatisierte tägliche Backups aller kritischen Systeme mit 3-2-1-Strategie. Monatliche Wiederherstellungstests und dokumentierte RTO/RPO-Ziele pro System.',
   'corrective',
   'daily',
   'fully_automated',
@@ -333,7 +333,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000204',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Schwachstellenmanagement',
-  'Kontinuierliches Schwachstellen-Scanning mit woechentlichen Scans und Patch-Management-Prozess. Kritische Schwachstellen (CVSS >= 9.0) muessen innerhalb von 72h gepatcht werden.',
+  'Kontinuierliches Schwachstellen-Scanning mit wöchentlichen Scans und Patch-Management-Prozess. Kritische Schwachstellen (CVSS >= 9.0) muessen innerhalb von 72h gepatcht werden.',
   'detective',
   'weekly',
   'semi_automated',
@@ -356,7 +356,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000205',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Sicherheitsvorfallmanagement',
-  'Strukturierter Incident-Response-Prozess mit Eskalationsstufen, Meldepflichten und Post-Incident-Review. Jaehrliche Incident-Response-Uebung mit Planspiel.',
+  'Strukturierter Incident-Response-Prozess mit Eskalationsstufen, Meldepflichten und Post-Incident-Review. Jährliche Incident-Response-Übung mit Planspiel.',
   'corrective',
   'event_driven',
   'semi_automated',
@@ -366,7 +366,7 @@ VALUES (
   'e2d523fb-8c1f-473c-a1f9-d9aac7aa9250', -- A.5.24
   NULL, 10000.00, 'EUR',
   'd0000000-0000-0000-0000-000000000002', -- ISMS Budget
-  'SIEM-Anteil und jaehrliche Tabletop-Exercise',
+  'SIEM-Anteil und jährliche Tabletop-Exercise',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -378,8 +378,8 @@ INSERT INTO control (id, org_id, title, description, control_type, frequency, au
 VALUES (
   'd0000000-0000-0000-0000-000000000206',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'Verschluesselungsrichtlinie und -umsetzung',
-  'Verschluesselung aller Daten at-rest (AES-256) und in-transit (TLS 1.3). Zentrales Key-Management mit HSM. Jaehrliche Ueberpruefung der Krypto-Algorithmen.',
+  'Verschlüsselungsrichtlinie und -umsetzung',
+  'Verschlüsselung aller Daten at-rest (AES-256) und in-transit (TLS 1.3). Zentrales Key-Management mit HSM. Jährliche Ueberprüfung der Krypto-Algorithmen.',
   'preventive',
   'continuous',
   'fully_automated',
@@ -402,7 +402,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000207',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Security-Awareness-Schulungen',
-  'Verpflichtende jaehrliche Security-Awareness-Schulung fuer alle Mitarbeiter. Monatliche Phishing-Simulationen und gezielte Schulungen fuer Risikogruppen (Finanzen, HR, IT-Admin).',
+  'Verpflichtende jährliche Security-Awareness-Schulung für alle Mitarbeiter. Monatliche Phishing-Simulationen und gezielte Schulungen für Risikogruppen (Finanzen, HR, IT-Admin).',
   'preventive',
   'monthly',
   'semi_automated',
@@ -425,7 +425,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000208',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Lieferanten-Sicherheitsmanagement',
-  'Strukturierte Sicherheitsbewertung aller IT-Dienstleister mittels standardisiertem Fragebogen. Jaehrliche Rezertifizierung kritischer Lieferanten mit Vor-Ort-Audits bei Hochrisiko-Anbietern.',
+  'Strukturierte Sicherheitsbewertung aller IT-Dienstleister mittels standardisiertem Fragebogen. Jährliche Rezertifizierung kritischer Lieferanten mit Vor-Ort-Audits bei Hochrisiko-Anbietern.',
   'preventive',
   'annually',
   'manual',
@@ -458,7 +458,7 @@ VALUES (
   80000.00, 40000.00, 'EUR',
   'd0000000-0000-0000-0000-000000000005', -- IT Security Operations
   0.60, 320.00,
-  'Einmalige Implementierung + jaehrliche Lizenz- und SOC-Kosten',
+  'Einmalige Implementierung + jährliche Lizenz- und SOC-Kosten',
   '2026-06-30',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -472,13 +472,13 @@ VALUES (
   'd0000000-0000-0000-0000-000000000302',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000102', -- RSK-002 Supply chain
-  'Identifikation und Qualifizierung von Zweitlieferanten fuer alle kritischen IT-Dienste und -Komponenten. Aufbau vertraglicher Rahmenvereinbarungen mit Alternativanbietern.',
+  'Identifikation und Qualifizierung von Zweitlieferanten für alle kritischen IT-Dienste und -Komponenten. Aufbau vertraglicher Rahmenvereinbarungen mit Alternativanbietern.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   'planned',
   30000.00, NULL, 'EUR',
   'd0000000-0000-0000-0000-000000000004', -- ERM Budget
   0.40, 160.00,
-  'Einmalige Aufwaende fuer Lieferantensuche, Evaluation und Vertragsgestaltung',
+  'Einmalige Aufwaende für Lieferantensuche, Evaluation und Vertragsgestaltung',
   '2026-09-30',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
@@ -492,7 +492,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000303',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000103', -- RSK-003 GDPR violation
-  'Aufbau eines strukturierten DSFA-Prozesses (Datenschutz-Folgenabschaetzung) mit Tool-Unterstuetzung. Schulung des DSB-Teams und Etablierung regelmaessiger Datenschutz-Audits.',
+  'Aufbau eines strukturierten DSFA-Prozesses (Datenschutz-Folgenabschätzung) mit Tool-Unterstützung. Schulung des DSB-Teams und Etablierung regelmäßiger Datenschutz-Audits.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   'in_progress',
   15000.00, 5000.00, 'EUR',
@@ -512,13 +512,13 @@ VALUES (
   'd0000000-0000-0000-0000-000000000304',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000104', -- RSK-004 Key personnel
-  'Abschluss einer Keyperson-Versicherung fuer CISO, DPO und leitende IT-Architekten. Zusaetzlich Aufbau von Stellvertreter-Regelungen und Wissensdokumentation.',
+  'Abschluss einer Keyperson-Versicherung für CISO, DPO und leitende IT-Architekten. Zusaetzlich Aufbau von Stellvertreter-Regelungen und Wissensdokumentation.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   'planned',
   NULL, 8000.00, 'EUR',
   'd0000000-0000-0000-0000-000000000004', -- ERM Budget
   0.30, 80.00,
-  'Jaehrliche Versicherungspraemie fuer 3 Schluesselrollen',
+  'Jährliche Versicherungspraemie für 3 Schluesselrollen',
   '2026-12-31',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;

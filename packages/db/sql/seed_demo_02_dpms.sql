@@ -31,15 +31,15 @@ VALUES (
   'd0000000-0000-0000-0000-000000000501',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Personalverwaltung — Mitarbeiterstammdaten',
-  'Verwaltung von Arbeitsverhaeltnissen, Gehaltsabrechnung, Sozialversicherungsmeldungen und betriebliche Altersvorsorge gemaess arbeitsrechtlichen Verpflichtungen.',
+  'Verwaltung von Arbeitsverhaeltnissen, Gehaltsabrechnung, Sozialversicherungsmeldungen und betriebliche Altersvorsorge gemäß arbeitsrechtlichen Verpflichtungen.',
   'legal_obligation',
   'Art. 6 Abs. 1 lit. b und c DSGVO i.V.m. BDSG, EStG, SGB IV',
   NULL,
   'Erhebung, Speicherung und Verarbeitung von Mitarbeiterstammdaten im HR-System. Umfasst Personalakte, Gehaltsabrechnung, Zeiterfassung und Abwesenheitsmanagement.',
   '10 Jahre nach Austritt',
-  'Aufbewahrungspflichten gemaess HGB (6 Jahre) und Steuerrecht (10 Jahre)',
-  'Verschluesselung at-rest (AES-256), TLS 1.3 in-transit, rollenbasierte Zugriffskontrolle',
-  'Need-to-know-Prinzip, Vertraulichkeitsvereinbarungen, jaehrliche Datenschutzschulung',
+  'Aufbewahrungspflichten gemäß HGB (6 Jahre) und Steuerrecht (10 Jahre)',
+  'Verschlüsselung at-rest (AES-256), TLS 1.3 in-transit, rollenbasierte Zugriffskontrolle',
+  'Need-to-know-Prinzip, Vertraulichkeitsvereinbarungen, jährliche Datenschutzschulung',
   false,
   'active',
   '2026-01-15T10:00:00Z',
@@ -62,10 +62,10 @@ VALUES (
   'Art. 6 Abs. 1 lit. b DSGVO — Vertragserfuellung',
   NULL,
   'Erfassung und Pflege von Kundenkontaktdaten, Kaufhistorie, Angeboten und Vertragsunterlagen im CRM-System.',
-  '3 Jahre nach letztem Geschaeftsvorfall',
-  'Verjaehrungsfrist gemaess BGB (3 Jahre), steuerliche Aufbewahrung separater Beleg',
-  'Mandantentrennung, Verschluesselung, API-Zugriff ueber OAuth 2.0',
-  'Zugriff nur Vertrieb und Kundenservice, quartalsweise Zugriffspruefung',
+  '3 Jahre nach letztem Geschäftsvorfall',
+  'Verjaehrungsfrist gemäß BGB (3 Jahre), steuerliche Aufbewahrung separater Beleg',
+  'Mandantentrennung, Verschlüsselung, API-Zugriff ueber OAuth 2.0',
+  'Zugriff nur Vertrieb und Kundenservice, quartalsweise Zugriffsprüfung',
   false,
   'active',
   '2026-02-01T09:00:00Z',
@@ -89,7 +89,7 @@ VALUES (
   'Matomo (Self-hosted)',
   'Erhebung anonymisierter Nutzungsdaten (Seitenaufrufe, Verweildauer, Referrer) ueber Self-hosted Matomo-Instanz. IP-Anonymisierung aktiviert.',
   '26 Monate',
-  'Maximale Analyseperiode fuer Trendvergleiche, danach automatische Loeschung',
+  'Maximale Analyseperiode für Trendvergleiche, danach automatische Loeschung',
   'IP-Anonymisierung, Self-hosted Instanz im eigenen Rechenzentrum, kein Drittland-Transfer',
   'Zugriff nur Marketing-Team, Consent-Management-Plattform implementiert',
   false,
@@ -113,11 +113,11 @@ VALUES (
   'consent',
   'Art. 6 Abs. 1 lit. a DSGVO i.V.m. UWG § 7 Abs. 2 Nr. 3 — Double-Opt-in',
   NULL,
-  'Verwaltung von Newsletter-Abonnements, Segmentierung nach Interessen, Versand personalisierter E-Mails, Tracking von Oeffnungs- und Klickraten.',
+  'Verwaltung von Newsletter-Abonnements, Segmentierung nach Interessen, Versand personalisierter E-Mails, Tracking von Öffnungs- und Klickraten.',
   'Bis zum Widerruf der Einwilligung',
-  'Einwilligung ist widerrufbar; Daten werden nach Abmeldung innerhalb von 30 Tagen geloescht',
-  'Double-Opt-in-Verfahren, verschluesselter Versand, Abmeldelink in jeder E-Mail',
-  'Marketing-Team verantwortlich, monatliche Pruefung der Abmeldeliste',
+  'Einwilligung ist widerrufbar; Daten werden nach Abmeldung innerhalb von 30 Tagen gelöscht',
+  'Double-Opt-in-Verfahren, verschlüsselter Versand, Abmeldelink in jeder E-Mail',
+  'Marketing-Team verantwortlich, monatliche Prüfung der Abmeldeliste',
   false,
   'under_review',
   '2025-12-10T11:00:00Z',
@@ -139,10 +139,10 @@ VALUES (
   'legal_obligation',
   'Art. 6 Abs. 1 lit. b und c DSGVO i.V.m. EStG, SGB IV — Arbeitsvertrag und gesetzliche Meldepflichten',
   'DATEV eG',
-  'Uebermittlung von Gehaltsdaten an DATEV-Rechenzentrum zur Lohn- und Gehaltsabrechnung. Auftragsverarbeitung gemaess Art. 28 DSGVO.',
+  'Uebermittlung von Gehaltsdaten an DATEV-Rechenzentrum zur Lohn- und Gehaltsabrechnung. Auftragsverarbeitung gemäß Art. 28 DSGVO.',
   '10 Jahre nach Ende des Beschaeftigungsverhaeltnisses',
-  'Steuerrechtliche Aufbewahrungspflicht (10 Jahre) gemaess AO § 147',
-  'Ende-zu-Ende-Verschluesselung, DATEV-Rechenzentrum ISO 27001 zertifiziert',
+  'Steuerrechtliche Aufbewahrungspflicht (10 Jahre) gemäß AO § 147',
+  'Ende-zu-Ende-Verschlüsselung, DATEV-Rechenzentrum ISO 27001 zertifiziert',
   'AVV mit DATEV abgeschlossen, Zugriff nur HR-Leitung und Payroll-Team',
   false,
   'active',
@@ -180,7 +180,7 @@ ON CONFLICT (id) DO NOTHING;
 -- E-Mail-Marketing (ROPA-004)
 INSERT INTO ropa_data_category (id, org_id, ropa_entry_id, category) VALUES
   ('d0000000-0000-0000-0000-000000000519', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000504', 'E-Mail-Adresse'),
-  ('d0000000-0000-0000-0000-00000000051a', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000504', 'Oeffnungs- und Klickverhalten')
+  ('d0000000-0000-0000-0000-00000000051a', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000504', 'Öffnungs- und Klickverhalten')
 ON CONFLICT (id) DO NOTHING;
 
 -- Payroll (ROPA-005)
@@ -221,17 +221,17 @@ ON CONFLICT (id) DO NOTHING;
 -- 5. DPIAs (2 Data Protection Impact Assessments)
 -- ─────────────────────────────────────────────────────────────────────────────
 
--- DPIA-001: Mitarbeiterueberwachung (completed)
+-- DPIA-001: Mitarbeiterüberwachung (completed)
 INSERT INTO dpia (id, org_id, title, processing_description, legal_basis,
   necessity_assessment, dpo_consultation_required, status,
   residual_risk_sign_off_id, created_by)
 VALUES (
   'd0000000-0000-0000-0000-000000000540',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
-  'DSFA — Mitarbeiterueberwachung und Leistungsmessung',
+  'DSFA — Mitarbeiterüberwachung und Leistungsmessung',
   'Einfuehrung eines Systems zur Zeiterfassung und Leistungsmessung am Arbeitsplatz. Umfasst Login-Zeiten, Applikationsnutzung und Projektzeitzuordnung. Keine Videoueberachung oder Tastaturprotokollierung.',
   'legitimate_interest',
-  'Die Verarbeitung ist notwendig zur Erfuellung arbeitsrechtlicher Pflichten (Arbeitszeitgesetz) und zur berechtigten Leistungsbewertung. Weniger eingriffsintensive Alternativen (manuelle Stechkarte) wurden geprueft und als nicht praktikabel verworfen.',
+  'Die Verarbeitung ist notwendig zur Erfuellung arbeitsrechtlicher Pflichten (Arbeitszeitgesetz) und zur berechtigten Leistungsbewertung. Weniger eingriffsintensive Alternativen (manuelle Stechkarte) wurden geprüft und als nicht praktikabel verworfen.',
   true,
   'completed',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -246,9 +246,9 @@ VALUES (
   'd0000000-0000-0000-0000-000000000541',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'DSFA — KI-gestuetzte Kundenanalyse und Scoring',
-  'Einsatz von Machine-Learning-Modellen zur Analyse von Kundenverhalten und Bonitaetsbewertung. Automatisierte Entscheidungsfindung gemaess Art. 22 DSGVO bei Kreditlimitvergabe. Trainingsdaten werden aus CRM und Zahlungshistorie aggregiert.',
+  'Einsatz von Machine-Learning-Modellen zur Analyse von Kundenverhalten und Bonitaetsbewertung. Automatisierte Entscheidungsfindung gemäß Art. 22 DSGVO bei Kreditlimitvergabe. Trainingsdaten werden aus CRM und Zahlungshistorie aggregiert.',
   'legitimate_interest',
-  'Die automatisierte Bonitaetsbewertung ist notwendig fuer effizientes Kreditrisikomanagement. Menschliche Ueberpruefung ist bei ablehnenden Entscheidungen vorgesehen (Art. 22 Abs. 3 DSGVO). Alternative: rein manuelle Pruefung — nicht skalierbar bei aktuellem Kundenvolumen.',
+  'Die automatisierte Bonitaetsbewertung ist notwendig für effizientes Kreditrisikomanagement. Menschliche Ueberprüfung ist bei ablehnenden Entscheidungen vorgesehen (Art. 22 Abs. 3 DSGVO). Alternative: rein manuelle Prüfung — nicht skalierbar bei aktuellem Kundenvolumen.',
   true,
   'in_progress',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
@@ -260,10 +260,10 @@ VALUES (
 
 INSERT INTO dpia_risk (id, org_id, dpia_id, risk_description, severity, likelihood, impact) VALUES
   ('d0000000-0000-0000-0000-000000000545', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000540',
-   'Ueberwachungsdruck fuehrt zu psychischer Belastung der Mitarbeiter und Verletzung der Persoenlichkeitsrechte.',
+   'Überwachungsdruck führt zu psychischer Belastung der Mitarbeiter und Verletzung der Persönlichkeitsrechte.',
    'high', 'medium', 'high'),
   ('d0000000-0000-0000-0000-000000000546', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000540',
-   'Zweckentfremdung der erhobenen Zeiterfassungsdaten fuer unzulaessige Verhaltenskontrolle.',
+   'Zweckentfremdung der erhobenen Zeiterfassungsdaten für unzulaessige Verhaltenskontrolle.',
    'medium', 'low', 'high'),
   ('d0000000-0000-0000-0000-000000000547', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000541',
    'Diskriminierende Ergebnisse durch Bias in Trainingsdaten bei der KI-Bonitaetsbewertung.',
@@ -287,9 +287,9 @@ INSERT INTO dpia_measure (id, org_id, dpia_id, measure_description, implementati
    'Q1 2026', 5000.00, NULL, 24.00, 'EUR', 'Anpassung des Zeiterfassungssystems'),
   ('d0000000-0000-0000-0000-00000000054c', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000541',
    'Bias-Audit der Trainingsdaten durch externen Dienstleister vor Produktivschaltung.',
-   'Q2 2026', 25000.00, 10000.00, 80.00, 'EUR', 'Externer Fairness-Audit und jaehrliche Wiederholung'),
+   'Q2 2026', 25000.00, 10000.00, 80.00, 'EUR', 'Externer Fairness-Audit und jährliche Wiederholung'),
   ('d0000000-0000-0000-0000-00000000054d', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000541',
-   'Implementierung eines Erklaerbarkeitslayers (XAI) mit verstaendlicher Begruendung fuer jede KI-Entscheidung.',
+   'Implementierung eines Erklaerbarkeitslayers (XAI) mit verstaendlicher Begruendung für jede KI-Entscheidung.',
    'Q3 2026', 35000.00, 5000.00, 160.00, 'EUR', 'Entwicklung XAI-Dashboard und Integration in CRM')
 ON CONFLICT (id) DO NOTHING;
 
@@ -306,7 +306,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'INC00000042',
   'Ransomware-Angriff auf Fileserver mit personenbezogenen Daten',
-  'Am 2026-03-10 wurde ein Ransomware-Befall auf dem zentralen Fileserver (FS-PROD-01) festgestellt. Verschluesselt wurden unter anderem Verzeichnisse mit Personalakten und Kundendaten. Laterale Ausbreitung konnte auf ein Netzwerksegment begrenzt werden.',
+  'Am 2026-03-10 wurde ein Ransomware-Befall auf dem zentralen Fileserver (FS-PROD-01) festgestellt. Verschlüsselt wurden unter anderem Verzeichnisse mit Personalakten und Kundendaten. Laterale Ausbreitung konnte auf ein Netzwerksegment begrenzt werden.',
   'critical',
   'contained',
   'ransomware',
@@ -316,7 +316,7 @@ VALUES (
   true,
   '2026-03-13T06:30:00Z',
   'Initiale Kompromittierung ueber Phishing-E-Mail mit manipuliertem PDF-Anhang. Mitarbeiter hat Makro aktiviert, dadurch Cobalt-Strike-Beacon nachgeladen.',
-  'Sofortige Netzwerksegmentierung, Isolation des betroffenen Fileservers, Wiederherstellung aus Offline-Backup, Credential-Reset fuer alle Admin-Konten.',
+  'Sofortige Netzwerksegmentierung, Isolation des betroffenen Fileservers, Wiederherstellung aus Offline-Backup, Credential-Reset für alle Admin-Konten.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -346,8 +346,8 @@ VALUES (
   230,
   ARRAY['DE'],
   'Sofortiger Passwort-Reset aller betroffenen Konten, MFA-Erzwingung, Session-Invalidierung.',
-  'Einfuehrung verpflichtender MFA fuer alle Mitarbeiter, verstaerkte Phishing-Simulation.',
-  'MFA haette den Zugriff verhindert. Phishing-Awareness-Schulung muss haeufiger durchgefuehrt werden.',
+  'Einfuehrung verpflichtender MFA für alle Mitarbeiter, verstaerkte Phishing-Simulation.',
+  'MFA haette den Zugriff verhindert. Phishing-Awareness-Schulung muss haeufiger durchgeführt werden.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2025-12-20T16:00:00Z',
@@ -365,7 +365,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000551',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'CRM-API-Fehlkonfiguration — Kundendaten oeffentlich abrufbar',
-  'Durch eine Fehlkonfiguration der CRM-REST-API waren Kundenstammdaten (Name, Adresse, E-Mail) fuer 48 Stunden ohne Authentifizierung abrufbar. Entdeckt durch externen Sicherheitsforscher.',
+  'Durch eine Fehlkonfiguration der CRM-REST-API waren Kundenstammdaten (Name, Adresse, E-Mail) für 48 Stunden ohne Authentifizierung abrufbar. Entdeckt durch externen Sicherheitsforscher.',
   'high',
   'remediation',
   '2026-02-28T10:15:00Z',
@@ -393,8 +393,8 @@ VALUES (
   'd0000000-0000-0000-0000-000000000552',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'd0000000-0000-0000-0000-000000000570',
-  'Ransomware-Verschluesselung — Personalakten und Kundendaten betroffen',
-  'Im Rahmen des Ransomware-Vorfalls (INC00000042) wurden Fileserver-Verzeichnisse mit Personalakten, Gehaltsabrechnungen und Kundenprojektdaten verschluesselt. Exfiltration kann nicht ausgeschlossen werden.',
+  'Ransomware-Verschlüsselung — Personalakten und Kundendaten betroffen',
+  'Im Rahmen des Ransomware-Vorfalls (INC00000042) wurden Fileserver-Verzeichnisse mit Personalakten, Gehaltsabrechnungen und Kundenprojektdaten verschlüsselt. Exfiltration kann nicht ausgeschlossen werden.',
   'critical',
   'notifying_dpa',
   '2026-03-10T06:30:00Z',
@@ -441,7 +441,7 @@ VALUES (
   '2026-01-25T10:30:00Z',
   '2026-01-28T16:00:00Z',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Ehemaliger Mitarbeiter fordert vollstaendige Auskunft ueber gespeicherte personenbezogene Daten gemaess Art. 15 DSGVO. Umfasst Personalakte, E-Mail-Archiv und Zeiterfassungsdaten.',
+  'Ehemaliger Mitarbeiter fordert vollständige Auskunft ueber gespeicherte personenbezogene Daten gemäß Art. 15 DSGVO. Umfasst Personalakte, E-Mail-Archiv und Zeiterfassungsdaten.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -460,7 +460,7 @@ VALUES (
   '2026-04-12T11:00:00Z',
   '2026-03-16T09:30:00Z',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
-  'Kundin fordert Loeschung aller personenbezogenen Daten gemaess Art. 17 DSGVO. Pruefung laufender Aufbewahrungspflichten (Steuerrecht, HGB) erforderlich.',
+  'Kundin fordert Loeschung aller personenbezogenen Daten gemäß Art. 17 DSGVO. Prüfung laufender Aufbewahrungspflichten (Steuerrecht, HGB) erforderlich.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 
@@ -479,11 +479,11 @@ INSERT INTO dsr_activity (id, org_id, dsr_id, activity_type, timestamp, details,
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
   ('d0000000-0000-0000-0000-000000000592', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000581',
    'identity_verification', '2026-03-16T09:30:00Z',
-   'Identitaet per E-Mail-Verifizierung und Kundennummer-Abgleich im CRM bestaetigt.',
+   'Identitaet per E-Mail-Verifizierung und Kundennummer-Abgleich im CRM bestätigt.',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf'),
   ('d0000000-0000-0000-0000-000000000593', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000581',
    'legal_review', '2026-03-20T11:00:00Z',
-   'Pruefung der Aufbewahrungspflichten durch Rechtsabteilung. Steuerrelevante Rechnungsdaten unterliegen 10-jaehriger Aufbewahrungsfrist und koennen nicht geloescht werden.',
+   'Prüfung der Aufbewahrungspflichten durch Rechtsabteilung. Steuerrelevante Rechnungsdaten unterliegen 10-jähriger Aufbewahrungsfrist und können nicht gelöscht werden.',
    '8c148f0a-f558-4a9f-8886-a3d7096da6cf')
 ON CONFLICT (id) DO NOTHING;
 

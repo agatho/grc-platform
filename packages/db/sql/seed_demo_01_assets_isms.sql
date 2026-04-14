@@ -31,7 +31,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000401',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'IT-Abteilung',
-  'Organisationseinheit IT mit Verantwortung fuer alle informationstechnischen Systeme, Infrastruktur und Dienste.',
+  'Organisationseinheit IT mit Verantwortung für alle informationstechnischen Systeme, Infrastruktur und Dienste.',
   'business_structure',
   'ORG',
   3, 3, 3,
@@ -49,7 +49,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000402',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'ERP-System',
-  'Zentrales Enterprise-Resource-Planning-System fuer Finanzbuchhaltung, Controlling, Materialwirtschaft und Personalwesen. Geschaeftskritisch mit Hochverfuegbarkeitsanforderung.',
+  'Zentrales Enterprise-Resource-Planning-System für Finanzbuchhaltung, Controlling, Materialwirtschaft und Personalwesen. Geschäftskritisch mit Hochverfügbarkeitsanforderung.',
   'primary_asset',
   'APP',
   'd0000000-0000-0000-0000-000000000401',
@@ -67,7 +67,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000403',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'CRM-System',
-  'Customer-Relationship-Management-System mit Kundenstammdaten, Vertriebspipeline und Kontakthistorie. Enthaelt personenbezogene Daten gemaess DSGVO.',
+  'Customer-Relationship-Management-System mit Kundenstammdaten, Vertriebspipeline und Kontakthistorie. Enthaelt personenbezogene Daten gemäß DSGVO.',
   'primary_asset',
   'APP',
   'd0000000-0000-0000-0000-000000000401',
@@ -103,7 +103,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000405',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Applikationsserver',
-  'Zentraler Applikationsserver-Cluster (Linux) fuer ERP, CRM und interne Webanwendungen. Redundante Konfiguration mit Load-Balancing.',
+  'Zentraler Applikationsserver-Cluster (Linux) für ERP, CRM und interne Webanwendungen. Redundante Konfiguration mit Load-Balancing.',
   'supporting_asset',
   'SRV',
   'd0000000-0000-0000-0000-000000000401',
@@ -121,7 +121,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000406',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Datenbankserver',
-  'PostgreSQL-Datenbankcluster mit Primary-Replica-Setup fuer alle geschaeftskritischen Anwendungen. Automatisches Failover und Point-in-Time-Recovery.',
+  'PostgreSQL-Datenbankcluster mit Primary-Replica-Setup für alle geschäftskritischen Anwendungen. Automatisches Failover und Point-in-Time-Recovery.',
   'supporting_asset',
   'SRV',
   'd0000000-0000-0000-0000-000000000401',
@@ -139,7 +139,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000407',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Firewall (Perimeter)',
-  'Next-Generation-Firewall am Netzwerkperimeter mit IDS/IPS, Deep Packet Inspection und VPN-Terminierung. Hochverfuegbar in Active-Passive-Konfiguration.',
+  'Next-Generation-Firewall am Netzwerkperimeter mit IDS/IPS, Deep Packet Inspection und VPN-Terminierung. Hochverfügbar in Active-Passive-Konfiguration.',
   'supporting_asset',
   'NET',
   'd0000000-0000-0000-0000-000000000401',
@@ -157,7 +157,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000408',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'E-Mail-Gateway',
-  'Secure E-Mail Gateway mit Anti-Spam, Anti-Malware, DLP-Policies und TLS-Verschluesselung. Filtert ein- und ausgehenden E-Mail-Verkehr.',
+  'Secure E-Mail Gateway mit Anti-Spam, Anti-Malware, DLP-Policies und TLS-Verschlüsselung. Filtert ein- und ausgehenden E-Mail-Verkehr.',
   'supporting_asset',
   'NET',
   'd0000000-0000-0000-0000-000000000401',
@@ -175,7 +175,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000409',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Cloud-Speicher',
-  'Unternehmensweiter Cloud-Speicherdienst fuer Dokumentenablage und Collaboration. Verschluesselung at-rest und in-transit, Standort EU (Frankfurt).',
+  'Unternehmensweiter Cloud-Speicherdienst für Dokumentenablage und Collaboration. Verschlüsselung at-rest und in-transit, Standort EU (Frankfurt).',
   'supporting_asset',
   'CLD',
   'd0000000-0000-0000-0000-000000000401',
@@ -193,7 +193,7 @@ VALUES (
   'd0000000-0000-0000-0000-00000000040A',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'Backup-System',
-  'Zentrales Backup-System mit 3-2-1-Strategie: lokale Disk-Backups, Tape-Bibliothek und Off-Site-Replikation. Unterstuetzt alle geschaeftskritischen Systeme.',
+  'Zentrales Backup-System mit 3-2-1-Strategie: lokale Disk-Backups, Tape-Bibliothek und Off-Site-Replikation. Unterstuetzt alle geschäftskritischen Systeme.',
   'supporting_asset',
   'SRV',
   'd0000000-0000-0000-0000-000000000401',
@@ -214,7 +214,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'G.0.39',
   'Ransomware-Angriff',
-  'Gezielte oder opportunistische Ransomware-Attacke mit Verschluesselung von Daten und Systemen. Haeufig kombiniert mit Datenexfiltration (Double Extortion).',
+  'Gezielte oder opportunistische Ransomware-Attacke mit Verschlüsselung von Daten und Systemen. Haeufig kombiniert mit Datenexfiltration (Double Extortion).',
   'malware',
   4,
   false,
@@ -242,7 +242,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'G.0.40',
   'Distributed Denial of Service (DDoS)',
-  'Volumetrische oder applikationsbasierte DDoS-Angriffe auf extern erreichbare Dienste. Kann zu mehrstuendiger Nichtverfuegbarkeit kritischer Systeme fuehren.',
+  'Volumetrische oder applikationsbasierte DDoS-Angriffe auf extern erreichbare Dienste. Kann zu mehrstuendiger Nichtverfügbarkeit kritischer Systeme fuehren.',
   'network_attack',
   3,
   false,
@@ -256,7 +256,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'G.0.37',
   'Insider-Bedrohung',
-  'Boswilliger oder fahrlassiger Missbrauch von Zugriffsrechten durch Mitarbeiter, Dienstleister oder ehemalige Beschaeftigte. Datenexfiltration oder Sabotage.',
+  'Böswilliger oder fahrlässiger Missbrauch von Zugriffsrechten durch Mitarbeiter, Dienstleister oder ehemalige Beschäftigte. Datenexfiltration oder Sabotage.',
   'insider',
   2,
   false,
@@ -270,7 +270,7 @@ VALUES (
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
   'G.0.28',
   'Konfigurationsfehler',
-  'Fehlerhafte Konfiguration von Systemen, Netzwerkkomponenten oder Cloud-Diensten fuehrt zu unbeabsichtigter Offenlegung von Daten oder Angriffsvektoren.',
+  'Fehlerhafte Konfiguration von Systemen, Netzwerkkomponenten oder Cloud-Diensten führt zu unbeabsichtigter Offenlegung von Daten oder Angriffsvektoren.',
   'misconfiguration',
   3,
   false,
@@ -350,7 +350,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000411', -- THR-001 Ransomware
   'd0000000-0000-0000-0000-000000000421', -- VLN-001 Log4Shell
   'd0000000-0000-0000-0000-000000000405', -- Applikationsserver
-  'Angreifer nutzt Log4Shell-Schwachstelle auf dem Applikationsserver zur Einschleusung von Ransomware. Verschluesselung des ERP-Systems und angeschlossener Datenbanken.'
+  'Angreifer nutzt Log4Shell-Schwachstelle auf dem Applikationsserver zur Einschleusung von Ransomware. Verschlüsselung des ERP-Systems und angeschlossener Datenbanken.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- RS-002: Phishing → CRM SQL Injection → Data Breach → RSK-003
@@ -362,7 +362,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000412', -- THR-002 Phishing
   'd0000000-0000-0000-0000-000000000423', -- VLN-003 SQL Injection CRM
   'd0000000-0000-0000-0000-000000000403', -- CRM-System
-  'Angreifer erlangt durch Phishing Zugang zum CRM-System und nutzt SQL-Injection-Schwachstelle zur Exfiltration von Kundenstammdaten. Meldepflicht gemaess Art. 33 DSGVO.'
+  'Angreifer erlangt durch Phishing Zugang zum CRM-System und nutzt SQL-Injection-Schwachstelle zur Exfiltration von Kundenstammdaten. Meldepflicht gemäß Art. 33 DSGVO.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- RS-003: DDoS on Firewall → Cloud Provider Outage → RSK-005
@@ -374,7 +374,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000413', -- THR-003 DDoS
   NULL,                                     -- No specific vulnerability
   'd0000000-0000-0000-0000-000000000407', -- Firewall
-  'Grossflaechiger DDoS-Angriff ueberlastet die Perimeter-Firewall und fuehrt zu Nichtverfuegbarkeit aller extern erreichbaren Dienste inklusive Cloud-Anbindung.'
+  'Großflächiger DDoS-Angriff überlastet die Perimeter-Firewall und führt zu Nichtverfügbarkeit aller extern erreichbaren Dienste inklusive Cloud-Anbindung.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- RS-004: Insider Threat + Missing Patches on DB Server → RSK-001
@@ -386,7 +386,7 @@ VALUES (
   'd0000000-0000-0000-0000-000000000414', -- THR-004 Insider Threat
   'd0000000-0000-0000-0000-000000000424', -- VLN-004 Fehlende Patches DB
   'd0000000-0000-0000-0000-000000000406', -- Datenbankserver
-  'Boswilliger Insider nutzt ungepatchte Schwachstelle auf dem Datenbankserver zur Datenmanipulation oder -exfiltration. Erhoehtes Risiko durch privilegierte Zugriffsrechte.'
+  'Böswilliger Insider nutzt ungepatchte Schwachstelle auf dem Datenbankserver zur Datenmanipulation oder -exfiltration. Erhöhtes Risiko durch privilegierte Zugriffsrechte.'
 ) ON CONFLICT (id) DO NOTHING;
 
 -- RS-005: Configuration Error on E-Mail Gateway + Phishing → RSK-002
@@ -413,9 +413,9 @@ VALUES (
   '2c598ce1-7b22-49ea-8d05-6b639e7a74e1', -- A.5.1 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000201', -- CTL-001
   'applicable',
-  'Zentrale Richtlinie fuer das gesamte ISMS erforderlich. Geltungsbereich umfasst alle Standorte und Tochtergesellschaften.',
+  'Zentrale Richtlinie für das gesamte ISMS erforderlich. Geltungsbereich umfasst alle Standorte und Tochtergesellschaften.',
   'implemented',
-  'IS-Richtlinie v3.2 genehmigt durch Geschaeftsfuehrung am 15.01.2026. Naechste Ueberpruefung geplant fuer Q1 2027.',
+  'IS-Richtlinie v3.2 genehmigt durch Geschäftsführung am 15.01.2026. Nächste Ueberprüfung geplant für Q1 2027.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-15 10:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -428,7 +428,7 @@ VALUES (
   '52fc1e05-0f7f-4615-b3af-f1c192135ef8', -- A.5.2 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000202', -- CTL-002
   'applicable',
-  'RBAC und Rezertifizierung sind Pflicht fuer alle IT-Systeme mit personenbezogenen oder geschaeftskritischen Daten.',
+  'RBAC und Rezertifizierung sind Pflicht für alle IT-Systeme mit personenbezogenen oder geschäftskritischen Daten.',
   'implemented',
   'IAM-System implementiert mit quartalsweiser Rezertifizierung. Letzte Kampagne: Q4 2025 mit 98% Abschlussquote.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
@@ -445,7 +445,7 @@ VALUES (
   'applicable',
   'Kontakt mit Aufsichtsbehoerden und Lieferanten-Sicherheitsbewertung erforderlich aufgrund regulatorischer Anforderungen.',
   'partially_implemented',
-  'Kontaktlisten fuer BSI, BfDI und Aufsichtsbehoerden gepflegt. Standardisierter Fragebogen fuer Lieferantenbewertung vorhanden. Automatisierung geplant Q3 2026.',
+  'Kontaktlisten für BSI, BfDI und Aufsichtsbehoerden gepflegt. Standardisierter Fragebogen für Lieferantenbewertung vorhanden. Automatisierung geplant Q3 2026.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-02-01 09:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -458,9 +458,9 @@ VALUES (
   '675c001b-87d2-49ec-8cab-6e7964245804', -- A.5.4 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000205', -- CTL-005
   'applicable',
-  'Leitungsverantwortung fuer Incident-Management und ISMS-Betrieb ist regulatorische Pflicht (NIS2, DSGVO Art. 33/34).',
+  'Leitungsverantwortung für Incident-Management und ISMS-Betrieb ist regulatorische Pflicht (NIS2, DSGVO Art. 33/34).',
   'implemented',
-  'IR-Prozess mit Eskalation an Geschaeftsfuehrung etabliert. Jaehrliche Tabletop-Exercise durchgefuehrt. Letzte Uebung: November 2025.',
+  'IR-Prozess mit Eskalation an Geschäftsführung etabliert. Jährliche Tabletop-Exercise durchgeführt. Letzte Übung: November 2025.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2025-11-20 15:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -473,9 +473,9 @@ VALUES (
   '27ca1e65-1555-4ea4-907a-1f577325b6f9', -- A.6.3 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000207', -- CTL-007
   'applicable',
-  'Schulungspflicht fuer alle Mitarbeiter gemaess ISO 27001 und BSI IT-Grundschutz. Besondere Anforderungen fuer privilegierte Nutzer.',
+  'Schulungspflicht für alle Mitarbeiter gemäß ISO 27001 und BSI IT-Grundschutz. Besondere Anforderungen für privilegierte Nutzer.',
   'implemented',
-  'E-Learning-Plattform mit monatlichen Phishing-Simulationen. Abschlussquote 2025: 94%. Naechste Pflichtschulung: April 2026.',
+  'E-Learning-Plattform mit monatlichen Phishing-Simulationen. Abschlussquote 2025: 94%. Nächste Pflichtschulung: April 2026.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-10 11:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -488,9 +488,9 @@ VALUES (
   '18afef37-2dd9-45bc-b3d1-6e5dbe7cef26', -- A.8.1 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000204', -- CTL-004
   'applicable',
-  'Endgeraetesicherheit und Schwachstellen-Scanning sind Pflicht fuer alle Endpunkte und Server im Netzwerk.',
+  'Endgeraetesicherheit und Schwachstellen-Scanning sind Pflicht für alle Endpunkte und Server im Netzwerk.',
   'implemented',
-  'Woechentliche automatisierte Scans, quartalsweise externer Penetrationstest. Patch-SLA: kritisch 72h, hoch 7 Tage, mittel 30 Tage.',
+  'Wöchentliche automatisierte Scans, quartalsweise externer Penetrationstest. Patch-SLA: kritisch 72h, hoch 7 Tage, mittel 30 Tage.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-02-15 10:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -503,9 +503,9 @@ VALUES (
   '89704cc9-eb01-4d68-8384-101474ee56a6', -- A.8.3 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000203', -- CTL-003
   'applicable',
-  'Zugangsbeschraenkung und Datensicherung sind essenziell fuer Business Continuity und Ransomware-Resilienz.',
+  'Zugangsbeschraenkung und Datensicherung sind essenziell für Business Continuity und Ransomware-Resilienz.',
   'implemented',
-  'Taegliche inkrementelle Backups, woechentliche Voll-Backups. Monatliche Restore-Tests. RTO: 4h, RPO: 24h fuer kritische Systeme.',
+  'Tägliche inkrementelle Backups, wöchentliche Voll-Backups. Monatliche Restore-Tests. RTO: 4h, RPO: 24h für kritische Systeme.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-01-25 16:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
@@ -518,9 +518,9 @@ VALUES (
   '2f977c19-c854-4f7b-8b17-03da44345818', -- A.8.5 (control_catalog_entry)
   'd0000000-0000-0000-0000-000000000206', -- CTL-006
   'applicable',
-  'Sichere Authentifizierung und Verschluesselung sind Pflicht gemaess DSGVO Art. 32 und BSI-Vorgaben.',
+  'Sichere Authentifizierung und Verschlüsselung sind Pflicht gemäß DSGVO Art. 32 und BSI-Vorgaben.',
   'implemented',
-  'AES-256 fuer Daten at-rest, TLS 1.3 fuer in-transit. MFA fuer alle Benutzer. Zentrales HSM fuer Key-Management. Jaehrlicher Krypto-Review.',
+  'AES-256 für Daten at-rest, TLS 1.3 für in-transit. MFA für alle Benutzer. Zentrales HSM für Key-Management. Jährlicher Krypto-Review.',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '2026-02-10 13:00:00+01'
 ) ON CONFLICT (id) DO NOTHING;
