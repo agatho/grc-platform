@@ -13,8 +13,8 @@ setup("authenticate as admin", async ({ page }) => {
   await page.locator('input[type="password"]').fill("admin123");
   await page.locator('button[type="submit"]').click();
 
-  // Wait for redirect to dashboard
-  await expect(page).toHaveURL(/dashboard/, { timeout: 15000 });
+  // Wait for redirect to dashboard (first compile can be slow)
+  await expect(page).toHaveURL(/dashboard/, { timeout: 60000 });
 
   // Save auth state
   await page.context().storageState({ path: STORAGE_STATE });

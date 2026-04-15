@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { updateAiCorrectiveActionSchema } from "@grc/shared";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -23,15 +24,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
   const { id } = await params;
-  const body = await req.json();
-
+  const parsed = updateAiCorrectiveActionSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
   const {
     title, description, non_conformity_description, action_type,
     is_recall, is_withdrawal, recall_reason, priority,
     assigned_to, due_date, status,
     authority_notified, authority_notified_at, authority_reference,
     verification_notes, effectiveness_rating,
-  } = body;
+  } = parsed.data;
 
   // Auto-set completed_at/verified_at based on status transitions
   const completedClause = status === "completed"

@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { updateAiGpaiModelSchema } from "@grc/shared";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -23,8 +24,10 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
   const { id } = await params;
-  const body = await req.json();
-
+  const parsed = updateAiGpaiModelSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
   const {
     name, provider, model_type, is_systemic_risk, systemic_risk_justification,
     training_data_summary, energy_consumption_kwh, version, status,
@@ -32,7 +35,7 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     computational_resources, cybersecurity_measures,
     eu_representative_name, eu_representative_contact,
     code_of_practice_adherence, code_of_practice_notes,
-  } = body;
+  } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

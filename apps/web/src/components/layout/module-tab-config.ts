@@ -228,6 +228,7 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.emissions", href: "/esg/emissions", match: "exact" },
       { labelKey: "nav.tabs.scope3", href: "/esg/emissions/scope3" },
       { labelKey: "nav.tabs.supplyChain", href: "/esg/emissions/supply-chain" },
+      { labelKey: "nav.tabs.climateScenarios", href: "/esg/climate-scenarios" },
       { labelKey: "nav.tabs.targets", href: "/esg/targets" },
       { labelKey: "nav.tabs.esgReport", href: "/esg/report", match: "prefix" },
     ],

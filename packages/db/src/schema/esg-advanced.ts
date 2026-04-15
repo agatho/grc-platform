@@ -450,3 +450,78 @@ export const esrsDisclosureTemplate = pgTable(
     index("edt_standard_idx").on(table.orgId, table.standard),
   ],
 );
+
+// ──────────────────────────────────────────────────────────────
+// TCFD Climate Risk Scenarios — Physical + Transition Risks
+// ──────────────────────────────────────────────────────────────
+
+export const climateRiskScenario = pgTable(
+  "climate_risk_scenario",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 500 }).notNull(),
+    description: text("description"),
+
+    // Scenario classification
+    scenarioType: varchar("scenario_type", { length: 30 })
+      .notNull(), // 'physical' | 'transition'
+    riskCategory: varchar("risk_category", { length: 50 })
+      .notNull(), // physical: acute/chronic; transition: policy/technology/market/reputation
+    temperaturePathway: varchar("temperature_pathway", { length: 10 })
+      .notNull(), // '1.5', '2.0', '3.0', '4.0'
+    timeHorizon: varchar("time_horizon", { length: 20 })
+      .notNull(), // 'short' (<2030), 'medium' (2030-2040), 'long' (2040-2050+)
+
+    // Impact assessment
+    likelihoodScore: integer("likelihood_score"), // 1-5
+    impactScore: integer("impact_score"), // 1-5
+    financialImpactMin: numeric("financial_impact_min", {
+      precision: 15,
+      scale: 2,
+    }),
+    financialImpactMax: numeric("financial_impact_max", {
+      precision: 15,
+      scale: 2,
+    }),
+    financialImpactCurrency: varchar("financial_impact_currency", {
+      length: 3,
+    }).default("EUR"),
+
+    // Affected areas
+    affectedAssets: text("affected_assets"), // description of affected assets/locations
+    affectedBusinessLines: jsonb("affected_business_lines").default("[]"),
+    geographicScope: varchar("geographic_scope", { length: 200 }),
+
+    // Mitigation
+    adaptationMeasures: text("adaptation_measures"),
+    mitigationStrategy: text("mitigation_strategy"),
+    residualRiskScore: integer("residual_risk_score"), // 1-5
+
+    // TCFD alignment
+    tcfdCategory: varchar("tcfd_category", { length: 50 }), // governance/strategy/risk_management/metrics_targets
+    esrsDisclosure: varchar("esrs_disclosure", { length: 20 }), // e.g. E1-9, ESRS 2 IRO-1
+    sbtiRelevance: boolean("sbti_relevance").default(false),
+
+    // Status & ERM bridge
+    status: varchar("status", { length: 20 }).notNull().default("draft"),
+    ermRiskId: uuid("erm_risk_id"), // FK to risk table for ERM sync
+    ermSyncedAt: timestamp("erm_synced_at", { withTimezone: true }),
+
+    // Audit
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("crs_org_idx").on(table.orgId),
+    index("crs_type_idx").on(table.orgId, table.scenarioType),
+    index("crs_pathway_idx").on(table.orgId, table.temperaturePathway),
+  ],
+);
