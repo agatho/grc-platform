@@ -2,6 +2,11 @@ import { db, crisisScenario, crisisLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const activateCrisisSchema = z.object({
+  initialAssessment: z.string().max(5000).optional(),
+});
 
 // POST /api/v1/bcms/crisis/[id]/activate — Activate a crisis
 export async function POST(
@@ -18,8 +23,8 @@ export async function POST(
 
   let initialAssessment: string | undefined;
   try {
-    const body = await req.json();
-    initialAssessment = body.initialAssessment;
+    const parsed = activateCrisisSchema.safeParse(await req.json());
+    if (parsed.success) initialAssessment = parsed.data.initialAssessment;
   } catch {
     // no body is fine
   }

@@ -2,6 +2,14 @@ import { db, threat } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const updateThreatSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(5000).optional(),
+  threatCategory: z.string().max(100).optional(),
+  likelihoodRating: z.string().max(20).optional(),
+});
 
 // GET /api/v1/isms/threats/[id]
 export async function GET(
@@ -41,17 +49,15 @@ export async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
-  const body = await req.json();
+  const parsed = updateThreatSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(threat)
-      .set({
-        title: body.title,
-        description: body.description,
-        threatCategory: body.threatCategory,
-        likelihoodRating: body.likelihoodRating,
-      })
+      .set(parsed.data)
       .where(and(eq(threat.id, id), eq(threat.orgId, ctx.orgId)))
       .returning();
     return updated;

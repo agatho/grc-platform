@@ -2,6 +2,11 @@ import { db, simulationScenario, simulationActivityParam, processSimulationResul
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const runSimulationSchema = z.object({
+  scenarioId: z.string().uuid(),
+});
 
 // POST /api/v1/processes/:id/simulation/run — Run simulation
 export async function POST(
@@ -15,7 +20,11 @@ export async function POST(
   if (moduleCheck) return moduleCheck;
 
   const { id: processId } = await params;
-  const { scenarioId } = await req.json();
+  const parsed = runSimulationSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
+  const { scenarioId } = parsed.data;
 
   if (!scenarioId) {
     return Response.json({ error: "scenarioId required" }, { status: 422 });
