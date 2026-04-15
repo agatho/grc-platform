@@ -14,6 +14,7 @@ import {
   date,
   timestamp,
   numeric,
+  jsonb,
   index,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
@@ -240,6 +241,17 @@ export const dpia = pgTable(
     dpoConsultationRequired: boolean("dpo_consultation_required")
       .notNull()
       .default(false),
+    // Art. 35(7) enhancement fields
+    systematicDescription: text("systematic_description"),
+    dataCategories: text("data_categories").array(),
+    dataSubjectCategories: text("data_subject_categories").array(),
+    recipients: text("recipients").array(),
+    thirdCountryTransfers: jsonb("third_country_transfers"),
+    retentionPeriod: varchar("retention_period", { length: 255 }),
+    consultationResult: text("consultation_result"),
+    consultationDate: date("consultation_date", { mode: "string" }),
+    nextReviewDate: date("next_review_date", { mode: "string" }),
+    dpoOpinion: text("dpo_opinion"),
     status: dpiaStatusEnum("status").notNull().default("draft"),
     residualRiskSignOffId: uuid("residual_risk_sign_off_id").references(
       () => user.id,
@@ -304,6 +316,7 @@ export const dpiaMeasure = pgTable(
       .notNull()
       .references(() => dpia.id, { onDelete: "cascade" }),
     measureDescription: text("measure_description").notNull(),
+    riskId: uuid("risk_id").references(() => dpiaRisk.id, { onDelete: "set null" }),
     implementationTimeline: varchar("implementation_timeline", {
       length: 255,
     }),

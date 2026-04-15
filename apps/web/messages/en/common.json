@@ -2821,7 +2821,9 @@
         "risks": "Risks",
         "measures": "Measures",
         "signOff": "DPO Sign-Off",
-        "prescreen": "Pre-Screen"
+        "prescreen": "Pre-Screen",
+        "consultation": "DPO Consultation",
+        "review": "Summary"
       },
       "status": {
         "draft": "Draft",

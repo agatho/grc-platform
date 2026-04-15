@@ -2823,7 +2823,9 @@
         "risks": "Risiken",
         "measures": "Maßnahmen",
         "signOff": "DPO-Freigabe",
-        "prescreen": "Vorabprüfung"
+        "prescreen": "Vorabprüfung",
+        "consultation": "DSB-Konsultation",
+        "review": "Zusammenfassung"
       },
       "status": {
         "draft": "Entwurf",

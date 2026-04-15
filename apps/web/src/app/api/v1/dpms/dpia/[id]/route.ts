@@ -33,6 +33,16 @@ export async function GET(
       legalBasis: dpia.legalBasis,
       necessityAssessment: dpia.necessityAssessment,
       dpoConsultationRequired: dpia.dpoConsultationRequired,
+      systematicDescription: dpia.systematicDescription,
+      dataCategories: dpia.dataCategories,
+      dataSubjectCategories: dpia.dataSubjectCategories,
+      recipients: dpia.recipients,
+      thirdCountryTransfers: dpia.thirdCountryTransfers,
+      retentionPeriod: dpia.retentionPeriod,
+      consultationResult: dpia.consultationResult,
+      consultationDate: dpia.consultationDate,
+      nextReviewDate: dpia.nextReviewDate,
+      dpoOpinion: dpia.dpoOpinion,
       status: dpia.status,
       residualRiskSignOffId: dpia.residualRiskSignOffId,
       signOffName: user.name,
@@ -68,7 +78,20 @@ export async function GET(
       ORDER BY created_at
     `),
     db
-      .select()
+      .select({
+        id: dpiaMeasure.id,
+        orgId: dpiaMeasure.orgId,
+        dpiaId: dpiaMeasure.dpiaId,
+        measureDescription: dpiaMeasure.measureDescription,
+        riskId: dpiaMeasure.riskId,
+        implementationTimeline: dpiaMeasure.implementationTimeline,
+        costOnetime: dpiaMeasure.costOnetime,
+        costAnnual: dpiaMeasure.costAnnual,
+        effortHours: dpiaMeasure.effortHours,
+        costCurrency: dpiaMeasure.costCurrency,
+        costNote: dpiaMeasure.costNote,
+        createdAt: dpiaMeasure.createdAt,
+      })
       .from(dpiaMeasure)
       .where(and(eq(dpiaMeasure.dpiaId, id), eq(dpiaMeasure.orgId, ctx.orgId))),
   ]);
