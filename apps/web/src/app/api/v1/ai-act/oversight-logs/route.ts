@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(aiHumanOversightLog).values({ ...body.data, orgId: ctx.orgId, reviewerId: ctx.userId, reviewedAt: new Date(body.data.reviewedAt) }).returning();
+    const [created] = await tx.insert(aiHumanOversightLog).values({ ...body.data, orgId: ctx.orgId, reviewedBy: ctx.userId, reviewedAt: new Date(body.data.reviewedAt) }).returning();
     return created;
   });
   return Response.json({ data: result }, { status: 201 });

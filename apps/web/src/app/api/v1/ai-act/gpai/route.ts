@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { createAiGpaiModelSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -34,7 +35,7 @@ export async function GET(req: Request) {
   ]);
   return Response.json({
     data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number((countResult.rows[0] as any)?.count ?? 0) },
+    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
   });
 }
 
@@ -44,11 +45,11 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
-  const { name, provider, model_type, is_systemic_risk, training_data_summary, energy_consumption_kwh, version } = body;
-  if (!name || !provider) {
-    return Response.json({ error: "name and provider are required" }, { status: 422 });
+  const parsed = createAiGpaiModelSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
+  const { name, provider, model_type, is_systemic_risk, training_data_summary, energy_consumption_kwh, version } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

@@ -102,11 +102,9 @@ export const aiConformityAssessment = pgTable(
     requirements: jsonb("requirements").default("[]"), // [{requirementId, description, status, evidence, notes}]
     overallResult: varchar("overall_result", { length: 20 }), // pass | fail | conditional | pending
     findings: jsonb("findings").default("[]"), // [{severity, description, recommendation}]
-    certificateRef: varchar("certificate_ref", { length: 200 }),
+    certificateReference: varchar("certificate_reference", { length: 200 }),
     validFrom: date("valid_from"),
     validUntil: date("valid_until"),
-    assessedAt: timestamp("assessed_at", { withTimezone: true }),
-    assessedBy: uuid("assessed_by").references(() => user.id),
     status: varchar("status", { length: 20 }).notNull().default("draft"), // draft | in_progress | completed | expired
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -133,10 +131,6 @@ export const aiConformityAssessmentRelations = relations(aiConformityAssessment,
     fields: [aiConformityAssessment.aiSystemId],
     references: [aiSystem.id],
   }),
-  assessor: one(user, {
-    fields: [aiConformityAssessment.assessedBy],
-    references: [user.id],
-  }),
 }));
 
 // ──────────────────────────────────────────────────────────────
@@ -154,16 +148,11 @@ export const aiHumanOversightLog = pgTable(
       .notNull()
       .references(() => aiSystem.id, { onDelete: "cascade" }),
     logType: varchar("log_type", { length: 50 }).notNull(), // decision_override | intervention | monitoring_check | bias_review | performance_review
-    description: text("description").notNull(),
-    aiDecision: text("ai_decision"),
-    humanDecision: text("human_decision"),
-    overrideReason: text("override_reason"),
-    affectedCount: integer("affected_count"),
+    description: text("description"),
     riskLevel: varchar("risk_level", { length: 20 }), // low | medium | high | critical
-    reviewerId: uuid("reviewer_id")
-      .notNull()
-      .references(() => user.id),
-    reviewedAt: timestamp("reviewed_at", { withTimezone: true }).notNull(),
+    actionTaken: text("action_taken"),
+    reviewedBy: uuid("reviewed_by").references(() => user.id),
+    reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -186,7 +175,7 @@ export const aiHumanOversightLogRelations = relations(aiHumanOversightLog, ({ on
     references: [aiSystem.id],
   }),
   reviewer: one(user, {
-    fields: [aiHumanOversightLog.reviewerId],
+    fields: [aiHumanOversightLog.reviewedBy],
     references: [user.id],
   }),
 }));
@@ -263,10 +252,7 @@ export const aiFria = pgTable(
     dataProtectionImpact: jsonb("data_protection_impact").default("{}"),
     accessToJustice: jsonb("access_to_justice").default("{}"),
     overallImpact: varchar("overall_impact", { length: 20 }).notNull(), // high | medium | low | negligible
-    mitigationPlan: text("mitigation_plan"),
-    consultationResults: jsonb("consultation_results").default("[]"), // [{stakeholder, feedback, incorporated}]
-    assessedBy: uuid("assessed_by").references(() => user.id),
-    assessedAt: timestamp("assessed_at", { withTimezone: true }),
+    mitigationMeasures: text("mitigation_measures"),
     nextReviewDate: date("next_review_date"),
     status: varchar("status", { length: 20 }).notNull().default("draft"), // draft | in_progress | completed | approved
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -294,10 +280,6 @@ export const aiFriaRelations = relations(aiFria, ({ one }) => ({
     fields: [aiFria.aiSystemId],
     references: [aiSystem.id],
   }),
-  assessor: one(user, {
-    fields: [aiFria.assessedBy],
-    references: [user.id],
-  }),
 }));
 
 // ──────────────────────────────────────────────────────────────
@@ -312,14 +294,12 @@ export const aiFrameworkMapping = pgTable(
       .notNull()
       .references(() => organization.id),
     framework: varchar("framework", { length: 50 }).notNull(), // iso_42001 | nist_ai_rmf | eu_ai_act
-    controlRef: varchar("control_ref", { length: 100 }).notNull(),
+    controlReference: varchar("control_reference", { length: 100 }).notNull(),
     controlTitle: varchar("control_title", { length: 500 }).notNull(),
     aiActArticle: varchar("ai_act_article", { length: 100 }),
     implementationStatus: varchar("implementation_status", { length: 20 }).notNull().default("not_started"), // not_started | in_progress | implemented | not_applicable
-    evidence: jsonb("evidence").default("[]"), // [{documentId, title, uploadedAt}]
+    evidenceIds: jsonb("evidence_ids").default("[]"),
     notes: text("notes"),
-    assessedBy: uuid("assessed_by").references(() => user.id),
-    assessedAt: timestamp("assessed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -330,7 +310,7 @@ export const aiFrameworkMapping = pgTable(
   (table) => ({
     orgIdx: index("ai_fm_org_idx").on(table.orgId),
     fwIdx: index("ai_fm_fw_idx").on(table.orgId, table.framework),
-    refIdx: uniqueIndex("ai_fm_ref_idx").on(table.orgId, table.framework, table.controlRef),
+    refIdx: uniqueIndex("ai_fm_ref_idx").on(table.orgId, table.framework, table.controlReference),
     statusIdx: index("ai_fm_status_idx").on(table.orgId, table.implementationStatus),
   }),
 );
@@ -339,9 +319,5 @@ export const aiFrameworkMappingRelations = relations(aiFrameworkMapping, ({ one 
   organization: one(organization, {
     fields: [aiFrameworkMapping.orgId],
     references: [organization.id],
-  }),
-  assessor: one(user, {
-    fields: [aiFrameworkMapping.assessedBy],
-    references: [user.id],
   }),
 }));

@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { createAiProhibitedScreeningSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
   ]);
   return Response.json({
     data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number((countResult.rows[0] as any)?.count ?? 0) },
+    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
   });
 }
 
@@ -38,11 +39,11 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
-  const { ai_system_id, social_scoring, real_time_biometric, emotion_recognition, predictive_policing, untargeted_scraping, subliminal_manipulation, exploiting_vulnerabilities, biometric_categorization } = body;
-  if (!ai_system_id) {
-    return Response.json({ error: "ai_system_id is required" }, { status: 422 });
+  const parsed = createAiProhibitedScreeningSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
+  const { ai_system_id, social_scoring, real_time_biometric, emotion_recognition, predictive_policing, untargeted_scraping, subliminal_manipulation, exploiting_vulnerabilities, biometric_categorization } = parsed.data;
 
   const isProhibited = !!(social_scoring || real_time_biometric || emotion_recognition || predictive_policing || untargeted_scraping || subliminal_manipulation || exploiting_vulnerabilities || biometric_categorization);
 
