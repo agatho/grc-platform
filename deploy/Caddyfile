@@ -1,0 +1,30 @@
+# ARCTOS GRC Platform — Caddy Reverse Proxy
+# Automatisches HTTPS via Let's Encrypt
+#
+# Anpassen: DOMAIN ersetzen durch Ihre tatsaechliche Domain
+# Beispiel: arctos.ihrefirma.de
+
+{$DOMAIN:localhost} {
+  reverse_proxy localhost:3000
+
+  # Security Headers
+  header {
+    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "SAMEORIGIN"
+    Referrer-Policy "strict-origin-when-cross-origin"
+    X-XSS-Protection "1; mode=block"
+    -Server
+  }
+
+  # Kompression
+  encode gzip zstd
+
+  # Logging
+  log {
+    output file /var/log/caddy/arctos-access.log {
+      roll_size 10mb
+      roll_keep 5
+    }
+  }
+}
