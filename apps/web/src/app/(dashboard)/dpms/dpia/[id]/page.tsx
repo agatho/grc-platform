@@ -757,6 +757,24 @@ function riskScoreColor(score: number): string {
 function DpiaRiskStep({ risks, dpiaId, onUpdated }: { risks: DpiaRiskExt[]; dpiaId: string; onUpdated: () => void }) {
   const [edits, setEdits] = useState<Record<string, { likelihood: number; impact: number }>>({});
   const [saving, setSaving] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [newDesc, setNewDesc] = useState("");
+  const [newSeverity, setNewSeverity] = useState("medium");
+  const [newLikelihood, setNewLikelihood] = useState("medium");
+  const [newImpact, setNewImpact] = useState("medium");
+  const [adding, setAdding] = useState(false);
+
+  const handleAddRisk = async () => {
+    if (!newDesc.trim()) return;
+    setAdding(true);
+    try {
+      const res = await fetch(`/api/v1/dpms/dpia/${dpiaId}/risks`, {
+        method: "POST", headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ riskDescription: newDesc.trim(), severity: newSeverity, likelihood: newLikelihood, impact: newImpact }),
+      });
+      if (res.ok) { setNewDesc(""); setShowForm(false); onUpdated(); }
+    } finally { setAdding(false); }
+  };
 
   const getEdit = (risk: DpiaRiskExt) => edits[risk.id] ?? {
     likelihood: risk.numeric_likelihood ?? 3,
@@ -780,9 +798,48 @@ function DpiaRiskStep({ risks, dpiaId, onUpdated }: { risks: DpiaRiskExt[]; dpia
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Risikoanalyse</h2>
-        <span className="text-sm text-gray-500">{risks.length} Risiken</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">{risks.length} Risiken</span>
+          {!showForm && <Button size="sm" variant="outline" onClick={() => setShowForm(true)}><Plus size={12} className="mr-1" /> Neues Risiko</Button>}
+        </div>
       </div>
-      {risks.length === 0 ? <p className="text-sm text-gray-400">Keine Risiken erfasst</p> : (
+
+      {/* Add Risk Form */}
+      {showForm && (
+        <div className="rounded-lg border-2 border-red-200 bg-red-50/30 p-4 space-y-3">
+          <p className="text-sm font-medium text-red-900">Neues Risiko identifizieren</p>
+          <textarea value={newDesc} onChange={e => setNewDesc(e.target.value)} rows={2} placeholder="Beschreibung des Risikos fuer die Betroffenen..."
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Schweregrad</label>
+              <select value={newSeverity} onChange={e => setNewSeverity(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                {["low","medium","high","critical"].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Eintrittswahrscheinlichkeit</label>
+              <select value={newLikelihood} onChange={e => setNewLikelihood(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                {["low","medium","high","critical"].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Auswirkung</label>
+              <select value={newImpact} onChange={e => setNewImpact(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                {["low","medium","high","critical"].map(v => <option key={v} value={v}>{v}</option>)}
+              </select>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleAddRisk} disabled={adding || !newDesc.trim()}>
+              {adding ? <Loader2 size={12} className="animate-spin mr-1" /> : <Plus size={12} className="mr-1" />} Hinzufuegen
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setShowForm(false)}>Abbrechen</Button>
+          </div>
+        </div>
+      )}
+
+      {risks.length === 0 && !showForm ? <p className="text-sm text-gray-400">Keine Risiken erfasst</p> : (
         <div className="space-y-4">
           {risks.map(risk => {
             const edit = getEdit(risk);
