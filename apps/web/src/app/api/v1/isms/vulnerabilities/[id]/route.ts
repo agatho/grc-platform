@@ -2,6 +2,17 @@ import { db, vulnerability } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const updateVulnerabilitySchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().max(5000).optional(),
+  cveReference: z.string().max(50).optional(),
+  affectedAssetId: z.string().uuid().optional(),
+  severity: z.string().max(20).optional(),
+  status: z.string().max(20).optional(),
+  mitigationControlId: z.string().uuid().optional(),
+});
 
 // GET /api/v1/isms/vulnerabilities/[id]
 export async function GET(
@@ -47,20 +58,15 @@ export async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
-  const body = await req.json();
+  const parsed = updateVulnerabilitySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(vulnerability)
-      .set({
-        title: body.title,
-        description: body.description,
-        cveReference: body.cveReference,
-        affectedAssetId: body.affectedAssetId,
-        severity: body.severity,
-        status: body.status,
-        mitigationControlId: body.mitigationControlId,
-      })
+      .set(parsed.data)
       .where(
         and(
           eq(vulnerability.id, id),

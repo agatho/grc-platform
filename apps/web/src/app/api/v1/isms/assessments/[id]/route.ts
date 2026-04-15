@@ -2,6 +2,18 @@ import { db, assessmentRun } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const updateAssessmentSchema = z.object({
+  name: z.string().max(500).optional(),
+  description: z.string().max(5000).optional(),
+  status: z.string().max(30).optional(),
+  scopeType: z.string().max(50).optional(),
+  scopeFilter: z.record(z.unknown()).optional(),
+  leadAssessorId: z.string().uuid().optional(),
+  periodStart: z.string().optional(),
+  periodEnd: z.string().optional(),
+});
 
 const VALID_ASSESSMENT_TRANSITIONS: Record<string, string[]> = {
   planning: ["in_progress", "cancelled"],
@@ -48,7 +60,11 @@ export async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
-  const body = await req.json();
+  const parsed = updateAssessmentSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
+  const body = parsed.data;
 
   const [existing] = await db
     .select()
