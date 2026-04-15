@@ -198,6 +198,7 @@ test.describe("Navigation & Tab System", () => {
   });
 
   test("all new AI Act pages return 200", async ({ page }) => {
+    test.setTimeout(180000); // 13 pages, each may need first-compile
     const aiActRoutes = [
       "/ai-act", "/ai-act/systems", "/ai-act/gpai", "/ai-act/frias",
       "/ai-act/incidents", "/ai-act/prohibited", "/ai-act/conformity-assessments",

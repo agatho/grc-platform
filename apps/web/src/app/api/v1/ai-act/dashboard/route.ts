@@ -28,7 +28,7 @@ export async function GET(req: Request) {
       oversightLogs30d: Number(oversightCount[0]?.count ?? 0),
       transparencyEntries: Number(transparencyCount[0]?.count ?? 0),
       friasPending: Number(friasPending[0]?.count ?? 0),
-      documentationDue: Number((docsDue.rows[0] as any)?.count ?? 0),
+      documentationDue: Number(docsDue.rows?.[0] ? (docsDue.rows[0] as any).count : 0),
       frameworkCompliance: {},
       systemsByRisk: {},
       recentOversightLogs: [],
