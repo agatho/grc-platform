@@ -20,7 +20,7 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [updated] = await tx.update(aiFrameworkMapping).set({ ...body.data, assessedBy: ctx.userId, assessedAt: new Date(), updatedAt: new Date() }).where(and(eq(aiFrameworkMapping.id, id), eq(aiFrameworkMapping.orgId, ctx.orgId))).returning();
+    const [updated] = await tx.update(aiFrameworkMapping).set({ ...body.data, updatedAt: new Date() }).where(and(eq(aiFrameworkMapping.id, id), eq(aiFrameworkMapping.orgId, ctx.orgId))).returning();
     return updated;
   });
   if (!result) return Response.json({ error: "Not found" }, { status: 404 });

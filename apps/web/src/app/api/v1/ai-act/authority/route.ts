@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { createAiAuthorityCommunicationSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -20,7 +21,7 @@ export async function GET(req: Request) {
     countQuery = sql`${countQuery} AND direction = ${direction}`;
   }
 
-  query = sql`${query} ORDER BY communication_date DESC LIMIT ${limit} OFFSET ${offset}`;
+  query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
   const [rows, countResult] = await Promise.all([
     db.execute(query),
@@ -28,7 +29,7 @@ export async function GET(req: Request) {
   ]);
   return Response.json({
     data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number((countResult.rows[0] as any)?.count ?? 0) },
+    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
   });
 }
 
@@ -38,16 +39,16 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
-  const { authority_name, subject, direction, communication_date, response_deadline, content, ai_system_id } = body;
-  if (!authority_name || !subject || !direction) {
-    return Response.json({ error: "authority_name, subject, and direction are required" }, { status: 422 });
+  const parsed = createAiAuthorityCommunicationSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
+  const { authority_name, subject, direction, response_deadline, content, ai_system_id } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`
-      INSERT INTO ai_authority_communication (org_id, authority_name, subject, direction, communication_date, response_deadline, content, ai_system_id, status, created_by)
-      VALUES (${ctx.orgId}, ${authority_name}, ${subject}, ${direction}, ${communication_date ?? new Date().toISOString()}, ${response_deadline ?? null}, ${content ?? null}, ${ai_system_id ?? null}, 'open', ${ctx.userId})
+      INSERT INTO ai_authority_communication (org_id, authority_name, subject, direction, sent_at, response_deadline, content, ai_system_id, status, created_by)
+      VALUES (${ctx.orgId}, ${authority_name}, ${subject}, ${direction}, ${new Date().toISOString()}, ${response_deadline ?? null}, ${content ?? null}, ${ai_system_id ?? null}, 'open', ${ctx.userId})
       RETURNING *
     `);
     return res.rows[0];

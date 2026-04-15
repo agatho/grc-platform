@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { updateAiIncidentSchema } from "@grc/shared";
 
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
@@ -23,15 +24,17 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
   const { id } = await params;
-  const body = await req.json();
-
+  const parsed = updateAiIncidentSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
   const {
     title, description, severity, is_serious, status,
     affected_persons_count, root_cause, root_cause_category,
     remediation_actions, preventive_measures, lessons_learned,
     harm_type, harm_description,
     authority_notified_at, authority_reference,
-  } = body;
+  } = parsed.data;
 
   // If being resolved, set resolved_at
   const resolvedClause = status === "resolved"

@@ -10,7 +10,7 @@ export async function POST(req: Request) {
   if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(aiConformityAssessment).values({ ...body.data, orgId: ctx.orgId, assessedBy: ctx.userId }).returning();
+    const [created] = await tx.insert(aiConformityAssessment).values({ ...body.data, orgId: ctx.orgId }).returning();
     return created;
   });
   return Response.json({ data: result }, { status: 201 });
