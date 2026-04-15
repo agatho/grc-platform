@@ -2,7 +2,7 @@
 
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. 74 entities, 31 catalog frameworks (~2,100 entries), 15 modules, 88 migrations completed.
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. 74 entities, 31 catalog frameworks (~2,100 entries), 15 modules, 94 migrations completed.
 
 ## Tech Stack
 
