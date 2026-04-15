@@ -61,12 +61,29 @@ export const createRopaRecipientSchema = z.object({
 
 // ──────────── DPIA ────────────
 
+export const thirdCountryTransferSchema = z.object({
+  country: z.string().min(1),
+  legalBasis: z.string().min(1),
+  safeguards: z.string().min(1),
+});
+
 export const createDpiaSchema = z.object({
   title: z.string().min(1).max(500),
   processingDescription: z.string().optional(),
   legalBasis: z.enum(ropaLegalBasisValues).optional(),
   necessityAssessment: z.string().optional(),
   dpoConsultationRequired: z.boolean().default(false),
+  // Art. 35 enhancement fields
+  systematicDescription: z.string().optional(),
+  dataCategories: z.array(z.string()).max(50).optional(),
+  dataSubjectCategories: z.array(z.string()).max(50).optional(),
+  recipients: z.array(z.string()).max(50).optional(),
+  thirdCountryTransfers: z.array(thirdCountryTransferSchema).max(20).optional(),
+  retentionPeriod: z.string().max(255).optional(),
+  consultationResult: z.string().optional(),
+  consultationDate: z.string().optional(),
+  nextReviewDate: z.string().optional(),
+  dpoOpinion: z.string().optional(),
 });
 
 export const updateDpiaSchema = createDpiaSchema.partial();
@@ -93,7 +110,13 @@ export const createDpiaRiskSchema = z.object({
 
 export const createDpiaMeasureSchema = z.object({
   measureDescription: z.string().min(1),
+  riskId: z.string().uuid().nullable().optional(),
   implementationTimeline: z.string().max(255).optional(),
+  costOnetime: z.number().min(0).optional(),
+  costAnnual: z.number().min(0).optional(),
+  effortHours: z.number().min(0).optional(),
+  costCurrency: z.string().max(3).optional(),
+  costNote: z.string().optional(),
 });
 
 // ──────────── DSR ────────────

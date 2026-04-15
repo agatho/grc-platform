@@ -43,7 +43,13 @@ export async function POST(
         orgId: ctx.orgId,
         dpiaId: id,
         measureDescription: body.data.measureDescription,
+        riskId: body.data.riskId ?? null,
         implementationTimeline: body.data.implementationTimeline,
+        costOnetime: body.data.costOnetime ? String(body.data.costOnetime) : null,
+        costAnnual: body.data.costAnnual ? String(body.data.costAnnual) : null,
+        effortHours: body.data.effortHours ? String(body.data.effortHours) : null,
+        costCurrency: body.data.costCurrency ?? "EUR",
+        costNote: body.data.costNote ?? null,
       })
       .returning();
     return row;
