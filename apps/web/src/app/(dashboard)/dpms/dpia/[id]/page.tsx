@@ -226,7 +226,7 @@ function DpiaDetailInner() {
         )}
 
         {activeStep === "measures" && (
-          <MeasuresStep measures={data.measures} risks={data.risks} />
+          <MeasuresStep measures={data.measures} risks={data.risks} dpiaId={data.id} onUpdated={fetchData} />
         )}
 
         {activeStep === "consultation" && (
@@ -507,14 +507,95 @@ function TransferTable({ transfers, onSave, saving }: {
 
 // ── Step: Measures (enhanced with risk linkage) ────────────
 
-function MeasuresStep({ measures, risks }: { measures: DpiaMeasureExt[]; risks: DpiaRiskExt[] }) {
+function MeasuresStep({ measures, risks, dpiaId, onUpdated }: {
+  measures: DpiaMeasureExt[]; risks: DpiaRiskExt[]; dpiaId: string; onUpdated: () => void;
+}) {
+  const [showForm, setShowForm] = useState(false);
+  const [desc, setDesc] = useState("");
+  const [riskId, setRiskId] = useState("");
+  const [timeline, setTimeline] = useState("");
+  const [costOnetime, setCostOnetime] = useState("");
+  const [costAnnual, setCostAnnual] = useState("");
+  const [effortHours, setEffortHours] = useState("");
+  const [adding, setAdding] = useState(false);
+
+  const resetForm = () => { setDesc(""); setRiskId(""); setTimeline(""); setCostOnetime(""); setCostAnnual(""); setEffortHours(""); setShowForm(false); };
+
+  const handleAdd = async () => {
+    if (!desc.trim()) return;
+    setAdding(true);
+    try {
+      const body: Record<string, unknown> = { measureDescription: desc.trim() };
+      if (riskId) body.riskId = riskId;
+      if (timeline) body.implementationTimeline = timeline;
+      if (costOnetime) body.costOnetime = Number(costOnetime);
+      if (costAnnual) body.costAnnual = Number(costAnnual);
+      if (effortHours) body.effortHours = Number(effortHours);
+      const res = await fetch(`/api/v1/dpms/dpia/${dpiaId}/measures`, {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body),
+      });
+      if (res.ok) { resetForm(); onUpdated(); }
+    } finally { setAdding(false); }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="font-semibold text-gray-900">Abhilfemassnahmen</h2>
-        <span className="text-sm text-gray-500">{measures.length} Massnahmen</span>
+        <div className="flex items-center gap-2">
+          <span className="text-sm text-gray-500">{measures.length} Massnahmen</span>
+          {!showForm && <Button size="sm" variant="outline" onClick={() => setShowForm(true)}><Plus size={12} className="mr-1" /> Neue Massnahme</Button>}
+        </div>
       </div>
-      {measures.length === 0 ? (
+
+      {/* Add Measure Form */}
+      {showForm && (
+        <div className="rounded-lg border-2 border-blue-200 bg-blue-50/50 p-4 space-y-3">
+          <p className="text-sm font-medium text-blue-900">Neue Abhilfemassnahme</p>
+          <textarea value={desc} onChange={e => setDesc(e.target.value)} rows={2} placeholder="Beschreibung der Massnahme..."
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Verknuepftes Risiko (optional)</label>
+              <select value={riskId} onChange={e => setRiskId(e.target.value)} className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm">
+                <option value="">DSFA-weite Massnahme</option>
+                {risks.map(r => <option key={r.id} value={r.id}>{r.riskDescription.substring(0, 60)}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Umsetzungszeitraum</label>
+              <input value={timeline} onChange={e => setTimeline(e.target.value)} placeholder="z.B. Q2 2026"
+                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            </div>
+          </div>
+          <div className="grid grid-cols-3 gap-3">
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Einmalkosten (EUR)</label>
+              <input type="number" value={costOnetime} onChange={e => setCostOnetime(e.target.value)} placeholder="0"
+                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Jaehrliche Kosten (EUR)</label>
+              <input type="number" value={costAnnual} onChange={e => setCostAnnual(e.target.value)} placeholder="0"
+                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Aufwand (Stunden)</label>
+              <input type="number" value={effortHours} onChange={e => setEffortHours(e.target.value)} placeholder="0"
+                className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm" />
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button size="sm" onClick={handleAdd} disabled={adding || !desc.trim()}>
+              {adding ? <Loader2 size={12} className="animate-spin mr-1" /> : <Plus size={12} className="mr-1" />} Hinzufuegen
+            </Button>
+            <Button size="sm" variant="ghost" onClick={resetForm}>Abbrechen</Button>
+          </div>
+        </div>
+      )}
+
+      {/* Existing Measures */}
+      {measures.length === 0 && !showForm ? (
         <p className="text-sm text-gray-400">Keine Massnahmen erfasst</p>
       ) : (
         <div className="space-y-3">
@@ -537,6 +618,11 @@ function MeasuresStep({ measures, risks }: { measures: DpiaMeasureExt[]; risks: 
                   {m.costOnetime && Number(m.costOnetime) > 0 && (
                     <Badge variant="outline" className="text-[10px]">
                       Einmalkosten: {Number(m.costOnetime).toLocaleString("de-DE")} {m.costCurrency ?? "EUR"}
+                    </Badge>
+                  )}
+                  {m.costAnnual && Number(m.costAnnual) > 0 && (
+                    <Badge variant="outline" className="text-[10px]">
+                      Jaehrlich: {Number(m.costAnnual).toLocaleString("de-DE")} {m.costCurrency ?? "EUR"}
                     </Badge>
                   )}
                   {m.effortHours && Number(m.effortHours) > 0 && (
