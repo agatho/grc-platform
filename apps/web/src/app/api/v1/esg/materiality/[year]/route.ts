@@ -66,11 +66,12 @@ export async function PUT(
     return Response.json({ error: "Invalid year" }, { status: 400 });
   }
 
-  const body = await req.json();
-  const status = body.status;
-  if (!["draft", "in_progress", "completed"].includes(status)) {
-    return Response.json({ error: "Invalid status" }, { status: 422 });
+  const { z } = await import("zod");
+  const parsed = z.object({ status: z.enum(["draft", "in_progress", "completed"]) }).safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
+  const { status } = parsed.data;
 
   const updated = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx

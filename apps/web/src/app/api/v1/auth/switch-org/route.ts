@@ -1,6 +1,9 @@
 import { auth } from "@/auth";
 import { setCurrentOrgId } from "@grc/auth/context";
 import { getAccessibleOrgIds } from "@grc/auth";
+import { z } from "zod";
+
+const switchOrgSchema = z.object({ orgId: z.string().uuid() });
 
 export async function POST(req: Request) {
   const session = await auth();
@@ -8,12 +11,11 @@ export async function POST(req: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const body = await req.json();
-  const { orgId } = body;
-
-  if (!orgId || typeof orgId !== "string") {
-    return Response.json({ error: "orgId is required" }, { status: 400 });
+  const parsed = switchOrgSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
   }
+  const { orgId } = parsed.data;
 
   // Verify user has access to the target org
   const accessible = getAccessibleOrgIds(session);

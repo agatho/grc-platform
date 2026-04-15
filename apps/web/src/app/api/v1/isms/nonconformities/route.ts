@@ -2,6 +2,17 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { z } from "zod";
+
+const createNonconformitySchema = z.object({
+  title: z.string().min(1).max(500),
+  description: z.string().max(5000).optional(),
+  sourceType: z.string().max(50).default("internal_audit"),
+  severity: z.enum(["minor", "major", "critical"]).default("minor"),
+  isoClause: z.string().max(50).optional(),
+  dueDate: z.string().optional(),
+  assignedTo: z.string().uuid().optional(),
+});
 
 export async function GET(req: Request) {
   const ctx = await withAuth();
@@ -37,10 +48,13 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = await req.json();
+  const parsed = createNonconformitySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
+  const d = parsed.data;
 
   const result = await withAuditContext(ctx, async () => {
-    // Generate NC code
     const [{ count }] = (await db.execute(
       sql`SELECT count(*)::int as count FROM isms_nonconformity WHERE org_id = ${ctx.orgId}`
     )).rows as [{ count: number }];
@@ -48,7 +62,7 @@ export async function POST(req: Request) {
 
     const rows = await db.execute(sql`
       INSERT INTO isms_nonconformity (org_id, nc_code, title, description, source_type, severity, iso_clause, due_date, identified_by, assigned_to, status)
-      VALUES (${ctx.orgId}, ${ncCode}, ${body.title}, ${body.description || null}, ${body.sourceType || "internal_audit"}, ${body.severity || "minor"}, ${body.isoClause || null}, ${body.dueDate || null}, ${ctx.userId}, ${body.assignedTo || null}, 'open')
+      VALUES (${ctx.orgId}, ${ncCode}, ${d.title}, ${d.description ?? null}, ${d.sourceType}, ${d.severity}, ${d.isoClause ?? null}, ${d.dueDate ?? null}, ${ctx.userId}, ${d.assignedTo ?? null}, 'open')
       RETURNING *
     `);
     return rows.rows[0];

@@ -56,7 +56,9 @@ export async function POST(
   // Parse optional body (name for new user)
   let body: { name?: string } = {};
   try {
-    body = await req.json();
+    const { z } = await import("zod");
+    const parsed = z.object({ name: z.string().max(200).optional() }).safeParse(await req.json());
+    if (parsed.success) body = parsed.data;
   } catch {
     // Body is optional for accept
   }

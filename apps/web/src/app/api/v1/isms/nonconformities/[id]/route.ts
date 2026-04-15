@@ -2,6 +2,15 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
+import { z } from "zod";
+
+const updateNonconformitySchema = z.object({
+  status: z.string().max(30).optional(),
+  rootCause: z.string().max(5000).optional(),
+  rootCauseMethod: z.string().max(100).optional(),
+  assignedTo: z.string().uuid().optional(),
+  dueDate: z.string().optional(),
+});
 
 // GET /api/v1/isms/nonconformities/[id]
 export async function GET(
@@ -64,17 +73,21 @@ export async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
-  const body = await req.json();
+  const parsed = updateNonconformitySchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+  }
+  const d = parsed.data;
 
   const result = await withAuditContext(ctx, async () => {
     const rows = await db.execute(sql`
       UPDATE isms_nonconformity
       SET
-        status = COALESCE(${body.status ?? null}, status),
-        root_cause = COALESCE(${body.rootCause ?? null}, root_cause),
-        root_cause_method = COALESCE(${body.rootCauseMethod ?? null}, root_cause_method),
-        assigned_to = COALESCE(${body.assignedTo ?? null}, assigned_to),
-        due_date = COALESCE(${body.dueDate ?? null}, due_date),
+        status = COALESCE(${d.status ?? null}, status),
+        root_cause = COALESCE(${d.rootCause ?? null}, root_cause),
+        root_cause_method = COALESCE(${d.rootCauseMethod ?? null}, root_cause_method),
+        assigned_to = COALESCE(${d.assignedTo ?? null}, assigned_to),
+        due_date = COALESCE(${d.dueDate ?? null}, due_date),
         updated_at = now()
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
