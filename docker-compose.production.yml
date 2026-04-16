@@ -71,6 +71,32 @@ services:
     networks:
       - arctos
 
+  # ── ARCTOS Worker (Cron Jobs, Background Tasks) ───────────────
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    environment:
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:-grc_prod_password}@postgres:5432/grc_platform
+      CRON_SECRET: ${CRON_SECRET:-change-me}
+      NODE_ENV: production
+      REDIS_URL: redis://redis:6379
+      RESEND_API_KEY: ${RESEND_API_KEY:-}
+      EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PORT: "3001"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - arctos
+    # Kein Port exposed — nur intern via Docker-Netzwerk erreichbar
+
 volumes:
   pgdata:
 
