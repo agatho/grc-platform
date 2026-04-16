@@ -28,6 +28,8 @@ const allRoles = [
   "admin", "risk_manager", "control_owner", "auditor", "dpo",
   "viewer", "process_owner", "esg_manager", "esg_contributor",
   "whistleblowing_officer", "ombudsperson",
+  "compliance_officer", "ciso", "bcm_manager", "contract_manager",
+  "quality_manager", "security_analyst", "department_head", "external_auditor",
 ] as const;
 
 // Role assignment schema

@@ -38,6 +38,18 @@ export const userRoleEnum = pgEnum("user_role", [
   "dpo",
   "process_owner",
   "viewer",
+  "esg_manager",
+  "esg_contributor",
+  "whistleblowing_officer",
+  "ombudsperson",
+  "compliance_officer",
+  "ciso",
+  "bcm_manager",
+  "contract_manager",
+  "quality_manager",
+  "security_analyst",
+  "department_head",
+  "external_auditor",
 ]);
 
 export const lineOfDefenseEnum = pgEnum("line_of_defense", [
