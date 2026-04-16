@@ -165,6 +165,7 @@
       "settings": "Settings",
       "organizations": "Organizations",
       "users": "User Management",
+      "roles": "Role Management",
       "modules": "Module Configuration",
       "auditLog": "Audit Trail",
       "accessLog": "Access Log",

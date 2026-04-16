@@ -165,6 +165,7 @@
       "settings": "Einstellungen",
       "organizations": "Organisationen",
       "users": "Benutzerverwaltung",
+      "roles": "Rollenverwaltung",
       "modules": "Modulkonfiguration",
       "auditLog": "Änderungshistorie",
       "accessLog": "Zugriffsprotokoll",

@@ -32,10 +32,61 @@ export async function withAuth(
 
   if (roles.length) {
     const check = requireRole(...roles)(session, orgId);
-    if (check) return check;
+    if (check) {
+      // Standard role denied — check custom roles as fallback
+      const hasCustomAccess = await checkCustomRoleAccess(session.user.id, orgId);
+      if (!hasCustomAccess) return check;
+    }
   }
 
   return { session, orgId, userId: session.user.id };
+}
+
+/**
+ * Check if user has any custom role with at least 'read' permission in current org.
+ * For module-specific checks, use checkCustomRoleModuleAccess().
+ */
+async function checkCustomRoleAccess(userId: string, orgId: string): Promise<boolean> {
+  const result = await db.execute(
+    sql`SELECT 1 FROM user_custom_role ucr
+        JOIN custom_role cr ON cr.id = ucr.custom_role_id
+        JOIN role_permission rp ON rp.role_id = cr.id
+        WHERE ucr.user_id = ${userId}
+          AND ucr.org_id = ${orgId}
+          AND rp.action != 'none'
+        LIMIT 1`,
+  );
+  return (result.rows?.length ?? 0) > 0;
+}
+
+/**
+ * Check if user has custom role permission for a specific module + action.
+ * action hierarchy: admin > write > read > none
+ */
+export async function checkCustomRoleModuleAccess(
+  userId: string,
+  orgId: string,
+  moduleKey: string,
+  requiredAction: "read" | "write" | "admin" = "read",
+): Promise<boolean> {
+  const actionHierarchy: Record<string, number> = { none: 0, read: 1, write: 2, admin: 3 };
+  const requiredLevel = actionHierarchy[requiredAction] ?? 1;
+
+  const result = await db.execute(
+    sql`SELECT rp.action FROM user_custom_role ucr
+        JOIN role_permission rp ON rp.role_id = ucr.custom_role_id
+        WHERE ucr.user_id = ${userId}
+          AND ucr.org_id = ${orgId}
+          AND rp.module_key = ${moduleKey}
+        ORDER BY CASE rp.action
+          WHEN 'admin' THEN 3 WHEN 'write' THEN 2
+          WHEN 'read' THEN 1 ELSE 0 END DESC
+        LIMIT 1`,
+  );
+
+  if (!result.rows?.length) return false;
+  const userLevel = actionHierarchy[(result.rows[0] as Record<string, string>).action] ?? 0;
+  return userLevel >= requiredLevel;
 }
 
 /** Wrap a mutation in a transaction with audit session variables. */
