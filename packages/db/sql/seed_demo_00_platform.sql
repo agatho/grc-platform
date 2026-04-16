@@ -1,21 +1,29 @@
 -- seed_demo_00_platform.sql — Base platform data (Orgs + Users + Roles + Modules)
 -- Must run BEFORE all other seed_demo_*.sql files
 -- Password for all users: admin123
+-- Requires: CREATE EXTENSION pgcrypto (for audit_trigger digest function)
+
+-- ============================================================
+-- 0. Required Extensions
+-- ============================================================
+
+CREATE EXTENSION IF NOT EXISTS pgcrypto;
+CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
 -- 1. Organizations (Meridian Holdings + Subsidiaries)
 -- ============================================================
 
-INSERT INTO organization (id, name, short_name, type, country, is_active)
+INSERT INTO organization (id, name, short_name, type, country)
 VALUES
-  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE', true),
-  ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE', true),
-  ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE', true),
-  ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE', true),
-  ('87746c01-50a6-4abc-bb81-6613f6ffaf99', 'Borealis Workwear International AG', 'Borealis', 'subsidiary', 'CH', true),
-  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ClearStream Hygiene Solutions', 'ClearStream', 'subsidiary', 'DE', true),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Meridian Financial Services', 'MFS', 'subsidiary', 'DE', true),
-  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Nordic Facility Management AS', 'Nordic FM', 'subsidiary', 'NO', true)
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE'),
+  ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE'),
+  ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE'),
+  ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE'),
+  ('87746c01-50a6-4abc-bb81-6613f6ffaf99', 'Borealis Workwear International AG', 'Borealis', 'subsidiary', 'CH'),
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ClearStream Hygiene Solutions', 'ClearStream', 'subsidiary', 'DE'),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Meridian Financial Services', 'MFS', 'subsidiary', 'DE'),
+  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Nordic Facility Management AS', 'Nordic FM', 'subsidiary', 'NO')
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE organization SET parent_org_id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41'
@@ -26,18 +34,18 @@ WHERE id != 'c2446a5c-64f1-40a7-862a-8ab084f66f41' AND parent_org_id IS NULL;
 -- bcrypt hash of "admin123" with 12 rounds
 -- ============================================================
 
-INSERT INTO "user" (id, email, name, password_hash, language, is_active)
+INSERT INTO "user" (id, email, name, password_hash, language)
 VALUES
-  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'admin@arctos.dev', 'Platform Admin', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'ciso@arctos.dev', 'Sarah Mueller', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'compliance@arctos.dev', 'Thomas Schmidt', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('e5f6a7b8-c9d0-1234-ef01-56789abcdef0', 'bcm@arctos.dev', 'Lisa Wagner', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('f6a7b8c9-d0e1-2345-f012-6789abcdef01', 'contracts@arctos.dev', 'Michael Hoffmann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('a7b8c9d0-e1f2-3456-0123-789abcdef012', 'qm@arctos.dev', 'Andrea Fischer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'security@arctos.dev', 'Markus Bauer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'auditor@arctos.dev', 'Dr. Klaus Richter', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'dpo@arctos.dev', 'Dr. Julia Krause', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true),
-  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'risk@arctos.dev', 'Peter Zimmermann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de', true)
+  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'admin@arctos.dev', 'Platform Admin', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'ciso@arctos.dev', 'Sarah Mueller', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'compliance@arctos.dev', 'Thomas Schmidt', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('e5f6a7b8-c9d0-1234-ef01-56789abcdef0', 'bcm@arctos.dev', 'Lisa Wagner', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('f6a7b8c9-d0e1-2345-f012-6789abcdef01', 'contracts@arctos.dev', 'Michael Hoffmann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('a7b8c9d0-e1f2-3456-0123-789abcdef012', 'qm@arctos.dev', 'Andrea Fischer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'security@arctos.dev', 'Markus Bauer', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'auditor@arctos.dev', 'Dr. Klaus Richter', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'dpo@arctos.dev', 'Dr. Julia Krause', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de'),
+  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'risk@arctos.dev', 'Peter Zimmermann', '$2b$12$VJqCv7CfzUqIXeSgVk3I2uFqj3llVxlhrLJVquIbUdt65Dh26e3oi', 'de')
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
@@ -58,6 +66,7 @@ VALUES
   ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second')
 ON CONFLICT DO NOTHING;
 
+-- Admin also gets NovaTec access
 INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
 VALUES ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
 ON CONFLICT DO NOTHING;
@@ -85,6 +94,7 @@ VALUES
   ('academy', 'GRC Academy', 'GRC Academy', 'graduation-cap', 130, 'included')
 ON CONFLICT (module_key) DO NOTHING;
 
+-- Enable all modules for all orgs
 INSERT INTO module_config (org_id, module_key, ui_status, is_data_active)
 SELECT o.id, md.module_key, 'enabled', true
 FROM organization o

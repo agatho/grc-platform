@@ -30,6 +30,10 @@ if [ -n "$DATABASE_URL" ] && command -v psql >/dev/null 2>&1; then
     sleep 1
   done
 
+  # Ensure required extensions exist
+  echo "Ensuring required PostgreSQL extensions..."
+  PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";" 2>/dev/null || true
+
   # Run custom SQL migrations
   if [ -d "/app/packages/db/drizzle" ]; then
     MIGRATED=0
