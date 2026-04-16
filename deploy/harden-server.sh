@@ -226,8 +226,17 @@ SYSEOF
 sysctl --system > /dev/null 2>&1
 echo "  Kernel-Parameter gehaertet"
 
-# ── 8. Docker-Daemon haerten ──────────────────────────────
-echo "[8/9] Docker haerten..."
+# ── 8. Docker installieren + haerten ─────────────────────
+echo "[8/9] Docker installieren und haerten..."
+if ! command -v docker &> /dev/null; then
+  curl -fsSL https://get.docker.com | sh
+  systemctl enable docker
+fi
+
+# Docker-Gruppe fuer arctos
+usermod -aG docker arctos
+
+# Gehaertete Daemon-Config
 mkdir -p /etc/docker
 cat > /etc/docker/daemon.json << 'DOCKEREOF'
 {
@@ -243,15 +252,8 @@ cat > /etc/docker/daemon.json << 'DOCKEREOF'
 }
 DOCKEREOF
 
-set +e
-systemctl restart docker 2>/dev/null
-DOCKER_RESULT=$?
-set -e
-if [ $DOCKER_RESULT -eq 0 ]; then
-  echo "  Docker: no-new-privileges, ICC disabled, Log-Rotation"
-else
-  echo "  Docker noch nicht installiert — Config wird beim naechsten Start angewendet"
-fi
+systemctl restart docker
+echo "  Docker installiert + gehaertet: no-new-privileges, ICC disabled, Log-Rotation"
 
 # ── 9. App-Verzeichnis vorbereiten ────────────────────────
 echo "[9/9] App-Verzeichnis vorbereiten..."
