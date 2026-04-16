@@ -103,7 +103,7 @@ SSHEOF
 # Duplikate entfernen
 awk '!seen[$0]++' "$SSHD_CONFIG" > "${SSHD_CONFIG}.tmp" && mv "${SSHD_CONFIG}.tmp" "$SSHD_CONFIG"
 
-systemctl restart sshd
+systemctl restart ssh 2>/dev/null || systemctl restart sshd
 echo "  SSH gehaertet"
 
 # ── 4. Firewall (UFW) ─────────────────────────────────────
