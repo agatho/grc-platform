@@ -1,6 +1,6 @@
 // Platform core types (Sprint 1)
 export type OrgType = "subsidiary" | "holding" | "joint_venture" | "branch";
-export type UserRole = "admin" | "risk_manager" | "control_owner" | "auditor" | "dpo" | "viewer" | "process_owner" | "ombudsperson" | "esg_manager" | "esg_contributor" | "whistleblowing_officer";
+export type UserRole = "admin" | "risk_manager" | "control_owner" | "auditor" | "dpo" | "viewer" | "process_owner" | "ombudsperson" | "esg_manager" | "esg_contributor" | "whistleblowing_officer" | "compliance_officer" | "ciso" | "bcm_manager" | "contract_manager" | "quality_manager" | "security_analyst" | "department_head" | "external_auditor";
 export type LineOfDefense = "first" | "second" | "third";
 
 export interface Organization {
