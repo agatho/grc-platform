@@ -42,7 +42,12 @@ services:
       dockerfile: Dockerfile
     restart: unless-stopped
     ports:
-      - "${PORT:-3000}:3000"
+      - "127.0.0.1:3000:3000"
+    security_opt:
+      - no-new-privileges:true
+    read_only: true
+    tmpfs:
+      - /tmp
     environment:
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:-grc_prod_password}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
