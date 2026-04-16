@@ -1,7 +1,6 @@
--- seed_demo_00_platform.sql — Base platform data (Orgs + Users + Roles + Modules)
+-- seed_demo_00_platform.sql — Base platform data (Orgs + Users + Roles + Modules + Work Item Types)
 -- Must run BEFORE all other seed_demo_*.sql files
 -- Password for all users: admin123
--- Requires: CREATE EXTENSION pgcrypto (for audit_trigger digest function)
 
 -- ============================================================
 -- 0. Required Extensions
@@ -11,12 +10,16 @@ CREATE EXTENSION IF NOT EXISTS pgcrypto;
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ============================================================
--- 1. Organizations (Meridian Holdings + Subsidiaries)
+-- 1. Organizations
 -- ============================================================
+-- Two org IDs are used across seeds:
+-- c2446a5c = primary login org (shown in org switcher)
+-- ccc4cc1c = demo data org (all seed_demo_01-12 reference this)
 
 INSERT INTO organization (id, name, short_name, type, country)
 VALUES
   ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE'),
+  ('ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'Meridian Holdings GmbH', 'Meridian-Demo', 'holding', 'DE'),
   ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE'),
   ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE'),
   ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE'),
@@ -27,7 +30,8 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 UPDATE organization SET parent_org_id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41'
-WHERE id != 'c2446a5c-64f1-40a7-862a-8ab084f66f41' AND parent_org_id IS NULL;
+WHERE id NOT IN ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7')
+  AND parent_org_id IS NULL;
 
 -- ============================================================
 -- 2. Users (password: admin123 for all)
@@ -49,11 +53,12 @@ VALUES
 ON CONFLICT (id) DO NOTHING;
 
 -- ============================================================
--- 3. Role Assignments (Meridian Holdings)
+-- 3. Role Assignments — both orgs
 -- ============================================================
 
 INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
 VALUES
+  -- Primary org (c2446a5c)
   ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'admin', 'first'),
   ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second'),
   ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second'),
@@ -63,16 +68,16 @@ VALUES
   ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'first'),
   ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'auditor', 'third'),
   ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'dpo', 'second'),
-  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second')
-ON CONFLICT DO NOTHING;
-
--- Admin also gets NovaTec access
-INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
-VALUES ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
+  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second'),
+  -- Demo data org (ccc4cc1c) — same users need access here for seeds
+  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'admin', 'first'),
+  ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
+  -- NovaTec
+  ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- 4. Module Definitions + Config
+-- 4. Module Definitions
 -- ============================================================
 
 INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, nav_order, license_tier)
@@ -94,9 +99,29 @@ VALUES
   ('academy', 'GRC Academy', 'GRC Academy', 'graduation-cap', 130, 'included')
 ON CONFLICT (module_key) DO NOTHING;
 
--- Enable all modules for all orgs
+-- Enable all modules for ALL orgs
 INSERT INTO module_config (org_id, module_key, ui_status, is_data_active)
 SELECT o.id, md.module_key, 'enabled', true
 FROM organization o
 CROSS JOIN module_definition md
 ON CONFLICT (org_id, module_key) DO NOTHING;
+
+-- ============================================================
+-- 5. Work Item Types (required by auto-create triggers)
+-- ============================================================
+
+INSERT INTO work_item_type (type_key, display_name_de, display_name_en, primary_module, nav_order)
+VALUES
+  ('task',      'Aufgabe',            'Task',        'erm',   5),
+  ('risk',      'Risiko',             'Risk',        'erm',   10),
+  ('incident',  'Vorfall',            'Incident',    'isms',  21),
+  ('control',   'Kontrolle',          'Control',     'ics',   30),
+  ('dpia',      'DSFA',               'DPIA',        'dpms',  40),
+  ('dsr',       'Betroffenenanfrage', 'DSR',         'dpms',  41),
+  ('breach',    'Datenpanne',         'Data Breach', 'dpms',  42),
+  ('audit',     'Audit',              'Audit',       'audit', 60),
+  ('finding',   'Feststellung',       'Finding',     'audit', 61),
+  ('vendor',    'Lieferant',          'Vendor',      'tprm',  70),
+  ('process',   'Prozess',            'Process',     'bpm',   90),
+  ('document',  'Dokument',           'Document',    'dms',   120)
+ON CONFLICT (type_key) DO NOTHING;
