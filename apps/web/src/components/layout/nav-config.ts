@@ -335,6 +335,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.settings", href: "/settings", icon: Settings, roles: ["admin"], parentModule: "settings" },
       { labelKey: "nav.grouped.organizations", href: "/organizations", icon: Building2, roles: ["admin"], parentModule: "settings" },
       { labelKey: "nav.grouped.users", href: "/users", icon: Users, roles: ["admin"], parentModule: "settings" },
+      { labelKey: "nav.grouped.roles", href: "/admin/roles", icon: ShieldCheck, roles: ["admin"], parentModule: "settings" },
       { labelKey: "nav.grouped.modules", href: "/admin/modules", icon: Blocks, roles: ["admin"], parentModule: "settings" },
       { labelKey: "nav.grouped.auditLog", href: "/audit-log", icon: History, roles: ["admin", "auditor", "dpo"], parentModule: "settings" },
       { labelKey: "nav.grouped.accessLog", href: "/access-log", icon: KeyRound, roles: ["admin"], parentModule: "settings" },
