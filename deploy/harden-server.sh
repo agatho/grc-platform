@@ -243,8 +243,12 @@ cat > /etc/docker/daemon.json << 'DOCKEREOF'
 }
 DOCKEREOF
 
-systemctl restart docker
-echo "  Docker: no-new-privileges, ICC disabled, Log-Rotation"
+if systemctl is-active docker &>/dev/null; then
+  systemctl restart docker
+  echo "  Docker: no-new-privileges, ICC disabled, Log-Rotation"
+else
+  echo "  Docker noch nicht installiert — Config wird beim naechsten Start angewendet"
+fi
 
 # ── 9. App-Verzeichnis vorbereiten ────────────────────────
 echo "[9/9] App-Verzeichnis vorbereiten..."
