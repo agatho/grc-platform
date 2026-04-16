@@ -5,6 +5,7 @@ const withNextIntl = createNextIntlPlugin("./src/i18n/request.ts");
 
 const nextConfig: NextConfig = {
   output: "standalone",
+  poweredByHeader: false,
   transpilePackages: ["@grc/auth", "@grc/db", "@grc/shared", "@grc/ui"],
   eslint: {
     ignoreDuringBuilds: true,
