@@ -147,14 +147,29 @@ logpath = /var/log/caddy/arctos.log
 maxretry = 10
 findtime = 300
 bantime = 3600
+
+[caddy-login]
+enabled = true
+port = 80,443
+filter = caddy-login
+logpath = /var/log/caddy/arctos.log
+maxretry = 5
+findtime = 120
+bantime = 1800
 F2BEOF
 
-# Caddy Auth-Failure Filter
+# Caddy Auth-Failure Filter (API 401/403)
 mkdir -p /etc/fail2ban/filter.d
 cat > /etc/fail2ban/filter.d/caddy-auth.conf << 'FILTEREOF'
 [Definition]
-failregex = ^.*"remote_ip":"<HOST>".*"status":401.*$
-            ^.*"remote_ip":"<HOST>".*"status":403.*$
+failregex = ^.*"remote_ip":"<HOST>".*"status":(401|403).*$
+ignoreregex =
+FILTEREOF
+
+# Caddy Login Brute-Force Filter (POST to auth callback)
+cat > /etc/fail2ban/filter.d/caddy-login.conf << 'FILTEREOF'
+[Definition]
+failregex = ^.*"remote_ip":"<HOST>".*"uri":"/api/auth/callback/credentials".*"method":"POST".*$
 ignoreregex =
 FILTEREOF
 

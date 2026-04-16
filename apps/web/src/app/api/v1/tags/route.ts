@@ -7,11 +7,14 @@ import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 
+// Strip HTML/script tags from user input
+const safeString = (max: number) => z.string().max(max).transform(s => s.replace(/<[^>]*>/g, ""));
+
 const createTagSchema = z.object({
-  name: z.string().min(1).max(200),
-  color: z.string().max(20).default("#6B7280"),
-  category: z.string().max(100).optional(),
-  description: z.string().max(1000).optional(),
+  name: safeString(200).pipe(z.string().min(1)),
+  color: z.string().max(20).regex(/^#[0-9a-fA-F]{3,8}$/).default("#6B7280"),
+  category: safeString(100).optional(),
+  description: safeString(1000).optional(),
 });
 
 export async function GET(req: Request) {
