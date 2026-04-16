@@ -6,24 +6,24 @@
 -- 1. Organizations (Meridian Holdings + Subsidiaries)
 -- ============================================================
 
-INSERT INTO organization (id, name, short_name, org_type, country, industry, employee_count, is_active)
+INSERT INTO organization (id, name, short_name, type, country, is_active)
 VALUES
-  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE', 'Conglomerate', 12000, true),
-  ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE', 'IT Services', 3500, true),
-  ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE', 'Textilservice', 4200, true),
-  ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE', 'Textilservice', 2800, true),
-  ('87746c01-50a6-4abc-bb81-6613f6ffaf99', 'Borealis Workwear International AG', 'Borealis', 'subsidiary', 'CH', 'Workwear', 1500, true),
-  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ClearStream Hygiene Solutions', 'ClearStream', 'subsidiary', 'DE', 'Hygiene', 800, true),
-  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Meridian Financial Services', 'MFS', 'subsidiary', 'DE', 'Finance', 600, true),
-  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Nordic Facility Management AS', 'Nordic FM', 'subsidiary', 'NO', 'Facility Management', 1200, true)
+  ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE', true),
+  ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE', true),
+  ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE', true),
+  ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE', true),
+  ('87746c01-50a6-4abc-bb81-6613f6ffaf99', 'Borealis Workwear International AG', 'Borealis', 'subsidiary', 'CH', true),
+  ('a1b2c3d4-e5f6-7890-abcd-ef1234567890', 'ClearStream Hygiene Solutions', 'ClearStream', 'subsidiary', 'DE', true),
+  ('b2c3d4e5-f6a7-8901-bcde-f12345678901', 'Meridian Financial Services', 'MFS', 'subsidiary', 'DE', true),
+  ('c3d4e5f6-a7b8-9012-cdef-123456789012', 'Nordic Facility Management AS', 'Nordic FM', 'subsidiary', 'NO', true)
 ON CONFLICT (id) DO NOTHING;
 
--- Set parent org for subsidiaries
 UPDATE organization SET parent_org_id = 'c2446a5c-64f1-40a7-862a-8ab084f66f41'
 WHERE id != 'c2446a5c-64f1-40a7-862a-8ab084f66f41' AND parent_org_id IS NULL;
 
 -- ============================================================
 -- 2. Users (password: admin123 for all)
+-- bcrypt hash of "admin123" with 12 rounds
 -- ============================================================
 
 INSERT INTO "user" (id, email, name, password_hash, language, is_active)
@@ -58,16 +58,15 @@ VALUES
   ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second')
 ON CONFLICT DO NOTHING;
 
--- Admin also gets NovaTec access
 INSERT INTO user_organization_role (user_id, org_id, role, line_of_defense)
 VALUES ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
 ON CONFLICT DO NOTHING;
 
 -- ============================================================
--- 4. Module Definitions + Module Config for all orgs
+-- 4. Module Definitions + Config
 -- ============================================================
 
-INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, sort_order, license_tier)
+INSERT INTO module_definition (module_key, display_name_de, display_name_en, icon, nav_order, license_tier)
 VALUES
   ('erm', 'Enterprise Risk Management', 'Enterprise Risk Management', 'shield-alert', 10, 'included'),
   ('isms', 'Informationssicherheit', 'Information Security', 'shield-check', 20, 'included'),
@@ -86,7 +85,6 @@ VALUES
   ('academy', 'GRC Academy', 'GRC Academy', 'graduation-cap', 130, 'included')
 ON CONFLICT (module_key) DO NOTHING;
 
--- Enable all modules for all orgs
 INSERT INTO module_config (org_id, module_key, ui_status, is_data_active)
 SELECT o.id, md.module_key, 'enabled', true
 FROM organization o
