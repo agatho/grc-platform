@@ -1,8 +1,12 @@
-# ARCTOS GRC Platform — Caddy Reverse Proxy
+# ARCTOS GRC Platform — Caddy Reverse Proxy Template
 # Automatisches HTTPS via Let's Encrypt
+#
+# VERWENDUNG:
+# Option A: DOMAIN Umgebungsvariable setzen → DOMAIN=arctos.firma.de caddy start
+# Option B: setup-hetzner.sh nutzt dieses Template und ersetzt __DOMAIN__
 
-{$DOMAIN:localhost} {
-  # F1: Block TRACE/TRACK methods
+{$DOMAIN:__DOMAIN__} {
+  # Block TRACE/TRACK methods
   @trace method TRACE TRACK
   respond @trace 405
 
@@ -18,14 +22,13 @@
     Content-Security-Policy "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'self'"
     Permissions-Policy "camera=(), microphone=(), geolocation=(), payment=()"
     -Server
-    # F7: Remove X-Powered-By from upstream
     -X-Powered-By
   }
 
   # Kompression
   encode gzip zstd
 
-  # JSON Logging (fuer fail2ban Parsing)
+  # JSON Logging (fuer fail2ban)
   log {
     output file /var/log/caddy/arctos.log {
       roll_size 10mb
@@ -33,9 +36,4 @@
     }
     format json
   }
-}
-
-# F2: Catch-all — unbekannte Hosts sofort ablehnen
-:80, :443 {
-  abort
 }
