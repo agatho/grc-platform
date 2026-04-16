@@ -9,8 +9,20 @@
 
 set -euo pipefail
 
-DOMAIN="arctos.charliehund.de"
 REPO="https://github.com/agatho/grc-platform.git"
+
+# Domain: erster Parameter oder aus .env oder interaktiv abfragen
+if [ -n "${1:-}" ]; then
+  DOMAIN="$1"
+elif [ -f /opt/arctos/.env ] && grep -q "^DOMAIN=" /opt/arctos/.env; then
+  DOMAIN=$(grep "^DOMAIN=" /opt/arctos/.env | cut -d= -f2)
+else
+  read -rp "Domain fuer ARCTOS (z.B. arctos.firma.de): " DOMAIN
+  if [ -z "$DOMAIN" ]; then
+    echo "FEHLER: Domain ist erforderlich"
+    exit 1
+  fi
+fi
 
 echo "=== ARCTOS GRC Platform Setup ==="
 echo "Server: $(hostname) | Domain: $DOMAIN"
@@ -99,28 +111,8 @@ fi
 echo "[7/8] Caddyfile konfigurieren..."
 mkdir -p /var/log/caddy
 
-cat > /etc/caddy/Caddyfile << CADDYEOF
-$DOMAIN {
-  reverse_proxy localhost:3000
-
-  header {
-    Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
-    X-Content-Type-Options "nosniff"
-    X-Frame-Options "SAMEORIGIN"
-    Referrer-Policy "strict-origin-when-cross-origin"
-    -Server
-  }
-
-  encode gzip zstd
-
-  log {
-    output file /var/log/caddy/arctos.log {
-      roll_size 10mb
-      roll_keep 5
-    }
-  }
-}
-CADDYEOF
+# Generate Caddyfile from template with actual domain
+sed "s/__DOMAIN__/$DOMAIN/g" /opt/arctos/deploy/Caddyfile > /etc/caddy/Caddyfile
 
 systemctl enable caddy
 systemctl restart caddy
