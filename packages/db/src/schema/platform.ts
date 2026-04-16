@@ -15,6 +15,7 @@ import {
   integer,
   bigint,
   index,
+  uniqueIndex,
   primaryKey,
 } from "drizzle-orm/pg-core";
 
@@ -444,5 +445,80 @@ export const verificationToken = pgTable(
   },
   (table) => [
     primaryKey({ columns: [table.identifier, table.token] }),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// Custom Roles + Permission Matrix
+// ──────────────────────────────────────────────────────────────
+
+export const customRole = pgTable(
+  "custom_role",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    name: varchar("name", { length: 100 }).notNull(),
+    description: text("description"),
+    color: varchar("color", { length: 20 }).default("#6B7280"),
+    isSystem: boolean("is_system").notNull().default(false),
+    systemRoleKey: varchar("system_role_key", { length: 50 }),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("custom_role_org_idx").on(table.orgId),
+    uniqueIndex("custom_role_org_name_idx").on(table.orgId, table.name),
+  ],
+);
+
+export const rolePermission = pgTable(
+  "role_permission",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    roleId: uuid("role_id")
+      .notNull()
+      .references(() => customRole.id, { onDelete: "cascade" }),
+    moduleKey: varchar("module_key", { length: 50 }).notNull(),
+    action: varchar("action", { length: 20 }).notNull(), // read | write | admin | none
+  },
+  (table) => [
+    index("role_permission_role_idx").on(table.roleId),
+    uniqueIndex("role_permission_unique_idx").on(table.roleId, table.moduleKey),
+  ],
+);
+
+export const userCustomRole = pgTable(
+  "user_custom_role",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: uuid("user_id")
+      .notNull()
+      .references(() => user.id, { onDelete: "cascade" }),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    customRoleId: uuid("custom_role_id")
+      .notNull()
+      .references(() => customRole.id, { onDelete: "cascade" }),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (table) => [
+    index("user_custom_role_user_idx").on(table.userId, table.orgId),
+    index("user_custom_role_role_idx").on(table.customRoleId),
+    uniqueIndex("user_custom_role_unique_idx").on(
+      table.userId,
+      table.orgId,
+      table.customRoleId,
+    ),
   ],
 );

@@ -23,17 +23,48 @@ export const inviteUserSchema = z.object({
   department: z.string().max(255).optional(),
 });
 
+// All user roles (must match DB enum)
+const allRoles = [
+  "admin", "risk_manager", "control_owner", "auditor", "dpo",
+  "viewer", "process_owner", "esg_manager", "esg_contributor",
+  "whistleblowing_officer", "ombudsperson",
+] as const;
+
 // Role assignment schema
 export const assignRoleSchema = z.object({
-  role: z.enum(["admin", "risk_manager", "control_owner", "auditor", "dpo", "viewer", "process_owner"]),
+  role: z.enum(allRoles),
   lineOfDefense: z.enum(["first", "second", "third"]).optional(),
 });
 
 // Invitation schemas (S1-13)
 export const createInvitationSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["admin", "risk_manager", "control_owner", "auditor", "dpo", "viewer", "process_owner"]),
+  role: z.enum(allRoles),
   lineOfDefense: z.enum(["first", "second", "third"]).optional(),
+});
+
+// Module permission actions
+const permissionActions = ["read", "write", "admin", "none"] as const;
+
+// Custom Role schemas
+export const createCustomRoleSchema = z.object({
+  name: z.string().min(1).max(100),
+  description: z.string().max(1000).optional(),
+  color: z.string().max(20).default("#6B7280"),
+  permissions: z.array(z.object({
+    moduleKey: z.string().min(1).max(50),
+    action: z.enum(permissionActions),
+  })).min(1).max(20),
+});
+
+export const updateCustomRoleSchema = z.object({
+  name: z.string().min(1).max(100).optional(),
+  description: z.string().max(1000).optional(),
+  color: z.string().max(20).optional(),
+  permissions: z.array(z.object({
+    moduleKey: z.string().min(1).max(50),
+    action: z.enum(permissionActions),
+  })).min(1).max(20).optional(),
 });
 
 export const acceptInvitationSchema = z.object({
