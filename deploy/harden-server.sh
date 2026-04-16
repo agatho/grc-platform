@@ -243,8 +243,11 @@ cat > /etc/docker/daemon.json << 'DOCKEREOF'
 }
 DOCKEREOF
 
-if systemctl is-active docker &>/dev/null; then
-  systemctl restart docker
+set +e
+systemctl restart docker 2>/dev/null
+DOCKER_RESULT=$?
+set -e
+if [ $DOCKER_RESULT -eq 0 ]; then
   echo "  Docker: no-new-privileges, ICC disabled, Log-Rotation"
 else
   echo "  Docker noch nicht installiert — Config wird beim naechsten Start angewendet"
