@@ -36,6 +36,17 @@ interface AuditDashboard {
   findingsBySeverity: Record<string, number>;
 }
 
+interface AuditImpactKris {
+  generatedAt: string;
+  openFindingsTotal: number;
+  openFindingsBySeverity: Record<string, number>;
+  overdueFindings: number;
+  unlinkedFindings: number;
+  auditTreatmentsOpen: number;
+  auditsCompletedLast12Months: number;
+  auditsByConclusion: Record<string, number>;
+}
+
 export default function AuditPage() {
   return (
     <ModuleGate moduleKey="audit">
@@ -49,15 +60,26 @@ function AuditDashboardInner() {
   const t = useTranslations("auditMgmt");
   const router = useRouter();
   const [data, setData] = useState<AuditDashboard | null>(null);
+  const [kris, setKris] = useState<AuditImpactKris | null>(null);
   const [loading, setLoading] = useState(true);
 
   const fetchDashboard = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/audit-mgmt/dashboard");
+      // Fetch both the core dashboard KPIs and the cross-module KRIs in
+      // parallel -- the KRIs slot in below and do not block the page if
+      // that endpoint is slow or unavailable.
+      const [res, krisRes] = await Promise.all([
+        fetch("/api/v1/audit-mgmt/dashboard"),
+        fetch("/api/v1/audit-mgmt/audit-impact-kris"),
+      ]);
       if (res.ok) {
         const json = await res.json();
         setData(json.data);
+      }
+      if (krisRes.ok) {
+        const kj = await krisRes.json();
+        setKris(kj.data);
       }
     } finally {
       setLoading(false);
@@ -191,6 +213,72 @@ function AuditDashboardInner() {
         </div>
       </div>
 
+      {/* KRI-Widget (Audit → ERM Feedback-Loop, ISO 31000 6.6) */}
+      {kris && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6">
+          <div className="flex items-center justify-between mb-4">
+            <div>
+              <h2 className="text-base font-semibold text-gray-900">
+                Audit-Impact-KRIs
+              </h2>
+              <p className="text-xs text-gray-500 mt-0.5">
+                Kennzahlen für Audit-getriebenes Risikomanagement · ISO 31000 6.6 · COSO ERM Principle 17
+              </p>
+            </div>
+            <span className="text-xs text-gray-400">
+              Stand: {new Date(kris.generatedAt).toLocaleString("de-DE")}
+            </span>
+          </div>
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <KriCard
+              label="Offene Feststellungen (gesamt)"
+              value={kris.openFindingsTotal}
+              hint={`davon ${kris.openFindingsBySeverity?.significant_nonconformity ?? 0} wesentlich`}
+              severity={
+                kris.openFindingsBySeverity?.significant_nonconformity
+                  ? "critical"
+                  : kris.openFindingsTotal > 0
+                    ? "warn"
+                    : "ok"
+              }
+            />
+            <KriCard
+              label="Überfällige Maßnahmen"
+              value={kris.overdueFindings}
+              hint="Plan vorhanden, Fälligkeit überschritten"
+              severity={kris.overdueFindings > 0 ? "critical" : "ok"}
+            />
+            <KriCard
+              label="Findings ohne Risiko-Link"
+              value={kris.unlinkedFindings}
+              hint="Traceability-Gap — Risiko nachtragen"
+              severity={kris.unlinkedFindings > 0 ? "warn" : "ok"}
+            />
+            <KriCard
+              label="Aktive Audit-Treatments"
+              value={kris.auditTreatmentsOpen}
+              hint="aus Audit in Risikoregister übernommen"
+              severity="ok"
+            />
+          </div>
+          {kris.auditsCompletedLast12Months > 0 && (
+            <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
+              <strong>{kris.auditsCompletedLast12Months}</strong> Audit
+              {kris.auditsCompletedLast12Months === 1 ? "" : "s"} in den
+              letzten 12 Monaten abgeschlossen
+              {Object.keys(kris.auditsByConclusion).length > 0 && (
+                <>
+                  {" · "}
+                  {Object.entries(kris.auditsByConclusion)
+                    .map(([k, v]) => `${k}: ${v}`)
+                    .join(", ")}
+                </>
+              )}
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Quick Navigation */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <h2 className="text-base font-semibold text-gray-900 mb-4">{t("quickNav")}</h2>
@@ -257,6 +345,31 @@ function NavCard({
       {icon}
       <p className="text-sm font-medium text-gray-900">{label}</p>
     </Link>
+  );
+}
+
+function KriCard({
+  label,
+  value,
+  hint,
+  severity,
+}: {
+  label: string;
+  value: number;
+  hint?: string;
+  severity: "ok" | "warn" | "critical";
+}) {
+  const colors = {
+    ok: "border-gray-200 bg-white text-gray-900",
+    warn: "border-yellow-300 bg-yellow-50 text-yellow-900",
+    critical: "border-red-300 bg-red-50 text-red-900",
+  }[severity];
+  return (
+    <div className={`rounded-md border p-3 ${colors}`}>
+      <p className="text-xs font-medium opacity-80">{label}</p>
+      <p className="text-2xl font-bold mt-1">{value}</p>
+      {hint && <p className="text-[10px] opacity-70 mt-1">{hint}</p>}
+    </div>
   );
 }
 

@@ -67,6 +67,13 @@ interface RiskRow {
   elementId?: string;
   createdAt: string;
   updatedAt: string;
+  // Derived audit-impact data merged client-side from
+  // /api/v1/risks/audit-impact-summary. Not from the base risks endpoint,
+  // so existing consumers stay unaffected.
+  needsReassessment?: boolean;
+  openCriticalFindings?: number;
+  openFindings?: number;
+  auditTreatments?: number;
 }
 
 interface DashboardSummary {
@@ -226,13 +233,39 @@ function RisksPageInner() {
     setLoading(true);
     setError(false);
     try {
-      const [risksRes, summaryRes] = await Promise.all([
+      const [risksRes, summaryRes, auditImpactRes] = await Promise.all([
         fetch("/api/v1/risks?limit=500&sortBy=riskScoreResidual&sortDir=desc"),
         fetch("/api/v1/risks/dashboard-summary"),
+        fetch("/api/v1/risks/audit-impact-summary"),
       ]);
       if (!risksRes.ok) throw new Error("Failed to fetch risks");
       const risksJson = await risksRes.json();
-      setRisks(risksJson.data ?? []);
+
+      // Merge audit-impact into the risk rows so the "Neubewertung"
+      // badge and related columns can be rendered without per-row fetches.
+      let auditImpact: Record<string, {
+        openCritical: number;
+        openAny: number;
+        treatmentCount: number;
+        needsReassessment: boolean;
+      }> = {};
+      if (auditImpactRes.ok) {
+        const aj = await auditImpactRes.json();
+        auditImpact = aj.data ?? {};
+      }
+      const enriched: RiskRow[] = (risksJson.data ?? []).map((r: RiskRow) => {
+        const ai = auditImpact[r.id];
+        return ai
+          ? {
+              ...r,
+              needsReassessment: ai.needsReassessment,
+              openCriticalFindings: ai.openCritical,
+              openFindings: ai.openAny,
+              auditTreatments: ai.treatmentCount,
+            }
+          : r;
+      });
+      setRisks(enriched);
 
       if (summaryRes.ok) {
         const summaryJson = await summaryRes.json();
@@ -454,12 +487,24 @@ function RisksPageInner() {
           <SortableHeader column={column}>{t("title")}</SortableHeader>
         ),
         cell: ({ row }) => (
-          <Link
-            href={`/risks/${row.original.id}`}
-            className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
-          >
-            {row.original.title}
-          </Link>
+          <div className="flex flex-col gap-1">
+            <Link
+              href={`/risks/${row.original.id}`}
+              className="font-medium text-blue-600 hover:text-blue-800 hover:underline"
+            >
+              {row.original.title}
+            </Link>
+            {/* Derived audit-impact marker -- surfaces ISO 27005 Kap. 10
+                "Risk Acceptance Review"-Pflicht direkt in der Liste. */}
+            {row.original.needsReassessment && (
+              <span
+                className="inline-block self-start text-[10px] px-2 py-0.5 rounded-full border bg-red-100 text-red-900 border-red-200 font-medium"
+                title={`${row.original.openCriticalFindings ?? 0} offene kritische Feststellung(en) aus Audits`}
+              >
+                Neubewertung durch Audit
+              </span>
+            )}
+          </div>
         ),
       },
       {
