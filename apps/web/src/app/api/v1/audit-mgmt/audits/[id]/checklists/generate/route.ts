@@ -14,11 +14,15 @@ import { withAuth, withAuditContext } from "@/lib/api";
 type RouteParams = { params: Promise<{ id: string }> };
 
 // POST /api/v1/audit-mgmt/audits/[id]/checklists/generate
-// Generate a checklist from items in scope: first preferred are org-owned
-// `control` rows (adjusted during ICS work), falling back to `catalog_entry`
-// rows from the org's active control catalogs (so freshly activated ISO
-// 27001 / CIS / NIST frameworks can be audited before individual controls
-// are copied into the `control` table).
+// Generate a checklist from items in scope.
+//
+// Body (optional): { catalogId?: string }
+//   - If `catalogId` is provided: generate ONLY from that catalog's entries
+//     (requires the catalog to be active on the org). Enables targeted
+//     dropdown picks like "ISO 27001 Annex A" in the Audit-Checklist UI.
+//   - Without `catalogId`: legacy behaviour -- prefer org-owned `control`
+//     rows, fall back to catalog_entry rows across ALL active control
+//     catalogs.
 export async function POST(req: Request, { params }: RouteParams) {
   const { id } = await params;
   const ctx = await withAuth("admin", "auditor");
@@ -26,6 +30,20 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const moduleCheck = await requireModule("audit", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
+
+  // Optional body — tolerate empty body for backwards compatibility.
+  let targetCatalogId: string | undefined;
+  try {
+    const raw = await req.text();
+    if (raw && raw.trim().length > 0) {
+      const body = JSON.parse(raw);
+      if (typeof body?.catalogId === "string" && body.catalogId.length > 0) {
+        targetCatalogId = body.catalogId;
+      }
+    }
+  } catch {
+    // Invalid JSON body -- ignore and use legacy behaviour.
+  }
 
   // Get the audit
   const [existing] = await db
@@ -43,75 +61,122 @@ export async function POST(req: Request, { params }: RouteParams) {
     return Response.json({ error: "Audit not found" }, { status: 404 });
   }
 
-  // 1. Prefer org-owned controls if any exist.
-  const controls = await db
-    .select({
-      id: control.id,
-      title: control.title,
-      description: control.description,
-    })
-    .from(control)
-    .where(and(eq(control.orgId, ctx.orgId), isNull(control.deletedAt)))
-    .limit(200);
-
   type Item = {
     controlId: string | null;
     title: string;
     description: string | null;
     source: "control" | "catalog_entry";
   };
+  const items: Item[] = [];
 
-  const items: Item[] = controls.map((c) => ({
-    controlId: c.id,
-    title: c.title,
-    description: c.description,
-    source: "control",
-  }));
-
-  // 2. If the org has no controls yet, fall back to catalog entries from
-  //    active control catalogs. This matches the user expectation that
-  //    activating an ISO/CIS/NIST catalog immediately enables an audit
-  //    against its entries.
-  if (items.length === 0) {
-    const activeCatalogs = await db
+  // Branch A: Specific catalog picked in the UI -- bypass controls, only
+  // generate from the targeted catalog's entries (and only if the org has
+  // it activated, to prevent cross-tenant abuse).
+  if (targetCatalogId) {
+    const [activation] = await db
       .select({ catalogId: orgActiveCatalog.catalogId })
       .from(orgActiveCatalog)
       .where(
         and(
           eq(orgActiveCatalog.orgId, ctx.orgId),
           eq(orgActiveCatalog.catalogType, "control"),
+          eq(orgActiveCatalog.catalogId, targetCatalogId),
         ),
       );
-
-    if (activeCatalogs.length > 0) {
-      const catalogIds = activeCatalogs.map((c) => c.catalogId);
-      const entries = await db
-        .select({
-          id: catalogEntry.id,
-          code: catalogEntry.code,
-          name: catalogEntry.name,
-          nameDe: catalogEntry.nameDe,
-          description: catalogEntry.description,
-          descriptionDe: catalogEntry.descriptionDe,
-        })
-        .from(catalogEntry)
+    if (!activation) {
+      return Response.json(
+        { error: "Catalog is not activated on this organization" },
+        { status: 422 },
+      );
+    }
+    const entries = await db
+      .select({
+        id: catalogEntry.id,
+        code: catalogEntry.code,
+        name: catalogEntry.name,
+        nameDe: catalogEntry.nameDe,
+        description: catalogEntry.description,
+        descriptionDe: catalogEntry.descriptionDe,
+      })
+      .from(catalogEntry)
+      .where(
+        and(
+          eq(catalogEntry.catalogId, targetCatalogId),
+          eq(catalogEntry.status, "active"),
+        ),
+      )
+      .orderBy(asc(catalogEntry.sortOrder))
+      .limit(500);
+    for (const e of entries) {
+      const title = `${e.code} — ${e.nameDe ?? e.name}`;
+      items.push({
+        controlId: null,
+        title,
+        description: e.descriptionDe ?? e.description,
+        source: "catalog_entry",
+      });
+    }
+  } else {
+    // Branch B: Legacy behaviour -- prefer org-owned controls, fall back
+    // to catalog entries across all active control catalogs.
+    const controls = await db
+      .select({
+        id: control.id,
+        title: control.title,
+        description: control.description,
+      })
+      .from(control)
+      .where(and(eq(control.orgId, ctx.orgId), isNull(control.deletedAt)))
+      .limit(200);
+    for (const c of controls) {
+      items.push({
+        controlId: c.id,
+        title: c.title,
+        description: c.description,
+        source: "control",
+      });
+    }
+    if (items.length === 0) {
+      const activeCatalogs = await db
+        .select({ catalogId: orgActiveCatalog.catalogId })
+        .from(orgActiveCatalog)
         .where(
           and(
-            inArray(catalogEntry.catalogId, catalogIds),
-            eq(catalogEntry.status, "active"),
+            eq(orgActiveCatalog.orgId, ctx.orgId),
+            eq(orgActiveCatalog.catalogType, "control"),
           ),
-        )
-        .orderBy(asc(catalogEntry.sortOrder))
-        .limit(200);
+        );
 
-      for (const e of entries) {
-        const title = `${e.code} — ${e.nameDe ?? e.name}`;
-        items.push({
-          controlId: null,
-          title,
-          description: e.descriptionDe ?? e.description,
-          source: "catalog_entry",
-        });
+      if (activeCatalogs.length > 0) {
+        const catalogIds = activeCatalogs.map((c) => c.catalogId);
+        const entries = await db
+          .select({
+            id: catalogEntry.id,
+            code: catalogEntry.code,
+            name: catalogEntry.name,
+            nameDe: catalogEntry.nameDe,
+            description: catalogEntry.description,
+            descriptionDe: catalogEntry.descriptionDe,
+          })
+          .from(catalogEntry)
+          .where(
+            and(
+              inArray(catalogEntry.catalogId, catalogIds),
+              eq(catalogEntry.status, "active"),
+            ),
+          )
+          .orderBy(asc(catalogEntry.sortOrder))
+          .limit(500);
+
+        for (const e of entries) {
+          const title = `${e.code} — ${e.nameDe ?? e.name}`;
+          items.push({
+            controlId: null,
+            title,
+            description: e.descriptionDe ?? e.description,
+            source: "catalog_entry",
+          });
+        }
       }
     }
   }
