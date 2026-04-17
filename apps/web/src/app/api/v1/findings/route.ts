@@ -180,6 +180,18 @@ export async function GET(req: Request) {
     conditions.push(eq(finding.controlId, controlId));
   }
 
+  // Audit filter -- scope findings to a single audit execution
+  const auditId = searchParams.get("auditId");
+  if (auditId) {
+    conditions.push(eq(finding.auditId, auditId));
+  }
+
+  // Risk filter -- list findings linked to a risk (Audit-ERM feedback loop)
+  const riskId = searchParams.get("riskId");
+  if (riskId) {
+    conditions.push(eq(finding.riskId, riskId));
+  }
+
   // Owner filter
   const ownerId = searchParams.get("ownerId");
   if (ownerId) {
