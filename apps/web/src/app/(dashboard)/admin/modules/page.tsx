@@ -289,7 +289,7 @@ export default function AdminModulesPage() {
     [],
   );
 
-  const currentOrgId = session?.user?.roles?.[0]?.orgId;
+  const currentOrgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
 
   const handleToggle = async (
     moduleKey: ModuleKey,
