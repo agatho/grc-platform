@@ -64,9 +64,15 @@ COPY --from=builder /app/apps/web/messages/en.json apps/web/messages/en.json
 COPY --from=builder /app/apps/web/messages/de apps/web/messages/de
 COPY --from=builder /app/apps/web/messages/en apps/web/messages/en
 
-# Copy migration files + seeds for entrypoint
+# Copy migration files + seeds for entrypoint. Two migration sources:
+#  - packages/db/drizzle/*.sql    drizzle-kit generated (Sprint 1–current)
+#  - packages/db/src/migrations/  hand-written Sprint 67+ feature migrations
+# Both are consumed by scripts/docker-entrypoint.sh in numeric order. Going
+# forward only the drizzle/ directory should grow (per ADR-014); src/migrations
+# stays to catch up the production DB.
 COPY --from=builder /app/packages/db/drizzle packages/db/drizzle
 COPY --from=builder /app/packages/db/sql packages/db/sql
+COPY --from=builder /app/packages/db/src/migrations packages/db/src/migrations
 
 # Copy entrypoint
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
