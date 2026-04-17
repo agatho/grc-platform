@@ -1,6 +1,6 @@
-import { db, organization, userOrganizationRole } from "@grc/db";
+import { db, organization, userOrganizationRole, moduleDefinition, moduleConfig } from "@grc/db";
 import { createOrganizationSchema } from "@grc/shared";
-import { eq, and, isNull, inArray, count, or } from "drizzle-orm";
+import { eq, and, isNull, inArray, count, or, sql } from "drizzle-orm";
 import { getAccessibleOrgIds } from "@grc/auth";
 import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
 
@@ -66,6 +66,17 @@ export async function POST(req: Request) {
       createdBy: ctx.userId,
       updatedBy: ctx.userId,
     });
+
+    // Auto-activate all "included" modules for the new org. Without this,
+    // ModuleGate blocks every page with a "Modul aktivieren" screen, because
+    // module_config is otherwise only populated via the demo seed.
+    await tx.execute(sql`
+      INSERT INTO module_config (org_id, module_key, ui_status, is_data_active, enabled_at, enabled_by, created_by, updated_by)
+      SELECT ${row.id}::uuid, module_key, 'enabled', true, NOW(), ${ctx.userId}::uuid, ${ctx.userId}::uuid, ${ctx.userId}::uuid
+      FROM module_definition
+      WHERE license_tier = 'included' AND is_active_in_platform = true
+      ON CONFLICT (org_id, module_key) DO NOTHING
+    `);
 
     return row;
   });

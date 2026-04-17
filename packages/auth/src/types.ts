@@ -24,6 +24,13 @@ declare module "next-auth" {
       image?: string | null;
       language: string;
       roles: RoleAssignment[];
+      /**
+       * The currently selected org, resolved from the `arctos-org-id` cookie
+       * and validated against `roles`. Falls back to `roles[0]?.orgId` if the
+       * cookie is missing or points to an org the user cannot access. Populated
+       * server-side in the `session` callback.
+       */
+      currentOrgId: string | null;
     };
   }
 }

@@ -19,8 +19,10 @@ function DashboardShell({ children }: { children: React.ReactNode }) {
   const { data: session } = useSession();
   const { layout } = useLayout();
 
-  // Derive current org from first role or null
-  const currentOrgId = session?.user?.roles?.[0]?.orgId ?? null;
+  // Use the cookie-resolved currentOrgId from the session callback. Falls
+  // back to the first role only if the cookie-resolver didn't populate it.
+  const currentOrgId =
+    session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   return (
     <ModuleConfigProvider orgId={currentOrgId}>

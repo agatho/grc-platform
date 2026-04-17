@@ -2,7 +2,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
-import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { Building2, ChevronDown, Check } from "lucide-react";
 
@@ -17,7 +16,6 @@ interface OrgSwitcherProps {
 
 export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
   const { data: session } = useSession();
-  const router = useRouter();
   const t = useTranslations("orgSwitcher");
   const [open, setOpen] = useState(false);
   const [orgs, setOrgs] = useState<OrgInfo[]>([]);
@@ -62,7 +60,11 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ orgId }),
     });
-    router.refresh();
+    // Hard reload so the server re-runs the session callback with the new
+    // arctos-org-id cookie, and every client component (header, sidebar,
+    // module-gated pages) picks up the new currentOrgId. router.refresh()
+    // alone left the client-cached useSession() stale.
+    window.location.reload();
   }
 
   if (orgs.length <= 1) {

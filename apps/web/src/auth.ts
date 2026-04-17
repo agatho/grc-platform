@@ -1,5 +1,5 @@
 import NextAuth from "next-auth";
-import { headers } from "next/headers";
+import { cookies, headers } from "next/headers";
 import { authConfig } from "@grc/auth";
 import {
   credentialsProvider,
@@ -12,6 +12,25 @@ import type { Provider } from "next-auth/providers";
 import { db, userOrganizationRole } from "@grc/db";
 import { and, eq, isNull } from "drizzle-orm";
 import type { RoleAssignment } from "@grc/auth";
+
+const ORG_COOKIE = "arctos-org-id";
+
+async function fetchFreshRoles(userId: string): Promise<RoleAssignment[]> {
+  const rows = await db
+    .select({
+      orgId: userOrganizationRole.orgId,
+      role: userOrganizationRole.role,
+      lineOfDefense: userOrganizationRole.lineOfDefense,
+    })
+    .from(userOrganizationRole)
+    .where(
+      and(
+        eq(userOrganizationRole.userId, userId),
+        isNull(userOrganizationRole.deletedAt),
+      ),
+    );
+  return rows as RoleAssignment[];
+}
 
 // Build the provider list — Azure AD is only included when env vars are set
 const providers: Provider[] = [credentialsProvider];
@@ -59,25 +78,49 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           (authUser as { roles?: RoleAssignment[] }).roles ?? [];
       }
 
-      // On explicit session.update(), refresh roles from DB. Required so newly
-      // created orgs (and any role changes) are reflected without re-login.
+      // On explicit session.update(), refresh roles from DB so newly created
+      // orgs (and any role changes) are reflected without re-login.
       if (trigger === "update" && token.userId) {
-        const rows = await db
-          .select({
-            orgId: userOrganizationRole.orgId,
-            role: userOrganizationRole.role,
-            lineOfDefense: userOrganizationRole.lineOfDefense,
-          })
-          .from(userOrganizationRole)
-          .where(
-            and(
-              eq(userOrganizationRole.userId, token.userId as string),
-              isNull(userOrganizationRole.deletedAt),
-            ),
-          );
-        (token as Record<string, unknown>).roles = rows as RoleAssignment[];
+        (token as Record<string, unknown>).roles = await fetchFreshRoles(
+          token.userId as string,
+        );
       }
       return token;
+    },
+    async session({ session, token }) {
+      // Base fields from the token (matches config.ts shape).
+      session.user.id = token.userId as string;
+      session.user.email = token.email as string;
+      session.user.name = token.name as string;
+      (session.user as any).language = (token as any).language ?? "de";
+
+      // Roles: prefer fresh DB reads for the server-side session object so
+      // newly granted roles are visible even if the JWT cookie still has a
+      // stale list. The JWT-embedded copy is kept for the edge middleware.
+      let roles = ((token as any).roles as RoleAssignment[]) ?? [];
+      if (token.userId) {
+        try {
+          roles = await fetchFreshRoles(token.userId as string);
+        } catch (err) {
+          console.warn("[auth] fresh role fetch failed, using JWT copy:", err);
+        }
+      }
+      (session.user as any).roles = roles;
+
+      // Resolve active org from the cookie, validated against roles.
+      let currentOrgId: string | null = roles[0]?.orgId ?? null;
+      try {
+        const jar = await cookies();
+        const fromCookie = jar.get(ORG_COOKIE)?.value;
+        if (fromCookie && roles.some((r) => r.orgId === fromCookie)) {
+          currentOrgId = fromCookie;
+        }
+      } catch {
+        // cookies() can throw in some edge contexts — keep fallback
+      }
+      (session.user as any).currentOrgId = currentOrgId;
+
+      return session;
     },
     async signIn({ user: authUser, account, profile }) {
       // For SSO providers, run JIT provisioning to ensure a DB user exists
