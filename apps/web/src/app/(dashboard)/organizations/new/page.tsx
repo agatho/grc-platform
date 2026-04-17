@@ -326,6 +326,8 @@ function BasicStep({ data, setData }: { data: OrgData; setData: (d: OrgData) => 
               { value: "holding", label: "Holding" },
               { value: "subsidiary", label: "Tochtergesellschaft" },
               { value: "branch", label: "Niederlassung" },
+              { value: "division", label: "Bereich" },
+              { value: "department", label: "Abteilung" },
               { value: "joint_venture", label: "Joint Venture" },
             ]} />
         </Field>

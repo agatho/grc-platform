@@ -557,7 +557,9 @@
       "subsidiary": "Tochtergesellschaft",
       "holding": "Holding",
       "joint_venture": "Joint Venture",
-      "branch": "Niederlassung"
+      "branch": "Niederlassung",
+      "division": "Bereich",
+      "department": "Abteilung"
     },
     "viewTree": "Baumansicht",
     "backToList": "Zurück zur Liste",

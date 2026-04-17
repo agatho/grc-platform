@@ -35,7 +35,7 @@ interface Organization {
   id: string;
   name: string;
   shortName: string | null;
-  type: "subsidiary" | "holding" | "joint_venture" | "branch";
+  type: "subsidiary" | "holding" | "joint_venture" | "branch" | "division" | "department";
   country: string;
   isEu: boolean;
   parentOrgId: string | null;
@@ -49,12 +49,12 @@ interface Organization {
 interface OrgFormData {
   name: string;
   shortName: string;
-  type: "subsidiary" | "holding" | "joint_venture" | "branch";
+  type: "subsidiary" | "holding" | "joint_venture" | "branch" | "division" | "department";
   country: string;
   parentOrgId: string;
 }
 
-const ORG_TYPES = ["subsidiary", "holding", "joint_venture", "branch"] as const;
+const ORG_TYPES = ["subsidiary", "holding", "joint_venture", "branch", "division", "department"] as const;
 
 const EMPTY_FORM: OrgFormData = {
   name: "",

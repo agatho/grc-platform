@@ -555,7 +555,9 @@
       "subsidiary": "Subsidiary",
       "holding": "Holding",
       "joint_venture": "Joint Venture",
-      "branch": "Branch"
+      "branch": "Branch",
+      "division": "Division",
+      "department": "Department"
     },
     "viewTree": "View Tree",
     "backToList": "Back to List",
