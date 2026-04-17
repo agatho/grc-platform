@@ -942,24 +942,67 @@ function FindingsTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
+  const [addOpen, setAddOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [risks, setRisks] = useState<Array<{ id: string; title: string }>>([]);
+
+  const fetchFindings = async () => {
+    setLoading(true);
+    try {
+      // F-14: proper server-side filter (auditId was client-side filtered
+      // before -> UI showed ALL org audit findings, misleading).
+      const res = await fetch(`/api/v1/findings?auditId=${auditId}&limit=100`);
+      if (res.ok) {
+        const json = await res.json();
+        setFindings(json.data ?? []);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchFindings = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch(`/api/v1/findings?source=audit&limit=100`);
-        if (res.ok) {
-          const json = await res.json();
-          // Filter by auditId client-side (shared finding table)
-          const all = json.data ?? [];
-          setFindings(all);
-        }
-      } finally {
-        setLoading(false);
-      }
-    };
     void fetchFindings();
+    // Load risks for the optional risk-link picker
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/risks?limit=200");
+        if (r.ok) {
+          const j = await r.json();
+          setRisks((j.data ?? []).map((x: { id: string; title: string }) => ({ id: x.id, title: x.title })));
+        }
+      } catch {}
+    })();
   }, [auditId]);
+
+  const handleAdd = async (formData: FormData) => {
+    setSaving(true);
+    try {
+      const riskIdRaw = formData.get("riskId") as string;
+      const body: Record<string, unknown> = {
+        title: formData.get("title") as string,
+        description: (formData.get("description") as string) || undefined,
+        severity: formData.get("severity") as string,
+        source: "audit",
+        auditId,
+      };
+      if (riskIdRaw) body.riskId = riskIdRaw;
+      const remDue = formData.get("remediationDueDate") as string;
+      if (remDue) body.remediationDueDate = remDue;
+
+      const res = await fetch("/api/v1/findings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        setAddOpen(false);
+        await fetchFindings();
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const severityBadge = (severity: string) => {
     const map: Record<string, string> = {
@@ -974,14 +1017,93 @@ function FindingsTab({ auditId }: { auditId: string }) {
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-gray-900">{t("findingsForAudit")}</h2>
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-gray-900">{t("findingsForAudit")}</h2>
+        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+          <DialogTrigger asChild>
+            <Button size="sm">
+              <Plus size={14} className="mr-1" />
+              Feststellung hinzufügen
+            </Button>
+          </DialogTrigger>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Feststellung hinzufügen</DialogTitle>
+            </DialogHeader>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                void handleAdd(new FormData(e.currentTarget));
+              }}
+              className="space-y-4"
+            >
+              <div>
+                <label className="text-sm font-medium">Titel</label>
+                <Input name="title" required />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Beschreibung</label>
+                <textarea
+                  name="description"
+                  rows={3}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium">Schweregrad</label>
+                <select
+                  name="severity"
+                  required
+                  defaultValue="observation"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="significant_nonconformity">Wesentliche Abweichung</option>
+                  <option value="insignificant_nonconformity">Geringfügige Abweichung</option>
+                  <option value="improvement_requirement">Verbesserungsanforderung</option>
+                  <option value="recommendation">Empfehlung</option>
+                  <option value="observation">Beobachtung</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">
+                  Risiko-Verknüpfung
+                  <span className="ml-1 text-xs text-gray-400">(optional, ISO 31000 6.6)</span>
+                </label>
+                <select
+                  name="riskId"
+                  defaultValue=""
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">— kein Risiko verknüpfen —</option>
+                  {risks.map((r) => (
+                    <option key={r.id} value={r.id}>{r.title}</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-sm font-medium">Fälligkeit</label>
+                <Input name="remediationDueDate" type="date" />
+              </div>
+              <Button type="submit" className="w-full" disabled={saving}>
+                {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
+                Speichern
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
 
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : findings.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">{t("emptyFindings")}</div>
+        <div className="text-center py-8 text-gray-400">
+          <p>{t("emptyFindings")}</p>
+          <p className="text-xs mt-2">
+            Nutze „Feststellung hinzufügen" für Ad-hoc-Befunde oder erstelle aus einer nicht-konformen Checklisten-Position heraus.
+          </p>
+        </div>
       ) : (
         <div className="space-y-3">
           {findings.map((f) => (
