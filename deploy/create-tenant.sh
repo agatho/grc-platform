@@ -92,9 +92,9 @@ echo "[3/5] Tenant-Konfiguration..."
 cat > "$TENANT_DIR/env" << TENVEOF
 # Tenant: $TENANT
 # Erstellt: $(date -u +"%Y-%m-%d %H:%M UTC")
+# HOST_PORT: $NEXT_PORT (nur fuer Docker-Compose Mapping, nicht im Container)
 TENANT_NAME=$TENANT
 DOMAIN=$SUBDOMAIN
-PORT=$NEXT_PORT
 DATABASE_URL=postgresql://grc:grc_dev_password@postgres:5432/$DB_NAME
 AUTH_SECRET=$AUTH_SECRET
 AUTH_URL=https://$SUBDOMAIN
@@ -157,7 +157,7 @@ $SUBDOMAIN {
   @trace method TRACE TRACK
   respond @trace 405
 
-  reverse_proxy localhost:$NEXT_PORT
+  reverse_proxy 127.0.0.1:$NEXT_PORT
 
   header {
     Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
