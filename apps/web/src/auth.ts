@@ -9,6 +9,9 @@ import {
   jitProvisionSsoUser,
 } from "@grc/auth/providers";
 import type { Provider } from "next-auth/providers";
+import { db, userOrganizationRole } from "@grc/db";
+import { and, eq, isNull } from "drizzle-orm";
+import type { RoleAssignment } from "@grc/auth";
 
 // Build the provider list — Azure AD is only included when env vars are set
 const providers: Provider[] = [credentialsProvider];
@@ -43,6 +46,39 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers,
   callbacks: {
     ...authConfig.callbacks,
+    async jwt({ token, user: authUser, trigger }) {
+      // Run the base JWT logic (sign-in persistence). Inline it here to avoid
+      // type gymnastics with the loose NextAuth callback signatures.
+      if (authUser) {
+        token.userId = authUser.id!;
+        token.email = authUser.email!;
+        token.name = authUser.name!;
+        (token as Record<string, unknown>).language =
+          (authUser as { language?: string }).language ?? "de";
+        (token as Record<string, unknown>).roles =
+          (authUser as { roles?: RoleAssignment[] }).roles ?? [];
+      }
+
+      // On explicit session.update(), refresh roles from DB. Required so newly
+      // created orgs (and any role changes) are reflected without re-login.
+      if (trigger === "update" && token.userId) {
+        const rows = await db
+          .select({
+            orgId: userOrganizationRole.orgId,
+            role: userOrganizationRole.role,
+            lineOfDefense: userOrganizationRole.lineOfDefense,
+          })
+          .from(userOrganizationRole)
+          .where(
+            and(
+              eq(userOrganizationRole.userId, token.userId as string),
+              isNull(userOrganizationRole.deletedAt),
+            ),
+          );
+        (token as Record<string, unknown>).roles = rows as RoleAssignment[];
+      }
+      return token;
+    },
     async signIn({ user: authUser, account, profile }) {
       // For SSO providers, run JIT provisioning to ensure a DB user exists
       if (account?.provider === "microsoft-entra-id" && profile?.email) {
