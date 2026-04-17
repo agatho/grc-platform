@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useSession } from "next-auth/react";
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Building2,
   MapPin, Phone, Briefcase, Shield, Users,
@@ -108,6 +109,7 @@ interface OrgData {
 
 export default function NewOrganizationPage() {
   const router = useRouter();
+  const { update: updateSession } = useSession();
   const [step, setStep] = useState<StepKey>("basic");
   const [data, setData] = useState<OrgData>({ name: "", type: "subsidiary", countryCode: "DE" });
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -157,7 +159,12 @@ export default function NewOrganizationPage() {
         });
       }
 
+      // Refresh the session so the newly granted admin role (assigned by the
+      // API) is picked up — otherwise the switcher and list won't see the new org.
+      await updateSession();
+
       router.push(`/organizations`);
+      router.refresh();
     } finally {
       setSaving(false);
     }
