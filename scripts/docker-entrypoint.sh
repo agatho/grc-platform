@@ -44,18 +44,24 @@ if [ -n "$DATABASE_URL" ] && command -v psql >/dev/null 2>&1; then
     echo "Applied $MIGRATED migration files."
   fi
 
-  # Run seed files if RUN_SEEDS=true
+  # Seed catalog/reference data whenever RUN_SEEDS=true.
+  # Demo organizations are gated separately behind SEED_DEMO_DATA=true so that
+  # private tenants don't receive Meridian/Arctis test orgs by default.
   if [ "$RUN_SEEDS" = "true" ] && [ -d "/app/packages/db/sql" ]; then
     echo "Seeding catalog data..."
     for f in /app/packages/db/sql/seed_catalog_*.sql /app/packages/db/sql/seed_fachliche_stammdaten.sql /app/packages/db/sql/seed_cross_framework_mappings*.sql; do
       [ -f "$f" ] || continue
       PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
     done
-    echo "Seeding demo data..."
-    for f in /app/packages/db/sql/seed_demo_*.sql; do
-      [ -f "$f" ] || continue
-      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
-    done
+    if [ "$SEED_DEMO_DATA" = "true" ]; then
+      echo "Seeding demo data (SEED_DEMO_DATA=true)..."
+      for f in /app/packages/db/sql/seed_demo_*.sql; do
+        [ -f "$f" ] || continue
+        PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
+      done
+    else
+      echo "Skipping demo data (SEED_DEMO_DATA != true)."
+    fi
     echo "Seed complete."
   fi
 else

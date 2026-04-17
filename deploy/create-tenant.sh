@@ -6,23 +6,38 @@
 # Vollstaendige Datenisolation: eigene DB, eigener Container
 #
 # Verwendung:
-#   sudo bash deploy/create-tenant.sh <tenant-name> <subdomain>
+#   sudo bash deploy/create-tenant.sh <tenant-name> <subdomain> [--with-demo]
 #
-# Beispiel:
+# Standard (ohne --with-demo): "Private" Mandant
+#   - Platform-Baseline (Module + Work-Item-Types) wird geseedet
+#   - KEINE Demo-Organisationen und KEINE Demo-User
+#   - Nach Setup: admin@arctos.dev (Platform-Admin) kann sich einloggen und
+#     per UI-Wizard die erste Organisation anlegen. Im neuen Mandant muss der
+#     erste User manuell via SQL oder UI-Invite angelegt werden.
+#
+# Mit --with-demo: "Demo" Mandant
+#   - Wie oben, PLUS Meridian Holdings + Arctis Gruppe + 10 Demo-User
+#   - Geeignet fuer Schulungen, Showcases, Demo-Umgebungen
+#
+# Beispiele:
 #   sudo bash deploy/create-tenant.sh daimon daimon.arctos.charliehund.de
-#   sudo bash deploy/create-tenant.sh tester1 tester1.arctos.charliehund.de
+#   sudo bash deploy/create-tenant.sh demo demo.arctos.charliehund.de --with-demo
 # ============================================================================
 
 set -euo pipefail
 
 if [ $# -lt 2 ]; then
-  echo "Verwendung: sudo bash deploy/create-tenant.sh <tenant-name> <subdomain>"
+  echo "Verwendung: sudo bash deploy/create-tenant.sh <tenant-name> <subdomain> [--with-demo]"
   echo "Beispiel:   sudo bash deploy/create-tenant.sh daimon daimon.arctos.charliehund.de"
   exit 1
 fi
 
 TENANT="$1"
 SUBDOMAIN="$2"
+WITH_DEMO="false"
+if [ "${3:-}" = "--with-demo" ] || [ "${3:-}" = "demo" ]; then
+  WITH_DEMO="true"
+fi
 COMPOSE_FILE="/opt/arctos/docker-compose.production.yml"
 TENANT_DIR="/opt/arctos/tenants/$TENANT"
 DB_NAME="grc_${TENANT}"
@@ -87,9 +102,21 @@ for f in $(docker compose -f "$COMPOSE_FILE" exec -T web ls /app/packages/db/dri
   docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U grc -d "$DB_NAME" -f "/dev/stdin" < "/opt/arctos/packages/db/drizzle/$f" 2>/dev/null || true
 done
 
-# Platform-Seed
-echo "  Platform-Seed..."
-docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U grc -d "$DB_NAME" -f "/dev/stdin" < /opt/arctos/packages/db/sql/seed_demo_00_platform.sql 2>/dev/null || true
+# Platform-Baseline (immer): Modul-Definitionen + Work-Item-Types.
+# Ohne diese sind Triggers/Module-Gates funktionsuntuechtig.
+echo "  Platform-Baseline (Module + Work-Item-Types)..."
+docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U grc -d "$DB_NAME" -f "/dev/stdin" < /opt/arctos/packages/db/sql/seed_platform_baseline.sql 2>/dev/null || true
+
+# Demo-Daten (nur bei --with-demo): Meridian + Arctis + 10 Demo-User.
+if [ "$WITH_DEMO" = "true" ]; then
+  echo "  Demo-Daten (Meridian + Arctis + 10 User)..."
+  docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U grc -d "$DB_NAME" -f "/dev/stdin" < /opt/arctos/packages/db/sql/seed_demo_00_platform.sql 2>/dev/null || true
+else
+  echo "  Private Mandant: keine Demo-Orgs/-User geseedet."
+  echo "  WICHTIG: Erster User muss separat angelegt werden (via SQL-Insert in 'user'"
+  echo "           + 'user_organization_role', oder via UI-Invite nach erstem Login mit"
+  echo "           einem Plattform-Admin aus dem Standard-Mandant)."
+fi
 
 echo "  Datenbank bereit"
 
