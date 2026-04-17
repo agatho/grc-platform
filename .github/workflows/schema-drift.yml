@@ -1,0 +1,52 @@
+name: Schema Drift Report (F-18)
+
+# Runs the static audit-rls-coverage tool + checks that every NEW table
+# added via drizzle migration has a matching Drizzle schema TS file.
+# Does NOT hit any live DB -- purely static, runs on every PR.
+#
+# The deep cross-check of Drizzle-Schema vs. running DB happens in
+# production via GET /api/v1/health/schema-drift (admin-only endpoint).
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "packages/db/**"
+      - "scripts/audit-rls-coverage.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  static-schema-audit:
+    name: Static schema + RLS coverage
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run RLS + audit-trigger coverage audit
+        run: node scripts/audit-rls-coverage.mjs
+
+      - name: Upload report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rls-coverage-report
+          path: docs/security/rls-coverage-report.*
+          retention-days: 30
+
+      - name: Fail if RLS_MISSING count increased
+        run: |
+          MISSING=$(grep -c ",RLS_MISSING$" docs/security/rls-coverage-report.csv || echo 0)
+          echo "RLS_MISSING count: $MISSING"
+          # Baseline: 132 tables without RLS as of Phase 3 start. Anything
+          # above that means we regressed.
+          BASELINE=132
+          if [ "$MISSING" -gt "$BASELINE" ]; then
+            echo "::error::RLS_MISSING count $MISSING exceeds baseline $BASELINE -- a new table was added without RLS."
+            exit 1
+          fi
