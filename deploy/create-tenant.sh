@@ -31,8 +31,11 @@ AUTH_SECRET=$(openssl rand -hex 32)
 WB_KEY=$(openssl rand -hex 32)
 CRON_SECRET=$(openssl rand -hex 16)
 
+# Tenant-Verzeichnis sicherstellen
+mkdir -p /opt/arctos/tenants
+
 # Naechsten freien Port finden (ab 3010)
-EXISTING_PORTS=$(grep -rh 'PORT=' /opt/arctos/tenants/*/env 2>/dev/null | grep -o '[0-9]*' | sort -n)
+EXISTING_PORTS=$(grep -rh 'PORT=' /opt/arctos/tenants/*/env 2>/dev/null | grep -o '[0-9]*' | sort -n || true)
 NEXT_PORT=3010
 for p in $EXISTING_PORTS; do
   if [ "$p" -ge "$NEXT_PORT" ]; then
