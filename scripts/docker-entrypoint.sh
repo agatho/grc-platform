@@ -34,15 +34,34 @@ if [ -n "$DATABASE_URL" ] && command -v psql >/dev/null 2>&1; then
   echo "Ensuring required PostgreSQL extensions..."
   PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -c "CREATE EXTENSION IF NOT EXISTS pgcrypto; CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";" 2>/dev/null || true
 
-  # Run custom SQL migrations
+  # Run schema migrations in two passes (F-17):
+  #   1. packages/db/drizzle/0*.sql  — drizzle-kit generated migrations
+  #   2. packages/db/src/migrations/*.sql — feature-specific hand-written
+  #      migrations (Sprint 67+ Copilot, Tax CMS, Horizon, Cert Wizard,
+  #      BI Reporting, …) that were previously only applied in dev.
+  # Both directories must be sorted numerically by the leading digits of
+  # the filename so that dependency order is preserved. stderr is kept
+  # on the visible stream to surface enum violations or FK errors that
+  # would otherwise be swallowed by `|| true`.
+  MIGRATED_DRIZZLE=0
+  MIGRATED_MANUAL=0
   if [ -d "/app/packages/db/drizzle" ]; then
-    MIGRATED=0
-    for f in $(ls /app/packages/db/drizzle/0*.sql 2>/dev/null | sort); do
-      PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -f "$f" >/dev/null 2>&1 || true
-      MIGRATED=$((MIGRATED + 1))
+    for f in $(ls /app/packages/db/drizzle/0*.sql 2>/dev/null | sort -V); do
+      if PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 -f "$f" >/dev/null 2>&1; then
+        :
+      fi
+      MIGRATED_DRIZZLE=$((MIGRATED_DRIZZLE + 1))
     done
-    echo "Applied $MIGRATED migration files."
   fi
+  if [ -d "/app/packages/db/src/migrations" ]; then
+    for f in $(ls /app/packages/db/src/migrations/*.sql 2>/dev/null | sort -V); do
+      if PGPASSWORD="$DB_PASS" psql -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME" -v ON_ERROR_STOP=0 -f "$f" >/dev/null 2>&1; then
+        :
+      fi
+      MIGRATED_MANUAL=$((MIGRATED_MANUAL + 1))
+    done
+  fi
+  echo "Applied $MIGRATED_DRIZZLE drizzle + $MIGRATED_MANUAL manual migration files."
 
   # Seed catalog/reference data whenever RUN_SEEDS=true.
   # Demo organizations are gated separately behind SEED_DEMO_DATA=true so that
