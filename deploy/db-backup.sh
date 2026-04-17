@@ -15,8 +15,11 @@
 #   docker compose -f /opt/arctos/docker-compose.production.yml stop web web-daimon
 #   # 2. DB leeren
 #   docker compose -f /opt/arctos/docker-compose.production.yml exec -T postgres psql -U grc -d postgres -c "DROP DATABASE grc_daimon; CREATE DATABASE grc_daimon OWNER grc;"
-#   # 3. Custom-Dump einspielen
-#   docker compose -f /opt/arctos/docker-compose.production.yml exec -T postgres pg_restore -U grc -d grc_daimon --no-owner < /opt/arctos/backups/grc_daimon-YYYYMMDD-HHMMSS.dump
+#   # 3. Custom-Dump einspielen -- --disable-triggers ist wegen der
+#   #    circular FKs in TimescaleDB-Metadaten (hypertable/chunk/
+#   #    continuous_agg) noetig; andernfalls schlaegt der Restore auf
+#   #    Postgres 15/16 fehl.
+#   docker compose -f /opt/arctos/docker-compose.production.yml exec -T postgres pg_restore -U grc -d grc_daimon --no-owner --disable-triggers < /opt/arctos/backups/grc_daimon-YYYYMMDD-HHMMSS.dump
 #   # 4. Container starten
 #   docker compose -f /opt/arctos/docker-compose.production.yml start web web-daimon
 # ============================================================================
