@@ -1406,7 +1406,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
                   </p>
                 </div>
                 <Link
-                  href={`/erm/risks/${r.riskId}`}
+                  href={`/risks/${r.riskId}`}
                   className="text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap print:hidden"
                 >
                   Risiko ansehen →
