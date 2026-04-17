@@ -28,6 +28,10 @@ const createFindingFromItemSchema = z.object({
   ownerId: z.string().uuid().optional(),
   remediationPlan: z.string().optional(),
   remediationDueDate: z.string().optional(),
+  // Cross-module link to the ERM risk register. When set, downstream processes
+  // (report, KRIs, risk reassessment prompt) pick this finding up as evidence
+  // that the control mitigating that risk is not fully effective.
+  riskId: z.string().uuid().optional(),
 });
 
 // POST /api/v1/audit-mgmt/audits/[id]/checklists/[checklistId]/items/[itemId]/create-finding
@@ -101,6 +105,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         source: "audit",
         controlId: item.controlId,
         auditId: id,
+        riskId: body.data.riskId,
         ownerId: body.data.ownerId,
         remediationPlan: body.data.remediationPlan,
         remediationDueDate: body.data.remediationDueDate,
