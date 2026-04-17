@@ -42,14 +42,16 @@ export async function POST(req: Request) {
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    // Create work item
+    // Create work item.
+    // workItemStatusGenericEnum has no "planned" value — using "draft" for a
+    // newly created audit (maps to audit.status="planned" in the typed table).
     const [wi] = await tx
       .insert(workItem)
       .values({
         orgId: ctx.orgId,
         typeKey: "audit",
         name: body.data.title,
-        status: "planned",
+        status: "draft",
         responsibleId: body.data.leadAuditorId,
         grcPerspective: ["audit"],
         createdBy: ctx.userId,
