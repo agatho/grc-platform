@@ -269,30 +269,56 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(null);
   const [createFindingItem, setCreateFindingItem] = useState<AuditChecklistItem | null>(null);
   const [risks, setRisks] = useState<Array<{ id: string; title: string; riskCategory?: string | null }>>([]);
+  const [activeCatalogs, setActiveCatalogs] = useState<Array<{ catalogId: string; name: string; source: string | null; version: string | null }>>([]);
 
-  // Fetch risks for the risk-picker in the create-finding dialog.
-  // Loaded once per audit detail page mount, not per-dialog, so the first
-  // picker click is instantaneous.
+  // Fetch risks for the risk-picker in the create-finding dialog + active
+  // control catalogs for the framework-import dropdown (F-13: previously
+  // hardcoded to IIA/SOC2/COBIT, now dynamic).
   useEffect(() => {
     let cancelled = false;
     (async () => {
       try {
         const r = await fetch("/api/v1/risks?limit=200");
-        if (!r.ok) return;
-        const j = await r.json();
-        if (!cancelled) {
-          setRisks(
-            (j.data ?? []).map((x: { id: string; title: string; riskCategory?: string | null }) => ({
-              id: x.id,
-              title: x.title,
-              riskCategory: x.riskCategory,
-            })),
-          );
+        if (r.ok) {
+          const j = await r.json();
+          if (!cancelled) {
+            setRisks(
+              (j.data ?? []).map((x: { id: string; title: string; riskCategory?: string | null }) => ({
+                id: x.id,
+                title: x.title,
+                riskCategory: x.riskCategory,
+              })),
+            );
+          }
+        }
+      } catch {}
+      // Active control catalogs of the current org
+      try {
+        const ac = await fetch(`/api/v1/organizations/${orgId}/active-catalogs?catalogType=control`);
+        if (ac.ok) {
+          const aj = await ac.json();
+          // Enrich with catalog name via separate fetch on /api/v1/catalogs
+          const ids: string[] = (aj.data ?? []).map((x: { catalogId: string }) => x.catalogId);
+          if (ids.length > 0) {
+            const catRes = await fetch("/api/v1/catalogs?type=control&limit=200");
+            if (catRes.ok) {
+              const catJ = await catRes.json();
+              const byId = new Map((catJ.data ?? []).map((c: { id: string; name: string; source: string | null; version: string | null }) => [c.id, c]));
+              if (!cancelled) {
+                setActiveCatalogs(
+                  ids
+                    .map((id) => byId.get(id))
+                    .filter((x): x is { id: string; name: string; source: string | null; version: string | null } => !!x)
+                    .map((c) => ({ catalogId: c.id, name: c.name, source: c.source, version: c.version })),
+                );
+              }
+            }
+          }
         }
       } catch {}
     })();
     return () => { cancelled = true; };
-  }, []);
+  }, [orgId]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
@@ -334,11 +360,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   }, [checklists, selectedChecklist]);
 
-  const handleGenerate = async () => {
+  const handleGenerate = async (catalogId?: string) => {
     setGenerating(true);
+    setImportMenuOpen(false);
     try {
       const res = await fetch(`/api/v1/audit-mgmt/audits/${auditId}/checklists/generate`, {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: catalogId ? JSON.stringify({ catalogId }) : "{}",
       });
       if (res.ok) {
         void fetchChecklists();
@@ -496,17 +525,47 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
               <ChevronDown size={12} className="ml-1" />
             </Button>
             {importMenuOpen && (
-              <div className="absolute right-0 top-full mt-1 w-56 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+              <div className="absolute right-0 top-full mt-1 w-72 rounded-md border border-gray-200 bg-white shadow-lg z-20 max-h-96 overflow-y-auto">
+                {/* Audit-Framework-Templates (hardcoded, eigene API-Route) */}
+                <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-b border-gray-100">
+                  Audit-Framework-Vorlagen
+                </div>
                 {FRAMEWORK_SOURCES.map((fw) => (
                   <button
                     key={fw.key}
                     type="button"
-                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 first:rounded-t-md last:rounded-b-md"
+                    className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                     onClick={() => handleImportFromFramework(fw.key, fw.labelKey)}
                   >
                     {t(fw.labelKey)}
                   </button>
                 ))}
+
+                {/* Dynamisch: aktive Kontroll-Kataloge der Org (F-13) */}
+                {activeCatalogs.length > 0 && (
+                  <>
+                    <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-t border-b border-gray-100">
+                      Aktive Kontroll-Kataloge
+                    </div>
+                    {activeCatalogs.map((cat) => (
+                      <button
+                        key={cat.catalogId}
+                        type="button"
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                        onClick={() => handleGenerate(cat.catalogId)}
+                        title={cat.source && cat.version ? `${cat.source} ${cat.version}` : undefined}
+                      >
+                        {cat.name}
+                        {cat.version && <span className="text-xs text-gray-400 ml-1">· {cat.version}</span>}
+                      </button>
+                    ))}
+                  </>
+                )}
+                {activeCatalogs.length === 0 && (
+                  <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
+                    Keine Kontroll-Kataloge aktiviert. Aktiviere z. B. ISO 27001 oder NIST CSF unter <em>/catalogs/controls</em>.
+                  </div>
+                )}
               </div>
             )}
           </div>
@@ -514,7 +573,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           <Button
             variant="outline"
             size="sm"
-            onClick={handleGenerate}
+            onClick={() => handleGenerate()}
             disabled={generating}
           >
             <Sparkles size={14} className={`mr-1 ${generating ? "animate-spin" : ""}`} />
