@@ -898,30 +898,367 @@ function FindingsTab({ auditId }: { auditId: string }) {
 
 // ─── Report Tab ──────────────────────────────────────────────
 
+interface ReportData {
+  audit: AuditDetail & {
+    leadAuditorEmail?: string | null;
+    scopeProcesses?: string[] | null;
+    scopeDepartments?: string[] | null;
+    scopeFrameworks?: string[] | null;
+  };
+  checklists: Array<{
+    id: string;
+    name: string;
+    sourceType: string | null;
+    totalItems: number;
+    completedItems: number;
+  }>;
+  breakdown: Array<{
+    checklistId: string;
+    conforming: number;
+    nonconforming: number;
+    observation: number;
+    not_applicable: number;
+    unevaluated: number;
+  }>;
+  findings: Array<{
+    id: string;
+    title: string;
+    description: string | null;
+    severity: string;
+    status: string;
+    elementId: string | null;
+    remediationPlan: string | null;
+    remediationDueDate: string | null;
+    createdAt: string;
+  }>;
+  findingsBySeverity: Record<string, number>;
+  nonconformingItems: Array<{
+    id: string;
+    question: string;
+    notes: string | null;
+    completedAt: string | null;
+  }>;
+  generatedAt: string;
+}
+
 function ReportTab({ audit }: { audit: AuditDetail }) {
   const t = useTranslations("auditMgmt");
+  const params = useParams<{ id: string }>();
+  const [report, setReport] = useState<ReportData | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch(`/api/v1/audit-mgmt/audits/${params.id}/report`);
+        if (!res.ok) {
+          setLoading(false);
+          return;
+        }
+        const json = await res.json();
+        if (!cancelled) setReport(json.data);
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [params.id]);
+
+  if (loading) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <Loader2 size={16} className="animate-spin text-gray-400" />
+      </div>
+    );
+  }
+  if (!report) {
+    return (
+      <div className="rounded-lg border border-gray-200 bg-white p-6">
+        <p className="text-sm text-gray-400">Bericht konnte nicht geladen werden.</p>
+      </div>
+    );
+  }
+
+  const sevColors: Record<string, string> = {
+    significant_nonconformity: "bg-red-100 text-red-900 border-red-200",
+    insignificant_nonconformity: "bg-orange-100 text-orange-900 border-orange-200",
+    improvement_requirement: "bg-yellow-100 text-yellow-900 border-yellow-200",
+    observation: "bg-blue-100 text-blue-900 border-blue-200",
+    recommendation: "bg-gray-100 text-gray-800 border-gray-200",
+  };
+  const sevLabels: Record<string, string> = {
+    significant_nonconformity: "Wesentliche Abweichung",
+    insignificant_nonconformity: "Geringfügige Abweichung",
+    improvement_requirement: "Verbesserungsanforderung",
+    observation: "Beobachtung",
+    recommendation: "Empfehlung",
+  };
+
+  const totalEvaluated = report.breakdown.reduce((sum, b) =>
+    sum + b.conforming + b.nonconforming + b.observation + b.not_applicable, 0);
+  const totalItems = report.breakdown.reduce((sum, b) =>
+    sum + b.conforming + b.nonconforming + b.observation + b.not_applicable + b.unevaluated, 0);
+  const conformanceRate = totalEvaluated > 0
+    ? Math.round((report.breakdown.reduce((s, b) => s + b.conforming, 0) / totalEvaluated) * 100)
+    : 0;
 
   return (
-    <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-      <h2 className="text-base font-semibold text-gray-900">{t("report")}</h2>
-      {audit.status === "completed" ? (
-        <div className="space-y-3">
-          <InfoRow label={t("conclusion")} value={audit.conclusion ? t(`conclusions.${audit.conclusion}`) : "-"} />
-          <InfoRow label={t("findingCount")} value={String(audit.findingCount ?? 0)} />
-          <InfoRow label={t("actualStart")} value={audit.actualStart ?? "-"} />
-          <InfoRow label={t("actualEnd")} value={audit.actualEnd ?? "-"} />
-          {audit.reportDocumentId && (
-            <Link
-              href={`/documents/${audit.reportDocumentId}`}
-              className="text-sm text-blue-600 hover:text-blue-800"
-            >
-              {t("viewReport")}
-            </Link>
-          )}
+    <div className="space-y-4">
+      {/* Actions */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-semibold text-gray-900">{t("report")}</h2>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={() => window.print()}>
+            Drucken / Als PDF speichern
+          </Button>
         </div>
-      ) : (
-        <p className="text-sm text-gray-400">{t("reportNotReady")}</p>
+      </div>
+
+      {/* Executive Summary */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3 print:border-0">
+        <h3 className="text-sm font-semibold text-gray-900">Executive Summary</h3>
+        <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
+          <InfoRow label="Audit" value={report.audit.title} />
+          <InfoRow label="Status" value={report.audit.status} />
+          <InfoRow label={t("conclusion")} value={report.audit.conclusion ? t(`conclusions.${report.audit.conclusion}`) : "-"} />
+          <InfoRow label="Audit-Typ" value={report.audit.auditType} />
+          <InfoRow label="Leitender Prüfer" value={report.audit.leadAuditorName ?? "-"} />
+          <InfoRow label="E-Mail" value={(report.audit as any).leadAuditorEmail ?? "-"} />
+          <InfoRow label={t("actualStart")} value={report.audit.actualStart ?? "-"} />
+          <InfoRow label={t("actualEnd")} value={report.audit.actualEnd ?? "-"} />
+        </div>
+        {report.audit.description && (
+          <div className="pt-2 border-t">
+            <p className="text-xs font-medium text-gray-500 mb-1">Beschreibung</p>
+            <p className="text-sm text-gray-700">{report.audit.description}</p>
+          </div>
+        )}
+      </div>
+
+      {/* Scope */}
+      {(report.audit.scopeDescription || report.audit.scopeFrameworks?.length || report.audit.scopeDepartments?.length || report.audit.scopeProcesses?.length) && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-900">Geltungsbereich</h3>
+          {report.audit.scopeDescription && (
+            <p className="text-sm text-gray-700">{report.audit.scopeDescription}</p>
+          )}
+          {report.audit.scopeFrameworks?.length ? (
+            <InfoRow label="Frameworks" value={report.audit.scopeFrameworks.join(", ")} />
+          ) : null}
+          {report.audit.scopeDepartments?.length ? (
+            <InfoRow label="Abteilungen" value={report.audit.scopeDepartments.join(", ")} />
+          ) : null}
+          {report.audit.scopeProcesses?.length ? (
+            <InfoRow label="Prozesse" value={report.audit.scopeProcesses.join(", ")} />
+          ) : null}
+        </div>
+      )}
+
+      {/* Checklist Conformance */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+        <h3 className="text-sm font-semibold text-gray-900">Checklisten-Auswertung</h3>
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+          <StatCard label="Konform" value={report.breakdown.reduce((s, b) => s + b.conforming, 0)} color="bg-green-50 text-green-900" />
+          <StatCard label="Nicht konform" value={report.breakdown.reduce((s, b) => s + b.nonconforming, 0)} color="bg-red-50 text-red-900" />
+          <StatCard label="Beobachtung" value={report.breakdown.reduce((s, b) => s + b.observation, 0)} color="bg-blue-50 text-blue-900" />
+          <StatCard label="Nicht anwendbar" value={report.breakdown.reduce((s, b) => s + b.not_applicable, 0)} color="bg-gray-50 text-gray-800" />
+          <StatCard label="Unbewertet" value={report.breakdown.reduce((s, b) => s + b.unevaluated, 0)} color="bg-yellow-50 text-yellow-900" />
+        </div>
+        <div className="pt-2 text-xs text-gray-500">
+          Konformitätsgrad (bewertete Items): <span className="font-semibold text-gray-900">{conformanceRate}%</span> ·
+          Bewertet: {totalEvaluated} / {totalItems}
+        </div>
+        {report.checklists.length > 0 && (
+          <div className="text-xs text-gray-500 pt-1">
+            Checklisten: {report.checklists.map(cl => `${cl.name} (${cl.completedItems}/${cl.totalItems})`).join(" · ")}
+          </div>
+        )}
+      </div>
+
+      {/* Findings */}
+      <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+        <div className="flex items-center justify-between">
+          <h3 className="text-sm font-semibold text-gray-900">Feststellungen ({report.findings.length})</h3>
+        </div>
+        {Object.keys(report.findingsBySeverity).length > 0 && (
+          <div className="flex flex-wrap gap-2 text-xs">
+            {Object.entries(report.findingsBySeverity).map(([sev, cnt]) => (
+              <span key={sev} className={`px-2 py-1 rounded-full border ${sevColors[sev] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}>
+                {sevLabels[sev] ?? sev}: <strong>{cnt}</strong>
+              </span>
+            ))}
+          </div>
+        )}
+        {report.findings.length === 0 ? (
+          <p className="text-sm text-gray-400">Keine Feststellungen.</p>
+        ) : (
+          <ul className="divide-y divide-gray-100">
+            {report.findings.map((f) => (
+              <FindingRow
+                key={f.id}
+                finding={f}
+                sevColors={sevColors}
+                sevLabels={sevLabels}
+                onUpdated={() => {
+                  // Refetch the report data after saving
+                  fetch(`/api/v1/audit-mgmt/audits/${params.id}/report`)
+                    .then(r => r.json())
+                    .then(json => setReport(json.data))
+                    .catch(() => {});
+                }}
+              />
+            ))}
+          </ul>
+        )}
+      </div>
+
+      {/* Nonconforming items (source of findings) */}
+      {report.nonconformingItems.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+          <h3 className="text-sm font-semibold text-gray-900">Nicht konforme Checklisten-Positionen</h3>
+          <ul className="divide-y divide-gray-100">
+            {report.nonconformingItems.map((it) => (
+              <li key={it.id} className="py-2">
+                <p className="text-sm text-gray-800">{it.question}</p>
+                {it.notes && <p className="text-xs text-gray-500 mt-1">Notiz: {it.notes}</p>}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400 text-right">
+        Bericht generiert: {new Date(report.generatedAt).toLocaleString("de-DE")}
+      </p>
+
+      {audit.reportDocumentId && (
+        <Link
+          href={`/documents/${audit.reportDocumentId}`}
+          className="text-sm text-blue-600 hover:text-blue-800"
+        >
+          {t("viewReport")}
+        </Link>
       )}
     </div>
+  );
+}
+
+function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+  return (
+    <div className={`rounded-md p-3 ${color}`}>
+      <p className="text-xs font-medium opacity-80">{label}</p>
+      <p className="text-xl font-bold">{value}</p>
+    </div>
+  );
+}
+
+// ─── Finding Row (with inline Treatment Plan editor) ─────────
+
+function FindingRow({
+  finding,
+  sevColors,
+  sevLabels,
+  onUpdated,
+}: {
+  finding: ReportData["findings"][number];
+  sevColors: Record<string, string>;
+  sevLabels: Record<string, string>;
+  onUpdated: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [plan, setPlan] = useState(finding.remediationPlan ?? "");
+  const [due, setDue] = useState(finding.remediationDueDate ?? "");
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/findings/${finding.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          remediationPlan: plan.trim() || null,
+          remediationDueDate: due || null,
+        }),
+      });
+      if (res.ok) {
+        setEditing(false);
+        onUpdated();
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <li className="py-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[finding.severity] ?? "bg-gray-100 border-gray-200"}`}>
+              {sevLabels[finding.severity] ?? finding.severity}
+            </span>
+            {finding.elementId && <span className="text-xs text-gray-400">{finding.elementId}</span>}
+            <span className="text-xs text-gray-400">· Status: {finding.status}</span>
+          </div>
+          <p className="text-sm font-medium text-gray-900 mt-1">{finding.title}</p>
+          {finding.description && <p className="text-sm text-gray-600 mt-0.5">{finding.description}</p>}
+        </div>
+        {!editing && (
+          <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="print:hidden">
+            {finding.remediationPlan ? "Maßnahme bearbeiten" : "Maßnahme erfassen"}
+          </Button>
+        )}
+      </div>
+
+      {editing ? (
+        <div className="rounded-md border border-blue-200 bg-blue-50/50 p-3 space-y-2 print:hidden">
+          <div>
+            <label className="text-xs font-medium text-gray-700 block mb-1">Maßnahmen-Plan</label>
+            <textarea
+              value={plan}
+              onChange={(e) => setPlan(e.target.value)}
+              rows={3}
+              className="w-full rounded-md border border-gray-300 px-2 py-1.5 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+              placeholder="Welche Maßnahme(n) werden ergriffen, um die Feststellung zu beheben?"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-700 block mb-1">Fälligkeitsdatum</label>
+            <input
+              type="date"
+              value={due}
+              onChange={(e) => setDue(e.target.value)}
+              className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
+            />
+          </div>
+          <div className="flex gap-2 pt-1">
+            <Button size="sm" onClick={save} disabled={saving}>
+              {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
+              Speichern
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => {
+              setEditing(false);
+              setPlan(finding.remediationPlan ?? "");
+              setDue(finding.remediationDueDate ?? "");
+            }}>
+              Abbrechen
+            </Button>
+          </div>
+        </div>
+      ) : (
+        (finding.remediationPlan || finding.remediationDueDate) && (
+          <div className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-0.5">
+            {finding.remediationPlan && (
+              <p><strong>Maßnahmen-Plan:</strong> {finding.remediationPlan}</p>
+            )}
+            {finding.remediationDueDate && (
+              <p><strong>Fällig:</strong> {finding.remediationDueDate}</p>
+            )}
+          </div>
+        )
+      )}
+    </li>
   );
 }
