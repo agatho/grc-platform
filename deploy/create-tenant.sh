@@ -26,6 +26,13 @@ SUBDOMAIN="$2"
 COMPOSE_FILE="/opt/arctos/docker-compose.production.yml"
 TENANT_DIR="/opt/arctos/tenants/$TENANT"
 DB_NAME="grc_${TENANT}"
+
+# DB-Passwort aus Haupt-Config holen (alle Tenants nutzen die gleiche DB-Instanz)
+MAIN_DB_PW=$(grep "^DB_PASSWORD=" /opt/arctos/.env 2>/dev/null | cut -d= -f2)
+if [ -z "$MAIN_DB_PW" ]; then
+  echo "FEHLER: DB_PASSWORD in /opt/arctos/.env nicht gefunden"
+  exit 1
+fi
 DB_PW=$(openssl rand -base64 24 | tr -d '=/+' | head -c 24)
 AUTH_SECRET=$(openssl rand -hex 32)
 WB_KEY=$(openssl rand -hex 32)
@@ -95,7 +102,7 @@ cat > "$TENANT_DIR/env" << TENVEOF
 # HOST_PORT: $NEXT_PORT (nur fuer Docker-Compose Mapping, nicht im Container)
 TENANT_NAME=$TENANT
 DOMAIN=$SUBDOMAIN
-DATABASE_URL=postgresql://grc:grc_dev_password@postgres:5432/$DB_NAME
+DATABASE_URL=postgresql://grc:${MAIN_DB_PW}@postgres:5432/$DB_NAME
 AUTH_SECRET=$AUTH_SECRET
 AUTH_URL=https://$SUBDOMAIN
 AUTH_TRUST_HOST=true
