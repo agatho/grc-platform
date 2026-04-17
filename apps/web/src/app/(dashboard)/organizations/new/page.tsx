@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
 import {
   ArrowLeft, ArrowRight, Check, Loader2, Plus, X, Building2,
   MapPin, Phone, Briefcase, Shield, Users,
@@ -109,7 +108,6 @@ interface OrgData {
 
 export default function NewOrganizationPage() {
   const router = useRouter();
-  const { update: updateSession } = useSession();
   const [step, setStep] = useState<StepKey>("basic");
   const [data, setData] = useState<OrgData>({ name: "", type: "subsidiary", countryCode: "DE" });
   const [contacts, setContacts] = useState<Contact[]>([]);
@@ -159,12 +157,15 @@ export default function NewOrganizationPage() {
         });
       }
 
-      // Refresh the session so the newly granted admin role (assigned by the
-      // API) is picked up — otherwise the switcher and list won't see the new org.
-      await updateSession();
-
-      router.push(`/organizations`);
-      router.refresh();
+      // Hard navigation: the JWT embedded in the cookie still has the old
+      // role list. `useSession().update()` proved unreliable at forcing a
+      // re-issue (Finding F-04). A full-page navigation makes Auth.js re-
+      // enter its flow: the jwt callback sees `trigger === "update"` via the
+      // session endpoint request that a subsequent SWR revalidation triggers,
+      // and — crucially — the first RSC render after the load runs the
+      // session callback fresh. This guarantees the new org is visible.
+      window.location.href = `/organizations`;
+      return;
     } finally {
       setSaving(false);
     }

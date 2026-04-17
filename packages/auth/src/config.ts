@@ -3,7 +3,10 @@
 // Providers that need DB access are added in the app's auth.ts.
 
 import type { NextAuthConfig } from "next-auth";
+import { cookies } from "next/headers";
 import type { RoleAssignment } from "./types";
+
+const ORG_COOKIE = "arctos-org-id";
 
 export const authConfig: NextAuthConfig = {
   session: { strategy: "jwt", maxAge: 8 * 60 * 60 }, // 8h
@@ -32,8 +35,25 @@ export const authConfig: NextAuthConfig = {
       session.user.email = token.email as string;
       session.user.name = token.name as string;
       (session.user as any).language = (token as any).language ?? "de";
-      (session.user as any).roles =
-        ((token as any).roles as RoleAssignment[]) ?? [];
+      const roles = ((token as any).roles as RoleAssignment[]) ?? [];
+      (session.user as any).roles = roles;
+
+      // Resolve the active org from the cookie, validated against the user's
+      // roles. Without this, client components (layout, switcher) would have
+      // to guess or always show the first role — which is the bug behind
+      // Finding F-05: switch-org updates the cookie but the UI never picks it up.
+      let currentOrgId: string | null = roles[0]?.orgId ?? null;
+      try {
+        const jar = await cookies();
+        const fromCookie = jar.get(ORG_COOKIE)?.value;
+        if (fromCookie && roles.some((r) => r.orgId === fromCookie)) {
+          currentOrgId = fromCookie;
+        }
+      } catch {
+        // cookies() can throw in some edge contexts — fall back to first role
+      }
+      (session.user as any).currentOrgId = currentOrgId;
+
       return session;
     },
   },
