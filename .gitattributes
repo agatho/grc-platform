@@ -1,0 +1,39 @@
+# Enforce LF line-endings for files that must run on Linux (Docker images,
+# Hetzner VM). Windows devs may have autocrlf=true globally; that converts
+# LF → CRLF on checkout and causes `git pull` to refuse merges on the
+# Linux side because it sees "local changes" that are really just EOLs.
+#
+# Whitelist approach: text files without an explicit rule fall back to
+# Git's defaults (auto-detect, preserve what's in the blob). Only the
+# files that are executed by a Linux shell are pinned to LF.
+
+*.sh            text eol=lf
+*.bash          text eol=lf
+*.zsh           text eol=lf
+Dockerfile      text eol=lf
+Dockerfile.*    text eol=lf
+.dockerignore   text eol=lf
+
+# SQL migrations are consumed by psql inside containers. CRLF in a SQL
+# file doesn't usually break psql, but keeping them LF avoids subtle
+# dollar-quoted-string issues and diff noise.
+*.sql           text eol=lf
+
+# YAML/JSON config read by docker compose / CI — also Linux.
+*.yml           text eol=lf
+*.yaml          text eol=lf
+
+# Binary files — do not touch.
+*.png           binary
+*.jpg           binary
+*.jpeg          binary
+*.gif           binary
+*.pdf           binary
+*.ico           binary
+*.woff          binary
+*.woff2         binary
+*.ttf           binary
+*.otf           binary
+*.zip           binary
+*.gz            binary
+*.dump          binary
