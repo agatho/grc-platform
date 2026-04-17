@@ -1,0 +1,48 @@
+name: Migration Policy (ADR-014 Phase 3)
+
+# Enforces ADR-014: new schema migrations must land in
+# packages/db/drizzle/ (drizzle-kit generated), NOT in
+# packages/db/src/migrations/ (legacy, catch-up only).
+#
+# PRs that touch src/migrations/ fail this check. Main-branch pushes are
+# never checked (the legacy files already there stay, but no new ones
+# get added because PRs are blocked).
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "packages/db/**"
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-migration-location:
+    name: Check migration location
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Detect new files in packages/db/src/migrations/
+        id: scan
+        run: |
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+          HEAD_SHA="${{ github.event.pull_request.head.sha }}"
+          # Added files only (A), not modifications (M). Legacy files can
+          # still be edited if someone really has to, just no new additions.
+          NEW=$(git diff --name-only --diff-filter=A "$BASE_SHA" "$HEAD_SHA" -- 'packages/db/src/migrations/*.sql' || true)
+          if [ -n "$NEW" ]; then
+            echo "::error::ADR-014 Phase 3 violation: new SQL migration files in src/migrations/ are not allowed."
+            echo "The following NEW files were added:"
+            echo "$NEW"
+            echo ""
+            echo "Move your migration to packages/db/drizzle/ and use drizzle-kit generate to author it."
+            echo "violated=true" >> "$GITHUB_OUTPUT"
+            exit 1
+          else
+            echo "OK: no new src/migrations/ files in this PR."
+          fi
