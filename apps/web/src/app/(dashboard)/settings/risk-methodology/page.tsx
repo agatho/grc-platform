@@ -32,7 +32,7 @@ export default function RiskMethodologySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const orgId = session?.user?.roles?.[0]?.orgId as string | undefined;
+  const orgId = (session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId) as string | undefined;
 
   useEffect(() => {
     if (!orgId) return;

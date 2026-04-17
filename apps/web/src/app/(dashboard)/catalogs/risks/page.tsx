@@ -156,7 +156,7 @@ export default function RiskCatalogBrowserPage() {
     try {
       const sessionRes = await fetch("/api/auth/session");
       const session = await sessionRes.json();
-      const orgId = session?.user?.roles?.[0]?.orgId;
+      const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
       if (!orgId) return;
 
       const res = await fetch(`/api/v1/organizations/${orgId}/active-catalogs`, {
@@ -191,7 +191,7 @@ export default function RiskCatalogBrowserPage() {
       try {
         const sessionRes = await fetch("/api/auth/session");
         const session = await sessionRes.json();
-        const orgId = session?.user?.roles?.[0]?.orgId;
+        const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
         if (orgId) {
           const activeRes = await fetch(`/api/v1/organizations/${orgId}/active-catalogs`);
           if (activeRes.ok) {

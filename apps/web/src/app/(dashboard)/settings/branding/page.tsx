@@ -137,7 +137,7 @@ export default function BrandingSettingsPage() {
     customCss: "" as string | null,
   });
 
-  const orgId = session?.user?.roles?.[0]?.orgId ?? null;
+  const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   // Fetch branding on mount
   useEffect(() => {

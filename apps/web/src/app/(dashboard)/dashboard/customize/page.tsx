@@ -77,7 +77,7 @@ export default function DashboardCustomizePage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [sizeMenuOpen, setSizeMenuOpen] = useState<string | null>(null);
 
-  const orgId = session?.user?.roles?.[0]?.orgId ?? null;
+  const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   // Fetch layout on mount
   useEffect(() => {

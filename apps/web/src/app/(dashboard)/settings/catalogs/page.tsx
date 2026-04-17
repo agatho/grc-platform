@@ -66,7 +66,7 @@ const MODULE_OPTIONS = [
 export default function CatalogActivationPage() {
   const t = useTranslations("catalogs");
   const { data: session } = useSession();
-  const orgId = session?.user?.roles?.[0]?.orgId as string | undefined;
+  const orgId = (session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId) as string | undefined;
 
   const [activeCatalogs, setActiveCatalogs] = useState<ActiveCatalog[]>([]);
   const [allCatalogs, setAllCatalogs] = useState<AvailableCatalog[]>([]);
