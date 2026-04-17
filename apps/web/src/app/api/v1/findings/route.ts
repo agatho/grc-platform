@@ -238,6 +238,7 @@ export async function GET(req: Request) {
         ownerId: finding.ownerId,
         ownerName: user.name,
         ownerEmail: user.email,
+        remediationPlan: finding.remediationPlan,
         remediationDueDate: finding.remediationDueDate,
         remediatedAt: finding.remediatedAt,
         verifiedAt: finding.verifiedAt,
