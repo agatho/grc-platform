@@ -15,7 +15,7 @@ for dir in /opt/arctos/tenants/*/; do
   [ -d "$dir" ] || continue
   TENANT=$(basename "$dir")
   SUBDOMAIN=$(grep "^DOMAIN=" "$dir/env" 2>/dev/null | cut -d= -f2 || echo "?")
-  PORT=$(grep "^PORT=" "$dir/env" 2>/dev/null | cut -d= -f2 || echo "?")
+  PORT=$(docker port "${TENANT}-web-${TENANT}-1" 3000 2>/dev/null | sed 's|.*:||' | head -1 || echo "?")
   STATUS=$(cd "$dir" && docker compose ps --format "{{.State}}" 2>/dev/null | head -1 || echo "stopped")
   printf "%-15s %-40s %-8s %-10s\n" "$TENANT" "$SUBDOMAIN" "$PORT" "$STATUS"
 done
