@@ -549,10 +549,12 @@ export default function OrganizationsPage() {
                 {t("viewTree")}
               </Button>
             </Link>
-            <Button size="sm" onClick={openCreate}>
-              <Plus size={16} />
-              {t("create")}
-            </Button>
+            <Link href="/organizations/new">
+              <Button size="sm">
+                <Plus size={16} />
+                {t("create")}
+              </Button>
+            </Link>
           </>
         }
       />

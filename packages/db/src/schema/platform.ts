@@ -14,6 +14,8 @@ import {
   inet,
   integer,
   bigint,
+  numeric,
+  date,
   index,
   uniqueIndex,
   primaryKey,
@@ -153,6 +155,41 @@ export const organization = pgTable(
     supervisoryAuthority: text("supervisory_authority"),
     dataResidency: varchar("data_residency", { length: 2 }),
     gdprSettings: jsonb("gdpr_settings").default({}),
+    // Master Data (Migration 0097)
+    taxId: varchar("tax_id", { length: 50 }),
+    lei: varchar("lei", { length: 20 }),
+    duns: varchar("duns", { length: 9 }),
+    registrationNumber: varchar("registration_number", { length: 50 }),
+    // Address (structured)
+    street: varchar("street", { length: 200 }),
+    zip: varchar("zip", { length: 20 }),
+    city: varchar("city", { length: 100 }),
+    state: varchar("state", { length: 100 }),
+    countryCode: varchar("country_code", { length: 2 }),
+    // Contact
+    phone: varchar("phone", { length: 50 }),
+    email: varchar("email", { length: 255 }),
+    website: varchar("website", { length: 500 }),
+    // Classification
+    naceCode: varchar("nace_code", { length: 10 }),
+    industry: varchar("industry", { length: 100 }),
+    employeeCount: integer("employee_count"),
+    revenueEur: numeric("revenue_eur", { precision: 15, scale: 2 }),
+    totalAssetsEur: numeric("total_assets_eur", { precision: 15, scale: 2 }),
+    isListed: boolean("is_listed").default(false),
+    stockExchange: varchar("stock_exchange", { length: 50 }),
+    tickerSymbol: varchar("ticker_symbol", { length: 10 }),
+    // Compliance Status
+    isKritis: boolean("is_kritis").default(false),
+    kritisSector: varchar("kritis_sector", { length: 50 }),
+    nis2Category: varchar("nis2_category", { length: 20 }),
+    csrdReporting: boolean("csrd_reporting").default(false),
+    lksgApplicable: boolean("lksg_applicable").default(false),
+    certifications: text("certifications").array(),
+    regulatedBy: text("regulated_by").array(),
+    // Dates
+    foundingDate: date("founding_date", { mode: "string" }),
+    fiscalYearEnd: varchar("fiscal_year_end", { length: 5 }),
     // Hierarchy fields for org tree
     hierarchyLevel: integer("hierarchy_level").default(0),
     hierarchyPath: text("hierarchy_path"),
@@ -532,5 +569,44 @@ export const userCustomRole = pgTable(
       table.orgId,
       table.customRoleId,
     ),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// Organization Contacts (Migration 0097)
+// ──────────────────────────────────────────────────────────────
+
+export const organizationContact = pgTable(
+  "organization_contact",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id, { onDelete: "cascade" }),
+    roleType: varchar("role_type", { length: 50 }).notNull(),
+    roleCustom: varchar("role_custom", { length: 100 }),
+    name: varchar("name", { length: 255 }).notNull(),
+    title: varchar("title", { length: 100 }),
+    position: varchar("position", { length: 200 }),
+    email: varchar("email", { length: 255 }),
+    phone: varchar("phone", { length: 50 }),
+    mobile: varchar("mobile", { length: 50 }),
+    isPrimary: boolean("is_primary").default(false),
+    isExternal: boolean("is_external").default(false),
+    internalUserId: uuid("internal_user_id").references(() => user.id),
+    addressOverride: text("address_override"),
+    validFrom: date("valid_from", { mode: "string" }),
+    validUntil: date("valid_until", { mode: "string" }),
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+    updatedBy: uuid("updated_by").references(() => user.id),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("oc_org_idx").on(table.orgId),
+    index("oc_role_idx").on(table.orgId, table.roleType),
+    index("oc_user_idx").on(table.internalUserId),
   ],
 );
