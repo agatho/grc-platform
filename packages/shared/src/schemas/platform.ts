@@ -5,7 +5,7 @@ export const createOrganizationSchema = z.object({
   // Stammdaten
   name: z.string().min(1).max(255),
   shortName: z.string().max(50).optional(),
-  type: z.enum(["subsidiary", "holding", "joint_venture", "branch"]).default("subsidiary"),
+  type: z.enum(["subsidiary", "holding", "joint_venture", "branch", "division", "department"]).default("subsidiary"),
   legalForm: z.string().max(100).optional(),
   parentOrgId: z.string().uuid().optional(),
   foundingDate: z.string().optional(),

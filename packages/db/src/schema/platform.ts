@@ -30,6 +30,8 @@ export const orgTypeEnum = pgEnum("org_type", [
   "holding",
   "joint_venture",
   "branch",
+  "division",
+  "department",
 ]);
 
 export const userRoleEnum = pgEnum("user_role", [
