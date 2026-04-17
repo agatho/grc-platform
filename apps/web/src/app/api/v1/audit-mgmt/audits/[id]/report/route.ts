@@ -132,6 +132,8 @@ export async function GET(req: Request, { params }: RouteParams) {
       remediationPlan: finding.remediationPlan,
       remediationDueDate: finding.remediationDueDate,
       ownerId: finding.ownerId,
+      riskId: finding.riskId,
+      controlId: finding.controlId,
       createdAt: finding.createdAt,
     })
     .from(finding)
