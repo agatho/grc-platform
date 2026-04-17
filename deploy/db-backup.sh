@@ -58,10 +58,13 @@ if [ -n "$TARGET_DB" ]; then
   DB_LIST="$TARGET_DB"
 else
   echo "[1/3] DB-Liste ermitteln..."
+  # Regex statt LIKE/ESCAPE, um bash+compose-Escape-Probleme mit '\\' zu
+  # umgehen. Trifft grc_platform, grc_daimon, grc_tester1 etc. und
+  # ignoriert template0, template1, postgres.
   DB_LIST=$(
     docker compose -f "$COMPOSE_FILE" exec -T "$PG_SERVICE" \
       psql -U grc -d postgres -tAc \
-      "SELECT datname FROM pg_database WHERE datname LIKE 'grc\\_%' ESCAPE '\\\\' OR datname = 'grc_platform' ORDER BY datname;"
+      "SELECT datname FROM pg_database WHERE datname ~ '^grc_' ORDER BY datname;"
   )
   if [ -z "$DB_LIST" ]; then
     echo "FEHLER: Keine Tenant-DBs gefunden (kein Datenbankname mit Präfix 'grc_')."
