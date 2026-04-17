@@ -268,6 +268,31 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const [importResult, setImportResult] = useState<{ count: number; source: string } | null>(null);
   const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(null);
   const [createFindingItem, setCreateFindingItem] = useState<AuditChecklistItem | null>(null);
+  const [risks, setRisks] = useState<Array<{ id: string; title: string; riskCategory?: string | null }>>([]);
+
+  // Fetch risks for the risk-picker in the create-finding dialog.
+  // Loaded once per audit detail page mount, not per-dialog, so the first
+  // picker click is instantaneous.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/risks?limit=200");
+        if (!r.ok) return;
+        const j = await r.json();
+        if (!cancelled) {
+          setRisks(
+            (j.data ?? []).map((x: { id: string; title: string; riskCategory?: string | null }) => ({
+              id: x.id,
+              title: x.title,
+              riskCategory: x.riskCategory,
+            })),
+          );
+        }
+      } catch {}
+    })();
+    return () => { cancelled = true; };
+  }, []);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
@@ -391,12 +416,18 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const handleCreateFinding = async (itemId: string, formData: FormData) => {
     if (!selectedChecklist) return;
 
-    const body = {
+    const riskIdRaw = formData.get("riskId") as string;
+    const body: Record<string, unknown> = {
       title: formData.get("title") as string,
       description: formData.get("description") as string || undefined,
       severity: formData.get("severity") as string,
       remediationDueDate: formData.get("remediationDueDate") as string || undefined,
     };
+    // Closes the Audit → ERM feedback loop (ISO 27001 9.2 / IIA 2120): when
+    // the auditor picks a concrete risk, the finding is persisted with
+    // finding.riskId → every downstream aggregation (affectedRisks, KRI,
+    // risk audit-impact) picks it up automatically.
+    if (riskIdRaw) body.riskId = riskIdRaw;
 
     const res = await fetch(
       `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/items/${itemId}/create-finding`,
@@ -671,6 +702,27 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 </select>
               </div>
               <div>
+                <label className="text-sm font-medium">
+                  Risiko-Verknüpfung
+                  <span className="ml-1 text-xs text-gray-400">(optional, ISO 27001 9.2 · ISO 31000 6.6)</span>
+                </label>
+                <select
+                  name="riskId"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  defaultValue=""
+                >
+                  <option value="">— kein Risiko verknüpfen —</option>
+                  {risks.map((r) => (
+                    <option key={r.id} value={r.id}>
+                      {r.title}{r.riskCategory ? ` (${r.riskCategory})` : ""}
+                    </option>
+                  ))}
+                </select>
+                <p className="text-xs text-gray-500 mt-1">
+                  Bei Verknüpfung wird die Feststellung als Wirksamkeitsnachweis für das Risiko geführt — ein Maßnahmen-Plan kann per Sync als Risk-Treatment übernommen werden.
+                </p>
+              </div>
+              <div>
                 <label className="text-sm font-medium">{t("remediationDueDate")}</label>
                 <Input name="remediationDueDate" type="date" />
               </div>
@@ -930,6 +982,7 @@ interface ReportData {
     remediationPlan: string | null;
     remediationDueDate: string | null;
     createdAt: string;
+    riskId?: string | null;
   }>;
   findingsBySeverity: Record<string, number>;
   nonconformingItems: Array<{
@@ -937,6 +990,25 @@ interface ReportData {
     question: string;
     notes: string | null;
     completedAt: string | null;
+  }>;
+  affectedRisks: Array<{
+    riskId: string;
+    title: string | null;
+    category: string | null;
+    status: string | null;
+    riskScoreResidual: number | null;
+    linkedFindingCount: number;
+    maxSeverity: string | null;
+    openFindingCount: number;
+    needsReassessment: boolean;
+    hasTreatmentFromAudit: boolean;
+  }>;
+  affectedControls: Array<{
+    controlId: string;
+    title: string | null;
+    controlType: string | null;
+    openFindingCount: number;
+    maxSeverity: string | null;
   }>;
   generatedAt: string;
 }
@@ -1113,6 +1185,95 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
         )}
       </div>
 
+      {/* Betroffene Risiken (Audit → ERM Feedback-Loop) */}
+      {report.affectedRisks && report.affectedRisks.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Betroffene Risiken ({report.affectedRisks.length})
+            </h3>
+            <span className="text-xs text-gray-500">ISO 27001 9.2 · ISO 31000 6.6</span>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {report.affectedRisks.map((r) => (
+              <li key={r.riskId} className="py-3 flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {r.needsReassessment && (
+                      <span className="inline-block text-[10px] px-2 py-0.5 rounded-full border bg-red-100 text-red-900 border-red-200 font-medium">
+                        Neubewertung erforderlich
+                      </span>
+                    )}
+                    {r.hasTreatmentFromAudit && (
+                      <span className="inline-block text-[10px] px-2 py-0.5 rounded-full border bg-green-100 text-green-900 border-green-200">
+                        Treatment aus Audit übernommen
+                      </span>
+                    )}
+                    {r.maxSeverity && (
+                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[r.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}>
+                        max. {sevLabels[r.maxSeverity] ?? r.maxSeverity}
+                      </span>
+                    )}
+                    <span className="text-xs text-gray-400">· Status: {r.status ?? "-"}</span>
+                    {r.category && <span className="text-xs text-gray-400">· {r.category}</span>}
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{r.title ?? "(ohne Titel)"}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {r.linkedFindingCount} Feststellung{r.linkedFindingCount === 1 ? "" : "en"} aus diesem Audit
+                    {r.openFindingCount > 0 && ` · ${r.openFindingCount} offen`}
+                    {r.riskScoreResidual != null && ` · Residualrisiko: ${r.riskScoreResidual}`}
+                  </p>
+                </div>
+                <Link
+                  href={`/erm/risks/${r.riskId}`}
+                  className="text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap print:hidden"
+                >
+                  Risiko ansehen →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Betroffene Kontrollen (Audit → ISMS Feedback-Loop) */}
+      {report.affectedControls && report.affectedControls.length > 0 && (
+        <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-semibold text-gray-900">
+              Betroffene Kontrollen ({report.affectedControls.length})
+            </h3>
+            <span className="text-xs text-gray-500">ISO 27001 Annex A Wirksamkeitsnachweis</span>
+          </div>
+          <ul className="divide-y divide-gray-100">
+            {report.affectedControls.map((c) => (
+              <li key={c.controlId} className="py-2 flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    {c.maxSeverity && (
+                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[c.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}>
+                        max. {sevLabels[c.maxSeverity] ?? c.maxSeverity}
+                      </span>
+                    )}
+                    {c.controlType && <span className="text-xs text-gray-400">{c.controlType}</span>}
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 mt-1">{c.title ?? "(ohne Titel)"}</p>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {c.openFindingCount} offene Feststellung{c.openFindingCount === 1 ? "" : "en"}
+                  </p>
+                </div>
+                <Link
+                  href={`/controls/${c.controlId}`}
+                  className="text-xs text-blue-600 hover:text-blue-800 whitespace-nowrap print:hidden"
+                >
+                  Kontrolle ansehen →
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {/* Nonconforming items (source of findings) */}
       {report.nonconformingItems.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
@@ -1170,6 +1331,10 @@ function FindingRow({
   const [saving, setSaving] = useState(false);
   const [plan, setPlan] = useState(finding.remediationPlan ?? "");
   const [due, setDue] = useState(finding.remediationDueDate ?? "");
+  // Default to syncing when the finding is already linked to a risk —
+  // skipping sync on a risk-linked finding is the exception, not the rule.
+  const hasRiskLink = !!finding.riskId;
+  const [syncToRiskTreatment, setSyncToRiskTreatment] = useState(hasRiskLink);
 
   const save = async () => {
     setSaving(true);
@@ -1182,10 +1347,19 @@ function FindingRow({
           remediationDueDate: due || null,
         }),
       });
-      if (res.ok) {
-        setEditing(false);
-        onUpdated();
+      if (!res.ok) return;
+
+      // Propagate to risk_treatment when the user opted in (and a risk is
+      // linked + a plan text exists). The endpoint is idempotent, so a
+      // second save updates the existing treatment instead of duplicating.
+      if (syncToRiskTreatment && hasRiskLink && plan.trim()) {
+        await fetch(`/api/v1/findings/${finding.id}/sync-treatment`, {
+          method: "POST",
+        }).catch(() => {});
       }
+
+      setEditing(false);
+      onUpdated();
     } finally {
       setSaving(false);
     }
@@ -1233,6 +1407,19 @@ function FindingRow({
               className="rounded-md border border-gray-300 px-2 py-1.5 text-sm"
             />
           </div>
+          {hasRiskLink && (
+            <label className="flex items-start gap-2 cursor-pointer pt-1">
+              <input
+                type="checkbox"
+                checked={syncToRiskTreatment}
+                onChange={(e) => setSyncToRiskTreatment(e.target.checked)}
+                className="mt-0.5 h-4 w-4 rounded text-blue-600"
+              />
+              <span className="text-xs text-gray-700">
+                <strong>Als Risk-Treatment übernehmen.</strong> Der Plan wird automatisch in das verknüpfte Risiko als formale Maßnahme eingetragen (ISO 31000 6.6). Idempotent — wiederholtes Speichern aktualisiert den bestehenden Treatment-Eintrag.
+              </span>
+            </label>
+          )}
           <div className="flex gap-2 pt-1">
             <Button size="sm" onClick={save} disabled={saving}>
               {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
@@ -1242,6 +1429,7 @@ function FindingRow({
               setEditing(false);
               setPlan(finding.remediationPlan ?? "");
               setDue(finding.remediationDueDate ?? "");
+              setSyncToRiskTreatment(hasRiskLink);
             }}>
               Abbrechen
             </Button>
