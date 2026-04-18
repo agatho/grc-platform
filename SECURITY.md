@@ -5,7 +5,7 @@
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
 Report privately via:
-- E-Mail: security@charliehund.de (PGP-Key on request)
+- E-Mail: agatho@charliehund.de (PGP-Key on request)
 - GitHub Security Advisory: [Create draft advisory](https://github.com/agatho/grc-platform/security/advisories/new)
 
 We aim to:
