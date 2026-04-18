@@ -25,6 +25,7 @@ All architecture decisions in chronological order. Each ADR links to full contex
 | 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md) | Proposed | 2026-04-18 |
 | 020 | [API Versioning Strategy](./ADR-020-api-versioning.md) | Proposed | 2026-04-18 |
 | 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md) | Proposed | 2026-04-18 |
+| 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md) | Accepted | 2026-04-18 |
 
 ## Companion Documents
 
@@ -55,6 +56,7 @@ Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf
 | `audit-missing-indexes.mjs` | `docs/perf/missing-indexes-report.md` | FK- / RLS-Index-Kandidaten |
 | `audit-n-plus-one.mjs` | `docs/perf/n-plus-one-report.md` | Loops mit Per-Iteration-DB-Call |
 | `audit-ts-errors.mjs` | `docs/perf/ts-errors-report.md` | TypeScript-Error-Kategorisierung |
+| `audit-i18n-coverage.mjs` | `docs/i18n-coverage-report.md` | DE/EN-Namespace-Parity |
 | `generate-schema-stubs.mjs` | `packages/db/src/schema/_generated_stubs.ts` | Drizzle-TS-Stubs fuer nicht-exportierte Tabellen |
 | `generate-openapi.mjs` | `docs/openapi.yaml` | OpenAPI 3.1 Spec aus Route-Scanner |
 
@@ -83,7 +85,6 @@ Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf
 
 ### Pending ADRs (not yet written)
 
-- ADR-022: i18n-Namespace-Organisation (71 namespaces, keine Dotted-Keys)
 - ADR-023: Rollback-Strategy fuer fehlgeschlagene Migrations
 - ADR-024: Search-Architecture (Postgres-FTS vs. pgvector vs. Meilisearch)
 - ADR-025: File-Upload-Storage (Filesystem vs. S3-kompatibel vs. B2)
