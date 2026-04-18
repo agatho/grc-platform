@@ -30,6 +30,17 @@ export {
   type BiaTransitionRequest,
   type BiaTransitionResult,
 } from "./state-machines/bcms-bia";
+export {
+  BCP_ALLOWED_TRANSITIONS,
+  validateBcpGate3Review,
+  validateBcpGate5Approval,
+  validateBcpGate6Publish,
+  validateBcpTransition,
+  type BcpSnapshot,
+  type BcpTransitionRequest,
+  type BcpTransitionResult,
+  type PublishContext,
+} from "./state-machines/bcms-bcp";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
