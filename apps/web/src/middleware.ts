@@ -8,8 +8,15 @@ const { auth } = NextAuth(authConfig);
 export default auth((req) => {
   const { pathname } = req.nextUrl;
 
-  // Public routes — no auth required
-  if (pathname.startsWith("/login") || pathname.startsWith("/api/auth")) {
+  // Public routes — no auth required.
+  // /api/v1/health is the liveness/readiness probe for Docker healthchecks
+  // and external monitors -- must respond without a session cookie.
+  // Returns only { status, checkedAt, dbLatencyMs, service } -- no data.
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/api/auth") ||
+    pathname === "/api/v1/health"
+  ) {
     return;
   }
 
