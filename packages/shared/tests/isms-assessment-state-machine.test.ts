@@ -4,10 +4,12 @@ import {
   phaseForStatus,
   validateGate1Setup,
   validateGate2SoaCoverage,
+  validateGate3RiskAssessment,
   validateGate4Coverage,
   validateTransition,
   buildSetupChecklist,
   type AssessmentSnapshot,
+  type RiskEvalStats,
   type SoaStats,
 } from "../src/state-machines/isms-assessment";
 
@@ -160,6 +162,60 @@ describe("validateGate2SoaCoverage", () => {
       notApplicableWithoutJustification: 5,
     });
     expect(blockers).toHaveLength(2);
+  });
+});
+
+describe("validateGate3RiskAssessment", () => {
+  const fullStats: RiskEvalStats = {
+    totalRiskEvals: 50,
+    decided: 50,
+    scored: 50,
+  };
+
+  it("passes when all decisions + scores set", () => {
+    const blockers = validateGate3RiskAssessment(fullStats);
+    expect(blockers).toHaveLength(0);
+  });
+
+  it("blocks when no evals exist", () => {
+    const blockers = validateGate3RiskAssessment({
+      totalRiskEvals: 0,
+      decided: 0,
+      scored: 0,
+    });
+    expect(blockers.some((b) => b.code === "no_risk_evals")).toBe(true);
+  });
+
+  it("blocks when any scenario still pending", () => {
+    const blockers = validateGate3RiskAssessment({
+      ...fullStats,
+      decided: 45, // 5 pending
+    });
+    const pending = blockers.find((b) => b.code === "pending_decisions");
+    expect(pending).toBeDefined();
+    expect(pending?.severity).toBe("error");
+    expect(pending?.message).toContain("5 von 50");
+  });
+
+  it("warns (non-blocking) about unscored scenarios", () => {
+    const blockers = validateGate3RiskAssessment({
+      ...fullStats,
+      scored: 40, // 10 unscored
+    });
+    const unscored = blockers.find((b) => b.code === "unscored_scenarios");
+    expect(unscored).toBeDefined();
+    expect(unscored?.severity).toBe("warning");
+  });
+
+  it("error + warning zusammen", () => {
+    const blockers = validateGate3RiskAssessment({
+      totalRiskEvals: 50,
+      decided: 45,
+      scored: 40,
+    });
+    expect(blockers).toHaveLength(2);
+    expect(blockers.some((b) => b.severity === "error")).toBe(true);
+    expect(blockers.some((b) => b.severity === "warning")).toBe(true);
   });
 });
 
