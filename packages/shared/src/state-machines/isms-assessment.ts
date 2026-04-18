@@ -146,6 +146,56 @@ export function validateGate1Setup(run: AssessmentSnapshot): Blocker[] {
   return blockers;
 }
 
+/**
+ * G2: Framework-Select → Execution
+ * Fuer SoA-Coverage wird ein separater Context gebraucht (Zahlen aus der
+ * Datenbank, nicht aus AssessmentSnapshot). Daher Validator mit SoA-Stats.
+ */
+export interface SoaStats {
+  /** Gesamt-Anzahl `catalog_entry` in den aktivierten Katalogen */
+  totalCatalogEntries: number;
+  /** Anzahl dieser mit einem `soa_entry` */
+  entriesWithSoa: number;
+  /** Anzahl soa_entry mit applicability='not_applicable' ohne Justification (>= 50 chars) */
+  notApplicableWithoutJustification: number;
+}
+
+export function validateGate2SoaCoverage(stats: SoaStats): Blocker[] {
+  const blockers: Blocker[] = [];
+
+  if (stats.totalCatalogEntries === 0) {
+    blockers.push({
+      code: "no_active_catalogs",
+      message:
+        "Keine aktiven Kataloge fuer diese Org. Aktiviere zuerst mindestens ein Framework (z. B. ISO 27001 Annex A).",
+      gate: "G2",
+      severity: "error",
+    });
+    return blockers;
+  }
+
+  const coverage = stats.entriesWithSoa / stats.totalCatalogEntries;
+  if (coverage < 0.8) {
+    blockers.push({
+      code: "soa_coverage_below_threshold",
+      message: `SoA-Coverage bei ${(coverage * 100).toFixed(1)}%. Mindestens 80% aller catalog_entries muessen einen soa_entry haben. Fuehre initialize-soa aus.`,
+      gate: "G2",
+      severity: "error",
+    });
+  }
+
+  if (stats.notApplicableWithoutJustification > 0) {
+    blockers.push({
+      code: "not_applicable_without_justification",
+      message: `${stats.notApplicableWithoutJustification} soa_entry(s) sind "not_applicable", haben aber keine Justification (>= 50 Zeichen).`,
+      gate: "G2",
+      severity: "error",
+    });
+  }
+
+  return blockers;
+}
+
 /** G4: Control-Eval → Gap-Analysis */
 export function validateGate4Coverage(run: AssessmentSnapshot): Blocker[] {
   const blockers: Blocker[] = [];

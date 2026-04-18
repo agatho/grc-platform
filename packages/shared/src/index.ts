@@ -6,6 +6,7 @@ export {
   ALLOWED_TRANSITIONS,
   phaseForStatus,
   validateGate1Setup,
+  validateGate2SoaCoverage,
   validateGate4Coverage,
   validateTransition,
   buildSetupChecklist,
@@ -13,6 +14,7 @@ export {
   type AssessmentSnapshot,
   type Blocker,
   type PhaseChecklist,
+  type SoaStats,
   type TransitionRequest,
   type TransitionResult,
 } from "./state-machines/isms-assessment";
