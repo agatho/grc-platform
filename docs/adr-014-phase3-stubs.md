@@ -1,10 +1,18 @@
-# ADR-014 Phase 3 — Schema-Stubs fuer bisher nicht exportierte Tabellen
+# ADR-014 Phase 3 — Offene Tabellen ohne Drizzle-Schema-Export
 
-_Generated: 2026-04-18T00:33:57.506Z_
+_Initial generiert: 2026-04-18T00:33:57.506Z_
+
+**Status**: offene Arbeits-Liste. Kein Stub-Artefakt im Repo -- Stubs rotten, wenn sie nicht sofort ordentlich integriert werden.
 
 55 Tabellen existieren in `packages/db/drizzle/*.sql`, haben aber keinen `pgTable()`-Export in `packages/db/src/schema/`. Folge: Code kann sie nicht type-safe ansprechen (nur via `db.execute(sql`…`)`), und der Drift-Check (F-18) listet sie als `extraInDb`.
 
-Der auto-generierte Draft liegt in `packages/db/src/schema/_generated_stubs.ts`. Jeden Eintrag reviewen, in die passende Domain-Datei umziehen, FK-References verdrahten, dann aus _generated_stubs.ts loeschen.
+**Workflow pro Tabelle**:
+1. Generator neu laufen lassen: `node scripts/generate-schema-stubs.mjs` (erzeugt _generated_stubs.ts temporaer)
+2. Gewuenschte Tabelle in passende Domain-Datei umziehen (z. B. `ai-act.ts`, `approval.ts`, `isms.ts`)
+3. FK-Kommentare durch echte `.references(() => ...)` ersetzen
+4. In `packages/db/src/index.ts` exportieren
+5. `_generated_stubs.ts` loeschen
+6. Zeile in dieser Liste abhaken
 
 ## Tabellen
 
