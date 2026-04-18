@@ -227,6 +227,17 @@ export {
   type IncidentStatus,
   type IncidentOverdueResult,
 } from "./state-machines/aiact-fria-incident";
+export {
+  classifyGpaiSystemicRisk,
+  assessGpaiObligations,
+  computeAnnualReport,
+  type GpaiSystemicRiskContext,
+  type GpaiSystemicRiskResult,
+  type GpaiObligationContext,
+  type GpaiObligationResult,
+  type AnnualReportInput,
+  type AnnualReportResult,
+} from "./state-machines/aiact-gpai-report";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
