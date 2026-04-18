@@ -20,6 +20,16 @@ export {
   type TransitionRequest,
   type TransitionResult,
 } from "./state-machines/isms-assessment";
+export {
+  BIA_ALLOWED_TRANSITIONS,
+  validateBcmsGate1Setup,
+  validateBcmsGate2Coverage,
+  validateBiaTransition,
+  type BiaSnapshot,
+  type BiaCoverageStats,
+  type BiaTransitionRequest,
+  type BiaTransitionResult,
+} from "./state-machines/bcms-bia";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
