@@ -1,6 +1,6 @@
 # Nachtarbeit 2026-04-18
 
-_33 Commits lokal, **keine Pushes**. Alle warten auf User-Review und selektives Push._
+_42 Commits lokal, **keine Pushes**. Alle warten auf User-Review und selektives Push._
 
 ## Update nach erstem Protokoll (Phase-3-Bundle)
 
@@ -171,10 +171,10 @@ Nach Review + Push der 33 Commits:
 3. Verifikation: `/api/v1/health` → 200, `/api/v1/health/schema-drift` → missingInDb sollte ≤ 3 bleiben, E2E-Regression-Suite wenn gewollt.
 4. Dann: Bundle 3 (Phase 3 Schemas) als eigene Iteration.
 
-## Erweiterung — Phase-3+4-Bundle (nach 3bc454f)
+## Erweiterung — Phase-3+4+5-Bundle (nach 3bc454f)
 
 Autonom fortgesetzt nach Abschluss des ersten Protokolls. Weitere
-14 Commits, **alle ohne Runtime-Risiko ausser 0104** (ein idempotenter
+18 Commits, **alle ohne Runtime-Risiko ausser 0104** (ein idempotenter
 INSERT-only-Seed):
 
 | # | Commit | Fix / Feat | Deploy-Impact |
@@ -193,6 +193,10 @@ INSERT-only-Seed):
 | 36 | `5552168` | feat: lib/api-errors.ts RFC-7807 Helper (ADR-021 Phase 1, opt-in) | null -- noch nicht importiert |
 | 37 | `8dae463` | feat: lib/rate-limit.ts Token-Bucket (ADR-019 Phase 1, opt-in) | null -- noch nicht importiert |
 | 38 | `c0a0010` | feat: audit-dead-exports.mjs (9. Audit-Script) + Report (1991 Kandidaten heuristisch) | null |
+| 39 | `c1df855` | docs: Protokoll-Update Phase-3+4 | null |
+| 40 | `9af795b` | fix: TS-Quick-Wins Runde 2 (111 -> 101, 10 isolated Type-Casts) | **minimal** -- 4 UI-Dateien |
+| 41 | `66d4eb4` | docs: ADR-023 Migration-Rollback-Strategy | null |
+| 42 | `9eb8f43` | docs: ADR-024 Search Architecture | null |
 
 ### Zusammenfassung nach Bereich
 
@@ -240,13 +244,14 @@ Variante A, aktualisiert:
 
 ## Gesamt-Statistik
 
-- **38 Commits** in 2 Phasen (24 im ersten Protokoll, 14 in Phase-3+4)
+- **42 Commits** in 3 Phasen (24 erst, 14 in Phase-3+4, 4 in Phase-5)
 - **0 Pushes** -- alles wartet auf Review
 - **3 DB-Seed-Migrations** (0102 F-08, 0103 KRI, 0104 Calendar) + 0
   Schema-Aenderungen ohne Migration
-- **9 Audit-Scripts** + **6 neue CI-Workflows**
-- **22 ADRs** gesamt, **4 Compliance-Checklisten**, **8 Companion-Docs**
-- **~15.000 LoC** Netto hinzugefuegt (schwer zu beziffern ohne git-diff)
+- **9 Audit-Scripts** + **7 neue CI-Workflows**
+- **24 ADRs** gesamt, **4 Compliance-Checklisten**, **8 Companion-Docs**
+- **TS-Errors**: 120 -> 99 (17 % reduziert, Rest = drizzle-rows + komplexe)
+- **Helper-Libs**: 2 opt-in (api-errors, rate-limit)
 
 Fuer morgen: Protokoll als Leitfaden fuer selektives Push in 7 Batches
 (siehe Abschnitt oben), DB-Backups vor Seed-Deploys.
