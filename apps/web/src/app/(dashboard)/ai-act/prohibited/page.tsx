@@ -87,7 +87,7 @@ function ProhibitedPageInner() {
               <div><Label>KI-System ID</Label><Input value={form.ai_system_id} onChange={(e) => setForm({ ...form, ai_system_id: e.target.value })} /></div>
               {Object.entries(PROHIBITED_LABELS).map(([key, label]) => (
                 <div key={key} className="flex items-center gap-2">
-                  <Switch checked={(form as Record<string, boolean>)[key] ?? false} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
+                  <Switch checked={(form as unknown as Record<string, boolean>)[key] ?? false} onCheckedChange={(v) => setForm({ ...form, [key]: v })} />
                   <Label className="text-sm">{label}</Label>
                 </div>
               ))}

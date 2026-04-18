@@ -375,8 +375,8 @@ export default function DashboardPage() {
     return (
       <ModernDashboard
         userName={userName}
-        t={(key: string, values?: Record<string, unknown>) => t(key, values)}
-        rt={(key: string, values?: Record<string, unknown>) => rt(key, values)}
+        t={(key: string, values?: Record<string, unknown>) => t(key, values as Record<string, string | number | Date> | undefined)}
+        rt={(key: string, values?: Record<string, unknown>) => rt(key, values as Record<string, string | number | Date> | undefined)}
         ermEnabled={ermEnabled}
         auditEntries={auditEntries}
         auditLoading={auditLoading}

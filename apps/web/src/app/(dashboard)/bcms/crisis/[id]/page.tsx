@@ -309,7 +309,7 @@ function CrisisDetailInner() {
             <Shield size={16} className="text-blue-600" />
             Risikobewertung
           </h2>
-          {(crisis as Record<string, unknown>).ermRiskId && (
+          {(crisis as unknown as Record<string, unknown>).ermRiskId && (
             <Badge variant="outline" className="text-blue-600 border-blue-200">
               <ArrowRight size={10} className="mr-1" /> ERM-Register
             </Badge>
@@ -392,7 +392,7 @@ function CrisisDetailInner() {
             {savingRisk ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
             Bewertung speichern
           </Button>
-          {likelihood > 0 && riskScore >= 12 && !(crisis as Record<string, unknown>).ermRiskId && (
+          {likelihood > 0 && riskScore >= 12 && !(crisis as unknown as Record<string, unknown>).ermRiskId && (
             <Button
               size="sm"
               variant="outline"
@@ -404,9 +404,9 @@ function CrisisDetailInner() {
               Ins ERM synchronisieren
             </Button>
           )}
-          {(crisis as Record<string, unknown>).ermSyncedAt && (
+          {(crisis as unknown as Record<string, unknown>).ermSyncedAt && (
             <span className="text-xs text-gray-400 ml-auto">
-              Synchronisiert: {new Date((crisis as Record<string, unknown>).ermSyncedAt as string).toLocaleString("de-DE")}
+              Synchronisiert: {new Date((crisis as unknown as Record<string, unknown>).ermSyncedAt as string).toLocaleString("de-DE")}
             </span>
           )}
         </div>
