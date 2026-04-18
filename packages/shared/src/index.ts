@@ -41,6 +41,15 @@ export {
   type BcpTransitionResult,
   type PublishContext,
 } from "./state-machines/bcms-bcp";
+export {
+  EXERCISE_ALLOWED_TRANSITIONS,
+  validateExerciseGate7Execute,
+  validateExerciseGate8Close,
+  validateExerciseTransition,
+  type ExerciseSnapshot,
+  type ExerciseTransitionRequest,
+  type ExerciseTransitionResult,
+} from "./state-machines/bcms-exercise";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
