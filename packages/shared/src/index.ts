@@ -136,6 +136,19 @@ export {
   type AvvTransitionResult,
   type AvvReviewStatus,
 } from "./state-machines/dpms-avv";
+export {
+  AI_STAGE_ALLOWED_TRANSITIONS,
+  hasProhibitedPractice,
+  countProhibitedPractices,
+  canTransitionToProduction,
+  classifyAiSystem,
+  validateHighRiskProductionGate,
+  type AiRiskCategory,
+  type AiDevelopmentStage,
+  type ProhibitedPracticesFlags,
+  type ClassificationContext,
+  type HighRiskProductionReadiness,
+} from "./state-machines/aiact-system";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
