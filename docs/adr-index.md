@@ -19,6 +19,44 @@ All architecture decisions in chronological order. Each ADR links to full contex
 | 013 | Generic catalog + catalog_entry (replaces typed risk/control catalogs) | Accepted | 2026-04-01 |
 | 014 | [DB Migration Policy: Drizzle-only](./ADR-014-migration-policy.md) | Accepted | 2026-04-17 |
 | 015 | [Off-Site Backup via Backblaze B2](./ADR-015-offsite-backup.md) | Proposed | 2026-04-18 |
+| 016 | [CI/CD Pipeline Architecture](./ADR-016-cicd-pipeline.md) | Accepted | 2026-04-18 |
+| 017 | [Monitoring & Alerting Strategy](./ADR-017-monitoring.md) | Accepted | 2026-04-18 |
+| 018 | [Secret Management](./ADR-018-secret-management.md) | Accepted | 2026-04-18 |
+| 019 | [Rate-Limiting Strategy](./ADR-019-rate-limiting.md) | Proposed | 2026-04-18 |
+| 020 | [API Versioning Strategy](./ADR-020-api-versioning.md) | Proposed | 2026-04-18 |
+| 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md) | Proposed | 2026-04-18 |
+
+## Companion Documents
+
+- [architecture.md](./architecture.md) -- 6 Mermaid-Diagramme
+- [feature-catalog.md](./feature-catalog.md) -- Module + Framework-Coverage-Matrix
+- [runbook.md](./runbook.md) -- Normale Ops-Prozeduren
+- [dr-playbook.md](./dr-playbook.md) -- 5 DR-Szenarien + Uebungs-Kalender
+- [env-vars-reference.md](./env-vars-reference.md) -- 32 ARCTOS-Env-Vars
+- [onboarding.md](./onboarding.md) -- Developer-Onboarding
+- [openapi.yaml](./openapi.yaml) -- 1034 Paths, 1606 Methoden
+
+## Compliance-Readiness-Checklisten
+
+- [compliance/iso-27001-readiness-checklist.md](./compliance/iso-27001-readiness-checklist.md)
+- [compliance/nis2-readiness-checklist.md](./compliance/nis2-readiness-checklist.md)
+- [compliance/gdpr-readiness-checklist.md](./compliance/gdpr-readiness-checklist.md)
+- [compliance/dora-readiness-checklist.md](./compliance/dora-readiness-checklist.md)
+
+## Security + Audit Reports (Continuous-Auditing-Suite)
+
+Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf/`.
+
+| Script | Output | Zweck |
+|---|---|---|
+| `audit-rls-coverage.mjs` | `docs/security/rls-coverage-report.md` | Tabellen ohne RLS + audit_trigger |
+| `audit-lod-coverage.mjs` | `docs/security/lod-coverage.md` | API-Routen ohne withAuth + Role-Matrix |
+| `audit-secrets.mjs` | `docs/security/secret-scan-report.md` | Hardcoded Keys, Env-Leaks |
+| `audit-missing-indexes.mjs` | `docs/perf/missing-indexes-report.md` | FK- / RLS-Index-Kandidaten |
+| `audit-n-plus-one.mjs` | `docs/perf/n-plus-one-report.md` | Loops mit Per-Iteration-DB-Call |
+| `audit-ts-errors.mjs` | `docs/perf/ts-errors-report.md` | TypeScript-Error-Kategorisierung |
+| `generate-schema-stubs.mjs` | `packages/db/src/schema/_generated_stubs.ts` | Drizzle-TS-Stubs fuer nicht-exportierte Tabellen |
+| `generate-openapi.mjs` | `docs/openapi.yaml` | OpenAPI 3.1 Spec aus Route-Scanner |
 
 ## Cross-cutting notes
 
@@ -45,10 +83,9 @@ All architecture decisions in chronological order. Each ADR links to full contex
 
 ### Pending ADRs (not yet written)
 
-- ADR-016: CI/CD Pipeline Architecture (current: ad-hoc `arctos-update` script)
-- ADR-017: Monitoring & Alerting Strategy (Prometheus vs. managed service)
-- ADR-018: Secret Management (current: env files, no vault)
-- ADR-019: Rate-Limiting Strategy (currently none)
-- ADR-020: API-Versioning beyond v1
+- ADR-022: i18n-Namespace-Organisation (71 namespaces, keine Dotted-Keys)
+- ADR-023: Rollback-Strategy fuer fehlgeschlagene Migrations
+- ADR-024: Search-Architecture (Postgres-FTS vs. pgvector vs. Meilisearch)
+- ADR-025: File-Upload-Storage (Filesystem vs. S3-kompatibel vs. B2)
 
 Contributions welcome -- each ADR should follow the established 7-section template (ID, Title, Status, Date, Context, Decision, Rationale, Consequences).
