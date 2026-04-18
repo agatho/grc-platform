@@ -102,10 +102,23 @@ import * as academySchema from "./schema/academy";
 import * as simulationSchema from "./schema/simulation";
 // Sprint 86: Community Edition und Open-Source Packaging
 import * as communitySchema from "./schema/community";
+// ADR-014 Phase 3: 55 Tabellen in 11 Domain-Files integriert
+import * as aiActExtendedSchema from "./schema/ai-act-extended";
+import * as approvalWorkflowSchema from "./schema/approval-workflow";
+import * as auditExtrasSchema from "./schema/audit-extras";
+import * as checklistSchema from "./schema/checklist";
+import * as connectorSchema from "./schema/connector";
+import * as contentNarrativeSchema from "./schema/content-narrative";
+import * as controlMonitoringSchema from "./schema/control-monitoring";
+import * as dataGovernanceSchema from "./schema/data-governance";
+import * as esefXbrlSchema from "./schema/esef-xbrl";
+import * as ismsCapSchema from "./schema/isms-cap";
+import * as riskAcceptanceSchema from "./schema/risk-acceptance";
+import * as phase3ExtrasSchema from "./schema/phase3-extras";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
-  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema, ...biReportingSchema, ...benchmarkingSchema, ...riskQuantificationSchema, ...dataSovereigntySchema, ...roleDashboardsSchema, ...marketplaceSchema, ...stakeholderPortalSchema, ...academySchema, ...simulationSchema, ...communitySchema },
+  schema: { ...platform, ...risk, ...processSchema, ...taskSchema, ...moduleSchema, ...assetSchema, ...workItemSchema, ...controlSchema, ...documentSchema, ...catalogSchema, ...ismsSchema, ...bcmsSchema, ...dpmsSchema, ...auditMgmtSchema, ...tprmSchema, ...supplierPortalSchema, ...esgSchema, ...intelligenceSchema, ...whistleblowingSchema, ...budgetSchema, ...brandingSchema, ...rcsaSchema, ...policyAcknowledgmentSchema, ...playbookSchema, ...calendarSchema, ...dashboardSchema, ...importExportSchema, ...identitySchema, ...translationSchema, ...eventBusSchema, ...boardKpiSchema, ...nis2CertificationSchema, ...fairSchema, ...ismsIntelligenceSchema, ...complianceCultureSchema, ...automationSchema, ...reportingSchema, ...regulatorySimulatorSchema, ...riskPropagationSchema, ...auditAnalyticsSchema, ...abacSchema, ...agentsSchema, ...eamSchema, ...eamAdvancedSchema, ...platformAdvancedSchema, ...ermAdvancedSchema, ...icsAdvancedSchema, ...bcmsAdvancedSchema, ...dpmsAdvancedSchema, ...auditAdvancedSchema, ...tprmAdvancedSchema, ...esgAdvancedSchema, ...whistleblowingAdvancedSchema, ...bpmAdvancedSchema, ...eamDashboardsSchema, ...eamDataArchitectureSchema, ...eamAiSchema, ...eamCatalogSchema, ...eamGovernanceSchema, ...riskEvaluationSchema, ...incidentTimelineSchema, ...processRaciSchema, ...apiPlatformSchema, ...extensionSchema, ...onboardingSchema, ...mobileSchema, ...saasMeteringSchema, ...evidenceConnectorSchema, ...cloudConnectorSchema, ...identitySaasConnectorSchema, ...devopsConnectorSchema, ...frameworkMappingSchema, ...copilotChatSchema, ...evidenceReviewSchema, ...regulatoryChangeSchema, ...controlTestingAgentSchema, ...predictiveRiskSchema, ...doraSchema, ...aiActSchema, ...taxCmsSchema, ...horizonScannerSchema, ...certWizardSchema, ...biReportingSchema, ...benchmarkingSchema, ...riskQuantificationSchema, ...dataSovereigntySchema, ...roleDashboardsSchema, ...marketplaceSchema, ...stakeholderPortalSchema, ...academySchema, ...simulationSchema, ...communitySchema, ...aiActExtendedSchema, ...approvalWorkflowSchema, ...auditExtrasSchema, ...checklistSchema, ...connectorSchema, ...contentNarrativeSchema, ...controlMonitoringSchema, ...dataGovernanceSchema, ...esefXbrlSchema, ...ismsCapSchema, ...riskAcceptanceSchema, ...phase3ExtrasSchema },
 });
 
 export type Database = typeof db;
@@ -213,3 +226,16 @@ export * from "./schema/simulation";
 export * from "./schema/community";
 // Navigation preferences (sidebar favorites + collapsed groups)
 export * from "./schema/nav-preference";
+// ADR-014 Phase 3: Schema-Integrations (55 neue Tabellen)
+export * from "./schema/ai-act-extended";
+export * from "./schema/approval-workflow";
+export * from "./schema/audit-extras";
+export * from "./schema/checklist";
+export * from "./schema/connector";
+export * from "./schema/content-narrative";
+export * from "./schema/control-monitoring";
+export * from "./schema/data-governance";
+export * from "./schema/esef-xbrl";
+export * from "./schema/isms-cap";
+export * from "./schema/risk-acceptance";
+export * from "./schema/phase3-extras";

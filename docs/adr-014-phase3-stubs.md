@@ -1,75 +1,71 @@
-# ADR-014 Phase 3 — Offene Tabellen ohne Drizzle-Schema-Export
+# ADR-014 Phase 3 — Abgeschlossen (2026-04-18)
 
-_Initial generiert: 2026-04-18T00:33:57.506Z_
+55 Tabellen aus `packages/db/drizzle/*.sql` sind jetzt in 11 Domain-
+Dateien integriert und ueber `packages/db/src/index.ts` exportiert. Damit
+ist die Schema-Luecke (F-18 `extraInDb`) fuer diese Tabellen geschlossen.
 
-**Status**: offene Arbeits-Liste. Kein Stub-Artefakt im Repo -- Stubs rotten, wenn sie nicht sofort ordentlich integriert werden.
+## Domain-Files (neu)
 
-55 Tabellen existieren in `packages/db/drizzle/*.sql`, haben aber keinen `pgTable()`-Export in `packages/db/src/schema/`. Folge: Code kann sie nicht type-safe ansprechen (nur via `db.execute(sql`…`)`), und der Drift-Check (F-18) listet sie als `extraInDb`.
-
-**Workflow pro Tabelle**:
-1. Generator neu laufen lassen: `node scripts/generate-schema-stubs.mjs` (erzeugt _generated_stubs.ts temporaer)
-2. Gewuenschte Tabelle in passende Domain-Datei umziehen (z. B. `ai-act.ts`, `approval.ts`, `isms.ts`)
-3. FK-Kommentare durch echte `.references(() => ...)` ersetzen
-4. In `packages/db/src/index.ts` exportieren
-5. `_generated_stubs.ts` loeschen
-6. Zeile in dieser Liste abhaken
-
-## Tabellen
-
-| Tabelle | Source-Migration |
+| Datei | Tabellen |
 |---|---|
-| `ai_authority_communication` | 0085_ai_act_complete.sql |
-| `ai_corrective_action` | 0085_ai_act_complete.sql |
-| `ai_gpai_model` | 0085_ai_act_full_compliance.sql |
-| `ai_incident` | 0085_ai_act_complete.sql |
-| `ai_penalty` | 0085_ai_act_complete.sql |
-| `ai_prohibited_screening` | 0085_ai_act_complete.sql |
-| `ai_provider_qms` | 0085_ai_act_complete.sql |
-| `approval_decision` | 0079_round2_features.sql |
-| `approval_request` | 0079_round2_features.sql |
-| `approval_workflow` | 0079_round2_features.sql |
-| `attestation_campaign` | 0080_round3_features.sql |
-| `attestation_response` | 0080_round3_features.sql |
-| `audit_sample` | 0079_round2_features.sql |
-| `board_report` | 0084_round7_financial_reporting.sql |
-| `catalog_entry_mapping` | 0075_fix_missing_tables.sql |
-| `checklist_instance` | 0080_round3_features.sql |
-| `checklist_template` | 0080_round3_features.sql |
-| `connector_field_mapping` | 0083_round6_connectors.sql |
-| `connector_instance` | 0083_round6_connectors.sql |
-| `connector_sync_log` | 0083_round6_connectors.sql |
-| `connector_type_definition` | 0083_round6_connectors.sql |
-| `consolidation_entry` | 0084_round7_financial_reporting.sql |
-| `consolidation_group` | 0084_round7_financial_reporting.sql |
-| `content_placeholder` | 0081_round4_data_reporting.sql |
-| `content_request` | 0082_round5_collaboration.sql |
-| `control_monitoring_result` | 0080_round3_features.sql |
-| `control_monitoring_rule` | 0080_round3_features.sql |
-| `data_lineage_entry` | 0078_data_lineage.sql |
-| `data_lineage_source` | 0078_data_lineage.sql |
-| `data_link` | 0081_round4_data_reporting.sql |
-| `data_validation_result` | 0081_round4_data_reporting.sql |
-| `data_validation_rule` | 0081_round4_data_reporting.sql |
-| `erm_sync_config` | 0091_erm_bridge_foundations.sql |
-| `esef_filing` | 0084_round7_financial_reporting.sql |
-| `eu_taxonomy_assessment` | 0079_round2_features.sql |
-| `evidence_request` | 0080_round3_features.sql |
-| `exception_report` | 0079_round2_features.sql |
-| `inline_comment` | 0082_round5_collaboration.sql |
-| `isms_corrective_action` | 0086_isms_corrective_actions.sql |
-| `isms_nonconformity` | 0086_isms_corrective_actions.sql |
-| `messaging_integration` | 0082_round5_collaboration.sql |
-| `module_nav_item` | 0075_fix_missing_tables.sql |
-| `narrative_instance` | 0081_round4_data_reporting.sql |
-| `narrative_template` | 0081_round4_data_reporting.sql |
-| `reminder_rule` | 0082_round5_collaboration.sql |
-| `review_cycle` | 0082_round5_collaboration.sql |
-| `review_decision` | 0082_round5_collaboration.sql |
-| `risk_acceptance` | 0088_risk_acceptance.sql |
-| `risk_acceptance_authority` | 0088_risk_acceptance.sql |
-| `root_cause_analysis` | 0079_round2_features.sql |
-| `sox_scoping` | 0080_round3_features.sql |
-| `tag_definition` | 0077_global_tag_system.sql |
-| `xbrl_tag` | 0084_round7_financial_reporting.sql |
-| `xbrl_tagging_instance` | 0084_round7_financial_reporting.sql |
-| `xbrl_taxonomy` | 0084_round7_financial_reporting.sql |
+| `ai-act-extended.ts` | ai_gpai_model, ai_incident, ai_corrective_action, ai_authority_communication, ai_penalty, ai_prohibited_screening, ai_provider_qms |
+| `approval-workflow.ts` | approval_workflow, approval_request, approval_decision, review_cycle, review_decision, attestation_campaign, attestation_response |
+| `audit-extras.ts` | audit_sample, board_report, exception_report |
+| `checklist.ts` | checklist_template, checklist_instance |
+| `connector.ts` | connector_type_definition, connector_instance, connector_field_mapping, connector_sync_log |
+| `content-narrative.ts` | content_placeholder, content_request, narrative_template, narrative_instance |
+| `control-monitoring.ts` | control_monitoring_rule, control_monitoring_result |
+| `data-governance.ts` | data_lineage_source, data_lineage_entry, data_link, data_validation_rule, data_validation_result |
+| `esef-xbrl.ts` | xbrl_taxonomy, xbrl_tag, xbrl_tagging_instance, esef_filing, consolidation_group, consolidation_entry, eu_taxonomy_assessment |
+| `isms-cap.ts` | isms_nonconformity, isms_corrective_action, root_cause_analysis |
+| `risk-acceptance.ts` | risk_acceptance, risk_acceptance_authority, erm_sync_config |
+| `phase3-extras.ts` | catalog_entry_mapping, evidence_request, inline_comment, messaging_integration, module_nav_item, reminder_rule, sox_scoping, tag_definition |
+
+Summe: 7+7+3+2+4+4+2+5+7+3+3+8 = **55 Tabellen** ✅
+
+## FK-Wireup
+
+Wo die Ziel-Tabelle im Schema existiert, wurden echte
+`.references(() => ...)`-Calls eingesetzt. Importe aus:
+- `platform.ts` (organization, user)
+- `ai-act.ts` (aiSystem)
+- `catalog.ts` (catalogEntry)
+- `module.ts` (moduleDefinition)
+- `control.ts` (control, evidence)
+- `audit-mgmt.ts` (audit)
+- `document.ts` (document)
+- `risk.ts` (risk)
+- Intra-File-Refs (z. B. ai_incident → ai_gpai_model)
+
+Self-Referentials (`xbrl_tag.parent_id`, `inline_comment.parent_id`)
+nutzen `AnyPgColumn` Forward-Reference-Pattern.
+
+## Abgrenzung
+
+- `ai_prohibited_screening.has_prohibited_practice` ist in der DB eine
+  `BOOLEAN GENERATED ALWAYS AS (OR der 8 Booleans) STORED`-Spalte.
+  Drizzle kann sie nicht schreiben -- im Code beim INSERT weglassen.
+- `ai_penalty.imposed_at DEFAULT CURRENT_DATE` und einige andere
+  PostgreSQL-spezifische Defaults muessen beim Insert explizit gesetzt
+  werden (Drizzle-kit generiert sie nicht auto).
+- `tags TEXT[]`-Spalten (in isms_nonconformity, isms_corrective_action)
+  werden als `jsonb` typisiert -- Drizzle-Clients muessen an DB-Seite
+  auf Array-Kompatibilitaet achten.
+
+## Nicht erledigt
+
+- Relations-Blocks (`relations(x, ({ one, many }) => ({ ... }))`) fuer
+  die Phase-3-Tabellen -- der Drizzle-Query-Builder kann sie auch ohne
+  nutzen, aber zur Komfort-Verbesserung sollten sie nachgereicht werden,
+  wenn die erste echte Consumer-Route entsteht
+- `audit_trigger` und RLS-Policies fuer die 55 Tabellen -- die sind in
+  den ursprungs-Migrationen bereits enthalten, aber `scripts/audit-rls-coverage.mjs`
+  sollte gegen-pruefen und ggf. ADR-014-Follow-up-Migration (0105_*) schreiben
+
+## Generator-Script
+
+`scripts/generate-schema-stubs.mjs` bleibt als Werkzeug. Wenn in Zukunft
+eine neue Tabelle ueber drizzle-kit generiert wird, ohne dass das
+zugehoerige `pgTable()` im TS-Schema-File existiert, liefert es einen
+Start-Draft zum Ueberarbeiten. Der Stub-Output wird bewusst NICHT ins
+Repo committed -- Review + Integration soll sofort passieren, nicht "irgendwann spaeter".
