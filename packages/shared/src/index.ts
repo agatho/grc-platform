@@ -149,6 +149,20 @@ export {
   type ClassificationContext,
   type HighRiskProductionReadiness,
 } from "./state-machines/aiact-system";
+export {
+  countCompletedProcedures,
+  computeQmsMaturity,
+  assessQmsReadinessForCe,
+  assessIso42001Gap,
+  assessAiRiskPortfolio,
+  type QmsProcedureChecklist,
+  type QmsReadinessResult,
+  type Iso42001Context,
+  type Iso42001GapResult,
+  type AiRiskDimension,
+  type AiRisk,
+  type AiRiskAssessmentQuality,
+} from "./state-machines/aiact-qms";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
