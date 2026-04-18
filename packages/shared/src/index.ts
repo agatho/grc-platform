@@ -82,6 +82,18 @@ export {
   type DpiaTransitionRequest,
   type DpiaTransitionResult,
 } from "./state-machines/dpms-dpia";
+export {
+  DSR_ALLOWED_TRANSITIONS,
+  validateDsrGate6Verify,
+  validateDsrGate7Response,
+  validateDsrGate8Close,
+  validateDsrTransition,
+  computeDsrDeadline,
+  type DsrSnapshot,
+  type DsrTransitionRequest,
+  type DsrTransitionResult,
+  type DsrDeadline,
+} from "./state-machines/dpms-dsr";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
