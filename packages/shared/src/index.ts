@@ -177,6 +177,25 @@ export {
   type ChangeSignal,
   type SubstantialChangeAssessment,
 } from "./state-machines/aiact-docgov";
+export {
+  assessLoggingCapability,
+  assessHumanOversight,
+  assessOversightLogQuality,
+  assessDeployerCompliance,
+  assessTransparencyCoverage,
+  type LogCategory,
+  type LoggingCapabilityContext,
+  type LoggingCapabilityResult,
+  type HumanOversightDesign,
+  type OversightAssessment,
+  type OversightLogStats,
+  type OversightLogQuality,
+  type DeployerDutyContext,
+  type DeployerComplianceResult,
+  type TransparencyObligationType,
+  type TransparencyContext,
+  type TransparencyResult,
+} from "./state-machines/aiact-oversight";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
