@@ -74,6 +74,26 @@ SET catalog_entry_id = m.keep_id
 FROM _ce_dedupe m
 WHERE control.catalog_entry_id = m.old_id;
 
+-- threat.catalog_entry_id (isms.ts line 124, ON DELETE NO ACTION)
+UPDATE threat
+SET catalog_entry_id = m.keep_id
+FROM _ce_dedupe m
+WHERE threat.catalog_entry_id = m.old_id;
+
+-- soa_entry.catalog_entry_id (isms.ts line 526, NOT NULL ON DELETE NO ACTION)
+-- SoA-Unique-Constraint (org_id, catalog_entry_id) -- vorher dedupen
+DELETE FROM soa_entry s1
+USING soa_entry s2, _ce_dedupe m
+WHERE s1.catalog_entry_id = m.old_id
+  AND s2.catalog_entry_id = m.keep_id
+  AND s1.org_id = s2.org_id
+  AND s1.id <> s2.id;
+
+UPDATE soa_entry
+SET catalog_entry_id = m.keep_id
+FROM _ce_dedupe m
+WHERE soa_entry.catalog_entry_id = m.old_id;
+
 -- catalog_entry_reference existiert als separate Tabelle (Cross-Framework-Map)
 -- Update per conditional DO-Block, falls die Tabelle vorhanden ist
 DO $$
