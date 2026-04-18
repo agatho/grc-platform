@@ -125,6 +125,17 @@ export {
   type ConsentTypeMeta,
   type ConsentValidationResult,
 } from "./state-machines/dpms-retention";
+export {
+  AVV_ALLOWED_TRANSITIONS,
+  validateAvvGateActivate,
+  validateAvvTransition,
+  checkAvvReviewStatus,
+  type AvvAgreementStatus,
+  type AvvSnapshot,
+  type AvvTransitionRequest,
+  type AvvTransitionResult,
+  type AvvReviewStatus,
+} from "./state-machines/dpms-avv";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
