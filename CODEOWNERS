@@ -1,0 +1,50 @@
+# CODEOWNERS — ARCTOS
+#
+# GitHub nutzt diese Datei, um fuer jeden geaenderten Pfad einen Review-
+# Owner anzufordern. Erst wenn ein CODEOWNER den PR approved hat, kann
+# gemerged werden.
+#
+# Syntax: <path-pattern> <@user-or-@team>
+# Siehe: https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-code-owners
+
+# Default — alle Aenderungen brauchen mindestens ein Maintainer-Approval
+*                                   @agatho
+
+# Architektur + ADRs
+/docs/ADR-*.md                      @agatho
+/docs/architecture.md               @agatho
+/CLAUDE.md                          @agatho
+
+# Sicherheit + Compliance
+/SECURITY.md                        @agatho
+/docs/security/                     @agatho
+/docs/compliance/                   @agatho
+/.github/workflows/secret-scanning.yml  @agatho
+/.github/workflows/codeql.yml       @agatho
+
+# Database + Migrations
+/packages/db/drizzle/               @agatho
+/packages/db/src/schema/            @agatho
+/packages/db/src/migrations/        @agatho
+/scripts/audit-rls-coverage.mjs     @agatho
+/scripts/audit-missing-indexes.mjs  @agatho
+
+# Auth + RBAC
+/packages/auth/                     @agatho
+/apps/web/src/middleware.ts         @agatho
+
+# Audit-Trail + Integrity
+/apps/web/src/app/api/v1/audit-log/ @agatho
+/apps/web/src/app/api/v1/health/    @agatho
+
+# CI + Deploy
+/.github/workflows/                 @agatho
+/Dockerfile                         @agatho
+/deploy/                            @agatho
+/scripts/docker-entrypoint.sh       @agatho
+
+# Frontend-Shared-Components
+/packages/ui/                       @agatho
+
+# AI-Integration
+/packages/ai/                       @agatho
