@@ -210,6 +210,23 @@ export {
   type PostMarketPlanQuality,
   type PostMarketPlanResult,
 } from "./state-machines/aiact-conformity";
+export {
+  determineFriaRequirement,
+  assessFriaQuality,
+  classifyIncidentDeadline,
+  checkIncidentOverdue,
+  type DeployerType,
+  type FriaDetermination,
+  type FriaRequirementResult,
+  type FundamentalRight,
+  type FriaRightAssessment,
+  type FriaQualityInput,
+  type FriaQualityResult,
+  type IncidentClassification,
+  type IncidentDeadlineResult,
+  type IncidentStatus,
+  type IncidentOverdueResult,
+} from "./state-machines/aiact-fria-incident";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
