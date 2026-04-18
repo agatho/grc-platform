@@ -163,6 +163,20 @@ export {
   type AiRisk,
   type AiRiskAssessmentQuality,
 } from "./state-machines/aiact-qms";
+export {
+  assessDataGovernance,
+  assessAnnexIvCompleteness,
+  validateDeclarationOfConformity,
+  assessSubstantialChange,
+  type DataGovernanceQuality,
+  type DataGovernanceResult,
+  type AnnexIvSections,
+  type AnnexIvResult,
+  type DeclarationOfConformityInput,
+  type DeclarationValidation,
+  type ChangeSignal,
+  type SubstantialChangeAssessment,
+} from "./state-machines/aiact-docgov";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
