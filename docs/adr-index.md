@@ -57,6 +57,7 @@ Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf
 | `audit-n-plus-one.mjs` | `docs/perf/n-plus-one-report.md` | Loops mit Per-Iteration-DB-Call |
 | `audit-ts-errors.mjs` | `docs/perf/ts-errors-report.md` | TypeScript-Error-Kategorisierung |
 | `audit-i18n-coverage.mjs` | `docs/i18n-coverage-report.md` | DE/EN-Namespace-Parity |
+| `audit-dead-exports.mjs` | `docs/perf/dead-exports-report.md` | Tote Exports (heuristisch) |
 | `generate-schema-stubs.mjs` | `packages/db/src/schema/_generated_stubs.ts` | Drizzle-TS-Stubs fuer nicht-exportierte Tabellen |
 | `generate-openapi.mjs` | `docs/openapi.yaml` | OpenAPI 3.1 Spec aus Route-Scanner |
 

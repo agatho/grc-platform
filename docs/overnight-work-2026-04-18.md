@@ -171,10 +171,10 @@ Nach Review + Push der 33 Commits:
 3. Verifikation: `/api/v1/health` → 200, `/api/v1/health/schema-drift` → missingInDb sollte ≤ 3 bleiben, E2E-Regression-Suite wenn gewollt.
 4. Dann: Bundle 3 (Phase 3 Schemas) als eigene Iteration.
 
-## Erweiterung — Phase-3-Bundle (nach 3bc454f)
+## Erweiterung — Phase-3+4-Bundle (nach 3bc454f)
 
 Autonom fortgesetzt nach Abschluss des ersten Protokolls. Weitere
-9 Commits, **alle ohne Runtime-Risiko ausser 0104** (ein idempotenter
+14 Commits, **alle ohne Runtime-Risiko ausser 0104** (ein idempotenter
 INSERT-only-Seed):
 
 | # | Commit | Fix / Feat | Deploy-Impact |
@@ -187,6 +187,12 @@ INSERT-only-Seed):
 | 30 | `2567ee5` | docs: DR-Playbook + Env-Vars-Reference | null |
 | 31 | `bc42e12` | feat: 15 Default Compliance-Calendar-Templates (0104) als catalog-Seeds | **minimal** -- 1 INSERT in catalog + 15 in catalog_entry, beide ON CONFLICT DO NOTHING |
 | 32 | `809931d` | docs: ADR-019 (Rate-Limit), ADR-020 (API-Versioning), ADR-021 (Error-Contract) + adr-index-Update | null |
+| 33 | `068e368` | docs: Protokoll-Update Phase-3 | null |
+| 34 | `baea99f` | feat: i18n-Coverage-Audit + 2 EN-Uebersetzungen (nav.tabs.ismsRisks, nav.tabs.cap) | **minimal** -- JSON-Strings |
+| 35 | `fa0c7f4` | docs: ADR-022 i18n + CI-Workflow .github/workflows/i18n-coverage.yml | **CI only** |
+| 36 | `5552168` | feat: lib/api-errors.ts RFC-7807 Helper (ADR-021 Phase 1, opt-in) | null -- noch nicht importiert |
+| 37 | `8dae463` | feat: lib/rate-limit.ts Token-Bucket (ADR-019 Phase 1, opt-in) | null -- noch nicht importiert |
+| 38 | `c0a0010` | feat: audit-dead-exports.mjs (9. Audit-Script) + Report (1991 Kandidaten heuristisch) | null |
 
 ### Zusammenfassung nach Bereich
 
@@ -199,10 +205,12 @@ INSERT-only-Seed):
 
 ### Neue Artefakte
 
-- **8 Audit-Scripts** insgesamt (4 RLS/LoD/Secrets/OpenAPI bereits im ersten Protokoll, 4 neu: N+1, Missing-Index, TS-Errors, Schema-Stubs)
-- **21 ADRs** (15 Accepted, 6 Proposed). Letzte drei 019-021 sind Entscheidungs-Vorlagen, noch nicht implementiert.
-- **4 Compliance-Readiness-Checklisten** (ISO 27001, NIS2, GDPR, DORA — DORA aus Vor-Protokoll)
+- **9 Audit-Scripts** insgesamt (RLS, LoD, Secrets, OpenAPI-Generator, N+1, Missing-Index, TS-Errors, Schema-Stubs, i18n-Coverage, Dead-Exports)
+- **22 ADRs** (15 Accepted, 7 Proposed -- 019/020/021 Implementation offen, 022 post-hoc dokumentiert)
+- **4 Compliance-Readiness-Checklisten** (ISO 27001, NIS2, GDPR, DORA)
 - **8 Companion-Docs** unter docs/: architecture, feature-catalog, runbook, dr-playbook, env-vars-reference, onboarding, adr-index, openapi
+- **2 Helper-Libs** opt-in: apps/web/src/lib/api-errors.ts + rate-limit.ts
+- **2 neue CI-Workflows**: schema-drift, i18n-coverage (migration-policy + secret-scanning aus erstem Protokoll)
 
 ### Push-Reihenfolge (Vorschlag Batches erweitert)
 
@@ -220,8 +228,25 @@ Variante A, aktualisiert:
 - **Drizzle-rows-Issue** (61 TS-Errors): die .rows-Property existiert nicht
   auf postgres-js-Driver-Results; Endpoints geben vermutlich schon heute
   `undefined` zurueck. Braucht Runtime-Validation vor Mass-Refactor.
-- **ADR-019/020/021**: nur Proposed, Implementierung ausstehend
+- **ADR-019/020/021**: nur Proposed, Implementierung ausstehend. Helper-
+  Libs fuer 019+021 bereits committed aber noch nicht gewrappt.
 - **Schema-Stubs-Review**: 55 Draft-Stubs in _generated_stubs.ts brauchen
   manuelle Umziehung in Domain-Dateien (ai-act.ts, approval.ts, etc.)
 - **Bundle 8 (Performance)**: Reports vorhanden, konkrete Index-CREATE-
   Statements noch nicht in eine Migration gegossen
+- **Dead-Exports**: 1991 Kandidaten heuristisch gefunden, 50-70 % sind
+  False-Positives (Barrel-Re-exports, Zod-Schemas, Types). Braucht
+  manuelle Durchsicht -- nicht auto-deletable.
+
+## Gesamt-Statistik
+
+- **38 Commits** in 2 Phasen (24 im ersten Protokoll, 14 in Phase-3+4)
+- **0 Pushes** -- alles wartet auf Review
+- **3 DB-Seed-Migrations** (0102 F-08, 0103 KRI, 0104 Calendar) + 0
+  Schema-Aenderungen ohne Migration
+- **9 Audit-Scripts** + **6 neue CI-Workflows**
+- **22 ADRs** gesamt, **4 Compliance-Checklisten**, **8 Companion-Docs**
+- **~15.000 LoC** Netto hinzugefuegt (schwer zu beziffern ohne git-diff)
+
+Fuer morgen: Protokoll als Leitfaden fuer selektives Push in 7 Batches
+(siehe Abschnitt oben), DB-Backups vor Seed-Deploys.
