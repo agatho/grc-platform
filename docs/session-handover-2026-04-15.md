@@ -1,7 +1,7 @@
 # ARCTOS Session-Uebergabe — 15. April 2026
 
 ## Kontext
-ARCTOS GRC-Plattform. Repo: `C:\Users\daimon\Downloads\grcfiles\grc-platform`. Remote: `github.com/agatho/grc-platform`, Branch `main`.
+ARCTOS GRC-Plattform. Remote: `github.com/agatho/grc-platform`, Branch `main`.
 
 ## Was in dieser Session erreicht wurde
 
