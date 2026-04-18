@@ -133,7 +133,7 @@ Uebungs-Ergebnisse werden in `bc_exercise`-Tabelle (BCMS-Modul) erfasst.
 
 | Rolle | Name | Kanal |
 |---|---|---|
-| Maintainer / Code-Owner | @agatho | GitHub, sec@charliehund.de |
+| Maintainer / Code-Owner | @agatho | GitHub, agatho@charliehund.de |
 | Hetzner-Support | Ticket-System | <https://console.hetzner.cloud> |
 | Backblaze-Support | Ticket-System | <https://secure.backblaze.com/contact_support.htm> |
 | Registrar (Charliehund.de) | tbd | tbd |
