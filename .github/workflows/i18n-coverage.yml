@@ -1,0 +1,57 @@
+name: i18n Coverage
+
+# Vergleicht messages/de/*.json gegen messages/en/*.json auf Key-Parity.
+# Faellt rot aus wenn fehlende Keys oder Placeholder-Werte (TODO/FIXME/leer)
+# auftreten. Pure static, keine DB.
+#
+# Konvention dokumentiert in docs/ADR-022-i18n-namespace-organization.md.
+
+on:
+  pull_request:
+    branches: [main, develop]
+    paths:
+      - "apps/web/messages/**"
+      - "scripts/audit-i18n-coverage.mjs"
+
+permissions:
+  contents: read
+
+jobs:
+  i18n-parity:
+    name: DE/EN namespace parity
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Run i18n coverage audit
+        run: node scripts/audit-i18n-coverage.mjs
+
+      - name: Upload report as artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: i18n-coverage-report
+          path: docs/i18n-coverage-report.md
+          retention-days: 30
+
+      - name: Fail if missing keys or placeholders
+        run: |
+          REPORT="docs/i18n-coverage-report.md"
+          MISSING_EN=$(grep -oE "Fehlende EN-Uebersetzungen: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
+          MISSING_DE=$(grep -oE "Fehlende DE-Uebersetzungen: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
+          PH_DE=$(grep -oE "Placeholder-Werte DE: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
+          PH_EN=$(grep -oE "Placeholder-Werte EN: [0-9]+" "$REPORT" | grep -oE "[0-9]+" || echo 0)
+          echo "Missing EN: $MISSING_EN, Missing DE: $MISSING_DE, Placeholder DE: $PH_DE, Placeholder EN: $PH_EN"
+          FAIL=0
+          [ "$MISSING_EN" -gt 0 ] && FAIL=1
+          [ "$MISSING_DE" -gt 0 ] && FAIL=1
+          [ "$PH_DE" -gt 0 ] && FAIL=1
+          [ "$PH_EN" -gt 0 ] && FAIL=1
+          if [ "$FAIL" -eq 1 ]; then
+            echo "::error::i18n parity broken -- siehe i18n-coverage-report artifact."
+            exit 1
+          fi
