@@ -2,6 +2,20 @@ export * from "./schemas";
 export * from "./types";
 export * from "./modules";
 export * from "./process-status";
+export {
+  ALLOWED_TRANSITIONS,
+  phaseForStatus,
+  validateGate1Setup,
+  validateGate4Coverage,
+  validateTransition,
+  buildSetupChecklist,
+  type AssessmentPhase,
+  type AssessmentSnapshot,
+  type Blocker,
+  type PhaseChecklist,
+  type TransitionRequest,
+  type TransitionResult,
+} from "./state-machines/isms-assessment";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";

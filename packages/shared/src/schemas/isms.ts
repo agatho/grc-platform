@@ -165,6 +165,56 @@ export const createAssessmentRunSchema = z
     { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
   );
 
+// ─── Setup-Wizard (ADR-014 Phase 3 ISMS Sprint 1.1) ────────────
+//
+// 3-Step-Wizard-Input: komplettere Struktur als createAssessmentRun.
+// Enthaelt: Basics, Scope-Filter-Strukturierung, Team.
+// Die Route /setup-wizard validiert, dass Gate G1 nach Speicherung
+// erfuellt werden KANN (nicht muss -- der Wizard kann auch partial
+// gespeichert werden und später finalisiert).
+
+export const assessmentSetupWizardSchema = z
+  .object({
+    // Step 1: Basics
+    name: z.string().min(1).max(500),
+    // Scope-Statement -- min. 200 Zeichen fuer Gate G1 (Finalize),
+    // hier nur >=1, damit Wizard zwischen-speicherbar ist.
+    description: z.string().min(1).max(5000),
+    // Multi-Framework-Support: ein Run kann mehrere Frameworks
+    // gleichzeitig abdecken via Cross-Framework-Mappings.
+    frameworks: z.array(z.string().max(100)).min(1).max(10),
+
+    // Step 2: Scope
+    scopeType: z.enum(assessmentScopeTypeValues).default("full"),
+    scopeFilter: z
+      .object({
+        assetIds: z.array(z.string().uuid()).optional(),
+        processIds: z.array(z.string().uuid()).optional(),
+        unitIds: z.array(z.string().uuid()).optional(),
+        locationIds: z.array(z.string().uuid()).optional(),
+        contextFactors: z.string().max(2000).optional(),
+      })
+      .optional(),
+
+    // Step 3: Team + Timeline
+    leadAssessorId: z.string().uuid(),
+    periodStart: z.string().min(1),
+    periodEnd: z.string().min(1),
+  })
+  .refine(
+    (data) => data.periodEnd >= data.periodStart,
+    { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
+  )
+  .refine(
+    (data) => {
+      const diffMs = new Date(data.periodEnd).getTime() - new Date(data.periodStart).getTime();
+      return diffMs >= 14 * 24 * 60 * 60 * 1000;
+    },
+    { message: "Assessment-Periode muss mindestens 14 Tage umfassen", path: ["periodEnd"] },
+  );
+
+export type AssessmentSetupWizardInput = z.infer<typeof assessmentSetupWizardSchema>;
+
 // ─── Control Evaluation ────────────────────────────────────────
 
 export const submitControlEvalSchema = z.object({
