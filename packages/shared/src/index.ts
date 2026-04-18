@@ -61,6 +61,17 @@ export {
   type CrisisTransitionResult,
   type DoraDeadlines,
 } from "./state-machines/bcms-crisis";
+export {
+  ROPA_ALLOWED_TRANSITIONS,
+  validateRopaGate1Activate,
+  validateRopaTransition,
+  countDpiaFlags,
+  isDpiaRequired,
+  type RopaSnapshot,
+  type RopaTransitionRequest,
+  type RopaTransitionResult,
+  type DpiaCriteriaFlags,
+} from "./state-machines/dpms-ropa";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
