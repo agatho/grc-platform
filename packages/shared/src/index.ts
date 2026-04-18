@@ -94,6 +94,19 @@ export {
   type DsrTransitionResult,
   type DsrDeadline,
 } from "./state-machines/dpms-dsr";
+export {
+  BREACH_ALLOWED_TRANSITIONS,
+  validateBreachGate9Assess,
+  validateBreachGate10NotifyDpa,
+  validateBreachGate11NotifyIndividuals,
+  validateBreachGate12Close,
+  validateBreachTransition,
+  computeBreachDeadline,
+  type BreachSnapshot,
+  type BreachTransitionRequest,
+  type BreachTransitionResult,
+  type BreachDeadline,
+} from "./state-machines/dpms-breach";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
