@@ -196,6 +196,56 @@ export function validateGate2SoaCoverage(stats: SoaStats): Blocker[] {
   return blockers;
 }
 
+/**
+ * G3: Risk-Assessment → Control-Evaluation
+ * Alle Risk-Scenarios im Run haben eine Decision (!= 'pending').
+ */
+export interface RiskEvalStats {
+  /** Gesamt-Anzahl assessment_risk_eval im Run */
+  totalRiskEvals: number;
+  /** Anzahl mit decision != 'pending' */
+  decided: number;
+  /** Anzahl mit residualLikelihood AND residualImpact gesetzt */
+  scored: number;
+}
+
+export function validateGate3RiskAssessment(stats: RiskEvalStats): Blocker[] {
+  const blockers: Blocker[] = [];
+
+  if (stats.totalRiskEvals === 0) {
+    blockers.push({
+      code: "no_risk_evals",
+      message:
+        "Keine Risk-Scenarios fuer diesen Run. Fuehre risk-assessment/generate-scenarios aus.",
+      gate: "G3",
+      severity: "error",
+    });
+    return blockers;
+  }
+
+  const pending = stats.totalRiskEvals - stats.decided;
+  if (pending > 0) {
+    blockers.push({
+      code: "pending_decisions",
+      message: `${pending} von ${stats.totalRiskEvals} Risk-Scenarios haben decision='pending'. Jedes Scenario braucht eine Entscheidung (accept|mitigate|transfer|avoid).`,
+      gate: "G3",
+      severity: "error",
+    });
+  }
+
+  const unscored = stats.totalRiskEvals - stats.scored;
+  if (unscored > 0) {
+    blockers.push({
+      code: "unscored_scenarios",
+      message: `${unscored} Scenarios ohne residualLikelihood/residualImpact-Score. Bewertung unvollstaendig.`,
+      gate: "G3",
+      severity: "warning",
+    });
+  }
+
+  return blockers;
+}
+
 /** G4: Control-Eval → Gap-Analysis */
 export function validateGate4Coverage(run: AssessmentSnapshot): Blocker[] {
   const blockers: Blocker[] = [];
