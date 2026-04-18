@@ -15,28 +15,33 @@ import { withAuth } from "@/lib/api";
 //      the `entry_hash` of the preceding row (by created_at, id). A mismatch
 //      means a row was deleted, inserted out-of-band, or rewritten.
 //
-// Admin-only. Read-only. O(N) over the audit_log -- returns counts + the
-// first 50 broken rows per category for diagnostics. Safe to run
-// periodically from a monitoring probe.
+// Admin/Auditor-only. Read-only. O(N) over the audit_log.
 //
-// `healthy: true` iff both checks pass. Used as CI/monitoring gate; a
-// healthy audit log is a hard ISO-27001 A.12.4 / A.18.1 requirement.
-export async function GET(req: Request) {
+// **Cross-Tenant-Policy**: Die Hash-Chain ist plattform-global (ADR-011),
+// aber **diese Route gibt KEINE Metadaten aus anderen Orgs preis**. Die
+// Verifikation laeuft ueber den gesamten Chain (sonst waere der Check
+// mathematisch falsch), aber Response-Details (Row-Mismatches mit
+// entity_type/action/created_at) werden NUR fuer Rows der eigenen Org
+// geliefert. Counts sind platform-global und bewusst so -- ein Counter
+// "total = 8.4M" leaked keine tenant-spezifischen Infos.
+//
+// Platform-Admins die den gesamten Chain-Break inspizieren muessen,
+// greifen direkt via psql oder dediziertem Platform-Admin-Tool zu
+// (ausserhalb ARCTOS). Bewusste Entscheidung gegen eine weitere
+// Rollen-Explosion.
+//
+// The trigger function uses now()::text to seed the final '|' segment of
+// the SHA input AND to set created_at. Since PostgreSQL's now() returns
+// the statement timestamp (cached within a transaction), those two
+// references return the same value. We re-cast stored created_at to
+// text and assume the session DateStyle matches the trigger's default.
+export async function GET(_req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
 
-  // NOTE: We do NOT scope by orgId -- the integrity of the chain is a
-  // cross-tenant platform property. A row inserted for org X affects the
-  // hash of the NEXT row across the platform.
-  //
-  // The trigger function uses now()::text to seed the final '|' segment of
-  // the SHA input AND to set created_at. Since PostgreSQL's now() returns
-  // the statement timestamp (cached within a transaction), those two
-  // references return the same value. We re-cast stored created_at to
-  // text and assume the session DateStyle matches the trigger's default.
-
   type RowCheck = {
     id: string;
+    org_id: string | null;
     entity_type: string;
     entity_id: string | null;
     action: string;
@@ -53,6 +58,7 @@ export async function GET(req: Request) {
     WITH ordered AS (
       SELECT
         id,
+        org_id,
         entity_type,
         entity_id,
         action,
@@ -75,6 +81,7 @@ export async function GET(req: Request) {
     )
     SELECT
       id,
+      org_id,
       entity_type,
       entity_id,
       action,
@@ -97,13 +104,26 @@ export async function GET(req: Request) {
 
   const healthy = rowMismatches.length === 0 && chainMismatches.length === 0;
 
+  // Cross-Tenant-Scrubbing: Row-Details werden NUR fuer die eigene Org
+  // zurueckgegeben. Counts bleiben global (andernfalls ist die Chain-
+  // Verifikation mathematisch falsch -- siehe Kommentar oben).
+  const ownOrgFilter = (r: RowCheck) => r.org_id === ctx.orgId;
+  const ownOrgRowMismatches = rowMismatches.filter(ownOrgFilter);
+  const ownOrgChainMismatches = chainMismatches.filter(ownOrgFilter);
+
   return Response.json(
     {
       data: {
         total,
         rowVerified: total - rowMismatches.length,
         chainVerified: total - chainMismatches.length,
-        rowMismatches: rowMismatches.slice(0, 50).map((r) => ({
+        // Platform-weite Counts -- kein Cross-Tenant-Leak, nur Aggregate
+        rowMismatchCount: rowMismatches.length,
+        chainMismatchCount: chainMismatches.length,
+        // Details NUR fuer eigene Org (ctx.orgId). Wenn in anderer Org
+        // ein Break auftritt, sieht dieser Tenant nur "rowMismatchCount > 0"
+        // und kontaktiert den Platform-Admin fuer forensische Analyse.
+        ownOrgRowMismatches: ownOrgRowMismatches.slice(0, 50).map((r) => ({
           id: r.id,
           entityType: r.entity_type,
           entityId: r.entity_id,
@@ -112,7 +132,7 @@ export async function GET(req: Request) {
           storedEntryHash: r.stored_entry_hash,
           recomputedEntryHash: r.recomputed_entry_hash,
         })),
-        chainMismatches: chainMismatches.slice(0, 50).map((r) => ({
+        ownOrgChainMismatches: ownOrgChainMismatches.slice(0, 50).map((r) => ({
           id: r.id,
           entityType: r.entity_type,
           entityId: r.entity_id,
@@ -122,8 +142,6 @@ export async function GET(req: Request) {
           expectedPreviousHash: r.prev_row_entry_hash,
         })),
         healthy,
-        firstEntryAt: rows[0]?.created_at ?? null,
-        lastEntryAt: rows[rows.length - 1]?.created_at ?? null,
       },
     },
     { status: healthy ? 200 : 503 },
