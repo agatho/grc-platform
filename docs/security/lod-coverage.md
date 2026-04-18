@@ -1,6 +1,6 @@
 # Three-Lines-of-Defense Coverage Report
 
-_Generated: 2026-04-18T00:17:39.064Z_
+_Generated: 2026-04-18T06:23:24.500Z_
 
 ## Summary
 
@@ -24,23 +24,23 @@ _Generated: 2026-04-18T00:17:39.064Z_
 
 | Route | Method |
 |---|---|
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/auth/admin-login` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/auth/sso/saml/callback` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/auth/switch-org` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/invitations/[token]/accept` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/dd/[token]/evidence` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/dd/[token]/responses` | PUT |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/dd/[token]/submit` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/mailbox/[token]/evidence` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/mailbox/[token]` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/portal/report/[orgCode]` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Groups` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Groups/[id]` | PATCH |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Users` | POST |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Users/[id]` | PUT |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Users/[id]` | PATCH |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/scim/v2/Users/[id]` | DELETE |
-| `C:/Users/daimon/Downloads/grcfiles/grc-platform//api/v1/vendors/dd/submit` | POST |
+| `/api/v1/auth/admin-login` | POST |
+| `/api/v1/auth/sso/saml/callback` | POST |
+| `/api/v1/auth/switch-org` | POST |
+| `/api/v1/invitations/[token]/accept` | POST |
+| `/api/v1/portal/dd/[token]/evidence` | POST |
+| `/api/v1/portal/dd/[token]/responses` | PUT |
+| `/api/v1/portal/dd/[token]/submit` | POST |
+| `/api/v1/portal/mailbox/[token]/evidence` | POST |
+| `/api/v1/portal/mailbox/[token]` | POST |
+| `/api/v1/portal/report/[orgCode]` | POST |
+| `/api/v1/scim/v2/Groups` | POST |
+| `/api/v1/scim/v2/Groups/[id]` | PATCH |
+| `/api/v1/scim/v2/Users` | POST |
+| `/api/v1/scim/v2/Users/[id]` | PUT |
+| `/api/v1/scim/v2/Users/[id]` | PATCH |
+| `/api/v1/scim/v2/Users/[id]` | DELETE |
+| `/api/v1/vendors/dd/submit` | POST |
 
 ## Methodology
 - Parses every `route.ts` under `apps/web/src/app/api/v1/`

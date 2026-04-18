@@ -14,7 +14,7 @@
 // docs/security/secret-scan-report.md for PR review.
 
 import { readFile, readdir, stat, writeFile, mkdir } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const OUT = join(ROOT, "docs/security/secret-scan-report.md");
@@ -89,8 +89,9 @@ async function main() {
           if (/placeholder|example|dummy|changeme|xxxxx/i.test(line)) continue;
           // env-variable references like $DB_PASSWORD or ${FOO} are not secrets
           if (pat.name === "Generic password assignment" && ENV_REF.test(line)) continue;
+          const rel = relative(ROOT, file).replace(/\\/g, "/");
           findings.push({
-            file: file.replace(ROOT + "/", "").replace(/\\/g, "/"),
+            file: rel,
             line: lineNum,
             pattern: pat.name,
             severity: pat.severity,

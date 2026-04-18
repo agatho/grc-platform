@@ -1,7 +1,7 @@
 # ARCTOS Session-Übergabe — 14. April 2026
 
 ## Kontext
-ARCTOS ist eine selbst-gehostete GRC-Plattform (Next.js 15 + PostgreSQL 16 + Drizzle ORM). Repo: `C:\Users\daimon\Downloads\grcfiles\grc-platform`. Remote: `github.com/agatho/grc-platform`, Branch `main`.
+ARCTOS ist eine selbst-gehostete GRC-Plattform (Next.js 15 + PostgreSQL 16 + Drizzle ORM). Remote: `github.com/agatho/grc-platform`, Branch `main`.
 
 ## Was in der letzten Session erreicht wurde
 

@@ -11,7 +11,7 @@
 // least one explicitly-named role (no anonymous mutations).
 
 import { readdir, readFile, mkdir, writeFile, stat } from "node:fs/promises";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 
 const ROOT = new URL("..", import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, "$1");
 const API_DIR = join(ROOT, "apps/web/src/app/api/v1");
@@ -91,7 +91,7 @@ async function main() {
     const methods = extractHttpMethods(src);
     const roles = extractAuthCall(src);
     const lods = extractRequireLoD(src);
-    const relPath = file.replace(ROOT + "/", "").replace(/\\/g, "/");
+    const relPath = relative(ROOT, file).replace(/\\/g, "/");
     const route = relPath
       .replace("apps/web/src/app/api/v1/", "/api/v1/")
       .replace("/route.ts", "");
