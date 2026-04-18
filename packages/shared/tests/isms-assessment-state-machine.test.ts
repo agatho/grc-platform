@@ -3,10 +3,12 @@ import {
   ALLOWED_TRANSITIONS,
   phaseForStatus,
   validateGate1Setup,
+  validateGate2SoaCoverage,
   validateGate4Coverage,
   validateTransition,
   buildSetupChecklist,
   type AssessmentSnapshot,
+  type SoaStats,
 } from "../src/state-machines/isms-assessment";
 
 const LONG_DESCRIPTION = "x".repeat(250);
@@ -101,6 +103,63 @@ describe("validateGate1Setup", () => {
   it("blocks if framework missing", () => {
     const blockers = validateGate1Setup({ ...validSnapshot, framework: null });
     expect(blockers.some((b) => b.code === "missing_framework")).toBe(true);
+  });
+});
+
+describe("validateGate2SoaCoverage", () => {
+  const validStats: SoaStats = {
+    totalCatalogEntries: 100,
+    entriesWithSoa: 95,
+    notApplicableWithoutJustification: 0,
+  };
+
+  it("passes with full coverage and all justifications", () => {
+    const blockers = validateGate2SoaCoverage(validStats);
+    expect(blockers).toHaveLength(0);
+  });
+
+  it("blocks with no active catalogs", () => {
+    const blockers = validateGate2SoaCoverage({
+      totalCatalogEntries: 0,
+      entriesWithSoa: 0,
+      notApplicableWithoutJustification: 0,
+    });
+    expect(blockers.some((b) => b.code === "no_active_catalogs")).toBe(true);
+  });
+
+  it("blocks at 79% coverage", () => {
+    const blockers = validateGate2SoaCoverage({
+      totalCatalogEntries: 100,
+      entriesWithSoa: 79,
+      notApplicableWithoutJustification: 0,
+    });
+    expect(blockers.some((b) => b.code === "soa_coverage_below_threshold")).toBe(true);
+  });
+
+  it("passes at 80% coverage", () => {
+    const blockers = validateGate2SoaCoverage({
+      totalCatalogEntries: 100,
+      entriesWithSoa: 80,
+      notApplicableWithoutJustification: 0,
+    });
+    expect(blockers).toHaveLength(0);
+  });
+
+  it("blocks if not_applicable entries lack justification", () => {
+    const blockers = validateGate2SoaCoverage({
+      ...validStats,
+      notApplicableWithoutJustification: 3,
+    });
+    expect(blockers.some((b) => b.code === "not_applicable_without_justification")).toBe(true);
+  });
+
+  it("reports both blockers when both conditions fail", () => {
+    const blockers = validateGate2SoaCoverage({
+      totalCatalogEntries: 100,
+      entriesWithSoa: 50,
+      notApplicableWithoutJustification: 5,
+    });
+    expect(blockers).toHaveLength(2);
   });
 });
 
