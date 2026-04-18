@@ -1,16 +1,16 @@
 # RLS + Audit-Trail Coverage Report
 
-_Generated: 2026-04-17T23:44:56.810Z_
+_Generated: 2026-04-18T06:56:13.197Z_
 
 ## Summary
 
 | Status | Count |
 |---|---|
-| OK | 297 |
-| RLS_MISSING | 132 |
+| OK | 347 |
+| RLS_MISSING | 131 |
 | AUDIT_MISSING | 52 |
-| PLATFORM_EXEMPT | 9 |
-| **Total** | **490** |
+| PLATFORM_EXEMPT | 15 |
+| **Total** | **545** |
 
 ## Semantics
 
@@ -22,7 +22,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 
 ## Findings by status
 
-### RLS_MISSING (132)
+### RLS_MISSING (131)
 
 | Table | Schema file | RLS | Policy | Audit |
 |---|---|---|---|---|
@@ -51,7 +51,6 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `bowtie_template` | erm-advanced.ts | ❌ | ❌ | ❌ |
 | `catalog_lifecycle_phase` | catalog.ts | ❌ | ❌ | ❌ |
 | `cloud_service_catalog` | eam-advanced.ts | ❌ | ❌ | ❌ |
-| `connector_test_definition` | evidence-connector.ts | ❌ | ❌ | ✅ |
 | `continuity_strategy` | bcms.ts | ❌ | ❌ | ❌ |
 | `contract` | tprm.ts | ❌ | ❌ | ❌ |
 | `contract_amendment` | tprm.ts | ❌ | ❌ | ❌ |
@@ -216,7 +215,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `wb_ombudsperson_activity` | whistleblowing-advanced.ts | ✅ | ✅ | ❌ |
 | `webhook_delivery_log` | event-bus.ts | ✅ | ✅ | ❌ |
 
-### PLATFORM_EXEMPT (9)
+### PLATFORM_EXEMPT (15)
 
 | Table | Schema file | RLS | Policy | Audit |
 |---|---|---|---|---|
@@ -224,13 +223,19 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `audit_log` | platform.ts | ✅ | ✅ | ❌ |
 | `catalog` | catalog.ts | ❌ | ❌ | ❌ |
 | `catalog_entry` | catalog.ts | ❌ | ❌ | ❌ |
+| `catalog_entry_mapping` | phase3-extras.ts | ❌ | ❌ | ✅ |
 | `catalog_entry_reference` | catalog.ts | ❌ | ❌ | ❌ |
+| `connector_test_definition` | evidence-connector.ts | ❌ | ❌ | ✅ |
+| `connector_type_definition` | connector.ts | ❌ | ❌ | ❌ |
 | `data_export_log` | platform.ts | ✅ | ✅ | ❌ |
 | `module_definition` | module.ts | ❌ | ❌ | ❌ |
+| `module_nav_item` | phase3-extras.ts | ❌ | ❌ | ✅ |
 | `user` | platform.ts | ❌ | ❌ | ✅ |
 | `work_item_type` | work-item.ts | ❌ | ❌ | ❌ |
+| `xbrl_tag` | esef-xbrl.ts | ❌ | ❌ | ❌ |
+| `xbrl_taxonomy` | esef-xbrl.ts | ❌ | ❌ | ❌ |
 
-### OK (297)
+### OK (347)
 
 | Table | Schema file | RLS | Policy | Audit |
 |---|---|---|---|---|
@@ -242,10 +247,17 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `academy_quiz_attempt` | academy.ts | ✅ | ✅ | ✅ |
 | `agent_recommendation` | agents.ts | ✅ | ✅ | ✅ |
 | `agent_registration` | agents.ts | ✅ | ✅ | ✅ |
+| `ai_authority_communication` | ai-act-extended.ts | ✅ | ✅ | ✅ |
 | `ai_conformity_assessment` | ai-act.ts | ✅ | ✅ | ✅ |
+| `ai_corrective_action` | ai-act-extended.ts | ✅ | ✅ | ✅ |
 | `ai_framework_mapping` | ai-act.ts | ✅ | ✅ | ✅ |
 | `ai_fria` | ai-act.ts | ✅ | ✅ | ✅ |
+| `ai_gpai_model` | ai-act-extended.ts | ✅ | ✅ | ✅ |
 | `ai_human_oversight_log` | ai-act.ts | ✅ | ✅ | ✅ |
+| `ai_incident` | ai-act-extended.ts | ✅ | ✅ | ✅ |
+| `ai_penalty` | ai-act-extended.ts | ✅ | ✅ | ✅ |
+| `ai_prohibited_screening` | ai-act-extended.ts | ✅ | ✅ | ✅ |
+| `ai_provider_qms` | ai-act-extended.ts | ✅ | ✅ | ✅ |
 | `ai_system` | ai-act.ts | ✅ | ✅ | ✅ |
 | `ai_transparency_entry` | ai-act.ts | ✅ | ✅ | ✅ |
 | `api_key` | api-platform.ts | ✅ | ✅ | ✅ |
@@ -253,6 +265,9 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `application_assessment_history` | eam-dashboards.ts | ✅ | ✅ | ✅ |
 | `application_interface` | eam-advanced.ts | ✅ | ✅ | ✅ |
 | `application_portfolio` | eam.ts | ✅ | ✅ | ✅ |
+| `approval_decision` | approval-workflow.ts | ✅ | ✅ | ✅ |
+| `approval_request` | approval-workflow.ts | ✅ | ✅ | ✅ |
+| `approval_workflow` | approval-workflow.ts | ✅ | ✅ | ✅ |
 | `architecture_change_request` | eam-advanced.ts | ✅ | ✅ | ✅ |
 | `architecture_element` | eam.ts | ✅ | ✅ | ✅ |
 | `architecture_relationship` | eam.ts | ✅ | ✅ | ✅ |
@@ -262,6 +277,8 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `asset_cpe` | isms-intelligence.ts | ✅ | ✅ | ✅ |
 | `assurance_score_snapshot` | board-kpi.ts | ✅ | ✅ | ✅ |
 | `attack_path_result` | regulatory-simulator.ts | ✅ | ✅ | ✅ |
+| `attestation_campaign` | approval-workflow.ts | ✅ | ✅ | ✅ |
+| `attestation_response` | approval-workflow.ts | ✅ | ✅ | ✅ |
 | `audit` | audit-mgmt.ts | ✅ | ✅ | ✅ |
 | `audit_analytics_import` | audit-analytics.ts | ✅ | ✅ | ✅ |
 | `audit_analytics_result` | audit-analytics.ts | ✅ | ✅ | ✅ |
@@ -271,6 +288,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `audit_qa_checklist_item` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `audit_qa_review` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `audit_resource_allocation` | audit-advanced.ts | ✅ | ✅ | ✅ |
+| `audit_sample` | audit-extras.ts | ✅ | ✅ | ✅ |
 | `audit_time_entry` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `audit_working_paper` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `audit_wp_folder` | audit-advanced.ts | ✅ | ✅ | ✅ |
@@ -291,6 +309,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `bi_scheduled_report` | bi-reporting.ts | ✅ | ✅ | ✅ |
 | `bi_shared_dashboard` | bi-reporting.ts | ✅ | ✅ | ✅ |
 | `billing_invoice` | saas-metering.ts | ✅ | ✅ | ✅ |
+| `board_report` | audit-extras.ts | ✅ | ✅ | ✅ |
 | `bowtie_element` | erm-advanced.ts | ✅ | ✅ | ✅ |
 | `business_capability` | eam.ts | ✅ | ✅ | ✅ |
 | `cci_configuration` | compliance-culture.ts | ✅ | ✅ | ✅ |
@@ -300,6 +319,8 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `cert_mock_audit` | cert-wizard.ts | ✅ | ✅ | ✅ |
 | `cert_readiness_assessment` | cert-wizard.ts | ✅ | ✅ | ✅ |
 | `certification_readiness_snapshot` | nis2-certification.ts | ✅ | ✅ | ✅ |
+| `checklist_instance` | checklist.ts | ✅ | ✅ | ✅ |
+| `checklist_template` | checklist.ts | ✅ | ✅ | ✅ |
 | `climate_risk_scenario` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `cloud_test_execution` | cloud-connector.ts | ✅ | ✅ | ✅ |
 | `cloud_test_suite` | cloud-connector.ts | ✅ | ✅ | ✅ |
@@ -308,15 +329,24 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `compliance_calendar_event` | calendar.ts | ✅ | ✅ | ✅ |
 | `compliance_culture_snapshot` | compliance-culture.ts | ✅ | ✅ | ✅ |
 | `connector_credential` | evidence-connector.ts | ✅ | ✅ | ✅ |
+| `connector_field_mapping` | connector.ts | ✅ | ✅ | ✅ |
+| `connector_instance` | connector.ts | ✅ | ✅ | ✅ |
 | `connector_schedule` | evidence-connector.ts | ✅ | ✅ | ✅ |
+| `connector_sync_log` | connector.ts | ✅ | ✅ | ✅ |
 | `connector_test_result` | evidence-connector.ts | ✅ | ✅ | ✅ |
 | `consent_record` | dpms-advanced.ts | ✅ | ✅ | ✅ |
 | `consent_type` | dpms-advanced.ts | ✅ | ✅ | ✅ |
+| `consolidation_entry` | esef-xbrl.ts | ✅ | ✅ | ✅ |
+| `consolidation_group` | esef-xbrl.ts | ✅ | ✅ | ✅ |
+| `content_placeholder` | content-narrative.ts | ✅ | ✅ | ✅ |
+| `content_request` | content-narrative.ts | ✅ | ✅ | ✅ |
 | `continuous_audit_exception` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `continuous_audit_rule` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `control` | control.ts | ✅ | ✅ | ✅ |
 | `control_deficiency` | ics-advanced.ts | ✅ | ✅ | ✅ |
 | `control_framework_coverage` | framework-mapping.ts | ✅ | ✅ | ✅ |
+| `control_monitoring_result` | control-monitoring.ts | ✅ | ✅ | ✅ |
+| `control_monitoring_rule` | control-monitoring.ts | ✅ | ✅ | ✅ |
 | `control_test` | control.ts | ✅ | ✅ | ✅ |
 | `control_test_campaign` | control.ts | ✅ | ✅ | ✅ |
 | `control_test_checklist` | control-testing-agent.ts | ✅ | ✅ | ✅ |
@@ -337,7 +367,12 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `custom_role` | platform.ts | ✅ | ✅ | ✅ |
 | `cve_asset_match` | isms-intelligence.ts | ✅ | ✅ | ✅ |
 | `data_flow` | eam-advanced.ts | ✅ | ✅ | ✅ |
+| `data_lineage_entry` | data-governance.ts | ✅ | ✅ | ✅ |
+| `data_lineage_source` | data-governance.ts | ✅ | ✅ | ✅ |
+| `data_link` | data-governance.ts | ✅ | ✅ | ✅ |
 | `data_residency_rule` | data-sovereignty.ts | ✅ | ✅ | ✅ |
+| `data_validation_result` | data-governance.ts | ✅ | ✅ | ✅ |
+| `data_validation_rule` | data-governance.ts | ✅ | ✅ | ✅ |
 | `deletion_request` | dpms-advanced.ts | ✅ | ✅ | ✅ |
 | `developer_app` | api-platform.ts | ✅ | ✅ | ✅ |
 | `device_registration` | mobile.ts | ✅ | ✅ | ✅ |
@@ -371,15 +406,20 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `emission_activity_data` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `emission_source` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `entity_reference` | event-bus.ts | ✅ | ✅ | ✅ |
+| `erm_sync_config` | risk-acceptance.ts | ✅ | ✅ | ✅ |
+| `esef_filing` | esef-xbrl.ts | ✅ | ✅ | ✅ |
 | `esg_collection_assignment` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `esg_collection_campaign` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `esrs_disclosure_template` | esg-advanced.ts | ✅ | ✅ | ✅ |
+| `eu_taxonomy_assessment` | esef-xbrl.ts | ✅ | ✅ | ✅ |
 | `evidence_artifact` | evidence-connector.ts | ✅ | ✅ | ✅ |
 | `evidence_connector` | evidence-connector.ts | ✅ | ✅ | ✅ |
 | `evidence_freshness_config` | evidence-connector.ts | ✅ | ✅ | ✅ |
+| `evidence_request` | phase3-extras.ts | ✅ | ✅ | ✅ |
 | `evidence_review_gap` | evidence-review.ts | ✅ | ✅ | ✅ |
 | `evidence_review_job` | evidence-review.ts | ✅ | ✅ | ✅ |
 | `evidence_review_result` | evidence-review.ts | ✅ | ✅ | ✅ |
+| `exception_report` | audit-extras.ts | ✅ | ✅ | ✅ |
 | `export_schedule` | import-export.ts | ✅ | ✅ | ✅ |
 | `external_auditor_share` | audit-advanced.ts | ✅ | ✅ | ✅ |
 | `fair_parameters` | fair.ts | ✅ | ✅ | ✅ |
@@ -401,6 +441,9 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `import_column_mapping` | import-export.ts | ✅ | ✅ | ✅ |
 | `import_job` | import-export.ts | ✅ | ✅ | ✅ |
 | `incident_correlation` | risk-propagation.ts | ✅ | ✅ | ✅ |
+| `inline_comment` | phase3-extras.ts | ✅ | ✅ | ✅ |
+| `isms_corrective_action` | isms-cap.ts | ✅ | ✅ | ✅ |
+| `isms_nonconformity` | isms-cap.ts | ✅ | ✅ | ✅ |
 | `it_infrastructure_check` | devops-connector.ts | ✅ | ✅ | ✅ |
 | `kri` | risk.ts | ✅ | ✅ | ✅ |
 | `lksg_due_diligence` | esg-advanced.ts | ✅ | ✅ | ✅ |
@@ -417,6 +460,9 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `maturity_model` | benchmarking.ts | ✅ | ✅ | ✅ |
 | `maturity_roadmap_action` | isms-intelligence.ts | ✅ | ✅ | ✅ |
 | `maturity_roadmap_item` | benchmarking.ts | ✅ | ✅ | ✅ |
+| `messaging_integration` | phase3-extras.ts | ✅ | ✅ | ✅ |
+| `narrative_instance` | content-narrative.ts | ✅ | ✅ | ✅ |
+| `narrative_template` | content-narrative.ts | ✅ | ✅ | ✅ |
 | `nis2_incident_report` | nis2-certification.ts | ✅ | ✅ | ✅ |
 | `notification` | platform.ts | ✅ | ✅ | ✅ |
 | `notification_preference` | platform-advanced.ts | ✅ | ✅ | ✅ |
@@ -459,12 +505,17 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `regulatory_digest` | regulatory-change.ts | ✅ | ✅ | ✅ |
 | `regulatory_impact_assessment` | regulatory-change.ts | ✅ | ✅ | ✅ |
 | `regulatory_source` | regulatory-change.ts | ✅ | ✅ | ✅ |
+| `reminder_rule` | phase3-extras.ts | ✅ | ✅ | ✅ |
 | `report_generation_log` | reporting.ts | ✅ | ✅ | ✅ |
 | `report_schedule` | reporting.ts | ✅ | ✅ | ✅ |
 | `report_template` | reporting.ts | ✅ | ✅ | ✅ |
 | `retention_exception` | dpms-advanced.ts | ✅ | ✅ | ✅ |
 | `retention_schedule` | dpms-advanced.ts | ✅ | ✅ | ✅ |
+| `review_cycle` | approval-workflow.ts | ✅ | ✅ | ✅ |
+| `review_decision` | approval-workflow.ts | ✅ | ✅ | ✅ |
 | `risk` | risk.ts | ✅ | ✅ | ✅ |
+| `risk_acceptance` | risk-acceptance.ts | ✅ | ✅ | ✅ |
+| `risk_acceptance_authority` | risk-acceptance.ts | ✅ | ✅ | ✅ |
 | `risk_anomaly_detection` | predictive-risk.ts | ✅ | ✅ | ✅ |
 | `risk_appetite` | risk.ts | ✅ | ✅ | ✅ |
 | `risk_appetite_threshold` | board-kpi.ts | ✅ | ✅ | ✅ |
@@ -484,6 +535,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `risk_var_calculation` | risk-quantification.ts | ✅ | ✅ | ✅ |
 | `role_dashboard_config` | role-dashboards.ts | ✅ | ✅ | ✅ |
 | `role_dashboard_widget_preference` | role-dashboards.ts | ✅ | ✅ | ✅ |
+| `root_cause_analysis` | isms-cap.ts | ✅ | ✅ | ✅ |
 | `saas_compliance_check` | identity-saas-connector.ts | ✅ | ✅ | ✅ |
 | `scim_token` | identity.ts | ✅ | ✅ | ✅ |
 | `security_posture_snapshot` | board-kpi.ts | ✅ | ✅ | ✅ |
@@ -495,11 +547,13 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `soa_ai_suggestion` | isms-intelligence.ts | ✅ | ✅ | ✅ |
 | `sovereignty_audit_log` | data-sovereignty.ts | ✅ | ✅ | ✅ |
 | `sox_scope` | ics-advanced.ts | ✅ | ✅ | ✅ |
+| `sox_scoping` | phase3-extras.ts | ✅ | ✅ | ✅ |
 | `sox_walkthrough` | ics-advanced.ts | ✅ | ✅ | ✅ |
 | `sso_config` | identity.ts | ✅ | ✅ | ✅ |
 | `sub_processor_notification` | dpms-advanced.ts | ✅ | ✅ | ✅ |
 | `supplier_esg_assessment` | esg-advanced.ts | ✅ | ✅ | ✅ |
 | `supplier_esg_corrective_action` | esg-advanced.ts | ✅ | ✅ | ✅ |
+| `tag_definition` | phase3-extras.ts | ✅ | ✅ | ✅ |
 | `tax_audit_prep` | tax-cms.ts | ✅ | ✅ | ✅ |
 | `tax_cms_element` | tax-cms.ts | ✅ | ✅ | ✅ |
 | `tax_gobd_archive` | tax-cms.ts | ✅ | ✅ | ✅ |
@@ -531,6 +585,7 @@ _Generated: 2026-04-17T23:44:56.810Z_
 | `webhook_registration` | event-bus.ts | ✅ | ✅ | ✅ |
 | `work_item` | work-item.ts | ✅ | ✅ | ✅ |
 | `work_item_link` | work-item.ts | ✅ | ✅ | ✅ |
+| `xbrl_tagging_instance` | esef-xbrl.ts | ✅ | ✅ | ✅ |
 
 ## Methodology
 

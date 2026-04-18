@@ -71,6 +71,13 @@ const TABLES_WITHOUT_ORG_ID = new Set([
   "user_ssoprovider", "user_mfa",
   // Log tables (tied to org via org_id but typically RLS is looser)
   "audit_log", "access_log", "data_export_log",
+  // ADR-014 Phase 3 -- globale Registry-Tabellen ohne org_id
+  "catalog_entry_mapping",    // Cross-Framework-Mappings sind plattform-global
+  "connector_type_definition", // Connector-Registry ist plattform-global
+  "connector_test_definition", // pre-existing, dito
+  "module_nav_item",          // Navigation pro Modul ist plattform-global
+  "xbrl_taxonomy",            // XBRL-Taxonomien sind industry-weite Standards
+  "xbrl_tag",                 // XBRL-Tags gehoeren zur Taxonomie, nicht zum Tenant
 ]);
 
 async function main() {

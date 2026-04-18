@@ -43,9 +43,10 @@ jobs:
         run: |
           MISSING=$(grep -c ",RLS_MISSING$" docs/security/rls-coverage-report.csv || echo 0)
           echo "RLS_MISSING count: $MISSING"
-          # Baseline: 132 tables without RLS as of Phase 3 start. Anything
-          # above that means we regressed.
-          BASELINE=132
+          # Baseline: 131 tables without RLS (nach 0105_phase3_rls_audit_triggers).
+          # Anything above that means ein neuer Tenant-Table wurde ohne RLS
+          # hinzugefuegt. Bei legitim erweiterter Coverage: Baseline senken.
+          BASELINE=131
           if [ "$MISSING" -gt "$BASELINE" ]; then
             echo "::error::RLS_MISSING count $MISSING exceeds baseline $BASELINE -- a new table was added without RLS."
             exit 1
