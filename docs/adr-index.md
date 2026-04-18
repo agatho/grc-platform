@@ -26,6 +26,7 @@ All architecture decisions in chronological order. Each ADR links to full contex
 | 020 | [API Versioning Strategy](./ADR-020-api-versioning.md) | Proposed | 2026-04-18 |
 | 021 | [Error-Handling-Contract (RFC 7807)](./ADR-021-error-handling.md) | Proposed | 2026-04-18 |
 | 022 | [i18n-Namespace-Organisation](./ADR-022-i18n-namespace-organization.md) | Accepted | 2026-04-18 |
+| 023 | [Migration-Rollback-Strategy](./ADR-023-migration-rollback.md) | Proposed | 2026-04-18 |
 
 ## Companion Documents
 
@@ -86,8 +87,8 @@ Scripts unter `scripts/audit-*.mjs`, Outputs unter `docs/security/` + `docs/perf
 
 ### Pending ADRs (not yet written)
 
-- ADR-023: Rollback-Strategy fuer fehlgeschlagene Migrations
 - ADR-024: Search-Architecture (Postgres-FTS vs. pgvector vs. Meilisearch)
 - ADR-025: File-Upload-Storage (Filesystem vs. S3-kompatibel vs. B2)
+- ADR-026: Performance-Testing-Strategy (k6 vs Artillery, target-RPS)
 
 Contributions welcome -- each ADR should follow the established 7-section template (ID, Title, Status, Date, Context, Decision, Rationale, Consequences).
