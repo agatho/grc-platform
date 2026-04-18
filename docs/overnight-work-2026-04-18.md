@@ -1,6 +1,16 @@
 # Nachtarbeit 2026-04-18
 
-_24 Commits lokal, **keine Pushes**. Alle warten auf User-Review und selektives Push._
+_33 Commits lokal, **keine Pushes**. Alle warten auf User-Review und selektives Push._
+
+## Update nach erstem Protokoll (Phase-3-Bundle)
+
+Nach dem ersten Protokoll wurden weitere 9 Commits hinzugefuegt
+(848897e bis 809931d) -- Phase-3-Scaffolding, Perf-Audit-Tools,
+TS-Errors-Fixes, Compliance-Checklisten, Contribution-Framework,
+DR-Playbook, Env-Vars-Reference, Compliance-Calendar-Seeds,
+ADRs 019-021.
+
+Details am Ende des Dokuments in Abschnitt "Erweiterung".
 
 ## Zusammenfassung
 
@@ -155,8 +165,63 @@ $ git log --oneline origin/main..HEAD
 
 ## Nächste Session
 
-Nach Review + Push der 24 Commits:
+Nach Review + Push der 33 Commits:
 1. `sudo bash /opt/arctos/deploy/db-backup.sh --pre-overnight-deploy`
 2. `sudo arctos-update`
 3. Verifikation: `/api/v1/health` → 200, `/api/v1/health/schema-drift` → missingInDb sollte ≤ 3 bleiben, E2E-Regression-Suite wenn gewollt.
 4. Dann: Bundle 3 (Phase 3 Schemas) als eigene Iteration.
+
+## Erweiterung — Phase-3-Bundle (nach 3bc454f)
+
+Autonom fortgesetzt nach Abschluss des ersten Protokolls. Weitere
+9 Commits, **alle ohne Runtime-Risiko ausser 0104** (ein idempotenter
+INSERT-only-Seed):
+
+| # | Commit | Fix / Feat | Deploy-Impact |
+|---|---|---|---|
+| 25 | `848897e` | feat: Schema-Stubs-Generator (scripts/generate-schema-stubs.mjs) + 55 Draft-Stubs in _generated_stubs.ts + Review-Markdown | **null** -- _generated_stubs.ts wird nicht via index.ts exportiert |
+| 26 | `c5e7936` | feat: Perf-Audit-Tools (N+1 + Missing-Index) + Reports unter docs/perf/ | **null** -- Static-Analysis-Scripts |
+| 27 | `bd5cc92` | fix: 9 isolated TS-Errors (120->111) + audit-ts-errors.mjs Report | **minimal** -- 5 kleine UI/API-Edits, alle typsicherer als vorher |
+| 28 | `7329b76` | docs: ISO 27001, NIS2, GDPR Readiness-Checklisten | null |
+| 29 | `1ed0a99` | docs: CONTRIBUTING.md, CODEOWNERS, PR-Template, Bug/Feature-Templates | null -- greift erst bei neuen PRs |
+| 30 | `2567ee5` | docs: DR-Playbook + Env-Vars-Reference | null |
+| 31 | `bc42e12` | feat: 15 Default Compliance-Calendar-Templates (0104) als catalog-Seeds | **minimal** -- 1 INSERT in catalog + 15 in catalog_entry, beide ON CONFLICT DO NOTHING |
+| 32 | `809931d` | docs: ADR-019 (Rate-Limit), ADR-020 (API-Versioning), ADR-021 (Error-Contract) + adr-index-Update | null |
+
+### Zusammenfassung nach Bereich
+
+| Bereich | Commit-Range | Push-Freigabe |
+|---|---|---|
+| Code-Fixes (TS-Errors) | `bd5cc92` | ✅ Nach UI-Smoke-Test |
+| Audit-Tools (static-analysis) | `848897e`, `c5e7936`, `bd5cc92` (Scripts) | ✅ Sofort |
+| DB-Seeds | `bc42e12` (0104) | ✅ Nach db-backup.sh |
+| Doku / ADRs / Checklisten | `7329b76`, `1ed0a99`, `2567ee5`, `809931d` | ✅ Sofort |
+
+### Neue Artefakte
+
+- **8 Audit-Scripts** insgesamt (4 RLS/LoD/Secrets/OpenAPI bereits im ersten Protokoll, 4 neu: N+1, Missing-Index, TS-Errors, Schema-Stubs)
+- **21 ADRs** (15 Accepted, 6 Proposed). Letzte drei 019-021 sind Entscheidungs-Vorlagen, noch nicht implementiert.
+- **4 Compliance-Readiness-Checklisten** (ISO 27001, NIS2, GDPR, DORA — DORA aus Vor-Protokoll)
+- **8 Companion-Docs** unter docs/: architecture, feature-catalog, runbook, dr-playbook, env-vars-reference, onboarding, adr-index, openapi
+
+### Push-Reihenfolge (Vorschlag Batches erweitert)
+
+Variante A, aktualisiert:
+- Batch 1 "Pure-Docs": alle docs/*.md + ADRs + Checklisten + CONTRIBUTING + CODEOWNERS + Templates (14 Commits)
+- Batch 2 "Audit-Tools": 7 Scripts + 6 Reports (5 Commits)
+- Batch 3 "CI-Guardrails": migration-policy, schema-drift, secret-scanning (2 Commits)
+- Batch 4 "Bug-Fixes": F-08, F-13, F-14, R-01, Risk-Link, TS-Quick-Wins (6 Commits, UI-Smoke-Test danach)
+- Batch 5 "Ops": /health, X-Request-ID, JSON-Logger (3 Commits)
+- Batch 6 "Integrity": /audit-log/integrity (1 Commit)
+- Batch 7 "DB-Seeds/Migrations": 0102, 0103, 0104 + Dead-Code-Entfernung (4 Commits, **db-backup.sh vorher**)
+
+### Was weiterhin offen ist
+
+- **Drizzle-rows-Issue** (61 TS-Errors): die .rows-Property existiert nicht
+  auf postgres-js-Driver-Results; Endpoints geben vermutlich schon heute
+  `undefined` zurueck. Braucht Runtime-Validation vor Mass-Refactor.
+- **ADR-019/020/021**: nur Proposed, Implementierung ausstehend
+- **Schema-Stubs-Review**: 55 Draft-Stubs in _generated_stubs.ts brauchen
+  manuelle Umziehung in Domain-Dateien (ai-act.ts, approval.ts, etc.)
+- **Bundle 8 (Performance)**: Reports vorhanden, konkrete Index-CREATE-
+  Statements noch nicht in eine Migration gegossen
