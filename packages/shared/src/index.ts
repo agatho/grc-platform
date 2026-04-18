@@ -196,6 +196,20 @@ export {
   type TransparencyContext,
   type TransparencyResult,
 } from "./state-machines/aiact-oversight";
+export {
+  selectConformityProcedure,
+  evaluateConformityChecklist,
+  validateCeMarkingGate,
+  assessPostMarketPlan,
+  type ConformityProcedure,
+  type AnnexIIICategory,
+  type ConformityRequirement,
+  type ConformityChecklistResult,
+  type CeMarkingGateContext,
+  type CeMarkingGateResult,
+  type PostMarketPlanQuality,
+  type PostMarketPlanResult,
+} from "./state-machines/aiact-conformity";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
