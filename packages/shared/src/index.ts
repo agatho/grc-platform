@@ -50,6 +50,17 @@ export {
   type ExerciseTransitionRequest,
   type ExerciseTransitionResult,
 } from "./state-machines/bcms-exercise";
+export {
+  CRISIS_ALLOWED_TRANSITIONS,
+  validateCrisisGate9Activate,
+  validateCrisisGate10Resolve,
+  validateCrisisTransition,
+  computeDoraDeadlines,
+  type CrisisSnapshot,
+  type CrisisTransitionRequest,
+  type CrisisTransitionResult,
+  type DoraDeadlines,
+} from "./state-machines/bcms-crisis";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
