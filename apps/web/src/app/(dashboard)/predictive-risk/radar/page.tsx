@@ -57,15 +57,15 @@ export default function PredictiveRadarPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {radarData.map((point, idx) => {
-            const TrendIcon = TREND_ICONS[point.trendDirection] ?? Minus;
+            const TrendIcon = point.trendDirection ? TREND_ICONS[point.trendDirection] ?? Minus : Minus;
             return (
-              <Card key={idx} className={`border-l-4 ${RISK_COLORS[point.riskLevel] ?? ""}`}>
+              <Card key={idx} className={`border-l-4 ${point.riskLevel ? RISK_COLORS[point.riskLevel] ?? "" : ""}`}>
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <Badge variant="outline">{point.entityType}</Badge>
                     <TrendIcon className={`h-4 w-4 ${point.trendDirection === "increasing" ? "text-red-500" : point.trendDirection === "decreasing" ? "text-green-500" : "text-gray-500"}`} />
                   </div>
-                  <p className="font-medium text-sm">{point.entityName ?? point.entityId.substring(0, 8)}</p>
+                  <p className="font-medium text-sm">{point.entityName ?? (point.entityId ? point.entityId.substring(0, 8) : "-")}</p>
                   <div className="flex items-center justify-between mt-2 text-sm">
                     <div>
                       <span className="text-muted-foreground">{t("radar.current")}: </span>

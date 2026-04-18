@@ -82,7 +82,7 @@ function GraphCanvas({
   svgRef,
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
-  const simulationRef = useRef<ReturnType<typeof import("d3-force").forceSimulation> | null>(null);
+  const simulationRef = useRef<unknown>(null);
   const [positions, setPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [dragging, setDragging] = useState<string | null>(null);
