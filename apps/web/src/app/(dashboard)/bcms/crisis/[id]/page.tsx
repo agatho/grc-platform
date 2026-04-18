@@ -309,7 +309,7 @@ function CrisisDetailInner() {
             <Shield size={16} className="text-blue-600" />
             Risikobewertung
           </h2>
-          {(crisis as unknown as Record<string, unknown>).ermRiskId && (
+          {Boolean((crisis as unknown as Record<string, unknown>).ermRiskId) && (
             <Badge variant="outline" className="text-blue-600 border-blue-200">
               <ArrowRight size={10} className="mr-1" /> ERM-Register
             </Badge>
@@ -404,7 +404,7 @@ function CrisisDetailInner() {
               Ins ERM synchronisieren
             </Button>
           )}
-          {(crisis as unknown as Record<string, unknown>).ermSyncedAt && (
+          {Boolean((crisis as unknown as Record<string, unknown>).ermSyncedAt) && (
             <span className="text-xs text-gray-400 ml-auto">
               Synchronisiert: {new Date((crisis as unknown as Record<string, unknown>).ermSyncedAt as string).toLocaleString("de-DE")}
             </span>
