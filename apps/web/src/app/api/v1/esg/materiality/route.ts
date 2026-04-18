@@ -23,7 +23,7 @@ export async function POST(req: Request) {
   const body = createMaterialityAssessmentSchema.safeParse(await req.json());
   if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
   const created = await withAuditContext(ctx, async (tx) => {
-    const [row] = await tx.insert(materialityAssessment).values({ orgId: ctx.orgId, reportingPeriodYear: body.data.reportingPeriodYear, financialThreshold: body.data.financialThreshold ?? { scoreThreshold: 50 }, impactThreshold: body.data.impactThreshold ?? { scoreThreshold: 50 }, createdBy: ctx.userId }).returning();
+    const [row] = await tx.insert(materialityAssessment).values({ orgId: ctx.orgId, reportingPeriodYear: body.data.reportingYear, financialThreshold: { scoreThreshold: 50 }, impactThreshold: { scoreThreshold: 50 }, createdBy: ctx.userId }).returning();
     return row;
   });
   return Response.json({ data: created }, { status: 201 });

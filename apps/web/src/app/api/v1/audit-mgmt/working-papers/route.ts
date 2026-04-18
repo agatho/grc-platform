@@ -63,7 +63,7 @@ export async function POST(req: Request) {
       .from(auditWorkingPaper)
       .where(and(eq(auditWorkingPaper.auditId, auditId), eq(auditWorkingPaper.folderId, body.data.folderId)));
 
-    const reference = generateWpReference(folder.code, existingWps.map((w) => w.reference));
+    const reference = generateWpReference(folder.code, existingWps.map((w: { reference: string | null }) => w.reference));
 
     const [row] = await tx
       .insert(auditWorkingPaper)
