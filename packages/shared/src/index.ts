@@ -72,6 +72,16 @@ export {
   type RopaTransitionResult,
   type DpiaCriteriaFlags,
 } from "./state-machines/dpms-ropa";
+export {
+  DPIA_ALLOWED_TRANSITIONS,
+  validateDpiaGate3Start,
+  validateDpiaGate3Complete,
+  validateDpiaGate3Approve,
+  validateDpiaTransition,
+  type DpiaSnapshot,
+  type DpiaTransitionRequest,
+  type DpiaTransitionResult,
+} from "./state-machines/dpms-dpia";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
