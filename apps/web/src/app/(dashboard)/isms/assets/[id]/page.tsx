@@ -183,7 +183,7 @@ function AssetDetailInner() {
               {tierLabel[asset.assetTier] ?? asset.assetTier}
             </Badge>
             {classification?.overallProtection && (
-              <ProtectionLevelBadge level={classification.overallProtection} />
+              <ProtectionLevelBadge level={classification.overallProtection as "normal" | "high" | "very_high" | null} />
             )}
           </div>
           {asset.description && (
@@ -343,7 +343,7 @@ function AssetDetailInner() {
                     <div>
                       <p className="text-sm font-medium text-gray-500">Gesamtschutzbedarf</p>
                       <div className="mt-1">
-                        <ProtectionLevelBadge level={classification.overallProtection} />
+                        <ProtectionLevelBadge level={classification.overallProtection as "normal" | "high" | "very_high" | null} />
                       </div>
                     </div>
                     <div className="ml-auto text-xs text-gray-400">
@@ -361,7 +361,7 @@ function AssetDetailInner() {
                       <div key={key} className="rounded-lg border border-gray-200 p-4">
                         <div className="flex items-center justify-between mb-2">
                           <p className="text-sm font-semibold text-gray-700">{label}</p>
-                          <ProtectionLevelBadge level={level} />
+                          <ProtectionLevelBadge level={level as "normal" | "high" | "very_high" | null} />
                         </div>
                         {reason ? (
                           <p className="text-xs text-gray-500 leading-relaxed">{reason}</p>
