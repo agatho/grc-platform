@@ -107,6 +107,24 @@ export {
   type BreachTransitionResult,
   type BreachDeadline,
 } from "./state-machines/dpms-breach";
+export {
+  validateTiaQuality,
+  assessTransferRisk,
+  ADEQUACY_COUNTRIES,
+  type TiaSnapshot,
+  type TransferRiskAssessment,
+  type LegalMechanism,
+} from "./state-machines/dpms-tia";
+export {
+  decideRetention,
+  validateConsentType,
+  isConsentStillValid,
+  type RetentionScheduleRule,
+  type RetentionExecutionContext,
+  type RetentionDecision,
+  type ConsentTypeMeta,
+  type ConsentValidationResult,
+} from "./state-machines/dpms-retention";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
