@@ -324,6 +324,7 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.executive", href: "/executive", icon: LineChart, roles: ["admin"], parentModule: "platform" },
       { labelKey: "nav.grouped.grcComposite", href: "/grc-composite", icon: ShieldCheck, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.grcFindings", href: "/grc-findings", icon: AlertTriangle, roles: ["admin", "risk_manager", "auditor"], parentModule: "platform" },
+      { labelKey: "nav.grouped.grcRiskSync", href: "/grc-risk-sync", icon: Workflow, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.graph", href: "/graph", icon: Network, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.search", href: "/search", icon: Search, roles: "all", parentModule: "platform" },
       // Catalogs & Framework Coverage
