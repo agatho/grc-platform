@@ -54,7 +54,8 @@ export async function GET(_req: Request) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
   }
 
-  const yearStart = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
+  const yearStartDate = new Date(Date.UTC(new Date().getUTCFullYear(), 0, 1));
+  const yearStart = yearStartDate.toISOString();
 
   // ─── ISMS Metrics ────────────────────────────────────────
   const [ismsAssessments] = await db
@@ -113,7 +114,7 @@ export async function GET(_req: Request) {
     .from(bcp)
     .where(and(eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)));
 
-  const yearStartIso = yearStart.toISOString().slice(0, 10);
+  const yearStartIso = yearStartDate.toISOString().slice(0, 10);
   const [exerciseCounts] = await db
     .select({
       completedYtd: sql<number>`count(*) filter (where ${bcExercise.status} = 'completed' and ${bcExercise.actualDate} >= ${yearStartIso})::int`,
@@ -157,9 +158,11 @@ export async function GET(_req: Request) {
     .where(and(eq(dataBreach.orgId, ctx.orgId), isNull(dataBreach.deletedAt)));
 
   const [tiaCounts] = await db
-    .select({ reviewed: sql<number>`count(*) filter (where ${tia.status} in ('approved','active'))::int` })
+    .select({
+      reviewed: sql<number>`count(*) filter (where ${tia.assessmentDate} is not null)::int`,
+    })
     .from(tia)
-    .where(eq(tia.orgId, ctx.orgId));
+    .where(and(eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)));
 
   const [consentCounts] = await db
     .select({

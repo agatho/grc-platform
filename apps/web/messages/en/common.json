@@ -160,6 +160,8 @@
       "academy": "Academy",
       "import": "Import / Export",
       "executive": "Executive View",
+      "grcComposite": "GRC Composite",
+      "grcFindings": "Cross-Module Findings",
       "graph": "Knowledge Graph",
       "search": "Global Search",
       "settings": "Settings",
