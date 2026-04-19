@@ -76,6 +76,19 @@ export async function GET(_req: Request) {
   const ncEnriched = ncRows.map((r) => {
     const due = r.dueDate ? new Date(r.dueDate) : null;
     const c = classifyByDueDate(due, now);
+    // ISO 27001 Kap. 10 ist der primaere Referenzrahmen. ISO-Clause-basiertes
+    // Mapping auf NIS2 / DORA / GDPR, wenn ein bekannter Bereich getroffen ist.
+    const frameworks: string[] = ["ISO 27001 Kap. 10"];
+    const clause = r.isoClause?.toLowerCase() ?? "";
+    if (clause.startsWith("a.5") || clause.startsWith("a.6")) {
+      frameworks.push("NIS2 Art. 21");
+    }
+    if (clause.startsWith("a.8")) {
+      frameworks.push("NIS2 Art. 21", "DORA Art. 9");
+    }
+    if (clause.startsWith("a.18")) {
+      frameworks.push("GDPR Art. 32");
+    }
     return {
       kind: "nonconformity" as const,
       id: r.id,
@@ -88,6 +101,7 @@ export async function GET(_req: Request) {
       identifiedAtIso: new Date(r.identifiedAt).toISOString(),
       dueDate: r.dueDate,
       assignedTo: r.assignedTo,
+      frameworks,
       escalationLevel: c.level,
       daysUntilDeadline: c.daysUntilDeadline,
       daysOverdue: c.daysOverdue,
@@ -126,6 +140,7 @@ export async function GET(_req: Request) {
       dueDate: r.dueDate,
       assignedTo: r.assignedTo,
       nonconformityId: r.nonconformityId,
+      frameworks: ["ISO 27001 Kap. 10"],
       escalationLevel: c.level,
       daysUntilDeadline: c.daysUntilDeadline,
       daysOverdue: c.daysOverdue,

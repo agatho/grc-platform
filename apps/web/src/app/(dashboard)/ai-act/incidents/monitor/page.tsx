@@ -42,6 +42,7 @@ interface IncidentWithOverdue {
   detectedAt: string;
   deadlineAt: string;
   authorityNotifiedAt: string | null;
+  frameworks?: string[];
   overdue: OverdueInfo;
 }
 
@@ -195,7 +196,7 @@ export default function IncidentsMonitorPage() {
             <div className="flex items-start justify-between gap-2">
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{r.title}</p>
-                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1">
+                <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
                   <span>Erkannt: {new Date(r.detectedAt).toLocaleString("de-DE")}</span>
                   <span>Frist: {new Date(r.deadlineAt).toLocaleString("de-DE")}</span>
                   {r.isSerious && (
@@ -203,6 +204,15 @@ export default function IncidentsMonitorPage() {
                       serious
                     </Badge>
                   )}
+                  {r.frameworks?.map((fw) => (
+                    <Badge
+                      key={fw}
+                      variant="outline"
+                      className="bg-sky-50 text-sky-800 border-sky-200 text-xs py-0"
+                    >
+                      {fw}
+                    </Badge>
+                  ))}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">

@@ -35,6 +35,7 @@ interface MonitorItem {
   createdAtIso: string;
   deadlineIso: string | null;
   closedAtIso: string | null;
+  frameworks?: string[];
   escalationLevel: EscalationLevel;
   hoursUntilDeadline: number | null;
   hoursOverdue: number | null;
@@ -222,6 +223,15 @@ export default function DpmsDeadlineMonitorPage() {
                       {i.severity}
                     </Badge>
                   )}
+                  {i.frameworks?.map((fw) => (
+                    <Badge
+                      key={fw}
+                      variant="outline"
+                      className="bg-sky-50 text-sky-800 border-sky-200 text-xs py-0"
+                    >
+                      {fw}
+                    </Badge>
+                  ))}
                 </div>
               </div>
               <div className="flex items-center gap-2 flex-shrink-0">
