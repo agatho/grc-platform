@@ -322,6 +322,8 @@ export const NAV_GROUPS: NavGroup[] = [
       { labelKey: "nav.grouped.academy", href: "/academy", icon: GraduationCap, roles: "all", parentModule: "platform" },
       { labelKey: "nav.grouped.import", href: "/import", icon: Upload, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.executive", href: "/executive", icon: LineChart, roles: ["admin"], parentModule: "platform" },
+      { labelKey: "nav.grouped.grcComposite", href: "/grc-composite", icon: ShieldCheck, roles: ["admin", "risk_manager"], parentModule: "platform" },
+      { labelKey: "nav.grouped.grcFindings", href: "/grc-findings", icon: AlertTriangle, roles: ["admin", "risk_manager", "auditor"], parentModule: "platform" },
       { labelKey: "nav.grouped.graph", href: "/graph", icon: Network, roles: ["admin", "risk_manager"], parentModule: "platform" },
       { labelKey: "nav.grouped.search", href: "/search", icon: Search, roles: "all", parentModule: "platform" },
       // Catalogs & Framework Coverage
