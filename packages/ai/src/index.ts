@@ -8,6 +8,7 @@ export { callClaudeApi } from "./providers/claude-api";
 export { callOpenAI } from "./providers/openai";
 export { callGemini } from "./providers/gemini";
 export { callOllama } from "./providers/ollama";
+export { callLmStudio } from "./providers/lmstudio";
 export type {
   AiProvider,
   AiMessage,

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useCallback } from "react";
+import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
 import { Blocks, Check, X as XIcon, AlertTriangle, Settings2 } from "lucide-react";
@@ -220,15 +221,15 @@ function ModuleCard({
             )}
           </div>
 
-          {/* Config button placeholder */}
-          {isAdmin && isEnabled && (
-            <button
-              disabled
-              className="mt-2 inline-flex items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-500 opacity-50 cursor-not-allowed"
+          {/* Config button — opens module settings page */}
+          {isAdmin && (
+            <Link
+              href={`/settings/modules/${mod.moduleKey}`}
+              className="mt-2 inline-flex w-fit items-center gap-1.5 rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 transition-colors hover:border-blue-300 hover:bg-blue-50 hover:text-blue-700"
             >
               <Settings2 size={12} />
-              Config
-            </button>
+              {t("modules.configure")}
+            </Link>
           )}
         </CardContent>
       </Card>

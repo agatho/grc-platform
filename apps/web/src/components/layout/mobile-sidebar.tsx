@@ -13,7 +13,7 @@ import {
   ChevronRight,
 } from "lucide-react";
 import {
-  NAV_GROUPS,
+  NAV_GROUPS_CONDENSED,
   getAllFlatNavItems,
 } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
@@ -74,7 +74,7 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
   );
 
   const groupedNav = useMemo(() => {
-    return NAV_GROUPS.map((group) => ({
+    return NAV_GROUPS_CONDENSED.map((group) => ({
       ...group,
       items: group.items.filter((item) => isItemVisible(roles, item.roles)),
     })).filter((group) => group.items.length > 0);

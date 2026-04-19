@@ -138,7 +138,7 @@ Config: `apps/web/src/components/layout/nav-config.ts`
 - **Cross-framework mappings** (`catalog_entry_mapping`) — links equivalent controls across frameworks
 - **Target modules** (`catalog.target_modules text[]`) — which management systems a catalog applies to
 
-### Seeded Catalogs (29 total, ~2,020 entries)
+### Seeded Catalogs (46 total, ~2,860 entries)
 
 | # | Catalog | Type | Entries | Target Modules |
 |---|---------|------|---------|----------------|
@@ -173,8 +173,23 @@ Config: `apps/web/src/components/layout/nav-config.ts`
 | 29 | OWASP ASVS v4.0.3 | Control | 106 | isms |
 | 30 | ISO 27005:2022 Bedrohungen | Risk | 31 | isms, erm |
 | 31 | ISO 27005:2022 Schwachstellen | Risk | 23 | isms, erm |
+| 32 | **ISO/IEC 27017:2015 Cloud Security** | Control | 23 | isms, ics, tprm |
+| 33 | **ISO/IEC 27018:2019 PII Cloud** | Control | 30 | dpms, isms, tprm |
+| 34 | **ISO/IEC 27701:2019 PIMS** | Control | 50 | dpms, isms |
+| 35 | **ISO/IEC 27019:2017 Energy** | Control | 18 | isms, bcms |
+| 36 | **NIST SP 800-53 Rev. 5** | Control | 120 | isms, ics, erm |
+| 37 | **PCI DSS v4.0.1** | Control | 50 | isms, ics, dpms |
+| 38 | **CSA Cloud Controls Matrix v4.0** | Control | 92 | isms, tprm, ics |
+| 39 | **BSI C5:2020 Cloud Compliance** | Control | 67 | isms, tprm |
+| 40 | **IEC 62443 OT/ICS Security** | Control | 41 | isms, ics, bcms |
+| 41 | **SWIFT CSCF v2024** | Control | 39 | isms, ics |
+| 42 | **ISO/IEC 42001:2023 AI-MS** | Control | 50 | isms, dpms |
+| 43 | **HIPAA Security Rule** | Control | 52 | dpms, isms, tprm |
+| 44 | **EU Cyber Resilience Act (2024/2847)** | Control | 31 | isms, ics, tprm |
+| 45 | **NIST SP 800-171 Rev. 3** | Control | 70 | isms, ics, tprm |
+| 46 | **CMMC 2.0 (L1/L2/L3)** | Control | 25 | isms, ics, tprm |
 
-### Cross-Framework Mappings (401 total)
+### Cross-Framework Mappings (~960 total)
 - ISO 27001 Annex A ↔ ISO 27002:2022 (93 — 1:1 equivalence)
 - BSI Grundschutz ↔ ISO 27001 (64 — Kreuzreferenztabelle)
 - TISAX ↔ ISO 27001 (44 — VDA ISA based on ISO)
@@ -184,8 +199,22 @@ Config: `apps/web/src/components/layout/nav-config.ts`
 - GDPR Art. 32 ↔ TOMs (23 — requirements → measures)
 - NIST CSF ↔ ISO 27002 (89 — existing v1)
 - ISO 22301 ↔ ISO 27001 (6 — BC ↔ IS)
+- **ISO 27017 ↔ ISO 27002 (20 — cloud guidance to base controls)**
+- **ISO 27018 ↔ ISO 27002 / GDPR (14 — PII cloud)**
+- **ISO 27701 ↔ ISO 27001 / GDPR (13 — PIMS)**
+- **ISO 27019 ↔ ISO 27001 / NIS2 (12 — energy/OT)**
+- **NIST 800-53 Rev. 5 ↔ ISO 27001 / NIST CSF (50 — US federal to ISO)**
+- **PCI DSS v4 ↔ ISO 27001 (28 — payment cards)**
+- **CSA CCM v4 ↔ ISO 27001 (24 — cloud)**
+- **BSI C5 ↔ ISO 27001 (23 — German cloud assurance)**
+- **IEC 62443 ↔ ISO 27001 (15 — OT/ICS to enterprise IS)**
+- **SWIFT CSCF v2024 ↔ ISO 27001 (17 — financial messaging)**
+- **SOC 2 ↔ ISO 27001 / NIST CSF / NIST 800-53 / COSO / CSA CCM / GDPR (~80 — gap closure)**
+- **PCI DSS v4 ↔ NIST CSF / NIST 800-53 / CSA CCM / ISO 27017 / SWIFT (~80 — extended)**
 
-Seed files: `packages/db/sql/seed_catalog_*.sql`, `seed_cross_framework_mappings*.sql`
+**Bridge** (migration `0106_framework_mapping_bridge.sql`): backfills the legacy `catalog_entry_mapping` (UUID-keyed, populated by seeds) into the API-side `framework_mapping` (string-keyed, used by the Framework-Coverage UI). Without the bridge the API saw 0 of the 600+ seeded mappings. The view `framework_mapping_full` joins with live catalog titles for read-side display.
+
+Seed files: `packages/db/sql/seed_catalog_*.sql`, `seed_cross_framework_mappings*.sql` (v1, v2, v3, v4)
 
 ## Budget & Cost Model
 

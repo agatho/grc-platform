@@ -1,6 +1,37 @@
 // Sprint 76: Certification und Audit Prep Wizard Types
 
-export type CertFramework = "iso_27001" | "bsi_grundschutz" | "nis2" | "soc2_type2" | "tisax" | "iso_22301" | "iso_9001";
+export type CertFramework =
+  // Core ISMS
+  | "iso_27001"
+  | "iso_27002"
+  | "bsi_grundschutz"
+  | "bsi_c5_2020"
+  | "nis2"
+  | "soc2_type2"
+  | "isae3402_soc2"
+  | "tisax"
+  | "iso_22301"
+  | "iso_9001"
+  // ISO 27k extensions
+  | "iso_27017_2015"
+  | "iso_27018_2019"
+  | "iso_27019_2017"
+  | "iso_27701_2019"
+  // Cloud / Industry
+  | "csa_ccm_v4"
+  | "iec_62443"
+  | "swift_cscf_v2024"
+  | "pci_dss_v4"
+  // US Federal / DoD
+  | "nist_800_53_r5"
+  | "nist_800_171"
+  | "cmmc_v2"
+  // Privacy / AI / Sector
+  | "hipaa_security"
+  | "iso_42001_2023"
+  | "eu_cra_2024"
+  | "eu_dora"
+  | "eu_ai_act";
 export type CertAssessmentStatus = "draft" | "in_progress" | "completed" | "approved" | "expired";
 export type CertMockAuditType = "stage_1" | "stage_2" | "surveillance" | "recertification";
 export type CertMockAuditStatus = "draft" | "in_progress" | "completed" | "reviewed";

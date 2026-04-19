@@ -12,6 +12,7 @@ import { callClaudeApi } from "./providers/claude-api";
 import { callOpenAI } from "./providers/openai";
 import { callGemini } from "./providers/gemini";
 import { callOllama } from "./providers/ollama";
+import { callLmStudio } from "./providers/lmstudio";
 
 const PROVIDER_FNS: Record<
   AiProvider,
@@ -22,6 +23,7 @@ const PROVIDER_FNS: Record<
   openai: callOpenAI,
   gemini: callGemini,
   ollama: callOllama,
+  lmstudio: callLmStudio,
 };
 
 /** Check which providers are configured/available. */
@@ -36,6 +38,9 @@ export function getAvailableProviders(): AiProvider[] {
   if (process.env.GOOGLE_AI_API_KEY) available.push("gemini");
   if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_ENABLED === "true") {
     available.push("ollama");
+  }
+  if (process.env.LMSTUDIO_BASE_URL || process.env.LMSTUDIO_ENABLED === "true") {
+    available.push("lmstudio");
   }
   return available;
 }
@@ -60,13 +65,24 @@ export async function aiComplete(
 ): Promise<AiCompletionResponse> {
   let provider: AiProvider;
 
-  if (request.containsPersonalData && getAvailableProviders().includes("ollama")) {
-    provider = "ollama";
+  if (request.containsPersonalData) {
+    // Privacy routing: prefer local models for personal data (GDPR Art. 5(1)(f))
+    const available = getAvailableProviders();
+    if (available.includes("ollama")) {
+      provider = "ollama";
+    } else if (available.includes("lmstudio")) {
+      provider = "lmstudio";
+    } else if (request.provider) {
+      provider = request.provider;
+    } else {
+      provider = getDefaultProvider();
+    }
   } else if (request.provider) {
     provider = request.provider;
   } else {
     provider = getDefaultProvider();
   }
+
 
   const fn = PROVIDER_FNS[provider];
   if (!fn) {
