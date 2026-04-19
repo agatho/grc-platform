@@ -268,6 +268,21 @@ export {
   type SyncBatchInput,
   type SyncBatchResult,
 } from "./state-machines/cross-risk-sync";
+export {
+  computeIsmsHealth,
+  computeBcmsHealth,
+  computeDpmsHealth,
+  computeAiActHealth,
+  computeExecutiveDashboard,
+  type IsmsDashboardInput,
+  type BcmsDashboardInput,
+  type DpmsDashboardInput,
+  type AiActDashboardInput,
+  type ExecutiveDashboardInput,
+  type ExecutiveDashboardResult,
+  type ModuleHealth,
+  type HealthStatus,
+} from "./state-machines/grc-executive-dashboard";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
