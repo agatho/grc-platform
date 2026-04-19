@@ -12,7 +12,7 @@ import {
   X,
 } from "lucide-react";
 import {
-  NAV_GROUPS,
+  NAV_GROUPS_CONDENSED,
   getAllFlatNavItems,
 } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
@@ -250,9 +250,11 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
     [pathname],
   );
 
-  // Grouped items by group key, filtered by role
+  // Grouped items by group key, filtered by role — uses the CONDENSED list
+  // so the vertical sidebar stays short; deeper items are reached via the
+  // horizontal tab nav on sub-pages (see module-tab-nav.tsx).
   const groupedNav = useMemo(() => {
-    return NAV_GROUPS.map((group) => {
+    return NAV_GROUPS_CONDENSED.map((group) => {
       const items = group.items.filter((item) =>
         isItemVisible(roles, item.roles),
       );

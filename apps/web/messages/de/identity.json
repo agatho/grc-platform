@@ -110,5 +110,13 @@
   "featureSecurity": "Datensouveraenitaet",
   "featureSecurityDesc": "Self-hosted. Keine US-Cloud-Abhängigkeit.",
   "featureAnalytics": "Risikoanalyse",
-  "featureAnalyticsDesc": "Echtzeit-Dashboards und KRI-Monitoring."
+  "featureAnalyticsDesc": "Echtzeit-Dashboards und KRI-Monitoring.",
+  "brandAcronym": "Audit · Risk · Compliance · Trust OS",
+  "brandNameHeading": "Was bedeutet ARCTOS?",
+  "brandLetterA": "udit — revisionssichere Prüfpfade und interne Revision",
+  "brandLetterR": "isk — Enterprise-Risk-Management mit ISO 31000 und FAIR",
+  "brandLetterC": "ompliance — 46 Frameworks von ISO 27001 bis DORA, AI Act und GDPR",
+  "brandLetterT": "rust — Datensouveränität, Audit-Chain, RBAC und Three Lines of Defense",
+  "brandLetterOS": " — Operating System: die integrierte Plattform, auf der GRC läuft",
+  "brandEtymology": "Der Name spielt zudem auf das Sternbild Arctos (griechisch für \"Bär\") an — den nördlichsten Orientierungspunkt der antiken Seefahrer. ARCTOS ist der verlässliche Fixpunkt Ihrer Governance-Landkarte."
 }

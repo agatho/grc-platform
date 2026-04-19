@@ -301,6 +301,7 @@ export * from "./lib/damage-index";
 export * from "./lib/bpmn-raci-engine";
 export * from "./lib/bpmn-walkthrough-engine";
 export * from "./lib/excel-to-bpmn";
+export * from "./lib/framework-test-plans";
 export * from "./utils/distributions";
 export * from "./cpe-matcher";
 export * from "./cci";

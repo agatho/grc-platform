@@ -288,7 +288,12 @@ export default function LoginPage() {
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm ring-1 ring-white/20">
               <ShieldCheck className="h-5 w-5 text-white" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-white">ARCTOS</span>
+            <div className="flex flex-col">
+              <span className="text-xl font-bold tracking-tight text-white">ARCTOS</span>
+              <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-blue-200/70">
+                {t("brandAcronym")}
+              </span>
+            </div>
           </div>
         </motion.div>
 
@@ -324,6 +329,38 @@ export default function LoginPage() {
               title={t("featureAnalytics")}
               description={t("featureAnalyticsDesc")}
             />
+          </div>
+
+          {/* ARCTOS name explanation */}
+          <div className="rounded-xl border border-white/10 bg-white/5 p-4 backdrop-blur-sm">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.2em] text-blue-200/70">
+              {t("brandNameHeading")}
+            </div>
+            <div className="mt-2 space-y-1 text-xs leading-relaxed text-blue-100/80">
+              <div>
+                <span className="font-semibold text-white">A</span>
+                {t("brandLetterA")}
+              </div>
+              <div>
+                <span className="font-semibold text-white">R</span>
+                {t("brandLetterR")}
+              </div>
+              <div>
+                <span className="font-semibold text-white">C</span>
+                {t("brandLetterC")}
+              </div>
+              <div>
+                <span className="font-semibold text-white">T</span>
+                {t("brandLetterT")}
+              </div>
+              <div>
+                <span className="font-semibold text-white">OS</span>
+                {t("brandLetterOS")}
+              </div>
+            </div>
+            <p className="mt-3 text-[11px] italic leading-relaxed text-blue-200/60">
+              {t("brandEtymology")}
+            </p>
           </div>
         </motion.div>
 

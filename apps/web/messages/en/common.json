@@ -732,7 +732,8 @@
       "included": "Included",
       "addon": "Add-on",
       "enterprise": "Enterprise"
-    }
+    },
+    "configure": "Settings"
   },
   "assets": {
     "title": "Assets",
