@@ -84,6 +84,7 @@ export async function GET(_req: Request) {
       createdAtIso: new Date(r.receivedAt).toISOString(),
       deadlineIso: deadline?.toISOString() ?? null,
       closedAtIso: closed?.toISOString() ?? null,
+      frameworks: ["GDPR Art. 12(3)", "GDPR Art. 15-22"],
       escalationLevel: c.level,
       hoursUntilDeadline: c.hoursUntilDeadline,
       hoursOverdue: c.hoursOverdue,
@@ -116,6 +117,13 @@ export async function GET(_req: Request) {
     const closed = r.closedAt ? new Date(r.closedAt) : null;
     const effectiveClosed = r.dpaNotifiedAt ? new Date(r.dpaNotifiedAt) : closed;
     const c = classify(deadline, effectiveClosed, now);
+    // Art. 33 DSGVO primaer; high-severity breaches fallen zusaetzlich unter
+    // NIS2 signifikante Meldepflicht und -- wenn high-risk -- Art. 34 zu
+    // betroffenen Personen.
+    const frameworks = ["GDPR Art. 33"];
+    if (r.severity === "high" || r.severity === "critical") {
+      frameworks.push("GDPR Art. 34", "NIS2 Art. 23");
+    }
     return {
       kind: "breach" as const,
       id: r.id,
@@ -125,6 +133,7 @@ export async function GET(_req: Request) {
       createdAtIso: new Date(r.detectedAt).toISOString(),
       deadlineIso: deadline?.toISOString() ?? null,
       closedAtIso: effectiveClosed?.toISOString() ?? null,
+      frameworks,
       escalationLevel: c.level,
       hoursUntilDeadline: c.hoursUntilDeadline,
       hoursOverdue: c.hoursOverdue,

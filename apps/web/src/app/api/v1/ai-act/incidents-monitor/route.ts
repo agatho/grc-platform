@@ -66,6 +66,17 @@ export async function GET(_req: Request) {
 
     const overdue = checkIncidentOverdue(status);
 
+    // Regulatorischer Framework-Overlay: AI-Act Art. 73 ist die primaere
+    // Quelle. Bei Personaldaten-Impact greift zusaetzlich GDPR Art. 33, DORA
+    // wenn ICT-System.
+    const frameworks = ["EU AI Act Art. 73"];
+    if (r.harmType === "privacy" || (r.affectedPersonsCount ?? 0) > 0) {
+      frameworks.push("GDPR Art. 33");
+    }
+    if (r.isSerious) {
+      frameworks.push("NIS2 Art. 23");
+    }
+
     return {
       id: r.id,
       aiSystemId: r.aiSystemId,
@@ -78,6 +89,7 @@ export async function GET(_req: Request) {
       authorityNotifiedAt: r.authorityNotifiedAt
         ? new Date(r.authorityNotifiedAt).toISOString()
         : null,
+      frameworks,
       overdue: {
         isNotified: overdue.isNotified,
         isOverdue: overdue.isOverdue,

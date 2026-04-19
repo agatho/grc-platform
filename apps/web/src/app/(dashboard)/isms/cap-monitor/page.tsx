@@ -39,6 +39,7 @@ interface NcItem {
   identifiedAtIso: string;
   dueDate: string | null;
   assignedTo: string | null;
+  frameworks?: string[];
   escalationLevel: EscalationLevel;
   daysUntilDeadline: number | null;
   daysOverdue: number | null;
@@ -54,6 +55,7 @@ interface CaItem {
   dueDate: string | null;
   assignedTo: string | null;
   nonconformityId: string | null;
+  frameworks?: string[];
   escalationLevel: EscalationLevel;
   daysUntilDeadline: number | null;
   daysOverdue: number | null;
@@ -239,6 +241,15 @@ export default function IsmsCapMonitorPage() {
                     </Badge>
                   )}
                   {n.dueDate && <span>Faellig: {n.dueDate}</span>}
+                  {n.frameworks?.map((fw) => (
+                    <Badge
+                      key={fw}
+                      variant="outline"
+                      className="bg-sky-50 text-sky-800 border-sky-200 text-xs py-0"
+                    >
+                      {fw}
+                    </Badge>
+                  ))}
                 </div>
               </div>
               <Badge variant="outline" className={meta.className}>

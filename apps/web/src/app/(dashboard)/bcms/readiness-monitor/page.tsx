@@ -41,6 +41,7 @@ interface ActiveCrisis {
   name: string;
   severity: string;
   activatedAtIso: string;
+  frameworks?: string[];
   dora: DoraState;
 }
 
@@ -277,13 +278,22 @@ export default function BcmsReadinessMonitorPage() {
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex-1 min-w-0">
                     <p className="font-medium">{c.name}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1 flex-wrap">
                       <Badge variant="outline" className="text-xs">
                         {c.severity}
                       </Badge>
                       <span>
                         Aktiviert: {new Date(c.activatedAtIso).toLocaleString("de-DE")}
                       </span>
+                      {c.frameworks?.map((fw) => (
+                        <Badge
+                          key={fw}
+                          variant="outline"
+                          className="bg-sky-50 text-sky-800 border-sky-200 text-xs py-0"
+                        >
+                          {fw}
+                        </Badge>
+                      ))}
                     </div>
                   </div>
                   <div className="flex-shrink-0">{doraBadge(c)}</div>
