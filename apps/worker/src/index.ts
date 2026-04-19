@@ -8,6 +8,8 @@ import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-remi
 import { processReviewReminders } from "./crons/process-review-reminder";
 import { processDsrSlaMonitor } from "./crons/dsr-sla-monitor";
 import { processBreach72hMonitor } from "./crons/breach-72h-monitor";
+import { processAiActIncidentDeadlineMonitor } from "./crons/ai-act-incident-deadline-monitor";
+import { processIsmsCapOverdueMonitor } from "./crons/isms-cap-overdue-monitor";
 import { processRopaReviewReminders } from "./crons/ropa-review-reminder";
 import { processContractExpiryMonitor } from "./crons/contract-expiry-monitor";
 import { processVendorReassessmentMonitor } from "./crons/vendor-reassessment-monitor";
@@ -267,6 +269,28 @@ app.post("/crons/breach-72h-monitor", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] breach-72h-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/ai-act-incident-deadline-monitor", async (c) => {
+  try {
+    const result = await processAiActIncidentDeadlineMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] ai-act-incident-deadline-monitor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/isms-cap-overdue-monitor", async (c) => {
+  try {
+    const result = await processIsmsCapOverdueMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] isms-cap-overdue-monitor cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
