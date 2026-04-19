@@ -240,7 +240,16 @@ export default function AiActAnnualReportPage() {
           </select>
           <Button variant="outline" size="sm" onClick={() => window.print()}>
             <Printer className="h-4 w-4 mr-2" />
-            Drucken / PDF
+            Drucken
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => {
+              window.open(`/api/v1/ai-act/annual-report/${year}/pdf`, "_blank");
+            }}
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            PDF herunterladen
           </Button>
         </div>
       </div>

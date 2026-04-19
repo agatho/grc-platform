@@ -341,10 +341,18 @@ export default function IsmsCapMonitorPage() {
             Corrective-Actions und Effectiveness-Reviews mit Fristen.
           </p>
         </div>
-        <Button onClick={fetchData} variant="outline" size="sm">
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Aktualisieren
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={fetchData} variant="outline" size="sm">
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Aktualisieren
+          </Button>
+          <Button
+            size="sm"
+            onClick={() => window.open("/api/v1/isms/cap-monitor/pdf", "_blank")}
+          >
+            PDF
+          </Button>
+        </div>
       </div>
 
       {/* KPI row */}

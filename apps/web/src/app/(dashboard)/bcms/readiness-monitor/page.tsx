@@ -183,10 +183,20 @@ export default function BcmsReadinessMonitorPage() {
             Exercise-Coverage.
           </p>
         </div>
-        <Button onClick={fetchData} variant="outline" size="sm">
-          <RefreshCcw className="h-4 w-4 mr-2" />
-          Aktualisieren
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button onClick={fetchData} variant="outline" size="sm">
+            <RefreshCcw className="h-4 w-4 mr-2" />
+            Aktualisieren
+          </Button>
+          <Button
+            size="sm"
+            onClick={() =>
+              window.open("/api/v1/bcms/readiness-monitor/pdf", "_blank")
+            }
+          >
+            PDF
+          </Button>
+        </div>
       </div>
 
       {/* Overall state */}
