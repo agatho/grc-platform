@@ -88,7 +88,7 @@ export async function GET(_req: Request) {
       hoursUntilDeadline: c.hoursUntilDeadline,
       hoursOverdue: c.hoursOverdue,
       isClosed: c.isClosed,
-      linkPath: `/data-privacy/dsr/${r.id}`,
+      linkPath: `/dpms/dsr/${r.id}`,
     };
   });
 
@@ -129,7 +129,7 @@ export async function GET(_req: Request) {
       hoursUntilDeadline: c.hoursUntilDeadline,
       hoursOverdue: c.hoursOverdue,
       isClosed: c.isClosed,
-      linkPath: `/data-privacy/breaches/${r.id}`,
+      linkPath: `/dpms/breaches/${r.id}`,
     };
   });
 
