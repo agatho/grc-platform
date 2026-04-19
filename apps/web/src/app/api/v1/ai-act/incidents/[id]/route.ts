@@ -1,6 +1,6 @@
 import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { updateAiIncidentSchema } from "@grc/shared";
 
@@ -11,11 +11,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (moduleCheck) return moduleCheck;
   const { id } = await params;
 
-  const rows = await db.execute(
-    sql`SELECT * FROM ai_incident WHERE id = ${id} AND org_id = ${ctx.orgId}`
-  );
-  if (rows.rows.length === 0) return Response.json({ error: "Not found" }, { status: 404 });
-  return Response.json({ data: rows.rows[0] });
+  const row = await withReadContext(ctx, async (tx) => {
+    const res = await tx.execute(
+      sql`SELECT * FROM ai_incident WHERE id = ${id} AND org_id = ${ctx.orgId}`,
+    );
+    const rows = Array.isArray(res) ? res : (res?.rows ?? []);
+    return rows[0];
+  });
+  if (!row) return Response.json({ error: "Not found" }, { status: 404 });
+  return Response.json({ data: row });
 }
 
 export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {

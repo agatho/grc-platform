@@ -1,6 +1,6 @@
 import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { withAuth, withAuditContext, paginate } from "@/lib/api";
+import { withAuth, withAuditContext, withReadContext, paginate } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { createAiAuthorityCommunicationSchema } from "@grc/shared";
 
@@ -23,13 +23,15 @@ export async function GET(req: Request) {
 
   query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
-  const [rows, countResult] = await Promise.all([
-    db.execute(query),
-    db.execute(countQuery),
-  ]);
+  const result = await withReadContext(ctx, async (tx) => {
+    const [r, c] = await Promise.all([tx.execute(query), tx.execute(countQuery)]);
+    const rows = Array.isArray(r) ? r : (r?.rows ?? []);
+    const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
+    return { rows, count: Number((countArr[0] as any)?.count ?? 0) };
+  });
   return Response.json({
-    data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
+    data: result.rows,
+    pagination: { page: Math.floor(offset / limit) + 1, limit, total: result.count },
   });
 }
 
