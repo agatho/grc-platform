@@ -238,6 +238,22 @@ export {
   type AnnualReportInput,
   type AnnualReportResult,
 } from "./state-machines/aiact-gpai-report";
+export {
+  aggregateCrossFindings,
+  prioritizeFindings,
+  normalizeIcsFindingSeverity,
+  normalizeIcsFindingStatus,
+  normalizeIsmsNcSeverity,
+  normalizeIsmsNcStatus,
+  normalizeAiIncidentSeverity,
+  normalizeBreachSeverity,
+  type FindingModule,
+  type NormalizedSeverity,
+  type NormalizedStatus,
+  type CrossModuleFinding,
+  type CrossFindingAggregate,
+  type PrioritizedFinding,
+} from "./state-machines/cross-findings";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
