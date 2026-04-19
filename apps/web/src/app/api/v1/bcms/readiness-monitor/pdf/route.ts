@@ -93,9 +93,9 @@ export async function GET(_req: Request) {
           <td>${escHtml(c.name)}</td>
           <td>${escHtml(c.severity)}</td>
           <td>${c.activatedAt ? new Date(c.activatedAt).toLocaleString("de-DE") : "-"}</td>
-          <td class="${dora.earlyWarningOverdue ? "text-red" : ""}">${dora.earlyWarning.toLocaleString("de-DE")}</td>
-          <td class="${dora.intermediateOverdue ? "text-red" : ""}">${dora.intermediate.toLocaleString("de-DE")}</td>
-          <td class="${dora.finalOverdue ? "text-red" : ""}">${dora.final.toLocaleString("de-DE")}</td>
+          <td class="${dora.earlyWarningOverdue ? "text-red" : ""}">${dora.earlyWarningDueAt.toLocaleString("de-DE")}</td>
+          <td class="${dora.intermediateOverdue ? "text-red" : ""}">${dora.intermediateReportDueAt.toLocaleString("de-DE")}</td>
+          <td class="${dora.finalOverdue ? "text-red" : ""}">${dora.finalReportDueAt.toLocaleString("de-DE")}</td>
           <td>${nextLabel}</td>
         </tr>`;
         })

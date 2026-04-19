@@ -42,23 +42,24 @@ export async function GET(_req: Request) {
     .map((c) => {
       const classifiedAt = c.activatedAt ? new Date(c.activatedAt) : now;
       const dora = computeDoraDeadlines(classifiedAt, now);
+      const hoursUntilNext =
+        dora.secondsToNextDeadline !== null
+          ? Math.round(dora.secondsToNextDeadline / 3600)
+          : null;
       return {
         id: c.id,
         name: c.name,
         severity: c.severity,
         activatedAtIso: classifiedAt.toISOString(),
         dora: {
-          earlyWarningAtIso: dora.earlyWarning.toISOString(),
-          intermediateAtIso: dora.intermediate.toISOString(),
-          finalAtIso: dora.final.toISOString(),
+          earlyWarningAtIso: dora.earlyWarningDueAt.toISOString(),
+          intermediateAtIso: dora.intermediateReportDueAt.toISOString(),
+          finalAtIso: dora.finalReportDueAt.toISOString(),
           earlyWarningOverdue: dora.earlyWarningOverdue,
           intermediateOverdue: dora.intermediateOverdue,
           finalOverdue: dora.finalOverdue,
           nextDeadlineLabel: dora.nextDeadlineLabel,
-          nextDeadlineAtIso: dora.nextDeadlineAt?.toISOString() ?? null,
-          hoursUntilNext: dora.nextDeadlineAt
-            ? Math.round((dora.nextDeadlineAt.getTime() - now.getTime()) / (60 * 60 * 1000))
-            : null,
+          hoursUntilNext,
         },
       };
     });
