@@ -254,6 +254,20 @@ export {
   type CrossFindingAggregate,
   type PrioritizedFinding,
 } from "./state-machines/cross-findings";
+export {
+  mapDpiaRiskToErm,
+  mapFriaRightToErm,
+  mapAiIncidentToErm,
+  decideRiskSync,
+  buildSyncBatch,
+  type DpiaRiskSource,
+  type FriaRightSource,
+  type AiIncidentSource,
+  type SyncedRiskDraft,
+  type SyncDecision,
+  type SyncBatchInput,
+  type SyncBatchResult,
+} from "./state-machines/cross-risk-sync";
 export * from "./bpmn-parser";
 export * from "./bpmn-diff";
 export * from "./bpmn-validator";
