@@ -4,6 +4,7 @@ import { Menu } from "lucide-react";
 import { OrgSwitcher } from "./org-switcher";
 import { NotificationBell } from "./notification-bell";
 import { UserMenu } from "./user-menu";
+import { ModuleHelpButton } from "@/components/help/module-help-button";
 
 interface HeaderProps {
   onMobileMenuToggle: () => void;
@@ -27,6 +28,7 @@ export function Header({ onMobileMenuToggle, currentOrgId }: HeaderProps) {
       </div>
 
       <div className="flex items-center gap-1">
+        <ModuleHelpButton />
         <NotificationBell />
         <UserMenu />
       </div>
