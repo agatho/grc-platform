@@ -111,6 +111,26 @@ export async function withAuditContext<T>(
   });
 }
 
+/**
+ * Wrap a read-only query in a transaction with RLS session vars.
+ * Required for raw-SQL reads -- without `app.current_org_id` the RLS policy
+ * filters out every row even if the query has an explicit `WHERE org_id = ...`.
+ */
+export async function withReadContext<T>(
+  ctx: ApiContext,
+  fn: (tx: any) => Promise<T>,
+): Promise<T> {
+  return db.transaction(async (tx) => {
+    await tx.execute(
+      sql`SELECT set_config('app.current_org_id', ${ctx.orgId}, true)`,
+    );
+    await tx.execute(
+      sql`SELECT set_config('app.current_user_id', ${ctx.userId}, true)`,
+    );
+    return fn(tx);
+  });
+}
+
 /** Parse pagination params from request or search params. */
 export function paginate(reqOrParams: Request | URLSearchParams) {
   const searchParams = reqOrParams instanceof Request

@@ -1,7 +1,7 @@
-import { db } from "@grc/db";
+import { db, aiIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext, paginate } from "@/lib/api";
-import { sql } from "drizzle-orm";
+import { and, desc, eq, sql } from "drizzle-orm";
 import { createAiIncidentSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
@@ -14,27 +14,35 @@ export async function GET(req: Request) {
   const severity = searchParams.get("severity");
   const status = searchParams.get("status");
 
-  let query = sql`SELECT * FROM ai_incident WHERE org_id = ${ctx.orgId}`;
-  let countQuery = sql`SELECT count(*)::int AS count FROM ai_incident WHERE org_id = ${ctx.orgId}`;
+  // Explicit orgId filter via drizzle query builder. The previous raw-sql variant
+  // relied on `app.current_org_id` session var being set, which this GET route
+  // never did -- resulting in 0 rows for every user.
+  const conditions = [eq(aiIncident.orgId, ctx.orgId)];
+  if (severity) conditions.push(eq(aiIncident.severity, severity));
+  if (status) conditions.push(eq(aiIncident.status, status));
+  const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
 
-  if (severity) {
-    query = sql`${query} AND severity = ${severity}`;
-    countQuery = sql`${countQuery} AND severity = ${severity}`;
-  }
-  if (status) {
-    query = sql`${query} AND status = ${status}`;
-    countQuery = sql`${countQuery} AND status = ${status}`;
-  }
-
-  query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
-
-  const [rows, countResult] = await Promise.all([
-    db.execute(query),
-    db.execute(countQuery),
+  const [rows, countRows] = await Promise.all([
+    db
+      .select()
+      .from(aiIncident)
+      .where(whereClause)
+      .orderBy(desc(aiIncident.createdAt))
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)::int` })
+      .from(aiIncident)
+      .where(whereClause),
   ]);
+
   return Response.json({
-    data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
+    data: rows,
+    pagination: {
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      total: countRows[0]?.count ?? 0,
+    },
   });
 }
 
@@ -56,12 +64,22 @@ export async function POST(req: Request) {
   const authorityDeadline = new Date(now.getTime() + deadlineDays * 24 * 60 * 60 * 1000);
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const res = await tx.execute(sql`
-      INSERT INTO ai_incident (org_id, title, description, ai_system_id, severity, is_serious, status, authority_deadline, detected_at, reported_by, created_by)
-      VALUES (${ctx.orgId}, ${title}, ${description ?? null}, ${ai_system_id ?? null}, ${severity}, ${is_serious ?? false}, 'detected', ${authorityDeadline.toISOString()}, ${now.toISOString()}, ${ctx.userId}, ${ctx.userId})
-      RETURNING *
-    `);
-    return res.rows[0];
+    const [inserted] = await tx
+      .insert(aiIncident)
+      .values({
+        orgId: ctx.orgId,
+        title,
+        description: description ?? null,
+        aiSystemId: ai_system_id ?? null,
+        severity,
+        isSerious: is_serious ?? false,
+        status: "detected",
+        authorityDeadline,
+        detectedAt: now,
+        createdBy: ctx.userId,
+      })
+      .returning();
+    return inserted;
   });
   return Response.json({ data: result }, { status: 201 });
 }
