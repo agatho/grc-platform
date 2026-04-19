@@ -263,8 +263,12 @@ VALUES (
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- Crisis-001: Ransomware (level_3_crisis)
+-- Demo-Daten: Krise wurde vor ~30h aktiviert, damit der DORA-Timer eine
+-- aussagekraeftige Szene zeigt: 4h Early-Warning ist ueberfaellig, 72h
+-- Intermediate und 1-Monat-Final sind noch offen.
 INSERT INTO crisis_scenario (id, org_id, name, description, category, severity, status,
-  escalation_matrix, communication_template, bcp_id, created_by)
+  escalation_matrix, communication_template, bcp_id, activated_at, activated_by,
+  created_by)
 VALUES (
   'd0000000-0000-0000-0000-000000000850',
   'ccc4cc1c-4b09-499c-8420-ebd8da655cd7',
@@ -272,7 +276,7 @@ VALUES (
   'Szenario: Grossflaechiger Ransomware-Angriff mit Verschlüsselung mehrerer Produktivsysteme. Moegliche Datenexfiltration. Erfordert sofortige Aktivierung des Krisenstabs und Einschaltung externer Forensik.',
   'cyber_attack',
   'level_3_crisis',
-  'standby',
+  'activated',
   '[{"level": 1, "trigger": "Einzelnes System betroffen", "action": "IT-Incident-Response-Team aktivieren", "authority": "IT-Leiter"},
     {"level": 2, "trigger": "Mehrere Systeme, laterale Ausbreitung", "action": "Krisenstab einberufen, Netzwerksegmentierung", "authority": "CISO"},
     {"level": 3, "trigger": "Geschäftskritische Systeme betroffen, Datenexfiltration", "action": "Externe Forensik, Aufsichtsbehoerde, Geschäftsführung", "authority": "CEO"}]'::jsonb,
@@ -287,6 +291,8 @@ Nächstes Update: [ZEITPUNKT]
 
 Bei Rueckfragen wenden Sie sich bitte an: krisen-hotline@meridian-holdings.example',
   'd0000000-0000-0000-0000-000000000820',
+  now() - interval '30 hours',
+  '8c148f0a-f558-4a9f-8886-a3d7096da6cf',
   '8c148f0a-f558-4a9f-8886-a3d7096da6cf'
 ) ON CONFLICT (id) DO NOTHING;
 

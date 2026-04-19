@@ -33,7 +33,6 @@ interface DoraState {
   intermediateOverdue: boolean;
   finalOverdue: boolean;
   nextDeadlineLabel: "early_warning" | "intermediate" | "final" | "none";
-  nextDeadlineAtIso: string | null;
   hoursUntilNext: number | null;
 }
 
