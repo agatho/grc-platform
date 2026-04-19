@@ -264,11 +264,11 @@ export default function DpmsDeadlineMonitorPage() {
       <div className="flex items-start justify-between">
         <div>
           <Link
-            href="/data-privacy"
+            href="/dpms"
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zu Data Privacy
+            Zurueck zu DPMS
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">DPMS Deadline Monitor</h1>
           <p className="text-muted-foreground mt-1">
