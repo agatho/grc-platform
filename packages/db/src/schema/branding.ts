@@ -20,7 +20,10 @@ import { organization, user } from "./platform";
 // Enums
 // ──────────────────────────────────────────────────────────────
 
-export const reportTemplateEnum = pgEnum("report_template", [
+// `branding_template_style` not `report_template` — the latter collides with
+// the `report_template` table in reporting.ts (PostgreSQL uses the same
+// namespace for types and tables).
+export const reportTemplateEnum = pgEnum("branding_template_style", [
   "standard",
   "formal",
   "minimal",

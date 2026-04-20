@@ -1,4 +1,4 @@
-CREATE TYPE "public"."report_template" AS ENUM('standard', 'formal', 'minimal');--> statement-breakpoint
+CREATE TYPE "public"."branding_template_style" AS ENUM('standard', 'formal', 'minimal');--> statement-breakpoint
 CREATE TABLE "org_branding" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"org_id" uuid NOT NULL,
@@ -11,7 +11,7 @@ CREATE TABLE "org_branding" (
 	"dark_mode_accent_color" varchar(7),
 	"logo_path" varchar(1000),
 	"favicon_path" varchar(1000),
-	"report_template" "report_template" DEFAULT 'standard' NOT NULL,
+	"report_template" "branding_template_style" DEFAULT 'standard' NOT NULL,
 	"confidentiality_notice" text DEFAULT 'CONFIDENTIAL -- For internal use only',
 	"custom_css" text,
 	"inherit_from_parent" boolean DEFAULT true NOT NULL,

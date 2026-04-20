@@ -24,10 +24,10 @@ CREATE TABLE IF NOT EXISTS academy_enrollment (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX ae_org_idx ON academy_enrollment(org_id);
-CREATE INDEX ae_user_idx ON academy_enrollment(user_id);
-CREATE INDEX ae_course_idx ON academy_enrollment(course_id);
-CREATE INDEX ae_status_idx ON academy_enrollment(org_id, status);
+CREATE INDEX academy_enrollment_org_idx ON academy_enrollment(org_id);
+CREATE INDEX academy_enrollment_user_idx ON academy_enrollment(user_id);
+CREATE INDEX academy_enrollment_course_idx ON academy_enrollment(course_id);
+CREATE INDEX academy_enrollment_status_idx ON academy_enrollment(org_id, status);
 CREATE UNIQUE INDEX ae_user_course ON academy_enrollment(user_id, course_id);
 
 ALTER TABLE academy_enrollment ENABLE ROW LEVEL SECURITY;

@@ -59,22 +59,22 @@ CREATE INDEX IF NOT EXISTS idx_crisis_erm_risk ON crisis_scenario(erm_risk_id) W
 
 -- Backfill likelihood from severity
 UPDATE crisis_scenario SET
-  likelihood = CASE severity
-    WHEN 'critical' THEN 4
-    WHEN 'high' THEN 3
-    WHEN 'medium' THEN 2
-    WHEN 'low' THEN 1
+  likelihood = CASE severity::text
+    WHEN 'level_4_catastrophe' THEN 4
+    WHEN 'level_3_crisis' THEN 3
+    WHEN 'level_2_emergency' THEN 2
+    WHEN 'level_1_incident' THEN 1
     ELSE 2
   END
 WHERE likelihood IS NULL;
 
 -- Compute risk_score (severity_level × likelihood)
 UPDATE crisis_scenario SET
-  risk_score = likelihood * CASE severity
-    WHEN 'critical' THEN 5
-    WHEN 'high' THEN 4
-    WHEN 'medium' THEN 3
-    WHEN 'low' THEN 2
+  risk_score = likelihood * CASE severity::text
+    WHEN 'level_4_catastrophe' THEN 5
+    WHEN 'level_3_crisis' THEN 4
+    WHEN 'level_2_emergency' THEN 3
+    WHEN 'level_1_incident' THEN 2
     ELSE 2
   END
 WHERE risk_score IS NULL;
