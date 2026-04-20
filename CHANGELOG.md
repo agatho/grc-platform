@@ -15,8 +15,21 @@ Erster Alpha-Release mit vollgrüner CI-Pipeline ohne jeden
 
 ### CI / Release-Gate
 
-- Alle 6 CI-Jobs blockierend: Lint & Type Check, DB Migration & Integrity,
-  Unit Tests, Integration Tests, Security Audit, Build.
+- Alle 7 CI-Jobs blockierend: Lint & Type Check, DB Migration & Integrity,
+  Unit Tests, Integration Tests, E2E Smoke, Security Audit, Build.
+- Worker-Image wird jetzt auch in der Build-Stufe gebaut + gepushed +
+  smoke-getestet (`tsx apps/worker/src/index.ts` bootet ohne
+  MODULE_NOT_FOUND). Fängt genau die Crash-Loop-Regression ab, die den
+  `arctos-worker-1` 4 Tage lang bei 5868 Restart-Attempts gehalten
+  hatte.
+- `Dockerfile.worker` kopiert jetzt `/app` komplett vom Deps-Stage
+  rüber (inklusive `packages/*/node_modules/`). Grund:
+  `@anthropic-ai/sdk` wird von npm-Workspaces nicht in
+  `/app/node_modules/` gehoisted.
+- `picomatch` via `overrides: ">=4.0.4"` gepinnt (CVE-2026-33671 ReDoS).
+- Trivy scannt Web- + Worker-Image; `skip-dirs: /usr/local/lib/node_modules/npm`
+  exkludiert npm's eigene gebundelte Dep-Tree (node:22-alpine Base
+  shipping picomatch 4.0.3 — kein Runtime-Pfad der App).
 - Neuer **E2E-Smoke-Job**: postgres + timescaledb hochfahren, Migrationen
   - Seed + RLS-Gap-Closure anwenden, `apps/web` bauen + starten,
     Playwright-Suite `ci-smoke.spec.ts` durchlaufen (Login →
