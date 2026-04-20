@@ -88,8 +88,16 @@ CREATE INDEX IF NOT EXISTS "bce_calendar_date_idx" ON "bc_exercise" USING btree 
 -- ESG Annual Report: reporting_year for calendar view
 CREATE INDEX IF NOT EXISTS "ear_calendar_year_idx" ON "esg_annual_report" USING btree ("org_id", "reporting_year");--> statement-breakpoint
 
--- RCSA Campaign: period_end for calendar view
-CREATE INDEX IF NOT EXISTS "rcsa_calendar_period_idx" ON "rcsa_campaign" USING btree ("org_id", "period_end");--> statement-breakpoint
+-- RCSA Campaign: period_end for calendar view.
+-- Skip gracefully if rcsa_campaign doesn't exist (its create migration was
+-- dropped / renamed — Sprint 14 originally, now gated on table presence).
+DO $BODY$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='rcsa_campaign') THEN
+    EXECUTE 'CREATE INDEX IF NOT EXISTS "rcsa_calendar_period_idx" ON "rcsa_campaign" USING btree ("org_id", "period_end")';
+  END IF;
+END
+$BODY$;
 
 -- Data Breach: detected_at + 72h deadline for calendar view
 CREATE INDEX IF NOT EXISTS "breach_calendar_detected_idx" ON "data_breach" USING btree ("org_id", "detected_at");--> statement-breakpoint

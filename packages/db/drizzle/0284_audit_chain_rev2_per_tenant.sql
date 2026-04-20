@@ -148,9 +148,13 @@ BEGIN
   ORDER BY created_at DESC, id DESC
   LIMIT 1;
 
-  -- Use one timestamp for both hash-input and stored created_at so they
-  -- always match. statement_timestamp() is stable within a statement.
-  v_created_at := statement_timestamp();
+  -- Use clock_timestamp() (not statement_timestamp) so that multiple
+  -- trigger firings inside ONE statement — e.g. a `INSERT … SELECT`
+  -- that creates 240 module_config rows at once — each get a distinct
+  -- created_at. Otherwise the integrity check's LAG window cannot
+  -- reconstruct the firing order (UUID ids provide no monotonic
+  -- secondary sort) and the chain looks forked to the verifier.
+  v_created_at := clock_timestamp();
 
   v_hash_input := COALESCE(v_prev_hash, '0') || '|' ||
     COALESCE(v_org_id::text, '')       || '|' ||
@@ -439,7 +443,7 @@ BEGIN
   ORDER BY created_at DESC, id DESC
   LIMIT 1;
 
-  v_created_at := statement_timestamp();
+  v_created_at := clock_timestamp();
 
   v_hash_input := COALESCE(v_prev_hash, '0') || '|' ||
     v_case_id::text                      || '|' ||
