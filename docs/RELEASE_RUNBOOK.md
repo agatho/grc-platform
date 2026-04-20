@@ -6,13 +6,13 @@ Konkrete Schritt-für-Schritt-Anleitung, wie ein ARCTOS-Release geschnitten, dep
 
 ## 0. Vorbedingungen
 
-| Anforderung                                                    | Check                             |
-| -------------------------------------------------------------- | --------------------------------- |
-| Du hast Push-Rechte auf `origin/main`                          | `gh auth status`                  |
-| Du hast SSH-Zugang zum Hetzner-Server (`arctos@`…)             | `ssh arctos@<server>`             |
-| GitHub Actions hat GHCR-Push-Permission (automatisch via PAT)  | CI-Run `Build`-Job muss grün sein |
-| Postgres-Volume wurde in den letzten 24 h gebackupt            | `deploy/db-backup.sh` cron-log    |
-| Ein zweites Terminal-Fenster ist offen (rollback-ready)        | —                                 |
+| Anforderung                                                   | Check                             |
+| ------------------------------------------------------------- | --------------------------------- |
+| Du hast Push-Rechte auf `origin/main`                         | `gh auth status`                  |
+| Du hast SSH-Zugang zum Hetzner-Server (`arctos@`…)            | `ssh arctos@<server>`             |
+| GitHub Actions hat GHCR-Push-Permission (automatisch via PAT) | CI-Run `Build`-Job muss grün sein |
+| Postgres-Volume wurde in den letzten 24 h gebackupt           | `deploy/db-backup.sh` cron-log    |
+| Ein zweites Terminal-Fenster ist offen (rollback-ready)       | —                                 |
 
 ---
 
@@ -111,14 +111,16 @@ curl -I https://arctos.<domain>/login
 ```
 
 5.2 **Admin-Login** im Browser:
+
 - `https://arctos.<domain>/login` → `admin@arctos.dev` / das `.env`-Passwort.
 - Dashboard lädt, Avatar oben rechts sichtbar.
 
-5.3 **Risk-CRUD** (UI-Schritt, eine Minute):
+  5.3 **Risk-CRUD** (UI-Schritt, eine Minute):
+
 - `/risks/new` → Titel „release-smoke-$(date +%s)", speichern.
 - Im Register auffindbar, Detail-Seite lädt, löschen geht.
 
-5.4 **Audit-Archive**:
+  5.4 **Audit-Archive**:
 
 ```bash
 curl -L -u admin@arctos.dev:<pw> \
@@ -185,13 +187,13 @@ docker compose up -d
 
 ## 9. Zeit-Budget
 
-| Schritt         | Mensch-Zeit | Wall-Clock         |
-| --------------- | ----------- | ------------------ |
-| 1 Pre-Flight    | 10 min      | 15 min             |
-| 2 Tag           | 5 min       | 15 min (CI-Build)  |
-| 3 Image-Verify  | 5 min       | 2 min              |
-| 4 Deploy        | 10 min      | 5 min (pull + up)  |
-| 5 Smoke         | 10 min      | 10 min             |
-| 6 Freigabe      | 5 min       | —                  |
-| **Gesamt**      | **~45 min** | **~50 min**        |
-| Rollback        | 15 min      | 5 min              |
+| Schritt        | Mensch-Zeit | Wall-Clock        |
+| -------------- | ----------- | ----------------- |
+| 1 Pre-Flight   | 10 min      | 15 min            |
+| 2 Tag          | 5 min       | 15 min (CI-Build) |
+| 3 Image-Verify | 5 min       | 2 min             |
+| 4 Deploy       | 10 min      | 5 min (pull + up) |
+| 5 Smoke        | 10 min      | 10 min            |
+| 6 Freigabe     | 5 min       | —                 |
+| **Gesamt**     | **~45 min** | **~50 min**       |
+| Rollback       | 15 min      | 5 min             |

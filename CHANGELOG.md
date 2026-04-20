@@ -18,9 +18,9 @@ Erster Alpha-Release mit vollgrüner CI-Pipeline ohne jeden
 - Alle 6 CI-Jobs blockierend: Lint & Type Check, DB Migration & Integrity,
   Unit Tests, Integration Tests, Security Audit, Build.
 - Neuer **E2E-Smoke-Job**: postgres + timescaledb hochfahren, Migrationen
-  + Seed + RLS-Gap-Closure anwenden, `apps/web` bauen + starten,
-  Playwright-Suite `ci-smoke.spec.ts` durchlaufen (Login →
-  Dashboard → Risk-API-CRUD → Audit-Log-Seite → Audit-Archive-ZIP).
+  - Seed + RLS-Gap-Closure anwenden, `apps/web` bauen + starten,
+    Playwright-Suite `ci-smoke.spec.ts` durchlaufen (Login →
+    Dashboard → Risk-API-CRUD → Audit-Log-Seite → Audit-Archive-ZIP).
 - **Trivy**-Image-Scan nach jedem Build-Push auf GHCR; CRITICAL/HIGH
   bricht ab.
 - **License-Check** blockiert jetzt GPL-/AGPL-Abhängigkeiten in
