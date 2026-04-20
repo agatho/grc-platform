@@ -570,7 +570,7 @@ jobs:
           fi
 
       - name: Trivy image scan — web
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
           format: table
@@ -580,7 +580,7 @@ jobs:
           vuln-type: os,library
 
       - name: Trivy image scan — worker
-        uses: aquasecurity/trivy-action@0.30.0
+        uses: aquasecurity/trivy-action@master
         with:
           image-ref: ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
           format: table
