@@ -56,6 +56,11 @@ export async function GET(req: Request) {
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
     return Response.json({ error: "Invalid date range" }, { status: 422 });
   }
+  // postgres-js's sql-template parameter serializer rejects raw `Date`
+  // values when the JS runtime packs them as non-standard wire objects
+  // — we pass ISO strings so it binds them as plain `timestamptz`.
+  const fromIso = fromDate.toISOString();
+  const toIso = toDate.toISOString();
 
   // Resolve tenant name for the README
   const [org] = await db
@@ -97,8 +102,8 @@ export async function GET(req: Request) {
            created_at::text AS created_at_text
     FROM audit_log
     WHERE org_id = ${ctx.orgId}
-      AND created_at >= ${fromDate}
-      AND created_at <= ${toDate}
+      AND created_at >= ${fromIso}::timestamptz
+      AND created_at <= ${toIso}::timestamptz
       AND entry_hash IS NOT NULL
     ORDER BY created_at ASC, id ASC
   `);
