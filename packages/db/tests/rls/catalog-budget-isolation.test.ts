@@ -84,9 +84,22 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       VALUES (${userAId}, ${orgAId}, 'admin'), (${userBId}, ${orgBId}, 'admin')
     `;
 
-    // Get a real catalog ID for FK reference
-    const [cat] = await adminDb.client`SELECT id FROM catalog LIMIT 1`;
-    catalogId = cat.id;
+    // Get a real catalog ID for FK reference. The Integration Tests CI job
+    // doesn't run the seed step (unlike the DB Migration job), so catalog
+    // may be empty here — insert a minimal placeholder on demand.
+    const existing = await adminDb.client<{ id: string }[]>`
+      SELECT id FROM catalog LIMIT 1
+    `;
+    if (existing.length > 0) {
+      catalogId = existing[0].id;
+    } else {
+      const [cat] = await adminDb.client<{ id: string }[]>`
+        INSERT INTO catalog (key, name, catalog_type, scope, version)
+        VALUES (${"rls-test-catalog-" + suffix}, 'RLS Test Catalog', 'control', 'public', '1.0.0')
+        RETURNING id
+      `;
+      catalogId = cat.id;
+    }
 
     // --- Seed test data for Org A ---
 
