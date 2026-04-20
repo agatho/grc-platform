@@ -185,10 +185,10 @@ describe("Audit Trigger & Hash Chain", () => {
     if (logs.length > 0) {
       // ADR-011 rev.2: audit_log_tombstone_guard permits UPDATE only on a
       // whitelisted set of PII columns; any other column change raises.
-      // `action` is not whitelisted → must throw.
+      // `entity_type` is a free-form varchar and not whitelisted → must throw.
       await expect(
         testDb.client`
-          UPDATE audit_log SET action = 'tampered' WHERE id = ${logs[0].id}
+          UPDATE audit_log SET entity_type = 'tampered' WHERE id = ${logs[0].id}
         `,
       ).rejects.toThrow(/append-only|cannot be updated/);
     }
