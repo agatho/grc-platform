@@ -205,7 +205,7 @@ function DpiaDetailInner() {
         {activeStep === "prescreen" && (
           <PrescreenStep criteria={criteria} criteriaLoading={criteriaLoading}
             checkedCriteria={checkedCriteria} dpiaRequired={dpiaRequired}
-            toggleCriterion={(code) => { setCheckedCriteria(prev => { const n = new Set(prev); n.has(code) ? n.delete(code) : n.add(code); return n; }); }}
+            toggleCriterion={(code) => { setCheckedCriteria(prev => { const n = new Set(prev); if (n.has(code)) { n.delete(code); } else { n.add(code); } return n; }); }}
             t={t} />
         )}
 
