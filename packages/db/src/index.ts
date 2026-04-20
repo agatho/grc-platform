@@ -239,3 +239,6 @@ export * from "./schema/esef-xbrl";
 export * from "./schema/isms-cap";
 export * from "./schema/risk-acceptance";
 export * from "./schema/phase3-extras";
+
+// ADR-001 RLS audit helper — re-exported so API routes + CLI can import it
+export * from "./rls-audit";
