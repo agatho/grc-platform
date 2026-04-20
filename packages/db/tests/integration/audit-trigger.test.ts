@@ -116,6 +116,13 @@ describe("Audit Trigger & Hash Chain", () => {
   });
 
   it("UPDATE on organization creates an audit_log entry with changes JSONB", async () => {
+    // Re-assert the RLS context so the policy `id = current_org_id` lets
+    // the UPDATE through. On a pooled connection the SET can land on a
+    // different session; we use max:1 now, but asserting it here keeps
+    // the test robust against future pool-size regressions.
+    await testDb.client`SELECT set_config('app.current_org_id', ${testOrgId}, false)`;
+    await testDb.client`SELECT set_config('app.current_user_id', ${testUserId}, false)`;
+
     await testDb.db
       .update(schema.organization)
       .set({ name: "Audit Test Corp Updated", country: "AUT" })
