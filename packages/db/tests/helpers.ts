@@ -9,9 +9,16 @@ const DATABASE_URL =
 /**
  * Create a database client for testing.
  * Uses the superuser connection (can bypass RLS).
+ *
+ * `max: 1` keeps every query on the same connection so that
+ * `set_config(..., is_local=false)` session settings (current_org_id,
+ * current_user_id, etc.) are observed by subsequent queries. Without
+ * this, a pooled client can route the INSERT to one connection and the
+ * follow-up UPDATE to a different one whose session has no RLS context
+ * — the UPDATE silently matches 0 rows under FORCE RLS.
  */
 export function createTestDb() {
-  const client = postgres(DATABASE_URL);
+  const client = postgres(DATABASE_URL, { max: 1 });
   const db = drizzle(client, { schema });
   return { db, client };
 }
@@ -24,7 +31,7 @@ export function createAppDb(url?: string) {
   const appUrl =
     url ??
     DATABASE_URL.replace(/\/\/[^@]+@/, "//grc_app:grc_app_dev_password@");
-  const client = postgres(appUrl);
+  const client = postgres(appUrl, { max: 1 });
   const db = drizzle(client, { schema });
   return { db, client };
 }
