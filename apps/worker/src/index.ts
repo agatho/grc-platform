@@ -1,5 +1,6 @@
 import { Hono } from "hono";
 import { processOverdueTasks } from "./crons/overdue-tasks";
+import { processDailyAuditAnchor } from "./crons/daily-audit-anchor";
 import { processScheduledNotifications } from "./crons/scheduled-notifications";
 import { processNotificationDigest } from "./crons/notification-digest";
 import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
@@ -177,6 +178,21 @@ app.post("/crons/overdue-tasks", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] overdue-tasks cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/daily-audit-anchor", async (c) => {
+  try {
+    // Allow caller to override the target date via body for backfill runs:
+    // POST /crons/daily-audit-anchor with { "date": "2026-04-15" }
+    const body = await c.req.json().catch(() => ({}));
+    const target = body?.date ? new Date(body.date + "T12:00:00Z") : undefined;
+    const result = await processDailyAuditAnchor(target);
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] daily-audit-anchor cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

@@ -14,6 +14,9 @@ import {
   Eraser,
   AlertCircle,
   Info,
+  Anchor,
+  Bitcoin,
+  Clock,
 } from "lucide-react";
 
 import { SortableHeader } from "@/components/ui/data-table";
@@ -86,6 +89,28 @@ interface AuditLogListResponse {
   scope?: { orgId: string; includeDescendants: boolean; resolvedOrgIds: string[] };
 }
 
+// ADR-011 rev.3 — external anchor status (FreeTSA + OpenTimestamps)
+interface AnchorRecord {
+  id: string;
+  anchorDate: string;
+  provider: "freetsa" | "opentimestamps";
+  merkleRoot: string;
+  leafCount: number;
+  proofStatus: "complete" | "pending" | "failed";
+  bitcoinBlockHeight: number | null;
+  lastError: string | null;
+  createdAt: string;
+  upgradedAt: string | null;
+}
+
+interface AnchorStatusResponse {
+  data: AnchorRecord[];
+  latest: {
+    freetsa: AnchorRecord | null;
+    opentimestamps: AnchorRecord | null;
+  };
+}
+
 // ──────────────────────────────────────────────────────────────
 // Constants
 // ──────────────────────────────────────────────────────────────
@@ -155,6 +180,132 @@ function displayValue(v: unknown): string {
 // ──────────────────────────────────────────────────────────────
 // Integrity Badge Component
 // ──────────────────────────────────────────────────────────────
+
+// ──────────────────────────────────────────────────────────────
+// AnchorBadges — shows the latest FreeTSA + OpenTimestamps anchor
+// status and lets admin/auditor trigger one on demand
+// ──────────────────────────────────────────────────────────────
+
+function AnchorBadges({
+  status,
+  t,
+  canAnchor,
+  onTrigger,
+  busy,
+}: {
+  status: AnchorStatusResponse | null;
+  t: ReturnType<typeof useTranslations>;
+  canAnchor: boolean;
+  onTrigger: () => void;
+  busy: boolean;
+}) {
+  const freetsa = status?.latest.freetsa;
+  const ots = status?.latest.opentimestamps;
+
+  const freetsaBadge = renderAnchorBadge({
+    provider: "freetsa",
+    anchor: freetsa ?? null,
+    icon: <Clock size={12} />,
+    t,
+  });
+  const otsBadge = renderAnchorBadge({
+    provider: "opentimestamps",
+    anchor: ots ?? null,
+    icon: <Bitcoin size={12} />,
+    t,
+  });
+
+  return (
+    <div className="flex items-center gap-2">
+      {freetsaBadge}
+      {otsBadge}
+      {canAnchor && (
+        <button
+          type="button"
+          onClick={onTrigger}
+          disabled={busy}
+          className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-100 disabled:opacity-50"
+          title={t("anchorNowHint")}
+        >
+          {busy ? <Loader2 size={12} className="animate-spin" /> : <Anchor size={12} />}
+          {t("anchorNow")}
+        </button>
+      )}
+    </div>
+  );
+}
+
+function renderAnchorBadge({
+  provider,
+  anchor,
+  icon,
+  t,
+}: {
+  provider: "freetsa" | "opentimestamps";
+  anchor: AnchorRecord | null;
+  icon: React.ReactNode;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  const label = provider === "freetsa" ? "FreeTSA" : "OpenTimestamps";
+
+  if (!anchor) {
+    return (
+      <Badge
+        variant="outline"
+        className="gap-1.5 border-gray-200 bg-gray-50 px-2.5 py-1.5 text-gray-500"
+      >
+        {icon}
+        {label}: {t("anchorNever")}
+      </Badge>
+    );
+  }
+
+  const ageMs = Date.now() - new Date(anchor.createdAt).getTime();
+  const ageHours = Math.round(ageMs / 3_600_000);
+  const ageText =
+    ageHours < 1
+      ? t("anchorJustNow")
+      : ageHours < 24
+        ? t("anchorHoursAgo", { h: ageHours })
+        : t("anchorDaysAgo", { d: Math.round(ageHours / 24) });
+
+  if (anchor.proofStatus === "failed") {
+    return (
+      <Badge
+        variant="destructive"
+        className="gap-1.5 px-2.5 py-1.5"
+        title={anchor.lastError ?? undefined}
+      >
+        {icon}
+        {label}: {t("anchorFailed")}
+      </Badge>
+    );
+  }
+
+  if (anchor.proofStatus === "pending") {
+    return (
+      <Badge
+        variant="outline"
+        className="gap-1.5 border-amber-200 bg-amber-50 px-2.5 py-1.5 text-amber-800"
+        title={t("anchorPendingHint")}
+      >
+        {icon}
+        {label}: {t("anchorPending")} · {ageText}
+      </Badge>
+    );
+  }
+
+  // complete
+  return (
+    <Badge
+      className="gap-1.5 border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-emerald-800 shadow-none"
+      title={`${anchor.leafCount} leaves, root ${anchor.merkleRoot.slice(0, 12)}…`}
+    >
+      {icon}
+      {label}: {t("anchorAnchored")} · {ageText}
+    </Badge>
+  );
+}
 
 function IntegrityBadge({ state, t }: { state: IntegrityState; t: ReturnType<typeof useTranslations> }) {
   if (state.kind === "loading") {
@@ -508,6 +659,13 @@ export default function AuditLogPage() {
     currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
   const canTombstone =
     currentOrgRoles.includes("admin") || currentOrgRoles.includes("dpo");
+  const canAnchor =
+    currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
+
+  // Anchor state
+  const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(null);
+  const [anchorBusy, setAnchorBusy] = useState(false);
+  const [anchorError, setAnchorError] = useState<string | null>(null);
 
   // Derive unique entity types from data
   const entityTypes = useMemo(() => {
@@ -565,6 +723,39 @@ export default function AuditLogPage() {
     }
   }, []);
 
+  // Fetch anchor status (ADR-011 rev.3)
+  const fetchAnchorStatus = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/audit-log/anchor");
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setAnchorStatus((await res.json()) as AnchorStatusResponse);
+    } catch {
+      setAnchorStatus(null);
+    }
+  }, []);
+
+  async function triggerAnchor() {
+    setAnchorBusy(true);
+    setAnchorError(null);
+    try {
+      const res = await fetch("/api/v1/audit-log/anchor", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      await fetchAnchorStatus();
+      await fetchIntegrity();
+    } catch (e) {
+      setAnchorError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setAnchorBusy(false);
+    }
+  }
+
   useEffect(() => {
     void fetchIntegrity();
   }, [fetchIntegrity]);
@@ -572,6 +763,10 @@ export default function AuditLogPage() {
   useEffect(() => {
     void fetchEntries();
   }, [fetchEntries]);
+
+  useEffect(() => {
+    void fetchAnchorStatus();
+  }, [fetchAnchorStatus]);
 
   // Table columns
   const columns = useMemo<ColumnDef<AuditLogEntry, unknown>[]>(
@@ -739,8 +934,24 @@ export default function AuditLogPage() {
       {/* Header row */}
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
-        <IntegrityBadge state={integrity} t={t} />
+        <div className="flex flex-wrap items-center gap-2">
+          <IntegrityBadge state={integrity} t={t} />
+          <AnchorBadges
+            status={anchorStatus}
+            t={t}
+            canAnchor={canAnchor}
+            onTrigger={triggerAnchor}
+            busy={anchorBusy}
+          />
+        </div>
       </div>
+
+      {anchorError && (
+        <div className="flex items-start gap-2 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+          <AlertCircle size={14} className="mt-0.5 shrink-0" />
+          <span>{anchorError}</span>
+        </div>
+      )}
 
       {/* Scope banner — visible when descendants are included */}
       {scope && scope.includeDescendants && scope.resolvedOrgIds.length > 1 && (
