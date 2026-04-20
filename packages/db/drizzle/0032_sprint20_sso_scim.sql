@@ -159,15 +159,26 @@ END $$;--> statement-breakpoint
 -- 302: Seed identity module_definition (admin-only)
 -- ──────────────────────────────────────────────────────────────
 
-INSERT INTO "module_definition" ("key", "name", "description", "icon", "sort_order", "is_core", "license_tier", "nav_items")
+-- module_definition schema evolved (key -> module_key, name -> display_name_*,
+-- sort_order -> nav_order, is_core folded into is_active_in_platform,
+-- nav_items removed in favour of nav-config.ts in the app). Match current schema.
+INSERT INTO "module_definition" (
+  "module_key", "display_name_de", "display_name_en",
+  "description_de", "description_en",
+  "icon", "nav_path", "nav_section", "nav_order",
+  "license_tier", "is_active_in_platform"
+)
 VALUES (
   'identity',
+  'Identität & SSO',
   'Identity & SSO',
+  'SSO (SAML 2.0/OIDC), SCIM-Benutzerbereitstellung, Identity-Management',
   'SSO (SAML 2.0/OIDC), SCIM user provisioning, and identity management',
   'KeyRound',
+  '/admin/sso',
+  'system',
   95,
-  true,
   'included',
-  '[{"path":"/admin/sso","label":"SSO Configuration","icon":"Shield","roles":["admin"]},{"path":"/admin/scim","label":"SCIM Provisioning","icon":"Users","roles":["admin"]}]'
+  true
 )
-ON CONFLICT ("key") DO NOTHING;--> statement-breakpoint
+ON CONFLICT ("module_key") DO NOTHING;--> statement-breakpoint

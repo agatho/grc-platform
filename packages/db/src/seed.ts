@@ -333,7 +333,7 @@ async function seed() {
       if (demoUser) {
         await tx.insert(userOrganizationRole).values({
           userId: demoUser.id,
-          orgId: holding.id,
+          orgId: holdingId,
           role: demo.role,
           lineOfDefense: demo.lod,
           department: demo.dept,

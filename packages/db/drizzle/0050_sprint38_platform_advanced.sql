@@ -39,7 +39,16 @@ ALTER TABLE control ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
 ALTER TABLE process ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
 ALTER TABLE asset ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
 ALTER TABLE vendor ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
-ALTER TABLE incident ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
+-- Renamed incident -> isms_incident in a later schema revision
+DO $BODY$
+BEGIN
+  IF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='incident') THEN
+    EXECUTE 'ALTER TABLE incident ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT ''{}''';
+  ELSIF EXISTS (SELECT 1 FROM information_schema.tables WHERE table_schema='public' AND table_name='isms_incident') THEN
+    EXECUTE 'ALTER TABLE isms_incident ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT ''{}''';
+  END IF;
+END
+$BODY$;
 ALTER TABLE document ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
 ALTER TABLE finding ADD COLUMN IF NOT EXISTS custom_fields JSONB DEFAULT '{}';
 
