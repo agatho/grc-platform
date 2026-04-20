@@ -292,13 +292,27 @@ jobs:
 
       - name: Verify append-only rules
         run: |
+          # ADR-011 rev.2 replaced audit_log_no_update with the
+          # audit_log_tombstone_guard trigger (see migration 0284) so that
+          # PII tombstoning can update whitelisted columns while still
+          # rejecting all other writes. Remaining rules: audit_log_no_delete,
+          # access_log_no_{update,delete}, data_export_log_no_{update,delete}.
           RULES=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
             SELECT count(*) FROM pg_rules
             WHERE schemaname = 'public' AND rulename LIKE '%_no_%';
           " | tr -d ' ')
           echo "Append-only rules: $RULES"
-          if [ "$RULES" -lt 6 ]; then
-            echo "::error::Expected 6 append-only rules, found $RULES"
+          if [ "$RULES" -lt 5 ]; then
+            echo "::error::Expected at least 5 append-only rules, found $RULES"
+            exit 1
+          fi
+          TOMBSTONE_GUARD=$(PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform -t -c "
+            SELECT count(*) FROM pg_trigger
+            WHERE tgname = 'audit_log_tombstone_guard' AND NOT tgisinternal;
+          " | tr -d ' ')
+          echo "audit_log tombstone guard triggers: $TOMBSTONE_GUARD"
+          if [ "$TOMBSTONE_GUARD" -lt 1 ]; then
+            echo "::error::audit_log_tombstone_guard trigger missing (ADR-011 rev.2)"
             exit 1
           fi
 
