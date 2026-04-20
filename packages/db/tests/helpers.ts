@@ -12,10 +12,7 @@ const DATABASE_URL =
  *
  * `max: 1` keeps every query on the same connection so that
  * `set_config(..., is_local=false)` session settings (current_org_id,
- * current_user_id, etc.) are observed by subsequent queries. Without
- * this, a pooled client can route the INSERT to one connection and the
- * follow-up UPDATE to a different one whose session has no RLS context
- * — the UPDATE silently matches 0 rows under FORCE RLS.
+ * current_user_id, etc.) are observed by subsequent queries.
  */
 export function createTestDb() {
   const client = postgres(DATABASE_URL, { max: 1 });
@@ -26,6 +23,8 @@ export function createTestDb() {
 /**
  * Create a database client as a non-superuser (for RLS tests).
  * Requires the grc_app role to exist (created by seed or CI).
+ *
+ * Pool size 1: setRlsContext() must stick for subsequent queries.
  */
 export function createAppDb(url?: string) {
   const appUrl =
