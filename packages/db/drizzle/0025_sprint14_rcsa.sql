@@ -120,7 +120,7 @@ ALTER TABLE "rcsa_result" ENABLE ROW LEVEL SECURITY;
 
 -- rcsa_campaign: org-scoped
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'rcsa_campaign_org_isolation') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'rcsa_campaign_org_isolation') THEN
     CREATE POLICY "rcsa_campaign_org_isolation" ON "rcsa_campaign"
       USING ("org_id" = current_setting('app.current_org_id', true)::uuid);
   END IF;
@@ -128,7 +128,7 @@ END $$;
 
 -- rcsa_assignment: org-scoped
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'rcsa_assignment_org_isolation') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'rcsa_assignment_org_isolation') THEN
     CREATE POLICY "rcsa_assignment_org_isolation" ON "rcsa_assignment"
       USING ("org_id" = current_setting('app.current_org_id', true)::uuid);
   END IF;
@@ -136,7 +136,7 @@ END $$;
 
 -- rcsa_response: org-scoped
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'rcsa_response_org_isolation') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'rcsa_response_org_isolation') THEN
     CREATE POLICY "rcsa_response_org_isolation" ON "rcsa_response"
       USING ("org_id" = current_setting('app.current_org_id', true)::uuid);
   END IF;
@@ -144,7 +144,7 @@ END $$;
 
 -- rcsa_result: org-scoped
 DO $$ BEGIN
-  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE polname = 'rcsa_result_org_isolation') THEN
+  IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE policyname = 'rcsa_result_org_isolation') THEN
     CREATE POLICY "rcsa_result_org_isolation" ON "rcsa_result"
       USING ("org_id" = current_setting('app.current_org_id', true)::uuid);
   END IF;

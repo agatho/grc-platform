@@ -103,9 +103,9 @@ describe("RLS Cross-Tenant Isolation", () => {
          t text;
        BEGIN
          FOR t IN
-           SELECT DISTINCT table_name FROM information_schema.columns
-           WHERE table_schema = 'public' AND column_name = 'org_id'
-             AND table_name NOT IN ('organization')
+           SELECT DISTINCT c.table_name FROM information_schema.columns c JOIN information_schema.tables tbl_meta ON tbl_meta.table_schema = c.table_schema AND tbl_meta.table_name = c.table_name AND tbl_meta.table_type = 'BASE TABLE'
+           WHERE c.table_schema = 'public' AND c.column_name = 'org_id'
+             AND c.table_name NOT IN ('organization')
          LOOP
            EXECUTE format('DELETE FROM %I WHERE org_id IN ($1, $2)', t)
              USING '${orgAId}'::uuid, '${orgBId}'::uuid;
