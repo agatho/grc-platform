@@ -1,16 +1,28 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
-import { ShieldCheck, ShieldAlert, Loader2, ArrowRight } from "lucide-react";
+import {
+  ShieldCheck,
+  ShieldAlert,
+  Loader2,
+  ArrowRight,
+  Network,
+  Building2,
+  Eraser,
+  AlertCircle,
+  Info,
+} from "lucide-react";
 
-import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -44,22 +56,35 @@ interface AuditLogEntry {
   sessionId: string | null;
   previousHash: string | null;
   entryHash: string | null;
+  previousHashScope: string | null;
+  piiTombstonedAt: string | null;
+  piiTombstoneReason: string | null;
   createdAt: string;
 }
 
+// ADR-011 rev.2 per-tenant integrity endpoint shape
 interface IntegrityCheckResult {
-  status: string;
-  chainLength: number;
-  totalEntries: number;
-  brokenLinks: number;
-  checkedAt: string;
+  scope: string;
+  total: number;
+  rowVerified: number;
+  chainVerified: number;
+  legacyRowCount: number;
+  healthy: boolean;
+  rowMismatches?: Array<{ id: string; entityType: string; action: string; createdAt: string }>;
+  chainMismatches?: Array<{ id: string; entityType: string; action: string; createdAt: string }>;
 }
 
 type IntegrityState =
   | { kind: "loading" }
-  | { kind: "intact"; data: IntegrityCheckResult }
-  | { kind: "broken"; data: IntegrityCheckResult }
+  | { kind: "healthy"; data: IntegrityCheckResult }
+  | { kind: "unhealthy"; data: IntegrityCheckResult }
   | { kind: "error"; message: string };
+
+interface AuditLogListResponse {
+  data: AuditLogEntry[];
+  pagination: { page: number; limit: number; total: number; totalPages: number };
+  scope?: { orgId: string; includeDescendants: boolean; resolvedOrgIds: string[] };
+}
 
 // ──────────────────────────────────────────────────────────────
 // Constants
@@ -150,26 +175,50 @@ function IntegrityBadge({ state, t }: { state: IntegrityState; t: ReturnType<typ
     );
   }
 
-  if (state.kind === "intact") {
+  const { data } = state;
+  const brokenRow = data.total - data.rowVerified;
+  const brokenChain = data.total - data.chainVerified;
+
+  if (state.kind === "healthy") {
     return (
-      <Badge className="gap-1.5 border-green-200 bg-green-100 px-3 py-1.5 text-green-800 shadow-none">
-        <ShieldCheck size={14} />
-        {t("chainIntact")}
-        <span className="ml-1 text-xs font-normal text-green-600">
-          ({state.data.chainLength} / {state.data.totalEntries})
-        </span>
-      </Badge>
+      <div className="flex items-center gap-2">
+        <Badge className="gap-1.5 border-green-200 bg-green-100 px-3 py-1.5 text-green-800 shadow-none">
+          <ShieldCheck size={14} />
+          {t("chainIntact")}
+          <span className="ml-1 text-xs font-normal text-green-600">
+            ({data.rowVerified} / {data.total})
+          </span>
+        </Badge>
+        {data.legacyRowCount > 0 && (
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-200 bg-amber-50 px-2 py-1 text-amber-700"
+            title={t("legacyRowsHint")}
+          >
+            <Info size={11} />
+            {data.legacyRowCount} {t("legacyRows")}
+          </Badge>
+        )}
+      </div>
     );
   }
 
   return (
-    <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
-      <ShieldAlert size={14} />
-      {t("chainBroken")}
-      <span className="ml-1 text-xs font-normal">
-        ({state.data.brokenLinks} {t("brokenLinks")})
-      </span>
-    </Badge>
+    <div className="flex items-center gap-2">
+      <Badge variant="destructive" className="gap-1.5 px-3 py-1.5">
+        <ShieldAlert size={14} />
+        {t("chainBroken")}
+        <span className="ml-1 text-xs font-normal">
+          ({brokenRow}/{data.total} {t("rowBreaks")}, {brokenChain}/{data.total} {t("chainBreaks")})
+        </span>
+      </Badge>
+      {data.legacyRowCount > 0 && (
+        <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">
+          <Info size={11} />
+          {data.legacyRowCount} {t("legacyRows")}
+        </Badge>
+      )}
+    </div>
   );
 }
 
@@ -177,27 +226,77 @@ function IntegrityBadge({ state, t }: { state: IntegrityState; t: ReturnType<typ
 // Change Detail Dialog
 // ──────────────────────────────────────────────────────────────
 
+const TOMBSTONE_REASONS = [
+  "gdpr_art_17",
+  "person_deceased",
+  "contract_end",
+  "legal_hold_expired",
+  "data_minimisation",
+] as const;
+
 function ChangeDetailDialog({
   entry,
   open,
   onOpenChange,
   t,
+  canTombstone,
+  onTombstoned,
 }: {
   entry: AuditLogEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
   t: ReturnType<typeof useTranslations>;
+  canTombstone: boolean;
+  onTombstoned: () => void;
 }) {
+  const [tombstoneOpen, setTombstoneOpen] = useState(false);
+  const [tombstoneReason, setTombstoneReason] = useState<string>("gdpr_art_17");
+  const [tombstoneBusy, setTombstoneBusy] = useState(false);
+  const [tombstoneError, setTombstoneError] = useState<string | null>(null);
+
   if (!entry) return null;
 
   const changes = entry.changes;
   const hasChanges = changes && typeof changes === "object" && Object.keys(changes).length > 0;
+  const isTombstoned = !!entry.piiTombstonedAt;
+
+  async function handleTombstone() {
+    if (!entry) return;
+    setTombstoneBusy(true);
+    setTombstoneError(null);
+    try {
+      const res = await fetch("/api/v1/dpms/audit-log-tombstone", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ auditLogId: entry.id, reason: tombstoneReason }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      setTombstoneOpen(false);
+      onTombstoned();
+      onOpenChange(false);
+    } catch (e) {
+      setTombstoneError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setTombstoneBusy(false);
+    }
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-h-[85vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{t("changeDetail")}</DialogTitle>
+          <DialogTitle className="flex items-center gap-2">
+            {t("changeDetail")}
+            {isTombstoned && (
+              <Badge variant="outline" className="gap-1 border-purple-200 bg-purple-50 text-purple-700">
+                <Eraser size={11} />
+                {t("tombstoned")}
+              </Badge>
+            )}
+          </DialogTitle>
           <DialogDescription>
             {entry.entityType} &mdash; {entry.entityTitle ?? entry.entityId}
           </DialogDescription>
@@ -273,8 +372,99 @@ function ChangeDetailDialog({
 
             <dt className="text-gray-500">{t("previousHash")}</dt>
             <dd className="font-mono text-xs text-gray-700">{entry.previousHash ?? "-"}</dd>
+
+            <dt className="text-gray-500">{t("scope")}</dt>
+            <dd className="font-mono text-xs text-gray-700">{entry.previousHashScope ?? t("legacy")}</dd>
+
+            {isTombstoned && (
+              <>
+                <dt className="text-gray-500">{t("tombstonedAt")}</dt>
+                <dd className="font-mono text-xs text-purple-700">
+                  {formatTimestamp(entry.piiTombstonedAt!)}
+                </dd>
+
+                <dt className="text-gray-500">{t("tombstoneReason")}</dt>
+                <dd className="font-mono text-xs text-purple-700">
+                  {entry.piiTombstoneReason ?? "-"}
+                </dd>
+              </>
+            )}
           </dl>
         </div>
+
+        {/* DPO tombstone action */}
+        {canTombstone && !isTombstoned && (
+          <DialogFooter className="border-t border-gray-200 pt-4">
+            <button
+              type="button"
+              onClick={() => setTombstoneOpen(true)}
+              className="inline-flex items-center gap-1.5 rounded-md border border-purple-200 bg-purple-50 px-3 py-1.5 text-xs font-medium text-purple-700 hover:border-purple-300 hover:bg-purple-100"
+            >
+              <Eraser size={12} />
+              {t("tombstoneAction")}
+            </button>
+          </DialogFooter>
+        )}
+
+        {/* Tombstone confirmation dialog */}
+        <Dialog open={tombstoneOpen} onOpenChange={setTombstoneOpen}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2 text-purple-900">
+                <Eraser size={18} />
+                {t("tombstoneTitle")}
+              </DialogTitle>
+              <DialogDescription>{t("tombstoneDescription")}</DialogDescription>
+            </DialogHeader>
+            <div className="space-y-3">
+              <label className="block text-sm font-medium text-gray-700">
+                {t("tombstoneReasonLabel")}
+              </label>
+              <Select value={tombstoneReason} onValueChange={setTombstoneReason}>
+                <SelectTrigger className="h-9 text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TOMBSTONE_REASONS.map((r) => (
+                    <SelectItem key={r} value={r}>
+                      {t(`tombstoneReasons.${r}`)}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {tombstoneError && (
+                <div className="flex items-start gap-2 rounded-md border border-red-200 bg-red-50 p-2 text-xs text-red-700">
+                  <AlertCircle size={14} className="mt-0.5 shrink-0" />
+                  <span>{tombstoneError}</span>
+                </div>
+              )}
+
+              <p className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800">
+                {t("tombstoneWarning")}
+              </p>
+            </div>
+            <DialogFooter>
+              <button
+                type="button"
+                onClick={() => setTombstoneOpen(false)}
+                disabled={tombstoneBusy}
+                className="rounded-md border border-gray-300 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+              >
+                {t("cancel")}
+              </button>
+              <button
+                type="button"
+                onClick={handleTombstone}
+                disabled={tombstoneBusy}
+                className="inline-flex items-center gap-1.5 rounded-md bg-purple-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-800 disabled:opacity-50"
+              >
+                {tombstoneBusy ? <Loader2 size={12} className="animate-spin" /> : <Eraser size={12} />}
+                {t("tombstoneConfirm")}
+              </button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </DialogContent>
     </Dialog>
   );
@@ -286,6 +476,7 @@ function ChangeDetailDialog({
 
 export default function AuditLogPage() {
   const t = useTranslations("auditLog");
+  const { data: session } = useSession();
 
   // Data state
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
@@ -295,10 +486,28 @@ export default function AuditLogPage() {
   // Filter state
   const [actionFilter, setActionFilter] = useState<string>("__all__");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>("__all__");
+  const [includeDescendants, setIncludeDescendants] = useState(false);
+
+  // Response scope
+  const [scope, setScope] = useState<AuditLogListResponse["scope"] | null>(null);
 
   // Dialog state
   const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
+
+  // Derive capabilities from session roles scoped to current org
+  const currentOrgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
+  const currentOrgRoles = useMemo(
+    () =>
+      (session?.user?.roles ?? [])
+        .filter((r) => r.orgId === currentOrgId)
+        .map((r) => r.role),
+    [session?.user?.roles, currentOrgId],
+  );
+  const canIncludeDescendants =
+    currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
+  const canTombstone =
+    currentOrgRoles.includes("admin") || currentOrgRoles.includes("dpo");
 
   // Derive unique entity types from data
   const entityTypes = useMemo(() => {
@@ -316,30 +525,37 @@ export default function AuditLogPage() {
       const params = new URLSearchParams({ limit: "50" });
       if (actionFilter !== "__all__") params.set("action", actionFilter);
       if (entityTypeFilter !== "__all__") params.set("entity_type", entityTypeFilter);
+      if (includeDescendants && canIncludeDescendants) {
+        params.set("includeDescendants", "true");
+      }
 
       const res = await fetch(`/api/v1/audit-log?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { data: AuditLogEntry[] };
+      const json = (await res.json()) as AuditLogListResponse;
       setEntries(json.data);
+      setScope(json.scope ?? null);
     } catch {
       setEntries([]);
+      setScope(null);
     } finally {
       setLoading(false);
     }
-  }, [actionFilter, entityTypeFilter]);
+  }, [actionFilter, entityTypeFilter, includeDescendants, canIncludeDescendants]);
 
-  // Fetch integrity check
+  // Fetch integrity check — ADR-011 rev.2 per-tenant endpoint
   const fetchIntegrity = useCallback(async () => {
     setIntegrity({ kind: "loading" });
     try {
-      const res = await fetch("/api/v1/audit-log/integrity-check");
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { data: IntegrityCheckResult };
-      const data = json.data;
+      // 503 means "chain broken" — the body is still valid JSON, we read it
+      const res = await fetch("/api/v1/audit-log/integrity");
+      if (res.status !== 200 && res.status !== 503) {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      const json = (await res.json()) as { data: IntegrityCheckResult };
       setIntegrity(
-        data.status === "integrity_confirmed"
-          ? { kind: "intact", data }
-          : { kind: "broken", data },
+        json.data.healthy
+          ? { kind: "healthy", data: json.data }
+          : { kind: "unhealthy", data: json.data },
       );
     } catch (err) {
       setIntegrity({
@@ -404,9 +620,18 @@ export default function AuditLogPage() {
       {
         accessorKey: "entityType",
         header: t("entityType"),
-        cell: ({ getValue }) => (
-          <span className="font-mono text-xs text-gray-600">
+        cell: ({ getValue, row }) => (
+          <span className="font-mono text-xs text-gray-600 inline-flex items-center gap-1">
             {getValue() as string}
+            {row.original.piiTombstonedAt && (
+              <span
+                title={t("tombstonedHint")}
+                className="inline-flex items-center rounded-full border border-purple-200 bg-purple-50 px-1.5 py-0.5 text-[9px] font-medium text-purple-700"
+              >
+                <Eraser size={9} className="mr-0.5" />
+                {t("tombstonedShort")}
+              </span>
+            )}
           </span>
         ),
       },
@@ -458,7 +683,7 @@ export default function AuditLogPage() {
 
   // Custom toolbar with filter dropdowns
   const toolbar = (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <Select value={actionFilter} onValueChange={setActionFilter}>
         <SelectTrigger className="h-8 w-[160px] text-xs">
           <SelectValue placeholder={t("allActions")} />
@@ -486,16 +711,51 @@ export default function AuditLogPage() {
           ))}
         </SelectContent>
       </Select>
+
+      {canIncludeDescendants && (
+        <label
+          className={`flex h-8 cursor-pointer items-center gap-1.5 rounded-md border px-2.5 text-xs font-medium transition-colors ${
+            includeDescendants
+              ? "border-blue-300 bg-blue-50 text-blue-800"
+              : "border-gray-200 bg-white text-gray-600 hover:border-blue-200 hover:bg-blue-50/40"
+          }`}
+          title={t("includeDescendantsHint")}
+        >
+          <input
+            type="checkbox"
+            checked={includeDescendants}
+            onChange={(e) => setIncludeDescendants(e.target.checked)}
+            className="h-3 w-3 rounded border-gray-300 text-blue-600"
+          />
+          <Network size={12} />
+          {t("includeDescendants")}
+        </label>
+      )}
     </div>
   );
 
   return (
     <div className="space-y-6">
       {/* Header row */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
         <IntegrityBadge state={integrity} t={t} />
       </div>
+
+      {/* Scope banner — visible when descendants are included */}
+      {scope && scope.includeDescendants && scope.resolvedOrgIds.length > 1 && (
+        <div className="flex items-start gap-2 rounded-lg border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-900">
+          <Building2 size={16} className="mt-0.5 shrink-0 text-blue-700" />
+          <div className="flex-1">
+            <div className="font-semibold">
+              {t("scopeBannerTitle", { count: scope.resolvedOrgIds.length })}
+            </div>
+            <div className="text-xs text-blue-800/80">
+              {t("scopeBannerBody")}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Table */}
       {loading ? (
@@ -518,6 +778,11 @@ export default function AuditLogPage() {
         open={dialogOpen}
         onOpenChange={setDialogOpen}
         t={t}
+        canTombstone={canTombstone}
+        onTombstoned={() => {
+          void fetchEntries();
+          void fetchIntegrity();
+        }}
       />
     </div>
   );
