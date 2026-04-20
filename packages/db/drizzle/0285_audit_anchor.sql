@@ -41,11 +41,14 @@ CREATE TABLE IF NOT EXISTS audit_anchor (
   -- mismatch quickly at verify time.
   leaf_count integer NOT NULL,
 
-  -- The encoded proof from the provider. For FreeTSA: a .tsr file
-  -- (ASN.1/DER, usually 2-3 KB). For OpenTimestamps: a .ots file
-  -- (binary, initially ~400 B stub; grows to 1-2 KB once the Bitcoin
-  -- attestation completes).
-  proof bytea NOT NULL,
+  -- The encoded proof from the provider, stored as base64. For FreeTSA:
+  -- a .tsr file (ASN.1/DER, usually 2-3 KB encoded). For OpenTimestamps:
+  -- the calendar's pending-timestamp stub initially (~400 B), later
+  -- upgraded to a full proof (1-2 KB) once a Bitcoin block commits the
+  -- calendar's aggregate. Text column rather than bytea because (a)
+  -- JSON/API boundaries need base64 anyway and (b) Drizzle-ORM's bytea
+  -- handling adds an extra conversion layer that we don't need.
+  proof text NOT NULL,
 
   -- Status of the proof. For FreeTSA this is always 'complete'. For
   -- OpenTimestamps, the initial stub is 'pending' — an upgrade job
