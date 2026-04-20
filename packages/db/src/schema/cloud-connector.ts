@@ -82,7 +82,9 @@ export const cloudTestExecution = pgTable(
     passRate: numeric("pass_rate", { precision: 5, scale: 2 }),
     durationMs: integer("duration_ms"),
     results: jsonb("results").default("[]"), // detailed per-test results
-    triggeredBy: varchar("triggered_by", { length: 30 }).notNull().default("schedule"), // schedule | manual | api
+    triggeredBy: varchar("triggered_by", { length: 30 })
+      .notNull()
+      .default("schedule"), // schedule | manual | api
     errorMessage: text("error_message"),
     startedAt: timestamp("started_at", { withTimezone: true })
       .notNull()
@@ -117,7 +119,10 @@ export const cloudComplianceSnapshot = pgTable(
       .references(() => evidenceConnector.id, { onDelete: "cascade" }),
     provider: varchar("provider", { length: 20 }).notNull(),
     snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
-    overallScore: numeric("overall_score", { precision: 5, scale: 2 }).notNull(),
+    overallScore: numeric("overall_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
     categoryScores: jsonb("category_scores").default("{}"), // { iam: 85, encryption: 92, logging: 78, ... }
     totalChecks: integer("total_checks").notNull(),
     passingChecks: integer("passing_checks").notNull(),

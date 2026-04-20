@@ -5,7 +5,10 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { updateBiReportWidgetSchema } from "@grc/shared";
 
 // PATCH /api/v1/bi-reports/widgets/:id
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -16,8 +19,13 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = updateBiReportWidgetSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [updated] = await tx.update(biReportWidget).set({ ...body, updatedAt: new Date() })
-      .where(and(eq(biReportWidget.id, id), eq(biReportWidget.orgId, ctx.orgId))).returning();
+    const [updated] = await tx
+      .update(biReportWidget)
+      .set({ ...body, updatedAt: new Date() })
+      .where(
+        and(eq(biReportWidget.id, id), eq(biReportWidget.orgId, ctx.orgId)),
+      )
+      .returning();
     return updated;
   });
 
@@ -26,7 +34,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 // DELETE /api/v1/bi-reports/widgets/:id
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -36,8 +47,12 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id } = await params;
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [deleted] = await tx.delete(biReportWidget)
-      .where(and(eq(biReportWidget.id, id), eq(biReportWidget.orgId, ctx.orgId))).returning();
+    const [deleted] = await tx
+      .delete(biReportWidget)
+      .where(
+        and(eq(biReportWidget.id, id), eq(biReportWidget.orgId, ctx.orgId)),
+      )
+      .returning();
     return deleted;
   });
 

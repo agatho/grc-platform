@@ -25,9 +25,7 @@ export async function GET(req: Request) {
   const limit = Math.min(Number(url.searchParams.get("limit") ?? "100"), 500);
 
   // 1. Get active catalogs for this org + type
-  const conditions = [
-    eq(orgActiveCatalog.orgId, ctx.orgId!),
-  ];
+  const conditions = [eq(orgActiveCatalog.orgId, ctx.orgId!)];
 
   const activeCatalogs = await db
     .select({
@@ -38,7 +36,12 @@ export async function GET(req: Request) {
     .where(and(...conditions));
 
   if (activeCatalogs.length === 0) {
-    return Response.json({ data: [], catalogs: [], totalEntries: 0, unassignedCount: 0 });
+    return Response.json({
+      data: [],
+      catalogs: [],
+      totalEntries: 0,
+      unassignedCount: 0,
+    });
   }
 
   // Get catalog details
@@ -46,12 +49,19 @@ export async function GET(req: Request) {
 
   // Filter by catalog type from the catalog table
   const catalogRows = await db
-    .select({ id: catalog.id, name: catalog.name, source: catalog.source, catalogType: catalog.catalogType })
+    .select({
+      id: catalog.id,
+      name: catalog.name,
+      source: catalog.source,
+      catalogType: catalog.catalogType,
+    })
     .from(catalog)
-    .where(and(
-      inArray(catalog.id, catalogIds),
-      eq(catalog.catalogType, catalogType),
-    ));
+    .where(
+      and(
+        inArray(catalog.id, catalogIds),
+        eq(catalog.catalogType, catalogType),
+      ),
+    );
 
   catalogIds = catalogRows.map((c) => c.id);
 
@@ -60,7 +70,12 @@ export async function GET(req: Request) {
   }
 
   if (catalogIds.length === 0) {
-    return Response.json({ data: [], catalogs: catalogRows, totalEntries: 0, unassignedCount: 0 });
+    return Response.json({
+      data: [],
+      catalogs: catalogRows,
+      totalEntries: 0,
+      unassignedCount: 0,
+    });
   }
 
   // 2. Get entries from those catalogs
@@ -106,10 +121,10 @@ export async function GET(req: Request) {
         `SELECT DISTINCT catalog_entry_id FROM "${entityTable}"
          WHERE org_id = '${ctx.orgId}'
          AND catalog_entry_id IS NOT NULL
-         AND deleted_at IS NULL`
+         AND deleted_at IS NULL`,
       );
       const assignedIds = new Set(
-        (assignedResult as any[]).map((r: any) => r.catalog_entry_id)
+        (assignedResult as any[]).map((r: any) => r.catalog_entry_id),
       );
       const beforeCount = entries.length;
       entries = entries.filter((e) => !assignedIds.has(e.id));

@@ -193,8 +193,15 @@ export default function FindingAnalyticsPage() {
               <Settings className="h-4 w-4 mr-2" />
               {t("findingAnalytics.slaConfig")}
             </Button>
-            <Button variant="outline" size="sm" onClick={fetchAll} disabled={loading}>
-              <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={fetchAll}
+              disabled={loading}
+            >
+              <RefreshCcw
+                className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+              />
               {t("findingAnalytics.refresh")}
             </Button>
           </div>
@@ -213,7 +220,9 @@ export default function FindingAnalyticsPage() {
                   <Clock className="h-5 w-5" />
                   {t("findingAnalytics.ttrTitle")}
                 </CardTitle>
-                <CardDescription>{t("findingAnalytics.ttrDescription")}</CardDescription>
+                <CardDescription>
+                  {t("findingAnalytics.ttrDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
@@ -224,7 +233,8 @@ export default function FindingAnalyticsPage() {
                           {item.severity.replace(/_/g, " ")}
                         </Badge>
                         <span className="text-muted-foreground">
-                          {item.avgDays}d avg / {item.medianDays}d med (n={item.count})
+                          {item.avgDays}d avg / {item.medianDays}d med (n=
+                          {item.count})
                         </span>
                       </div>
                       <div className="relative h-6 bg-muted rounded">
@@ -235,7 +245,9 @@ export default function FindingAnalyticsPage() {
                         {item.slaDays && (
                           <div
                             className="absolute h-full w-0.5 bg-destructive"
-                            style={{ left: `${Math.min(100, (item.slaDays / maxTtr) * 100)}%` }}
+                            style={{
+                              left: `${Math.min(100, (item.slaDays / maxTtr) * 100)}%`,
+                            }}
                             title={`SLA: ${item.slaDays}d`}
                           />
                         )}
@@ -258,7 +270,9 @@ export default function FindingAnalyticsPage() {
                   <AlertTriangle className="h-5 w-5" />
                   {t("findingAnalytics.slaTitle")}
                 </CardTitle>
-                <CardDescription>{t("findingAnalytics.slaDescription")}</CardDescription>
+                <CardDescription>
+                  {t("findingAnalytics.slaDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {slaData && (
@@ -266,7 +280,10 @@ export default function FindingAnalyticsPage() {
                     {/* Overall compliance */}
                     <div className="flex items-center justify-center">
                       <div className="relative w-32 h-32">
-                        <svg viewBox="0 0 100 100" className="w-full h-full -rotate-90">
+                        <svg
+                          viewBox="0 0 100 100"
+                          className="w-full h-full -rotate-90"
+                        >
                           <circle
                             cx="50"
                             cy="50"
@@ -327,7 +344,9 @@ export default function FindingAnalyticsPage() {
             <Card className="md:col-span-2">
               <CardHeader>
                 <CardTitle>{t("findingAnalytics.agingTitle")}</CardTitle>
-                <CardDescription>{t("findingAnalytics.agingDescription")}</CardDescription>
+                <CardDescription>
+                  {t("findingAnalytics.agingDescription")}
+                </CardDescription>
               </CardHeader>
               <CardContent>
                 {agingData && (
@@ -335,7 +354,8 @@ export default function FindingAnalyticsPage() {
                     {/* Stacked bar for totals */}
                     <div className="flex h-10 rounded overflow-hidden">
                       {Object.entries(agingData.totals).map(([bucket, cnt]) => {
-                        const pct = totalAging > 0 ? (cnt / totalAging) * 100 : 0;
+                        const pct =
+                          totalAging > 0 ? (cnt / totalAging) * 100 : 0;
                         if (pct === 0) return null;
                         return (
                           <div
@@ -352,39 +372,51 @@ export default function FindingAnalyticsPage() {
 
                     {/* Legend */}
                     <div className="flex gap-4 text-xs flex-wrap">
-                      {Object.entries(agingData.bucketLabels).map(([key, label]) => (
-                        <span key={key} className="flex items-center gap-1">
-                          <span className={`w-3 h-3 rounded ${BUCKET_COLORS[key] ?? "bg-gray-400"}`} />
-                          {label}: {agingData.totals[key] ?? 0}
-                        </span>
-                      ))}
+                      {Object.entries(agingData.bucketLabels).map(
+                        ([key, label]) => (
+                          <span key={key} className="flex items-center gap-1">
+                            <span
+                              className={`w-3 h-3 rounded ${BUCKET_COLORS[key] ?? "bg-gray-400"}`}
+                            />
+                            {label}: {agingData.totals[key] ?? 0}
+                          </span>
+                        ),
+                      )}
                     </div>
 
                     {/* Per-severity breakdown */}
                     <div className="space-y-2">
                       {Object.entries(agingData.bySeverity).map(
                         ([severity, buckets]) => {
-                          const total = Object.values(buckets).reduce((s, n) => s + n, 0);
+                          const total = Object.values(buckets).reduce(
+                            (s, n) => s + n,
+                            0,
+                          );
                           return (
                             <div key={severity} className="space-y-1">
                               <div className="flex justify-between text-sm">
                                 <Badge className={severityBadge(severity)}>
                                   {severity.replace(/_/g, " ")}
                                 </Badge>
-                                <span className="text-muted-foreground">{total} open</span>
+                                <span className="text-muted-foreground">
+                                  {total} open
+                                </span>
                               </div>
                               <div className="flex h-4 rounded overflow-hidden">
-                                {Object.entries(buckets).map(([bucket, cnt]) => {
-                                  const pct = total > 0 ? (cnt / total) * 100 : 0;
-                                  if (pct === 0) return null;
-                                  return (
-                                    <div
-                                      key={bucket}
-                                      className={`${BUCKET_COLORS[bucket] ?? "bg-gray-400"}`}
-                                      style={{ width: `${pct}%` }}
-                                    />
-                                  );
-                                })}
+                                {Object.entries(buckets).map(
+                                  ([bucket, cnt]) => {
+                                    const pct =
+                                      total > 0 ? (cnt / total) * 100 : 0;
+                                    if (pct === 0) return null;
+                                    return (
+                                      <div
+                                        key={bucket}
+                                        className={`${BUCKET_COLORS[bucket] ?? "bg-gray-400"}`}
+                                        style={{ width: `${pct}%` }}
+                                      />
+                                    );
+                                  },
+                                )}
                               </div>
                             </div>
                           );
@@ -412,7 +444,9 @@ export default function FindingAnalyticsPage() {
                         key={config.severity}
                         className="flex items-center gap-4"
                       >
-                        <Badge className={`w-56 justify-center ${severityBadge(config.severity)}`}>
+                        <Badge
+                          className={`w-56 justify-center ${severityBadge(config.severity)}`}
+                        >
                           {config.severity.replace(/_/g, " ")}
                         </Badge>
                         <Input
@@ -440,7 +474,9 @@ export default function FindingAnalyticsPage() {
                       disabled={saving}
                       className="mt-4"
                     >
-                      {saving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+                      {saving && (
+                        <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      )}
                       {t("findingAnalytics.saveSla")}
                     </Button>
                   </div>

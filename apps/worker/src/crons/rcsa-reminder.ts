@@ -105,7 +105,9 @@ export async function processRcsaReminder(): Promise<RcsaReminderResult> {
           remindersSent++;
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          errors.push(`Reminder for user ${userId} in campaign ${campaign.id}: ${message}`);
+          errors.push(
+            `Reminder for user ${userId} in campaign ${campaign.id}: ${message}`,
+          );
         }
       }
     } catch (err) {

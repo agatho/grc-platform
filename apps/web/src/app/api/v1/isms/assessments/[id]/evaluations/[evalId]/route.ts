@@ -79,9 +79,12 @@ export async function PUT(
     if (data.result !== undefined) updates.result = data.result;
     if (data.evidence !== undefined) updates.evidence = data.evidence;
     if (data.notes !== undefined) updates.notes = data.notes;
-    if (data.evidenceDocumentIds !== undefined) updates.evidenceDocumentIds = data.evidenceDocumentIds;
-    if (data.currentMaturity !== undefined) updates.currentMaturity = data.currentMaturity;
-    if (data.targetMaturity !== undefined) updates.targetMaturity = data.targetMaturity;
+    if (data.evidenceDocumentIds !== undefined)
+      updates.evidenceDocumentIds = data.evidenceDocumentIds;
+    if (data.currentMaturity !== undefined)
+      updates.currentMaturity = data.currentMaturity;
+    if (data.targetMaturity !== undefined)
+      updates.targetMaturity = data.targetMaturity;
 
     const [updated] = await tx
       .update(assessmentControlEval)

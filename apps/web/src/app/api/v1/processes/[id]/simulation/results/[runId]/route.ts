@@ -19,7 +19,12 @@ export async function GET(
   const [result] = await db
     .select()
     .from(processSimulationResult)
-    .where(and(eq(processSimulationResult.id, runId), eq(processSimulationResult.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(processSimulationResult.id, runId),
+        eq(processSimulationResult.orgId, ctx.orgId),
+      ),
+    );
 
   if (!result) {
     return Response.json({ error: "Result not found" }, { status: 404 });

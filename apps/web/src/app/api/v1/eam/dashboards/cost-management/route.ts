@@ -37,10 +37,27 @@ export async function GET(req: Request) {
 
   return Response.json({
     data: {
-      totalApplications: (rows as unknown as Array<{ app_count: number }>).reduce((s: number, r: { app_count: number }) => s + r.app_count, 0),
-      totalApplicationCost: (rows as unknown as Array<{ total_cost: string }>).reduce((s: number, r: { total_cost: string }) => s + Number(r.total_cost), 0),
-      totalComponents: (infraRows as unknown as Array<{ component_count: number }>).reduce((s: number, r: { component_count: number }) => s + r.component_count, 0),
-      totalComponentCost: (infraRows as unknown as Array<{ total_cost: string }>).reduce((s: number, r: { total_cost: string }) => s + Number(r.total_cost), 0),
+      totalApplications: (
+        rows as unknown as Array<{ app_count: number }>
+      ).reduce((s: number, r: { app_count: number }) => s + r.app_count, 0),
+      totalApplicationCost: (
+        rows as unknown as Array<{ total_cost: string }>
+      ).reduce(
+        (s: number, r: { total_cost: string }) => s + Number(r.total_cost),
+        0,
+      ),
+      totalComponents: (
+        infraRows as unknown as Array<{ component_count: number }>
+      ).reduce(
+        (s: number, r: { component_count: number }) => s + r.component_count,
+        0,
+      ),
+      totalComponentCost: (
+        infraRows as unknown as Array<{ total_cost: string }>
+      ).reduce(
+        (s: number, r: { total_cost: string }) => s + Number(r.total_cost),
+        0,
+      ),
       costByCategory: rows,
       costByProvider: infraRows,
     },

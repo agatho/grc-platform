@@ -43,7 +43,12 @@ interface SimResult {
   aleP95?: string;
   aleMean?: string;
   aleStdDev?: string;
-  histogram?: Array<{ bucket: number; bucketMax: number; count: number; percentage: number }>;
+  histogram?: Array<{
+    bucket: number;
+    bucketMax: number;
+    count: number;
+    percentage: number;
+  }>;
   lossExceedance?: Array<{ threshold: number; probability: number }>;
   sensitivity?: Array<{ parameter: string; impact: number; label: string }>;
   computedAt?: string;
@@ -135,7 +140,8 @@ function FAIRResultsInner() {
           <div>
             <h1 className="text-2xl font-bold">{t("resultsTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              {result.iterations.toLocaleString()} {t("iterationsLabel")} &middot;{" "}
+              {result.iterations.toLocaleString()} {t("iterationsLabel")}{" "}
+              &middot;{" "}
               {result.computedAt
                 ? new Date(result.computedAt).toLocaleString("de-DE")
                 : "-"}
@@ -154,7 +160,9 @@ function FAIRResultsInner() {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="p-4 border-l-4 border-l-green-500">
           <p className="text-sm text-muted-foreground">{t("expectedALE")}</p>
-          <p className="text-2xl font-bold text-green-700">{formatEUR(aleP50)}</p>
+          <p className="text-2xl font-bold text-green-700">
+            {formatEUR(aleP50)}
+          </p>
           <p className="text-xs text-muted-foreground">{t("median")} (P50)</p>
         </Card>
         <Card className="p-4 border-l-4 border-l-red-500">
@@ -169,7 +177,9 @@ function FAIRResultsInner() {
         </Card>
         <Card className="p-4 border-l-4 border-l-purple-500">
           <p className="text-sm text-muted-foreground">{t("aleStdDev")}</p>
-          <p className="text-2xl font-bold text-muted-foreground">{formatEUR(aleStdDev)}</p>
+          <p className="text-2xl font-bold text-muted-foreground">
+            {formatEUR(aleStdDev)}
+          </p>
           <p className="text-xs text-muted-foreground">{t("volatility")}</p>
         </Card>
       </div>
@@ -186,7 +196,9 @@ function FAIRResultsInner() {
         {/* Histogram */}
         <TabsContent value="histogram">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">{t("lossDistribution")}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {t("lossDistribution")}
+            </h3>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={result.histogram ?? []}>
@@ -205,27 +217,31 @@ function FAIRResultsInner() {
                     labelFormatter={(label) => formatEUR(label)}
                   />
                   <ReferenceLine
-                    x={result.histogram?.reduce(
-                      (closest, b) =>
-                        Math.abs(b.bucket - aleP50) <
-                        Math.abs(closest.bucket - aleP50)
-                          ? b
-                          : closest,
-                      result.histogram[0],
-                    )?.bucket}
+                    x={
+                      result.histogram?.reduce(
+                        (closest, b) =>
+                          Math.abs(b.bucket - aleP50) <
+                          Math.abs(closest.bucket - aleP50)
+                            ? b
+                            : closest,
+                        result.histogram[0],
+                      )?.bucket
+                    }
                     stroke="#16a34a"
                     strokeDasharray="5 5"
                     label={{ value: "P50", position: "top", fill: "#16a34a" }}
                   />
                   <ReferenceLine
-                    x={result.histogram?.reduce(
-                      (closest, b) =>
-                        Math.abs(b.bucket - aleP95) <
-                        Math.abs(closest.bucket - aleP95)
-                          ? b
-                          : closest,
-                      result.histogram[0],
-                    )?.bucket}
+                    x={
+                      result.histogram?.reduce(
+                        (closest, b) =>
+                          Math.abs(b.bucket - aleP95) <
+                          Math.abs(closest.bucket - aleP95)
+                            ? b
+                            : closest,
+                        result.histogram[0],
+                      )?.bucket
+                    }
                     stroke="#dc2626"
                     strokeDasharray="5 5"
                     label={{ value: "P95", position: "top", fill: "#dc2626" }}
@@ -253,8 +269,12 @@ function FAIRResultsInner() {
         {/* Loss Exceedance Curve */}
         <TabsContent value="exceedance">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">{t("exceedanceTitle")}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{t("exceedanceDesc")}</p>
+            <h3 className="text-lg font-semibold mb-4">
+              {t("exceedanceTitle")}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t("exceedanceDesc")}
+            </p>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={result.lossExceedance ?? []}>
@@ -274,7 +294,9 @@ function FAIRResultsInner() {
                       `${(Number(value) * 100).toFixed(1)}%`,
                       t("probability"),
                     ]}
-                    labelFormatter={(label) => `${t("lossExceeds")} ${formatEUR(label)}`}
+                    labelFormatter={(label) =>
+                      `${t("lossExceeds")} ${formatEUR(label)}`
+                    }
                   />
                   <Line
                     type="monotone"
@@ -298,8 +320,12 @@ function FAIRResultsInner() {
         {/* Tornado Diagram */}
         <TabsContent value="tornado">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">{t("sensitivityAnalysis")}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{t("sensitivityDesc")}</p>
+            <h3 className="text-lg font-semibold mb-4">
+              {t("sensitivityAnalysis")}
+            </h3>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t("sensitivityDesc")}
+            </p>
             <div className="space-y-4">
               {(result.sensitivity ?? []).map((s) => (
                 <div key={s.parameter} className="space-y-1">
@@ -324,14 +350,22 @@ function FAIRResultsInner() {
         {/* Percentile Table */}
         <TabsContent value="percentiles">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold mb-4">{t("percentileTable")}</h3>
+            <h3 className="text-lg font-semibold mb-4">
+              {t("percentileTable")}
+            </h3>
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left p-2 font-medium">{t("percentile")}</th>
-                    <th className="text-right p-2 font-medium">{t("aleValue")}</th>
-                    <th className="text-left p-2 font-medium">{t("interpretation")}</th>
+                    <th className="text-left p-2 font-medium">
+                      {t("percentile")}
+                    </th>
+                    <th className="text-right p-2 font-medium">
+                      {t("aleValue")}
+                    </th>
+                    <th className="text-left p-2 font-medium">
+                      {t("interpretation")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -344,7 +378,9 @@ function FAIRResultsInner() {
                   ].map((row) => (
                     <tr key={row.p} className="border-b last:border-0">
                       <td className="p-2 font-medium">{row.p}</td>
-                      <td className="p-2 text-right font-mono">{formatEUR(row.val)}</td>
+                      <td className="p-2 text-right font-mono">
+                        {formatEUR(row.val)}
+                      </td>
                       <td className="p-2 text-muted-foreground">{row.desc}</td>
                     </tr>
                   ))}
@@ -358,7 +394,9 @@ function FAIRResultsInner() {
       {/* Simulation History */}
       {allResults.length > 1 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">{t("simulationHistory")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("simulationHistory")}
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -378,7 +416,9 @@ function FAIRResultsInner() {
                         ? new Date(r.computedAt).toLocaleString("de-DE")
                         : "-"}
                     </td>
-                    <td className="p-2 text-right">{r.iterations.toLocaleString()}</td>
+                    <td className="p-2 text-right">
+                      {r.iterations.toLocaleString()}
+                    </td>
                     <td className="p-2 text-right font-mono">
                       {r.aleP50 ? formatEUR(Number(r.aleP50)) : "-"}
                     </td>

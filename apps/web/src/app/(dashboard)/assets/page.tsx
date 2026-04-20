@@ -66,11 +66,12 @@ const TIER_ICONS: Record<string, LucideIcon> = {
   supporting_asset: Server,
 };
 
-const TIER_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
-  business_structure: "default",
-  primary_asset: "secondary",
-  supporting_asset: "outline",
-};
+const TIER_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> =
+  {
+    business_structure: "default",
+    primary_asset: "secondary",
+    supporting_asset: "outline",
+  };
 
 // ---------------------------------------------------------------------------
 // Module filter options
@@ -107,7 +108,9 @@ function filterByModule(nodes: AssetNode[], filter: ModuleFilter): AssetNode[] {
     }));
 }
 
-function flattenAssets(nodes: AssetNode[]): { id: string; name: string; tier: string }[] {
+function flattenAssets(
+  nodes: AssetNode[],
+): { id: string; name: string; tier: string }[] {
   const result: { id: string; name: string; tier: string }[] = [];
   function walk(list: AssetNode[]) {
     for (const node of list) {
@@ -183,7 +186,9 @@ function AssetTreeNode({
           variant={TIER_BADGE_VARIANTS[node.assetTier] ?? "secondary"}
           className="text-[10px] px-1.5 py-0"
         >
-          {t(`tiers.${node.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`)}
+          {t(
+            `tiers.${node.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`,
+          )}
         </Badge>
 
         {/* Protection goal class badge */}
@@ -297,9 +302,15 @@ function CreateAssetDialog({
                 <SelectValue placeholder={t("tier")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="business_structure">{t("tiers.business_structure")}</SelectItem>
-                <SelectItem value="primary_asset">{t("tiers.primary_asset")}</SelectItem>
-                <SelectItem value="supporting_asset">{t("tiers.supporting_asset")}</SelectItem>
+                <SelectItem value="business_structure">
+                  {t("tiers.business_structure")}
+                </SelectItem>
+                <SelectItem value="primary_asset">
+                  {t("tiers.primary_asset")}
+                </SelectItem>
+                <SelectItem value="supporting_asset">
+                  {t("tiers.supporting_asset")}
+                </SelectItem>
               </SelectContent>
             </Select>
           </div>
@@ -333,7 +344,10 @@ function CreateAssetDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tActions("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || !tier || submitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={!name.trim() || !tier || submitting}
+          >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             {tActions("create")}
           </Button>
@@ -422,7 +436,9 @@ export default function AssetsPage() {
       <div className="flex items-start justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{t("hierarchy")}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t("hierarchyDescription")}</p>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("hierarchyDescription")}
+          </p>
         </div>
         <Button onClick={() => setDialogOpen(true)}>
           <Plus size={16} />

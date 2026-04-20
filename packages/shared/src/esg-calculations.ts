@@ -10,7 +10,11 @@ export interface MaterialityTopicInput {
 }
 
 export interface MaterialityTopicResult extends MaterialityTopicInput {
-  quadrant: "high_impact_high_financial" | "high_impact_low_financial" | "low_impact_high_financial" | "low_impact_low_financial";
+  quadrant:
+    | "high_impact_high_financial"
+    | "high_impact_low_financial"
+    | "low_impact_high_financial"
+    | "low_impact_low_financial";
   isMaterial: boolean;
 }
 
@@ -98,7 +102,8 @@ export function computeTargetProgress(
   }
 
   const currentChange = current - baseline;
-  const percentComplete = Math.round((currentChange / totalChange) * 100 * 100) / 100;
+  const percentComplete =
+    Math.round((currentChange / totalChange) * 100 * 100) / 100;
   const clamped = Math.min(Math.max(percentComplete, 0), 100);
   const remainingReduction = target - current;
 

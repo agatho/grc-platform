@@ -12,6 +12,7 @@ Sprints entstanden aber nirgends niedergeschrieben — neue Entwickler
 muessen sie durch Lesen bestehender Dateien erraten.
 
 Status 2026-04-18:
+
 - 69 Namespaces pro Sprache
 - 2 fehlende EN-Keys (via audit-i18n-coverage.mjs, gefixt in commit baea99f)
 - Alle Keys sind **nested Objects**, keine Dotted-Strings
@@ -23,6 +24,7 @@ Status 2026-04-18:
 ### Namespace-Pro-Domain-Oder-Feature
 
 Ein Namespace = ein Modul oder Feature-Bereich:
+
 - `common.json` — geteilt (Navigation, Buttons, Meldungen)
 - `isms.json`, `erm.json`, `bpm.json`, ... — ein Modul
 - `fair.json`, `rcsa.json`, `playbooks.json` — groessere Sub-Features
@@ -100,17 +102,20 @@ fehlende EN-Keys brechen nichts.
 ## Consequences
 
 ### Positiv
+
 - Neue Entwickler wissen wohin mit ihren Strings
 - CI-Gate (sobald aktiv) verhindert Regressionen
 - Einheitliches ICU fuer Plural / Select
 
 ### Negativ
+
 - Grosse common.json (~4800 Zeilen) -- Split auf `common.json` +
   `nav.json` waere moeglich, bisher aber verzichtet (Migration-Kosten)
 - 138 Dateien (69 × 2) koennen bei massiven Refactors auseinander
   laufen -- Audit-Skript ist Gegen-Mittel
 
 ### Neutral
+
 - JSON-Format bleibt -- keine Migration auf YAML oder TS-Maps
 - Schluessel-Benennung camelCase, keine snake_case
 - Kein externes TMS (Lokalise, Phrase) -- alles in-repo, versioniert

@@ -15,7 +15,11 @@ export async function processImportJobs(): Promise<void> {
       // Mark as running
       await db
         .update(importJob)
-        .set({ status: "running", startedAt: new Date(), updatedAt: new Date() })
+        .set({
+          status: "running",
+          startedAt: new Date(),
+          updatedAt: new Date(),
+        })
         .where(eq(importJob.id, job.id));
 
       let processedCount = 0;
@@ -62,7 +66,12 @@ export async function processImportJobs(): Promise<void> {
         .update(importJob)
         .set({
           status: "failed",
-          errorLog: [{ item: "job", error: err instanceof Error ? err.message : "Unknown" }],
+          errorLog: [
+            {
+              item: "job",
+              error: err instanceof Error ? err.message : "Unknown",
+            },
+          ],
           updatedAt: new Date(),
         })
         .where(eq(importJob.id, job.id));

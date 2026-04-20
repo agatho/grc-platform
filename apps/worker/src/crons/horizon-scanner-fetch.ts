@@ -34,21 +34,30 @@ export async function processHorizonScannerFetch(): Promise<HorizonFetchResult> 
   for (const source of dueSources) {
     try {
       // Mark as fetched even if no new items (prevents re-processing)
-      await db.update(horizonScanSource)
+      await db
+        .update(horizonScanSource)
         .set({ lastFetchedAt: now, lastFetchError: null, updatedAt: now })
         .where(eq(horizonScanSource.id, source.id));
 
-      console.log(`[cron:horizon-scanner-fetch] Processed source: ${source.name}`);
+      console.log(
+        `[cron:horizon-scanner-fetch] Processed source: ${source.name}`,
+      );
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors++;
-      await db.update(horizonScanSource)
+      await db
+        .update(horizonScanSource)
         .set({ lastFetchError: message, updatedAt: now })
         .where(eq(horizonScanSource.id, source.id));
-      console.error(`[cron:horizon-scanner-fetch] Error for source ${source.name}:`, message);
+      console.error(
+        `[cron:horizon-scanner-fetch] Error for source ${source.name}:`,
+        message,
+      );
     }
   }
 
-  console.log(`[cron:horizon-scanner-fetch] Done: ${dueSources.length} sources, ${itemsFetched} items, ${errors} errors`);
+  console.log(
+    `[cron:horizon-scanner-fetch] Done: ${dueSources.length} sources, ${itemsFetched} items, ${errors} errors`,
+  );
   return { sourcesProcessed: dueSources.length, itemsFetched, errors };
 }

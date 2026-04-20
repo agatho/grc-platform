@@ -3,13 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Loader2,
-  Play,
-  Link2,
-  TrendingUp,
-  Shield,
-} from "lucide-react";
+import { Loader2, Play, Link2, TrendingUp, Shield } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -107,7 +101,11 @@ function CorrelationInner() {
             </SelectContent>
           </Select>
           <Button onClick={runCorrelation} disabled={computing}>
-            {computing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            {computing ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Play className="mr-2 h-4 w-4" />
+            )}
             {t("runAnalysis")}
           </Button>
         </div>
@@ -130,27 +128,37 @@ function CorrelationInner() {
               </CardHeader>
               <CardContent>
                 {correlations.length === 0 ? (
-                  <p className="text-center text-muted-foreground p-8">{t("noCorrelations")}</p>
+                  <p className="text-center text-muted-foreground p-8">
+                    {t("noCorrelations")}
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {correlations.map((corr) => (
                       <div
                         key={corr.id}
                         className="cursor-pointer rounded border p-4 hover:bg-muted/25"
-                        onClick={() => router.push(`/isms/incidents/correlation/${corr.id}`)}
+                        onClick={() =>
+                          router.push(`/isms/incidents/correlation/${corr.id}`)
+                        }
                       >
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline">{corr.correlationType}</Badge>
+                            <Badge variant="outline">
+                              {corr.correlationType}
+                            </Badge>
                             {corr.campaignName && (
-                              <span className="font-medium">{corr.campaignName}</span>
+                              <span className="font-medium">
+                                {corr.campaignName}
+                              </span>
                             )}
                           </div>
                           <Badge variant={confidenceColor(corr.confidence)}>
                             {corr.confidence}%
                           </Badge>
                         </div>
-                        <p className="mt-2 text-sm text-muted-foreground">{corr.reasoning}</p>
+                        <p className="mt-2 text-sm text-muted-foreground">
+                          {corr.reasoning}
+                        </p>
                         <p className="mt-1 text-xs text-muted-foreground">
                           {corr.incidentIds.length} {t("incidents")}
                         </p>
@@ -173,12 +181,16 @@ function CorrelationInner() {
               </CardHeader>
               <CardContent>
                 {patterns.length === 0 ? (
-                  <p className="text-center text-muted-foreground p-4">{t("noPatterns")}</p>
+                  <p className="text-center text-muted-foreground p-4">
+                    {t("noPatterns")}
+                  </p>
                 ) : (
                   <div className="space-y-3">
                     {patterns.map((pattern, i) => (
                       <div key={i} className="rounded border p-3">
-                        <p className="text-sm font-medium">{pattern.description}</p>
+                        <p className="text-sm font-medium">
+                          {pattern.description}
+                        </p>
                         <div className="mt-2 flex items-center gap-2">
                           <Badge
                             variant={

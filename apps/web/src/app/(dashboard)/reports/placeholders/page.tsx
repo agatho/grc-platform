@@ -1,22 +1,11 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Loader2,
-  Plus,
-  RefreshCcw,
-  Code2,
-  Tag,
-} from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Code2, Tag } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -122,8 +111,15 @@ export default function PlaceholdersPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             Aktualisieren
           </Button>
           <Button>
@@ -160,9 +156,12 @@ export default function PlaceholdersPage() {
           {placeholders.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-400">
               <Code2 className="mb-3 h-10 w-10" />
-              <p className="font-medium text-gray-500">Keine Platzhalter vorhanden</p>
+              <p className="font-medium text-gray-500">
+                Keine Platzhalter vorhanden
+              </p>
               <p className="mt-1 text-gray-400">
-                Erstellen Sie wiederverwendbare Datenpunkte f&uuml;r Ihre Berichte.
+                Erstellen Sie wiederverwendbare Datenpunkte f&uuml;r Ihre
+                Berichte.
               </p>
             </div>
           ) : (
@@ -212,13 +211,20 @@ export default function PlaceholdersPage() {
                       </td>
                       <td className="px-4 py-3 text-sm">
                         {ph.currentValue ? (
-                          <span className="text-gray-900">{ph.currentValue}</span>
+                          <span className="text-gray-900">
+                            {ph.currentValue}
+                          </span>
                         ) : (
                           <span className="text-gray-300">&mdash;</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge className={statusColors[ph.status] ?? "bg-gray-100 text-gray-800"}>
+                        <Badge
+                          className={
+                            statusColors[ph.status] ??
+                            "bg-gray-100 text-gray-800"
+                          }
+                        >
                           {statusLabels[ph.status] ?? ph.status}
                         </Badge>
                       </td>

@@ -59,7 +59,10 @@ interface ObligationsResult {
 function tierBadge(tier: "systemic" | "high_capability" | "standard") {
   if (tier === "systemic") {
     return (
-      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+      <Badge
+        variant="outline"
+        className="bg-red-100 text-red-800 border-red-300"
+      >
         <ShieldAlert className="h-3 w-3 mr-1" />
         SYSTEMIC
       </Badge>
@@ -67,7 +70,10 @@ function tierBadge(tier: "systemic" | "high_capability" | "standard") {
   }
   if (tier === "high_capability") {
     return (
-      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+      <Badge
+        variant="outline"
+        className="bg-amber-100 text-amber-800 border-amber-300"
+      >
         HIGH-CAPABILITY
       </Badge>
     );
@@ -81,7 +87,10 @@ function tierBadge(tier: "systemic" | "high_capability" | "standard") {
 
 function compliancePill(ok: boolean) {
   return ok ? (
-    <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+    <Badge
+      variant="outline"
+      className="bg-emerald-100 text-emerald-800 border-emerald-300"
+    >
       <CheckCircle2 className="h-3 w-3 mr-1" />
       Compliant
     </Badge>
@@ -105,7 +114,9 @@ export default function GpaiComplianceWizardPage() {
     hasAdvancedReasoning: false,
     hasMultimodalCapabilities: false,
   });
-  const [classifyResult, setClassifyResult] = useState<ClassifyResult>({ status: "idle" });
+  const [classifyResult, setClassifyResult] = useState<ClassifyResult>({
+    status: "idle",
+  });
 
   // ─── Obligations inputs ──────────────────────────────────
   const [obligations, setObligations] = useState({
@@ -116,9 +127,11 @@ export default function GpaiComplianceWizardPage() {
     hasModelEvaluations: false,
     hasSystemicRiskAssessment: false,
   });
-  const [obligationsResult, setObligationsResult] = useState<ObligationsResult>({
-    status: "idle",
-  });
+  const [obligationsResult, setObligationsResult] = useState<ObligationsResult>(
+    {
+      status: "idle",
+    },
+  );
 
   const runClassify = useCallback(async () => {
     setClassifyResult({ status: "running" });
@@ -199,10 +212,12 @@ export default function GpaiComplianceWizardPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zu GPAI Models
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">GPAI Compliance Wizard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            GPAI Compliance Wizard
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Art. 51-55 Checks: Systemic-Risk-Klassifikation + Art. 53 (Standard) / Art. 55
-            (Systemic) Obligations.
+            Art. 51-55 Checks: Systemic-Risk-Klassifikation + Art. 53 (Standard)
+            / Art. 55 (Systemic) Obligations.
           </p>
         </div>
         <Button onClick={runAll}>
@@ -218,7 +233,9 @@ export default function GpaiComplianceWizardPage() {
             <div className="flex items-center gap-2">
               <Cpu className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-lg">Art. 51 Systemic-Risk Classification</CardTitle>
+                <CardTitle className="text-lg">
+                  Art. 51 Systemic-Risk Classification
+                </CardTitle>
                 <CardDescription>
                   Compute-Threshold (10^25 FLOPs) / Commission-Designierung /
                   High-Impact-Capabilities.
@@ -232,16 +249,23 @@ export default function GpaiComplianceWizardPage() {
                   Laeuft...
                 </Badge>
               )}
-              {classifyResult.status === "done" && classifyResult.data && (
-                tierBadge(classifyResult.data.tierLevel)
-              )}
+              {classifyResult.status === "done" &&
+                classifyResult.data &&
+                tierBadge(classifyResult.data.tierLevel)}
               {classifyResult.status === "error" && (
-                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                <Badge
+                  variant="outline"
+                  className="bg-red-100 text-red-800 border-red-300"
+                >
                   <XCircle className="h-3 w-3 mr-1" />
                   Fehler
                 </Badge>
               )}
-              <Button size="sm" onClick={runClassify} disabled={classifyResult.status === "running"}>
+              <Button
+                size="sm"
+                onClick={runClassify}
+                disabled={classifyResult.status === "running"}
+              >
                 Klassifizieren
               </Button>
             </div>
@@ -302,7 +326,10 @@ export default function GpaiComplianceWizardPage() {
                 min="0"
                 value={classify.parametersCount}
                 onChange={(e) =>
-                  setClassify({ ...classify, parametersCount: parseInt(e.target.value) || 0 })
+                  setClassify({
+                    ...classify,
+                    parametersCount: parseInt(e.target.value) || 0,
+                  })
                 }
                 className="h-8"
               />
@@ -312,7 +339,9 @@ export default function GpaiComplianceWizardPage() {
           {classifyResult.status === "done" && classifyResult.data && (
             <div className="border-t pt-3 space-y-2">
               <p className="text-sm font-medium">Begruendung:</p>
-              <p className="text-sm text-muted-foreground">{classifyResult.data.reasoning}</p>
+              <p className="text-sm text-muted-foreground">
+                {classifyResult.data.reasoning}
+              </p>
               {classifyResult.data.triggers.length > 0 && (
                 <div className="flex flex-wrap gap-1 mt-2">
                   {classifyResult.data.triggers.map((t, i) => (
@@ -344,8 +373,8 @@ export default function GpaiComplianceWizardPage() {
                   Art. 53 + Art. 55 Obligations-Check
                 </CardTitle>
                 <CardDescription>
-                  Technical-Doc / Training-Summary / Copyright / Downstream-Info /
-                  EU-Rep (non-EU) + Art. 55 wenn systemic.
+                  Technical-Doc / Training-Summary / Copyright / Downstream-Info
+                  / EU-Rep (non-EU) + Art. 55 wenn systemic.
                 </CardDescription>
               </div>
             </div>
@@ -356,9 +385,9 @@ export default function GpaiComplianceWizardPage() {
                   Laeuft...
                 </Badge>
               )}
-              {obligationsResult.status === "done" && obligationsResult.data && (
-                compliancePill(obligationsResult.data.isFullyCompliant)
-              )}
+              {obligationsResult.status === "done" &&
+                obligationsResult.data &&
+                compliancePill(obligationsResult.data.isFullyCompliant)}
               <Button
                 size="sm"
                 onClick={runObligations}
@@ -387,13 +416,21 @@ export default function GpaiComplianceWizardPage() {
               "o-copyright",
               "Art. 53 (1)(c) Copyright-Direktive eingehalten",
               obligations.respectsCopyrightDirective,
-              (v) => setObligations({ ...obligations, respectsCopyrightDirective: v }),
+              (v) =>
+                setObligations({
+                  ...obligations,
+                  respectsCopyrightDirective: v,
+                }),
             )}
             {boolRow(
               "o-downstream",
               "Art. 53 Downstream-Provider-Info geteilt",
               obligations.downstreamProviderInfoShared,
-              (v) => setObligations({ ...obligations, downstreamProviderInfoShared: v }),
+              (v) =>
+                setObligations({
+                  ...obligations,
+                  downstreamProviderInfoShared: v,
+                }),
             )}
             {boolRow(
               "o-evals",
@@ -405,7 +442,11 @@ export default function GpaiComplianceWizardPage() {
               "o-sysrisk",
               "Art. 55 (1)(b) Systemic-Risk-Assessment",
               obligations.hasSystemicRiskAssessment,
-              (v) => setObligations({ ...obligations, hasSystemicRiskAssessment: v }),
+              (v) =>
+                setObligations({
+                  ...obligations,
+                  hasSystemicRiskAssessment: v,
+                }),
             )}
           </div>
 
@@ -414,28 +455,43 @@ export default function GpaiComplianceWizardPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <div>
                   <div className="flex justify-between text-xs mb-1">
-                    <span>Art. 53 Standard ({obligationsResult.data.standardObligationsMet} erfuellt)</span>
-                    <span className="font-medium">{obligationsResult.data.standardPercent}%</span>
+                    <span>
+                      Art. 53 Standard (
+                      {obligationsResult.data.standardObligationsMet} erfuellt)
+                    </span>
+                    <span className="font-medium">
+                      {obligationsResult.data.standardPercent}%
+                    </span>
                   </div>
-                  <Progress value={obligationsResult.data.standardPercent} className="h-2" />
+                  <Progress
+                    value={obligationsResult.data.standardPercent}
+                    className="h-2"
+                  />
                 </div>
                 {obligationsResult.data.systemicPercent !== null && (
                   <div>
                     <div className="flex justify-between text-xs mb-1">
                       <span>
-                        Art. 55 Systemic ({obligationsResult.data.systemicObligationsMet} erfuellt)
+                        Art. 55 Systemic (
+                        {obligationsResult.data.systemicObligationsMet}{" "}
+                        erfuellt)
                       </span>
                       <span className="font-medium">
                         {obligationsResult.data.systemicPercent}%
                       </span>
                     </div>
-                    <Progress value={obligationsResult.data.systemicPercent} className="h-2" />
+                    <Progress
+                      value={obligationsResult.data.systemicPercent}
+                      className="h-2"
+                    />
                   </div>
                 )}
               </div>
               {obligationsResult.data.missing.length > 0 && (
                 <div>
-                  <p className="text-xs text-muted-foreground mb-1">Fehlende Pflichten:</p>
+                  <p className="text-xs text-muted-foreground mb-1">
+                    Fehlende Pflichten:
+                  </p>
                   <div className="flex flex-wrap gap-1">
                     {obligationsResult.data.missing.map((m, i) => (
                       <Badge

@@ -66,17 +66,12 @@ export function SideBySideEditor({
   const [translating, setTranslating] = useState(false);
   const [saved, setSaved] = useState(false);
 
-  const targetLanguages = activeLanguages.filter(
-    (l) => l !== defaultLanguage,
-  );
+  const targetLanguages = activeLanguages.filter((l) => l !== defaultLanguage);
 
-  const handleFieldChange = useCallback(
-    (fieldName: string, value: string) => {
-      setEditedValues((prev) => ({ ...prev, [fieldName]: value }));
-      setSaved(false);
-    },
-    [],
-  );
+  const handleFieldChange = useCallback((fieldName: string, value: string) => {
+    setEditedValues((prev) => ({ ...prev, [fieldName]: value }));
+    setSaved(false);
+  }, []);
 
   const handleSave = useCallback(async () => {
     setSaving(true);
@@ -203,9 +198,7 @@ export function SideBySideEditor({
                 </Label>
                 <Textarea
                   value={targetText}
-                  onChange={(e) =>
-                    handleFieldChange(fieldName, e.target.value)
-                  }
+                  onChange={(e) => handleFieldChange(fieldName, e.target.value)}
                   placeholder={sourceText ? sourceText.substring(0, 200) : ""}
                   className={`resize-none ${!targetText ? "border-amber-300" : ""}`}
                   rows={3}

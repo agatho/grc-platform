@@ -1,4 +1,9 @@
-import { db, copilotConversation, copilotMessage, copilotFeedback } from "@grc/db";
+import {
+  db,
+  copilotConversation,
+  copilotMessage,
+  copilotFeedback,
+} from "@grc/db";
 import { copilotUsageQuerySchema } from "@grc/shared";
 import { eq, sql, and, gte, lte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -9,9 +14,14 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = copilotUsageQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = copilotUsageQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const convConditions = [eq(copilotConversation.orgId, ctx.orgId)];

@@ -2,7 +2,10 @@ import { db, cveAssetMatch } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { acknowledgeCveMatchSchema, isValidCveMatchTransition } from "@grc/shared";
+import {
+  acknowledgeCveMatchSchema,
+  isValidCveMatchTransition,
+} from "@grc/shared";
 
 // PUT /api/v1/isms/cve/matches/:id/acknowledge — Acknowledge/update match status
 export async function PUT(
@@ -19,7 +22,10 @@ export async function PUT(
   const body = await req.json();
   const parsed = acknowledgeCveMatchSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const [existing] = await db
@@ -34,7 +40,9 @@ export async function PUT(
 
   if (!isValidCveMatchTransition(existing.status, parsed.data.status)) {
     return Response.json(
-      { error: `Invalid status transition from '${existing.status}' to '${parsed.data.status}'` },
+      {
+        error: `Invalid status transition from '${existing.status}' to '${parsed.data.status}'`,
+      },
       { status: 422 },
     );
   }

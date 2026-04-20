@@ -2,7 +2,12 @@
 // Runs every Monday at 03:00 — recomputes all predictions, alerts if > 70%
 // Requires >= 6 months KRI data per risk
 
-import { db, riskPrediction, riskPredictionAlert, riskPredictionModel } from "@grc/db";
+import {
+  db,
+  riskPrediction,
+  riskPredictionAlert,
+  riskPredictionModel,
+} from "@grc/db";
 import { eq, desc } from "drizzle-orm";
 
 const ALERT_THRESHOLD = 70; // Escalation probability > 70% triggers alert
@@ -29,7 +34,10 @@ function predictEscalation(
   features: RiskFeatures,
   weights: ModelWeights,
   bias: number,
-): { probability: number; topFactors: Array<{ factor: string; value: number; contribution: number }> } {
+): {
+  probability: number;
+  topFactors: Array<{ factor: string; value: number; contribution: number }>;
+} {
   const featureEntries = Object.entries(features);
   const linearCombination = featureEntries.reduce(
     (sum, [key, value]) => sum + (weights[key] ?? 0) * value,
@@ -71,8 +79,8 @@ export async function processRiskPredictionWeekly(): Promise<{
     kriMomentum: 0.28,
     incidentFrequency: 0.15,
     findingBacklog: 0.12,
-    controlEffectiveness: -0.20,
-    daysSinceReview: 0.10,
+    controlEffectiveness: -0.2,
+    daysSinceReview: 0.1,
   };
   const bias = -1.5;
 

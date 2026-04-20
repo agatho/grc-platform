@@ -60,7 +60,10 @@ export function validateBcpGate3Review(snapshot: BcpSnapshot): Blocker[] {
     });
   }
 
-  if (!snapshot.activationCriteria || snapshot.activationCriteria.trim().length < 30) {
+  if (
+    !snapshot.activationCriteria ||
+    snapshot.activationCriteria.trim().length < 30
+  ) {
     blockers.push({
       code: "missing_activation_criteria",
       message: "Activation-Criteria muessen definiert sein (mind. 30 Zeichen).",
@@ -109,7 +112,10 @@ export function validateBcpGate3Review(snapshot: BcpSnapshot): Blocker[] {
 }
 
 /** B5: Review -> Approved -- Approver (Role='risk_manager' oder 'admin') */
-export function validateBcpGate5Approval(snapshot: BcpSnapshot, approverUserId: string | null): Blocker[] {
+export function validateBcpGate5Approval(
+  snapshot: BcpSnapshot,
+  approverUserId: string | null,
+): Blocker[] {
   const blockers: Blocker[] = [];
 
   if (!approverUserId) {
@@ -147,7 +153,8 @@ export function validateBcpGate6Publish(
   if (!snapshot.approvedBy || !snapshot.approvedAt) {
     blockers.push({
       code: "not_approved",
-      message: "BCP muss zuerst approved sein (status='approved') bevor published werden kann.",
+      message:
+        "BCP muss zuerst approved sein (status='approved') bevor published werden kann.",
       gate: "B6",
       severity: "error",
     });
@@ -156,13 +163,17 @@ export function validateBcpGate6Publish(
   if (!ctx.reportDocumentId) {
     blockers.push({
       code: "missing_pdf_export",
-      message: "PDF-Export (report_document_id) fehlt -- Offline-Kopie pflicht vor publish.",
+      message:
+        "PDF-Export (report_document_id) fehlt -- Offline-Kopie pflicht vor publish.",
       gate: "B6",
       severity: "error",
     });
   }
 
-  if (!ctx.physicalStorageLocation || ctx.physicalStorageLocation.trim().length < 10) {
+  if (
+    !ctx.physicalStorageLocation ||
+    ctx.physicalStorageLocation.trim().length < 10
+  ) {
     blockers.push({
       code: "missing_physical_storage",
       message:
@@ -189,8 +200,11 @@ export interface BcpTransitionResult {
   updates?: Partial<BcpSnapshot>;
 }
 
-export function validateBcpTransition(req: BcpTransitionRequest): BcpTransitionResult {
-  const { currentStatus, targetStatus, snapshot, approverUserId, publishCtx } = req;
+export function validateBcpTransition(
+  req: BcpTransitionRequest,
+): BcpTransitionResult {
+  const { currentStatus, targetStatus, snapshot, approverUserId, publishCtx } =
+    req;
 
   const allowed = BCP_ALLOWED_TRANSITIONS[currentStatus] ?? [];
   if (!allowed.includes(targetStatus)) {

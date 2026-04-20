@@ -6,9 +6,17 @@ import {
   playbookActivation,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { createPlaybookTemplateSchema, playbookListQuerySchema } from "@grc/shared";
+import {
+  createPlaybookTemplateSchema,
+  playbookListQuerySchema,
+} from "@grc/shared";
 import { eq, and, ilike, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/playbooks — List playbook templates
 export async function GET(req: Request) {
@@ -29,7 +37,14 @@ export async function GET(req: Request) {
     conditions.push(
       eq(
         playbookTemplate.triggerCategory,
-        categoryFilter as "ransomware" | "data_breach" | "ddos" | "insider" | "supply_chain" | "phishing" | "other",
+        categoryFilter as
+          | "ransomware"
+          | "data_breach"
+          | "ddos"
+          | "insider"
+          | "supply_chain"
+          | "phishing"
+          | "other",
       ),
     );
   }
@@ -64,9 +79,7 @@ export async function GET(req: Request) {
         const [taskCountResult] = await db
           .select({ count: sql<number>`count(*)::int` })
           .from(playbookTaskTemplate)
-          .where(
-            sql`${playbookTaskTemplate.phaseId} = ANY(${phaseIds})`,
-          );
+          .where(sql`${playbookTaskTemplate.phaseId} = ANY(${phaseIds})`);
         taskCount = taskCountResult?.count ?? 0;
       }
 

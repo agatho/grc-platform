@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, RefreshCcw, ArrowLeft, Download, CheckCircle, FileText, Send } from "lucide-react";
+import {
+  Loader2,
+  RefreshCcw,
+  ArrowLeft,
+  Download,
+  CheckCircle,
+  FileText,
+  Send,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -83,7 +91,9 @@ function ReportYearInner() {
 
   const handleExport = async (format: string) => {
     try {
-      const res = await fetch(`/api/v1/esg/reports/${year}/export?format=${format}`);
+      const res = await fetch(
+        `/api/v1/esg/reports/${year}/export?format=${format}`,
+      );
       if (res.ok) {
         const blob = await res.blob();
         const url = URL.createObjectURL(blob);
@@ -124,14 +134,27 @@ function ReportYearInner() {
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport("json")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("json")}
+          >
             <Download size={14} className="mr-1" />
             {t("report.exportJson")}
           </Button>
-          <Button variant="outline" size="sm" onClick={() => handleExport("pdf")}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => handleExport("pdf")}
+          >
             <FileText size={14} className="mr-1" />
             {t("report.exportPdf")}
           </Button>
@@ -144,28 +167,47 @@ function ReportYearInner() {
           {/* Completeness Gauge */}
           <div className="relative w-28 h-28">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="50" fill="none" stroke="#e5e7eb" strokeWidth="10" />
               <circle
                 cx="60"
                 cy="60"
                 r="50"
                 fill="none"
-                stroke={overallPct >= 80 ? "#22c55e" : overallPct >= 50 ? "#eab308" : "#ef4444"}
+                stroke="#e5e7eb"
+                strokeWidth="10"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="50"
+                fill="none"
+                stroke={
+                  overallPct >= 80
+                    ? "#22c55e"
+                    : overallPct >= 50
+                      ? "#eab308"
+                      : "#ef4444"
+                }
                 strokeWidth="10"
                 strokeDasharray={`${(overallPct / 100) * 314} 314`}
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-2xl font-bold text-gray-900">{overallPct}%</span>
+              <span className="text-2xl font-bold text-gray-900">
+                {overallPct}%
+              </span>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mt-3">{t("completeness")}</p>
+          <p className="text-sm font-medium text-gray-600 mt-3">
+            {t("completeness")}
+          </p>
         </div>
 
         {/* Approval Workflow */}
         <div className="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("report.approval")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("report.approval")}
+          </h2>
           <div className="flex items-center gap-3 mb-4">
             <span className="text-sm text-gray-600">{t("status")}:</span>
             <ReportStatusBadge status={report?.status ?? "draft"} t={t} />
@@ -173,29 +215,35 @@ function ReportYearInner() {
 
           {/* Workflow steps visualization */}
           <div className="flex items-center gap-2 mb-4">
-            {(["draft", "in_review", "approved", "published"] as const).map((step, idx) => {
-              const isActive = report?.status === step;
-              const isPast =
-                (["draft", "in_review", "approved", "published"] as const).indexOf(report?.status ?? "draft") > idx;
-              return (
-                <div key={step} className="flex items-center gap-2">
-                  <div
-                    className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
-                      isPast
-                        ? "bg-green-100 text-green-900"
-                        : isActive
-                          ? "bg-blue-100 text-blue-900 ring-2 ring-blue-300"
-                          : "bg-gray-100 text-gray-400"
-                    }`}
-                  >
-                    {isPast ? <CheckCircle size={14} /> : idx + 1}
+            {(["draft", "in_review", "approved", "published"] as const).map(
+              (step, idx) => {
+                const isActive = report?.status === step;
+                const isPast =
+                  (
+                    ["draft", "in_review", "approved", "published"] as const
+                  ).indexOf(report?.status ?? "draft") > idx;
+                return (
+                  <div key={step} className="flex items-center gap-2">
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-medium ${
+                        isPast
+                          ? "bg-green-100 text-green-900"
+                          : isActive
+                            ? "bg-blue-100 text-blue-900 ring-2 ring-blue-300"
+                            : "bg-gray-100 text-gray-400"
+                      }`}
+                    >
+                      {isPast ? <CheckCircle size={14} /> : idx + 1}
+                    </div>
+                    {idx < 3 && (
+                      <div
+                        className={`w-8 h-0.5 ${isPast ? "bg-green-300" : "bg-gray-200"}`}
+                      />
+                    )}
                   </div>
-                  {idx < 3 && (
-                    <div className={`w-8 h-0.5 ${isPast ? "bg-green-300" : "bg-gray-200"}`} />
-                  )}
-                </div>
-              );
-            })}
+                );
+              },
+            )}
           </div>
 
           {/* Workflow Actions */}
@@ -208,11 +256,19 @@ function ReportYearInner() {
             )}
             {report?.status === "in_review" && (
               <>
-                <Button size="sm" className="bg-green-600 hover:bg-green-700" onClick={() => handleWorkflow("approve")}>
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700"
+                  onClick={() => handleWorkflow("approve")}
+                >
                   <CheckCircle size={14} className="mr-1" />
                   {t("report.approve")}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => handleWorkflow("revert")}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleWorkflow("revert")}
+                >
                   {t("report.revertToDraft")}
                 </Button>
               </>
@@ -229,41 +285,79 @@ function ReportYearInner() {
       {/* Completeness Overview per Standard */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">{t("report.completenessOverview")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("report.completenessOverview")}
+          </h2>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("report.standard")}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("report.covered")}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("report.totalDr")}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 w-48">{t("report.percentage")}</th>
-                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">{t("status")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                  {t("report.standard")}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                  {t("report.covered")}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                  {t("report.totalDr")}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 w-48">
+                  {t("report.percentage")}
+                </th>
+                <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                  {t("status")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {completeness.map((item) => {
                 const color =
-                  item.percentage >= 80 ? "bg-green-500" : item.percentage >= 50 ? "bg-yellow-500" : "bg-red-500";
+                  item.percentage >= 80
+                    ? "bg-green-500"
+                    : item.percentage >= 50
+                      ? "bg-yellow-500"
+                      : "bg-red-500";
                 const statusColor =
-                  item.percentage >= 80 ? "bg-green-100 text-green-900" : item.percentage >= 50 ? "bg-yellow-100 text-yellow-900" : "bg-red-100 text-red-900";
+                  item.percentage >= 80
+                    ? "bg-green-100 text-green-900"
+                    : item.percentage >= 50
+                      ? "bg-yellow-100 text-yellow-900"
+                      : "bg-red-100 text-red-900";
                 return (
                   <tr key={item.standard} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{item.standard}</td>
-                    <td className="px-4 py-3 text-right text-gray-700">{item.coveredDatapoints}</td>
-                    <td className="px-4 py-3 text-right text-gray-700">{item.totalDatapoints}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {item.standard}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {item.coveredDatapoints}
+                    </td>
+                    <td className="px-4 py-3 text-right text-gray-700">
+                      {item.totalDatapoints}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
                         <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
-                          <div className={`h-full rounded-full ${color}`} style={{ width: `${item.percentage}%` }} />
+                          <div
+                            className={`h-full rounded-full ${color}`}
+                            style={{ width: `${item.percentage}%` }}
+                          />
                         </div>
-                        <span className="text-xs font-medium text-gray-700 w-10 text-right">{item.percentage}%</span>
+                        <span className="text-xs font-medium text-gray-700 w-10 text-right">
+                          {item.percentage}%
+                        </span>
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className={`${statusColor} text-[10px]`}>
-                        {item.percentage >= 80 ? "OK" : item.percentage >= 50 ? "Partial" : "Gap"}
+                      <Badge
+                        variant="outline"
+                        className={`${statusColor} text-[10px]`}
+                      >
+                        {item.percentage >= 80
+                          ? "OK"
+                          : item.percentage >= 50
+                            ? "Partial"
+                            : "Gap"}
                       </Badge>
                     </td>
                   </tr>
@@ -271,7 +365,12 @@ function ReportYearInner() {
               })}
               {completeness.length === 0 && (
                 <tr>
-                  <td colSpan={5} className="px-4 py-8 text-center text-gray-400">{t("noData")}</td>
+                  <td
+                    colSpan={5}
+                    className="px-4 py-8 text-center text-gray-400"
+                  >
+                    {t("noData")}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -282,21 +381,37 @@ function ReportYearInner() {
       {/* Gap List */}
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
         <div className="px-6 py-4 border-b border-gray-200">
-          <h2 className="text-base font-semibold text-gray-900">{t("report.gapList")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("report.gapList")}
+          </h2>
         </div>
         {gaps.length === 0 ? (
-          <div className="px-6 py-8 text-center text-gray-400">{t("noData")}</div>
+          <div className="px-6 py-8 text-center text-gray-400">
+            {t("noData")}
+          </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {gaps.map((gap, idx) => (
-              <div key={idx} className="px-6 py-3 flex items-center justify-between hover:bg-gray-50">
+              <div
+                key={idx}
+                className="px-6 py-3 flex items-center justify-between hover:bg-gray-50"
+              >
                 <div className="flex items-center gap-3 min-w-0">
-                  <span className="font-mono text-xs text-gray-500 shrink-0">{gap.datapointCode}</span>
-                  <span className="text-sm text-gray-900 truncate">{gap.datapointName}</span>
+                  <span className="font-mono text-xs text-gray-500 shrink-0">
+                    {gap.datapointCode}
+                  </span>
+                  <span className="text-sm text-gray-900 truncate">
+                    {gap.datapointName}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 ml-3">
-                  <Badge variant="outline" className="text-[10px]">{gap.standard}</Badge>
-                  <Badge variant="outline" className="bg-red-50 text-red-600 text-[10px]">
+                  <Badge variant="outline" className="text-[10px]">
+                    {gap.standard}
+                  </Badge>
+                  <Badge
+                    variant="outline"
+                    className="bg-red-50 text-red-600 text-[10px]"
+                  >
                     {t("report.datapointMissing")}
                   </Badge>
                 </div>
@@ -309,7 +424,13 @@ function ReportYearInner() {
   );
 }
 
-function ReportStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
+function ReportStatusBadge({
+  status,
+  t,
+}: {
+  status: string;
+  t: (key: string) => string;
+}) {
   const colors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
     in_review: "bg-yellow-100 text-yellow-900",

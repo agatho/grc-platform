@@ -15,18 +15,28 @@ export async function GET(req: Request) {
   const category = searchParams.get("category");
   if (category) conditions.push(eq(controlLibraryEntry.category, category));
   const controlType = searchParams.get("controlType");
-  if (controlType) conditions.push(eq(controlLibraryEntry.controlType, controlType));
+  if (controlType)
+    conditions.push(eq(controlLibraryEntry.controlType, controlType));
   const framework = searchParams.get("framework");
   if (framework) {
-    conditions.push(sql`${controlLibraryEntry.frameworkMappings}::jsonb @> ${JSON.stringify([{ framework }])}::jsonb`);
+    conditions.push(
+      sql`${controlLibraryEntry.frameworkMappings}::jsonb @> ${JSON.stringify([{ framework }])}::jsonb`,
+    );
   }
 
-  const where = conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : undefined;
+  const where =
+    conditions.length > 0
+      ? sql`${sql.join(conditions, sql` AND `)}`
+      : undefined;
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(controlLibraryEntry).where(where)
+    db
+      .select()
+      .from(controlLibraryEntry)
+      .where(where)
       .orderBy(controlLibraryEntry.category, controlLibraryEntry.controlRef)
-      .limit(limit).offset(offset),
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(controlLibraryEntry).where(where),
   ]);
 

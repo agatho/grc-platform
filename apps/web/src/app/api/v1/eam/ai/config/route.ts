@@ -17,8 +17,12 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const config = await db.select().from(eamAiConfig)
-    .where(and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)))
+  const config = await db
+    .select()
+    .from(eamAiConfig)
+    .where(
+      and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)),
+    )
     .limit(1);
 
   if (!config.length) return Response.json({ data: null });
@@ -46,26 +50,33 @@ export async function PUT(req: Request) {
 
   const body = await req.json();
   const parsed = aiConfigSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   // Encrypt config (in production, use AES-256 from Sprint 1)
   const configJson = JSON.stringify(parsed.data);
   const encrypted = Buffer.from(configJson).toString("base64");
 
   // Deactivate existing configs
-  await db.update(eamAiConfig)
+  await db
+    .update(eamAiConfig)
     .set({ isActive: false, updatedAt: new Date() })
-    .where(and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)));
+    .where(
+      and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)),
+    );
 
   // Create new config
-  const created = await db.insert(eamAiConfig).values({
-    orgId: ctx.orgId,
-    provider: parsed.data.provider,
-    configEncrypted: encrypted,
-    isActive: true,
-    validationStatus: "untested",
-    createdBy: ctx.userId,
-  }).returning();
+  const created = await db
+    .insert(eamAiConfig)
+    .values({
+      orgId: ctx.orgId,
+      provider: parsed.data.provider,
+      configEncrypted: encrypted,
+      isActive: true,
+      validationStatus: "untested",
+      createdBy: ctx.userId,
+    })
+    .returning();
 
   return Response.json({
     data: {

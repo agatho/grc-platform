@@ -11,6 +11,7 @@ export interface ApiContext {
   session: Session;
   orgId: string;
   userId: string;
+  roles?: string[];
 }
 
 /** Authenticate, resolve org, check roles. Returns context or error Response. */
@@ -34,7 +35,10 @@ export async function withAuth(
     const check = requireRole(...roles)(session, orgId);
     if (check) {
       // Standard role denied — check custom roles as fallback
-      const hasCustomAccess = await checkCustomRoleAccess(session.user.id, orgId);
+      const hasCustomAccess = await checkCustomRoleAccess(
+        session.user.id,
+        orgId,
+      );
       if (!hasCustomAccess) return check;
     }
   }
@@ -46,7 +50,10 @@ export async function withAuth(
  * Check if user has any custom role with at least 'read' permission in current org.
  * For module-specific checks, use checkCustomRoleModuleAccess().
  */
-async function checkCustomRoleAccess(userId: string, orgId: string): Promise<boolean> {
+async function checkCustomRoleAccess(
+  userId: string,
+  orgId: string,
+): Promise<boolean> {
   const result = await db.execute(
     sql`SELECT 1 FROM user_custom_role ucr
         JOIN custom_role cr ON cr.id = ucr.custom_role_id
@@ -56,7 +63,7 @@ async function checkCustomRoleAccess(userId: string, orgId: string): Promise<boo
           AND rp.action != 'none'
         LIMIT 1`,
   );
-  return (result.rows?.length ?? 0) > 0;
+  return (result?.length ?? 0) > 0;
 }
 
 /**
@@ -69,7 +76,12 @@ export async function checkCustomRoleModuleAccess(
   moduleKey: string,
   requiredAction: "read" | "write" | "admin" = "read",
 ): Promise<boolean> {
-  const actionHierarchy: Record<string, number> = { none: 0, read: 1, write: 2, admin: 3 };
+  const actionHierarchy: Record<string, number> = {
+    none: 0,
+    read: 1,
+    write: 2,
+    admin: 3,
+  };
   const requiredLevel = actionHierarchy[requiredAction] ?? 1;
 
   const result = await db.execute(
@@ -84,8 +96,9 @@ export async function checkCustomRoleModuleAccess(
         LIMIT 1`,
   );
 
-  if (!result.rows?.length) return false;
-  const userLevel = actionHierarchy[(result.rows[0] as Record<string, string>).action] ?? 0;
+  if (!result?.length) return false;
+  const userLevel =
+    actionHierarchy[(result[0] as Record<string, string>).action] ?? 0;
   return userLevel >= requiredLevel;
 }
 
@@ -133,11 +146,15 @@ export async function withReadContext<T>(
 
 /** Parse pagination params from request or search params. */
 export function paginate(reqOrParams: Request | URLSearchParams) {
-  const searchParams = reqOrParams instanceof Request
-    ? new URL(reqOrParams.url).searchParams
-    : reqOrParams;
+  const searchParams =
+    reqOrParams instanceof Request
+      ? new URL(reqOrParams.url).searchParams
+      : reqOrParams;
   const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const limit = Math.min(100, Math.max(1, Number(searchParams.get("limit")) || 20));
+  const limit = Math.min(
+    100,
+    Math.max(1, Number(searchParams.get("limit")) || 20),
+  );
   return { page, limit, offset: (page - 1) * limit, searchParams };
 }
 

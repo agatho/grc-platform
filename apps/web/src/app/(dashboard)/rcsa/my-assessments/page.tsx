@@ -37,7 +37,9 @@ export default function MyAssessmentsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // Form state per assignment
-  const [forms, setForms] = useState<Record<string, Record<string, unknown>>>({});
+  const [forms, setForms] = useState<Record<string, Record<string, unknown>>>(
+    {},
+  );
 
   const fetchAssignments = useCallback(async () => {
     setLoading(true);
@@ -73,11 +75,14 @@ export default function MyAssessmentsPage() {
     setError(null);
     try {
       const form = getForm(assignment.id);
-      const res = await fetch(`/api/v1/rcsa/assignments/${assignment.id}/respond`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
+      const res = await fetch(
+        `/api/v1/rcsa/assignments/${assignment.id}/respond`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(form),
+        },
+      );
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error ?? "Failed to submit");
@@ -91,8 +96,12 @@ export default function MyAssessmentsPage() {
   };
 
   const riskAssignments = assignments.filter((a) => a.entityType === "risk");
-  const controlAssignments = assignments.filter((a) => a.entityType === "control");
-  const totalCompleted = assignments.filter((a) => a.status === "submitted").length;
+  const controlAssignments = assignments.filter(
+    (a) => a.entityType === "control",
+  );
+  const totalCompleted = assignments.filter(
+    (a) => a.status === "submitted",
+  ).length;
 
   if (loading && assignments.length === 0) {
     return (
@@ -112,12 +121,20 @@ export default function MyAssessmentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("myAssessments.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("myAssessments.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {totalCompleted} / {assignments.length} {t("myAssessments.completed")}
+            {totalCompleted} / {assignments.length}{" "}
+            {t("myAssessments.completed")}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAssignments} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchAssignments}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -141,7 +158,9 @@ export default function MyAssessmentsPage() {
       {assignments.length === 0 && (
         <div className="text-center py-16">
           <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
-          <p className="mt-4 text-sm text-gray-500">{t("myAssessments.empty")}</p>
+          <p className="mt-4 text-sm text-gray-500">
+            {t("myAssessments.empty")}
+          </p>
         </div>
       )}
 
@@ -158,7 +177,9 @@ export default function MyAssessmentsPage() {
                 key={assignment.id}
                 assignment={assignment}
                 form={getForm(assignment.id)}
-                onUpdate={(field, value) => updateForm(assignment.id, field, value)}
+                onUpdate={(field, value) =>
+                  updateForm(assignment.id, field, value)
+                }
                 onSubmit={() => submitResponse(assignment)}
                 submitting={submitting === assignment.id}
                 daysLeft={daysUntilDeadline(assignment.deadline)}
@@ -174,7 +195,8 @@ export default function MyAssessmentsPage() {
         <div>
           <h2 className="text-lg font-semibold text-gray-900 mb-3 flex items-center gap-2">
             <ShieldCheck size={18} className="text-blue-500" />
-            {t("myAssessments.controlAssessments")} ({controlAssignments.length})
+            {t("myAssessments.controlAssessments")} ({controlAssignments.length}
+            )
           </h2>
           <div className="space-y-4">
             {controlAssignments.map((assignment) => (
@@ -182,7 +204,9 @@ export default function MyAssessmentsPage() {
                 key={assignment.id}
                 assignment={assignment}
                 form={getForm(assignment.id)}
-                onUpdate={(field, value) => updateForm(assignment.id, field, value)}
+                onUpdate={(field, value) =>
+                  updateForm(assignment.id, field, value)
+                }
                 onSubmit={() => submitResponse(assignment)}
                 submitting={submitting === assignment.id}
                 daysLeft={daysUntilDeadline(assignment.deadline)}
@@ -216,25 +240,42 @@ function RiskCard({
   const isSubmitted = assignment.status === "submitted";
 
   return (
-    <div className={`rounded-lg border p-5 ${isSubmitted ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
+    <div
+      className={`rounded-lg border p-5 ${isSubmitted ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="text-orange-500" />
-            <h3 className="font-semibold text-gray-900">{assignment.entityTitle ?? assignment.entityId}</h3>
+            <h3 className="font-semibold text-gray-900">
+              {assignment.entityTitle ?? assignment.entityId}
+            </h3>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            {assignment.entityCategory && <span>{assignment.entityCategory} | </span>}
+            {assignment.entityCategory && (
+              <span>{assignment.entityCategory} | </span>
+            )}
             {assignment.campaignName}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {isSubmitted ? (
-            <Badge className="bg-green-100 text-green-900"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
+            <Badge className="bg-green-100 text-green-900">
+              <Check size={12} className="mr-1" />
+              {t("status.submitted")}
+            </Badge>
           ) : (
-            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-700"}>
+            <Badge
+              className={
+                daysLeft <= 3
+                  ? "bg-red-100 text-red-900"
+                  : "bg-gray-100 text-gray-700"
+              }
+            >
               <Clock size={12} className="mr-1" />
-              {daysLeft > 0 ? `${daysLeft} ${t("common.daysLeft")}` : t("status.overdue")}
+              {daysLeft > 0
+                ? `${daysLeft} ${t("common.daysLeft")}`
+                : t("status.overdue")}
             </Badge>
           )}
         </div>
@@ -243,7 +284,9 @@ function RiskCard({
       {!isSubmitted && (
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("risk.stillRelevant")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("risk.stillRelevant")}
+            </label>
             <div className="flex gap-2">
               {[true, false].map((v) => (
                 <Button
@@ -261,14 +304,17 @@ function RiskCard({
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-1">
-                {t("risk.likelihood")}: {String(form.likelihoodAssessment ?? "-")}
+                {t("risk.likelihood")}:{" "}
+                {String(form.likelihoodAssessment ?? "-")}
               </label>
               <input
                 type="range"
                 min={1}
                 max={5}
                 value={Number(form.likelihoodAssessment ?? 3)}
-                onChange={(e) => onUpdate("likelihoodAssessment", Number(e.target.value))}
+                onChange={(e) =>
+                  onUpdate("likelihoodAssessment", Number(e.target.value))
+                }
                 className="w-full"
               />
             </div>
@@ -281,30 +327,38 @@ function RiskCard({
                 min={1}
                 max={5}
                 value={Number(form.impactAssessment ?? 3)}
-                onChange={(e) => onUpdate("impactAssessment", Number(e.target.value))}
+                onChange={(e) =>
+                  onUpdate("impactAssessment", Number(e.target.value))
+                }
                 className="w-full"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("risk.trend")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("risk.trend")}
+            </label>
             <div className="flex gap-2">
-              {(["increasing", "stable", "decreasing"] as const).map((trend) => (
-                <Button
-                  key={trend}
-                  size="sm"
-                  variant={form.riskTrend === trend ? "default" : "outline"}
-                  onClick={() => onUpdate("riskTrend", trend)}
-                >
-                  {t(`risk.trend_${trend}`)}
-                </Button>
-              ))}
+              {(["increasing", "stable", "decreasing"] as const).map(
+                (trend) => (
+                  <Button
+                    key={trend}
+                    size="sm"
+                    variant={form.riskTrend === trend ? "default" : "outline"}
+                    onClick={() => onUpdate("riskTrend", trend)}
+                  >
+                    {t(`risk.trend_${trend}`)}
+                  </Button>
+                ),
+              )}
             </div>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("common.comment")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("common.comment")}
+            </label>
             <textarea
               value={String(form.comment ?? "")}
               onChange={(e) => onUpdate("comment", e.target.value)}
@@ -329,10 +383,19 @@ function RiskCard({
 
           <Button
             onClick={onSubmit}
-            disabled={submitting || form.riskStillRelevant === undefined || !form.likelihoodAssessment || !form.riskTrend}
+            disabled={
+              submitting ||
+              form.riskStillRelevant === undefined ||
+              !form.likelihoodAssessment ||
+              !form.riskTrend
+            }
             className="w-full"
           >
-            {submitting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Check size={14} className="mr-1" />}
+            {submitting ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <Check size={14} className="mr-1" />
+            )}
             {t("myAssessments.submit")}
           </Button>
         </div>
@@ -361,25 +424,42 @@ function ControlCard({
   const isSubmitted = assignment.status === "submitted";
 
   return (
-    <div className={`rounded-lg border p-5 ${isSubmitted ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}>
+    <div
+      className={`rounded-lg border p-5 ${isSubmitted ? "bg-green-50 border-green-200" : "bg-white border-gray-200"}`}
+    >
       <div className="flex items-start justify-between mb-4">
         <div>
           <div className="flex items-center gap-2">
             <ShieldCheck size={16} className="text-blue-500" />
-            <h3 className="font-semibold text-gray-900">{assignment.entityTitle ?? assignment.entityId}</h3>
+            <h3 className="font-semibold text-gray-900">
+              {assignment.entityTitle ?? assignment.entityId}
+            </h3>
           </div>
           <p className="text-xs text-gray-500 mt-1">
-            {assignment.entityCategory && <span>{assignment.entityCategory} | </span>}
+            {assignment.entityCategory && (
+              <span>{assignment.entityCategory} | </span>
+            )}
             {assignment.campaignName}
           </p>
         </div>
         <div className="flex items-center gap-2">
           {isSubmitted ? (
-            <Badge className="bg-green-100 text-green-900"><Check size={12} className="mr-1" />{t("status.submitted")}</Badge>
+            <Badge className="bg-green-100 text-green-900">
+              <Check size={12} className="mr-1" />
+              {t("status.submitted")}
+            </Badge>
           ) : (
-            <Badge className={daysLeft <= 3 ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-700"}>
+            <Badge
+              className={
+                daysLeft <= 3
+                  ? "bg-red-100 text-red-900"
+                  : "bg-gray-100 text-gray-700"
+              }
+            >
               <Clock size={12} className="mr-1" />
-              {daysLeft > 0 ? `${daysLeft} ${t("common.daysLeft")}` : t("status.overdue")}
+              {daysLeft > 0
+                ? `${daysLeft} ${t("common.daysLeft")}`
+                : t("status.overdue")}
             </Badge>
           )}
         </div>
@@ -388,13 +468,19 @@ function ControlCard({
       {!isSubmitted && (
         <div className="space-y-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("control.effectiveness")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("control.effectiveness")}
+            </label>
             <div className="flex gap-2">
-              {(["effective", "partially_effective", "ineffective"] as const).map((eff) => (
+              {(
+                ["effective", "partially_effective", "ineffective"] as const
+              ).map((eff) => (
                 <Button
                   key={eff}
                   size="sm"
-                  variant={form.controlEffectiveness === eff ? "default" : "outline"}
+                  variant={
+                    form.controlEffectiveness === eff ? "default" : "outline"
+                  }
                   onClick={() => onUpdate("controlEffectiveness", eff)}
                   className={
                     form.controlEffectiveness === eff
@@ -413,7 +499,9 @@ function ControlCard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("control.operating")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("control.operating")}
+            </label>
             <div className="flex gap-2">
               {[true, false].map((v) => (
                 <Button
@@ -429,7 +517,9 @@ function ControlCard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("control.weaknesses")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("control.weaknesses")}
+            </label>
             <textarea
               value={String(form.controlWeaknesses ?? "")}
               onChange={(e) => onUpdate("controlWeaknesses", e.target.value)}
@@ -439,7 +529,9 @@ function ControlCard({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">{t("common.comment")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {t("common.comment")}
+            </label>
             <textarea
               value={String(form.comment ?? "")}
               onChange={(e) => onUpdate("comment", e.target.value)}
@@ -464,10 +556,18 @@ function ControlCard({
 
           <Button
             onClick={onSubmit}
-            disabled={submitting || !form.controlEffectiveness || form.controlOperating === undefined}
+            disabled={
+              submitting ||
+              !form.controlEffectiveness ||
+              form.controlOperating === undefined
+            }
             className="w-full"
           >
-            {submitting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Check size={14} className="mr-1" />}
+            {submitting ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <Check size={14} className="mr-1" />
+            )}
             {t("myAssessments.submit")}
           </Button>
         </div>

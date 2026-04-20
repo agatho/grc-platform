@@ -52,7 +52,7 @@ const translations = {
 
 export function getSubject(
   data: Record<string, unknown>,
-  lang: "de" | "en"
+  lang: "de" | "en",
 ): string {
   const title = (data.taskTitle as string) || "";
   return lang === "de"
@@ -133,9 +133,7 @@ export const TaskOverdue: React.FC<TaskOverdueProps> = ({
           <Section style={styles.footer}>
             {orgName && <Text style={styles.footerOrg}>{orgName}</Text>}
             <Text style={styles.footerText}>{t.footer}</Text>
-            <Text style={styles.footerBrand}>
-              ARCTOS GRC Platform
-            </Text>
+            <Text style={styles.footerBrand}>ARCTOS GRC Platform</Text>
           </Section>
         </Container>
       </Body>

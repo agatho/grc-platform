@@ -10,7 +10,12 @@
 //
 // Dedup ueber UNIQUE(biaAssessmentId, processId).
 
-import { db, biaAssessment, biaProcessImpact, process as processTable } from "@grc/db";
+import {
+  db,
+  biaAssessment,
+  biaProcessImpact,
+  process as processTable,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, inArray, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -37,7 +42,9 @@ export async function POST(req: Request, { params }: RouteParams) {
   let bodyData: z.infer<typeof bodySchema>;
   try {
     const raw = await req.text();
-    const parsed = bodySchema.safeParse(raw && raw.trim().length > 0 ? JSON.parse(raw) : {});
+    const parsed = bodySchema.safeParse(
+      raw && raw.trim().length > 0 ? JSON.parse(raw) : {},
+    );
     if (!parsed.success) {
       return Response.json(
         { error: "Validation failed", details: parsed.error.flatten() },
@@ -53,13 +60,17 @@ export async function POST(req: Request, { params }: RouteParams) {
   const [bia] = await db
     .select()
     .from(biaAssessment)
-    .where(and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)));
+    .where(
+      and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)),
+    );
   if (!bia) {
     return Response.json({ error: "BIA not found" }, { status: 404 });
   }
   if (bia.status !== "draft" && bia.status !== "in_progress") {
     return Response.json(
-      { error: `BIA status '${bia.status}' -- Bulk-Generation nur fuer draft/in_progress` },
+      {
+        error: `BIA status '${bia.status}' -- Bulk-Generation nur fuer draft/in_progress`,
+      },
       { status: 422 },
     );
   }

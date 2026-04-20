@@ -1,17 +1,67 @@
 // Internal Control System (ICS) types (Sprint 4)
 export type ControlType = "preventive" | "detective" | "corrective";
-export type ControlFrequency = "event_driven" | "continuous" | "daily" | "weekly" | "monthly" | "quarterly" | "annually" | "ad_hoc";
+export type ControlFrequency =
+  | "event_driven"
+  | "continuous"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "annually"
+  | "ad_hoc";
 export type AutomationLevel = "manual" | "semi_automated" | "fully_automated";
-export type ControlStatus = "designed" | "implemented" | "effective" | "ineffective" | "retired";
-export type ControlAssertion = "completeness" | "accuracy" | "obligations_and_rights" | "fraud_prevention" | "existence" | "valuation" | "presentation" | "safeguarding_of_assets";
+export type ControlStatus =
+  | "designed"
+  | "implemented"
+  | "effective"
+  | "ineffective"
+  | "retired";
+export type ControlAssertion =
+  | "completeness"
+  | "accuracy"
+  | "obligations_and_rights"
+  | "fraud_prevention"
+  | "existence"
+  | "valuation"
+  | "presentation"
+  | "safeguarding_of_assets";
 export type TestType = "design_effectiveness" | "operating_effectiveness";
-export type TestResult = "effective" | "ineffective" | "partially_effective" | "not_tested";
+export type TestResult =
+  | "effective"
+  | "ineffective"
+  | "partially_effective"
+  | "not_tested";
 export type TestStatus = "planned" | "in_progress" | "completed" | "cancelled";
 export type CampaignStatus = "draft" | "active" | "completed" | "cancelled";
-export type FindingSeverity = "observation" | "recommendation" | "improvement_requirement" | "insignificant_nonconformity" | "significant_nonconformity";
-export type FindingStatus = "identified" | "in_remediation" | "remediated" | "verified" | "accepted" | "closed";
-export type FindingSource = "control_test" | "audit" | "incident" | "self_assessment" | "external";
-export type EvidenceCategory = "screenshot" | "document" | "log_export" | "email" | "certificate" | "report" | "photo" | "config_export" | "other";
+export type FindingSeverity =
+  | "observation"
+  | "recommendation"
+  | "improvement_requirement"
+  | "insignificant_nonconformity"
+  | "significant_nonconformity";
+export type FindingStatus =
+  | "identified"
+  | "in_remediation"
+  | "remediated"
+  | "verified"
+  | "accepted"
+  | "closed";
+export type FindingSource =
+  | "control_test"
+  | "audit"
+  | "incident"
+  | "self_assessment"
+  | "external";
+export type EvidenceCategory =
+  | "screenshot"
+  | "document"
+  | "log_export"
+  | "email"
+  | "certificate"
+  | "report"
+  | "photo"
+  | "config_export"
+  | "other";
 
 export interface Control {
   id: string;
@@ -118,8 +168,24 @@ export interface Finding {
 }
 
 // Document Management System (DMS) types (Sprint 4)
-export type DocumentCategory = "policy" | "procedure" | "guideline" | "template" | "record" | "tom" | "dpa" | "bcp" | "soa" | "other";
-export type DocumentStatus = "draft" | "in_review" | "approved" | "published" | "archived" | "expired";
+export type DocumentCategory =
+  | "policy"
+  | "procedure"
+  | "guideline"
+  | "template"
+  | "record"
+  | "tom"
+  | "dpa"
+  | "bcp"
+  | "soa"
+  | "other";
+export type DocumentStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "published"
+  | "archived"
+  | "expired";
 
 export interface Document {
   id: string;

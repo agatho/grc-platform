@@ -22,16 +22,20 @@ export async function GET(req: Request) {
   const toDate = new Date(to);
 
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
-    return Response.json(
-      { error: "Invalid date format" },
-      { status: 422 },
-    );
+    return Response.json({ error: "Invalid date format" }, { status: 422 });
   }
 
   const modulesParam = searchParams.get("modules");
-  const filterModules = modulesParam ? modulesParam.split(",").filter(Boolean) : undefined;
+  const filterModules = modulesParam
+    ? modulesParam.split(",").filter(Boolean)
+    : undefined;
 
-  const heatmap = await getCapacityHeatmap(ctx.orgId, fromDate, toDate, filterModules);
+  const heatmap = await getCapacityHeatmap(
+    ctx.orgId,
+    fromDate,
+    toDate,
+    filterModules,
+  );
 
   return Response.json({ data: heatmap });
 }

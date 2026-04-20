@@ -23,7 +23,10 @@ export async function GET(req: Request) {
   `);
 
   const rows = result as unknown as Array<{
-    ring: string; app_count: number; technology_name: string; technology_id: string;
+    ring: string;
+    app_count: number;
+    technology_name: string;
+    technology_id: string;
   }>;
 
   const standard = rows.filter((r) => ["adopt", "trial"].includes(r.ring));
@@ -42,7 +45,8 @@ export async function GET(req: Request) {
         technologyName: r.technology_name,
         ring: r.ring,
         applicationCount: r.app_count,
-        recommendedAction: r.ring === "hold" ? "Plan migration" : "Evaluate alternatives",
+        recommendedAction:
+          r.ring === "hold" ? "Plan migration" : "Evaluate alternatives",
       })),
     },
   });

@@ -1,9 +1,4 @@
-import {
-  db,
-  esgTarget,
-  esgMeasurement,
-  esrsMetric,
-} from "@grc/db";
+import { db, esgTarget, esgMeasurement, esrsMetric } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { computeTargetProgress } from "@grc/shared";
 import { eq, and, desc } from "drizzle-orm";
@@ -38,9 +33,7 @@ export async function GET(
     })
     .from(esgTarget)
     .leftJoin(esrsMetric, eq(esgTarget.metricId, esrsMetric.id))
-    .where(
-      and(eq(esgTarget.id, id), eq(esgTarget.orgId, ctx.orgId)),
-    );
+    .where(and(eq(esgTarget.id, id), eq(esgTarget.orgId, ctx.orgId)));
 
   if (!target) {
     return Response.json({ error: "Target not found" }, { status: 404 });

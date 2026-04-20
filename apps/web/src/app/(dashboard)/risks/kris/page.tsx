@@ -242,13 +242,17 @@ function KriSlideOver({
             </h3>
             <div className="grid grid-cols-3 gap-2">
               <div className="rounded-lg border border-green-200 bg-green-50 p-3 text-center">
-                <div className="text-xs text-green-600">{t("thresholdGreen")}</div>
+                <div className="text-xs text-green-600">
+                  {t("thresholdGreen")}
+                </div>
                 <div className="text-sm font-semibold text-green-700 mt-1">
                   {kri.thresholdGreen ?? "-"}
                 </div>
               </div>
               <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-3 text-center">
-                <div className="text-xs text-yellow-600">{t("thresholdYellow")}</div>
+                <div className="text-xs text-yellow-600">
+                  {t("thresholdYellow")}
+                </div>
                 <div className="text-sm font-semibold text-yellow-700 mt-1">
                   {kri.thresholdYellow ?? "-"}
                 </div>
@@ -274,10 +278,18 @@ function KriSlideOver({
                 <table className="w-full text-sm">
                   <thead>
                     <tr className="bg-gray-50 text-gray-500">
-                      <th className="text-left py-2 px-3">{t("measurementDate")}</th>
-                      <th className="text-right py-2 px-3">{t("measurementValue")}</th>
-                      <th className="text-left py-2 px-3">{t("measurementSource")}</th>
-                      <th className="text-left py-2 px-3">{t("measurementNotes")}</th>
+                      <th className="text-left py-2 px-3">
+                        {t("measurementDate")}
+                      </th>
+                      <th className="text-right py-2 px-3">
+                        {t("measurementValue")}
+                      </th>
+                      <th className="text-left py-2 px-3">
+                        {t("measurementSource")}
+                      </th>
+                      <th className="text-left py-2 px-3">
+                        {t("measurementNotes")}
+                      </th>
                     </tr>
                   </thead>
                   <tbody>
@@ -389,9 +401,7 @@ function KriDashboardContent() {
   const yellowCount = kris.filter(
     (k) => k.currentAlertStatus === "yellow",
   ).length;
-  const redCount = kris.filter(
-    (k) => k.currentAlertStatus === "red",
-  ).length;
+  const redCount = kris.filter((k) => k.currentAlertStatus === "red").length;
 
   // Add measurement
   async function addMeasurement() {

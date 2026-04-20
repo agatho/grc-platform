@@ -56,11 +56,17 @@ import type {
 
 const FACTOR_LABELS: Record<CCIFactorKey, { de: string; en: string }> = {
   task_compliance: { de: "Aufgaben-Compliance", en: "Task Compliance" },
-  policy_ack_rate: { de: "Richtlinien-Kenntnisnahme", en: "Policy Acknowledgment" },
+  policy_ack_rate: {
+    de: "Richtlinien-Kenntnisnahme",
+    en: "Policy Acknowledgment",
+  },
   training_completion: { de: "Schulungsabschluss", en: "Training Completion" },
   incident_response_time: { de: "Vorfallreaktion", en: "Incident Response" },
   audit_finding_closure: { de: "Feststellungsbehebung", en: "Finding Closure" },
-  self_assessment_participation: { de: "Self-Assessment", en: "Self-Assessment" },
+  self_assessment_participation: {
+    de: "Self-Assessment",
+    en: "Self-Assessment",
+  },
 };
 
 function getScoreColor(score: number): string {
@@ -137,9 +143,7 @@ export default function CCIDashboardPage() {
 
   const improvementAreas = useMemo(() => {
     if (!factors?.factors) return [];
-    return [...factors.factors]
-      .sort((a, b) => a.score - b.score)
-      .slice(0, 3);
+    return [...factors.factors].sort((a, b) => a.score - b.score).slice(0, 3);
   }, [factors]);
 
   const overallScore = current?.snapshot?.overallScore ?? 0;
@@ -211,10 +215,14 @@ export default function CCIDashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-6">
               <div className="flex flex-col items-center">
-                <span className={`text-5xl font-bold ${getScoreColor(overallScore)}`}>
+                <span
+                  className={`text-5xl font-bold ${getScoreColor(overallScore)}`}
+                >
                   {overallScore.toFixed(1)}
                 </span>
-                <span className="mt-1 text-xs text-gray-500">{t("outOf100")}</span>
+                <span className="mt-1 text-xs text-gray-500">
+                  {t("outOf100")}
+                </span>
               </div>
               <div className="flex items-center gap-2">
                 <TrendIcon trend={trend} />
@@ -297,7 +305,12 @@ export default function CCIDashboardPage() {
                   <YAxis domain={[0, 100]} />
                   <Tooltip />
                   <Legend />
-                  <ReferenceLine y={70} stroke="#22c55e" strokeDasharray="3 3" label="Target" />
+                  <ReferenceLine
+                    y={70}
+                    stroke="#22c55e"
+                    strokeDasharray="3 3"
+                    label="Target"
+                  />
                   <Line
                     type="monotone"
                     dataKey="overallScore"
@@ -322,7 +335,9 @@ export default function CCIDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>{t("departmentHeatmap")}</CardTitle>
-            <CardDescription>{t("departmentHeatmapDescription")}</CardDescription>
+            <CardDescription>
+              {t("departmentHeatmapDescription")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -352,7 +367,8 @@ export default function CCIDashboardPage() {
                         {dept.departmentName}
                       </td>
                       {Object.keys(FACTOR_LABELS).map((key) => {
-                        const score = dept.factorScores?.[key as CCIFactorKey] ?? 0;
+                        const score =
+                          dept.factorScores?.[key as CCIFactorKey] ?? 0;
                         return (
                           <td key={key} className="px-4 py-2 text-center">
                             <Badge className={getScoreBgColor(score)}>
@@ -390,7 +406,9 @@ export default function CCIDashboardPage() {
               </CardHeader>
               <CardContent>
                 <div className="flex items-center gap-3">
-                  <span className={`text-3xl font-bold ${getScoreColor(area.score)}`}>
+                  <span
+                    className={`text-3xl font-bold ${getScoreColor(area.score)}`}
+                  >
                     {area.score.toFixed(1)}
                   </span>
                   <TrendIcon trend={area.trend} />

@@ -47,14 +47,21 @@ export async function processControlTestScheduler(): Promise<{
           startedAt: new Date(),
         });
         testsScheduled++;
-        console.log(`[control-test-scheduler] Scheduled test for script ${script.name}`);
+        console.log(
+          `[control-test-scheduler] Scheduled test for script ${script.name}`,
+        );
       }
     } catch (err) {
-      console.error(`[control-test-scheduler] Failed for script ${script.id}:`, err);
+      console.error(
+        `[control-test-scheduler] Failed for script ${script.id}:`,
+        err,
+      );
     }
   }
 
-  console.log(`[control-test-scheduler] Checked ${dueScripts.length} scripts, scheduled ${testsScheduled} tests`);
+  console.log(
+    `[control-test-scheduler] Checked ${dueScripts.length} scripts, scheduled ${testsScheduled} tests`,
+  );
   return { scriptsChecked: dueScripts.length, testsScheduled };
 }
 

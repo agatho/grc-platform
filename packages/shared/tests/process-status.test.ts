@@ -355,9 +355,7 @@ describe("TRANSITIONS_REQUIRING_COMMENT", () => {
   });
 
   it("published -> archived does NOT require comment", () => {
-    expect(TRANSITIONS_REQUIRING_COMMENT).not.toContain(
-      "published->archived",
-    );
+    expect(TRANSITIONS_REQUIRING_COMMENT).not.toContain("published->archived");
   });
 
   it("contains exactly 3 transition keys", () => {

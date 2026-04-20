@@ -5,7 +5,9 @@ import { login } from "../fixtures/auth";
 // no org-owned controls exist. Must produce exactly as many items as the
 // chosen catalog has entries.
 
-test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({ page }) => {
+test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
+  page,
+}) => {
   await login(page);
 
   // Create a fresh org with Audit module (auto-activated post F-06).
@@ -14,7 +16,12 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
     const r = await fetch("/api/v1/organizations", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ name: n, type: "holding", country: "DEU", countryCode: "DE" }),
+      body: JSON.stringify({
+        name: n,
+        type: "holding",
+        country: "DEU",
+        countryCode: "DE",
+      }),
     });
     return await r.json();
   }, orgName);
@@ -45,14 +52,21 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
   );
   expect(iso).toBeTruthy();
 
-  const activationStatus = await page.evaluate(async ({ oId, cId }) => {
-    const r = await fetch(`/api/v1/organizations/${oId}/active-catalogs`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ catalogId: cId, catalogType: "control", enforcementLevel: "recommended" }),
-    });
-    return r.status;
-  }, { oId: orgId, cId: iso.id });
+  const activationStatus = await page.evaluate(
+    async ({ oId, cId }) => {
+      const r = await fetch(`/api/v1/organizations/${oId}/active-catalogs`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          catalogId: cId,
+          catalogType: "control",
+          enforcementLevel: "recommended",
+        }),
+      });
+      return r.status;
+    },
+    { oId: orgId, cId: iso.id },
+  );
   expect(activationStatus).toBe(201);
 
   // Create an audit.
@@ -68,14 +82,20 @@ test("F-15: checklist generate from catalog_entry (ISO 27001 Annex A)", async ({
   expect(auditId).toBeTruthy();
 
   // Generate checklist targeting the ISO catalog specifically (F-13+F-15).
-  const generate = await page.evaluate(async ({ aId, cId }) => {
-    const r = await fetch(`/api/v1/audit-mgmt/audits/${aId}/checklists/generate`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ catalogId: cId }),
-    });
-    return await r.json();
-  }, { aId: auditId, cId: iso.id });
+  const generate = await page.evaluate(
+    async ({ aId, cId }) => {
+      const r = await fetch(
+        `/api/v1/audit-mgmt/audits/${aId}/checklists/generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ catalogId: cId }),
+        },
+      );
+      return await r.json();
+    },
+    { aId: auditId, cId: iso.id },
+  );
 
   expect(generate?.data?.itemCount).toBeGreaterThan(0);
   // ISO 27001 Annex A has 97 controls seeded -- allow some tolerance

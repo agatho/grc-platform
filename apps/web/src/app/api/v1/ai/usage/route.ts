@@ -29,10 +29,22 @@ export async function GET(req: Request) {
   const [totals] = await db
     .select({
       totalPrompts: sql<number>`COUNT(*)`.as("total_prompts"),
-      totalInputTokens: sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens}), 0)`.as("total_input"),
-      totalOutputTokens: sql<number>`COALESCE(SUM(${aiPromptLog.outputTokens}), 0)`.as("total_output"),
-      totalCostUsd: sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as("total_cost"),
-      cachedCount: sql<number>`SUM(CASE WHEN ${aiPromptLog.cachedResult} THEN 1 ELSE 0 END)`.as("cached"),
+      totalInputTokens:
+        sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens}), 0)`.as(
+          "total_input",
+        ),
+      totalOutputTokens:
+        sql<number>`COALESCE(SUM(${aiPromptLog.outputTokens}), 0)`.as(
+          "total_output",
+        ),
+      totalCostUsd:
+        sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as(
+          "total_cost",
+        ),
+      cachedCount:
+        sql<number>`SUM(CASE WHEN ${aiPromptLog.cachedResult} THEN 1 ELSE 0 END)`.as(
+          "cached",
+        ),
     })
     .from(aiPromptLog)
     .where(where);
@@ -42,8 +54,13 @@ export async function GET(req: Request) {
     .select({
       model: aiPromptLog.model,
       prompts: sql<number>`COUNT(*)`.as("prompts"),
-      tokens: sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens} + ${aiPromptLog.outputTokens}), 0)`.as("tokens"),
-      cost: sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as("cost"),
+      tokens:
+        sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens} + ${aiPromptLog.outputTokens}), 0)`.as(
+          "tokens",
+        ),
+      cost: sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as(
+        "cost",
+      ),
     })
     .from(aiPromptLog)
     .where(where)
@@ -54,15 +71,25 @@ export async function GET(req: Request) {
     .select({
       template: aiPromptLog.promptTemplate,
       prompts: sql<number>`COUNT(*)`.as("prompts"),
-      tokens: sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens} + ${aiPromptLog.outputTokens}), 0)`.as("tokens"),
-      cost: sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as("cost"),
-      avgLatencyMs: sql<number>`ROUND(AVG(${aiPromptLog.latencyMs}))`.as("avg_latency"),
+      tokens:
+        sql<number>`COALESCE(SUM(${aiPromptLog.inputTokens} + ${aiPromptLog.outputTokens}), 0)`.as(
+          "tokens",
+        ),
+      cost: sql<number>`COALESCE(SUM(${aiPromptLog.costUsd}::numeric), 0)`.as(
+        "cost",
+      ),
+      avgLatencyMs: sql<number>`ROUND(AVG(${aiPromptLog.latencyMs}))`.as(
+        "avg_latency",
+      ),
     })
     .from(aiPromptLog)
     .where(where)
     .groupBy(aiPromptLog.promptTemplate);
 
-  const byModel: Record<string, { prompts: number; tokens: number; cost: number }> = {};
+  const byModel: Record<
+    string,
+    { prompts: number; tokens: number; cost: number }
+  > = {};
   for (const r of byModelRows) {
     byModel[r.model] = {
       prompts: Number(r.prompts),
@@ -71,7 +98,10 @@ export async function GET(req: Request) {
     };
   }
 
-  const byTemplate: Record<string, { prompts: number; tokens: number; cost: number; avgLatencyMs: number }> = {};
+  const byTemplate: Record<
+    string,
+    { prompts: number; tokens: number; cost: number; avgLatencyMs: number }
+  > = {};
   for (const r of byTemplateRows) {
     byTemplate[r.template] = {
       prompts: Number(r.prompts),
@@ -90,7 +120,8 @@ export async function GET(req: Request) {
       totalInputTokens: Number(totals?.totalInputTokens ?? 0),
       totalOutputTokens: Number(totals?.totalOutputTokens ?? 0),
       totalCostUsd: Number(totals?.totalCostUsd ?? 0),
-      cacheHitRate: totalPrompts > 0 ? Math.round((cachedCount / totalPrompts) * 100) : 0,
+      cacheHitRate:
+        totalPrompts > 0 ? Math.round((cachedCount / totalPrompts) * 100) : 0,
       byModel,
       byTemplate,
     },

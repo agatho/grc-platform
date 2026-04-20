@@ -20,13 +20,18 @@ export async function POST(req: Request) {
   const [existing] = await db
     .select()
     .from(pluginInstallation)
-    .where(and(
-      eq(pluginInstallation.orgId, ctx.orgId),
-      eq(pluginInstallation.pluginId, body.data.pluginId),
-    ));
+    .where(
+      and(
+        eq(pluginInstallation.orgId, ctx.orgId),
+        eq(pluginInstallation.pluginId, body.data.pluginId),
+      ),
+    );
 
   if (existing) {
-    return Response.json({ error: "Plugin already installed" }, { status: 409 });
+    return Response.json(
+      { error: "Plugin already installed" },
+      { status: 409 },
+    );
   }
 
   const [created] = await db

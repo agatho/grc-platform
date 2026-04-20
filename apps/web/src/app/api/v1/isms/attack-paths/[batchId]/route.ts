@@ -28,7 +28,10 @@ export async function GET(
     .orderBy(desc(attackPathResult.riskScore));
 
   if (rows.length === 0) {
-    return Response.json({ error: "No paths found for this batch" }, { status: 404 });
+    return Response.json(
+      { error: "No paths found for this batch" },
+      { status: 404 },
+    );
   }
 
   return Response.json({

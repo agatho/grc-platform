@@ -54,7 +54,8 @@ export default function LifecycleRoadmapPage() {
   );
 
   const minDate = allDates.length > 0 ? Math.min(...allDates) : Date.now();
-  const maxDate = allDates.length > 0 ? Math.max(...allDates) : Date.now() + 365 * 86400000;
+  const maxDate =
+    allDates.length > 0 ? Math.max(...allDates) : Date.now() + 365 * 86400000;
   const totalRange = Math.max(maxDate - minDate, 86400000 * 30);
 
   const getBarPosition = (start: string, end: string | null) => {
@@ -76,8 +77,12 @@ export default function LifecycleRoadmapPage() {
   return (
     <div className="space-y-4">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t("lifecycle.title")}</h1>
-        <p className="mt-1 text-sm text-gray-500">{t("lifecycleDescription")}</p>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("lifecycle.title")}
+        </h1>
+        <p className="mt-1 text-sm text-gray-500">
+          {t("lifecycleDescription")}
+        </p>
       </div>
 
       {/* Legend */}
@@ -96,7 +101,9 @@ export default function LifecycleRoadmapPage() {
       {entities.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-8 text-center">
           <Calendar className="mx-auto h-12 w-12 text-gray-400" />
-          <p className="mt-4 text-sm text-gray-500">{t("lifecycle.noPhases")}</p>
+          <p className="mt-4 text-sm text-gray-500">
+            {t("lifecycle.noPhases")}
+          </p>
         </div>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white">
@@ -128,7 +135,10 @@ export default function LifecycleRoadmapPage() {
               </div>
 
               {/* Bars */}
-              <div className="relative flex-1 px-4 py-3" style={{ minHeight: 40 }}>
+              <div
+                className="relative flex-1 px-4 py-3"
+                style={{ minHeight: 40 }}
+              >
                 {entity.phases.map((phase) => {
                   const pos = getBarPosition(phase.startDate, phase.endDate);
                   return (

@@ -85,7 +85,8 @@ export async function processPlaybookSuggestion(): Promise<PlaybookSuggestionRes
           tmpl.triggerCategory.includes(incidentCategory);
 
         // Special: data breach match
-        const breachMatch = incident.isDataBreach && tmpl.triggerCategory === "data_breach";
+        const breachMatch =
+          incident.isDataBreach && tmpl.triggerCategory === "data_breach";
 
         // Severity match
         const severityMatch = matchesSeverityThreshold(
@@ -123,14 +124,21 @@ export async function processPlaybookSuggestion(): Promise<PlaybookSuggestionRes
         }
 
         suggested++;
-        console.log(`[cron:playbook-suggestion] Suggested "${bestMatch.name}" for incident "${incident.title}"`);
+        console.log(
+          `[cron:playbook-suggestion] Suggested "${bestMatch.name}" for incident "${incident.title}"`,
+        );
       }
     } catch (err) {
-      console.error(`[cron:playbook-suggestion] Error processing incident ${incident.id}:`, err);
+      console.error(
+        `[cron:playbook-suggestion] Error processing incident ${incident.id}:`,
+        err,
+      );
     }
   }
 
-  console.log(`[cron:playbook-suggestion] Done. Processed: ${recentIncidents.length}, Suggested: ${suggested}`);
+  console.log(
+    `[cron:playbook-suggestion] Done. Processed: ${recentIncidents.length}, Suggested: ${suggested}`,
+  );
 
   return { processed: recentIncidents.length, suggested };
 }

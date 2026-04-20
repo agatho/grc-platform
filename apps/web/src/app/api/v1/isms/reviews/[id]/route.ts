@@ -20,7 +20,9 @@ export async function GET(
   const [row] = await db
     .select()
     .from(managementReview)
-    .where(and(eq(managementReview.id, id), eq(managementReview.orgId, ctx.orgId)));
+    .where(
+      and(eq(managementReview.id, id), eq(managementReview.orgId, ctx.orgId)),
+    );
 
   if (!row) {
     return Response.json({ error: "Review not found" }, { status: 404 });
@@ -51,7 +53,9 @@ export async function PUT(
   const [existing] = await db
     .select()
     .from(managementReview)
-    .where(and(eq(managementReview.id, id), eq(managementReview.orgId, ctx.orgId)));
+    .where(
+      and(eq(managementReview.id, id), eq(managementReview.orgId, ctx.orgId)),
+    );
 
   if (!existing) {
     return Response.json({ error: "Review not found" }, { status: 404 });
@@ -65,16 +69,23 @@ export async function PUT(
     if (data.reviewDate !== undefined) updates.reviewDate = data.reviewDate;
     if (data.status !== undefined) updates.status = data.status;
     if (data.chairId !== undefined) updates.chairId = data.chairId;
-    if (data.participantIds !== undefined) updates.participantIds = data.participantIds;
-    if (data.changesInContext !== undefined) updates.changesInContext = data.changesInContext;
-    if (data.performanceFeedback !== undefined) updates.performanceFeedback = data.performanceFeedback;
-    if (data.riskAssessmentResults !== undefined) updates.riskAssessmentResults = data.riskAssessmentResults;
-    if (data.auditResults !== undefined) updates.auditResults = data.auditResults;
-    if (data.improvementOpportunities !== undefined) updates.improvementOpportunities = data.improvementOpportunities;
+    if (data.participantIds !== undefined)
+      updates.participantIds = data.participantIds;
+    if (data.changesInContext !== undefined)
+      updates.changesInContext = data.changesInContext;
+    if (data.performanceFeedback !== undefined)
+      updates.performanceFeedback = data.performanceFeedback;
+    if (data.riskAssessmentResults !== undefined)
+      updates.riskAssessmentResults = data.riskAssessmentResults;
+    if (data.auditResults !== undefined)
+      updates.auditResults = data.auditResults;
+    if (data.improvementOpportunities !== undefined)
+      updates.improvementOpportunities = data.improvementOpportunities;
     if (data.decisions !== undefined) updates.decisions = data.decisions;
     if (data.actionItems !== undefined) updates.actionItems = data.actionItems;
     if (data.minutes !== undefined) updates.minutes = data.minutes;
-    if (data.nextReviewDate !== undefined) updates.nextReviewDate = data.nextReviewDate;
+    if (data.nextReviewDate !== undefined)
+      updates.nextReviewDate = data.nextReviewDate;
 
     const [updated] = await tx
       .update(managementReview)

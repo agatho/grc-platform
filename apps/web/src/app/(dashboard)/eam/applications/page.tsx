@@ -60,7 +60,11 @@ function ApplicationsInner() {
   }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -68,22 +72,47 @@ function ApplicationsInner() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("portfolio.title")}</h1>
         <div className="flex gap-2">
-          <Button variant={view === "list" ? "default" : "outline"} size="sm" onClick={() => setView("list")}>{t("portfolio.listView")}</Button>
-          <Button variant={view === "quadrant" ? "default" : "outline"} size="sm" onClick={() => setView("quadrant")}>{t("portfolio.quadrantView")}</Button>
-          <Button variant={view === "timeline" ? "default" : "outline"} size="sm" onClick={() => setView("timeline")}>{t("portfolio.timelineView")}</Button>
-          <Button><Plus className="h-4 w-4 mr-2" />{t("portfolio.registerApp")}</Button>
+          <Button
+            variant={view === "list" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("list")}
+          >
+            {t("portfolio.listView")}
+          </Button>
+          <Button
+            variant={view === "quadrant" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("quadrant")}
+          >
+            {t("portfolio.quadrantView")}
+          </Button>
+          <Button
+            variant={view === "timeline" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setView("timeline")}
+          >
+            {t("portfolio.timelineView")}
+          </Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            {t("portfolio.registerApp")}
+          </Button>
         </div>
       </div>
 
       <div className="grid gap-3">
         {apps.map((app) => (
-          <Link key={app.element?.id ?? app.id} href={`/eam/applications/${app.element?.id ?? app.id}`}>
+          <Link
+            key={app.element?.id ?? app.id}
+            href={`/eam/applications/${app.element?.id ?? app.id}`}
+          >
             <Card className="hover:shadow-md transition-shadow cursor-pointer">
               <CardContent className="p-4 flex items-center justify-between">
                 <div>
                   <p className="font-medium">{app.element?.name}</p>
                   <p className="text-sm text-muted-foreground">
-                    {app.portfolio?.vendorName ?? "-"} | v{app.portfolio?.version ?? "-"}
+                    {app.portfolio?.vendorName ?? "-"} | v
+                    {app.portfolio?.version ?? "-"}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
@@ -91,18 +120,31 @@ function ApplicationsInner() {
                     <Badge variant="outline">{app.portfolio.licenseType}</Badge>
                   )}
                   {app.portfolio?.lifecycleStatus && (
-                    <Badge className={LIFECYCLE_COLORS[app.portfolio.lifecycleStatus] ?? ""}>
+                    <Badge
+                      className={
+                        LIFECYCLE_COLORS[app.portfolio.lifecycleStatus] ?? ""
+                      }
+                    >
                       {app.portfolio.lifecycleStatus}
                     </Badge>
                   )}
                   {app.portfolio?.timeClassification && (
-                    <Badge className={TIME_COLORS[app.portfolio.timeClassification] ?? ""}>
-                      {t(`portfolio.${app.portfolio.timeClassification}` as any)}
+                    <Badge
+                      className={
+                        TIME_COLORS[app.portfolio.timeClassification] ?? ""
+                      }
+                    >
+                      {t(
+                        `portfolio.${app.portfolio.timeClassification}` as any,
+                      )}
                     </Badge>
                   )}
                   {app.portfolio?.annualCost && (
                     <span className="text-sm font-medium">
-                      {Number(app.portfolio.annualCost).toLocaleString("de-DE", { style: "currency", currency: "EUR" })}
+                      {Number(app.portfolio.annualCost).toLocaleString(
+                        "de-DE",
+                        { style: "currency", currency: "EUR" },
+                      )}
                     </span>
                   )}
                 </div>

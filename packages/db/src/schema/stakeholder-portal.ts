@@ -37,14 +37,17 @@ export const portalSessionStatusEnum = pgEnum("portal_session_status", [
   "completed",
 ]);
 
-export const portalQuestionnaireStatusEnum = pgEnum("portal_questionnaire_status", [
-  "not_started",
-  "in_progress",
-  "submitted",
-  "reviewed",
-  "accepted",
-  "rejected",
-]);
+export const portalQuestionnaireStatusEnum = pgEnum(
+  "portal_questionnaire_status",
+  [
+    "not_started",
+    "in_progress",
+    "submitted",
+    "reviewed",
+    "accepted",
+    "rejected",
+  ],
+);
 
 // ──────────────────────────────────────────────────────────────
 // 83.1 PortalConfig — Configuration per portal type per org
@@ -62,15 +65,25 @@ export const portalConfig = pgTable(
     description: text("description"),
     isActive: boolean("is_active").notNull().default(true),
     requireMfa: boolean("require_mfa").notNull().default(true),
-    sessionTimeoutMinutes: integer("session_timeout_minutes").notNull().default(60),
-    allowedLanguages: jsonb("allowed_languages").notNull().default(sql`'["de","en"]'::jsonb`),
-    accessPermissions: jsonb("access_permissions").notNull().default(sql`'[]'::jsonb`),
+    sessionTimeoutMinutes: integer("session_timeout_minutes")
+      .notNull()
+      .default(60),
+    allowedLanguages: jsonb("allowed_languages")
+      .notNull()
+      .default(sql`'["de","en"]'::jsonb`),
+    accessPermissions: jsonb("access_permissions")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     customCss: text("custom_css"),
     welcomeMessage: text("welcome_message"),
     privacyPolicyUrl: varchar("privacy_policy_url", { length: 2000 }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("pc_org_idx").on(t.orgId),
@@ -103,7 +116,9 @@ export const portalSession = pgTable(
     userAgent: text("user_agent"),
     lastAccessAt: timestamp("last_access_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("ps_org_idx").on(t.orgId),
@@ -128,15 +143,23 @@ export const portalQuestionnaireResponse = pgTable(
       .notNull()
       .references(() => portalSession.id),
     questionnaireId: uuid("questionnaire_id").notNull(),
-    status: portalQuestionnaireStatusEnum("status").notNull().default("not_started"),
-    answersJson: jsonb("answers_json").notNull().default(sql`'{}'::jsonb`),
+    status: portalQuestionnaireStatusEnum("status")
+      .notNull()
+      .default("not_started"),
+    answersJson: jsonb("answers_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     progressPct: integer("progress_pct").notNull().default(0),
     submittedAt: timestamp("submitted_at", { withTimezone: true }),
     reviewedBy: uuid("reviewed_by").references(() => user.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     reviewNotes: text("review_notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("pqr_org_idx").on(t.orgId),
@@ -167,8 +190,12 @@ export const portalEvidenceUpload = pgTable(
     entityType: varchar("entity_type", { length: 100 }),
     entityId: uuid("entity_id"),
     description: text("description"),
-    virusScanStatus: varchar("virus_scan_status", { length: 30 }).notNull().default("pending"),
-    uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+    virusScanStatus: varchar("virus_scan_status", { length: 30 })
+      .notNull()
+      .default("pending"),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("peu_org_idx").on(t.orgId),
@@ -193,13 +220,21 @@ export const portalBranding = pgTable(
       .references(() => portalConfig.id, { onDelete: "cascade" }),
     logoUrl: varchar("logo_url", { length: 2000 }),
     faviconUrl: varchar("favicon_url", { length: 2000 }),
-    primaryColor: varchar("primary_color", { length: 7 }).notNull().default("#2563EB"),
-    secondaryColor: varchar("secondary_color", { length: 7 }).notNull().default("#1E40AF"),
+    primaryColor: varchar("primary_color", { length: 7 })
+      .notNull()
+      .default("#2563EB"),
+    secondaryColor: varchar("secondary_color", { length: 7 })
+      .notNull()
+      .default("#1E40AF"),
     fontFamily: varchar("font_family", { length: 200 }).default("Inter"),
     headerHtml: text("header_html"),
     footerHtml: text("footer_html"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("pb_org_idx").on(t.orgId),
@@ -218,15 +253,18 @@ export const portalAuditTrail = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    sessionId: uuid("session_id")
-      .references(() => portalSession.id),
+    sessionId: uuid("session_id").references(() => portalSession.id),
     portalType: portalTypeEnum("portal_type").notNull(),
     action: varchar("action", { length: 200 }).notNull(),
     entityType: varchar("entity_type", { length: 100 }),
     entityId: uuid("entity_id"),
     ipAddress: varchar("ip_address", { length: 45 }),
-    metadataJson: jsonb("metadata_json").notNull().default(sql`'{}'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    metadataJson: jsonb("metadata_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("pat_org_idx").on(t.orgId),

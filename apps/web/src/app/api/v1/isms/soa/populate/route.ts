@@ -25,7 +25,12 @@ export async function POST(req: Request) {
       .limit(1);
 
     if (!annexACatalog) {
-      return { error: "ISO 27001 Annex A catalog not found", created: 0, skipped: 0, total: 0 };
+      return {
+        error: "ISO 27001 Annex A catalog not found",
+        created: 0,
+        skipped: 0,
+        total: 0,
+      };
     }
 
     // Get all Annex A control entries

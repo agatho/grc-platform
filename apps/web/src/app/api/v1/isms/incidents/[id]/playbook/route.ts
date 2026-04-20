@@ -133,12 +133,10 @@ export async function GET(
   const now = new Date();
 
   const phaseStatuses = phases.map((phase) => {
-    const phaseTasks = playbookTasks.filter(
-      (t) => {
-        const meta = t.metadata as Record<string, unknown> | null;
-        return meta?.phaseId === phase.id;
-      },
-    );
+    const phaseTasks = playbookTasks.filter((t) => {
+      const meta = t.metadata as Record<string, unknown> | null;
+      return meta?.phaseId === phase.id;
+    });
     const completed = phaseTasks.filter(
       (t) => t.status === "done" || t.status === "cancelled",
     ).length;
@@ -151,7 +149,9 @@ export async function GET(
       status = now > phaseDeadline ? "overdue" : "active";
     } else {
       // Check if this phase is before or after current
-      const currentPhase = phases.find((p) => p.id === activation.currentPhaseId);
+      const currentPhase = phases.find(
+        (p) => p.id === activation.currentPhaseId,
+      );
       if (currentPhase && phase.sortOrder < currentPhase.sortOrder) {
         status = "completed";
       } else if (activation.status === "completed") {
@@ -171,7 +171,9 @@ export async function GET(
   });
 
   // Get current phase details
-  const currentPhaseData = phases.find((p) => p.id === activation.currentPhaseId);
+  const currentPhaseData = phases.find(
+    (p) => p.id === activation.currentPhaseId,
+  );
   const currentPhaseTasks = playbookTasks.filter((t) => {
     const meta = t.metadata as Record<string, unknown> | null;
     return meta?.phaseId === activation.currentPhaseId;

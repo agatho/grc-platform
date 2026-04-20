@@ -52,7 +52,11 @@ export function deriveWalkthroughFromBPMN(bpmnXml: string): WalkthroughStep[] {
     const node = nodes.find((n) => n.id === currentId);
     if (!node) continue;
 
-    if (node.type === "startEvent" || node.type === "endEvent" || node.type === "intermediateEvent") {
+    if (
+      node.type === "startEvent" ||
+      node.type === "endEvent" ||
+      node.type === "intermediateEvent"
+    ) {
       // Events: add as event step only if they have a name
       if (node.name && node.type !== "startEvent") {
         steps.push({
@@ -139,7 +143,11 @@ function resolveDecisionTargets(
     if (step.type === "decision" && step.decisionOptions) {
       const outFlows = flows.filter((f) => f.sourceRef === step.bpmnId);
 
-      for (let i = 0; i < step.decisionOptions.length && i < outFlows.length; i++) {
+      for (
+        let i = 0;
+        i < step.decisionOptions.length && i < outFlows.length;
+        i++
+      ) {
         const targetId = outFlows[i].targetRef;
         const targetStep = steps.find((s) => s.bpmnId === targetId);
         if (targetStep) {
@@ -156,24 +164,48 @@ function extractFlowNodes(xml: string): FlowNode[] {
   const nodes: FlowNode[] = [];
 
   // Extract tasks
-  const taskRegex = /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask|scriptTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
+  const taskRegex =
+    /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask|scriptTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
   let m: RegExpExecArray | null;
   while ((m = taskRegex.exec(xml)) !== null) {
-    nodes.push({ id: m[2], name: m[3] || m[2], type: "task", outgoing: [], incoming: [] });
+    nodes.push({
+      id: m[2],
+      name: m[3] || m[2],
+      type: "task",
+      outgoing: [],
+      incoming: [],
+    });
   }
 
   // Extract gateways
-  const gwRegex = /<bpmn:(exclusiveGateway|parallelGateway|inclusiveGateway)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
+  const gwRegex =
+    /<bpmn:(exclusiveGateway|parallelGateway|inclusiveGateway)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
   while ((m = gwRegex.exec(xml)) !== null) {
-    nodes.push({ id: m[2], name: m[3] || "", type: "gateway", outgoing: [], incoming: [] });
+    nodes.push({
+      id: m[2],
+      name: m[3] || "",
+      type: "gateway",
+      outgoing: [],
+      incoming: [],
+    });
   }
 
   // Extract events
-  const eventRegex = /<bpmn:(startEvent|endEvent|intermediateThrowEvent|intermediateCatchEvent)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
+  const eventRegex =
+    /<bpmn:(startEvent|endEvent|intermediateThrowEvent|intermediateCatchEvent)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
   while ((m = eventRegex.exec(xml)) !== null) {
-    const type = m[1].includes("start") ? "startEvent" :
-      m[1].includes("end") ? "endEvent" : "intermediateEvent";
-    nodes.push({ id: m[2], name: m[3] || "", type, outgoing: [], incoming: [] });
+    const type = m[1].includes("start")
+      ? "startEvent"
+      : m[1].includes("end")
+        ? "endEvent"
+        : "intermediateEvent";
+    nodes.push({
+      id: m[2],
+      name: m[3] || "",
+      type,
+      outgoing: [],
+      incoming: [],
+    });
   }
 
   return nodes;
@@ -181,7 +213,8 @@ function extractFlowNodes(xml: string): FlowNode[] {
 
 function extractSequenceFlows(xml: string): SequenceFlow[] {
   const flows: SequenceFlow[] = [];
-  const flowRegex = /<bpmn:sequenceFlow\s+id="([^"]+)"\s+sourceRef="([^"]+)"\s+targetRef="([^"]+)"(?:\s+name="([^"]*)")?/g;
+  const flowRegex =
+    /<bpmn:sequenceFlow\s+id="([^"]+)"\s+sourceRef="([^"]+)"\s+targetRef="([^"]+)"(?:\s+name="([^"]*)")?/g;
   let m: RegExpExecArray | null;
 
   while ((m = flowRegex.exec(xml)) !== null) {
@@ -198,7 +231,8 @@ function extractSequenceFlows(xml: string): SequenceFlow[] {
 
 function extractLaneMapping(xml: string): Map<string, string> {
   const mapping = new Map<string, string>();
-  const laneRegex = /<bpmn:lane\s+id="[^"]*"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
+  const laneRegex =
+    /<bpmn:lane\s+id="[^"]*"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
   let m: RegExpExecArray | null;
 
   while ((m = laneRegex.exec(xml)) !== null) {

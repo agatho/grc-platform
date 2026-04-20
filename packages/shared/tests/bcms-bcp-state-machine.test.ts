@@ -62,28 +62,48 @@ describe("validateBcpGate3Review", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks if procedure count < 3", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, procedureCount: 2 });
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      procedureCount: 2,
+    });
     expect(blockers.some((b) => b.code === "too_few_procedures")).toBe(true);
   });
   it("blocks if scope too short", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, scope: "short" });
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      scope: "short",
+    });
     expect(blockers.some((b) => b.code === "scope_too_short")).toBe(true);
   });
   it("blocks if activationCriteria too short", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, activationCriteria: "short" });
-    expect(blockers.some((b) => b.code === "missing_activation_criteria")).toBe(true);
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      activationCriteria: "short",
+    });
+    expect(blockers.some((b) => b.code === "missing_activation_criteria")).toBe(
+      true,
+    );
   });
   it("blocks if bcManager missing", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, bcManagerId: null });
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      bcManagerId: null,
+    });
     expect(blockers.some((b) => b.code === "missing_bc_manager")).toBe(true);
   });
   it("warns if no resources", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, resourceCount: 0 });
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      resourceCount: 0,
+    });
     const warn = blockers.find((b) => b.code === "no_resources");
     expect(warn?.severity).toBe("warning");
   });
   it("warns if no processes linked", () => {
-    const blockers = validateBcpGate3Review({ ...validSnapshot, processIds: [] });
+    const blockers = validateBcpGate3Review({
+      ...validSnapshot,
+      processIds: [],
+    });
     const warn = blockers.find((b) => b.code === "no_processes_linked");
     expect(warn?.severity).toBe("warning");
   });

@@ -4,13 +4,29 @@ import { z } from "zod";
 
 // ─── CVE Enums ───────────────────────────────────────────────
 
-export const cveSeverity = z.enum(["critical", "high", "medium", "low", "none"]);
-export const cveMatchStatus = z.enum(["new", "acknowledged", "mitigated", "not_applicable"]);
+export const cveSeverity = z.enum([
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "none",
+]);
+export const cveMatchStatus = z.enum([
+  "new",
+  "acknowledged",
+  "mitigated",
+  "not_applicable",
+]);
 export const soaGapType = z.enum(["not_covered", "partial", "full"]);
 export const soaSuggestionStatus = z.enum(["pending", "accepted", "rejected"]);
 export const soaGapPriority = z.enum(["critical", "high", "medium", "low"]);
 export const roadmapEffort = z.enum(["S", "M", "L"]);
-export const roadmapActionStatus = z.enum(["proposed", "in_progress", "completed", "dismissed"]);
+export const roadmapActionStatus = z.enum([
+  "proposed",
+  "in_progress",
+  "completed",
+  "dismissed",
+]);
 
 // ─── CVE Match Status Transitions ────────────────────────────
 
@@ -29,9 +45,13 @@ export function isValidCveMatchTransition(from: string, to: string): boolean {
 
 export const assignAssetCpeSchema = z.object({
   assetId: z.string().uuid(),
-  cpeUri: z.string().min(5).max(500).regex(/^cpe:2\.3:[aoh]:/i, {
-    message: "CPE URI must follow CPE 2.3 format (cpe:2.3:[a|h|o]:...)",
-  }),
+  cpeUri: z
+    .string()
+    .min(5)
+    .max(500)
+    .regex(/^cpe:2\.3:[aoh]:/i, {
+      message: "CPE URI must follow CPE 2.3 format (cpe:2.3:[a|h|o]:...)",
+    }),
   vendor: z.string().max(200).optional(),
   product: z.string().max(200).optional(),
   version: z.string().max(100).optional(),
@@ -44,10 +64,9 @@ export const removeAssetCpeSchema = z.object({
 // ─── CVE Match Acknowledge ───────────────────────────────────
 
 export const acknowledgeCveMatchSchema = z.object({
-  status: cveMatchStatus.refine(
-    (val) => val !== "new",
-    { message: "Cannot set status to new" },
-  ),
+  status: cveMatchStatus.refine((val) => val !== "new", {
+    message: "Cannot set status to new",
+  }),
 });
 
 // ─── CVE to Vulnerability Conversion ─────────────────────────
@@ -101,8 +120,7 @@ export const cveMatchQuerySchema = z.object({
 
 export const bulkCveMatchStatusSchema = z.object({
   matchIds: z.array(z.string().uuid()).min(1).max(100),
-  status: cveMatchStatus.refine(
-    (val) => val !== "new",
-    { message: "Cannot bulk-set status to new" },
-  ),
+  status: cveMatchStatus.refine((val) => val !== "new", {
+    message: "Cannot bulk-set status to new",
+  }),
 });

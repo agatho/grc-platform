@@ -13,7 +13,9 @@ export async function processDoraIncidentDeadlineMonitor(): Promise<DoraDeadline
   const now = new Date();
   let notified = 0;
 
-  console.log(`[cron:dora-incident-deadlines] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:dora-incident-deadlines] Starting at ${now.toISOString()}`,
+  );
 
   // Find incidents with overdue initial reports (4h deadline)
   const overdueInitial = await db
@@ -48,17 +50,26 @@ export async function processDoraIncidentDeadlineMonitor(): Promise<DoraDeadline
         message: `ICT incident "${incident.title}" has an overdue initial report (4h deadline). Due: ${incident.initialReportDue?.toISOString()}`,
         channel: "both" as const,
         templateKey: "dora_report_overdue",
-        templateData: { incidentCode: incident.incidentCode, title: incident.title, deadline: "4h" },
+        templateData: {
+          incidentCode: incident.incidentCode,
+          title: incident.title,
+          deadline: "4h",
+        },
         createdAt: now,
         updatedAt: now,
       });
       notified++;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:dora-incident-deadlines] Failed for ${incident.id}:`, message);
+      console.error(
+        `[cron:dora-incident-deadlines] Failed for ${incident.id}:`,
+        message,
+      );
     }
   }
 
-  console.log(`[cron:dora-incident-deadlines] Processed ${overdueInitial.length} overdue reports, ${notified} notifications created`);
+  console.log(
+    `[cron:dora-incident-deadlines] Processed ${overdueInitial.length} overdue reports, ${notified} notifications created`,
+  );
   return { processed: overdueInitial.length, notified };
 }

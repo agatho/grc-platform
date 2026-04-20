@@ -222,9 +222,7 @@ export async function resolveFK(
 
     // For user table, no org_id filter needed (users are global)
     const orgFilter =
-      rule.lookupTable === "user"
-        ? sql`1=1`
-        : sql`org_id = ${orgId}`;
+      rule.lookupTable === "user" ? sql`1=1` : sql`org_id = ${orgId}`;
 
     const result = await db.execute(
       sql`SELECT id FROM ${sql.raw(rule.lookupTable)}
@@ -280,7 +278,9 @@ export async function resolveFKsForRow(
     if (result.success && result.id) {
       // Replace the text field with the resolved UUID
       // Map field name to the FK column (e.g. owner_email → owner_id)
-      const fkColumnName = rule.field.replace(/_email$/, "_id").replace(/_name$/, "_id");
+      const fkColumnName = rule.field
+        .replace(/_email$/, "_id")
+        .replace(/_name$/, "_id");
       resolved[fkColumnName] = result.id;
       delete resolved[rule.field];
     } else {

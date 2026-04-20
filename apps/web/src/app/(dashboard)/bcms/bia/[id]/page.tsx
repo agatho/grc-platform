@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, ChevronRight, ChevronLeft, Check } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  ChevronRight,
+  ChevronLeft,
+  Check,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -137,34 +143,47 @@ function BiaWizardInner() {
   }
 
   if (!assessment) {
-    return <p className="text-center text-gray-400 py-12">{t("bia.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-400 py-12">{t("bia.notFound")}</p>
+    );
   }
 
   const assessedCount = impacts.filter((i) => i.rtoHours != null).length;
   const totalCount = impacts.length;
-  const progressPct = totalCount > 0 ? Math.round((assessedCount / totalCount) * 100) : 0;
+  const progressPct =
+    totalCount > 0 ? Math.round((assessedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <button onClick={() => router.push("/bcms/bia")} className="text-gray-400 hover:text-gray-600">
+        <button
+          onClick={() => router.push("/bcms/bia")}
+          className="text-gray-400 hover:text-gray-600"
+        >
           <ArrowLeft size={18} />
         </button>
         <div className="flex-1">
           <h1 className="text-xl font-bold text-gray-900">{assessment.name}</h1>
           <p className="text-sm text-gray-500">
-            {t("bia.progress")}: {assessedCount}/{totalCount} {t("bia.processCount")} ({progressPct}%)
+            {t("bia.progress")}: {assessedCount}/{totalCount}{" "}
+            {t("bia.processCount")} ({progressPct}%)
           </p>
         </div>
-        <Badge variant="outline" className={`${form.isEssential ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-600"}`}>
+        <Badge
+          variant="outline"
+          className={`${form.isEssential ? "bg-red-100 text-red-900" : "bg-gray-100 text-gray-600"}`}
+        >
           {form.isEssential ? "Essential" : "Standard"}
         </Badge>
       </div>
 
       {/* Progress bar */}
       <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-        <div className="h-full bg-blue-500 rounded-full transition-all" style={{ width: `${progressPct}%` }} />
+        <div
+          className="h-full bg-blue-500 rounded-full transition-all"
+          style={{ width: `${progressPct}%` }}
+        />
       </div>
 
       {/* Process Stepper */}
@@ -173,7 +192,10 @@ function BiaWizardInner() {
           {impacts.map((imp, idx) => (
             <button
               key={imp.id}
-              onClick={() => { setCurrentIndex(idx); loadImpact(imp); }}
+              onClick={() => {
+                setCurrentIndex(idx);
+                loadImpact(imp);
+              }}
               className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-colors ${
                 idx === currentIndex
                   ? "bg-blue-600 text-white"
@@ -182,7 +204,9 @@ function BiaWizardInner() {
                     : "bg-gray-100 text-gray-600"
               }`}
             >
-              {imp.rtoHours != null && idx !== currentIndex && <Check size={10} className="inline mr-1" />}
+              {imp.rtoHours != null && idx !== currentIndex && (
+                <Check size={10} className="inline mr-1" />
+              )}
               {idx + 1}
             </button>
           ))}
@@ -191,52 +215,119 @@ function BiaWizardInner() {
 
       {/* Recovery Targets */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("bia.recoveryTargets")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("bia.recoveryTargets")}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <NumberInput label={t("bia.mtpd")} value={form.mtpdHours} onChange={(v) => setForm({ ...form, mtpdHours: v })} suffix={t("bia.hours")} />
-          <NumberInput label={t("bia.rto")} value={form.rtoHours} onChange={(v) => setForm({ ...form, rtoHours: v })} suffix={t("bia.hours")} />
-          <NumberInput label={t("bia.rpo")} value={form.rpoHours} onChange={(v) => setForm({ ...form, rpoHours: v })} suffix={t("bia.hours")} />
+          <NumberInput
+            label={t("bia.mtpd")}
+            value={form.mtpdHours}
+            onChange={(v) => setForm({ ...form, mtpdHours: v })}
+            suffix={t("bia.hours")}
+          />
+          <NumberInput
+            label={t("bia.rto")}
+            value={form.rtoHours}
+            onChange={(v) => setForm({ ...form, rtoHours: v })}
+            suffix={t("bia.hours")}
+          />
+          <NumberInput
+            label={t("bia.rpo")}
+            value={form.rpoHours}
+            onChange={(v) => setForm({ ...form, rpoHours: v })}
+            suffix={t("bia.hours")}
+          />
         </div>
-        {form.rtoHours != null && form.mtpdHours != null && form.rtoHours <= form.mtpdHours && (
-          <p className="text-xs text-green-600 mt-2">RTO ({form.rtoHours}h) &le; MTPD ({form.mtpdHours}h)</p>
-        )}
-        {form.rtoHours != null && form.mtpdHours != null && form.rtoHours > form.mtpdHours && (
-          <p className="text-xs text-red-600 mt-2">RTO ({form.rtoHours}h) must be &le; MTPD ({form.mtpdHours}h)</p>
-        )}
+        {form.rtoHours != null &&
+          form.mtpdHours != null &&
+          form.rtoHours <= form.mtpdHours && (
+            <p className="text-xs text-green-600 mt-2">
+              RTO ({form.rtoHours}h) &le; MTPD ({form.mtpdHours}h)
+            </p>
+          )}
+        {form.rtoHours != null &&
+          form.mtpdHours != null &&
+          form.rtoHours > form.mtpdHours && (
+            <p className="text-xs text-red-600 mt-2">
+              RTO ({form.rtoHours}h) must be &le; MTPD ({form.mtpdHours}h)
+            </p>
+          )}
       </div>
 
       {/* Financial Impact */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("bia.financialImpact")} (EUR)</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("bia.financialImpact")} (EUR)
+        </h2>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-          <NumberInput label={t("bia.after1h")} value={form.impact1h} onChange={(v) => setForm({ ...form, impact1h: v })} />
-          <NumberInput label={t("bia.after4h")} value={form.impact4h} onChange={(v) => setForm({ ...form, impact4h: v })} />
-          <NumberInput label={t("bia.after24h")} value={form.impact24h} onChange={(v) => setForm({ ...form, impact24h: v })} />
-          <NumberInput label={t("bia.after72h")} value={form.impact72h} onChange={(v) => setForm({ ...form, impact72h: v })} />
-          <NumberInput label={t("bia.after1w")} value={form.impact1w} onChange={(v) => setForm({ ...form, impact1w: v })} />
-          <NumberInput label={t("bia.after1m")} value={form.impact1m} onChange={(v) => setForm({ ...form, impact1m: v })} />
+          <NumberInput
+            label={t("bia.after1h")}
+            value={form.impact1h}
+            onChange={(v) => setForm({ ...form, impact1h: v })}
+          />
+          <NumberInput
+            label={t("bia.after4h")}
+            value={form.impact4h}
+            onChange={(v) => setForm({ ...form, impact4h: v })}
+          />
+          <NumberInput
+            label={t("bia.after24h")}
+            value={form.impact24h}
+            onChange={(v) => setForm({ ...form, impact24h: v })}
+          />
+          <NumberInput
+            label={t("bia.after72h")}
+            value={form.impact72h}
+            onChange={(v) => setForm({ ...form, impact72h: v })}
+          />
+          <NumberInput
+            label={t("bia.after1w")}
+            value={form.impact1w}
+            onChange={(v) => setForm({ ...form, impact1w: v })}
+          />
+          <NumberInput
+            label={t("bia.after1m")}
+            value={form.impact1m}
+            onChange={(v) => setForm({ ...form, impact1m: v })}
+          />
         </div>
 
         {/* Simple bar chart */}
         <div className="mt-4 space-y-1">
-          {([
-            { label: "1h", val: form.impact1h },
-            { label: "4h", val: form.impact4h },
-            { label: "24h", val: form.impact24h },
-            { label: "72h", val: form.impact72h },
-            { label: "1w", val: form.impact1w },
-            { label: "1m", val: form.impact1m },
-          ] as const).map(({ label, val }) => {
-            const maxVal = Math.max(form.impact1m ?? 0, form.impact1w ?? 0, form.impact72h ?? 0, 1);
+          {(
+            [
+              { label: "1h", val: form.impact1h },
+              { label: "4h", val: form.impact4h },
+              { label: "24h", val: form.impact24h },
+              { label: "72h", val: form.impact72h },
+              { label: "1w", val: form.impact1w },
+              { label: "1m", val: form.impact1m },
+            ] as const
+          ).map(({ label, val }) => {
+            const maxVal = Math.max(
+              form.impact1m ?? 0,
+              form.impact1w ?? 0,
+              form.impact72h ?? 0,
+              1,
+            );
             const pct = val ? Math.round((val / maxVal) * 100) : 0;
             return (
               <div key={label} className="flex items-center gap-2">
                 <span className="text-xs text-gray-500 w-8">{label}</span>
                 <div className="flex-1 h-4 bg-gray-100 rounded">
-                  <div className="h-full bg-blue-400 rounded transition-all" style={{ width: `${pct}%` }} />
+                  <div
+                    className="h-full bg-blue-400 rounded transition-all"
+                    style={{ width: `${pct}%` }}
+                  />
                 </div>
                 <span className="text-xs text-gray-600 w-24 text-right">
-                  {val != null ? new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(val) : "-"}
+                  {val != null
+                    ? new Intl.NumberFormat("de-DE", {
+                        style: "currency",
+                        currency: "EUR",
+                        maximumFractionDigits: 0,
+                      }).format(val)
+                    : "-"}
                 </span>
               </div>
             );
@@ -246,15 +337,19 @@ function BiaWizardInner() {
 
       {/* Qualitative Impact */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("bia.qualitativeImpact")} (1-5)</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("bia.qualitativeImpact")} (1-5)
+        </h2>
         <div className="space-y-3">
-          {([
-            { key: "impactReputation", label: t("bia.reputation") },
-            { key: "impactLegal", label: t("bia.legal") },
-            { key: "impactOperational", label: t("bia.operational") },
-            { key: "impactFinancial", label: t("bia.financial") },
-            { key: "impactSafety", label: t("bia.safety") },
-          ] as const).map(({ key, label }) => (
+          {(
+            [
+              { key: "impactReputation", label: t("bia.reputation") },
+              { key: "impactLegal", label: t("bia.legal") },
+              { key: "impactOperational", label: t("bia.operational") },
+              { key: "impactFinancial", label: t("bia.financial") },
+              { key: "impactSafety", label: t("bia.safety") },
+            ] as const
+          ).map(({ key, label }) => (
             <div key={key} className="flex items-center gap-3">
               <span className="text-sm text-gray-700 w-28">{label}</span>
               <div className="flex gap-1">
@@ -284,33 +379,51 @@ function BiaWizardInner() {
 
       {/* Dependencies */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("bia.dependencies")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("bia.dependencies")}
+        </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">{t("bia.criticalResources")}</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t("bia.criticalResources")}
+            </label>
             <input
               type="text"
               value={form.criticalResources}
-              onChange={(e) => setForm({ ...form, criticalResources: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, criticalResources: e.target.value })
+              }
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
-          <NumberInput label={t("bia.minimumStaff")} value={form.minimumStaff} onChange={(v) => setForm({ ...form, minimumStaff: v })} />
+          <NumberInput
+            label={t("bia.minimumStaff")}
+            value={form.minimumStaff}
+            onChange={(v) => setForm({ ...form, minimumStaff: v })}
+          />
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">{t("bia.alternateLocation")}</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t("bia.alternateLocation")}
+            </label>
             <input
               type="text"
               value={form.alternateLocation}
-              onChange={(e) => setForm({ ...form, alternateLocation: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, alternateLocation: e.target.value })
+              }
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
           <div>
-            <label className="block text-xs font-medium text-gray-600 mb-1">{t("bia.peakPeriods")}</label>
+            <label className="block text-xs font-medium text-gray-600 mb-1">
+              {t("bia.peakPeriods")}
+            </label>
             <input
               type="text"
               value={form.peakPeriods}
-              onChange={(e) => setForm({ ...form, peakPeriods: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, peakPeriods: e.target.value })
+              }
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             />
           </div>
@@ -323,10 +436,14 @@ function BiaWizardInner() {
           <input
             type="checkbox"
             checked={form.isEssential}
-            onChange={(e) => setForm({ ...form, isEssential: e.target.checked })}
+            onChange={(e) =>
+              setForm({ ...form, isEssential: e.target.checked })
+            }
             className="rounded border-gray-300"
           />
-          <span className="text-sm font-medium text-gray-700">{t("bia.markEssential")}</span>
+          <span className="text-sm font-medium text-gray-700">
+            {t("bia.markEssential")}
+          </span>
         </label>
 
         <div className="flex gap-2">
@@ -342,7 +459,9 @@ function BiaWizardInner() {
             <ChevronLeft size={14} className="mr-1" /> {t("bia.back")}
           </Button>
           <Button onClick={handleSave} disabled={saving}>
-            {saving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+            {saving ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : null}
             {t("bia.saveAndNext")} <ChevronRight size={14} className="ml-1" />
           </Button>
         </div>
@@ -364,15 +483,21 @@ function NumberInput({
 }) {
   return (
     <div>
-      <label className="block text-xs font-medium text-gray-600 mb-1">{label}</label>
+      <label className="block text-xs font-medium text-gray-600 mb-1">
+        {label}
+      </label>
       <div className="flex items-center gap-1">
         <input
           type="number"
           value={value ?? ""}
-          onChange={(e) => onChange(e.target.value ? Number(e.target.value) : undefined)}
+          onChange={(e) =>
+            onChange(e.target.value ? Number(e.target.value) : undefined)
+          }
           className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
         />
-        {suffix && <span className="text-xs text-gray-500 shrink-0">{suffix}</span>}
+        {suffix && (
+          <span className="text-xs text-gray-500 shrink-0">{suffix}</span>
+        )}
       </div>
     </div>
   );

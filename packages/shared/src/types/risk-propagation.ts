@@ -15,10 +15,7 @@ export type OrgRelationshipType =
 // Propagation Types
 // ──────────────────────────────────────────────────────────────
 
-export type PropagationType =
-  | "causal"
-  | "correlated"
-  | "amplifying";
+export type PropagationType = "causal" | "correlated" | "amplifying";
 
 // ──────────────────────────────────────────────────────────────
 // OrgEntityRelationship
@@ -63,11 +60,7 @@ export interface RiskPropagationResult {
 // Correlation Types
 // ──────────────────────────────────────────────────────────────
 
-export type CorrelationType =
-  | "temporal"
-  | "asset"
-  | "pattern"
-  | "mitre";
+export type CorrelationType = "temporal" | "asset" | "pattern" | "mitre";
 
 export interface SharedFactor {
   factor: string;

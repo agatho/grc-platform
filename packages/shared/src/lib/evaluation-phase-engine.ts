@@ -66,11 +66,17 @@ export function validatePhaseTransition(
   if (!rule) {
     return {
       valid: false,
-      missingFields: [`Invalid transition from '${currentPhase}' to '${targetPhase}'`],
+      missingFields: [
+        `Invalid transition from '${currentPhase}' to '${targetPhase}'`,
+      ],
     };
   }
 
-  if (rule.requiredRole && userRole !== rule.requiredRole && userRole !== "admin") {
+  if (
+    rule.requiredRole &&
+    userRole !== rule.requiredRole &&
+    userRole !== "admin"
+  ) {
     return {
       valid: false,
       missingFields: [`Requires role: ${rule.requiredRole}`],
@@ -78,7 +84,8 @@ export function validatePhaseTransition(
   }
 
   const missing = rule.requiredFields.filter(
-    (f) => riskData[f] === null || riskData[f] === undefined || riskData[f] === "",
+    (f) =>
+      riskData[f] === null || riskData[f] === undefined || riskData[f] === "",
   );
 
   return {
@@ -97,7 +104,10 @@ export function getPhaseIndex(phase: string): number {
 /**
  * Check if a phase has been completed (i.e., current phase is past it).
  */
-export function isPhaseCompleted(currentPhase: string, checkPhase: string): boolean {
+export function isPhaseCompleted(
+  currentPhase: string,
+  checkPhase: string,
+): boolean {
   return getPhaseIndex(currentPhase) > getPhaseIndex(checkPhase);
 }
 
@@ -105,14 +115,20 @@ export function isPhaseCompleted(currentPhase: string, checkPhase: string): bool
  * Get all valid target phases from the current phase.
  */
 export function getValidTransitions(currentPhase: string): string[] {
-  return PHASE_TRANSITIONS
-    .filter((r) => r.from === currentPhase)
-    .map((r) => r.to);
+  return PHASE_TRANSITIONS.filter((r) => r.from === currentPhase).map(
+    (r) => r.to,
+  );
 }
 
 /**
  * Get all phases as an ordered list for the progress bar.
  */
 export function getAllPhases(): string[] {
-  return ["assignment", "gross_evaluation", "net_evaluation", "approval", "active"];
+  return [
+    "assignment",
+    "gross_evaluation",
+    "net_evaluation",
+    "approval",
+    "active",
+  ];
 }

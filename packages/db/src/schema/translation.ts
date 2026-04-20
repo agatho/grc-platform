@@ -52,8 +52,12 @@ export const translationStatus = pgTable(
     translatedAt: timestamp("translated_at", { withTimezone: true }),
     sourceHash: varchar("source_hash", { length: 64 }),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

@@ -60,10 +60,7 @@ export const biQueryStatusEnum = pgEnum("bi_query_status", [
   "failed",
 ]);
 
-export const biShareAccessEnum = pgEnum("bi_share_access", [
-  "view",
-  "edit",
-]);
+export const biShareAccessEnum = pgEnum("bi_share_access", ["view", "edit"]);
 
 export const biScheduleFrequencyEnum = pgEnum("bi_schedule_frequency", [
   "daily",
@@ -100,17 +97,29 @@ export const biReport = pgTable(
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
     status: biReportStatusEnum("status").notNull().default("draft"),
-    moduleScope: varchar("module_scope", { length: 50 }).notNull().default("all"),
-    layoutJson: jsonb("layout_json").notNull().default(sql`'[]'::jsonb`),
-    filtersJson: jsonb("filters_json").notNull().default(sql`'{}'::jsonb`),
-    parametersJson: jsonb("parameters_json").notNull().default(sql`'[]'::jsonb`),
+    moduleScope: varchar("module_scope", { length: 50 })
+      .notNull()
+      .default("all"),
+    layoutJson: jsonb("layout_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    filtersJson: jsonb("filters_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    parametersJson: jsonb("parameters_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     isTemplate: boolean("is_template").notNull().default(false),
     templateCategory: varchar("template_category", { length: 100 }),
     thumbnailUrl: varchar("thumbnail_url", { length: 1000 }),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_report_org_idx").on(t.orgId),
@@ -138,11 +147,19 @@ export const biReportWidget = pgTable(
     title: varchar("title", { length: 300 }),
     dataSourceType: biDataSourceTypeEnum("data_source_type").notNull(),
     queryId: uuid("query_id"),
-    configJson: jsonb("config_json").notNull().default(sql`'{}'::jsonb`),
-    positionJson: jsonb("position_json").notNull().default(sql`'{}'::jsonb`),
+    configJson: jsonb("config_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    positionJson: jsonb("position_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     sortOrder: integer("sort_order").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_rw_org_idx").on(t.orgId),
@@ -164,14 +181,26 @@ export const biDataSource = pgTable(
     name: varchar("name", { length: 300 }).notNull(),
     sourceType: biDataSourceTypeEnum("source_type").notNull(),
     description: text("description"),
-    schemaDefinition: jsonb("schema_definition").notNull().default(sql`'{}'::jsonb`),
-    availableColumns: jsonb("available_columns").notNull().default(sql`'[]'::jsonb`),
-    defaultFilters: jsonb("default_filters").notNull().default(sql`'{}'::jsonb`),
-    refreshIntervalMinutes: integer("refresh_interval_minutes").notNull().default(60),
+    schemaDefinition: jsonb("schema_definition")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    availableColumns: jsonb("available_columns")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    defaultFilters: jsonb("default_filters")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    refreshIntervalMinutes: integer("refresh_interval_minutes")
+      .notNull()
+      .default(60),
     lastRefreshedAt: timestamp("last_refreshed_at", { withTimezone: true }),
     isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_ds_org_idx").on(t.orgId),
@@ -200,8 +229,12 @@ export const biQuery = pgTable(
     validationError: text("validation_error"),
     isSaved: boolean("is_saved").notNull().default(true),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_q_org_idx").on(t.orgId),
@@ -232,7 +265,9 @@ export const biSharedDashboard = pgTable(
     viewCount: integer("view_count").notNull().default(0),
     lastViewedAt: timestamp("last_viewed_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_sd_org_idx").on(t.orgId),
@@ -261,12 +296,14 @@ export const biBrandConfig = pgTable(
     confidentialityLabel: varchar("confidentiality_label", { length: 200 }),
     showPageNumbers: boolean("show_page_numbers").notNull().default(true),
     customCss: text("custom_css"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (t) => [
-    unique("bi_bc_org_unique").on(t.orgId),
-  ],
+  (t) => [unique("bi_bc_org_unique").on(t.orgId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -287,14 +324,22 @@ export const biScheduledReport = pgTable(
     frequency: biScheduleFrequencyEnum("frequency").notNull(),
     cronExpression: varchar("cron_expression", { length: 100 }),
     outputFormat: biOutputFormatEnum("output_format").notNull().default("pdf"),
-    recipientEmails: jsonb("recipient_emails").notNull().default(sql`'[]'::jsonb`),
-    parametersJson: jsonb("parameters_json").notNull().default(sql`'{}'::jsonb`),
+    recipientEmails: jsonb("recipient_emails")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    parametersJson: jsonb("parameters_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     isActive: boolean("is_active").notNull().default(true),
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
     nextRunAt: timestamp("next_run_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bi_sr_org_idx").on(t.orgId),
@@ -317,16 +362,22 @@ export const biReportExecution = pgTable(
     reportId: uuid("report_id")
       .notNull()
       .references(() => biReport.id, { onDelete: "cascade" }),
-    scheduledReportId: uuid("scheduled_report_id").references(() => biScheduledReport.id),
+    scheduledReportId: uuid("scheduled_report_id").references(
+      () => biScheduledReport.id,
+    ),
     status: biExecutionStatusEnum("status").notNull().default("queued"),
     outputFormat: biOutputFormatEnum("output_format").notNull().default("pdf"),
     filePath: varchar("file_path", { length: 1000 }),
     fileSize: integer("file_size"),
     executionTimeMs: integer("execution_time_ms"),
-    parametersJson: jsonb("parameters_json").notNull().default(sql`'{}'::jsonb`),
+    parametersJson: jsonb("parameters_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     error: text("error"),
     triggeredBy: uuid("triggered_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
   },
   (t) => [

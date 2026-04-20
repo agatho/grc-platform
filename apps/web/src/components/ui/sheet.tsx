@@ -32,7 +32,11 @@ interface SheetContentProps {
   children: React.ReactNode;
 }
 
-function SheetContent({ side = "right", className, children }: SheetContentProps) {
+function SheetContent({
+  side = "right",
+  className,
+  children,
+}: SheetContentProps) {
   return (
     <DialogContent
       className={`fixed inset-y-0 ${side === "right" ? "right-0" : "left-0"} h-full max-h-full rounded-none border-l ${className ?? ""}`}
@@ -42,28 +46,79 @@ function SheetContent({ side = "right", className, children }: SheetContentProps
   );
 }
 
-function SheetHeader({ children, className }: { children: React.ReactNode; className?: string }) {
+function SheetHeader({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <DialogHeader className={className}>{children}</DialogHeader>;
 }
 
-function SheetTitle({ children, className }: { children: React.ReactNode; className?: string }) {
+function SheetTitle({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <DialogTitle className={className}>{children}</DialogTitle>;
 }
 
-function SheetFooter({ children, className }: { children: React.ReactNode; className?: string }) {
+function SheetFooter({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <DialogFooter className={className}>{children}</DialogFooter>;
 }
 
-function SheetTrigger({ children, asChild, className }: { children: React.ReactNode; asChild?: boolean; className?: string }) {
+function SheetTrigger({
+  children,
+  asChild,
+  className,
+}: {
+  children: React.ReactNode;
+  asChild?: boolean;
+  className?: string;
+}) {
   return <div className={className}>{children}</div>;
 }
 
-function SheetDescription({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <p className={`text-sm text-muted-foreground ${className ?? ""}`}>{children}</p>;
+function SheetDescription({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
+  return (
+    <p className={`text-sm text-muted-foreground ${className ?? ""}`}>
+      {children}
+    </p>
+  );
 }
 
-function SheetClose({ children, className }: { children: React.ReactNode; className?: string }) {
+function SheetClose({
+  children,
+  className,
+}: {
+  children: React.ReactNode;
+  className?: string;
+}) {
   return <div className={className}>{children}</div>;
 }
 
-export { Sheet, SheetContent, SheetHeader, SheetTitle, SheetFooter, SheetTrigger, SheetDescription, SheetClose };
+export {
+  Sheet,
+  SheetContent,
+  SheetHeader,
+  SheetTitle,
+  SheetFooter,
+  SheetTrigger,
+  SheetDescription,
+  SheetClose,
+};

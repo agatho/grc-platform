@@ -27,8 +27,7 @@ export const regulatorySource = pgTable(
   "regulatory_source",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organization.id), // NULL = platform-wide
+    orgId: uuid("org_id").references(() => organization.id), // NULL = platform-wide
     name: varchar("name", { length: 500 }).notNull(),
     sourceType: varchar("source_type", { length: 50 }).notNull(), // official_gazette | regulator | industry_body | eu_lex | custom_feed
     url: varchar("url", { length: 2000 }),
@@ -39,7 +38,9 @@ export const regulatorySource = pgTable(
     isActive: boolean("is_active").notNull().default(true),
     lastFetchedAt: timestamp("last_fetched_at", { withTimezone: true }),
     lastFetchError: text("last_fetch_error"),
-    totalChangesDetected: integer("total_changes_detected").notNull().default(0),
+    totalChangesDetected: integer("total_changes_detected")
+      .notNull()
+      .default(0),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -76,8 +77,7 @@ export const regulatoryChange = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    sourceId: uuid("source_id")
-      .references(() => regulatorySource.id),
+    sourceId: uuid("source_id").references(() => regulatorySource.id),
     externalId: varchar("external_id", { length: 500 }),
     title: varchar("title", { length: 1000 }).notNull(),
     summary: text("summary").notNull(),
@@ -110,7 +110,11 @@ export const regulatoryChange = pgTable(
     classIdx: index("rc_class_idx").on(table.orgId, table.classification),
     statusIdx: index("rc_status_idx").on(table.orgId, table.status),
     dateIdx: index("rc_date_idx").on(table.orgId, table.publishedAt),
-    externalIdx: uniqueIndex("rc_external_idx").on(table.orgId, table.sourceId, table.externalId),
+    externalIdx: uniqueIndex("rc_external_idx").on(
+      table.orgId,
+      table.sourceId,
+      table.externalId,
+    ),
   }),
 );
 
@@ -197,8 +201,7 @@ export const regulatoryCalendarEvent = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    changeId: uuid("change_id")
-      .references(() => regulatoryChange.id),
+    changeId: uuid("change_id").references(() => regulatoryChange.id),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     eventType: varchar("event_type", { length: 50 }).notNull(), // compliance_deadline | enforcement_date | consultation_end | reporting_deadline
@@ -255,7 +258,9 @@ export const regulatoryDigest = pgTable(
       .references(() => organization.id),
     periodStart: date("period_start").notNull(),
     periodEnd: date("period_end").notNull(),
-    digestType: varchar("digest_type", { length: 20 }).notNull().default("weekly"), // daily | weekly | monthly
+    digestType: varchar("digest_type", { length: 20 })
+      .notNull()
+      .default("weekly"), // daily | weekly | monthly
     summary: text("summary").notNull(),
     changeCount: integer("change_count").notNull().default(0),
     criticalCount: integer("critical_count").notNull().default(0),

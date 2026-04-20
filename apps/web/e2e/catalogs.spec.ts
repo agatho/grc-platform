@@ -8,7 +8,7 @@ test.describe("Catalog Browser", () => {
     expect(res.ok()).toBeTruthy();
 
     const json = await res.json();
-    const data = Array.isArray(json) ? json : json.data ?? [];
+    const data = Array.isArray(json) ? json : (json.data ?? []);
     expect(data.length).toBeGreaterThanOrEqual(5);
   });
 
@@ -16,7 +16,7 @@ test.describe("Catalog Browser", () => {
     // First get list of catalogs
     const catRes = await request.get("/api/v1/catalogs?limit=5");
     const catJson = await catRes.json();
-    const catalogs = Array.isArray(catJson) ? catJson : catJson.data ?? [];
+    const catalogs = Array.isArray(catJson) ? catJson : (catJson.data ?? []);
     expect(catalogs.length).toBeGreaterThan(0);
   });
 
@@ -24,7 +24,7 @@ test.describe("Catalog Browser", () => {
     const res = await request.get("/api/v1/catalogs?module=isms");
     if (res.ok()) {
       const json = await res.json();
-      const data = Array.isArray(json) ? json : json.data ?? [];
+      const data = Array.isArray(json) ? json : (json.data ?? []);
       // All returned catalogs should target ISMS
       for (const cat of data) {
         if (cat.targetModules) {

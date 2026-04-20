@@ -8,7 +8,14 @@ function makeNode(id: string, type: string): GraphNode {
   return { id, type, name: id, connectionCount: 0 };
 }
 
-function makeEdge(sourceId: string, sourceType: string, targetId: string, targetType: string, relationship: string = "linked_to", weight: number = 50): GraphEdge {
+function makeEdge(
+  sourceId: string,
+  sourceType: string,
+  targetId: string,
+  targetType: string,
+  relationship: string = "linked_to",
+  weight: number = 50,
+): GraphEdge {
   return {
     id: `${sourceId}:${targetId}:${relationship}`,
     sourceId,
@@ -20,19 +27,33 @@ function makeEdge(sourceId: string, sourceType: string, targetId: string, target
   };
 }
 
-function makeGraph(nodes: GraphNode[], edges: GraphEdge[], rootId: string, rootType: string): GraphResult {
+function makeGraph(
+  nodes: GraphNode[],
+  edges: GraphEdge[],
+  rootId: string,
+  rootType: string,
+): GraphResult {
   // Update connection counts
   const counts = new Map<string, number>();
   for (const e of edges) {
     counts.set(e.sourceId, (counts.get(e.sourceId) ?? 0) + 1);
     counts.set(e.targetId, (counts.get(e.targetId) ?? 0) + 1);
   }
-  const enrichedNodes = nodes.map((n) => ({ ...n, connectionCount: counts.get(n.id) ?? 0 }));
+  const enrichedNodes = nodes.map((n) => ({
+    ...n,
+    connectionCount: counts.get(n.id) ?? 0,
+  }));
 
   return {
     nodes: enrichedNodes,
     edges,
-    meta: { rootId, rootType, depth: 3, nodeCount: enrichedNodes.length, edgeCount: edges.length },
+    meta: {
+      rootId,
+      rootType,
+      depth: 3,
+      nodeCount: enrichedNodes.length,
+      edgeCount: edges.length,
+    },
   };
 }
 

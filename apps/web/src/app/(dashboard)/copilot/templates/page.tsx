@@ -32,7 +32,11 @@ export default function PromptTemplatesPage() {
   }, [fetchTemplates]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -68,7 +72,9 @@ export default function PromptTemplatesPage() {
               </p>
               <div className="flex items-center justify-between text-xs text-muted-foreground">
                 <span>v{template.version}</span>
-                {template.moduleKey && <Badge variant="outline">{template.moduleKey}</Badge>}
+                {template.moduleKey && (
+                  <Badge variant="outline">{template.moduleKey}</Badge>
+                )}
               </div>
               <div className="flex items-center gap-1 mt-2 text-xs">
                 {template.variables.map((v) => (

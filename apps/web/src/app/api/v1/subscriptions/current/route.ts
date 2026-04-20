@@ -1,5 +1,8 @@
 import { db, orgSubscription, subscriptionPlan } from "@grc/db";
-import { createOrgSubscriptionSchema, cancelSubscriptionSchema } from "@grc/shared";
+import {
+  createOrgSubscriptionSchema,
+  cancelSubscriptionSchema,
+} from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -14,7 +17,10 @@ export async function GET(req: Request) {
       plan: subscriptionPlan,
     })
     .from(orgSubscription)
-    .innerJoin(subscriptionPlan, eq(orgSubscription.planId, subscriptionPlan.id))
+    .innerJoin(
+      subscriptionPlan,
+      eq(orgSubscription.planId, subscriptionPlan.id),
+    )
     .where(eq(orgSubscription.orgId, ctx.orgId));
 
   if (!row) {
@@ -55,9 +61,10 @@ export async function POST(req: Request) {
     periodEnd.setMonth(periodEnd.getMonth() + 1);
   }
 
-  const trialEndsAt = plan.trialDays > 0
-    ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000)
-    : undefined;
+  const trialEndsAt =
+    plan.trialDays > 0
+      ? new Date(now.getTime() + plan.trialDays * 24 * 60 * 60 * 1000)
+      : undefined;
 
   const [created] = await db
     .insert(orgSubscription)

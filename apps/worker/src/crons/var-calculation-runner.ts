@@ -11,7 +11,11 @@ interface VarCalculationRunnerResult {
 }
 
 export async function processVarCalculationRunner(): Promise<VarCalculationRunnerResult> {
-  const result: VarCalculationRunnerResult = { queued: 0, completed: 0, failed: 0 };
+  const result: VarCalculationRunnerResult = {
+    queued: 0,
+    completed: 0,
+    failed: 0,
+  };
 
   // Get pending calculations
   const pending = await db
@@ -56,17 +60,28 @@ export async function processVarCalculationRunner(): Promise<VarCalculationRunne
       for (let i = 0; i < iterations; i++) {
         let totalLoss = 0;
         for (const risk of riskArray) {
-          const lef = randomPert(Number(risk.lef_min), Number(risk.lef_most_likely), Number(risk.lef_max));
-          const lm = randomPert(Number(risk.lm_min), Number(risk.lm_most_likely), Number(risk.lm_max));
+          const lef = randomPert(
+            Number(risk.lef_min),
+            Number(risk.lef_most_likely),
+            Number(risk.lef_max),
+          );
+          const lm = randomPert(
+            Number(risk.lm_min),
+            Number(risk.lm_most_likely),
+            Number(risk.lm_max),
+          );
           totalLoss += lef * lm;
         }
         losses.push(totalLoss);
       }
 
       losses.sort((a, b) => a - b);
-      const percentile = (p: number) => losses[Math.floor(losses.length * p)] ?? 0;
+      const percentile = (p: number) =>
+        losses[Math.floor(losses.length * p)] ?? 0;
       const mean = losses.reduce((a, b) => a + b, 0) / losses.length;
-      const stdDev = Math.sqrt(losses.reduce((a, b) => a + (b - mean) ** 2, 0) / losses.length);
+      const stdDev = Math.sqrt(
+        losses.reduce((a, b) => a + (b - mean) ** 2, 0) / losses.length,
+      );
 
       await db
         .update(riskVarCalculation)
@@ -101,8 +116,8 @@ export async function processVarCalculationRunner(): Promise<VarCalculationRunne
 function randomPert(min: number, mode: number, max: number): number {
   if (min >= max) return mode;
   const lambda = 4;
-  const alpha = 1 + lambda * (mode - min) / (max - min);
-  const beta = 1 + lambda * (max - mode) / (max - min);
+  const alpha = 1 + (lambda * (mode - min)) / (max - min);
+  const beta = 1 + (lambda * (max - mode)) / (max - min);
   const u = betaRandom(alpha, beta);
   return min + u * (max - min);
 }
@@ -126,7 +141,10 @@ function gammaRandom(shape: number): number {
       v = (1 + c * x) ** 3;
     } while (v <= 0);
     u = Math.random();
-  } while (u >= 1 - 0.0331 * x ** 4 && Math.log(u) >= 0.5 * x ** 2 + d * (1 - v + Math.log(v)));
+  } while (
+    u >= 1 - 0.0331 * x ** 4 &&
+    Math.log(u) >= 0.5 * x ** 2 + d * (1 - v + Math.log(v))
+  );
   return d * v;
 }
 

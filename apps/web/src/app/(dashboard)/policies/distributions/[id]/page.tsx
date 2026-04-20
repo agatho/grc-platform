@@ -41,7 +41,9 @@ export default function DistributionDetailPage() {
   const id = params.id as string;
 
   const [dist, setDist] = useState<PolicyDistributionWithStats | null>(null);
-  const [acknowledgments, setAcknowledgments] = useState<PolicyAcknowledgmentWithUser[]>([]);
+  const [acknowledgments, setAcknowledgments] = useState<
+    PolicyAcknowledgmentWithUser[]
+  >([]);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState(false);
 
@@ -175,7 +177,9 @@ export default function DistributionDetailPage() {
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
-              <h1 className="text-2xl font-bold tracking-tight">{dist.title}</h1>
+              <h1 className="text-2xl font-bold tracking-tight">
+                {dist.title}
+              </h1>
               <p className="text-muted-foreground">
                 {dist.documentTitle} v{dist.documentVersion}
               </p>
@@ -199,7 +203,11 @@ export default function DistributionDetailPage() {
               </Button>
             )}
             {dist.status === "active" && (
-              <Button variant="outline" onClick={handleClose} disabled={actionLoading}>
+              <Button
+                variant="outline"
+                onClick={handleClose}
+                disabled={actionLoading}
+              >
                 {actionLoading ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
@@ -224,7 +232,9 @@ export default function DistributionDetailPage() {
             <CardContent>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-muted-foreground" />
-                <span className="text-2xl font-bold">{dist.totalRecipients}</span>
+                <span className="text-2xl font-bold">
+                  {dist.totalRecipients}
+                </span>
               </div>
             </CardContent>
           </Card>
@@ -256,7 +266,9 @@ export default function DistributionDetailPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
-                <span className="text-2xl font-bold">{dist.complianceRate}%</span>
+                <span className="text-2xl font-bold">
+                  {dist.complianceRate}%
+                </span>
                 <Progress value={Number(dist.complianceRate)} className="h-2" />
               </div>
             </CardContent>
@@ -271,22 +283,34 @@ export default function DistributionDetailPage() {
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4 text-sm">
               <div>
-                <p className="font-medium text-muted-foreground">{t("distribution.deadline")}</p>
+                <p className="font-medium text-muted-foreground">
+                  {t("distribution.deadline")}
+                </p>
                 <p>{new Date(dist.deadline).toLocaleDateString("de-DE")}</p>
               </div>
               <div>
-                <p className="font-medium text-muted-foreground">{t("distribution.mandatory")}</p>
+                <p className="font-medium text-muted-foreground">
+                  {t("distribution.mandatory")}
+                </p>
                 <Badge variant={dist.isMandatory ? "destructive" : "secondary"}>
                   {dist.isMandatory ? t("mandatory") : t("optional")}
                 </Badge>
               </div>
               <div>
-                <p className="font-medium text-muted-foreground">{t("create.enableQuiz")}</p>
-                <p>{dist.requiresQuiz ? `${t("yes")} (${dist.quizPassThreshold}%)` : t("no")}</p>
+                <p className="font-medium text-muted-foreground">
+                  {t("create.enableQuiz")}
+                </p>
+                <p>
+                  {dist.requiresQuiz
+                    ? `${t("yes")} (${dist.quizPassThreshold}%)`
+                    : t("no")}
+                </p>
               </div>
               {dist.distributedAt && (
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("distribution.distributedAt")}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("distribution.distributedAt")}
+                  </p>
                   <p>{new Date(dist.distributedAt).toLocaleString("de-DE")}</p>
                 </div>
               )}
@@ -305,7 +329,9 @@ export default function DistributionDetailPage() {
                   size="sm"
                   onClick={() => {
                     const overdueIds = acknowledgments
-                      .filter((a) => a.status === "overdue" || a.status === "pending")
+                      .filter(
+                        (a) => a.status === "overdue" || a.status === "pending",
+                      )
                       .map((a) => a.userId);
                     handleSendReminder(overdueIds);
                   }}
@@ -325,7 +351,9 @@ export default function DistributionDetailPage() {
                 >
                   <div className="flex items-center gap-3">
                     <div>
-                      <p className="font-medium text-sm">{ack.userName ?? ack.userEmail}</p>
+                      <p className="font-medium text-sm">
+                        {ack.userName ?? ack.userEmail}
+                      </p>
                       <p className="text-xs text-muted-foreground">
                         {ack.department ?? "-"}
                       </p>

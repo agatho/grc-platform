@@ -10,7 +10,7 @@ import {
   checkIncidentOverdue,
   classifyIncidentDeadline,
   type IncidentClassification,
-  type IncidentStatus,
+  type AiActIncidentSnapshot,
 } from "@grc/shared";
 import { eq, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -35,6 +35,7 @@ export async function GET(_req: Request) {
       authorityDeadline: aiIncident.authorityDeadline,
       authorityNotifiedAt: aiIncident.authorityNotifiedAt,
       affectedPersonsCount: aiIncident.affectedPersonsCount,
+      harmType: aiIncident.harmType,
     })
     .from(aiIncident)
     .where(eq(aiIncident.orgId, ctx.orgId))
@@ -48,18 +49,27 @@ export async function GET(_req: Request) {
       const criteria = (r.seriousCriteria ?? []) as string[];
       const classification: IncidentClassification = {
         resultedInDeath: criteria.includes("death"),
-        resultedInSeriousHealthDamage: criteria.includes("serious_health_damage"),
+        resultedInSeriousHealthDamage: criteria.includes(
+          "serious_health_damage",
+        ),
         isWidespreadInfringement: criteria.includes("widespread"),
         violatesUnionLaw: criteria.includes("union_law_violation"),
-        affectsCriticalInfrastructure: criteria.includes("critical_infrastructure"),
+        affectsCriticalInfrastructure: criteria.includes(
+          "critical_infrastructure",
+        ),
         affectedPersonsCount: r.affectedPersonsCount ?? 0,
       };
-      deadlineAt = classifyIncidentDeadline(classification, new Date(r.detectedAt)).deadlineAt;
+      deadlineAt = classifyIncidentDeadline(
+        classification,
+        new Date(r.detectedAt),
+      ).deadlineAt;
     }
 
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date(r.detectedAt),
-      authorityNotifiedAt: r.authorityNotifiedAt ? new Date(r.authorityNotifiedAt) : null,
+      authorityNotifiedAt: r.authorityNotifiedAt
+        ? new Date(r.authorityNotifiedAt)
+        : null,
       deadlineAt,
       isSerious: r.isSerious ?? false,
     };
@@ -102,9 +112,14 @@ export async function GET(_req: Request) {
 
   const summary = {
     total: enriched.length,
-    criticalOverdue: enriched.filter((e) => e.overdue.escalationLevel === "critical_overdue").length,
-    overdue: enriched.filter((e) => e.overdue.escalationLevel === "overdue").length,
-    approaching: enriched.filter((e) => e.overdue.escalationLevel === "approaching").length,
+    criticalOverdue: enriched.filter(
+      (e) => e.overdue.escalationLevel === "critical_overdue",
+    ).length,
+    overdue: enriched.filter((e) => e.overdue.escalationLevel === "overdue")
+      .length,
+    approaching: enriched.filter(
+      (e) => e.overdue.escalationLevel === "approaching",
+    ).length,
     ok: enriched.filter((e) => e.overdue.escalationLevel === "none").length,
   };
 

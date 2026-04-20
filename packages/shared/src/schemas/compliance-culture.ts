@@ -31,10 +31,9 @@ export const cciFactorWeightsSchema = z
     },
     { message: "Factor weights must sum to 1.0" },
   )
-  .refine(
-    (weights) => Object.values(weights).every((w) => w >= 0),
-    { message: "All weights must be non-negative" },
-  );
+  .refine((weights) => Object.values(weights).every((w) => w >= 0), {
+    message: "All weights must be non-negative",
+  });
 
 // ──────────── Configuration Update ────────────
 

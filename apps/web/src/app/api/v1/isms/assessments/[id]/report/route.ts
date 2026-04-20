@@ -47,7 +47,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .where(and(eq(assessmentRun.id, id), eq(assessmentRun.orgId, ctx.orgId)));
 
   if (!runRow) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
   const run = runRow.run;
 
@@ -81,12 +84,16 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const maturityScores = evals
     .map((e) => e.currentMaturity)
     .filter((m): m is number => m !== null && m !== undefined);
-  const averageMaturity = maturityScores.length > 0
-    ? maturityScores.reduce((a, b) => a + b, 0) / maturityScores.length
-    : null;
+  const averageMaturity =
+    maturityScores.length > 0
+      ? maturityScores.reduce((a, b) => a + b, 0) / maturityScores.length
+      : null;
 
   // Framework-Coverage
-  const frameworkCoverage: Record<string, { total: number; effective: number; percentage: number }> = {};
+  const frameworkCoverage: Record<
+    string,
+    { total: number; effective: number; percentage: number }
+  > = {};
   if (run.framework) {
     const frameworks = run.framework.split(",").map((f) => f.trim());
     for (const fw of frameworks) {
@@ -94,7 +101,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
       frameworkCoverage[fw] = {
         total: evals.length,
         effective,
-        percentage: evals.length > 0 ? Math.round((effective / evals.length) * 100) : 0,
+        percentage:
+          evals.length > 0 ? Math.round((effective / evals.length) * 100) : 0,
       };
     }
   }
@@ -130,7 +138,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     observation: 1,
   };
   const topFindings = [...recentFindings]
-    .sort((a, b) => (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0))
+    .sort(
+      (a, b) =>
+        (severityRank[b.severity] ?? 0) - (severityRank[a.severity] ?? 0),
+    )
     .slice(0, 10);
 
   // Risk-Evaluations
@@ -149,7 +160,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
     );
   const decisionDistribution: Record<string, number> = {};
   for (const r of riskEvals) {
-    decisionDistribution[r.decision] = (decisionDistribution[r.decision] ?? 0) + 1;
+    decisionDistribution[r.decision] =
+      (decisionDistribution[r.decision] ?? 0) + 1;
   }
 
   // Per-Catalog-Category Maturity
@@ -172,13 +184,22 @@ export async function GET(_req: Request, { params }: RouteParams) {
       ),
     )
     .limit(200)
-    .catch(() => [] as Array<{ catalogName: string; entryCode: string; entryName: string }>);
+    .catch(
+      () =>
+        [] as Array<{
+          catalogName: string;
+          entryCode: string;
+          entryName: string;
+        }>,
+    );
 
-  const perCatalogStats: Record<string, { total: number; effective: number }> = {};
+  const perCatalogStats: Record<string, { total: number; effective: number }> =
+    {};
   for (const e of evals) {
     const cat = catalogCategories.find((c) => c.entryCode);
     const key = cat?.catalogName ?? "Uncategorized";
-    if (!perCatalogStats[key]) perCatalogStats[key] = { total: 0, effective: 0 };
+    if (!perCatalogStats[key])
+      perCatalogStats[key] = { total: 0, effective: 0 };
     perCatalogStats[key].total++;
     if (e.result === "effective") perCatalogStats[key].effective++;
   }
@@ -204,7 +225,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
         averageMaturity,
         totalFindings: recentFindings.length,
         criticalFindings: topFindings.filter((f) =>
-          ["significant_nonconformity", "insignificant_nonconformity"].includes(f.severity),
+          ["significant_nonconformity", "insignificant_nonconformity"].includes(
+            f.severity,
+          ),
         ).length,
         riskDecisions: decisionDistribution,
       },

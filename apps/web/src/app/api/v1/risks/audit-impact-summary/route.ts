@@ -76,26 +76,44 @@ export async function GET(req: Request) {
     )
     .groupBy(riskTreatment.riskId);
 
-  const byRisk: Record<string, {
-    openCritical: number;
-    openAny: number;
-    treatmentCount: number;
-    needsReassessment: boolean;
-  }> = {};
+  const byRisk: Record<
+    string,
+    {
+      openCritical: number;
+      openAny: number;
+      treatmentCount: number;
+      needsReassessment: boolean;
+    }
+  > = {};
 
   for (const r of openCriticalRows) {
     if (!r.riskId) continue;
-    byRisk[r.riskId] = byRisk[r.riskId] ?? { openCritical: 0, openAny: 0, treatmentCount: 0, needsReassessment: false };
+    byRisk[r.riskId] = byRisk[r.riskId] ?? {
+      openCritical: 0,
+      openAny: 0,
+      treatmentCount: 0,
+      needsReassessment: false,
+    };
     byRisk[r.riskId].openCritical = r.cnt;
   }
   for (const r of openAnyRows) {
     if (!r.riskId) continue;
-    byRisk[r.riskId] = byRisk[r.riskId] ?? { openCritical: 0, openAny: 0, treatmentCount: 0, needsReassessment: false };
+    byRisk[r.riskId] = byRisk[r.riskId] ?? {
+      openCritical: 0,
+      openAny: 0,
+      treatmentCount: 0,
+      needsReassessment: false,
+    };
     byRisk[r.riskId].openAny = r.cnt;
   }
   for (const r of treatmentRows) {
     if (!r.riskId) continue;
-    byRisk[r.riskId] = byRisk[r.riskId] ?? { openCritical: 0, openAny: 0, treatmentCount: 0, needsReassessment: false };
+    byRisk[r.riskId] = byRisk[r.riskId] ?? {
+      openCritical: 0,
+      openAny: 0,
+      treatmentCount: 0,
+      needsReassessment: false,
+    };
     byRisk[r.riskId].treatmentCount = r.cnt;
   }
   for (const id of Object.keys(byRisk)) {

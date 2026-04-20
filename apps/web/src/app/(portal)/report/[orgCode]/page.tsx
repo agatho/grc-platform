@@ -30,14 +30,52 @@ interface SubmitResult {
   tokenExpiresAt: string;
 }
 
-const CATEGORY_LABELS: Record<string, { de: string; en: string; desc_de: string; desc_en: string }> = {
-  fraud: { de: "Betrug", en: "Fraud", desc_de: "Finanzbetrug, Bilanzmanipulation, Unterschlagung", desc_en: "Financial fraud, accounting manipulation, embezzlement" },
-  corruption: { de: "Korruption", en: "Corruption", desc_de: "Bestechung, unzulaessige Vorteilsnahme", desc_en: "Bribery, improper advantages" },
-  discrimination: { de: "Diskriminierung", en: "Discrimination", desc_de: "Diskriminierung, Belaestigung, Mobbing", desc_en: "Discrimination, harassment, bullying" },
-  privacy: { de: "Datenschutz", en: "Privacy", desc_de: "Verstoesse gegen DSGVO, Datenmissbrauch", desc_en: "GDPR violations, data misuse" },
-  environmental: { de: "Umwelt", en: "Environmental", desc_de: "Umweltverschmutzung, illegale Entsorgung", desc_en: "Pollution, illegal disposal" },
-  health_safety: { de: "Arbeitsschutz", en: "Health & Safety", desc_de: "Unsichere Arbeitsbedingungen, Arbeitsunfaelle", desc_en: "Unsafe conditions, workplace accidents" },
-  other: { de: "Sonstiges", en: "Other", desc_de: "Andere Verstoesse gegen Gesetze oder Richtlinien", desc_en: "Other violations of laws or policies" },
+const CATEGORY_LABELS: Record<
+  string,
+  { de: string; en: string; desc_de: string; desc_en: string }
+> = {
+  fraud: {
+    de: "Betrug",
+    en: "Fraud",
+    desc_de: "Finanzbetrug, Bilanzmanipulation, Unterschlagung",
+    desc_en: "Financial fraud, accounting manipulation, embezzlement",
+  },
+  corruption: {
+    de: "Korruption",
+    en: "Corruption",
+    desc_de: "Bestechung, unzulaessige Vorteilsnahme",
+    desc_en: "Bribery, improper advantages",
+  },
+  discrimination: {
+    de: "Diskriminierung",
+    en: "Discrimination",
+    desc_de: "Diskriminierung, Belaestigung, Mobbing",
+    desc_en: "Discrimination, harassment, bullying",
+  },
+  privacy: {
+    de: "Datenschutz",
+    en: "Privacy",
+    desc_de: "Verstoesse gegen DSGVO, Datenmissbrauch",
+    desc_en: "GDPR violations, data misuse",
+  },
+  environmental: {
+    de: "Umwelt",
+    en: "Environmental",
+    desc_de: "Umweltverschmutzung, illegale Entsorgung",
+    desc_en: "Pollution, illegal disposal",
+  },
+  health_safety: {
+    de: "Arbeitsschutz",
+    en: "Health & Safety",
+    desc_de: "Unsichere Arbeitsbedingungen, Arbeitsunfaelle",
+    desc_en: "Unsafe conditions, workplace accidents",
+  },
+  other: {
+    de: "Sonstiges",
+    en: "Other",
+    desc_de: "Andere Verstoesse gegen Gesetze oder Richtlinien",
+    desc_en: "Other violations of laws or policies",
+  },
 };
 
 export default function ReportPage() {
@@ -101,7 +139,9 @@ export default function ReportPage() {
         setResult(json.data);
       } else {
         const json = await res.json();
-        setError(json.error || t("Fehler beim Einreichen", "Submission failed"));
+        setError(
+          json.error || t("Fehler beim Einreichen", "Submission failed"),
+        );
       }
     } catch {
       setError(t("Verbindungsfehler", "Connection error"));
@@ -145,7 +185,10 @@ export default function ReportPage() {
           <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto mb-6" />
 
           <h1 className="text-2xl font-semibold text-gray-900 mb-2">
-            {t("Ihre Meldung wurde eingereicht", "Your report has been submitted")}
+            {t(
+              "Ihre Meldung wurde eingereicht",
+              "Your report has been submitted",
+            )}
           </h1>
 
           <p className="text-gray-600 mb-8">
@@ -210,7 +253,10 @@ export default function ReportPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-semibold text-gray-900">
-            {t("Vertraulicher Hinweisgeberkanal", "Confidential Whistleblowing Channel")}
+            {t(
+              "Vertraulicher Hinweisgeberkanal",
+              "Confidential Whistleblowing Channel",
+            )}
           </h1>
           <p className="text-sm text-gray-500 mt-1">{orgInfo?.orgName}</p>
         </div>
@@ -298,7 +344,8 @@ export default function ReportPage() {
             className="w-full rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-y"
           />
           <p className="text-xs text-gray-400 mt-1">
-            {description.length}/10000 ({t("mind. 20 Zeichen", "min. 20 characters")})
+            {description.length}/10000 (
+            {t("mind. 20 Zeichen", "min. 20 characters")})
           </p>
         </div>
 

@@ -1,5 +1,8 @@
 import { db, rcsaAssignment, rcsaResponse, rcsaCampaign } from "@grc/db";
-import { submitRiskResponseSchema, submitControlResponseSchema } from "@grc/shared";
+import {
+  submitRiskResponseSchema,
+  submitControlResponseSchema,
+} from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -51,10 +54,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
 
   if (campaign.status !== "active") {
-    return Response.json(
-      { error: "Campaign is not active" },
-      { status: 409 },
-    );
+    return Response.json({ error: "Campaign is not active" }, { status: 409 });
   }
 
   // Enforce deadline
@@ -62,7 +62,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
   const periodEndDate = new Date(campaign.periodEnd + "T23:59:59Z");
   if (now > periodEndDate) {
     return Response.json(
-      { error: "Campaign deadline has passed. Responses are no longer accepted." },
+      {
+        error:
+          "Campaign deadline has passed. Responses are no longer accepted.",
+      },
       { status: 409 },
     );
   }
@@ -155,8 +158,5 @@ export async function PUT(req: Request, { params }: RouteParams) {
     return Response.json({ data: result });
   }
 
-  return Response.json(
-    { error: "Unknown entity type" },
-    { status: 400 },
-  );
+  return Response.json({ error: "Unknown entity type" }, { status: 400 });
 }

@@ -57,7 +57,10 @@ export async function POST(req: Request) {
         createdBy: ctx.userId,
       })
       .onConflictDoUpdate({
-        target: [riskAppetiteThreshold.orgId, riskAppetiteThreshold.riskCategory],
+        target: [
+          riskAppetiteThreshold.orgId,
+          riskAppetiteThreshold.riskCategory,
+        ],
         set: {
           maxResidualScore: parsed.data.maxResidualScore,
           maxResidualAle: parsed.data.maxResidualAle

@@ -14,20 +14,20 @@ Based on: Data Model v1.0 (44 Entities) | Gap Analysis v2.1 (88 Requirements) | 
 
 This document records the 12 key technology decisions für die ARCTOS — GRC & BPM SaaS Platform. Each ADR follows the format: Context → evaluated alternatives → decision → consequences. Status: Accepted = decision final, Proposed = to be validated.
 
-| **ADR** | **Decision** | **Core Technologies** | **Status** |
-| --- | --- | --- | --- |
-| **001** | Multi-Entity via RLS (org_id) | PostgreSQL RLS | ** Accepted ** |
-| **002** | Frontend: Next.js 15 + React 19 + shadcn/ui | Next.js, Tailwind, next-intl | ** Accepted ** |
-| **003** | BPMN-Engine: bpmn.js (Camunda) | bpmn.js + reactflow | ** Accepted ** |
-| **004** | Backend: Node.js 22 + TypeScript 5 | Hono.js, Monorepo | ** Accepted ** |
+| **ADR** | **Decision**                                      | **Core Technologies**        | **Status**     |
+| ------- | ------------------------------------------------- | ---------------------------- | -------------- |
+| **001** | Multi-Entity via RLS (org_id)                     | PostgreSQL RLS               | ** Accepted ** |
+| **002** | Frontend: Next.js 15 + React 19 + shadcn/ui       | Next.js, Tailwind, next-intl | ** Accepted ** |
+| **003** | BPMN-Engine: bpmn.js (Camunda)                    | bpmn.js + reactflow          | ** Accepted ** |
+| **004** | Backend: Node.js 22 + TypeScript 5                | Hono.js, Monorepo            | ** Accepted ** |
 | **005** | Datenbank: PostgreSQL 16 + pgvector + TimescaleDB | FTS, Hypertables, Embeddings | ** Accepted ** |
-| **006** | ORM: Drizzle ORM | Type-safe, SQL-nah | ** Accepted ** |
-| **007** | Auth: Auth.js + Custom RBAC | SSO, Three Lines of Defense | ** Accepted ** |
-| **008** | KI: Claude API + lokale Modelle | MCP, Ollama, Privacy-Router | ** Accepted ** |
-| **009** | Workflow: Temporal.io | Durable, Timer, Cron | ** Proposed ** |
-| **010** | API: REST + OpenAPI 3.1 + Webhooks | Zod-to-OpenAPI | ** Accepted ** |
-| **011** | Audit-Trail: Append-Only + Hash-Kette | 3 Log-Tabellen, Trigger | ** Accepted ** |
-| **012** | Deployment: Docker + K8s | Helm, GitHub Actions | ** Proposed ** |
+| **006** | ORM: Drizzle ORM                                  | Type-safe, SQL-nah           | ** Accepted ** |
+| **007** | Auth: Auth.js + Custom RBAC                       | SSO, Three Lines of Defense  | ** Accepted ** |
+| **008** | KI: Claude API + lokale Modelle                   | MCP, Ollama, Privacy-Router  | ** Accepted ** |
+| **009** | Workflow: Temporal.io                             | Durable, Timer, Cron         | ** Proposed ** |
+| **010** | API: REST + OpenAPI 3.1 + Webhooks                | Zod-to-OpenAPI               | ** Accepted ** |
+| **011** | Audit-Trail: Append-Only + Hash-Kette             | 3 Log-Tabellen, Trigger      | ** Accepted ** |
+| **012** | Deployment: Docker + K8s                          | Helm, GitHub Actions         | ** Proposed ** |
 
 ### Tech Stack at a Glance
 
@@ -55,11 +55,11 @@ Hosting: Hetzner Cloud / Deutsche Telekom OTC (DSGVO-konform, DE)
 
 ## ADR-001: Multi-Entity Architecture
 
-| **ADR-ID** | **001** |
-| --- | --- |
-| **Title** | **Multi-Entity Isolation via Row-Level Security (RLS)** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **001**                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| **Title**   | **Multi-Entity Isolation via Row-Level Security (RLS)**                                     |
+| **Status**  | ** Accepted **                                                                              |
+| **Date**    | 2026-03-22                                                                                  |
 | **Context** | G-02: 5 unabhängige Unternehmen mit eigenen Daten + Konfiguration, aber Konzern-Aggregation |
 
 ### Decision
@@ -68,11 +68,11 @@ Row-Level Security (RLS) auf PostgreSQL-Ebene mit org_id als Diskriminator auf j
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **RLS (org_id pro Zeile)** | Einfaches Schema, Cross-Entity-Joins für Konzernberichte, ein Deployment, PostgreSQL-nativ | Fehlerhafte Policy = Datenleck, etwas Performance-Overhead bei großen Tabellen | **✅** |
-| **Schema-per-Tenant** | Härteste Isolation, eigene Migrations pro Tenant | Konzern-Aggregation extrem komplex (Cross-Schema-Queries), Schema-Drift-Risiko, Migrations x5 | — |
-| **Separate Datenbanken** | Maximale Isolation | Keine Konzernberichte möglich, 5x Infrastruktur-Kosten, kein gemeinsames Framework-Repository | — |
+| **Option**                 | **Advantages**                                                                             | **Disadvantages**                                                                             | **Choice** |
+| -------------------------- | ------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------------------- | ---------- |
+| **RLS (org_id pro Zeile)** | Einfaches Schema, Cross-Entity-Joins für Konzernberichte, ein Deployment, PostgreSQL-nativ | Fehlerhafte Policy = Datenleck, etwas Performance-Overhead bei großen Tabellen                | **✅**     |
+| **Schema-per-Tenant**      | Härteste Isolation, eigene Migrations pro Tenant                                           | Konzern-Aggregation extrem komplex (Cross-Schema-Queries), Schema-Drift-Risiko, Migrations x5 | —          |
+| **Separate Datenbanken**   | Maximale Isolation                                                                         | Keine Konzernberichte möglich, 5x Infrastruktur-Kosten, kein gemeinsames Framework-Repository | —          |
 
 ### Consequences
 
@@ -82,11 +82,11 @@ Ref: Datenmodell v1.0 Abschnitt 1.1 Organization, Cross-Cutting Pflichtfelder
 
 ## ADR-002: Frontend Framework
 
-| **ADR-ID** | **002** |
-| --- | --- |
-| **Title** | **Next.js 15 + React 19 + Tailwind CSS + shadcn/ui** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **002**                                                                                                   |
+| ----------- | --------------------------------------------------------------------------------------------------------- |
+| **Title**   | **Next.js 15 + React 19 + Tailwind CSS + shadcn/ui**                                                      |
+| **Status**  | ** Accepted **                                                                                            |
+| **Date**    | 2026-03-22                                                                                                |
 | **Context** | G-06: Deutsch + Englisch UI, G-08: Konfigurierbare Dashboards, G-11: Mobile-freundlich, P-01: BPMN-Editor |
 
 ### Decision
@@ -95,12 +95,12 @@ Next.js 15 (App Router) mit React 19 Server Components, Tailwind CSS 4 für Styl
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Next.js 15 + shadcn/ui** | Server Components (Performance), App Router (Layouts), riesiges Ökosystem, shadcn/ui = volle Kontrolle über Design | Vendor Lock-in auf Vercel-Ökosystem (mitigierbar durch Self-Hosting) | **✅** |
-| **Remix / React Router 7** | Nested Routes, progressive Enhancement | Kleineres Ökosystem, weniger Enterprise-Referenzen, kein Server Components | — |
-| **SvelteKit** | Bessere Performance, weniger Boilerplate | Deutlich kleinerer Talentpool, bpmn.js ist React-Ökosystem | — |
-| **Angular** | Enterprise-Standard, starke Typisierung | Überdimensioniert, bpmn.js-Integration umständlicher, langsamere Entwicklung | — |
+| **Option**                 | **Advantages**                                                                                                     | **Disadvantages**                                                            | **Choice** |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------ | ---------------------------------------------------------------------------- | ---------- |
+| **Next.js 15 + shadcn/ui** | Server Components (Performance), App Router (Layouts), riesiges Ökosystem, shadcn/ui = volle Kontrolle über Design | Vendor Lock-in auf Vercel-Ökosystem (mitigierbar durch Self-Hosting)         | **✅**     |
+| **Remix / React Router 7** | Nested Routes, progressive Enhancement                                                                             | Kleineres Ökosystem, weniger Enterprise-Referenzen, kein Server Components   | —          |
+| **SvelteKit**              | Bessere Performance, weniger Boilerplate                                                                           | Deutlich kleinerer Talentpool, bpmn.js ist React-Ökosystem                   | —          |
+| **Angular**                | Enterprise-Standard, starke Typisierung                                                                            | Überdimensioniert, bpmn.js-Integration umständlicher, langsamere Entwicklung | —          |
 
 ### Consequences
 
@@ -108,11 +108,11 @@ Monorepo-Struktur mit Turborepo: apps/web (Next.js), packages/ui (shadcn/ui-Komp
 
 ## ADR-003: BPMN Engine
 
-| **ADR-ID** | **003** |
-| --- | --- |
-| **Title** | **bpmn.js (Camunda) as Embedded BPMN 2.0 Editor** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **003**                                                                                                     |
+| ----------- | ----------------------------------------------------------------------------------------------------------- |
+| **Title**   | **bpmn.js (Camunda) as Embedded BPMN 2.0 Editor**                                                           |
+| **Status**  | ** Accepted **                                                                                              |
+| **Date**    | 2026-03-22                                                                                                  |
 | **Context** | P-01: Native BPMN 2.0 Modellierung, P-02: Mehrere Notationen, P-05: Verknüpfung Prozesse ↔ Risiken/Controls |
 
 ### Decision
@@ -121,12 +121,12 @@ bpmn.js von Camunda als React-Komponente eingebettet (bpmn-js-react oder eigener
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **bpmn.js (Camunda)** | Industriestandard, vollständige BPMN 2.0 Spec, MIT-Lizenz (Viewer) / Camunda-Lizenz (Modeler), Custom Overlays API, Export als SVG/PNG/XML | Camunda-Modeler-Lizenz für Editing, Lernkurve für Customization | **✅** |
-| **reactflow** | Flexibel, leichtgewichtig, eigene Node-Types, MIT-Lizenz | Keine BPMN-Validierung, kein Standard-XML-Export, alles selbst bauen | — |
-| **BPMN.io + dmn-js** | Zusätzlich DMN-Support | Gleiche Basis wie bpmn.js, DMN ist P3-Feature | — |
-| **GoJS** | Schnell, viele Diagrammtypen | Kommerzielle Lizenz ($5k+), kein nativer BPMN-Support | — |
+| **Option**            | **Advantages**                                                                                                                             | **Disadvantages**                                                    | **Choice** |
+| --------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ | -------------------------------------------------------------------- | ---------- |
+| **bpmn.js (Camunda)** | Industriestandard, vollständige BPMN 2.0 Spec, MIT-Lizenz (Viewer) / Camunda-Lizenz (Modeler), Custom Overlays API, Export als SVG/PNG/XML | Camunda-Modeler-Lizenz für Editing, Lernkurve für Customization      | **✅**     |
+| **reactflow**         | Flexibel, leichtgewichtig, eigene Node-Types, MIT-Lizenz                                                                                   | Keine BPMN-Validierung, kein Standard-XML-Export, alles selbst bauen | —          |
+| **BPMN.io + dmn-js**  | Zusätzlich DMN-Support                                                                                                                     | Gleiche Basis wie bpmn.js, DMN ist P3-Feature                        | —          |
+| **GoJS**              | Schnell, viele Diagrammtypen                                                                                                               | Kommerzielle Lizenz ($5k+), kein nativer BPMN-Support                | —          |
 
 ### Consequences
 
@@ -134,11 +134,11 @@ bpmn.js wird als React-Komponente gewrappt mit folgenden Custom-Extensions: (1) 
 
 ## ADR-004: Backend Runtime & Language
 
-| **ADR-ID** | **004** |
-| --- | --- |
-| **Title** | **Node.js 22 LTS + TypeScript 5.x** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **004**                                                                           |
+| ----------- | --------------------------------------------------------------------------------- |
+| **Title**   | **Node.js 22 LTS + TypeScript 5.x**                                               |
+| **Status**  | ** Accepted **                                                                    |
+| **Date**    | 2026-03-22                                                                        |
 | **Context** | G-10: REST-API, G-09: Workflow-Engine, G-12: KI-Funktionen, Monorepo mit Frontend |
 
 ### Decision
@@ -147,12 +147,12 @@ Node.js 22 LTS mit TypeScript 5.x. API-Layer als Next.js API Routes (App Router)
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Node.js + TypeScript** | Gleiche Sprache wie Frontend, Type-Sharing im Monorepo, riesiges Ökosystem, gute PostgreSQL-Driver | Single-threaded (mitigierbar durch Worker Threads), nicht ideal für CPU-intensive Tasks | **✅** |
-| **Python + FastAPI** | Bestes KI/ML-Ökosystem, async-native, Pydantic-Validierung | Zwei Sprachen im Stack, kein Type-Sharing mit Frontend, GIL-Limitierung | — |
-| **Go** | Beste Performance, native Concurrency | Kein Type-Sharing, kleineres Web-Ökosystem, langsamere Feature-Entwicklung | — |
-| **.NET / C#** | Enterprise-Standard, starke Typisierung | Microsoft-Lock-in, kein Type-Sharing, Überdimensioniert für SaaS-Startup | — |
+| **Option**               | **Advantages**                                                                                     | **Disadvantages**                                                                       | **Choice** |
+| ------------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- | ---------- |
+| **Node.js + TypeScript** | Gleiche Sprache wie Frontend, Type-Sharing im Monorepo, riesiges Ökosystem, gute PostgreSQL-Driver | Single-threaded (mitigierbar durch Worker Threads), nicht ideal für CPU-intensive Tasks | **✅**     |
+| **Python + FastAPI**     | Bestes KI/ML-Ökosystem, async-native, Pydantic-Validierung                                         | Zwei Sprachen im Stack, kein Type-Sharing mit Frontend, GIL-Limitierung                 | —          |
+| **Go**                   | Beste Performance, native Concurrency                                                              | Kein Type-Sharing, kleineres Web-Ökosystem, langsamere Feature-Entwicklung              | —          |
+| **.NET / C#**            | Enterprise-Standard, starke Typisierung                                                            | Microsoft-Lock-in, kein Type-Sharing, Überdimensioniert für SaaS-Startup                | —          |
 
 ### Consequences
 
@@ -160,11 +160,11 @@ Monorepo-Struktur: apps/web (Next.js + API Routes), apps/worker (Hono.js Backgro
 
 ## ADR-005: Database
 
-| **ADR-ID** | **005** |
-| --- | --- |
-| **Title** | **PostgreSQL 16 + pgvector + TimescaleDB** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **005**                                                                                                                            |
+| ----------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | **PostgreSQL 16 + pgvector + TimescaleDB**                                                                                         |
+| **Status**  | ** Accepted **                                                                                                                     |
+| **Date**    | 2026-03-22                                                                                                                         |
 | **Context** | G-01: Einheitliche Plattform, G-07: Audit-Trail, G-02: Multi-Entity, DM-07: Volltextsuche, E-08: Monte Carlo, E-10: KRI-Zeitreihen |
 
 ### Decision
@@ -173,12 +173,12 @@ PostgreSQL 16 als einzige primäre Datenbank mit drei Extensions: (1) pgvector f
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **PostgreSQL + TimescaleDB + pgvector** | Eine DB für alles, RLS auf Hypertables, SQL-JOINs zwischen Business- und Zeitreihen-Daten, 90%+ Kompression, Continuous Aggregates | TimescaleDB-Lizenz (Apache 2 Core, TSL Advanced), etwas Konfigurations-Aufwand | — |
-| **PostgreSQL + InfluxDB** | Purpose-Built Zeitreihen, schnelle Writes | Zwei Systeme, eigene Query-Sprache (Flux), kein RLS, keine JOINs mit GRC-Daten, doppelte Ops | — |
-| **PostgreSQL + Elasticsearch** | Bessere Volltextsuche, Faceted Search | Zwei Systeme synchronisieren, höhere Ops-Komplexität, überdimensioniert | — |
-| **MySQL 8 / MongoDB** | Verbreitet / flexibles Schema | Kein RLS, kein pgvector, keine Zeitreihen-Extension | — |
+| **Option**                              | **Advantages**                                                                                                                     | **Disadvantages**                                                                            | **Choice** |
+| --------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------- | ---------- |
+| **PostgreSQL + TimescaleDB + pgvector** | Eine DB für alles, RLS auf Hypertables, SQL-JOINs zwischen Business- und Zeitreihen-Daten, 90%+ Kompression, Continuous Aggregates | TimescaleDB-Lizenz (Apache 2 Core, TSL Advanced), etwas Konfigurations-Aufwand               | —          |
+| **PostgreSQL + InfluxDB**               | Purpose-Built Zeitreihen, schnelle Writes                                                                                          | Zwei Systeme, eigene Query-Sprache (Flux), kein RLS, keine JOINs mit GRC-Daten, doppelte Ops | —          |
+| **PostgreSQL + Elasticsearch**          | Bessere Volltextsuche, Faceted Search                                                                                              | Zwei Systeme synchronisieren, höhere Ops-Komplexität, überdimensioniert                      | —          |
+| **MySQL 8 / MongoDB**                   | Verbreitet / flexibles Schema                                                                                                      | Kein RLS, kein pgvector, keine Zeitreihen-Extension                                          | —          |
 
 ### TimescaleDB: Concrete Use Cases
 
@@ -202,11 +202,11 @@ Managed PostgreSQL mit TimescaleDB (Timescale Cloud oder Self-Managed auf Hetzne
 
 ## ADR-006: ORM / Database Access
 
-| **ADR-ID** | **006** |
-| --- | --- |
-| **Title** | **Drizzle ORM** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **006**                                                                    |
+| ----------- | -------------------------------------------------------------------------- |
+| **Title**   | **Drizzle ORM**                                                            |
+| **Status**  | ** Accepted **                                                             |
+| **Date**    | 2026-03-22                                                                 |
 | **Context** | ADR-004 (TypeScript), ADR-005 (PostgreSQL), Datenmodell v1.0 (44 Entities) |
 
 ### Decision
@@ -215,24 +215,24 @@ Drizzle ORM für Schema-Definition, Type-Safe Queries und Migrationen. Drizzle b
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Drizzle ORM** | SQL-nah, kein Query-Overhead, TypeScript-native Typen, Schema = Single Source of Truth, exzellente PostgreSQL-Unterstützung | Jünger als Prisma, kleinere Community | **✅** |
-| **Prisma** | Größte Community, Prisma Studio, intuitive Syntax | Eigene Query Engine (Performance-Overhead), RLS-Support begrenzt, Custom Enums umständlich | — |
-| **Kysely** | Type-safe Query Builder, sehr performant | Kein Schema-Management, keine Migrationen, mehr Boilerplate | — |
-| **Raw SQL + pg** | Maximale Kontrolle, beste Performance | Keine Type-Safety, kein Schema-Management, fehleranfällig | — |
+| **Option**       | **Advantages**                                                                                                              | **Disadvantages**                                                                          | **Choice** |
+| ---------------- | --------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------ | ---------- |
+| **Drizzle ORM**  | SQL-nah, kein Query-Overhead, TypeScript-native Typen, Schema = Single Source of Truth, exzellente PostgreSQL-Unterstützung | Jünger als Prisma, kleinere Community                                                      | **✅**     |
+| **Prisma**       | Größte Community, Prisma Studio, intuitive Syntax                                                                           | Eigene Query Engine (Performance-Overhead), RLS-Support begrenzt, Custom Enums umständlich | —          |
+| **Kysely**       | Type-safe Query Builder, sehr performant                                                                                    | Kein Schema-Management, keine Migrationen, mehr Boilerplate                                | —          |
+| **Raw SQL + pg** | Maximale Kontrolle, beste Performance                                                                                       | Keine Type-Safety, kein Schema-Management, fehleranfällig                                  | —          |
 
 ### Consequences
 
-Schema-Definitionen in packages/db/schema/*.ts (ein File pro Domäne: risk.ts, process.ts, audit.ts, etc.). Drizzle Kit für Migrationen (drizzle-kit generate + drizzle-kit migrate). Custom SQL-Migrationen für RLS-Policies, Audit-Trail-Trigger und Hash-Ketten-Funktion. Zod-Schemas werden aus Drizzle-Typen generiert (drizzle-zod) für API-Validierung. Prepared Statements für häufige Queries.
+Schema-Definitionen in packages/db/schema/\*.ts (ein File pro Domäne: risk.ts, process.ts, audit.ts, etc.). Drizzle Kit für Migrationen (drizzle-kit generate + drizzle-kit migrate). Custom SQL-Migrationen für RLS-Policies, Audit-Trail-Trigger und Hash-Ketten-Funktion. Zod-Schemas werden aus Drizzle-Typen generiert (drizzle-zod) für API-Validierung. Prepared Statements für häufige Queries.
 
 ## ADR-007: Authentication & Authorization (SUPERSEDED — See ADR-007-rev1.md)
 
-| **ADR-ID** | **007** |
-| --- | --- |
-| **Title** | **Auth.js (Self-Hosted) + Custom RBAC with Three Lines of Defense Model** |
-| **Status** | **Accepted (Rev. 1)** |
-| **Date** | 2026-03-23 |
+| **ADR-ID** | **007**                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| **Title**  | **Auth.js (Self-Hosted) + Custom RBAC with Three Lines of Defense Model** |
+| **Status** | **Accepted (Rev. 1)**                                                     |
+| **Date**   | 2026-03-23                                                                |
 
 > **This ADR has been revised.** The original decision for Clerk has been replaced by Auth.js (self-hosted).
 > See `docs/ADR-007-rev1.md` for the full updated decision, rationale, architecture, and migration path.
@@ -243,11 +243,11 @@ Clerk (US cloud auth service) replaced by Auth.js (self-hosted) due to data sove
 
 ## ADR-008: AI Strategy
 
-| **ADR-ID** | **008** |
-| --- | --- |
-| **Title** | **Claude API (Cloud) + Local Models (Privacy-Sensitive)** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **008**                                                                                     |
+| ----------- | ------------------------------------------------------------------------------------------- |
+| **Title**   | **Claude API (Cloud) + Local Models (Privacy-Sensitive)**                                   |
+| **Status**  | ** Accepted **                                                                              |
+| **Date**    | 2026-03-22                                                                                  |
 | **Context** | G-12: KI-Funktionen, P-08: KI-Prozessgenerierung, E-08: Monte Carlo, O-07: Horizon Scanning |
 
 ### Decision
@@ -256,12 +256,12 @@ Primär Claude API (Sonnet/Opus) für: BPMN-Generierung aus Freitext (P-08), Ris
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Claude API + lokale Modelle** | Beste Reasoning-Qualität, MCP-nativ, DSGVO-Compliance durch lokale Modelle für sensible Daten | API-Kosten, Latenz bei komplexen Prompts, lokale Modelle = GPU-Infrastruktur | **✅** |
-| **Nur Claude API** | Einfachste Integration, konsistente Qualität | DSGVO-Bedenken bei personenbezogenen Daten, Vendor-Lock-in | — |
-| **OpenAI GPT-4** | Großes Ökosystem, Function Calling | Kein MCP, US-Datenverarbeitung, DSGVO-Risiko | — |
-| **Nur lokale Modelle** | Volle Datenkontrolle | Schlechtere Qualität bei komplexen GRC-Aufgaben, GPU-Kosten | — |
+| **Option**                      | **Advantages**                                                                                | **Disadvantages**                                                            | **Choice** |
+| ------------------------------- | --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------- | ---------- |
+| **Claude API + lokale Modelle** | Beste Reasoning-Qualität, MCP-nativ, DSGVO-Compliance durch lokale Modelle für sensible Daten | API-Kosten, Latenz bei komplexen Prompts, lokale Modelle = GPU-Infrastruktur | **✅**     |
+| **Nur Claude API**              | Einfachste Integration, konsistente Qualität                                                  | DSGVO-Bedenken bei personenbezogenen Daten, Vendor-Lock-in                   | —          |
+| **OpenAI GPT-4**                | Großes Ökosystem, Function Calling                                                            | Kein MCP, US-Datenverarbeitung, DSGVO-Risiko                                 | —          |
+| **Nur lokale Modelle**          | Volle Datenkontrolle                                                                          | Schlechtere Qualität bei komplexen GRC-Aufgaben, GPU-Kosten                  | —          |
 
 ### Consequences
 
@@ -269,11 +269,11 @@ KI-Abstraktionsschicht mit Provider-Interface: jeder KI-Aufruf geht durch einen 
 
 ## ADR-009: Workflow Engine
 
-| **ADR-ID** | **009** |
-| --- | --- |
-| **Title** | **Temporal.io for Long-Running GRC Workflows** |
-| **Status** | ** Proposed ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **009**                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------- |
+| **Title**   | **Temporal.io for Long-Running GRC Workflows**                                                          |
+| **Status**  | ** Proposed **                                                                                          |
+| **Date**    | 2026-03-22                                                                                              |
 | **Context** | G-09: Aufgaben, Eskalation, Termine; K-05: Automatisierte Kontrollworkflows; P-06: Genehmigungsworkflow |
 
 ### Decision
@@ -282,12 +282,12 @@ Temporal.io für langlebige, zustandsbehaftete Workflows: Audit-Kampagnen (Woche
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Temporal.io** | Durable Workflows, Timer/Cron nativ, TypeScript SDK, Replay-fähig, ideal für GRC-Fristen | Ops-Komplexität (eigener Cluster), Lernkurve | **✅** |
-| **BullMQ (Redis)** | Einfach, bewährt für Job-Queues | Keine nativen Timer/Cron, kein Workflow-State, nicht durable über Monate | — |
-| **Inngest** | Serverless Workflows, einfache API | Vendor-Lock-in, weniger Kontrolle, noch jung | — |
-| **Eigene Engine (DB-basiert)** | Volle Kontrolle, kein externer Service | Fehleranfällig, Race Conditions, Skalierungsprobleme, monatelanges Engineering | — |
+| **Option**                     | **Advantages**                                                                           | **Disadvantages**                                                              | **Choice** |
+| ------------------------------ | ---------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------- |
+| **Temporal.io**                | Durable Workflows, Timer/Cron nativ, TypeScript SDK, Replay-fähig, ideal für GRC-Fristen | Ops-Komplexität (eigener Cluster), Lernkurve                                   | **✅**     |
+| **BullMQ (Redis)**             | Einfach, bewährt für Job-Queues                                                          | Keine nativen Timer/Cron, kein Workflow-State, nicht durable über Monate       | —          |
+| **Inngest**                    | Serverless Workflows, einfache API                                                       | Vendor-Lock-in, weniger Kontrolle, noch jung                                   | —          |
+| **Eigene Engine (DB-basiert)** | Volle Kontrolle, kein externer Service                                                   | Fehleranfällig, Race Conditions, Skalierungsprobleme, monatelanges Engineering | —          |
 
 ### Consequences
 
@@ -295,11 +295,11 @@ Temporal Cloud (managed) initial, später Self-Hosting möglich. Workflow-Defini
 
 ## ADR-010: API Design
 
-| **ADR-ID** | **010** |
-| --- | --- |
-| **Title** | **REST-First + OpenAPI 3.1 + Webhooks** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **010**                                      |
+| ----------- | -------------------------------------------- |
+| **Title**   | **REST-First + OpenAPI 3.1 + Webhooks**      |
+| **Status**  | ** Accepted **                               |
+| **Date**    | 2026-03-22                                   |
 | **Context** | G-10: Offene REST-API, Integration ERP/HR/IT |
 
 ### Decision
@@ -308,12 +308,12 @@ REST-API als primäres Interface, dokumentiert mit OpenAPI 3.1 (auto-generiert a
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **REST + OpenAPI** | Universell verstanden, tooling-reich, OpenAPI = automatische Client-Generierung, Swagger UI | Over-Fetching bei komplexen Abfragen (mitigierbar durch Sparse Fields) | **✅** |
-| **GraphQL** | Flexible Abfragen, kein Over-Fetching | Complexity Overhead, Caching schwieriger, N+1-Problem, Überdimensioniert für Phase 1 | — |
-| **tRPC** | End-to-End Type Safety, kein Schema | Nur TypeScript-Clients, keine externen Integrationen | — |
-| **gRPC** | Beste Performance, Streaming | Browser-Inkompatibel ohne Proxy, überdimensioniert | — |
+| **Option**         | **Advantages**                                                                              | **Disadvantages**                                                                    | **Choice** |
+| ------------------ | ------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------ | ---------- |
+| **REST + OpenAPI** | Universell verstanden, tooling-reich, OpenAPI = automatische Client-Generierung, Swagger UI | Over-Fetching bei komplexen Abfragen (mitigierbar durch Sparse Fields)               | **✅**     |
+| **GraphQL**        | Flexible Abfragen, kein Over-Fetching                                                       | Complexity Overhead, Caching schwieriger, N+1-Problem, Überdimensioniert für Phase 1 | —          |
+| **tRPC**           | End-to-End Type Safety, kein Schema                                                         | Nur TypeScript-Clients, keine externen Integrationen                                 | —          |
+| **gRPC**           | Beste Performance, Streaming                                                                | Browser-Inkompatibel ohne Proxy, überdimensioniert                                   | —          |
 
 ### Consequences
 
@@ -321,11 +321,11 @@ URL-Muster: /api/v1/{entity}?org_id=...&status=...&page=...&limit=... — org_id
 
 ## ADR-011: Audit Trail Architecture
 
-| **ADR-ID** | **011** |
-| --- | --- |
-| **Title** | **Append-Only Audit Log with Hash Chain + 3 Log Tables** |
-| **Status** | ** Accepted ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **011**                                                  |
+| ----------- | -------------------------------------------------------- |
+| **Title**   | **Append-Only Audit Log with Hash Chain + 3 Log Tables** |
+| **Status**  | ** Accepted **                                           |
+| **Date**    | 2026-03-22                                               |
 | **Context** | G-07: Audit-Trail, DSGVO Art. 5, ISO 27001 A.12.4, A.9.4 |
 
 ### Decision
@@ -336,7 +336,7 @@ Drei separate Log-Tabellen: (1) audit_log für alle Business-Datenänderungen, (
 
 1. Vollständigkeit: Jede Änderung an jeder Business-Tabelle wird protokolliert — CRUD, Statusübergänge, Zuweisungen, Evidenz-Uploads, Lesebesttigungen, Kommentare, Verknüpfungen.
 
-2. Unverfälschbarkeit: Append-only + Hash-Kette. Integritätsprüfung: SELECT * FROM audit_log WHERE entry_hash != compute_hash(...) findet Manipulationen.
+2. Unverfälschbarkeit: Append-only + Hash-Kette. Integritätsprüfung: SELECT \* FROM audit_log WHERE entry_hash != compute_hash(...) findet Manipulationen.
 
 3. Nachvollziehbarkeit: User-Snapshots (Name, Email) direkt im Log, damit die Historie auch nach User-Löschung vollständig bleibt. entity_title als Snapshot.
 
@@ -344,12 +344,12 @@ Drei separate Log-Tabellen: (1) audit_log für alle Business-Datenänderungen, (
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **DB-Trigger + Hash-Kette** | Automatisch, lückenlos, tamper-evident, keine Applikationsänderung nötig | Trigger-Performance bei Bulk-Ops, Hash-Kette = sequentiell | **✅** |
-| **Applikations-Level Logging** | Flexibler, einfacher zu implementieren | Lücken möglich (vergessene Log-Calls), umgehbar | — |
-| **Event Sourcing (komplett)** | Perfekte Historie, Replay möglich | Massive Komplexität, CQRS nötig, überdimensioniert für GRC | — |
-| **Blockchain (extern)** | Kryptographisch beweisbar | Overkill, Infrastruktur-Overhead, keine Markt-Referenz in GRC | — |
+| **Option**                     | **Advantages**                                                           | **Disadvantages**                                             | **Choice** |
+| ------------------------------ | ------------------------------------------------------------------------ | ------------------------------------------------------------- | ---------- |
+| **DB-Trigger + Hash-Kette**    | Automatisch, lückenlos, tamper-evident, keine Applikationsänderung nötig | Trigger-Performance bei Bulk-Ops, Hash-Kette = sequentiell    | **✅**     |
+| **Applikations-Level Logging** | Flexibler, einfacher zu implementieren                                   | Lücken möglich (vergessene Log-Calls), umgehbar               | —          |
+| **Event Sourcing (komplett)**  | Perfekte Historie, Replay möglich                                        | Massive Komplexität, CQRS nötig, überdimensioniert für GRC    | —          |
+| **Blockchain (extern)**        | Kryptographisch beweisbar                                                | Overkill, Infrastruktur-Overhead, keine Markt-Referenz in GRC | —          |
 
 ### Consequences
 
@@ -357,11 +357,11 @@ DB-Trigger-Funktion: audit_trigger() wird auf jeder Business-Tabelle als AFTER I
 
 ## ADR-012: Deployment & Infrastructure
 
-| **ADR-ID** | **012** |
-| --- | --- |
-| **Title** | **Docker + Kubernetes + CI/CD via GitHub Actions** |
-| **Status** | ** Proposed ** |
-| **Date** | 2026-03-22 |
+| **ADR-ID**  | **012**                                                 |
+| ----------- | ------------------------------------------------------- |
+| **Title**   | **Docker + Kubernetes + CI/CD via GitHub Actions**      |
+| **Status**  | ** Proposed **                                          |
+| **Date**    | 2026-03-22                                              |
 | **Context** | G-05: Cloud (SaaS) und On-Prem, Multi-Entity Deployment |
 
 ### Decision
@@ -370,12 +370,12 @@ Docker-Container für alle Services (Web, Worker, Temporal). Kubernetes (K8s) f�
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Docker + K8s** | Skalierbar, portable, On-Prem und Cloud identisch, Health Checks, Rolling Updates | K8s-Komplexität, DevOps-Know-how nötig | **✅** |
-| **Vercel + Serverless** | Zero-Ops für Frontend, Auto-Scaling | Kein On-Prem möglich (G-05), Vendor-Lock-in, Temporal nicht deploybar | — |
-| **AWS ECS / Fargate** | Managed Container, weniger Ops als K8s | AWS-Lock-in, kein einfaches On-Prem | — |
-| **Bare Metal / VMs** | Maximale Kontrolle, günstig | Kein Auto-Scaling, manuelle Updates, hoher Ops-Aufwand | — |
+| **Option**              | **Advantages**                                                                    | **Disadvantages**                                                     | **Choice** |
+| ----------------------- | --------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ---------- |
+| **Docker + K8s**        | Skalierbar, portable, On-Prem und Cloud identisch, Health Checks, Rolling Updates | K8s-Komplexität, DevOps-Know-how nötig                                | **✅**     |
+| **Vercel + Serverless** | Zero-Ops für Frontend, Auto-Scaling                                               | Kein On-Prem möglich (G-05), Vendor-Lock-in, Temporal nicht deploybar | —          |
+| **AWS ECS / Fargate**   | Managed Container, weniger Ops als K8s                                            | AWS-Lock-in, kein einfaches On-Prem                                   | —          |
+| **Bare Metal / VMs**    | Maximale Kontrolle, günstig                                                       | Kein Auto-Scaling, manuelle Updates, hoher Ops-Aufwand                | —          |
 
 ### Consequences
 

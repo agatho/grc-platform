@@ -44,7 +44,12 @@ const bodySchema = z.object({
   minVulnSeverity: z.enum(["low", "medium", "high", "critical"]).default("low"),
 });
 
-const SEVERITY_ORDER: Record<string, number> = { low: 1, medium: 2, high: 3, critical: 4 };
+const SEVERITY_ORDER: Record<string, number> = {
+  low: 1,
+  medium: 2,
+  high: 3,
+  critical: 4,
+};
 const MAX_SCENARIOS_PER_CALL = 10_000;
 
 export async function POST(req: Request, { params }: RouteParams) {
@@ -60,7 +65,9 @@ export async function POST(req: Request, { params }: RouteParams) {
   let bodyData: z.infer<typeof bodySchema>;
   try {
     const raw = await req.text();
-    const parsed = bodySchema.safeParse(raw && raw.trim().length > 0 ? JSON.parse(raw) : {});
+    const parsed = bodySchema.safeParse(
+      raw && raw.trim().length > 0 ? JSON.parse(raw) : {},
+    );
     if (!parsed.success) {
       return Response.json(
         { error: "Validation failed", details: parsed.error.flatten() },
@@ -76,14 +83,21 @@ export async function POST(req: Request, { params }: RouteParams) {
   const [run] = await db
     .select()
     .from(assessmentRun)
-    .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+    .where(
+      and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+    );
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   if (run.status !== "in_progress" && run.status !== "planning") {
     return Response.json(
-      { error: `Run status '${run.status}' -- Scenario-Generation nur fuer planning/in_progress` },
+      {
+        error: `Run status '${run.status}' -- Scenario-Generation nur fuer planning/in_progress`,
+      },
       { status: 422 },
     );
   }
@@ -146,7 +160,11 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   // Kombinationen bilden
-  const combinations: Array<{ threatId: string; vulnId: string; assetId: string | null }> = [];
+  const combinations: Array<{
+    threatId: string;
+    vulnId: string;
+    assetId: string | null;
+  }> = [];
 
   for (const vuln of filteredVulns) {
     // Wenn Vuln an ein Asset gebunden ist: nur dieses Asset
@@ -244,7 +262,9 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   const existingEvalSet = new Set(existingEvals.map((e) => e.scenarioId));
 
-  const missingEvalScenarioIds = allScenarioIds.filter((id) => !existingEvalSet.has(id));
+  const missingEvalScenarioIds = allScenarioIds.filter(
+    (id) => !existingEvalSet.has(id),
+  );
 
   let evalStubsCreated = 0;
   if (missingEvalScenarioIds.length > 0) {

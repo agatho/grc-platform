@@ -22,7 +22,7 @@ export async function GET(req: Request) {
         WHERE org_id = ${ctx.orgId}`,
   );
 
-  const row = result.rows?.[0] ?? {};
+  const row = (result as unknown as Record<string, unknown>[])[0] ?? {};
 
   return Response.json({
     data: {

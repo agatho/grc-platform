@@ -185,9 +185,7 @@ export function TabProvider({ children }: { children: ReactNode }) {
       const pinnedCount = prev.filter((t) => t.pinned).length;
       if (pinnedCount >= MAX_PINNED) return prev;
 
-      const next = prev.map((t) =>
-        t.id === id ? { ...t, pinned: true } : t,
-      );
+      const next = prev.map((t) => (t.id === id ? { ...t, pinned: true } : t));
 
       // Update localStorage
       const pinnedIds = new Set(next.filter((t) => t.pinned).map((t) => t.id));
@@ -199,9 +197,7 @@ export function TabProvider({ children }: { children: ReactNode }) {
 
   const unpinTab = useCallback((id: string) => {
     setTabs((prev) => {
-      const next = prev.map((t) =>
-        t.id === id ? { ...t, pinned: false } : t,
-      );
+      const next = prev.map((t) => (t.id === id ? { ...t, pinned: false } : t));
 
       const pinnedIds = new Set(next.filter((t) => t.pinned).map((t) => t.id));
       savePinnedIds(pinnedIds);

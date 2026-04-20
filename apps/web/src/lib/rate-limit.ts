@@ -43,14 +43,23 @@ export interface RateLimitResult {
 }
 
 // In-Memory-Fallback. Nur fuer dev ohne Redis. Pro Container, nicht shared.
-const inMemoryBuckets = new Map<string, { tokens: number; lastRefillMs: number }>();
+const inMemoryBuckets = new Map<
+  string,
+  { tokens: number; lastRefillMs: number }
+>();
 
 function inMemoryCheck(opts: RateLimitOptions): RateLimitResult {
   const now = Date.now();
-  const bucket = inMemoryBuckets.get(opts.key) ?? { tokens: opts.capacity, lastRefillMs: now };
+  const bucket = inMemoryBuckets.get(opts.key) ?? {
+    tokens: opts.capacity,
+    lastRefillMs: now,
+  };
   const elapsedMs = now - bucket.lastRefillMs;
   const refillRate = opts.capacity / (opts.windowSeconds * 1000); // tokens per ms
-  const refilled = Math.min(opts.capacity, bucket.tokens + elapsedMs * refillRate);
+  const refilled = Math.min(
+    opts.capacity,
+    bucket.tokens + elapsedMs * refillRate,
+  );
 
   if (refilled < 1) {
     const needed = 1 - refilled;
@@ -75,7 +84,9 @@ function inMemoryCheck(opts: RateLimitOptions): RateLimitResult {
  * Fuer Multi-Container-Setup muss auf Redis umgestellt werden -- siehe
  * ADR-019. Der API-Contract bleibt stabil.
  */
-export async function rateLimit(opts: RateLimitOptions): Promise<RateLimitResult> {
+export async function rateLimit(
+  opts: RateLimitOptions,
+): Promise<RateLimitResult> {
   if (opts.capacity <= 0 || opts.windowSeconds <= 0) {
     throw new Error("rateLimit: capacity and windowSeconds must be > 0");
   }

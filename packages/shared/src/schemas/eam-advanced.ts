@@ -13,15 +13,32 @@ export const createDataFlowSchema = z.object({
   description: z.string().max(5000).optional(),
   dataCategories: z.array(z.string().max(50)).min(1).max(20),
   containsPersonalData: z.boolean().default(false),
-  transferMechanism: z.enum(["api", "file_transfer", "message_queue", "database_replication", "manual"]),
+  transferMechanism: z.enum([
+    "api",
+    "file_transfer",
+    "message_queue",
+    "database_replication",
+    "manual",
+  ]),
   encryptionInTransit: z.enum(["tls", "vpn", "none"]).default("tls"),
   encryptionAtRest: z.enum(["aes256", "none"]).default("aes256"),
-  frequency: z.enum(["real_time", "hourly", "daily", "weekly", "monthly", "on_demand"]),
+  frequency: z.enum([
+    "real_time",
+    "hourly",
+    "daily",
+    "weekly",
+    "monthly",
+    "on_demand",
+  ]),
   volumePerDay: z.string().max(100).optional(),
   hostingSource: z.string().max(5).optional(),
   hostingTarget: z.string().max(5).optional(),
-  legalBasis: z.enum(["consent", "contract", "legitimate_interest", "legal_obligation"]).optional(),
-  schremsIiSafeguard: z.enum(["adequacy_decision", "scc", "bcr", "none"]).optional(),
+  legalBasis: z
+    .enum(["consent", "contract", "legitimate_interest", "legal_obligation"])
+    .optional(),
+  schremsIiSafeguard: z
+    .enum(["adequacy_decision", "scc", "bcr", "none"])
+    .optional(),
   ropaEntryId: z.string().uuid().optional(),
   status: z.enum(["active", "planned", "deprecated"]).default("active"),
 });
@@ -35,10 +52,21 @@ export const updateDataFlowSchema = createDataFlowSchema.partial();
 export const createInterfaceSchema = z.object({
   name: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
-  interfaceType: z.enum(["rest_api", "soap", "graphql", "grpc", "file_transfer", "message_queue", "database_link", "manual"]),
+  interfaceType: z.enum([
+    "rest_api",
+    "soap",
+    "graphql",
+    "grpc",
+    "file_transfer",
+    "message_queue",
+    "database_link",
+    "manual",
+  ]),
   direction: z.enum(["provides", "consumes"]),
   protocol: z.string().max(30).optional(),
-  authentication: z.enum(["oauth2", "api_key", "basic", "mtls", "saml", "none"]).optional(),
+  authentication: z
+    .enum(["oauth2", "api_key", "basic", "mtls", "saml", "none"])
+    .optional(),
   dataFormat: z.enum(["json", "xml", "csv", "binary", "custom"]).optional(),
   slaAvailability: z.number().min(0).max(100).optional(),
   documentationUrl: z.string().url().max(2000).optional(),
@@ -53,8 +81,21 @@ export const updateInterfaceSchema = createInterfaceSchema.partial();
 
 export const createTechnologySchema = z.object({
   name: z.string().min(1).max(300),
-  category: z.enum(["language", "framework", "database", "cloud_service", "infrastructure", "tool", "platform"]),
-  quadrant: z.enum(["languages_frameworks", "infrastructure", "data_management", "tools"]),
+  category: z.enum([
+    "language",
+    "framework",
+    "database",
+    "cloud_service",
+    "infrastructure",
+    "tool",
+    "platform",
+  ]),
+  quadrant: z.enum([
+    "languages_frameworks",
+    "infrastructure",
+    "data_management",
+    "tools",
+  ]),
   ring: z.enum(["adopt", "trial", "assess", "hold"]),
   versionInUse: z.string().max(100).optional(),
   latestVersion: z.string().max(100).optional(),
@@ -80,9 +121,17 @@ export const createAcrSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().min(1).max(10000),
   justification: z.string().max(10000).optional(),
-  changeType: z.enum(["add_element", "remove_element", "modify_element", "add_relationship", "migration"]),
+  changeType: z.enum([
+    "add_element",
+    "remove_element",
+    "modify_element",
+    "add_relationship",
+    "migration",
+  ]),
   affectedElementIds: z.array(z.string().uuid()).max(100).default([]),
-  riskAssessment: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  riskAssessment: z
+    .enum(["low", "medium", "high", "critical"])
+    .default("medium"),
   costEstimate: z.number().min(0).optional(),
   implementationDeadline: z.string().date().optional(),
 });

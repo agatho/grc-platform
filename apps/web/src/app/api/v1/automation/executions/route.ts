@@ -66,7 +66,10 @@ export async function GET(req: Request) {
       executedAt: automationRuleExecution.executedAt,
     })
     .from(automationRuleExecution)
-    .leftJoin(automationRule, eq(automationRuleExecution.ruleId, automationRule.id))
+    .leftJoin(
+      automationRule,
+      eq(automationRuleExecution.ruleId, automationRule.id),
+    )
     .where(and(...conditions))
     .orderBy(desc(automationRuleExecution.executedAt))
     .limit(limit)

@@ -25,7 +25,8 @@ export async function processRetentionMonitoring(): Promise<MonitoringResult> {
   for (const schedule of schedules) {
     // Check if retention period has elapsed since schedule creation
     const monthsSinceCreation = Math.floor(
-      (now.getTime() - new Date(schedule.createdAt).getTime()) / (1000 * 60 * 60 * 24 * 30),
+      (now.getTime() - new Date(schedule.createdAt).getTime()) /
+        (1000 * 60 * 60 * 24 * 30),
     );
 
     if (monthsSinceCreation >= schedule.retentionPeriodMonths) {
@@ -61,13 +62,19 @@ export async function processRetentionMonitoring(): Promise<MonitoringResult> {
             message: `Data under "${schedule.name}" has exceeded the retention period of ${schedule.retentionPeriodMonths} months. A deletion request has been automatically created.`,
             entityType: "retention_schedule",
             entityId: schedule.id,
-            templateData: { module: "dpms", priority: "high", subtype: "retention_overdue" },
+            templateData: {
+              module: "dpms",
+              priority: "high",
+              subtype: "retention_overdue",
+            },
           });
         }
       }
     }
   }
 
-  console.log(`[cron:retention-monitoring] Completed: ${schedules.length} schedules, ${requestsCreated} requests created`);
+  console.log(
+    `[cron:retention-monitoring] Completed: ${schedules.length} schedules, ${requestsCreated} requests created`,
+  );
   return { processed: schedules.length, requestsCreated };
 }

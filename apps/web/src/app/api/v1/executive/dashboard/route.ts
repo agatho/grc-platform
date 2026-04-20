@@ -18,9 +18,14 @@ export async function GET(req: Request) {
   // 1. Average CES
   const [cesRow] = await db
     .select({
-      avgCes: sql<number>`ROUND(AVG(${controlEffectivenessScore.score}))`.as("avg_ces"),
+      avgCes: sql<number>`ROUND(AVG(${controlEffectivenessScore.score}))`.as(
+        "avg_ces",
+      ),
       totalControls: sql<number>`COUNT(*)`.as("total"),
-      belowThreshold: sql<number>`SUM(CASE WHEN ${controlEffectivenessScore.score} < 50 THEN 1 ELSE 0 END)`.as("below"),
+      belowThreshold:
+        sql<number>`SUM(CASE WHEN ${controlEffectivenessScore.score} < 50 THEN 1 ELSE 0 END)`.as(
+          "below",
+        ),
     })
     .from(controlEffectivenessScore)
     .where(eq(controlEffectivenessScore.orgId, ctx.orgId));
@@ -28,8 +33,13 @@ export async function GET(req: Request) {
   // 2. Risk score average
   const [riskRow] = await db
     .select({
-      avgResidual: sql<number>`ROUND(AVG(${risk.riskScoreResidual}))`.as("avg_residual"),
-      aboveAppetite: sql<number>`SUM(CASE WHEN ${risk.riskAppetiteExceeded} THEN 1 ELSE 0 END)`.as("above"),
+      avgResidual: sql<number>`ROUND(AVG(${risk.riskScoreResidual}))`.as(
+        "avg_residual",
+      ),
+      aboveAppetite:
+        sql<number>`SUM(CASE WHEN ${risk.riskAppetiteExceeded} THEN 1 ELSE 0 END)`.as(
+          "above",
+        ),
     })
     .from(risk)
     .where(and(eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)));
@@ -70,9 +80,7 @@ export async function GET(req: Request) {
       updatedAt: finding.updatedAt,
     })
     .from(finding)
-    .where(
-      and(eq(finding.orgId, ctx.orgId), isNull(finding.deletedAt)),
-    );
+    .where(and(eq(finding.orgId, ctx.orgId), isNull(finding.deletedAt)));
 
   let slaTotal = 0;
   let slaCompliant = 0;
@@ -89,7 +97,8 @@ export async function GET(req: Request) {
     }
   }
 
-  const findingSlaCompliance = slaTotal > 0 ? Math.round((slaCompliant / slaTotal) * 100) : 100;
+  const findingSlaCompliance =
+    slaTotal > 0 ? Math.round((slaCompliant / slaTotal) * 100) : 100;
 
   return Response.json({
     data: {

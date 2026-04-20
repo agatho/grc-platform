@@ -13,27 +13,45 @@ const VALID_TRANSITIONS: Record<string, string[]> = {
 };
 
 // PATCH /api/v1/marketplace/listings/:id/status
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
   const { id } = await params;
   const body = changeListingStatusSchema.parse(await req.json());
 
-  const [existing] = await db.select().from(marketplaceListing)
-    .where(and(eq(marketplaceListing.id, id), eq(marketplaceListing.orgId, ctx.orgId)));
+  const [existing] = await db
+    .select()
+    .from(marketplaceListing)
+    .where(
+      and(
+        eq(marketplaceListing.id, id),
+        eq(marketplaceListing.orgId, ctx.orgId),
+      ),
+    );
   if (!existing) return Response.json({ error: "Not found" }, { status: 404 });
 
   const allowed = VALID_TRANSITIONS[existing.status] ?? [];
   if (!allowed.includes(body.status)) {
-    return Response.json({ error: `Invalid transition from ${existing.status} to ${body.status}` }, { status: 422 });
+    return Response.json(
+      { error: `Invalid transition from ${existing.status} to ${body.status}` },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [updated] = await tx.update(marketplaceListing).set({
-      status: body.status,
-      publishedAt: body.status === "published" ? new Date() : existing.publishedAt,
-      updatedAt: new Date(),
-    }).where(eq(marketplaceListing.id, id)).returning();
+    const [updated] = await tx
+      .update(marketplaceListing)
+      .set({
+        status: body.status,
+        publishedAt:
+          body.status === "published" ? new Date() : existing.publishedAt,
+        updatedAt: new Date(),
+      })
+      .where(eq(marketplaceListing.id, id))
+      .returning();
     return updated;
   });
 

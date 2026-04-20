@@ -40,7 +40,9 @@ export const asset = pgTable(
       .references(() => organization.id),
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
-    assetTier: assetTierEnum("asset_tier").notNull().default("supporting_asset"),
+    assetTier: assetTierEnum("asset_tier")
+      .notNull()
+      .default("supporting_asset"),
     codeGroup: varchar("code_group", { length: 100 }),
 
     // CIA defaults (1-4 scale, nullable — CHECK constraints in migration)
@@ -55,7 +57,9 @@ export const asset = pgTable(
 
     // Business structure fields
     contactPerson: varchar("contact_person", { length: 255 }),
-    dataProtectionResponsible: varchar("data_protection_responsible", { length: 255 }),
+    dataProtectionResponsible: varchar("data_protection_responsible", {
+      length: 255,
+    }),
     dpoEmail: varchar("dpo_email", { length: 255 }),
     latestAuditDate: date("latest_audit_date"),
     latestAuditResult: varchar("latest_audit_result", { length: 50 }),
@@ -70,8 +74,12 @@ export const asset = pgTable(
       .default(sql`'{}'::text[]`),
 
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -110,12 +118,14 @@ export const assetCiaProfile = pgTable(
     validFrom: date("valid_from").notNull().defaultNow(),
     validTo: date("valid_to"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedBy: uuid("updated_by"),
   },
-  (table) => [
-    index("asset_cia_profile_asset_idx").on(table.assetId),
-  ],
+  (table) => [index("asset_cia_profile_asset_idx").on(table.assetId)],
 );

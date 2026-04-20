@@ -42,15 +42,28 @@ function HealthInner() {
   }, [fetchData]);
 
   if (loading || !score) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
-  const scoreColor = score.overall >= 80 ? "text-green-600" : score.overall >= 60 ? "text-yellow-600" : "text-red-600";
+  const scoreColor =
+    score.overall >= 80
+      ? "text-green-600"
+      : score.overall >= 60
+        ? "text-yellow-600"
+        : "text-red-600";
 
   const factors = [
     { key: "portfolioAge", value: score.portfolioAge, weight: 20 },
     { key: "techCurrency", value: score.techCurrency, weight: 20 },
-    { key: "integrationComplexity", value: score.integrationComplexity, weight: 15 },
+    {
+      key: "integrationComplexity",
+      value: score.integrationComplexity,
+      weight: 15,
+    },
     { key: "spofScore", value: score.spofScore, weight: 15 },
     { key: "ruleCompliance", value: score.ruleCompliance, weight: 15 },
     { key: "dataFlowCompliance", value: score.dataFlowCompliance, weight: 15 },
@@ -60,12 +73,17 @@ function HealthInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("health.title")}</h1>
-        <Button variant="outline"><FileDown className="h-4 w-4 mr-2" />Generate Executive Report</Button>
+        <Button variant="outline">
+          <FileDown className="h-4 w-4 mr-2" />
+          Generate Executive Report
+        </Button>
       </div>
 
       {/* Overall Score */}
       <Card className="text-center p-8">
-        <p className="text-sm text-muted-foreground">{t("health.overallScore")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("health.overallScore")}
+        </p>
         <p className={`text-6xl font-bold ${scoreColor}`}>{score.overall}</p>
         <p className="text-muted-foreground">/100</p>
       </Card>
@@ -76,7 +94,9 @@ function HealthInner() {
           <Card key={f.key}>
             <CardContent className="p-4 flex items-center gap-4">
               <div className="flex-1">
-                <p className="text-sm font-medium">{t(`health.${f.key}` as any)}</p>
+                <p className="text-sm font-medium">
+                  {t(`health.${f.key}` as any)}
+                </p>
                 <div className="w-full bg-gray-200 rounded-full h-2 mt-1">
                   <div
                     className={`h-2 rounded-full ${f.value >= 80 ? "bg-green-500" : f.value >= 60 ? "bg-yellow-500" : "bg-red-500"}`}

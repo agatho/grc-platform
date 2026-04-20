@@ -80,17 +80,26 @@ function StatisticsInner() {
     );
   }
 
-  const categoryTotal = Object.values(data.byCategory).reduce((a, b) => a + b, 0) || 1;
-  const resolutionTotal = Object.values(data.byResolution).reduce((a, b) => a + b, 0) || 1;
-  const maxMonthCount = Math.max(...(data.byMonth.map((m) => m.count) || [0]), 1);
+  const categoryTotal =
+    Object.values(data.byCategory).reduce((a, b) => a + b, 0) || 1;
+  const resolutionTotal =
+    Object.values(data.byResolution).reduce((a, b) => a + b, 0) || 1;
+  const maxMonthCount = Math.max(
+    ...(data.byMonth.map((m) => m.count) || [0]),
+    1,
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900">{t("statisticsTitle")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("statisticsSubtitle")}</p>
+          <h1 className="text-2xl font-semibold text-gray-900">
+            {t("statisticsTitle")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("statisticsSubtitle")}
+          </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchStats}>
           <RefreshCcw className="h-4 w-4 mr-2" />
@@ -131,7 +140,9 @@ function StatisticsInner() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Category distribution */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">{t("categoryDistribution")}</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-4">
+            {t("categoryDistribution")}
+          </h3>
           <div className="space-y-3">
             {Object.entries(data.byCategory).map(([cat, cnt]) => (
               <div key={cat} className="flex items-center gap-3">
@@ -144,7 +155,9 @@ function StatisticsInner() {
                     style={{ width: `${(cnt / categoryTotal) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-700 w-8 text-right">{cnt}</span>
+                <span className="text-sm font-medium text-gray-700 w-8 text-right">
+                  {cnt}
+                </span>
               </div>
             ))}
           </div>
@@ -152,15 +165,25 @@ function StatisticsInner() {
 
         {/* Monthly trend */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">{t("monthlyTrend")}</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-4">
+            {t("monthlyTrend")}
+          </h3>
           <div className="flex items-end gap-2 h-40">
             {data.byMonth.map((m) => (
-              <div key={m.month} className="flex-1 flex flex-col items-center justify-end">
+              <div
+                key={m.month}
+                className="flex-1 flex flex-col items-center justify-end"
+              >
                 <div
                   className="w-full bg-blue-500 rounded-t"
-                  style={{ height: `${(m.count / maxMonthCount) * 100}%`, minHeight: m.count > 0 ? "4px" : "0" }}
+                  style={{
+                    height: `${(m.count / maxMonthCount) * 100}%`,
+                    minHeight: m.count > 0 ? "4px" : "0",
+                  }}
                 />
-                <span className="text-[10px] text-gray-400 mt-1">{m.month.slice(5)}</span>
+                <span className="text-[10px] text-gray-400 mt-1">
+                  {m.month.slice(5)}
+                </span>
               </div>
             ))}
           </div>
@@ -168,7 +191,9 @@ function StatisticsInner() {
 
         {/* Resolution breakdown */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">{t("resolutionBreakdown")}</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-4">
+            {t("resolutionBreakdown")}
+          </h3>
           <div className="space-y-3">
             {Object.entries(data.byResolution).map(([res, cnt]) => (
               <div key={res} className="flex items-center gap-3">
@@ -181,7 +206,9 @@ function StatisticsInner() {
                     style={{ width: `${(cnt / resolutionTotal) * 100}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-700 w-8 text-right">{cnt}</span>
+                <span className="text-sm font-medium text-gray-700 w-8 text-right">
+                  {cnt}
+                </span>
               </div>
             ))}
           </div>
@@ -189,7 +216,9 @@ function StatisticsInner() {
 
         {/* Status distribution */}
         <div className="bg-white border border-gray-200 rounded-xl p-6">
-          <h3 className="text-sm font-medium text-gray-700 mb-4">{t("statusDistribution")}</h3>
+          <h3 className="text-sm font-medium text-gray-700 mb-4">
+            {t("statusDistribution")}
+          </h3>
           <div className="space-y-3">
             {Object.entries(data.byStatus).map(([status, cnt]) => {
               const colors: Record<string, string> = {
@@ -199,7 +228,8 @@ function StatisticsInner() {
                 resolved: "bg-green-500",
                 closed: "bg-gray-600",
               };
-              const totalStatus = Object.values(data.byStatus).reduce((a, b) => a + b, 0) || 1;
+              const totalStatus =
+                Object.values(data.byStatus).reduce((a, b) => a + b, 0) || 1;
               return (
                 <div key={status} className="flex items-center gap-3">
                   <span className="text-sm text-gray-600 w-28 truncate">
@@ -211,7 +241,9 @@ function StatisticsInner() {
                       style={{ width: `${(cnt / totalStatus) * 100}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 w-8 text-right">{cnt}</span>
+                  <span className="text-sm font-medium text-gray-700 w-8 text-right">
+                    {cnt}
+                  </span>
                 </div>
               );
             })}
@@ -241,7 +273,9 @@ function KpiCard({
         {icon}
         <span className="text-sm text-gray-500">{label}</span>
       </div>
-      <p className={`text-3xl font-bold ${highlight ? "text-green-600" : "text-gray-900"}`}>
+      <p
+        className={`text-3xl font-bold ${highlight ? "text-green-600" : "text-gray-900"}`}
+      >
         {value}
       </p>
       <p className="text-xs text-gray-400 mt-1">{subtext}</p>

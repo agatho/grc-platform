@@ -24,12 +24,16 @@ function DetailInner() {
   const router = useRouter();
   const params = useParams<{ id: string }>();
   const [loading, setLoading] = useState(true);
-  const [correlation, setCorrelation] = useState<IncidentCorrelation | null>(null);
+  const [correlation, setCorrelation] = useState<IncidentCorrelation | null>(
+    null,
+  );
 
   useEffect(() => {
     const fetchCorrelation = async () => {
       try {
-        const res = await fetch(`/api/v1/isms/incidents/correlations?limit=100`);
+        const res = await fetch(
+          `/api/v1/isms/incidents/correlations?limit=100`,
+        );
         if (res.ok) {
           const json = await res.json();
           const found = (json.data ?? []).find(
@@ -63,7 +67,11 @@ function DetailInner() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/isms/incidents/correlation")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/isms/incidents/correlation")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">
@@ -90,8 +98,12 @@ function DetailInner() {
           <CardContent>
             {(correlation.sharedFactorsJson ?? []).map((factor, i) => (
               <div key={i} className="mb-2 rounded border p-3 text-sm">
-                <p className="font-medium">{(factor as { factor: string }).factor}</p>
-                <p className="text-muted-foreground">{(factor as { description: string }).description}</p>
+                <p className="font-medium">
+                  {(factor as { factor: string }).factor}
+                </p>
+                <p className="text-muted-foreground">
+                  {(factor as { description: string }).description}
+                </p>
               </div>
             ))}
           </CardContent>

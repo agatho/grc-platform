@@ -22,7 +22,10 @@ export async function GET(req: Request) {
       portfolio: applicationPortfolio,
     })
     .from(architectureElement)
-    .leftJoin(applicationPortfolio, eq(architectureElement.id, applicationPortfolio.elementId))
+    .leftJoin(
+      applicationPortfolio,
+      eq(architectureElement.id, applicationPortfolio.elementId),
+    )
     .where(
       and(
         eq(architectureElement.orgId, ctx.orgId),
@@ -34,10 +37,14 @@ export async function GET(req: Request) {
 
   let filtered = apps;
   if (lifecycleStatus) {
-    filtered = filtered.filter((a) => a.portfolio?.lifecycleStatus === lifecycleStatus);
+    filtered = filtered.filter(
+      (a) => a.portfolio?.lifecycleStatus === lifecycleStatus,
+    );
   }
   if (timeClassification) {
-    filtered = filtered.filter((a) => a.portfolio?.timeClassification === timeClassification);
+    filtered = filtered.filter(
+      (a) => a.portfolio?.timeClassification === timeClassification,
+    );
   }
 
   return Response.json({ data: filtered });

@@ -32,8 +32,11 @@ export async function GET(req: Request) {
   if (includeDescendants) {
     // DPO role is not allowed to fan out to descendants — privacy boundary
     // is at the data controller (org) level, not group level.
-    const roles = ctx.session.user.roles?.filter((r) => r.orgId === ctx.orgId) ?? [];
-    const isHierarchyRole = roles.some((r) => r.role === "admin" || r.role === "auditor");
+    const roles =
+      ctx.session.user.roles?.filter((r) => r.orgId === ctx.orgId) ?? [];
+    const isHierarchyRole = roles.some(
+      (r) => r.role === "admin" || r.role === "auditor",
+    );
     if (!isHierarchyRole) {
       return Response.json(
         { error: "includeDescendants requires admin or auditor role" },
@@ -72,7 +75,8 @@ export async function GET(req: Request) {
   if (entityId) conditions.push(eq(auditLog.entityId, entityId));
 
   const action = searchParams.get("action");
-  if (action) conditions.push(sql`${auditLog.action} = ${action}::audit_action`);
+  if (action)
+    conditions.push(sql`${auditLog.action} = ${action}::audit_action`);
 
   const since = searchParams.get("since");
   if (since) conditions.push(sql`${auditLog.createdAt} >= ${since}`);

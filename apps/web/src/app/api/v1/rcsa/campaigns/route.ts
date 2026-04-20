@@ -1,7 +1,12 @@
 import { db, rcsaCampaign, rcsaAssignment } from "@grc/db";
 import { createRcsaCampaignSchema } from "@grc/shared";
 import { eq, and, count, desc, ilike, or, sql } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/rcsa/campaigns — Create campaign (admin/risk_manager)
@@ -60,7 +65,10 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(ilike(rcsaCampaign.name, pattern), ilike(rcsaCampaign.description, pattern))!,
+      or(
+        ilike(rcsaCampaign.name, pattern),
+        ilike(rcsaCampaign.description, pattern),
+      )!,
     );
   }
 
@@ -103,7 +111,8 @@ export async function GET(req: Request) {
         ...campaign,
         totalAssignments: totalCount,
         completedCount,
-        completionRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
+        completionRate:
+          totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
         participantCount: Number(stats?.participants ?? 0),
       };
     }),

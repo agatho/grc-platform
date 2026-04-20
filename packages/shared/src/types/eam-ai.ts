@@ -1,9 +1,23 @@
 // Sprint 51: EAM AI Assistant types
 
-export type LLMProviderId = "openai" | "anthropic" | "azure_openai" | "ollama" | "mistral" | "custom";
+export type LLMProviderId =
+  | "openai"
+  | "anthropic"
+  | "azure_openai"
+  | "ollama"
+  | "mistral"
+  | "custom";
 export type AIValidationStatus = "valid" | "invalid" | "untested";
-export type TranslationStatus = "untranslated" | "ai_translated" | "human_reviewed";
-export type SuggestionReason = "eol_approaching" | "open_cves" | "unassessed" | "recently_modified" | "in_department";
+export type TranslationStatus =
+  | "untranslated"
+  | "ai_translated"
+  | "human_reviewed";
+export type SuggestionReason =
+  | "eol_approaching"
+  | "open_cves"
+  | "unassessed"
+  | "recently_modified"
+  | "in_department";
 
 export interface LLMProviderConfig {
   provider: LLMProviderId;

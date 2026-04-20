@@ -1,4 +1,9 @@
-import { db, eamOrgUnit, eamBusinessContext, architectureElement } from "@grc/db";
+import {
+  db,
+  eamOrgUnit,
+  eamBusinessContext,
+  architectureElement,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -11,10 +16,14 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const orgUnits = await db.select().from(eamOrgUnit)
+  const orgUnits = await db
+    .select()
+    .from(eamOrgUnit)
     .where(eq(eamOrgUnit.orgId, ctx.orgId));
 
-  const businessContexts = await db.select().from(eamBusinessContext)
+  const businessContexts = await db
+    .select()
+    .from(eamBusinessContext)
     .where(eq(eamBusinessContext.orgId, ctx.orgId));
 
   // Build usage matrix from business contexts

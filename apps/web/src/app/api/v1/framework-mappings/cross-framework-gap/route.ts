@@ -34,7 +34,10 @@ export async function POST(req: Request) {
 
   const body = gapInputSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
   const { sourceFramework, targetFramework, onlyImplementedSource } = body.data;
 
@@ -60,9 +63,19 @@ export async function POST(req: Request) {
   }
 
   const targetEntries = await db
-    .select({ code: catalogEntry.code, name: catalogEntry.name, nameDe: catalogEntry.nameDe, level: catalogEntry.level })
+    .select({
+      code: catalogEntry.code,
+      name: catalogEntry.name,
+      nameDe: catalogEntry.nameDe,
+      level: catalogEntry.level,
+    })
     .from(catalogEntry)
-    .where(and(eq(catalogEntry.catalogId, targetCat.id), eq(catalogEntry.status, "active")))
+    .where(
+      and(
+        eq(catalogEntry.catalogId, targetCat.id),
+        eq(catalogEntry.status, "active"),
+      ),
+    )
     .orderBy(catalogEntry.sortOrder);
   const targetLeafEntries = targetEntries.filter((e) => e.level > 0);
   const targetTotal = targetLeafEntries.length;
@@ -74,7 +87,9 @@ export async function POST(req: Request) {
     const [srcCat] = await db
       .select({ id: catalog.id })
       .from(catalog)
-      .where(and(eq(catalog.source, sourceFramework), eq(catalog.isActive, true)))
+      .where(
+        and(eq(catalog.source, sourceFramework), eq(catalog.isActive, true)),
+      )
       .limit(1);
 
     if (!srcCat) {
@@ -92,7 +107,10 @@ export async function POST(req: Request) {
         and(
           eq(soaEntry.orgId, ctx.orgId),
           eq(catalogEntry.catalogId, srcCat.id),
-          inArray(soaEntry.implementation, ["implemented", "partially_implemented"]),
+          inArray(soaEntry.implementation, [
+            "implemented",
+            "partially_implemented",
+          ]),
         ),
       );
 
@@ -160,27 +178,47 @@ export async function POST(req: Request) {
   //                                        AND the source side is implemented (or onlyImplementedSource=false)
   //   target control is "partially_covered" if mapping is 'intersect' or 'subset'
   //   target control is "not_covered"      if no satisfying mapping
-  const coverageMap = new Map<string, { status: "covered" | "partially_covered" | "not_covered"; via: { sourceCode: string; relationship: string; confidence: string }[] }>();
+  const coverageMap = new Map<
+    string,
+    {
+      status: "covered" | "partially_covered" | "not_covered";
+      via: { sourceCode: string; relationship: string; confidence: string }[];
+    }
+  >();
   for (const e of targetLeafEntries) {
     coverageMap.set(e.code, { status: "not_covered", via: [] });
   }
 
   for (const m of mappings) {
     if (!coverageMap.has(m.targetCode)) continue;
-    if (implementedSourceCodes && !implementedSourceCodes.has(m.sourceCode)) continue;
+    if (implementedSourceCodes && !implementedSourceCodes.has(m.sourceCode))
+      continue;
 
     const cur = coverageMap.get(m.targetCode)!;
-    cur.via.push({ sourceCode: m.sourceCode, relationship: m.relationship, confidence: String(m.confidence) });
+    cur.via.push({
+      sourceCode: m.sourceCode,
+      relationship: m.relationship,
+      confidence: String(m.confidence),
+    });
     const isFull = m.relationship === "equal" || m.relationship === "superset";
-    const isPartial = m.relationship === "intersect" || m.relationship === "subset";
+    const isPartial =
+      m.relationship === "intersect" || m.relationship === "subset";
     if (isFull) cur.status = "covered";
-    else if (isPartial && cur.status !== "covered") cur.status = "partially_covered";
+    else if (isPartial && cur.status !== "covered")
+      cur.status = "partially_covered";
   }
 
-  const covered = [...coverageMap.values()].filter((c) => c.status === "covered").length;
-  const partial = [...coverageMap.values()].filter((c) => c.status === "partially_covered").length;
+  const covered = [...coverageMap.values()].filter(
+    (c) => c.status === "covered",
+  ).length;
+  const partial = [...coverageMap.values()].filter(
+    (c) => c.status === "partially_covered",
+  ).length;
   const notCovered = targetTotal - covered - partial;
-  const coveragePercent = targetTotal > 0 ? Math.round(((covered + partial * 0.5) / targetTotal) * 10000) / 100 : 0;
+  const coveragePercent =
+    targetTotal > 0
+      ? Math.round(((covered + partial * 0.5) / targetTotal) * 10000) / 100
+      : 0;
 
   // Top gaps (uncovered target controls)
   const gaps = targetLeafEntries
@@ -194,10 +232,21 @@ export async function POST(req: Request) {
 
   // Per-source-control: which target controls does each source one satisfy?
   // Useful for "control reuse" reports.
-  const sourceLeverage = new Map<string, { sourceTitle: string | null; targets: { code: string; relationship: string; status: string }[] }>();
+  const sourceLeverage = new Map<
+    string,
+    {
+      sourceTitle: string | null;
+      targets: { code: string; relationship: string; status: string }[];
+    }
+  >();
   for (const m of mappings) {
-    if (implementedSourceCodes && !implementedSourceCodes.has(m.sourceCode)) continue;
-    if (!sourceLeverage.has(m.sourceCode)) sourceLeverage.set(m.sourceCode, { sourceTitle: m.sourceTitle, targets: [] });
+    if (implementedSourceCodes && !implementedSourceCodes.has(m.sourceCode))
+      continue;
+    if (!sourceLeverage.has(m.sourceCode))
+      sourceLeverage.set(m.sourceCode, {
+        sourceTitle: m.sourceTitle,
+        targets: [],
+      });
     sourceLeverage.get(m.sourceCode)!.targets.push({
       code: m.targetCode,
       relationship: m.relationship,
@@ -226,11 +275,20 @@ export async function POST(req: Request) {
       notCovered,
       coveragePercent,
       onlyImplementedSource,
-      implementedSourceControls: implementedSourceCodes ? implementedSourceCodes.size : null,
+      implementedSourceControls: implementedSourceCodes
+        ? implementedSourceCodes.size
+        : null,
       mappingsConsidered: mappings.length,
       gaps,
       topReusableSourceControls: topReusable,
-      summary: buildSummary(coveragePercent, covered, partial, notCovered, sourceFramework, targetFramework),
+      summary: buildSummary(
+        coveragePercent,
+        covered,
+        partial,
+        notCovered,
+        sourceFramework,
+        targetFramework,
+      ),
     },
   });
 }
@@ -243,8 +301,11 @@ function buildSummary(
   src: string,
   tgt: string,
 ): string {
-  if (pct >= 90) return `Du bist nahezu ${tgt}-ready: ${covered} Controls direkt aus ${src} abgedeckt, nur ${notCovered} Lücken.`;
-  if (pct >= 70) return `Starke Basis: ${pct}% von ${tgt} aus ${src} ableitbar (${covered} voll + ${partial} teilweise). ${notCovered} echte Lücken bleiben.`;
-  if (pct >= 40) return `${src} bringt dich zu ${pct}% Richtung ${tgt}. Plane gezielt für die ${notCovered} fehlenden Controls.`;
+  if (pct >= 90)
+    return `Du bist nahezu ${tgt}-ready: ${covered} Controls direkt aus ${src} abgedeckt, nur ${notCovered} Lücken.`;
+  if (pct >= 70)
+    return `Starke Basis: ${pct}% von ${tgt} aus ${src} ableitbar (${covered} voll + ${partial} teilweise). ${notCovered} echte Lücken bleiben.`;
+  if (pct >= 40)
+    return `${src} bringt dich zu ${pct}% Richtung ${tgt}. Plane gezielt für die ${notCovered} fehlenden Controls.`;
   return `${src} und ${tgt} überschneiden sich nur zu ${pct}% — das wird ein größeres Programm (${notCovered} fehlende Controls).`;
 }

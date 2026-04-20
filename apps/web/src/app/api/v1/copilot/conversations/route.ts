@@ -5,12 +5,23 @@ import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/copilot/conversations — Create new conversation
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "auditor", "dpo", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "auditor",
+    "dpo",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = createConversationSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -26,13 +37,26 @@ export async function POST(req: Request) {
 
 // GET /api/v1/copilot/conversations — List user conversations
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "auditor", "dpo", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "auditor",
+    "dpo",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = conversationQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = conversationQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, contextModule, isArchived, search } = query.data;
@@ -43,8 +67,10 @@ export async function GET(req: Request) {
     eq(copilotConversation.userId, ctx.userId),
   ];
 
-  if (contextModule) conditions.push(eq(copilotConversation.contextModule, contextModule));
-  if (isArchived !== undefined) conditions.push(eq(copilotConversation.isArchived, isArchived));
+  if (contextModule)
+    conditions.push(eq(copilotConversation.contextModule, contextModule));
+  if (isArchived !== undefined)
+    conditions.push(eq(copilotConversation.isArchived, isArchived));
   if (search) conditions.push(ilike(copilotConversation.title, `%${search}%`));
 
   const [conversations, countResult] = await Promise.all([

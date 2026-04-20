@@ -9,7 +9,8 @@ export async function processAcademyOverdueCheck(): Promise<{
 }> {
   console.log("[academy-overdue-check] Running overdue enrollment check");
 
-  const result = await db.update(academyEnrollment)
+  const result = await db
+    .update(academyEnrollment)
     .set({ status: "overdue", updatedAt: new Date() })
     .where(
       and(
@@ -21,6 +22,8 @@ export async function processAcademyOverdueCheck(): Promise<{
     )
     .returning({ id: academyEnrollment.id });
 
-  console.log(`[academy-overdue-check] Marked ${result.length} enrollments as overdue`);
+  console.log(
+    `[academy-overdue-check] Marked ${result.length} enrollments as overdue`,
+  );
   return { overdueCount: result.length };
 }

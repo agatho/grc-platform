@@ -30,7 +30,10 @@ export async function DELETE(
   });
 
   if (!deleted) {
-    return Response.json({ error: "Active catalog not found" }, { status: 404 });
+    return Response.json(
+      { error: "Active catalog not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: { id: deleted.id, deactivated: true } });

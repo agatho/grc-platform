@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Brain, AlertTriangle, TrendingUp, Radar, Activity } from "lucide-react";
+import {
+  Brain,
+  AlertTriangle,
+  TrendingUp,
+  Radar,
+  Activity,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -28,13 +34,21 @@ export default function PredictiveRiskDashboardPage() {
     try {
       const res = await fetch("/api/v1/predictive-risk/dashboard");
       if (res.ok) setData((await res.json()).data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   if (!data) {
@@ -47,10 +61,17 @@ export default function PredictiveRiskDashboardPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-16 text-center">
             <Brain className="h-12 w-12 text-muted-foreground/40 mb-4" />
-            <h3 className="text-lg font-semibold mb-1">{t("emptyState.title")}</h3>
-            <p className="text-sm text-muted-foreground max-w-md mb-6">{t("emptyState.description")}</p>
+            <h3 className="text-lg font-semibold mb-1">
+              {t("emptyState.title")}
+            </h3>
+            <p className="text-sm text-muted-foreground max-w-md mb-6">
+              {t("emptyState.description")}
+            </p>
             <Link href="/predictive-risk/models">
-              <Button><Brain className="h-4 w-4 mr-2" />{t("emptyState.createModel")}</Button>
+              <Button>
+                <Brain className="h-4 w-4 mr-2" />
+                {t("emptyState.createModel")}
+              </Button>
             </Link>
           </CardContent>
         </Card>
@@ -67,23 +88,77 @@ export default function PredictiveRiskDashboardPage() {
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex gap-2">
-          <Link href="/predictive-risk/models"><Button variant="outline"><Brain className="h-4 w-4 mr-2" />{t("models")}</Button></Link>
-          <Link href="/predictive-risk/radar"><Button variant="outline"><Radar className="h-4 w-4 mr-2" />{t("radar")}</Button></Link>
-          <Link href="/predictive-risk/anomalies"><Button variant="outline"><AlertTriangle className="h-4 w-4 mr-2" />{t("anomalies")}</Button></Link>
+          <Link href="/predictive-risk/models">
+            <Button variant="outline">
+              <Brain className="h-4 w-4 mr-2" />
+              {t("models")}
+            </Button>
+          </Link>
+          <Link href="/predictive-risk/radar">
+            <Button variant="outline">
+              <Radar className="h-4 w-4 mr-2" />
+              {t("radar")}
+            </Button>
+          </Link>
+          <Link href="/predictive-risk/anomalies">
+            <Button variant="outline">
+              <AlertTriangle className="h-4 w-4 mr-2" />
+              {t("anomalies")}
+            </Button>
+          </Link>
         </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("activeModels")}</p><p className="text-2xl font-bold">{data.activeModels}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("totalPredictions")}</p><p className="text-2xl font-bold">{data.totalPredictions}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("earlyWarnings")}</p><p className="text-2xl font-bold text-orange-600">{data.earlyWarnings}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("criticalAnomalies")}</p><p className="text-2xl font-bold text-red-600">{data.criticalAnomalies}</p></CardContent></Card>
-        <Card><CardContent className="p-4"><p className="text-sm text-muted-foreground">{t("avgAccuracy")}</p><p className="text-2xl font-bold">{Number(data.avgModelAccuracy).toFixed(1)}%</p></CardContent></Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">{t("activeModels")}</p>
+            <p className="text-2xl font-bold">{data.activeModels}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              {t("totalPredictions")}
+            </p>
+            <p className="text-2xl font-bold">{data.totalPredictions}</p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              {t("earlyWarnings")}
+            </p>
+            <p className="text-2xl font-bold text-orange-600">
+              {data.earlyWarnings}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">
+              {t("criticalAnomalies")}
+            </p>
+            <p className="text-2xl font-bold text-red-600">
+              {data.criticalAnomalies}
+            </p>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <p className="text-sm text-muted-foreground">{t("avgAccuracy")}</p>
+            <p className="text-2xl font-bold">
+              {Number(data.avgModelAccuracy).toFixed(1)}%
+            </p>
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader><CardTitle>{t("topEarlyWarnings")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>{t("topEarlyWarnings")}</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {data.topEarlyWarnings.map((pred) => (
@@ -91,12 +166,22 @@ export default function PredictiveRiskDashboardPage() {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2">
                       <TrendingUp className="h-4 w-4 text-orange-500" />
-                      <span className="text-sm font-medium">{pred.entityType}: {pred.entityId.substring(0, 8)}</span>
+                      <span className="text-sm font-medium">
+                        {pred.entityType}: {pred.entityId.substring(0, 8)}
+                      </span>
                     </div>
-                    <Badge className={SEVERITY_COLORS[pred.riskLevel ?? "medium"] ?? ""}>{pred.riskLevel}</Badge>
+                    <Badge
+                      className={
+                        SEVERITY_COLORS[pred.riskLevel ?? "medium"] ?? ""
+                      }
+                    >
+                      {pred.riskLevel}
+                    </Badge>
                   </div>
                   {pred.earlyWarningMessage && (
-                    <p className="text-xs text-muted-foreground mt-1 ml-6">{pred.earlyWarningMessage}</p>
+                    <p className="text-xs text-muted-foreground mt-1 ml-6">
+                      {pred.earlyWarningMessage}
+                    </p>
                   )}
                 </div>
               ))}
@@ -105,7 +190,9 @@ export default function PredictiveRiskDashboardPage() {
         </Card>
 
         <Card>
-          <CardHeader><CardTitle>{t("topAnomalies")}</CardTitle></CardHeader>
+          <CardHeader>
+            <CardTitle>{t("topAnomalies")}</CardTitle>
+          </CardHeader>
           <CardContent>
             <div className="space-y-2">
               {data.topAnomalies.map((anomaly) => (
@@ -114,11 +201,17 @@ export default function PredictiveRiskDashboardPage() {
                     <div className="flex items-center gap-2">
                       <AlertTriangle className="h-4 w-4 text-red-500" />
                       <div>
-                        <span className="text-sm font-medium">{anomaly.metricName}</span>
-                        <p className="text-xs text-muted-foreground">{anomaly.anomalyType} - {anomaly.entityType}</p>
+                        <span className="text-sm font-medium">
+                          {anomaly.metricName}
+                        </span>
+                        <p className="text-xs text-muted-foreground">
+                          {anomaly.anomalyType} - {anomaly.entityType}
+                        </p>
                       </div>
                     </div>
-                    <Badge className={SEVERITY_COLORS[anomaly.severity] ?? ""}>{anomaly.severity}</Badge>
+                    <Badge className={SEVERITY_COLORS[anomaly.severity] ?? ""}>
+                      {anomaly.severity}
+                    </Badge>
                   </div>
                 </div>
               ))}

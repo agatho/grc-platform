@@ -12,9 +12,16 @@ export type AiRiskCategory =
   | "gpai"
   | "gpai_sr";
 
-export type AiDevelopmentStage = "research" | "prototype" | "production" | "retired";
+export type AiDevelopmentStage =
+  | "research"
+  | "prototype"
+  | "production"
+  | "retired";
 
-export const AI_STAGE_ALLOWED_TRANSITIONS: Record<AiDevelopmentStage, AiDevelopmentStage[]> = {
+export const AI_STAGE_ALLOWED_TRANSITIONS: Record<
+  AiDevelopmentStage,
+  AiDevelopmentStage[]
+> = {
   research: ["prototype", "retired"],
   prototype: ["production", "research", "retired"],
   production: ["retired"],
@@ -49,11 +56,15 @@ export interface ProhibitedPracticesFlags {
   realTimeBiometricPublic: boolean;
 }
 
-export function hasProhibitedPractice(flags: ProhibitedPracticesFlags): boolean {
+export function hasProhibitedPractice(
+  flags: ProhibitedPracticesFlags,
+): boolean {
   return Object.values(flags).some((v) => v === true);
 }
 
-export function countProhibitedPractices(flags: ProhibitedPracticesFlags): number {
+export function countProhibitedPractices(
+  flags: ProhibitedPracticesFlags,
+): number {
   return Object.values(flags).filter((v) => v === true).length;
 }
 
@@ -84,7 +95,11 @@ export function canTransitionToProduction(
     };
   }
 
-  if (hasProhibited && exceptionApplied && (!exceptionJustification || exceptionJustification.trim().length < 100)) {
+  if (
+    hasProhibited &&
+    exceptionApplied &&
+    (!exceptionJustification || exceptionJustification.trim().length < 100)
+  ) {
     return {
       allowed: false,
       reason:
@@ -126,12 +141,16 @@ export function classifyAiSystem(ctx: ClassificationContext): {
   const reasoning: string[] = [];
 
   if (hasProhibitedPractice(ctx.prohibitedFlags)) {
-    reasoning.push("Prohibited-Practice (Art. 5) erkannt -- Kategorie 'prohibited'.");
+    reasoning.push(
+      "Prohibited-Practice (Art. 5) erkannt -- Kategorie 'prohibited'.",
+    );
     return { category: "prohibited", reasoning };
   }
 
   if (ctx.isGpaiSystemicRisk) {
-    reasoning.push("GPAI mit systemic risk (>10^25 FLOPs, Art. 51) -- Kategorie 'gpai_sr'.");
+    reasoning.push(
+      "GPAI mit systemic risk (>10^25 FLOPs, Art. 51) -- Kategorie 'gpai_sr'.",
+    );
     return { category: "gpai_sr", reasoning };
   }
 
@@ -160,12 +179,16 @@ export function classifyAiSystem(ctx: ClassificationContext): {
       }
       return { category: "minimal_risk", reasoning };
     }
-    reasoning.push("Annex-III-Use-Case ohne Art. 6(3)-Ausnahme -- Kategorie 'high_risk'.");
+    reasoning.push(
+      "Annex-III-Use-Case ohne Art. 6(3)-Ausnahme -- Kategorie 'high_risk'.",
+    );
     return { category: "high_risk", reasoning };
   }
 
   if (ctx.hasArt50TransparencyObligation) {
-    reasoning.push("Art. 50 Transparenz-Pflicht (Chatbot/Deepfake/Emotion) -- Kategorie 'limited_risk'.");
+    reasoning.push(
+      "Art. 50 Transparenz-Pflicht (Chatbot/Deepfake/Emotion) -- Kategorie 'limited_risk'.",
+    );
     return { category: "limited_risk", reasoning };
   }
 
@@ -193,13 +216,41 @@ export function validateHighRiskProductionGate(
 
   const checks: Array<[keyof HighRiskProductionReadiness, string, string]> = [
     ["hasQms", "missing_qms", "QMS (Art. 17) erforderlich fuer High-Risk."],
-    ["hasRiskManagement", "missing_risk_mgmt", "Risk-Management (Art. 9) erforderlich."],
-    ["hasDataGovernance", "missing_data_gov", "Data-Governance (Art. 10) erforderlich."],
-    ["hasTechnicalDocumentation", "missing_tech_doc", "Technical-Documentation (Art. 11 + Annex IV) erforderlich."],
-    ["hasOperationalLogging", "missing_op_logging", "Operational-Logging (Art. 12) erforderlich."],
-    ["hasHumanOversight", "missing_oversight", "Human-Oversight (Art. 14) erforderlich."],
-    ["hasConformityAssessment", "missing_conformity", "Conformity-Assessment (Art. 43) erforderlich."],
-    ["ceMarkingAffixed", "missing_ce_marking", "CE-Marking muss affixed sein vor Markteinfuehrung."],
+    [
+      "hasRiskManagement",
+      "missing_risk_mgmt",
+      "Risk-Management (Art. 9) erforderlich.",
+    ],
+    [
+      "hasDataGovernance",
+      "missing_data_gov",
+      "Data-Governance (Art. 10) erforderlich.",
+    ],
+    [
+      "hasTechnicalDocumentation",
+      "missing_tech_doc",
+      "Technical-Documentation (Art. 11 + Annex IV) erforderlich.",
+    ],
+    [
+      "hasOperationalLogging",
+      "missing_op_logging",
+      "Operational-Logging (Art. 12) erforderlich.",
+    ],
+    [
+      "hasHumanOversight",
+      "missing_oversight",
+      "Human-Oversight (Art. 14) erforderlich.",
+    ],
+    [
+      "hasConformityAssessment",
+      "missing_conformity",
+      "Conformity-Assessment (Art. 43) erforderlich.",
+    ],
+    [
+      "ceMarkingAffixed",
+      "missing_ce_marking",
+      "CE-Marking muss affixed sein vor Markteinfuehrung.",
+    ],
   ];
 
   for (const [key, code, message] of checks) {

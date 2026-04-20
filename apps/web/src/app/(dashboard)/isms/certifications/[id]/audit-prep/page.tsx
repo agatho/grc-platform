@@ -121,12 +121,46 @@ function AuditPrepInner() {
 
   // Pre-audit checklist
   const preAuditChecks = [
-    { id: "mgmt_review", label: t("audit.mgmtReview"), done: readiness?.checks.find((c) => c.id === "mgmt_review")?.passed ?? false },
-    { id: "internal_audit", label: t("audit.internalAudit"), done: readiness?.checks.find((c) => c.id === "internal_audit")?.passed ?? false },
-    { id: "findings_closed", label: t("audit.findingsClosed"), done: readiness?.checks.find((c) => c.id === "findings_closed")?.passed ?? false },
-    { id: "documentation", label: t("audit.documentation"), done: readiness?.checks.find((c) => c.id === "policy_current")?.passed ?? false },
-    { id: "scope", label: t("audit.scopeDefined"), done: readiness?.checks.find((c) => c.id === "scope_defined")?.passed ?? false },
-    { id: "soa", label: t("audit.soaComplete"), done: readiness?.checks.find((c) => c.id === "soa_complete")?.passed ?? false },
+    {
+      id: "mgmt_review",
+      label: t("audit.mgmtReview"),
+      done:
+        readiness?.checks.find((c) => c.id === "mgmt_review")?.passed ?? false,
+    },
+    {
+      id: "internal_audit",
+      label: t("audit.internalAudit"),
+      done:
+        readiness?.checks.find((c) => c.id === "internal_audit")?.passed ??
+        false,
+    },
+    {
+      id: "findings_closed",
+      label: t("audit.findingsClosed"),
+      done:
+        readiness?.checks.find((c) => c.id === "findings_closed")?.passed ??
+        false,
+    },
+    {
+      id: "documentation",
+      label: t("audit.documentation"),
+      done:
+        readiness?.checks.find((c) => c.id === "policy_current")?.passed ??
+        false,
+    },
+    {
+      id: "scope",
+      label: t("audit.scopeDefined"),
+      done:
+        readiness?.checks.find((c) => c.id === "scope_defined")?.passed ??
+        false,
+    },
+    {
+      id: "soa",
+      label: t("audit.soaComplete"),
+      done:
+        readiness?.checks.find((c) => c.id === "soa_complete")?.passed ?? false,
+    },
   ];
 
   const completedCount = preAuditChecks.filter((c) => c.done).length;
@@ -146,7 +180,9 @@ function AuditPrepInner() {
             <h1 className="text-2xl font-bold text-gray-900">
               {t("auditPrep")} - {frameworkNames[frameworkId] ?? frameworkId}
             </h1>
-            <p className="text-sm text-gray-500 mt-1">{t("auditPrepDescription")}</p>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("auditPrepDescription")}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
@@ -159,7 +195,12 @@ function AuditPrepInner() {
             <FileDown size={14} className="mr-1" />
             {exporting ? t("exporting") : t("exportPackage")}
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -168,9 +209,12 @@ function AuditPrepInner() {
       {/* Progress Bar */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between mb-2">
-          <h3 className="text-sm font-semibold text-gray-900">{t("audit.progress")}</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("audit.progress")}
+          </h3>
           <span className="text-sm font-bold text-gray-700">
-            {completedCount}/{totalCount} ({Math.round((completedCount / totalCount) * 100)}%)
+            {completedCount}/{totalCount} (
+            {Math.round((completedCount / totalCount) * 100)}%)
           </span>
         </div>
         <div className="h-3 bg-gray-100 rounded-full overflow-hidden">
@@ -192,12 +236,17 @@ function AuditPrepInner() {
         <div className="p-4 border-b border-gray-100">
           <div className="flex items-center gap-2">
             <ClipboardList className="h-5 w-5 text-gray-600" />
-            <h2 className="text-base font-semibold text-gray-900">{t("audit.checklist")}</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("audit.checklist")}
+            </h2>
           </div>
         </div>
         <div className="divide-y divide-gray-100">
           {preAuditChecks.map((check) => (
-            <div key={check.id} className="px-4 py-3 flex items-center justify-between">
+            <div
+              key={check.id}
+              className="px-4 py-3 flex items-center justify-between"
+            >
               <div className="flex items-center gap-3">
                 {check.done ? (
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -224,17 +273,25 @@ function AuditPrepInner() {
       {/* Evidence Collection Summary */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("audit.evidenceCollection")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("audit.evidenceCollection")}
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
-            {gaps.filter((g) => g.controlId).length} / {gaps.length} {t("audit.controlsWithEvidence")}
+            {gaps.filter((g) => g.controlId).length} / {gaps.length}{" "}
+            {t("audit.controlsWithEvidence")}
           </p>
         </div>
         {gaps.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">{t("audit.noControlsNeeded")}</div>
+          <div className="p-8 text-center text-sm text-gray-400">
+            {t("audit.noControlsNeeded")}
+          </div>
         ) : (
           <div className="divide-y divide-gray-100 max-h-96 overflow-y-auto">
             {gaps.slice(0, 30).map((gap) => (
-              <div key={gap.id} className="px-4 py-2 flex items-center justify-between">
+              <div
+                key={gap.id}
+                className="px-4 py-2 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-2 min-w-0">
                   {gap.controlId ? (
                     <CheckCircle2 className="h-3.5 w-3.5 text-green-500 shrink-0" />
@@ -242,7 +299,9 @@ function AuditPrepInner() {
                     <XCircle className="h-3.5 w-3.5 text-red-400 shrink-0" />
                   )}
                   <span className="text-xs text-gray-700 truncate">
-                    <span className="font-mono text-gray-400 mr-1">{gap.catalogCode}</span>
+                    <span className="font-mono text-gray-400 mr-1">
+                      {gap.catalogCode}
+                    </span>
                     {gap.catalogTitleDe || gap.catalogTitleEn}
                   </span>
                 </div>

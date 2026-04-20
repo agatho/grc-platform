@@ -57,14 +57,14 @@ export function ModuleConfigProvider({
     setError(null);
 
     try {
-      const res = await fetch(
-        `/api/v1/organizations/${orgId}/modules`,
-      );
+      const res = await fetch(`/api/v1/organizations/${orgId}/modules`);
       if (!res.ok) {
         throw new Error(`Failed to load module configs (${res.status})`);
       }
       const json = await res.json();
-      const data: ModuleConfig[] = Array.isArray(json) ? json : json.data ?? [];
+      const data: ModuleConfig[] = Array.isArray(json)
+        ? json
+        : (json.data ?? []);
       setConfigs(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);

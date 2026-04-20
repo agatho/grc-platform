@@ -2,12 +2,44 @@ import { z } from "zod";
 
 // Sprint 13: GRC Budget, Cost Tracking & ROI schemas
 
-const budgetStatusValues = ["draft", "submitted", "approved", "closed"] as const;
-const budgetTypeValues = ["management_system", "department", "project", "custom"] as const;
-const grcAreaValues = ["erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general"] as const;
-const costCategoryValues = ["personnel", "external", "tools", "training", "measures", "certification"] as const;
+const budgetStatusValues = [
+  "draft",
+  "submitted",
+  "approved",
+  "closed",
+] as const;
+const budgetTypeValues = [
+  "management_system",
+  "department",
+  "project",
+  "custom",
+] as const;
+const grcAreaValues = [
+  "erm",
+  "isms",
+  "ics",
+  "dpms",
+  "audit",
+  "tprm",
+  "bcms",
+  "esg",
+  "general",
+] as const;
+const costCategoryValues = [
+  "personnel",
+  "external",
+  "tools",
+  "training",
+  "measures",
+  "certification",
+] as const;
 const costTypeValues = ["planned", "actual", "forecast"] as const;
-const roiMethodValues = ["ale_reduction", "penalty_avoidance", "incident_prevention", "roni"] as const;
+const roiMethodValues = [
+  "ale_reduction",
+  "penalty_avoidance",
+  "incident_prevention",
+  "roni",
+] as const;
 
 // ─── Budget CRUD ────────────────────────────────────────────
 

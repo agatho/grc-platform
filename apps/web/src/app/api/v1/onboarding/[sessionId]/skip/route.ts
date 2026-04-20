@@ -18,10 +18,12 @@ export async function POST(
       skippedAt: new Date(),
       updatedAt: new Date(),
     })
-    .where(and(
-      eq(onboardingSession.id, sessionId),
-      eq(onboardingSession.orgId, ctx.orgId),
-    ))
+    .where(
+      and(
+        eq(onboardingSession.id, sessionId),
+        eq(onboardingSession.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!updated) {

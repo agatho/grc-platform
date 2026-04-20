@@ -4,7 +4,10 @@ import { eq, and, desc, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/connectors/:id/health — Get health check history
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -16,7 +19,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const items = await db
     .select()
     .from(connectorHealthCheck)
-    .where(and(eq(connectorHealthCheck.connectorId, id), eq(connectorHealthCheck.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(connectorHealthCheck.connectorId, id),
+        eq(connectorHealthCheck.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(connectorHealthCheck.checkedAt))
     .limit(50);
 
@@ -24,7 +32,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 // POST /api/v1/connectors/:id/health — Trigger health check
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -36,7 +47,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const [connector] = await db
     .select()
     .from(evidenceConnector)
-    .where(and(eq(evidenceConnector.id, id), eq(evidenceConnector.orgId, ctx.orgId), isNull(evidenceConnector.deletedAt)));
+    .where(
+      and(
+        eq(evidenceConnector.id, id),
+        eq(evidenceConnector.orgId, ctx.orgId),
+        isNull(evidenceConnector.deletedAt),
+      ),
+    );
 
   if (!connector) {
     return Response.json({ error: "Connector not found" }, { status: 404 });
@@ -56,7 +73,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         status: healthStatus,
         responseTimeMs,
         checkType: "connectivity",
-        details: { connectorType: connector.connectorType, providerKey: connector.providerKey },
+        details: {
+          connectorType: connector.connectorType,
+          providerKey: connector.providerKey,
+        },
       })
       .returning();
 

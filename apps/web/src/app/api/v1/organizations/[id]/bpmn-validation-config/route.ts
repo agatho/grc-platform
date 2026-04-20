@@ -25,12 +25,7 @@ export async function GET(
   const [org] = await db
     .select({ settings: organization.settings })
     .from(organization)
-    .where(
-      and(
-        eq(organization.id, id),
-        isNull(organization.deletedAt),
-      ),
-    );
+    .where(and(eq(organization.id, id), isNull(organization.deletedAt)));
 
   if (!org) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
@@ -77,12 +72,7 @@ export async function PUT(
   const [org] = await db
     .select({ settings: organization.settings })
     .from(organization)
-    .where(
-      and(
-        eq(organization.id, id),
-        isNull(organization.deletedAt),
-      ),
-    );
+    .where(and(eq(organization.id, id), isNull(organization.deletedAt)));
 
   if (!org) {
     return Response.json({ error: "Organization not found" }, { status: 404 });

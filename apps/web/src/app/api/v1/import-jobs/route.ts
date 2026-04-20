@@ -20,10 +20,13 @@ export async function POST(req: Request) {
     .insert(importJob)
     .values({
       orgId: ctx.orgId,
+      entityType: body.data.entityType,
       source: body.data.source,
-      sourceFile: body.data.sourceFile,
+      fileName: body.data.sourceFile ?? `${body.data.source}-${Date.now()}`,
+      fileSize: 0,
+      mimeType: body.data.source,
       templatePackId: body.data.templatePackId,
-      mapping: body.data.mapping,
+      columnMapping: body.data.mapping,
       createdBy: ctx.userId,
     })
     .returning();

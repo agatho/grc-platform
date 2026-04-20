@@ -13,7 +13,11 @@ interface TimelineEntry {
 
 interface IncidentTimelineTabProps {
   entries: TimelineEntry[];
-  onAddEntry: (entry: { eventType: string; description: string; occurredAt?: string }) => void;
+  onAddEntry: (entry: {
+    eventType: string;
+    description: string;
+    occurredAt?: string;
+  }) => void;
   canEdit: boolean;
   labels?: {
     title: string;
@@ -38,8 +42,14 @@ const EVENT_TYPE_COLORS: Record<string, string> = {
 };
 
 const EVENT_TYPES = [
-  "detected", "reported", "escalated", "contained",
-  "mitigated", "resolved", "post_mortem", "other",
+  "detected",
+  "reported",
+  "escalated",
+  "contained",
+  "mitigated",
+  "resolved",
+  "post_mortem",
+  "other",
 ];
 
 export function IncidentTimelineTab({
@@ -150,23 +160,30 @@ export function IncidentTimelineTab({
 
         {entries.map((entry, idx) => (
           <div key={entry.id} className="relative">
-            <div className={cn(
-              "absolute -left-4 top-1 w-3 h-3 rounded-full border-2 border-white",
-              idx < entries.length - 1 ? "bg-teal-500" : "bg-gray-300",
-            )} />
+            <div
+              className={cn(
+                "absolute -left-4 top-1 w-3 h-3 rounded-full border-2 border-white",
+                idx < entries.length - 1 ? "bg-teal-500" : "bg-gray-300",
+              )}
+            />
             <div className="pl-4">
               <div className="flex items-center gap-2 mb-1">
                 <span className="text-xs text-gray-400">
                   {new Date(entry.occurredAt).toLocaleString()}
                 </span>
-                <span className={cn(
-                  "text-xs font-medium px-2 py-0.5 rounded-full uppercase",
-                  EVENT_TYPE_COLORS[entry.eventType] ?? EVENT_TYPE_COLORS.other,
-                )}>
+                <span
+                  className={cn(
+                    "text-xs font-medium px-2 py-0.5 rounded-full uppercase",
+                    EVENT_TYPE_COLORS[entry.eventType] ??
+                      EVENT_TYPE_COLORS.other,
+                  )}
+                >
                   {entry.eventType.replace(/_/g, " ")}
                 </span>
                 {entry.createdByName && (
-                  <span className="text-xs text-gray-400">{entry.createdByName}</span>
+                  <span className="text-xs text-gray-400">
+                    {entry.createdByName}
+                  </span>
                 )}
               </div>
               <p className="text-sm text-gray-700">{entry.description}</p>

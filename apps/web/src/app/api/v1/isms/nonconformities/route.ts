@@ -35,11 +35,17 @@ export async function GET(req: Request) {
   query = sql`${query} ORDER BY nc.created_at DESC LIMIT ${limit} OFFSET ${offset}`;
   const rows = await db.execute(query);
 
-  const [{ total }] = (await db.execute(
-    sql`SELECT count(*)::int as total FROM isms_nonconformity WHERE org_id = ${ctx.orgId}`
-  )).rows as [{ total: number }];
+  const totalRows = (await db.execute(
+    sql`SELECT count(*)::int as total FROM isms_nonconformity WHERE org_id = ${ctx.orgId}`,
+  )) as unknown as Array<{ total: number }>;
+  const total = totalRows[0]?.total ?? 0;
 
-  return Response.json({ data: rows.rows, total, page: Math.floor(offset / limit) + 1, limit });
+  return Response.json({
+    data: rows,
+    total,
+    page: Math.floor(offset / limit) + 1,
+    limit,
+  });
 }
 
 export async function POST(req: Request) {
@@ -50,22 +56,26 @@ export async function POST(req: Request) {
 
   const parsed = createNonconformitySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 
   const result = await withAuditContext(ctx, async () => {
-    const [{ count }] = (await db.execute(
-      sql`SELECT count(*)::int as count FROM isms_nonconformity WHERE org_id = ${ctx.orgId}`
-    )).rows as [{ count: number }];
+    const countRows = (await db.execute(
+      sql`SELECT count(*)::int as count FROM isms_nonconformity WHERE org_id = ${ctx.orgId}`,
+    )) as unknown as Array<{ count: number }>;
+    const count = countRows[0]?.count ?? 0;
     const ncCode = `NC-${String(count + 1).padStart(3, "0")}`;
 
-    const rows = await db.execute(sql`
+    const rows = (await db.execute(sql`
       INSERT INTO isms_nonconformity (org_id, nc_code, title, description, source_type, severity, iso_clause, due_date, identified_by, assigned_to, status)
       VALUES (${ctx.orgId}, ${ncCode}, ${d.title}, ${d.description ?? null}, ${d.sourceType}, ${d.severity}, ${d.isoClause ?? null}, ${d.dueDate ?? null}, ${ctx.userId}, ${d.assignedTo ?? null}, 'open')
       RETURNING *
-    `);
-    return rows.rows[0];
+    `)) as unknown as Record<string, unknown>[];
+    return rows[0];
   });
 
   return Response.json(result, { status: 201 });

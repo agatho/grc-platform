@@ -280,9 +280,7 @@ function DdResultsInner() {
                 strokeLinecap="round"
               />
             </svg>
-            <span
-              className={`absolute text-2xl font-bold ${scoreColor}`}
-            >
+            <span className={`absolute text-2xl font-bold ${scoreColor}`}>
               {scorePercent}%
             </span>
           </div>
@@ -388,8 +386,7 @@ function DdResultsInner() {
                 onClick={() =>
                   setExpandedSections((prev) => {
                     const next = new Set(prev);
-                    if (next.has(ss.sectionId))
-                      next.delete(ss.sectionId);
+                    if (next.has(ss.sectionId)) next.delete(ss.sectionId);
                     else next.add(ss.sectionId);
                     return next;
                   })
@@ -448,9 +445,7 @@ function DdResultsInner() {
                           <td className="py-2 text-right font-medium">
                             <span
                               className={
-                                q.score === 0
-                                  ? "text-red-600"
-                                  : "text-gray-700"
+                                q.score === 0 ? "text-red-600" : "text-gray-700"
                               }
                             >
                               {q.score}
@@ -548,9 +543,7 @@ function DdResultsInner() {
                   {cs.sectionTitle}
                 </span>
                 <div className="flex items-center gap-3">
-                  <span className="text-gray-500">
-                    {cs.previousPercent}%
-                  </span>
+                  <span className="text-gray-500">{cs.previousPercent}%</span>
                   {cs.trend === "improved" && (
                     <TrendingUp size={14} className="text-green-500" />
                   )}

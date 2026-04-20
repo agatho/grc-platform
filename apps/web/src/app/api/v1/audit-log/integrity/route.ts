@@ -27,7 +27,7 @@ import { withAuth } from "@/lib/api";
 // Cross-tenant: this endpoint NEVER discloses data from other tenants.
 // The SQL is filtered on org_id up front.
 
-interface RowCheck {
+interface RowCheck extends Record<string, unknown> {
   id: string;
   entity_type: string;
   entity_id: string | null;

@@ -1,20 +1,92 @@
 // Sprint 74: Tax CMS und Financial Compliance Types
 
-export type TaxCmsElementType = "culture" | "goals" | "risks" | "program" | "org_structure" | "communication" | "monitoring";
-export type TaxCmsElementStatus = "not_started" | "in_progress" | "implemented" | "effective" | "needs_improvement";
-export type TaxType = "corporate_tax" | "vat" | "trade_tax" | "withholding_tax" | "transfer_pricing" | "customs" | "payroll_tax" | "real_estate_tax";
-export type TaxRiskCategory = "compliance" | "reporting" | "assessment" | "process" | "legal_change" | "interpretation";
-export type TaxRiskStatus = "identified" | "assessed" | "treated" | "accepted" | "closed";
-export type GobdDocumentType = "invoice" | "receipt" | "contract" | "correspondence" | "booking_record" | "tax_return" | "assessment_notice";
-export type GobdArchiveStatus = "active" | "under_review" | "expired" | "destroyed";
+export type TaxCmsElementType =
+  | "culture"
+  | "goals"
+  | "risks"
+  | "program"
+  | "org_structure"
+  | "communication"
+  | "monitoring";
+export type TaxCmsElementStatus =
+  | "not_started"
+  | "in_progress"
+  | "implemented"
+  | "effective"
+  | "needs_improvement";
+export type TaxType =
+  | "corporate_tax"
+  | "vat"
+  | "trade_tax"
+  | "withholding_tax"
+  | "transfer_pricing"
+  | "customs"
+  | "payroll_tax"
+  | "real_estate_tax";
+export type TaxRiskCategory =
+  | "compliance"
+  | "reporting"
+  | "assessment"
+  | "process"
+  | "legal_change"
+  | "interpretation";
+export type TaxRiskStatus =
+  | "identified"
+  | "assessed"
+  | "treated"
+  | "accepted"
+  | "closed";
+export type GobdDocumentType =
+  | "invoice"
+  | "receipt"
+  | "contract"
+  | "correspondence"
+  | "booking_record"
+  | "tax_return"
+  | "assessment_notice";
+export type GobdArchiveStatus =
+  | "active"
+  | "under_review"
+  | "expired"
+  | "destroyed";
 export type IcfrControlType = "preventive" | "detective" | "corrective";
-export type IcfrProcessArea = "revenue" | "procurement" | "payroll" | "financial_close" | "tax_reporting" | "treasury";
-export type IcfrAssertion = "existence" | "completeness" | "valuation" | "rights" | "presentation";
-export type IcfrFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "annually";
+export type IcfrProcessArea =
+  | "revenue"
+  | "procurement"
+  | "payroll"
+  | "financial_close"
+  | "tax_reporting"
+  | "treasury";
+export type IcfrAssertion =
+  | "existence"
+  | "completeness"
+  | "valuation"
+  | "rights"
+  | "presentation";
+export type IcfrFrequency =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "annually";
 export type IcfrAutomationLevel = "manual" | "semi_automated" | "automated";
-export type IcfrTestResult = "effective" | "partially_effective" | "not_effective" | "not_tested";
-export type TaxAuditType = "regular" | "special" | "follow_up" | "vat_audit" | "transfer_pricing";
-export type TaxAuditPrepStatus = "preparation" | "active" | "fieldwork" | "closing" | "completed";
+export type IcfrTestResult =
+  | "effective"
+  | "partially_effective"
+  | "not_effective"
+  | "not_tested";
+export type TaxAuditType =
+  | "regular"
+  | "special"
+  | "follow_up"
+  | "vat_audit"
+  | "transfer_pricing";
+export type TaxAuditPrepStatus =
+  | "preparation"
+  | "active"
+  | "fieldwork"
+  | "closing"
+  | "completed";
 
 export interface TaxCmsElement {
   id: string;

@@ -32,8 +32,10 @@ export async function discoverOIDCEndpoints(
 
   // Validate required fields
   if (!doc.issuer) throw new Error("OIDC discovery: missing issuer");
-  if (!doc.authorization_endpoint) throw new Error("OIDC discovery: missing authorization_endpoint");
-  if (!doc.token_endpoint) throw new Error("OIDC discovery: missing token_endpoint");
+  if (!doc.authorization_endpoint)
+    throw new Error("OIDC discovery: missing authorization_endpoint");
+  if (!doc.token_endpoint)
+    throw new Error("OIDC discovery: missing token_endpoint");
   if (!doc.jwks_uri) throw new Error("OIDC discovery: missing jwks_uri");
 
   return {

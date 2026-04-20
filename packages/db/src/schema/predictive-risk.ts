@@ -89,7 +89,10 @@ export const riskPrediction = pgTable(
     entityId: uuid("entity_id").notNull(),
     predictionType: varchar("prediction_type", { length: 50 }).notNull(), // score_forecast | trend | threshold_breach | correlation
     currentValue: numeric("current_value", { precision: 12, scale: 4 }),
-    predictedValue: numeric("predicted_value", { precision: 12, scale: 4 }).notNull(),
+    predictedValue: numeric("predicted_value", {
+      precision: 12,
+      scale: 4,
+    }).notNull(),
     confidenceInterval: jsonb("confidence_interval").default("{}"), // {lower, upper, confidence}
     predictionHorizonDays: integer("prediction_horizon_days").notNull(),
     confidence: numeric("confidence", { precision: 5, scale: 2 }).notNull(),
@@ -109,22 +112,23 @@ export const riskPrediction = pgTable(
   (table) => ({
     modelIdx: index("rp_model_idx").on(table.modelId),
     orgIdx: index("rp_org_idx").on(table.orgId),
-    entityIdx: index("rp_entity_idx").on(table.orgId, table.entityType, table.entityId),
+    entityIdx: index("rp_entity_idx").on(
+      table.orgId,
+      table.entityType,
+      table.entityId,
+    ),
     warningIdx: index("rp_warning_idx").on(table.orgId, table.earlyWarning),
     riskLevelIdx: index("rp_risk_level_idx").on(table.orgId, table.riskLevel),
     activeIdx: index("rp_active_idx").on(table.orgId, table.isActive),
   }),
 );
 
-export const riskPredictionRelations = relations(
-  riskPrediction,
-  ({ one }) => ({
-    model: one(riskPredictionModel, {
-      fields: [riskPrediction.modelId],
-      references: [riskPredictionModel.id],
-    }),
+export const riskPredictionRelations = relations(riskPrediction, ({ one }) => ({
+  model: one(riskPredictionModel, {
+    fields: [riskPrediction.modelId],
+    references: [riskPredictionModel.id],
   }),
-);
+}));
 
 // ──────────────────────────────────────────────────────────────
 // 71.3 Risk Anomaly Detection — Detected anomalies
@@ -134,8 +138,7 @@ export const riskAnomalyDetection = pgTable(
   "risk_anomaly_detection",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    modelId: uuid("model_id")
-      .references(() => riskPredictionModel.id),
+    modelId: uuid("model_id").references(() => riskPredictionModel.id),
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
@@ -147,7 +150,10 @@ export const riskAnomalyDetection = pgTable(
     expectedValue: numeric("expected_value", { precision: 12, scale: 4 }),
     actualValue: numeric("actual_value", { precision: 12, scale: 4 }).notNull(),
     deviationPercent: numeric("deviation_percent", { precision: 8, scale: 2 }),
-    anomalyScore: numeric("anomaly_score", { precision: 5, scale: 2 }).notNull(), // 0-100
+    anomalyScore: numeric("anomaly_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(), // 0-100
     description: text("description").notNull(),
     possibleCauses: jsonb("possible_causes").default("[]"),
     suggestedActions: jsonb("suggested_actions").default("[]"),
@@ -164,7 +170,11 @@ export const riskAnomalyDetection = pgTable(
   },
   (table) => ({
     orgIdx: index("rad_org_idx").on(table.orgId),
-    entityIdx: index("rad_entity_idx").on(table.orgId, table.entityType, table.entityId),
+    entityIdx: index("rad_entity_idx").on(
+      table.orgId,
+      table.entityType,
+      table.entityId,
+    ),
     severityIdx: index("rad_severity_idx").on(table.orgId, table.severity),
     statusIdx: index("rad_status_idx").on(table.orgId, table.status),
     dateIdx: index("rad_date_idx").on(table.orgId, table.detectedAt),

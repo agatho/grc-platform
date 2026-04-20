@@ -74,9 +74,9 @@ describe("computeCES — test score average", () => {
     const now = new Date();
     const result = computeCES({
       testResults: [
-        { result: "effective", executedDate: now.toISOString() },       // 100
+        { result: "effective", executedDate: now.toISOString() }, // 100
         { result: "partially_effective", executedDate: now.toISOString() }, // 50
-        { result: "ineffective", executedDate: now.toISOString() },     // 0
+        { result: "ineffective", executedDate: now.toISOString() }, // 0
       ],
       openFindings: [],
       automationLevel: "manual",
@@ -134,7 +134,9 @@ describe("computeCES — overdue penalty", () => {
     const twoMonthsAgo = new Date(now);
     twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
     const result = computeCES({
-      testResults: [{ result: "effective", executedDate: twoMonthsAgo.toISOString() }],
+      testResults: [
+        { result: "effective", executedDate: twoMonthsAgo.toISOString() },
+      ],
       openFindings: [],
       automationLevel: "manual",
       lastTestDate: twoMonthsAgo.toISOString(),
@@ -147,7 +149,9 @@ describe("computeCES — overdue penalty", () => {
     const tenMonthsAgo = new Date(now);
     tenMonthsAgo.setMonth(tenMonthsAgo.getMonth() - 10);
     const result = computeCES({
-      testResults: [{ result: "effective", executedDate: tenMonthsAgo.toISOString() }],
+      testResults: [
+        { result: "effective", executedDate: tenMonthsAgo.toISOString() },
+      ],
       openFindings: [],
       automationLevel: "manual",
       lastTestDate: tenMonthsAgo.toISOString(),

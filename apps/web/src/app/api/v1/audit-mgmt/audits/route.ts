@@ -1,9 +1,4 @@
-import {
-  db,
-  audit,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, audit, workItem, user } from "@grc/db";
 import { createAuditSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -107,7 +102,13 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "planned" | "preparation" | "fieldwork" | "reporting" | "review" | "completed" | "cancelled"
+      | "planned"
+      | "preparation"
+      | "fieldwork"
+      | "reporting"
+      | "review"
+      | "completed"
+      | "cancelled"
     >;
     conditions.push(inArray(audit.status, statuses));
   }
@@ -132,10 +133,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(audit.title, pattern),
-        ilike(audit.description, pattern),
-      )!,
+      or(ilike(audit.title, pattern), ilike(audit.description, pattern))!,
     );
   }
 

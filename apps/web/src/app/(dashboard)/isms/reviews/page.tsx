@@ -52,7 +52,11 @@ function ReviewsInner() {
     void fetchReviews();
   }, [fetchReviews]);
 
-  const handleCreate = async (formData: { title: string; reviewDate: string; nextReviewDate: string }) => {
+  const handleCreate = async (formData: {
+    title: string;
+    reviewDate: string;
+    nextReviewDate: string;
+  }) => {
     const res = await fetch("/api/v1/isms/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -68,7 +72,9 @@ function ReviewsInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("review.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("review.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("review.subtitle")}</p>
         </div>
         <Button onClick={() => setShowCreate(!showCreate)}>
@@ -78,7 +84,11 @@ function ReviewsInner() {
 
       {showCreate && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-6 space-y-4">
-          <CreateReviewForm onSubmit={handleCreate} onCancel={() => setShowCreate(false)} t={t} />
+          <CreateReviewForm
+            onSubmit={handleCreate}
+            onCancel={() => setShowCreate(false)}
+            t={t}
+          />
         </div>
       )}
 
@@ -102,14 +112,25 @@ function ReviewsInner() {
               <div className="flex items-center justify-between">
                 <div>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-semibold text-gray-900">{r.title}</h3>
-                    <Badge variant="outline" className={STATUS_COLORS[r.status]}>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {r.title}
+                    </h3>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[r.status]}
+                    >
                       {t(`review.statuses.${r.status}`)}
                     </Badge>
                   </div>
                   <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
-                    <span>{t("review.date")}: {r.reviewDate}</span>
-                    {r.nextReviewDate && <span>{t("review.nextReview")}: {r.nextReviewDate}</span>}
+                    <span>
+                      {t("review.date")}: {r.reviewDate}
+                    </span>
+                    {r.nextReviewDate && (
+                      <span>
+                        {t("review.nextReview")}: {r.nextReviewDate}
+                      </span>
+                    )}
                   </div>
                 </div>
               </div>
@@ -126,7 +147,11 @@ function CreateReviewForm({
   onCancel,
   t,
 }: {
-  onSubmit: (data: { title: string; reviewDate: string; nextReviewDate: string }) => void;
+  onSubmit: (data: {
+    title: string;
+    reviewDate: string;
+    nextReviewDate: string;
+  }) => void;
   onCancel: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
@@ -136,24 +161,54 @@ function CreateReviewForm({
 
   return (
     <>
-      <h3 className="text-sm font-semibold text-gray-900">{t("review.create")}</h3>
+      <h3 className="text-sm font-semibold text-gray-900">
+        {t("review.create")}
+      </h3>
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">{t("review.titleField")}</label>
-          <input className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={title} onChange={(e) => setTitle(e.target.value)} />
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            {t("review.titleField")}
+          </label>
+          <input
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">{t("review.date")}</label>
-          <input type="date" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={reviewDate} onChange={(e) => setReviewDate(e.target.value)} />
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            {t("review.date")}
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={reviewDate}
+            onChange={(e) => setReviewDate(e.target.value)}
+          />
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1">{t("review.nextReview")}</label>
-          <input type="date" className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm" value={nextReviewDate} onChange={(e) => setNextReviewDate(e.target.value)} />
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            {t("review.nextReview")}
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={nextReviewDate}
+            onChange={(e) => setNextReviewDate(e.target.value)}
+          />
         </div>
       </div>
       <div className="flex justify-end gap-2">
-        <Button variant="outline" size="sm" onClick={onCancel}>{t("actions.cancel")}</Button>
-        <Button size="sm" onClick={() => onSubmit({ title, reviewDate, nextReviewDate })} disabled={!title || !reviewDate}>{t("review.create")}</Button>
+        <Button variant="outline" size="sm" onClick={onCancel}>
+          {t("actions.cancel")}
+        </Button>
+        <Button
+          size="sm"
+          onClick={() => onSubmit({ title, reviewDate, nextReviewDate })}
+          disabled={!title || !reviewDate}
+        >
+          {t("review.create")}
+        </Button>
       </div>
     </>
   );

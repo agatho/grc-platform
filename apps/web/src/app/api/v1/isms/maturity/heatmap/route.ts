@@ -21,7 +21,15 @@
 // is the natural grouping for ISO 27001/27002, NIST 800-53 (control families),
 // BSI (layers), CSA CCM (domains) and similar hierarchical catalogs.
 
-import { db, controlMaturity, control, catalogEntry, catalog, orgActiveCatalog, soaEntry } from "@grc/db";
+import {
+  db,
+  controlMaturity,
+  control,
+  catalogEntry,
+  catalog,
+  orgActiveCatalog,
+  soaEntry,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { eq, and, inArray, sql } from "drizzle-orm";
@@ -40,19 +48,32 @@ export async function GET(req: Request) {
   // Resolve framework list. If unspecified, use active catalogs of type 'control'.
   let frameworkSources: string[];
   if (fwParam) {
-    frameworkSources = fwParam.split(",").map((s) => s.trim()).filter(Boolean);
+    frameworkSources = fwParam
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
   } else {
     const active = await db
       .select({ source: catalog.source })
       .from(orgActiveCatalog)
       .innerJoin(catalog, eq(catalog.id, orgActiveCatalog.catalogId))
-      .where(and(eq(orgActiveCatalog.orgId, ctx.orgId), eq(catalog.catalogType, "control")));
+      .where(
+        and(
+          eq(orgActiveCatalog.orgId, ctx.orgId),
+          eq(catalog.catalogType, "control"),
+        ),
+      );
     frameworkSources = active.map((a) => a.source);
   }
 
   if (frameworkSources.length === 0) {
     return Response.json({
-      data: { frameworks: [], families: [], cells: [], hint: "No control frameworks active for this org. Activate a catalog under /catalogs first." },
+      data: {
+        frameworks: [],
+        families: [],
+        cells: [],
+        hint: "No control frameworks active for this org. Activate a catalog under /catalogs first.",
+      },
     });
   }
 
@@ -60,12 +81,19 @@ export async function GET(req: Request) {
   const catalogs = await db
     .select({ id: catalog.id, source: catalog.source, name: catalog.name })
     .from(catalog)
-    .where(and(eq(catalog.isActive, true), inArray(catalog.source, frameworkSources)));
+    .where(
+      and(
+        eq(catalog.isActive, true),
+        inArray(catalog.source, frameworkSources),
+      ),
+    );
   const catalogIdToSource = new Map(catalogs.map((c) => [c.id, c.source]));
   const catalogIds = catalogs.map((c) => c.id);
 
   if (catalogIds.length === 0) {
-    return Response.json({ data: { frameworks: frameworkSources, families: [], cells: [] } });
+    return Response.json({
+      data: { frameworks: frameworkSources, families: [], cells: [] },
+    });
   }
 
   // Pull all leaf catalog entries with their family code (level-0 ancestor).
@@ -78,14 +106,20 @@ export async function GET(req: Request) {
       catalogId: catalogEntry.catalogId,
     })
     .from(catalogEntry)
-    .where(and(inArray(catalogEntry.catalogId, catalogIds), eq(catalogEntry.status, "active")));
+    .where(
+      and(
+        inArray(catalogEntry.catalogId, catalogIds),
+        eq(catalogEntry.status, "active"),
+      ),
+    );
 
   // Resolve family for each leaf code: take the first segment before "." or "_".
   // For BSI ("ISMS.1.A1") family = "ISMS"; for ISO ("A.5.1") family = "A.5";
   // for NIST 800-53 ("AC-2") family = "AC"; for SOC 2 ("CC6.1") family = "CC6".
   function deriveFamily(code: string): string {
     // ISO-style "A.x.y" → "A.x"
-    if (/^[A-Z]\.\d+\.\d+/.test(code)) return code.split(".").slice(0, 2).join(".");
+    if (/^[A-Z]\.\d+\.\d+/.test(code))
+      return code.split(".").slice(0, 2).join(".");
     // Multi-dot code with prefix like "ISMS.1.A1" → first segment
     if (code.includes(".")) return code.split(".")[0];
     // NIST-style "AC-2" → "AC"
@@ -94,7 +128,10 @@ export async function GET(req: Request) {
     return code;
   }
 
-  const leafEntryFamilies = new Map<string, { family: string; source: string }>();
+  const leafEntryFamilies = new Map<
+    string,
+    { family: string; source: string }
+  >();
   for (const e of entries) {
     if (e.level === 0) continue; // skip headers
     const source = catalogIdToSource.get(e.catalogId);
@@ -111,9 +148,17 @@ export async function GET(req: Request) {
       controlId: soaEntry.controlId,
     })
     .from(soaEntry)
-    .where(and(eq(soaEntry.orgId, ctx.orgId), inArray(soaEntry.catalogEntryId, [...leafEntryFamilies.keys()])));
+    .where(
+      and(
+        eq(soaEntry.orgId, ctx.orgId),
+        inArray(soaEntry.catalogEntryId, [...leafEntryFamilies.keys()]),
+      ),
+    );
 
-  const controlIdToFamily = new Map<string, { family: string; source: string }>();
+  const controlIdToFamily = new Map<
+    string,
+    { family: string; source: string }
+  >();
   for (const s of soas) {
     if (!s.controlId) continue;
     const fam = leafEntryFamilies.get(s.catalogEntryId);
@@ -139,17 +184,34 @@ export async function GET(req: Request) {
       targetMaturity: controlMaturity.targetMaturity,
     })
     .from(controlMaturity)
-    .where(and(eq(controlMaturity.orgId, ctx.orgId), inArray(controlMaturity.controlId, [...controlIdToFamily.keys()])));
+    .where(
+      and(
+        eq(controlMaturity.orgId, ctx.orgId),
+        inArray(controlMaturity.controlId, [...controlIdToFamily.keys()]),
+      ),
+    );
 
   // Aggregate
-  type CellAccum = { framework: string; family: string; currents: number[]; targets: number[]; controlCount: number };
+  type CellAccum = {
+    framework: string;
+    family: string;
+    currents: number[];
+    targets: number[];
+    controlCount: number;
+  };
   const cellMap = new Map<string, CellAccum>();
   for (const m of maturities) {
     const fam = controlIdToFamily.get(m.controlId);
     if (!fam) continue;
     const key = `${fam.source}::${fam.family}`;
     if (!cellMap.has(key)) {
-      cellMap.set(key, { framework: fam.source, family: fam.family, currents: [], targets: [], controlCount: 0 });
+      cellMap.set(key, {
+        framework: fam.source,
+        family: fam.family,
+        currents: [],
+        targets: [],
+        controlCount: 0,
+      });
     }
     const cell = cellMap.get(key)!;
     cell.currents.push(m.currentMaturity);
@@ -160,13 +222,25 @@ export async function GET(req: Request) {
   const cells = [...cellMap.values()].map((c) => ({
     framework: c.framework,
     family: c.family,
-    currentAvg: c.currents.length ? Math.round((c.currents.reduce((a, b) => a + b, 0) / c.currents.length) * 10) / 10 : 0,
-    targetAvg: includeTarget && c.targets.length
-      ? Math.round((c.targets.reduce((a, b) => a + b, 0) / c.targets.length) * 10) / 10
-      : null,
-    gap: includeTarget && c.targets.length && c.currents.length
-      ? Math.round(((c.targets.reduce((a, b) => a + b, 0) / c.targets.length) - (c.currents.reduce((a, b) => a + b, 0) / c.currents.length)) * 10) / 10
-      : null,
+    currentAvg: c.currents.length
+      ? Math.round(
+          (c.currents.reduce((a, b) => a + b, 0) / c.currents.length) * 10,
+        ) / 10
+      : 0,
+    targetAvg:
+      includeTarget && c.targets.length
+        ? Math.round(
+            (c.targets.reduce((a, b) => a + b, 0) / c.targets.length) * 10,
+          ) / 10
+        : null,
+    gap:
+      includeTarget && c.targets.length && c.currents.length
+        ? Math.round(
+            (c.targets.reduce((a, b) => a + b, 0) / c.targets.length -
+              c.currents.reduce((a, b) => a + b, 0) / c.currents.length) *
+              10,
+          ) / 10
+        : null,
     controlCount: c.controlCount,
   }));
 
@@ -183,7 +257,9 @@ export async function GET(req: Request) {
       stats: {
         cellCount: cells.length,
         avgMaturityOverall: cells.length
-          ? Math.round((cells.reduce((a, b) => a + b.currentAvg, 0) / cells.length) * 10) / 10
+          ? Math.round(
+              (cells.reduce((a, b) => a + b.currentAvg, 0) / cells.length) * 10,
+            ) / 10
           : 0,
       },
     },

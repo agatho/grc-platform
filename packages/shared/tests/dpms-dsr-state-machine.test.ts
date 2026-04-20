@@ -60,7 +60,9 @@ describe("validateDsrGate6Verify", () => {
       subjectName: null,
       subjectEmail: null,
     });
-    expect(blockers.some((b) => b.code === "missing_subject_identity")).toBe(true);
+    expect(blockers.some((b) => b.code === "missing_subject_identity")).toBe(
+      true,
+    );
   });
   it("blocks without verification documented", () => {
     const blockers = validateDsrGate6Verify({
@@ -77,7 +79,10 @@ describe("validateDsrGate7Response", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks without handler", () => {
-    const blockers = validateDsrGate7Response({ ...responseSnapshot, handlerId: null });
+    const blockers = validateDsrGate7Response({
+      ...responseSnapshot,
+      handlerId: null,
+    });
     expect(blockers.some((b) => b.code === "missing_handler")).toBe(true);
   });
   it("blocks access type without artifacts", () => {
@@ -86,7 +91,9 @@ describe("validateDsrGate7Response", () => {
       requestType: "access",
       responseArtifactsCount: 0,
     });
-    expect(blockers.some((b) => b.code === "missing_response_artifacts")).toBe(true);
+    expect(blockers.some((b) => b.code === "missing_response_artifacts")).toBe(
+      true,
+    );
   });
   it("allows erasure without artifacts (different flow)", () => {
     const blockers = validateDsrGate7Response({
@@ -120,7 +127,9 @@ describe("validateDsrGate8Close", () => {
       receivedAt: received,
       respondedAt: responded,
     });
-    expect(blockers.some((b) => b.code === "deadline_exceeded_without_extension")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "deadline_exceeded_without_extension"),
+    ).toBe(true);
   });
 
   it("hard-blocks > 90 days", () => {
@@ -132,7 +141,9 @@ describe("validateDsrGate8Close", () => {
       respondedAt: new Date(),
       extensionApplied: true,
     });
-    expect(blockers.some((b) => b.code === "deadline_hard_exceeded")).toBe(true);
+    expect(blockers.some((b) => b.code === "deadline_hard_exceeded")).toBe(
+      true,
+    );
   });
 
   it("warns Art 19 missing for erasure", () => {

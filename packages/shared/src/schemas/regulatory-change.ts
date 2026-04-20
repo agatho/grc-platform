@@ -6,7 +6,13 @@ import { z } from "zod";
 
 export const createRegulatorySourceSchema = z.object({
   name: z.string().min(1).max(500),
-  sourceType: z.enum(["official_gazette", "regulator", "industry_body", "eu_lex", "custom_feed"]),
+  sourceType: z.enum([
+    "official_gazette",
+    "regulator",
+    "industry_body",
+    "eu_lex",
+    "custom_feed",
+  ]),
   url: z.string().url().max(2000).optional(),
   jurisdiction: z.string().min(1).max(100),
   frameworks: z.array(z.string().max(100)).max(20).optional(),
@@ -15,7 +21,8 @@ export const createRegulatorySourceSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export const updateRegulatorySourceSchema = createRegulatorySourceSchema.partial();
+export const updateRegulatorySourceSchema =
+  createRegulatorySourceSchema.partial();
 
 export const regulatorySourceQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -30,16 +37,27 @@ export const regulatorySourceQuerySchema = z.object({
 export const regulatoryChangeQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
-  classification: z.enum(["critical", "major", "minor", "informational"]).optional(),
-  changeType: z.enum(["new_regulation", "amendment", "repeal", "guidance", "enforcement"]).optional(),
-  status: z.enum(["new", "under_review", "assessed", "acknowledged", "not_applicable"]).optional(),
+  classification: z
+    .enum(["critical", "major", "minor", "informational"])
+    .optional(),
+  changeType: z
+    .enum(["new_regulation", "amendment", "repeal", "guidance", "enforcement"])
+    .optional(),
+  status: z
+    .enum(["new", "under_review", "assessed", "acknowledged", "not_applicable"])
+    .optional(),
   jurisdiction: z.string().max(100).optional(),
   since: z.string().datetime().optional(),
   framework: z.string().max(100).optional(),
 });
 
 export const updateRegulatoryChangeSchema = z.object({
-  status: z.enum(["under_review", "assessed", "acknowledged", "not_applicable"]),
+  status: z.enum([
+    "under_review",
+    "assessed",
+    "acknowledged",
+    "not_applicable",
+  ]),
 });
 
 // ─── Impact Assessment ───────────────────────────────────────
@@ -47,17 +65,27 @@ export const updateRegulatoryChangeSchema = z.object({
 export const createImpactAssessmentSchema = z.object({
   changeId: z.string().uuid(),
   impactLevel: z.enum(["critical", "high", "medium", "low", "none"]),
-  impactAreas: z.array(z.object({
-    module: z.string().max(50),
-    area: z.string().max(200),
-    description: z.string().max(2000),
-    severity: z.enum(["critical", "high", "medium", "low"]),
-  })).max(50).optional(),
-  requiredActions: z.array(z.object({
-    action: z.string().max(500),
-    priority: z.enum(["critical", "high", "medium", "low"]),
-    deadline: z.string().optional(),
-  })).max(50).optional(),
+  impactAreas: z
+    .array(
+      z.object({
+        module: z.string().max(50),
+        area: z.string().max(200),
+        description: z.string().max(2000),
+        severity: z.enum(["critical", "high", "medium", "low"]),
+      }),
+    )
+    .max(50)
+    .optional(),
+  requiredActions: z
+    .array(
+      z.object({
+        action: z.string().max(500),
+        priority: z.enum(["critical", "high", "medium", "low"]),
+        deadline: z.string().optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
   estimatedEffort: z.string().max(50).optional(),
   complianceDeadline: z.string().optional(),
 });
@@ -79,7 +107,12 @@ export const createRegulatoryCalendarEventSchema = z.object({
   changeId: z.string().uuid().optional(),
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
-  eventType: z.enum(["compliance_deadline", "enforcement_date", "consultation_end", "reporting_deadline"]),
+  eventType: z.enum([
+    "compliance_deadline",
+    "enforcement_date",
+    "consultation_end",
+    "reporting_deadline",
+  ]),
   eventDate: z.string(),
   jurisdiction: z.string().max(100).optional(),
   framework: z.string().max(100).optional(),

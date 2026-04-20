@@ -9,7 +9,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
@@ -89,7 +95,9 @@ function IncidentDetailInner() {
     }
   }, [id]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -118,29 +126,47 @@ function IncidentDetailInner() {
   }
 
   if (!data) {
-    return <div className="text-center py-12 text-muted-foreground">Vorfall nicht gefunden</div>;
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        Vorfall nicht gefunden
+      </div>
+    );
   }
 
-  const set = (key: string, value: unknown) => setForm((prev) => ({ ...prev, [key]: value }));
+  const set = (key: string, value: unknown) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
   const deadlineInfo = getDeadlineInfo(data.authority_deadline);
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/ai-act/incidents" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href="/ai-act/incidents"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
         </Link>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+          {saving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           Speichern
         </Button>
       </div>
 
       <div className="flex items-center gap-3 flex-wrap">
         <h1 className="text-2xl font-bold">{data.title}</h1>
-        {data.incident_code && <Badge variant="outline">{data.incident_code}</Badge>}
-        <Badge className={SEVERITY_COLORS[data.severity] ?? ""}>{data.severity}</Badge>
-        <Badge className={STATUS_COLORS[data.status] ?? ""}>{data.status}</Badge>
+        {data.incident_code && (
+          <Badge variant="outline">{data.incident_code}</Badge>
+        )}
+        <Badge className={SEVERITY_COLORS[data.severity] ?? ""}>
+          {data.severity}
+        </Badge>
+        <Badge className={STATUS_COLORS[data.status] ?? ""}>
+          {data.status}
+        </Badge>
         {data.is_serious && (
           <Badge className="bg-red-600 text-white">
             <AlertTriangle className="h-3 w-3 mr-1" /> Schwerwiegend
@@ -150,19 +176,32 @@ function IncidentDetailInner() {
 
       {/* Behoerden-Frist Countdown */}
       {deadlineInfo && (
-        <Card className={deadlineInfo.overdue ? "border-red-400 bg-red-50" : "border-yellow-400 bg-yellow-50"}>
+        <Card
+          className={
+            deadlineInfo.overdue
+              ? "border-red-400 bg-red-50"
+              : "border-yellow-400 bg-yellow-50"
+          }
+        >
           <CardContent className="p-4 flex items-center gap-3">
-            <Clock className={`h-5 w-5 ${deadlineInfo.overdue ? "text-red-600" : "text-yellow-600"}`} />
+            <Clock
+              className={`h-5 w-5 ${deadlineInfo.overdue ? "text-red-600" : "text-yellow-600"}`}
+            />
             <div>
               <p className="font-semibold">
                 {deadlineInfo.overdue
                   ? `Meldefrist ueberschritten seit ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tagen` : `${deadlineInfo.diffH} Stunden`}`
-                  : `Meldefrist: noch ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tage` : `${deadlineInfo.diffH} Stunden`}`
-                }
+                  : `Meldefrist: noch ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tage` : `${deadlineInfo.diffH} Stunden`}`}
               </p>
               <p className="text-sm text-muted-foreground">
-                Frist: {deadlineInfo.date.toLocaleDateString("de-DE")} {deadlineInfo.date.toLocaleTimeString("de-DE", { hour: "2-digit", minute: "2-digit" })}
-                {data.is_serious ? " (2 Tage - schwerwiegend)" : " (15 Tage - Standard)"}
+                Frist: {deadlineInfo.date.toLocaleDateString("de-DE")}{" "}
+                {deadlineInfo.date.toLocaleTimeString("de-DE", {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })}
+                {data.is_serious
+                  ? " (2 Tage - schwerwiegend)"
+                  : " (15 Tage - Standard)"}
               </p>
             </div>
           </CardContent>
@@ -171,20 +210,34 @@ function IncidentDetailInner() {
 
       {/* Stammdaten */}
       <Card>
-        <CardHeader><CardTitle>Stammdaten</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Stammdaten</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="md:col-span-2">
             <Label>Titel</Label>
-            <Input value={form.title ?? ""} onChange={(e) => set("title", e.target.value)} />
+            <Input
+              value={form.title ?? ""}
+              onChange={(e) => set("title", e.target.value)}
+            />
           </div>
           <div className="md:col-span-2">
             <Label>Beschreibung</Label>
-            <Textarea value={form.description ?? ""} onChange={(e) => set("description", e.target.value)} rows={3} />
+            <Textarea
+              value={form.description ?? ""}
+              onChange={(e) => set("description", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Schweregrad</Label>
-            <Select value={form.severity ?? "medium"} onValueChange={(v) => set("severity", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.severity ?? "medium"}
+              onValueChange={(v) => set("severity", v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="critical">Kritisch</SelectItem>
                 <SelectItem value="high">Hoch</SelectItem>
@@ -195,8 +248,13 @@ function IncidentDetailInner() {
           </div>
           <div>
             <Label>Status</Label>
-            <Select value={form.status ?? "detected"} onValueChange={(v) => set("status", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.status ?? "detected"}
+              onValueChange={(v) => set("status", v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="detected">Erkannt</SelectItem>
                 <SelectItem value="investigating">Untersuchung</SelectItem>
@@ -207,87 +265,165 @@ function IncidentDetailInner() {
             </Select>
           </div>
           <div className="flex items-center gap-3">
-            <Switch checked={form.is_serious ?? false} onCheckedChange={(v) => set("is_serious", v)} />
+            <Switch
+              checked={form.is_serious ?? false}
+              onCheckedChange={(v) => set("is_serious", v)}
+            />
             <Label>Schwerwiegender Vorfall (Art. 73 Abs. 4)</Label>
           </div>
           <div>
             <Label>Betroffene Personen (Anzahl)</Label>
-            <Input type="number" value={form.affected_persons_count ?? ""} onChange={(e) => set("affected_persons_count", e.target.value ? Number(e.target.value) : null)} />
+            <Input
+              type="number"
+              value={form.affected_persons_count ?? ""}
+              onChange={(e) =>
+                set(
+                  "affected_persons_count",
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
+            />
           </div>
           <div>
             <Label>Erkannt am</Label>
-            <Input type="datetime-local" value={form.detected_at ? form.detected_at.slice(0, 16) : ""} onChange={(e) => set("detected_at", e.target.value)} />
+            <Input
+              type="datetime-local"
+              value={form.detected_at ? form.detected_at.slice(0, 16) : ""}
+              onChange={(e) => set("detected_at", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Schaden & Ursache */}
       <Card>
-        <CardHeader><CardTitle>Schaden und Ursachenanalyse</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Schaden und Ursachenanalyse</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <Label>Art des Schadens</Label>
-              <Input value={form.harm_type ?? ""} onChange={(e) => set("harm_type", e.target.value)} />
+              <Input
+                value={form.harm_type ?? ""}
+                onChange={(e) => set("harm_type", e.target.value)}
+              />
             </div>
             <div>
               <Label>Ursachenkategorie</Label>
-              <Input value={form.root_cause_category ?? ""} onChange={(e) => set("root_cause_category", e.target.value)} />
+              <Input
+                value={form.root_cause_category ?? ""}
+                onChange={(e) => set("root_cause_category", e.target.value)}
+              />
             </div>
           </div>
           <div>
             <Label>Schadensbeschreibung</Label>
-            <Textarea value={form.harm_description ?? ""} onChange={(e) => set("harm_description", e.target.value)} rows={2} />
+            <Textarea
+              value={form.harm_description ?? ""}
+              onChange={(e) => set("harm_description", e.target.value)}
+              rows={2}
+            />
           </div>
           <div>
             <Label>Ursachenanalyse</Label>
-            <Textarea value={form.root_cause ?? ""} onChange={(e) => set("root_cause", e.target.value)} rows={3} />
+            <Textarea
+              value={form.root_cause ?? ""}
+              onChange={(e) => set("root_cause", e.target.value)}
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Massnahmen */}
       <Card>
-        <CardHeader><CardTitle>Massnahmen</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Massnahmen</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <Label>Sofortmassnahmen</Label>
-            <Textarea value={form.remediation_actions ?? ""} onChange={(e) => set("remediation_actions", e.target.value)} rows={3} />
+            <Textarea
+              value={form.remediation_actions ?? ""}
+              onChange={(e) => set("remediation_actions", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Praeventivmassnahmen</Label>
-            <Textarea value={form.preventive_measures ?? ""} onChange={(e) => set("preventive_measures", e.target.value)} rows={3} />
+            <Textarea
+              value={form.preventive_measures ?? ""}
+              onChange={(e) => set("preventive_measures", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Erkenntnisse (Lessons Learned)</Label>
-            <Textarea value={form.lessons_learned ?? ""} onChange={(e) => set("lessons_learned", e.target.value)} rows={3} />
+            <Textarea
+              value={form.lessons_learned ?? ""}
+              onChange={(e) => set("lessons_learned", e.target.value)}
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Behoerdenbenachrichtigung */}
       <Card>
-        <CardHeader><CardTitle>Behoerdenbenachrichtigung</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Behoerdenbenachrichtigung</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Behoerde benachrichtigt am</Label>
-            <Input type="datetime-local" value={form.authority_notified_at ? String(form.authority_notified_at).slice(0, 16) : ""} onChange={(e) => set("authority_notified_at", e.target.value || null)} />
+            <Input
+              type="datetime-local"
+              value={
+                form.authority_notified_at
+                  ? String(form.authority_notified_at).slice(0, 16)
+                  : ""
+              }
+              onChange={(e) =>
+                set("authority_notified_at", e.target.value || null)
+              }
+            />
           </div>
           <div>
             <Label>Aktenzeichen Behoerde</Label>
-            <Input value={form.authority_reference ?? ""} onChange={(e) => set("authority_reference", e.target.value)} />
+            <Input
+              value={form.authority_reference ?? ""}
+              onChange={(e) => set("authority_reference", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Metadaten */}
       <Card>
-        <CardHeader><CardTitle>Metadaten</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Metadaten</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-          <div><span className="font-medium text-foreground">Erstellt am:</span> {new Date(data.created_at).toLocaleDateString("de-DE")}</div>
-          <div><span className="font-medium text-foreground">Aktualisiert am:</span> {new Date(data.updated_at).toLocaleDateString("de-DE")}</div>
-          {data.resolved_at && <div><span className="font-medium text-foreground">Behoben am:</span> {new Date(data.resolved_at).toLocaleDateString("de-DE")}</div>}
-          <div><span className="font-medium text-foreground">ID:</span> {data.id}</div>
+          <div>
+            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            {new Date(data.created_at).toLocaleDateString("de-DE")}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">
+              Aktualisiert am:
+            </span>{" "}
+            {new Date(data.updated_at).toLocaleDateString("de-DE")}
+          </div>
+          {data.resolved_at && (
+            <div>
+              <span className="font-medium text-foreground">Behoben am:</span>{" "}
+              {new Date(data.resolved_at).toLocaleDateString("de-DE")}
+            </div>
+          )}
+          <div>
+            <span className="font-medium text-foreground">ID:</span> {data.id}
+          </div>
         </CardContent>
       </Card>
     </div>

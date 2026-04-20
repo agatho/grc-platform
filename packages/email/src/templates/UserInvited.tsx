@@ -80,7 +80,7 @@ const translations = {
 
 export function getSubject(
   _data: Record<string, unknown>,
-  lang: "de" | "en"
+  lang: "de" | "en",
 ): string {
   return lang === "de" ? "Einladung zu ARCTOS" : "Invitation to ARCTOS";
 }
@@ -122,9 +122,7 @@ export const UserInvited: React.FC<UserInvitedProps> = ({
           <Section style={styles.content}>
             <Text style={styles.heading}>{t.heading}</Text>
             <Text style={styles.text}>{t.greeting}</Text>
-            <Text style={styles.text}>
-              {t.intro(inviterName, orgName)}
-            </Text>
+            <Text style={styles.text}>{t.intro(inviterName, orgName)}</Text>
 
             <Section style={styles.card}>
               <Text style={styles.cardLabel}>{t.organization}</Text>
@@ -153,9 +151,7 @@ export const UserInvited: React.FC<UserInvitedProps> = ({
           {/* Footer */}
           <Section style={styles.footer}>
             <Text style={styles.footerText}>{t.footer}</Text>
-            <Text style={styles.footerBrand}>
-              ARCTOS GRC Platform
-            </Text>
+            <Text style={styles.footerBrand}>ARCTOS GRC Platform</Text>
           </Section>
         </Container>
       </Body>

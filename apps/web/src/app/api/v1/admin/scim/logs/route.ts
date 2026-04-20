@@ -15,9 +15,7 @@ export async function GET(req: Request) {
   const to = searchParams.get("to");
 
   // Build dynamic conditions
-  const conditions: ReturnType<typeof sql>[] = [
-    sql`ssl.org_id = ${ctx.orgId}`,
-  ];
+  const conditions: ReturnType<typeof sql>[] = [sql`ssl.org_id = ${ctx.orgId}`];
 
   if (action) {
     conditions.push(sql`ssl.action = ${action}`);

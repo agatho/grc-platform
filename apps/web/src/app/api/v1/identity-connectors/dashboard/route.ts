@@ -10,17 +10,38 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const configs = await db.select().from(identityConnectorConfig).where(eq(identityConnectorConfig.orgId, ctx.orgId));
+  const configs = await db
+    .select()
+    .from(identityConnectorConfig)
+    .where(eq(identityConnectorConfig.orgId, ctx.orgId));
 
-  const latestResults = await db.select().from(identityTestResult).where(eq(identityTestResult.orgId, ctx.orgId)).orderBy(desc(identityTestResult.executedAt)).limit(50);
+  const latestResults = await db
+    .select()
+    .from(identityTestResult)
+    .where(eq(identityTestResult.orgId, ctx.orgId))
+    .orderBy(desc(identityTestResult.executedAt))
+    .limit(50);
 
-  const mfaResults = latestResults.filter((r) => r.testCategory === "mfa_enforcement");
-  const mfaComplianceRate = mfaResults.length > 0
-    ? Math.round(mfaResults.reduce((sum, r) => sum + Number(r.complianceRate ?? 0), 0) / mfaResults.length)
-    : 0;
+  const mfaResults = latestResults.filter(
+    (r) => r.testCategory === "mfa_enforcement",
+  );
+  const mfaComplianceRate =
+    mfaResults.length > 0
+      ? Math.round(
+          mfaResults.reduce(
+            (sum, r) => sum + Number(r.complianceRate ?? 0),
+            0,
+          ) / mfaResults.length,
+        )
+      : 0;
 
-  const staleResults = latestResults.filter((r) => r.testCategory === "stale_accounts");
-  const staleAccounts = staleResults.reduce((sum, r) => sum + r.nonCompliantUsers, 0);
+  const staleResults = latestResults.filter(
+    (r) => r.testCategory === "stale_accounts",
+  );
+  const staleAccounts = staleResults.reduce(
+    (sum, r) => sum + r.nonCompliantUsers,
+    0,
+  );
 
   return Response.json({
     data: {

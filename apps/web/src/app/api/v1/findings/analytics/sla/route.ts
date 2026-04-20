@@ -32,12 +32,7 @@ export async function GET(req: Request) {
       updatedAt: finding.updatedAt,
     })
     .from(finding)
-    .where(
-      and(
-        eq(finding.orgId, ctx.orgId),
-        isNull(finding.deletedAt),
-      ),
-    );
+    .where(and(eq(finding.orgId, ctx.orgId), isNull(finding.deletedAt)));
 
   // Compute SLA compliance per severity
   const bySeverity: Record<
@@ -73,9 +68,7 @@ export async function GET(req: Request) {
     withinSla: stats.withinSla,
     breached: stats.breached,
     complianceRate:
-      stats.total > 0
-        ? Math.round((stats.withinSla / stats.total) * 100)
-        : 100,
+      stats.total > 0 ? Math.round((stats.withinSla / stats.total) * 100) : 100,
     slaDays: slaMap[severity],
   }));
 

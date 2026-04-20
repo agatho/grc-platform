@@ -108,7 +108,10 @@ function ExecutionDetailInner() {
     return (
       <div className="text-center py-12">
         <p className="text-gray-500">{t("auditNotFound")}</p>
-        <Link href="/audit/executions" className="text-blue-600 text-sm mt-2 inline-block">
+        <Link
+          href="/audit/executions"
+          className="text-blue-600 text-sm mt-2 inline-block"
+        >
           {t("backToAudits")}
         </Link>
       </div>
@@ -117,13 +120,34 @@ function ExecutionDetailInner() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, { className: string; label: string }> = {
-      planned: { className: "bg-gray-100 text-gray-700", label: t("auditStatus.planned") },
-      preparation: { className: "bg-blue-100 text-blue-900", label: t("auditStatus.preparation") },
-      fieldwork: { className: "bg-yellow-100 text-yellow-900", label: t("auditStatus.fieldwork") },
-      reporting: { className: "bg-orange-100 text-orange-900", label: t("auditStatus.reporting") },
-      review: { className: "bg-purple-100 text-purple-900", label: t("auditStatus.review") },
-      completed: { className: "bg-green-100 text-green-900", label: t("auditStatus.completed") },
-      cancelled: { className: "bg-red-100 text-red-900", label: t("auditStatus.cancelled") },
+      planned: {
+        className: "bg-gray-100 text-gray-700",
+        label: t("auditStatus.planned"),
+      },
+      preparation: {
+        className: "bg-blue-100 text-blue-900",
+        label: t("auditStatus.preparation"),
+      },
+      fieldwork: {
+        className: "bg-yellow-100 text-yellow-900",
+        label: t("auditStatus.fieldwork"),
+      },
+      reporting: {
+        className: "bg-orange-100 text-orange-900",
+        label: t("auditStatus.reporting"),
+      },
+      review: {
+        className: "bg-purple-100 text-purple-900",
+        label: t("auditStatus.review"),
+      },
+      completed: {
+        className: "bg-green-100 text-green-900",
+        label: t("auditStatus.completed"),
+      },
+      cancelled: {
+        className: "bg-red-100 text-red-900",
+        label: t("auditStatus.cancelled"),
+      },
     };
     const config = map[status] ?? map.planned;
     return <Badge className={config.className}>{config.label}</Badge>;
@@ -149,7 +173,10 @@ function ExecutionDetailInner() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Link href="/audit/executions" className="text-gray-400 hover:text-gray-600">
+        <Link
+          href="/audit/executions"
+          className="text-gray-400 hover:text-gray-600"
+        >
           <ArrowLeft size={20} />
         </Link>
         <div className="flex-1">
@@ -158,8 +185,12 @@ function ExecutionDetailInner() {
             {statusBadge(audit.status)}
           </div>
           <p className="text-sm text-gray-500 mt-1">
-            {audit.leadAuditorName ? `${t("lead")}: ${audit.leadAuditorName}` : ""}{" "}
-            {audit.plannedStart ? `| ${audit.plannedStart} - ${audit.plannedEnd ?? ""}` : ""}
+            {audit.leadAuditorName
+              ? `${t("lead")}: ${audit.leadAuditorName}`
+              : ""}{" "}
+            {audit.plannedStart
+              ? `| ${audit.plannedStart} - ${audit.plannedEnd ?? ""}`
+              : ""}
           </p>
         </div>
         {nextStatus[audit.status] && (
@@ -194,7 +225,9 @@ function ExecutionDetailInner() {
 
       {/* Tab Content */}
       {activeTab === "overview" && <OverviewTab audit={audit} />}
-      {activeTab === "checklists" && <ChecklistsTab auditId={params.id} orgId={audit.orgId} />}
+      {activeTab === "checklists" && (
+        <ChecklistsTab auditId={params.id} orgId={audit.orgId} />
+      )}
       {activeTab === "activities" && <ActivitiesTab auditId={params.id} />}
       {activeTab === "findings" && <FindingsTab auditId={params.id} />}
       {activeTab === "report" && <ReportTab audit={audit} />}
@@ -210,12 +243,22 @@ function OverviewTab({ audit }: { audit: AuditDetail }) {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-        <h2 className="text-base font-semibold text-gray-900">{t("details")}</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {t("details")}
+        </h2>
         <dl className="space-y-3 text-sm">
-          <InfoRow label={t("auditType")} value={t(`auditTypes.${audit.auditType === "follow_up" ? "followUp" : audit.auditType}`)} />
+          <InfoRow
+            label={t("auditType")}
+            value={t(
+              `auditTypes.${audit.auditType === "follow_up" ? "followUp" : audit.auditType}`,
+            )}
+          />
           <InfoRow label={t("description")} value={audit.description ?? "-"} />
           <InfoRow label={t("scope")} value={audit.scopeDescription ?? "-"} />
-          <InfoRow label={t("plannedStart")} value={audit.plannedStart ?? "-"} />
+          <InfoRow
+            label={t("plannedStart")}
+            value={audit.plannedStart ?? "-"}
+          />
           <InfoRow label={t("plannedEnd")} value={audit.plannedEnd ?? "-"} />
           <InfoRow label={t("actualStart")} value={audit.actualStart ?? "-"} />
           <InfoRow label={t("actualEnd")} value={audit.actualEnd ?? "-"} />
@@ -225,17 +268,27 @@ function OverviewTab({ audit }: { audit: AuditDetail }) {
         <h2 className="text-base font-semibold text-gray-900">{t("team")}</h2>
         <dl className="space-y-3 text-sm">
           <InfoRow label={t("lead")} value={audit.leadAuditorName ?? "-"} />
-          <InfoRow label={t("findingCount")} value={String(audit.findingCount ?? 0)} />
+          <InfoRow
+            label={t("findingCount")}
+            value={String(audit.findingCount ?? 0)}
+          />
           {audit.conclusion && (
-            <InfoRow label={t("conclusion")} value={t(`conclusions.${audit.conclusion}`)} />
+            <InfoRow
+              label={t("conclusion")}
+              value={t(`conclusions.${audit.conclusion}`)}
+            />
           )}
         </dl>
         {audit.scopeFrameworks && audit.scopeFrameworks.length > 0 && (
           <div>
-            <p className="text-xs font-medium text-gray-500 mb-2">{t("frameworks")}</p>
+            <p className="text-xs font-medium text-gray-500 mb-2">
+              {t("frameworks")}
+            </p>
             <div className="flex flex-wrap gap-1">
               {audit.scopeFrameworks.map((fw) => (
-                <Badge key={fw} variant="outline">{fw}</Badge>
+                <Badge key={fw} variant="outline">
+                  {fw}
+                </Badge>
               ))}
             </div>
           </div>
@@ -249,7 +302,9 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
       <dt className="text-gray-500">{label}</dt>
-      <dd className="text-gray-900 font-medium text-right max-w-[60%]">{value}</dd>
+      <dd className="text-gray-900 font-medium text-right max-w-[60%]">
+        {value}
+      </dd>
     </div>
   );
 }
@@ -259,17 +314,34 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const t = useTranslations("auditMgmt");
   const [checklists, setChecklists] = useState<AuditChecklist[]>([]);
-  const [selectedChecklist, setSelectedChecklist] = useState<string | null>(null);
+  const [selectedChecklist, setSelectedChecklist] = useState<string | null>(
+    null,
+  );
   const [items, setItems] = useState<AuditChecklistItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
   const [importing, setImporting] = useState(false);
   const [importMenuOpen, setImportMenuOpen] = useState(false);
-  const [importResult, setImportResult] = useState<{ count: number; source: string } | null>(null);
-  const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(null);
-  const [createFindingItem, setCreateFindingItem] = useState<AuditChecklistItem | null>(null);
-  const [risks, setRisks] = useState<Array<{ id: string; title: string; riskCategory?: string | null }>>([]);
-  const [activeCatalogs, setActiveCatalogs] = useState<Array<{ catalogId: string; name: string; source: string | null; version: string | null }>>([]);
+  const [importResult, setImportResult] = useState<{
+    count: number;
+    source: string;
+  } | null>(null);
+  const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(
+    null,
+  );
+  const [createFindingItem, setCreateFindingItem] =
+    useState<AuditChecklistItem | null>(null);
+  const [risks, setRisks] = useState<
+    Array<{ id: string; title: string; riskCategory?: string | null }>
+  >([]);
+  const [activeCatalogs, setActiveCatalogs] = useState<
+    Array<{
+      catalogId: string;
+      name: string;
+      source: string | null;
+      version: string | null;
+    }>
+  >([]);
 
   // Fetch risks for the risk-picker in the create-finding dialog + active
   // control catalogs for the framework-import dropdown (F-13: previously
@@ -283,47 +355,90 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
           const j = await r.json();
           if (!cancelled) {
             setRisks(
-              (j.data ?? []).map((x: { id: string; title: string; riskCategory?: string | null }) => ({
-                id: x.id,
-                title: x.title,
-                riskCategory: x.riskCategory,
-              })),
+              (j.data ?? []).map(
+                (x: {
+                  id: string;
+                  title: string;
+                  riskCategory?: string | null;
+                }) => ({
+                  id: x.id,
+                  title: x.title,
+                  riskCategory: x.riskCategory,
+                }),
+              ),
             );
           }
         }
-      } catch {}
+      } catch {
+        // ignore preload errors — UI falls back to empty lists
+      }
       // Active control catalogs of the current org
       try {
-        const ac = await fetch(`/api/v1/organizations/${orgId}/active-catalogs?catalogType=control`);
+        const ac = await fetch(
+          `/api/v1/organizations/${orgId}/active-catalogs?catalogType=control`,
+        );
         if (ac.ok) {
           const aj = await ac.json();
           // Enrich with catalog name via separate fetch on /api/v1/catalogs
-          const ids: string[] = (aj.data ?? []).map((x: { catalogId: string }) => x.catalogId);
+          const ids: string[] = (aj.data ?? []).map(
+            (x: { catalogId: string }) => x.catalogId,
+          );
           if (ids.length > 0) {
-            const catRes = await fetch("/api/v1/catalogs?type=control&limit=200");
+            const catRes = await fetch(
+              "/api/v1/catalogs?type=control&limit=200",
+            );
             if (catRes.ok) {
               const catJ = await catRes.json();
-              const byId = new Map((catJ.data ?? []).map((c: { id: string; name: string; source: string | null; version: string | null }) => [c.id, c]));
+              const byId = new Map(
+                (catJ.data ?? []).map(
+                  (c: {
+                    id: string;
+                    name: string;
+                    source: string | null;
+                    version: string | null;
+                  }) => [c.id, c],
+                ),
+              );
               if (!cancelled) {
                 setActiveCatalogs(
                   ids
                     .map((id) => byId.get(id))
-                    .filter((x): x is { id: string; name: string; source: string | null; version: string | null } => !!x)
-                    .map((c) => ({ catalogId: c.id, name: c.name, source: c.source, version: c.version })),
+                    .filter(
+                      (
+                        x,
+                      ): x is {
+                        id: string;
+                        name: string;
+                        source: string | null;
+                        version: string | null;
+                      } => !!x,
+                    )
+                    .map((c) => ({
+                      catalogId: c.id,
+                      name: c.name,
+                      source: c.source,
+                      version: c.version,
+                    })),
                 );
               }
             }
           }
         }
-      } catch {}
+      } catch {
+        // ignore preload errors — UI falls back to empty lists
+      }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [orgId]);
 
   const fetchChecklists = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/audit-mgmt/audits/${auditId}/checklists?limit=100`);
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/checklists?limit=100`,
+      );
       if (res.ok) {
         const json = await res.json();
         setChecklists(json.data ?? []);
@@ -333,15 +448,18 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   }, [auditId]);
 
-  const fetchItems = useCallback(async (checklistId: string) => {
-    const res = await fetch(
-      `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}/items`,
-    );
-    if (res.ok) {
-      const json = await res.json();
-      setItems(json.data ?? []);
-    }
-  }, [auditId]);
+  const fetchItems = useCallback(
+    async (checklistId: string) => {
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}/items`,
+      );
+      if (res.ok) {
+        const json = await res.json();
+        setItems(json.data ?? []);
+      }
+    },
+    [auditId],
+  );
 
   useEffect(() => {
     void fetchChecklists();
@@ -364,11 +482,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     setGenerating(true);
     setImportMenuOpen(false);
     try {
-      const res = await fetch(`/api/v1/audit-mgmt/audits/${auditId}/checklists/generate`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: catalogId ? JSON.stringify({ catalogId }) : "{}",
-      });
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/checklists/generate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: catalogId ? JSON.stringify({ catalogId }) : "{}",
+        },
+      );
       if (res.ok) {
         void fetchChecklists();
       }
@@ -383,15 +504,21 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     { key: "cobit_2019", labelKey: "importCobit" },
   ] as const;
 
-  const handleImportFromFramework = async (source: string, labelKey: string) => {
+  const handleImportFromFramework = async (
+    source: string,
+    labelKey: string,
+  ) => {
     setImporting(true);
     setImportMenuOpen(false);
     setImportResult(null);
     try {
-      const templateRes = await fetch(`/api/v1/audit-mgmt/templates?source=${source}`);
+      const templateRes = await fetch(
+        `/api/v1/audit-mgmt/templates?source=${source}`,
+      );
       if (!templateRes.ok) return;
       const templateJson = await templateRes.json();
-      const entries: Array<{ question: string; reference?: string }> = templateJson.data ?? [];
+      const entries: Array<{ question: string; reference?: string }> =
+        templateJson.data ?? [];
 
       let created = 0;
       for (const entry of entries) {
@@ -423,7 +550,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
     const body = {
       result: formData.get("result") as string,
-      notes: formData.get("notes") as string || undefined,
+      notes: (formData.get("notes") as string) || undefined,
     };
 
     const res = await fetch(
@@ -448,9 +575,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     const riskIdRaw = formData.get("riskId") as string;
     const body: Record<string, unknown> = {
       title: formData.get("title") as string,
-      description: formData.get("description") as string || undefined,
+      description: (formData.get("description") as string) || undefined,
       severity: formData.get("severity") as string,
-      remediationDueDate: formData.get("remediationDueDate") as string || undefined,
+      remediationDueDate:
+        (formData.get("remediationDueDate") as string) || undefined,
     };
     // Closes the Audit → ERM feedback loop (ISO 27001 9.2 / IIA 2120): when
     // the auditor picks a concrete risk, the finding is persisted with
@@ -483,14 +611,17 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       case "not_applicable":
         return <MinusCircle className="h-4 w-4 text-gray-400" />;
       default:
-        return <span className="h-4 w-4 rounded-full border-2 border-gray-300 inline-block" />;
+        return (
+          <span className="h-4 w-4 rounded-full border-2 border-gray-300 inline-block" />
+        );
     }
   };
 
   const selectedCl = checklists.find((c) => c.id === selectedChecklist);
   const completedCount = selectedCl?.completedItems ?? 0;
   const totalCount = selectedCl?.totalItems ?? items.length;
-  const progressPct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+  const progressPct =
+    totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
   return (
     <div className="space-y-4">
@@ -535,7 +666,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     key={fw.key}
                     type="button"
                     className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                    onClick={() => handleImportFromFramework(fw.key, fw.labelKey)}
+                    onClick={() =>
+                      handleImportFromFramework(fw.key, fw.labelKey)
+                    }
                   >
                     {t(fw.labelKey)}
                   </button>
@@ -553,17 +686,26 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                         type="button"
                         className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
                         onClick={() => handleGenerate(cat.catalogId)}
-                        title={cat.source && cat.version ? `${cat.source} ${cat.version}` : undefined}
+                        title={
+                          cat.source && cat.version
+                            ? `${cat.source} ${cat.version}`
+                            : undefined
+                        }
                       >
                         {cat.name}
-                        {cat.version && <span className="text-xs text-gray-400 ml-1">· {cat.version}</span>}
+                        {cat.version && (
+                          <span className="text-xs text-gray-400 ml-1">
+                            · {cat.version}
+                          </span>
+                        )}
                       </button>
                     ))}
                   </>
                 )}
                 {activeCatalogs.length === 0 && (
                   <div className="px-4 py-2 text-xs text-gray-400 border-t border-gray-100">
-                    Keine Kontroll-Kataloge aktiviert. Aktiviere z. B. ISO 27001 oder NIST CSF unter <em>/catalogs/controls</em>.
+                    Keine Kontroll-Kataloge aktiviert. Aktiviere z. B. ISO 27001
+                    oder NIST CSF unter <em>/catalogs/controls</em>.
                   </div>
                 )}
               </div>
@@ -576,7 +718,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             onClick={() => handleGenerate()}
             disabled={generating}
           >
-            <Sparkles size={14} className={`mr-1 ${generating ? "animate-spin" : ""}`} />
+            <Sparkles
+              size={14}
+              className={`mr-1 ${generating ? "animate-spin" : ""}`}
+            />
             {t("generateChecklist")}
           </Button>
         </div>
@@ -586,7 +731,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       {importResult && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-3 flex items-center justify-between">
           <p className="text-sm text-green-800">
-            {t("importResult", { count: importResult.count, source: t(importResult.source) })}
+            {t("importResult", {
+              count: importResult.count,
+              source: t(importResult.source),
+            })}
           </p>
           <button
             onClick={() => setImportResult(null)}
@@ -616,33 +764,49 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
           {/* Items Table */}
           {items.length === 0 ? (
-            <div className="text-center py-8 text-gray-400">{t("emptyChecklist")}</div>
+            <div className="text-center py-8 text-gray-400">
+              {t("emptyChecklist")}
+            </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-8">#</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600">{t("question")}</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-32">{t("result")}</th>
-                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-40">{t("actions")}</th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-8">
+                      #
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600">
+                      {t("question")}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-32">
+                      {t("result")}
+                    </th>
+                    <th className="px-4 py-3 text-left font-medium text-gray-600 w-40">
+                      {t("actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
                   {items.map((item) => (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-500">{item.sortOrder}</td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {item.sortOrder}
+                      </td>
                       <td className="px-4 py-3">
                         <p className="text-gray-900">{item.question}</p>
                         {item.notes && (
-                          <p className="text-xs text-gray-500 mt-1">{item.notes}</p>
+                          <p className="text-xs text-gray-500 mt-1">
+                            {item.notes}
+                          </p>
                         )}
                       </td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
                           {resultIcon(item.result)}
                           <span className="text-xs text-gray-600">
-                            {item.result ? t(`results.${item.result}`) : t("results.open")}
+                            {item.result
+                              ? t(`results.${item.result}`)
+                              : t("results.open")}
                           </span>
                         </div>
                       </td>
@@ -685,7 +849,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void handleEvaluate(evaluateItem.id, new FormData(e.currentTarget));
+                void handleEvaluate(
+                  evaluateItem.id,
+                  new FormData(e.currentTarget),
+                );
               }}
               className="space-y-4"
             >
@@ -700,9 +867,15 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 >
                   <option value="">{t("selectResult")}</option>
                   <option value="conforming">{t("results.conforming")}</option>
-                  <option value="nonconforming">{t("results.nonconforming")}</option>
-                  <option value="observation">{t("results.observation")}</option>
-                  <option value="not_applicable">{t("results.not_applicable")}</option>
+                  <option value="nonconforming">
+                    {t("results.nonconforming")}
+                  </option>
+                  <option value="observation">
+                    {t("results.observation")}
+                  </option>
+                  <option value="not_applicable">
+                    {t("results.not_applicable")}
+                  </option>
                 </select>
               </div>
               <div>
@@ -714,14 +887,19 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
-              <Button type="submit" className="w-full">{t("save")}</Button>
+              <Button type="submit" className="w-full">
+                {t("save")}
+              </Button>
             </form>
           )}
         </DialogContent>
       </Dialog>
 
       {/* Create Finding Dialog */}
-      <Dialog open={!!createFindingItem} onOpenChange={() => setCreateFindingItem(null)}>
+      <Dialog
+        open={!!createFindingItem}
+        onOpenChange={() => setCreateFindingItem(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("createFinding")}</DialogTitle>
@@ -730,16 +908,23 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             <form
               onSubmit={(e) => {
                 e.preventDefault();
-                void handleCreateFinding(createFindingItem.id, new FormData(e.currentTarget));
+                void handleCreateFinding(
+                  createFindingItem.id,
+                  new FormData(e.currentTarget),
+                );
               }}
               className="space-y-4"
             >
               <div>
-                <label className="text-sm font-medium">{t("findingTitle")}</label>
+                <label className="text-sm font-medium">
+                  {t("findingTitle")}
+                </label>
                 <Input name="title" required />
               </div>
               <div>
-                <label className="text-sm font-medium">{t("description")}</label>
+                <label className="text-sm font-medium">
+                  {t("description")}
+                </label>
                 <textarea
                   name="description"
                   rows={3}
@@ -747,23 +932,37 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">{t("findingSeverity")}</label>
+                <label className="text-sm font-medium">
+                  {t("findingSeverity")}
+                </label>
                 <select
                   name="severity"
                   required
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="significant_nonconformity">{t("severity.significantNonconformity")}</option>
-                  <option value="insignificant_nonconformity">{t("severity.insignificantNonconformity")}</option>
-                  <option value="improvement_requirement">{t("severity.improvementRequirement")}</option>
-                  <option value="recommendation">{t("severity.recommendation")}</option>
-                  <option value="observation">{t("severity.observation")}</option>
+                  <option value="significant_nonconformity">
+                    {t("severity.significantNonconformity")}
+                  </option>
+                  <option value="insignificant_nonconformity">
+                    {t("severity.insignificantNonconformity")}
+                  </option>
+                  <option value="improvement_requirement">
+                    {t("severity.improvementRequirement")}
+                  </option>
+                  <option value="recommendation">
+                    {t("severity.recommendation")}
+                  </option>
+                  <option value="observation">
+                    {t("severity.observation")}
+                  </option>
                 </select>
               </div>
               <div>
                 <label className="text-sm font-medium">
                   Risiko-Verknüpfung
-                  <span className="ml-1 text-xs text-gray-400">(optional, ISO 27001 9.2 · ISO 31000 6.6)</span>
+                  <span className="ml-1 text-xs text-gray-400">
+                    (optional, ISO 27001 9.2 · ISO 31000 6.6)
+                  </span>
                 </label>
                 <select
                   name="riskId"
@@ -773,19 +972,26 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   <option value="">— kein Risiko verknüpfen —</option>
                   {risks.map((r) => (
                     <option key={r.id} value={r.id}>
-                      {r.title}{r.riskCategory ? ` (${r.riskCategory})` : ""}
+                      {r.title}
+                      {r.riskCategory ? ` (${r.riskCategory})` : ""}
                     </option>
                   ))}
                 </select>
                 <p className="text-xs text-gray-500 mt-1">
-                  Bei Verknüpfung wird die Feststellung als Wirksamkeitsnachweis für das Risiko geführt — ein Maßnahmen-Plan kann per Sync als Risk-Treatment übernommen werden.
+                  Bei Verknüpfung wird die Feststellung als Wirksamkeitsnachweis
+                  für das Risiko geführt — ein Maßnahmen-Plan kann per Sync als
+                  Risk-Treatment übernommen werden.
                 </p>
               </div>
               <div>
-                <label className="text-sm font-medium">{t("remediationDueDate")}</label>
+                <label className="text-sm font-medium">
+                  {t("remediationDueDate")}
+                </label>
                 <Input name="remediationDueDate" type="date" />
               </div>
-              <Button type="submit" className="w-full">{t("save")}</Button>
+              <Button type="submit" className="w-full">
+                {t("save")}
+              </Button>
             </form>
           )}
         </DialogContent>
@@ -805,7 +1011,9 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(`/api/v1/audit-mgmt/audits/${auditId}/activities?limit=100`);
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=100`,
+      );
       if (res.ok) {
         const json = await res.json();
         setActivities(json.data ?? []);
@@ -823,9 +1031,11 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
     const body = {
       activityType: formData.get("activityType") as string,
       title: formData.get("title") as string,
-      description: formData.get("description") as string || undefined,
-      duration: formData.get("duration") ? Number(formData.get("duration")) : undefined,
-      notes: formData.get("notes") as string || undefined,
+      description: (formData.get("description") as string) || undefined,
+      duration: formData.get("duration")
+        ? Number(formData.get("duration"))
+        : undefined,
+      notes: (formData.get("notes") as string) || undefined,
     };
 
     const res = await fetch(`/api/v1/audit-mgmt/audits/${auditId}/activities`, {
@@ -843,7 +1053,9 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">{t("activityLog")}</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {t("activityLog")}
+        </h2>
         <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
@@ -863,26 +1075,44 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
               className="space-y-4"
             >
               <div>
-                <label className="text-sm font-medium">{t("activityType")}</label>
-                <select name="activityType" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
-                  <option value="interview">{t("activityTypes.interview")}</option>
-                  <option value="document_review">{t("activityTypes.documentReview")}</option>
-                  <option value="walkthrough">{t("activityTypes.walkthrough")}</option>
+                <label className="text-sm font-medium">
+                  {t("activityType")}
+                </label>
+                <select
+                  name="activityType"
+                  required
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="interview">
+                    {t("activityTypes.interview")}
+                  </option>
+                  <option value="document_review">
+                    {t("activityTypes.documentReview")}
+                  </option>
+                  <option value="walkthrough">
+                    {t("activityTypes.walkthrough")}
+                  </option>
                   <option value="testing">{t("activityTypes.testing")}</option>
                   <option value="meeting">{t("activityTypes.meeting")}</option>
                   <option value="other">{t("activityTypes.other")}</option>
                 </select>
               </div>
               <div>
-                <label className="text-sm font-medium">{t("activityTitle")}</label>
+                <label className="text-sm font-medium">
+                  {t("activityTitle")}
+                </label>
                 <Input name="title" required />
               </div>
               <div>
-                <label className="text-sm font-medium">{t("description")}</label>
+                <label className="text-sm font-medium">
+                  {t("description")}
+                </label>
                 <Input name="description" />
               </div>
               <div>
-                <label className="text-sm font-medium">{t("durationMinutes")}</label>
+                <label className="text-sm font-medium">
+                  {t("durationMinutes")}
+                </label>
                 <Input name="duration" type="number" min="1" />
               </div>
               <div>
@@ -893,7 +1123,9 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
-              <Button type="submit" className="w-full">{t("save")}</Button>
+              <Button type="submit" className="w-full">
+                {t("save")}
+              </Button>
             </form>
           </DialogContent>
         </Dialog>
@@ -904,7 +1136,9 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : activities.length === 0 ? (
-        <div className="text-center py-8 text-gray-400">{t("emptyActivities")}</div>
+        <div className="text-center py-8 text-gray-400">
+          {t("emptyActivities")}
+        </div>
       ) : (
         <div className="space-y-3">
           {activities.map((activity) => (
@@ -915,7 +1149,9 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline">{activity.activityType}</Badge>
-                  <span className="font-medium text-gray-900">{activity.title}</span>
+                  <span className="font-medium text-gray-900">
+                    {activity.title}
+                  </span>
                 </div>
                 <span className="text-xs text-gray-500">
                   {new Date(activity.performedAt).toLocaleString()}
@@ -969,9 +1205,16 @@ function FindingsTab({ auditId }: { auditId: string }) {
         const r = await fetch("/api/v1/risks?limit=200");
         if (r.ok) {
           const j = await r.json();
-          setRisks((j.data ?? []).map((x: { id: string; title: string }) => ({ id: x.id, title: x.title })));
+          setRisks(
+            (j.data ?? []).map((x: { id: string; title: string }) => ({
+              id: x.id,
+              title: x.title,
+            })),
+          );
         }
-      } catch {}
+      } catch {
+        // ignore preload errors — UI falls back to empty lists
+      }
     })();
   }, [auditId]);
 
@@ -1012,13 +1255,21 @@ function FindingsTab({ auditId }: { auditId: string }) {
       recommendation: "bg-blue-100 text-blue-900",
       observation: "bg-gray-100 text-gray-700",
     };
-    return <Badge className={map[severity] ?? "bg-gray-100 text-gray-700"}>{t(`severity.${severity.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())}`)}</Badge>;
+    return (
+      <Badge className={map[severity] ?? "bg-gray-100 text-gray-700"}>
+        {t(
+          `severity.${severity.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())}`,
+        )}
+      </Badge>
+    );
   };
 
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-semibold text-gray-900">{t("findingsForAudit")}</h2>
+        <h2 className="text-base font-semibold text-gray-900">
+          {t("findingsForAudit")}
+        </h2>
         <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
@@ -1057,9 +1308,15 @@ function FindingsTab({ auditId }: { auditId: string }) {
                   defaultValue="observation"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="significant_nonconformity">Wesentliche Abweichung</option>
-                  <option value="insignificant_nonconformity">Geringfügige Abweichung</option>
-                  <option value="improvement_requirement">Verbesserungsanforderung</option>
+                  <option value="significant_nonconformity">
+                    Wesentliche Abweichung
+                  </option>
+                  <option value="insignificant_nonconformity">
+                    Geringfügige Abweichung
+                  </option>
+                  <option value="improvement_requirement">
+                    Verbesserungsanforderung
+                  </option>
                   <option value="recommendation">Empfehlung</option>
                   <option value="observation">Beobachtung</option>
                 </select>
@@ -1067,7 +1324,9 @@ function FindingsTab({ auditId }: { auditId: string }) {
               <div>
                 <label className="text-sm font-medium">
                   Risiko-Verknüpfung
-                  <span className="ml-1 text-xs text-gray-400">(optional, ISO 31000 6.6)</span>
+                  <span className="ml-1 text-xs text-gray-400">
+                    (optional, ISO 31000 6.6)
+                  </span>
                 </label>
                 <select
                   name="riskId"
@@ -1076,7 +1335,9 @@ function FindingsTab({ auditId }: { auditId: string }) {
                 >
                   <option value="">— kein Risiko verknüpfen —</option>
                   {risks.map((r) => (
-                    <option key={r.id} value={r.id}>{r.title}</option>
+                    <option key={r.id} value={r.id}>
+                      {r.title}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -1085,7 +1346,9 @@ function FindingsTab({ auditId }: { auditId: string }) {
                 <Input name="remediationDueDate" type="date" />
               </div>
               <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
+                {saving ? (
+                  <Loader2 size={12} className="animate-spin mr-1" />
+                ) : null}
                 Speichern
               </Button>
             </form>
@@ -1101,7 +1364,8 @@ function FindingsTab({ auditId }: { auditId: string }) {
         <div className="text-center py-8 text-gray-400">
           <p>{t("emptyFindings")}</p>
           <p className="text-xs mt-2">
-            Nutze „Feststellung hinzufügen" für Ad-hoc-Befunde oder erstelle aus einer nicht-konformen Checklisten-Position heraus.
+            Nutze „Feststellung hinzufügen" für Ad-hoc-Befunde oder erstelle aus
+            einer nicht-konformen Checklisten-Position heraus.
           </p>
         </div>
       ) : (
@@ -1204,7 +1468,9 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch(`/api/v1/audit-mgmt/audits/${params.id}/report`);
+        const res = await fetch(
+          `/api/v1/audit-mgmt/audits/${params.id}/report`,
+        );
         if (!res.ok) {
           setLoading(false);
           return;
@@ -1215,7 +1481,9 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
         if (!cancelled) setLoading(false);
       }
     })();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [params.id]);
 
   if (loading) {
@@ -1228,14 +1496,17 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
   if (!report) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <p className="text-sm text-gray-400">Bericht konnte nicht geladen werden.</p>
+        <p className="text-sm text-gray-400">
+          Bericht konnte nicht geladen werden.
+        </p>
       </div>
     );
   }
 
   const sevColors: Record<string, string> = {
     significant_nonconformity: "bg-red-100 text-red-900 border-red-200",
-    insignificant_nonconformity: "bg-orange-100 text-orange-900 border-orange-200",
+    insignificant_nonconformity:
+      "bg-orange-100 text-orange-900 border-orange-200",
     improvement_requirement: "bg-yellow-100 text-yellow-900 border-yellow-200",
     observation: "bg-blue-100 text-blue-900 border-blue-200",
     recommendation: "bg-gray-100 text-gray-800 border-gray-200",
@@ -1248,13 +1519,29 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
     recommendation: "Empfehlung",
   };
 
-  const totalEvaluated = report.breakdown.reduce((sum, b) =>
-    sum + b.conforming + b.nonconforming + b.observation + b.not_applicable, 0);
-  const totalItems = report.breakdown.reduce((sum, b) =>
-    sum + b.conforming + b.nonconforming + b.observation + b.not_applicable + b.unevaluated, 0);
-  const conformanceRate = totalEvaluated > 0
-    ? Math.round((report.breakdown.reduce((s, b) => s + b.conforming, 0) / totalEvaluated) * 100)
-    : 0;
+  const totalEvaluated = report.breakdown.reduce(
+    (sum, b) =>
+      sum + b.conforming + b.nonconforming + b.observation + b.not_applicable,
+    0,
+  );
+  const totalItems = report.breakdown.reduce(
+    (sum, b) =>
+      sum +
+      b.conforming +
+      b.nonconforming +
+      b.observation +
+      b.not_applicable +
+      b.unevaluated,
+    0,
+  );
+  const conformanceRate =
+    totalEvaluated > 0
+      ? Math.round(
+          (report.breakdown.reduce((s, b) => s + b.conforming, 0) /
+            totalEvaluated) *
+            100,
+        )
+      : 0;
 
   return (
     <div className="space-y-4">
@@ -1270,61 +1557,128 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
 
       {/* Executive Summary */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3 print:border-0">
-        <h3 className="text-sm font-semibold text-gray-900">Executive Summary</h3>
+        <h3 className="text-sm font-semibold text-gray-900">
+          Executive Summary
+        </h3>
         <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm">
           <InfoRow label="Audit" value={report.audit.title} />
           <InfoRow label="Status" value={report.audit.status} />
-          <InfoRow label={t("conclusion")} value={report.audit.conclusion ? t(`conclusions.${report.audit.conclusion}`) : "-"} />
+          <InfoRow
+            label={t("conclusion")}
+            value={
+              report.audit.conclusion
+                ? t(`conclusions.${report.audit.conclusion}`)
+                : "-"
+            }
+          />
           <InfoRow label="Audit-Typ" value={report.audit.auditType} />
-          <InfoRow label="Leitender Prüfer" value={report.audit.leadAuditorName ?? "-"} />
-          <InfoRow label="E-Mail" value={(report.audit as any).leadAuditorEmail ?? "-"} />
-          <InfoRow label={t("actualStart")} value={report.audit.actualStart ?? "-"} />
-          <InfoRow label={t("actualEnd")} value={report.audit.actualEnd ?? "-"} />
+          <InfoRow
+            label="Leitender Prüfer"
+            value={report.audit.leadAuditorName ?? "-"}
+          />
+          <InfoRow
+            label="E-Mail"
+            value={(report.audit as any).leadAuditorEmail ?? "-"}
+          />
+          <InfoRow
+            label={t("actualStart")}
+            value={report.audit.actualStart ?? "-"}
+          />
+          <InfoRow
+            label={t("actualEnd")}
+            value={report.audit.actualEnd ?? "-"}
+          />
         </div>
         {report.audit.description && (
           <div className="pt-2 border-t">
-            <p className="text-xs font-medium text-gray-500 mb-1">Beschreibung</p>
+            <p className="text-xs font-medium text-gray-500 mb-1">
+              Beschreibung
+            </p>
             <p className="text-sm text-gray-700">{report.audit.description}</p>
           </div>
         )}
       </div>
 
       {/* Scope */}
-      {(report.audit.scopeDescription || report.audit.scopeFrameworks?.length || report.audit.scopeDepartments?.length || report.audit.scopeProcesses?.length) && (
+      {(report.audit.scopeDescription ||
+        report.audit.scopeFrameworks?.length ||
+        report.audit.scopeDepartments?.length ||
+        report.audit.scopeProcesses?.length) && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900">Geltungsbereich</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            Geltungsbereich
+          </h3>
           {report.audit.scopeDescription && (
-            <p className="text-sm text-gray-700">{report.audit.scopeDescription}</p>
+            <p className="text-sm text-gray-700">
+              {report.audit.scopeDescription}
+            </p>
           )}
           {report.audit.scopeFrameworks?.length ? (
-            <InfoRow label="Frameworks" value={report.audit.scopeFrameworks.join(", ")} />
+            <InfoRow
+              label="Frameworks"
+              value={report.audit.scopeFrameworks.join(", ")}
+            />
           ) : null}
           {report.audit.scopeDepartments?.length ? (
-            <InfoRow label="Abteilungen" value={report.audit.scopeDepartments.join(", ")} />
+            <InfoRow
+              label="Abteilungen"
+              value={report.audit.scopeDepartments.join(", ")}
+            />
           ) : null}
           {report.audit.scopeProcesses?.length ? (
-            <InfoRow label="Prozesse" value={report.audit.scopeProcesses.join(", ")} />
+            <InfoRow
+              label="Prozesse"
+              value={report.audit.scopeProcesses.join(", ")}
+            />
           ) : null}
         </div>
       )}
 
       {/* Checklist Conformance */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
-        <h3 className="text-sm font-semibold text-gray-900">Checklisten-Auswertung</h3>
+        <h3 className="text-sm font-semibold text-gray-900">
+          Checklisten-Auswertung
+        </h3>
         <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
-          <StatCard label="Konform" value={report.breakdown.reduce((s, b) => s + b.conforming, 0)} color="bg-green-50 text-green-900" />
-          <StatCard label="Nicht konform" value={report.breakdown.reduce((s, b) => s + b.nonconforming, 0)} color="bg-red-50 text-red-900" />
-          <StatCard label="Beobachtung" value={report.breakdown.reduce((s, b) => s + b.observation, 0)} color="bg-blue-50 text-blue-900" />
-          <StatCard label="Nicht anwendbar" value={report.breakdown.reduce((s, b) => s + b.not_applicable, 0)} color="bg-gray-50 text-gray-800" />
-          <StatCard label="Unbewertet" value={report.breakdown.reduce((s, b) => s + b.unevaluated, 0)} color="bg-yellow-50 text-yellow-900" />
+          <StatCard
+            label="Konform"
+            value={report.breakdown.reduce((s, b) => s + b.conforming, 0)}
+            color="bg-green-50 text-green-900"
+          />
+          <StatCard
+            label="Nicht konform"
+            value={report.breakdown.reduce((s, b) => s + b.nonconforming, 0)}
+            color="bg-red-50 text-red-900"
+          />
+          <StatCard
+            label="Beobachtung"
+            value={report.breakdown.reduce((s, b) => s + b.observation, 0)}
+            color="bg-blue-50 text-blue-900"
+          />
+          <StatCard
+            label="Nicht anwendbar"
+            value={report.breakdown.reduce((s, b) => s + b.not_applicable, 0)}
+            color="bg-gray-50 text-gray-800"
+          />
+          <StatCard
+            label="Unbewertet"
+            value={report.breakdown.reduce((s, b) => s + b.unevaluated, 0)}
+            color="bg-yellow-50 text-yellow-900"
+          />
         </div>
         <div className="pt-2 text-xs text-gray-500">
-          Konformitätsgrad (bewertete Items): <span className="font-semibold text-gray-900">{conformanceRate}%</span> ·
-          Bewertet: {totalEvaluated} / {totalItems}
+          Konformitätsgrad (bewertete Items):{" "}
+          <span className="font-semibold text-gray-900">
+            {conformanceRate}%
+          </span>{" "}
+          · Bewertet: {totalEvaluated} / {totalItems}
         </div>
         {report.checklists.length > 0 && (
           <div className="text-xs text-gray-500 pt-1">
-            Checklisten: {report.checklists.map(cl => `${cl.name} (${cl.completedItems}/${cl.totalItems})`).join(" · ")}
+            Checklisten:{" "}
+            {report.checklists
+              .map((cl) => `${cl.name} (${cl.completedItems}/${cl.totalItems})`)
+              .join(" · ")}
           </div>
         )}
       </div>
@@ -1332,12 +1686,17 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
       {/* Findings */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
         <div className="flex items-center justify-between">
-          <h3 className="text-sm font-semibold text-gray-900">Feststellungen ({report.findings.length})</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            Feststellungen ({report.findings.length})
+          </h3>
         </div>
         {Object.keys(report.findingsBySeverity).length > 0 && (
           <div className="flex flex-wrap gap-2 text-xs">
             {Object.entries(report.findingsBySeverity).map(([sev, cnt]) => (
-              <span key={sev} className={`px-2 py-1 rounded-full border ${sevColors[sev] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}>
+              <span
+                key={sev}
+                className={`px-2 py-1 rounded-full border ${sevColors[sev] ?? "bg-gray-100 text-gray-800 border-gray-200"}`}
+              >
                 {sevLabels[sev] ?? sev}: <strong>{cnt}</strong>
               </span>
             ))}
@@ -1356,8 +1715,8 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
                 onUpdated={() => {
                   // Refetch the report data after saving
                   fetch(`/api/v1/audit-mgmt/audits/${params.id}/report`)
-                    .then(r => r.json())
-                    .then(json => setReport(json.data))
+                    .then((r) => r.json())
+                    .then((json) => setReport(json.data))
                     .catch(() => {});
                 }}
               />
@@ -1373,11 +1732,16 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
             <h3 className="text-sm font-semibold text-gray-900">
               Betroffene Risiken ({report.affectedRisks.length})
             </h3>
-            <span className="text-xs text-gray-500">ISO 27001 9.2 · ISO 31000 6.6</span>
+            <span className="text-xs text-gray-500">
+              ISO 27001 9.2 · ISO 31000 6.6
+            </span>
           </div>
           <ul className="divide-y divide-gray-100">
             {report.affectedRisks.map((r) => (
-              <li key={r.riskId} className="py-3 flex items-start justify-between gap-3">
+              <li
+                key={r.riskId}
+                className="py-3 flex items-start justify-between gap-3"
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     {r.needsReassessment && (
@@ -1391,18 +1755,30 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
                       </span>
                     )}
                     {r.maxSeverity && (
-                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[r.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}>
+                      <span
+                        className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[r.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}
+                      >
                         max. {sevLabels[r.maxSeverity] ?? r.maxSeverity}
                       </span>
                     )}
-                    <span className="text-xs text-gray-400">· Status: {r.status ?? "-"}</span>
-                    {r.category && <span className="text-xs text-gray-400">· {r.category}</span>}
+                    <span className="text-xs text-gray-400">
+                      · Status: {r.status ?? "-"}
+                    </span>
+                    {r.category && (
+                      <span className="text-xs text-gray-400">
+                        · {r.category}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{r.title ?? "(ohne Titel)"}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {r.title ?? "(ohne Titel)"}
+                  </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {r.linkedFindingCount} Feststellung{r.linkedFindingCount === 1 ? "" : "en"} aus diesem Audit
+                    {r.linkedFindingCount} Feststellung
+                    {r.linkedFindingCount === 1 ? "" : "en"} aus diesem Audit
                     {r.openFindingCount > 0 && ` · ${r.openFindingCount} offen`}
-                    {r.riskScoreResidual != null && ` · Residualrisiko: ${r.riskScoreResidual}`}
+                    {r.riskScoreResidual != null &&
+                      ` · Residualrisiko: ${r.riskScoreResidual}`}
                   </p>
                 </div>
                 <Link
@@ -1424,23 +1800,37 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
             <h3 className="text-sm font-semibold text-gray-900">
               Betroffene Kontrollen ({report.affectedControls.length})
             </h3>
-            <span className="text-xs text-gray-500">ISO 27001 Annex A Wirksamkeitsnachweis</span>
+            <span className="text-xs text-gray-500">
+              ISO 27001 Annex A Wirksamkeitsnachweis
+            </span>
           </div>
           <ul className="divide-y divide-gray-100">
             {report.affectedControls.map((c) => (
-              <li key={c.controlId} className="py-2 flex items-start justify-between gap-3">
+              <li
+                key={c.controlId}
+                className="py-2 flex items-start justify-between gap-3"
+              >
                 <div className="flex-1">
                   <div className="flex items-center gap-2 flex-wrap">
                     {c.maxSeverity && (
-                      <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[c.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}>
+                      <span
+                        className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[c.maxSeverity] ?? "bg-gray-100 border-gray-200"}`}
+                      >
                         max. {sevLabels[c.maxSeverity] ?? c.maxSeverity}
                       </span>
                     )}
-                    {c.controlType && <span className="text-xs text-gray-400">{c.controlType}</span>}
+                    {c.controlType && (
+                      <span className="text-xs text-gray-400">
+                        {c.controlType}
+                      </span>
+                    )}
                   </div>
-                  <p className="text-sm font-medium text-gray-900 mt-1">{c.title ?? "(ohne Titel)"}</p>
+                  <p className="text-sm font-medium text-gray-900 mt-1">
+                    {c.title ?? "(ohne Titel)"}
+                  </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {c.openFindingCount} offene Feststellung{c.openFindingCount === 1 ? "" : "en"}
+                    {c.openFindingCount} offene Feststellung
+                    {c.openFindingCount === 1 ? "" : "en"}
                   </p>
                 </div>
                 <Link
@@ -1458,12 +1848,18 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
       {/* Nonconforming items (source of findings) */}
       {report.nonconformingItems.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
-          <h3 className="text-sm font-semibold text-gray-900">Nicht konforme Checklisten-Positionen</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            Nicht konforme Checklisten-Positionen
+          </h3>
           <ul className="divide-y divide-gray-100">
             {report.nonconformingItems.map((it) => (
               <li key={it.id} className="py-2">
                 <p className="text-sm text-gray-800">{it.question}</p>
-                {it.notes && <p className="text-xs text-gray-500 mt-1">Notiz: {it.notes}</p>}
+                {it.notes && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    Notiz: {it.notes}
+                  </p>
+                )}
               </li>
             ))}
           </ul>
@@ -1471,7 +1867,8 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
       )}
 
       <p className="text-xs text-gray-400 text-right">
-        Bericht generiert: {new Date(report.generatedAt).toLocaleString("de-DE")}
+        Bericht generiert:{" "}
+        {new Date(report.generatedAt).toLocaleString("de-DE")}
       </p>
 
       {audit.reportDocumentId && (
@@ -1486,7 +1883,15 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
   );
 }
 
-function StatCard({ label, value, color }: { label: string; value: number; color: string }) {
+function StatCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
   return (
     <div className={`rounded-md p-3 ${color}`}>
       <p className="text-xs font-medium opacity-80">{label}</p>
@@ -1551,18 +1956,37 @@ function FindingRow({
       <div className="flex items-start justify-between gap-2">
         <div className="flex-1">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[finding.severity] ?? "bg-gray-100 border-gray-200"}`}>
+            <span
+              className={`inline-block text-[10px] px-2 py-0.5 rounded-full border ${sevColors[finding.severity] ?? "bg-gray-100 border-gray-200"}`}
+            >
               {sevLabels[finding.severity] ?? finding.severity}
             </span>
-            {finding.elementId && <span className="text-xs text-gray-400">{finding.elementId}</span>}
-            <span className="text-xs text-gray-400">· Status: {finding.status}</span>
+            {finding.elementId && (
+              <span className="text-xs text-gray-400">{finding.elementId}</span>
+            )}
+            <span className="text-xs text-gray-400">
+              · Status: {finding.status}
+            </span>
           </div>
-          <p className="text-sm font-medium text-gray-900 mt-1">{finding.title}</p>
-          {finding.description && <p className="text-sm text-gray-600 mt-0.5">{finding.description}</p>}
+          <p className="text-sm font-medium text-gray-900 mt-1">
+            {finding.title}
+          </p>
+          {finding.description && (
+            <p className="text-sm text-gray-600 mt-0.5">
+              {finding.description}
+            </p>
+          )}
         </div>
         {!editing && (
-          <Button size="sm" variant="outline" onClick={() => setEditing(true)} className="print:hidden">
-            {finding.remediationPlan ? "Maßnahme bearbeiten" : "Maßnahme erfassen"}
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setEditing(true)}
+            className="print:hidden"
+          >
+            {finding.remediationPlan
+              ? "Maßnahme bearbeiten"
+              : "Maßnahme erfassen"}
           </Button>
         )}
       </div>
@@ -1570,7 +1994,9 @@ function FindingRow({
       {editing ? (
         <div className="rounded-md border border-blue-200 bg-blue-50/50 p-3 space-y-2 print:hidden">
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Maßnahmen-Plan</label>
+            <label className="text-xs font-medium text-gray-700 block mb-1">
+              Maßnahmen-Plan
+            </label>
             <textarea
               value={plan}
               onChange={(e) => setPlan(e.target.value)}
@@ -1580,7 +2006,9 @@ function FindingRow({
             />
           </div>
           <div>
-            <label className="text-xs font-medium text-gray-700 block mb-1">Fälligkeitsdatum</label>
+            <label className="text-xs font-medium text-gray-700 block mb-1">
+              Fälligkeitsdatum
+            </label>
             <input
               type="date"
               value={due}
@@ -1597,21 +2025,30 @@ function FindingRow({
                 className="mt-0.5 h-4 w-4 rounded text-blue-600"
               />
               <span className="text-xs text-gray-700">
-                <strong>Als Risk-Treatment übernehmen.</strong> Der Plan wird automatisch in das verknüpfte Risiko als formale Maßnahme eingetragen (ISO 31000 6.6). Idempotent — wiederholtes Speichern aktualisiert den bestehenden Treatment-Eintrag.
+                <strong>Als Risk-Treatment übernehmen.</strong> Der Plan wird
+                automatisch in das verknüpfte Risiko als formale Maßnahme
+                eingetragen (ISO 31000 6.6). Idempotent — wiederholtes Speichern
+                aktualisiert den bestehenden Treatment-Eintrag.
               </span>
             </label>
           )}
           <div className="flex gap-2 pt-1">
             <Button size="sm" onClick={save} disabled={saving}>
-              {saving ? <Loader2 size={12} className="animate-spin mr-1" /> : null}
+              {saving ? (
+                <Loader2 size={12} className="animate-spin mr-1" />
+              ) : null}
               Speichern
             </Button>
-            <Button size="sm" variant="ghost" onClick={() => {
-              setEditing(false);
-              setPlan(finding.remediationPlan ?? "");
-              setDue(finding.remediationDueDate ?? "");
-              setSyncToRiskTreatment(hasRiskLink);
-            }}>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setEditing(false);
+                setPlan(finding.remediationPlan ?? "");
+                setDue(finding.remediationDueDate ?? "");
+                setSyncToRiskTreatment(hasRiskLink);
+              }}
+            >
               Abbrechen
             </Button>
           </div>
@@ -1620,10 +2057,14 @@ function FindingRow({
         (finding.remediationPlan || finding.remediationDueDate) && (
           <div className="rounded-md bg-gray-50 px-3 py-2 text-xs text-gray-700 space-y-0.5">
             {finding.remediationPlan && (
-              <p><strong>Maßnahmen-Plan:</strong> {finding.remediationPlan}</p>
+              <p>
+                <strong>Maßnahmen-Plan:</strong> {finding.remediationPlan}
+              </p>
             )}
             {finding.remediationDueDate && (
-              <p><strong>Fällig:</strong> {finding.remediationDueDate}</p>
+              <p>
+                <strong>Fällig:</strong> {finding.remediationDueDate}
+              </p>
             )}
           </div>
         )

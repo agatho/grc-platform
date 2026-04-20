@@ -1,10 +1,8 @@
+import { db, finding, workItem, notification } from "@grc/db";
 import {
-  db,
-  finding,
-  workItem,
-  notification,
-} from "@grc/db";
-import { findingStatusTransitionSchema, VALID_FINDING_TRANSITIONS } from "@grc/shared";
+  findingStatusTransitionSchema,
+  VALID_FINDING_TRANSITIONS,
+} from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -24,7 +22,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);

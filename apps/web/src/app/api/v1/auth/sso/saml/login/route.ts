@@ -8,7 +8,10 @@ export async function GET(req: Request) {
   const orgId = url.searchParams.get("orgId");
 
   if (!orgId) {
-    return Response.json({ error: "orgId parameter required" }, { status: 400 });
+    return Response.json(
+      { error: "orgId parameter required" },
+      { status: 400 },
+    );
   }
 
   const [config] = await db
@@ -24,7 +27,10 @@ export async function GET(req: Request) {
     );
 
   if (!config || !config.samlSsoUrl) {
-    return Response.json({ error: "SAML SSO not configured for this organization" }, { status: 404 });
+    return Response.json(
+      { error: "SAML SSO not configured for this organization" },
+      { status: 404 },
+    );
   }
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";

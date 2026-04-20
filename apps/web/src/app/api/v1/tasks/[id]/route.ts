@@ -42,11 +42,7 @@ export async function GET(
     .from(task)
     .leftJoin(user, eq(task.assigneeId, user.id))
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!row) {
@@ -71,11 +67,7 @@ export async function PUT(
     .select()
     .from(task)
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!existing) {
@@ -142,11 +134,7 @@ export async function PUT(
       .update(task)
       .set(updateValues)
       .where(
-        and(
-          eq(task.id, id),
-          eq(task.orgId, ctx.orgId),
-          isNull(task.deletedAt),
-        ),
+        and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
       )
       .returning();
 
@@ -180,11 +168,7 @@ export async function DELETE(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(task.id, id),
-          eq(task.orgId, ctx.orgId),
-          isNull(task.deletedAt),
-        ),
+        and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
       )
       .returning({ id: task.id });
 

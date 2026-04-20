@@ -2,22 +2,52 @@ import { z } from "zod";
 
 // Sprint 64: Identity und SaaS Connectors Zod schemas
 
-export const identityProviderValues = ["entra_id", "google_workspace", "okta", "generic_oidc", "hr_system"] as const;
+export const identityProviderValues = [
+  "entra_id",
+  "google_workspace",
+  "okta",
+  "generic_oidc",
+  "hr_system",
+] as const;
 
 export const identityTestCategoryValues = [
-  "mfa_enforcement", "stale_accounts", "password_policy", "access_review",
-  "privileged_accounts", "guest_access", "conditional_access", "dlp",
-  "retention", "onboarding", "offboarding",
+  "mfa_enforcement",
+  "stale_accounts",
+  "password_policy",
+  "access_review",
+  "privileged_accounts",
+  "guest_access",
+  "conditional_access",
+  "dlp",
+  "retention",
+  "onboarding",
+  "offboarding",
 ] as const;
 
-export const saasPlatformValues = ["m365", "google_workspace", "hr_system"] as const;
+export const saasPlatformValues = [
+  "m365",
+  "google_workspace",
+  "hr_system",
+] as const;
 
 export const saasCheckTypeValues = [
-  "dlp_policy", "retention_policy", "sharing_policy", "external_sharing",
-  "mailbox_audit", "drive_sharing", "onboarding_sla", "offboarding_sla",
+  "dlp_policy",
+  "retention_policy",
+  "sharing_policy",
+  "external_sharing",
+  "mailbox_audit",
+  "drive_sharing",
+  "onboarding_sla",
+  "offboarding_sla",
 ] as const;
 
-export const saasComplianceStatusValues = ["compliant", "non_compliant", "partial", "error", "not_applicable"] as const;
+export const saasComplianceStatusValues = [
+  "compliant",
+  "non_compliant",
+  "partial",
+  "error",
+  "not_applicable",
+] as const;
 
 export const syncIntervalValues = ["hourly", "daily", "weekly"] as const;
 
@@ -86,5 +116,9 @@ export const saasComplianceQuerySchema = z.object({
 
 export const triggerIdentitySyncSchema = z.object({
   configId: z.string().uuid(),
-  categories: z.array(z.enum(identityTestCategoryValues)).min(1).max(20).optional(),
+  categories: z
+    .array(z.enum(identityTestCategoryValues))
+    .min(1)
+    .max(20)
+    .optional(),
 });

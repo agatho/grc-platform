@@ -1,6 +1,11 @@
 // Sprint 64: Identity und SaaS Connectors types
 
-export type SaasIdentityProvider = "entra_id" | "google_workspace" | "okta" | "generic_oidc" | "hr_system";
+export type SaasIdentityProvider =
+  | "entra_id"
+  | "google_workspace"
+  | "okta"
+  | "generic_oidc"
+  | "hr_system";
 
 export type IdentityTestCategory =
   | "mfa_enforcement"
@@ -27,7 +32,12 @@ export type SaasCheckType =
   | "onboarding_sla"
   | "offboarding_sla";
 
-export type SaasComplianceStatus = "compliant" | "non_compliant" | "partial" | "error" | "not_applicable";
+export type SaasComplianceStatus =
+  | "compliant"
+  | "non_compliant"
+  | "partial"
+  | "error"
+  | "not_applicable";
 
 export type SyncInterval = "hourly" | "daily" | "weekly";
 

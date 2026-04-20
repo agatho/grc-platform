@@ -1,8 +1,4 @@
-import {
-  db,
-  customDashboard,
-  customDashboardWidget,
-} from "@grc/db";
+import { db, customDashboard, customDashboardWidget } from "@grc/db";
 import { duplicateDashboardSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -37,10 +33,7 @@ export async function POST(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (
-    source.visibility === "personal" &&
-    source.userId !== ctx.userId
-  ) {
+  if (source.visibility === "personal" && source.userId !== ctx.userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 

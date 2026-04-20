@@ -14,22 +14,51 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const ctxA = url.searchParams.get("a");
   const ctxB = url.searchParams.get("b");
-  if (!ctxA || !ctxB) return Response.json({ error: "Both context IDs (a and b) required" }, { status: 400 });
+  if (!ctxA || !ctxB)
+    return Response.json(
+      { error: "Both context IDs (a and b) required" },
+      { status: 400 },
+    );
 
-  const overridesA = await db.select().from(eamContextAttribute)
+  const overridesA = await db
+    .select()
+    .from(eamContextAttribute)
     .where(eq(eamContextAttribute.contextId, ctxA));
-  const overridesB = await db.select().from(eamContextAttribute)
+  const overridesB = await db
+    .select()
+    .from(eamContextAttribute)
     .where(eq(eamContextAttribute.contextId, ctxB));
 
-  const allElementIds = new Set([...overridesA.map((o) => o.elementId), ...overridesB.map((o) => o.elementId)]);
-  const diffs: Array<{ elementId: string; changes: Array<{ field: string; valueA: string | null; valueB: string | null }> }> = [];
+  const allElementIds = new Set([
+    ...overridesA.map((o) => o.elementId),
+    ...overridesB.map((o) => o.elementId),
+  ]);
+  const diffs: Array<{
+    elementId: string;
+    changes: Array<{
+      field: string;
+      valueA: string | null;
+      valueB: string | null;
+    }>;
+  }> = [];
 
-  const fields = ["functionalFit", "technicalFit", "timeClassification", "sixRStrategy", "businessCriticality", "lifecycleStatus"] as const;
+  const fields = [
+    "functionalFit",
+    "technicalFit",
+    "timeClassification",
+    "sixRStrategy",
+    "businessCriticality",
+    "lifecycleStatus",
+  ] as const;
 
   for (const elemId of allElementIds) {
     const a = overridesA.find((o) => o.elementId === elemId);
     const b = overridesB.find((o) => o.elementId === elemId);
-    const changes: Array<{ field: string; valueA: string | null; valueB: string | null }> = [];
+    const changes: Array<{
+      field: string;
+      valueA: string | null;
+      valueB: string | null;
+    }> = [];
 
     for (const field of fields) {
       const valA = a?.[field] ?? null;
@@ -40,5 +69,7 @@ export async function GET(req: Request) {
     if (changes.length > 0) diffs.push({ elementId: elemId, changes });
   }
 
-  return Response.json({ data: { contextA: ctxA, contextB: ctxB, diffs, totalChanged: diffs.length } });
+  return Response.json({
+    data: { contextA: ctxA, contextB: ctxB, diffs, totalChanged: diffs.length },
+  });
 }

@@ -36,7 +36,9 @@ test.describe("Sidebar Navigation", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(2000);
 
-    const catalogLink = page.getByRole("link", { name: /katalog|catalog/i }).first();
+    const catalogLink = page
+      .getByRole("link", { name: /katalog|catalog/i })
+      .first();
     await catalogLink.click();
     await page.waitForTimeout(2000);
 

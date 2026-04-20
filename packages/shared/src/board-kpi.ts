@@ -59,9 +59,7 @@ export function computeAssuranceScore(
   // Data quality: ratio of measured vs estimated
   const totalMeasurable = data.measuredCount + data.estimatedCount;
   const dataQuality =
-    totalMeasurable > 0
-      ? (data.measuredCount / totalMeasurable) * 100
-      : 0;
+    totalMeasurable > 0 ? (data.measuredCount / totalMeasurable) * 100 : 0;
 
   // Assessment source: 3rd line weighted highest
   const assessmentSource =
@@ -156,9 +154,7 @@ export function computeSecurityPosture(
   factors: PostureFactors;
 } {
   const assetCoverage =
-    data.totalAssets > 0
-      ? (data.assetsWithPRQ / data.totalAssets) * 100
-      : 0;
+    data.totalAssets > 0 ? (data.assetsWithPRQ / data.totalAssets) * 100 : 0;
 
   const maturity = (data.avgMaturity / 5) * 100;
 
@@ -171,10 +167,7 @@ export function computeSecurityPosture(
 
   const incidentTTR = Math.max(0, 100 - data.avgTTRDays * 2);
 
-  const freshness = Math.max(
-    0,
-    100 - data.avgAssessmentAgeDays / 3.65,
-  );
+  const freshness = Math.max(0, 100 - data.avgAssessmentAgeDays / 3.65);
 
   const soaCompleteness =
     data.totalAnnexAControls > 0

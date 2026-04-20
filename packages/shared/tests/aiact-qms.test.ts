@@ -37,7 +37,11 @@ describe("QMS counts + maturity", () => {
     expect(computeQmsMaturity(allTrueQms)).toBe(100);
   });
   it("partial", () => {
-    const partial = { ...allFalseQms, riskManagementProcedure: true, humanOversightProcedure: true };
+    const partial = {
+      ...allFalseQms,
+      riskManagementProcedure: true,
+      humanOversightProcedure: true,
+    };
     expect(computeQmsMaturity(partial)).toBe(20);
   });
 });
@@ -48,7 +52,10 @@ describe("assessQmsReadinessForCe", () => {
     expect(r.readyForCe).toBe(true);
   });
   it("not ready when critical missing (humanOversight)", () => {
-    const r = assessQmsReadinessForCe({ ...allTrueQms, humanOversightProcedure: false });
+    const r = assessQmsReadinessForCe({
+      ...allTrueQms,
+      humanOversightProcedure: false,
+    });
     expect(r.readyForCe).toBe(false);
     expect(r.reasoning).toContain("humanOversight");
   });

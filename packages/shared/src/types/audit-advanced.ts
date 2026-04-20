@@ -38,7 +38,13 @@ export interface AuditWorkingPaper {
 export interface AuditWpReviewNote {
   id: string;
   workingPaperId: string;
-  section: "objective" | "scope" | "procedure" | "results" | "conclusion" | "general";
+  section:
+    | "objective"
+    | "scope"
+    | "procedure"
+    | "results"
+    | "conclusion"
+    | "general";
   noteText: string;
   severity: "informational" | "requires_action" | "blocking";
   status: "open" | "addressed" | "closed";
@@ -147,10 +153,19 @@ export interface AuditQaReview {
 export interface AuditQaChecklistItem {
   id: string;
   qaReviewId: string;
-  section: "planning" | "fieldwork" | "reporting" | "communication" | "documentation";
+  section:
+    | "planning"
+    | "fieldwork"
+    | "reporting"
+    | "communication"
+    | "documentation";
   itemNumber: number;
   itemText: string;
-  compliance?: "compliant" | "partially_compliant" | "non_compliant" | "not_applicable";
+  compliance?:
+    | "compliant"
+    | "partially_compliant"
+    | "non_compliant"
+    | "not_applicable";
   weight: number;
   reviewerComment?: string;
 }

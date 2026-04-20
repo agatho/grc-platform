@@ -46,9 +46,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     questions = await db
       .select()
       .from(questionnaireQuestion)
-      .where(
-        eq(questionnaireQuestion.sectionId, sectionIds[0]),
-      )
+      .where(eq(questionnaireQuestion.sectionId, sectionIds[0]))
       .orderBy(asc(questionnaireQuestion.sortOrder));
 
     // Fetch all questions for all sections

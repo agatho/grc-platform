@@ -97,7 +97,9 @@ function EsgYoyInner() {
           >
             <option value="">Alle ESRS-Standards</option>
             {standards.map((s) => (
-              <option key={s} value={s}>{s}</option>
+              <option key={s} value={s}>
+                {s}
+              </option>
             ))}
           </select>
         </div>
@@ -118,12 +120,24 @@ function EsgYoyInner() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Metrik</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">ESRS</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Aktueller Wert</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Vorjahreswert</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">Ver\u00e4nderung (%)</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Erkl\u00e4rung</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Metrik
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      ESRS
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                      Aktueller Wert
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                      Vorjahreswert
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                      Ver\u00e4nderung (%)
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Erkl\u00e4rung
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -131,16 +145,25 @@ function EsgYoyInner() {
                     <tr key={m.id} className="hover:bg-gray-50">
                       <td className="px-4 py-3 font-medium">{m.metricName}</td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className="font-mono text-xs">{m.esrsStandard}</Badge>
+                        <Badge variant="outline" className="font-mono text-xs">
+                          {m.esrsStandard}
+                        </Badge>
                       </td>
                       <td className="px-4 py-3 text-right text-gray-700">
-                        {m.currentValue != null ? `${m.currentValue} ${m.unit}` : "--"}
+                        {m.currentValue != null
+                          ? `${m.currentValue} ${m.unit}`
+                          : "--"}
                       </td>
                       <td className="px-4 py-3 text-right text-gray-500">
-                        {m.previousValue != null ? `${m.previousValue} ${m.unit}` : "--"}
+                        {m.previousValue != null
+                          ? `${m.previousValue} ${m.unit}`
+                          : "--"}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <ChangeCell changePercent={m.changePercent} direction={m.direction} />
+                        <ChangeCell
+                          changePercent={m.changePercent}
+                          direction={m.direction}
+                        />
                       </td>
                       <td className="px-4 py-3 text-gray-500 text-xs max-w-xs truncate">
                         {m.explanation ?? "--"}

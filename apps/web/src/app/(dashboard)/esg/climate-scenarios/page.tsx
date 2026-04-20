@@ -37,8 +37,10 @@ interface ClimateScenario {
 
 const PATHWAY_COLORS: Record<string, string> = {
   "1.5": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200",
-  "2.0": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
-  "3.0": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
+  "2.0":
+    "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200",
+  "3.0":
+    "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200",
   "4.0": "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200",
 };
 
@@ -56,14 +58,25 @@ const HORIZON_LABELS: Record<string, string> = {
   long: "Langfristig (2040-2050+)",
 };
 
-function formatCurrency(min: number | null, max: number | null, currency: string) {
+function formatCurrency(
+  min: number | null,
+  max: number | null,
+  currency: string,
+) {
   if (!min && !max) return "-";
-  const fmt = new Intl.NumberFormat("de-DE", { style: "currency", currency, maximumFractionDigits: 0 });
+  const fmt = new Intl.NumberFormat("de-DE", {
+    style: "currency",
+    currency,
+    maximumFractionDigits: 0,
+  });
   if (min && max) return `${fmt.format(min)} - ${fmt.format(max)}`;
   return fmt.format(min || max || 0);
 }
 
-function riskScore(likelihood: number | null, impact: number | null): number | null {
+function riskScore(
+  likelihood: number | null,
+  impact: number | null,
+): number | null {
   if (!likelihood || !impact) return null;
   return likelihood * impact;
 }
@@ -89,14 +102,17 @@ function ClimateScenarioInner() {
   const t = useTranslations();
   const [data, setData] = useState<ClimateScenario[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<"all" | "physical" | "transition">("all");
+  const [filter, setFilter] = useState<"all" | "physical" | "transition">(
+    "all",
+  );
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const url = filter === "all"
-        ? "/api/v1/esg/climate-scenarios?limit=100"
-        : `/api/v1/esg/climate-scenarios?limit=100&scenario_type=${filter}`;
+      const url =
+        filter === "all"
+          ? "/api/v1/esg/climate-scenarios?limit=100"
+          : `/api/v1/esg/climate-scenarios?limit=100&scenario_type=${filter}`;
       const res = await fetch(url);
       if (res.ok) {
         const json = await res.json();
@@ -113,8 +129,12 @@ function ClimateScenarioInner() {
 
   const physical = data.filter((s) => s.scenario_type === "physical");
   const transition = data.filter((s) => s.scenario_type === "transition");
-  const highRisk = data.filter((s) => riskScore(s.likelihood_score, s.impact_score)! >= 16);
-  const assessed = data.filter((s) => s.status === "assessed" || s.status === "mitigated");
+  const highRisk = data.filter(
+    (s) => riskScore(s.likelihood_score, s.impact_score)! >= 16,
+  );
+  const assessed = data.filter(
+    (s) => s.status === "assessed" || s.status === "mitigated",
+  );
 
   const pathwayDistribution = ["1.5", "2.0", "3.0", "4.0"].map((p) => ({
     pathway: `${p}°C`,
@@ -134,8 +154,15 @@ function ClimateScenarioInner() {
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`mr-2 h-4 w-4 ${loading ? "animate-spin" : ""}`}
+            />
             Aktualisieren
           </Button>
         </div>
@@ -169,14 +196,19 @@ function ClimateScenarioInner() {
             <ShieldAlert className="h-4 w-4 text-red-500" />
             Hohes Risiko ({"\u2265"}16)
           </div>
-          <p className="mt-1 text-2xl font-bold text-red-600">{highRisk.length}</p>
+          <p className="mt-1 text-2xl font-bold text-red-600">
+            {highRisk.length}
+          </p>
         </div>
       </div>
 
       {/* Temperature Pathway Distribution */}
       <div className="grid gap-4 md:grid-cols-4">
         {pathwayDistribution.map((p) => (
-          <div key={p.pathway} className={`rounded-lg border p-3 text-center ${PATHWAY_COLORS[p.pathway.replace("°C", "")] ?? ""}`}>
+          <div
+            key={p.pathway}
+            className={`rounded-lg border p-3 text-center ${PATHWAY_COLORS[p.pathway.replace("°C", "")] ?? ""}`}
+          >
             <p className="text-lg font-bold">{p.pathway}</p>
             <p className="text-sm">{p.count} Szenarien</p>
           </div>
@@ -192,7 +224,11 @@ function ClimateScenarioInner() {
             size="sm"
             onClick={() => setFilter(f)}
           >
-            {f === "all" ? "Alle" : f === "physical" ? "Physisch" : "Transition"}
+            {f === "all"
+              ? "Alle"
+              : f === "physical"
+                ? "Physisch"
+                : "Transition"}
           </Button>
         ))}
       </div>
@@ -218,7 +254,9 @@ function ClimateScenarioInner() {
                   <th className="p-3 text-center font-medium">Pfad</th>
                   <th className="p-3 text-left font-medium">Zeithorizont</th>
                   <th className="p-3 text-center font-medium">Risiko (L*I)</th>
-                  <th className="p-3 text-right font-medium">Finanzielle Auswirkung</th>
+                  <th className="p-3 text-right font-medium">
+                    Finanzielle Auswirkung
+                  </th>
                   <th className="p-3 text-center font-medium">Status</th>
                 </tr>
               </thead>
@@ -226,37 +264,56 @@ function ClimateScenarioInner() {
                 {data.map((s) => {
                   const score = riskScore(s.likelihood_score, s.impact_score);
                   return (
-                    <tr key={s.id} className="border-b hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={s.id}
+                      className="border-b hover:bg-muted/30 transition-colors"
+                    >
                       <td className="p-3">
                         <div className="font-medium">{s.name}</div>
                         {s.description && (
-                          <div className="text-xs text-muted-foreground line-clamp-1 max-w-xs">{s.description}</div>
+                          <div className="text-xs text-muted-foreground line-clamp-1 max-w-xs">
+                            {s.description}
+                          </div>
                         )}
                       </td>
                       <td className="p-3">
                         <Badge variant="outline">
-                          {s.scenario_type === "physical" ? "Physisch" : "Transition"}
+                          {s.scenario_type === "physical"
+                            ? "Physisch"
+                            : "Transition"}
                         </Badge>
                       </td>
                       <td className="p-3 capitalize">{s.risk_category}</td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${PATHWAY_COLORS[s.temperature_pathway] ?? ""}`}>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${PATHWAY_COLORS[s.temperature_pathway] ?? ""}`}
+                        >
                           {s.temperature_pathway}°C
                         </span>
                       </td>
-                      <td className="p-3 text-xs">{HORIZON_LABELS[s.time_horizon] ?? s.time_horizon}</td>
+                      <td className="p-3 text-xs">
+                        {HORIZON_LABELS[s.time_horizon] ?? s.time_horizon}
+                      </td>
                       <td className={`p-3 text-center ${riskColor(score)}`}>
-                        {score ? `${score} (${s.likelihood_score}×${s.impact_score})` : "-"}
+                        {score
+                          ? `${score} (${s.likelihood_score}×${s.impact_score})`
+                          : "-"}
                       </td>
                       <td className="p-3 text-right text-xs">
                         {formatCurrency(
-                          s.financial_impact_min ? Number(s.financial_impact_min) : null,
-                          s.financial_impact_max ? Number(s.financial_impact_max) : null,
+                          s.financial_impact_min
+                            ? Number(s.financial_impact_min)
+                            : null,
+                          s.financial_impact_max
+                            ? Number(s.financial_impact_max)
+                            : null,
                           s.financial_impact_currency,
                         )}
                       </td>
                       <td className="p-3 text-center">
-                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? ""}`}>
+                        <span
+                          className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_COLORS[s.status] ?? ""}`}
+                        >
                           {s.status}
                         </span>
                       </td>

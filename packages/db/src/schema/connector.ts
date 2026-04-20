@@ -30,24 +30,34 @@ export const connectorTypeDefinition = pgTable("connector_type_definition", {
   // JSON-Schema fuer Config-Fields des Connectors
   configSchema: jsonb("config_schema").default({}),
   isAvailable: boolean("is_available").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const connectorInstance = pgTable("connector_instance", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   // FK auf connectorTypeDefinition.connectorType -- Drizzle unterstuetzt
   // referenzierte Non-UUID-Keys, hier via Text-Match
-  connectorType: varchar("connector_type", { length: 50 }).notNull().references(() => connectorTypeDefinition.connectorType),
+  connectorType: varchar("connector_type", { length: 50 })
+    .notNull()
+    .references(() => connectorTypeDefinition.connectorType),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   // oauth2 | api_key | basic_auth | certificate | none
-  authMethod: varchar("auth_method", { length: 30 }).default("oauth2").notNull(),
+  authMethod: varchar("auth_method", { length: 30 })
+    .default("oauth2")
+    .notNull(),
   config: jsonb("config").default({}).notNull(),
   // Verschluesselt mit CONNECTOR_ENCRYPTION_KEY (env-var, ADR-018)
   credentialsEncrypted: text("credentials_encrypted"),
   // pull | push | bidirectional
-  syncDirection: varchar("sync_direction", { length: 20 }).default("pull").notNull(),
+  syncDirection: varchar("sync_direction", { length: 20 })
+    .default("pull")
+    .notNull(),
   // manual | hourly | daily | weekly | realtime
   syncFrequency: varchar("sync_frequency", { length: 20 }).default("daily"),
   lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
@@ -55,14 +65,20 @@ export const connectorInstance = pgTable("connector_instance", {
   lastSyncRecords: integer("last_sync_records"),
   lastError: text("last_error"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
 export const connectorFieldMapping = pgTable("connector_field_mapping", {
   id: uuid("id").primaryKey().defaultRandom(),
-  connectorId: uuid("connector_id").notNull().references(() => connectorInstance.id, { onDelete: "cascade" }),
+  connectorId: uuid("connector_id")
+    .notNull()
+    .references(() => connectorInstance.id, { onDelete: "cascade" }),
   sourceField: varchar("source_field", { length: 255 }).notNull(),
   targetEntity: varchar("target_entity", { length: 50 }).notNull(),
   targetField: varchar("target_field", { length: 100 }).notNull(),
@@ -70,13 +86,19 @@ export const connectorFieldMapping = pgTable("connector_field_mapping", {
   transformation: varchar("transformation", { length: 50 }).default("direct"),
   transformConfig: jsonb("transform_config").default({}),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const connectorSyncLog = pgTable("connector_sync_log", {
   id: uuid("id").primaryKey().defaultRandom(),
-  connectorId: uuid("connector_id").notNull().references(() => connectorInstance.id, { onDelete: "cascade" }),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  connectorId: uuid("connector_id")
+    .notNull()
+    .references(() => connectorInstance.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   // full | incremental | delta | repair
   syncType: varchar("sync_type", { length: 20 }).default("full").notNull(),
   // success | partial | failed | cancelled

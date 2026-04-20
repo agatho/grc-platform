@@ -234,7 +234,9 @@ risk:1:desc,risk,1,description,Beschreibung,Description`;
   });
 
   it("should throw for empty CSV", () => {
-    expect(() => parseCsv("")).toThrow("requires header and at least one data row");
+    expect(() => parseCsv("")).toThrow(
+      "requires header and at least one data row",
+    );
   });
 
   it("should handle quoted values with commas", () => {

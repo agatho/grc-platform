@@ -147,10 +147,7 @@ export async function GET(req: Request) {
 
   const view = requestedView === "all" && canViewAll ? "all" : "my";
 
-  const conditions: SQL[] = [
-    eq(task.orgId, ctx.orgId),
-    isNull(task.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(task.orgId, ctx.orgId), isNull(task.deletedAt)];
 
   // 'my' view: filter to assigned tasks
   if (view === "my") {
@@ -172,10 +169,7 @@ export async function GET(req: Request) {
   const priority = searchParams.get("priority");
   if (priority) {
     conditions.push(
-      eq(
-        task.priority,
-        priority as "low" | "medium" | "high" | "critical",
-      ),
+      eq(task.priority, priority as "low" | "medium" | "high" | "critical"),
     );
   }
 
@@ -199,9 +193,7 @@ export async function GET(req: Request) {
   // Overdue filter
   if (searchParams.get("overdue") === "true") {
     conditions.push(lt(task.dueDate, new Date()));
-    conditions.push(
-      sql`${task.status} NOT IN ('done', 'cancelled')`,
-    );
+    conditions.push(sql`${task.status} NOT IN ('done', 'cancelled')`);
   }
 
   // Source entity filters

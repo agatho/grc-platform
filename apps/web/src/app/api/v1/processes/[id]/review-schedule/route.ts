@@ -141,10 +141,7 @@ export async function POST(
     }
   });
 
-  return Response.json(
-    { data: result },
-    { status: existing ? 200 : 201 },
-  );
+  return Response.json({ data: result }, { status: existing ? 200 : 201 });
 }
 
 // DELETE /api/v1/processes/:id/review-schedule — Deactivate schedule
@@ -178,7 +175,10 @@ export async function DELETE(
 
   // Find active schedule
   const [existing] = await db
-    .select({ id: processReviewSchedule.id, isActive: processReviewSchedule.isActive })
+    .select({
+      id: processReviewSchedule.id,
+      isActive: processReviewSchedule.isActive,
+    })
     .from(processReviewSchedule)
     .where(
       and(
@@ -188,7 +188,10 @@ export async function DELETE(
     );
 
   if (!existing) {
-    return Response.json({ error: "Review schedule not found" }, { status: 404 });
+    return Response.json(
+      { error: "Review schedule not found" },
+      { status: 404 },
+    );
   }
 
   if (!existing.isActive) {

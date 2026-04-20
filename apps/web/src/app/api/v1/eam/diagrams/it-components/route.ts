@@ -11,14 +11,25 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const components = await db.select().from(architectureElement)
-    .where(and(eq(architectureElement.orgId, ctx.orgId), eq(architectureElement.layer, "technology")));
+  const components = await db
+    .select()
+    .from(architectureElement)
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        eq(architectureElement.layer, "technology"),
+      ),
+    );
 
-  const relationships = await db.select().from(architectureRelationship)
-    .where(and(
-      eq(architectureRelationship.orgId, ctx.orgId),
-      eq(architectureRelationship.relationshipType, "composes"),
-    ));
+  const relationships = await db
+    .select()
+    .from(architectureRelationship)
+    .where(
+      and(
+        eq(architectureRelationship.orgId, ctx.orgId),
+        eq(architectureRelationship.relationshipType, "composes"),
+      ),
+    );
 
   // Build hierarchy
   const childMap = new Map<string, string[]>();

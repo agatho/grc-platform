@@ -41,12 +41,14 @@ ARCTOS-Extension:
 ```
 
 **Pflicht-Felder**:
+
 - `type` — URI identifiziert Error-Kategorie (stable, dokumentiert)
 - `title` — human-lesbare Kurzform
 - `status` — HTTP-Status als Nummer
 - `requestId` — aus `X-Request-ID`-Header, fuer Support-Tickets
 
 **Optional**:
+
 - `detail` — Long-Form-Beschreibung
 - `instance` — Pfad der Request
 - `errors` — Array bei Validierungs-Fehlern
@@ -98,18 +100,21 @@ Default-Fehlerseite mehr.
 ## Consequences
 
 ### Positiv
+
 - Einheitliches Client-Side-Error-Handling: eine Zeile, alle Errors
 - Bessere Support-Tickets (requestId immer dabei)
 - OpenAPI kann Error-Shapes zentral referenzieren
 - SDK-Generierung (kuenftig) wird trivialer
 
 ### Negativ
+
 - 1034 Endpoints muessen migriert werden -- grosser Refactor, in Phasen
 - Breaking Change fuer aktuelle Frontend-Error-Handler -> v2 fuer Clients?
   Nein: Frontend wird parallel migriert, Error-Shape-Aenderung ist intern
 - Log-Tooling muss `problem+json` parsen koennen
 
 ### Neutral
+
 - Error-Types-URL muss dokumentiert werden (`docs/api-errors.md`)
 - i18n fuer `title`/`detail` — Entscheidung: Accept-Language-Header
   respektieren, Fallback DE

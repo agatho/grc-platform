@@ -23,7 +23,8 @@ export function PersonalDataTriggerBanner({
       <span className="text-amber-500 text-lg">\u26A0\uFE0F</span>
       <div className="flex-1">
         <p className="text-sm font-medium text-amber-800">
-          {labels?.message ?? "Data Breach workflow has been initiated. DPO has been notified."}
+          {labels?.message ??
+            "Data Breach workflow has been initiated. DPO has been notified."}
         </p>
       </div>
       {dataBreachId && (

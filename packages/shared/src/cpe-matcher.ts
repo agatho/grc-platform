@@ -13,7 +13,7 @@
 
 export interface ParsedCpe {
   raw: string;
-  part: string;      // a=application, h=hardware, o=os
+  part: string; // a=application, h=hardware, o=os
   vendor: string;
   product: string;
   version: string;
@@ -94,7 +94,9 @@ export function cpeMatches(cveCpes: string[], assetCpe: string): boolean {
 /**
  * Extract vendor and product from a CPE URI string.
  */
-export function extractCpeVendorProduct(cpeUri: string): { vendor: string; product: string; version: string } | null {
+export function extractCpeVendorProduct(
+  cpeUri: string,
+): { vendor: string; product: string; version: string } | null {
   const parsed = parseCpe(cpeUri);
   if (!parsed) return null;
   return {
@@ -107,7 +109,9 @@ export function extractCpeVendorProduct(cpeUri: string): { vendor: string; produ
 /**
  * Calculate CVSS severity from score.
  */
-export function cvssToSeverity(score: number): "critical" | "high" | "medium" | "low" | "none" {
+export function cvssToSeverity(
+  score: number,
+): "critical" | "high" | "medium" | "low" | "none" {
   if (score >= 9.0) return "critical";
   if (score >= 7.0) return "high";
   if (score >= 4.0) return "medium";

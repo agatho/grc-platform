@@ -11,7 +11,13 @@ export async function GET(req: Request) {
   const { page, limit, offset } = paginate(req);
   const where = eq(frameworkCoverageSnapshot.orgId, ctx.orgId);
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(frameworkCoverageSnapshot).where(where).orderBy(desc(frameworkCoverageSnapshot.snapshotDate)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(frameworkCoverageSnapshot)
+      .where(where)
+      .orderBy(desc(frameworkCoverageSnapshot.snapshotDate))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(frameworkCoverageSnapshot).where(where),
   ]);
   return paginatedResponse(items, total, page, limit);

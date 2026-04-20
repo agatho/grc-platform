@@ -301,7 +301,10 @@ function CommentItem({
 
   return (
     <div
-      className={cn("space-y-2", depth > 0 && "ml-8 border-l-2 border-gray-100 pl-4")}
+      className={cn(
+        "space-y-2",
+        depth > 0 && "ml-8 border-l-2 border-gray-100 pl-4",
+      )}
     >
       <div
         className={cn(
@@ -321,7 +324,10 @@ function CommentItem({
           </span>
           <span>{new Date(comment.createdAt).toLocaleString()}</span>
           {comment.isResolved && (
-            <Badge variant="secondary" className="text-[10px] bg-green-100 text-green-700">
+            <Badge
+              variant="secondary"
+              className="text-[10px] bg-green-100 text-green-700"
+            >
               {t("comments.resolved")}
             </Badge>
           )}

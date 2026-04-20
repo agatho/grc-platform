@@ -1,9 +1,6 @@
 import { db, process, auditLog, userOrganizationRole } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  bulkActionSchema,
-  PROCESS_STATUS_TRANSITIONS,
-} from "@grc/shared";
+import { bulkActionSchema, PROCESS_STATUS_TRANSITIONS } from "@grc/shared";
 import type { ProcessStatus } from "@grc/shared";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -86,9 +83,7 @@ export async function POST(req: Request) {
             await tx
               .update(process)
               .set(updateData)
-              .where(
-                and(eq(process.id, pid), eq(process.orgId, ctx.orgId)),
-              );
+              .where(and(eq(process.id, pid), eq(process.orgId, ctx.orgId)));
             break;
           }
 
@@ -100,9 +95,7 @@ export async function POST(req: Request) {
                 updatedBy: ctx.userId,
                 updatedAt: new Date(),
               })
-              .where(
-                and(eq(process.id, pid), eq(process.orgId, ctx.orgId)),
-              );
+              .where(and(eq(process.id, pid), eq(process.orgId, ctx.orgId)));
             break;
           }
 
@@ -114,9 +107,7 @@ export async function POST(req: Request) {
                 updatedBy: ctx.userId,
                 updatedAt: new Date(),
               })
-              .where(
-                and(eq(process.id, pid), eq(process.orgId, ctx.orgId)),
-              );
+              .where(and(eq(process.id, pid), eq(process.orgId, ctx.orgId)));
             break;
           }
 
@@ -128,9 +119,7 @@ export async function POST(req: Request) {
                 updatedBy: ctx.userId,
                 updatedAt: new Date(),
               })
-              .where(
-                and(eq(process.id, pid), eq(process.orgId, ctx.orgId)),
-              );
+              .where(and(eq(process.id, pid), eq(process.orgId, ctx.orgId)));
             break;
           }
 
@@ -143,9 +132,7 @@ export async function POST(req: Request) {
                 updatedBy: ctx.userId,
                 updatedAt: new Date(),
               })
-              .where(
-                and(eq(process.id, pid), eq(process.orgId, ctx.orgId)),
-              );
+              .where(and(eq(process.id, pid), eq(process.orgId, ctx.orgId)));
             break;
           }
         }

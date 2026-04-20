@@ -4,14 +4,19 @@ import * as React from "react";
 
 import { cn } from "@grc/ui";
 
-export interface SwitchProps
-  extends Omit<React.ButtonHTMLAttributes<HTMLButtonElement>, "onChange"> {
+export interface SwitchProps extends Omit<
+  React.ButtonHTMLAttributes<HTMLButtonElement>,
+  "onChange"
+> {
   checked?: boolean;
   onCheckedChange?: (checked: boolean) => void;
 }
 
 const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
-  ({ className, checked = false, onCheckedChange, disabled, ...props }, ref) => {
+  (
+    { className, checked = false, onCheckedChange, disabled, ...props },
+    ref,
+  ) => {
     return (
       <button
         type="button"
@@ -24,7 +29,7 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
           checked
             ? "bg-blue-600 dark:bg-blue-500"
             : "bg-slate-200 dark:bg-slate-800",
-          className
+          className,
         )}
         onClick={() => onCheckedChange?.(!checked)}
         {...props}
@@ -32,12 +37,12 @@ const Switch = React.forwardRef<HTMLButtonElement, SwitchProps>(
         <span
           className={cn(
             "pointer-events-none block h-4 w-4 rounded-full bg-white shadow-lg ring-0 transition-transform dark:bg-slate-950",
-            checked ? "translate-x-4" : "translate-x-0"
+            checked ? "translate-x-4" : "translate-x-0",
           )}
         />
       </button>
     );
-  }
+  },
 );
 Switch.displayName = "Switch";
 

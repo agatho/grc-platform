@@ -11,12 +11,16 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const suggestions = await db.select().from(eamObjectSuggestion)
-    .where(and(
-      eq(eamObjectSuggestion.userId, ctx.userId),
-      eq(eamObjectSuggestion.orgId, ctx.orgId),
-      eq(eamObjectSuggestion.dismissed, false),
-    ))
+  const suggestions = await db
+    .select()
+    .from(eamObjectSuggestion)
+    .where(
+      and(
+        eq(eamObjectSuggestion.userId, ctx.userId),
+        eq(eamObjectSuggestion.orgId, ctx.orgId),
+        eq(eamObjectSuggestion.dismissed, false),
+      ),
+    )
     .limit(50);
 
   return Response.json({ data: suggestions });

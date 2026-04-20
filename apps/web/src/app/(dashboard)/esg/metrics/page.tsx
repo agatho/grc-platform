@@ -58,11 +58,18 @@ function MetricsInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("metrics.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("metrics.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("metrics.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchMetrics} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchMetrics}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -74,7 +81,10 @@ function MetricsInner() {
 
       {/* Search */}
       <div className="relative max-w-md">
-        <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+        <Search
+          size={14}
+          className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+        />
         <input
           type="text"
           placeholder={t("searchPlaceholder")}
@@ -95,12 +105,24 @@ function MetricsInner() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("name")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("metrics.datapoint")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("frequency")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("responsible")}</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("lastMeasurement")}</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">{t("metrics.dataQuality")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("name")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("metrics.datapoint")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("frequency")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("responsible")}
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                    {t("lastMeasurement")}
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                    {t("metrics.dataQuality")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -110,12 +132,20 @@ function MetricsInner() {
                     className="hover:bg-gray-50 cursor-pointer"
                     onClick={() => router.push(`/esg/metrics/${m.id}`)}
                   >
-                    <td className="px-4 py-3 font-medium text-gray-900">{m.name}</td>
-                    <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-gray-600">{m.datapointCode ?? m.datapointId.slice(0, 8)}</span>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {m.name}
                     </td>
-                    <td className="px-4 py-3 text-gray-600 capitalize">{m.frequency.replace("_", " ")}</td>
-                    <td className="px-4 py-3 text-gray-600">{m.responsibleName ?? "-"}</td>
+                    <td className="px-4 py-3">
+                      <span className="font-mono text-xs text-gray-600">
+                        {m.datapointCode ?? m.datapointId.slice(0, 8)}
+                      </span>
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 capitalize">
+                      {m.frequency.replace("_", " ")}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {m.responsibleName ?? "-"}
+                    </td>
                     <td className="px-4 py-3 text-right text-gray-700">
                       {m.lastValue != null ? `${m.lastValue} ${m.unit}` : "-"}
                     </td>
@@ -130,7 +160,12 @@ function MetricsInner() {
                 ))}
                 {metrics.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">{t("empty")}</td>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-gray-400"
+                    >
+                      {t("empty")}
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -142,7 +177,13 @@ function MetricsInner() {
   );
 }
 
-function QualityBadge({ quality, t }: { quality: string; t: (key: string) => string }) {
+function QualityBadge({
+  quality,
+  t,
+}: {
+  quality: string;
+  t: (key: string) => string;
+}) {
   const colors: Record<string, string> = {
     measured: "bg-green-100 text-green-900 border-green-300",
     estimated: "bg-yellow-100 text-yellow-900 border-yellow-300",

@@ -8,7 +8,12 @@ export interface CustomFieldDefinition {
   label: Record<string, string>;
   fieldType: string;
   options: Array<{ value: string; label: Record<string, string> }>;
-  validation: { required?: boolean; min?: number; max?: number; regex?: string };
+  validation: {
+    required?: boolean;
+    min?: number;
+    max?: number;
+    regex?: string;
+  };
   defaultValue: unknown;
   placeholder?: Record<string, string>;
   helpText?: Record<string, string>;

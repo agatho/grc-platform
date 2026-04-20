@@ -142,10 +142,7 @@ export default function ExecutionLogPage() {
           onClick={fetchData}
           disabled={loading}
         >
-          <RefreshCcw
-            size={14}
-            className={loading ? "animate-spin" : ""}
-          />
+          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
 
@@ -182,9 +179,7 @@ export default function ExecutionLogPage() {
         </div>
       ) : executions.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <p className="text-sm text-gray-400">
-            {t("executionLog.empty")}
-          </p>
+          <p className="text-sm text-gray-400">{t("executionLog.empty")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -200,9 +195,7 @@ export default function ExecutionLogPage() {
               >
                 <button
                   type="button"
-                  onClick={() =>
-                    setExpandedId(isExpanded ? null : exec.id)
-                  }
+                  onClick={() => setExpandedId(isExpanded ? null : exec.id)}
                   className="flex items-center justify-between w-full px-4 py-3 text-left"
                 >
                   <div className="flex items-center gap-3 min-w-0">
@@ -213,9 +206,7 @@ export default function ExecutionLogPage() {
                       </p>
                       <p className="text-xs text-gray-500">
                         {exec.entityType && (
-                          <span className="mr-2">
-                            {exec.entityType}
-                          </span>
+                          <span className="mr-2">{exec.entityType}</span>
                         )}
                         {exec.durationMs != null && (
                           <span>{exec.durationMs}ms</span>
@@ -284,14 +275,9 @@ export default function ExecutionLogPage() {
                                     className="text-green-600"
                                   />
                                 ) : (
-                                  <XCircle
-                                    size={12}
-                                    className="text-red-600"
-                                  />
+                                  <XCircle size={12} className="text-red-600" />
                                 )}
-                                <span>
-                                  {t(`actionTypes.${a.type}`)}
-                                </span>
+                                <span>{t(`actionTypes.${a.type}`)}</span>
                                 {a.error && (
                                   <span className="text-red-500">
                                     ({a.error})

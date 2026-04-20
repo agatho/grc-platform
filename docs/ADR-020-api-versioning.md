@@ -15,6 +15,7 @@ Platzhalter — es gibt keine definierte Strategie fuer:
 - Wie API-Konsumenten (externe Tenants, Integrations) informiert werden
 
 Heutige Realitaet:
+
 - 1034 Pfade, 1606 Methoden-Kombinationen (Stand openapi.yaml vom 2026-04-18)
 - Interne Consumers: Next.js-Frontend, Worker, E2E-Tests
 - Externe Consumers (zukuenftig): Mobile-App (Sprint 60), Compliance-Partners,
@@ -51,36 +52,39 @@ Heutige Realitaet:
 ## Consequences
 
 ### Positiv
+
 - Klare Regeln fuer "wann muss v2 her?"
 - Externe Consumer koennen mit festem Contract planen
 - Automated Contract-Testing moeglich (Pact / Dredd gegen openapi.yaml)
 
 ### Negativ
+
 - Duplizierte Route-Files in `/api/v1/` und `/api/v2/` waehrend Overlap
 - Dev-Disziplin: selbst "kleine" Feld-Rename erzwingt v2 oder Rueckwaerts-
   Kompatibilitaet via Adapter
 - Onboarding-Komplexitaet fuer neue Entwickler
 
 ### Neutral
+
 - Frontend und interne Services migrieren mit dem Backend — Overlap-
   Regeln gelten primaer fuer externe Konsumenten
 - Plugin-API (ADR-058) erbt dieselbe Versionierung
 
 ## Breaking vs. Non-Breaking — Entscheidungs-Matrix
 
-| Aenderung | Breaking? |
-|---|---|
-| Neuer Endpoint | Nein |
-| Neues optional-Feld im Response | Nein |
-| Neues Pflicht-Feld im Request | **Ja** |
-| Neues Pflicht-Feld im Response (Consumer erwartet es evtl.) | Nein (additiv) |
-| Feld-Rename | **Ja** |
-| Feld-Typ-Aenderung (string -> int) | **Ja** |
-| Enum-Wert entfernt | **Ja** |
-| Enum-Wert hinzugefuegt | Nein (Consumer muss unknown vertragen) |
-| HTTP-Status-Code geaendert (200 -> 201) | **Ja** |
-| Pagination von default-10 zu default-50 | **Ja** (Performance-Shock) |
-| Validierungs-Regel strenger (max-length 500 -> 200) | **Ja** |
+| Aenderung                                                   | Breaking?                              |
+| ----------------------------------------------------------- | -------------------------------------- |
+| Neuer Endpoint                                              | Nein                                   |
+| Neues optional-Feld im Response                             | Nein                                   |
+| Neues Pflicht-Feld im Request                               | **Ja**                                 |
+| Neues Pflicht-Feld im Response (Consumer erwartet es evtl.) | Nein (additiv)                         |
+| Feld-Rename                                                 | **Ja**                                 |
+| Feld-Typ-Aenderung (string -> int)                          | **Ja**                                 |
+| Enum-Wert entfernt                                          | **Ja**                                 |
+| Enum-Wert hinzugefuegt                                      | Nein (Consumer muss unknown vertragen) |
+| HTTP-Status-Code geaendert (200 -> 201)                     | **Ja**                                 |
+| Pagination von default-10 zu default-50                     | **Ja** (Performance-Shock)             |
+| Validierungs-Regel strenger (max-length 500 -> 200)         | **Ja**                                 |
 
 ## Implementation-Plan
 

@@ -37,7 +37,11 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
 
     const [org] = await testDb.db
       .insert(schema.organization)
-      .values({ name: "Budget Audit Test Org", type: "subsidiary", country: "DEU" })
+      .values({
+        name: "Budget Audit Test Org",
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning();
     testOrgId = org.id;
 
@@ -51,32 +55,60 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     await testDb.client`SELECT set_config('app.current_user_id', '', false)`;
 
     // Disable audit triggers on tables we'll delete from
-    await testDb.client.unsafe(`ALTER TABLE grc_budget DISABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE "user" DISABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await testDb.client.unsafe(
+      `ALTER TABLE grc_budget DISABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
 
     // Clean up test data
     if (testBudgetId) {
-      await testDb.client.unsafe(`DELETE FROM grc_budget_line WHERE budget_id = '${testBudgetId}'`);
-      await testDb.client.unsafe(`DELETE FROM grc_budget WHERE id = '${testBudgetId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM grc_budget_line WHERE budget_id = '${testBudgetId}'`,
+      );
+      await testDb.client.unsafe(
+        `DELETE FROM grc_budget WHERE id = '${testBudgetId}'`,
+      );
     }
     if (testUserId) {
-      await testDb.client.unsafe(`DELETE FROM audit_log WHERE user_id = '${testUserId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM audit_log WHERE user_id = '${testUserId}'`,
+      );
     }
     if (testOrgId) {
-      await testDb.client.unsafe(`DELETE FROM audit_log WHERE org_id = '${testOrgId}' OR entity_id = '${testOrgId}'`);
-      await testDb.client.unsafe(`DELETE FROM organization WHERE id = '${testOrgId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM audit_log WHERE org_id = '${testOrgId}' OR entity_id = '${testOrgId}'`,
+      );
+      await testDb.client.unsafe(
+        `DELETE FROM organization WHERE id = '${testOrgId}'`,
+      );
     }
     if (testUserId) {
-      await testDb.client.unsafe(`DELETE FROM "user" WHERE id = '${testUserId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM "user" WHERE id = '${testUserId}'`,
+      );
     }
 
     // Re-enable everything
-    await testDb.client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await testDb.client.unsafe(`ALTER TABLE grc_budget ENABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE "user" ENABLE TRIGGER audit_trigger`);
+    await testDb.client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE grc_budget ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE "user" ENABLE TRIGGER audit_trigger`,
+    );
     await testDb.client.end();
   });
 
@@ -119,7 +151,9 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     // some custom migrations fail due to schema ordering dependencies.
     // In production (local dev) it should always be present.
     if (triggers.length === 0) {
-      console.warn("SKIP: org_active_catalog audit trigger not found (custom migration may not have applied in CI)");
+      console.warn(
+        "SKIP: org_active_catalog audit trigger not found (custom migration may not have applied in CI)",
+      );
       return;
     }
 

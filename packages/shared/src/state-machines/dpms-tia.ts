@@ -41,7 +41,10 @@ export function validateTiaQuality(snapshot: TiaSnapshot): Blocker[] {
     });
   }
 
-  if (!snapshot.transferCountry || snapshot.transferCountry.trim().length === 0) {
+  if (
+    !snapshot.transferCountry ||
+    snapshot.transferCountry.trim().length === 0
+  ) {
     blockers.push({
       code: "missing_transfer_country",
       message: "Empfaenger-Land muss gesetzt sein.",
@@ -53,16 +56,21 @@ export function validateTiaQuality(snapshot: TiaSnapshot): Blocker[] {
   if (!snapshot.legalBasis) {
     blockers.push({
       code: "missing_legal_basis",
-      message: "Rechtsgrundlage muss benannt sein (adequacy | sccs | bcrs | ...).",
+      message:
+        "Rechtsgrundlage muss benannt sein (adequacy | sccs | bcrs | ...).",
       gate: "TIA-1",
       severity: "error",
     });
   }
 
-  if (!snapshot.schremsIiAssessment || snapshot.schremsIiAssessment.trim().length < 200) {
+  if (
+    !snapshot.schremsIiAssessment ||
+    snapshot.schremsIiAssessment.trim().length < 200
+  ) {
     blockers.push({
       code: "schrems_ii_assessment_too_short",
-      message: "Schrems-II-Assessment muss mindestens 200 Zeichen umfassen (Rechts- + Praxis-Analyse).",
+      message:
+        "Schrems-II-Assessment muss mindestens 200 Zeichen umfassen (Rechts- + Praxis-Analyse).",
       gate: "TIA-1",
       severity: "error",
     });
@@ -108,7 +116,9 @@ export const ADEQUACY_COUNTRIES = new Set([
   "AR", // Argentina (partial)
   "CA", // Canada (commercial)
   "FO", // Faroe Islands
-  "GG", "JE", "IM", // UK Crown Dependencies
+  "GG",
+  "JE",
+  "IM", // UK Crown Dependencies
   "IL", // Israel
   "JP", // Japan (private sector)
   "NZ", // New Zealand
@@ -119,7 +129,13 @@ export const ADEQUACY_COUNTRIES = new Set([
   "US", // USA (EU-US Data Privacy Framework, 2023)
 ]);
 
-export type LegalMechanism = "adequacy" | "sccs" | "bcrs" | "certifications" | "art_49" | "none";
+export type LegalMechanism =
+  | "adequacy"
+  | "sccs"
+  | "bcrs"
+  | "certifications"
+  | "art_49"
+  | "none";
 
 export interface TransferRiskAssessment {
   country: string;
@@ -129,7 +145,9 @@ export interface TransferRiskAssessment {
   reason: string;
 }
 
-export function assessTransferRisk(countryCode: string): TransferRiskAssessment {
+export function assessTransferRisk(
+  countryCode: string,
+): TransferRiskAssessment {
   const c = countryCode.toUpperCase().trim();
   if (ADEQUACY_COUNTRIES.has(c)) {
     return {
@@ -137,7 +155,8 @@ export function assessTransferRisk(countryCode: string): TransferRiskAssessment 
       hasAdequacy: true,
       requiresFallback: false,
       recommendedMechanism: "adequacy",
-      reason: "EU-Adequacy-Decision existiert -- kein Fallback noetig (Stand 2026, dynamisch verifizieren).",
+      reason:
+        "EU-Adequacy-Decision existiert -- kein Fallback noetig (Stand 2026, dynamisch verifizieren).",
     };
   }
   return {

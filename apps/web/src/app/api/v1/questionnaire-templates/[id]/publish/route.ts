@@ -64,12 +64,12 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   // Compute total max score from all questions
-  const scoreResult = await db.execute(sql`
+  const scoreResult = (await db.execute(sql`
     SELECT COALESCE(SUM(q.max_score), 0)::int as total
     FROM questionnaire_question q
     INNER JOIN questionnaire_section s ON q.section_id = s.id
     WHERE s.template_id = ${id}
-  `) as unknown as Array<Record<string, unknown>>;
+  `)) as unknown as Array<Record<string, unknown>>;
   const totalMaxScore = (scoreResult[0]?.total as number) ?? 0;
 
   const updated = await withAuditContext(ctx, async (tx) => {

@@ -23,18 +23,29 @@ function parseBarData(data: unknown): BarDataPoint[] {
   if (!data) return [];
   if (Array.isArray(data)) {
     return data.map((item, idx) => ({
-      name: item.name ?? item.label ?? item.category ?? item.period ?? `Item ${idx + 1}`,
+      name:
+        item.name ??
+        item.label ??
+        item.category ??
+        item.period ??
+        `Item ${idx + 1}`,
       value: Number(item.value ?? item.count ?? 0),
       ...item,
     }));
   }
   const d = data as Record<string, unknown>;
   if ("data" in d && Array.isArray(d.data)) return parseBarData(d.data);
-  if ("distribution" in d && Array.isArray(d.distribution)) return parseBarData(d.distribution);
+  if ("distribution" in d && Array.isArray(d.distribution))
+    return parseBarData(d.distribution);
   return [];
 }
 
-export function BarChartWidget({ data, config, isLoading, error }: WidgetProps) {
+export function BarChartWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -65,17 +76,14 @@ export function BarChartWidget({ data, config, isLoading, error }: WidgetProps) 
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <BarChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+      <BarChart
+        data={chartData}
+        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+      >
         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
-        <XAxis
-          dataKey="name"
-          tick={{ fontSize: 11 }}
-          tickLine={false}
-        />
+        <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} />
         <YAxis tick={{ fontSize: 11 }} tickLine={false} />
-        <Tooltip
-          formatter={(value) => Number(value).toLocaleString("de-DE")}
-        />
+        <Tooltip formatter={(value) => Number(value).toLocaleString("de-DE")} />
         {showLegend && <Legend wrapperStyle={{ fontSize: "11px" }} />}
         <Bar dataKey="value" fill={color} radius={[4, 4, 0, 0]} />
       </BarChart>

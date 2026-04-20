@@ -24,7 +24,11 @@ interface GrossEvaluationTabProps {
 
 const LEVELS = [1, 2, 3, 4, 5];
 
-function getHeatmapColor(likelihood: number, impact: number, isChance: boolean): string {
+function getHeatmapColor(
+  likelihood: number,
+  impact: number,
+  isChance: boolean,
+): string {
   const score = likelihood * impact;
   if (isChance) {
     // Inverted: high = good (green)
@@ -55,9 +59,10 @@ export function GrossEvaluationTab({
   labels,
 }: GrossEvaluationTabProps) {
   const isChance = riskObjectType === "chance";
-  const score = inherentLikelihood && inherentImpact
-    ? inherentLikelihood * inherentImpact
-    : null;
+  const score =
+    inherentLikelihood && inherentImpact
+      ? inherentLikelihood * inherentImpact
+      : null;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -105,9 +110,7 @@ export function GrossEvaluationTab({
           <label className="block text-sm font-medium text-gray-700 mb-1">
             {labels?.score ?? "Score"}
           </label>
-          <div className="text-2xl font-bold text-gray-900">
-            {score ?? "-"}
-          </div>
+          <div className="text-2xl font-bold text-gray-900">{score ?? "-"}</div>
         </div>
 
         <div>
@@ -130,32 +133,36 @@ export function GrossEvaluationTab({
           {labels?.heatmapTitle ?? "Heatmap Position"}
         </h3>
         <div className="grid grid-cols-5 gap-1">
-          {LEVELS.slice().reverse().map((impact) =>
-            LEVELS.map((likelihood) => {
-              const isSelected =
-                inherentLikelihood === likelihood && inherentImpact === impact;
-              return (
-                <button
-                  key={`${likelihood}-${impact}`}
-                  type="button"
-                  disabled={!isEditable}
-                  onClick={() => {
-                    onLikelihoodChange(likelihood);
-                    onImpactChange(impact);
-                    onHeatmapClick?.(likelihood, impact);
-                  }}
-                  className={cn(
-                    "w-full aspect-square rounded-sm text-xs font-medium transition-all",
-                    getHeatmapColor(likelihood, impact, isChance),
-                    isSelected && "ring-2 ring-offset-1 ring-gray-900 scale-110",
-                    !isEditable && "cursor-default",
-                  )}
-                >
-                  {isSelected ? "\u2022" : ""}
-                </button>
-              );
-            }),
-          )}
+          {LEVELS.slice()
+            .reverse()
+            .map((impact) =>
+              LEVELS.map((likelihood) => {
+                const isSelected =
+                  inherentLikelihood === likelihood &&
+                  inherentImpact === impact;
+                return (
+                  <button
+                    key={`${likelihood}-${impact}`}
+                    type="button"
+                    disabled={!isEditable}
+                    onClick={() => {
+                      onLikelihoodChange(likelihood);
+                      onImpactChange(impact);
+                      onHeatmapClick?.(likelihood, impact);
+                    }}
+                    className={cn(
+                      "w-full aspect-square rounded-sm text-xs font-medium transition-all",
+                      getHeatmapColor(likelihood, impact, isChance),
+                      isSelected &&
+                        "ring-2 ring-offset-1 ring-gray-900 scale-110",
+                      !isEditable && "cursor-default",
+                    )}
+                  >
+                    {isSelected ? "\u2022" : ""}
+                  </button>
+                );
+              }),
+            )}
         </div>
         <div className="flex justify-between mt-2 text-xs text-gray-400">
           <span>{labels?.likelihood ?? "Probability"} &rarr;</span>

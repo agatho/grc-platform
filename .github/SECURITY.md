@@ -3,7 +3,7 @@
 ## Supported Versions
 
 | Version | Supported |
-|---------|-----------|
+| ------- | --------- |
 | main    | Yes       |
 
 ## Reporting a Vulnerability
@@ -19,6 +19,7 @@ We aim to acknowledge reports within 48 hours and provide a fix or mitigation wi
 ## Security Measures
 
 This project implements:
+
 - Row-Level Security (RLS) for multi-tenant data isolation
 - Append-only audit log with SHA-256 hash chain for tamper detection
 - Auth.js with JWT sessions and bcrypt password hashing

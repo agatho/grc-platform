@@ -57,7 +57,8 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   // Sort: overdue first, then by completion (ascending)
   enriched.sort((a, b) => {
-    if (a.overdueCount !== b.overdueCount) return b.overdueCount - a.overdueCount;
+    if (a.overdueCount !== b.overdueCount)
+      return b.overdueCount - a.overdueCount;
     return a.completedCount - b.completedCount;
   });
 

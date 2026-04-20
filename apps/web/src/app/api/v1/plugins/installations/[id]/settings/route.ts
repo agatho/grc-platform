@@ -21,7 +21,12 @@ export async function GET(
       updatedAt: pluginSetting.updatedAt,
     })
     .from(pluginSetting)
-    .where(and(eq(pluginSetting.installationId, id), eq(pluginSetting.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(pluginSetting.installationId, id),
+        eq(pluginSetting.orgId, ctx.orgId),
+      ),
+    );
 
   // Mask secret values
   const masked = rows.map((r) => ({

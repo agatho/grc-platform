@@ -75,7 +75,10 @@ function FAIRTopRisksInner() {
   }
 
   const chartData = risks.map((r) => ({
-    name: r.riskTitle.length > 25 ? r.riskTitle.substring(0, 25) + "..." : r.riskTitle,
+    name:
+      r.riskTitle.length > 25
+        ? r.riskTitle.substring(0, 25) + "..."
+        : r.riskTitle,
     P50: r.aleP50,
     P95: r.aleP95,
   }));
@@ -87,7 +90,10 @@ function FAIRTopRisksInner() {
           <h1 className="text-2xl font-bold">{t("topRisksTitle")}</h1>
           <p className="text-muted-foreground">{t("topRisksSubtitle")}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/erm/fair/portfolio")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/erm/fair/portfolio")}
+        >
           <TrendingUp className="mr-2 h-4 w-4" />
           {t("portfolioView")}
         </Button>
@@ -112,10 +118,22 @@ function FAIRTopRisksInner() {
                   width={180}
                   fontSize={11}
                 />
-                <RechartsTooltip formatter={(val: unknown) => formatEUR(Number(val))} />
+                <RechartsTooltip
+                  formatter={(val: unknown) => formatEUR(Number(val))}
+                />
                 <Legend />
-                <Bar dataKey="P50" fill="#3b82f6" name="ALE P50 (Median)" radius={[0, 4, 4, 0]} />
-                <Bar dataKey="P95" fill="#ef4444" name="ALE P95 (VaR)" radius={[0, 4, 4, 0]} />
+                <Bar
+                  dataKey="P50"
+                  fill="#3b82f6"
+                  name="ALE P50 (Median)"
+                  radius={[0, 4, 4, 0]}
+                />
+                <Bar
+                  dataKey="P95"
+                  fill="#ef4444"
+                  name="ALE P95 (VaR)"
+                  radius={[0, 4, 4, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -140,7 +158,10 @@ function FAIRTopRisksInner() {
             </thead>
             <tbody>
               {risks.map((r, idx) => (
-                <tr key={r.riskId} className="border-b last:border-0 hover:bg-muted/50">
+                <tr
+                  key={r.riskId}
+                  className="border-b last:border-0 hover:bg-muted/50"
+                >
                   <td className="p-2 font-medium">{idx + 1}</td>
                   <td className="p-2 font-medium">{r.riskTitle}</td>
                   <td className="p-2">
@@ -155,12 +176,16 @@ function FAIRTopRisksInner() {
                   <td className="p-2 text-right font-mono text-red-600">
                     {formatEUR(r.aleP95)}
                   </td>
-                  <td className="p-2 text-muted-foreground">{r.ownerName ?? "-"}</td>
+                  <td className="p-2 text-muted-foreground">
+                    {r.ownerName ?? "-"}
+                  </td>
                   <td className="p-2 text-right">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => router.push(`/erm/risks/${r.riskId}/fair/results`)}
+                      onClick={() =>
+                        router.push(`/erm/risks/${r.riskId}/fair/results`)
+                      }
                     >
                       <ExternalLink className="h-4 w-4" />
                     </Button>

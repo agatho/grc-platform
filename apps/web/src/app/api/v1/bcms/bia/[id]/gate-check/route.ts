@@ -3,11 +3,7 @@
 // Sprint 2.1 Gate-B1+B2-Check.
 // Liefert aktuelle Snapshot-Werte + Coverage-Stats + Blocker.
 
-import {
-  db,
-  biaAssessment,
-  biaProcessImpact,
-} from "@grc/db";
+import { db, biaAssessment, biaProcessImpact } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   validateBcmsGate1Setup,

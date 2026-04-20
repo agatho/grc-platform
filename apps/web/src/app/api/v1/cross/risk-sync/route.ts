@@ -47,20 +47,18 @@ export async function POST(req: Request) {
   }
 
   // ─── Source-Collection ────────────────────────────────────
-  const dpiaRisks = (
-    await db
-      .select({
-        id: dpiaRisk.id,
-        orgId: dpiaRisk.orgId,
-        dpiaId: dpiaRisk.dpiaId,
-        riskDescription: dpiaRisk.riskDescription,
-        severity: dpiaRisk.severity,
-        likelihood: dpiaRisk.likelihood,
-        impact: dpiaRisk.impact,
-      })
-      .from(dpiaRisk)
-      .where(eq(dpiaRisk.orgId, ctx.orgId))
-  ) as DpiaRiskSource[];
+  const dpiaRisks = (await db
+    .select({
+      id: dpiaRisk.id,
+      orgId: dpiaRisk.orgId,
+      dpiaId: dpiaRisk.dpiaId,
+      riskDescription: dpiaRisk.riskDescription,
+      severity: dpiaRisk.severity,
+      likelihood: dpiaRisk.likelihood,
+      impact: dpiaRisk.impact,
+    })
+    .from(dpiaRisk)
+    .where(eq(dpiaRisk.orgId, ctx.orgId))) as DpiaRiskSource[];
 
   const friaRows = await db
     .select({
@@ -95,21 +93,19 @@ export async function POST(req: Request) {
     }
   }
 
-  const aiIncidents = (
-    await db
-      .select({
-        id: aiIncident.id,
-        orgId: aiIncident.orgId,
-        aiSystemId: aiIncident.aiSystemId,
-        title: aiIncident.title,
-        severity: aiIncident.severity,
-        isSerious: aiIncident.isSerious,
-        harmType: aiIncident.harmType,
-        affectedPersonsCount: aiIncident.affectedPersonsCount,
-      })
-      .from(aiIncident)
-      .where(eq(aiIncident.orgId, ctx.orgId))
-  ) as AiIncidentSource[];
+  const aiIncidents = (await db
+    .select({
+      id: aiIncident.id,
+      orgId: aiIncident.orgId,
+      aiSystemId: aiIncident.aiSystemId,
+      title: aiIncident.title,
+      severity: aiIncident.severity,
+      isSerious: aiIncident.isSerious,
+      harmType: aiIncident.harmType,
+      affectedPersonsCount: aiIncident.affectedPersonsCount,
+    })
+    .from(aiIncident)
+    .where(eq(aiIncident.orgId, ctx.orgId))) as AiIncidentSource[];
 
   const batch = buildSyncBatch({
     dpiaRisks,
@@ -132,7 +128,11 @@ export async function POST(req: Request) {
   }
 
   // ─── Upsert (idempotent via catalogSource + catalogEntryId) ──
-  const upserts: Array<{ id: string; action: "created" | "updated"; draft: SyncedRiskDraft }> = [];
+  const upserts: Array<{
+    id: string;
+    action: "created" | "updated";
+    draft: SyncedRiskDraft;
+  }> = [];
 
   await withAuditContext(ctx, async (tx) => {
     for (const draft of batch.drafts) {

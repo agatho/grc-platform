@@ -43,20 +43,30 @@ const REQUIRED_LOG_CATEGORIES: LogCategory[] = [
 
 const MIN_LOG_RETENTION_DAYS = 180; // 6 Monate Minimum fuer High-Risk
 
-export function assessLoggingCapability(ctx: LoggingCapabilityContext): LoggingCapabilityResult {
-  const missing = REQUIRED_LOG_CATEGORIES.filter((c) => !ctx.loggedCategories.includes(c));
+export function assessLoggingCapability(
+  ctx: LoggingCapabilityContext,
+): LoggingCapabilityResult {
+  const missing = REQUIRED_LOG_CATEGORIES.filter(
+    (c) => !ctx.loggedCategories.includes(c),
+  );
   const coveragePercent = Math.round(
-    ((REQUIRED_LOG_CATEGORIES.length - missing.length) / REQUIRED_LOG_CATEGORIES.length) * 100,
+    ((REQUIRED_LOG_CATEGORIES.length - missing.length) /
+      REQUIRED_LOG_CATEGORIES.length) *
+      100,
   );
 
   const issues: string[] = [];
-  if (!ctx.hasAutomaticLogging) issues.push("Automatic logging disabled -- Art. 12 violation.");
+  if (!ctx.hasAutomaticLogging)
+    issues.push("Automatic logging disabled -- Art. 12 violation.");
   if (ctx.logRetentionDays < MIN_LOG_RETENTION_DAYS) {
-    issues.push(`Retention ${ctx.logRetentionDays}d < ${MIN_LOG_RETENTION_DAYS}d minimum.`);
+    issues.push(
+      `Retention ${ctx.logRetentionDays}d < ${MIN_LOG_RETENTION_DAYS}d minimum.`,
+    );
   }
   if (!ctx.tamperEvidentStorage) issues.push("Logs not tamper-evident.");
   if (!ctx.logsExportable) issues.push("Logs not exportable for authorities.");
-  if (missing.length > 0) issues.push(`Missing log categories: ${missing.join(", ")}.`);
+  if (missing.length > 0)
+    issues.push(`Missing log categories: ${missing.join(", ")}.`);
 
   const meetsMinimumRequirement =
     ctx.hasAutomaticLogging &&
@@ -65,7 +75,12 @@ export function assessLoggingCapability(ctx: LoggingCapabilityContext): LoggingC
     ctx.logsExportable &&
     missing.length === 0;
 
-  return { coveragePercent, meetsMinimumRequirement, missingCategories: missing, issues };
+  return {
+    coveragePercent,
+    meetsMinimumRequirement,
+    missingCategories: missing,
+    issues,
+  };
 }
 
 // ─── Art. 14 Human-Oversight Design ───────────────────────────
@@ -94,7 +109,9 @@ export interface OversightAssessment {
   warnings: string[];
 }
 
-export function assessHumanOversight(design: HumanOversightDesign): OversightAssessment {
+export function assessHumanOversight(
+  design: HumanOversightDesign,
+): OversightAssessment {
   const checks: Array<[boolean, string]> = [
     [design.hasUnderstandableOutputs, "understandable_outputs"],
     [design.hasOverrideCapability, "override_capability"],
@@ -111,10 +128,14 @@ export function assessHumanOversight(design: HumanOversightDesign): OversightAss
     warnings.push("Mindestens 1 qualifizierte Oversight-Person erforderlich.");
   }
   if (design.assignedOversightPersonnel === 1) {
-    warnings.push("Single-Person-Oversight: bei Ausfall keine Abdeckung. Mind. 2 empfohlen.");
+    warnings.push(
+      "Single-Person-Oversight: bei Ausfall keine Abdeckung. Mind. 2 empfohlen.",
+    );
   }
   if (design.oversightFrequency === "none") {
-    warnings.push("oversightFrequency = none -- Art. 14 violation fuer High-Risk.");
+    warnings.push(
+      "oversightFrequency = none -- Art. 14 violation fuer High-Risk.",
+    );
   }
 
   const isAdequate =
@@ -143,7 +164,9 @@ export interface OversightLogQuality {
   warnings: string[];
 }
 
-export function assessOversightLogQuality(stats: OversightLogStats): OversightLogQuality {
+export function assessOversightLogQuality(
+  stats: OversightLogStats,
+): OversightLogQuality {
   const warnings: string[] = [];
 
   let activityLevel: OversightLogQuality["activityLevel"] = "dormant";
@@ -158,14 +181,16 @@ export function assessOversightLogQuality(stats: OversightLogStats): OversightLo
     activityLevel = "high";
   }
 
-  const overrideRate = stats.totalLogs > 0 ? stats.overrideCount / stats.totalLogs : 0;
+  const overrideRate =
+    stats.totalLogs > 0 ? stats.overrideCount / stats.totalLogs : 0;
   if (overrideRate > 0.5) {
     warnings.push(
       "Override-Rate > 50 %: System-Outputs werden haeufig korrigiert. Modell-Review erforderlich.",
     );
   }
 
-  const hasRecentActivity = stats.daysSinceLastLog !== null && stats.daysSinceLastLog <= 90;
+  const hasRecentActivity =
+    stats.daysSinceLastLog !== null && stats.daysSinceLastLog <= 90;
   if (!hasRecentActivity && stats.totalLogs > 0) {
     warnings.push("Letzter Oversight-Log > 90 Tage alt -- Monitoring inaktiv?");
   }
@@ -203,7 +228,9 @@ export interface DeployerComplianceResult {
   criticalGaps: string[];
 }
 
-export function assessDeployerCompliance(ctx: DeployerDutyContext): DeployerComplianceResult {
+export function assessDeployerCompliance(
+  ctx: DeployerDutyContext,
+): DeployerComplianceResult {
   const checks: Array<[boolean, string, boolean]> = [
     [ctx.implementsHumanOversight, "human_oversight", true],
     [ctx.followsProviderInstructions, "follows_instructions", true],
@@ -211,7 +238,11 @@ export function assessDeployerCompliance(ctx: DeployerDutyContext): DeployerComp
     [ctx.hasMonitoringProcess, "monitoring_process", true],
     [ctx.hasReportingChannelToProvider, "reporting_to_provider", false],
     [ctx.informsAffectedPersons, "affected_persons_info", false],
-    [ctx.dpiaRequired ? ctx.dpiaCompletedIfRequired : true, "dpia_if_required", true],
+    [
+      ctx.dpiaRequired ? ctx.dpiaCompletedIfRequired : true,
+      "dpia_if_required",
+      true,
+    ],
     [ctx.retainsLogs, "retains_logs", true],
   ];
 
@@ -241,7 +272,11 @@ export type TransparencyObligationType =
 export interface TransparencyContext {
   applicableObligations: TransparencyObligationType[];
   implementedDisclosures: TransparencyObligationType[];
-  disclosureMethod: "pre_interaction" | "during_interaction" | "post_interaction" | null;
+  disclosureMethod:
+    | "pre_interaction"
+    | "during_interaction"
+    | "post_interaction"
+    | null;
   userCanAcknowledge: boolean;
 }
 
@@ -253,7 +288,9 @@ export interface TransparencyResult {
   isCompliant: boolean;
 }
 
-export function assessTransparencyCoverage(ctx: TransparencyContext): TransparencyResult {
+export function assessTransparencyCoverage(
+  ctx: TransparencyContext,
+): TransparencyResult {
   const missing = ctx.applicableObligations.filter(
     (o) => !ctx.implementedDisclosures.includes(o),
   );

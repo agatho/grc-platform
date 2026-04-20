@@ -1,8 +1,17 @@
 import { db, controlDeficiency } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
-import { createDeficiencySchema, updateDeficiencyStatusSchema, isValidDeficiencyTransition } from "@grc/shared";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
+import {
+  createDeficiencySchema,
+  updateDeficiencyStatusSchema,
+  isValidDeficiencyTransition,
+} from "@grc/shared";
 
 // GET /api/v1/ics/deficiencies — List deficiencies
 export async function GET(req: Request) {
@@ -16,13 +25,19 @@ export async function GET(req: Request) {
   const status = searchParams.get("status");
   if (status) conditions.push(eq(controlDeficiency.remediationStatus, status));
   const classification = searchParams.get("classification");
-  if (classification) conditions.push(eq(controlDeficiency.classification, classification));
+  if (classification)
+    conditions.push(eq(controlDeficiency.classification, classification));
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(controlDeficiency).where(where)
-      .orderBy(desc(controlDeficiency.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(controlDeficiency)
+      .where(where)
+      .orderBy(desc(controlDeficiency.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(controlDeficiency).where(where),
   ]);
 
@@ -38,15 +53,21 @@ export async function POST(req: Request) {
 
   const body = createDeficiencySchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [item] = await tx.insert(controlDeficiency).values({
-      orgId: ctx.orgId,
-      createdBy: ctx.userId,
-      ...body.data,
-    }).returning();
+    const [item] = await tx
+      .insert(controlDeficiency)
+      .values({
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+        ...body.data,
+      })
+      .returning();
     return item;
   });
 
@@ -63,21 +84,36 @@ export async function PATCH(req: Request) {
   const { id, ...statusData } = await req.json();
   const body = updateDeficiencyStatusSchema.safeParse(statusData);
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Fetch current deficiency
-  const [current] = await db.select().from(controlDeficiency)
-    .where(and(eq(controlDeficiency.id, id), eq(controlDeficiency.orgId, ctx.orgId)));
+  const [current] = await db
+    .select()
+    .from(controlDeficiency)
+    .where(
+      and(eq(controlDeficiency.id, id), eq(controlDeficiency.orgId, ctx.orgId)),
+    );
   if (!current) {
     return Response.json({ error: "Deficiency not found" }, { status: 404 });
   }
 
   // Validate state transition
-  if (!isValidDeficiencyTransition(current.remediationStatus, body.data.remediationStatus)) {
-    return Response.json({
-      error: `Invalid transition from '${current.remediationStatus}' to '${body.data.remediationStatus}'`,
-    }, { status: 422 });
+  if (
+    !isValidDeficiencyTransition(
+      current.remediationStatus,
+      body.data.remediationStatus,
+    )
+  ) {
+    return Response.json(
+      {
+        error: `Invalid transition from '${current.remediationStatus}' to '${body.data.remediationStatus}'`,
+      },
+      { status: 422 },
+    );
   }
 
   const updated = await withAuditContext(ctx, async (tx) => {
@@ -85,14 +121,18 @@ export async function PATCH(req: Request) {
       remediationStatus: body.data.remediationStatus,
       updatedAt: new Date(),
     };
-    if (body.data.remediationStatus === "closed") updateData.closedAt = new Date();
+    if (body.data.remediationStatus === "closed")
+      updateData.closedAt = new Date();
     if (body.data.retestDate) updateData.retestDate = body.data.retestDate;
     if (body.data.retestResult) {
       updateData.retestResult = body.data.retestResult;
       updateData.retestBy = ctx.userId;
     }
-    const [item] = await tx.update(controlDeficiency).set(updateData)
-      .where(eq(controlDeficiency.id, id)).returning();
+    const [item] = await tx
+      .update(controlDeficiency)
+      .set(updateData)
+      .where(eq(controlDeficiency.id, id))
+      .returning();
     return item;
   });
 

@@ -15,7 +15,9 @@ export async function processContractExpiryMonitor(): Promise<ContractExpiryResu
   let notified = 0;
   let transitioned = 0;
 
-  console.log(`[cron:contract-expiry-monitor] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:contract-expiry-monitor] Starting at ${now.toISOString()}`,
+  );
 
   // 1. Find contracts that are past their expiration date and still active
   const expiredContracts = await db
@@ -65,7 +67,11 @@ export async function processContractExpiryMonitor(): Promise<ContractExpiryResu
             message: `Contract "${c.title}" has been auto-renewed until ${newExpDate.toISOString().split("T")[0]}.`,
             channel: "both" as const,
             templateKey: "contract_auto_renewed",
-            templateData: { contractId: c.id, contractTitle: c.title, newExpDate: newExpDate.toISOString() },
+            templateData: {
+              contractId: c.id,
+              contractTitle: c.title,
+              newExpDate: newExpDate.toISOString(),
+            },
             createdAt: now,
             updatedAt: now,
           });
@@ -99,7 +105,10 @@ export async function processContractExpiryMonitor(): Promise<ContractExpiryResu
       transitioned++;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:contract-expiry-monitor] Failed for contract ${c.id}:`, message);
+      console.error(
+        `[cron:contract-expiry-monitor] Failed for contract ${c.id}:`,
+        message,
+      );
     }
   }
 
@@ -148,7 +157,10 @@ export async function processContractExpiryMonitor(): Promise<ContractExpiryResu
       notified++;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:contract-expiry-monitor] Notice alert failed for ${c.id}:`, message);
+      console.error(
+        `[cron:contract-expiry-monitor] Notice alert failed for ${c.id}:`,
+        message,
+      );
     }
   }
 

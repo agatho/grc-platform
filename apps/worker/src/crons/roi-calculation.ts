@@ -43,10 +43,7 @@ export async function processRoiCalculation(): Promise<RoiCalculationResult> {
         })
         .from(riskTreatment)
         .where(
-          and(
-            eq(riskTreatment.orgId, org.id),
-            isNull(riskTreatment.deletedAt),
-          ),
+          and(eq(riskTreatment.orgId, org.id), isNull(riskTreatment.deletedAt)),
         );
 
       for (const treatment of treatments) {
@@ -61,18 +58,15 @@ export async function processRoiCalculation(): Promise<RoiCalculationResult> {
               financialImpactExpected: risk.financialImpactExpected,
             })
             .from(risk)
-            .where(
-              and(
-                eq(risk.id, treatment.riskId),
-                eq(risk.orgId, org.id),
-              ),
-            )
+            .where(and(eq(risk.id, treatment.riskId), eq(risk.orgId, org.id)))
             .limit(1);
 
           if (!parentRisk) continue;
 
           // Calculate ALE (Annualized Loss Expectancy)
-          const financialImpact = Number(parentRisk.financialImpactExpected || 0);
+          const financialImpact = Number(
+            parentRisk.financialImpactExpected || 0,
+          );
           const inherentLikelihood = (parentRisk.inherentLikelihood ?? 1) / 5; // normalize to 0-1
           const residualLikelihood = (parentRisk.residualLikelihood ?? 1) / 5;
 
@@ -95,32 +89,33 @@ export async function processRoiCalculation(): Promise<RoiCalculationResult> {
               ),
             );
 
-          const investmentCost = Number(actualCosts?.total || treatment.costEstimate || 0);
-          const roiPercent = investmentCost > 0
-            ? ((aleReduction - investmentCost) / investmentCost) * 100
-            : 0;
+          const investmentCost = Number(
+            actualCosts?.total || treatment.costEstimate || 0,
+          );
+          const roiPercent =
+            investmentCost > 0
+              ? ((aleReduction - investmentCost) / investmentCost) * 100
+              : 0;
 
           // RONI: cost of NOT investing (for accepted risks with no treatment)
           const roniCfo = inherentAle; // CFO: negative return
           const roniCiso = inherentAle; // CISO: risk exposure
 
           // Upsert ROI calculation
-          await db
-            .insert(grcRoiCalculation)
-            .values({
-              orgId: org.id,
-              entityType: "risk_treatment",
-              entityId: treatment.id,
-              investmentCost: String(Math.round(investmentCost * 100) / 100),
-              riskReductionValue: String(Math.round(aleReduction * 100) / 100),
-              roiPercent: String(Math.round(roiPercent * 100) / 100),
-              roniCfo: String(Math.round(roniCfo * 100) / 100),
-              roniCiso: String(Math.round(roniCiso * 100) / 100),
-              inherentAle: String(Math.round(inherentAle * 100) / 100),
-              residualAle: String(Math.round(residualAle * 100) / 100),
-              calculationMethod: "ale_reduction",
-              computedAt: now,
-            });
+          await db.insert(grcRoiCalculation).values({
+            orgId: org.id,
+            entityType: "risk_treatment",
+            entityId: treatment.id,
+            investmentCost: String(Math.round(investmentCost * 100) / 100),
+            riskReductionValue: String(Math.round(aleReduction * 100) / 100),
+            roiPercent: String(Math.round(roiPercent * 100) / 100),
+            roniCfo: String(Math.round(roniCfo * 100) / 100),
+            roniCiso: String(Math.round(roniCiso * 100) / 100),
+            inherentAle: String(Math.round(inherentAle * 100) / 100),
+            residualAle: String(Math.round(residualAle * 100) / 100),
+            calculationMethod: "ale_reduction",
+            computedAt: now,
+          });
 
           processed++;
         } catch (err) {
@@ -138,12 +133,7 @@ export async function processRoiCalculation(): Promise<RoiCalculationResult> {
           id: control.id,
         })
         .from(control)
-        .where(
-          and(
-            eq(control.orgId, org.id),
-            isNull(control.deletedAt),
-          ),
-        );
+        .where(and(eq(control.orgId, org.id), isNull(control.deletedAt)));
 
       for (const ctrl of controls) {
         try {
@@ -168,26 +158,29 @@ export async function processRoiCalculation(): Promise<RoiCalculationResult> {
           // For controls, use penalty avoidance estimation
           // Simplified: assume control prevents a fraction of potential fines
           const estimatedPenaltyAvoidance = investmentCost * 2; // Conservative 2x multiplier
-          const roiPercent = investmentCost > 0
-            ? ((estimatedPenaltyAvoidance - investmentCost) / investmentCost) * 100
-            : 0;
+          const roiPercent =
+            investmentCost > 0
+              ? ((estimatedPenaltyAvoidance - investmentCost) /
+                  investmentCost) *
+                100
+              : 0;
 
-          await db
-            .insert(grcRoiCalculation)
-            .values({
-              orgId: org.id,
-              entityType: "control",
-              entityId: ctrl.id,
-              investmentCost: String(Math.round(investmentCost * 100) / 100),
-              riskReductionValue: String(Math.round(estimatedPenaltyAvoidance * 100) / 100),
-              roiPercent: String(Math.round(roiPercent * 100) / 100),
-              roniCfo: String(Math.round(estimatedPenaltyAvoidance * 100) / 100),
-              roniCiso: String(Math.round(estimatedPenaltyAvoidance * 100) / 100),
-              inherentAle: "0",
-              residualAle: "0",
-              calculationMethod: "penalty_avoidance",
-              computedAt: now,
-            });
+          await db.insert(grcRoiCalculation).values({
+            orgId: org.id,
+            entityType: "control",
+            entityId: ctrl.id,
+            investmentCost: String(Math.round(investmentCost * 100) / 100),
+            riskReductionValue: String(
+              Math.round(estimatedPenaltyAvoidance * 100) / 100,
+            ),
+            roiPercent: String(Math.round(roiPercent * 100) / 100),
+            roniCfo: String(Math.round(estimatedPenaltyAvoidance * 100) / 100),
+            roniCiso: String(Math.round(estimatedPenaltyAvoidance * 100) / 100),
+            inherentAle: "0",
+            residualAle: "0",
+            calculationMethod: "penalty_avoidance",
+            computedAt: now,
+          });
 
           processed++;
         } catch (err) {

@@ -97,9 +97,7 @@ export default function ImportWizardPage() {
   const [executing, setExecuting] = useState(false);
 
   // Step 1 → 2 result
-  const [uploadResult, setUploadResult] = useState<UploadResponse | null>(
-    null,
-  );
+  const [uploadResult, setUploadResult] = useState<UploadResponse | null>(null);
 
   // Step 2 state
   const [mapping, setMapping] = useState<Record<string, string | null>>({});
@@ -130,20 +128,17 @@ export default function ImportWizardPage() {
     [],
   );
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const dropped = e.dataTransfer.files[0];
-      if (dropped) {
-        if (dropped.size > 10 * 1024 * 1024) {
-          toast.error("File too large. Maximum 10 MB.");
-          return;
-        }
-        setFile(dropped);
+  const handleDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    const dropped = e.dataTransfer.files[0];
+    if (dropped) {
+      if (dropped.size > 10 * 1024 * 1024) {
+        toast.error("File too large. Maximum 10 MB.");
+        return;
       }
-    },
-    [],
-  );
+      setFile(dropped);
+    }
+  }, []);
 
   const handleUpload = useCallback(async () => {
     if (!file || !entityType) return;
@@ -224,14 +219,11 @@ export default function ImportWizardPage() {
 
     setValidating(true);
     try {
-      const res = await fetch(
-        `/api/v1/import/${uploadResult.jobId}/validate`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ mapping, dryRun: true }),
-        },
-      );
+      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/validate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ mapping, dryRun: true }),
+      });
 
       if (!res.ok) {
         const err = await res.json();
@@ -255,13 +247,10 @@ export default function ImportWizardPage() {
 
     setExecuting(true);
     try {
-      const res = await fetch(
-        `/api/v1/import/${uploadResult.jobId}/execute`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-        },
-      );
+      const res = await fetch(`/api/v1/import/${uploadResult.jobId}/execute`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
 
       if (!res.ok) {
         const err = await res.json();
@@ -378,9 +367,7 @@ export default function ImportWizardPage() {
               className="flex cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors hover:border-primary"
               onDrop={handleDrop}
               onDragOver={(e) => e.preventDefault()}
-              onClick={() =>
-                document.getElementById("file-input")?.click()
-              }
+              onClick={() => document.getElementById("file-input")?.click()}
             >
               <Upload className="mb-2 h-8 w-8 text-muted-foreground" />
               <p className="text-sm font-medium">
@@ -429,8 +416,7 @@ export default function ImportWizardPage() {
           <CardHeader>
             <CardTitle>{t("wizard.step2.title")}</CardTitle>
             <CardDescription>
-              {uploadResult.headers.length}{" "}
-              {t("wizard.step2.csvHeader")} |{" "}
+              {uploadResult.headers.length} {t("wizard.step2.csvHeader")} |{" "}
               {Object.values(mapping).filter(Boolean).length} mapped
             </CardDescription>
           </CardHeader>
@@ -471,7 +457,10 @@ export default function ImportWizardPage() {
                     </SelectContent>
                   </Select>
                   {mapping[header] ? (
-                    <Badge variant="default" className="bg-green-100 text-green-800">
+                    <Badge
+                      variant="default"
+                      className="bg-green-100 text-green-800"
+                    >
                       {t("wizard.step2.autoDetected")}
                     </Badge>
                   ) : (
@@ -621,27 +610,25 @@ export default function ImportWizardPage() {
                         <table className="w-full text-xs">
                           <thead className="bg-muted sticky top-0">
                             <tr>
-                              {Object.keys(
-                                validationResult.previewRows[0],
-                              ).map((key) => (
-                                <th key={key} className="p-2 text-left">
-                                  {key}
-                                </th>
-                              ))}
+                              {Object.keys(validationResult.previewRows[0]).map(
+                                (key) => (
+                                  <th key={key} className="p-2 text-left">
+                                    {key}
+                                  </th>
+                                ),
+                              )}
                             </tr>
                           </thead>
                           <tbody>
-                            {validationResult.previewRows.map(
-                              (row, i) => (
-                                <tr key={i} className="border-t">
-                                  {Object.values(row).map((val, j) => (
-                                    <td key={j} className="p-2">
-                                      {String(val ?? "")}
-                                    </td>
-                                  ))}
-                                </tr>
-                              ),
-                            )}
+                            {validationResult.previewRows.map((row, i) => (
+                              <tr key={i} className="border-t">
+                                {Object.values(row).map((val, j) => (
+                                  <td key={j} className="p-2">
+                                    {String(val ?? "")}
+                                  </td>
+                                ))}
+                              </tr>
+                            ))}
                           </tbody>
                         </table>
                       </div>
@@ -649,9 +636,7 @@ export default function ImportWizardPage() {
                   )}
               </>
             ) : (
-              <p className="text-muted-foreground">
-                Running validation...
-              </p>
+              <p className="text-muted-foreground">Running validation...</p>
             )}
 
             <div className="flex justify-between">
@@ -692,8 +677,7 @@ export default function ImportWizardPage() {
                 <div className="flex items-center gap-2 text-green-700">
                   <CheckCircle2 className="h-5 w-5" />
                   <span className="font-medium">
-                    {executeResult.imported}{" "}
-                    {t(`entityTypes.${entityType}`)}{" "}
+                    {executeResult.imported} {t(`entityTypes.${entityType}`)}{" "}
                     successfully imported
                   </span>
                 </div>
@@ -714,9 +698,7 @@ export default function ImportWizardPage() {
                 <table className="w-full text-xs">
                   <thead className="bg-muted sticky top-0">
                     <tr>
-                      <th className="p-2 text-left">
-                        {t("wizard.step4.row")}
-                      </th>
+                      <th className="p-2 text-left">{t("wizard.step4.row")}</th>
                       <th className="p-2 text-left">
                         {t("wizard.step4.status")}
                       </th>
@@ -747,9 +729,7 @@ export default function ImportWizardPage() {
                           )}
                         </td>
                         <td className="p-2 font-mono text-xs">
-                          {entry.entityId
-                            ? entry.entityId.slice(0, 8)
-                            : "-"}
+                          {entry.entityId ? entry.entityId.slice(0, 8) : "-"}
                         </td>
                         <td className="p-2">{entry.error ?? ""}</td>
                       </tr>
@@ -788,7 +768,11 @@ export default function ImportWizardPage() {
               </Button>
               <Button
                 size="sm"
-                onClick={() => router.push(`/${entityType === "ropa_entry" ? "data-privacy/ropa" : `${entityType}s`}`)}
+                onClick={() =>
+                  router.push(
+                    `/${entityType === "ropa_entry" ? "data-privacy/ropa" : `${entityType}s`}`,
+                  )
+                }
               >
                 {t("wizard.step4.goToEntity", {
                   entityType: t(`entityTypes.${entityType}`),

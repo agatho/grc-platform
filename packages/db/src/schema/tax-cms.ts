@@ -87,7 +87,10 @@ export const taxRisk = pgTable(
     jurisdiction: varchar("jurisdiction", { length: 100 }).notNull(),
     affectedEntities: jsonb("affected_entities").default("[]"), // [{entityId, entityName}]
     likelihood: varchar("likelihood", { length: 20 }).notNull(), // very_low | low | medium | high | very_high
-    financialExposure: numeric("financial_exposure", { precision: 15, scale: 2 }),
+    financialExposure: numeric("financial_exposure", {
+      precision: 15,
+      scale: 2,
+    }),
     impact: varchar("impact", { length: 20 }).notNull(), // very_low | low | medium | high | very_high
     riskLevel: varchar("risk_level", { length: 20 }).notNull(), // low | medium | high | critical
     treatmentStrategy: varchar("treatment_strategy", { length: 20 }), // mitigate | accept | transfer | avoid
@@ -165,7 +168,10 @@ export const taxGobdArchive = pgTable(
     codeIdx: uniqueIndex("gobd_code_idx").on(table.orgId, table.archiveCode),
     yearIdx: index("gobd_year_idx").on(table.orgId, table.taxYear),
     typeIdx: index("gobd_type_idx").on(table.orgId, table.documentType),
-    retentionIdx: index("gobd_retention_idx").on(table.orgId, table.retentionEndDate),
+    retentionIdx: index("gobd_retention_idx").on(
+      table.orgId,
+      table.retentionEndDate,
+    ),
     statusIdx: index("gobd_status_idx").on(table.orgId, table.status),
   }),
 );
@@ -273,7 +279,10 @@ export const taxAuditPrep = pgTable(
     codeIdx: uniqueIndex("tax_prep_code_idx").on(table.orgId, table.prepCode),
     typeIdx: index("tax_prep_type_idx").on(table.orgId, table.auditType),
     statusIdx: index("tax_prep_status_idx").on(table.orgId, table.status),
-    dateIdx: index("tax_prep_date_idx").on(table.orgId, table.expectedStartDate),
+    dateIdx: index("tax_prep_date_idx").on(
+      table.orgId,
+      table.expectedStartDate,
+    ),
   }),
 );
 

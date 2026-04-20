@@ -18,14 +18,22 @@ export async function PUT(
   const { scenarioId } = await params;
   const body = bulkActivityParamsSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Verify scenario exists
   const [scenario] = await db
     .select({ id: simulationScenario.id })
     .from(simulationScenario)
-    .where(and(eq(simulationScenario.id, scenarioId), eq(simulationScenario.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(simulationScenario.id, scenarioId),
+        eq(simulationScenario.orgId, ctx.orgId),
+      ),
+    );
 
   if (!scenario) {
     return Response.json({ error: "Scenario not found" }, { status: 404 });
@@ -33,7 +41,9 @@ export async function PUT(
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Delete existing params and insert new ones
-    await tx.delete(simulationActivityParam).where(eq(simulationActivityParam.scenarioId, scenarioId));
+    await tx
+      .delete(simulationActivityParam)
+      .where(eq(simulationActivityParam.scenarioId, scenarioId));
 
     const values = body.data.params.map((p) => ({
       scenarioId,
@@ -48,7 +58,10 @@ export async function PUT(
       gatewayProbabilities: p.gatewayProbabilities,
     }));
 
-    const inserted = await tx.insert(simulationActivityParam).values(values).returning();
+    const inserted = await tx
+      .insert(simulationActivityParam)
+      .values(values)
+      .returning();
     return inserted;
   });
 

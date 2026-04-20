@@ -95,9 +95,7 @@ describe("executeActions", () => {
 
   it("executes change_status action", async () => {
     const results = await executeActions(
-      [
-        { type: "change_status", config: { newStatus: "in_review" } },
-      ],
+      [{ type: "change_status", config: { newStatus: "in_review" } }],
       baseContext,
       mockServices,
     );

@@ -18,10 +18,7 @@ export async function POST(req: Request) {
   }
 
   // Fetch risks with their linked control counts
-  const riskConditions = [
-    eq(risk.orgId, ctx.orgId),
-    isNull(risk.deletedAt),
-  ];
+  const riskConditions = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
   if (body.data.scope === "high_risk") {
     riskConditions.push(sql`${risk.riskScoreInherent} >= 15`);
@@ -96,7 +93,11 @@ Return JSON: {"gaps": [{"riskId": string, "riskTitle": string, "gapType": "unmit
 
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown." },
+      {
+        role: "system",
+        content:
+          "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown.",
+      },
       { role: "user", content: prompt },
     ],
     maxTokens: 4000,
@@ -114,8 +115,8 @@ Return JSON: {"gaps": [{"riskId": string, "riskTitle": string, "gapType": "unmit
     model: aiResponse.model,
     latencyMs,
     costUsd: String(
-      ((aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015),
+      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
+        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
     ),
     cachedResult: false,
   });
@@ -132,7 +133,7 @@ Return JSON: {"gaps": [{"riskId": string, "riskTitle": string, "gapType": "unmit
     data: {
       scope: body.data.scope,
       risksAnalyzed: riskData.length,
-      ...result as object,
+      ...(result as object),
       model: aiResponse.model,
       provider: aiResponse.provider,
     },

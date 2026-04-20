@@ -13,8 +13,18 @@ export const incidentStatus = z.enum([
   "lessons_learned",
   "closed",
 ]);
-export const dependencyType = z.enum(["uses", "produces", "manages", "depends_on"]);
-export const ismsObjectCriticality = z.enum(["low", "medium", "high", "critical"]);
+export const dependencyType = z.enum([
+  "uses",
+  "produces",
+  "manages",
+  "depends_on",
+]);
+export const ismsObjectCriticality = z.enum([
+  "low",
+  "medium",
+  "high",
+  "critical",
+]);
 
 // ─── Asset Classification (PRQ) ─────────────────────────────
 
@@ -137,13 +147,50 @@ export const createIncidentTimelineEntrySchema = z.object({
 
 // Sprint 5b: ISMS Assessment schemas
 
-const assessmentStatusValues = ["planning", "in_progress", "review", "completed", "cancelled"] as const;
-const assessmentScopeTypeValues = ["full", "department", "asset_group", "custom"] as const;
-const evalResultValues = ["effective", "partially_effective", "ineffective", "not_applicable", "not_evaluated"] as const;
-const riskDecisionValues = ["accept", "mitigate", "transfer", "avoid", "pending"] as const;
-const soaApplicabilityValues = ["applicable", "not_applicable", "partially_applicable"] as const;
-const soaImplementationValues = ["implemented", "partially_implemented", "planned", "not_implemented"] as const;
-const reviewStatusValues = ["planned", "in_progress", "completed", "cancelled"] as const;
+const assessmentStatusValues = [
+  "planning",
+  "in_progress",
+  "review",
+  "completed",
+  "cancelled",
+] as const;
+const assessmentScopeTypeValues = [
+  "full",
+  "department",
+  "asset_group",
+  "custom",
+] as const;
+const evalResultValues = [
+  "effective",
+  "partially_effective",
+  "ineffective",
+  "not_applicable",
+  "not_evaluated",
+] as const;
+const riskDecisionValues = [
+  "accept",
+  "mitigate",
+  "transfer",
+  "avoid",
+  "pending",
+] as const;
+const soaApplicabilityValues = [
+  "applicable",
+  "not_applicable",
+  "partially_applicable",
+] as const;
+const soaImplementationValues = [
+  "implemented",
+  "partially_implemented",
+  "planned",
+  "not_implemented",
+] as const;
+const reviewStatusValues = [
+  "planned",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
 
 const maturityScale = z.number().int().min(1).max(5);
 
@@ -160,10 +207,10 @@ export const createAssessmentRunSchema = z
     periodEnd: z.string().min(1),
     leadAssessorId: z.string().uuid().optional(),
   })
-  .refine(
-    (data) => data.periodEnd >= data.periodStart,
-    { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
-  );
+  .refine((data) => data.periodEnd >= data.periodStart, {
+    message: "periodEnd must be >= periodStart",
+    path: ["periodEnd"],
+  });
 
 // ─── Setup-Wizard (ADR-014 Phase 3 ISMS Sprint 1.1) ────────────
 //
@@ -201,19 +248,26 @@ export const assessmentSetupWizardSchema = z
     periodStart: z.string().min(1),
     periodEnd: z.string().min(1),
   })
-  .refine(
-    (data) => data.periodEnd >= data.periodStart,
-    { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
-  )
+  .refine((data) => data.periodEnd >= data.periodStart, {
+    message: "periodEnd must be >= periodStart",
+    path: ["periodEnd"],
+  })
   .refine(
     (data) => {
-      const diffMs = new Date(data.periodEnd).getTime() - new Date(data.periodStart).getTime();
+      const diffMs =
+        new Date(data.periodEnd).getTime() -
+        new Date(data.periodStart).getTime();
       return diffMs >= 14 * 24 * 60 * 60 * 1000;
     },
-    { message: "Assessment-Periode muss mindestens 14 Tage umfassen", path: ["periodEnd"] },
+    {
+      message: "Assessment-Periode muss mindestens 14 Tage umfassen",
+      path: ["periodEnd"],
+    },
   );
 
-export type AssessmentSetupWizardInput = z.infer<typeof assessmentSetupWizardSchema>;
+export type AssessmentSetupWizardInput = z.infer<
+  typeof assessmentSetupWizardSchema
+>;
 
 // ─── Control Evaluation ────────────────────────────────────────
 

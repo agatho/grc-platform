@@ -5,7 +5,11 @@
     "import": "Ereignisprotokoll importieren",
     "eventLog": "Ereignisprotokoll",
     "format": { "csv": "CSV", "xes": "XES (IEEE-Standard)" },
-    "status": { "importing": "Wird importiert...", "ready": "Bereit", "error": "Fehler" },
+    "status": {
+      "importing": "Wird importiert...",
+      "ready": "Bereit",
+      "error": "Fehler"
+    },
     "discovery": "Prozesserkennung",
     "dfg": "Directly-Follows Graph",
     "bottleneck": "Engpass",
@@ -22,8 +26,19 @@
     "title": "Prozess-KPIs",
     "definition": "KPI-Definition",
     "measurement": "Messung",
-    "metricType": { "cycle_time": "Durchlaufzeit", "cost": "Kosten", "throughput": "Durchsatz", "error_rate": "Fehlerquote", "compliance_rate": "Konformitätsrate", "custom": "Benutzerdefiniert" },
-    "dataSource": { "manual": "Manuell", "mining": "Mining-Daten", "api": "API" },
+    "metricType": {
+      "cycle_time": "Durchlaufzeit",
+      "cost": "Kosten",
+      "throughput": "Durchsatz",
+      "error_rate": "Fehlerquote",
+      "compliance_rate": "Konformitätsrate",
+      "custom": "Benutzerdefiniert"
+    },
+    "dataSource": {
+      "manual": "Manuell",
+      "mining": "Mining-Daten",
+      "api": "API"
+    },
     "target": "Zielwert",
     "actual": "Ist-Wert",
     "status": { "green": "Im Ziel", "yellow": "Warnung", "red": "Kritisch" },
@@ -34,8 +49,20 @@
   "maturity": {
     "title": "Prozessreifebewertung",
     "questionnaire": "Bewertungsfragebogen",
-    "dimensions": { "documentation": "Dokumentation", "adherence": "Einhaltung", "measurement": "Messung", "improvement": "Verbesserung", "satisfaction": "Zufriedenheit" },
-    "levels": { "1": "Initial", "2": "Gemanagt", "3": "Definiert", "4": "Quantitativ gemanagt", "5": "Optimierend" },
+    "dimensions": {
+      "documentation": "Dokumentation",
+      "adherence": "Einhaltung",
+      "measurement": "Messung",
+      "improvement": "Verbesserung",
+      "satisfaction": "Zufriedenheit"
+    },
+    "levels": {
+      "1": "Initial",
+      "2": "Gemanagt",
+      "3": "Definiert",
+      "4": "Quantitativ gemanagt",
+      "5": "Optimierend"
+    },
     "overallLevel": "Gesamtreifegrad",
     "targetLevel": "Zielreifegrad",
     "gapActions": "Verbesserungsmaßnahmen",
@@ -50,17 +77,37 @@
     "valueAddTime": "Wertschöpfungszeit",
     "valueAddRatio": "Wertschöpfungsanteil",
     "wasteAnalysis": "Verschwendungsanalyse",
-    "wastes": { "defects": "Fehler", "overproduction": "Überproduktion", "waiting": "Warten", "non_utilized_talent": "Ungenutztes Talent", "transportation": "Transport", "inventory": "Bestand", "motion": "Bewegung", "extra_processing": "Überbearbeitung" },
+    "wastes": {
+      "defects": "Fehler",
+      "overproduction": "Überproduktion",
+      "waiting": "Warten",
+      "non_utilized_talent": "Ungenutztes Talent",
+      "transportation": "Transport",
+      "inventory": "Bestand",
+      "motion": "Bewegung",
+      "extra_processing": "Überbearbeitung"
+    },
     "comparison": "Ist-Soll-Vergleich",
     "export": "VSM exportieren"
   },
   "templates": {
     "title": "Prozessvorlagen-Bibliothek",
-    "domain": { "finance": "Finanzen", "hr": "Personal", "it": "IT", "compliance": "Compliance", "operations": "Betrieb", "procurement": "Beschaffung" },
+    "domain": {
+      "finance": "Finanzen",
+      "hr": "Personal",
+      "it": "IT",
+      "compliance": "Compliance",
+      "operations": "Betrieb",
+      "procurement": "Beschaffung"
+    },
     "adopt": "Vorlage übernehmen",
     "preview": "BPMN-Vorschau",
     "suggestedRisks": "Vorgeschlagene Risiken",
     "suggestedControls": "Vorgeschlagene Kontrollen",
-    "complexity": { "simple": "Einfach", "moderate": "Mittel", "complex": "Komplex" }
+    "complexity": {
+      "simple": "Einfach",
+      "moderate": "Mittel",
+      "complex": "Komplex"
+    }
   }
 }

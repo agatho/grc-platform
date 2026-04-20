@@ -35,7 +35,9 @@ export const eamDataObject = pgTable(
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
     dataCategory: varchar("data_category", { length: 30 }).notNull(),
-    classification: varchar("classification", { length: 20 }).default("internal"),
+    classification: varchar("classification", { length: 20 }).default(
+      "internal",
+    ),
     ownerApplicationId: uuid("owner_application_id").references(
       () => architectureElement.id,
     ),
@@ -283,12 +285,12 @@ export const eamBusinessContext = pgTable(
       .references(() => organization.id),
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
-    capabilityId: uuid("capability_id").references(
-      () => businessCapability.id,
-    ),
+    capabilityId: uuid("capability_id").references(() => businessCapability.id),
     processId: uuid("process_id").references(() => process.id),
     orgUnitId: uuid("org_unit_id").references(() => eamOrgUnit.id),
-    applicationIds: uuid("application_ids").array().default(sql`'{}'`),
+    applicationIds: uuid("application_ids")
+      .array()
+      .default(sql`'{}'`),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

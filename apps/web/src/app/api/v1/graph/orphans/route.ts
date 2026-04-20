@@ -16,6 +16,9 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("[graph/orphans] Error:", err);
-    return Response.json({ error: "Failed to detect orphan entities" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to detect orphan entities" },
+      { status: 500 },
+    );
   }
 }

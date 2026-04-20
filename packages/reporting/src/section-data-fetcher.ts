@@ -217,14 +217,7 @@ async function fetchControlEffectivenessTable(
     LIMIT 200
   `);
   return {
-    headers: [
-      "ID",
-      "Title",
-      "CES",
-      "Status",
-      "Test Frequency",
-      "Last Test",
-    ],
+    headers: ["ID", "Title", "CES", "Status", "Test Frequency", "Last Test"],
     rows: rows as unknown as Array<Record<string, unknown>>,
   };
 }
@@ -355,9 +348,7 @@ async function fetchPostureScore(ctx: FetchContext): Promise<KPIData> {
   };
 }
 
-async function fetchIncidentBySeverity(
-  ctx: FetchContext,
-): Promise<ChartData> {
+async function fetchIncidentBySeverity(ctx: FetchContext): Promise<ChartData> {
   const rows = await db.execute(sql`
     SELECT severity, count(*)::int as cnt
     FROM security_incident

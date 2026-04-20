@@ -2,7 +2,12 @@ import { db, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createIncidentSchema } from "@grc/shared";
 import { eq, and, isNull, ilike, sql } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/incidents
 export async function GET(req: Request) {
@@ -23,10 +28,27 @@ export async function GET(req: Request) {
     isNull(securityIncident.deletedAt),
   ];
   if (severityFilter) {
-    conditions.push(eq(securityIncident.severity, severityFilter as "low" | "medium" | "high" | "critical"));
+    conditions.push(
+      eq(
+        securityIncident.severity,
+        severityFilter as "low" | "medium" | "high" | "critical",
+      ),
+    );
   }
   if (statusFilter) {
-    conditions.push(eq(securityIncident.status, statusFilter as "detected" | "triaged" | "contained" | "eradicated" | "recovered" | "lessons_learned" | "closed"));
+    conditions.push(
+      eq(
+        securityIncident.status,
+        statusFilter as
+          | "detected"
+          | "triaged"
+          | "contained"
+          | "eradicated"
+          | "recovered"
+          | "lessons_learned"
+          | "closed",
+      ),
+    );
   }
   if (search) {
     conditions.push(ilike(securityIncident.title, `%${search}%`));

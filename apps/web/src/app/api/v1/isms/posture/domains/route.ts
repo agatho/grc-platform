@@ -28,14 +28,14 @@ export async function GET(req: Request) {
       implementation: soaEntry.implementation,
     })
     .from(soaEntry)
-    .innerJoin(
-      catalogEntry,
-      eq(catalogEntry.id, soaEntry.catalogEntryId),
-    )
+    .innerJoin(catalogEntry, eq(catalogEntry.id, soaEntry.catalogEntryId))
     .where(eq(soaEntry.orgId, ctx.orgId));
 
   // Group SoA entries by domain
-  const domainStats: Record<PostureDomain, { total: number; implemented: number }> = {
+  const domainStats: Record<
+    PostureDomain,
+    { total: number; implemented: number }
+  > = {
     organizational: { total: 0, implemented: 0 },
     people: { total: 0, implemented: 0 },
     physical: { total: 0, implemented: 0 },
@@ -51,7 +51,10 @@ export async function GET(req: Request) {
     if (!domain) continue;
 
     domainStats[domain].total++;
-    if (entry.implementation === "implemented" || entry.implementation === "partially_implemented") {
+    if (
+      entry.implementation === "implemented" ||
+      entry.implementation === "partially_implemented"
+    ) {
       domainStats[domain].implemented++;
     }
   }
@@ -64,11 +67,12 @@ export async function GET(req: Request) {
     technological: 0,
   };
 
-  for (const [domain, stats] of Object.entries(domainStats) as [PostureDomain, typeof domainStats.organizational][]) {
+  for (const [domain, stats] of Object.entries(domainStats) as [
+    PostureDomain,
+    typeof domainStats.organizational,
+  ][]) {
     domains[domain] =
-      stats.total > 0
-        ? Math.round((stats.implemented / stats.total) * 100)
-        : 0;
+      stats.total > 0 ? Math.round((stats.implemented / stats.total) * 100) : 0;
   }
 
   return Response.json({

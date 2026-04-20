@@ -34,7 +34,9 @@ export const plugin = pgTable(
     tags: jsonb("tags").default("[]"),
     iconUrl: varchar("icon_url", { length: 500 }),
     entryPoint: varchar("entry_point", { length: 500 }).notNull(),
-    executionMode: varchar("execution_mode", { length: 20 }).notNull().default("wasm"),
+    executionMode: varchar("execution_mode", { length: 20 })
+      .notNull()
+      .default("wasm"),
     permissions: jsonb("permissions").default("[]"),
     configSchema: jsonb("config_schema").default("{}"),
     isSystem: boolean("is_system").notNull().default(false),
@@ -174,7 +176,10 @@ export const pluginSetting = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("plugin_setting_unique_idx").on(table.installationId, table.key),
+    uniqueIndex("plugin_setting_unique_idx").on(
+      table.installationId,
+      table.key,
+    ),
     index("plugin_setting_org_idx").on(table.orgId),
   ],
 );
@@ -195,7 +200,9 @@ export const extensionMarketplace = pgTable(
     shortDescription: varchar("short_description", { length: 500 }),
     longDescription: text("long_description"),
     screenshots: jsonb("screenshots").default("[]"),
-    pricingModel: varchar("pricing_model", { length: 30 }).notNull().default("free"),
+    pricingModel: varchar("pricing_model", { length: 30 })
+      .notNull()
+      .default("free"),
     priceMonthly: integer("price_monthly"),
     priceYearly: integer("price_yearly"),
     downloadCount: integer("download_count").notNull().default(0),

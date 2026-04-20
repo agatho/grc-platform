@@ -45,8 +45,23 @@ import type {
 } from "@grc/shared";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
-const BUDGET_TYPES: BudgetType[] = ["management_system", "department", "project", "custom"];
-const GRC_AREAS: GrcArea[] = ["erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general"];
+const BUDGET_TYPES: BudgetType[] = [
+  "management_system",
+  "department",
+  "project",
+  "custom",
+];
+const GRC_AREAS: GrcArea[] = [
+  "erm",
+  "isms",
+  "ics",
+  "dpms",
+  "audit",
+  "tprm",
+  "bcms",
+  "esg",
+  "general",
+];
 
 interface BudgetNode extends GrcBudget {
   children: BudgetNode[];
@@ -136,7 +151,13 @@ export default function BudgetOverviewPage() {
   };
 
   const expandAll = () => {
-    setExpandedIds(new Set(budgets.filter((b) => budgets.some((c) => c.parentBudgetId === b.id)).map((b) => b.id)));
+    setExpandedIds(
+      new Set(
+        budgets
+          .filter((b) => budgets.some((c) => c.parentBudgetId === b.id))
+          .map((b) => b.id),
+      ),
+    );
   };
 
   const resetForm = () => {
@@ -201,13 +222,20 @@ export default function BudgetOverviewPage() {
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchBudgets} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchBudgets}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button
             variant="outline"
             size="sm"
-            onClick={() => { setTreeView(!treeView); }}
+            onClick={() => {
+              setTreeView(!treeView);
+            }}
             title={treeView ? t("flatView") : t("treeView")}
           >
             {treeView ? <List size={14} /> : <FolderTree size={14} />}
@@ -263,7 +291,9 @@ export default function BudgetOverviewPage() {
           <div className="space-y-4">
             {/* Name */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("name")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("name")}
+              </label>
               <input
                 type="text"
                 value={formName}
@@ -276,8 +306,13 @@ export default function BudgetOverviewPage() {
             {/* Type + Area */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("budgetType")}</label>
-                <Select value={formType} onValueChange={(v) => setFormType(v as BudgetType)}>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("budgetType")}
+                </label>
+                <Select
+                  value={formType}
+                  onValueChange={(v) => setFormType(v as BudgetType)}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -291,8 +326,13 @@ export default function BudgetOverviewPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("grcArea")}</label>
-                <Select value={formArea || "_none"} onValueChange={(v) => setFormArea(v === "_none" ? "" : v)}>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("grcArea")}
+                </label>
+                <Select
+                  value={formArea || "_none"}
+                  onValueChange={(v) => setFormArea(v === "_none" ? "" : v)}
+                >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
@@ -310,8 +350,13 @@ export default function BudgetOverviewPage() {
 
             {/* Parent Budget */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("parentBudget")}</label>
-              <Select value={formParentId || "_none"} onValueChange={(v) => setFormParentId(v === "_none" ? "" : v)}>
+              <label className="text-sm font-medium text-gray-700">
+                {t("parentBudget")}
+              </label>
+              <Select
+                value={formParentId || "_none"}
+                onValueChange={(v) => setFormParentId(v === "_none" ? "" : v)}
+              >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
@@ -329,7 +374,9 @@ export default function BudgetOverviewPage() {
             {/* Year + Amount */}
             <div className="grid grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("year")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("year")}
+                </label>
                 <input
                   type="number"
                   min={2020}
@@ -340,7 +387,9 @@ export default function BudgetOverviewPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("totalAmount")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("totalAmount")}
+                </label>
                 <input
                   type="number"
                   min={0}
@@ -351,12 +400,16 @@ export default function BudgetOverviewPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">Currency</label>
+                <label className="text-sm font-medium text-gray-700">
+                  Currency
+                </label>
                 <input
                   type="text"
                   maxLength={3}
                   value={formCurrency}
-                  onChange={(e) => setFormCurrency(e.target.value.toUpperCase())}
+                  onChange={(e) =>
+                    setFormCurrency(e.target.value.toUpperCase())
+                  }
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
@@ -365,7 +418,9 @@ export default function BudgetOverviewPage() {
             {/* Period */}
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("periodStart")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("periodStart")}
+                </label>
                 <input
                   type="date"
                   value={formPeriodStart}
@@ -374,7 +429,9 @@ export default function BudgetOverviewPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("periodEnd")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("periodEnd")}
+                </label>
                 <input
                   type="date"
                   value={formPeriodEnd}
@@ -386,7 +443,9 @@ export default function BudgetOverviewPage() {
 
             {/* Notes */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("notes")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("notes")}
+              </label>
               <textarea
                 value={formNotes}
                 onChange={(e) => setFormNotes(e.target.value)}
@@ -396,11 +455,26 @@ export default function BudgetOverviewPage() {
             </div>
           </div>
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => { setShowCreate(false); resetForm(); }}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                setShowCreate(false);
+                resetForm();
+              }}
+            >
               {t("actions.cancel")}
             </Button>
-            <Button size="sm" onClick={handleCreate} disabled={creating || !formName.trim()}>
-              {creating ? <Loader2 size={14} className="animate-spin mr-1" /> : <Plus size={14} className="mr-1" />}
+            <Button
+              size="sm"
+              onClick={handleCreate}
+              disabled={creating || !formName.trim()}
+            >
+              {creating ? (
+                <Loader2 size={14} className="animate-spin mr-1" />
+              ) : (
+                <Plus size={14} className="mr-1" />
+              )}
               {t("actions.save")}
             </Button>
           </DialogFooter>
@@ -565,25 +639,33 @@ function BudgetRow({
         <div className="flex-1 min-w-0">
           <div className="flex items-center justify-between mb-1">
             <div className="flex items-center gap-2 min-w-0">
-              <span className="font-semibold text-gray-900 truncate">{budget.name}</span>
+              <span className="font-semibold text-gray-900 truncate">
+                {budget.name}
+              </span>
               <Badge variant="outline" className="text-xs flex-shrink-0">
                 {t(`typeLabels.${budget.budgetType}`)}
               </Badge>
               {budget.grcArea && (
-                <Badge variant="outline" className="text-xs bg-blue-50 text-blue-700 flex-shrink-0">
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-blue-50 text-blue-700 flex-shrink-0"
+                >
                   {t(`areas.${budget.grcArea}`)}
                 </Badge>
               )}
               <StatusBadge status={budget.status} t={t} />
             </div>
-            <span className="text-sm text-gray-500 flex-shrink-0 ml-2">{budget.year}</span>
+            <span className="text-sm text-gray-500 flex-shrink-0 ml-2">
+              {budget.year}
+            </span>
           </div>
 
           {/* Progress bar */}
           <div className="mt-2">
             <div className="flex items-center justify-between text-xs text-gray-500 mb-1">
               <span>
-                {t("used")}: {formatCurrency(used, budget.currency)} / {formatCurrency(planned, budget.currency)}
+                {t("used")}: {formatCurrency(used, budget.currency)} /{" "}
+                {formatCurrency(planned, budget.currency)}
               </span>
               <span className={remaining < 0 ? "text-red-600 font-medium" : ""}>
                 {t("remaining")}: {formatCurrency(remaining, budget.currency)}
@@ -598,7 +680,9 @@ function BudgetRow({
             <div className="flex items-center justify-between text-xs text-gray-400 mt-1">
               <span>{Math.round(usagePercent)}%</span>
               {entityCount > 0 && (
-                <span>{entityCount} {t("entities")}</span>
+                <span>
+                  {entityCount} {t("entities")}
+                </span>
               )}
             </div>
           </div>
@@ -606,7 +690,8 @@ function BudgetRow({
           {/* Period info */}
           {(budget.periodStart || budget.periodEnd) && (
             <div className="mt-2 text-xs text-gray-400">
-              {t("period")}: {budget.periodStart ?? "..."} - {budget.periodEnd ?? "..."}
+              {t("period")}: {budget.periodStart ?? "..."} -{" "}
+              {budget.periodEnd ?? "..."}
             </div>
           )}
         </div>
@@ -644,7 +729,13 @@ function BudgetRow({
 
 // ─── Status Badge ───────────────────────────────────────────
 
-function StatusBadge({ status, t }: { status: BudgetStatus; t: (key: string) => string }) {
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: BudgetStatus;
+  t: (key: string) => string;
+}) {
   const colors: Record<string, string> = {
     draft: "bg-gray-100 text-gray-700",
     submitted: "bg-yellow-100 text-yellow-900",
@@ -652,7 +743,10 @@ function StatusBadge({ status, t }: { status: BudgetStatus; t: (key: string) => 
     closed: "bg-slate-200 text-slate-600",
   };
   return (
-    <Badge variant="outline" className={`${colors[status] ?? ""} text-xs flex-shrink-0`}>
+    <Badge
+      variant="outline"
+      className={`${colors[status] ?? ""} text-xs flex-shrink-0`}
+    >
       {t(`statusLabels.${status}`)}
     </Badge>
   );

@@ -34,7 +34,9 @@ export async function GET(
     return Response.json({ error: "Asset not found" }, { status: 404 });
   }
 
-  const assetType = String(targetAsset.asset_tier ?? targetAsset.code_group ?? "");
+  const assetType = String(
+    targetAsset.asset_tier ?? targetAsset.code_group ?? "",
+  );
   if (!assetType) {
     return Response.json({ data: [] });
   }

@@ -1,13 +1,29 @@
 // Sprint 1.3: Module System Types & Constants
 
 export const MODULE_KEYS = [
-  'erm', 'bpm', 'ics', 'dms', 'isms', 'bcms',
-  'dpms', 'audit', 'tprm', 'contract', 'esg', 'whistleblowing', 'reporting', 'eam', 'academy', 'community',
-  'marketplace', 'simulations', 'portals'
+  "erm",
+  "bpm",
+  "ics",
+  "dms",
+  "isms",
+  "bcms",
+  "dpms",
+  "audit",
+  "tprm",
+  "contract",
+  "esg",
+  "whistleblowing",
+  "reporting",
+  "eam",
+  "academy",
+  "community",
+  "marketplace",
+  "simulations",
+  "portals",
 ] as const;
 
-export type ModuleKey = typeof MODULE_KEYS[number];
-export type ModuleUiStatus = 'disabled' | 'preview' | 'enabled' | 'maintenance';
+export type ModuleKey = (typeof MODULE_KEYS)[number];
+export type ModuleUiStatus = "disabled" | "preview" | "enabled" | "maintenance";
 
 export interface ModuleDefinition {
   moduleKey: ModuleKey;

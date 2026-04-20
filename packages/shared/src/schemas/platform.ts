@@ -5,11 +5,23 @@ export const createOrganizationSchema = z.object({
   // Stammdaten
   name: z.string().min(1).max(255),
   shortName: z.string().max(50).optional(),
-  type: z.enum(["subsidiary", "holding", "joint_venture", "branch", "division", "department"]).default("subsidiary"),
+  type: z
+    .enum([
+      "subsidiary",
+      "holding",
+      "joint_venture",
+      "branch",
+      "division",
+      "department",
+    ])
+    .default("subsidiary"),
   legalForm: z.string().max(100).optional(),
   parentOrgId: z.string().uuid().optional(),
   foundingDate: z.string().optional(),
-  fiscalYearEnd: z.string().regex(/^\d{2}-\d{2}$/).optional(),
+  fiscalYearEnd: z
+    .string()
+    .regex(/^\d{2}-\d{2}$/)
+    .optional(),
 
   // Identifikatoren
   taxId: z.string().max(50).optional(),
@@ -61,11 +73,20 @@ export const updateOrganizationSchema = createOrganizationSchema.partial();
 
 // Organization Contact schemas
 export const contactRoleTypes = [
-  "ceo", "cfo", "coo", "cto",
-  "dpo", "ciso", "compliance_officer", "risk_manager",
-  "whistleblowing_officer", "audit_coordinator",
-  "legal_representative", "works_council",
-  "external_auditor", "other",
+  "ceo",
+  "cfo",
+  "coo",
+  "cto",
+  "dpo",
+  "ciso",
+  "compliance_officer",
+  "risk_manager",
+  "whistleblowing_officer",
+  "audit_coordinator",
+  "legal_representative",
+  "works_council",
+  "external_auditor",
+  "other",
 ] as const;
 
 export const createOrganizationContactSchema = z.object({
@@ -86,23 +107,46 @@ export const createOrganizationContactSchema = z.object({
   notes: z.string().max(2000).optional(),
 });
 
-export const updateOrganizationContactSchema = createOrganizationContactSchema.partial();
+export const updateOrganizationContactSchema =
+  createOrganizationContactSchema.partial();
 
 // User invitation schema
 export const inviteUserSchema = z.object({
   email: z.string().email(),
-  role: z.enum(["admin", "risk_manager", "control_owner", "auditor", "dpo", "viewer", "process_owner"]),
+  role: z.enum([
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "auditor",
+    "dpo",
+    "viewer",
+    "process_owner",
+  ]),
   lineOfDefense: z.enum(["first", "second", "third"]).optional(),
   department: z.string().max(255).optional(),
 });
 
 // All user roles (must match DB enum)
 const allRoles = [
-  "admin", "risk_manager", "control_owner", "auditor", "dpo",
-  "viewer", "process_owner", "esg_manager", "esg_contributor",
-  "whistleblowing_officer", "ombudsperson",
-  "compliance_officer", "ciso", "bcm_manager", "contract_manager",
-  "quality_manager", "security_analyst", "department_head", "external_auditor",
+  "admin",
+  "risk_manager",
+  "control_owner",
+  "auditor",
+  "dpo",
+  "viewer",
+  "process_owner",
+  "esg_manager",
+  "esg_contributor",
+  "whistleblowing_officer",
+  "ombudsperson",
+  "compliance_officer",
+  "ciso",
+  "bcm_manager",
+  "contract_manager",
+  "quality_manager",
+  "security_analyst",
+  "department_head",
+  "external_auditor",
 ] as const;
 
 // Role assignment schema
@@ -126,20 +170,31 @@ export const createCustomRoleSchema = z.object({
   name: z.string().min(1).max(100),
   description: z.string().max(1000).optional(),
   color: z.string().max(20).default("#6B7280"),
-  permissions: z.array(z.object({
-    moduleKey: z.string().min(1).max(50),
-    action: z.enum(permissionActions),
-  })).min(1).max(20),
+  permissions: z
+    .array(
+      z.object({
+        moduleKey: z.string().min(1).max(50),
+        action: z.enum(permissionActions),
+      }),
+    )
+    .min(1)
+    .max(20),
 });
 
 export const updateCustomRoleSchema = z.object({
   name: z.string().min(1).max(100).optional(),
   description: z.string().max(1000).optional(),
   color: z.string().max(20).optional(),
-  permissions: z.array(z.object({
-    moduleKey: z.string().min(1).max(50),
-    action: z.enum(permissionActions),
-  })).min(1).max(20).optional(),
+  permissions: z
+    .array(
+      z.object({
+        moduleKey: z.string().min(1).max(50),
+        action: z.enum(permissionActions),
+      }),
+    )
+    .min(1)
+    .max(20)
+    .optional(),
 });
 
 export const acceptInvitationSchema = z.object({

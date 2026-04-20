@@ -142,19 +142,19 @@ export const control = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     controlType: controlTypeEnum("control_type").notNull(),
     frequency: controlFreqEnum("frequency").notNull().default("event_driven"),
-    automationLevel: automationLevelEnum("automation_level").notNull().default("manual"),
+    automationLevel: automationLevelEnum("automation_level")
+      .notNull()
+      .default("manual"),
     status: controlStatusEnum("status").notNull().default("designed"),
     assertions: text("assertions")
       .array()
       .default(sql`'{}'::text[]`),
-    ownerId: uuid("owner_id")
-      .references(() => user.id),
+    ownerId: uuid("owner_id").references(() => user.id),
     department: varchar("department", { length: 255 }),
     objective: text("objective"),
     testInstructions: text("test_instructions"),
@@ -170,8 +170,12 @@ export const control = pgTable(
     budgetId: uuid("budget_id"),
     costNote: text("cost_note"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -200,11 +204,14 @@ export const controlTestCampaign = pgTable(
     status: campaignStatusEnum("status").notNull().default("draft"),
     periodStart: date("period_start").notNull(),
     periodEnd: date("period_end").notNull(),
-    responsibleId: uuid("responsible_id")
-      .references(() => user.id),
+    responsibleId: uuid("responsible_id").references(() => user.id),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -230,23 +237,24 @@ export const controlTest = pgTable(
     controlId: uuid("control_id")
       .notNull()
       .references(() => control.id, { onDelete: "cascade" }),
-    campaignId: uuid("campaign_id")
-      .references(() => controlTestCampaign.id),
-    taskId: uuid("task_id")
-      .references(() => task.id),
+    campaignId: uuid("campaign_id").references(() => controlTestCampaign.id),
+    taskId: uuid("task_id").references(() => task.id),
     testType: testTypeEnum("test_type").notNull(),
     status: testStatusEnum("status").notNull().default("planned"),
     todResult: testResultEnum("tod_result"),
     toeResult: testResultEnum("toe_result"),
-    testerId: uuid("tester_id")
-      .references(() => user.id),
+    testerId: uuid("tester_id").references(() => user.id),
     testDate: date("test_date"),
     sampleSize: integer("sample_size"),
     sampleDescription: text("sample_description"),
     conclusion: text("conclusion"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -282,7 +290,9 @@ export const evidence = pgTable(
     uploadedBy: uuid("uploaded_by")
       .notNull()
       .references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
   },
@@ -303,16 +313,11 @@ export const finding = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
-    controlId: uuid("control_id")
-      .references(() => control.id),
-    controlTestId: uuid("control_test_id")
-      .references(() => controlTest.id),
-    riskId: uuid("risk_id")
-      .references(() => risk.id),
-    taskId: uuid("task_id")
-      .references(() => task.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
+    controlId: uuid("control_id").references(() => control.id),
+    controlTestId: uuid("control_test_id").references(() => controlTest.id),
+    riskId: uuid("risk_id").references(() => risk.id),
+    taskId: uuid("task_id").references(() => task.id),
     // Sprint 8: FK to audit table (added via migration SQL, no import to avoid circular dep)
     auditId: uuid("audit_id"),
     title: varchar("title", { length: 500 }).notNull(),
@@ -320,17 +325,19 @@ export const finding = pgTable(
     severity: findingSeverityEnum("severity").notNull(),
     status: findingStatusEnum("status").notNull().default("identified"),
     source: findingSourceEnum("source").notNull().default("control_test"),
-    ownerId: uuid("owner_id")
-      .references(() => user.id),
+    ownerId: uuid("owner_id").references(() => user.id),
     remediationPlan: text("remediation_plan"),
     remediationDueDate: date("remediation_due_date"),
     remediatedAt: timestamp("remediated_at", { withTimezone: true }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
-    verifiedBy: uuid("verified_by")
-      .references(() => user.id),
+    verifiedBy: uuid("verified_by").references(() => user.id),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

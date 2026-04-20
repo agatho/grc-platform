@@ -1,8 +1,24 @@
 // Whistleblowing (HinSchG) types (Sprint 12)
-export type WbCategory = "fraud" | "corruption" | "discrimination" | "privacy" | "environmental" | "health_safety" | "other";
-export type WbCaseStatus = "received" | "acknowledged" | "investigating" | "resolved" | "closed";
+export type WbCategory =
+  | "fraud"
+  | "corruption"
+  | "discrimination"
+  | "privacy"
+  | "environmental"
+  | "health_safety"
+  | "other";
+export type WbCaseStatus =
+  | "received"
+  | "acknowledged"
+  | "investigating"
+  | "resolved"
+  | "closed";
 export type WbPriority = "low" | "medium" | "high" | "critical";
-export type WbResolutionCategory = "substantiated" | "unsubstantiated" | "inconclusive" | "referred";
+export type WbResolutionCategory =
+  | "substantiated"
+  | "unsubstantiated"
+  | "inconclusive"
+  | "referred";
 export type WbDirection = "inbound" | "outbound";
 export type WbAuthorType = "whistleblower" | "ombudsperson";
 

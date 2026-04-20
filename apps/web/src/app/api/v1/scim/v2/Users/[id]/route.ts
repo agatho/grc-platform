@@ -83,7 +83,7 @@ export async function PUT(
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
 
   // Verify user belongs to org
-  const [existing] = await db.execute(sql`
+  const [existing] = (await db.execute(sql`
     SELECT u.id FROM "user" u
     JOIN user_organization_role uor ON uor.user_id = u.id
     WHERE u.id = ${id}
@@ -91,13 +91,14 @@ export async function PUT(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `) as any[];
+  `)) as any[];
 
   if (!existing) {
     return scimResponse(buildScimError("User not found", 404), 404);
   }
 
-  const name = `${parsed.data.name.givenName} ${parsed.data.name.familyName}`.trim();
+  const name =
+    `${parsed.data.name.givenName} ${parsed.data.name.familyName}`.trim();
 
   await db.execute(sql`
     UPDATE "user" SET
@@ -123,10 +124,7 @@ export async function PUT(
   });
 
   // Fetch updated user
-  const [updated] = await db
-    .select()
-    .from(user)
-    .where(eq(user.id, id));
+  const [updated] = await db.select().from(user).where(eq(user.id, id));
 
   return scimResponse(
     arctosToScimUser(
@@ -167,7 +165,7 @@ export async function PATCH(
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
 
   // Verify user belongs to org
-  const [existing] = await db.execute(sql`
+  const [existing] = (await db.execute(sql`
     SELECT u.id, u.email, u.name FROM "user" u
     JOIN user_organization_role uor ON uor.user_id = u.id
     WHERE u.id = ${id}
@@ -175,7 +173,7 @@ export async function PATCH(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `) as any[];
+  `)) as any[];
 
   if (!existing) {
     return scimResponse(buildScimError("User not found", 404), 404);
@@ -193,9 +191,15 @@ export async function PATCH(
           WHERE id = ${id}
         `);
         action = isActive ? "reactivate" : "deactivate";
-      } else if (op.path === "name.givenName" || op.path === "name.familyName") {
+      } else if (
+        op.path === "name.givenName" ||
+        op.path === "name.familyName"
+      ) {
         // For name updates, fetch current name and update the relevant part
-        const [current] = await db.select({ name: user.name }).from(user).where(eq(user.id, id));
+        const [current] = await db
+          .select({ name: user.name })
+          .from(user)
+          .where(eq(user.id, id));
         const parts = (current?.name ?? "").split(" ");
         if (op.path === "name.givenName") {
           parts[0] = String(op.value);
@@ -206,7 +210,10 @@ export async function PATCH(
           UPDATE "user" SET name = ${parts.join(" ")}, updated_at = now(), last_synced_at = now()
           WHERE id = ${id}
         `);
-      } else if (op.path === "userName" || op.path === "emails[type eq \"work\"].value") {
+      } else if (
+        op.path === "userName" ||
+        op.path === 'emails[type eq "work"].value'
+      ) {
         await db.execute(sql`
           UPDATE "user" SET email = ${String(op.value).toLowerCase()}, updated_at = now(), last_synced_at = now()
           WHERE id = ${id}
@@ -263,7 +270,7 @@ export async function DELETE(
   const { id } = await params;
 
   // Verify user belongs to org
-  const [existing] = await db.execute(sql`
+  const [existing] = (await db.execute(sql`
     SELECT u.id, u.email FROM "user" u
     JOIN user_organization_role uor ON uor.user_id = u.id
     WHERE u.id = ${id}
@@ -271,7 +278,7 @@ export async function DELETE(
       AND uor.deleted_at IS NULL
       AND u.deleted_at IS NULL
     LIMIT 1
-  `) as any[];
+  `)) as any[];
 
   if (!existing) {
     return scimResponse(buildScimError("User not found", 404), 404);

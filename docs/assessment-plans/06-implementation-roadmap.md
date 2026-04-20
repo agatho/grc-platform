@@ -9,14 +9,14 @@ Sprint-Reihenfolge und Team-Allocation ableiten.
 
 ## Gesamtaufwand (Summe der 4 Module + Cross)
 
-| Modul | Backend-h | Frontend-h | Test-h | Doku/Legal-h | Total-h | Personen-Wochen |
-|---|---|---|---|---|---|---|
-| ISMS | 100 | 120 | 50 | 25 | 295 | ~4 |
-| BCMS | 85 | 140 | 40 | 20 | 285 | ~4 |
-| DPMS | 140 | 190 | 60 | 30 | 420 | ~5 |
-| AI-Act | 165 | 210 | 70 | 40 | 485 | ~6 |
-| Cross-Integration | 60 | 100 | 30 | 15 | 205 | ~3 |
-| **Total** | **550** | **760** | **250** | **130** | **1690** | **~22** |
+| Modul             | Backend-h | Frontend-h | Test-h  | Doku/Legal-h | Total-h  | Personen-Wochen |
+| ----------------- | --------- | ---------- | ------- | ------------ | -------- | --------------- |
+| ISMS              | 100       | 120        | 50      | 25           | 295      | ~4              |
+| BCMS              | 85        | 140        | 40      | 20           | 285      | ~4              |
+| DPMS              | 140       | 190        | 60      | 30           | 420      | ~5              |
+| AI-Act            | 165       | 210        | 70      | 40           | 485      | ~6              |
+| Cross-Integration | 60        | 100        | 30      | 15           | 205      | ~3              |
+| **Total**         | **550**   | **760**    | **250** | **130**      | **1690** | **~22**         |
 
 Bei 1 FTE: **~22 Personen-Wochen**, realistisch mit 2 FTE: **~13 Wochen**
 (ca. 3 Monate). Mit Review-Cycles, Incidents und Unplanned-Work: **5-6 Monate**.
@@ -34,6 +34,7 @@ Drei konkurrierende Achsen:
 **Empfohlene Reihenfolge**: ISMS → BCMS → Cross-Integration-Core → DPMS → AI-Act.
 
 Begruendung:
+
 - ISMS bildet das technische Framework (Assessment-State-Machine, SoA-
   Pattern) das die anderen Module adaptieren
 - BCMS ist kleinster Scope, schnelles Delivery → Momentum
@@ -46,6 +47,7 @@ Begruendung:
 ### Epic 1: ISMS-Assessment-Workflow (5 Sprints, ~10 Wochen)
 
 **Sprint 1.1: Assessment-Run-Foundation**
+
 - [ ] State-Machine: `isms-assessment-states.ts` (Draft → Planning → ...)
 - [ ] `POST /api/v1/isms/assessments/{id}/setup-wizard`
 - [ ] UI: `/isms/assessments/new` (3-Step-Wizard)
@@ -54,6 +56,7 @@ Begruendung:
 - **Deliverable**: Users koennen strukturierte Assessment-Runs anlegen.
 
 **Sprint 1.2: SoA-Initialization + Scope-Management**
+
 - [ ] `POST /api/v1/isms/assessments/{id}/initialize-soa`
 - [ ] SoA-Diff-View-Endpoint
 - [ ] UI: Bulk-SoA-Init + Diff-View
@@ -63,6 +66,7 @@ Begruendung:
   Vorversion sichtbar.
 
 **Sprint 1.3: ISO 27005 Risk-Assessment-Flow**
+
 - [ ] `POST /api/v1/isms/assessments/{id}/risk-assessment/generate-scenarios`
 - [ ] UI: `/isms/risk-assessment-wizard` (5-Step)
 - [ ] Asset → Threat → Vuln → Scenario → Decision
@@ -71,6 +75,7 @@ Begruendung:
 - **Deliverable**: 27005-konformer Risk-Assessment-Workflow.
 
 **Sprint 1.4: Control-Evaluation + Maturity**
+
 - [ ] `POST /api/v1/isms/assessments/{id}/generate-evaluations`
 - [ ] Bulk-Edit-UI
 - [ ] Peer-Review-Feature (4-Augen)
@@ -79,6 +84,7 @@ Begruendung:
 - **Deliverable**: Bulk-Control-Evaluations mit Maturity-Tracking.
 
 **Sprint 1.5: Finalize + Report + Management-Review**
+
 - [ ] `POST /api/v1/isms/assessments/{id}/finalize`
 - [ ] Report-Template-Engine (analog audit_report)
 - [ ] Framework-Coverage-Generator
@@ -90,12 +96,14 @@ Begruendung:
 ### Epic 2: BCMS-Assessment-Workflow (4 Sprints, ~8 Wochen)
 
 **Sprint 2.1: BIA-Workflow**
+
 - [ ] BIA-Wizard 5-Step
 - [ ] Process-Impact-Bulk-Edit
 - [ ] Heatmap + Dependency-Graph
 - [ ] Gate G1-G2
 
 **Sprint 2.2: Strategy + BCP-Builder**
+
 - [ ] Strategy-Comparison-View
 - [ ] BCP-Builder mit Drag-Drop-Procedures
 - [ ] BCP-PDF-Export (Offline-optimiert)
@@ -103,6 +111,7 @@ Begruendung:
 - [ ] Gate G3-G6
 
 **Sprint 2.3: Exercise-Programm + War-Room-MVP**
+
 - [ ] Exercise-Planning-Wizard
 - [ ] Live-War-Room (MVP ohne WebSocket, polling-based)
 - [ ] Inject-Queue
@@ -110,6 +119,7 @@ Begruendung:
 - [ ] Gate G7-G8
 
 **Sprint 2.4: Crisis-Management + DORA-Reporting**
+
 - [ ] Crisis-Activation-Checklist
 - [ ] Crisis-War-Room mit DORA-Timer
 - [ ] Post-Mortem-Wizard
@@ -120,6 +130,7 @@ Begruendung:
 ### Epic 3: Cross-Module-Integration-Core (3 Sprints, ~6 Wochen)
 
 **Sprint 3.1: Finding-Unification + Risk-Sync**
+
 - [ ] `finding.source`-Spalte + Migration (wenn fehlt)
 - [ ] `erm_sync_config` in allen Modulen aktivieren
 - [ ] `createOrUpdateLinkedRisk` Helper
@@ -127,6 +138,7 @@ Begruendung:
 - **Deliverable**: Ein integrierter Risk-Register + Finding-Register.
 
 **Sprint 3.2: Event-Bus + Auto-Triggers**
+
 - [ ] `event-bus`-Schema erweitern (falls noetig)
 - [ ] Security-Incident → Breach Auto-Trigger
 - [ ] AI-Incident → Breach Auto-Trigger
@@ -134,6 +146,7 @@ Begruendung:
 - [ ] ADR-028 dokumentieren
 
 **Sprint 3.3: GRC-Executive-Dashboard**
+
 - [ ] `GET /api/v1/integrated/compliance-score`
 - [ ] Widgets: Compliance-Score, Risk-Heatmap, Next-30d-Deadlines, Budget-Util
 - [ ] UI: `/dashboard` mit Role-based-Layout
@@ -141,6 +154,7 @@ Begruendung:
 ### Epic 4: DPMS-Zyklus (6 Sprints, ~12 Wochen)
 
 **Sprint 4.1: RoPA-Workflow + Process-Bootstrap**
+
 - [ ] RoPA-Wizard 6-Step
 - [ ] `POST /api/v1/dpms/ropa/from-process` (BPM-Bootstrap)
 - [ ] DPIA-Trigger-Auto-Detection
@@ -148,6 +162,7 @@ Begruendung:
 - [ ] Gate G1-G2
 
 **Sprint 4.2: DPIA-Workflow**
+
 - [ ] DPIA-Wizard 5-Step
 - [ ] Template-Library
 - [ ] Prior-Consultation-Package
@@ -155,6 +170,7 @@ Begruendung:
 - [ ] Gate G3-G5
 
 **Sprint 4.3: DSR-Workflow + Public-Portal**
+
 - [ ] DSR-Intake-Public-Page (kein Auth noetig)
 - [ ] Identity-Verification-Flow
 - [ ] 30-Tage-Countdown
@@ -163,6 +179,7 @@ Begruendung:
 - [ ] Gate G6-G8
 
 **Sprint 4.4: Breach-Notification + 72h-Flow**
+
 - [ ] Breach-Assessment-Wizard
 - [ ] 72h-Countdown + Reminders
 - [ ] Authority-Notification (DE-Landesbehoerden)
@@ -170,6 +187,7 @@ Begruendung:
 - [ ] Gate G9-G11
 
 **Sprint 4.5: TIA + Consent + Retention**
+
 - [ ] TIA-Wizard mit Schrems-II-Logik
 - [ ] Country-Risk-Dashboard
 - [ ] SCC-Generator
@@ -178,6 +196,7 @@ Begruendung:
 - [ ] Gate G12-G13
 
 **Sprint 4.6: AVV + PbD + Annual-Report**
+
 - [ ] AVV-Template-Engine
 - [ ] Sub-Processor-Portal
 - [ ] PbD-Questionnaire
@@ -187,6 +206,7 @@ Begruendung:
 ### Epic 5: AI-Act-Zyklus (7 Sprints, ~14 Wochen)
 
 **Sprint 5.1: AI-System-Inventory + Classification**
+
 - [ ] Registration-Wizard 6-Step
 - [ ] Prohibited-Screening (Hard-Stop)
 - [ ] Classification-Decision-Tree-UI
@@ -194,6 +214,7 @@ Begruendung:
 - [ ] Gate G1
 
 **Sprint 5.2: QMS + Risk-Management**
+
 - [ ] QMS-Setup-Wizard
 - [ ] Policy-Template-Pack
 - [ ] ISO-42001-Gap-Analysis
@@ -201,24 +222,28 @@ Begruendung:
 - [ ] Bias-Metrics-Tracking
 
 **Sprint 5.3: Data-Governance + Tech-Doc**
+
 - [ ] Data-Governance-Assessment-Wizard
 - [ ] Model-Card-Generator
 - [ ] Annex-IV-Wizard (9-Step)
 - [ ] EU-DB-Registration-Tracker
 
 **Sprint 5.4: Operational-Logging + Oversight**
+
 - [ ] `ai_operational_log` Schema + Worker
 - [ ] Log-Query + Export
 - [ ] Oversight-Metrics-Dashboard
 - [ ] Override-Rate-Analysis
 
 **Sprint 5.5: Conformity-Assessment + Declaration**
+
 - [ ] Conformity-Assessment-Wizard 9-Step
 - [ ] EU-Declaration-Generator (PDF + Signatur)
 - [ ] Substantial-Change-Detection
 - [ ] Gate G2-G4
 
 **Sprint 5.6: FRIA + Post-Market-Monitoring**
+
 - [ ] FRIA-Wizard 8-Step
 - [ ] Harm-Taxonomy-Library
 - [ ] Post-Market-Monitoring-Dashboard
@@ -226,6 +251,7 @@ Begruendung:
 - [ ] Gate G5-G7
 
 **Sprint 5.7: GPAI + Annual-Report**
+
 - [ ] Training-Data-Summary-Template
 - [ ] Annex-XI-Doc-Generator
 - [ ] Code-of-Practice-Tracker
@@ -236,12 +262,14 @@ Begruendung:
 ### Epic 6: Cross-Module-Advanced (2 Sprints, ~4 Wochen)
 
 **Sprint 6.1: Compliance-Matrix + Evidence-Pool**
+
 - [ ] Compliance-Matrix-Dashboard
 - [ ] Evidence-Pool-Refactor (Join-Table)
 - [ ] Integrated-Risk-Register
 - [ ] Treatment-Portfolio-Dashboard
 
 **Sprint 6.2: Certification-Bundles**
+
 - [ ] `POST /api/v1/integrated/certification-bundle`
 - [ ] Core-GRC-Bundle (ISO 27001 + 22301 + GDPR)
 - [ ] Financial-Services-Bundle
@@ -284,27 +312,27 @@ Jeder Sprint muss erfuellen bevor er als "done" markiert wird:
 
 ## Risiken + Mitigations
 
-| Risiko | Wahrsch. | Impact | Mitigation |
-|---|---|---|---|
-| ML/AI-Expertise fehlt fuer AI-Act-Module | Medium | High | Frueh externe Consultants (AI-Act-Experte) einplanen |
-| Legal-Review der Templates dauert zu lang | High | Medium | Parallele Legal-Partnerschaft fruehzeitig |
-| Schrems-III / EU-AI-Act-Delegated-Acts aendern Scope | Medium | Medium | Regulatory-Change-Modul integriert, Quarterly-Review |
-| Frontend-Aufwand zu hoch (viele Wizards) | High | Medium | Wizard-Komponente als Shared-Lib mit StateMachine-Pattern |
-| Connector-Integrationen (SaaS-Systems) komplexer als erwartet | Medium | High | Connector-Framework-Refactor in Epic 3 |
-| DPIA/FRIA-Templates nicht juristisch belastbar | Medium | High | Partnerschaft mit Datenschutz-Kanzlei fuer Reviews |
-| Dependabot-Vulnerabilities blockieren Deploys | Low | Medium | Quartalsweise Dependency-Update-Sprints |
-| Context-Window-Limits in AI-Worker bei Bulk-Evaluations | Low | Low | Batching + Streaming-Pattern nutzen |
+| Risiko                                                        | Wahrsch. | Impact | Mitigation                                                |
+| ------------------------------------------------------------- | -------- | ------ | --------------------------------------------------------- |
+| ML/AI-Expertise fehlt fuer AI-Act-Module                      | Medium   | High   | Frueh externe Consultants (AI-Act-Experte) einplanen      |
+| Legal-Review der Templates dauert zu lang                     | High     | Medium | Parallele Legal-Partnerschaft fruehzeitig                 |
+| Schrems-III / EU-AI-Act-Delegated-Acts aendern Scope          | Medium   | Medium | Regulatory-Change-Modul integriert, Quarterly-Review      |
+| Frontend-Aufwand zu hoch (viele Wizards)                      | High     | Medium | Wizard-Komponente als Shared-Lib mit StateMachine-Pattern |
+| Connector-Integrationen (SaaS-Systems) komplexer als erwartet | Medium   | High   | Connector-Framework-Refactor in Epic 3                    |
+| DPIA/FRIA-Templates nicht juristisch belastbar                | Medium   | High   | Partnerschaft mit Datenschutz-Kanzlei fuer Reviews        |
+| Dependabot-Vulnerabilities blockieren Deploys                 | Low      | Medium | Quartalsweise Dependency-Update-Sprints                   |
+| Context-Window-Limits in AI-Worker bei Bulk-Evaluations       | Low      | Low    | Batching + Streaming-Pattern nutzen                       |
 
 ## Sign-Off-Matrix
 
-| Epic | Sponsor | Reviewer | Customer |
-|---|---|---|---|
-| 1 ISMS | CISO | Architect + Compliance | CWS ISO-27001-Zertifizierer |
-| 2 BCMS | BCM-Manager | Architect + Crisis-Expert | CWS Business-Continuity-Lead |
-| 3 Cross-Core | Architect | Lead-Dev + Security | Internal |
-| 4 DPMS | DPO | Architect + Datenschutz-Kanzlei | DPO + externe Pruefung |
-| 5 AI-Act | CISO + AI-Lead | AI-Act-Rechtsanwalt + Architect | Board (wegen Deadlines) |
-| 6 Cross-Adv | Architect | Full-Team | Exec-Sponsor |
+| Epic         | Sponsor        | Reviewer                        | Customer                     |
+| ------------ | -------------- | ------------------------------- | ---------------------------- |
+| 1 ISMS       | CISO           | Architect + Compliance          | CWS ISO-27001-Zertifizierer  |
+| 2 BCMS       | BCM-Manager    | Architect + Crisis-Expert       | CWS Business-Continuity-Lead |
+| 3 Cross-Core | Architect      | Lead-Dev + Security             | Internal                     |
+| 4 DPMS       | DPO            | Architect + Datenschutz-Kanzlei | DPO + externe Pruefung       |
+| 5 AI-Act     | CISO + AI-Lead | AI-Act-Rechtsanwalt + Architect | Board (wegen Deadlines)      |
+| 6 Cross-Adv  | Architect      | Full-Team                       | Exec-Sponsor                 |
 
 ## Next-Steps nach Session-Cluster
 

@@ -5,7 +5,7 @@ import { z } from "zod";
 
 const previewSchema = z.object({
   templateId: z.string().uuid(),
-  parameters: z.record(z.unknown()).default({}),
+  parameters: z.record(z.string(), z.unknown()).default({}),
 });
 
 // POST /api/v1/reports/preview — Generate HTML preview

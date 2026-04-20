@@ -150,7 +150,12 @@ function CertDetailInner() {
               {t("auditPrep")}
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -159,33 +164,50 @@ function CertDetailInner() {
       {/* Gap Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-xs font-medium text-red-700">{t("notImplemented")}</p>
-          <p className="text-2xl font-bold text-red-800">{gapStats.notImplemented ?? 0}</p>
+          <p className="text-xs font-medium text-red-700">
+            {t("notImplemented")}
+          </p>
+          <p className="text-2xl font-bold text-red-800">
+            {gapStats.notImplemented ?? 0}
+          </p>
         </div>
         <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4">
           <p className="text-xs font-medium text-yellow-700">{t("planned")}</p>
-          <p className="text-2xl font-bold text-yellow-800">{gapStats.planned ?? 0}</p>
+          <p className="text-2xl font-bold text-yellow-800">
+            {gapStats.planned ?? 0}
+          </p>
         </div>
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-          <p className="text-xs font-medium text-blue-700">{t("partiallyImplemented")}</p>
-          <p className="text-2xl font-bold text-blue-800">{gapStats.partiallyImplemented ?? 0}</p>
+          <p className="text-xs font-medium text-blue-700">
+            {t("partiallyImplemented")}
+          </p>
+          <p className="text-2xl font-bold text-blue-800">
+            {gapStats.partiallyImplemented ?? 0}
+          </p>
         </div>
       </div>
 
       {/* Gap Analysis Table */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("openGapsTitle")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("openGapsTitle")}
+          </h2>
           <p className="text-sm text-gray-500 mt-1">
             {gapStats.total ?? 0} {t("controlsNeedAttention")}
           </p>
         </div>
         {gaps.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">{t("noGaps")}</div>
+          <div className="p-8 text-center text-sm text-gray-400">
+            {t("noGaps")}
+          </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {gaps.map((gap) => (
-              <div key={gap.id} className="px-4 py-3 flex items-center justify-between">
+              <div
+                key={gap.id}
+                className="px-4 py-3 flex items-center justify-between"
+              >
                 <div className="flex items-center gap-3 min-w-0">
                   {gap.controlId ? (
                     <CheckCircle2 className="h-4 w-4 text-yellow-500 shrink-0" />
@@ -194,7 +216,9 @@ function CertDetailInner() {
                   )}
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-gray-900 truncate">
-                      <span className="font-mono text-gray-400 mr-2">{gap.catalogCode}</span>
+                      <span className="font-mono text-gray-400 mr-2">
+                        {gap.catalogCode}
+                      </span>
                       {gap.catalogTitleDe || gap.catalogTitleEn}
                     </p>
                   </div>
@@ -209,14 +233,21 @@ function CertDetailInner() {
       {/* Snapshot History */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("snapshotHistory")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("snapshotHistory")}
+          </h2>
         </div>
         {snapshots.length === 0 ? (
-          <div className="p-8 text-center text-sm text-gray-400">{t("noSnapshots")}</div>
+          <div className="p-8 text-center text-sm text-gray-400">
+            {t("noSnapshots")}
+          </div>
         ) : (
           <div className="divide-y divide-gray-100">
             {snapshots.map((snap) => (
-              <div key={snap.id} className="px-4 py-3 flex items-center justify-between">
+              <div
+                key={snap.id}
+                className="px-4 py-3 flex items-center justify-between"
+              >
                 <div>
                   <p className="text-sm font-medium text-gray-900">
                     {new Date(snap.createdAt).toLocaleDateString("de-DE")} -{" "}
@@ -226,19 +257,26 @@ function CertDetailInner() {
                     })}
                   </p>
                   <p className="text-xs text-gray-500 mt-0.5">
-                    {snap.passedCount}/{snap.totalChecks} {t("checksPassed")} | {snap.gapCount} {t("gaps")}
+                    {snap.passedCount}/{snap.totalChecks} {t("checksPassed")} |{" "}
+                    {snap.gapCount} {t("gaps")}
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full ${
-                        snap.score >= 75 ? "bg-green-500" : snap.score >= 50 ? "bg-yellow-500" : "bg-red-500"
+                        snap.score >= 75
+                          ? "bg-green-500"
+                          : snap.score >= 50
+                            ? "bg-yellow-500"
+                            : "bg-red-500"
                       }`}
                       style={{ width: `${snap.score}%` }}
                     />
                   </div>
-                  <span className="text-sm font-bold text-gray-700 w-12 text-right">{snap.score}%</span>
+                  <span className="text-sm font-bold text-gray-700 w-12 text-right">
+                    {snap.score}%
+                  </span>
                 </div>
               </div>
             ))}
@@ -251,10 +289,22 @@ function CertDetailInner() {
 
 function ImplementationBadge({ implementation }: { implementation: string }) {
   const config: Record<string, { color: string; label: string }> = {
-    not_implemented: { color: "bg-red-100 text-red-900 border-red-200", label: "Nicht implementiert" },
-    planned: { color: "bg-yellow-100 text-yellow-900 border-yellow-200", label: "Geplant" },
-    partially_implemented: { color: "bg-blue-100 text-blue-900 border-blue-200", label: "Teilweise" },
-    implemented: { color: "bg-green-100 text-green-900 border-green-200", label: "Implementiert" },
+    not_implemented: {
+      color: "bg-red-100 text-red-900 border-red-200",
+      label: "Nicht implementiert",
+    },
+    planned: {
+      color: "bg-yellow-100 text-yellow-900 border-yellow-200",
+      label: "Geplant",
+    },
+    partially_implemented: {
+      color: "bg-blue-100 text-blue-900 border-blue-200",
+      label: "Teilweise",
+    },
+    implemented: {
+      color: "bg-green-100 text-green-900 border-green-200",
+      label: "Implementiert",
+    },
   };
   const c = config[implementation] ?? { color: "", label: implementation };
   return (

@@ -4,10 +4,7 @@
 
 import { db, aiSystem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  assessPostMarketPlan,
-  type PostMarketPlanQuality,
-} from "@grc/shared";
+import { assessPostMarketPlan, type PostMarketPlanQuality } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -42,7 +39,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {

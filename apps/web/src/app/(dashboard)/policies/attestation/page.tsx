@@ -1,7 +1,14 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Users, CalendarClock, CheckCheck, Clock } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Users,
+  CalendarClock,
+  CheckCheck,
+  Clock,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -86,7 +93,8 @@ function PolicyAttestationInner() {
             <div className="text-center space-y-3">
               <CheckCheck className="h-12 w-12 mx-auto text-muted-foreground" />
               <p className="text-muted-foreground">
-                Keine Kampagnen vorhanden. Erstellen Sie Ihre erste Kenntnisnahme-Kampagne.
+                Keine Kampagnen vorhanden. Erstellen Sie Ihre erste
+                Kenntnisnahme-Kampagne.
               </p>
             </div>
           </CardContent>
@@ -94,12 +102,16 @@ function PolicyAttestationInner() {
       ) : (
         <div className="space-y-4">
           {campaigns.map((campaign) => {
-            const progress = campaign.total > 0
-              ? Math.round((campaign.confirmed / campaign.total) * 100)
-              : 0;
+            const progress =
+              campaign.total > 0
+                ? Math.round((campaign.confirmed / campaign.total) * 100)
+                : 0;
 
             return (
-              <Card key={campaign.id} className="hover:shadow-md transition-shadow cursor-pointer">
+              <Card
+                key={campaign.id}
+                className="hover:shadow-md transition-shadow cursor-pointer"
+              >
                 <CardContent className="p-6">
                   <div className="flex items-start justify-between mb-4">
                     <div className="space-y-1">
@@ -111,7 +123,10 @@ function PolicyAttestationInner() {
                         </span>
                         <span className="flex items-center gap-1">
                           <CalendarClock className="h-3.5 w-3.5" />
-                          Frist: {new Date(campaign.deadline).toLocaleDateString("de-DE")}
+                          Frist:{" "}
+                          {new Date(campaign.deadline).toLocaleDateString(
+                            "de-DE",
+                          )}
                         </span>
                       </div>
                     </div>
@@ -123,7 +138,8 @@ function PolicyAttestationInner() {
                     <div className="flex items-center justify-between text-sm">
                       <span className="text-muted-foreground">Fortschritt</span>
                       <span className="font-medium">
-                        {campaign.confirmed}/{campaign.total} best\u00e4tigt ({progress}%)
+                        {campaign.confirmed}/{campaign.total} best\u00e4tigt (
+                        {progress}%)
                       </span>
                     </div>
                     <div className="w-full bg-gray-200 rounded-full h-2.5">
@@ -155,7 +171,10 @@ function CampaignStatusBadge({ status }: { status: string }) {
       return <Badge variant="default">Aktiv</Badge>;
     case "completed":
       return (
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+        <Badge
+          variant="default"
+          className="bg-green-100 text-green-800 border-green-300"
+        >
           Abgeschlossen
         </Badge>
       );

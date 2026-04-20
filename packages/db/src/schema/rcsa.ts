@@ -130,9 +130,7 @@ export const rcsaResponse = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("rr_assignment_idx").on(table.assignmentId),
-  ],
+  (table) => [index("rr_assignment_idx").on(table.assignmentId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -152,7 +150,10 @@ export const rcsaResult = pgTable(
     // Aggregation
     totalAssignments: integer("total_assignments").notNull(),
     completedCount: integer("completed_count").notNull(),
-    completionRate: numeric("completion_rate", { precision: 5, scale: 2 }).notNull(),
+    completionRate: numeric("completion_rate", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
     // Risk results
     avgLikelihood: numeric("avg_likelihood", { precision: 3, scale: 2 }),
     avgImpact: numeric("avg_impact", { precision: 3, scale: 2 }),
@@ -170,42 +171,46 @@ export const rcsaResult = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    uniqueIndex("rr_campaign_uniq_idx").on(table.campaignId),
-  ],
+  (table) => [uniqueIndex("rr_campaign_uniq_idx").on(table.campaignId)],
 );
 
 // ──────────────────────────────────────────────────────────────
 // Relations
 // ──────────────────────────────────────────────────────────────
 
-export const rcsaCampaignRelations = relations(rcsaCampaign, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [rcsaCampaign.orgId],
-    references: [organization.id],
+export const rcsaCampaignRelations = relations(
+  rcsaCampaign,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [rcsaCampaign.orgId],
+      references: [organization.id],
+    }),
+    creator: one(user, {
+      fields: [rcsaCampaign.createdBy],
+      references: [user.id],
+    }),
+    assignments: many(rcsaAssignment),
+    result: one(rcsaResult, {
+      fields: [rcsaCampaign.id],
+      references: [rcsaResult.campaignId],
+    }),
   }),
-  creator: one(user, {
-    fields: [rcsaCampaign.createdBy],
-    references: [user.id],
-  }),
-  assignments: many(rcsaAssignment),
-  result: one(rcsaResult, {
-    fields: [rcsaCampaign.id],
-    references: [rcsaResult.campaignId],
-  }),
-}));
+);
 
-export const rcsaAssignmentRelations = relations(rcsaAssignment, ({ one, many }) => ({
-  campaign: one(rcsaCampaign, {
-    fields: [rcsaAssignment.campaignId],
-    references: [rcsaCampaign.id],
+export const rcsaAssignmentRelations = relations(
+  rcsaAssignment,
+  ({ one, many }) => ({
+    campaign: one(rcsaCampaign, {
+      fields: [rcsaAssignment.campaignId],
+      references: [rcsaCampaign.id],
+    }),
+    user: one(user, {
+      fields: [rcsaAssignment.userId],
+      references: [user.id],
+    }),
+    responses: many(rcsaResponse),
   }),
-  user: one(user, {
-    fields: [rcsaAssignment.userId],
-    references: [user.id],
-  }),
-  responses: many(rcsaResponse),
-}));
+);
 
 export const rcsaResponseRelations = relations(rcsaResponse, ({ one }) => ({
   assignment: one(rcsaAssignment, {

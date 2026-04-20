@@ -21,7 +21,9 @@ export async function processScimSyncCleanup(): Promise<ScimCleanupResult> {
     `);
 
     const deletedEntries = (result as any).rowCount ?? 0;
-    console.log(`[cron:scim-sync-cleanup] Deleted ${deletedEntries} old sync log entries`);
+    console.log(
+      `[cron:scim-sync-cleanup] Deleted ${deletedEntries} old sync log entries`,
+    );
 
     return { deletedEntries, error: null };
   } catch (err) {

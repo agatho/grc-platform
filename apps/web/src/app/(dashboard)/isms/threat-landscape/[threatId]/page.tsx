@@ -157,9 +157,7 @@ export default function ThreatDetailPage() {
           <div className="col-span-8">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">
-                  {t("threatDetails")}
-                </CardTitle>
+                <CardTitle className="text-sm">{t("threatDetails")}</CardTitle>
               </CardHeader>
               <CardContent>
                 <dl className="grid grid-cols-2 gap-4 text-sm">
@@ -176,9 +174,7 @@ export default function ThreatDetailPage() {
                     </dd>
                   </div>
                   <div>
-                    <dt className="text-muted-foreground">
-                      {t("likelihood")}
-                    </dt>
+                    <dt className="text-muted-foreground">{t("likelihood")}</dt>
                     <dd className="font-medium">
                       {threat.likelihoodRating !== null
                         ? `${threat.likelihoodRating}/5`
@@ -211,9 +207,7 @@ export default function ThreatDetailPage() {
                     <div>
                       <p className="font-medium">{t("threatCreated")}</p>
                       <p className="text-muted-foreground">
-                        {new Date(threat.createdAt).toLocaleDateString(
-                          "de-DE",
-                        )}
+                        {new Date(threat.createdAt).toLocaleDateString("de-DE")}
                       </p>
                     </div>
                   </div>

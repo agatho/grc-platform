@@ -209,7 +209,9 @@ function RisksPageInner() {
     const i = Number(searchParams.get("impact"));
     return l > 0 && i > 0 ? { likelihood: l, impact: i } : null;
   }, [searchParams]);
-  const [heatMapMode, setHeatMapMode] = useState<"inherent" | "residual">("residual");
+  const [heatMapMode, setHeatMapMode] = useState<"inherent" | "residual">(
+    "residual",
+  );
   const [selectedHeatCell, setSelectedHeatCell] = useState<{
     likelihood: number;
     impact: number;
@@ -243,12 +245,15 @@ function RisksPageInner() {
 
       // Merge audit-impact into the risk rows so the "Neubewertung"
       // badge and related columns can be rendered without per-row fetches.
-      let auditImpact: Record<string, {
-        openCritical: number;
-        openAny: number;
-        treatmentCount: number;
-        needsReassessment: boolean;
-      }> = {};
+      let auditImpact: Record<
+        string,
+        {
+          openCritical: number;
+          openAny: number;
+          treatmentCount: number;
+          needsReassessment: boolean;
+        }
+      > = {};
       if (auditImpactRes.ok) {
         const aj = await auditImpactRes.json();
         auditImpact = aj.data ?? {};
@@ -332,16 +337,14 @@ function RisksPageInner() {
 
     // Heat map cell filter
     if (selectedHeatCell) {
-      const field =
-        heatMapMode === "inherent" ? "inherent" : "residual";
+      const field = heatMapMode === "inherent" ? "inherent" : "residual";
       result = result.filter(
         (r) =>
           (field === "inherent"
             ? r.inherentLikelihood
             : r.residualLikelihood) === selectedHeatCell.likelihood &&
-          (field === "inherent"
-            ? r.inherentImpact
-            : r.residualImpact) === selectedHeatCell.impact,
+          (field === "inherent" ? r.inherentImpact : r.residualImpact) ===
+            selectedHeatCell.impact,
       );
     }
 
@@ -365,7 +368,9 @@ function RisksPageInner() {
     const map = new Map<string, HeatMapCell>();
     for (const r of risks) {
       const likelihood =
-        heatMapMode === "inherent" ? r.inherentLikelihood : r.residualLikelihood;
+        heatMapMode === "inherent"
+          ? r.inherentLikelihood
+          : r.residualLikelihood;
       const impact =
         heatMapMode === "inherent" ? r.inherentImpact : r.residualImpact;
       if (!likelihood || !impact) continue;
@@ -554,7 +559,10 @@ function RisksPageInner() {
           </SortableHeader>
         ),
         cell: ({ row }) => (
-          <RiskScoreBadge score={row.original.riskScoreInherent ?? null} size="sm" />
+          <RiskScoreBadge
+            score={row.original.riskScoreInherent ?? null}
+            size="sm"
+          />
         ),
       },
       {
@@ -592,7 +600,9 @@ function RisksPageInner() {
       {
         accessorKey: "reviewDate",
         header: ({ column }) => (
-          <SortableHeader column={column}>{t("form.reviewDate")}</SortableHeader>
+          <SortableHeader column={column}>
+            {t("form.reviewDate")}
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <span
@@ -693,7 +703,9 @@ function RisksPageInner() {
                 <SelectValue placeholder={t("form.status")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__all__">{t("filter.allStatuses")}</SelectItem>
+                <SelectItem value="__all__">
+                  {t("filter.allStatuses")}
+                </SelectItem>
                 {STATUSES.map((s) => (
                   <SelectItem key={s} value={s}>
                     {t(`status.${s}`)}
@@ -771,9 +783,7 @@ function RisksPageInner() {
                 {t("bulk.export")}
               </Button>
               <Select
-                onValueChange={(v) =>
-                  handleBulkStatusChange(v as RiskStatus)
-                }
+                onValueChange={(v) => handleBulkStatusChange(v as RiskStatus)}
               >
                 <SelectTrigger className="w-[160px] h-7 text-xs">
                   <SelectValue placeholder={t("bulk.statusChange")} />
@@ -896,8 +906,7 @@ function RisksPageInner() {
                 <h3 className="text-sm font-semibold text-gray-700 mb-2">
                   {selectedHeatCell
                     ? `${t("heatmap.risksInCell")} (L${selectedHeatCell.likelihood} x I${selectedHeatCell.impact})`
-                    : t("register")}
-                  {" "}
+                    : t("register")}{" "}
                   <span className="text-gray-400 font-normal">
                     ({filteredRisks.length})
                   </span>
@@ -931,8 +940,8 @@ function RisksPageInner() {
                           <RiskScoreBadge
                             score={
                               heatMapMode === "inherent"
-                                ? r.riskScoreInherent ?? null
-                                : r.riskScoreResidual ?? null
+                                ? (r.riskScoreInherent ?? null)
+                                : (r.riskScoreResidual ?? null)
                             }
                             size="sm"
                           />

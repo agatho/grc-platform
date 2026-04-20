@@ -9,7 +9,11 @@ export interface RetentionScheduleRule {
   retentionPeriodDays: number;
   basis: "legal_obligation" | "contract" | "consent" | "legitimate_interest";
   legalReference: string | null;
-  triggerEvent: "contract_end" | "consent_withdrawal" | "last_interaction" | "fixed_date";
+  triggerEvent:
+    | "contract_end"
+    | "consent_withdrawal"
+    | "last_interaction"
+    | "fixed_date";
   deletionStrategy: "hard_delete" | "anonymize" | "pseudonymize" | "archive";
 }
 
@@ -38,10 +42,14 @@ export interface RetentionDecision {
   };
 }
 
-export function decideRetention(ctx: RetentionExecutionContext): RetentionDecision {
+export function decideRetention(
+  ctx: RetentionExecutionContext,
+): RetentionDecision {
   const now = ctx.now ?? new Date();
   const DAY_MS = 24 * 60 * 60 * 1000;
-  const dueAt = new Date(ctx.triggerEventAt.getTime() + ctx.schedule.retentionPeriodDays * DAY_MS);
+  const dueAt = new Date(
+    ctx.triggerEventAt.getTime() + ctx.schedule.retentionPeriodDays * DAY_MS,
+  );
   const daysOverdue = Math.floor((now.getTime() - dueAt.getTime()) / DAY_MS);
 
   // Exception-Check
@@ -91,7 +99,9 @@ export interface ConsentValidationResult {
  * Validiert Consent-Type gegen Art. 7 + EDPB-Guidelines.
  * Insbesondere Art. 7(4) Koppelungsverbot.
  */
-export function validateConsentType(meta: ConsentTypeMeta): ConsentValidationResult {
+export function validateConsentType(
+  meta: ConsentTypeMeta,
+): ConsentValidationResult {
   const issues: string[] = [];
 
   if (meta.requiredForService && meta.granularity === "bundled") {
@@ -116,10 +126,16 @@ export function validateConsentType(meta: ConsentTypeMeta): ConsentValidationRes
 }
 
 export function isConsentStillValid(
-  consent: { grantedAt: Date; withdrawnAt: Date | null; expiresAt: Date | null },
+  consent: {
+    grantedAt: Date;
+    withdrawnAt: Date | null;
+    expiresAt: Date | null;
+  },
   now: Date = new Date(),
 ): boolean {
-  if (consent.withdrawnAt && consent.withdrawnAt.getTime() <= now.getTime()) return false;
-  if (consent.expiresAt && consent.expiresAt.getTime() <= now.getTime()) return false;
+  if (consent.withdrawnAt && consent.withdrawnAt.getTime() <= now.getTime())
+    return false;
+  if (consent.expiresAt && consent.expiresAt.getTime() <= now.getTime())
+    return false;
   return true;
 }

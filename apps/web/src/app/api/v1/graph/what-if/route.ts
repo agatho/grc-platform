@@ -27,13 +27,22 @@ export async function POST(req: Request) {
   const { entityId, entityType, scenario, maxDepth } = parsed.data;
 
   try {
-    const result = await runWhatIf(ctx.orgId, entityId, entityType, scenario, maxDepth);
+    const result = await runWhatIf(
+      ctx.orgId,
+      entityId,
+      entityType,
+      scenario,
+      maxDepth,
+    );
 
     return Response.json(result, {
       headers: { "Cache-Control": "no-store" },
     });
   } catch (err) {
     console.error("[graph/what-if] Error:", err);
-    return Response.json({ error: "Failed to run what-if simulation" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to run what-if simulation" },
+      { status: 500 },
+    );
   }
 }

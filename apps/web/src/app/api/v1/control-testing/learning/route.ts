@@ -9,9 +9,14 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = learningQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = learningQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, controlId, patternType } = query.data;
@@ -19,14 +24,20 @@ export async function GET(req: Request) {
 
   const conditions = [eq(controlTestLearning.orgId, ctx.orgId)];
   if (controlId) conditions.push(eq(controlTestLearning.controlId, controlId));
-  if (patternType) conditions.push(eq(controlTestLearning.patternType, patternType));
+  if (patternType)
+    conditions.push(eq(controlTestLearning.patternType, patternType));
 
   const [patterns, countResult] = await Promise.all([
-    db.select().from(controlTestLearning)
+    db
+      .select()
+      .from(controlTestLearning)
       .where(and(...conditions))
       .orderBy(desc(controlTestLearning.updatedAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(controlTestLearning)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(controlTestLearning)
       .where(and(...conditions)),
   ]);
 

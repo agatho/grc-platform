@@ -27,9 +27,11 @@ import type { Evidence, EvidenceCategory } from "@grc/shared";
 
 function categoryIcon(category: EvidenceCategory) {
   const imageTypes: EvidenceCategory[] = ["screenshot", "photo"];
-  if (imageTypes.includes(category)) return <Image size={16} className="text-blue-500" />;
+  if (imageTypes.includes(category))
+    return <Image size={16} className="text-blue-500" />;
   const docTypes: EvidenceCategory[] = ["document", "report", "certificate"];
-  if (docTypes.includes(category)) return <FileText size={16} className="text-emerald-500" />;
+  if (docTypes.includes(category))
+    return <FileText size={16} className="text-emerald-500" />;
   return <File size={16} className="text-gray-500" />;
 }
 
@@ -110,9 +112,12 @@ function EvidencePageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("evidence.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("evidence.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            {t("evidence.subtitle")} &mdash; {evidence.length} {t("evidence.items")}
+            {t("evidence.subtitle")} &mdash; {evidence.length}{" "}
+            {t("evidence.items")}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -132,7 +137,12 @@ function EvidencePageInner() {
               <LayoutGrid size={14} />
             </button>
           </div>
-          <Button variant="outline" size="sm" onClick={() => fetchEvidence()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchEvidence()}
+            disabled={loading}
+          >
             <RefreshCcw size={14} />
           </Button>
         </div>
@@ -141,7 +151,9 @@ function EvidencePageInner() {
       {evidence.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <Upload size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("evidence.empty")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("evidence.empty")}
+          </p>
         </div>
       ) : viewMode === "list" ? (
         <div className="space-y-2">
@@ -154,14 +166,19 @@ function EvidencePageInner() {
               <div className="flex items-center gap-3 min-w-0">
                 {categoryIcon(e.category)}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{e.fileName}</p>
+                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
+                    {e.fileName}
+                  </p>
                   <p className="text-xs text-gray-500">
                     {e.entityType} | {formatDate(e.createdAt)}
                     {e.fileSize ? ` | ${formatFileSize(e.fileSize)}` : ""}
                   </p>
                 </div>
               </div>
-              <Badge variant="outline" className={categoryBadgeClass(e.category)}>
+              <Badge
+                variant="outline"
+                className={categoryBadgeClass(e.category)}
+              >
                 {t(`evidence.category.${e.category}`)}
               </Badge>
             </Link>
@@ -170,17 +187,28 @@ function EvidencePageInner() {
       ) : (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
           {evidence.map((e) => (
-            <Link key={e.id} href={`/controls/evidence/${e.id}`} className="block">
+            <Link
+              key={e.id}
+              href={`/controls/evidence/${e.id}`}
+              className="block"
+            >
               <Card className="hover:border-blue-300 transition-colors cursor-pointer">
                 <CardContent className="py-4 text-center">
                   <div className="flex justify-center mb-2">
                     {categoryIcon(e.category)}
                   </div>
-                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{e.fileName}</p>
-                  <Badge variant="outline" className={`mt-2 ${categoryBadgeClass(e.category)}`}>
+                  <p className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
+                    {e.fileName}
+                  </p>
+                  <Badge
+                    variant="outline"
+                    className={`mt-2 ${categoryBadgeClass(e.category)}`}
+                  >
                     {t(`evidence.category.${e.category}`)}
                   </Badge>
-                  <p className="text-[10px] text-gray-400 mt-1">{formatDate(e.createdAt)}</p>
+                  <p className="text-[10px] text-gray-400 mt-1">
+                    {formatDate(e.createdAt)}
+                  </p>
                 </CardContent>
               </Card>
             </Link>

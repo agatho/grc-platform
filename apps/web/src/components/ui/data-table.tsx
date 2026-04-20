@@ -66,7 +66,9 @@ export function DataTable<TData, TValue>({
         {searchKey && (
           <input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+            value={
+              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
+            }
             onChange={(e) =>
               table.getColumn(searchKey)?.setFilterValue(e.target.value)
             }
@@ -125,9 +127,7 @@ export function DataTable<TData, TValue>({
 
       {/* Pagination */}
       <div className="flex items-center justify-between text-sm text-gray-600">
-        <span>
-          {table.getFilteredRowModel().rows.length} row(s)
-        </span>
+        <span>{table.getFilteredRowModel().rows.length} row(s)</span>
         <div className="flex items-center gap-2">
           <span>
             Page {table.getState().pagination.pageIndex + 1} of{" "}
@@ -158,7 +158,10 @@ export function SortableHeader({
   column,
   children,
 }: {
-  column: { toggleSorting: (desc?: boolean) => void; getIsSorted: () => false | "asc" | "desc" };
+  column: {
+    toggleSorting: (desc?: boolean) => void;
+    getIsSorted: () => false | "asc" | "desc";
+  };
   children: React.ReactNode;
 }) {
   return (

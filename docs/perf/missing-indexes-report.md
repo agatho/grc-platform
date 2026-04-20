@@ -8,14 +8,14 @@ Statische DDL-Analyse identifiziert Spalten, die wahrscheinlich einen Index brau
 
 ## Prioritaeten-Hinweis
 
-| Reason | Was | Priorisierung |
-|---|---|---|
-| RLS-Filter | `org_id` Index fehlt | **HIGH** -- RLS-Policy prueft pro Row |
-| FK | FK-Spalte ohne Index | **HIGH** -- JOIN-Performance + Delete-Cascade |
-| ID-Suffix | `xxx_id` ohne FK aber ohne Index | Medium -- oft Filter |
-| Timestamp-Sort | `created_at/updated_at` | Medium -- ORDER BY |
-| Status-Filter | `status/state` | Low -- geringe Cardinality |
-| Audit-User-Filter | `created_by/updated_by` | Low |
+| Reason            | Was                              | Priorisierung                                 |
+| ----------------- | -------------------------------- | --------------------------------------------- |
+| RLS-Filter        | `org_id` Index fehlt             | **HIGH** -- RLS-Policy prueft pro Row         |
+| FK                | FK-Spalte ohne Index             | **HIGH** -- JOIN-Performance + Delete-Cascade |
+| ID-Suffix         | `xxx_id` ohne FK aber ohne Index | Medium -- oft Filter                          |
+| Timestamp-Sort    | `created_at/updated_at`          | Medium -- ORDER BY                            |
+| Status-Filter     | `status/state`                   | Low -- geringe Cardinality                    |
+| Audit-User-Filter | `created_by/updated_by`          | Low                                           |
 
 ## Audit-User-Filter (205)
 

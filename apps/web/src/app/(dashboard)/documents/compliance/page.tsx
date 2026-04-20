@@ -66,9 +66,10 @@ function CompliancePageInner() {
   // Aggregate metrics
   const totalDocs = rows.length;
   const fullyCompliant = rows.filter((r) => r.pct >= 100).length;
-  const avgPct = rows.length > 0
-    ? Math.round(rows.reduce((sum, r) => sum + r.pct, 0) / rows.length)
-    : 0;
+  const avgPct =
+    rows.length > 0
+      ? Math.round(rows.reduce((sum, r) => sum + r.pct, 0) / rows.length)
+      : 0;
 
   if (loading) {
     return (
@@ -83,10 +84,19 @@ function CompliancePageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("compliance.title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("compliance.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("compliance.title")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("compliance.subtitle")}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => fetchData()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchData()}
+          disabled={loading}
+        >
           <RefreshCcw size={14} />
         </Button>
       </div>
@@ -100,7 +110,9 @@ function CompliancePageInner() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{totalDocs}</p>
-              <p className="text-xs text-gray-500">{t("compliance.totalDocuments")}</p>
+              <p className="text-xs text-gray-500">
+                {t("compliance.totalDocuments")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -110,8 +122,12 @@ function CompliancePageInner() {
               <CheckCircle2 size={20} className="text-emerald-600" />
             </div>
             <div>
-              <p className="text-2xl font-bold text-gray-900">{fullyCompliant}</p>
-              <p className="text-xs text-gray-500">{t("compliance.fullyCompliant")}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {fullyCompliant}
+              </p>
+              <p className="text-xs text-gray-500">
+                {t("compliance.fullyCompliant")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -122,7 +138,9 @@ function CompliancePageInner() {
             </div>
             <div>
               <p className="text-2xl font-bold text-gray-900">{avgPct}%</p>
-              <p className="text-xs text-gray-500">{t("compliance.averageRate")}</p>
+              <p className="text-xs text-gray-500">
+                {t("compliance.averageRate")}
+              </p>
             </div>
           </CardContent>
         </Card>
@@ -132,12 +150,16 @@ function CompliancePageInner() {
       {rows.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <CheckCircle2 size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("compliance.empty")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("compliance.empty")}
+          </p>
         </div>
       ) : (
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">{t("compliance.perDocument")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("compliance.perDocument")}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="overflow-x-auto">
@@ -145,14 +167,19 @@ function CompliancePageInner() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase">
                     <th className="pb-2 pr-4">{t("form.title")}</th>
-                    <th className="pb-2 pr-4">{t("compliance.acknowledged")}</th>
+                    <th className="pb-2 pr-4">
+                      {t("compliance.acknowledged")}
+                    </th>
                     <th className="pb-2 pr-4">{t("compliance.total")}</th>
                     <th className="pb-2">{t("compliance.rate")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {rows.map((row) => (
-                    <tr key={row.documentId} className="border-b border-gray-100 last:border-0">
+                    <tr
+                      key={row.documentId}
+                      className="border-b border-gray-100 last:border-0"
+                    >
                       <td className="py-2 pr-4">
                         <Link
                           href={`/documents/${row.documentId}`}
@@ -161,8 +188,12 @@ function CompliancePageInner() {
                           {row.documentTitle}
                         </Link>
                       </td>
-                      <td className="py-2 pr-4 text-gray-700">{row.acknowledgedCount}</td>
-                      <td className="py-2 pr-4 text-gray-700">{row.totalUsers}</td>
+                      <td className="py-2 pr-4 text-gray-700">
+                        {row.acknowledgedCount}
+                      </td>
+                      <td className="py-2 pr-4 text-gray-700">
+                        {row.totalUsers}
+                      </td>
                       <td className="py-2">
                         <div className="flex items-center gap-2">
                           <div className="w-20 h-2 rounded-full bg-gray-200 overflow-hidden">
@@ -177,7 +208,9 @@ function CompliancePageInner() {
                               style={{ width: `${row.pct}%` }}
                             />
                           </div>
-                          <span className="text-xs font-medium text-gray-600">{row.pct}%</span>
+                          <span className="text-xs font-medium text-gray-600">
+                            {row.pct}%
+                          </span>
                           {row.pct < 50 && (
                             <AlertTriangle size={12} className="text-red-500" />
                           )}

@@ -22,7 +22,14 @@
 //
 // Return: { created, skipped, catalogs: [...], framework_coverage: {...} }
 
-import { db, catalog, catalogEntry, orgActiveCatalog, soaEntry, assessmentRun } from "@grc/db";
+import {
+  db,
+  catalog,
+  catalogEntry,
+  orgActiveCatalog,
+  soaEntry,
+  assessmentRun,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, inArray, or } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -63,7 +70,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     } else {
       const parsed = bodySchema.safeParse({});
       if (!parsed.success) {
-        return Response.json({ error: "Internal schema error" }, { status: 500 });
+        return Response.json(
+          { error: "Internal schema error" },
+          { status: 500 },
+        );
       }
       bodyData = parsed.data;
     }
@@ -75,9 +85,17 @@ export async function POST(req: Request, { params }: RouteParams) {
   const [run] = await db
     .select()
     .from(assessmentRun)
-    .where(and(eq(assessmentRun.id, assessmentRunId), eq(assessmentRun.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(assessmentRun.id, assessmentRunId),
+        eq(assessmentRun.orgId, ctx.orgId),
+      ),
+    );
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   // Kataloge ermitteln
@@ -135,7 +153,9 @@ export async function POST(req: Request, { params }: RouteParams) {
       .filter((c) => {
         if (!c.source) return false;
         return frameworkCodes.some((code) =>
-          c.source!.toLowerCase().includes(code.toLowerCase().replace(/[_-]/g, "")),
+          c
+            .source!.toLowerCase()
+            .includes(code.toLowerCase().replace(/[_-]/g, "")),
         );
       })
       .map((c) => c.id);
@@ -172,7 +192,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     })
     .from(catalogEntry)
     .where(
-      and(inArray(catalogEntry.catalogId, targetCatalogIds), eq(catalogEntry.status, "active")),
+      and(
+        inArray(catalogEntry.catalogId, targetCatalogIds),
+        eq(catalogEntry.status, "active"),
+      ),
     );
 
   // Existierende SoA-Entries laden (Dedup)
@@ -215,7 +238,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   // Coverage-Statistik pro Framework berechnen
-  const coverageByFramework: Record<string, { total: number; withSoa: number }> = {};
+  const coverageByFramework: Record<
+    string,
+    { total: number; withSoa: number }
+  > = {};
   for (const meta of catalogMeta) {
     const key = meta.source ?? meta.name;
     const entriesInCat = entries.filter((e) => e.catalogId === meta.id);

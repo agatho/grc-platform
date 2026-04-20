@@ -1,15 +1,16 @@
 ## ADR-017: Monitoring & Alerting Strategy
 
-| **ADR-ID** | **017** |
-| --- | --- |
-| **Title** | **Grafana Cloud Free + JSON-Logs als Basis; OpenTelemetry als spätere Erweiterung** |
-| **Status** | **Proposed** |
-| **Date** | 2026-04-18 |
+| **ADR-ID**  | **017**                                                                                                                                                                                                                                   |
+| ----------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | **Grafana Cloud Free + JSON-Logs als Basis; OpenTelemetry als spätere Erweiterung**                                                                                                                                                       |
+| **Status**  | **Proposed**                                                                                                                                                                                                                              |
+| **Date**    | 2026-04-18                                                                                                                                                                                                                                |
 | **Context** | Aktuell gibt es `/api/v1/health`, den Schema-Drift-Check und den Audit-Integrity-Endpoint, aber kein Monitoring-Backend das sie regelmäßig abruft + alarmiert. Die Plattform ist GRC — Ausfälle müssen innerhalb Minuten entdeckt werden. |
 
 ### Decision
 
 **Phase 1 (sofort, ohne Infra-Change)**: Healthchecks.io Free-Plan. Jeder Probe-Endpoint bekommt einen Check:
+
 - `/api/v1/health` alle 60s
 - `/api/v1/health/schema-drift` (mit Admin-Cookie) stündlich
 - `/api/v1/audit-log/integrity` (mit Admin-Cookie) täglich 03:00
@@ -17,11 +18,13 @@
 Healthchecks.io sendet Alarme an E-Mail + optional Slack/Telegram/PagerDuty bei fehlgeschlagenem Ping.
 
 **Phase 2 (wenn > 50 Tenants oder Compliance-Druck)**: Grafana Cloud Free-Tier mit Loki + Prometheus:
+
 - Loki: JSON-Logs via Docker-Log-Driver nach `promtail` im Host
 - Prometheus: node-exporter + postgres-exporter im Compose-Stack
 - Grafana-Dashboards für DB-Latenz, Audit-Trail-Größe, KRI-Entwicklung
 
 **Nicht verwenden**:
+
 - Datadog (zu teuer + US-Cloud, widerspricht ADR-007 rev. 1)
 - Sentry SaaS (US-Cloud). Alternative: Sentry Self-Hosted auf Hetzner — aber separater ADR.
 
@@ -35,6 +38,7 @@ Healthchecks.io sendet Alarme an E-Mail + optional Slack/Telegram/PagerDuty bei 
 ### Concrete Metrics to Expose
 
 Aus der bestehenden Audit-Impact-KRI-API lassen sich bereits ziehen:
+
 ```
 arctos_open_findings_total{severity="significant_nonconformity"} 3
 arctos_overdue_findings_total 12

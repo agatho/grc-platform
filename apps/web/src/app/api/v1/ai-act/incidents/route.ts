@@ -5,7 +5,13 @@ import { and, desc, eq, sql } from "drizzle-orm";
 import { createAiIncidentSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -20,7 +26,8 @@ export async function GET(req: Request) {
   const conditions = [eq(aiIncident.orgId, ctx.orgId)];
   if (severity) conditions.push(eq(aiIncident.severity, severity));
   if (status) conditions.push(eq(aiIncident.status, status));
-  const whereClause = conditions.length === 1 ? conditions[0] : and(...conditions);
+  const whereClause =
+    conditions.length === 1 ? conditions[0] : and(...conditions);
 
   const [rows, countRows] = await Promise.all([
     db
@@ -54,14 +61,20 @@ export async function POST(req: Request) {
 
   const parsed = createAiIncidentSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
-  const { title, description, ai_system_id, severity, is_serious } = parsed.data;
+  const { title, description, ai_system_id, severity, is_serious } =
+    parsed.data;
 
   // Auto-calculate authority_deadline: 2 days if death/serious harm, 15 days otherwise
   const deadlineDays = is_serious ? 2 : 15;
   const now = new Date();
-  const authorityDeadline = new Date(now.getTime() + deadlineDays * 24 * 60 * 60 * 1000);
+  const authorityDeadline = new Date(
+    now.getTime() + deadlineDays * 24 * 60 * 60 * 1000,
+  );
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [inserted] = await tx

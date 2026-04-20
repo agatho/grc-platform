@@ -31,10 +31,12 @@ export async function POST(req: Request) {
   const [existing] = await db
     .select()
     .from(onboardingSession)
-    .where(and(
-      eq(onboardingSession.orgId, ctx.orgId),
-      eq(onboardingSession.status, "in_progress"),
-    ));
+    .where(
+      and(
+        eq(onboardingSession.orgId, ctx.orgId),
+        eq(onboardingSession.status, "in_progress"),
+      ),
+    );
 
   if (existing) {
     return Response.json({ data: existing });

@@ -27,7 +27,9 @@ export async function processRegulatorySources(): Promise<{
 
   for (const source of dueSources) {
     try {
-      console.log(`[regulatory-source-fetcher] Fetching source: ${source.name}`);
+      console.log(
+        `[regulatory-source-fetcher] Fetching source: ${source.name}`,
+      );
 
       // In production: fetch from source.url, parse content, classify via NLP
       // Placeholder: update last fetch time
@@ -39,9 +41,11 @@ export async function processRegulatorySources(): Promise<{
           updatedAt: now,
         })
         .where(eq(regulatorySource.id, source.id));
-
     } catch (err) {
-      console.error(`[regulatory-source-fetcher] Source ${source.name} failed:`, err);
+      console.error(
+        `[regulatory-source-fetcher] Source ${source.name} failed:`,
+        err,
+      );
       await db
         .update(regulatorySource)
         .set({
@@ -52,6 +56,8 @@ export async function processRegulatorySources(): Promise<{
     }
   }
 
-  console.log(`[regulatory-source-fetcher] Checked ${dueSources.length} sources, detected ${changesDetected} changes`);
+  console.log(
+    `[regulatory-source-fetcher] Checked ${dueSources.length} sources, detected ${changesDetected} changes`,
+  );
   return { sourcesChecked: dueSources.length, changesDetected };
 }

@@ -8,7 +8,9 @@ export async function processEamPortfolioHealthCheck(): Promise<{
   totalApplications: number;
   alertsGenerated: number;
 }> {
-  console.log("[eam-portfolio-health-check] Computing portfolio health indicators");
+  console.log(
+    "[eam-portfolio-health-check] Computing portfolio health indicators",
+  );
 
   const result = await db.execute(sql`
     SELECT
@@ -22,7 +24,9 @@ export async function processEamPortfolioHealthCheck(): Promise<{
     WHERE ae.status != 'retired'
   `);
 
-  const row = (result as unknown as Array<Record<string, number>>)[0] ?? { total: 0 };
+  const row = (result as unknown as Array<Record<string, number>>)[0] ?? {
+    total: 0,
+  };
   const total = row.total || 1;
 
   const indicators = {
@@ -36,19 +40,27 @@ export async function processEamPortfolioHealthCheck(): Promise<{
 
   // Default thresholds (configurable per org in production)
   if (indicators.insufficientFitPct > 20) {
-    console.log(`[eam-portfolio-health-check] ALERT: ${indicators.insufficientFitPct}% insufficient functional fit (threshold: 20%)`);
+    console.log(
+      `[eam-portfolio-health-check] ALERT: ${indicators.insufficientFitPct}% insufficient functional fit (threshold: 20%)`,
+    );
     alertsGenerated++;
   }
   if (indicators.approachingEolPct > 15) {
-    console.log(`[eam-portfolio-health-check] ALERT: ${indicators.approachingEolPct}% approaching EOL`);
+    console.log(
+      `[eam-portfolio-health-check] ALERT: ${indicators.approachingEolPct}% approaching EOL`,
+    );
     alertsGenerated++;
   }
   if (indicators.unassessedPct > 30) {
-    console.log(`[eam-portfolio-health-check] ALERT: ${indicators.unassessedPct}% unassessed`);
+    console.log(
+      `[eam-portfolio-health-check] ALERT: ${indicators.unassessedPct}% unassessed`,
+    );
     alertsGenerated++;
   }
 
-  console.log(`[eam-portfolio-health-check] Complete: ${total} apps, ${alertsGenerated} alerts`);
+  console.log(
+    `[eam-portfolio-health-check] Complete: ${total} apps, ${alertsGenerated} alerts`,
+  );
 
   return { totalApplications: total, alertsGenerated };
 }

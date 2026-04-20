@@ -62,18 +62,34 @@ function kpiColor(value: number, threshold: number, inverted = false): string {
   return "text-red-600";
 }
 
-function TrendIcon({ snapshots, kpiKey, inverted = false }: { snapshots: Snapshot[]; kpiKey: keyof KpiData; inverted?: boolean }) {
-  if (snapshots.length < 2) return <Minus className="h-4 w-4 text-muted-foreground" />;
+function TrendIcon({
+  snapshots,
+  kpiKey,
+  inverted = false,
+}: {
+  snapshots: Snapshot[];
+  kpiKey: keyof KpiData;
+  inverted?: boolean;
+}) {
+  if (snapshots.length < 2)
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   const latest = snapshots[0].kpis[kpiKey] as number;
   const previous = snapshots[1].kpis[kpiKey] as number;
   const delta = latest - previous;
   const improving = inverted ? delta < 0 : delta > 0;
-  if (Math.abs(delta) < 1) return <Minus className="h-4 w-4 text-muted-foreground" />;
+  if (Math.abs(delta) < 1)
+    return <Minus className="h-4 w-4 text-muted-foreground" />;
   if (improving) return <TrendingUp className="h-4 w-4 text-green-600" />;
   return <TrendingDown className="h-4 w-4 text-red-600" />;
 }
 
-function Sparkline({ data, color = "stroke-primary" }: { data: number[]; color?: string }) {
+function Sparkline({
+  data,
+  color = "stroke-primary",
+}: {
+  data: number[];
+  color?: string;
+}) {
   if (data.length < 2) return null;
   const max = Math.max(...data, 1);
   const min = Math.min(...data, 0);
@@ -200,8 +216,15 @@ export default function ExecutiveDashboardPage() {
             {t("executive.description")}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchAll} disabled={loading}>
-          <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchAll}
+          disabled={loading}
+        >
+          <RefreshCcw
+            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+          />
           {t("executive.refresh")}
         </Button>
       </div>
@@ -225,7 +248,8 @@ export default function ExecutiveDashboardPage() {
                 <CardContent>
                   <div className="flex items-center gap-2">
                     <span className={`text-3xl font-bold ${card.color}`}>
-                      {card.value}{card.suffix}
+                      {card.value}
+                      {card.suffix}
                     </span>
                     <TrendIcon
                       snapshots={snapshots}
@@ -246,7 +270,9 @@ export default function ExecutiveDashboardPage() {
             {kpiCards.map((card) => (
               <Card key={`trend-${card.key}`}>
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-sm">{card.label} {t("executive.trend")}</CardTitle>
+                  <CardTitle className="text-sm">
+                    {card.label} {t("executive.trend")}
+                  </CardTitle>
                 </CardHeader>
                 <CardContent>
                   <Sparkline

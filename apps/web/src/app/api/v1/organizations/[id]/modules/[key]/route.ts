@@ -135,9 +135,7 @@ export async function PUT(
         );
 
       const activeDeps = activeDepConfigs
-        .filter(
-          (c) => c.uiStatus === "enabled" || c.uiStatus === "preview",
-        )
+        .filter((c) => c.uiStatus === "enabled" || c.uiStatus === "preview")
         .map((c) => c.moduleKey);
 
       if (activeDeps.length > 0) {

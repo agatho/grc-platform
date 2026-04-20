@@ -1,7 +1,13 @@
 // Cron Job: Policy Overdue Escalation
 // WEEKLY — Mark overdue acknowledgments, escalate to distribution creator
 
-import { db, policyDistribution, policyAcknowledgment, notification, user } from "@grc/db";
+import {
+  db,
+  policyDistribution,
+  policyAcknowledgment,
+  notification,
+  user,
+} from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
 
 interface PolicyOverdueResult {
@@ -17,7 +23,9 @@ export async function processPolicyOverdueEscalation(): Promise<PolicyOverdueRes
   let escalationsSent = 0;
   const now = new Date();
 
-  console.log(`[cron:policy-overdue-escalation] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:policy-overdue-escalation] Starting at ${now.toISOString()}`,
+  );
 
   // Find active distributions past their deadline
   const overdueDistributions = await db
@@ -31,7 +39,9 @@ export async function processPolicyOverdueEscalation(): Promise<PolicyOverdueRes
     );
 
   if (overdueDistributions.length === 0) {
-    console.log("[cron:policy-overdue-escalation] No overdue distributions found");
+    console.log(
+      "[cron:policy-overdue-escalation] No overdue distributions found",
+    );
     return { processed: 0, markedOverdue: 0, escalationsSent: 0, errors: [] };
   }
 
@@ -65,8 +75,10 @@ export async function processPolicyOverdueEscalation(): Promise<PolicyOverdueRes
           AND pa.status = 'overdue'
       `);
 
-      const overdueCount = (overdueResult[0] as { overdue_count: number }).overdue_count;
-      const overdueNames = (overdueResult[0] as { overdue_names: string[] }).overdue_names;
+      const overdueCount = (overdueResult[0] as { overdue_count: number })
+        .overdue_count;
+      const overdueNames = (overdueResult[0] as { overdue_names: string[] })
+        .overdue_names;
 
       if (overdueCount > 0 && dist.distributedBy) {
         // Send escalation to distribution creator
@@ -113,7 +125,9 @@ export async function processPolicyOverdueEscalation(): Promise<PolicyOverdueRes
             });
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            errors.push(`Overdue notification for user ${ackRecord.userId}: ${message}`);
+            errors.push(
+              `Overdue notification for user ${ackRecord.userId}: ${message}`,
+            );
           }
         }
 

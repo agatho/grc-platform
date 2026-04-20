@@ -1,7 +1,12 @@
 // Sprint 51: EAM Suggestion Compute Worker — Daily
 // Rule-based, NO LLM needed — computes suggestions from EOL dates, risk counts, assessment gaps
 
-import { db, applicationPortfolio, architectureElement, eamObjectSuggestion } from "@grc/db";
+import {
+  db,
+  applicationPortfolio,
+  architectureElement,
+  eamObjectSuggestion,
+} from "@grc/db";
 import { eq, and, sql, lte, isNull, or } from "drizzle-orm";
 
 export async function processEamSuggestionCompute(): Promise<{
@@ -10,7 +15,9 @@ export async function processEamSuggestionCompute(): Promise<{
   console.log("[eam-suggestion-compute] Computing rule-based suggestions");
 
   // Clear old suggestions (recompute fresh)
-  await db.execute(sql`DELETE FROM eam_object_suggestion WHERE computed_at < NOW() - INTERVAL '7 days'`);
+  await db.execute(
+    sql`DELETE FROM eam_object_suggestion WHERE computed_at < NOW() - INTERVAL '7 days'`,
+  );
 
   let suggestionsCreated = 0;
 
@@ -26,15 +33,20 @@ export async function processEamSuggestionCompute(): Promise<{
       AND ae.owner IS NOT NULL
   `);
 
-  for (const row of eolApproaching as unknown as Array<Record<string, string>>) {
-    await db.insert(eamObjectSuggestion).values({
-      orgId: row.org_id,
-      userId: row.user_id,
-      entityId: row.entity_id,
-      entityType: "application",
-      reason: "eol_approaching",
-      priority: 8,
-    }).onConflictDoNothing();
+  for (const row of eolApproaching as unknown as Array<
+    Record<string, string>
+  >) {
+    await db
+      .insert(eamObjectSuggestion)
+      .values({
+        orgId: row.org_id,
+        userId: row.user_id,
+        entityId: row.entity_id,
+        entityType: "application",
+        reason: "eol_approaching",
+        priority: 8,
+      })
+      .onConflictDoNothing();
     suggestionsCreated++;
   }
 
@@ -49,18 +61,23 @@ export async function processEamSuggestionCompute(): Promise<{
   `);
 
   for (const row of unassessed as unknown as Array<Record<string, string>>) {
-    await db.insert(eamObjectSuggestion).values({
-      orgId: row.org_id,
-      userId: row.user_id,
-      entityId: row.entity_id,
-      entityType: "application",
-      reason: "unassessed",
-      priority: 5,
-    }).onConflictDoNothing();
+    await db
+      .insert(eamObjectSuggestion)
+      .values({
+        orgId: row.org_id,
+        userId: row.user_id,
+        entityId: row.entity_id,
+        entityType: "application",
+        reason: "unassessed",
+        priority: 5,
+      })
+      .onConflictDoNothing();
     suggestionsCreated++;
   }
 
-  console.log(`[eam-suggestion-compute] Complete: ${suggestionsCreated} suggestions created`);
+  console.log(
+    `[eam-suggestion-compute] Complete: ${suggestionsCreated} suggestions created`,
+  );
 
   return { suggestionsCreated };
 }

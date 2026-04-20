@@ -85,9 +85,7 @@ export async function GET(
   }
 
   const totalEmissions =
-    scopes.scope1.total +
-    scopes.scope2_location.total +
-    scopes.scope3.total;
+    scopes.scope1.total + scopes.scope2_location.total + scopes.scope3.total;
 
   return Response.json({
     data: {

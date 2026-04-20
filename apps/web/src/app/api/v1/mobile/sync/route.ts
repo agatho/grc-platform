@@ -20,10 +20,12 @@ export async function POST(req: Request) {
   const [existing] = await db
     .select()
     .from(offlineSyncState)
-    .where(and(
-      eq(offlineSyncState.deviceId, body.data.deviceId),
-      eq(offlineSyncState.entityType, body.data.entityType),
-    ));
+    .where(
+      and(
+        eq(offlineSyncState.deviceId, body.data.deviceId),
+        eq(offlineSyncState.entityType, body.data.entityType),
+      ),
+    );
 
   const newVersion = (existing?.syncVersion ?? 0) + 1;
 
@@ -74,11 +76,13 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(offlineSyncState)
-    .where(and(
-      eq(offlineSyncState.orgId, ctx.orgId),
-      eq(offlineSyncState.userId, ctx.userId),
-      eq(offlineSyncState.deviceId, deviceId),
-    ));
+    .where(
+      and(
+        eq(offlineSyncState.orgId, ctx.orgId),
+        eq(offlineSyncState.userId, ctx.userId),
+        eq(offlineSyncState.deviceId, deviceId),
+      ),
+    );
 
   return Response.json({ data: rows });
 }

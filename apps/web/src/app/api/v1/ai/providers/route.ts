@@ -88,12 +88,14 @@ function envState(keys: string[]): ProviderInfo["envVars"] {
 }
 
 const HINT: Record<string, string> = {
-  CLAUDE_CLI_ENABLED: "Auf 'false' setzen, um den CLI-Provider komplett zu deaktivieren.",
+  CLAUDE_CLI_ENABLED:
+    "Auf 'false' setzen, um den CLI-Provider komplett zu deaktivieren.",
   ANTHROPIC_API_KEY: "Anthropic API-Schlüssel (beginnt mit sk-ant-).",
   OPENAI_API_KEY: "OpenAI API-Schlüssel (beginnt mit sk-).",
   GOOGLE_AI_API_KEY: "Google Generative AI API-Schlüssel.",
   OLLAMA_BASE_URL: "Typisch http://localhost:11434",
-  OLLAMA_ENABLED: "Alternativ zu OLLAMA_BASE_URL — 'true' genügt für localhost.",
+  OLLAMA_ENABLED:
+    "Alternativ zu OLLAMA_BASE_URL — 'true' genügt für localhost.",
   LMSTUDIO_BASE_URL: "Typisch http://localhost:1234",
   LMSTUDIO_ENABLED: "'true' genügt, wenn localhost:1234 genutzt wird.",
   LMSTUDIO_DEFAULT_MODEL: "Default-Modellname, den LM Studio ausliefert.",

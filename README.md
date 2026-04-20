@@ -62,50 +62,50 @@ npm run dev
 
 The setup seeds a complete demo scenario for **Meridian Holdings GmbH** — a German holding company:
 
-| Module | Demo Data |
-|--------|-----------|
-| **ERM** | 5 risks, 5 KRIs with 6-month trend data, 4 risk treatments |
-| **ICS** | 8 controls (ISO 27001 mapped), 2 test campaigns, 6 test results |
-| **ISMS** | 10 assets, 5 threats, 4 vulnerabilities, 8 SoA entries |
-| **DPMS** | 5 RoPA entries, 2 DPIAs, 3 data breaches, 2 DSRs |
-| **Audit** | 1 audit plan, 2 audits (ISO pre-audit + NIS2 gap), 5 findings |
-| **BCMS** | 2 BIA assessments, 1 BCP, 2 crisis scenarios, 1 BC exercise |
-| **TPRM** | 5 vendors, 3 contracts, 4 SLAs, 1 LkSG assessment |
-| **BPM** | 6 processes with steps |
-| **DMS** | 8 policy documents |
-| **Budget** | 5 hierarchical budgets (2M EUR total) |
+| Module     | Demo Data                                                       |
+| ---------- | --------------------------------------------------------------- |
+| **ERM**    | 5 risks, 5 KRIs with 6-month trend data, 4 risk treatments      |
+| **ICS**    | 8 controls (ISO 27001 mapped), 2 test campaigns, 6 test results |
+| **ISMS**   | 10 assets, 5 threats, 4 vulnerabilities, 8 SoA entries          |
+| **DPMS**   | 5 RoPA entries, 2 DPIAs, 3 data breaches, 2 DSRs                |
+| **Audit**  | 1 audit plan, 2 audits (ISO pre-audit + NIS2 gap), 5 findings   |
+| **BCMS**   | 2 BIA assessments, 1 BCP, 2 crisis scenarios, 1 BC exercise     |
+| **TPRM**   | 5 vendors, 3 contracts, 4 SLAs, 1 LkSG assessment               |
+| **BPM**    | 6 processes with steps                                          |
+| **DMS**    | 8 policy documents                                              |
+| **Budget** | 5 hierarchical budgets (2M EUR total)                           |
 
 ## Compliance Frameworks
 
 29 seeded catalogs with target module filtering:
 
-| Framework | Type | Entries | Modules |
-|-----------|------|---------|---------|
-| ISO 27001:2022 Annex A | Control | 97 | ISMS |
-| GDPR (2016/679) | Control | 106 | DPMS, ISMS |
-| NIS2 (2022/2555) | Control | 50 | ISMS, BCMS, ERM |
-| DORA (2022/2554) | Control | 53 | ISMS, BCMS, TPRM |
-| BSI IT-Grundschutz | Control | 160 | ISMS, ICS |
-| EU AI Act (2024/1689) | Control | 63 | ISMS |
-| MITRE ATT&CK v15.1 | Risk | 266 | ISMS |
-| TISAX (VDA ISA 6.0) | Control | 110 | ISMS, TPRM |
-| NIST CSF 2.0 | Control | 131 | ISMS, ICS, ERM |
-| COBIT 2019 | Control | 45 | ICS, Audit |
-| ... and 19 more | | | |
+| Framework              | Type    | Entries | Modules          |
+| ---------------------- | ------- | ------- | ---------------- |
+| ISO 27001:2022 Annex A | Control | 97      | ISMS             |
+| GDPR (2016/679)        | Control | 106     | DPMS, ISMS       |
+| NIS2 (2022/2555)       | Control | 50      | ISMS, BCMS, ERM  |
+| DORA (2022/2554)       | Control | 53      | ISMS, BCMS, TPRM |
+| BSI IT-Grundschutz     | Control | 160     | ISMS, ICS        |
+| EU AI Act (2024/1689)  | Control | 63      | ISMS             |
+| MITRE ATT&CK v15.1     | Risk    | 266     | ISMS             |
+| TISAX (VDA ISA 6.0)    | Control | 110     | ISMS, TPRM       |
+| NIST CSF 2.0           | Control | 131     | ISMS, ICS, ERM   |
+| COBIT 2019             | Control | 45      | ICS, Audit       |
+| ... and 19 more        |         |         |                  |
 
 401 cross-framework mappings enable "implement once, satisfy many" — one ISO 27001 control can satisfy NIS2, BSI, TISAX, and DORA requirements simultaneously.
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
+| Layer    | Technology                                                         |
+| -------- | ------------------------------------------------------------------ |
 | Frontend | Next.js 15, React 19, Tailwind CSS 4, shadcn/ui, recharts, bpmn-js |
-| Backend | Node.js 22, TypeScript, Hono.js (Worker) |
-| Database | PostgreSQL 16 + TimescaleDB, Drizzle ORM, RLS |
-| Auth | Auth.js v5 (self-hosted) + Custom RBAC + Three Lines of Defense |
-| AI | Claude API + OpenAI + Gemini + Ollama (local) |
-| Email | Resend SDK + React Email (27 templates, DE/EN) |
-| CI/CD | GitHub Actions, CodeQL, Dependabot |
+| Backend  | Node.js 22, TypeScript, Hono.js (Worker)                           |
+| Database | PostgreSQL 16 + TimescaleDB, Drizzle ORM, RLS                      |
+| Auth     | Auth.js v5 (self-hosted) + Custom RBAC + Three Lines of Defense    |
+| AI       | Claude API + OpenAI + Gemini + Ollama (local)                      |
+| Email    | Resend SDK + React Email (27 templates, DE/EN)                     |
+| CI/CD    | GitHub Actions, CodeQL, Dependabot                                 |
 
 ## Project Structure
 
@@ -131,15 +131,15 @@ arctos/
 
 ## NPM Scripts
 
-| Script | Description |
-|--------|------------|
-| `npm run setup` | Full setup (deps, DB, migrations, seeds, i18n) |
-| `npm run dev` | Start dev server (web + worker) |
-| `npm run build` | Production build |
-| `npm run db:migrate` | Run database migrations |
-| `npm run db:seed` | Seed foundation data |
-| `npm run db:seed:demo` | Seed demo data only |
-| `npm run test` | Run all tests |
+| Script                 | Description                                    |
+| ---------------------- | ---------------------------------------------- |
+| `npm run setup`        | Full setup (deps, DB, migrations, seeds, i18n) |
+| `npm run dev`          | Start dev server (web + worker)                |
+| `npm run build`        | Production build                               |
+| `npm run db:migrate`   | Run database migrations                        |
+| `npm run db:seed`      | Seed foundation data                           |
+| `npm run db:seed:demo` | Seed demo data only                            |
+| `npm run test`         | Run all tests                                  |
 
 ## Security
 
@@ -153,10 +153,10 @@ arctos/
 
 See `.env.example` for all variables. Required:
 
-| Variable | Description |
-|----------|------------|
-| `DATABASE_URL` | PostgreSQL connection string |
-| `AUTH_SECRET` | Session encryption key (auto-generated by setup) |
+| Variable            | Description                                         |
+| ------------------- | --------------------------------------------------- |
+| `DATABASE_URL`      | PostgreSQL connection string                        |
+| `AUTH_SECRET`       | Session encryption key (auto-generated by setup)    |
 | `WB_ENCRYPTION_KEY` | Whistleblowing encryption (auto-generated by setup) |
 
 Optional: `ANTHROPIC_API_KEY`, `OPENAI_API_KEY`, `RESEND_API_KEY`, `AZURE_AD_*`

@@ -14,7 +14,10 @@ export async function POST(req: Request) {
 
   const body = createArchRelationshipSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Verify both elements exist and belong to same org
@@ -29,11 +32,17 @@ export async function POST(req: Request) {
     .where(eq(architectureElement.id, body.data.targetId));
 
   if (!source || !target) {
-    return Response.json({ error: "Source or target element not found" }, { status: 404 });
+    return Response.json(
+      { error: "Source or target element not found" },
+      { status: 404 },
+    );
   }
 
   if (source.orgId !== ctx.orgId || target.orgId !== ctx.orgId) {
-    return Response.json({ error: "Cross-org relationships not allowed" }, { status: 403 });
+    return Response.json(
+      { error: "Cross-org relationships not allowed" },
+      { status: 403 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

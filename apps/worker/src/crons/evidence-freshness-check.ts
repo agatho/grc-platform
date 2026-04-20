@@ -7,7 +7,10 @@ import { eq, and, desc } from "drizzle-orm";
 export const evidenceFreshnessCheckCron = "0 6 * * *"; // Daily at 6 AM
 
 export async function evidenceFreshnessCheck(): Promise<void> {
-  const configs = await db.select().from(evidenceFreshnessConfig).where(eq(evidenceFreshnessConfig.notifyOnStale, true));
+  const configs = await db
+    .select()
+    .from(evidenceFreshnessConfig)
+    .where(eq(evidenceFreshnessConfig.notifyOnStale, true));
 
   const now = new Date();
 
@@ -30,7 +33,8 @@ export async function evidenceFreshnessCheck(): Promise<void> {
     if (!latestResult) continue;
 
     const daysSinceLastRun = Math.floor(
-      (now.getTime() - new Date(latestResult.executedAt).getTime()) / (1000 * 60 * 60 * 24),
+      (now.getTime() - new Date(latestResult.executedAt).getTime()) /
+        (1000 * 60 * 60 * 24),
     );
 
     if (daysSinceLastRun >= config.maxAgeDays) {

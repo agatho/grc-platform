@@ -36,11 +36,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
   if (!r) {
     return Response.json({ error: "Risk not found" }, { status: 404 });
@@ -84,7 +80,8 @@ export async function GET(req: Request, { params }: RouteParams) {
     const open = openStatuses.has(f.status);
     const critical = criticalSeverities.has(f.severity);
     if (open && critical) openCritical++;
-    if (open && f.remediationDueDate && f.remediationDueDate < now) overdueOpen++;
+    if (open && f.remediationDueDate && f.remediationDueDate < now)
+      overdueOpen++;
   }
 
   // Count treatments derived from these findings.

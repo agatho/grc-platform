@@ -60,7 +60,10 @@ export async function POST(req: Request) {
     const responseXml = decodeSamlResponse(samlResponse);
 
     // Validate signature
-    const signatureValid = validateSAMLSignature(responseXml, config.samlCertificate);
+    const signatureValid = validateSAMLSignature(
+      responseXml,
+      config.samlCertificate,
+    );
     if (!signatureValid) {
       await logAccessEvent({
         emailAttempted: "unknown",
@@ -68,7 +71,10 @@ export async function POST(req: Request) {
         authMethod: "sso_oidc",
         failureReason: "saml_invalid_signature",
       });
-      return Response.json({ error: "Invalid SAML signature" }, { status: 401 });
+      return Response.json(
+        { error: "Invalid SAML signature" },
+        { status: 401 },
+      );
     }
 
     // Validate assertion (expiry, audience, replay)
@@ -76,17 +82,19 @@ export async function POST(req: Request) {
     validateSAMLAssertion(responseXml, spEntityId);
 
     // Extract user attributes
-    const attrMapping = (config.samlAttributeMapping as SamlAttributeMapping) ?? {
-      email: "email",
-      firstName: "givenName",
-      lastName: "sn",
-      groups: "memberOf",
-    };
+    const attrMapping =
+      (config.samlAttributeMapping as SamlAttributeMapping) ?? {
+        email: "email",
+        firstName: "givenName",
+        lastName: "sn",
+        groups: "memberOf",
+      };
     const attrs = extractSAMLAttributes(responseXml, attrMapping);
 
     // JIT Provisioning: create or update user
     const email = attrs.email.toLowerCase();
-    const name = [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
+    const name =
+      [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
 
     const [existing] = await db
       .select()
@@ -134,7 +142,11 @@ export async function POST(req: Request) {
       // Assign default role
       const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
       const mappingEntries = groupRoleMappingToEntries(groupMapping);
-      const role = resolveRole(attrs.groups ?? [], mappingEntries, config.defaultRole ?? "viewer");
+      const role = resolveRole(
+        attrs.groups ?? [],
+        mappingEntries,
+        config.defaultRole ?? "viewer",
+      );
 
       await db.insert(userOrganizationRole).values({
         userId,
@@ -161,7 +173,8 @@ export async function POST(req: Request) {
     const redirectUrl = new URL(`${baseUrl}${callbackUrl}`);
     return Response.redirect(redirectUrl.toString(), 302);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "SAML authentication failed";
+    const message =
+      err instanceof Error ? err.message : "SAML authentication failed";
     await logAccessEvent({
       emailAttempted: "unknown",
       eventType: "login_failed",

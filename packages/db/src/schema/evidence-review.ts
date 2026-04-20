@@ -35,9 +35,14 @@ export const evidenceReviewJob = pgTable(
     totalArtifacts: integer("total_artifacts").notNull().default(0),
     reviewedArtifacts: integer("reviewed_artifacts").notNull().default(0),
     compliantArtifacts: integer("compliant_artifacts").notNull().default(0),
-    nonCompliantArtifacts: integer("non_compliant_artifacts").notNull().default(0),
+    nonCompliantArtifacts: integer("non_compliant_artifacts")
+      .notNull()
+      .default(0),
     gapsIdentified: integer("gaps_identified").notNull().default(0),
-    overallConfidence: numeric("overall_confidence", { precision: 5, scale: 2 }),
+    overallConfidence: numeric("overall_confidence", {
+      precision: 5,
+      scale: 2,
+    }),
     model: varchar("model", { length: 100 }),
     totalTokensUsed: integer("total_tokens_used").notNull().default(0),
     durationMs: integer("duration_ms"),
@@ -93,10 +98,16 @@ export const evidenceReviewResult = pgTable(
     controlId: uuid("control_id"),
     artifactName: varchar("artifact_name", { length: 500 }).notNull(),
     classification: varchar("classification", { length: 30 }).notNull(), // compliant | partially_compliant | non_compliant | inconclusive
-    confidenceScore: numeric("confidence_score", { precision: 5, scale: 2 }).notNull(), // 0-100
+    confidenceScore: numeric("confidence_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(), // 0-100
     reasoning: text("reasoning").notNull(),
     requirements: jsonb("requirements").default("[]"), // [{requirement, met, evidence_excerpt}]
-    completenessScore: numeric("completeness_score", { precision: 5, scale: 2 }), // 0-100
+    completenessScore: numeric("completeness_score", {
+      precision: 5,
+      scale: 2,
+    }), // 0-100
     freshnessScore: numeric("freshness_score", { precision: 5, scale: 2 }), // 0-100
     qualityScore: numeric("quality_score", { precision: 5, scale: 2 }), // 0-100
     suggestedImprovements: jsonb("suggested_improvements").default("[]"),

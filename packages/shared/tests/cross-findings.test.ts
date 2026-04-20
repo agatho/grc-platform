@@ -12,7 +12,9 @@ import {
 
 describe("severity normalizers", () => {
   it("ICS significant_nonconformity => high", () => {
-    expect(normalizeIcsFindingSeverity("significant_nonconformity")).toBe("high");
+    expect(normalizeIcsFindingSeverity("significant_nonconformity")).toBe(
+      "high",
+    );
   });
   it("ICS observation => observation", () => {
     expect(normalizeIcsFindingSeverity("observation")).toBe("observation");
@@ -61,9 +63,19 @@ describe("aggregateCrossFindings", () => {
   it("counts by module, severity, status", () => {
     const findings = [
       mk({ id: "1", module: "ics", severity: "high", status: "open" }),
-      mk({ id: "2", module: "ai_act_incident", severity: "critical", status: "open" }),
+      mk({
+        id: "2",
+        module: "ai_act_incident",
+        severity: "critical",
+        status: "open",
+      }),
       mk({ id: "3", module: "isms_cap", severity: "medium", status: "closed" }),
-      mk({ id: "4", module: "dpms_breach", severity: "critical", status: "resolved" }),
+      mk({
+        id: "4",
+        module: "dpms_breach",
+        severity: "critical",
+        status: "resolved",
+      }),
     ];
     const r = aggregateCrossFindings(findings, now);
     expect(r.total).toBe(4);
@@ -91,8 +103,16 @@ describe("aggregateCrossFindings", () => {
 
   it("oldestOpenAgeDays computed from oldest open finding", () => {
     const findings = [
-      mk({ id: "1", status: "open", identifiedAt: new Date("2026-03-01T00:00:00Z") }),
-      mk({ id: "2", status: "open", identifiedAt: new Date("2026-04-15T00:00:00Z") }),
+      mk({
+        id: "1",
+        status: "open",
+        identifiedAt: new Date("2026-03-01T00:00:00Z"),
+      }),
+      mk({
+        id: "2",
+        status: "open",
+        identifiedAt: new Date("2026-04-15T00:00:00Z"),
+      }),
     ];
     const r = aggregateCrossFindings(findings, now);
     expect(r.oldestOpenAgeDays).toBeGreaterThanOrEqual(48);
@@ -153,7 +173,12 @@ describe("prioritizeFindings", () => {
 
   it("age boost capped at +0.5", () => {
     const veryOld = new Date("2025-01-01T00:00:00Z");
-    const f = mk({ id: "a", severity: "high", identifiedAt: veryOld, dueDate: null });
+    const f = mk({
+      id: "a",
+      severity: "high",
+      identifiedAt: veryOld,
+      dueDate: null,
+    });
     const [scored] = prioritizeFindings([f], now);
     // severity=high (70) * (1 + 0.5) = 105 max without overdue
     expect(scored.priorityScore).toBeLessThanOrEqual(105);
@@ -164,7 +189,12 @@ describe("prioritizeFindings", () => {
   it("critical overdue > 30d reaches max score", () => {
     const longOverdue = new Date("2026-01-01T00:00:00Z");
     const veryOld = new Date("2025-01-01T00:00:00Z");
-    const f = mk({ id: "a", severity: "critical", identifiedAt: veryOld, dueDate: longOverdue });
+    const f = mk({
+      id: "a",
+      severity: "critical",
+      identifiedAt: veryOld,
+      dueDate: longOverdue,
+    });
     const [scored] = prioritizeFindings([f], now);
     // 100 * 1.5 * 2.0 = 300
     expect(scored.priorityScore).toBe(300);

@@ -118,7 +118,9 @@ function EvidenceRequestsInner() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-red-600">{data?.overdue ?? 0}</div>
+            <div className="text-3xl font-bold text-red-600">
+              {data?.overdue ?? 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -129,7 +131,9 @@ function EvidenceRequestsInner() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{data?.answered ?? 0}</div>
+            <div className="text-3xl font-bold text-green-600">
+              {data?.answered ?? 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -141,7 +145,9 @@ function EvidenceRequestsInner() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {data?.avgResponseDays != null ? `${data.avgResponseDays} Tage` : "--"}
+              {data?.avgResponseDays != null
+                ? `${data.avgResponseDays} Tage`
+                : "--"}
             </div>
           </CardContent>
         </Card>
@@ -165,20 +171,39 @@ function EvidenceRequestsInner() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Titel</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Kontrolle</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Angefordert von</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Frist</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Priorit\u00e4t</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Titel
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Kontrolle
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Angefordert von
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Frist
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                      Priorit\u00e4t
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {requests.map((req) => (
-                    <tr key={req.id} className="hover:bg-gray-50 cursor-pointer">
+                    <tr
+                      key={req.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                    >
                       <td className="px-4 py-3 font-medium">{req.title}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">{req.controlRef}</td>
-                      <td className="px-4 py-3 text-gray-600">{req.requestedBy}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                        {req.controlRef}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {req.requestedBy}
+                      </td>
                       <td className="px-4 py-3 text-gray-600">
                         {new Date(req.deadline).toLocaleDateString("de-DE")}
                       </td>
@@ -211,7 +236,10 @@ function PriorityBadge({ priority }: { priority: string }) {
       );
     case "high":
       return (
-        <Badge variant="destructive" className="bg-orange-100 text-orange-800 border-orange-300 gap-1">
+        <Badge
+          variant="destructive"
+          className="bg-orange-100 text-orange-800 border-orange-300 gap-1"
+        >
           Hoch
         </Badge>
       );
@@ -232,13 +260,19 @@ function RequestStatusBadge({ status }: { status: string }) {
       return <Badge variant="destructive">\u00dcberf\u00e4llig</Badge>;
     case "submitted":
       return (
-        <Badge variant="default" className="bg-blue-100 text-blue-800 border-blue-300">
+        <Badge
+          variant="default"
+          className="bg-blue-100 text-blue-800 border-blue-300"
+        >
           Eingereicht
         </Badge>
       );
     case "accepted":
       return (
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+        <Badge
+          variant="default"
+          className="bg-green-100 text-green-800 border-green-300"
+        >
           Akzeptiert
         </Badge>
       );

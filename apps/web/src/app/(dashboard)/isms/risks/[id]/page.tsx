@@ -3,8 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Loader2, ArrowLeft, Shield, AlertTriangle, Target,
-  TrendingDown, Bug, Server, Activity, ArrowRight,
+  Loader2,
+  ArrowLeft,
+  Shield,
+  AlertTriangle,
+  Target,
+  TrendingDown,
+  Bug,
+  Server,
+  Activity,
+  ArrowRight,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -106,7 +114,11 @@ function riskLabel(score: number): string {
 
 function fmtDate(v: string | null | undefined): string {
   if (!v) return "—";
-  return new Date(v).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(v).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 /* ── Component ── */
@@ -151,35 +163,53 @@ function RiskDetailInner() {
   }
 
   if (!data) {
-    return <p className="text-center text-gray-500 py-12">Risikoszenario nicht gefunden.</p>;
+    return (
+      <p className="text-center text-gray-500 py-12">
+        Risikoszenario nicht gefunden.
+      </p>
+    );
   }
 
-  const score = data.risk_score ?? (data.likelihood * data.impact);
-  const residual = data.residual_score ?? (data.residual_likelihood * data.residual_impact);
+  const score = data.risk_score ?? data.likelihood * data.impact;
+  const residual =
+    data.residual_score ?? data.residual_likelihood * data.residual_impact;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/isms/risks")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/isms/risks")}
+          >
             <ArrowLeft size={16} />
           </Button>
           <div>
             <div className="flex items-center gap-2">
               {data.scenario_code && (
-                <span className="font-mono text-sm text-gray-500">{data.scenario_code}</span>
+                <span className="font-mono text-sm text-gray-500">
+                  {data.scenario_code}
+                </span>
               )}
               <h1 className="text-2xl font-bold text-gray-900">
-                {data.title || data.description?.slice(0, 60) || "Risikoszenario"}
+                {data.title ||
+                  data.description?.slice(0, 60) ||
+                  "Risikoszenario"}
               </h1>
             </div>
             <div className="flex items-center gap-2 mt-1">
-              <Badge className={STATUS_COLORS[data.status ?? ""] ?? "bg-gray-100"}>
+              <Badge
+                className={STATUS_COLORS[data.status ?? ""] ?? "bg-gray-100"}
+              >
                 {STATUS_LABELS[data.status ?? ""] ?? data.status ?? "—"}
               </Badge>
               {data.synced_to_erm && (
-                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                <Badge
+                  variant="outline"
+                  className="text-blue-600 border-blue-200"
+                >
                   <ArrowRight size={10} className="mr-1" /> ERM-Register
                 </Badge>
               )}
@@ -194,7 +224,9 @@ function RiskDetailInner() {
           <h2 className="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-2">
             Beschreibung
           </h2>
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">{data.description}</p>
+          <p className="text-sm text-gray-800 whitespace-pre-wrap">
+            {data.description}
+          </p>
         </div>
       )}
 
@@ -206,20 +238,28 @@ function RiskDetailInner() {
             <AlertTriangle size={14} /> Inhärentes Risiko
           </h2>
           <div className="flex items-center justify-center mb-4">
-            <div className={`rounded-lg px-6 py-4 text-center ${riskColor(score)}`}>
+            <div
+              className={`rounded-lg px-6 py-4 text-center ${riskColor(score)}`}
+            >
               <div className="text-3xl font-bold">{score}</div>
               <div className="text-sm font-medium">{riskLabel(score)}</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-xs text-gray-500 mb-1">Eintrittswahrscheinlichkeit</div>
-              <div className="text-2xl font-bold text-gray-900">{data.likelihood}</div>
+              <div className="text-xs text-gray-500 mb-1">
+                Eintrittswahrscheinlichkeit
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {data.likelihood}
+              </div>
               <div className="text-xs text-gray-500">von 5</div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Auswirkung</div>
-              <div className="text-2xl font-bold text-gray-900">{data.impact}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {data.impact}
+              </div>
               <div className="text-xs text-gray-500">von 5</div>
             </div>
           </div>
@@ -231,20 +271,28 @@ function RiskDetailInner() {
             <Shield size={14} /> Restrisiko
           </h2>
           <div className="flex items-center justify-center mb-4">
-            <div className={`rounded-lg px-6 py-4 text-center ${riskColor(residual)}`}>
+            <div
+              className={`rounded-lg px-6 py-4 text-center ${riskColor(residual)}`}
+            >
               <div className="text-3xl font-bold">{residual}</div>
               <div className="text-sm font-medium">{riskLabel(residual)}</div>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-xs text-gray-500 mb-1">Eintrittswahrscheinlichkeit</div>
-              <div className="text-2xl font-bold text-gray-900">{data.residual_likelihood}</div>
+              <div className="text-xs text-gray-500 mb-1">
+                Eintrittswahrscheinlichkeit
+              </div>
+              <div className="text-2xl font-bold text-gray-900">
+                {data.residual_likelihood}
+              </div>
               <div className="text-xs text-gray-500">von 5</div>
             </div>
             <div className="text-center">
               <div className="text-xs text-gray-500 mb-1">Auswirkung</div>
-              <div className="text-2xl font-bold text-gray-900">{data.residual_impact}</div>
+              <div className="text-2xl font-bold text-gray-900">
+                {data.residual_impact}
+              </div>
               <div className="text-xs text-gray-500">von 5</div>
             </div>
           </div>
@@ -252,7 +300,8 @@ function RiskDetailInner() {
             <div className="mt-3 text-center">
               <span className="text-xs text-gray-500">Risikoreduktion: </span>
               <span className="text-sm font-semibold text-green-600">
-                {score > 0 ? Math.round(((score - residual) / score) * 100) : 0}%
+                {score > 0 ? Math.round(((score - residual) / score) * 100) : 0}
+                %
               </span>
             </div>
           )}
@@ -268,9 +317,13 @@ function RiskDetailInner() {
           </h3>
           {data.threat_title ? (
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.threat_title}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {data.threat_title}
+              </p>
               {data.threat_category && (
-                <Badge variant="outline" className="text-[10px] mt-2">{data.threat_category}</Badge>
+                <Badge variant="outline" className="text-[10px] mt-2">
+                  {data.threat_category}
+                </Badge>
               )}
             </div>
           ) : (
@@ -285,7 +338,9 @@ function RiskDetailInner() {
           </h3>
           {data.vulnerability_title ? (
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.vulnerability_title}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {data.vulnerability_title}
+              </p>
               {data.vulnerability_severity && (
                 <Badge
                   variant="outline"
@@ -307,9 +362,13 @@ function RiskDetailInner() {
           </h3>
           {data.asset_name ? (
             <div>
-              <p className="text-sm font-medium text-gray-900">{data.asset_name}</p>
+              <p className="text-sm font-medium text-gray-900">
+                {data.asset_name}
+              </p>
               {data.asset_tier && (
-                <Badge variant="outline" className="text-[10px] mt-2">Tier {data.asset_tier}</Badge>
+                <Badge variant="outline" className="text-[10px] mt-2">
+                  Tier {data.asset_tier}
+                </Badge>
               )}
             </div>
           ) : (
@@ -326,19 +385,31 @@ function RiskDetailInner() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <FieldRow
             label="Strategie"
-            value={TREATMENT_LABELS[data.treatment_strategy ?? ""] ?? data.treatment_strategy ?? "—"}
+            value={
+              TREATMENT_LABELS[data.treatment_strategy ?? ""] ??
+              data.treatment_strategy ??
+              "—"
+            }
           />
           <FieldRow label="Verantwortlich" value={data.owner_name ?? "—"} />
           <FieldRow label="Review-Datum" value={fmtDate(data.review_date)} />
           <FieldRow
             label="Verknüpfte Controls"
-            value={data.control_ids?.length ? `${data.control_ids.length} Controls` : "—"}
+            value={
+              data.control_ids?.length
+                ? `${data.control_ids.length} Controls`
+                : "—"
+            }
           />
         </div>
         {data.treatment_description && (
           <div className="mt-4">
-            <dt className="text-xs font-medium text-gray-500 mb-1">Maßnahmenbeschreibung</dt>
-            <dd className="text-sm text-gray-800 whitespace-pre-wrap">{data.treatment_description}</dd>
+            <dt className="text-xs font-medium text-gray-500 mb-1">
+              Maßnahmenbeschreibung
+            </dt>
+            <dd className="text-sm text-gray-800 whitespace-pre-wrap">
+              {data.treatment_description}
+            </dd>
           </div>
         )}
       </div>
@@ -351,8 +422,14 @@ function RiskDetailInner() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           <FieldRow label="Erstellt am" value={fmtDate(data.created_at)} />
           <FieldRow label="Aktualisiert am" value={fmtDate(data.updated_at)} />
-          <FieldRow label="ERM-Sync" value={data.synced_to_erm ? "Ja" : "Nein"} />
-          <FieldRow label="Tags" value={data.tags?.length ? data.tags.join(", ") : "—"} />
+          <FieldRow
+            label="ERM-Sync"
+            value={data.synced_to_erm ? "Ja" : "Nein"}
+          />
+          <FieldRow
+            label="Tags"
+            value={data.tags?.length ? data.tags.join(", ") : "—"}
+          />
         </div>
       </div>
 
@@ -364,7 +441,8 @@ function RiskDetailInner() {
             Im ERM-Risikoregister synchronisiert
           </div>
           <p className="text-sm text-blue-600 mt-1">
-            Dieses IS-Risikoszenario ist mit dem unternehmensweiten Risikoregister verknüpft.
+            Dieses IS-Risikoszenario ist mit dem unternehmensweiten
+            Risikoregister verknüpft.
           </p>
         </div>
       )}

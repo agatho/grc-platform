@@ -124,7 +124,10 @@ function ConditionGroupBlock({
   depth: number;
   t: ReturnType<typeof useTranslations>;
 }) {
-  const updateRule = (index: number, updated: ConditionRule | ConditionGroup) => {
+  const updateRule = (
+    index: number,
+    updated: ConditionRule | ConditionGroup,
+  ) => {
     const newRules = [...group.rules];
     newRules[index] = updated;
     onChange({ ...group, rules: newRules });
@@ -148,7 +151,10 @@ function ConditionGroupBlock({
       ...group,
       rules: [
         ...group.rules,
-        { operator: "AND" as const, rules: [{ field: "", op: "=", value: "" }] },
+        {
+          operator: "AND" as const,
+          rules: [{ field: "", op: "=", value: "" }],
+        },
       ],
     });
   };
@@ -160,11 +166,23 @@ function ConditionGroupBlock({
     });
   };
 
-  const borderColor = depth === 0 ? "border-blue-200" : depth === 1 ? "border-orange-200" : "border-purple-200";
-  const bgColor = depth === 0 ? "bg-blue-50/50" : depth === 1 ? "bg-orange-50/50" : "bg-purple-50/50";
+  const borderColor =
+    depth === 0
+      ? "border-blue-200"
+      : depth === 1
+        ? "border-orange-200"
+        : "border-purple-200";
+  const bgColor =
+    depth === 0
+      ? "bg-blue-50/50"
+      : depth === 1
+        ? "bg-orange-50/50"
+        : "bg-purple-50/50";
 
   return (
-    <div className={`rounded-lg border-2 ${borderColor} ${bgColor} p-4 space-y-3`}>
+    <div
+      className={`rounded-lg border-2 ${borderColor} ${bgColor} p-4 space-y-3`}
+    >
       <div className="flex items-center justify-between">
         <button
           type="button"
@@ -232,12 +250,7 @@ function ConditionGroupBlock({
           {t("conditionBuilder.addCondition")}
         </Button>
         {depth < 3 && (
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={addGroup}
-          >
+          <Button type="button" variant="outline" size="sm" onClick={addGroup}>
             <Plus size={12} className="mr-1" />
             {t("conditionBuilder.addGroup")}
           </Button>

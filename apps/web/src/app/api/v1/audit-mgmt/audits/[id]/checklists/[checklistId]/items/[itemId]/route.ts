@@ -80,7 +80,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
   });
 
   if (!updated) {
-    return Response.json({ error: "Checklist item not found" }, { status: 404 });
+    return Response.json(
+      { error: "Checklist item not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: updated });

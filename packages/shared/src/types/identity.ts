@@ -2,7 +2,13 @@
 
 export type SsoProviderType = "saml" | "oidc";
 export type IdentityProvider = "local" | "saml" | "oidc" | "scim";
-export type ScimSyncAction = "create" | "update" | "deactivate" | "reactivate" | "group_assign" | "group_remove";
+export type ScimSyncAction =
+  | "create"
+  | "update"
+  | "deactivate"
+  | "reactivate"
+  | "group_assign"
+  | "group_remove";
 export type ScimSyncStatus = "success" | "error" | "skipped";
 
 // ─── SSO Configuration ──────────────────────────────────────

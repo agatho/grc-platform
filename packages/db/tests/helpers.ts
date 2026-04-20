@@ -23,10 +23,7 @@ export function createTestDb() {
 export function createAppDb(url?: string) {
   const appUrl =
     url ??
-    DATABASE_URL.replace(
-      /\/\/[^@]+@/,
-      "//grc_app:grc_app_dev_password@",
-    );
+    DATABASE_URL.replace(/\/\/[^@]+@/, "//grc_app:grc_app_dev_password@");
   const client = postgres(appUrl);
   const db = drizzle(client, { schema });
   return { db, client };

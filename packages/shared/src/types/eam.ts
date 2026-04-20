@@ -2,18 +2,54 @@
 
 export type ArchitectureLayer = "business" | "application" | "technology";
 export type ArchitectureType =
-  | "business_capability" | "business_service" | "business_function"
-  | "application" | "app_service" | "app_interface" | "app_component" | "data_object"
-  | "server" | "network" | "cloud_service" | "database" | "infrastructure_service";
-export type ArchRelationshipType = "realizes" | "serves" | "runs_on" | "accesses" | "flows_to" | "composes" | "depends_on" | "deployed_on" | "uses";
+  | "business_capability"
+  | "business_service"
+  | "business_function"
+  | "application"
+  | "app_service"
+  | "app_interface"
+  | "app_component"
+  | "data_object"
+  | "server"
+  | "network"
+  | "cloud_service"
+  | "database"
+  | "infrastructure_service";
+export type ArchRelationshipType =
+  | "realizes"
+  | "serves"
+  | "runs_on"
+  | "accesses"
+  | "flows_to"
+  | "composes"
+  | "depends_on"
+  | "deployed_on"
+  | "uses";
 export type ElementStatus = "planned" | "active" | "phase_out" | "retired";
 export type EamCriticality = "critical" | "important" | "normal" | "low";
-export type LifecycleStatus = "planned" | "active" | "phase_out" | "end_of_life" | "retired";
-export type TimeClassification = "tolerate" | "invest" | "migrate" | "eliminate";
+export type LifecycleStatus =
+  | "planned"
+  | "active"
+  | "phase_out"
+  | "end_of_life"
+  | "retired";
+export type TimeClassification =
+  | "tolerate"
+  | "invest"
+  | "migrate"
+  | "eliminate";
 export type LicenseType = "saas" | "on_premise" | "hybrid" | "open_source";
-export type DataClassification = "public" | "internal" | "confidential" | "restricted";
+export type DataClassification =
+  | "public"
+  | "internal"
+  | "confidential"
+  | "restricted";
 export type StrategicImportance = "core" | "supporting" | "commodity";
-export type ViolationStatus = "open" | "acknowledged" | "resolved" | "false_positive";
+export type ViolationStatus =
+  | "open"
+  | "acknowledged"
+  | "resolved"
+  | "false_positive";
 
 export interface ArchitectureElement {
   id: string;
@@ -163,6 +199,18 @@ export interface PortfolioQuadrantData {
 
 export const LAYER_TYPE_MAP: Record<ArchitectureLayer, ArchitectureType[]> = {
   business: ["business_capability", "business_service", "business_function"],
-  application: ["application", "app_service", "app_interface", "app_component", "data_object"],
-  technology: ["server", "network", "cloud_service", "database", "infrastructure_service"],
+  application: [
+    "application",
+    "app_service",
+    "app_interface",
+    "app_component",
+    "data_object",
+  ],
+  technology: [
+    "server",
+    "network",
+    "cloud_service",
+    "database",
+    "infrastructure_service",
+  ],
 };

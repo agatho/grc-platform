@@ -18,7 +18,10 @@ export async function GET(req: Request) {
   const rolesWithPermissions = await Promise.all(
     roles.map(async (role) => {
       const permissions = await db
-        .select({ moduleKey: rolePermission.moduleKey, action: rolePermission.action })
+        .select({
+          moduleKey: rolePermission.moduleKey,
+          action: rolePermission.action,
+        })
         .from(rolePermission)
         .where(eq(rolePermission.roleId, role.id));
       return { ...role, permissions };
@@ -35,7 +38,10 @@ export async function POST(req: Request) {
 
   const parsed = createCustomRoleSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { permissions, ...roleData } = parsed.data;
@@ -63,7 +69,10 @@ export async function POST(req: Request) {
     }
 
     const perms = await tx
-      .select({ moduleKey: rolePermission.moduleKey, action: rolePermission.action })
+      .select({
+        moduleKey: rolePermission.moduleKey,
+        action: rolePermission.action,
+      })
       .from(rolePermission)
       .where(eq(rolePermission.roleId, created.id));
 

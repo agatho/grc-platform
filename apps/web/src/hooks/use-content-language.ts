@@ -38,7 +38,7 @@ export function useContentLanguage() {
     });
 
     if (res.ok) {
-      setData((prev) => prev ? { ...prev, contentLanguage: lang } : null);
+      setData((prev) => (prev ? { ...prev, contentLanguage: lang } : null));
     }
   }, []);
 

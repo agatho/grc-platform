@@ -3,10 +3,7 @@ import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
-const VALID_SOURCES = [
-  "vda_isa_tisax",
-  "eu_dora",
-] as const;
+const VALID_SOURCES = ["vda_isa_tisax", "eu_dora"] as const;
 
 type TemplateSource = (typeof VALID_SOURCES)[number];
 
@@ -28,12 +25,14 @@ export async function GET(req: Request) {
           {
             key: "vda_isa_tisax",
             label: "VDA ISA / TISAX Assessment Criteria",
-            description: "TISAX assessment criteria for vendor due diligence questionnaires",
+            description:
+              "TISAX assessment criteria for vendor due diligence questionnaires",
           },
           {
             key: "eu_dora",
             label: "EU DORA ICT Third-Party Requirements",
-            description: "DORA Chapter V requirements for ICT third-party vendor assessments",
+            description:
+              "DORA Chapter V requirements for ICT third-party vendor assessments",
           },
         ],
       },

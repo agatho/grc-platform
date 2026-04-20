@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import type { ColumnDef } from "@tanstack/react-table";
-import { ShieldPlus, X, Loader2, UserPlus, Mail, Copy, Check } from "lucide-react";
+import {
+  ShieldPlus,
+  X,
+  Loader2,
+  UserPlus,
+  Mail,
+  Copy,
+  Check,
+} from "lucide-react";
 import { toast } from "sonner";
 
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
@@ -118,7 +126,9 @@ export default function UsersPage() {
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [assignTarget, setAssignTarget] = useState<UserRecord | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRole | "">("");
-  const [selectedLod, setSelectedLod] = useState<LineOfDefense | "none" | "">("");
+  const [selectedLod, setSelectedLod] = useState<LineOfDefense | "none" | "">(
+    "",
+  );
   const [assigning, setAssigning] = useState(false);
 
   // Revoke confirmation dialog state
@@ -365,7 +375,7 @@ export default function UsersPage() {
         ),
       },
     ],
-    
+
     [t],
   );
 
@@ -390,10 +400,14 @@ export default function UsersPage() {
     <div className="space-y-6">
       {/* Page header */}
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t("users.title")}
-        </h1>
-        <Button onClick={() => { setShowInvite(true); setInviteLink(""); setInvEmail(""); }}>
+        <h1 className="text-2xl font-bold text-gray-900">{t("users.title")}</h1>
+        <Button
+          onClick={() => {
+            setShowInvite(true);
+            setInviteLink("");
+            setInvEmail("");
+          }}
+        >
           <UserPlus size={16} className="mr-2" />
           Benutzer einladen
         </Button>
@@ -403,34 +417,69 @@ export default function UsersPage() {
       {showInvite && !inviteLink && (
         <div className="rounded-lg border-2 border-blue-200 bg-blue-50/50 p-5 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="font-semibold text-blue-900">Neuen Benutzer einladen</h3>
-            <Button size="sm" variant="ghost" onClick={() => setShowInvite(false)}><X size={16} /></Button>
+            <h3 className="font-semibold text-blue-900">
+              Neuen Benutzer einladen
+            </h3>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => setShowInvite(false)}
+            >
+              <X size={16} />
+            </Button>
           </div>
           <div className="flex flex-wrap gap-3">
-            <input type="email" value={invEmail} onChange={e => setInvEmail(e.target.value)}
-              placeholder="kollege@firma.de" className="flex-1 min-w-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm" />
-            <select value={invRole} onChange={e => setInvRole(e.target.value as UserRole)}
-              className="rounded-md border border-gray-300 px-3 py-2 text-sm">
-              {ALL_ROLES.map(r => <option key={r} value={r}>{t(`roles.${r}`)}</option>)}
+            <input
+              type="email"
+              value={invEmail}
+              onChange={(e) => setInvEmail(e.target.value)}
+              placeholder="kollege@firma.de"
+              className="flex-1 min-w-[200px] rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+            <select
+              value={invRole}
+              onChange={(e) => setInvRole(e.target.value as UserRole)}
+              className="rounded-md border border-gray-300 px-3 py-2 text-sm"
+            >
+              {ALL_ROLES.map((r) => (
+                <option key={r} value={r}>
+                  {t(`roles.${r}`)}
+                </option>
+              ))}
             </select>
-            <Button disabled={inviting || !invEmail.trim()} onClick={async () => {
-              setInviting(true);
-              try {
-                const res = await fetch("/api/v1/invitations", {
-                  method: "POST", headers: { "Content-Type": "application/json" },
-                  body: JSON.stringify({ email: invEmail.trim(), role: invRole }),
-                });
-                if (res.ok) {
-                  const json = await res.json();
-                  setInviteLink(`${window.location.origin}/invite/${json.data.token}`);
-                  toast.success("Einladung erstellt");
-                } else {
-                  const json = await res.json();
-                  toast.error(json.error ?? "Fehler");
+            <Button
+              disabled={inviting || !invEmail.trim()}
+              onClick={async () => {
+                setInviting(true);
+                try {
+                  const res = await fetch("/api/v1/invitations", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      email: invEmail.trim(),
+                      role: invRole,
+                    }),
+                  });
+                  if (res.ok) {
+                    const json = await res.json();
+                    setInviteLink(
+                      `${window.location.origin}/invite/${json.data.token}`,
+                    );
+                    toast.success("Einladung erstellt");
+                  } else {
+                    const json = await res.json();
+                    toast.error(json.error ?? "Fehler");
+                  }
+                } finally {
+                  setInviting(false);
                 }
-              } finally { setInviting(false); }
-            }}>
-              {inviting ? <Loader2 size={14} className="animate-spin mr-1" /> : <Mail size={14} className="mr-1" />}
+              }}
+            >
+              {inviting ? (
+                <Loader2 size={14} className="animate-spin mr-1" />
+              ) : (
+                <Mail size={14} className="mr-1" />
+              )}
               Einladen
             </Button>
           </div>
@@ -442,19 +491,58 @@ export default function UsersPage() {
         <div className="rounded-lg border-2 border-green-200 bg-green-50 p-5 space-y-3">
           <div className="flex items-center gap-2">
             <Check size={18} className="text-green-600" />
-            <span className="font-semibold text-green-900">Einladung fuer {invEmail} erstellt</span>
+            <span className="font-semibold text-green-900">
+              Einladung fuer {invEmail} erstellt
+            </span>
           </div>
-          <p className="text-sm text-green-800">Link ist 7 Tage gueltig. Senden Sie ihn per E-Mail oder Chat.</p>
+          <p className="text-sm text-green-800">
+            Link ist 7 Tage gueltig. Senden Sie ihn per E-Mail oder Chat.
+          </p>
           <div className="flex gap-2">
-            <input value={inviteLink} readOnly className="flex-1 rounded-md border bg-white px-3 py-2 text-sm font-mono" />
-            <Button variant="outline" size="sm" onClick={() => { navigator.clipboard.writeText(inviteLink); setLinkCopied(true); setTimeout(() => setLinkCopied(false), 2000); }}>
-              {linkCopied ? <Check size={14} className="text-green-600" /> : <Copy size={14} />}
+            <input
+              value={inviteLink}
+              readOnly
+              className="flex-1 rounded-md border bg-white px-3 py-2 text-sm font-mono"
+            />
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                navigator.clipboard.writeText(inviteLink);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+            >
+              {linkCopied ? (
+                <Check size={14} className="text-green-600" />
+              ) : (
+                <Copy size={14} />
+              )}
               {linkCopied ? "Kopiert!" : "Kopieren"}
             </Button>
           </div>
           <div className="flex gap-2">
-            <Button size="sm" variant="outline" onClick={() => { setShowInvite(false); setInviteLink(""); fetchUsers(); }}>Schliessen</Button>
-            <Button size="sm" variant="ghost" onClick={() => { setInviteLink(""); setInvEmail(""); }}>Weitere einladen</Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                setShowInvite(false);
+                setInviteLink("");
+                fetchUsers();
+              }}
+            >
+              Schliessen
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={() => {
+                setInviteLink("");
+                setInvEmail("");
+              }}
+            >
+              Weitere einladen
+            </Button>
           </div>
         </div>
       )}

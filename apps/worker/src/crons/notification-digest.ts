@@ -30,12 +30,14 @@ export async function processNotificationDigest(): Promise<DigestResult> {
       and(
         sql`${user.notificationPreferences}->>'emailMode' = 'daily_digest'`,
         eq(user.isActive, true),
-        isNull(user.deletedAt)
-      )
+        isNull(user.deletedAt),
+      ),
     );
 
   if (digestUsers.length === 0) {
-    console.log("[cron:notification-digest] No users with daily digest enabled");
+    console.log(
+      "[cron:notification-digest] No users with daily digest enabled",
+    );
     return { usersProcessed: 0, emailsSent: 0 };
   }
 
@@ -63,8 +65,8 @@ export async function processNotificationDigest(): Promise<DigestResult> {
             eq(notification.isRead, false),
             isNull(notification.emailSentAt),
             isNull(notification.deletedAt),
-            gte(notification.createdAt, since)
-          )
+            gte(notification.createdAt, since),
+          ),
         )
         .orderBy(notification.createdAt);
 
@@ -74,23 +76,28 @@ export async function processNotificationDigest(): Promise<DigestResult> {
 
       const lang = (digestUser.language === "en" ? "en" : "de") as "de" | "en";
 
-      const platformUrl = process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
+      const platformUrl =
+        process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000";
 
       // Build digest notification items for the template
       const notificationItems = unreadNotifications.map((n) => ({
         type: n.type,
         title: n.title,
         timestamp: n.createdAt.toISOString(),
-        url: n.entityType && n.entityId
-          ? `${platformUrl}/${n.entityType}s/${n.entityId}`
-          : undefined,
+        url:
+          n.entityType && n.entityId
+            ? `${platformUrl}/${n.entityType}s/${n.entityId}`
+            : undefined,
       }));
 
-      const digestDate = now.toLocaleDateString(lang === "de" ? "de-DE" : "en-US", {
-        year: "numeric",
-        month: "long",
-        day: "numeric",
-      });
+      const digestDate = now.toLocaleDateString(
+        lang === "de" ? "de-DE" : "en-US",
+        {
+          year: "numeric",
+          month: "long",
+          day: "numeric",
+        },
+      );
 
       await emailService.send({
         to: digestUser.email,
@@ -112,22 +119,20 @@ export async function processNotificationDigest(): Promise<DigestResult> {
           emailSentAt: now,
           updatedAt: now,
         })
-        .where(
-          sql`${notification.id} = ANY(${notificationIds}::uuid[])`
-        );
+        .where(sql`${notification.id} = ANY(${notificationIds}::uuid[])`);
 
       emailsSent++;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       console.error(
         `[cron:notification-digest] Failed for user ${digestUser.id}:`,
-        message
+        message,
       );
     }
   }
 
   console.log(
-    `[cron:notification-digest] Processed ${digestUsers.length} users, sent ${emailsSent} digests`
+    `[cron:notification-digest] Processed ${digestUsers.length} users, sent ${emailsSent} digests`,
   );
 
   return { usersProcessed: digestUsers.length, emailsSent };

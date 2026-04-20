@@ -15,7 +15,11 @@ export async function PUT(req: Request, { params }: RouteParams) {
   const ctx = await withAuth("admin", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
-  const moduleCheck = await requireModule("whistleblowing", ctx.orgId, req.method);
+  const moduleCheck = await requireModule(
+    "whistleblowing",
+    ctx.orgId,
+    req.method,
+  );
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;

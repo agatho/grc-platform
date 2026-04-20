@@ -27,16 +27,21 @@ export async function GET(req: Request) {
     .groupBy(entityReference.targetType);
 
   // Merge counts: an entity can appear as both source and target
-  const merged: Record<string, { asSource: number; asTarget: number; total: number }> = {};
+  const merged: Record<
+    string,
+    { asSource: number; asTarget: number; total: number }
+  > = {};
 
   for (const s of sourceStats) {
-    if (!merged[s.entityType]) merged[s.entityType] = { asSource: 0, asTarget: 0, total: 0 };
+    if (!merged[s.entityType])
+      merged[s.entityType] = { asSource: 0, asTarget: 0, total: 0 };
     merged[s.entityType].asSource = s.count;
     merged[s.entityType].total += s.count;
   }
 
   for (const t of targetStats) {
-    if (!merged[t.entityType]) merged[t.entityType] = { asSource: 0, asTarget: 0, total: 0 };
+    if (!merged[t.entityType])
+      merged[t.entityType] = { asSource: 0, asTarget: 0, total: 0 };
     merged[t.entityType].asTarget = t.count;
     merged[t.entityType].total += t.count;
   }

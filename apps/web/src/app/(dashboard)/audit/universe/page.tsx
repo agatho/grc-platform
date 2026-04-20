@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  Plus,
-  RefreshCcw,
-  AlertTriangle,
-  Search,
-} from "lucide-react";
+import { Loader2, Plus, RefreshCcw, AlertTriangle, Search } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -71,9 +65,13 @@ function UniverseInner() {
     const body = {
       name: formData.get("name") as string,
       entityType: formData.get("entityType") as string,
-      riskScore: formData.get("riskScore") ? Number(formData.get("riskScore")) : undefined,
-      auditCycleMonths: formData.get("auditCycleMonths") ? Number(formData.get("auditCycleMonths")) : 12,
-      notes: formData.get("notes") as string || undefined,
+      riskScore: formData.get("riskScore")
+        ? Number(formData.get("riskScore"))
+        : undefined,
+      auditCycleMonths: formData.get("auditCycleMonths")
+        ? Number(formData.get("auditCycleMonths"))
+        : 12,
+      notes: (formData.get("notes") as string) || undefined,
     };
 
     const res = await fetch("/api/v1/audit-mgmt/universe", {
@@ -91,8 +89,17 @@ function UniverseInner() {
   const riskBadge = (score: number | null | undefined) => {
     if (score == null) return <Badge variant="outline">-</Badge>;
     if (score >= 16) return <Badge variant="destructive">{score}</Badge>;
-    if (score >= 8) return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">{score}</Badge>;
-    return <Badge className="bg-green-100 text-green-800 border-green-300">{score}</Badge>;
+    if (score >= 8)
+      return (
+        <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+          {score}
+        </Badge>
+      );
+    return (
+      <Badge className="bg-green-100 text-green-800 border-green-300">
+        {score}
+      </Badge>
+    );
   };
 
   const gapBadge = (entry: AuditUniverseEntry) => {
@@ -102,7 +109,11 @@ function UniverseInner() {
     if (entry.nextAuditDue) {
       const today = new Date().toISOString().split("T")[0];
       if (entry.nextAuditDue <= today) {
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-300">{t("overdueLabel")}</Badge>;
+        return (
+          <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+            {t("overdueLabel")}
+          </Badge>
+        );
       }
     }
     return null;
@@ -117,7 +128,12 @@ function UniverseInner() {
           <p className="text-sm text-gray-500 mt-1">{t("universeSubtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchEntries} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchEntries}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -143,28 +159,50 @@ function UniverseInner() {
                   <Input name="name" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("entityType")}</label>
-                  <select name="entityType" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <label className="text-sm font-medium">
+                    {t("entityType")}
+                  </label>
+                  <select
+                    name="entityType"
+                    required
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  >
                     <option value="process">{t("entityTypes.process")}</option>
-                    <option value="department">{t("entityTypes.department")}</option>
-                    <option value="it_system">{t("entityTypes.itSystem")}</option>
+                    <option value="department">
+                      {t("entityTypes.department")}
+                    </option>
+                    <option value="it_system">
+                      {t("entityTypes.itSystem")}
+                    </option>
                     <option value="vendor">{t("entityTypes.vendor")}</option>
                     <option value="custom">{t("entityTypes.custom")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("riskScore")}</label>
+                  <label className="text-sm font-medium">
+                    {t("riskScore")}
+                  </label>
                   <Input name="riskScore" type="number" min="0" max="100" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("auditCycle")}</label>
-                  <Input name="auditCycleMonths" type="number" min="1" max="120" defaultValue="12" />
+                  <label className="text-sm font-medium">
+                    {t("auditCycle")}
+                  </label>
+                  <Input
+                    name="auditCycleMonths"
+                    type="number"
+                    min="1"
+                    max="120"
+                    defaultValue="12"
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">{t("notes")}</label>
                   <Input name="notes" />
                 </div>
-                <Button type="submit" className="w-full">{t("save")}</Button>
+                <Button type="submit" className="w-full">
+                  {t("save")}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -178,10 +216,14 @@ function UniverseInner() {
             <AlertTriangle className="h-5 w-5 text-orange-600" />
             <span className="text-sm text-orange-800">
               {gaps.neverAudited > 0 && (
-                <span className="font-semibold">{gaps.neverAudited} {t("neverAuditedEntities")}. </span>
+                <span className="font-semibold">
+                  {gaps.neverAudited} {t("neverAuditedEntities")}.{" "}
+                </span>
               )}
               {gaps.overdue > 0 && (
-                <span className="font-semibold">{gaps.overdue} {t("overdueEntities")}.</span>
+                <span className="font-semibold">
+                  {gaps.overdue} {t("overdueEntities")}.
+                </span>
               )}
             </span>
           </div>
@@ -228,32 +270,58 @@ function UniverseInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : entries.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">{t("emptyUniverse")}</div>
+        <div className="text-center py-12 text-gray-400">
+          {t("emptyUniverse")}
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-lg border border-gray-200">
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("name")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("entityType")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("riskScore")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("lastAudit")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("nextAuditDue")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("cycle")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("gap")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("name")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("entityType")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("riskScore")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("lastAudit")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("nextAuditDue")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("cycle")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("gap")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {entries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{entry.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {entry.name}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">
-                    {t(`entityTypes.${entry.entityType === "it_system" ? "itSystem" : entry.entityType}`)}
+                    {t(
+                      `entityTypes.${entry.entityType === "it_system" ? "itSystem" : entry.entityType}`,
+                    )}
                   </td>
                   <td className="px-4 py-3">{riskBadge(entry.riskScore)}</td>
-                  <td className="px-4 py-3 text-gray-600">{entry.lastAuditDate ?? "-"}</td>
-                  <td className="px-4 py-3 text-gray-600">{entry.nextAuditDue ?? "-"}</td>
-                  <td className="px-4 py-3 text-gray-600">{entry.auditCycleMonths} {t("months")}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {entry.lastAuditDate ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {entry.nextAuditDue ?? "-"}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {entry.auditCycleMonths} {t("months")}
+                  </td>
                   <td className="px-4 py-3">{gapBadge(entry)}</td>
                 </tr>
               ))}

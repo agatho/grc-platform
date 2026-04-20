@@ -3,7 +3,7 @@ name: Bug Report
 about: Reproducible Problem in einer ARCTOS-Installation
 title: "[BUG] "
 labels: bug, triage
-assignees: ''
+assignees: ""
 ---
 
 ## Beschreibung

@@ -33,7 +33,10 @@ export async function PATCH(
     .limit(1);
 
   if (!latestVersion) {
-    return Response.json({ error: "No process version found" }, { status: 404 });
+    return Response.json(
+      { error: "No process version found" },
+      { status: 404 },
+    );
   }
 
   const override = await withAuditContext(ctx, async (tx) => {

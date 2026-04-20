@@ -191,9 +191,7 @@ export default function CrossFrameworkMappingsPage() {
   const fetchMappings = useCallback(async (entryId: string) => {
     setLoadingMappings(true);
     try {
-      const res = await fetch(
-        `/api/v1/catalogs/mappings?entryId=${entryId}`,
-      );
+      const res = await fetch(`/api/v1/catalogs/mappings?entryId=${entryId}`);
       const json = await res.json();
       setMappings(json.data ?? []);
       // Expand all groups by default
@@ -433,13 +431,17 @@ export default function CrossFrameworkMappingsPage() {
                     <p className="text-2xl font-bold text-indigo-600">
                       {totalMappings}
                     </p>
-                    <p className="text-xs text-gray-500">{t("mappings.mappings")}</p>
+                    <p className="text-xs text-gray-500">
+                      {t("mappings.mappings")}
+                    </p>
                   </div>
                   <div>
                     <p className="text-2xl font-bold text-indigo-600">
                       {totalFrameworks}
                     </p>
-                    <p className="text-xs text-gray-500">{t("mappings.frameworks")}</p>
+                    <p className="text-xs text-gray-500">
+                      {t("mappings.frameworks")}
+                    </p>
                   </div>
                 </div>
               </div>

@@ -2,21 +2,11 @@
 
 import { useCallback, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Play,
-  Save,
-  Loader2,
-  Code2,
-} from "lucide-react";
+import { Play, Save, Loader2, Code2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function ApiPlaygroundPage() {
   const t = useTranslations("developerPortal");
@@ -67,7 +57,9 @@ export default function ApiPlaygroundPage() {
               onChange={(e) => setMethod(e.target.value)}
             >
               {["GET", "POST", "PUT", "PATCH", "DELETE"].map((m) => (
-                <option key={m} value={m}>{m}</option>
+                <option key={m} value={m}>
+                  {m}
+                </option>
               ))}
             </select>
             <input
@@ -102,7 +94,9 @@ export default function ApiPlaygroundPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-3">
               {t("response")}
-              <Badge variant={response.statusCode < 400 ? "default" : "destructive"}>
+              <Badge
+                variant={response.statusCode < 400 ? "default" : "destructive"}
+              >
                 {response.statusCode}
               </Badge>
               <span className="text-sm text-muted-foreground font-normal">

@@ -119,10 +119,7 @@ export default function MessagingIntegrationsPage() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
@@ -156,8 +153,7 @@ export default function MessagingIntegrationsPage() {
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {integrations.map((integration) => {
             const providerCfg =
-              PROVIDER_CONFIG[integration.provider] ??
-              PROVIDER_CONFIG.webhook;
+              PROVIDER_CONFIG[integration.provider] ?? PROVIDER_CONFIG.webhook;
             const ProviderIcon = providerCfg.icon;
 
             return (
@@ -174,9 +170,7 @@ export default function MessagingIntegrationsPage() {
                         <CardTitle className="text-base">
                           {integration.name}
                         </CardTitle>
-                        <CardDescription>
-                          {providerCfg.label}
-                        </CardDescription>
+                        <CardDescription>{providerCfg.label}</CardDescription>
                       </div>
                     </div>
                     {integration.isActive ? (

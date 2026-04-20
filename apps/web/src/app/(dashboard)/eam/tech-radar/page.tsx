@@ -28,7 +28,10 @@ export default function TechRadarPage() {
 
 function TechRadarInner() {
   const t = useTranslations("eam");
-  const [data, setData] = useState<{ technologies: any[]; quadrants: Record<string, any[]> } | null>(null);
+  const [data, setData] = useState<{
+    technologies: any[];
+    quadrants: Record<string, any[]>;
+  } | null>(null);
   const [holdWithUsage, setHoldWithUsage] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -51,14 +54,21 @@ function TechRadarInner() {
   }, [fetchData]);
 
   if (loading || !data) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("techRadar.title")}</h1>
-        <Button><Plus className="h-4 w-4 mr-2" />{t("techRadar.addTechnology")}</Button>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          {t("techRadar.addTechnology")}
+        </Button>
       </div>
 
       {holdWithUsage.length > 0 && (
@@ -66,7 +76,8 @@ function TechRadarInner() {
           <CardContent className="p-4 flex items-center gap-3">
             <AlertTriangle className="h-5 w-5 text-red-600" />
             <span className="text-sm text-red-800">
-              {t("techRadar.holdWarning")}: {holdWithUsage.map((h) => `${h.name} (${h.appCount})`).join(", ")}
+              {t("techRadar.holdWarning")}:{" "}
+              {holdWithUsage.map((h) => `${h.name} (${h.appCount})`).join(", ")}
             </span>
           </CardContent>
         </Card>
@@ -103,7 +114,9 @@ function TechRadarInner() {
           return (
             <Card key={ring}>
               <CardContent className="p-4 text-center">
-                <Badge className={RING_COLORS[ring]}>{t(`techRadar.${ring}`)}</Badge>
+                <Badge className={RING_COLORS[ring]}>
+                  {t(`techRadar.${ring}`)}
+                </Badge>
                 <p className="text-2xl font-bold mt-2">{count}</p>
               </CardContent>
             </Card>
@@ -117,14 +130,18 @@ function TechRadarInner() {
         if (techs.length === 0) return null;
         return (
           <div key={ring}>
-            <h2 className="text-lg font-semibold mb-2">{t(`techRadar.${ring}`)}</h2>
+            <h2 className="text-lg font-semibold mb-2">
+              {t(`techRadar.${ring}`)}
+            </h2>
             <div className="grid grid-cols-3 gap-2">
               {techs.map((tech) => (
                 <Card key={tech.id}>
                   <CardContent className="p-3 flex items-center justify-between">
                     <div>
                       <p className="font-medium text-sm">{tech.name}</p>
-                      <p className="text-xs text-muted-foreground">{tech.vendor} | {tech.category}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {tech.vendor} | {tech.category}
+                      </p>
                     </div>
                     {tech.appCount > 0 && (
                       <Badge variant="outline">{tech.appCount} apps</Badge>

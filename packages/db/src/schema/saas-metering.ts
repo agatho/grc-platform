@@ -68,14 +68,22 @@ export const orgSubscription = pgTable(
       .notNull()
       .references(() => subscriptionPlan.id),
     status: varchar("status", { length: 30 }).notNull().default("active"),
-    billingCycle: varchar("billing_cycle", { length: 20 }).notNull().default("monthly"),
-    currentPeriodStart: timestamp("current_period_start", { withTimezone: true }).notNull(),
-    currentPeriodEnd: timestamp("current_period_end", { withTimezone: true }).notNull(),
+    billingCycle: varchar("billing_cycle", { length: 20 })
+      .notNull()
+      .default("monthly"),
+    currentPeriodStart: timestamp("current_period_start", {
+      withTimezone: true,
+    }).notNull(),
+    currentPeriodEnd: timestamp("current_period_end", {
+      withTimezone: true,
+    }).notNull(),
     trialEndsAt: timestamp("trial_ends_at", { withTimezone: true }),
     cancelledAt: timestamp("cancelled_at", { withTimezone: true }),
     cancelReason: text("cancel_reason"),
     externalCustomerId: varchar("external_customer_id", { length: 255 }),
-    externalSubscriptionId: varchar("external_subscription_id", { length: 255 }),
+    externalSubscriptionId: varchar("external_subscription_id", {
+      length: 255,
+    }),
     paymentMethod: varchar("payment_method", { length: 50 }),
     metadata: jsonb("metadata").default("{}"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -105,16 +113,18 @@ export const usageMeter = pgTable(
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     unit: varchar("unit", { length: 50 }).notNull(),
-    aggregationType: varchar("aggregation_type", { length: 20 }).notNull().default("sum"),
-    resetInterval: varchar("reset_interval", { length: 20 }).notNull().default("monthly"),
+    aggregationType: varchar("aggregation_type", { length: 20 })
+      .notNull()
+      .default("sum"),
+    resetInterval: varchar("reset_interval", { length: 20 })
+      .notNull()
+      .default("monthly"),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("usage_meter_active_idx").on(table.isActive),
-  ],
+  (table) => [index("usage_meter_active_idx").on(table.isActive)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -142,7 +152,11 @@ export const usageRecord = pgTable(
   (table) => [
     index("usage_record_org_idx").on(table.orgId),
     index("usage_record_meter_idx").on(table.meterId),
-    index("usage_record_period_idx").on(table.orgId, table.meterId, table.periodStart),
+    index("usage_record_period_idx").on(
+      table.orgId,
+      table.meterId,
+      table.periodStart,
+    ),
   ],
 );
 

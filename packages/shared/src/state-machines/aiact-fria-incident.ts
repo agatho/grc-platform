@@ -27,7 +27,9 @@ export interface FriaRequirementResult {
   recommendationLevel: "mandatory" | "recommended" | "not_required";
 }
 
-export function determineFriaRequirement(ctx: FriaDetermination): FriaRequirementResult {
+export function determineFriaRequirement(
+  ctx: FriaDetermination,
+): FriaRequirementResult {
   if (ctx.riskClassification !== "high") {
     return {
       isFriaRequired: false,
@@ -39,7 +41,8 @@ export function determineFriaRequirement(ctx: FriaDetermination): FriaRequiremen
   if (ctx.deployerType === "public_sector") {
     return {
       isFriaRequired: true,
-      reason: "Public-Sector-Deployer + High-Risk = FRIA Pflicht (Art. 27 (1) (a)).",
+      reason:
+        "Public-Sector-Deployer + High-Risk = FRIA Pflicht (Art. 27 (1) (a)).",
       recommendationLevel: "mandatory",
     };
   }
@@ -62,7 +65,8 @@ export function determineFriaRequirement(ctx: FriaDetermination): FriaRequiremen
 
   return {
     isFriaRequired: false,
-    reason: "High-Risk aber ausserhalb mandatory-Scope. FRIA empfohlen aber nicht Pflicht.",
+    reason:
+      "High-Risk aber ausserhalb mandatory-Scope. FRIA empfohlen aber nicht Pflicht.",
     recommendationLevel: "recommended",
   };
 }
@@ -122,7 +126,9 @@ const CORE_RIGHTS: FundamentalRight[] = [
 
 export function assessFriaQuality(input: FriaQualityInput): FriaQualityResult {
   const assessedRights = new Set(input.rightsAssessed.map((r) => r.right));
-  const rightsCoverage = Math.round((assessedRights.size / CORE_RIGHTS.length) * 100);
+  const rightsCoverage = Math.round(
+    (assessedRights.size / CORE_RIGHTS.length) * 100,
+  );
 
   const qualityChecks: Array<[boolean, string]> = [
     [input.hasDiscriminationAnalysis, "discrimination_analysis"],
@@ -134,7 +140,9 @@ export function assessFriaQuality(input: FriaQualityInput): FriaQualityResult {
   ];
   const passed = qualityChecks.filter(([v]) => v).length;
   const missing = qualityChecks.filter(([v]) => !v).map(([, k]) => k);
-  const qualityChecksPercent = Math.round((passed / qualityChecks.length) * 100);
+  const qualityChecksPercent = Math.round(
+    (passed / qualityChecks.length) * 100,
+  );
 
   const highResidualRights = input.rightsAssessed
     .filter((r) => r.residualRisk === "high")
@@ -144,7 +152,9 @@ export function assessFriaQuality(input: FriaQualityInput): FriaQualityResult {
 
   // Approvable = >=5 rights covered, all 6 quality-checks, no high residual risk
   const isApprovable =
-    assessedRights.size >= 5 && passed === qualityChecks.length && !hasHighResidualRisk;
+    assessedRights.size >= 5 &&
+    passed === qualityChecks.length &&
+    !hasHighResidualRisk;
 
   return {
     rightsCoverage,
@@ -177,7 +187,11 @@ export interface IncidentDeadlineResult {
   isSerious: boolean;
   notificationDeadlineDays: number;
   notificationDeadlineHours: number;
-  deadlineCategory: "immediate_2d" | "widespread_2d" | "serious_15d" | "not_reportable";
+  deadlineCategory:
+    | "immediate_2d"
+    | "widespread_2d"
+    | "serious_15d"
+    | "not_reportable";
   reasoning: string;
 }
 
@@ -200,14 +214,18 @@ export function classifyIncidentDeadline(
   }
 
   // Widespread infringement: 2 days
-  if (incident.isWidespreadInfringement || incident.affectedPersonsCount > 100) {
+  if (
+    incident.isWidespreadInfringement ||
+    incident.affectedPersonsCount > 100
+  ) {
     const deadline = new Date(detectedAt.getTime() + 2 * 24 * 60 * 60 * 1000);
     return {
       isSerious: true,
       notificationDeadlineDays: 2,
       notificationDeadlineHours: 48,
       deadlineCategory: "widespread_2d",
-      reasoning: "Widespread infringement oder > 100 affected persons -- 2-Tage-Deadline.",
+      reasoning:
+        "Widespread infringement oder > 100 affected persons -- 2-Tage-Deadline.",
       deadlineAt: deadline,
     };
   }
@@ -225,7 +243,8 @@ export function classifyIncidentDeadline(
       notificationDeadlineDays: 15,
       notificationDeadlineHours: 360,
       deadlineCategory: "serious_15d",
-      reasoning: "Serious incident -- 15-Tage-Deadline an Market-Surveillance-Authority.",
+      reasoning:
+        "Serious incident -- 15-Tage-Deadline an Market-Surveillance-Authority.",
       deadlineAt: deadline,
     };
   }
@@ -235,14 +254,15 @@ export function classifyIncidentDeadline(
     notificationDeadlineDays: 0,
     notificationDeadlineHours: 0,
     deadlineCategory: "not_reportable",
-    reasoning: "Nicht als serious oder widespread klassifiziert -- keine Meldepflicht.",
+    reasoning:
+      "Nicht als serious oder widespread klassifiziert -- keine Meldepflicht.",
     deadlineAt: detectedAt,
   };
 }
 
 // ─── Incident Overdue-Check ───────────────────────────────────
 
-export interface IncidentStatus {
+export interface AiActIncidentSnapshot {
   detectedAt: Date;
   authorityNotifiedAt: Date | null;
   deadlineAt: Date;
@@ -258,7 +278,7 @@ export interface IncidentOverdueResult {
 }
 
 export function checkIncidentOverdue(
-  status: IncidentStatus,
+  status: AiActIncidentSnapshot,
   now: Date = new Date(),
 ): IncidentOverdueResult {
   const isNotified = status.authorityNotifiedAt !== null;

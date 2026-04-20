@@ -38,11 +38,13 @@ export async function POST(_req: Request) {
       merkleRoot: auditAnchor.merkleRoot,
     })
     .from(auditAnchor)
-    .where(and(
-      eq(auditAnchor.orgId, ctx.orgId),
-      eq(auditAnchor.provider, "opentimestamps"),
-      eq(auditAnchor.proofStatus, "pending"),
-    ));
+    .where(
+      and(
+        eq(auditAnchor.orgId, ctx.orgId),
+        eq(auditAnchor.provider, "opentimestamps"),
+        eq(auditAnchor.proofStatus, "pending"),
+      ),
+    );
 
   const results: UpgradeRowResult[] = [];
 

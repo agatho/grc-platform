@@ -3,7 +3,14 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { ArrowLeft, Calendar, Loader2, Plus, Trash2, Link as LinkIcon } from "lucide-react";
+import {
+  ArrowLeft,
+  Calendar,
+  Loader2,
+  Plus,
+  Trash2,
+  Link as LinkIcon,
+} from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
@@ -49,7 +56,9 @@ export default function ObjectDetailPage() {
     if (!id) return;
     Promise.all([
       fetch(`/api/v1/catalogs/objects/${id}`).then((r) => r.json()),
-      fetch(`/api/v1/catalogs/objects/${id}/lifecycle-phases`).then((r) => r.json()),
+      fetch(`/api/v1/catalogs/objects/${id}/lifecycle-phases`).then((r) =>
+        r.json(),
+      ),
       fetch(`/api/v1/catalogs/where-used/${id}`).then((r) => r.json()),
     ]).then(([objRes, phasesRes, refsRes]) => {
       setObject(objRes.data ?? null);
@@ -76,7 +85,12 @@ export default function ObjectDetailPage() {
       const json = await res.json();
       setPhases((prev) => [...prev, json.data]);
       setShowAddPhase(false);
-      setNewPhase({ phaseName: "planned", startDate: "", endDate: "", notes: "" });
+      setNewPhase({
+        phaseName: "planned",
+        startDate: "",
+        endDate: "",
+        notes: "",
+      });
       toast.success(t("phaseAdded"));
     }
   };
@@ -119,7 +133,14 @@ export default function ObjectDetailPage() {
     );
   }
 
-  const phaseNames = ["planned", "pilot", "active", "migration", "eol", "retired"];
+  const phaseNames = [
+    "planned",
+    "pilot",
+    "active",
+    "migration",
+    "eol",
+    "retired",
+  ];
 
   return (
     <div className="space-y-6">
@@ -135,7 +156,9 @@ export default function ObjectDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{object.name}</h1>
             <div className="mt-1 flex items-center gap-2">
-              <Badge className="text-xs">{t(`objectTypes.${object.objectType}`)}</Badge>
+              <Badge className="text-xs">
+                {t(`objectTypes.${object.objectType}`)}
+              </Badge>
               <Badge variant="outline" className="text-xs capitalize">
                 {object.status}
               </Badge>
@@ -151,7 +174,9 @@ export default function ObjectDetailPage() {
       {/* Description */}
       {object.description && (
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <h3 className="text-sm font-medium text-gray-700">{t("entry.description")}</h3>
+          <h3 className="text-sm font-medium text-gray-700">
+            {t("entry.description")}
+          </h3>
           <p className="mt-1 text-sm text-gray-600">{object.description}</p>
         </div>
       )}
@@ -163,14 +188,20 @@ export default function ObjectDetailPage() {
             <Calendar className="h-4 w-4" />
             {t("lifecycle.title")}
           </h3>
-          <Button size="sm" variant="outline" onClick={() => setShowAddPhase(true)}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowAddPhase(true)}
+          >
             <Plus className="mr-1 h-3 w-3" />
             {t("lifecycle.addPhase")}
           </Button>
         </div>
         <div className="p-4">
           {phases.length === 0 ? (
-            <p className="text-center text-sm text-gray-500">{t("lifecycle.noPhases")}</p>
+            <p className="text-center text-sm text-gray-500">
+              {t("lifecycle.noPhases")}
+            </p>
           ) : (
             <div className="space-y-3">
               {phases.map((phase) => (
@@ -184,10 +215,14 @@ export default function ObjectDetailPage() {
                     </span>
                     <span className="ml-3 text-xs text-gray-600">
                       {phase.startDate}
-                      {phase.endDate ? ` - ${phase.endDate}` : ` - ${t("lifecycle.ongoing")}`}
+                      {phase.endDate
+                        ? ` - ${phase.endDate}`
+                        : ` - ${t("lifecycle.ongoing")}`}
                     </span>
                     {phase.notes && (
-                      <p className="mt-1 text-xs text-gray-500">{phase.notes}</p>
+                      <p className="mt-1 text-xs text-gray-500">
+                        {phase.notes}
+                      </p>
                     )}
                   </div>
                   <button
@@ -213,7 +248,10 @@ export default function ObjectDetailPage() {
                 <select
                   value={newPhase.phaseName}
                   onChange={(e) =>
-                    setNewPhase((prev) => ({ ...prev, phaseName: e.target.value }))
+                    setNewPhase((prev) => ({
+                      ...prev,
+                      phaseName: e.target.value,
+                    }))
                   }
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
@@ -232,7 +270,10 @@ export default function ObjectDetailPage() {
                   type="date"
                   value={newPhase.startDate}
                   onChange={(e) =>
-                    setNewPhase((prev) => ({ ...prev, startDate: e.target.value }))
+                    setNewPhase((prev) => ({
+                      ...prev,
+                      startDate: e.target.value,
+                    }))
                   }
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
@@ -245,7 +286,10 @@ export default function ObjectDetailPage() {
                   type="date"
                   value={newPhase.endDate}
                   onChange={(e) =>
-                    setNewPhase((prev) => ({ ...prev, endDate: e.target.value }))
+                    setNewPhase((prev) => ({
+                      ...prev,
+                      endDate: e.target.value,
+                    }))
                   }
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
@@ -265,7 +309,11 @@ export default function ObjectDetailPage() {
               </div>
             </div>
             <div className="mt-3 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setShowAddPhase(false)}>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShowAddPhase(false)}
+              >
                 {t("cancel")}
               </Button>
               <Button size="sm" onClick={handleAddPhase}>
@@ -286,7 +334,9 @@ export default function ObjectDetailPage() {
         </div>
         <div className="p-4">
           {references.length === 0 ? (
-            <p className="text-center text-sm text-gray-500">{t("noReferences")}</p>
+            <p className="text-center text-sm text-gray-500">
+              {t("noReferences")}
+            </p>
           ) : (
             <div className="space-y-2">
               {references.map((ref) => (

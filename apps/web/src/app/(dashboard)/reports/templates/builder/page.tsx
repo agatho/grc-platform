@@ -82,7 +82,9 @@ export default function TemplateBuilderPage() {
   useEffect(() => {
     fetch("/api/v1/reports/data-sources")
       .then((res) => res.json())
-      .then((data) => setDataSources(data.data || { tables: [], charts: [], kpis: [] }))
+      .then((data) =>
+        setDataSources(data.data || { tables: [], charts: [], kpis: [] }),
+      )
       .catch(() => {});
   }, []);
 
@@ -186,13 +188,15 @@ export default function TemplateBuilderPage() {
               <h1 className="text-2xl font-bold tracking-tight">
                 {t("builderTitle")}
               </h1>
-              <p className="text-muted-foreground">
-                {t("builderSubtitle")}
-              </p>
+              <p className="text-muted-foreground">{t("builderSubtitle")}</p>
             </div>
           </div>
           <div className="flex gap-2">
-            <Button variant="outline" onClick={handlePreview} disabled={previewing}>
+            <Button
+              variant="outline"
+              onClick={handlePreview}
+              disabled={previewing}
+            >
               <Eye className="mr-2 h-4 w-4" />
               {t("preview")}
             </Button>
@@ -240,7 +244,9 @@ export default function TemplateBuilderPage() {
               </CardHeader>
               <CardContent className="space-y-3">
                 <div>
-                  <label className="text-xs font-medium">{t("primaryColor")}</label>
+                  <label className="text-xs font-medium">
+                    {t("primaryColor")}
+                  </label>
                   <div className="flex gap-2 mt-1">
                     <input
                       type="color"
@@ -256,7 +262,9 @@ export default function TemplateBuilderPage() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-xs font-medium">{t("footerText")}</label>
+                  <label className="text-xs font-medium">
+                    {t("footerText")}
+                  </label>
                   <Input
                     value={footerText}
                     onChange={(e) => setFooterText(e.target.value)}
@@ -265,8 +273,13 @@ export default function TemplateBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-xs font-medium">{t("confidentiality")}</label>
-                  <Select value={confidentiality} onValueChange={setConfidentiality}>
+                  <label className="text-xs font-medium">
+                    {t("confidentiality")}
+                  </label>
+                  <Select
+                    value={confidentiality}
+                    onValueChange={setConfidentiality}
+                  >
                     <SelectTrigger className="mt-1 text-xs">
                       <SelectValue placeholder={t("selectConfidentiality")} />
                     </SelectTrigger>
@@ -288,7 +301,9 @@ export default function TemplateBuilderPage() {
             <Card>
               <CardContent className="pt-4 space-y-3">
                 <div>
-                  <label className="text-sm font-medium">{t("templateName")}</label>
+                  <label className="text-sm font-medium">
+                    {t("templateName")}
+                  </label>
                   <Input
                     value={name}
                     onChange={(e) => setName(e.target.value)}
@@ -297,7 +312,9 @@ export default function TemplateBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("templateDescription")}</label>
+                  <label className="text-sm font-medium">
+                    {t("templateDescription")}
+                  </label>
                   <Textarea
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
@@ -307,10 +324,14 @@ export default function TemplateBuilderPage() {
                   />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("moduleScope")}</label>
+                  <label className="text-sm font-medium">
+                    {t("moduleScope")}
+                  </label>
                   <Select
                     value={moduleScope}
-                    onValueChange={(v) => setModuleScope(v as ReportModuleScope)}
+                    onValueChange={(v) =>
+                      setModuleScope(v as ReportModuleScope)
+                    }
                   >
                     <SelectTrigger className="mt-1">
                       <SelectValue />

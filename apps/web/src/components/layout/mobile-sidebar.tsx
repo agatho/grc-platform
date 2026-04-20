@@ -5,17 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import {
-  X,
-  Search,
-  Star,
-  ChevronDown,
-  ChevronRight,
-} from "lucide-react";
-import {
-  NAV_GROUPS_CONDENSED,
-  getAllFlatNavItems,
-} from "./nav-config";
+import { X, Search, Star, ChevronDown, ChevronRight } from "lucide-react";
+import { NAV_GROUPS_CONDENSED, getAllFlatNavItems } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import type { UserRole } from "@grc/shared";
 
@@ -25,12 +16,19 @@ interface MobileSidebarProps {
   currentOrgId: string | null;
 }
 
-function isItemVisible(roles: UserRole[], itemRoles: UserRole[] | "all"): boolean {
+function isItemVisible(
+  roles: UserRole[],
+  itemRoles: UserRole[] | "all",
+): boolean {
   if (itemRoles === "all") return true;
   return itemRoles.some((r) => roles.includes(r));
 }
 
-export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProps) {
+export function MobileSidebar({
+  open,
+  onClose,
+  currentOrgId,
+}: MobileSidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
   const { data: session } = useSession();
@@ -137,7 +135,10 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                 {searchResults.map((item) => {
                   const Icon = item.icon;
                   return (
-                    <li key={`${item.groupKey}-${item.href}`} className="relative group">
+                    <li
+                      key={`${item.groupKey}-${item.href}`}
+                      className="relative group"
+                    >
                       <Link
                         href={item.href}
                         onClick={onClose}
@@ -148,7 +149,9 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                         }`}
                       >
                         <Icon size={16} className="shrink-0" />
-                        <span className="truncate flex-1">{t(item.labelKey)}</span>
+                        <span className="truncate flex-1">
+                          {t(item.labelKey)}
+                        </span>
                       </Link>
                       <button
                         onClick={(e) => {
@@ -244,7 +247,10 @@ export function MobileSidebar({ open, onClose, currentOrgId }: MobileSidebarProp
                       {group.items.map((item) => {
                         const Icon = item.icon;
                         return (
-                          <li key={`${group.key}-${item.labelKey}`} className="relative group/item">
+                          <li
+                            key={`${group.key}-${item.labelKey}`}
+                            className="relative group/item"
+                          >
                             <Link
                               href={item.href}
                               onClick={onClose}

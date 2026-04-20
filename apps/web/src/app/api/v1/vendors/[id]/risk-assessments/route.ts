@@ -21,7 +21,13 @@ export async function POST(
   const [v] = await db
     .select({ id: vendor.id })
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) {
     return Response.json({ error: "Vendor not found" }, { status: 404 });
   }

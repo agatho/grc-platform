@@ -1,10 +1,4 @@
-import {
-  db,
-  soaEntry,
-  catalogEntry,
-  control,
-  controlMaturity,
-} from "@grc/db";
+import { db, soaEntry, catalogEntry, control, controlMaturity } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, isNull, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -44,7 +38,7 @@ export async function GET(req: Request) {
     const catalogIds = catalogEntries.map((e) => e.id);
 
     // Find org controls linked via SoA
-    let controls: ControlWithCES[] = [];
+    const controls: ControlWithCES[] = [];
     if (catalogIds.length > 0) {
       const soaRows = await db
         .select({
@@ -121,11 +115,14 @@ export async function GET(req: Request) {
     data: {
       requirements,
       overallScore,
-      compliantCount: requirements.filter((r) => r.status === "compliant").length,
+      compliantCount: requirements.filter((r) => r.status === "compliant")
+        .length,
       partiallyCompliantCount: requirements.filter(
         (r) => r.status === "partially_compliant",
       ).length,
-      nonCompliantCount: requirements.filter((r) => r.status === "non_compliant").length,
+      nonCompliantCount: requirements.filter(
+        (r) => r.status === "non_compliant",
+      ).length,
       totalRequirements: requirements.length,
     },
   });

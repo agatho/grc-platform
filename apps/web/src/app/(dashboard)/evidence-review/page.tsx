@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { FileSearch, Plus, AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import {
+  FileSearch,
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+  XCircle,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,7 +63,11 @@ export default function EvidenceReviewPage() {
   };
 
   if (loading || !data) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -77,32 +87,46 @@ export default function EvidenceReviewPage() {
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("totalReviewed")}</p>
-            <p className="text-2xl font-bold">{data.summary.totalArtifactsReviewed}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("totalReviewed")}
+            </p>
+            <p className="text-2xl font-bold">
+              {data.summary.totalArtifactsReviewed}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("compliant")}</p>
-            <p className="text-2xl font-bold text-green-600">{data.summary.totalCompliant}</p>
+            <p className="text-2xl font-bold text-green-600">
+              {data.summary.totalCompliant}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("nonCompliant")}</p>
-            <p className="text-2xl font-bold text-red-600">{data.summary.totalNonCompliant}</p>
+            <p className="text-2xl font-bold text-red-600">
+              {data.summary.totalNonCompliant}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("openGaps")}</p>
-            <p className="text-2xl font-bold text-orange-600">{data.summary.openGaps}</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {data.summary.openGaps}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("avgConfidence")}</p>
-            <p className="text-2xl font-bold">{Number(data.summary.avgConfidence).toFixed(1)}%</p>
+            <p className="text-sm text-muted-foreground">
+              {t("avgConfidence")}
+            </p>
+            <p className="text-2xl font-bold">
+              {Number(data.summary.avgConfidence).toFixed(1)}%
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -115,14 +139,19 @@ export default function EvidenceReviewPage() {
         <CardContent>
           <div className="space-y-3">
             {data.recentJobs.map((job) => (
-              <Link key={job.id} href={`/evidence-review/${job.id}`} className="block">
+              <Link
+                key={job.id}
+                href={`/evidence-review/${job.id}`}
+                className="block"
+              >
                 <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-muted/50">
                   <div className="flex items-center gap-3">
                     <FileSearch className="h-5 w-5 text-muted-foreground" />
                     <div>
                       <p className="font-medium text-sm">{job.name}</p>
                       <p className="text-xs text-muted-foreground">
-                        {job.reviewedArtifacts}/{job.totalArtifacts} {t("artifacts")}
+                        {job.reviewedArtifacts}/{job.totalArtifacts}{" "}
+                        {t("artifacts")}
                       </p>
                     </div>
                   </div>
@@ -145,7 +174,10 @@ export default function EvidenceReviewPage() {
           <CardContent>
             <div className="space-y-2">
               {data.topGaps.map((gap) => (
-                <div key={gap.id} className="flex items-center justify-between p-2 rounded border">
+                <div
+                  key={gap.id}
+                  className="flex items-center justify-between p-2 rounded border"
+                >
                   <div className="flex items-center gap-2">
                     <AlertTriangle className="h-4 w-4 text-orange-500" />
                     <span className="text-sm">{gap.title}</span>

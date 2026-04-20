@@ -2,7 +2,12 @@ import { db, vendorSlaDefinition } from "@grc/db";
 import { createSlaDefinitionSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/tprm/sla-definitions?vendorId=...
 export async function GET(req: Request) {
@@ -40,7 +45,10 @@ export async function POST(req: Request) {
 
   const body = createSlaDefinitionSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {

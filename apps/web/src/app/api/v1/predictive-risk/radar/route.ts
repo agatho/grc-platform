@@ -9,9 +9,14 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = radarQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = radarQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { horizonDays } = query.data;
@@ -28,11 +33,13 @@ export async function GET(req: Request) {
       earlyWarning: riskPrediction.earlyWarning,
     })
     .from(riskPrediction)
-    .where(and(
-      eq(riskPrediction.orgId, ctx.orgId),
-      eq(riskPrediction.isActive, true),
-      sql`${riskPrediction.predictionHorizonDays} <= ${horizonDays}`,
-    ))
+    .where(
+      and(
+        eq(riskPrediction.orgId, ctx.orgId),
+        eq(riskPrediction.isActive, true),
+        sql`${riskPrediction.predictionHorizonDays} <= ${horizonDays}`,
+      ),
+    )
     .orderBy(sql`${riskPrediction.riskLevel} desc`)
     .limit(100);
 

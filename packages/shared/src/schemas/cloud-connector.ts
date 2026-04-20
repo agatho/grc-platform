@@ -4,7 +4,12 @@ import { z } from "zod";
 
 export const cloudProviderValues = ["aws", "azure", "gcp"] as const;
 
-export const cloudExecutionStatusValues = ["running", "completed", "failed", "cancelled"] as const;
+export const cloudExecutionStatusValues = [
+  "running",
+  "completed",
+  "failed",
+  "cancelled",
+] as const;
 
 export const cloudTriggerValues = ["schedule", "manual", "api"] as const;
 
@@ -38,7 +43,10 @@ export const triggerCloudTestSchema = z.object({
 export const cloudSuiteQuerySchema = z.object({
   provider: z.enum(cloudProviderValues).optional(),
   connectorId: z.string().uuid().optional(),
-  isEnabled: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
+  isEnabled: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

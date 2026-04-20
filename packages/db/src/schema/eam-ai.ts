@@ -179,15 +179,12 @@ export const eamTranslation = pgTable(
   }),
 );
 
-export const eamTranslationRelations = relations(
-  eamTranslation,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [eamTranslation.orgId],
-      references: [organization.id],
-    }),
+export const eamTranslationRelations = relations(eamTranslation, ({ one }) => ({
+  organization: one(organization, {
+    fields: [eamTranslation.orgId],
+    references: [organization.id],
   }),
-);
+}));
 
 // ──────────────────────────────────────────────────────────────
 // EAM Chat Session (conversation history)
@@ -220,19 +217,16 @@ export const eamChatSession = pgTable(
   }),
 );
 
-export const eamChatSessionRelations = relations(
-  eamChatSession,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [eamChatSession.orgId],
-      references: [organization.id],
-    }),
-    chatUser: one(user, {
-      fields: [eamChatSession.userId],
-      references: [user.id],
-    }),
+export const eamChatSessionRelations = relations(eamChatSession, ({ one }) => ({
+  organization: one(organization, {
+    fields: [eamChatSession.orgId],
+    references: [organization.id],
   }),
-);
+  chatUser: one(user, {
+    fields: [eamChatSession.userId],
+    references: [user.id],
+  }),
+}));
 
 // ──────────────────────────────────────────────────────────────
 // EAM Object Suggestion (rule-based, no LLM)

@@ -31,23 +31,24 @@ interface AiProvidersResponse {
   providers: ProviderInfo[];
 }
 
-const TYPE_LABEL: Record<string, { de: string; en: string; classes: string }> = {
-  cloud: {
-    de: "Cloud",
-    en: "Cloud",
-    classes: "bg-blue-50 text-blue-700 border-blue-200",
-  },
-  local: {
-    de: "Lokal",
-    en: "Local",
-    classes: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  },
-  subscription: {
-    de: "Abo",
-    en: "Subscription",
-    classes: "bg-purple-50 text-purple-700 border-purple-200",
-  },
-};
+const TYPE_LABEL: Record<string, { de: string; en: string; classes: string }> =
+  {
+    cloud: {
+      de: "Cloud",
+      en: "Cloud",
+      classes: "bg-blue-50 text-blue-700 border-blue-200",
+    },
+    local: {
+      de: "Lokal",
+      en: "Local",
+      classes: "bg-emerald-50 text-emerald-700 border-emerald-200",
+    },
+    subscription: {
+      de: "Abo",
+      en: "Subscription",
+      classes: "bg-purple-50 text-purple-700 border-purple-200",
+    },
+  };
 
 export default function AiProvidersSettingsPage() {
   const locale = useLocale();
@@ -67,8 +68,7 @@ export default function AiProvidersSettingsPage() {
         const json = (await res.json()) as AiProvidersResponse;
         if (!cancelled) setData(json);
       } catch (e) {
-        if (!cancelled)
-          setError(e instanceof Error ? e.message : "Load error");
+        if (!cancelled) setError(e instanceof Error ? e.message : "Load error");
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -179,7 +179,12 @@ export default function AiProvidersSettingsPage() {
         <div className="grid gap-4 lg:grid-cols-2">
           {data.providers.map((p) => {
             const typeInfo = TYPE_LABEL[p.type];
-            const Icon = p.type === "local" ? HardDrive : p.type === "subscription" ? BadgeIcon : Cloud;
+            const Icon =
+              p.type === "local"
+                ? HardDrive
+                : p.type === "subscription"
+                  ? BadgeIcon
+                  : Cloud;
             return (
               <div
                 key={p.key}
@@ -244,7 +249,9 @@ export default function AiProvidersSettingsPage() {
                   </span>
                 </div>
 
-                <p className="text-xs leading-relaxed text-gray-600">{p.notes}</p>
+                <p className="text-xs leading-relaxed text-gray-600">
+                  {p.notes}
+                </p>
 
                 {/* Env vars */}
                 <div className="space-y-1.5 rounded-lg bg-gray-50 p-3">

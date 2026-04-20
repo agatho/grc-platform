@@ -21,7 +21,9 @@ interface MonthlyReportResult {
 export async function processMonthlyReportGenerator(): Promise<MonthlyReportResult> {
   const now = new Date();
   const currentYear = now.getFullYear();
-  console.log(`[cron:monthly-report-generator] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:monthly-report-generator] Starting at ${now.toISOString()}`,
+  );
 
   let processed = 0;
   let errors = 0;
@@ -43,10 +45,7 @@ export async function processMonthlyReportGenerator(): Promise<MonthlyReportResu
         })
         .from(grcBudget)
         .where(
-          and(
-            eq(grcBudget.orgId, org.id),
-            eq(grcBudget.year, currentYear),
-          ),
+          and(eq(grcBudget.orgId, org.id), eq(grcBudget.year, currentYear)),
         )
         .limit(1);
 
@@ -148,21 +147,19 @@ export async function processMonthlyReportGenerator(): Promise<MonthlyReportResu
         acceptedRisksCount: acceptedRisks.length,
       };
 
-      await db
-        .insert(grcCostEntry)
-        .values({
-          orgId: org.id,
-          entityType: "executive_report",
-          entityId: budget.id,
-          costCategory: "measures",
-          costType: "forecast",
-          amount: String(totalActual),
-          currency: "EUR",
-          periodStart: yearStart,
-          periodEnd: yearEnd,
-          budgetId: budget.id,
-          description: JSON.stringify(reportData),
-        });
+      await db.insert(grcCostEntry).values({
+        orgId: org.id,
+        entityType: "executive_report",
+        entityId: budget.id,
+        costCategory: "measures",
+        costType: "forecast",
+        amount: String(totalActual),
+        currency: "EUR",
+        periodStart: yearStart,
+        periodEnd: yearEnd,
+        budgetId: budget.id,
+        description: JSON.stringify(reportData),
+      });
 
       processed++;
       console.log(

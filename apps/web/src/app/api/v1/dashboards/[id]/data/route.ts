@@ -31,10 +31,7 @@ export async function GET(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -66,7 +63,11 @@ export async function GET(
       };
 
       if (!config?.dataSource) {
-        return { widgetId: widget.id, status: "rejected" as const, error: "No data source configured" };
+        return {
+          widgetId: widget.id,
+          status: "rejected" as const,
+          error: "No data source configured",
+        };
       }
 
       const urlPath = resolveWidgetUrl({
@@ -88,9 +89,10 @@ export async function GET(
           return {
             widgetId: widget.id,
             status: "rejected" as const,
-            error: response.status === 404
-              ? "Module not activated"
-              : `API error: ${response.status}`,
+            error:
+              response.status === 404
+                ? "Module not activated"
+                : `API error: ${response.status}`,
           };
         }
 
@@ -107,7 +109,10 @@ export async function GET(
   );
 
   // Build response map
-  const widgetData: Record<string, { status: string; data?: unknown; error?: string }> = {};
+  const widgetData: Record<
+    string,
+    { status: string; data?: unknown; error?: string }
+  > = {};
 
   for (const result of results) {
     if (result.status === "fulfilled") {

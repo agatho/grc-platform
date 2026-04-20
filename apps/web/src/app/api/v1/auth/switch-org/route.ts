@@ -13,7 +13,10 @@ export async function POST(req: Request) {
 
   const parsed = switchOrgSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const { orgId } = parsed.data;
 

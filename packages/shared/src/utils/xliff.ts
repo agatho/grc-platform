@@ -97,9 +97,7 @@ export function parseXliff(xml: string): XliffDocument {
     const entityIdMatch = unitContent.match(
       /<meta type="entityId">([^<]+)<\/meta>/,
     );
-    const fieldMatch = unitContent.match(
-      /<meta type="field">([^<]+)<\/meta>/,
-    );
+    const fieldMatch = unitContent.match(/<meta type="field">([^<]+)<\/meta>/);
 
     // Extract source and target
     const sourceMatch = unitContent.match(/<source[^>]*>([^<]*)<\/source>/);
@@ -115,7 +113,9 @@ export function parseXliff(xml: string): XliffDocument {
       entityId: unescapeXml(entityIdMatch[1]),
       field: unescapeXml(fieldMatch[1]),
       source: unescapeXml(sourceMatch[1]),
-      target: targetMatch ? sanitizeTranslation(unescapeXml(targetMatch[1])) : "",
+      target: targetMatch
+        ? sanitizeTranslation(unescapeXml(targetMatch[1]))
+        : "",
     });
   }
 
@@ -152,7 +152,11 @@ export function generateCsv(
 /**
  * Parse CSV string into translation rows.
  */
-export function parseCsv(csv: string): { sourceLanguage: string; targetLanguage: string; rows: CsvRow[] } {
+export function parseCsv(csv: string): {
+  sourceLanguage: string;
+  targetLanguage: string;
+  rows: CsvRow[];
+} {
   const lines = csv.trim().split("\n");
   if (lines.length < 2) {
     throw new Error("Invalid CSV: requires header and at least one data row");
@@ -164,7 +168,9 @@ export function parseCsv(csv: string): { sourceLanguage: string; targetLanguage:
   const targetMatch = header.match(/target_(\w+)/);
 
   if (!sourceMatch || !targetMatch) {
-    throw new Error("Invalid CSV header: expected source_XX and target_XX columns");
+    throw new Error(
+      "Invalid CSV header: expected source_XX and target_XX columns",
+    );
   }
 
   const rows: CsvRow[] = [];

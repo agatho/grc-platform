@@ -12,7 +12,7 @@ test.describe("Catalog Activation per Organization", () => {
     expect(res.ok()).toBeTruthy();
 
     const json = await res.json();
-    const data = Array.isArray(json) ? json : json.data ?? [];
+    const data = Array.isArray(json) ? json : (json.data ?? []);
     expect(data.length).toBeGreaterThan(0);
 
     // All modules should be enabled

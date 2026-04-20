@@ -1,5 +1,5 @@
 import { db, auditLog, auditAnchor, organization } from "@grc/db";
-import { and, eq, sql } from "drizzle-orm";
+import { and, eq, sql, gte, lte, asc } from "drizzle-orm";
 import { createHash } from "node:crypto";
 import JSZip from "jszip";
 import { withAuth } from "@/lib/api";
@@ -49,7 +49,8 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const from = url.searchParams.get("from") ?? defaultFrom();
-  const to = url.searchParams.get("to") ?? new Date().toISOString().slice(0, 10);
+  const to =
+    url.searchParams.get("to") ?? new Date().toISOString().slice(0, 10);
   const fromDate = new Date(from + "T00:00:00Z");
   const toDate = new Date(to + "T23:59:59.999Z");
   if (isNaN(fromDate.getTime()) || isNaN(toDate.getTime())) {
@@ -129,11 +130,13 @@ export async function GET(req: Request) {
   const anchors = await db
     .select()
     .from(auditAnchor)
-    .where(and(
-      eq(auditAnchor.orgId, ctx.orgId),
-      gte(auditAnchor.anchorDate, from),
-      lte(auditAnchor.anchorDate, to),
-    ))
+    .where(
+      and(
+        eq(auditAnchor.orgId, ctx.orgId),
+        gte(auditAnchor.anchorDate, from),
+        lte(auditAnchor.anchorDate, to),
+      ),
+    )
     .orderBy(asc(auditAnchor.anchorDate), asc(auditAnchor.provider));
 
   // Build the ZIP
@@ -141,7 +144,9 @@ export async function GET(req: Request) {
 
   // 1. audit_log/audit_log.jsonl + checksum
   zip.folder("audit_log")!.file("audit_log.jsonl", jsonl);
-  zip.folder("audit_log")!.file("audit_log.sha256", `${jsonlSha256}  audit_log.jsonl\n`);
+  zip
+    .folder("audit_log")!
+    .file("audit_log.sha256", `${jsonlSha256}  audit_log.jsonl\n`);
 
   // 2. anchors/
   const anchorsFolder = zip.folder("anchors")!;
@@ -200,10 +205,13 @@ export async function GET(req: Request) {
   // 5. README.md
   zip.file("README.md", buildReadme(manifest, anchors.length, logRows.length));
 
-  const blob = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+  const blob = await zip.generateAsync({
+    type: "nodebuffer",
+    compression: "DEFLATE",
+  });
 
   const filename = `arctos-audit-archive-${org.id.slice(0, 8)}-${from}_${to}.zip`;
-  return new Response(blob, {
+  return new Response(new Uint8Array(blob), {
     status: 200,
     headers: {
       "Content-Type": "application/zip",
@@ -350,7 +358,11 @@ if __name__ == "__main__":
     main()
 `;
 
-function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): string {
+function buildReadme(
+  m: Manifest,
+  anchorCount: number,
+  logRowCount: number,
+): string {
   const lines: string[] = [];
   lines.push(`# ARCTOS Audit Archive`);
   lines.push(``);
@@ -368,7 +380,9 @@ function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): str
   lines.push(`  audit_log.jsonl      one row per line, canonically-keyed JSON`);
   lines.push(`  audit_log.sha256     sha256 of the .jsonl file`);
   lines.push(`anchors/`);
-  lines.push(`  <YYYY-MM-DD>_freetsa.tsr         RFC 3161 timestamp (DER-encoded)`);
+  lines.push(
+    `  <YYYY-MM-DD>_freetsa.tsr         RFC 3161 timestamp (DER-encoded)`,
+  );
   lines.push(`  <YYYY-MM-DD>_freetsa.root.hex    Merkle root this TSR signed`);
   lines.push(`  <YYYY-MM-DD>_opentimestamps.ots  OpenTimestamps proof`);
   lines.push(`  <YYYY-MM-DD>_opentimestamps.root.hex`);
@@ -386,7 +400,9 @@ function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): str
   lines.push(`sha256sum -c audit_log/audit_log.sha256`);
   lines.push(`\`\`\``);
   lines.push(``);
-  lines.push(`### 2. Check that each row's entry_hash is internally consistent`);
+  lines.push(
+    `### 2. Check that each row's entry_hash is internally consistent`,
+  );
   lines.push(``);
   lines.push(`Each row's \`entryHash\` is SHA-256 over:`);
   lines.push(``);
@@ -395,11 +411,17 @@ function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): str
   lines.push(`action | changes_json | created_at | previous_hash_scope`);
   lines.push(`\`\`\``);
   lines.push(``);
-  lines.push(`(PostgreSQL \`text\` concatenation with \`|\` separator, as emitted by \`audit_trigger()\`. See ADR-011 rev.2.)`);
+  lines.push(
+    `(PostgreSQL \`text\` concatenation with \`|\` separator, as emitted by \`audit_trigger()\`. See ADR-011 rev.2.)`,
+  );
   lines.push(``);
-  lines.push(`### 3. Check that each row's previous_hash chains to the prior row`);
+  lines.push(
+    `### 3. Check that each row's previous_hash chains to the prior row`,
+  );
   lines.push(``);
-  lines.push(`Within a \`previous_hash_scope\`, rows form a chain sorted by \`(created_at, id)\`. The \`previousHash\` of row N must equal the \`entryHash\` of row N-1. The first row in the scope has \`previousHash = null\`.`);
+  lines.push(
+    `Within a \`previous_hash_scope\`, rows form a chain sorted by \`(created_at, id)\`. The \`previousHash\` of row N must equal the \`entryHash\` of row N-1. The first row in the scope has \`previousHash = null\`.`,
+  );
   lines.push(``);
   lines.push(`### 4. Rebuild the daily Merkle roots and compare`);
   lines.push(``);
@@ -407,24 +429,38 @@ function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): str
   lines.push(`python3 verify/rebuild_merkle.py`);
   lines.push(`\`\`\``);
   lines.push(``);
-  lines.push(`Prints OK or MISMATCH for each anchor. Exits non-zero if anything fails.`);
+  lines.push(
+    `Prints OK or MISMATCH for each anchor. Exits non-zero if anything fails.`,
+  );
   lines.push(``);
   lines.push(`> Note: anchors are point-in-time snapshots. If the archive was`);
-  lines.push(`> created after additional audit events occurred on an anchor's date`);
-  lines.push(`> the verifier reports *"+N later rows not covered by this anchor"*`);
-  lines.push(`> alongside the OK. Those later rows are visible in the jsonl but`);
-  lines.push(`> wait for the next day's anchor for their own external commitment.`);
+  lines.push(
+    `> created after additional audit events occurred on an anchor's date`,
+  );
+  lines.push(
+    `> the verifier reports *"+N later rows not covered by this anchor"*`,
+  );
+  lines.push(
+    `> alongside the OK. Those later rows are visible in the jsonl but`,
+  );
+  lines.push(
+    `> wait for the next day's anchor for their own external commitment.`,
+  );
   lines.push(``);
   lines.push(`### 5. Verify FreeTSA timestamp proofs`);
   lines.push(``);
-  lines.push(`FreeTSA issues RFC 3161 timestamps. Public certificate chain: <https://freetsa.org/files/tsa.crt>, CA: <https://freetsa.org/files/cacert.pem>.`);
+  lines.push(
+    `FreeTSA issues RFC 3161 timestamps. Public certificate chain: <https://freetsa.org/files/tsa.crt>, CA: <https://freetsa.org/files/cacert.pem>.`,
+  );
   lines.push(``);
   lines.push(`\`\`\`bash`);
   lines.push(`# Download the CA once`);
   lines.push(`curl -sO https://freetsa.org/files/cacert.pem`);
   lines.push(`curl -sO https://freetsa.org/files/tsa.crt`);
   lines.push(``);
-  lines.push(`# For each anchor, pack the expected root into a binary file and verify`);
+  lines.push(
+    `# For each anchor, pack the expected root into a binary file and verify`,
+  );
   lines.push(`for root_hex in anchors/*_freetsa.root.hex; do`);
   lines.push(`  tsr_file="\${root_hex%.root.hex}.tsr"`);
   lines.push(`  root_bin="\${root_hex%.root.hex}.root.bin"`);
@@ -444,24 +480,44 @@ function buildReadme(m: Manifest, anchorCount: number, logRowCount: number): str
   lines.push(`done`);
   lines.push(`\`\`\``);
   lines.push(``);
-  lines.push(`The CLI queries a Bitcoin block explorer (blockstream.info by default). For a fully trustless verification, point it at your own Bitcoin node: \`ots -B <node> verify\`.`);
+  lines.push(
+    `The CLI queries a Bitcoin block explorer (blockstream.info by default). For a fully trustless verification, point it at your own Bitcoin node: \`ots -B <node> verify\`.`,
+  );
   lines.push(``);
-  lines.push(`Anchors that are still \`pending\` have not yet been included in a Bitcoin block (typical 1-2h window). The FreeTSA proof on the same day is already verifiable.`);
+  lines.push(
+    `Anchors that are still \`pending\` have not yet been included in a Bitcoin block (typical 1-2h window). The FreeTSA proof on the same day is already verifiable.`,
+  );
   lines.push(``);
   lines.push(`## What this archive proves`);
   lines.push(``);
   lines.push(`If all six steps pass:`);
   lines.push(``);
-  lines.push(`1. **The audit_log.jsonl matches what the server held** (sha256 + canonical-key JSON).`);
-  lines.push(`2. **No row was mutated in the DB after insert** (entry_hash re-computation).`);
-  lines.push(`3. **No row was inserted out-of-order or deleted** (chain integrity).`);
-  lines.push(`4. **The daily Merkle roots match the leaves in the jsonl** (rebuild_merkle.py).`);
-  lines.push(`5. **Those Merkle roots were committed externally at the dates claimed** (FreeTSA signature).`);
-  lines.push(`6. **Those Merkle roots are also in the Bitcoin blockchain** (OpenTimestamps proof).`);
+  lines.push(
+    `1. **The audit_log.jsonl matches what the server held** (sha256 + canonical-key JSON).`,
+  );
+  lines.push(
+    `2. **No row was mutated in the DB after insert** (entry_hash re-computation).`,
+  );
+  lines.push(
+    `3. **No row was inserted out-of-order or deleted** (chain integrity).`,
+  );
+  lines.push(
+    `4. **The daily Merkle roots match the leaves in the jsonl** (rebuild_merkle.py).`,
+  );
+  lines.push(
+    `5. **Those Merkle roots were committed externally at the dates claimed** (FreeTSA signature).`,
+  );
+  lines.push(
+    `6. **Those Merkle roots are also in the Bitcoin blockchain** (OpenTimestamps proof).`,
+  );
   lines.push(``);
-  lines.push(`Together, steps 5 and 6 bind the entire audit trail to an external trust root at known points in time. After the anchor timestamp, rewriting any row would require either coercing FreeTSA AND reorganizing Bitcoin, or the shorter path of accepting that the Merkle root would no longer match.`);
+  lines.push(
+    `Together, steps 5 and 6 bind the entire audit trail to an external trust root at known points in time. After the anchor timestamp, rewriting any row would require either coercing FreeTSA AND reorganizing Bitcoin, or the shorter path of accepting that the Merkle root would no longer match.`,
+  );
   lines.push(``);
-  lines.push(`See [ADR-011 rev.3](https://github.com/agatho/grc-platform/blob/main/docs/ADR-011-rev3.md) for the full design rationale.`);
+  lines.push(
+    `See [ADR-011 rev.3](https://github.com/agatho/grc-platform/blob/main/docs/ADR-011-rev3.md) for the full design rationale.`,
+  );
   lines.push(``);
   return lines.join("\n");
 }

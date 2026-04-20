@@ -1,8 +1,20 @@
 // Sprint 65: DevOps und IT Connectors types
 
-export type DevopsPlatform = "github" | "gitlab" | "bitbucket" | "jira" | "confluence" | "servicenow" | "wiki_generic";
+export type DevopsPlatform =
+  | "github"
+  | "gitlab"
+  | "bitbucket"
+  | "jira"
+  | "confluence"
+  | "servicenow"
+  | "wiki_generic";
 
-export type DevopsPlatformCategory = "git_platform" | "issue_tracker" | "wiki" | "endpoint_mgmt" | "network_firewall";
+export type DevopsPlatformCategory =
+  | "git_platform"
+  | "issue_tracker"
+  | "wiki"
+  | "endpoint_mgmt"
+  | "network_firewall";
 
 export type DevopsTestCategory =
   | "branch_protection"
@@ -14,7 +26,12 @@ export type DevopsTestCategory =
   | "endpoint_compliance"
   | "firewall_rules";
 
-export type DevopsResourceType = "repository" | "project" | "space" | "endpoint" | "firewall";
+export type DevopsResourceType =
+  | "repository"
+  | "project"
+  | "space"
+  | "endpoint"
+  | "firewall";
 
 export type ItCheckType =
   | "endpoint_encryption"
@@ -25,9 +42,19 @@ export type ItCheckType =
   | "vpn_config"
   | "certificate_expiry";
 
-export type ItResourceType = "endpoint" | "firewall" | "switch" | "router" | "certificate" | "vpn";
+export type ItResourceType =
+  | "endpoint"
+  | "firewall"
+  | "switch"
+  | "router"
+  | "certificate"
+  | "vpn";
 
-export type InfraComplianceStatus = "compliant" | "non_compliant" | "warning" | "error";
+export type InfraComplianceStatus =
+  | "compliant"
+  | "non_compliant"
+  | "warning"
+  | "error";
 
 export interface DevopsConnectorConfig {
   id: string;

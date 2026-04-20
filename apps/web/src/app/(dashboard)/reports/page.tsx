@@ -22,7 +22,13 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -74,7 +80,9 @@ export default function ReportCenterPage() {
     setLoading(true);
     try {
       const [templatesRes, historyRes] = await Promise.all([
-        fetch(`/api/v1/reports/templates?limit=100&moduleScope=${scopeFilter !== "all" ? scopeFilter : ""}&search=${search}`),
+        fetch(
+          `/api/v1/reports/templates?limit=100&moduleScope=${scopeFilter !== "all" ? scopeFilter : ""}&search=${search}`,
+        ),
         fetch("/api/v1/reports/history?limit=20"),
       ]);
       if (templatesRes.ok) {
@@ -96,7 +104,12 @@ export default function ReportCenterPage() {
 
   // Poll active job status
   useEffect(() => {
-    if (!activeJob || activeJob.status === "completed" || activeJob.status === "failed") return;
+    if (
+      !activeJob ||
+      activeJob.status === "completed" ||
+      activeJob.status === "failed"
+    )
+      return;
 
     const interval = setInterval(async () => {
       const res = await fetch(`/api/v1/reports/jobs/${activeJob.logId}`);
@@ -199,9 +212,7 @@ export default function ReportCenterPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">
-              {t("title")}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{t("title")}</h1>
             <p className="text-muted-foreground">{t("subtitle")}</p>
           </div>
           <div className="flex gap-2">
@@ -358,17 +369,13 @@ export default function ReportCenterPage() {
                 <tbody>
                   {history.map((entry) => (
                     <tr key={entry.id} className="border-b last:border-0">
-                      <td className="px-4 py-3">
-                        {entry.templateName || "—"}
-                      </td>
+                      <td className="px-4 py-3">{entry.templateName || "—"}</td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="uppercase text-xs">
                           {entry.outputFormat}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3">
-                        {statusBadge(entry.status)}
-                      </td>
+                      <td className="px-4 py-3">{statusBadge(entry.status)}</td>
                       <td className="px-4 py-3">
                         {entry.fileSize
                           ? `${(entry.fileSize / 1024).toFixed(1)} KB`
@@ -447,10 +454,7 @@ export default function ReportCenterPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setGenerateOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setGenerateOpen(false)}>
                 {t("cancel")}
               </Button>
               <Button onClick={handleGenerate} disabled={generating}>

@@ -3,7 +3,10 @@
 // PUT /api/v1/translations/status — update a status record
 
 import { db, translationStatus } from "@grc/db";
-import { updateTranslationStatusSchema, TRANSLATABLE_FIELDS } from "@grc/shared";
+import {
+  updateTranslationStatusSchema,
+  TRANSLATABLE_FIELDS,
+} from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -37,7 +40,13 @@ export async function GET(req: Request) {
 }
 
 export async function PUT(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = updateTranslationStatusSchema.safeParse(await req.json());
@@ -53,7 +62,10 @@ export async function PUT(req: Request) {
   // Validate field is translatable
   const fields = TRANSLATABLE_FIELDS[entityType];
   if (!fields || !fields.includes(field)) {
-    return Response.json({ error: "Field is not translatable" }, { status: 422 });
+    return Response.json(
+      { error: "Field is not translatable" },
+      { status: 422 },
+    );
   }
 
   await withAuditContext(ctx, async (tx) => {

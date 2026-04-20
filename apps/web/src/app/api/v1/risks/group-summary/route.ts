@@ -59,7 +59,10 @@ export async function GET(req: Request) {
         FROM kri
         WHERE kri.org_id = o.id AND kri.deleted_at IS NULL
       ) k ON true
-      WHERE o.id IN (${sql.join(orgIds.map(id => sql`${id}`), sql`, `)})
+      WHERE o.id IN (${sql.join(
+        orgIds.map((id) => sql`${id}`),
+        sql`, `,
+      )})
         AND o.deleted_at IS NULL
       ORDER BY r.total_risks DESC
     `);

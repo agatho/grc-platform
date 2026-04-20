@@ -2,7 +2,12 @@ import { db, biaProcessImpact, biaAssessment } from "@grc/db";
 import { submitBiaProcessImpactSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/bcms/bia/[id]/impacts — Submit/upsert a process impact
 export async function POST(
@@ -29,10 +34,15 @@ export async function POST(
   const [bia] = await db
     .select({ id: biaAssessment.id })
     .from(biaAssessment)
-    .where(and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)));
+    .where(
+      and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)),
+    );
 
   if (!bia) {
-    return Response.json({ error: "BIA assessment not found" }, { status: 404 });
+    return Response.json(
+      { error: "BIA assessment not found" },
+      { status: 404 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -84,10 +94,7 @@ export async function POST(
       return row;
     }
 
-    const [row] = await tx
-      .insert(biaProcessImpact)
-      .values(values)
-      .returning();
+    const [row] = await tx.insert(biaProcessImpact).values(values).returning();
     return row;
   });
 

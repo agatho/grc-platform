@@ -1,4 +1,11 @@
-import { db, rcsaCampaign, rcsaAssignment, risk, control, notification } from "@grc/db";
+import {
+  db,
+  rcsaCampaign,
+  rcsaAssignment,
+  risk,
+  control,
+  notification,
+} from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -39,10 +46,7 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const result = await withAuditContext(ctx, async (tx) => {
     // 1. Find risks matching scope with owners
-    const riskConditions = [
-      eq(risk.orgId, ctx.orgId),
-      isNull(risk.deletedAt),
-    ];
+    const riskConditions = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
     const matchingRisks = await tx
       .select({
@@ -54,14 +58,20 @@ export async function POST(req: Request, { params }: RouteParams) {
       .where(and(...riskConditions));
 
     // Filter by scope
-    const filteredRisks = matchingRisks.filter((r: { id: string; ownerId: string | null; department: string | null }) => {
-      if (!r.ownerId) return false;
-      if (scope.departments?.length && r.department) {
-        return scope.departments.includes(r.department);
-      }
-      // If no department filter, include all risks with owners
-      return true;
-    });
+    const filteredRisks = matchingRisks.filter(
+      (r: {
+        id: string;
+        ownerId: string | null;
+        department: string | null;
+      }) => {
+        if (!r.ownerId) return false;
+        if (scope.departments?.length && r.department) {
+          return scope.departments.includes(r.department);
+        }
+        // If no department filter, include all risks with owners
+        return true;
+      },
+    );
 
     // 2. Find controls matching scope with owners
     const controlConditions = [
@@ -78,35 +88,53 @@ export async function POST(req: Request, { params }: RouteParams) {
       .from(control)
       .where(and(...controlConditions));
 
-    const filteredControls = matchingControls.filter((c: { id: string; ownerId: string | null; department: string | null }) => {
-      if (!c.ownerId) return false;
-      if (scope.departments?.length && c.department) {
-        return scope.departments.includes(c.department);
-      }
-      return true;
-    });
+    const filteredControls = matchingControls.filter(
+      (c: {
+        id: string;
+        ownerId: string | null;
+        department: string | null;
+      }) => {
+        if (!c.ownerId) return false;
+        if (scope.departments?.length && c.department) {
+          return scope.departments.includes(c.department);
+        }
+        return true;
+      },
+    );
 
     // 3. Create assignments for risks
-    const riskAssignments = filteredRisks.map((r: { id: string; ownerId: string | null; department: string | null }) => ({
-      campaignId: id,
-      orgId: ctx.orgId,
-      userId: r.ownerId!,
-      entityType: "risk" as const,
-      entityId: r.id,
-      deadline,
-      status: "pending" as const,
-    }));
+    const riskAssignments = filteredRisks.map(
+      (r: {
+        id: string;
+        ownerId: string | null;
+        department: string | null;
+      }) => ({
+        campaignId: id,
+        orgId: ctx.orgId,
+        userId: r.ownerId!,
+        entityType: "risk" as const,
+        entityId: r.id,
+        deadline,
+        status: "pending" as const,
+      }),
+    );
 
     // 4. Create assignments for controls
-    const controlAssignments = filteredControls.map((c: { id: string; ownerId: string | null; department: string | null }) => ({
-      campaignId: id,
-      orgId: ctx.orgId,
-      userId: c.ownerId!,
-      entityType: "control" as const,
-      entityId: c.id,
-      deadline,
-      status: "pending" as const,
-    }));
+    const controlAssignments = filteredControls.map(
+      (c: {
+        id: string;
+        ownerId: string | null;
+        department: string | null;
+      }) => ({
+        campaignId: id,
+        orgId: ctx.orgId,
+        userId: c.ownerId!,
+        entityType: "control" as const,
+        entityId: c.id,
+        deadline,
+        status: "pending" as const,
+      }),
+    );
 
     const allAssignments = [...riskAssignments, ...controlAssignments];
 
@@ -126,12 +154,12 @@ export async function POST(req: Request, { params }: RouteParams) {
       .returning();
 
     // 6. Send notifications to unique participants
-    const uniqueUserIds = [
-      ...new Set(allAssignments.map((a) => a.userId)),
-    ];
+    const uniqueUserIds = [...new Set(allAssignments.map((a) => a.userId))];
 
     for (const userId of uniqueUserIds) {
-      const userAssignmentCount = allAssignments.filter((a) => a.userId === userId).length;
+      const userAssignmentCount = allAssignments.filter(
+        (a) => a.userId === userId,
+      ).length;
       await tx.insert(notification).values({
         orgId: ctx.orgId,
         userId,

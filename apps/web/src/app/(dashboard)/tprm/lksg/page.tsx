@@ -110,10 +110,20 @@ function LksgPageInner() {
           setEditData({
             overallRiskLevel: latest.overallRiskLevel ?? "low",
             mitigationPlans: Array.isArray(latest.mitigationPlans)
-              ? latest.mitigationPlans.map((m: Record<string, string>) => m.description ?? m.text ?? JSON.stringify(m)).join("\n")
+              ? latest.mitigationPlans
+                  .map(
+                    (m: Record<string, string>) =>
+                      m.description ?? m.text ?? JSON.stringify(m),
+                  )
+                  .join("\n")
               : "",
             riskAreas: Array.isArray(latest.riskAreas)
-              ? latest.riskAreas.map((r: Record<string, string>) => r.description ?? r.area ?? JSON.stringify(r)).join("\n")
+              ? latest.riskAreas
+                  .map(
+                    (r: Record<string, string>) =>
+                      r.description ?? r.area ?? JSON.stringify(r),
+                  )
+                  .join("\n")
               : "",
             status: latest.status ?? "draft",
           });
@@ -169,10 +179,17 @@ function LksgPageInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("lksg.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("lksg.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("lksg.subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -180,21 +197,28 @@ function LksgPageInner() {
       {/* KPIs */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-2xl font-bold text-gray-900">{data?.lksgRelevant ?? 0}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {data?.lksgRelevant ?? 0}
+          </p>
           <p className="text-xs text-gray-500">{t("lksg.relevantVendors")}</p>
           <p className="text-xs text-gray-400 mt-1">
             {t("lksg.ofTotal", { total: data?.totalVendors ?? 0 })}
           </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
-          <p className="text-2xl font-bold text-gray-900">{data?.byStatus?.completed ?? 0}</p>
-          <p className="text-xs text-gray-500">{t("lksg.completedAssessments")}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {data?.byStatus?.completed ?? 0}
+          </p>
+          <p className="text-xs text-gray-500">
+            {t("lksg.completedAssessments")}
+          </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2">
             <AlertTriangle size={16} className="text-red-500" />
             <p className="text-2xl font-bold text-gray-900">
-              {(data?.byRiskLevel?.high ?? 0) + (data?.byRiskLevel?.critical ?? 0)}
+              {(data?.byRiskLevel?.high ?? 0) +
+                (data?.byRiskLevel?.critical ?? 0)}
             </p>
           </div>
           <p className="text-xs text-gray-500">{t("lksg.highRisk")}</p>
@@ -204,7 +228,9 @@ function LksgPageInner() {
       {/* Risk Level Distribution */}
       {data?.byRiskLevel && Object.keys(data.byRiskLevel).length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("lksg.riskDistribution")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("lksg.riskDistribution")}
+          </h2>
           <div className="flex items-center gap-4">
             {["low", "medium", "high", "critical"].map((level) => {
               const val = data.byRiskLevel[level] ?? 0;
@@ -223,8 +249,10 @@ function LksgPageInner() {
 
       {/* Vendor List */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("lksg.vendorList")}</h2>
-        {(!data?.lksgVendors || data.lksgVendors.length === 0) ? (
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("lksg.vendorList")}
+        </h2>
+        {!data?.lksgVendors || data.lksgVendors.length === 0 ? (
           <p className="text-sm text-gray-400">{t("lksg.noVendors")}</p>
         ) : (
           <div className="space-y-2">
@@ -233,13 +261,22 @@ function LksgPageInner() {
                 key={v.id}
                 className="flex items-center justify-between rounded border border-gray-200 px-4 py-3 hover:border-blue-300 transition-colors"
               >
-                <Link href={`/tprm/vendors/${v.id}`} className="flex items-center gap-3 flex-1">
-                  <span className="text-sm font-medium text-gray-900">{v.name}</span>
-                  <span className="text-xs text-gray-500">{v.country ?? ""}</span>
+                <Link
+                  href={`/tprm/vendors/${v.id}`}
+                  className="flex items-center gap-3 flex-1"
+                >
+                  <span className="text-sm font-medium text-gray-900">
+                    {v.name}
+                  </span>
+                  <span className="text-xs text-gray-500">
+                    {v.country ?? ""}
+                  </span>
                 </Link>
                 <div className="flex items-center gap-2">
                   {v.lksgTier && (
-                    <Badge variant="outline" className="text-xs">{v.lksgTier}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {v.lksgTier}
+                    </Badge>
                   )}
                   <Button
                     variant="outline"
@@ -257,7 +294,12 @@ function LksgPageInner() {
       </div>
 
       {/* Edit Assessment Dialog */}
-      <Dialog open={!!editVendor} onOpenChange={(open) => { if (!open) setEditVendor(null); }}>
+      <Dialog
+        open={!!editVendor}
+        onOpenChange={(open) => {
+          if (!open) setEditVendor(null);
+        }}
+      >
         <DialogContent className="max-w-lg">
           <DialogHeader>
             <DialogTitle>
@@ -269,7 +311,9 @@ function LksgPageInner() {
               <Label>Risikoniveau</Label>
               <Select
                 value={editData.overallRiskLevel}
-                onValueChange={(val) => setEditData((d) => ({ ...d, overallRiskLevel: val }))}
+                onValueChange={(val) =>
+                  setEditData((d) => ({ ...d, overallRiskLevel: val }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -286,7 +330,9 @@ function LksgPageInner() {
               <Label>Status</Label>
               <Select
                 value={editData.status}
-                onValueChange={(val) => setEditData((d) => ({ ...d, status: val }))}
+                onValueChange={(val) =>
+                  setEditData((d) => ({ ...d, status: val }))
+                }
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -295,7 +341,9 @@ function LksgPageInner() {
                   <SelectItem value="draft">Entwurf</SelectItem>
                   <SelectItem value="in_progress">In Bearbeitung</SelectItem>
                   <SelectItem value="completed">Abgeschlossen</SelectItem>
-                  <SelectItem value="reviewed">{"\u00dcberpr\u00fcft"}</SelectItem>
+                  <SelectItem value="reviewed">
+                    {"\u00dcberpr\u00fcft"}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -304,7 +352,12 @@ function LksgPageInner() {
               <Textarea
                 rows={4}
                 value={editData.mitigationPlans}
-                onChange={(e) => setEditData((d) => ({ ...d, mitigationPlans: e.target.value }))}
+                onChange={(e) =>
+                  setEditData((d) => ({
+                    ...d,
+                    mitigationPlans: e.target.value,
+                  }))
+                }
                 placeholder="Ma&szlig;nahme 1&#10;Ma&szlig;nahme 2"
               />
             </div>
@@ -313,7 +366,9 @@ function LksgPageInner() {
               <Textarea
                 rows={4}
                 value={editData.riskAreas}
-                onChange={(e) => setEditData((d) => ({ ...d, riskAreas: e.target.value }))}
+                onChange={(e) =>
+                  setEditData((d) => ({ ...d, riskAreas: e.target.value }))
+                }
                 placeholder="Risikobereich 1&#10;Risikobereich 2"
               />
             </div>

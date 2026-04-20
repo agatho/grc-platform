@@ -22,31 +22,36 @@ export async function GET(req: Request) {
   };
 
   const parsed = biExportQuerySchema.safeParse(params);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   // Fetch all applications with portfolio data (flat tabular format for BI)
-  const apps = await db.select({
-    id: architectureElement.id,
-    name: architectureElement.name,
-    type: architectureElement.type,
-    layer: architectureElement.layer,
-    status: architectureElement.status,
-    department: architectureElement.department,
-    governanceStatus: architectureElement.governanceStatus,
-    lifecycleStatus: applicationPortfolio.lifecycleStatus,
-    timeClassification: applicationPortfolio.timeClassification,
-    functionalFit: applicationPortfolio.functionalFit,
-    technicalFit: applicationPortfolio.technicalFit,
-    sixRStrategy: applicationPortfolio.sixRStrategy,
-    businessCriticality: applicationPortfolio.businessCriticality,
-    annualCost: applicationPortfolio.annualCost,
-    userCount: applicationPortfolio.userCount,
-    vendorName: applicationPortfolio.vendorName,
-    licenseType: applicationPortfolio.licenseType,
-    processesPersonalData: applicationPortfolio.processesPersonalData,
-  })
+  const apps = await db
+    .select({
+      id: architectureElement.id,
+      name: architectureElement.name,
+      type: architectureElement.type,
+      layer: architectureElement.layer,
+      status: architectureElement.status,
+      department: architectureElement.department,
+      governanceStatus: architectureElement.governanceStatus,
+      lifecycleStatus: applicationPortfolio.lifecycleStatus,
+      timeClassification: applicationPortfolio.timeClassification,
+      functionalFit: applicationPortfolio.functionalFit,
+      technicalFit: applicationPortfolio.technicalFit,
+      sixRStrategy: applicationPortfolio.sixRStrategy,
+      businessCriticality: applicationPortfolio.businessCriticality,
+      annualCost: applicationPortfolio.annualCost,
+      userCount: applicationPortfolio.userCount,
+      vendorName: applicationPortfolio.vendorName,
+      licenseType: applicationPortfolio.licenseType,
+      processesPersonalData: applicationPortfolio.processesPersonalData,
+    })
     .from(architectureElement)
-    .leftJoin(applicationPortfolio, eq(applicationPortfolio.elementId, architectureElement.id))
+    .leftJoin(
+      applicationPortfolio,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
     .where(eq(architectureElement.orgId, ctx.orgId))
     .limit(parsed.data.$top)
     .offset(parsed.data.$skip);

@@ -1,20 +1,65 @@
 // Sprint 37: EAM Advanced types
 
-export type TransferMechanism = "api" | "file_transfer" | "message_queue" | "database_replication" | "manual";
+export type TransferMechanism =
+  | "api"
+  | "file_transfer"
+  | "message_queue"
+  | "database_replication"
+  | "manual";
 export type EncryptionType = "tls" | "vpn" | "none";
 export type EncryptionAtRest = "aes256" | "none";
-export type DataFlowFrequency = "real_time" | "hourly" | "daily" | "weekly" | "monthly" | "on_demand";
+export type DataFlowFrequency =
+  | "real_time"
+  | "hourly"
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "on_demand";
 export type DataFlowStatus = "active" | "planned" | "deprecated";
-export type LegalBasis = "consent" | "contract" | "legitimate_interest" | "legal_obligation";
+export type LegalBasis =
+  | "consent"
+  | "contract"
+  | "legitimate_interest"
+  | "legal_obligation";
 export type SchremsIiSafeguard = "adequacy_decision" | "scc" | "bcr" | "none";
-export type InterfaceType = "rest_api" | "soap" | "graphql" | "grpc" | "file_transfer" | "message_queue" | "database_link" | "manual";
+export type InterfaceType =
+  | "rest_api"
+  | "soap"
+  | "graphql"
+  | "grpc"
+  | "file_transfer"
+  | "message_queue"
+  | "database_link"
+  | "manual";
 export type InterfaceDirection = "provides" | "consumes";
 export type HealthStatus = "active" | "degraded" | "down" | "unknown";
-export type TechCategory = "language" | "framework" | "database" | "cloud_service" | "infrastructure" | "tool" | "platform";
-export type TechQuadrant = "languages_frameworks" | "infrastructure" | "data_management" | "tools";
+export type TechCategory =
+  | "language"
+  | "framework"
+  | "database"
+  | "cloud_service"
+  | "infrastructure"
+  | "tool"
+  | "platform";
+export type TechQuadrant =
+  | "languages_frameworks"
+  | "infrastructure"
+  | "data_management"
+  | "tools";
 export type TechRing = "adopt" | "trial" | "assess" | "hold";
-export type AcrChangeType = "add_element" | "remove_element" | "modify_element" | "add_relationship" | "migration";
-export type AcrStatus = "draft" | "submitted" | "under_review" | "approved" | "rejected" | "deferred";
+export type AcrChangeType =
+  | "add_element"
+  | "remove_element"
+  | "modify_element"
+  | "add_relationship"
+  | "migration";
+export type AcrStatus =
+  | "draft"
+  | "submitted"
+  | "under_review"
+  | "approved"
+  | "rejected"
+  | "deferred";
 export type AcrRiskAssessment = "low" | "medium" | "high" | "critical";
 export type VoteChoice = "approve" | "reject" | "defer" | "abstain";
 export type EamCloudProvider = "aws" | "azure" | "gcp";
@@ -191,11 +236,54 @@ export interface RedundancyCluster {
 }
 
 export const EU_EEA_COUNTRIES = [
-  "AT","BE","BG","HR","CY","CZ","DK","EE","FI","FR","DE","GR","HU","IE","IT","LV","LT","LU","MT","NL","PL","PT","RO","SK","SI","ES","SE","IS","LI","NO",
+  "AT",
+  "BE",
+  "BG",
+  "HR",
+  "CY",
+  "CZ",
+  "DK",
+  "EE",
+  "FI",
+  "FR",
+  "DE",
+  "GR",
+  "HU",
+  "IE",
+  "IT",
+  "LV",
+  "LT",
+  "LU",
+  "MT",
+  "NL",
+  "PL",
+  "PT",
+  "RO",
+  "SK",
+  "SI",
+  "ES",
+  "SE",
+  "IS",
+  "LI",
+  "NO",
 ] as const;
 
 export const ADEQUACY_COUNTRIES = [
-  "AD","AR","CA","FO","GG","IL","IM","JP","JE","NZ","KR","CH","UY","UK","US",
+  "AD",
+  "AR",
+  "CA",
+  "FO",
+  "GG",
+  "IL",
+  "IM",
+  "JP",
+  "JE",
+  "NZ",
+  "KR",
+  "CH",
+  "UY",
+  "UK",
+  "US",
 ] as const;
 
 export const ACR_STATUS_TRANSITIONS: Record<string, string[]> = {

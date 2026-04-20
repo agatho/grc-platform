@@ -3,25 +3,71 @@ import { z } from "zod";
 // Sprint 66: Cross-Framework Auto-Mapping Engine Zod schemas
 
 export const frameworkKeyValues = [
-  "ISO27001", "NIS2", "BSI", "NIST_CSF", "SOC2",
-  "TISAX", "DORA", "GDPR", "COBIT", "CIS",
+  "ISO27001",
+  "NIS2",
+  "BSI",
+  "NIST_CSF",
+  "SOC2",
+  "TISAX",
+  "DORA",
+  "GDPR",
+  "COBIT",
+  "CIS",
 ] as const;
 
-export const mappingRelationshipTypeValues = ["equal", "subset", "superset", "intersect", "not_related"] as const;
+export const mappingRelationshipTypeValues = [
+  "equal",
+  "subset",
+  "superset",
+  "intersect",
+  "not_related",
+] as const;
 
-export const mappingSourceValues = ["nist_olir", "manual", "ai_suggested"] as const;
+export const mappingSourceValues = [
+  "nist_olir",
+  "manual",
+  "ai_suggested",
+] as const;
 
-export const mappingRuleTypeValues = ["override", "addition", "exclusion"] as const;
+export const mappingRuleTypeValues = [
+  "override",
+  "addition",
+  "exclusion",
+] as const;
 
-export const coverageStatusValues = ["covered", "partially_covered", "not_covered", "not_applicable"] as const;
+export const coverageStatusValues = [
+  "covered",
+  "partially_covered",
+  "not_covered",
+  "not_applicable",
+] as const;
 
-export const coverageSourceValues = ["direct_assessment", "mapped", "inherited", "manual"] as const;
+export const coverageSourceValues = [
+  "direct_assessment",
+  "mapped",
+  "inherited",
+  "manual",
+] as const;
 
-export const evidenceStatusValues = ["fresh", "stale", "missing", "not_required"] as const;
+export const evidenceStatusValues = [
+  "fresh",
+  "stale",
+  "missing",
+  "not_required",
+] as const;
 
-export const assessmentResultValues = ["effective", "partially_effective", "ineffective"] as const;
+export const assessmentResultValues = [
+  "effective",
+  "partially_effective",
+  "ineffective",
+] as const;
 
-export const riskExposureValues = ["critical", "high", "medium", "low"] as const;
+export const riskExposureValues = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+] as const;
 
 // ─── Framework Mapping CRUD ─────────────────────────────────
 
@@ -87,7 +133,10 @@ export const frameworkMappingQuerySchema = z.object({
   sourceFramework: z.string().max(50).optional(),
   targetFramework: z.string().max(50).optional(),
   relationshipType: z.enum(mappingRelationshipTypeValues).optional(),
-  isVerified: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
+  isVerified: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   minConfidence: z.coerce.number().min(0).max(1).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(50),

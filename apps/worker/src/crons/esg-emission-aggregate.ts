@@ -2,7 +2,12 @@
 // Aggregates emission measurements by scope and year from esg_measurement records.
 // Updates a materialized summary for the ESG dashboard.
 
-import { db, esrsMetric, esgMeasurement, esrsDatapointDefinition } from "@grc/db";
+import {
+  db,
+  esrsMetric,
+  esgMeasurement,
+  esrsDatapointDefinition,
+} from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 
 interface EsgEmissionAggregateResult {
@@ -31,13 +36,20 @@ export async function processEsgEmissionAggregate(): Promise<EsgEmissionAggregat
       orgId: esrsMetric.orgId,
       datapointCode: esrsDatapointDefinition.datapointCode,
       esrsStandard: esrsDatapointDefinition.esrsStandard,
-      year: sql<number>`EXTRACT(YEAR FROM ${esgMeasurement.periodStart}::date)`.as("year"),
-      totalValue: sql<number>`SUM(${esgMeasurement.value}::numeric)`.as("total_value"),
+      year: sql<number>`EXTRACT(YEAR FROM ${esgMeasurement.periodStart}::date)`.as(
+        "year",
+      ),
+      totalValue: sql<number>`SUM(${esgMeasurement.value}::numeric)`.as(
+        "total_value",
+      ),
       measurementCount: sql<number>`COUNT(*)`.as("measurement_count"),
     })
     .from(esgMeasurement)
     .innerJoin(esrsMetric, eq(esgMeasurement.metricId, esrsMetric.id))
-    .innerJoin(esrsDatapointDefinition, eq(esrsMetric.datapointId, esrsDatapointDefinition.id))
+    .innerJoin(
+      esrsDatapointDefinition,
+      eq(esrsMetric.datapointId, esrsDatapointDefinition.id),
+    )
     .where(
       and(
         eq(esrsDatapointDefinition.esrsStandard, "E1"),
@@ -58,11 +70,23 @@ export async function processEsgEmissionAggregate(): Promise<EsgEmissionAggregat
     const code = row.datapointCode?.toUpperCase() ?? "";
     let scope = "unknown";
 
-    if (code.includes("SCOPE1") || code.includes("S1") || code.includes("E1-6")) {
+    if (
+      code.includes("SCOPE1") ||
+      code.includes("S1") ||
+      code.includes("E1-6")
+    ) {
       scope = "scope1";
-    } else if (code.includes("SCOPE2") || code.includes("S2") || code.includes("E1-7")) {
+    } else if (
+      code.includes("SCOPE2") ||
+      code.includes("S2") ||
+      code.includes("E1-7")
+    ) {
       scope = "scope2";
-    } else if (code.includes("SCOPE3") || code.includes("S3") || code.includes("E1-8")) {
+    } else if (
+      code.includes("SCOPE3") ||
+      code.includes("S3") ||
+      code.includes("E1-8")
+    ) {
       scope = "scope3";
     } else {
       // Default E1 emissions to scope1 if not clearly categorized

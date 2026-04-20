@@ -86,13 +86,21 @@ export const dataRegion = pgTable(
     provider: varchar("provider", { length: 100 }).notNull(),
     status: regionStatusEnum("status").notNull().default("provisioning"),
     endpointUrl: varchar("endpoint_url", { length: 500 }),
-    infraConfig: jsonb("infra_config").notNull().default(sql`'{}'::jsonb`),
-    complianceTags: jsonb("compliance_tags").notNull().default(sql`'[]'::jsonb`),
+    infraConfig: jsonb("infra_config")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    complianceTags: jsonb("compliance_tags")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     maxTenants: integer("max_tenants"),
     currentTenants: integer("current_tenants").notNull().default(0),
     isDefault: boolean("is_default").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     unique("dr_code_unique").on(t.code),
@@ -114,17 +122,26 @@ export const regionTenantConfig = pgTable(
     primaryRegionId: uuid("primary_region_id")
       .notNull()
       .references(() => dataRegion.id),
-    backupRegionId: uuid("backup_region_id")
-      .references(() => dataRegion.id),
+    backupRegionId: uuid("backup_region_id").references(() => dataRegion.id),
     isRegionLocked: boolean("is_region_locked").notNull().default(true),
     lockReason: varchar("lock_reason", { length: 500 }),
-    dataClassification: varchar("data_classification", { length: 100 }).notNull().default("confidential"),
-    retentionPolicy: jsonb("retention_policy").notNull().default(sql`'{}'::jsonb`),
-    encryptionConfig: jsonb("encryption_config").notNull().default(sql`'{}'::jsonb`),
+    dataClassification: varchar("data_classification", { length: 100 })
+      .notNull()
+      .default("confidential"),
+    retentionPolicy: jsonb("retention_policy")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    encryptionConfig: jsonb("encryption_config")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     unique("rtc_org_unique").on(t.orgId),
@@ -146,15 +163,27 @@ export const dataResidencyRule = pgTable(
     name: varchar("name", { length: 300 }).notNull(),
     ruleType: residencyRuleTypeEnum("rule_type").notNull(),
     description: text("description"),
-    allowedRegions: jsonb("allowed_regions").notNull().default(sql`'[]'::jsonb`),
-    deniedRegions: jsonb("denied_regions").notNull().default(sql`'[]'::jsonb`),
+    allowedRegions: jsonb("allowed_regions")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    deniedRegions: jsonb("denied_regions")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     complianceFramework: complianceFrameworkTagEnum("compliance_framework"),
     isEnforced: boolean("is_enforced").notNull().default(true),
-    violationAction: varchar("violation_action", { length: 50 }).notNull().default("block"),
-    conditionsJson: jsonb("conditions_json").notNull().default(sql`'{}'::jsonb`),
+    violationAction: varchar("violation_action", { length: 50 })
+      .notNull()
+      .default("block"),
+    conditionsJson: jsonb("conditions_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("drr_org_idx").on(t.orgId),
@@ -179,17 +208,31 @@ export const crossRegionReplication = pgTable(
     targetRegionId: uuid("target_region_id")
       .notNull()
       .references(() => dataRegion.id),
-    status: replicationStatusEnum("status").notNull().default("pending_approval"),
-    replicationType: varchar("replication_type", { length: 50 }).notNull().default("async"),
-    tablesIncluded: jsonb("tables_included").notNull().default(sql`'[]'::jsonb`),
-    tablesExcluded: jsonb("tables_excluded").notNull().default(sql`'[]'::jsonb`),
-    gdprSafeguards: jsonb("gdpr_safeguards").notNull().default(sql`'{}'::jsonb`),
+    status: replicationStatusEnum("status")
+      .notNull()
+      .default("pending_approval"),
+    replicationType: varchar("replication_type", { length: 50 })
+      .notNull()
+      .default("async"),
+    tablesIncluded: jsonb("tables_included")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    tablesExcluded: jsonb("tables_excluded")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    gdprSafeguards: jsonb("gdpr_safeguards")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),
     lagSeconds: integer("lag_seconds"),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("crr_org_idx").on(t.orgId),
@@ -216,11 +259,15 @@ export const sovereigntyAuditLog = pgTable(
     entityType: varchar("entity_type", { length: 100 }),
     entityId: uuid("entity_id"),
     description: text("description").notNull(),
-    metadata: jsonb("metadata").notNull().default(sql`'{}'::jsonb`),
+    metadata: jsonb("metadata")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     ipAddress: varchar("ip_address", { length: 45 }),
     userId: uuid("user_id").references(() => user.id),
     isViolation: boolean("is_violation").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("sal_org_idx").on(t.orgId),

@@ -7,7 +7,9 @@ export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const rows = await db.select().from(simulationComparison)
+  const rows = await db
+    .select()
+    .from(simulationComparison)
     .where(eq(simulationComparison.orgId, ctx.orgId))
     .orderBy(desc(simulationComparison.createdAt));
 
@@ -20,9 +22,14 @@ export async function POST(req: Request) {
   const body = createSimulationComparisonSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(simulationComparison).values({
-      orgId: ctx.orgId, ...body, createdBy: ctx.userId,
-    }).returning();
+    const [created] = await tx
+      .insert(simulationComparison)
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+        createdBy: ctx.userId,
+      })
+      .returning();
     return created;
   });
 

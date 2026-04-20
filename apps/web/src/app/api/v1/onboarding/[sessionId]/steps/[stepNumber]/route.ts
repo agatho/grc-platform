@@ -24,10 +24,12 @@ export async function PATCH(
   const [session] = await db
     .select()
     .from(onboardingSession)
-    .where(and(
-      eq(onboardingSession.id, sessionId),
-      eq(onboardingSession.orgId, ctx.orgId),
-    ));
+    .where(
+      and(
+        eq(onboardingSession.id, sessionId),
+        eq(onboardingSession.orgId, ctx.orgId),
+      ),
+    );
 
   if (!session) {
     return Response.json({ error: "Session not found" }, { status: 404 });
@@ -47,10 +49,12 @@ export async function PATCH(
   const [updated] = await db
     .update(onboardingStep)
     .set(updateData)
-    .where(and(
-      eq(onboardingStep.sessionId, sessionId),
-      eq(onboardingStep.stepNumber, Number(stepNumber)),
-    ))
+    .where(
+      and(
+        eq(onboardingStep.sessionId, sessionId),
+        eq(onboardingStep.stepNumber, Number(stepNumber)),
+      ),
+    )
     .returning();
 
   if (!updated) {
@@ -67,7 +71,11 @@ export async function PATCH(
   } else {
     await db
       .update(onboardingSession)
-      .set({ status: "completed", completedAt: new Date(), updatedAt: new Date() })
+      .set({
+        status: "completed",
+        completedAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(onboardingSession.id, sessionId));
   }
 

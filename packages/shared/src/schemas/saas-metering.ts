@@ -4,7 +4,11 @@ import { z } from "zod";
 
 // Subscription Plan
 export const createSubscriptionPlanSchema = z.object({
-  key: z.string().min(1).max(50).regex(/^[a-z0-9_-]+$/),
+  key: z
+    .string()
+    .min(1)
+    .max(50)
+    .regex(/^[a-z0-9_-]+$/),
   name: z.string().min(1).max(255),
   description: z.string().max(2000).optional(),
   tier: z.enum(["free", "standard", "professional", "enterprise"]),
@@ -21,7 +25,9 @@ export const createSubscriptionPlanSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
-export const updateSubscriptionPlanSchema = createSubscriptionPlanSchema.partial().omit({ key: true });
+export const updateSubscriptionPlanSchema = createSubscriptionPlanSchema
+  .partial()
+  .omit({ key: true });
 
 // Org Subscription
 export const createOrgSubscriptionSchema = z.object({
@@ -51,16 +57,25 @@ export const recordUsageSchema = z.object({
 });
 
 export const bulkRecordUsageSchema = z.object({
-  records: z.array(z.object({
-    meterKey: z.string().min(1).max(100),
-    quantity: z.number().min(0),
-    metadata: z.record(z.unknown()).default({}),
-  })).min(1).max(100),
+  records: z
+    .array(
+      z.object({
+        meterKey: z.string().min(1).max(100),
+        quantity: z.number().min(0),
+        metadata: z.record(z.unknown()).default({}),
+      }),
+    )
+    .min(1)
+    .max(100),
 });
 
 // Feature Gate
 export const createFeatureGateSchema = z.object({
-  key: z.string().min(1).max(100).regex(/^[a-z0-9_]+$/),
+  key: z
+    .string()
+    .min(1)
+    .max(100)
+    .regex(/^[a-z0-9_]+$/),
   name: z.string().min(1).max(255),
   description: z.string().max(2000).optional(),
   module: z.string().max(50).optional(),
@@ -69,31 +84,45 @@ export const createFeatureGateSchema = z.object({
   planOverrides: z.record(z.unknown()).default({}),
 });
 
-export const updateFeatureGateSchema = createFeatureGateSchema.partial().omit({ key: true });
+export const updateFeatureGateSchema = createFeatureGateSchema
+  .partial()
+  .omit({ key: true });
 
 // Usage Query
 export const usageQuerySchema = z.object({
   meterKey: z.string().max(100).optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
-  granularity: z.enum(["hourly", "daily", "weekly", "monthly"]).default("daily"),
+  granularity: z
+    .enum(["hourly", "daily", "weekly", "monthly"])
+    .default("daily"),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
 // Billing Query
 export const billingQuerySchema = z.object({
-  status: z.enum(["draft", "pending", "paid", "overdue", "cancelled"]).optional(),
+  status: z
+    .enum(["draft", "pending", "paid", "overdue", "cancelled"])
+    .optional(),
   startDate: z.string().datetime().optional(),
   endDate: z.string().datetime().optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });
 
-export type CreateSubscriptionPlanInput = z.infer<typeof createSubscriptionPlanSchema>;
-export type UpdateSubscriptionPlanInput = z.infer<typeof updateSubscriptionPlanSchema>;
-export type CreateOrgSubscriptionInput = z.infer<typeof createOrgSubscriptionSchema>;
-export type UpdateOrgSubscriptionInput = z.infer<typeof updateOrgSubscriptionSchema>;
+export type CreateSubscriptionPlanInput = z.infer<
+  typeof createSubscriptionPlanSchema
+>;
+export type UpdateSubscriptionPlanInput = z.infer<
+  typeof updateSubscriptionPlanSchema
+>;
+export type CreateOrgSubscriptionInput = z.infer<
+  typeof createOrgSubscriptionSchema
+>;
+export type UpdateOrgSubscriptionInput = z.infer<
+  typeof updateOrgSubscriptionSchema
+>;
 export type CancelSubscriptionInput = z.infer<typeof cancelSubscriptionSchema>;
 export type RecordUsageInput = z.infer<typeof recordUsageSchema>;
 export type BulkRecordUsageInput = z.infer<typeof bulkRecordUsageSchema>;

@@ -1,8 +1,4 @@
-import {
-  db,
-  esgMeasurement,
-  esrsMetric,
-} from "@grc/db";
+import { db, esgMeasurement, esrsMetric } from "@grc/db";
 import { recordMeasurementSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
@@ -87,9 +83,15 @@ export async function GET(req: Request) {
   }
 
   const dataQuality = searchParams.get("dataQuality");
-  if (dataQuality && ["measured", "estimated", "calculated"].includes(dataQuality)) {
+  if (
+    dataQuality &&
+    ["measured", "estimated", "calculated"].includes(dataQuality)
+  ) {
     conditions.push(
-      eq(esgMeasurement.dataQuality, dataQuality as "measured" | "estimated" | "calculated"),
+      eq(
+        esgMeasurement.dataQuality,
+        dataQuality as "measured" | "estimated" | "calculated",
+      ),
     );
   }
 

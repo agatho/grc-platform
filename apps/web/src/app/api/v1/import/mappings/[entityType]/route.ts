@@ -38,7 +38,10 @@ export async function DELETE(
   const id = url.searchParams.get("id");
 
   if (!id) {
-    return Response.json({ error: "Missing id query parameter" }, { status: 400 });
+    return Response.json(
+      { error: "Missing id query parameter" },
+      { status: 400 },
+    );
   }
 
   const [deleted] = await db

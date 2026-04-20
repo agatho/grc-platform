@@ -40,12 +40,7 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import {
-  Tabs,
-  TabsContent,
-  TabsList,
-  TabsTrigger,
-} from "@/components/ui/tabs";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type { CustomDashboardRecord } from "@grc/shared";
 
 type DashboardListItem = CustomDashboardRecord & { widgetCount: number };
@@ -59,7 +54,9 @@ export default function DashboardListPage() {
   const [showCreateDialog, setShowCreateDialog] = useState(false);
   const [createName, setCreateName] = useState("");
   const [createDescription, setCreateDescription] = useState("");
-  const [createVisibility, setCreateVisibility] = useState<"personal" | "team" | "org">("personal");
+  const [createVisibility, setCreateVisibility] = useState<
+    "personal" | "team" | "org"
+  >("personal");
   const [isCreating, setIsCreating] = useState(false);
 
   const fetchDashboards = useCallback(async () => {
@@ -204,8 +201,13 @@ export default function DashboardListPage() {
               >
                 {t("cancel")}
               </Button>
-              <Button onClick={handleCreate} disabled={!createName.trim() || isCreating}>
-                {isCreating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              <Button
+                onClick={handleCreate}
+                disabled={!createName.trim() || isCreating}
+              >
+                {isCreating && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 {t("create")}
               </Button>
             </DialogFooter>
@@ -279,13 +281,17 @@ export default function DashboardListPage() {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <Badge variant="secondary" className="text-xs">
-                          {VISIBILITY_LABELS[dash.visibility] ?? dash.visibility}
+                          {VISIBILITY_LABELS[dash.visibility] ??
+                            dash.visibility}
                         </Badge>
                         <span className="text-xs text-muted-foreground">
                           {dash.widgetCount} {t("widgets")}
                         </span>
                       </div>
-                      <div className="flex items-center gap-0.5" onClick={(e) => e.stopPropagation()}>
+                      <div
+                        className="flex items-center gap-0.5"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Button
                           variant="ghost"
                           size="icon"
@@ -323,7 +329,8 @@ export default function DashboardListPage() {
                       </Badge>
                     )}
                     <div className="mt-2 text-[10px] text-muted-foreground">
-                      {t("lastUpdated")}: {new Date(dash.updatedAt).toLocaleDateString("de-DE")}
+                      {t("lastUpdated")}:{" "}
+                      {new Date(dash.updatedAt).toLocaleDateString("de-DE")}
                     </div>
                   </CardContent>
                 </Card>

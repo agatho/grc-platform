@@ -21,7 +21,13 @@ export async function POST(
   const [v] = await db
     .select({ id: vendor.id })
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) {
     return Response.json({ error: "Vendor not found" }, { status: 404 });
   }
@@ -40,7 +46,12 @@ export async function POST(
       await tx
         .update(vendorContact)
         .set({ isPrimary: false })
-        .where(and(eq(vendorContact.vendorId, id), eq(vendorContact.isPrimary, true)));
+        .where(
+          and(
+            eq(vendorContact.vendorId, id),
+            eq(vendorContact.isPrimary, true),
+          ),
+        );
     }
 
     const [row] = await tx
@@ -78,7 +89,9 @@ export async function GET(
   const contacts = await db
     .select()
     .from(vendorContact)
-    .where(and(eq(vendorContact.vendorId, id), eq(vendorContact.orgId, ctx.orgId)))
+    .where(
+      and(eq(vendorContact.vendorId, id), eq(vendorContact.orgId, ctx.orgId)),
+    )
     .orderBy(desc(vendorContact.isPrimary), vendorContact.name);
 
   return Response.json({ data: contacts });

@@ -73,15 +73,23 @@ function DsrDetailInner() {
   }
 
   if (!data) {
-    return <p className="text-center text-gray-500 py-8">{t("dsr.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-500 py-8">{t("dsr.notFound")}</p>
+    );
   }
 
   const deadline = new Date(data.deadline);
   const receivedAt = new Date(data.receivedAt);
   const now = new Date();
   const totalDays = 30;
-  const elapsedDays = Math.max(0, Math.floor((now.getTime() - receivedAt.getTime()) / (1000 * 60 * 60 * 24)));
-  const daysRemaining = Math.max(0, Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)));
+  const elapsedDays = Math.max(
+    0,
+    Math.floor((now.getTime() - receivedAt.getTime()) / (1000 * 60 * 60 * 24)),
+  );
+  const daysRemaining = Math.max(
+    0,
+    Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)),
+  );
   const progress = Math.min(100, Math.round((elapsedDays / totalDays) * 100));
 
   let slaColor = "bg-green-500";
@@ -100,7 +108,11 @@ function DsrDetailInner() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/dpms/dsr")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/dpms/dsr")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <div>
@@ -109,7 +121,9 @@ function DsrDetailInner() {
           </h1>
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{data.status.replace(/_/g, " ")}</Badge>
-            <span className="text-sm text-gray-500">{t("dsr.deadline")}: {deadline.toLocaleDateString()}</span>
+            <span className="text-sm text-gray-500">
+              {t("dsr.deadline")}: {deadline.toLocaleDateString()}
+            </span>
           </div>
         </div>
       </div>
@@ -117,7 +131,9 @@ function DsrDetailInner() {
       {/* SLA Timer */}
       {!isClosed && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-sm font-semibold text-gray-700 mb-3">{t("dsr.slaTimer")}</h2>
+          <h2 className="text-sm font-semibold text-gray-700 mb-3">
+            {t("dsr.slaTimer")}
+          </h2>
           <div className="w-full bg-gray-200 rounded-full h-4 mb-2">
             <div
               className={`h-4 rounded-full transition-all ${slaColor}`}
@@ -125,7 +141,9 @@ function DsrDetailInner() {
             />
           </div>
           <div className="flex justify-between text-sm">
-            <span className="text-gray-500">{t("dsr.day")} {elapsedDays} {t("dsr.of")} {totalDays}</span>
+            <span className="text-gray-500">
+              {t("dsr.day")} {elapsedDays} {t("dsr.of")} {totalDays}
+            </span>
             <span className={`font-medium ${slaTextColor}`}>
               {daysRemaining} {t("dsr.daysRemaining")}
             </span>
@@ -140,9 +158,22 @@ function DsrDetailInner() {
           <FieldRow label={t("dsr.type")} value={data.requestType} />
           <FieldRow label={t("dsr.subject")} value={data.subjectName ?? "-"} />
           <FieldRow label={t("dsr.email")} value={data.subjectEmail ?? "-"} />
-          <FieldRow label={t("dsr.received")} value={receivedAt.toLocaleDateString()} />
-          <FieldRow label={t("dsr.verified")} value={data.verifiedAt ? new Date(data.verifiedAt).toLocaleDateString() : "-"} />
-          <FieldRow label={t("dsr.handler")} value={(data as DsrDetailData).handlerName ?? "-"} />
+          <FieldRow
+            label={t("dsr.received")}
+            value={receivedAt.toLocaleDateString()}
+          />
+          <FieldRow
+            label={t("dsr.verified")}
+            value={
+              data.verifiedAt
+                ? new Date(data.verifiedAt).toLocaleDateString()
+                : "-"
+            }
+          />
+          <FieldRow
+            label={t("dsr.handler")}
+            value={(data as DsrDetailData).handlerName ?? "-"}
+          />
           {data.notes && <FieldRow label={t("dsr.notes")} value={data.notes} />}
         </div>
 
@@ -150,7 +181,12 @@ function DsrDetailInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
           <h2 className="font-semibold text-gray-900">{t("dsr.actions")}</h2>
           {data.status === "received" && (
-            <Button size="sm" onClick={() => performAction("verify")} disabled={acting} className="w-full">
+            <Button
+              size="sm"
+              onClick={() => performAction("verify")}
+              disabled={acting}
+              className="w-full"
+            >
               <CheckCircle size={14} className="mr-1" />
               {t("dsr.verifyIdentity")}
             </Button>
@@ -170,7 +206,10 @@ function DsrDetailInner() {
                   await fetch(`/api/v1/dpms/dsr/${id}/activity`, {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
-                    body: JSON.stringify({ activityType: "data_collection", details: "Started processing" }),
+                    body: JSON.stringify({
+                      activityType: "data_collection",
+                      details: "Started processing",
+                    }),
                   });
                   await fetchData();
                 } finally {
@@ -184,13 +223,24 @@ function DsrDetailInner() {
             </Button>
           )}
           {data.status === "processing" && (
-            <Button size="sm" onClick={() => performAction("respond")} disabled={acting} className="w-full">
+            <Button
+              size="sm"
+              onClick={() => performAction("respond")}
+              disabled={acting}
+              className="w-full"
+            >
               <Send size={14} className="mr-1" />
               {t("dsr.sendResponse")}
             </Button>
           )}
           {(data.status === "response_sent" || data.status === "rejected") && (
-            <Button size="sm" onClick={() => performAction("close")} disabled={acting} className="w-full" variant="outline">
+            <Button
+              size="sm"
+              onClick={() => performAction("close")}
+              disabled={acting}
+              className="w-full"
+              variant="outline"
+            >
               <XCircle size={14} className="mr-1" />
               {t("dsr.close")}
             </Button>
@@ -200,7 +250,9 @@ function DsrDetailInner() {
 
       {/* Activity Log */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="font-semibold text-gray-900 mb-4">{t("dsr.activityLog")}</h2>
+        <h2 className="font-semibold text-gray-900 mb-4">
+          {t("dsr.activityLog")}
+        </h2>
         {data.activities.length === 0 ? (
           <p className="text-sm text-gray-400">{t("dsr.noActivity")}</p>
         ) : (
@@ -211,7 +263,9 @@ function DsrDetailInner() {
                   {new Date(activity.timestamp).toLocaleDateString()}
                 </span>
                 <div>
-                  <Badge variant="outline" className="text-[10px] mr-2">{activity.activityType}</Badge>
+                  <Badge variant="outline" className="text-[10px] mr-2">
+                    {activity.activityType}
+                  </Badge>
                   <span className="text-gray-700">{activity.details}</span>
                 </div>
               </div>

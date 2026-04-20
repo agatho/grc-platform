@@ -1,4 +1,9 @@
-import { db, eamDataObject, eamDataObjectCrud, architectureElement } from "@grc/db";
+import {
+  db,
+  eamDataObject,
+  eamDataObjectCrud,
+  architectureElement,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -11,15 +16,21 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const dataObjects = await db.select().from(eamDataObject)
+  const dataObjects = await db
+    .select()
+    .from(eamDataObject)
     .where(eq(eamDataObject.orgId, ctx.orgId));
 
-  const cruds = await db.select({
-    crud: eamDataObjectCrud,
-    appName: architectureElement.name,
-  })
+  const cruds = await db
+    .select({
+      crud: eamDataObjectCrud,
+      appName: architectureElement.name,
+    })
     .from(eamDataObjectCrud)
-    .leftJoin(architectureElement, eq(eamDataObjectCrud.applicationId, architectureElement.id))
+    .leftJoin(
+      architectureElement,
+      eq(eamDataObjectCrud.applicationId, architectureElement.id),
+    )
     .where(eq(eamDataObjectCrud.orgId, ctx.orgId));
 
   // Build matrix: rows = data objects, columns = applications

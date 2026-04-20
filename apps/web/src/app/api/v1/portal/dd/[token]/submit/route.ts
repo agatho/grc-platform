@@ -31,7 +31,7 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   // Verify all required questions are answered
-  const unanswered = await db.execute(sql`
+  const unanswered = (await db.execute(sql`
     SELECT q.id, q.question_de, q.question_en
     FROM questionnaire_question q
     INNER JOIN questionnaire_section s ON q.section_id = s.id
@@ -39,7 +39,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     WHERE s.template_id = ${session.templateId}
       AND q.is_required = true
       AND r.id IS NULL
-  `) as unknown as Array<Record<string, unknown>>;
+  `)) as unknown as Array<Record<string, unknown>>;
 
   if (unanswered.length > 0) {
     return Response.json(
@@ -52,7 +52,7 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   // Verify required evidence is uploaded
-  const missingEvidence = await db.execute(sql`
+  const missingEvidence = (await db.execute(sql`
     SELECT q.id, q.question_de, q.question_en
     FROM questionnaire_question q
     INNER JOIN questionnaire_section s ON q.section_id = s.id
@@ -60,7 +60,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     WHERE s.template_id = ${session.templateId}
       AND q.is_evidence_required = true
       AND e.id IS NULL
-  `) as unknown as Array<Record<string, unknown>>;
+  `)) as unknown as Array<Record<string, unknown>>;
 
   if (missingEvidence.length > 0) {
     return Response.json(
@@ -78,12 +78,12 @@ export async function POST(req: Request, { params }: RouteParams) {
     .from(ddResponse)
     .where(eq(ddResponse.sessionId, session.id));
 
-  const maxResultRows = await db.execute(sql`
+  const maxResultRows = (await db.execute(sql`
     SELECT COALESCE(SUM(q.max_score), 0)::int as total
     FROM questionnaire_question q
     INNER JOIN questionnaire_section s ON q.section_id = s.id
     WHERE s.template_id = ${session.templateId}
-  `) as unknown as Array<Record<string, unknown>>;
+  `)) as unknown as Array<Record<string, unknown>>;
 
   const totalScore = scoreResult[0]?.total ?? 0;
   const maxPossibleScore = (maxResultRows[0]?.total as number) ?? 0;

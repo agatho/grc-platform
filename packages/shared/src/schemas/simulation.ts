@@ -3,15 +3,31 @@ import { z } from "zod";
 // Sprint 85: Simulation und Scenario Engine — Zod schemas
 
 export const simulationTypeValues = [
-  "what_if", "bpm_cost_time", "business_impact", "monte_carlo", "supplier_cascade", "custom",
+  "what_if",
+  "bpm_cost_time",
+  "business_impact",
+  "monte_carlo",
+  "supplier_cascade",
+  "custom",
 ] as const;
 
 export const simulationStatusValues = [
-  "draft", "configuring", "running", "completed", "failed", "archived",
+  "draft",
+  "configuring",
+  "running",
+  "completed",
+  "failed",
+  "archived",
 ] as const;
 
 export const simulationScenarioTagValues = [
-  "as_is", "to_be_a", "to_be_b", "to_be_c", "best_case", "worst_case", "most_likely",
+  "as_is",
+  "to_be_a",
+  "to_be_b",
+  "to_be_c",
+  "best_case",
+  "worst_case",
+  "most_likely",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -29,7 +45,8 @@ export const createSimulationScenarioSchema = z.object({
   sourceEntityId: z.string().uuid().optional(),
 });
 
-export const updateSimulationScenarioSchema = createSimulationScenarioSchema.partial();
+export const updateSimulationScenarioSchema =
+  createSimulationScenarioSchema.partial();
 
 export const listSimulationScenariosQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -57,17 +74,23 @@ export const createSimulationParameterSchema = z.object({
   scenarioId: z.string().uuid(),
   parameterKey: z.string().min(1).max(200),
   displayName: z.string().min(1).max(300),
-  parameterType: z.enum(["number", "percentage", "currency", "duration"]).default("number"),
+  parameterType: z
+    .enum(["number", "percentage", "currency", "duration"])
+    .default("number"),
   minValue: z.number().optional(),
   maxValue: z.number().optional(),
   defaultValue: z.number().optional(),
-  distribution: z.enum(["normal", "uniform", "triangular", "lognormal", "pert"]).default("normal"),
+  distribution: z
+    .enum(["normal", "uniform", "triangular", "lognormal", "pert"])
+    .default("normal"),
   unit: z.string().max(50).optional(),
 });
 
 export const bulkCreateParametersSchema = z.object({
   scenarioId: z.string().uuid(),
-  parameters: z.array(createSimulationParameterSchema.omit({ scenarioId: true })).max(100),
+  parameters: z
+    .array(createSimulationParameterSchema.omit({ scenarioId: true }))
+    .max(100),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -81,13 +104,20 @@ export const createSimulationComparisonSchema = z.object({
   comparisonMetrics: z.array(z.string().max(200)).max(20).default([]),
 });
 
-export const updateSimulationComparisonSchema = createSimulationComparisonSchema.partial();
+export const updateSimulationComparisonSchema =
+  createSimulationComparisonSchema.partial();
 
 // ──────────────────────────────────────────────────────────────
 // Type exports
 // ──────────────────────────────────────────────────────────────
 
-export type CreateSimulationScenarioInput = z.infer<typeof createSimulationScenarioSchema>;
+export type CreateSimulationScenarioInput = z.infer<
+  typeof createSimulationScenarioSchema
+>;
 export type StartSimulationRunInput = z.infer<typeof startSimulationRunSchema>;
-export type CreateSimulationParameterInput = z.infer<typeof createSimulationParameterSchema>;
-export type CreateSimulationComparisonInput = z.infer<typeof createSimulationComparisonSchema>;
+export type CreateSimulationParameterInput = z.infer<
+  typeof createSimulationParameterSchema
+>;
+export type CreateSimulationComparisonInput = z.infer<
+  typeof createSimulationComparisonSchema
+>;

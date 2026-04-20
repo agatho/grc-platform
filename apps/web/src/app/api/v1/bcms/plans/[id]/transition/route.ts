@@ -7,12 +7,7 @@
 //   - publishCtx?: { reportDocumentId: uuid, physicalStorageLocation: string }
 //     (nur fuer approved -> published relevant)
 
-import {
-  db,
-  bcp,
-  bcpProcedure,
-  bcpResource,
-} from "@grc/db";
+import { db, bcp, bcpProcedure, bcpResource } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   validateBcpTransition,

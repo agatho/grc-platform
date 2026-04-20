@@ -6,7 +6,9 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // DELETE /api/v1/processes/:id/steps/:stepId/controls/:controlId — Unlink control from step
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string; stepId: string; controlId: string }> },
+  {
+    params,
+  }: { params: Promise<{ id: string; stepId: string; controlId: string }> },
 ) {
   const ctx = await withAuth("admin", "control_owner", "process_owner");
   if (ctx instanceof Response) return ctx;
@@ -60,10 +62,7 @@ export async function DELETE(
     );
 
   if (!link) {
-    return Response.json(
-      { error: "Control link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Control link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {

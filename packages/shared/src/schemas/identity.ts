@@ -93,7 +93,16 @@ export const createScimTokenSchema = z.object({
 // ─── SCIM Sync Log Filter ───────────────────────────────────
 
 export const scimSyncLogFilterSchema = z.object({
-  action: z.enum(["create", "update", "deactivate", "reactivate", "group_assign", "group_remove"]).optional(),
+  action: z
+    .enum([
+      "create",
+      "update",
+      "deactivate",
+      "reactivate",
+      "group_assign",
+      "group_remove",
+    ])
+    .optional(),
   status: z.enum(["success", "error", "skipped"]).optional(),
   from: z.string().datetime().optional(),
   to: z.string().datetime().optional(),
@@ -102,8 +111,10 @@ export const scimSyncLogFilterSchema = z.object({
 // ─── SCIM Protocol Schemas (RFC 7644) ───────────────────────
 
 const scimSchemaUri = "urn:ietf:params:scim:schemas:core:2.0:User" as const;
-const scimGroupSchemaUri = "urn:ietf:params:scim:schemas:core:2.0:Group" as const;
-const scimPatchSchemaUri = "urn:ietf:params:scim:api:messages:2.0:PatchOp" as const;
+const scimGroupSchemaUri =
+  "urn:ietf:params:scim:schemas:core:2.0:Group" as const;
+const scimPatchSchemaUri =
+  "urn:ietf:params:scim:api:messages:2.0:PatchOp" as const;
 
 export const scimCreateUserSchema = z.object({
   schemas: z.array(z.string()).min(1),
@@ -113,25 +124,38 @@ export const scimCreateUserSchema = z.object({
     givenName: z.string().max(255),
     familyName: z.string().max(255),
   }),
-  emails: z.array(z.object({
-    value: z.string().email(),
-    type: z.string().optional(),
-    primary: z.boolean().optional(),
-  })).optional(),
+  emails: z
+    .array(
+      z.object({
+        value: z.string().email(),
+        type: z.string().optional(),
+        primary: z.boolean().optional(),
+      }),
+    )
+    .optional(),
   active: z.boolean().optional().default(true),
-  groups: z.array(z.object({
-    value: z.string(),
-    display: z.string().optional(),
-  })).optional(),
+  groups: z
+    .array(
+      z.object({
+        value: z.string(),
+        display: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 export const scimPatchOpSchema = z.object({
   schemas: z.array(z.string()).min(1),
-  Operations: z.array(z.object({
-    op: z.enum(["add", "remove", "replace"]),
-    path: z.string().optional(),
-    value: z.unknown().optional(),
-  })).min(1).max(100),
+  Operations: z
+    .array(
+      z.object({
+        op: z.enum(["add", "remove", "replace"]),
+        path: z.string().optional(),
+        value: z.unknown().optional(),
+      }),
+    )
+    .min(1)
+    .max(100),
 });
 
 export const scimReplaceUserSchema = z.object({
@@ -142,21 +166,29 @@ export const scimReplaceUserSchema = z.object({
     givenName: z.string().max(255),
     familyName: z.string().max(255),
   }),
-  emails: z.array(z.object({
-    value: z.string().email(),
-    type: z.string().optional(),
-    primary: z.boolean().optional(),
-  })).optional(),
+  emails: z
+    .array(
+      z.object({
+        value: z.string().email(),
+        type: z.string().optional(),
+        primary: z.boolean().optional(),
+      }),
+    )
+    .optional(),
   active: z.boolean().optional().default(true),
 });
 
 export const scimCreateGroupSchema = z.object({
   schemas: z.array(z.string()).min(1),
   displayName: z.string().max(255),
-  members: z.array(z.object({
-    value: z.string().uuid(),
-    display: z.string().optional(),
-  })).optional(),
+  members: z
+    .array(
+      z.object({
+        value: z.string().uuid(),
+        display: z.string().optional(),
+      }),
+    )
+    .optional(),
 });
 
 // ─── SSO Enforcement Toggle ─────────────────────────────────

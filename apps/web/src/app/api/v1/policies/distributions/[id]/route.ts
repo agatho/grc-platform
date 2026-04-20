@@ -1,7 +1,4 @@
-import {
-  db,
-  policyDistribution,
-} from "@grc/db";
+import { db, policyDistribution } from "@grc/db";
 import { updateDistributionSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
@@ -119,13 +116,20 @@ export async function PATCH(
   const updated = await withAuditContext(ctx, async (tx) => {
     const values: Record<string, unknown> = { updatedAt: new Date() };
     if (body.data.title !== undefined) values.title = body.data.title;
-    if (body.data.targetScope !== undefined) values.targetScope = body.data.targetScope;
-    if (body.data.deadline !== undefined) values.deadline = new Date(body.data.deadline);
-    if (body.data.isMandatory !== undefined) values.isMandatory = body.data.isMandatory;
-    if (body.data.requiresQuiz !== undefined) values.requiresQuiz = body.data.requiresQuiz;
-    if (body.data.quizPassThreshold !== undefined) values.quizPassThreshold = body.data.quizPassThreshold;
-    if (body.data.quizQuestions !== undefined) values.quizQuestions = body.data.quizQuestions;
-    if (body.data.reminderDaysBefore !== undefined) values.reminderDaysBefore = body.data.reminderDaysBefore;
+    if (body.data.targetScope !== undefined)
+      values.targetScope = body.data.targetScope;
+    if (body.data.deadline !== undefined)
+      values.deadline = new Date(body.data.deadline);
+    if (body.data.isMandatory !== undefined)
+      values.isMandatory = body.data.isMandatory;
+    if (body.data.requiresQuiz !== undefined)
+      values.requiresQuiz = body.data.requiresQuiz;
+    if (body.data.quizPassThreshold !== undefined)
+      values.quizPassThreshold = body.data.quizPassThreshold;
+    if (body.data.quizQuestions !== undefined)
+      values.quizQuestions = body.data.quizQuestions;
+    if (body.data.reminderDaysBefore !== undefined)
+      values.reminderDaysBefore = body.data.reminderDaysBefore;
 
     const [row] = await tx
       .update(policyDistribution)

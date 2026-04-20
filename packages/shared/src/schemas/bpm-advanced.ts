@@ -7,37 +7,57 @@ export const createEventLogImportSchema = z.object({
   processId: z.string().uuid().optional(),
   importName: z.string().min(1).max(500),
   formatSource: z.enum(["csv", "xes"]),
-  columnMapping: z.object({
-    caseId: z.string().min(1),
-    activity: z.string().min(1),
-    timestamp: z.string().min(1),
-    resource: z.string().optional(),
-  }).optional(),
+  columnMapping: z
+    .object({
+      caseId: z.string().min(1),
+      activity: z.string().min(1),
+      timestamp: z.string().min(1),
+      resource: z.string().optional(),
+    })
+    .optional(),
 });
 
 // ─── Process KPI Definition ─────────────────────────────────
-export const LOWER_IS_BETTER_METRICS = ["cycle_time", "error_rate", "cost"] as const;
-export const HIGHER_IS_BETTER_METRICS = ["throughput", "compliance_rate"] as const;
+export const LOWER_IS_BETTER_METRICS = [
+  "cycle_time",
+  "error_rate",
+  "cost",
+] as const;
+export const HIGHER_IS_BETTER_METRICS = [
+  "throughput",
+  "compliance_rate",
+] as const;
 
 export const createKpiDefinitionSchema = z.object({
   processId: z.string().uuid(),
   name: z.string().min(1).max(500),
-  metricType: z.enum(["cycle_time", "cost", "throughput", "error_rate", "compliance_rate", "custom"]),
+  metricType: z.enum([
+    "cycle_time",
+    "cost",
+    "throughput",
+    "error_rate",
+    "compliance_rate",
+    "custom",
+  ]),
   unit: z.string().min(1).max(50),
   targetValue: z.number(),
   thresholdGreen: z.number(),
   thresholdYellow: z.number(),
   measurementPeriod: z.enum(["daily", "weekly", "monthly", "quarterly"]),
   dataSource: z.enum(["manual", "mining", "api"]),
-  apiConfig: z.object({
-    url: z.string().url(),
-    method: z.enum(["GET", "POST"]).default("GET"),
-    jsonPath: z.string(),
-    auth: z.object({
-      type: z.enum(["bearer", "api_key", "basic"]),
-      value: z.string(),
-    }).optional(),
-  }).optional(),
+  apiConfig: z
+    .object({
+      url: z.string().url(),
+      method: z.enum(["GET", "POST"]).default("GET"),
+      jsonPath: z.string(),
+      auth: z
+        .object({
+          type: z.enum(["bearer", "api_key", "basic"]),
+          value: z.string(),
+        })
+        .optional(),
+    })
+    .optional(),
   ownerId: z.string().uuid().optional(),
 });
 
@@ -86,7 +106,9 @@ export const submitMaturityAssessmentSchema = z.object({
 });
 
 // ─── Maturity Level Computation (weakest-link + average override) ─
-export function computeMaturityLevel(dimensionScores: Record<string, number>): number {
+export function computeMaturityLevel(
+  dimensionScores: Record<string, number>,
+): number {
   const scores = Object.values(dimensionScores);
   if (scores.length === 0) return 1;
   const min = Math.min(...scores);
@@ -100,7 +122,11 @@ export function generateGapActions(
   dimensionScores: Record<string, number>,
   targetLevel: number,
 ): Array<{ dimension: string; action: string; priority: string }> {
-  const actions: Array<{ dimension: string; action: string; priority: string }> = [];
+  const actions: Array<{
+    dimension: string;
+    action: string;
+    priority: string;
+  }> = [];
   const gapDescriptions: Record<string, Record<number, string>> = {
     documentation: {
       2: "Document the process in BPMN format with roles and responsibilities",
@@ -142,7 +168,12 @@ export function generateGapActions(
         actions.push({
           dimension,
           action: desc,
-          priority: targetLevel - score > 2 ? "high" : targetLevel - score > 1 ? "medium" : "low",
+          priority:
+            targetLevel - score > 2
+              ? "high"
+              : targetLevel - score > 1
+                ? "medium"
+                : "low",
         });
       }
     }
@@ -167,40 +198,61 @@ export const createVsmSchema = z.object({
   mapType: z.enum(["current_state", "future_state"]),
   title: z.string().min(1).max(500),
   diagramData: z.object({
-    steps: z.array(z.object({
-      id: z.string(),
-      name: z.string(),
-      cycleTimeMinutes: z.number().min(0),
-      waitTimeMinutes: z.number().min(0).default(0),
-      changeoverTimeMinutes: z.number().min(0).default(0),
-      uptime: z.number().min(0).max(100).default(100),
-      operators: z.number().int().min(0).default(1),
-      wasteTags: z.array(z.enum(LEAN_8_WASTES)).optional(),
-    })),
-    informationFlows: z.array(z.object({
-      from: z.string(),
-      to: z.string(),
-      type: z.enum(["electronic", "manual", "push", "pull"]),
-    })).optional(),
-    materialFlows: z.array(z.object({
-      from: z.string(),
-      to: z.string(),
-      inventoryCount: z.number().int().min(0).optional(),
-    })).optional(),
+    steps: z.array(
+      z.object({
+        id: z.string(),
+        name: z.string(),
+        cycleTimeMinutes: z.number().min(0),
+        waitTimeMinutes: z.number().min(0).default(0),
+        changeoverTimeMinutes: z.number().min(0).default(0),
+        uptime: z.number().min(0).max(100).default(100),
+        operators: z.number().int().min(0).default(1),
+        wasteTags: z.array(z.enum(LEAN_8_WASTES)).optional(),
+      }),
+    ),
+    informationFlows: z
+      .array(
+        z.object({
+          from: z.string(),
+          to: z.string(),
+          type: z.enum(["electronic", "manual", "push", "pull"]),
+        }),
+      )
+      .optional(),
+    materialFlows: z
+      .array(
+        z.object({
+          from: z.string(),
+          to: z.string(),
+          inventoryCount: z.number().int().min(0).optional(),
+        }),
+      )
+      .optional(),
   }),
 });
 
 export const updateVsmSchema = createVsmSchema.partial();
 
 // ─── VSM Metrics Computation ────────────────────────────────
-export function computeVsmMetrics(steps: Array<{ cycleTimeMinutes: number; waitTimeMinutes: number }>): {
+export function computeVsmMetrics(
+  steps: Array<{ cycleTimeMinutes: number; waitTimeMinutes: number }>,
+): {
   totalLeadTimeMinutes: number;
   totalValueAddMinutes: number;
   valueAddRatio: number;
 } {
-  const totalLeadTimeMinutes = steps.reduce((sum, s) => sum + s.cycleTimeMinutes + s.waitTimeMinutes, 0);
-  const totalValueAddMinutes = steps.reduce((sum, s) => sum + s.cycleTimeMinutes, 0);
-  const valueAddRatio = totalLeadTimeMinutes > 0 ? (totalValueAddMinutes / totalLeadTimeMinutes) * 100 : 0;
+  const totalLeadTimeMinutes = steps.reduce(
+    (sum, s) => sum + s.cycleTimeMinutes + s.waitTimeMinutes,
+    0,
+  );
+  const totalValueAddMinutes = steps.reduce(
+    (sum, s) => sum + s.cycleTimeMinutes,
+    0,
+  );
+  const valueAddRatio =
+    totalLeadTimeMinutes > 0
+      ? (totalValueAddMinutes / totalLeadTimeMinutes) * 100
+      : 0;
   return {
     totalLeadTimeMinutes,
     totalValueAddMinutes,
@@ -228,7 +280,10 @@ export function computeWasteAnalysis(
   return Array.from(wasteMap.entries()).map(([wasteType, timeMinutes]) => ({
     wasteType,
     timeMinutes: Math.round(timeMinutes * 100) / 100,
-    percentage: totalWasteTime > 0 ? Math.round((timeMinutes / totalWasteTime) * 10000) / 100 : 0,
+    percentage:
+      totalWasteTime > 0
+        ? Math.round((timeMinutes / totalWasteTime) * 10000) / 100
+        : 0,
   }));
 }
 

@@ -86,7 +86,9 @@ export const managementSummaryRequestSchema = z.object({
   period_end: z.string().datetime(),
   language: z.enum(["de", "en"]).default("de"),
 });
-export type ManagementSummaryRequest = z.infer<typeof managementSummaryRequestSchema>;
+export type ManagementSummaryRequest = z.infer<
+  typeof managementSummaryRequestSchema
+>;
 
 // ─── Risk Treatment Link ──────────────────────────────────────
 
@@ -94,13 +96,23 @@ export const createRiskTreatmentLinkSchema = z.object({
   riskId: z.string().uuid(),
   treatmentId: z.string().uuid(),
 });
-export type CreateRiskTreatmentLink = z.infer<typeof createRiskTreatmentLinkSchema>;
+export type CreateRiskTreatmentLink = z.infer<
+  typeof createRiskTreatmentLinkSchema
+>;
 
 // ─── Risk Value Colors ────────────────────────────────────────
 
-export type RiskValueRange = "critical" | "high" | "medium" | "low" | "minimal" | "none";
+export type RiskValueRange =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "minimal"
+  | "none";
 
-export function getRiskValueRange(value: number | null | undefined): RiskValueRange {
+export function getRiskValueRange(
+  value: number | null | undefined,
+): RiskValueRange {
   if (value == null || value === 0) return "none";
   if (value >= 81) return "critical";
   if (value >= 61) return "high";

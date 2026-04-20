@@ -46,34 +46,39 @@ function HeatmapGrid({
 }) {
   return (
     <div>
-      <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">{title}</h3>
+      <h3 className="text-sm font-medium text-gray-700 mb-2 text-center">
+        {title}
+      </h3>
       <div className="grid grid-cols-5 gap-0.5 relative">
-        {LEVELS.slice().reverse().map((impact) =>
-          LEVELS.map((likelihood) => {
-            const cellRisks = risks.filter(
-              (r) => getLikelihood(r) === likelihood && getImpact(r) === impact,
-            );
-            return (
-              <div
-                key={`${likelihood}-${impact}`}
-                className={cn(
-                  "w-full aspect-square rounded-sm flex flex-wrap items-center justify-center gap-0.5 p-0.5",
-                  getCellColor(likelihood, impact),
-                )}
-              >
-                {cellRisks.map((r) => (
-                  <button
-                    key={r.id}
-                    type="button"
-                    onClick={() => onRiskClick?.(r.id)}
-                    className="w-2.5 h-2.5 rounded-full bg-gray-800 hover:bg-teal-600 transition-colors"
-                    title={r.label}
-                  />
-                ))}
-              </div>
-            );
-          }),
-        )}
+        {LEVELS.slice()
+          .reverse()
+          .map((impact) =>
+            LEVELS.map((likelihood) => {
+              const cellRisks = risks.filter(
+                (r) =>
+                  getLikelihood(r) === likelihood && getImpact(r) === impact,
+              );
+              return (
+                <div
+                  key={`${likelihood}-${impact}`}
+                  className={cn(
+                    "w-full aspect-square rounded-sm flex flex-wrap items-center justify-center gap-0.5 p-0.5",
+                    getCellColor(likelihood, impact),
+                  )}
+                >
+                  {cellRisks.map((r) => (
+                    <button
+                      key={r.id}
+                      type="button"
+                      onClick={() => onRiskClick?.(r.id)}
+                      className="w-2.5 h-2.5 rounded-full bg-gray-800 hover:bg-teal-600 transition-colors"
+                      title={r.label}
+                    />
+                  ))}
+                </div>
+              );
+            }),
+          )}
       </div>
     </div>
   );

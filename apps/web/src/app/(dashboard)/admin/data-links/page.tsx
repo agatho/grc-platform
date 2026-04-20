@@ -14,12 +14,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -118,12 +113,20 @@ export default function DataLinksPage() {
             Live-Datenverkn&uuml;pfungen
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Automatische Aktualisierung verkn&uuml;pfter Datenpunkte &uuml;ber Module hinweg
+            Automatische Aktualisierung verkn&uuml;pfter Datenpunkte &uuml;ber
+            Module hinweg
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             Aktualisieren
           </Button>
           <Button>
@@ -151,7 +154,9 @@ export default function DataLinksPage() {
             <div className="flex items-center gap-3">
               <ArrowRightLeft className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">{stats?.bidirectional ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {stats?.bidirectional ?? 0}
+                </p>
                 <p className="text-xs text-gray-500">Bidirektional</p>
               </div>
             </div>
@@ -162,7 +167,9 @@ export default function DataLinksPage() {
             <div className="flex items-center gap-3">
               <Layers className="h-8 w-8 text-purple-500" />
               <div>
-                <p className="text-2xl font-bold">{stats?.modulesLinked ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {stats?.modulesLinked ?? 0}
+                </p>
                 <p className="text-xs text-gray-500">Module verkn&uuml;pft</p>
               </div>
             </div>
@@ -196,9 +203,12 @@ export default function DataLinksPage() {
           {links.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-400">
               <Unlink className="mb-3 h-10 w-10" />
-              <p className="font-medium text-gray-500">Keine Verkn&uuml;pfungen vorhanden</p>
+              <p className="font-medium text-gray-500">
+                Keine Verkn&uuml;pfungen vorhanden
+              </p>
               <p className="mt-1 text-gray-400">
-                Erstellen Sie automatische Datenverkn&uuml;pfungen zwischen Modulen.
+                Erstellen Sie automatische Datenverkn&uuml;pfungen zwischen
+                Modulen.
               </p>
             </div>
           ) : (
@@ -249,7 +259,9 @@ export default function DataLinksPage() {
                         </code>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={`text-xs ${linkTypeColors[link.linkType] ?? ""}`}>
+                        <Badge
+                          className={`text-xs ${linkTypeColors[link.linkType] ?? ""}`}
+                        >
                           {linkTypeLabels[link.linkType] ?? link.linkType}
                         </Badge>
                       </td>
@@ -260,11 +272,18 @@ export default function DataLinksPage() {
                             Bidirektional
                           </Badge>
                         ) : (
-                          <span className="text-xs text-gray-400">Unidirektional</span>
+                          <span className="text-xs text-gray-400">
+                            Unidirektional
+                          </span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge className={statusColors[link.status] ?? "bg-gray-100 text-gray-800"}>
+                        <Badge
+                          className={
+                            statusColors[link.status] ??
+                            "bg-gray-100 text-gray-800"
+                          }
+                        >
                           {statusLabels[link.status] ?? link.status}
                         </Badge>
                       </td>

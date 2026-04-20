@@ -9,7 +9,7 @@ const updateAssessmentSchema = z.object({
   description: z.string().max(5000).optional(),
   status: z.string().max(30).optional(),
   scopeType: z.string().max(50).optional(),
-  scopeFilter: z.record(z.unknown()).optional(),
+  scopeFilter: z.record(z.string(), z.unknown()).optional(),
   leadAssessorId: z.string().uuid().optional(),
   periodStart: z.string().optional(),
   periodEnd: z.string().optional(),
@@ -62,7 +62,10 @@ export async function PUT(
   const { id } = await params;
   const parsed = updateAssessmentSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const body = parsed.data;
 
@@ -80,7 +83,9 @@ export async function PUT(
     const allowed = VALID_ASSESSMENT_TRANSITIONS[existing.status] ?? [];
     if (!allowed.includes(body.status)) {
       return Response.json(
-        { error: `Invalid transition from '${existing.status}' to '${body.status}'` },
+        {
+          error: `Invalid transition from '${existing.status}' to '${body.status}'`,
+        },
         { status: 400 },
       );
     }
@@ -96,7 +101,8 @@ export async function PUT(
     }
     if (body.scopeType !== undefined) updates.scopeType = body.scopeType;
     if (body.scopeFilter !== undefined) updates.scopeFilter = body.scopeFilter;
-    if (body.leadAssessorId !== undefined) updates.leadAssessorId = body.leadAssessorId;
+    if (body.leadAssessorId !== undefined)
+      updates.leadAssessorId = body.leadAssessorId;
     if (body.periodStart !== undefined) updates.periodStart = body.periodStart;
     if (body.periodEnd !== undefined) updates.periodEnd = body.periodEnd;
 

@@ -1,7 +1,11 @@
 // Policy Acknowledgment Portal types (Sprint 15)
 
 export type PolicyDistributionStatus = "draft" | "active" | "closed";
-export type PolicyAcknowledgmentStatus = "pending" | "acknowledged" | "overdue" | "failed_quiz";
+export type PolicyAcknowledgmentStatus =
+  | "pending"
+  | "acknowledged"
+  | "overdue"
+  | "failed_quiz";
 
 export interface QuizQuestion {
   question: string;

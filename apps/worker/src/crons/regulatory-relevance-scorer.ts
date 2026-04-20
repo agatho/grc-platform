@@ -19,7 +19,9 @@ interface RelevanceScorerResult {
 
 export async function processRegulatoryRelevanceScorer(): Promise<RelevanceScorerResult> {
   const now = new Date();
-  console.log(`[cron:regulatory-relevance-scorer] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:regulatory-relevance-scorer] Starting at ${now.toISOString()}`,
+  );
 
   let processed = 0;
   let scored = 0;
@@ -36,9 +38,7 @@ export async function processRegulatoryRelevanceScorer(): Promise<RelevanceScore
   const recentItems = await db
     .select()
     .from(regulatoryFeedItem)
-    .where(
-      sql`${regulatoryFeedItem.fetchedAt} >= NOW() - INTERVAL '24 hours'`,
-    )
+    .where(sql`${regulatoryFeedItem.fetchedAt} >= NOW() - INTERVAL '24 hours'`)
     .limit(50);
 
   for (const item of recentItems) {
@@ -80,19 +80,33 @@ Return JSON: {"relevanceScore": number, "reasoning": string, "affectedModules": 
 
         const aiResponse = await aiComplete({
           messages: [
-            { role: "system", content: "You are a regulatory compliance expert. Respond with valid JSON only." },
+            {
+              role: "system",
+              content:
+                "You are a regulatory compliance expert. Respond with valid JSON only.",
+            },
             { role: "user", content: prompt },
           ],
           maxTokens: 500,
           temperature: 0.1,
         });
 
-        let result: { relevanceScore: number; reasoning: string; affectedModules: string[] };
+        let result: {
+          relevanceScore: number;
+          reasoning: string;
+          affectedModules: string[];
+        };
         try {
-          const cleaned = aiResponse.text.replace(/```json\n?|\n?```/g, "").trim();
+          const cleaned = aiResponse.text
+            .replace(/```json\n?|\n?```/g, "")
+            .trim();
           result = JSON.parse(cleaned);
         } catch {
-          result = { relevanceScore: 50, reasoning: "Unable to parse AI response", affectedModules: [] };
+          result = {
+            relevanceScore: 50,
+            reasoning: "Unable to parse AI response",
+            affectedModules: [],
+          };
         }
 
         await db.insert(regulatoryRelevanceScore).values({

@@ -66,7 +66,11 @@ interface Question {
   options: QuestionOption[];
   isRequired: boolean;
   isEvidenceRequired: boolean;
-  conditionalOn?: { questionId: string; operator: string; value: string } | null;
+  conditionalOn?: {
+    questionId: string;
+    operator: string;
+    value: string;
+  } | null;
   weight: string;
   maxScore: number;
   sortOrder: number;
@@ -105,8 +109,16 @@ interface ImportCatalogEntry {
 }
 
 const IMPORT_FRAMEWORKS = [
-  { value: "vda_isa_tisax", label: "TISAX (VDA ISA 6.0)", labelDe: "TISAX (VDA ISA 6.0)" },
-  { value: "eu_dora", label: "DORA ICT Third-Party", labelDe: "DORA IKT-Drittparteien" },
+  {
+    value: "vda_isa_tisax",
+    label: "TISAX (VDA ISA 6.0)",
+    labelDe: "TISAX (VDA ISA 6.0)",
+  },
+  {
+    value: "eu_dora",
+    label: "DORA ICT Third-Party",
+    labelDe: "DORA IKT-Drittparteien",
+  },
 ] as const;
 
 const STATUS_COLORS: Record<string, string> = {
@@ -155,16 +167,24 @@ function QuestionnaireEditInner() {
   const [template, setTemplate] = useState<Template | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(null);
-  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(null);
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set());
+  const [selectedSectionId, setSelectedSectionId] = useState<string | null>(
+    null,
+  );
+  const [selectedQuestionId, setSelectedQuestionId] = useState<string | null>(
+    null,
+  );
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    new Set(),
+  );
 
   // Import from Framework state
   const [importOpen, setImportOpen] = useState(false);
   const [importFramework, setImportFramework] = useState<string>("");
   const [importEntries, setImportEntries] = useState<ImportCatalogEntry[]>([]);
   const [importLoading, setImportLoading] = useState(false);
-  const [importSelectedSections, setImportSelectedSections] = useState<Set<string>>(new Set());
+  const [importSelectedSections, setImportSelectedSections] = useState<
+    Set<string>
+  >(new Set());
   const [importing, setImporting] = useState(false);
 
   // ──────────────────────────────────────────────────────────────
@@ -322,7 +342,10 @@ function QuestionnaireEditInner() {
         ...template,
         sections: template.sections.map((s) =>
           s.id === sectionId
-            ? { ...s, questions: s.questions.filter((q) => q.id !== questionId) }
+            ? {
+                ...s,
+                questions: s.questions.filter((q) => q.id !== questionId),
+              }
             : s,
         ),
       });
@@ -364,13 +387,19 @@ function QuestionnaireEditInner() {
     if (!source) return;
     setImportLoading(true);
     try {
-      const res = await fetch(`/api/v1/tprm/templates?source=${encodeURIComponent(source)}`);
+      const res = await fetch(
+        `/api/v1/tprm/templates?source=${encodeURIComponent(source)}`,
+      );
       if (res.ok) {
         const json = await res.json();
         setImportEntries(json.data ?? []);
         // Pre-select all top-level sections
-        const sections = (json.data ?? []).filter((e: ImportCatalogEntry) => e.level === 0);
-        setImportSelectedSections(new Set(sections.map((s: ImportCatalogEntry) => s.code)));
+        const sections = (json.data ?? []).filter(
+          (e: ImportCatalogEntry) => e.level === 0,
+        );
+        setImportSelectedSections(
+          new Set(sections.map((s: ImportCatalogEntry) => s.code)),
+        );
       }
     } catch {
       toast.error("Failed to load framework entries");
@@ -392,26 +421,30 @@ function QuestionnaireEditInner() {
     if (!template || importEntries.length === 0) return;
     setImporting(true);
 
-    const sections = importEntries.filter((e) => e.level === 0 && importSelectedSections.has(e.code));
+    const sections = importEntries.filter(
+      (e) => e.level === 0 && importSelectedSections.has(e.code),
+    );
     const newSections: Section[] = sections.map((section, sIdx) => {
       const questions = importEntries
         .filter((e) => e.level >= 1 && e.parentCode === section.code)
-        .map((q, qIdx): Question => ({
-          id: `temp-import-q-${Date.now()}-${sIdx}-${qIdx}`,
-          sectionId: `temp-import-s-${Date.now()}-${sIdx}`,
-          questionType: "text",
-          questionDe: q.title,
-          questionEn: q.title,
-          helpTextDe: q.description ?? "",
-          helpTextEn: q.description ?? "",
-          options: [],
-          isRequired: true,
-          isEvidenceRequired: false,
-          conditionalOn: null,
-          weight: "1.0",
-          maxScore: 0,
-          sortOrder: qIdx,
-        }));
+        .map(
+          (q, qIdx): Question => ({
+            id: `temp-import-q-${Date.now()}-${sIdx}-${qIdx}`,
+            sectionId: `temp-import-s-${Date.now()}-${sIdx}`,
+            questionType: "text",
+            questionDe: q.title,
+            questionEn: q.title,
+            helpTextDe: q.description ?? "",
+            helpTextEn: q.description ?? "",
+            options: [],
+            isRequired: true,
+            isEvidenceRequired: false,
+            conditionalOn: null,
+            weight: "1.0",
+            maxScore: 0,
+            sortOrder: qIdx,
+          }),
+        );
 
       return {
         id: `temp-import-s-${Date.now()}-${sIdx}`,
@@ -492,8 +525,7 @@ function QuestionnaireEditInner() {
             {t("editTemplate")}: {template.name}
           </h1>
           <p className="text-xs text-gray-500">
-            v{template.version} &middot;{" "}
-            {t(`status.${template.status}`)}
+            v{template.version} &middot; {t(`status.${template.status}`)}
           </p>
         </div>
         <Badge
@@ -515,7 +547,12 @@ function QuestionnaireEditInner() {
           <Download size={14} />
           {t("importFramework.button")}
         </Button>
-        <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleSave}
+          disabled={saving}
+        >
           {saving ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (
@@ -558,7 +595,10 @@ function QuestionnaireEditInner() {
                       setSelectedQuestionId(null);
                     }}
                   >
-                    <GripVertical size={12} className="text-gray-400 flex-shrink-0" />
+                    <GripVertical
+                      size={12}
+                      className="text-gray-400 flex-shrink-0"
+                    />
                     <button
                       type="button"
                       onClick={(e) => {
@@ -607,12 +647,17 @@ function QuestionnaireEditInner() {
                               setSelectedQuestionId(q.id);
                             }}
                           >
-                            <Icon size={12} className="text-gray-400 flex-shrink-0" />
+                            <Icon
+                              size={12}
+                              className="text-gray-400 flex-shrink-0"
+                            />
                             <span className="text-xs text-gray-700 flex-1 truncate">
                               {q.questionEn}
                             </span>
                             {q.isRequired && (
-                              <span className="text-[10px] text-red-400">*</span>
+                              <span className="text-[10px] text-red-400">
+                                *
+                              </span>
                             )}
                             {q.isEvidenceRequired && (
                               <Upload size={10} className="text-gray-400" />
@@ -796,8 +841,18 @@ function QuestionnaireEditInner() {
                           ? selectedQuestion.options.length > 0
                             ? selectedQuestion.options
                             : [
-                                { value: "opt1", labelDe: "Option 1", labelEn: "Option 1", score: 0 },
-                                { value: "opt2", labelDe: "Option 2", labelEn: "Option 2", score: 0 },
+                                {
+                                  value: "opt1",
+                                  labelDe: "Option 1",
+                                  labelEn: "Option 1",
+                                  score: 0,
+                                },
+                                {
+                                  value: "opt2",
+                                  labelDe: "Option 2",
+                                  labelEn: "Option 2",
+                                  score: 0,
+                                },
                               ]
                           : [],
                     })
@@ -922,9 +977,7 @@ function QuestionnaireEditInner() {
 
               {/* Scoring */}
               <div className="rounded-lg border border-gray-100 bg-gray-50 p-4 space-y-3">
-                <h4 className="text-xs font-semibold text-gray-700">
-                  Scoring
-                </h4>
+                <h4 className="text-xs font-semibold text-gray-700">Scoring</h4>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="text-xs text-gray-600">
@@ -982,9 +1035,7 @@ function QuestionnaireEditInner() {
                         type="number"
                         min={0}
                         max={10}
-                        value={
-                          selectedQuestion.options?.[0]?.score ?? 0
-                        }
+                        value={selectedQuestion.options?.[0]?.score ?? 0}
                         onChange={(e) => {
                           const opts = [
                             {
@@ -1017,9 +1068,7 @@ function QuestionnaireEditInner() {
                         type="number"
                         min={0}
                         max={10}
-                        value={
-                          selectedQuestion.options?.[1]?.score ?? 0
-                        }
+                        value={selectedQuestion.options?.[1]?.score ?? 0}
                         onChange={(e) => {
                           const opts = [
                             selectedQuestion.options?.[0] ?? {
@@ -1069,7 +1118,10 @@ function QuestionnaireEditInner() {
                           value={opt.value}
                           onChange={(e) => {
                             const opts = [...selectedQuestion.options];
-                            opts[optIdx] = { ...opts[optIdx], value: e.target.value };
+                            opts[optIdx] = {
+                              ...opts[optIdx],
+                              value: e.target.value,
+                            };
                             updateQuestion(
                               selectedSection.id,
                               selectedQuestion.id,
@@ -1088,7 +1140,10 @@ function QuestionnaireEditInner() {
                           value={opt.labelDe}
                           onChange={(e) => {
                             const opts = [...selectedQuestion.options];
-                            opts[optIdx] = { ...opts[optIdx], labelDe: e.target.value };
+                            opts[optIdx] = {
+                              ...opts[optIdx],
+                              labelDe: e.target.value,
+                            };
                             updateQuestion(
                               selectedSection.id,
                               selectedQuestion.id,
@@ -1107,7 +1162,10 @@ function QuestionnaireEditInner() {
                           value={opt.labelEn}
                           onChange={(e) => {
                             const opts = [...selectedQuestion.options];
-                            opts[optIdx] = { ...opts[optIdx], labelEn: e.target.value };
+                            opts[optIdx] = {
+                              ...opts[optIdx],
+                              labelEn: e.target.value,
+                            };
                             updateQuestion(
                               selectedSection.id,
                               selectedQuestion.id,
@@ -1174,11 +1232,9 @@ function QuestionnaireEditInner() {
                           score: 0,
                         },
                       ];
-                      updateQuestion(
-                        selectedSection.id,
-                        selectedQuestion.id,
-                        { options: opts },
-                      );
+                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                        options: opts,
+                      });
                     }}
                   >
                     <Plus size={12} />
@@ -1199,22 +1255,18 @@ function QuestionnaireEditInner() {
                   <select
                     value={selectedQuestion.conditionalOn?.questionId ?? ""}
                     onChange={(e) =>
-                      updateQuestion(
-                        selectedSection.id,
-                        selectedQuestion.id,
-                        {
-                          conditionalOn: e.target.value
-                            ? {
-                                questionId: e.target.value,
-                                operator:
-                                  selectedQuestion.conditionalOn?.operator ??
-                                  "equals",
-                                value:
-                                  selectedQuestion.conditionalOn?.value ?? "",
-                              }
-                            : null,
-                        },
-                      )
+                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                        conditionalOn: e.target.value
+                          ? {
+                              questionId: e.target.value,
+                              operator:
+                                selectedQuestion.conditionalOn?.operator ??
+                                "equals",
+                              value:
+                                selectedQuestion.conditionalOn?.value ?? "",
+                            }
+                          : null,
+                      })
                     }
                     className="rounded-md border border-gray-300 px-2 py-1 text-xs"
                   >
@@ -1229,22 +1281,16 @@ function QuestionnaireEditInner() {
                       ))}
                   </select>
                   <select
-                    value={
-                      selectedQuestion.conditionalOn?.operator ?? "equals"
-                    }
+                    value={selectedQuestion.conditionalOn?.operator ?? "equals"}
                     onChange={(e) =>
-                      updateQuestion(
-                        selectedSection.id,
-                        selectedQuestion.id,
-                        {
-                          conditionalOn: selectedQuestion.conditionalOn
-                            ? {
-                                ...selectedQuestion.conditionalOn,
-                                operator: e.target.value,
-                              }
-                            : null,
-                        },
-                      )
+                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                        conditionalOn: selectedQuestion.conditionalOn
+                          ? {
+                              ...selectedQuestion.conditionalOn,
+                              operator: e.target.value,
+                            }
+                          : null,
+                      })
                     }
                     disabled={!selectedQuestion.conditionalOn}
                     className="rounded-md border border-gray-300 px-2 py-1 text-xs"
@@ -1257,18 +1303,14 @@ function QuestionnaireEditInner() {
                     type="text"
                     value={selectedQuestion.conditionalOn?.value ?? ""}
                     onChange={(e) =>
-                      updateQuestion(
-                        selectedSection.id,
-                        selectedQuestion.id,
-                        {
-                          conditionalOn: selectedQuestion.conditionalOn
-                            ? {
-                                ...selectedQuestion.conditionalOn,
-                                value: e.target.value,
-                              }
-                            : null,
-                        },
-                      )
+                      updateQuestion(selectedSection.id, selectedQuestion.id, {
+                        conditionalOn: selectedQuestion.conditionalOn
+                          ? {
+                              ...selectedQuestion.conditionalOn,
+                              value: e.target.value,
+                            }
+                          : null,
+                      })
                     }
                     disabled={!selectedQuestion.conditionalOn}
                     placeholder="Value"
@@ -1286,13 +1328,17 @@ function QuestionnaireEditInner() {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("importFramework.title")}</DialogTitle>
-            <DialogDescription>{t("importFramework.description")}</DialogDescription>
+            <DialogDescription>
+              {t("importFramework.description")}
+            </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-5">
             {/* Framework selector */}
             <div>
-              <label className="text-xs font-medium text-gray-700">{t("importFramework.selectFramework")}</label>
+              <label className="text-xs font-medium text-gray-700">
+                {t("importFramework.selectFramework")}
+              </label>
               <select
                 value={importFramework}
                 onChange={(e) => void handleFrameworkChange(e.target.value)}
@@ -1323,7 +1369,9 @@ function QuestionnaireEditInner() {
                     {t("importFramework.selectSections")}
                   </label>
                   <span className="text-xs text-gray-500">
-                    {importSelectedSections.size} / {importEntries.filter((e) => e.level === 0).length} {t("importFramework.selected")}
+                    {importSelectedSections.size} /{" "}
+                    {importEntries.filter((e) => e.level === 0).length}{" "}
+                    {t("importFramework.selected")}
                   </span>
                 </div>
                 <div className="space-y-1.5 max-h-64 overflow-y-auto rounded-md border border-gray-200 p-3">
@@ -1349,9 +1397,13 @@ function QuestionnaireEditInner() {
                             className="h-4 w-4 rounded text-blue-600 mt-0.5"
                           />
                           <div className="flex-1">
-                            <span className="text-sm font-medium text-gray-900">{section.title}</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {section.title}
+                            </span>
                             {section.description && (
-                              <p className="text-xs text-gray-500 mt-0.5">{section.description}</p>
+                              <p className="text-xs text-gray-500 mt-0.5">
+                                {section.description}
+                              </p>
                             )}
                             <p className="text-xs text-gray-400 mt-0.5">
                               {childCount} {t("questions").toLowerCase()}
@@ -1364,13 +1416,21 @@ function QuestionnaireEditInner() {
               </div>
             )}
 
-            {!importLoading && importFramework && importEntries.length === 0 && (
-              <p className="text-sm text-gray-400 py-4">{t("importFramework.noEntries")}</p>
-            )}
+            {!importLoading &&
+              importFramework &&
+              importEntries.length === 0 && (
+                <p className="text-sm text-gray-400 py-4">
+                  {t("importFramework.noEntries")}
+                </p>
+              )}
           </div>
 
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setImportOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setImportOpen(false)}
+            >
               {t("importFramework.cancel")}
             </Button>
             <Button
@@ -1380,7 +1440,8 @@ function QuestionnaireEditInner() {
             >
               {importing && <Loader2 size={14} className="animate-spin mr-1" />}
               <Download size={14} className="mr-1" />
-              {t("importFramework.importButton")} ({importSelectedSections.size})
+              {t("importFramework.importButton")} ({importSelectedSections.size}
+              )
             </Button>
           </DialogFooter>
         </DialogContent>

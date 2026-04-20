@@ -6,7 +6,9 @@ import type { ImportResult, ImportLogEntry } from "@grc/shared";
 import { getEntityDefinition, ENTITY_REGISTRY } from "./entity-registry";
 
 // Security: whitelist of allowed table names (from hardcoded entity registry)
-const ALLOWED_TABLES = new Set(Object.values(ENTITY_REGISTRY).map((d) => d.tableName));
+const ALLOWED_TABLES = new Set(
+  Object.values(ENTITY_REGISTRY).map((d) => d.tableName),
+);
 import { applyMapping } from "./column-mapper";
 import { sanitizeRowValues } from "./csv-sanitizer";
 import { resolveFKsForRow, parseBooleanValue } from "./validation-engine";
@@ -60,14 +62,16 @@ export async function executeImport(
 
         // Security: validate table name against whitelist
         if (!ALLOWED_TABLES.has(def.tableName)) {
-          throw new Error(`SECURITY: Table "${def.tableName}" not in allowed import targets`);
+          throw new Error(
+            `SECURITY: Table "${def.tableName}" not in allowed import targets`,
+          );
         }
         // Insert into the entity table
         const insertResult = await tx.execute(
           sql`INSERT INTO ${sql.raw(def.tableName)} ${buildInsertSql(dbRow)} RETURNING id`,
         );
 
-        const entityId = ((insertResult as unknown as { id: string }[])[0])?.id;
+        const entityId = (insertResult as unknown as { id: string }[])[0]?.id;
 
         log.push({
           rowNumber: rowNum,
@@ -82,8 +86,7 @@ export async function executeImport(
     return result;
   } catch (err) {
     // Transaction was rolled back — find which row caused the error
-    const errorMessage =
-      err instanceof Error ? err.message : String(err);
+    const errorMessage = err instanceof Error ? err.message : String(err);
 
     // Add error entry for the failing row
     const failedRowIndex = log.length;
@@ -130,9 +133,10 @@ function buildDbRow(
           dbRow[key] = Number(value);
           break;
         case "boolean":
-          dbRow[key] = typeof value === "string"
-            ? parseBooleanValue(value)
-            : Boolean(value);
+          dbRow[key] =
+            typeof value === "string"
+              ? parseBooleanValue(value)
+              : Boolean(value);
           break;
         default:
           dbRow[key] = value;

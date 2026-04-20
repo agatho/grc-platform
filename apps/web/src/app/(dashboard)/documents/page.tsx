@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  Search,
-  RefreshCcw,
-  FileText,
-} from "lucide-react";
+import { Plus, Loader2, Search, RefreshCcw, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -141,7 +135,9 @@ function DocumentsPageInner() {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/v1/documents?limit=500&sortBy=title&sortDir=asc");
+      const res = await fetch(
+        "/api/v1/documents?limit=500&sortBy=title&sortDir=asc",
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
       setDocuments(json.data ?? []);
@@ -206,7 +202,10 @@ function DocumentsPageInner() {
           <SortableHeader column={column}>{t("form.status")}</SortableHeader>
         ),
         cell: ({ row }) => (
-          <Badge variant="outline" className={statusBadgeClass(row.original.status)}>
+          <Badge
+            variant="outline"
+            className={statusBadgeClass(row.original.status)}
+          >
             {t(`status.${row.original.status}`)}
           </Badge>
         ),
@@ -241,7 +240,9 @@ function DocumentsPageInner() {
       {
         accessorKey: "publishedAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>{t("form.publishedAt")}</SortableHeader>
+          <SortableHeader column={column}>
+            {t("form.publishedAt")}
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <span className="text-sm text-gray-600">
@@ -254,7 +255,8 @@ function DocumentsPageInner() {
         header: t("form.acknowledgment"),
         cell: ({ row }) => {
           const pct = row.original.acknowledgmentPct;
-          if (pct == null) return <span className="text-gray-400">{"\u2014"}</span>;
+          if (pct == null)
+            return <span className="text-gray-400">{"\u2014"}</span>;
           return (
             <div className="flex items-center gap-2">
               <div className="w-16 h-2 rounded-full bg-gray-200 overflow-hidden">
@@ -356,7 +358,12 @@ function DocumentsPageInner() {
         <div className="flex flex-col items-center justify-center h-48 text-gray-400">
           <FileText size={32} className="mb-2" />
           <p className="text-sm">{t("loadError")}</p>
-          <Button variant="outline" size="sm" className="mt-2" onClick={() => fetchDocuments()}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="mt-2"
+            onClick={() => fetchDocuments()}
+          >
             {t("retry")}
           </Button>
         </div>
@@ -369,7 +376,9 @@ function DocumentsPageInner() {
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
               <Search size={28} className="text-gray-400 mb-3" />
               <p className="text-sm font-medium text-gray-500">
-                {debouncedSearch || statusFilter !== "__all__" || categoryFilter !== "__all__"
+                {debouncedSearch ||
+                statusFilter !== "__all__" ||
+                categoryFilter !== "__all__"
                   ? t("empty.noResults")
                   : t("empty.noDocuments")}
               </p>

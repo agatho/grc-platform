@@ -5,10 +5,12 @@
 **Please do NOT open a public GitHub issue for security vulnerabilities.**
 
 Report privately via:
+
 - E-Mail: agatho@charliehund.de (PGP-Key on request)
 - GitHub Security Advisory: [Create draft advisory](https://github.com/agatho/grc-platform/security/advisories/new)
 
 We aim to:
+
 - Acknowledge receipt within 48h
 - Provide a triage decision within 5 business days
 - Coordinate a fix + disclosure timeline with the reporter
@@ -44,10 +46,11 @@ We'll credit reporters in the release notes of the fix (opt-out available).
 ## Known-Risk Baselines
 
 See:
+
 - [`docs/security/rls-coverage-report.md`](./docs/security/rls-coverage-report.md) — tables without RLS (currently 132, shrinking)
 - [`docs/security/lod-coverage.md`](./docs/security/lod-coverage.md) — API routes without withAuth
 - [`docs/ADR-018-secret-management.md`](./docs/ADR-018-secret-management.md) — secret-handling model
-- [`docs/ADR-011-audit-trail.md`](./docs/) *(TBD — hash chain specification)*
+- [`docs/ADR-011-audit-trail.md`](./docs/) _(TBD — hash chain specification)_
 
 ## CI Security Gates
 

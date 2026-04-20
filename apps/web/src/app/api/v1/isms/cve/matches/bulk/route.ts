@@ -15,7 +15,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = bulkCveMatchStatusSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

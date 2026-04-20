@@ -25,11 +25,14 @@ export async function POST(req: Request) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || "https://arctos.local";
   const icalUrl = `${baseUrl}/api/v1/calendar/ical/${token}`;
 
-  return Response.json({
-    data: {
-      icalToken: token,
-      icalUrl,
-      createdAt: now.toISOString(),
+  return Response.json(
+    {
+      data: {
+        icalToken: token,
+        icalUrl,
+        createdAt: now.toISOString(),
+      },
     },
-  }, { status: 201 });
+    { status: 201 },
+  );
 }

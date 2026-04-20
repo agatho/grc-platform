@@ -2,7 +2,12 @@ import { db, frameworkGapAnalysis, controlFrameworkCoverage } from "@grc/db";
 import { triggerGapAnalysisSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 export async function POST(req: Request) {
@@ -12,53 +17,90 @@ export async function POST(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const body = triggerGapAnalysisSchema.safeParse(await req.json());
-  if (!body.success) return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+  if (!body.success)
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
 
-  const coverageItems = await db.select().from(controlFrameworkCoverage).where(and(
-    eq(controlFrameworkCoverage.orgId, ctx.orgId),
-    eq(controlFrameworkCoverage.framework, body.data.framework),
-  ));
+  const coverageItems = await db
+    .select()
+    .from(controlFrameworkCoverage)
+    .where(
+      and(
+        eq(controlFrameworkCoverage.orgId, ctx.orgId),
+        eq(controlFrameworkCoverage.framework, body.data.framework),
+      ),
+    );
 
   const totalControls = coverageItems.length;
-  const covered = coverageItems.filter((c) => c.coverageStatus === "covered").length;
-  const partial = coverageItems.filter((c) => c.coverageStatus === "partially_covered").length;
-  const notCovered = coverageItems.filter((c) => c.coverageStatus === "not_covered").length;
-  const notApplicable = coverageItems.filter((c) => c.coverageStatus === "not_applicable").length;
+  const covered = coverageItems.filter(
+    (c) => c.coverageStatus === "covered",
+  ).length;
+  const partial = coverageItems.filter(
+    (c) => c.coverageStatus === "partially_covered",
+  ).length;
+  const notCovered = coverageItems.filter(
+    (c) => c.coverageStatus === "not_covered",
+  ).length;
+  const notApplicable = coverageItems.filter(
+    (c) => c.coverageStatus === "not_applicable",
+  ).length;
   const applicableTotal = totalControls - notApplicable;
-  const coveragePercentage = applicableTotal > 0 ? Math.round(((covered + partial * 0.5) / applicableTotal) * 10000) / 100 : 0;
+  const coveragePercentage =
+    applicableTotal > 0
+      ? Math.round(((covered + partial * 0.5) / applicableTotal) * 10000) / 100
+      : 0;
 
   const gapDetails = coverageItems
-    .filter((c) => c.coverageStatus === "not_covered" || c.coverageStatus === "partially_covered")
+    .filter(
+      (c) =>
+        c.coverageStatus === "not_covered" ||
+        c.coverageStatus === "partially_covered",
+    )
     .map((c) => ({
       controlId: c.frameworkControlId,
       controlTitle: c.frameworkControlId,
       status: c.coverageStatus,
-      recommendation: c.coverageStatus === "not_covered" ? "Implement control" : "Strengthen existing control",
+      recommendation:
+        c.coverageStatus === "not_covered"
+          ? "Implement control"
+          : "Strengthen existing control",
     }));
 
-  const riskExposure = coveragePercentage >= 80 ? "low" : coveragePercentage >= 60 ? "medium" : coveragePercentage >= 40 ? "high" : "critical";
+  const riskExposure =
+    coveragePercentage >= 80
+      ? "low"
+      : coveragePercentage >= 60
+        ? "medium"
+        : coveragePercentage >= 40
+          ? "high"
+          : "critical";
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [row] = await tx.insert(frameworkGapAnalysis).values({
-      orgId: ctx.orgId,
-      framework: body.data.framework,
-      analysisDate: new Date(),
-      totalControls,
-      coveredControls: covered,
-      partiallyCoveredControls: partial,
-      notCoveredControls: notCovered,
-      notApplicableControls: notApplicable,
-      coveragePercentage: String(coveragePercentage),
-      gapDetails,
-      prioritizedActions: gapDetails.slice(0, 10).map((g) => ({
-        action: g.recommendation,
-        priority: g.status === "not_covered" ? "high" : "medium",
-        effort: "medium",
-        impact: "high",
-      })),
-      riskExposure,
-      createdBy: ctx.userId,
-    }).returning();
+    const [row] = await tx
+      .insert(frameworkGapAnalysis)
+      .values({
+        orgId: ctx.orgId,
+        framework: body.data.framework,
+        analysisDate: new Date(),
+        totalControls,
+        coveredControls: covered,
+        partiallyCoveredControls: partial,
+        notCoveredControls: notCovered,
+        notApplicableControls: notApplicable,
+        coveragePercentage: String(coveragePercentage),
+        gapDetails,
+        prioritizedActions: gapDetails.slice(0, 10).map((g) => ({
+          action: g.recommendation,
+          priority: g.status === "not_covered" ? "high" : "medium",
+          effort: "medium",
+          impact: "high",
+        })),
+        riskExposure,
+        createdBy: ctx.userId,
+      })
+      .returning();
     return row;
   });
 
@@ -78,7 +120,13 @@ export async function GET(req: Request) {
 
   const where = and(...conditions);
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(frameworkGapAnalysis).where(where).orderBy(desc(frameworkGapAnalysis.analysisDate)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(frameworkGapAnalysis)
+      .where(where)
+      .orderBy(desc(frameworkGapAnalysis.analysisDate))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(frameworkGapAnalysis).where(where),
   ]);
   return paginatedResponse(items, total, page, limit);

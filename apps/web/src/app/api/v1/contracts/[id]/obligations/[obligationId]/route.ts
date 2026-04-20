@@ -1,5 +1,8 @@
 import { db, contract, contractObligation } from "@grc/db";
-import { updateObligationSchema, obligationStatusTransitionSchema } from "@grc/shared";
+import {
+  updateObligationSchema,
+  obligationStatusTransitionSchema,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -9,7 +12,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; obligationId: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("contract", ctx.orgId, req.method);
@@ -21,7 +29,13 @@ export async function PUT(
   const [c] = await db
     .select({ id: contract.id })
     .from(contract)
-    .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)));
+    .where(
+      and(
+        eq(contract.id, id),
+        eq(contract.orgId, ctx.orgId),
+        isNull(contract.deletedAt),
+      ),
+    );
   if (!c) {
     return Response.json({ error: "Contract not found" }, { status: 404 });
   }
@@ -38,7 +52,8 @@ export async function PUT(
       );
     }
 
-    const completedAt = parsed.data.status === "completed" ? new Date() : undefined;
+    const completedAt =
+      parsed.data.status === "completed" ? new Date() : undefined;
 
     const [updated] = await withAuditContext(ctx, async (tx) =>
       tx

@@ -19,25 +19,37 @@ describe("classifyGpaiSystemicRisk", () => {
   };
 
   it("systemic by compute threshold (10^25)", () => {
-    const r = classifyGpaiSystemicRisk({ ...baseline, trainingComputeFlops: 2e25 });
+    const r = classifyGpaiSystemicRisk({
+      ...baseline,
+      trainingComputeFlops: 2e25,
+    });
     expect(r.isSystemic).toBe(true);
     expect(r.tierLevel).toBe("systemic");
     expect(r.triggers.some((t) => t.includes("training_compute"))).toBe(true);
   });
 
   it("systemic by commission designation", () => {
-    const r = classifyGpaiSystemicRisk({ ...baseline, commissionDesignated: true });
+    const r = classifyGpaiSystemicRisk({
+      ...baseline,
+      commissionDesignated: true,
+    });
     expect(r.isSystemic).toBe(true);
     expect(r.triggers).toContain("commission_designation");
   });
 
   it("systemic by high-impact capabilities", () => {
-    const r = classifyGpaiSystemicRisk({ ...baseline, hasHighImpactCapabilities: true });
+    const r = classifyGpaiSystemicRisk({
+      ...baseline,
+      hasHighImpactCapabilities: true,
+    });
     expect(r.isSystemic).toBe(true);
   });
 
   it("high_capability by near-compute (10^24)", () => {
-    const r = classifyGpaiSystemicRisk({ ...baseline, trainingComputeFlops: 5e24 });
+    const r = classifyGpaiSystemicRisk({
+      ...baseline,
+      trainingComputeFlops: 5e24,
+    });
     expect(r.isSystemic).toBe(false);
     expect(r.tierLevel).toBe("high_capability");
   });
@@ -121,7 +133,10 @@ describe("assessGpaiObligations", () => {
   });
 
   it("missing training data summary blocks", () => {
-    const r = assessGpaiObligations({ ...standardCompliant, hasTrainingDataSummary: false });
+    const r = assessGpaiObligations({
+      ...standardCompliant,
+      hasTrainingDataSummary: false,
+    });
     expect(r.isFullyCompliant).toBe(false);
     expect(r.missing).toContain("training_data_summary");
   });
@@ -161,16 +176,25 @@ describe("computeAnnualReport", () => {
   it("unacceptable-risk system = critical finding", () => {
     const r = computeAnnualReport({
       ...healthy,
-      systems: { ...healthy.systems, byRisk: { ...healthy.systems.byRisk, unacceptable: 1 } },
+      systems: {
+        ...healthy.systems,
+        byRisk: { ...healthy.systems.byRisk, unacceptable: 1 },
+      },
     });
     expect(r.readyForSubmission).toBe(false);
-    expect(r.criticalFindings.some((c) => c.includes("unacceptable"))).toBe(true);
+    expect(r.criticalFindings.some((c) => c.includes("unacceptable"))).toBe(
+      true,
+    );
   });
 
   it("overdue notifications = critical finding", () => {
     const r = computeAnnualReport({
       ...healthy,
-      incidents: { ...healthy.incidents, overdueNotifications: 2, seriousIncidents: 2 },
+      incidents: {
+        ...healthy.incidents,
+        overdueNotifications: 2,
+        seriousIncidents: 2,
+      },
     });
     expect(r.readyForSubmission).toBe(false);
     expect(r.criticalFindings.some((c) => c.includes("Art. 73"))).toBe(true);

@@ -2,7 +2,12 @@ import { db, bcExercise } from "@grc/db";
 import { createBcExerciseSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc, ilike, or, inArray } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/exercises — Create exercise
@@ -59,26 +64,46 @@ export async function GET(req: Request) {
 
   const statusParam = searchParams.get("status");
   if (statusParam) {
-    const statuses = statusParam.split(",") as Array<"planned" | "preparation" | "executing" | "evaluation" | "completed" | "cancelled">;
+    const statuses = statusParam.split(",") as Array<
+      | "planned"
+      | "preparation"
+      | "executing"
+      | "evaluation"
+      | "completed"
+      | "cancelled"
+    >;
     conditions.push(inArray(bcExercise.status, statuses));
   }
 
   const typeParam = searchParams.get("type");
   if (typeParam) {
-    const types = typeParam.split(",") as Array<"tabletop" | "walkthrough" | "functional" | "full_simulation">;
+    const types = typeParam.split(",") as Array<
+      "tabletop" | "walkthrough" | "functional" | "full_simulation"
+    >;
     conditions.push(inArray(bcExercise.exerciseType, types));
   }
 
   const search = searchParams.get("search");
   if (search) {
     const pattern = `%${search}%`;
-    conditions.push(or(ilike(bcExercise.title, pattern), ilike(bcExercise.description, pattern))!);
+    conditions.push(
+      or(
+        ilike(bcExercise.title, pattern),
+        ilike(bcExercise.description, pattern),
+      )!,
+    );
   }
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(bcExercise).where(where).orderBy(desc(bcExercise.plannedDate)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(bcExercise)
+      .where(where)
+      .orderBy(desc(bcExercise.plannedDate))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(bcExercise).where(where),
   ]);
 

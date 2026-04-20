@@ -129,7 +129,12 @@ function PlaybooksInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchPlaybooks} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchPlaybooks}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => router.push("/isms/playbooks/new")}>
@@ -141,7 +146,10 @@ function PlaybooksInner() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -206,10 +214,16 @@ function PlaybooksInner() {
                   <div className="flex items-center gap-4 text-xs text-gray-400">
                     <span>
                       <Shield size={12} className="inline mr-1" />
-                      {t(`severities.${pb.triggerMinSeverity as "significant"}`)}
+                      {t(
+                        `severities.${pb.triggerMinSeverity as "significant"}`,
+                      )}
                     </span>
-                    <span>{pb.phaseCount} {t("phases")}</span>
-                    <span>{pb.taskCount} {t("tasks")}</span>
+                    <span>
+                      {pb.phaseCount} {t("phases")}
+                    </span>
+                    <span>
+                      {pb.taskCount} {t("tasks")}
+                    </span>
                     {pb.estimatedDurationHours && (
                       <span>{pb.estimatedDurationHours}h</span>
                     )}

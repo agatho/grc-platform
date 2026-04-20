@@ -31,7 +31,9 @@ export function ModuleHelpButton() {
         onClick={() => setOpen(true)}
         className="p-1.5 rounded-md text-gray-500 hover:bg-gray-100 hover:text-blue-700"
         title={locale === "de" ? "Modul-Handbuch" : "Module handbook"}
-        aria-label={locale === "de" ? "Modul-Handbuch öffnen" : "Open module handbook"}
+        aria-label={
+          locale === "de" ? "Modul-Handbuch öffnen" : "Open module handbook"
+        }
       >
         <HelpCircle size={18} />
       </button>
@@ -81,9 +83,7 @@ function HandbookSheet({
               <BookOpen size={18} />
             </div>
             <div>
-              <h2 className="text-base font-semibold text-gray-900">
-                {title}
-              </h2>
+              <h2 className="text-base font-semibold text-gray-900">{title}</h2>
               <p className="mt-0.5 text-xs text-gray-500">{tagline}</p>
             </div>
           </div>

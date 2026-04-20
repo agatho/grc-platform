@@ -30,7 +30,11 @@ export async function GET(req: Request) {
         sql`${controlMaturity.targetMaturity} - ${controlMaturity.currentMaturity} > 0`,
       ),
     )
-    .orderBy(desc(sql`${controlMaturity.targetMaturity} - ${controlMaturity.currentMaturity}`));
+    .orderBy(
+      desc(
+        sql`${controlMaturity.targetMaturity} - ${controlMaturity.currentMaturity}`,
+      ),
+    );
 
   // Deduplicate: keep latest per control
   const seen = new Set<string>();
@@ -51,7 +55,9 @@ export async function GET(req: Request) {
     .where(eq(controlMaturity.orgId, ctx.orgId));
 
   const stats = allLatest[0];
-  const avgGap = Number(((stats?.avgTarget ?? 0) - (stats?.avgCurrent ?? 0)).toFixed(1));
+  const avgGap = Number(
+    ((stats?.avgTarget ?? 0) - (stats?.avgCurrent ?? 0)).toFixed(1),
+  );
 
   return Response.json({
     data: deduplicated,

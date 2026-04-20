@@ -32,7 +32,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
     const orgId = String(org.id);
 
     try {
-      await db.execute(sql`SELECT set_config('app.current_org_id', ${orgId}, false)`);
+      await db.execute(
+        sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
+      );
 
       // Check DSR deadlines that are overdue and still open
       const overdueDsrs = await db.execute(sql`
@@ -54,7 +56,8 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
               entityType: "dsr",
               entityId: String(dsr.id),
               title: `Overdue: ${String(dsr.title)}`,
-              message: "This DSR has passed its deadline and is still open. Immediate action is required.",
+              message:
+                "This DSR has passed its deadline and is still open. Immediate action is required.",
               channel: "both",
               templateKey: "calendar_overdue_escalation",
               createdAt: now,
@@ -62,7 +65,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
             });
             escalationsSent++;
           } catch (err) {
-            errors.push(`DSR notification ${dsr.id}: ${err instanceof Error ? err.message : String(err)}`);
+            errors.push(
+              `DSR notification ${dsr.id}: ${err instanceof Error ? err.message : String(err)}`,
+            );
           }
         }
       }
@@ -78,7 +83,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
           AND db.deleted_at IS NULL
       `);
 
-      for (const breach of (overdueBreaches ?? []) as Array<Record<string, unknown>>) {
+      for (const breach of (overdueBreaches ?? []) as Array<
+        Record<string, unknown>
+      >) {
         overdueFound++;
         if (breach.assignee_id) {
           try {
@@ -89,7 +96,8 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
               entityType: "data_breach",
               entityId: String(breach.id),
               title: `URGENT Overdue: ${String(breach.title)}`,
-              message: "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
+              message:
+                "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
               channel: "both",
               templateKey: "calendar_overdue_escalation",
               createdAt: now,
@@ -97,7 +105,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
             });
             escalationsSent++;
           } catch (err) {
-            errors.push(`Breach notification ${breach.id}: ${err instanceof Error ? err.message : String(err)}`);
+            errors.push(
+              `Breach notification ${breach.id}: ${err instanceof Error ? err.message : String(err)}`,
+            );
           }
         }
       }
@@ -113,7 +123,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
           AND f.deleted_at IS NULL
       `);
 
-      for (const finding of (overdueFindings ?? []) as Array<Record<string, unknown>>) {
+      for (const finding of (overdueFindings ?? []) as Array<
+        Record<string, unknown>
+      >) {
         overdueFound++;
         if (finding.assignee_id) {
           try {
@@ -124,7 +136,8 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
               entityType: "finding",
               entityId: String(finding.id),
               title: `Overdue: ${String(finding.title)}`,
-              message: "This finding has passed its remediation due date and is still open.",
+              message:
+                "This finding has passed its remediation due date and is still open.",
               channel: "both",
               templateKey: "calendar_overdue_escalation",
               createdAt: now,
@@ -132,7 +145,9 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
             });
             escalationsSent++;
           } catch (err) {
-            errors.push(`Finding notification ${finding.id}: ${err instanceof Error ? err.message : String(err)}`);
+            errors.push(
+              `Finding notification ${finding.id}: ${err instanceof Error ? err.message : String(err)}`,
+            );
           }
         }
       }

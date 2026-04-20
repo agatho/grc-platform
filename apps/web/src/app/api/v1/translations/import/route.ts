@@ -52,14 +52,15 @@ async function handleXliffImport(
   try {
     doc = parseXliff(body.data.content);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to parse XLIFF";
+    const message =
+      err instanceof Error ? err.message : "Failed to parse XLIFF";
     return Response.json({ error: message }, { status: 422 });
   }
 
   const targetLanguage = doc.targetLanguage;
   let imported = 0;
   let skipped = 0;
-  let conflicts = 0;
+  const conflicts = 0;
   const errors: Array<{ unitId: string; error: string }> = [];
 
   if (body.data.dryRun) {
@@ -106,28 +107,44 @@ async function handleXliffImport(
 
       try {
         // Fetch current field value
-        const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-          ? ""
-          : `AND org_id = '${ctx.orgId}'`;
+        const orgFilter =
+          tableName === "risk_catalog_entry" ||
+          tableName === "control_catalog_entry"
+            ? ""
+            : `AND org_id = '${ctx.orgId}'`;
 
-        const existingResult = await tx.execute(sql.raw(
-          `SELECT "${unit.field}" FROM "${tableName}" WHERE id = '${unit.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-        ));
+        const existingResult = await tx.execute(
+          sql.raw(
+            `SELECT "${unit.field}" FROM "${tableName}" WHERE id = '${unit.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
+          ),
+        );
 
-        const existingRows = existingResult as unknown as Record<string, unknown>[];
+        const existingRows = existingResult as unknown as Record<
+          string,
+          unknown
+        >[];
         if (!existingRows || existingRows.length === 0) {
           errors.push({ unitId: unit.id, error: "Entity not found" });
           continue;
         }
 
-        const currentField = existingRows[0][unit.field] as Record<string, string> | null;
+        const currentField = existingRows[0][unit.field] as Record<
+          string,
+          string
+        > | null;
         const sanitized = sanitizeTranslation(unit.target);
-        const merged = mergeTranslation(currentField, targetLanguage, sanitized);
+        const merged = mergeTranslation(
+          currentField,
+          targetLanguage,
+          sanitized,
+        );
 
         // Update entity field
-        await tx.execute(sql.raw(
-          `UPDATE "${tableName}" SET "${unit.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${unit.entityId}' ${orgFilter}`,
-        ));
+        await tx.execute(
+          sql.raw(
+            `UPDATE "${tableName}" SET "${unit.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${unit.entityId}' ${orgFilter}`,
+          ),
+        );
 
         // Upsert translation_status
         const hash = computeSourceHash(sanitized);
@@ -245,27 +262,43 @@ async function handleCsvImport(
       }
 
       try {
-        const orgFilter = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry"
-          ? ""
-          : `AND org_id = '${ctx.orgId}'`;
+        const orgFilter =
+          tableName === "risk_catalog_entry" ||
+          tableName === "control_catalog_entry"
+            ? ""
+            : `AND org_id = '${ctx.orgId}'`;
 
-        const existingResult = await tx.execute(sql.raw(
-          `SELECT "${row.field}" FROM "${tableName}" WHERE id = '${row.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
-        ));
+        const existingResult = await tx.execute(
+          sql.raw(
+            `SELECT "${row.field}" FROM "${tableName}" WHERE id = '${row.entityId}' ${orgFilter} AND deleted_at IS NULL LIMIT 1`,
+          ),
+        );
 
-        const existingRows = existingResult as unknown as Record<string, unknown>[];
+        const existingRows = existingResult as unknown as Record<
+          string,
+          unknown
+        >[];
         if (!existingRows || existingRows.length === 0) {
           errors.push({ unitId: row.id, error: "Entity not found" });
           continue;
         }
 
-        const currentField = existingRows[0][row.field] as Record<string, string> | null;
+        const currentField = existingRows[0][row.field] as Record<
+          string,
+          string
+        > | null;
         const sanitized = sanitizeTranslation(row.target);
-        const merged = mergeTranslation(currentField, targetLanguage, sanitized);
+        const merged = mergeTranslation(
+          currentField,
+          targetLanguage,
+          sanitized,
+        );
 
-        await tx.execute(sql.raw(
-          `UPDATE "${tableName}" SET "${row.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${row.entityId}' ${orgFilter}`,
-        ));
+        await tx.execute(
+          sql.raw(
+            `UPDATE "${tableName}" SET "${row.field}" = '${JSON.stringify(merged).replace(/'/g, "''")}'::jsonb, updated_at = now(), updated_by = '${ctx.userId}' WHERE id = '${row.entityId}' ${orgFilter}`,
+          ),
+        );
 
         const hash = computeSourceHash(sanitized);
         await tx

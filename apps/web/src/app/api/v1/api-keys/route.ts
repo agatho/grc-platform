@@ -4,7 +4,12 @@ import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { randomBytes, createHash } from "crypto";
 
-function generateApiKey(): { key: string; hash: string; prefix: string; last4: string } {
+function generateApiKey(): {
+  key: string;
+  hash: string;
+  prefix: string;
+  last4: string;
+} {
   const raw = randomBytes(32).toString("hex");
   const prefix = `grc_${raw.slice(0, 8)}`;
   const key = `${prefix}_${raw.slice(8)}`;
@@ -37,7 +42,9 @@ export async function POST(req: Request) {
       keyPrefix: prefix,
       keyHash: hash,
       keyLast4: last4,
-      expiresAt: body.data.expiresAt ? new Date(body.data.expiresAt) : undefined,
+      expiresAt: body.data.expiresAt
+        ? new Date(body.data.expiresAt)
+        : undefined,
       rateLimitPerMinute: body.data.rateLimitPerMinute,
       rateLimitPerDay: body.data.rateLimitPerDay,
       allowedIps: body.data.allowedIps,

@@ -47,7 +47,10 @@ export async function POST(req: Request) {
     .select()
     .from(processTable)
     .where(
-      and(eq(processTable.id, parsed.data.processId), eq(processTable.orgId, ctx.orgId)),
+      and(
+        eq(processTable.id, parsed.data.processId),
+        eq(processTable.orgId, ctx.orgId),
+      ),
     );
   if (!proc) {
     return Response.json(
@@ -63,12 +66,7 @@ export async function POST(req: Request) {
   const existingRopa = await db
     .select({ id: ropaEntry.id, status: ropaEntry.status })
     .from(ropaEntry)
-    .where(
-      and(
-        eq(ropaEntry.orgId, ctx.orgId),
-        eq(ropaEntry.title, proc.name),
-      ),
-    );
+    .where(and(eq(ropaEntry.orgId, ctx.orgId), eq(ropaEntry.title, proc.name)));
 
   if (existingRopa.length > 0) {
     return Response.json(
@@ -88,7 +86,8 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         title: proc.name,
-        purpose: proc.description ?? `Processing-Activity fuer Prozess "${proc.name}"`,
+        purpose:
+          proc.description ?? `Processing-Activity fuer Prozess "${proc.name}"`,
         legalBasis: parsed.data.legalBasis,
         legalBasisDetail: parsed.data.legalBasisDetail ?? null,
         processingDescription: proc.description ?? null,

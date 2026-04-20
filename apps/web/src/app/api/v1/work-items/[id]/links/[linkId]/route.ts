@@ -54,9 +54,7 @@ export async function DELETE(
     }
 
     await withAuditContext(ctx, async (tx) => {
-      await tx
-        .delete(workItemLink)
-        .where(eq(workItemLink.id, linkId));
+      await tx.delete(workItemLink).where(eq(workItemLink.id, linkId));
     });
 
     return Response.json({ data: { id: linkId, deleted: true } });
@@ -75,9 +73,7 @@ export async function DELETE(
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(workItemLink)
-      .where(eq(workItemLink.id, linkId));
+    await tx.delete(workItemLink).where(eq(workItemLink.id, linkId));
   });
 
   return Response.json({ data: { id: linkId, deleted: true } });

@@ -52,10 +52,12 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(deviceRegistration)
-    .where(and(
-      eq(deviceRegistration.orgId, ctx.orgId),
-      eq(deviceRegistration.userId, ctx.userId),
-    ))
+    .where(
+      and(
+        eq(deviceRegistration.orgId, ctx.orgId),
+        eq(deviceRegistration.userId, ctx.userId),
+      ),
+    )
     .orderBy(desc(deviceRegistration.lastSeenAt));
 
   return Response.json({ data: rows });

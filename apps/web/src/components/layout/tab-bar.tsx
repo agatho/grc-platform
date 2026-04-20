@@ -114,9 +114,7 @@ export function TabBar() {
           isActive={tab.id === activeTab}
           onClose={() => closeTab(tab.id)}
           onNavigate={() => router.push(tab.href)}
-          onPinToggle={() =>
-            tab.pinned ? unpinTab(tab.id) : pinTab(tab.id)
-          }
+          onPinToggle={() => (tab.pinned ? unpinTab(tab.id) : pinTab(tab.id))}
           t={t}
         />
       ))}

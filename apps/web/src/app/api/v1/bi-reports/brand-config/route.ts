@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("reporting", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const [row] = await db.select().from(biBrandConfig).where(eq(biBrandConfig.orgId, ctx.orgId));
+  const [row] = await db
+    .select()
+    .from(biBrandConfig)
+    .where(eq(biBrandConfig.orgId, ctx.orgId));
   return Response.json({ data: row ?? null });
 }
 
@@ -25,16 +28,24 @@ export async function PUT(req: Request) {
   const body = upsertBiBrandConfigSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [existing] = await tx.select({ id: biBrandConfig.id }).from(biBrandConfig)
+    const [existing] = await tx
+      .select({ id: biBrandConfig.id })
+      .from(biBrandConfig)
       .where(eq(biBrandConfig.orgId, ctx.orgId));
 
     if (existing) {
-      const [updated] = await tx.update(biBrandConfig).set({ ...body, updatedAt: new Date() })
-        .where(eq(biBrandConfig.orgId, ctx.orgId)).returning();
+      const [updated] = await tx
+        .update(biBrandConfig)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(biBrandConfig.orgId, ctx.orgId))
+        .returning();
       return updated;
     }
 
-    const [created] = await tx.insert(biBrandConfig).values({ orgId: ctx.orgId, ...body }).returning();
+    const [created] = await tx
+      .insert(biBrandConfig)
+      .values({ orgId: ctx.orgId, ...body })
+      .returning();
     return created;
   });
 

@@ -24,7 +24,9 @@ export function ReaderModeToggle({
         onClick={() => onToggle(false)}
         className={cn(
           "px-3 py-1.5 text-xs font-medium transition-colors",
-          !isReaderMode ? "bg-teal-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50",
+          !isReaderMode
+            ? "bg-teal-600 text-white"
+            : "bg-white text-gray-600 hover:bg-gray-50",
         )}
       >
         {labels?.fullView ?? "Full View"}
@@ -34,7 +36,9 @@ export function ReaderModeToggle({
         onClick={() => onToggle(true)}
         className={cn(
           "px-3 py-1.5 text-xs font-medium transition-colors border-l",
-          isReaderMode ? "bg-teal-600 text-white" : "bg-white text-gray-600 hover:bg-gray-50",
+          isReaderMode
+            ? "bg-teal-600 text-white"
+            : "bg-white text-gray-600 hover:bg-gray-50",
         )}
       >
         {labels?.readerView ?? "Reader View"}

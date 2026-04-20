@@ -38,7 +38,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [exercise] = await db
@@ -56,7 +59,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     .where(eq(bcExerciseFinding.exerciseId, id));
 
   // lessonsLearnedCount: bc_exercise.lessonsLearned Text-Feld, oder 0 wenn leer
-  const lessonsLearnedCount = exercise.lessonsLearned && exercise.lessonsLearned.trim().length > 0 ? 1 : 0;
+  const lessonsLearnedCount =
+    exercise.lessonsLearned && exercise.lessonsLearned.trim().length > 0
+      ? 1
+      : 0;
 
   const snapshot: ExerciseSnapshot = {
     status: exercise.status,

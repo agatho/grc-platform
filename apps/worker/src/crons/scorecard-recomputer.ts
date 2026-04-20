@@ -5,7 +5,10 @@ import { db, vendorScorecard, notification } from "@grc/db";
 import { classifyVendorTier, DEFAULT_SCORECARD_WEIGHTS } from "@grc/shared";
 import { eq, sql } from "drizzle-orm";
 
-interface ScorecardRecomputeResult { processed: number; tierChanges: number; }
+interface ScorecardRecomputeResult {
+  processed: number;
+  tierChanges: number;
+}
 
 export async function processScorecardRecomputer(): Promise<ScorecardRecomputeResult> {
   console.log(`[cron:scorecard-recomputer] Starting`);
@@ -14,7 +17,8 @@ export async function processScorecardRecomputer(): Promise<ScorecardRecomputeRe
   const scorecards = await db.select().from(vendorScorecard);
 
   for (const sc of scorecards) {
-    const weights = (sc.weights as Record<string, number>) || DEFAULT_SCORECARD_WEIGHTS;
+    const weights =
+      (sc.weights as Record<string, number>) || DEFAULT_SCORECARD_WEIGHTS;
     const dimensions = sc.dimensionScores as Record<string, number>;
 
     // Recompute weighted score
@@ -29,7 +33,8 @@ export async function processScorecardRecomputer(): Promise<ScorecardRecomputeRe
       tierChanges++;
     }
 
-    await db.update(vendorScorecard)
+    await db
+      .update(vendorScorecard)
       .set({
         overallScore,
         tier,
@@ -40,6 +45,8 @@ export async function processScorecardRecomputer(): Promise<ScorecardRecomputeRe
       .where(eq(vendorScorecard.id, sc.id));
   }
 
-  console.log(`[cron:scorecard-recomputer] Processed ${scorecards.length}, ${tierChanges} tier changes`);
+  console.log(
+    `[cron:scorecard-recomputer] Processed ${scorecards.length}, ${tierChanges} tier changes`,
+  );
   return { processed: scorecards.length, tierChanges };
 }

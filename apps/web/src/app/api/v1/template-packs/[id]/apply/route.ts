@@ -20,7 +20,10 @@ export async function POST(
     );
   }
 
-  const [pack] = await db.select().from(templatePack).where(eq(templatePack.id, id));
+  const [pack] = await db
+    .select()
+    .from(templatePack)
+    .where(eq(templatePack.id, id));
   if (!pack) {
     return Response.json({ error: "Template pack not found" }, { status: 404 });
   }
@@ -35,10 +38,14 @@ export async function POST(
     .insert(importJob)
     .values({
       orgId: ctx.orgId,
+      entityType: "template_pack",
       source: "template_pack",
+      fileName: `template-pack-${id}`,
+      fileSize: 0,
+      mimeType: "application/x-template-pack",
       templatePackId: id,
       totalItems: items.length,
-      mapping: body.data.options as Record<string, unknown>,
+      columnMapping: body.data.options as Record<string, unknown>,
       status: "pending",
       createdBy: ctx.userId,
     })

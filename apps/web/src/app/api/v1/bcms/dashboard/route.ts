@@ -1,4 +1,12 @@
-import { db, biaAssessment, biaProcessImpact, bcp, crisisScenario, bcExercise, bcExerciseFinding } from "@grc/db";
+import {
+  db,
+  biaAssessment,
+  biaProcessImpact,
+  bcp,
+  crisisScenario,
+  bcExercise,
+  bcExerciseFinding,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -30,7 +38,12 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(biaProcessImpact)
-      .where(and(eq(biaProcessImpact.orgId, orgId), eq(biaProcessImpact.isEssential, true))),
+      .where(
+        and(
+          eq(biaProcessImpact.orgId, orgId),
+          eq(biaProcessImpact.isEssential, true),
+        ),
+      ),
     // Total BIA impacts
     db
       .select({ value: count() })
@@ -40,12 +53,23 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(biaProcessImpact)
-      .where(and(eq(biaProcessImpact.orgId, orgId), sql`${biaProcessImpact.rtoHours} IS NOT NULL`)),
+      .where(
+        and(
+          eq(biaProcessImpact.orgId, orgId),
+          sql`${biaProcessImpact.rtoHours} IS NOT NULL`,
+        ),
+      ),
     // Active BCPs (published)
     db
       .select({ value: count() })
       .from(bcp)
-      .where(and(eq(bcp.orgId, orgId), eq(bcp.status, "published"), isNull(bcp.deletedAt))),
+      .where(
+        and(
+          eq(bcp.orgId, orgId),
+          eq(bcp.status, "published"),
+          isNull(bcp.deletedAt),
+        ),
+      ),
     // Total crisis scenarios
     db
       .select({ value: count() })
@@ -55,37 +79,62 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(crisisScenario)
-      .where(and(eq(crisisScenario.orgId, orgId), eq(crisisScenario.status, "activated"))),
+      .where(
+        and(
+          eq(crisisScenario.orgId, orgId),
+          eq(crisisScenario.status, "activated"),
+        ),
+      ),
     // Completed exercises
     db
       .select({ value: count() })
       .from(bcExercise)
-      .where(and(eq(bcExercise.orgId, orgId), eq(bcExercise.status, "completed"))),
+      .where(
+        and(eq(bcExercise.orgId, orgId), eq(bcExercise.status, "completed")),
+      ),
     // Planned exercises
     db
       .select({ value: count() })
       .from(bcExercise)
-      .where(and(eq(bcExercise.orgId, orgId), eq(bcExercise.status, "planned"))),
+      .where(
+        and(eq(bcExercise.orgId, orgId), eq(bcExercise.status, "planned")),
+      ),
     // Open exercise findings (no linked finding)
     db
       .select({ value: count() })
       .from(bcExerciseFinding)
-      .where(and(eq(bcExerciseFinding.orgId, orgId), isNull(bcExerciseFinding.findingId))),
+      .where(
+        and(
+          eq(bcExerciseFinding.orgId, orgId),
+          isNull(bcExerciseFinding.findingId),
+        ),
+      ),
     // Average RTO
     db
-      .select({ value: sql<string>`ROUND(AVG(${biaProcessImpact.rtoHours}), 1)` })
+      .select({
+        value: sql<string>`ROUND(AVG(${biaProcessImpact.rtoHours}), 1)`,
+      })
       .from(biaProcessImpact)
-      .where(and(eq(biaProcessImpact.orgId, orgId), sql`${biaProcessImpact.rtoHours} IS NOT NULL`)),
+      .where(
+        and(
+          eq(biaProcessImpact.orgId, orgId),
+          sql`${biaProcessImpact.rtoHours} IS NOT NULL`,
+        ),
+      ),
   ]);
 
   const totalImpacts = totalBiaImpacts[0].value;
   const assessed = assessedBiaImpacts[0].value;
-  const biaCompletionPct = totalImpacts > 0 ? Math.round((assessed / totalImpacts) * 100) : 0;
+  const biaCompletionPct =
+    totalImpacts > 0 ? Math.round((assessed / totalImpacts) * 100) : 0;
 
   // BCP coverage: essential processes covered by a published BCP
   const essentialCount = essentialProcesses[0].value;
   const publishedBcpCount = activeBcps[0].value;
-  const bcpCoveragePct = essentialCount > 0 ? Math.min(100, Math.round((publishedBcpCount / essentialCount) * 100)) : 0;
+  const bcpCoveragePct =
+    essentialCount > 0
+      ? Math.min(100, Math.round((publishedBcpCount / essentialCount) * 100))
+      : 0;
 
   const dashboard = {
     essentialProcessCount: essentialCount,

@@ -8,7 +8,9 @@ export async function processEamLifecycleMonitor(): Promise<{
   approachingEol: number;
   notificationsSent: number;
 }> {
-  console.log("[eam-lifecycle-monitor] Checking for approaching EOL applications");
+  console.log(
+    "[eam-lifecycle-monitor] Checking for approaching EOL applications",
+  );
 
   const thresholds = [90, 60, 30]; // days before EOL
   let totalApproaching = 0;
@@ -26,10 +28,16 @@ export async function processEamLifecycleMonitor(): Promise<{
         owner: architectureElement.owner,
       })
       .from(applicationPortfolio)
-      .innerJoin(architectureElement, eq(applicationPortfolio.elementId, architectureElement.id))
+      .innerJoin(
+        architectureElement,
+        eq(applicationPortfolio.elementId, architectureElement.id),
+      )
       .where(
         and(
-          lte(applicationPortfolio.plannedEol, cutoff.toISOString().split("T")[0]!),
+          lte(
+            applicationPortfolio.plannedEol,
+            cutoff.toISOString().split("T")[0]!,
+          ),
           eq(applicationPortfolio.lifecycleStatus, "active"),
         ),
       );
@@ -37,11 +45,15 @@ export async function processEamLifecycleMonitor(): Promise<{
     totalApproaching += approaching.length;
 
     for (const app of approaching) {
-      console.log(`[eam-lifecycle-monitor] ${app.name} EOL in ≤${days} days (${app.eol})`);
+      console.log(
+        `[eam-lifecycle-monitor] ${app.name} EOL in ≤${days} days (${app.eol})`,
+      );
       notificationsSent++;
     }
   }
 
-  console.log(`[eam-lifecycle-monitor] Found ${totalApproaching} approaching EOL, sent ${notificationsSent} notifications`);
+  console.log(
+    `[eam-lifecycle-monitor] Found ${totalApproaching} approaching EOL, sent ${notificationsSent} notifications`,
+  );
   return { approachingEol: totalApproaching, notificationsSent };
 }

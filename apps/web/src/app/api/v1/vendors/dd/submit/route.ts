@@ -18,15 +18,24 @@ export async function POST(req: Request) {
     .where(eq(vendorDueDiligence.accessToken, token));
 
   if (!dd) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 404 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 404 },
+    );
   }
 
   if (dd.status === "completed") {
-    return Response.json({ error: "Questionnaire already submitted" }, { status: 409 });
+    return Response.json(
+      { error: "Questionnaire already submitted" },
+      { status: 409 },
+    );
   }
 
   if (dd.status === "expired") {
-    return Response.json({ error: "Questionnaire has expired" }, { status: 410 });
+    return Response.json(
+      { error: "Questionnaire has expired" },
+      { status: 410 },
+    );
   }
 
   const body = completeDueDiligenceSchema.safeParse(await req.json());
@@ -55,6 +64,10 @@ export async function POST(req: Request) {
     .returning();
 
   return Response.json({
-    data: { id: updated.id, status: updated.status, completedAt: updated.completedAt },
+    data: {
+      id: updated.id,
+      status: updated.status,
+      completedAt: updated.completedAt,
+    },
   });
 }

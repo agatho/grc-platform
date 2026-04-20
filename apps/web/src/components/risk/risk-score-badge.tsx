@@ -17,11 +17,19 @@ interface RiskScoreBadgeProps {
 // Score -> color & label mapping (matches heat map ranges)
 // ---------------------------------------------------------------------------
 
-function getScoreConfig(score: number): { bg: string; text: string; labelKey: string } {
-  if (score <= 4) return { bg: "bg-emerald-100", text: "text-emerald-800", labelKey: "low" };
-  if (score <= 8) return { bg: "bg-yellow-100", text: "text-yellow-800", labelKey: "medium" };
-  if (score <= 14) return { bg: "bg-orange-100", text: "text-orange-800", labelKey: "high" };
-  if (score <= 19) return { bg: "bg-red-100", text: "text-red-800", labelKey: "veryHigh" };
+function getScoreConfig(score: number): {
+  bg: string;
+  text: string;
+  labelKey: string;
+} {
+  if (score <= 4)
+    return { bg: "bg-emerald-100", text: "text-emerald-800", labelKey: "low" };
+  if (score <= 8)
+    return { bg: "bg-yellow-100", text: "text-yellow-800", labelKey: "medium" };
+  if (score <= 14)
+    return { bg: "bg-orange-100", text: "text-orange-800", labelKey: "high" };
+  if (score <= 19)
+    return { bg: "bg-red-100", text: "text-red-800", labelKey: "veryHigh" };
   return { bg: "bg-purple-100", text: "text-purple-800", labelKey: "critical" };
 }
 

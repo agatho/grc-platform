@@ -99,7 +99,8 @@ export class DashboardCache {
     const total = this.metrics.hits + this.metrics.misses;
     return {
       ...this.metrics,
-      hitRate: total > 0 ? Math.round((this.metrics.hits / total) * 10000) / 100 : 0,
+      hitRate:
+        total > 0 ? Math.round((this.metrics.hits / total) * 10000) / 100 : 0,
     };
   }
 
@@ -123,7 +124,8 @@ export class DashboardCache {
       const info = await this.adapter.info("memory");
       const match = info.match(/used_memory:(\d+)/);
       if (match) {
-        memoryUsedMb = Math.round((parseInt(match[1], 10) / 1024 / 1024) * 100) / 100;
+        memoryUsedMb =
+          Math.round((parseInt(match[1], 10) / 1024 / 1024) * 100) / 100;
       }
     } catch {
       // Redis info may not be available in all setups

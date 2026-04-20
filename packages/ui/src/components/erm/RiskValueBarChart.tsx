@@ -16,7 +16,10 @@ interface RiskValueBarChartProps {
   labels?: Record<string, string>;
 }
 
-const RANGE_CONFIG: Record<string, { label: string; color: string; order: number }> = {
+const RANGE_CONFIG: Record<
+  string,
+  { label: string; color: string; order: number }
+> = {
   critical: { label: "81-100", color: "bg-red-500", order: 0 },
   high: { label: "61-80", color: "bg-orange-400", order: 1 },
   medium: { label: "41-60", color: "bg-yellow-400", order: 2 },
@@ -41,7 +44,11 @@ export function RiskValueBarChart({
   return (
     <div className="space-y-2">
       {sorted.map((item) => {
-        const config = RANGE_CONFIG[item.range] ?? { label: item.range, color: "bg-gray-400", order: 99 };
+        const config = RANGE_CONFIG[item.range] ?? {
+          label: item.range,
+          color: "bg-gray-400",
+          order: 99,
+        };
         const widthPct = Math.max(4, (Number(item.count) / maxCount) * 100);
 
         return (
@@ -56,7 +63,10 @@ export function RiskValueBarChart({
             </span>
             <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
               <div
-                className={cn("h-full rounded-full transition-all", config.color)}
+                className={cn(
+                  "h-full rounded-full transition-all",
+                  config.color,
+                )}
                 style={{ width: `${widthPct}%` }}
               />
             </div>

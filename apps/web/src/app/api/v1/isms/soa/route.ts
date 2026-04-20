@@ -1,7 +1,12 @@
 import { db, soaEntry, catalogEntry, controlCatalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/soa
 export async function GET(req: Request) {
@@ -16,14 +21,29 @@ export async function GET(req: Request) {
   const implementationFilter = searchParams.get("implementation");
   const search = searchParams.get("search");
 
-  const conditions: ReturnType<typeof eq>[] = [
-    eq(soaEntry.orgId, ctx.orgId),
-  ];
+  const conditions: ReturnType<typeof eq>[] = [eq(soaEntry.orgId, ctx.orgId)];
   if (applicabilityFilter) {
-    conditions.push(eq(soaEntry.applicability, applicabilityFilter as "applicable" | "not_applicable" | "partially_applicable"));
+    conditions.push(
+      eq(
+        soaEntry.applicability,
+        applicabilityFilter as
+          | "applicable"
+          | "not_applicable"
+          | "partially_applicable",
+      ),
+    );
   }
   if (implementationFilter) {
-    conditions.push(eq(soaEntry.implementation, implementationFilter as "implemented" | "partially_implemented" | "planned" | "not_implemented"));
+    conditions.push(
+      eq(
+        soaEntry.implementation,
+        implementationFilter as
+          | "implemented"
+          | "partially_implemented"
+          | "planned"
+          | "not_implemented",
+      ),
+    );
   }
 
   // Join with catalog entries for search and display
@@ -46,11 +66,14 @@ export async function GET(req: Request) {
       catalogTitleEn: controlCatalogEntry.titleEn,
     })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id));
+    .leftJoin(
+      controlCatalogEntry,
+      eq(soaEntry.catalogEntryId, controlCatalogEntry.id),
+    );
 
   if (search) {
     conditions.push(
-      sql`(${controlCatalogEntry.titleDe} ilike ${'%' + search + '%'} or ${controlCatalogEntry.titleEn} ilike ${'%' + search + '%'} or ${controlCatalogEntry.code} ilike ${'%' + search + '%'})`,
+      sql`(${controlCatalogEntry.titleDe} ilike ${"%" + search + "%"} or ${controlCatalogEntry.titleEn} ilike ${"%" + search + "%"} or ${controlCatalogEntry.code} ilike ${"%" + search + "%"})`,
     );
   }
 
@@ -63,7 +86,10 @@ export async function GET(req: Request) {
   const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(soaEntry)
-    .leftJoin(controlCatalogEntry, eq(soaEntry.catalogEntryId, controlCatalogEntry.id))
+    .leftJoin(
+      controlCatalogEntry,
+      eq(soaEntry.catalogEntryId, controlCatalogEntry.id),
+    )
     .where(and(...conditions));
 
   // Stats
@@ -82,9 +108,10 @@ export async function GET(req: Request) {
     .where(eq(soaEntry.orgId, ctx.orgId));
 
   const applicableCount = stats.applicable + stats.partiallyApplicable;
-  const implementationPct = applicableCount > 0
-    ? Math.round((stats.implemented / applicableCount) * 100)
-    : 0;
+  const implementationPct =
+    applicableCount > 0
+      ? Math.round((stats.implemented / applicableCount) * 100)
+      : 0;
 
   return Response.json({
     data: rows,

@@ -25,10 +25,16 @@ export async function processEvidenceReviewJobs(): Promise<{
       // Mark as running
       await db
         .update(evidenceReviewJob)
-        .set({ status: "running", startedAt: new Date(), updatedAt: new Date() })
+        .set({
+          status: "running",
+          startedAt: new Date(),
+          updatedAt: new Date(),
+        })
         .where(eq(evidenceReviewJob.id, job.id));
 
-      console.log(`[evidence-review-processor] Processing job ${job.name} (${job.id})`);
+      console.log(
+        `[evidence-review-processor] Processing job ${job.name} (${job.id})`,
+      );
 
       // In production: fetch evidence, classify via AI, identify gaps
       // For now, mark as completed
@@ -57,6 +63,8 @@ export async function processEvidenceReviewJobs(): Promise<{
     }
   }
 
-  console.log(`[evidence-review-processor] Done: ${pendingJobs.length} checked, ${completed} completed, ${failed} failed`);
+  console.log(
+    `[evidence-review-processor] Done: ${pendingJobs.length} checked, ${completed} completed, ${failed} failed`,
+  );
   return { processed: pendingJobs.length, completed, failed };
 }

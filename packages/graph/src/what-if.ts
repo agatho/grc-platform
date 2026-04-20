@@ -16,10 +16,10 @@ import { DEFAULT_GRAPH_DEPTH } from "./types";
  * Scenario multipliers: how much removal/failure of entity amplifies impact.
  */
 const SCENARIO_MULTIPLIERS: Record<ScenarioType, number> = {
-  control_disabled: 1.5,   // losing a control amplifies risk
-  vendor_terminated: 1.3,  // losing vendor affects assets
-  asset_compromised: 2.0,  // compromised asset = high ripple
-  process_stopped: 1.4,    // stopped process affects controls
+  control_disabled: 1.5, // losing a control amplifies risk
+  vendor_terminated: 1.3, // losing vendor affects assets
+  asset_compromised: 2.0, // compromised asset = high ripple
+  process_stopped: 1.4, // stopped process affects controls
 };
 
 /**
@@ -43,7 +43,14 @@ export async function runWhatIf(
   const after = applyScenarioMultiplier(before, multiplier);
 
   // 3. Compute the delta
-  const delta = computeDelta(before, after, orgId, entityId, entityType, maxDepth);
+  const delta = computeDelta(
+    before,
+    after,
+    orgId,
+    entityId,
+    entityType,
+    maxDepth,
+  );
 
   return {
     scenario,
@@ -61,10 +68,12 @@ function applyScenarioMultiplier(
   impact: ImpactResult,
   multiplier: number,
 ): ImpactResult {
-  const amplifiedEntities: AffectedEntity[] = impact.affectedEntities.map((entity) => ({
-    ...entity,
-    impactScore: Math.min(100, Math.round(entity.impactScore * multiplier)),
-  }));
+  const amplifiedEntities: AffectedEntity[] = impact.affectedEntities.map(
+    (entity) => ({
+      ...entity,
+      impactScore: Math.min(100, Math.round(entity.impactScore * multiplier)),
+    }),
+  );
 
   // Sort by new score
   amplifiedEntities.sort((a, b) => b.impactScore - a.impactScore);
@@ -72,7 +81,10 @@ function applyScenarioMultiplier(
   return {
     ...impact,
     affectedEntities: amplifiedEntities,
-    totalImpactScore: amplifiedEntities.reduce((sum, e) => sum + e.impactScore, 0),
+    totalImpactScore: amplifiedEntities.reduce(
+      (sum, e) => sum + e.impactScore,
+      0,
+    ),
   };
 }
 
@@ -87,7 +99,9 @@ async function computeDelta(
   entityType: string,
   maxDepth: number,
 ): Promise<DeltaResult> {
-  const beforeMap = new Map(before.affectedEntities.map((e) => [e.entityId, e]));
+  const beforeMap = new Map(
+    before.affectedEntities.map((e) => [e.entityId, e]),
+  );
   const afterMap = new Map(after.affectedEntities.map((e) => [e.entityId, e]));
 
   // Entities newly affected (above threshold after scenario)

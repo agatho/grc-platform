@@ -54,7 +54,7 @@ function buildLocale(locale: string): void {
   const outPath = join(MESSAGES_DIR, `${locale}.json`);
   writeFileSync(outPath, JSON.stringify(result, null, 2) + "\n", "utf-8");
   console.log(
-    `Built ${outPath} (${files.length} namespaces, ${(JSON.stringify(result).length / 1024).toFixed(1)} KB)`
+    `Built ${outPath} (${files.length} namespaces, ${(JSON.stringify(result).length / 1024).toFixed(1)} KB)`,
   );
 }
 

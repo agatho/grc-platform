@@ -23,7 +23,10 @@ export async function GET(
     .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)));
 
   if (!row) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: row });
@@ -54,13 +57,18 @@ export async function PUT(
     const [row] = await tx
       .update(crisisScenario)
       .set({ ...body.data, updatedAt: new Date() })
-      .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)))
+      .where(
+        and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)),
+      )
       .returning();
     return row;
   });
 
   if (!updated) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: updated });

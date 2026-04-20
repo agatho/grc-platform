@@ -35,10 +35,14 @@ export const aiSystem = pgTable(
     description: text("description"),
     purpose: text("purpose"),
     aiTechnique: varchar("ai_technique", { length: 100 }), // machine_learning | deep_learning | nlp | computer_vision | expert_system | generative_ai
-    riskClassification: varchar("risk_classification", { length: 20 }).notNull(), // unacceptable | high | limited | minimal
+    riskClassification: varchar("risk_classification", {
+      length: 20,
+    }).notNull(), // unacceptable | high | limited | minimal
     riskJustification: text("risk_justification"),
     annexCategory: varchar("annex_category", { length: 50 }), // annex_i | annex_ii | annex_iii | annex_iv | none
-    providerOrDeployer: varchar("provider_or_deployer", { length: 20 }).notNull(), // provider | deployer | both
+    providerOrDeployer: varchar("provider_or_deployer", {
+      length: 20,
+    }).notNull(), // provider | deployer | both
     providerName: varchar("provider_name", { length: 500 }),
     providerJurisdiction: varchar("provider_jurisdiction", { length: 100 }),
     deploymentDate: date("deployment_date"),
@@ -47,7 +51,9 @@ export const aiSystem = pgTable(
     outputData: jsonb("output_data").default("{}"),
     affectedPersons: jsonb("affected_persons").default("[]"), // [{category, count, vulnerableGroup}]
     technicalDocumentation: jsonb("technical_documentation").default("{}"),
-    humanOversightRequired: boolean("human_oversight_required").notNull().default(false),
+    humanOversightRequired: boolean("human_oversight_required")
+      .notNull()
+      .default(false),
     transparencyObligations: jsonb("transparency_obligations").default("[]"),
     ownerId: uuid("owner_id").references(() => user.id),
     status: varchar("status", { length: 20 }).notNull().default("draft"), // draft | registered | under_review | compliant | non_compliant | decommissioned
@@ -116,22 +122,28 @@ export const aiConformityAssessment = pgTable(
   (table) => ({
     orgIdx: index("ai_ca_org_idx").on(table.orgId),
     systemIdx: index("ai_ca_system_idx").on(table.aiSystemId),
-    codeIdx: uniqueIndex("ai_ca_code_idx").on(table.orgId, table.assessmentCode),
+    codeIdx: uniqueIndex("ai_ca_code_idx").on(
+      table.orgId,
+      table.assessmentCode,
+    ),
     resultIdx: index("ai_ca_result_idx").on(table.orgId, table.overallResult),
     statusIdx: index("ai_ca_status_idx").on(table.orgId, table.status),
   }),
 );
 
-export const aiConformityAssessmentRelations = relations(aiConformityAssessment, ({ one }) => ({
-  organization: one(organization, {
-    fields: [aiConformityAssessment.orgId],
-    references: [organization.id],
+export const aiConformityAssessmentRelations = relations(
+  aiConformityAssessment,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [aiConformityAssessment.orgId],
+      references: [organization.id],
+    }),
+    aiSystem: one(aiSystem, {
+      fields: [aiConformityAssessment.aiSystemId],
+      references: [aiSystem.id],
+    }),
   }),
-  aiSystem: one(aiSystem, {
-    fields: [aiConformityAssessment.aiSystemId],
-    references: [aiSystem.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 73.3 AI Human Oversight Log
@@ -165,20 +177,23 @@ export const aiHumanOversightLog = pgTable(
   }),
 );
 
-export const aiHumanOversightLogRelations = relations(aiHumanOversightLog, ({ one }) => ({
-  organization: one(organization, {
-    fields: [aiHumanOversightLog.orgId],
-    references: [organization.id],
+export const aiHumanOversightLogRelations = relations(
+  aiHumanOversightLog,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [aiHumanOversightLog.orgId],
+      references: [organization.id],
+    }),
+    aiSystem: one(aiSystem, {
+      fields: [aiHumanOversightLog.aiSystemId],
+      references: [aiSystem.id],
+    }),
+    reviewer: one(user, {
+      fields: [aiHumanOversightLog.reviewedBy],
+      references: [user.id],
+    }),
   }),
-  aiSystem: one(aiSystem, {
-    fields: [aiHumanOversightLog.aiSystemId],
-    references: [aiSystem.id],
-  }),
-  reviewer: one(user, {
-    fields: [aiHumanOversightLog.reviewedBy],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 73.4 AI Transparency Register
@@ -217,20 +232,23 @@ export const aiTransparencyEntry = pgTable(
   }),
 );
 
-export const aiTransparencyEntryRelations = relations(aiTransparencyEntry, ({ one }) => ({
-  organization: one(organization, {
-    fields: [aiTransparencyEntry.orgId],
-    references: [organization.id],
+export const aiTransparencyEntryRelations = relations(
+  aiTransparencyEntry,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [aiTransparencyEntry.orgId],
+      references: [organization.id],
+    }),
+    aiSystem: one(aiSystem, {
+      fields: [aiTransparencyEntry.aiSystemId],
+      references: [aiSystem.id],
+    }),
+    publisher: one(user, {
+      fields: [aiTransparencyEntry.publishedBy],
+      references: [user.id],
+    }),
   }),
-  aiSystem: one(aiSystem, {
-    fields: [aiTransparencyEntry.aiSystemId],
-    references: [aiSystem.id],
-  }),
-  publisher: one(user, {
-    fields: [aiTransparencyEntry.publishedBy],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 73.5 AI FRIA — Fundamental Rights Impact Assessment
@@ -265,7 +283,10 @@ export const aiFria = pgTable(
   (table) => ({
     orgIdx: index("ai_fria_org_idx").on(table.orgId),
     systemIdx: index("ai_fria_system_idx").on(table.aiSystemId),
-    codeIdx: uniqueIndex("ai_fria_code_idx").on(table.orgId, table.assessmentCode),
+    codeIdx: uniqueIndex("ai_fria_code_idx").on(
+      table.orgId,
+      table.assessmentCode,
+    ),
     impactIdx: index("ai_fria_impact_idx").on(table.orgId, table.overallImpact),
     statusIdx: index("ai_fria_status_idx").on(table.orgId, table.status),
   }),
@@ -297,7 +318,9 @@ export const aiFrameworkMapping = pgTable(
     controlReference: varchar("control_reference", { length: 100 }).notNull(),
     controlTitle: varchar("control_title", { length: 500 }).notNull(),
     aiActArticle: varchar("ai_act_article", { length: 100 }),
-    implementationStatus: varchar("implementation_status", { length: 20 }).notNull().default("not_started"), // not_started | in_progress | implemented | not_applicable
+    implementationStatus: varchar("implementation_status", { length: 20 })
+      .notNull()
+      .default("not_started"), // not_started | in_progress | implemented | not_applicable
     evidenceIds: jsonb("evidence_ids").default("[]"),
     notes: text("notes"),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -310,14 +333,24 @@ export const aiFrameworkMapping = pgTable(
   (table) => ({
     orgIdx: index("ai_fm_org_idx").on(table.orgId),
     fwIdx: index("ai_fm_fw_idx").on(table.orgId, table.framework),
-    refIdx: uniqueIndex("ai_fm_ref_idx").on(table.orgId, table.framework, table.controlReference),
-    statusIdx: index("ai_fm_status_idx").on(table.orgId, table.implementationStatus),
+    refIdx: uniqueIndex("ai_fm_ref_idx").on(
+      table.orgId,
+      table.framework,
+      table.controlReference,
+    ),
+    statusIdx: index("ai_fm_status_idx").on(
+      table.orgId,
+      table.implementationStatus,
+    ),
   }),
 );
 
-export const aiFrameworkMappingRelations = relations(aiFrameworkMapping, ({ one }) => ({
-  organization: one(organization, {
-    fields: [aiFrameworkMapping.orgId],
-    references: [organization.id],
+export const aiFrameworkMappingRelations = relations(
+  aiFrameworkMapping,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [aiFrameworkMapping.orgId],
+      references: [organization.id],
+    }),
   }),
-}));
+);

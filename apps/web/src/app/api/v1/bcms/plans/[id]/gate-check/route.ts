@@ -2,12 +2,7 @@
 //
 // Sprint 2.2: Liefert aktuellen Gate-Status fuer BCP (B3, B5, B6).
 
-import {
-  db,
-  bcp,
-  bcpProcedure,
-  bcpResource,
-} from "@grc/db";
+import { db, bcp, bcpProcedure, bcpResource } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   validateBcpGate3Review,

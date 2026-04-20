@@ -1,9 +1,4 @@
-import {
-  db,
-  controlTestCampaign,
-  user,
-  userOrganizationRole,
-} from "@grc/db";
+import { db, controlTestCampaign, user, userOrganizationRole } from "@grc/db";
 import { createCampaignSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {

@@ -40,13 +40,19 @@ export const policyDistribution = pgTable(
     requiresQuiz: boolean("requires_quiz").notNull().default(false),
     quizPassThreshold: integer("quiz_pass_threshold").default(80),
     quizQuestions: jsonb("quiz_questions").default(sql`'[]'::jsonb`), // [{ question, options: [], correctIndex }]
-    reminderDaysBefore: jsonb("reminder_days_before").default(sql`'[7, 3, 1]'::jsonb`),
+    reminderDaysBefore: jsonb("reminder_days_before").default(
+      sql`'[7, 3, 1]'::jsonb`,
+    ),
     status: varchar("status", { length: 20 }).notNull().default("draft"), // draft | active | closed
     distributedAt: timestamp("distributed_at", { withTimezone: true }),
     distributedBy: uuid("distributed_by").references(() => user.id),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("pd_org_idx").on(table.orgId),
@@ -82,8 +88,12 @@ export const policyAcknowledgment = pgTable(
     ipAddress: varchar("ip_address", { length: 45 }),
     userAgent: varchar("user_agent", { length: 500 }),
     remindersSent: integer("reminders_sent").notNull().default(0),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     uniqueIndex("pa_dist_user_idx").on(table.distributionId, table.userId),
@@ -110,7 +120,9 @@ export const policyQuizResponse = pgTable(
     questionIndex: integer("question_index").notNull(),
     selectedOptionIndex: integer("selected_option_index").notNull(),
     isCorrect: boolean("is_correct").notNull(),
-    answeredAt: timestamp("answered_at", { withTimezone: true }).notNull().defaultNow(),
+    answeredAt: timestamp("answered_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("pqr_ack_idx").on(table.acknowledgmentId),

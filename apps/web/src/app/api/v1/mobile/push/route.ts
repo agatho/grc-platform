@@ -20,11 +20,13 @@ export async function POST(req: Request) {
   const devices = await db
     .select()
     .from(deviceRegistration)
-    .where(and(
-      eq(deviceRegistration.orgId, ctx.orgId),
-      eq(deviceRegistration.userId, body.data.userId),
-      eq(deviceRegistration.isActive, true),
-    ));
+    .where(
+      and(
+        eq(deviceRegistration.orgId, ctx.orgId),
+        eq(deviceRegistration.userId, body.data.userId),
+        eq(deviceRegistration.isActive, true),
+      ),
+    );
 
   const notifications = [];
   for (const device of devices) {
@@ -58,10 +60,12 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(pushNotification)
-    .where(and(
-      eq(pushNotification.orgId, ctx.orgId),
-      eq(pushNotification.userId, ctx.userId),
-    ))
+    .where(
+      and(
+        eq(pushNotification.orgId, ctx.orgId),
+        eq(pushNotification.userId, ctx.userId),
+      ),
+    )
     .orderBy(desc(pushNotification.createdAt))
     .limit(limit)
     .offset(offset);
@@ -69,10 +73,12 @@ export async function GET(req: Request) {
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(pushNotification)
-    .where(and(
-      eq(pushNotification.orgId, ctx.orgId),
-      eq(pushNotification.userId, ctx.userId),
-    ));
+    .where(
+      and(
+        eq(pushNotification.orgId, ctx.orgId),
+        eq(pushNotification.userId, ctx.userId),
+      ),
+    );
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
 }

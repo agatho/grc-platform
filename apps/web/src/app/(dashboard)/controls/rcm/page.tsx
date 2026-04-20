@@ -52,7 +52,10 @@ function effectivenessColor(eff: string): string {
   return map[eff] ?? "bg-gray-300";
 }
 
-function effectivenessLabel(eff: string, t: ReturnType<typeof useTranslations>): string {
+function effectivenessLabel(
+  eff: string,
+  t: ReturnType<typeof useTranslations>,
+): string {
   return t(`rcm.effectiveness.${eff}`);
 }
 
@@ -109,7 +112,9 @@ function RcmPageInner() {
     for (const cell of data.cells) {
       if (cell.effectiveness === "full") covered.add(cell.riskId);
     }
-    return new Set(data.risks.filter((r) => !covered.has(r.id)).map((r) => r.id));
+    return new Set(
+      data.risks.filter((r) => !covered.has(r.id)).map((r) => r.id),
+    );
   }, [data]);
 
   if (loading) {
@@ -128,7 +133,12 @@ function RcmPageInner() {
           <h1 className="text-2xl font-bold text-gray-900">{t("rcm.title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("rcm.subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => fetchRcm()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchRcm()}
+          disabled={loading}
+        >
           <RefreshCcw size={14} />
         </Button>
       </div>
@@ -137,8 +147,12 @@ function RcmPageInner() {
       <div className="flex items-center gap-4 flex-wrap">
         {["full", "partial", "planned", "none"].map((eff) => (
           <div key={eff} className="flex items-center gap-1.5">
-            <span className={`inline-block h-3 w-3 rounded ${effectivenessColor(eff)}`} />
-            <span className="text-xs text-gray-600">{effectivenessLabel(eff, t)}</span>
+            <span
+              className={`inline-block h-3 w-3 rounded ${effectivenessColor(eff)}`}
+            />
+            <span className="text-xs text-gray-600">
+              {effectivenessLabel(eff, t)}
+            </span>
           </div>
         ))}
         <div className="flex items-center gap-1.5 ml-4">
@@ -163,9 +177,17 @@ function RcmPageInner() {
                     {t("rcm.riskColumn")}
                   </th>
                   {data.controls.map((ctrl) => (
-                    <th key={ctrl.id} className="text-center text-[10px] font-medium text-gray-500 pb-2 px-1 min-w-[80px]">
-                      <Link href={`/controls/${ctrl.id}`} className="hover:text-blue-600 hover:underline">
-                        {ctrl.title.length > 20 ? `${ctrl.title.slice(0, 20)}...` : ctrl.title}
+                    <th
+                      key={ctrl.id}
+                      className="text-center text-[10px] font-medium text-gray-500 pb-2 px-1 min-w-[80px]"
+                    >
+                      <Link
+                        href={`/controls/${ctrl.id}`}
+                        className="hover:text-blue-600 hover:underline"
+                      >
+                        {ctrl.title.length > 20
+                          ? `${ctrl.title.slice(0, 20)}...`
+                          : ctrl.title}
                       </Link>
                     </th>
                   ))}
@@ -175,10 +197,18 @@ function RcmPageInner() {
                 {data.risks.map((risk) => {
                   const isGap = gapRiskIds.has(risk.id);
                   return (
-                    <tr key={risk.id} className={`border-t border-gray-100 ${isGap ? "bg-red-50/50" : ""}`}>
+                    <tr
+                      key={risk.id}
+                      className={`border-t border-gray-100 ${isGap ? "bg-red-50/50" : ""}`}
+                    >
                       <td className="sticky left-0 bg-white z-10 py-2 pr-4">
                         <div className="flex items-center gap-1.5">
-                          {isGap && <AlertTriangle size={12} className="text-red-500 shrink-0" />}
+                          {isGap && (
+                            <AlertTriangle
+                              size={12}
+                              className="text-red-500 shrink-0"
+                            />
+                          )}
                           <Link
                             href={`/risks/${risk.id}`}
                             className="text-sm font-medium text-gray-900 hover:text-blue-600 hover:underline truncate max-w-[180px]"
@@ -194,7 +224,10 @@ function RcmPageInner() {
                             {cell ? (
                               <span
                                 className={`inline-block h-6 w-6 rounded ${effectivenessColor(cell.effectiveness)} cursor-pointer transition-colors`}
-                                title={effectivenessLabel(cell.effectiveness, t)}
+                                title={effectivenessLabel(
+                                  cell.effectiveness,
+                                  t,
+                                )}
                               />
                             ) : (
                               <span className="inline-block h-6 w-6 rounded bg-gray-100" />

@@ -1,11 +1,22 @@
 import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { withAuth, withAuditContext, withReadContext, paginate } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  withReadContext,
+  paginate,
+} from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { createAiAuthorityCommunicationSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -24,14 +35,21 @@ export async function GET(req: Request) {
   query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
   const result = await withReadContext(ctx, async (tx) => {
-    const [r, c] = await Promise.all([tx.execute(query), tx.execute(countQuery)]);
+    const [r, c] = await Promise.all([
+      tx.execute(query),
+      tx.execute(countQuery),
+    ]);
     const rows = Array.isArray(r) ? r : (r?.rows ?? []);
     const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
     return { rows, count: Number((countArr[0] as any)?.count ?? 0) };
   });
   return Response.json({
     data: result.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: result.count },
+    pagination: {
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      total: result.count,
+    },
   });
 }
 
@@ -41,11 +59,23 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const parsed = createAiAuthorityCommunicationSchema.safeParse(await req.json());
+  const parsed = createAiAuthorityCommunicationSchema.safeParse(
+    await req.json(),
+  );
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
-  const { authority_name, subject, direction, response_deadline, content, ai_system_id } = parsed.data;
+  const {
+    authority_name,
+    subject,
+    direction,
+    response_deadline,
+    content,
+    ai_system_id,
+  } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

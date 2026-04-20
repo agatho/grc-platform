@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
-import { createTestDb, createAppDb, setRlsContext, clearRlsContext, schema } from "../helpers";
+import {
+  createTestDb,
+  createAppDb,
+  setRlsContext,
+  clearRlsContext,
+  schema,
+} from "../helpers";
 
 /**
  * RLS Cross-Tenant Isolation Tests
@@ -51,11 +57,19 @@ describe("RLS Cross-Tenant Isolation", () => {
     // Create two test users (unique per run)
     const [uA] = await adminDb.db
       .insert(schema.user)
-      .values({ email: `rls-a-${suffix}@test.dev`, name: "User A", passwordHash: "x" })
+      .values({
+        email: `rls-a-${suffix}@test.dev`,
+        name: "User A",
+        passwordHash: "x",
+      })
       .returning({ id: schema.user.id });
     const [uB] = await adminDb.db
       .insert(schema.user)
-      .values({ email: `rls-b-${suffix}@test.dev`, name: "User B", passwordHash: "x" })
+      .values({
+        email: `rls-b-${suffix}@test.dev`,
+        name: "User B",
+        passwordHash: "x",
+      })
       .returning({ id: schema.user.id });
     userAId = uA.id;
     userBId = uB.id;
@@ -69,10 +83,18 @@ describe("RLS Cross-Tenant Isolation", () => {
 
   afterAll(async () => {
     // Disable triggers and rules for clean teardown
-    await adminDb.client.unsafe(`ALTER TABLE user_organization_role DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE "user" DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await adminDb.client.unsafe(
+      `ALTER TABLE user_organization_role DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
 
     await adminDb.client.unsafe(`
       DELETE FROM user_organization_role WHERE org_id IN ('${orgAId}', '${orgBId}');
@@ -82,22 +104,32 @@ describe("RLS Cross-Tenant Isolation", () => {
       DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}');
     `);
 
-    await adminDb.client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await adminDb.client.unsafe(`ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE "user" ENABLE TRIGGER audit_trigger`);
+    await adminDb.client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE "user" ENABLE TRIGGER audit_trigger`,
+    );
 
     await appDb.client.end();
     await adminDb.client.end();
   });
 
   it("non-superuser sees 0 organizations without RLS context", async () => {
-    const result = await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
+    const result =
+      await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
     expect(result[0].cnt).toBe(0);
   });
 
   it("non-superuser sees 0 user_organization_role without RLS context", async () => {
-    const result = await appDb.client`SELECT count(*)::int AS cnt FROM user_organization_role`;
+    const result =
+      await appDb.client`SELECT count(*)::int AS cnt FROM user_organization_role`;
     expect(result[0].cnt).toBe(0);
   });
 
@@ -129,7 +161,8 @@ describe("RLS Cross-Tenant Isolation", () => {
 
   it("user_organization_role is filtered by RLS context", async () => {
     await setRlsContext(appDb.client, orgAId, userAId);
-    const roles = await appDb.client`SELECT user_id, role FROM user_organization_role`;
+    const roles =
+      await appDb.client`SELECT user_id, role FROM user_organization_role`;
     expect(roles).toHaveLength(1);
     expect(roles[0].user_id).toBe(userAId);
     expect(roles[0].role).toBe("admin");
@@ -138,7 +171,8 @@ describe("RLS Cross-Tenant Isolation", () => {
 
   it("switching context from Org A to Org B changes visible data", async () => {
     await setRlsContext(appDb.client, orgAId, userAId);
-    const orgAResult = await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
+    const orgAResult =
+      await appDb.client`SELECT count(*)::int AS cnt FROM organization`;
     expect(orgAResult[0].cnt).toBe(1);
 
     await setRlsContext(appDb.client, orgBId, userBId);
@@ -149,7 +183,8 @@ describe("RLS Cross-Tenant Isolation", () => {
   });
 
   it("superuser (grc) can see all organizations regardless of RLS", async () => {
-    const result = await adminDb.client`SELECT count(*)::int AS cnt FROM organization`;
+    const result =
+      await adminDb.client`SELECT count(*)::int AS cnt FROM organization`;
     expect(result[0].cnt).toBeGreaterThanOrEqual(2);
   });
 });

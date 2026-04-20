@@ -32,7 +32,12 @@ function parseChartData(data: unknown): ChartDataPoint[] {
   if (!data) return [];
   if (Array.isArray(data)) {
     return data.map((item, idx) => ({
-      name: item.name ?? item.label ?? item.status ?? item.category ?? `Item ${idx + 1}`,
+      name:
+        item.name ??
+        item.label ??
+        item.status ??
+        item.category ??
+        `Item ${idx + 1}`,
       value: Number(item.value ?? item.count ?? 0),
       color: item.color,
     }));
@@ -47,7 +52,12 @@ function parseChartData(data: unknown): ChartDataPoint[] {
   return [];
 }
 
-export function DonutChartWidget({ data, config, isLoading, error }: WidgetProps) {
+export function DonutChartWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -96,9 +106,7 @@ export function DonutChartWidget({ data, config, isLoading, error }: WidgetProps
             />
           ))}
         </Pie>
-        <Tooltip
-          formatter={(value) => Number(value).toLocaleString("de-DE")}
-        />
+        <Tooltip formatter={(value) => Number(value).toLocaleString("de-DE")} />
         {showLegend && (
           <Legend
             verticalAlign="bottom"

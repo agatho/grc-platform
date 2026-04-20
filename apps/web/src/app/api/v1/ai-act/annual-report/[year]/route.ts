@@ -89,7 +89,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
       total: sql<number>`count(*)::int`,
       serious: sql<number>`count(*) filter (where ${aiIncident.isSerious} = true)::int`,
       overdue: sql<number>`count(*) filter (where ${aiIncident.authorityDeadline} < now() and ${aiIncident.authorityNotifiedAt} is null)::int`,
-      avgNotifyHours: sql<number | null>`avg(extract(epoch from (${aiIncident.authorityNotifiedAt} - ${aiIncident.detectedAt}))/3600) filter (where ${aiIncident.authorityNotifiedAt} is not null)`,
+      avgNotifyHours: sql<
+        number | null
+      >`avg(extract(epoch from (${aiIncident.authorityNotifiedAt} - ${aiIncident.detectedAt}))/3600) filter (where ${aiIncident.authorityNotifiedAt} is not null)`,
     })
     .from(aiIncident)
     .where(
@@ -135,7 +137,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
     totalMaturity += readiness.maturityScore;
     if (readiness.readyForCe) readyForCe++;
   }
-  const avgMaturity = qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
+  const avgMaturity =
+    qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
   const notReadyForCe = qmsRows.length - readyForCe;
 
   // ─── GPAI ─────────────────────────────────────────────────

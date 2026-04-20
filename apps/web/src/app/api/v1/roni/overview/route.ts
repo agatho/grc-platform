@@ -47,7 +47,8 @@ export async function GET(req: Request) {
       totalRoniCiso: Number(totals.totalRoniCiso),
       totalInherentAle: Number(totals.totalInherentAle),
       totalResidualAle: Number(totals.totalResidualAle),
-      aleReduction: Number(totals.totalInherentAle) - Number(totals.totalResidualAle),
+      aleReduction:
+        Number(totals.totalInherentAle) - Number(totals.totalResidualAle),
       entityCount: Number(totals.entityCount),
     },
   });

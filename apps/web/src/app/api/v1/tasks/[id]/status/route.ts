@@ -28,11 +28,7 @@ export async function PUT(
     .select()
     .from(task)
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!existing) {
@@ -99,11 +95,7 @@ export async function PUT(
       .update(task)
       .set(updateValues)
       .where(
-        and(
-          eq(task.id, id),
-          eq(task.orgId, ctx.orgId),
-          isNull(task.deletedAt),
-        ),
+        and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
       )
       .returning();
 

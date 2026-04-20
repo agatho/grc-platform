@@ -1,9 +1,4 @@
-import {
-  db,
-  vendor,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, vendor, workItem, user } from "@grc/db";
 import { createVendorSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -103,7 +98,12 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "prospect" | "onboarding" | "active" | "under_review" | "suspended" | "terminated"
+      | "prospect"
+      | "onboarding"
+      | "active"
+      | "under_review"
+      | "suspended"
+      | "terminated"
     >;
     conditions.push(inArray(vendor.status, statuses));
   }
@@ -119,7 +119,15 @@ export async function GET(req: Request) {
   const categoryParam = searchParams.get("category");
   if (categoryParam) {
     const categories = categoryParam.split(",") as Array<
-      "it_services" | "cloud_provider" | "consulting" | "facility" | "logistics" | "raw_materials" | "financial" | "hr_services" | "other"
+      | "it_services"
+      | "cloud_provider"
+      | "consulting"
+      | "facility"
+      | "logistics"
+      | "raw_materials"
+      | "financial"
+      | "hr_services"
+      | "other"
     >;
     conditions.push(inArray(vendor.category, categories));
   }

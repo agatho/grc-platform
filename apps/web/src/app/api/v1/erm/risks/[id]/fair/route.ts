@@ -1,6 +1,9 @@
 import { db, fairParameters, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { upsertFairParametersSchema, DEFAULT_LOSS_COMPONENTS } from "@grc/shared";
+import {
+  upsertFairParametersSchema,
+  DEFAULT_LOSS_COMPONENTS,
+} from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 

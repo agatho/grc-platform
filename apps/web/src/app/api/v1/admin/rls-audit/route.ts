@@ -25,8 +25,5 @@ export async function GET(_req: Request) {
     report.counts.tenantsMissingForce +
     report.counts.tenantsMissingPolicies;
 
-  return Response.json(
-    { data: report },
-    { status: gaps === 0 ? 200 : 503 },
-  );
+  return Response.json({ data: report }, { status: gaps === 0 ? 200 : 503 });
 }

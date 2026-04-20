@@ -1,8 +1,4 @@
-import {
-  db,
-  esgMaterialityAssessment,
-  esgMaterialityTopic,
-} from "@grc/db";
+import { db, esgMaterialityAssessment, esgMaterialityTopic } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { computeMaterialityMatrix } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
@@ -36,10 +32,7 @@ export async function GET(
     );
 
   if (!assessment) {
-    return Response.json(
-      { error: "Assessment not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Assessment not found" }, { status: 404 });
   }
 
   const topics = await db

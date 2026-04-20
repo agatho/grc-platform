@@ -46,7 +46,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {
@@ -87,7 +90,8 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   const daysSinceLastLog = latest?.createdAt
     ? Math.floor(
-        (Date.now() - new Date(latest.createdAt).getTime()) / (1000 * 60 * 60 * 24),
+        (Date.now() - new Date(latest.createdAt).getTime()) /
+          (1000 * 60 * 60 * 24),
       )
     : null;
 

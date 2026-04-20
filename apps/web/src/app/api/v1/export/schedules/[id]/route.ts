@@ -16,9 +16,7 @@ export async function GET(
   const [schedule] = await db
     .select()
     .from(exportSchedule)
-    .where(
-      and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)),
-    );
+    .where(and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)));
 
   if (!schedule) {
     return Response.json({ error: "Schedule not found" }, { status: 404 });
@@ -48,9 +46,7 @@ export async function PATCH(
   const [existing] = await db
     .select()
     .from(exportSchedule)
-    .where(
-      and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)),
-    );
+    .where(and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)));
 
   if (!existing) {
     return Response.json({ error: "Schedule not found" }, { status: 404 });
@@ -82,9 +78,7 @@ export async function DELETE(
 
   const [deleted] = await db
     .delete(exportSchedule)
-    .where(
-      and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)),
-    )
+    .where(and(eq(exportSchedule.id, id), eq(exportSchedule.orgId, ctx.orgId)))
     .returning();
 
   if (!deleted) {

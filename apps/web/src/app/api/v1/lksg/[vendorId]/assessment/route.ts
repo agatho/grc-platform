@@ -1,5 +1,8 @@
 import { db, vendor, lksgAssessment } from "@grc/db";
-import { createLksgAssessmentSchema, updateLksgAssessmentSchema } from "@grc/shared";
+import {
+  createLksgAssessmentSchema,
+  updateLksgAssessmentSchema,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -63,7 +66,11 @@ export async function POST(
     // Update vendor lksgTier
     await tx
       .update(vendor)
-      .set({ lksgTier: body.data.lksgTier, updatedBy: ctx.userId, updatedAt: new Date() })
+      .set({
+        lksgTier: body.data.lksgTier,
+        updatedBy: ctx.userId,
+        updatedAt: new Date(),
+      })
       .where(eq(vendor.id, vendorId));
 
     return row;
@@ -98,7 +105,10 @@ export async function PUT(
     .select({ id: lksgAssessment.id })
     .from(lksgAssessment)
     .where(
-      and(eq(lksgAssessment.vendorId, vendorId), eq(lksgAssessment.orgId, ctx.orgId)),
+      and(
+        eq(lksgAssessment.vendorId, vendorId),
+        eq(lksgAssessment.orgId, ctx.orgId),
+      ),
     )
     .orderBy(desc(lksgAssessment.createdAt))
     .limit(1);
@@ -139,7 +149,10 @@ export async function GET(
     .select()
     .from(lksgAssessment)
     .where(
-      and(eq(lksgAssessment.vendorId, vendorId), eq(lksgAssessment.orgId, ctx.orgId)),
+      and(
+        eq(lksgAssessment.vendorId, vendorId),
+        eq(lksgAssessment.orgId, ctx.orgId),
+      ),
     )
     .orderBy(desc(lksgAssessment.assessmentDate));
 

@@ -2,7 +2,16 @@ import { db, complianceCultureSnapshot } from "@grc/db";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { CCI_FACTOR_KEYS, getPreviousPeriod } from "@grc/shared";
-import type { CCIFactorsResponse, CCIFactorDetail, CCIFactorKey, CCIFactorScores, CCIFactorWeights, CCIRawMetrics, CCIRawMetricDetail, CCITrend } from "@grc/shared";
+import type {
+  CCIFactorsResponse,
+  CCIFactorDetail,
+  CCIFactorKey,
+  CCIFactorScores,
+  CCIFactorWeights,
+  CCIRawMetrics,
+  CCIRawMetricDetail,
+  CCITrend,
+} from "@grc/shared";
 
 // GET /api/v1/compliance/cci/factors — Detailed factor breakdown
 export async function GET(req: Request) {
@@ -24,7 +33,11 @@ export async function GET(req: Request) {
 
   if (!latest) {
     return Response.json({
-      data: { factors: [], overallScore: 0, period: "" } satisfies CCIFactorsResponse,
+      data: {
+        factors: [],
+        overallScore: 0,
+        period: "",
+      } satisfies CCIFactorsResponse,
     });
   }
 

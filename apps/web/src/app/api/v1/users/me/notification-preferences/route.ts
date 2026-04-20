@@ -18,7 +18,8 @@ export async function GET() {
     return Response.json({ error: "User not found" }, { status: 404 });
   }
 
-  const prefs = (rows[0] as Record<string, unknown>).notification_preferences ?? {};
+  const prefs =
+    (rows[0] as Record<string, unknown>).notification_preferences ?? {};
   return Response.json({ data: prefs });
 }
 

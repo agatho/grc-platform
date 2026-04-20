@@ -75,7 +75,10 @@ export async function GET(req: Request) {
   const rootOnly = searchParams.get("rootOnly") === "true";
 
   const conditions = parentId
-    ? and(eq(grcBudget.orgId, ctx.orgId), eq(grcBudget.parentBudgetId, parentId))
+    ? and(
+        eq(grcBudget.orgId, ctx.orgId),
+        eq(grcBudget.parentBudgetId, parentId),
+      )
     : rootOnly
       ? and(eq(grcBudget.orgId, ctx.orgId), isNull(grcBudget.parentBudgetId))
       : eq(grcBudget.orgId, ctx.orgId);

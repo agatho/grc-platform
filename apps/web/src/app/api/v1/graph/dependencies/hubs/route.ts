@@ -25,11 +25,17 @@ export async function GET(req: Request) {
   try {
     const hubs = await getHubs(ctx.orgId, limit);
 
-    return Response.json({ data: hubs }, {
-      headers: { "Cache-Control": "private, max-age=60" },
-    });
+    return Response.json(
+      { data: hubs },
+      {
+        headers: { "Cache-Control": "private, max-age=60" },
+      },
+    );
   } catch (err) {
     console.error("[graph/hubs] Error:", err);
-    return Response.json({ error: "Failed to retrieve hub entities" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to retrieve hub entities" },
+      { status: 500 },
+    );
   }
 }

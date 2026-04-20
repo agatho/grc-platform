@@ -10,12 +10,19 @@ export async function POST(req: Request) {
 
   const body = ragIndexRequestSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Trigger async indexing job (returns immediately)
   // In production, this would enqueue a worker job
-  const indexed = { sourceTypes: body.data.sourceTypes, status: "queued", forceReindex: body.data.forceReindex };
+  const indexed = {
+    sourceTypes: body.data.sourceTypes,
+    status: "queued",
+    forceReindex: body.data.forceReindex,
+  };
 
   return Response.json({ data: indexed }, { status: 202 });
 }

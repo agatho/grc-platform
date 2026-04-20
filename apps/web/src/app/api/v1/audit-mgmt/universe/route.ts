@@ -1,7 +1,4 @@
-import {
-  db,
-  auditUniverseEntry,
-} from "@grc/db";
+import { db, auditUniverseEntry } from "@grc/db";
 import { createAuditUniverseEntrySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -154,12 +151,7 @@ export async function GET(req: Request) {
   const [overdueResult] = await db
     .select({ value: count() })
     .from(auditUniverseEntry)
-    .where(
-      and(
-        allWhere,
-        lte(auditUniverseEntry.nextAuditDue, today),
-      ),
-    );
+    .where(and(allWhere, lte(auditUniverseEntry.nextAuditDue, today)));
 
   return Response.json({
     data: items,

@@ -36,7 +36,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(bcExercise)
     .innerJoin(organization, eq(organization.id, bcExercise.orgId))
     .leftJoin(bcp, eq(bcp.id, bcExercise.bcpId))
-    .leftJoin(crisisScenario, eq(crisisScenario.id, bcExercise.crisisScenarioId))
+    .leftJoin(
+      crisisScenario,
+      eq(crisisScenario.id, bcExercise.crisisScenarioId),
+    )
     .where(and(eq(bcExercise.id, id), eq(bcExercise.orgId, ctx.orgId)));
 
   if (!row) {
@@ -49,7 +52,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .where(eq(bcExerciseFinding.exerciseId, id));
 
   // Lead-User-Info laden (falls assigned)
-  let leadUser: { id: string; name: string | null; email: string } | null = null;
+  let leadUser: { id: string; name: string | null; email: string } | null =
+    null;
   if (row.exercise.exerciseLeadId) {
     const [u] = await db
       .select({ id: user.id, name: user.name, email: user.email })
@@ -59,7 +63,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
   }
 
   // Objective-Aggregat
-  const objectives = Array.isArray(row.exercise.objectives) ? row.exercise.objectives : [];
+  const objectives = Array.isArray(row.exercise.objectives)
+    ? row.exercise.objectives
+    : [];
   type Objective = { title?: string; achieved?: string; [k: string]: unknown };
   const objAchievedCount = (objectives as Objective[]).filter(
     (o) => o.achieved === "achieved",
@@ -74,12 +80,17 @@ export async function GET(_req: Request, { params }: RouteParams) {
   // Severity-Distribution
   const severityDistribution: Record<string, number> = {};
   for (const f of findings) {
-    severityDistribution[f.severity] = (severityDistribution[f.severity] ?? 0) + 1;
+    severityDistribution[f.severity] =
+      (severityDistribution[f.severity] ?? 0) + 1;
   }
 
   // RTO-Adherence (wenn rtoTargetHours + rtoActualHours in objectives / metadata)
   // Nicht Schema-mandatiert; als Platzhalter
-  const rtoAdherence: { target: number | null; actual: number | null; gap: number | null } = {
+  const rtoAdherence: {
+    target: number | null;
+    actual: number | null;
+    gap: number | null;
+  } = {
     target: null,
     actual: null,
     gap: null,
@@ -104,7 +115,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
       },
       context: {
         org: { id: row.exercise.orgId, name: row.orgName },
-        bcp: row.bcpTitle ? { id: row.exercise.bcpId, title: row.bcpTitle } : null,
+        bcp: row.bcpTitle
+          ? { id: row.exercise.bcpId, title: row.bcpTitle }
+          : null,
         scenario: row.scenarioName
           ? { id: row.exercise.crisisScenarioId, name: row.scenarioName }
           : null,

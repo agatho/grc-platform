@@ -39,11 +39,7 @@ export async function GET(
     .from(tia)
     .leftJoin(user, eq(tia.responsibleId, user.id))
     .where(
-      and(
-        eq(tia.id, id),
-        eq(tia.orgId, ctx.orgId),
-        isNull(tia.deletedAt),
-      ),
+      and(eq(tia.id, id), eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)),
     );
 
   if (!row) {
@@ -70,11 +66,7 @@ export async function PUT(
     .select()
     .from(tia)
     .where(
-      and(
-        eq(tia.id, id),
-        eq(tia.orgId, ctx.orgId),
-        isNull(tia.deletedAt),
-      ),
+      and(eq(tia.id, id), eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)),
     );
 
   if (!existing) {

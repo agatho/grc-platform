@@ -1,6 +1,11 @@
 // GET /api/v1/isms/cap-monitor/pdf
 
-import { db, ismsNonconformity, ismsCorrectiveAction, organization } from "@grc/db";
+import {
+  db,
+  ismsNonconformity,
+  ismsCorrectiveAction,
+  organization,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { and, eq, not, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -10,16 +15,25 @@ const DAY_MS = 24 * 60 * 60 * 1000;
 
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
-function classify(dueDate: Date | null, now: Date): {
+function classify(
+  dueDate: Date | null,
+  now: Date,
+): {
   level: EscalationLevel;
   daysUntilDeadline: number | null;
   daysOverdue: number | null;
 } {
-  if (!dueDate) return { level: "none", daysUntilDeadline: null, daysOverdue: null };
+  if (!dueDate)
+    return { level: "none", daysUntilDeadline: null, daysOverdue: null };
   const diffDays = Math.round((dueDate.getTime() - now.getTime()) / DAY_MS);
-  if (diffDays > 7) return { level: "none", daysUntilDeadline: diffDays, daysOverdue: null };
+  if (diffDays > 7)
+    return { level: "none", daysUntilDeadline: diffDays, daysOverdue: null };
   if (diffDays >= 0)
-    return { level: "approaching", daysUntilDeadline: diffDays, daysOverdue: null };
+    return {
+      level: "approaching",
+      daysUntilDeadline: diffDays,
+      daysOverdue: null,
+    };
   const overdue = -diffDays;
   return {
     level: overdue > 30 ? "critical_overdue" : "overdue",
@@ -69,15 +83,31 @@ export async function GET(_req: Request) {
 
   const summary = {
     ncTotal: ncEnriched.length,
-    ncOverdue: ncEnriched.filter((e) => ["overdue", "critical_overdue"].includes(e.c.level)).length,
-    ncCriticalOverdue: ncEnriched.filter((e) => e.c.level === "critical_overdue").length,
+    ncOverdue: ncEnriched.filter((e) =>
+      ["overdue", "critical_overdue"].includes(e.c.level),
+    ).length,
+    ncCriticalOverdue: ncEnriched.filter(
+      (e) => e.c.level === "critical_overdue",
+    ).length,
     caTotal: caEnriched.length,
-    caOverdue: caEnriched.filter((e) => ["overdue", "critical_overdue"].includes(e.c.level)).length,
-    caCriticalOverdue: caEnriched.filter((e) => e.c.level === "critical_overdue").length,
+    caOverdue: caEnriched.filter((e) =>
+      ["overdue", "critical_overdue"].includes(e.c.level),
+    ).length,
+    caCriticalOverdue: caEnriched.filter(
+      (e) => e.c.level === "critical_overdue",
+    ).length,
   };
 
-  const sortFn = (a: { c: { level: EscalationLevel; daysOverdue: number | null } }, b: { c: { level: EscalationLevel; daysOverdue: number | null } }) => {
-    const order: Record<string, number> = { critical_overdue: 0, overdue: 1, approaching: 2, none: 3 };
+  const sortFn = (
+    a: { c: { level: EscalationLevel; daysOverdue: number | null } },
+    b: { c: { level: EscalationLevel; daysOverdue: number | null } },
+  ) => {
+    const order: Record<string, number> = {
+      critical_overdue: 0,
+      overdue: 1,
+      approaching: 2,
+      none: 3,
+    };
     const cmp = order[a.c.level] - order[b.c.level];
     if (cmp !== 0) return cmp;
     return (b.c.daysOverdue ?? 0) - (a.c.daysOverdue ?? 0);
@@ -147,20 +177,24 @@ export async function GET(_req: Request) {
 </div>
 
 <h2>Nonconformities (${summary.ncTotal})</h2>
-${ncHtml
-  ? `<table>
+${
+  ncHtml
+    ? `<table>
   <thead><tr><th>Code</th><th>Titel</th><th>Severity</th><th>Status</th><th>ISO Clause</th><th>Faellig</th><th>Escalation</th><th>Rest</th></tr></thead>
   <tbody>${ncHtml}</tbody>
 </table>`
-  : `<div class="empty">Keine offenen Nonconformities.</div>`}
+    : `<div class="empty">Keine offenen Nonconformities.</div>`
+}
 
 <h2>Corrective Actions (${summary.caTotal})</h2>
-${caHtml
-  ? `<table>
+${
+  caHtml
+    ? `<table>
   <thead><tr><th>Titel</th><th>Typ</th><th>Status</th><th>Faellig</th><th>Escalation</th><th>Rest</th></tr></thead>
   <tbody>${caHtml}</tbody>
 </table>`
-  : `<div class="empty">Keine offenen Corrective-Actions.</div>`}
+    : `<div class="empty">Keine offenen Corrective-Actions.</div>`
+}
 
 <div class="footer">Vertraulich — Erstellt mit ARCTOS GRC Platform — ${exportTs}</div>
 </body></html>`;

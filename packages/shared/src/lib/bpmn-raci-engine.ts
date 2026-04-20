@@ -112,7 +112,11 @@ export function deriveRACIFromBPMN(bpmnXml: string): RACIMatrix {
  */
 export function applyRACIOverrides(
   matrix: RACIMatrix,
-  overrides: { activityBpmnId: string; participantBpmnId: string; raciRole: string }[],
+  overrides: {
+    activityBpmnId: string;
+    participantBpmnId: string;
+    raciRole: string;
+  }[],
 ): RACIMatrix {
   const updatedEntries = [...matrix.entries];
 
@@ -126,14 +130,17 @@ export function applyRACIOverrides(
     const entry: RACIEntry = {
       activityId: override.activityBpmnId,
       activityName:
-        matrix.activities.find((a) => a.id === override.activityBpmnId)?.name ?? "",
+        matrix.activities.find((a) => a.id === override.activityBpmnId)?.name ??
+        "",
       participantId: override.participantBpmnId,
       participantName:
-        matrix.participants.find((p) => p.id === override.participantBpmnId)?.name ?? "",
+        matrix.participants.find((p) => p.id === override.participantBpmnId)
+          ?.name ?? "",
       role: override.raciRole as "R" | "A" | "C" | "I",
       isOverride: true,
       documents: existingIdx >= 0 ? updatedEntries[existingIdx].documents : [],
-      applications: existingIdx >= 0 ? updatedEntries[existingIdx].applications : [],
+      applications:
+        existingIdx >= 0 ? updatedEntries[existingIdx].applications : [],
       risks: existingIdx >= 0 ? updatedEntries[existingIdx].risks : [],
     };
 
@@ -151,7 +158,8 @@ export function applyRACIOverrides(
 
 function extractLanes(xml: string): BpmnLane[] {
   const lanes: BpmnLane[] = [];
-  const laneRegex = /<bpmn:lane\s+id="([^"]+)"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
+  const laneRegex =
+    /<bpmn:lane\s+id="([^"]+)"(?:\s+name="([^"]*)")?[^>]*>([\s\S]*?)<\/bpmn:lane>/g;
   let match: RegExpExecArray | null;
 
   while ((match = laneRegex.exec(xml)) !== null) {
@@ -172,7 +180,8 @@ function extractLanes(xml: string): BpmnLane[] {
 
 function extractTasks(xml: string): BpmnElement[] {
   const tasks: BpmnElement[] = [];
-  const taskRegex = /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
+  const taskRegex =
+    /<bpmn:(task|userTask|serviceTask|sendTask|receiveTask|manualTask)\s+id="([^"]+)"(?:\s+name="([^"]*)")?/g;
   let match: RegExpExecArray | null;
 
   while ((match = taskRegex.exec(xml)) !== null) {
@@ -188,7 +197,8 @@ function extractTasks(xml: string): BpmnElement[] {
 
 function extractMessageFlows(xml: string): BpmnMessageFlow[] {
   const flows: BpmnMessageFlow[] = [];
-  const flowRegex = /<bpmn:messageFlow[^>]+sourceRef="([^"]+)"[^>]+targetRef="([^"]+)"/g;
+  const flowRegex =
+    /<bpmn:messageFlow[^>]+sourceRef="([^"]+)"[^>]+targetRef="([^"]+)"/g;
   let match: RegExpExecArray | null;
 
   while ((match = flowRegex.exec(xml)) !== null) {

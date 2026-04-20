@@ -2,7 +2,12 @@ import { db, cloudTestExecution, cloudTestSuite } from "@grc/db";
 import { triggerCloudTestSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/cloud-connectors/executions — Trigger cloud test suite execution
@@ -15,11 +20,23 @@ export async function POST(req: Request) {
 
   const body = triggerCloudTestSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
-  const [suite] = await db.select().from(cloudTestSuite).where(and(eq(cloudTestSuite.id, body.data.suiteId), eq(cloudTestSuite.orgId, ctx.orgId)));
-  if (!suite) return Response.json({ error: "Suite not found" }, { status: 404 });
+  const [suite] = await db
+    .select()
+    .from(cloudTestSuite)
+    .where(
+      and(
+        eq(cloudTestSuite.id, body.data.suiteId),
+        eq(cloudTestSuite.orgId, ctx.orgId),
+      ),
+    );
+  if (!suite)
+    return Response.json({ error: "Suite not found" }, { status: 404 });
 
   const created = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
@@ -45,7 +62,12 @@ export async function POST(req: Request) {
 
     await tx
       .update(cloudTestSuite)
-      .set({ lastRunAt: new Date(), lastPassRate: "100.00", passingTests: suite.totalTests, updatedAt: new Date() })
+      .set({
+        lastRunAt: new Date(),
+        lastPassRate: "100.00",
+        passingTests: suite.totalTests,
+        updatedAt: new Date(),
+      })
       .where(eq(cloudTestSuite.id, suite.id));
 
     return row;
@@ -78,7 +100,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(cloudTestExecution).where(where).orderBy(desc(cloudTestExecution.startedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(cloudTestExecution)
+      .where(where)
+      .orderBy(desc(cloudTestExecution.startedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(cloudTestExecution).where(where),
   ]);
 

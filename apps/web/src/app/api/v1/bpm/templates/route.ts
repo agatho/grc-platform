@@ -5,7 +5,12 @@ import { withAuth } from "@/lib/api";
 
 // GET /api/v1/bpm/templates — Browse template library (read-only)
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "process_owner", "risk_manager", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "process_owner",
+    "risk_manager",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -15,10 +20,14 @@ export async function GET(req: Request) {
 
   let rows;
   if (domain) {
-    rows = await db.select().from(processTemplate)
+    rows = await db
+      .select()
+      .from(processTemplate)
       .where(eq(processTemplate.domain, domain));
   } else {
-    rows = await db.select().from(processTemplate)
+    rows = await db
+      .select()
+      .from(processTemplate)
       .where(eq(processTemplate.isPublished, true));
   }
 
@@ -27,13 +36,25 @@ export async function GET(req: Request) {
 
 // POST, PUT, PATCH, DELETE — Not allowed (templates are seed data)
 export async function POST() {
-  return Response.json({ error: "Templates are managed by the platform. Use POST /api/v1/bpm/templates/:id/adopt to adopt a template." }, { status: 405 });
+  return Response.json(
+    {
+      error:
+        "Templates are managed by the platform. Use POST /api/v1/bpm/templates/:id/adopt to adopt a template.",
+    },
+    { status: 405 },
+  );
 }
 
 export async function PUT() {
-  return Response.json({ error: "Templates cannot be modified via API" }, { status: 405 });
+  return Response.json(
+    { error: "Templates cannot be modified via API" },
+    { status: 405 },
+  );
 }
 
 export async function DELETE() {
-  return Response.json({ error: "Templates cannot be deleted via API" }, { status: 405 });
+  return Response.json(
+    { error: "Templates cannot be deleted via API" },
+    { status: 405 },
+  );
 }

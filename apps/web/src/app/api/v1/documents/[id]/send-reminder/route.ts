@@ -76,25 +76,26 @@ export async function POST(
     );
 
   const ackedUserIds = new Set(
-    acks
-      .filter((a) => a.userId != null)
-      .map((a) => a.userId!),
+    acks.filter((a) => a.userId != null).map((a) => a.userId!),
   );
 
   // Find pending users
-  const pendingMembers = orgMembers.filter(
-    (m) => !ackedUserIds.has(m.userId),
-  );
+  const pendingMembers = orgMembers.filter((m) => !ackedUserIds.has(m.userId));
 
   // Create notifications for pending users
   const notifications = pendingMembers.map((m) => ({
     orgId: ctx.orgId,
     userId: m.userId,
-    type: "document_acknowledgment_reminder" as const,
+    type: "approval_request" as const,
     title: `Acknowledgment required: ${doc.title}`,
     message: `Please review and acknowledge the document "${doc.title}" (v${doc.currentVersion}).`,
+    entityType: "document",
+    entityId: id,
     channel: "in_app" as const,
-    link: `/documents/${id}`,
+    templateData: {
+      link: `/documents/${id}`,
+      subtype: "document_acknowledgment_reminder",
+    },
     isRead: false,
   }));
 

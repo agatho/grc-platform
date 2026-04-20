@@ -19,7 +19,10 @@ export async function GET(
     .select()
     .from(agentExecutionLog)
     .where(
-      and(eq(agentExecutionLog.agentId, id), eq(agentExecutionLog.orgId, ctx.orgId)),
+      and(
+        eq(agentExecutionLog.agentId, id),
+        eq(agentExecutionLog.orgId, ctx.orgId),
+      ),
     )
     .orderBy(desc(agentExecutionLog.executedAt))
     .limit(limit)

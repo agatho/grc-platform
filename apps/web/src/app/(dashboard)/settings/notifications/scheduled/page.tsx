@@ -164,9 +164,7 @@ function CreateScheduledDialog({
               <Label>{t("recipientRole")}</Label>
               <Select
                 value={form.recipientRole}
-                onValueChange={(v) =>
-                  setForm({ ...form, recipientRole: v })
-                }
+                onValueChange={(v) => setForm({ ...form, recipientRole: v })}
               >
                 <SelectTrigger>
                   <SelectValue />
@@ -231,9 +229,7 @@ function CreateScheduledDialog({
               type="submit"
               disabled={saving || !form.subject.trim() || !form.scheduledFor}
             >
-              {saving ? (
-                <Loader2 size={16} className="animate-spin" />
-              ) : null}
+              {saving ? <Loader2 size={16} className="animate-spin" /> : null}
               {tActions("create")}
             </Button>
           </DialogFooter>
@@ -253,7 +249,7 @@ export default function ScheduledNotificationsPage() {
   const { data: session } = useSession();
 
   const [notifications, setNotifications] = useState<ScheduledNotification[]>(
-    []
+    [],
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

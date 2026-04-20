@@ -15,7 +15,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const idsParam = url.searchParams.get("ids");
   if (!idsParam) {
-    return Response.json({ error: "ids query parameter required" }, { status: 400 });
+    return Response.json(
+      { error: "ids query parameter required" },
+      { status: 400 },
+    );
   }
 
   const ids = idsParam.split(",");

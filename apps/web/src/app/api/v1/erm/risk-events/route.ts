@@ -1,7 +1,12 @@
 import { db, riskEvent } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { createRiskEventSchema } from "@grc/shared";
 
 // GET /api/v1/erm/risk-events — List risk events
@@ -19,8 +24,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(riskEvent).where(where)
-      .orderBy(desc(riskEvent.eventDate)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(riskEvent)
+      .where(where)
+      .orderBy(desc(riskEvent.eventDate))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(riskEvent).where(where),
   ]);
 
@@ -36,15 +46,21 @@ export async function POST(req: Request) {
 
   const body = createRiskEventSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [item] = await tx.insert(riskEvent).values({
-      orgId: ctx.orgId,
-      createdBy: ctx.userId,
-      ...body.data,
-    }).returning();
+    const [item] = await tx
+      .insert(riskEvent)
+      .values({
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+        ...body.data,
+      })
+      .returning();
     return item;
   });
 

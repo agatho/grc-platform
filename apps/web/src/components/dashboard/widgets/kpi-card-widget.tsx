@@ -93,10 +93,7 @@ export function KPICardWidget({ data, config, isLoading, error }: WidgetProps) {
 
   return (
     <div className="flex h-full flex-col items-center justify-center p-2">
-      <div
-        className="text-3xl font-bold tabular-nums"
-        style={{ color }}
-      >
+      <div className="text-3xl font-bold tabular-nums" style={{ color }}>
         {typeof kpi.value === "number"
           ? kpi.value.toLocaleString("de-DE")
           : kpi.value}

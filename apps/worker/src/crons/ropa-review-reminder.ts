@@ -44,7 +44,8 @@ export async function processRopaReviewReminders(): Promise<RopaReviewResult> {
       const reviewDate = entry.nextReviewDate;
       const daysUntilReview = reviewDate
         ? Math.ceil(
-            (new Date(reviewDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+            (new Date(reviewDate).getTime() - now.getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : 0;
 

@@ -11,8 +11,14 @@ import type { SamlMetadataResult } from "@grc/shared";
 function extractTagContent(xml: string, tagName: string): string | null {
   // Match both namespaced and non-namespaced tags
   const patterns = [
-    new RegExp(`<(?:md:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:md:)?${tagName}>`, "i"),
-    new RegExp(`<(?:ds:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:ds:)?${tagName}>`, "i"),
+    new RegExp(
+      `<(?:md:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:md:)?${tagName}>`,
+      "i",
+    ),
+    new RegExp(
+      `<(?:ds:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:ds:)?${tagName}>`,
+      "i",
+    ),
   ];
   for (const pattern of patterns) {
     const match = xml.match(pattern);
@@ -21,7 +27,11 @@ function extractTagContent(xml: string, tagName: string): string | null {
   return null;
 }
 
-function extractAttribute(xml: string, tagName: string, attrName: string): string | null {
+function extractAttribute(
+  xml: string,
+  tagName: string,
+  attrName: string,
+): string | null {
   const patterns = [
     new RegExp(`<(?:md:)?${tagName}[^>]*${attrName}="([^"]*)"`, "i"),
     new RegExp(`<(?:md:)?${tagName}[^>]*${attrName}='([^']*)'`, "i"),
@@ -39,13 +49,19 @@ function extractAttribute(xml: string, tagName: string, attrName: string): strin
  */
 function rejectXXE(xml: string): void {
   if (/<!DOCTYPE/i.test(xml)) {
-    throw new Error("XML contains DOCTYPE declaration — rejected for XXE prevention");
+    throw new Error(
+      "XML contains DOCTYPE declaration — rejected for XXE prevention",
+    );
   }
   if (/<!ENTITY/i.test(xml)) {
-    throw new Error("XML contains ENTITY declaration — rejected for XXE prevention");
+    throw new Error(
+      "XML contains ENTITY declaration — rejected for XXE prevention",
+    );
   }
   if (/SYSTEM\s+["']/i.test(xml)) {
-    throw new Error("XML contains SYSTEM reference — rejected for XXE prevention");
+    throw new Error(
+      "XML contains SYSTEM reference — rejected for XXE prevention",
+    );
   }
 }
 
@@ -60,7 +76,11 @@ export function parseSAMLMetadata(metadataXml: string): SamlMetadataResult {
   rejectXXE(metadataXml);
 
   // Extract entityID from EntityDescriptor
-  const entityId = extractAttribute(metadataXml, "EntityDescriptor", "entityID");
+  const entityId = extractAttribute(
+    metadataXml,
+    "EntityDescriptor",
+    "entityID",
+  );
   if (!entityId) {
     throw new Error("Missing entityID in IdP metadata");
   }

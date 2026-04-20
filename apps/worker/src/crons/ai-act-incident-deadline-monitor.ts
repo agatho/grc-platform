@@ -14,7 +14,9 @@ export async function processAiActIncidentDeadlineMonitor(): Promise<AiIncidentM
   const now = new Date();
   let notified = 0;
 
-  console.log(`[cron:ai-act-incident-deadline] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:ai-act-incident-deadline] Starting at ${now.toISOString()}`,
+  );
 
   // Find incidents that are not resolved/closed and not yet notified.
   const activeIncidents = await db
@@ -39,7 +41,9 @@ export async function processAiActIncidentDeadlineMonitor(): Promise<AiIncidentM
     );
 
   if (activeIncidents.length === 0) {
-    console.log("[cron:ai-act-incident-deadline] No active incidents pending notification");
+    console.log(
+      "[cron:ai-act-incident-deadline] No active incidents pending notification",
+    );
     return { processed: 0, notified: 0 };
   }
 
@@ -55,7 +59,9 @@ export async function processAiActIncidentDeadlineMonitor(): Promise<AiIncidentM
         deadline = new Date(detected.getTime() + days * 24 * 60 * 60 * 1000);
       }
 
-      const hoursRemaining = Math.floor((deadline.getTime() - now.getTime()) / (1000 * 60 * 60));
+      const hoursRemaining = Math.floor(
+        (deadline.getTime() - now.getTime()) / (1000 * 60 * 60),
+      );
 
       // Fire at 48h, 24h, 12h, at-deadline, then once per 24h while overdue.
       const shouldWarn =

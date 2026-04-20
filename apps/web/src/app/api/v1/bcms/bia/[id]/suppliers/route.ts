@@ -2,7 +2,12 @@ import { db, biaSupplierDependency, biaProcessImpact } from "@grc/db";
 import { createBiaSupplierDependencySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/bcms/bia/[id]/suppliers — Add supplier dependency
 export async function POST(
@@ -37,7 +42,10 @@ export async function POST(
     );
 
   if (!impact) {
-    return Response.json({ error: "BIA process impact not found" }, { status: 404 });
+    return Response.json(
+      { error: "BIA process impact not found" },
+      { status: 404 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -80,7 +88,12 @@ export async function GET(
   );
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(biaSupplierDependency).where(where).limit(limit).offset(offset),
+    db
+      .select()
+      .from(biaSupplierDependency)
+      .where(where)
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(biaSupplierDependency).where(where),
   ]);
 

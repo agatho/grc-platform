@@ -226,7 +226,9 @@ export default function IsmsCapMonitorPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   {n.code && (
-                    <span className="font-mono text-xs text-muted-foreground">{n.code}</span>
+                    <span className="font-mono text-xs text-muted-foreground">
+                      {n.code}
+                    </span>
                   )}
                   <p className="font-medium truncate">{n.title}</p>
                 </div>
@@ -257,7 +259,8 @@ export default function IsmsCapMonitorPage() {
               </Badge>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
-              {n.escalationLevel === "overdue" || n.escalationLevel === "critical_overdue" ? (
+              {n.escalationLevel === "overdue" ||
+              n.escalationLevel === "critical_overdue" ? (
                 <span className="text-red-700 font-medium">
                   {formatDays(n.daysOverdue)} ueberfaellig
                 </span>
@@ -315,7 +318,8 @@ export default function IsmsCapMonitorPage() {
               </Badge>
             </div>
             <div className="mt-2 text-xs text-muted-foreground">
-              {c.escalationLevel === "overdue" || c.escalationLevel === "critical_overdue" ? (
+              {c.escalationLevel === "overdue" ||
+              c.escalationLevel === "critical_overdue" ? (
                 <span className="text-red-700 font-medium">
                   {formatDays(c.daysOverdue)} ueberfaellig
                 </span>
@@ -346,7 +350,9 @@ export default function IsmsCapMonitorPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zu ISMS
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">ISMS CAP Monitor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            ISMS CAP Monitor
+          </h1>
           <p className="text-muted-foreground mt-1">
             ISO 27001 Kap. 10 Corrective-Action-Program. Nonconformities,
             Corrective-Actions und Effectiveness-Reviews mit Fristen.
@@ -359,7 +365,9 @@ export default function IsmsCapMonitorPage() {
           </Button>
           <Button
             size="sm"
-            onClick={() => window.open("/api/v1/isms/cap-monitor/pdf", "_blank")}
+            onClick={() =>
+              window.open("/api/v1/isms/cap-monitor/pdf", "_blank")
+            }
           >
             PDF
           </Button>
@@ -368,7 +376,13 @@ export default function IsmsCapMonitorPage() {
 
       {/* KPI row */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className={s.ncCriticalOverdue > 0 ? "border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}>
+        <Card
+          className={
+            s.ncCriticalOverdue > 0
+              ? "border-red-500 bg-red-50/50 dark:bg-red-950/20"
+              : ""
+          }
+        >
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <FileWarning className="h-3.5 w-3.5" />
@@ -384,7 +398,13 @@ export default function IsmsCapMonitorPage() {
             </p>
           </CardContent>
         </Card>
-        <Card className={s.caCriticalOverdue > 0 ? "border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}>
+        <Card
+          className={
+            s.caCriticalOverdue > 0
+              ? "border-red-500 bg-red-50/50 dark:bg-red-950/20"
+              : ""
+          }
+        >
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Wrench className="h-3.5 w-3.5" />
@@ -429,7 +449,9 @@ export default function IsmsCapMonitorPage() {
             <p className="text-3xl font-bold text-red-700">
               {s.ncCriticalOverdue + s.caCriticalOverdue}
             </p>
-            <p className="text-xs text-muted-foreground mt-1">&gt; 30d ueberfaellig</p>
+            <p className="text-xs text-muted-foreground mt-1">
+              &gt; 30d ueberfaellig
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -442,8 +464,8 @@ export default function IsmsCapMonitorPage() {
             Nonconformities ({data.nonconformities.length})
           </CardTitle>
           <CardDescription>
-            Offene Nichtkonformitaeten aus Audits, Management-Reviews, Incidents oder
-            externen Pruefungen.
+            Offene Nichtkonformitaeten aus Audits, Management-Reviews, Incidents
+            oder externen Pruefungen.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -465,7 +487,8 @@ export default function IsmsCapMonitorPage() {
             Corrective Actions ({data.correctiveActions.length})
           </CardTitle>
           <CardDescription>
-            Offene CAPAs aus Nonconformities. Status &ne; closed und completed_at = null.
+            Offene CAPAs aus Nonconformities. Status &ne; closed und
+            completed_at = null.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-2">
@@ -488,7 +511,8 @@ export default function IsmsCapMonitorPage() {
               Effectiveness Reviews ({data.effectivenessReviews.length})
             </CardTitle>
             <CardDescription>
-              CAPAs die abgeschlossen sind aber noch keine Effectiveness-Bewertung haben.
+              CAPAs die abgeschlossen sind aber noch keine
+              Effectiveness-Bewertung haben.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">

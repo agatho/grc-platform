@@ -23,12 +23,20 @@ describe("Audit integrity endpoint logic (live DB)", () => {
   });
 
   afterAll(async () => {
-    await client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     await client`DELETE FROM audit_log WHERE org_id = ${orgId}`;
     await client`DELETE FROM organization WHERE id = ${orgId}`;
-    await client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
     await client.end();
   });
 

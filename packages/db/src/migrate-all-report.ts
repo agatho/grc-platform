@@ -13,7 +13,9 @@ const client = postgres(process.env.DATABASE_URL!, {
 });
 const MIGRATIONS_DIR = join(__dirname, "../drizzle");
 
-async function runPass(files: string[]): Promise<{ ok: string[]; fail: string[] }> {
+async function runPass(
+  files: string[],
+): Promise<{ ok: string[]; fail: string[] }> {
   const ok: string[] = [];
   const fail: string[] = [];
   for (const file of files) {
@@ -23,7 +25,9 @@ async function runPass(files: string[]): Promise<{ ok: string[]; fail: string[] 
       await client.unsafe(`BEGIN; ${sql}; COMMIT;`);
       ok.push(file);
     } catch {
-      try { await client.unsafe(`ROLLBACK;`); } catch {}
+      try {
+        await client.unsafe(`ROLLBACK;`);
+      } catch {}
       fail.push(file);
     }
   }
@@ -31,7 +35,9 @@ async function runPass(files: string[]): Promise<{ ok: string[]; fail: string[] 
 }
 
 async function main() {
-  const files = readdirSync(MIGRATIONS_DIR).filter((f) => f.endsWith(".sql")).sort();
+  const files = readdirSync(MIGRATIONS_DIR)
+    .filter((f) => f.endsWith(".sql"))
+    .sort();
   const p1 = await runPass(files);
   const p2 = await runPass(p1.fail);
   const p3 = await runPass(p2.fail);
@@ -42,4 +48,7 @@ async function main() {
   await client.end();
 }
 
-main().catch((err) => { console.error(err); process.exit(1); });
+main().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

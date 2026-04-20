@@ -65,11 +65,12 @@ const TIER_ICONS: Record<string, LucideIcon> = {
   supporting_asset: Server,
 };
 
-const TIER_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> = {
-  business_structure: "default",
-  primary_asset: "secondary",
-  supporting_asset: "outline",
-};
+const TIER_BADGE_VARIANTS: Record<string, "default" | "secondary" | "outline"> =
+  {
+    business_structure: "default",
+    primary_asset: "secondary",
+    supporting_asset: "outline",
+  };
 
 // ---------------------------------------------------------------------------
 // Overview tab
@@ -86,7 +87,9 @@ function OverviewTab({
     { label: t("name"), value: asset.name },
     {
       label: t("tier"),
-      value: t(`tiers.${asset.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`),
+      value: t(
+        `tiers.${asset.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`,
+      ),
     },
     { label: t("parent"), value: asset.parentAsset?.name ?? "-" },
     { label: t("description"), value: asset.description ?? "-" },
@@ -141,11 +144,31 @@ function CiaDefaultsTab({
   tCia: ReturnType<typeof useTranslations>;
 }) {
   const ciaFields = [
-    { key: "confidentiality", label: tCia("confidentiality"), value: asset.defaultConfidentiality ?? null },
-    { key: "integrity", label: tCia("integrity"), value: asset.defaultIntegrity ?? null },
-    { key: "availability", label: tCia("availability"), value: asset.defaultAvailability ?? null },
-    { key: "authenticity", label: tCia("authenticity"), value: asset.defaultAuthenticity ?? null },
-    { key: "reliability", label: tCia("reliability"), value: asset.defaultReliability ?? null },
+    {
+      key: "confidentiality",
+      label: tCia("confidentiality"),
+      value: asset.defaultConfidentiality ?? null,
+    },
+    {
+      key: "integrity",
+      label: tCia("integrity"),
+      value: asset.defaultIntegrity ?? null,
+    },
+    {
+      key: "availability",
+      label: tCia("availability"),
+      value: asset.defaultAvailability ?? null,
+    },
+    {
+      key: "authenticity",
+      label: tCia("authenticity"),
+      value: asset.defaultAuthenticity ?? null,
+    },
+    {
+      key: "reliability",
+      label: tCia("reliability"),
+      value: asset.defaultReliability ?? null,
+    },
   ];
 
   return (
@@ -162,7 +185,12 @@ function CiaDefaultsTab({
               key={field.key}
               label={field.label}
               value={field.value}
-              onChange={(val) => onUpdate(`default${field.key.charAt(0).toUpperCase()}${field.key.slice(1)}`, val)}
+              onChange={(val) =>
+                onUpdate(
+                  `default${field.key.charAt(0).toUpperCase()}${field.key.slice(1)}`,
+                  val,
+                )
+              }
             />
           ))}
 
@@ -171,7 +199,9 @@ function CiaDefaultsTab({
             <span className="text-sm font-medium text-gray-700">
               {t("protectionGoalClass")}
             </span>
-            <Badge className={`border-0 ${protectionGoalClassColor(asset.protectionGoalClass)}`}>
+            <Badge
+              className={`border-0 ${protectionGoalClassColor(asset.protectionGoalClass)}`}
+            >
               {asset.protectionGoalClass != null
                 ? `${asset.protectionGoalClass} - ${protectionGoalClassLabel(asset.protectionGoalClass, tCia)}`
                 : tCia("notSet")}
@@ -196,7 +226,10 @@ function CiaDefaultsTab({
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { label: tCia("confidentiality"), value: inherited.confidentiality },
+              {
+                label: tCia("confidentiality"),
+                value: inherited.confidentiality,
+              },
               { label: tCia("integrity"), value: inherited.integrity },
               { label: tCia("availability"), value: inherited.availability },
               { label: tCia("authenticity"), value: inherited.authenticity },
@@ -271,7 +304,9 @@ function WorkItemsTab({
   const columns: ColumnDef<AssetWorkItem, unknown>[] = [
     {
       accessorKey: "typeKey",
-      header: ({ column }) => <SortableHeader column={column}>{tWi("type")}</SortableHeader>,
+      header: ({ column }) => (
+        <SortableHeader column={column}>{tWi("type")}</SortableHeader>
+      ),
       cell: ({ row }) => (
         <Badge variant="outline" className="text-xs">
           {row.original.typeDisplayName ?? row.original.typeKey}
@@ -289,7 +324,9 @@ function WorkItemsTab({
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <SortableHeader column={column}>{tWi("name")}</SortableHeader>,
+      header: ({ column }) => (
+        <SortableHeader column={column}>{tWi("name")}</SortableHeader>
+      ),
       cell: ({ row }) => (
         <button
           onClick={() => router.push(`/work-items/${row.original.id}`)}
@@ -303,8 +340,12 @@ function WorkItemsTab({
       accessorKey: "status",
       header: tWi("status"),
       cell: ({ row }) => (
-        <Badge className={`border-0 text-xs ${statusColor(row.original.status)}`}>
-          {tWi(`statuses.${row.original.status as "draft" | "active" | "completed"}`)}
+        <Badge
+          className={`border-0 text-xs ${statusColor(row.original.status)}`}
+        >
+          {tWi(
+            `statuses.${row.original.status as "draft" | "active" | "completed"}`,
+          )}
         </Badge>
       ),
     },
@@ -368,7 +409,10 @@ export default function AssetDetailPage() {
     try {
       const res = await fetch(`/api/v1/assets/${assetId}`);
       if (!res.ok) throw new Error("Not found");
-      const json = (await res.json()) as { data: AssetDetail; inherited?: InheritedCia };
+      const json = (await res.json()) as {
+        data: AssetDetail;
+        inherited?: InheritedCia;
+      };
       setAsset(json.data);
       if (json.inherited) {
         setInherited(json.inherited);
@@ -391,11 +435,12 @@ export default function AssetDetailPage() {
         id: `asset-${assetId}`,
         label: asset.name,
         href: `/assets/${assetId}`,
-        icon: TIER_ICONS[asset.assetTier] === Building2
-          ? "Building2"
-          : TIER_ICONS[asset.assetTier] === Server
-            ? "Server"
-            : "Database",
+        icon:
+          TIER_ICONS[asset.assetTier] === Building2
+            ? "Building2"
+            : TIER_ICONS[asset.assetTier] === Server
+              ? "Server"
+              : "Database",
       });
     }
   }, [asset]);
@@ -453,11 +498,17 @@ export default function AssetDetailPage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{asset.name}</h1>
             <div className="mt-1 flex items-center gap-2">
-              <Badge variant={TIER_BADGE_VARIANTS[asset.assetTier] ?? "secondary"}>
-                {t(`tiers.${asset.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`)}
+              <Badge
+                variant={TIER_BADGE_VARIANTS[asset.assetTier] ?? "secondary"}
+              >
+                {t(
+                  `tiers.${asset.assetTier as "business_structure" | "primary_asset" | "supporting_asset"}`,
+                )}
               </Badge>
               {asset.protectionGoalClass != null && (
-                <Badge className={`border-0 ${protectionGoalClassColor(asset.protectionGoalClass)}`}>
+                <Badge
+                  className={`border-0 ${protectionGoalClassColor(asset.protectionGoalClass)}`}
+                >
                   PGC: {asset.protectionGoalClass}
                 </Badge>
               )}

@@ -8,7 +8,9 @@ export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const [row] = await db.select().from(communityEditionConfig)
+  const [row] = await db
+    .select()
+    .from(communityEditionConfig)
     .where(eq(communityEditionConfig.orgId, ctx.orgId));
 
   return Response.json({ data: row ?? null });
@@ -21,15 +23,23 @@ export async function PUT(req: Request) {
   const body = upsertCommunityEditionConfigSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [existing] = await tx.select().from(communityEditionConfig)
+    const [existing] = await tx
+      .select()
+      .from(communityEditionConfig)
       .where(eq(communityEditionConfig.orgId, ctx.orgId));
 
     if (existing) {
-      const [updated] = await tx.update(communityEditionConfig).set({ ...body, updatedAt: new Date() })
-        .where(eq(communityEditionConfig.id, existing.id)).returning();
+      const [updated] = await tx
+        .update(communityEditionConfig)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(communityEditionConfig.id, existing.id))
+        .returning();
       return updated;
     } else {
-      const [created] = await tx.insert(communityEditionConfig).values({ orgId: ctx.orgId, ...body }).returning();
+      const [created] = await tx
+        .insert(communityEditionConfig)
+        .values({ orgId: ctx.orgId, ...body })
+        .returning();
       return created;
     }
   });

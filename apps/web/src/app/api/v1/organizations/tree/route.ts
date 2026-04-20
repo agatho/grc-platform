@@ -60,7 +60,9 @@ export async function GET() {
   // Filter to accessible orgs + their ancestors/descendants
   const accessibleSet = new Set(orgIds);
   const allOrgs = orgs.filter(
-    (o) => accessibleSet.has(o.id) || (o.parent_org_id && accessibleSet.has(o.parent_org_id)),
+    (o) =>
+      accessibleSet.has(o.id) ||
+      (o.parent_org_id && accessibleSet.has(o.parent_org_id)),
   );
 
   function buildTree(parentId: string | null): OrgNode[] {

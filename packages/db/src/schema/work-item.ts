@@ -62,7 +62,9 @@ export const workItemType = pgTable("work_item_type", {
   elementIdPrefix: varchar("element_id_prefix", { length: 3 }),
   navOrder: integer("nav_order").notNull(),
   isActiveInPlatform: boolean("is_active_in_platform").notNull().default(true),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -93,8 +95,12 @@ export const workItem = pgTable(
       .notNull()
       .default(sql`'{}'::text[]`),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -128,7 +134,9 @@ export const workItemLink = pgTable(
       .references(() => workItem.id, { onDelete: "cascade" }),
     linkType: varchar("link_type", { length: 50 }).notNull().default("related"),
     linkContext: text("link_context"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [

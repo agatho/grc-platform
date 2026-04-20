@@ -74,8 +74,18 @@ interface IntegrityCheckResult {
   chainVerified: number;
   legacyRowCount: number;
   healthy: boolean;
-  rowMismatches?: Array<{ id: string; entityType: string; action: string; createdAt: string }>;
-  chainMismatches?: Array<{ id: string; entityType: string; action: string; createdAt: string }>;
+  rowMismatches?: Array<{
+    id: string;
+    entityType: string;
+    action: string;
+    createdAt: string;
+  }>;
+  chainMismatches?: Array<{
+    id: string;
+    entityType: string;
+    action: string;
+    createdAt: string;
+  }>;
 }
 
 type IntegrityState =
@@ -86,8 +96,17 @@ type IntegrityState =
 
 interface AuditLogListResponse {
   data: AuditLogEntry[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
-  scope?: { orgId: string; includeDescendants: boolean; resolvedOrgIds: string[] };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
+  scope?: {
+    orgId: string;
+    includeDescendants: boolean;
+    resolvedOrgIds: string[];
+  };
 }
 
 // ADR-011 rev.3 — external anchor status (FreeTSA + OpenTimestamps)
@@ -237,7 +256,11 @@ function AnchorBadges({
           className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
           title={t("anchorUpgradeHint")}
         >
-          {upgradeBusy ? <Loader2 size={12} className="animate-spin" /> : <Bitcoin size={12} />}
+          {upgradeBusy ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <Bitcoin size={12} />
+          )}
           {t("anchorUpgrade")}
         </button>
       )}
@@ -249,7 +272,11 @@ function AnchorBadges({
           className="inline-flex items-center gap-1.5 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-xs font-medium text-indigo-700 transition-colors hover:border-indigo-300 hover:bg-indigo-100 disabled:opacity-50"
           title={t("anchorNowHint")}
         >
-          {busy ? <Loader2 size={12} className="animate-spin" /> : <Anchor size={12} />}
+          {busy ? (
+            <Loader2 size={12} className="animate-spin" />
+          ) : (
+            <Anchor size={12} />
+          )}
           {t("anchorNow")}
         </button>
       )}
@@ -333,7 +360,13 @@ function renderAnchorBadge({
   );
 }
 
-function IntegrityBadge({ state, t }: { state: IntegrityState; t: ReturnType<typeof useTranslations> }) {
+function IntegrityBadge({
+  state,
+  t,
+}: {
+  state: IntegrityState;
+  t: ReturnType<typeof useTranslations>;
+}) {
   if (state.kind === "loading") {
     return (
       <Badge variant="secondary" className="gap-1.5 px-3 py-1.5">
@@ -386,11 +419,15 @@ function IntegrityBadge({ state, t }: { state: IntegrityState; t: ReturnType<typ
         <ShieldAlert size={14} />
         {t("chainBroken")}
         <span className="ml-1 text-xs font-normal">
-          ({brokenRow}/{data.total} {t("rowBreaks")}, {brokenChain}/{data.total} {t("chainBreaks")})
+          ({brokenRow}/{data.total} {t("rowBreaks")}, {brokenChain}/{data.total}{" "}
+          {t("chainBreaks")})
         </span>
       </Badge>
       {data.legacyRowCount > 0 && (
-        <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 px-2 py-1 text-amber-700">
+        <Badge
+          variant="outline"
+          className="gap-1 border-amber-200 bg-amber-50 px-2 py-1 text-amber-700"
+        >
           <Info size={11} />
           {data.legacyRowCount} {t("legacyRows")}
         </Badge>
@@ -434,7 +471,8 @@ function ChangeDetailDialog({
   if (!entry) return null;
 
   const changes = entry.changes;
-  const hasChanges = changes && typeof changes === "object" && Object.keys(changes).length > 0;
+  const hasChanges =
+    changes && typeof changes === "object" && Object.keys(changes).length > 0;
   const isTombstoned = !!entry.piiTombstonedAt;
 
   async function handleTombstone() {
@@ -468,7 +506,10 @@ function ChangeDetailDialog({
           <DialogTitle className="flex items-center gap-2">
             {t("changeDetail")}
             {isTombstoned && (
-              <Badge variant="outline" className="gap-1 border-purple-200 bg-purple-50 text-purple-700">
+              <Badge
+                variant="outline"
+                className="gap-1 border-purple-200 bg-purple-50 text-purple-700"
+              >
                 <Eraser size={11} />
                 {t("tombstoned")}
               </Badge>
@@ -481,7 +522,9 @@ function ChangeDetailDialog({
 
         {/* Change diff table */}
         <div className="space-y-4">
-          <h4 className="text-sm font-semibold text-gray-700">{t("changes")}</h4>
+          <h4 className="text-sm font-semibold text-gray-700">
+            {t("changes")}
+          </h4>
           {hasChanges ? (
             <div className="rounded-md border border-gray-200">
               <table className="w-full text-sm">
@@ -503,7 +546,10 @@ function ChangeDetailDialog({
                   {Object.entries(changes).map(([field, diff]) => {
                     const d = diff as { old?: unknown; new?: unknown };
                     return (
-                      <tr key={field} className="border-b border-gray-100 last:border-0">
+                      <tr
+                        key={field}
+                        className="border-b border-gray-100 last:border-0"
+                      >
                         <td className="px-3 py-2 font-mono text-xs text-gray-700">
                           {field}
                         </td>
@@ -531,10 +577,14 @@ function ChangeDetailDialog({
           )}
 
           {/* Metadata section */}
-          <h4 className="text-sm font-semibold text-gray-700">{t("metadata")}</h4>
+          <h4 className="text-sm font-semibold text-gray-700">
+            {t("metadata")}
+          </h4>
           <dl className="grid grid-cols-[auto_1fr] gap-x-4 gap-y-2 text-sm">
             <dt className="text-gray-500">{t("ipAddress")}</dt>
-            <dd className="font-mono text-xs text-gray-700">{entry.ipAddress ?? "-"}</dd>
+            <dd className="font-mono text-xs text-gray-700">
+              {entry.ipAddress ?? "-"}
+            </dd>
 
             <dt className="text-gray-500">{t("userAgent")}</dt>
             <dd className="max-w-sm truncate font-mono text-xs text-gray-700">
@@ -542,16 +592,24 @@ function ChangeDetailDialog({
             </dd>
 
             <dt className="text-gray-500">{t("sessionId")}</dt>
-            <dd className="font-mono text-xs text-gray-700">{entry.sessionId ?? "-"}</dd>
+            <dd className="font-mono text-xs text-gray-700">
+              {entry.sessionId ?? "-"}
+            </dd>
 
             <dt className="text-gray-500">{t("hash")}</dt>
-            <dd className="font-mono text-xs text-gray-700">{entry.entryHash ?? "-"}</dd>
+            <dd className="font-mono text-xs text-gray-700">
+              {entry.entryHash ?? "-"}
+            </dd>
 
             <dt className="text-gray-500">{t("previousHash")}</dt>
-            <dd className="font-mono text-xs text-gray-700">{entry.previousHash ?? "-"}</dd>
+            <dd className="font-mono text-xs text-gray-700">
+              {entry.previousHash ?? "-"}
+            </dd>
 
             <dt className="text-gray-500">{t("scope")}</dt>
-            <dd className="font-mono text-xs text-gray-700">{entry.previousHashScope ?? t("legacy")}</dd>
+            <dd className="font-mono text-xs text-gray-700">
+              {entry.previousHashScope ?? t("legacy")}
+            </dd>
 
             {isTombstoned && (
               <>
@@ -597,7 +655,10 @@ function ChangeDetailDialog({
               <label className="block text-sm font-medium text-gray-700">
                 {t("tombstoneReasonLabel")}
               </label>
-              <Select value={tombstoneReason} onValueChange={setTombstoneReason}>
+              <Select
+                value={tombstoneReason}
+                onValueChange={setTombstoneReason}
+              >
                 <SelectTrigger className="h-9 text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -636,7 +697,11 @@ function ChangeDetailDialog({
                 disabled={tombstoneBusy}
                 className="inline-flex items-center gap-1.5 rounded-md bg-purple-700 px-3 py-1.5 text-xs font-medium text-white hover:bg-purple-800 disabled:opacity-50"
               >
-                {tombstoneBusy ? <Loader2 size={12} className="animate-spin" /> : <Eraser size={12} />}
+                {tombstoneBusy ? (
+                  <Loader2 size={12} className="animate-spin" />
+                ) : (
+                  <Eraser size={12} />
+                )}
                 {t("tombstoneConfirm")}
               </button>
             </DialogFooter>
@@ -658,7 +723,9 @@ export default function AuditLogPage() {
   // Data state
   const [entries, setEntries] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
-  const [integrity, setIntegrity] = useState<IntegrityState>({ kind: "loading" });
+  const [integrity, setIntegrity] = useState<IntegrityState>({
+    kind: "loading",
+  });
 
   // Filter state
   const [actionFilter, setActionFilter] = useState<string>("__all__");
@@ -666,14 +733,19 @@ export default function AuditLogPage() {
   const [includeDescendants, setIncludeDescendants] = useState(false);
 
   // Response scope
-  const [scope, setScope] = useState<AuditLogListResponse["scope"] | null>(null);
+  const [scope, setScope] = useState<AuditLogListResponse["scope"] | null>(
+    null,
+  );
 
   // Dialog state
-  const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(null);
+  const [selectedEntry, setSelectedEntry] = useState<AuditLogEntry | null>(
+    null,
+  );
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Derive capabilities from session roles scoped to current org
-  const currentOrgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
+  const currentOrgId =
+    session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
   const currentOrgRoles = useMemo(
     () =>
       (session?.user?.roles ?? [])
@@ -689,7 +761,9 @@ export default function AuditLogPage() {
     currentOrgRoles.includes("admin") || currentOrgRoles.includes("auditor");
 
   // Anchor state
-  const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(null);
+  const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(
+    null,
+  );
   const [anchorBusy, setAnchorBusy] = useState(false);
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [anchorError, setAnchorError] = useState<string | null>(null);
@@ -712,7 +786,8 @@ export default function AuditLogPage() {
     try {
       const params = new URLSearchParams({ limit: "50" });
       if (actionFilter !== "__all__") params.set("action", actionFilter);
-      if (entityTypeFilter !== "__all__") params.set("entity_type", entityTypeFilter);
+      if (entityTypeFilter !== "__all__")
+        params.set("entity_type", entityTypeFilter);
       if (includeDescendants && canIncludeDescendants) {
         params.set("includeDescendants", "true");
       }
@@ -728,7 +803,12 @@ export default function AuditLogPage() {
     } finally {
       setLoading(false);
     }
-  }, [actionFilter, entityTypeFilter, includeDescendants, canIncludeDescendants]);
+  }, [
+    actionFilter,
+    entityTypeFilter,
+    includeDescendants,
+    canIncludeDescendants,
+  ]);
 
   // Fetch integrity check — ADR-011 rev.2 per-tenant endpoint
   const fetchIntegrity = useCallback(async () => {
@@ -871,7 +951,9 @@ export default function AuditLogPage() {
           const email = row.original.userEmail;
           return (
             <div className="min-w-[120px]">
-              <div className="text-sm font-medium text-gray-900">{name ?? "-"}</div>
+              <div className="text-sm font-medium text-gray-900">
+                {name ?? "-"}
+              </div>
               {email && <div className="text-xs text-gray-500">{email}</div>}
             </div>
           );
@@ -882,7 +964,9 @@ export default function AuditLogPage() {
         header: t("action"),
         cell: ({ getValue }) => {
           const action = getValue() as string;
-          const colorClass = ACTION_COLORS[action] ?? "bg-gray-100 text-gray-800 border-gray-200";
+          const colorClass =
+            ACTION_COLORS[action] ??
+            "bg-gray-100 text-gray-800 border-gray-200";
           return (
             <Badge
               variant="outline"
@@ -1034,7 +1118,11 @@ export default function AuditLogPage() {
               className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
               title={t("archiveDownloadHint")}
             >
-              {archiveBusy ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              {archiveBusy ? (
+                <Loader2 size={12} className="animate-spin" />
+              ) : (
+                <Download size={12} />
+              )}
               {t("archiveDownload")}
             </button>
           )}
@@ -1202,7 +1290,9 @@ function DataTableWithRowIndex<TData>({
         {searchKey && (
           <input
             placeholder={searchPlaceholder}
-            value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ""}
+            value={
+              (table.getColumn(searchKey)?.getFilterValue() as string) ?? ""
+            }
             onChange={(e) =>
               table.getColumn(searchKey)?.setFilterValue(e.target.value)
             }
@@ -1221,7 +1311,10 @@ function DataTableWithRowIndex<TData>({
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
-                      : flexRender(header.column.columnDef.header, header.getContext())}
+                      : flexRender(
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -1237,7 +1330,10 @@ function DataTableWithRowIndex<TData>({
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell key={cell.id}>
-                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                      {flexRender(
+                        cell.column.columnDef.cell,
+                        cell.getContext(),
+                      )}
                     </TableCell>
                   ))}
                 </TableRow>
@@ -1260,7 +1356,8 @@ function DataTableWithRowIndex<TData>({
         <span>{table.getFilteredRowModel().rows.length} row(s)</span>
         <div className="flex items-center gap-2">
           <span>
-            Page {table.getState().pagination.pageIndex + 1} of {table.getPageCount()}
+            Page {table.getState().pagination.pageIndex + 1} of{" "}
+            {table.getPageCount()}
           </span>
           <button
             onClick={() => table.previousPage()}

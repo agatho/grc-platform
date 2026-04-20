@@ -4,8 +4,24 @@
     "title": "Double Materiality Assessment",
     "assessment": "Assessment",
     "iro": "IRO Identification",
-    "iroTypes": { "impact": "Impact", "risk": "Risk", "opportunity": "Opportunity" },
-    "esrsTopics": { "E1": "Climate Change", "E2": "Pollution", "E3": "Water & Marine Resources", "E4": "Biodiversity", "E5": "Resource Use & Circular Economy", "S1": "Own Workforce", "S2": "Workers in Value Chain", "S3": "Affected Communities", "S4": "Consumers & End-Users", "G1": "Business Conduct", "G2": "Corporate Governance" },
+    "iroTypes": {
+      "impact": "Impact",
+      "risk": "Risk",
+      "opportunity": "Opportunity"
+    },
+    "esrsTopics": {
+      "E1": "Climate Change",
+      "E2": "Pollution",
+      "E3": "Water & Marine Resources",
+      "E4": "Biodiversity",
+      "E5": "Resource Use & Circular Economy",
+      "S1": "Own Workforce",
+      "S2": "Workers in Value Chain",
+      "S3": "Affected Communities",
+      "S4": "Consumers & End-Users",
+      "G1": "Business Conduct",
+      "G2": "Corporate Governance"
+    },
     "financialMateriality": "Financial Materiality",
     "impactMateriality": "Impact Materiality",
     "matrix": "Materiality Matrix",
@@ -21,8 +37,16 @@
     "activityData": "Activity Data",
     "factors": "Emission Factors",
     "customFactor": "Add Custom Factor",
-    "scope": { "1": "Scope 1 (Direct)", "2": "Scope 2 (Indirect Energy)", "3": "Scope 3 (Value Chain)" },
-    "dataQuality": { "measured": "Measured", "calculated": "Calculated", "estimated": "Estimated" },
+    "scope": {
+      "1": "Scope 1 (Direct)",
+      "2": "Scope 2 (Indirect Energy)",
+      "3": "Scope 3 (Value Chain)"
+    },
+    "dataQuality": {
+      "measured": "Measured",
+      "calculated": "Calculated",
+      "estimated": "Estimated"
+    },
     "dualReporting": "Scope 2 Dual Reporting",
     "locationBased": "Location-Based",
     "marketBased": "Market-Based",
@@ -46,14 +70,22 @@
     "submit": "Submit Data",
     "review": "Review Submission",
     "progress": "Collection Progress",
-    "validation": { "error": "Error (blocks submission)", "warning": "Warning (review recommended)" },
+    "validation": {
+      "error": "Error (blocks submission)",
+      "warning": "Warning (review recommended)"
+    },
     "myAssignments": "My Assignments"
   },
   "supplyChain": {
     "title": "Supply Chain ESG",
     "assessment": "Supplier ESG Assessment",
     "questionnaire": "ESG Questionnaire",
-    "riskClassification": { "low": "Low Risk", "medium": "Medium Risk", "high": "High Risk", "critical": "Critical Risk" },
+    "riskClassification": {
+      "low": "Low Risk",
+      "medium": "Medium Risk",
+      "high": "High Risk",
+      "critical": "Critical Risk"
+    },
     "correctiveAction": "Corrective Action",
     "lksg": "LkSG Due Diligence",
     "dashboard": "Supply Chain ESG Dashboard",

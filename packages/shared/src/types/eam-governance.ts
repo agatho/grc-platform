@@ -1,7 +1,18 @@
 // Sprint 53: EAM Governance & Deep Integration types
 
-export type GovernanceStatus = "draft" | "pending_review" | "approved" | "published" | "rejected" | "archived";
-export type GovernanceAction = "publish" | "approve" | "reject" | "archive" | "change_to_suggestion";
+export type GovernanceStatus =
+  | "draft"
+  | "pending_review"
+  | "approved"
+  | "published"
+  | "rejected"
+  | "archived";
+export type GovernanceAction =
+  | "publish"
+  | "approve"
+  | "reject"
+  | "archive"
+  | "change_to_suggestion";
 export type GovernanceRole = "author" | "examiner" | "responsible";
 export type BpmnPlacementType = "application" | "it_component" | "data_object";
 export type BiExportFormat = "json" | "csv";

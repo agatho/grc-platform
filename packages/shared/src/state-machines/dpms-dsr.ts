@@ -100,7 +100,8 @@ export function validateDsrGate8Close(snapshot: DsrSnapshot): Blocker[] {
   if (!snapshot.respondedAt) {
     blockers.push({
       code: "no_response_sent",
-      message: "Response wurde nicht als gesendet markiert (respondedAt fehlt).",
+      message:
+        "Response wurde nicht als gesendet markiert (respondedAt fehlt).",
       gate: "G8",
       severity: "error",
     });
@@ -108,7 +109,8 @@ export function validateDsrGate8Close(snapshot: DsrSnapshot): Blocker[] {
 
   // Art. 19 Notification-Check fuer rectification/erasure/restriction
   const needsArticle19 =
-    snapshot.requestType === "erasure" || snapshot.requestType === "restriction";
+    snapshot.requestType === "erasure" ||
+    snapshot.requestType === "restriction";
   if (needsArticle19 && !snapshot.article19NotificationsSent) {
     blockers.push({
       code: "article_19_missing",
@@ -123,7 +125,8 @@ export function validateDsrGate8Close(snapshot: DsrSnapshot): Blocker[] {
   if (snapshot.receivedAt && snapshot.respondedAt) {
     const received = new Date(snapshot.receivedAt);
     const responded = new Date(snapshot.respondedAt);
-    const diffDays = (responded.getTime() - received.getTime()) / (1000 * 60 * 60 * 24);
+    const diffDays =
+      (responded.getTime() - received.getTime()) / (1000 * 60 * 60 * 24);
     if (diffDays > 30 && !snapshot.extensionApplied) {
       blockers.push({
         code: "deadline_exceeded_without_extension",
@@ -159,13 +162,20 @@ export interface DsrDeadline {
   urgency: "green" | "yellow" | "orange" | "red";
 }
 
-export function computeDsrDeadline(receivedAt: Date, now: Date = new Date()): DsrDeadline {
+export function computeDsrDeadline(
+  receivedAt: Date,
+  now: Date = new Date(),
+): DsrDeadline {
   const DAY_MS = 24 * 60 * 60 * 1000;
   const standard = new Date(receivedAt.getTime() + 30 * DAY_MS);
   const extended = new Date(receivedAt.getTime() + 90 * DAY_MS);
 
-  const daysRemaining = Math.ceil((standard.getTime() - now.getTime()) / DAY_MS);
-  const daysExtendedRemaining = Math.ceil((extended.getTime() - now.getTime()) / DAY_MS);
+  const daysRemaining = Math.ceil(
+    (standard.getTime() - now.getTime()) / DAY_MS,
+  );
+  const daysExtendedRemaining = Math.ceil(
+    (extended.getTime() - now.getTime()) / DAY_MS,
+  );
 
   const standardOverdue = now.getTime() > standard.getTime();
   const extendedOverdue = now.getTime() > extended.getTime();
@@ -202,19 +212,23 @@ export interface DsrTransitionResult {
   updates?: Partial<DsrSnapshot>;
 }
 
-export function validateDsrTransition(req: DsrTransitionRequest): DsrTransitionResult {
+export function validateDsrTransition(
+  req: DsrTransitionRequest,
+): DsrTransitionResult {
   const { currentStatus, targetStatus, snapshot } = req;
 
   const allowed = DSR_ALLOWED_TRANSITIONS[currentStatus] ?? [];
   if (!allowed.includes(targetStatus)) {
     return {
       allowed: false,
-      blockers: [{
-        code: "invalid_transition",
-        message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
-        gate: "state_machine",
-        severity: "error",
-      }],
+      blockers: [
+        {
+          code: "invalid_transition",
+          message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
+          gate: "state_machine",
+          severity: "error",
+        },
+      ],
     };
   }
 
@@ -233,5 +247,9 @@ export function validateDsrTransition(req: DsrTransitionRequest): DsrTransitionR
     return { allowed: false, blockers: gateBlockers };
   }
 
-  return { allowed: true, blockers: gateBlockers, updates: { status: targetStatus } };
+  return {
+    allowed: true,
+    blockers: gateBlockers,
+    updates: { status: targetStatus },
+  };
 }

@@ -107,7 +107,7 @@ export async function requestTimestamp(
         "Content-Type": "application/timestamp-query",
         Accept: "application/timestamp-reply",
       },
-      body,
+      body: new Uint8Array(body),
       signal: controller.signal,
     });
   } finally {
@@ -188,10 +188,16 @@ function findGeneralizedTime(buf: Buffer): Date | undefined {
     const m = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})(\d{2})(\.\d+)?Z$/.exec(str);
     if (!m) continue;
     const [, yyyy, mm, dd, HH, MM, SS] = m;
-    return new Date(Date.UTC(
-      Number(yyyy), Number(mm) - 1, Number(dd),
-      Number(HH), Number(MM), Number(SS),
-    ));
+    return new Date(
+      Date.UTC(
+        Number(yyyy),
+        Number(mm) - 1,
+        Number(dd),
+        Number(HH),
+        Number(MM),
+        Number(SS),
+      ),
+    );
   }
   return undefined;
 }

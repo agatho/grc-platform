@@ -103,7 +103,11 @@ function BcpListInner() {
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : t("common.create")}
+              {creating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                t("common.create")
+              )}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
               {t("common.cancel")}
@@ -119,27 +123,47 @@ function BcpListInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.status")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("bcp.version")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.updated")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.name")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.status")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("bcp.version")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.updated")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/bcms/plans/${item.id}`)}>
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => router.push(`/bcms/plans/${item.id}`)}
+                >
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/bcms/plans/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                    <Link
+                      href={`/bcms/plans/${item.id}`}
+                      className="text-blue-700 hover:text-blue-900"
+                    >
                       {item.title}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={STATUS_COLORS[item.status]}>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[item.status]}
+                    >
                       {t(`bcp.status.${item.status}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-gray-600">v{item.version}</td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{new Date(item.updatedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">
+                    {new Date(item.updatedAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

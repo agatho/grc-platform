@@ -134,20 +134,17 @@ export const auditWpReviewNote = pgTable(
 // 43.4 audit_wp_review_note_reply — Threaded replies
 // ──────────────────────────────────────────────────────────────
 
-export const auditWpReviewNoteReply = pgTable(
-  "audit_wp_review_note_reply",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    reviewNoteId: uuid("review_note_id")
-      .notNull()
-      .references(() => auditWpReviewNote.id, { onDelete: "cascade" }),
-    replyText: text("reply_text").notNull(),
-    createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const auditWpReviewNoteReply = pgTable("audit_wp_review_note_reply", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reviewNoteId: uuid("review_note_id")
+    .notNull()
+    .references(() => auditWpReviewNote.id, { onDelete: "cascade" }),
+  replyText: text("reply_text").notNull(),
+  createdBy: uuid("created_by").references(() => user.id),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 // ──────────────────────────────────────────────────────────────
 // 43.5 auditor_profile — Skills, certs, capacity, hourly rate
@@ -199,7 +196,10 @@ export const auditResourceAllocation = pgTable(
       .notNull()
       .references(() => auditorProfile.id),
     role: varchar("role", { length: 20 }).notNull(),
-    plannedHours: numeric("planned_hours", { precision: 8, scale: 2 }).notNull(),
+    plannedHours: numeric("planned_hours", {
+      precision: 8,
+      scale: 2,
+    }).notNull(),
     actualHours: numeric("actual_hours", { precision: 8, scale: 2 }).default(
       "0",
     ),
@@ -294,9 +294,7 @@ export const continuousAuditResult = pgTable(
     executionTimeMs: integer("execution_time_ms"),
     errorMessage: text("error_message"),
   },
-  (table) => [
-    index("caresult_rule_idx").on(table.ruleId, table.executedAt),
-  ],
+  (table) => [index("caresult_rule_idx").on(table.ruleId, table.executedAt)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -431,18 +429,15 @@ export const externalAuditorShare = pgTable(
 // 43.14 external_auditor_activity — IMMUTABLE activity log
 // ──────────────────────────────────────────────────────────────
 
-export const externalAuditorActivity = pgTable(
-  "external_auditor_activity",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id").notNull(),
-    externalUserId: uuid("external_user_id").notNull(),
-    action: varchar("action", { length: 20 }).notNull(),
-    entityType: varchar("entity_type", { length: 50 }).notNull(),
-    entityId: uuid("entity_id").notNull(),
-    detail: jsonb("detail").default("{}"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const externalAuditorActivity = pgTable("external_auditor_activity", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  externalUserId: uuid("external_user_id").notNull(),
+  action: varchar("action", { length: 20 }).notNull(),
+  entityType: varchar("entity_type", { length: 50 }).notNull(),
+  entityId: uuid("entity_id").notNull(),
+  detail: jsonb("detail").default("{}"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

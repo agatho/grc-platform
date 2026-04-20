@@ -8,14 +8,22 @@ interface RiskValueBadgeProps {
   className?: string;
 }
 
-function getBadgeStyle(value: number | null | undefined): { bg: string; text: string; label: string } {
+function getBadgeStyle(value: number | null | undefined): {
+  bg: string;
+  text: string;
+  label: string;
+} {
   if (value == null || value === 0) {
     return { bg: "bg-gray-100", text: "text-gray-500", label: "N/A" };
   }
-  if (value >= 81) return { bg: "bg-red-500", text: "text-white", label: String(value) };
-  if (value >= 61) return { bg: "bg-orange-400", text: "text-white", label: String(value) };
-  if (value >= 41) return { bg: "bg-yellow-400", text: "text-gray-900", label: String(value) };
-  if (value >= 21) return { bg: "bg-lime-400", text: "text-gray-900", label: String(value) };
+  if (value >= 81)
+    return { bg: "bg-red-500", text: "text-white", label: String(value) };
+  if (value >= 61)
+    return { bg: "bg-orange-400", text: "text-white", label: String(value) };
+  if (value >= 41)
+    return { bg: "bg-yellow-400", text: "text-gray-900", label: String(value) };
+  if (value >= 21)
+    return { bg: "bg-lime-400", text: "text-gray-900", label: String(value) };
   return { bg: "bg-green-500", text: "text-white", label: String(value) };
 }
 

@@ -13,7 +13,8 @@ const LONG_TEXT = "x".repeat(150);
 const startSnapshot: DpiaSnapshot = {
   status: "draft",
   title: "DPIA Video-Surveillance",
-  processingDescription: "Kamera-Ueberwachung der Eingaenge mit Gesichtserkennung",
+  processingDescription:
+    "Kamera-Ueberwachung der Eingaenge mit Gesichtserkennung",
   necessityAssessment: null,
   systematicDescription: null,
   dataCategories: null,
@@ -31,7 +32,8 @@ const completeSnapshot: DpiaSnapshot = {
   ...startSnapshot,
   status: "in_progress",
   systematicDescription: LONG_TEXT,
-  necessityAssessment: "Rechtmaessig gemaess Art. 6(1)(f) -- Sicherheits-Interesse",
+  necessityAssessment:
+    "Rechtmaessig gemaess Art. 6(1)(f) -- Sicherheits-Interesse",
   dataCategories: ["Video", "Biometrisch"],
   dataSubjectCategories: ["Besucher", "Mitarbeiter"],
   riskCount: 3,
@@ -69,8 +71,13 @@ describe("validateDpiaGate3Start", () => {
     expect(blockers.some((b) => b.code === "missing_title")).toBe(true);
   });
   it("blocks description too short", () => {
-    const blockers = validateDpiaGate3Start({ ...startSnapshot, processingDescription: "short" });
-    expect(blockers.some((b) => b.code === "processing_description_too_short")).toBe(true);
+    const blockers = validateDpiaGate3Start({
+      ...startSnapshot,
+      processingDescription: "short",
+    });
+    expect(
+      blockers.some((b) => b.code === "processing_description_too_short"),
+    ).toBe(true);
   });
 });
 
@@ -80,16 +87,27 @@ describe("validateDpiaGate3Complete", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks no risks", () => {
-    const blockers = validateDpiaGate3Complete({ ...completeSnapshot, riskCount: 0 });
+    const blockers = validateDpiaGate3Complete({
+      ...completeSnapshot,
+      riskCount: 0,
+    });
     expect(blockers.some((b) => b.code === "no_risks")).toBe(true);
   });
   it("blocks no measures", () => {
-    const blockers = validateDpiaGate3Complete({ ...completeSnapshot, measureCount: 0 });
+    const blockers = validateDpiaGate3Complete({
+      ...completeSnapshot,
+      measureCount: 0,
+    });
     expect(blockers.some((b) => b.code === "no_measures")).toBe(true);
   });
   it("blocks no data categories", () => {
-    const blockers = validateDpiaGate3Complete({ ...completeSnapshot, dataCategories: [] });
-    expect(blockers.some((b) => b.code === "missing_data_categories")).toBe(true);
+    const blockers = validateDpiaGate3Complete({
+      ...completeSnapshot,
+      dataCategories: [],
+    });
+    expect(blockers.some((b) => b.code === "missing_data_categories")).toBe(
+      true,
+    );
   });
   it("warns insufficient mitigation", () => {
     const blockers = validateDpiaGate3Complete({
@@ -109,7 +127,10 @@ describe("validateDpiaGate3Approve", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks without DPO opinion", () => {
-    const blockers = validateDpiaGate3Approve({ ...approveSnapshot, dpoOpinion: null });
+    const blockers = validateDpiaGate3Approve({
+      ...approveSnapshot,
+      dpoOpinion: null,
+    });
     expect(blockers.some((b) => b.code === "missing_dpo_opinion")).toBe(true);
   });
   it("blocks without sign-off", () => {
@@ -125,7 +146,9 @@ describe("validateDpiaGate3Approve", () => {
       priorConsultationRequired: true,
       consultationDate: null,
     });
-    expect(blockers.some((b) => b.code === "prior_consultation_overdue")).toBe(true);
+    expect(blockers.some((b) => b.code === "prior_consultation_overdue")).toBe(
+      true,
+    );
   });
 });
 

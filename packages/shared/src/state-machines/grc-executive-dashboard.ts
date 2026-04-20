@@ -100,9 +100,15 @@ export function computeIsmsHealth(input: IsmsDashboardInput): ModuleHealth {
   const findingsHealth =
     input.openFindingsCount === 0
       ? 100
-      : Math.max(0, 100 - input.criticalFindingsCount * 20 - input.openFindingsCount * 2);
+      : Math.max(
+          0,
+          100 - input.criticalFindingsCount * 20 - input.openFindingsCount * 2,
+        );
 
-  const capHealth = input.capOpenCount === 0 ? 100 : Math.max(0, 100 - input.capOverdueCount * 15);
+  const capHealth =
+    input.capOpenCount === 0
+      ? 100
+      : Math.max(0, 100 - input.capOverdueCount * 15);
 
   const score = Math.round(
     input.maturityAverage * 0.3 +
@@ -123,7 +129,9 @@ export function computeIsmsHealth(input: IsmsDashboardInput): ModuleHealth {
     concerns.push(`SoA-Coverage ${input.soaCoveragePercent}% unter Ziel 80%.`);
   }
   if (input.maturityAverage < 60) {
-    concerns.push(`Durchschnittliche Maturity ${input.maturityAverage}% unter ERM-Minimum.`);
+    concerns.push(
+      `Durchschnittliche Maturity ${input.maturityAverage}% unter ERM-Minimum.`,
+    );
   }
 
   return {
@@ -143,9 +151,13 @@ export function computeIsmsHealth(input: IsmsDashboardInput): ModuleHealth {
 
 export function computeBcmsHealth(input: BcmsDashboardInput): ModuleHealth {
   const biaCoverage =
-    input.biaTotalCount > 0 ? (input.biaCompletedCount / input.biaTotalCount) * 100 : 0;
+    input.biaTotalCount > 0
+      ? (input.biaCompletedCount / input.biaTotalCount) * 100
+      : 0;
   const bcpCoverage =
-    input.bcpTotalCount > 0 ? (input.bcpPublishedCount / input.bcpTotalCount) * 100 : 0;
+    input.bcpTotalCount > 0
+      ? (input.bcpPublishedCount / input.bcpTotalCount) * 100
+      : 0;
   const exerciseHealth = input.exercisesCompletedYtd > 0 ? 100 : 40;
   const crisisPenalty = input.activeCrisisCount > 0 ? 50 : 100;
 
@@ -159,7 +171,9 @@ export function computeBcmsHealth(input: BcmsDashboardInput): ModuleHealth {
 
   const concerns: string[] = [];
   if (input.activeCrisisCount > 0) {
-    concerns.push(`${input.activeCrisisCount} aktive(r) Krisenfall/Krise -- volle Aufmerksamkeit.`);
+    concerns.push(
+      `${input.activeCrisisCount} aktive(r) Krisenfall/Krise -- volle Aufmerksamkeit.`,
+    );
   }
   if (bcpCoverage < 80) {
     concerns.push(`Nur ${Math.round(bcpCoverage)}% BCPs published.`);
@@ -219,7 +233,9 @@ export function computeDpmsHealth(input: DpmsDashboardInput): ModuleHealth {
     );
   }
   if (input.dsrOverdueCount > 0) {
-    concerns.push(`${input.dsrOverdueCount} DSR ueberfaellig (Art. 12 (3) 1-Monat-Frist).`);
+    concerns.push(
+      `${input.dsrOverdueCount} DSR ueberfaellig (Art. 12 (3) 1-Monat-Frist).`,
+    );
   }
   if (input.dpiaPendingCount > 5) {
     concerns.push(`${input.dpiaPendingCount} DPIAs noch nicht approved.`);
@@ -255,7 +271,9 @@ export function computeAiActHealth(input: AiActDashboardInput): ModuleHealth {
         systemsUnacceptable: input.systemsUnacceptable,
         qmsAverageMaturity: input.qmsAverageMaturity,
         friaCoverage:
-          input.friaRequired > 0 ? Math.round((input.friaCompleted / input.friaRequired) * 100) : 100,
+          input.friaRequired > 0
+            ? Math.round((input.friaCompleted / input.friaRequired) * 100)
+            : 100,
       },
       topConcerns: [
         `HARD-STOP: ${input.systemsUnacceptable} AI-System(e) mit unacceptable-risk.`,
@@ -264,9 +282,13 @@ export function computeAiActHealth(input: AiActDashboardInput): ModuleHealth {
   }
 
   const complianceRate =
-    input.systemsTotal > 0 ? (input.systemsCompliant / input.systemsTotal) * 100 : 100;
+    input.systemsTotal > 0
+      ? (input.systemsCompliant / input.systemsTotal) * 100
+      : 100;
   const friaCoverage =
-    input.friaRequired > 0 ? (input.friaCompleted / input.friaRequired) * 100 : 100;
+    input.friaRequired > 0
+      ? (input.friaCompleted / input.friaRequired) * 100
+      : 100;
   const incidentHealth = input.incidentsOverdueCount === 0 ? 100 : 30;
   const gpaiPenalty = input.gpaiSystemicCount > 0 ? 85 : 100; // More scrutiny
 
@@ -280,7 +302,9 @@ export function computeAiActHealth(input: AiActDashboardInput): ModuleHealth {
 
   const concerns: string[] = [];
   if (input.incidentsOverdueCount > 0) {
-    concerns.push(`${input.incidentsOverdueCount} AI-Incident-Notifications ueberfaellig (Art. 73).`);
+    concerns.push(
+      `${input.incidentsOverdueCount} AI-Incident-Notifications ueberfaellig (Art. 73).`,
+    );
   }
   if (friaCoverage < 100 && input.friaRequired > 0) {
     concerns.push(`FRIA-Coverage ${Math.round(friaCoverage)}% unter 100%.`);
@@ -289,7 +313,9 @@ export function computeAiActHealth(input: AiActDashboardInput): ModuleHealth {
     concerns.push(`QMS-Maturity ${input.qmsAverageMaturity}% unter CE-Reife.`);
   }
   if (input.systemsHighRisk > 0 && complianceRate < 80) {
-    concerns.push(`${input.systemsHighRisk} high-risk-Systeme, nur ${Math.round(complianceRate)}% compliant.`);
+    concerns.push(
+      `${input.systemsHighRisk} high-risk-Systeme, nur ${Math.round(complianceRate)}% compliant.`,
+    );
   }
 
   return {
@@ -320,7 +346,9 @@ export function computeExecutiveDashboard(
   ];
 
   // Equal weighting across modules (25% each)
-  const overallScore = Math.round(modules.reduce((s, m) => s + m.score, 0) / modules.length);
+  const overallScore = Math.round(
+    modules.reduce((s, m) => s + m.score, 0) / modules.length,
+  );
   const overallStatus = classifyStatus(overallScore);
 
   const criticalCount = modules.filter((m) => m.status === "red").length;
@@ -338,7 +366,8 @@ export function computeExecutiveDashboard(
   if (actions.length < 3) {
     for (const m of modules.filter((x) => x.status === "amber")) {
       for (const c of m.topConcerns) {
-        if (actions.length < 3) actions.push(`[${m.module.toUpperCase()}] ${c}`);
+        if (actions.length < 3)
+          actions.push(`[${m.module.toUpperCase()}] ${c}`);
       }
       if (actions.length >= 3) break;
     }
@@ -350,10 +379,14 @@ export function computeExecutiveDashboard(
     `Module-Status: ${modules.map((m) => `${m.module}=${m.status}`).join(", ")}.`,
   ];
   if (criticalCount > 0) {
-    talkingPoints.push(`${criticalCount} Modul(e) im RED -- unmittelbare Aufmerksamkeit.`);
+    talkingPoints.push(
+      `${criticalCount} Modul(e) im RED -- unmittelbare Aufmerksamkeit.`,
+    );
   }
   if (amberCount > 0 && criticalCount === 0) {
-    talkingPoints.push(`${amberCount} Modul(e) im AMBER -- Monitoring intensivieren.`);
+    talkingPoints.push(
+      `${amberCount} Modul(e) im AMBER -- Monitoring intensivieren.`,
+    );
   }
 
   return {

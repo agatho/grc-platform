@@ -63,7 +63,10 @@ import {
   EMPTY_BPMN_XML,
 } from "@grc/shared";
 
-import type { BpmnEditorRef, RiskOverlayData } from "@/components/bpmn/bpmn-editor";
+import type {
+  BpmnEditorRef,
+  RiskOverlayData,
+} from "@/components/bpmn/bpmn-editor";
 import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
 import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
@@ -73,12 +76,32 @@ import { ProcessReviewConfig } from "@/components/process/process-review-config"
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
-  () => import("@/components/bpmn/bpmn-editor").then((m) => ({ default: m.BpmnEditor })),
-  { ssr: false, loading: () => <div className="flex items-center justify-center min-h-[500px]"><Loader2 className="h-6 w-6 animate-spin text-gray-400" /></div> },
+  () =>
+    import("@/components/bpmn/bpmn-editor").then((m) => ({
+      default: m.BpmnEditor,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[500px]">
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
+      </div>
+    ),
+  },
 );
 const BpmnViewerDynamic = dynamic(
-  () => import("@/components/bpmn/bpmn-viewer").then((m) => ({ default: m.BpmnViewer })),
-  { ssr: false, loading: () => <div className="flex items-center justify-center min-h-[400px]"><Loader2 className="h-5 w-5 animate-spin text-gray-400" /></div> },
+  () =>
+    import("@/components/bpmn/bpmn-viewer").then((m) => ({
+      default: m.BpmnViewer,
+    })),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
+      </div>
+    ),
+  },
 );
 
 // ---------------------------------------------------------------------------
@@ -168,7 +191,8 @@ function ProcessDetailContent() {
 
   // Deep link: ?tab=editor&shape=Activity_1 or ?tab=comments&comment=uuid
   const [activeTab, setActiveTab] = useState(
-    tabParam ?? (shapeParam ? "editor" : commentParam ? "comments" : "overview"),
+    tabParam ??
+      (shapeParam ? "editor" : commentParam ? "comments" : "overview"),
   );
 
   // Editor state is now managed by EditorTab / useBpmnEditor
@@ -182,7 +206,8 @@ function ProcessDetailContent() {
   const [historyLoading, setHistoryLoading] = useState(false);
 
   // Transition state
-  const [transitionTarget, setTransitionTarget] = useState<ProcessStatus | null>(null);
+  const [transitionTarget, setTransitionTarget] =
+    useState<ProcessStatus | null>(null);
   const [transitionComment, setTransitionComment] = useState("");
   const [transitioning, setTransitioning] = useState(false);
 
@@ -309,7 +334,9 @@ function ProcessDetailContent() {
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
-        throw new Error((err as Record<string, string>).error ?? "Transition failed");
+        throw new Error(
+          (err as Record<string, string>).error ?? "Transition failed",
+        );
       }
       toast.success(t(`status.${target}`));
       setTransitionTarget(null);
@@ -419,7 +446,10 @@ function ProcessDetailContent() {
             ))}
             {canEdit && (
               <Button variant="outline" size="sm" asChild>
-                <Link href={`/processes/${processId}#editor`} onClick={() => setActiveTab("editor")}>
+                <Link
+                  href={`/processes/${processId}#editor`}
+                  onClick={() => setActiveTab("editor")}
+                >
                   <Pencil size={14} />
                   {t("actions.edit")}
                 </Link>
@@ -455,9 +485,7 @@ function ProcessDetailContent() {
             <DialogTitle>
               {transitionTarget && getTransitionLabel(transitionTarget)}
             </DialogTitle>
-            <DialogDescription>
-              {t("history.comment")}
-            </DialogDescription>
+            <DialogDescription>{t("history.comment")}</DialogDescription>
           </DialogHeader>
           <textarea
             value={transitionComment}
@@ -480,13 +508,9 @@ function ProcessDetailContent() {
               onClick={() =>
                 transitionTarget && handleTransition(transitionTarget)
               }
-              disabled={
-                transitioning || !transitionComment.trim()
-              }
+              disabled={transitioning || !transitionComment.trim()}
             >
-              {transitioning && (
-                <Loader2 size={14} className="animate-spin" />
-              )}
+              {transitioning && <Loader2 size={14} className="animate-spin" />}
               Confirm
             </Button>
           </DialogFooter>
@@ -628,21 +652,33 @@ function OverviewTab({
           <dl className="space-y-3">
             <MetaRow label={t("form.name")} value={process.name} />
             {process.description && (
-              <MetaRow label={t("detail.description")} value={process.description} />
+              <MetaRow
+                label={t("detail.description")}
+                value={process.description}
+              />
             )}
             <MetaRow
               label={t("detail.level")}
               value={t(`levels.${process.level}` as Parameters<typeof t>[0])}
             />
             {process.department && (
-              <MetaRow label={t("detail.department")} value={process.department} />
+              <MetaRow
+                label={t("detail.department")}
+                value={process.department}
+              />
             )}
-            <MetaRow label={t("detail.notation")} value={process.notation.toUpperCase()} />
+            <MetaRow
+              label={t("detail.notation")}
+              value={process.notation.toUpperCase()}
+            />
             {process.ownerName && (
               <MetaRow label={t("detail.owner")} value={process.ownerName} />
             )}
             {process.reviewerName && (
-              <MetaRow label={t("detail.reviewer")} value={process.reviewerName} />
+              <MetaRow
+                label={t("detail.reviewer")}
+                value={process.reviewerName}
+              />
             )}
             <MetaRow
               label={t("detail.version")}
@@ -656,7 +692,11 @@ function OverviewTab({
             )}
             <MetaRow
               label={t("detail.essential")}
-              value={process.isEssential ? t("detail.essentialYes") : t("detail.essentialNo")}
+              value={
+                process.isEssential
+                  ? t("detail.essentialYes")
+                  : t("detail.essentialNo")
+              }
             />
           </dl>
 
@@ -670,7 +710,10 @@ function OverviewTab({
                 {steps
                   .sort((a, b) => a.sequenceOrder - b.sequenceOrder)
                   .map((step, idx) => (
-                    <li key={step.id} className="flex items-center gap-2 text-sm">
+                    <li
+                      key={step.id}
+                      className="flex items-center gap-2 text-sm"
+                    >
                       <span className="text-gray-400 text-xs w-5 text-right">
                         {idx + 1}.
                       </span>
@@ -734,12 +777,14 @@ function OverviewTab({
                 </Badge>
               ) : (
                 <Badge variant="destructive">
-                  {validation.errorCount} Error{validation.errorCount !== 1 ? "s" : ""}
+                  {validation.errorCount} Error
+                  {validation.errorCount !== 1 ? "s" : ""}
                 </Badge>
               )}
               {validation.warningCount > 0 && (
                 <Badge className="bg-yellow-100 text-yellow-900 border-yellow-200">
-                  {validation.warningCount} Warning{validation.warningCount !== 1 ? "s" : ""}
+                  {validation.warningCount} Warning
+                  {validation.warningCount !== 1 ? "s" : ""}
                 </Badge>
               )}
             </CardTitle>
@@ -816,17 +861,24 @@ function EditorTab({
   });
 
   // Risk overlay data
-  const { overlayData, stepRisks, refetch: refetchRisks } = useProcessStepRisks(processId);
+  const {
+    overlayData,
+    stepRisks,
+    refetch: refetchRisks,
+  } = useProcessStepRisks(processId);
 
   // Selected element for side panel
-  const [selectedElement, setSelectedElement] = useState<SelectedElement | null>(null);
+  const [selectedElement, setSelectedElement] =
+    useState<SelectedElement | null>(null);
 
   // Find process step for selected element
   const selectedStep = useMemo(() => {
     if (!selectedElement) return null;
-    return (process.steps ?? []).find(
-      (s) => s.bpmnElementId === selectedElement.id,
-    ) ?? null;
+    return (
+      (process.steps ?? []).find(
+        (s) => s.bpmnElementId === selectedElement.id,
+      ) ?? null
+    );
   }, [selectedElement, process.steps]);
 
   // Find linked risks for selected step
@@ -840,11 +892,18 @@ function EditorTab({
   const handleElementClick = useCallback(
     (elementId: string, elementType: string, elementName: string | null) => {
       // Click on canvas background closes panel
-      if (elementType === "bpmn:Process" || elementType === "bpmn:Collaboration") {
+      if (
+        elementType === "bpmn:Process" ||
+        elementType === "bpmn:Collaboration"
+      ) {
         setSelectedElement(null);
         return;
       }
-      setSelectedElement({ id: elementId, type: elementType, name: elementName });
+      setSelectedElement({
+        id: elementId,
+        type: elementType,
+        name: elementName,
+      });
     },
     [],
   );
@@ -862,9 +921,12 @@ function EditorTab({
   const handleRiskUnlink = useCallback(
     async (linkId: string) => {
       try {
-        const res = await fetch(`/api/v1/processes/${processId}/risks/${linkId}`, {
-          method: "DELETE",
-        });
+        const res = await fetch(
+          `/api/v1/processes/${processId}/risks/${linkId}`,
+          {
+            method: "DELETE",
+          },
+        );
         if (!res.ok) throw new Error("Unlink failed");
         toast.success("Risk unlinked");
         refetchRisks();
@@ -911,9 +973,17 @@ function EditorTab({
       />
 
       {/* Editor area */}
-      <div className="flex border border-t-0 border-gray-200 rounded-b-lg overflow-hidden" style={{ height: "calc(100vh - 380px)", minHeight: 500 }}>
+      <div
+        className="flex border border-t-0 border-gray-200 rounded-b-lg overflow-hidden"
+        style={{ height: "calc(100vh - 380px)", minHeight: 500 }}
+      >
         {/* BPMN Canvas */}
-        <div className={cn("flex-1 relative", selectedElement ? "w-[70%]" : "w-full")}>
+        <div
+          className={cn(
+            "flex-1 relative",
+            selectedElement ? "w-[70%]" : "w-full",
+          )}
+        >
           <BpmnEditorDynamic
             ref={editorRef}
             initialXml={initialXml}
@@ -979,7 +1049,9 @@ function VersionsTab({
   );
 
   const handleRestore = async (version: ProcessVersion) => {
-    if (!confirm(t("versions.restoreConfirm", { version: version.versionNumber }))) {
+    if (
+      !confirm(t("versions.restoreConfirm", { version: version.versionNumber }))
+    ) {
       return;
     }
     setRestoring(true);
@@ -1092,10 +1164,14 @@ function VersionsTab({
         <DialogContent className="max-w-4xl max-h-[80vh]">
           <DialogHeader>
             <DialogTitle>
-              v{viewingVersion?.versionNumber} — {viewingVersion?.changeSummary ?? "BPMN XML"}
+              v{viewingVersion?.versionNumber} —{" "}
+              {viewingVersion?.changeSummary ?? "BPMN XML"}
             </DialogTitle>
           </DialogHeader>
-          <div className="overflow-hidden rounded border border-gray-200 bg-white" style={{ height: "60vh" }}>
+          <div
+            className="overflow-hidden rounded border border-gray-200 bg-white"
+            style={{ height: "60vh" }}
+          >
             {viewingVersion?.bpmnXml ? (
               <BpmnViewerDynamic
                 xml={viewingVersion.bpmnXml}
@@ -1138,7 +1214,13 @@ function RisksTab({
   const [linkDialogOpen, setLinkDialogOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [searchResults, setSearchResults] = useState<
-    Array<{ id: string; title: string; riskScore?: number; status?: string; elementId?: string }>
+    Array<{
+      id: string;
+      title: string;
+      riskScore?: number;
+      status?: string;
+      elementId?: string;
+    }>
   >([]);
   const [searching, setSearching] = useState(false);
   const [linkTarget, setLinkTarget] = useState<"process" | string>("process");
@@ -1174,15 +1256,13 @@ function RisksTab({
         if (res.ok) {
           const json = await res.json();
           setSearchResults(
-            (json.data ?? []).map(
-              (r: Record<string, unknown>) => ({
-                id: r.id as string,
-                title: r.title as string,
-                riskScore: r.riskScoreInherent as number | undefined,
-                status: r.status as string | undefined,
-                elementId: r.elementId as string | undefined,
-              }),
-            ),
+            (json.data ?? []).map((r: Record<string, unknown>) => ({
+              id: r.id as string,
+              title: r.title as string,
+              riskScore: r.riskScoreInherent as number | undefined,
+              status: r.status as string | undefined,
+              elementId: r.elementId as string | undefined,
+            })),
           );
         }
       } catch {
@@ -1220,9 +1300,12 @@ function RisksTab({
   const handleUnlinkRisk = async (linkId: string) => {
     if (!confirm(t("risks.unlinkConfirm"))) return;
     try {
-      const res = await fetch(`/api/v1/processes/${processId}/risks/${linkId}`, {
-        method: "DELETE",
-      });
+      const res = await fetch(
+        `/api/v1/processes/${processId}/risks/${linkId}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (!res.ok) throw new Error("Unlink failed");
       toast.success(t("risks.unlinked"));
       onRefresh();
@@ -1256,7 +1339,9 @@ function RisksTab({
             <h3 className="text-base font-semibold text-gray-900">
               {t("risks.processRisks")}
             </h3>
-            <p className="text-sm text-gray-500">{t("risks.processRisksDesc")}</p>
+            <p className="text-sm text-gray-500">
+              {t("risks.processRisksDesc")}
+            </p>
           </div>
           {canEdit && (
             <Button

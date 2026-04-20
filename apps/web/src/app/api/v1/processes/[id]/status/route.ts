@@ -20,11 +20,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth(
-    "admin",
-    "process_owner",
-    "auditor",
-  );
+  const ctx = await withAuth("admin", "process_owner", "auditor");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
@@ -89,10 +85,7 @@ export async function PUT(
   );
 
   if (!validation.valid) {
-    return Response.json(
-      { error: validation.error },
-      { status: 403 },
-    );
+    return Response.json({ error: validation.error }, { status: 403 });
   }
 
   // Check comment requirement
@@ -117,7 +110,10 @@ export async function PUT(
 
     if (versions.length === 0) {
       return Response.json(
-        { error: "Process must have at least one version before submitting for review" },
+        {
+          error:
+            "Process must have at least one version before submitting for review",
+        },
         { status: 422 },
       );
     }
@@ -138,12 +134,7 @@ export async function PUT(
     const [row] = await tx
       .update(process)
       .set(updateData)
-      .where(
-        and(
-          eq(process.id, id),
-          eq(process.orgId, ctx.orgId),
-        ),
-      )
+      .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)))
       .returning();
 
     // Send notifications based on transition type
@@ -171,7 +162,8 @@ export async function PUT(
       (targetStatus === "approved" || targetStatus === "draft") &&
       existing.processOwnerId
     ) {
-      const notifType = targetStatus === "approved" ? "status_change" : "status_change";
+      const notifType =
+        targetStatus === "approved" ? "status_change" : "status_change";
       const title =
         targetStatus === "approved"
           ? `Process approved: ${existing.name}`
@@ -187,9 +179,7 @@ export async function PUT(
         message: body.data.comment ?? null,
         channel: "both",
         templateKey:
-          targetStatus === "approved"
-            ? "process_approved"
-            : "process_rejected",
+          targetStatus === "approved" ? "process_approved" : "process_rejected",
         templateData: {
           processId: id,
           processName: existing.name,

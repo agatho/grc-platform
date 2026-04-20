@@ -15,7 +15,11 @@ import {
   DEFAULT_CCI_WEIGHTS,
   CCI_FACTOR_KEYS,
 } from "../src/cci/calculator";
-import type { CCIFactorScores, CCIFactorWeights, CCIRawMetrics } from "../src/types/compliance-culture";
+import type {
+  CCIFactorScores,
+  CCIFactorWeights,
+  CCIRawMetrics,
+} from "../src/types/compliance-culture";
 
 describe("CCICalculator", () => {
   const defaultFactors: CCIFactorScores = {

@@ -51,7 +51,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {
@@ -59,8 +62,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const input: TransparencyContext = {
-    applicableObligations: parsed.data.applicableObligations as TransparencyObligationType[],
-    implementedDisclosures: parsed.data.implementedDisclosures as TransparencyObligationType[],
+    applicableObligations: parsed.data
+      .applicableObligations as TransparencyObligationType[],
+    implementedDisclosures: parsed.data
+      .implementedDisclosures as TransparencyObligationType[],
     disclosureMethod: parsed.data.disclosureMethod,
     userCanAcknowledge: parsed.data.userCanAcknowledge,
   };

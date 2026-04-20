@@ -1,14 +1,14 @@
-import {
-  db,
-  process,
-  processVersion,
-  processStep,
-} from "@grc/db";
+import { db, process, processVersion, processStep } from "@grc/db";
 import { createVersionSchema } from "@grc/shared";
 import { parseBpmnXml, computeBpmnDiff } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/processes/:id/versions — Save BPMN as new version
 export async function POST(
@@ -69,11 +69,16 @@ export async function POST(
   const prevVersions = await db
     .select({ bpmnXml: processVersion.bpmnXml })
     .from(processVersion)
-    .where(and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)))
+    .where(
+      and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
+    )
     .limit(1);
   if (prevVersions[0]?.bpmnXml) {
     try {
-      diffSummaryJson = computeBpmnDiff(prevVersions[0].bpmnXml, body.data.bpmnXml) as unknown as Record<string, unknown>;
+      diffSummaryJson = computeBpmnDiff(
+        prevVersions[0].bpmnXml,
+        body.data.bpmnXml,
+      ) as unknown as Record<string, unknown>;
     } catch {
       // Diff computation failed — store null, not blocking
     }
@@ -119,17 +124,17 @@ export async function POST(
         bpmnElementId: processStep.bpmnElementId,
       })
       .from(processStep)
-      .where(
-        and(
-          eq(processStep.processId, id),
-          isNull(processStep.deletedAt),
-        ),
-      );
+      .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
 
     const existingStepMap = new Map<string, string>(
-      existingSteps.map((s: { bpmnElementId: string; id: string }) => [s.bpmnElementId, s.id]),
+      existingSteps.map((s: { bpmnElementId: string; id: string }) => [
+        s.bpmnElementId,
+        s.id,
+      ]),
     );
-    const parsedElementIds = new Set<string>(parsedSteps.map((s) => s.bpmnElementId));
+    const parsedElementIds = new Set<string>(
+      parsedSteps.map((s) => s.bpmnElementId),
+    );
 
     // Upsert parsed steps
     for (const step of parsedSteps) {

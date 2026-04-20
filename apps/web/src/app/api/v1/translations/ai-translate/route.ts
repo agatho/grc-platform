@@ -21,7 +21,13 @@ import { eq, and, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = aiTranslateSchema.safeParse(await req.json());
@@ -37,7 +43,10 @@ export async function POST(req: Request) {
   const tableName = ENTITY_TABLE_MAP[entityType];
   const allTranslatableFields = TRANSLATABLE_FIELDS[entityType];
   if (!tableName || !allTranslatableFields) {
-    return Response.json({ error: "Entity type not translatable" }, { status: 400 });
+    return Response.json(
+      { error: "Entity type not translatable" },
+      { status: 400 },
+    );
   }
 
   const fieldsToTranslate = body.data.fields
@@ -45,17 +54,25 @@ export async function POST(req: Request) {
     : allTranslatableFields;
 
   if (fieldsToTranslate.length === 0) {
-    return Response.json({ error: "No valid translatable fields specified" }, { status: 422 });
+    return Response.json(
+      { error: "No valid translatable fields specified" },
+      { status: 422 },
+    );
   }
 
   // Fetch entity
   // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
-  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const isCatalogTable =
+    tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
   const fieldSelects = allTranslatableFields.map((f) => sql.raw(`"${f}"`));
 
   const entityResult = isCatalogTable
-    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
-    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
+    ? await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`,
+      )
+    : await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`,
+      );
 
   const entityRows = entityResult as unknown as Record<string, unknown>[];
   if (!entityRows || entityRows.length === 0) {
@@ -82,7 +99,10 @@ export async function POST(req: Request) {
   }
 
   if (Object.keys(sourceTexts).length === 0) {
-    return Response.json({ error: "No source content to translate" }, { status: 422 });
+    return Response.json(
+      { error: "No source content to translate" },
+      { status: 422 },
+    );
   }
 
   // Translate to each target language
@@ -106,21 +126,33 @@ export async function POST(req: Request) {
           maxTokens: 4096,
           temperature: 0.1,
         });
-        translatedTexts = { [field]: sanitizeTranslation(response.text.trim()) };
+        translatedTexts = {
+          [field]: sanitizeTranslation(response.text.trim()),
+        };
         totalInputTokens += response.usage?.inputTokens ?? 0;
         totalOutputTokens += response.usage?.outputTokens ?? 0;
         provider = response.provider;
       } else {
         // Multiple fields — use batch prompt
-        const prompt = buildBatchTranslatePrompt(sourceTexts, orgDefaultLang, targetLang);
+        const prompt = buildBatchTranslatePrompt(
+          sourceTexts,
+          orgDefaultLang,
+          targetLang,
+        );
         const response = await aiComplete({
           messages: [{ role: "user", content: prompt }],
           maxTokens: 8192,
           temperature: 0.1,
         });
-        const parsed = parseBatchTranslateResponse(response.text, Object.keys(sourceTexts));
+        const parsed = parseBatchTranslateResponse(
+          response.text,
+          Object.keys(sourceTexts),
+        );
         translatedTexts = Object.fromEntries(
-          Object.entries(parsed).map(([k, v]) => [k, sanitizeTranslation(String(v))]),
+          Object.entries(parsed).map(([k, v]) => [
+            k,
+            sanitizeTranslation(String(v)),
+          ]),
         );
         totalInputTokens += response.usage?.inputTokens ?? 0;
         totalOutputTokens += response.usage?.outputTokens ?? 0;
@@ -142,7 +174,11 @@ export async function POST(req: Request) {
       for (const [field, translatedText] of Object.entries(translatedFields)) {
         // Merge translation into JSONB field
         const currentField = entity[field] as Record<string, string> | null;
-        const merged = mergeTranslation(currentField, targetLang, translatedText);
+        const merged = mergeTranslation(
+          currentField,
+          targetLang,
+          translatedText,
+        );
 
         // Field name validated against TRANSLATABLE_FIELDS whitelist above
         const updateQuery = isCatalogTable

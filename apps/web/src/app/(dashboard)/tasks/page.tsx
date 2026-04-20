@@ -4,12 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  MoreHorizontal,
-  Loader2,
-  Search,
-} from "lucide-react";
+import { Plus, MoreHorizontal, Loader2, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -75,7 +70,13 @@ interface TaskFormData {
 }
 
 const PRIORITIES = ["critical", "high", "medium", "low"] as const;
-const STATUSES = ["open", "in_progress", "done", "overdue", "cancelled"] as const;
+const STATUSES = [
+  "open",
+  "in_progress",
+  "done",
+  "overdue",
+  "cancelled",
+] as const;
 
 const EMPTY_FORM: TaskFormData = {
   title: "",
@@ -196,7 +197,9 @@ function CreateTaskDialog({
             <Textarea
               id="task-desc"
               value={form.description}
-              onChange={(e) => setForm({ ...form, description: e.target.value })}
+              onChange={(e) =>
+                setForm({ ...form, description: e.target.value })
+              }
               rows={3}
               placeholder={t("descriptionPlaceholder")}
             />
@@ -330,29 +333,26 @@ export default function TasksPage() {
   // Determine if user has admin/risk_manager role
   const userRoles = session?.user?.roles ?? [];
   const canViewAll = userRoles.some(
-    (r) => r.role === "admin" || r.role === "risk_manager"
+    (r) => r.role === "admin" || r.role === "risk_manager",
   );
 
   // Fetch tasks
-  const fetchTasks = useCallback(
-    async (view: "my" | "all") => {
-      setLoading(true);
-      setError(false);
-      try {
-        const params = new URLSearchParams({ view, limit: "200" });
-        const res = await fetch(`/api/v1/tasks?${params.toString()}`);
-        if (!res.ok) throw new Error("Failed to fetch tasks");
-        const json = await res.json();
-        setTasks(json.data ?? []);
-      } catch {
-        setError(true);
-        setTasks([]);
-      } finally {
-        setLoading(false);
-      }
-    },
-    []
-  );
+  const fetchTasks = useCallback(async (view: "my" | "all") => {
+    setLoading(true);
+    setError(false);
+    try {
+      const params = new URLSearchParams({ view, limit: "200" });
+      const res = await fetch(`/api/v1/tasks?${params.toString()}`);
+      if (!res.ok) throw new Error("Failed to fetch tasks");
+      const json = await res.json();
+      setTasks(json.data ?? []);
+    } catch {
+      setError(true);
+      setTasks([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   // Fetch org users
   useEffect(() => {
@@ -362,13 +362,11 @@ export default function TasksPage() {
         return r.json();
       })
       .then((json) => {
-        const users = (json.data ?? []).map(
-          (u: Record<string, unknown>) => ({
-            id: u.id as string,
-            name: (u.name as string) || (u.email as string),
-            email: u.email as string,
-          })
-        );
+        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
+          id: u.id as string,
+          name: (u.name as string) || (u.email as string),
+          email: u.email as string,
+        }));
         setOrgUsers(users);
       })
       .catch(() => {
@@ -388,7 +386,8 @@ export default function TasksPage() {
         title: data.title.trim(),
         priority: data.priority,
       };
-      if (data.description.trim()) payload.description = data.description.trim();
+      if (data.description.trim())
+        payload.description = data.description.trim();
       if (data.assigneeId) payload.assigneeId = data.assigneeId;
       if (data.dueDate) payload.dueDate = data.dueDate;
       if (data.sourceEntityType.trim())
@@ -415,7 +414,8 @@ export default function TasksPage() {
 
   // Apply local filters
   const filteredTasks = tasks.filter((task) => {
-    if (statusFilter !== "__all__" && task.status !== statusFilter) return false;
+    if (statusFilter !== "__all__" && task.status !== statusFilter)
+      return false;
     if (priorityFilter !== "__all__" && task.priority !== priorityFilter)
       return false;
     return true;
@@ -470,7 +470,9 @@ export default function TasksPage() {
       header: t("assignee"),
       cell: ({ row }) => (
         <span className="text-gray-600 text-sm">
-          {row.original.assigneeName ?? row.original.assigneeEmail ?? t("unassigned")}
+          {row.original.assigneeName ??
+            row.original.assigneeEmail ??
+            t("unassigned")}
         </span>
       ),
     },

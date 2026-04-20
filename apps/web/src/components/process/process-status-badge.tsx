@@ -68,7 +68,11 @@ export function ProcessStatusDot({
 }) {
   return (
     <span
-      className={cn("inline-block h-2 w-2 rounded-full", STATUS_DOTS[status], className)}
+      className={cn(
+        "inline-block h-2 w-2 rounded-full",
+        STATUS_DOTS[status],
+        className,
+      )}
       title={status}
     />
   );

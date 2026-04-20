@@ -91,10 +91,7 @@ export const notificationPreference = pgTable(
     digestFrequency: varchar("digest_frequency", { length: 20 }),
   },
   (table) => [
-    uniqueIndex("np_user_type_idx").on(
-      table.userId,
-      table.notificationType,
-    ),
+    uniqueIndex("np_user_type_idx").on(table.userId, table.notificationType),
   ],
 );
 

@@ -56,7 +56,10 @@ export async function processWbDeadlineMonitor(): Promise<WbDeadlineResult> {
         warnings++;
       }
     } catch (err) {
-      console.error(`[cron:wb-deadline-monitor] Warning failed for ${row.id}:`, err);
+      console.error(
+        `[cron:wb-deadline-monitor] Warning failed for ${row.id}:`,
+        err,
+      );
     }
   }
 
@@ -96,7 +99,10 @@ export async function processWbDeadlineMonitor(): Promise<WbDeadlineResult> {
         warnings++;
       }
     } catch (err) {
-      console.error(`[cron:wb-deadline-monitor] Response warning failed for ${row.id}:`, err);
+      console.error(
+        `[cron:wb-deadline-monitor] Response warning failed for ${row.id}:`,
+        err,
+      );
     }
   }
 
@@ -140,7 +146,10 @@ export async function processWbDeadlineMonitor(): Promise<WbDeadlineResult> {
       }
       breaches++;
     } catch (err) {
-      console.error(`[cron:wb-deadline-monitor] Ack breach failed for ${row.id}:`, err);
+      console.error(
+        `[cron:wb-deadline-monitor] Ack breach failed for ${row.id}:`,
+        err,
+      );
     }
   }
 
@@ -183,7 +192,10 @@ export async function processWbDeadlineMonitor(): Promise<WbDeadlineResult> {
       }
       breaches++;
     } catch (err) {
-      console.error(`[cron:wb-deadline-monitor] Response breach failed for ${row.id}:`, err);
+      console.error(
+        `[cron:wb-deadline-monitor] Response breach failed for ${row.id}:`,
+        err,
+      );
     }
   }
 

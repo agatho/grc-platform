@@ -20,7 +20,9 @@ export async function GET(
   const [row] = await db
     .select()
     .from(bcp)
-    .where(and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)));
+    .where(
+      and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)),
+    );
 
   if (!row) {
     return Response.json({ error: "BCP not found" }, { status: 404 });
@@ -54,7 +56,9 @@ export async function PUT(
     const [row] = await tx
       .update(bcp)
       .set({ ...body.data, updatedAt: new Date() })
-      .where(and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)))
+      .where(
+        and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)),
+      )
       .returning();
     return row;
   });
@@ -83,7 +87,9 @@ export async function DELETE(
     const [row] = await tx
       .update(bcp)
       .set({ deletedAt: new Date(), updatedAt: new Date() })
-      .where(and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)))
+      .where(
+        and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)),
+      )
       .returning();
     return row;
   });

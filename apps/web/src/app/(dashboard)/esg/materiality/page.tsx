@@ -86,7 +86,10 @@ function PageInner() {
       const res = await fetch("/api/v1/esg/materiality", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ reportingYear: year, reportingPeriodYear: year }),
+        body: JSON.stringify({
+          reportingYear: year,
+          reportingPeriodYear: year,
+        }),
       });
       if (res.ok) {
         setDialogOpen(false);
@@ -105,7 +108,9 @@ function PageInner() {
     );
   }
 
-  const completedCount = assessments.filter((a) => a.status === "completed").length;
+  const completedCount = assessments.filter(
+    (a) => a.status === "completed",
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -144,11 +149,17 @@ function PageInner() {
                 />
               </div>
               <div className="flex justify-end gap-2 pt-2">
-                <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setDialogOpen(false)}
+                >
                   Abbrechen
                 </Button>
                 <Button type="submit" disabled={saving}>
-                  {saving && <Loader2 size={14} className="mr-1 animate-spin" />}
+                  {saving && (
+                    <Loader2 size={14} className="mr-1 animate-spin" />
+                  )}
                   Erstellen
                 </Button>
               </div>
@@ -193,7 +204,11 @@ function PageInner() {
           </CardHeader>
           <CardContent>
             <p className="text-2xl font-bold">
-              {assessments.filter((a) => a.status === "in_progress" || a.status === "draft").length}
+              {
+                assessments.filter(
+                  (a) => a.status === "in_progress" || a.status === "draft",
+                ).length
+              }
             </p>
           </CardContent>
         </Card>

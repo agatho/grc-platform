@@ -65,7 +65,9 @@ export const createWorkItemSchema = z.object({
   grcPerspective: z.array(z.string()).default([]),
 });
 
-export const updateWorkItemSchema = createWorkItemSchema.partial().omit({ typeKey: true });
+export const updateWorkItemSchema = createWorkItemSchema
+  .partial()
+  .omit({ typeKey: true });
 
 export const createWorkItemLinkSchema = z.object({
   sourceId: z.string().uuid(),

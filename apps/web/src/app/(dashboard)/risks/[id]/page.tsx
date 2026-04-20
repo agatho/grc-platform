@@ -151,10 +151,14 @@ function scoreBadge(score: number | null | undefined): {
   color: string;
 } {
   if (score == null) return { label: "-", color: "bg-gray-100 text-gray-500" };
-  if (score >= 20) return { label: String(score), color: "bg-red-100 text-red-900" };
-  if (score >= 15) return { label: String(score), color: "bg-orange-100 text-orange-900" };
-  if (score >= 10) return { label: String(score), color: "bg-yellow-100 text-yellow-900" };
-  if (score >= 5) return { label: String(score), color: "bg-blue-100 text-blue-900" };
+  if (score >= 20)
+    return { label: String(score), color: "bg-red-100 text-red-900" };
+  if (score >= 15)
+    return { label: String(score), color: "bg-orange-100 text-orange-900" };
+  if (score >= 10)
+    return { label: String(score), color: "bg-yellow-100 text-yellow-900" };
+  if (score >= 5)
+    return { label: String(score), color: "bg-blue-100 text-blue-900" };
   return { label: String(score), color: "bg-green-100 text-green-900" };
 }
 
@@ -212,10 +216,7 @@ function MiniHeatMap({
 
   return (
     <div className="flex flex-col items-center">
-      <div
-        style={{ width: totalW, height: totalH }}
-        className="relative"
-      >
+      <div style={{ width: totalW, height: totalH }} className="relative">
         {/* Y-axis labels */}
         {[5, 4, 3, 2, 1].map((l, rowIdx) => (
           <span
@@ -266,14 +267,8 @@ function MiniHeatMap({
             className="absolute w-5 h-5 rounded-full bg-slate-800 border-2 border-white shadow-md z-10"
             style={{
               left:
-                labelW +
-                (inherentI - 1) * (cellSize + gap) +
-                cellSize / 2 -
-                10,
-              top:
-                (5 - inherentL) * (cellSize + gap) +
-                cellSize / 2 -
-                10,
+                labelW + (inherentI - 1) * (cellSize + gap) + cellSize / 2 - 10,
+              top: (5 - inherentL) * (cellSize + gap) + cellSize / 2 - 10,
             }}
             title={`Inherent: L${inherentL} x I${inherentI}`}
           />
@@ -285,14 +280,8 @@ function MiniHeatMap({
             className="absolute w-5 h-5 rounded-full border-2 border-slate-800 bg-white shadow-md z-10"
             style={{
               left:
-                labelW +
-                (residualI - 1) * (cellSize + gap) +
-                cellSize / 2 -
-                10,
-              top:
-                (5 - residualL) * (cellSize + gap) +
-                cellSize / 2 -
-                10,
+                labelW + (residualI - 1) * (cellSize + gap) + cellSize / 2 - 10,
+              top: (5 - residualL) * (cellSize + gap) + cellSize / 2 - 10,
             }}
             title={`Residual: L${residualL} x I${residualI}`}
           />
@@ -392,7 +381,15 @@ function RiskDetailContent() {
   const [frameworkMappings, setFrameworkMappings] = useState<LinkageItem[]>([]);
   const [processLinks, setProcessLinks] = useState<LinkageItem[]>([]);
   const [assetLinks, setAssetLinks] = useState<LinkageItem[]>([]);
-  const [controlLinks, setControlLinks] = useState<Array<{ id: string; linkId: string; title: string; status: string; controlType: string }>>([]);
+  const [controlLinks, setControlLinks] = useState<
+    Array<{
+      id: string;
+      linkId: string;
+      title: string;
+      status: string;
+      controlType: string;
+    }>
+  >([]);
   const [linkagesLoading, setLinkagesLoading] = useState(true);
 
   // Assessment editing
@@ -981,9 +978,7 @@ function RiskDetailContent() {
           ) : (
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">
-                  {t("editAssessment")}
-                </CardTitle>
+                <CardTitle className="text-sm">{t("editAssessment")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {(["inherent", "residual"] as const).map((type) => (
@@ -1107,11 +1102,7 @@ function RiskDetailContent() {
                 return (
                   <Card
                     key={tr.id}
-                    className={
-                      isOverdue
-                        ? "border-l-4 border-l-red-400"
-                        : ""
-                    }
+                    className={isOverdue ? "border-l-4 border-l-red-400" : ""}
                   >
                     <CardContent className="pt-4">
                       <div className="flex flex-col gap-2">
@@ -1227,7 +1218,12 @@ function RiskDetailContent() {
                   className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                 >
                   {(
-                    ["planned", "in_progress", "completed", "cancelled"] as const
+                    [
+                      "planned",
+                      "in_progress",
+                      "completed",
+                      "cancelled",
+                    ] as const
                   ).map((s) => (
                     <option key={s} value={s}>
                       {t(`treatmentStatuses.${s}`)}
@@ -1285,10 +1281,13 @@ function RiskDetailContent() {
                     }
                     className="mt-2 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
                   >
-                    <option value="">{t("costTracking.budgetPlaceholder")}</option>
+                    <option value="">
+                      {t("costTracking.budgetPlaceholder")}
+                    </option>
                     {treatmentBudgets.map((b) => (
                       <option key={b.id} value={b.id}>
-                        {b.name} ({b.currency} {parseFloat(b.totalAmount).toLocaleString()})
+                        {b.name} ({b.currency}{" "}
+                        {parseFloat(b.totalAmount).toLocaleString()})
                       </option>
                     ))}
                   </select>
@@ -1309,7 +1308,9 @@ function RiskDetailContent() {
               <DialogFooter>
                 <button
                   onClick={addTreatment}
-                  disabled={savingTreatment || !treatmentForm.description.trim()}
+                  disabled={
+                    savingTreatment || !treatmentForm.description.trim()
+                  }
                   className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
                 >
                   {savingTreatment && (
@@ -1551,7 +1552,9 @@ function RiskDetailContent() {
                 </CardHeader>
                 <CardContent>
                   {controlLinks.length === 0 ? (
-                    <p className="text-sm text-gray-400">Keine Kontrollen verknüpft</p>
+                    <p className="text-sm text-gray-400">
+                      Keine Kontrollen verknüpft
+                    </p>
                   ) : (
                     <div className="space-y-2">
                       {controlLinks.map((ctrl) => (
@@ -1562,11 +1565,17 @@ function RiskDetailContent() {
                         >
                           <div className="flex items-center gap-2">
                             <ShieldCheck size={14} className="text-green-600" />
-                            <span className="text-sm font-medium text-gray-900">{ctrl.title}</span>
+                            <span className="text-sm font-medium text-gray-900">
+                              {ctrl.title}
+                            </span>
                           </div>
                           <div className="flex items-center gap-2">
-                            <Badge variant="outline" className="text-xs">{ctrl.controlType}</Badge>
-                            <Badge variant="outline" className="text-xs">{ctrl.status}</Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ctrl.controlType}
+                            </Badge>
+                            <Badge variant="outline" className="text-xs">
+                              {ctrl.status}
+                            </Badge>
                           </div>
                         </Link>
                       ))}
@@ -1579,9 +1588,7 @@ function RiskDetailContent() {
               <Card>
                 <CardHeader>
                   <div className="flex items-center justify-between">
-                    <CardTitle className="text-sm">
-                      {t("assetLinks")}
-                    </CardTitle>
+                    <CardTitle className="text-sm">{t("assetLinks")}</CardTitle>
                     <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
                       <Plus size={12} />
                       {t("addAssetLink")}
@@ -1639,8 +1646,7 @@ function RiskDetailContent() {
                     },
                     delete: { icon: Trash2, color: "text-red-600 bg-red-50" },
                   };
-                  const def =
-                    actionIcons[entry.action] ?? actionIcons.update;
+                  const def = actionIcons[entry.action] ?? actionIcons.update;
                   const ActionIcon = def.icon;
 
                   return (
@@ -1672,9 +1678,7 @@ function RiskDetailContent() {
                                     key={field}
                                     className="text-xs text-gray-500"
                                   >
-                                    <span className="font-medium">
-                                      {field}
-                                    </span>
+                                    <span className="font-medium">{field}</span>
                                     :{" "}
                                     <span className="line-through text-red-400">
                                       {String(change.old ?? "-")}

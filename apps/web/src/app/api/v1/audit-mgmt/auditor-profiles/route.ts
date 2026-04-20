@@ -2,7 +2,12 @@ import { db, auditorProfile } from "@grc/db";
 import { createAuditorProfileSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/audit-mgmt/auditor-profiles
 export async function GET(req: Request) {
@@ -46,7 +51,10 @@ export async function POST(req: Request) {
 
   const body = createAuditorProfileSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {

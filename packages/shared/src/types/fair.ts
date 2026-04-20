@@ -1,7 +1,11 @@
 // Sprint 25: FAIR Monte Carlo types
 
 export type RiskMethodology = "qualitative" | "fair" | "hybrid";
-export type FairSimulationStatus = "pending" | "running" | "completed" | "failed";
+export type FairSimulationStatus =
+  | "pending"
+  | "running"
+  | "completed"
+  | "failed";
 
 export interface LossComponents {
   productivity: number;

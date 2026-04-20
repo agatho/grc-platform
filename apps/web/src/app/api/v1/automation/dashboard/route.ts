@@ -63,9 +63,7 @@ export async function GET(_req: Request) {
     );
 
   const successRate24h =
-    executions24h > 0
-      ? Math.round((successCount / executions24h) * 100)
-      : 100;
+    executions24h > 0 ? Math.round((successCount / executions24h) * 100) : 100;
   const errorRate24h =
     executions24h > 0 ? Math.round((errorCount / executions24h) * 100) : 0;
 

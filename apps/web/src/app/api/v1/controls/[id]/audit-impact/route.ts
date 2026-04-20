@@ -80,7 +80,8 @@ export async function GET(req: Request, { params }: RouteParams) {
   const bySeverity: Record<string, number> = {};
   for (const f of rows) {
     if (openStatuses.has(f.status)) openCount++;
-    if (openStatuses.has(f.status) && criticalSeverities.has(f.severity)) openCritical++;
+    if (openStatuses.has(f.status) && criticalSeverities.has(f.severity))
+      openCritical++;
     bySeverity[f.severity] = (bySeverity[f.severity] ?? 0) + 1;
   }
 
@@ -90,9 +91,19 @@ export async function GET(req: Request, { params }: RouteParams) {
   //  - else 1 or more improvement_requirement open → -1 level
   //  - else 0 (no negative audit evidence)
   let suggestedMaturityDelta = 0;
-  const openSig = rows.filter((f) => openStatuses.has(f.status) && f.severity === "significant_nonconformity").length;
-  const openInsig = rows.filter((f) => openStatuses.has(f.status) && f.severity === "insignificant_nonconformity").length;
-  const openImp = rows.filter((f) => openStatuses.has(f.status) && f.severity === "improvement_requirement").length;
+  const openSig = rows.filter(
+    (f) =>
+      openStatuses.has(f.status) && f.severity === "significant_nonconformity",
+  ).length;
+  const openInsig = rows.filter(
+    (f) =>
+      openStatuses.has(f.status) &&
+      f.severity === "insignificant_nonconformity",
+  ).length;
+  const openImp = rows.filter(
+    (f) =>
+      openStatuses.has(f.status) && f.severity === "improvement_requirement",
+  ).length;
   if (openSig > 0) suggestedMaturityDelta = -2;
   else if (openInsig > 0 || openImp > 0) suggestedMaturityDelta = -1;
 

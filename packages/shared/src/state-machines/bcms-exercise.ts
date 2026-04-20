@@ -9,7 +9,10 @@
 import type { ExerciseStatus } from "../types/bcms";
 export type { ExerciseStatus };
 
-export const EXERCISE_ALLOWED_TRANSITIONS: Record<ExerciseStatus, ExerciseStatus[]> = {
+export const EXERCISE_ALLOWED_TRANSITIONS: Record<
+  ExerciseStatus,
+  ExerciseStatus[]
+> = {
   planned: ["preparation", "cancelled"],
   preparation: ["executing", "planned", "cancelled"],
   executing: ["evaluation", "cancelled"],
@@ -41,7 +44,9 @@ export interface ExerciseSnapshot {
 }
 
 /** B7: Plan -> Execute -- Team + Scenario + Objectives definiert */
-export function validateExerciseGate7Execute(snapshot: ExerciseSnapshot): Blocker[] {
+export function validateExerciseGate7Execute(
+  snapshot: ExerciseSnapshot,
+): Blocker[] {
   const blockers: Blocker[] = [];
 
   if (!snapshot.title || snapshot.title.trim().length === 0) {
@@ -74,13 +79,17 @@ export function validateExerciseGate7Execute(snapshot: ExerciseSnapshot): Blocke
   if (!snapshot.bcpId && !snapshot.crisisScenarioId) {
     blockers.push({
       code: "no_context",
-      message: "Exercise muss auf einen BCP oder ein Crisis-Scenario referenzieren.",
+      message:
+        "Exercise muss auf einen BCP oder ein Crisis-Scenario referenzieren.",
       gate: "B7",
       severity: "error",
     });
   }
 
-  if (!snapshot.objectives || (Array.isArray(snapshot.objectives) && snapshot.objectives.length === 0)) {
+  if (
+    !snapshot.objectives ||
+    (Array.isArray(snapshot.objectives) && snapshot.objectives.length === 0)
+  ) {
     blockers.push({
       code: "missing_objectives",
       message: "Mindestens 1 Objective muss definiert sein.",
@@ -102,13 +111,16 @@ export function validateExerciseGate7Execute(snapshot: ExerciseSnapshot): Blocke
 }
 
 /** B8: Evaluation -> Completed -- overallResult + Lessons-Learned */
-export function validateExerciseGate8Close(snapshot: ExerciseSnapshot): Blocker[] {
+export function validateExerciseGate8Close(
+  snapshot: ExerciseSnapshot,
+): Blocker[] {
   const blockers: Blocker[] = [];
 
   if (!snapshot.overallResult) {
     blockers.push({
       code: "missing_overall_result",
-      message: "overallResult muss gesetzt sein (successful | partially_successful | failed).",
+      message:
+        "overallResult muss gesetzt sein (successful | partially_successful | failed).",
       gate: "B8",
       severity: "error",
     });
@@ -117,7 +129,8 @@ export function validateExerciseGate8Close(snapshot: ExerciseSnapshot): Blocker[
   if (snapshot.lessonsLearnedCount === 0) {
     blockers.push({
       code: "no_lessons_learned",
-      message: "Mindestens 1 Lesson-Learned muss erfasst sein (Continual-Improvement ISO 22301 10.2).",
+      message:
+        "Mindestens 1 Lesson-Learned muss erfasst sein (Continual-Improvement ISO 22301 10.2).",
       gate: "B8",
       severity: "error",
     });
@@ -149,8 +162,11 @@ export interface ExerciseTransitionResult {
   updates?: Partial<ExerciseSnapshot>;
 }
 
-export function validateExerciseTransition(req: ExerciseTransitionRequest): ExerciseTransitionResult {
-  const { currentStatus, targetStatus, snapshot, forceCloseWithoutFindings } = req;
+export function validateExerciseTransition(
+  req: ExerciseTransitionRequest,
+): ExerciseTransitionResult {
+  const { currentStatus, targetStatus, snapshot, forceCloseWithoutFindings } =
+    req;
 
   const allowed = EXERCISE_ALLOWED_TRANSITIONS[currentStatus] ?? [];
   if (!allowed.includes(targetStatus)) {

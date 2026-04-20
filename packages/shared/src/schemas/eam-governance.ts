@@ -2,8 +2,18 @@ import { z } from "zod";
 
 // Sprint 53: EAM Governance & Deep Integration Zod Schemas
 
-export const governanceActionEnum = z.enum(["publish", "approve", "reject", "archive", "change_to_suggestion"]);
-export const bpmnPlacementTypeEnum = z.enum(["application", "it_component", "data_object"]);
+export const governanceActionEnum = z.enum([
+  "publish",
+  "approve",
+  "reject",
+  "archive",
+  "change_to_suggestion",
+]);
+export const bpmnPlacementTypeEnum = z.enum([
+  "application",
+  "it_component",
+  "data_object",
+]);
 
 export const governanceTransitionSchema = z.object({
   action: governanceActionEnum,
@@ -45,7 +55,12 @@ export const biApiKeySchema = z.object({
 });
 
 export const excelImportSchema = z.object({
-  objectType: z.enum(["application", "business_capability", "it_component", "data_object"]),
+  objectType: z.enum([
+    "application",
+    "business_capability",
+    "it_component",
+    "data_object",
+  ]),
   matchBy: z.enum(["name", "id"]).default("name"),
   dryRun: z.boolean().default(true),
 });

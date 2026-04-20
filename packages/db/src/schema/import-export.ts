@@ -82,10 +82,7 @@ export const importColumnMapping = pgTable(
       .defaultNow(),
   },
   (table) => ({
-    orgEntityIdx: index("icm_org_entity_idx").on(
-      table.orgId,
-      table.entityType,
-    ),
+    orgEntityIdx: index("icm_org_entity_idx").on(table.orgId, table.entityType),
   }),
 );
 

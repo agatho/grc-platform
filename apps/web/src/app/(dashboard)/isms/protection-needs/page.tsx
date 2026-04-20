@@ -2,13 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  Search,
-  RefreshCcw,
-  ShieldCheck,
-  Info,
-} from "lucide-react";
+import { Loader2, Search, RefreshCcw, ShieldCheck, Info } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -58,10 +52,7 @@ function deriveSource(row: ProtectionNeedRow): ProtectionSource {
   // Assets without classification inherit from parent/default.
   if (!row.classificationId) return "inherited";
   // If classified and has high/very_high availability, likely BIA-derived
-  if (
-    row.availabilityLevel &&
-    LEVEL_ORDER[row.availabilityLevel] >= 2
-  ) {
+  if (row.availabilityLevel && LEVEL_ORDER[row.availabilityLevel] >= 2) {
     return "bia";
   }
   return "manual";
@@ -127,9 +118,7 @@ function ProtectionNeedsInner() {
       if (protectionFilter === "unclassified") {
         result = result.filter((a) => !a.classificationId);
       } else {
-        result = result.filter(
-          (a) => a.overallProtection === protectionFilter
-        );
+        result = result.filter((a) => a.overallProtection === protectionFilter);
       }
     }
     if (sourceFilter !== "__all__") {
@@ -141,11 +130,9 @@ function ProtectionNeedsInner() {
   // KPI stats
   const totalAssets = assets.length;
   const classifiedCount = assets.filter((a) => a.classificationId).length;
-  const highCount = assets.filter(
-    (a) => a.overallProtection === "high"
-  ).length;
+  const highCount = assets.filter((a) => a.overallProtection === "high").length;
   const veryHighCount = assets.filter(
-    (a) => a.overallProtection === "very_high"
+    (a) => a.overallProtection === "very_high",
   ).length;
 
   if (loading && assets.length === 0) {
@@ -174,10 +161,7 @@ function ProtectionNeedsInner() {
           onClick={fetchData}
           disabled={loading}
         >
-          <RefreshCcw
-            size={14}
-            className={loading ? "animate-spin" : ""}
-          />
+          <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
 
@@ -186,9 +170,7 @@ function ProtectionNeedsInner() {
         <Info size={16} className="mt-0.5 text-blue-600 shrink-0" />
         <div className="text-sm text-blue-800">
           <p className="font-medium">{t("biaIntegrationTitle")}</p>
-          <p className="mt-1 text-blue-700">
-            {t("biaIntegrationDescription")}
-          </p>
+          <p className="mt-1 text-blue-700">{t("biaIntegrationDescription")}</p>
         </div>
       </div>
 
@@ -203,7 +185,8 @@ function ProtectionNeedsInner() {
           <p className="text-2xl font-bold text-gray-900">
             {classifiedCount}
             <span className="text-sm text-gray-400 ml-1">
-              ({totalAssets > 0
+              (
+              {totalAssets > 0
                 ? Math.round((classifiedCount / totalAssets) * 100)
                 : 0}
               %)
@@ -235,10 +218,7 @@ function ProtectionNeedsInner() {
             className="h-8 w-48 rounded-md border border-gray-300 pl-8 pr-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           />
         </div>
-        <Select
-          value={protectionFilter}
-          onValueChange={setProtectionFilter}
-        >
+        <Select value={protectionFilter} onValueChange={setProtectionFilter}>
           <SelectTrigger className="w-[160px] h-8 text-xs">
             <SelectValue placeholder={t("protectionClass")} />
           </SelectTrigger>
@@ -247,9 +227,7 @@ function ProtectionNeedsInner() {
             <SelectItem value="normal">Normal</SelectItem>
             <SelectItem value="high">High / Hoch</SelectItem>
             <SelectItem value="very_high">Very High / Sehr Hoch</SelectItem>
-            <SelectItem value="unclassified">
-              {t("unclassified")}
-            </SelectItem>
+            <SelectItem value="unclassified">{t("unclassified")}</SelectItem>
           </SelectContent>
         </Select>
         <Select value={sourceFilter} onValueChange={setSourceFilter}>
@@ -311,31 +289,22 @@ function ProtectionNeedsInner() {
                         {a.name}
                       </span>
                       {a.assetTier && (
-                        <Badge
-                          variant="outline"
-                          className="ml-2 text-[10px]"
-                        >
+                        <Badge variant="outline" className="ml-2 text-[10px]">
                           {a.assetTier}
                         </Badge>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <ProtectionLevelBadge
-                        level={a.confidentialityLevel}
-                      />
+                      <ProtectionLevelBadge level={a.confidentialityLevel} />
                     </td>
                     <td className="px-4 py-3 text-center">
                       <ProtectionLevelBadge level={a.integrityLevel} />
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <ProtectionLevelBadge
-                        level={a.availabilityLevel}
-                      />
+                      <ProtectionLevelBadge level={a.availabilityLevel} />
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <ProtectionLevelBadge
-                        level={a.overallProtection}
-                      />
+                      <ProtectionLevelBadge level={a.overallProtection} />
                     </td>
                     <td className="px-4 py-3 text-center">
                       <Badge

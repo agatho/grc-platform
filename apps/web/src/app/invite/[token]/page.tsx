@@ -54,7 +54,9 @@ export default function AcceptInvitationPage() {
       <div className="flex min-h-screen items-center justify-center bg-gray-50 px-4">
         <div className="w-full max-w-md rounded-lg border bg-white p-8 shadow-sm text-center space-y-4">
           <CheckCircle size={48} className="mx-auto text-green-600" />
-          <h1 className="text-2xl font-bold text-gray-900">Willkommen bei ARCTOS</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Willkommen bei ARCTOS
+          </h1>
           <p className="text-gray-600">
             Ihre Einladung wurde angenommen. Sie koennen sich jetzt anmelden.
           </p>
@@ -71,7 +73,9 @@ export default function AcceptInvitationPage() {
       <div className="w-full max-w-md space-y-6">
         <div className="text-center">
           <Shield size={40} className="mx-auto text-blue-600 mb-3" />
-          <h1 className="text-2xl font-bold text-gray-900">ARCTOS GRC Platform</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            ARCTOS GRC Platform
+          </h1>
           <p className="text-gray-500 mt-1">Einladung annehmen</p>
         </div>
 
@@ -84,28 +88,49 @@ export default function AcceptInvitationPage() {
           )}
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Ihr Name</label>
-            <input value={name} onChange={e => setName(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Ihr Name
+            </label>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
               placeholder="Max Mustermann"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Passwort</label>
-            <input type="password" value={password} onChange={e => setPassword(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Passwort
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="Mindestens 8 Zeichen"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Passwort bestaetigen</label>
-            <input type="password" value={confirmPassword} onChange={e => setConfirmPassword(e.target.value)}
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Passwort bestaetigen
+            </label>
+            <input
+              type="password"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Passwort wiederholen"
-              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500" />
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+            />
           </div>
 
           <Button onClick={handleAccept} disabled={loading} className="w-full">
-            {loading ? <Loader2 size={16} className="animate-spin mr-2" /> : <CheckCircle size={16} className="mr-2" />}
+            {loading ? (
+              <Loader2 size={16} className="animate-spin mr-2" />
+            ) : (
+              <CheckCircle size={16} className="mr-2" />
+            )}
             Einladung annehmen
           </Button>
 

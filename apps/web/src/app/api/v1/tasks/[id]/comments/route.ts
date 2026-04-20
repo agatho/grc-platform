@@ -1,7 +1,12 @@
 import { db, task, taskComment, user } from "@grc/db";
 import { eq, and, isNull, asc, count } from "drizzle-orm";
 import { z } from "zod";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 const createCommentSchema = z.object({
   content: z.string().min(1).max(5000),
@@ -22,11 +27,7 @@ export async function POST(
     .select({ id: task.id })
     .from(task)
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!existing) {
@@ -73,11 +74,7 @@ export async function GET(
     .select({ id: task.id })
     .from(task)
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!existing) {

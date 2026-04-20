@@ -6,7 +6,9 @@ import { withAuth, withAuditContext } from "@/lib/api";
 // DELETE /api/v1/processes/:id/steps/:stepId/assets/:assetId — Unlink asset from step
 export async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string; stepId: string; assetId: string }> },
+  {
+    params,
+  }: { params: Promise<{ id: string; stepId: string; assetId: string }> },
 ) {
   const ctx = await withAuth("admin", "process_owner");
   if (ctx instanceof Response) return ctx;
@@ -60,16 +62,11 @@ export async function DELETE(
     );
 
   if (!link) {
-    return Response.json(
-      { error: "Asset link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Asset link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(processStepAsset)
-      .where(eq(processStepAsset.id, link.id));
+    await tx.delete(processStepAsset).where(eq(processStepAsset.id, link.id));
   });
 
   return Response.json({ success: true });

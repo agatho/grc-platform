@@ -36,6 +36,7 @@ docker compose up -d
 ## After First Start
 
 Edit `.env` and set `RUN_SEEDS=false` to skip seeding on subsequent restarts:
+
 ```bash
 sed -i 's/RUN_SEEDS=true/RUN_SEEDS=false/' .env
 ```
@@ -69,10 +70,10 @@ docker compose up -d
 
 ## Files
 
-| File | Purpose |
-|------|---------|
-| `docker-compose.yml` | Full stack definition (web + postgres + redis) |
-| `.env.sample` | Environment template — copy to `.env` |
+| File                  | Purpose                                            |
+| --------------------- | -------------------------------------------------- |
+| `docker-compose.yml`  | Full stack definition (web + postgres + redis)     |
+| `.env.sample`         | Environment template — copy to `.env`              |
 | `init-extensions.sql` | PostgreSQL extensions (auto-runs on first DB init) |
 
 ## Architecture

@@ -20,7 +20,14 @@ export async function GET(req: Request) {
     );
   }
 
-  const { entityId, entityType, depth, entityTypes, relationshipTypes, minWeight } = parsed.data;
+  const {
+    entityId,
+    entityType,
+    depth,
+    entityTypes,
+    relationshipTypes,
+    minWeight,
+  } = parsed.data;
 
   try {
     const rawGraph = await getSubgraph(ctx.orgId, entityId, entityType, depth, {
@@ -36,6 +43,9 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("[graph/subgraph] Error:", err);
-    return Response.json({ error: "Failed to retrieve subgraph" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to retrieve subgraph" },
+      { status: 500 },
+    );
   }
 }

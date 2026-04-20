@@ -81,7 +81,9 @@ export const grcBudget = pgTable(
       .notNull()
       .references(() => organization.id),
     name: varchar("name", { length: 500 }).notNull(),
-    budgetType: budgetTypeEnum("budget_type").notNull().default("management_system"),
+    budgetType: budgetTypeEnum("budget_type")
+      .notNull()
+      .default("management_system"),
     grcArea: grcAreaEnum("grc_area"),
     year: integer("year").notNull(),
     periodStart: date("period_start"),

@@ -17,7 +17,13 @@ interface ModuleRelevanceCheckboxesProps {
   labels?: Record<string, string>;
 }
 
-const MODULE_KEYS: (keyof ModuleRelevance)[] = ["ics", "isms", "esg", "compliance", "bcm"];
+const MODULE_KEYS: (keyof ModuleRelevance)[] = [
+  "ics",
+  "isms",
+  "esg",
+  "compliance",
+  "bcm",
+];
 
 export function ModuleRelevanceCheckboxes({
   value,

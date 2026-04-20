@@ -74,8 +74,15 @@ describe("createVendorSchema", () => {
 
   it("accepts all valid vendor categories", () => {
     const cats = [
-      "it_services", "cloud_provider", "consulting", "facility",
-      "logistics", "raw_materials", "financial", "hr_services", "other",
+      "it_services",
+      "cloud_provider",
+      "consulting",
+      "facility",
+      "logistics",
+      "raw_materials",
+      "financial",
+      "hr_services",
+      "other",
     ];
     for (const category of cats) {
       const result = createVendorSchema.safeParse({ name: "Vendor", category });
@@ -121,14 +128,23 @@ describe("createVendorSchema", () => {
 
 describe("vendorStatusTransitionSchema", () => {
   it("accepts all valid vendor statuses", () => {
-    for (const s of ["prospect", "onboarding", "active", "under_review", "suspended", "terminated"]) {
+    for (const s of [
+      "prospect",
+      "onboarding",
+      "active",
+      "under_review",
+      "suspended",
+      "terminated",
+    ]) {
       const result = vendorStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
   });
 
   it("rejects invalid vendor status", () => {
-    const result = vendorStatusTransitionSchema.safeParse({ status: "approved" });
+    const result = vendorStatusTransitionSchema.safeParse({
+      status: "approved",
+    });
     expect(result.success).toBe(false);
   });
 
@@ -172,7 +188,13 @@ describe("VALID_VENDOR_TRANSITIONS", () => {
   });
 
   it("allows any non-terminal status to reach terminated", () => {
-    for (const from of ["prospect", "onboarding", "active", "under_review", "suspended"]) {
+    for (const from of [
+      "prospect",
+      "onboarding",
+      "active",
+      "under_review",
+      "suspended",
+    ]) {
       expect(VALID_VENDOR_TRANSITIONS[from]).toContain("terminated");
     }
   });
@@ -238,11 +260,21 @@ describe("createContractSchema", () => {
 
   it("accepts all valid contract types", () => {
     const types = [
-      "master_agreement", "service_agreement", "nda", "dpa",
-      "sla", "license", "maintenance", "consulting", "other",
+      "master_agreement",
+      "service_agreement",
+      "nda",
+      "dpa",
+      "sla",
+      "license",
+      "maintenance",
+      "consulting",
+      "other",
     ];
     for (const contractType of types) {
-      const result = createContractSchema.safeParse({ title: "Contract", contractType });
+      const result = createContractSchema.safeParse({
+        title: "Contract",
+        contractType,
+      });
       expect(result.success).toBe(true);
     }
   });
@@ -278,14 +310,25 @@ describe("createContractSchema", () => {
 
 describe("contractStatusTransitionSchema", () => {
   it("accepts all valid contract statuses", () => {
-    for (const s of ["draft", "negotiation", "pending_approval", "active", "renewal", "expired", "terminated", "archived"]) {
+    for (const s of [
+      "draft",
+      "negotiation",
+      "pending_approval",
+      "active",
+      "renewal",
+      "expired",
+      "terminated",
+      "archived",
+    ]) {
       const result = contractStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
   });
 
   it("rejects invalid contract status", () => {
-    const result = contractStatusTransitionSchema.safeParse({ status: "signed" });
+    const result = contractStatusTransitionSchema.safeParse({
+      status: "signed",
+    });
     expect(result.success).toBe(false);
   });
 

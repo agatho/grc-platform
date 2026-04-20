@@ -35,9 +35,14 @@ export const widgetDisplayOptionsSchema = z.object({
 // ──────────── Widget Config ────────────
 
 export const widgetConfigSchema = z.object({
-  dataSource: z.string().min(1).max(500).regex(/^\/api\/v1\//, {
-    message: "Data source must reference an internal API endpoint (/api/v1/*)",
-  }),
+  dataSource: z
+    .string()
+    .min(1)
+    .max(500)
+    .regex(/^\/api\/v1\//, {
+      message:
+        "Data source must reference an internal API endpoint (/api/v1/*)",
+    }),
   filters: z.record(z.union([z.string(), z.number(), z.boolean()])).default({}),
   displayOptions: widgetDisplayOptionsSchema.default({}),
 });
@@ -98,8 +103,14 @@ export const updateWidgetSchema = z.object({
 
 export const dashboardListQuerySchema = z.object({
   visibility: z.enum(["personal", "team", "org"]).optional(),
-  isDefault: z.string().transform((v) => v === "true").optional(),
-  isFavorite: z.string().transform((v) => v === "true").optional(),
+  isDefault: z
+    .string()
+    .transform((v) => v === "true")
+    .optional(),
+  isFavorite: z
+    .string()
+    .transform((v) => v === "true")
+    .optional(),
   search: z.string().max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -113,7 +124,9 @@ export const exportPdfSchema = z.object({
 
 // ──────────── Layout Validation Helpers ────────────
 
-export function validateLayout(layout: Array<{ i: string; x: number; y: number; w: number; h: number }>): boolean {
+export function validateLayout(
+  layout: Array<{ i: string; x: number; y: number; w: number; h: number }>,
+): boolean {
   for (const item of layout) {
     if (item.w > 12) return false;
     if (item.x + item.w > 12) return false;
@@ -123,11 +136,16 @@ export function validateLayout(layout: Array<{ i: string; x: number; y: number; 
   return true;
 }
 
-export function serializeLayout(layout: Array<{ i: string; x: number; y: number; w: number; h: number }>): string {
+export function serializeLayout(
+  layout: Array<{ i: string; x: number; y: number; w: number; h: number }>,
+): string {
   return JSON.stringify(layout);
 }
 
-export function resolveWidgetUrl(config: { dataSource: string; filters?: Record<string, string | number | boolean> }): string {
+export function resolveWidgetUrl(config: {
+  dataSource: string;
+  filters?: Record<string, string | number | boolean>;
+}): string {
   const url = new URL(config.dataSource, "http://localhost");
   if (config.filters) {
     for (const [key, value] of Object.entries(config.filters)) {

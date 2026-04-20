@@ -1,7 +1,13 @@
 // Cron Job: SLA Measurement Reminder
 // Per measurement frequency: remind responsible users to submit SLA measurements.
 
-import { db, contract, contractSla, contractSlaMeasurement, notification } from "@grc/db";
+import {
+  db,
+  contract,
+  contractSla,
+  contractSlaMeasurement,
+  notification,
+} from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
 
 interface SlaMeasurementReminderResult {
@@ -13,7 +19,9 @@ export async function processSlaMeasurementReminder(): Promise<SlaMeasurementRem
   const now = new Date();
   let notified = 0;
 
-  console.log(`[cron:sla-measurement-reminder] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:sla-measurement-reminder] Starting at ${now.toISOString()}`,
+  );
 
   // Find active contracts with SLAs that need measurement
   const slasNeedingMeasurement = await db
@@ -82,7 +90,10 @@ export async function processSlaMeasurementReminder(): Promise<SlaMeasurementRem
   return { processed: slasNeedingMeasurement.length, notified };
 }
 
-async function isMeasurementDue(slaId: string, frequency: string): Promise<boolean> {
+async function isMeasurementDue(
+  slaId: string,
+  frequency: string,
+): Promise<boolean> {
   // Find the latest measurement
   const [latest] = await db
     .select({ periodEnd: contractSlaMeasurement.periodEnd })
@@ -95,7 +106,9 @@ async function isMeasurementDue(slaId: string, frequency: string): Promise<boole
 
   const lastEnd = new Date(latest.periodEnd);
   const now = new Date();
-  const daysSinceLast = Math.floor((now.getTime() - lastEnd.getTime()) / (1000 * 60 * 60 * 24));
+  const daysSinceLast = Math.floor(
+    (now.getTime() - lastEnd.getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   switch (frequency) {
     case "monthly":

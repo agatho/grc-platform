@@ -97,11 +97,26 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "#EF4444",
 };
 
-const URGENCY_STYLES: Record<string, { bg: string; text: string; border: string }> = {
+const URGENCY_STYLES: Record<
+  string,
+  { bg: string; text: string; border: string }
+> = {
   overdue: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200" },
-  urgent: { bg: "bg-yellow-50", text: "text-yellow-700", border: "border-yellow-200" },
-  upcoming: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  future: { bg: "bg-gray-50", text: "text-gray-600", border: "border-gray-200" },
+  urgent: {
+    bg: "bg-yellow-50",
+    text: "text-yellow-700",
+    border: "border-yellow-200",
+  },
+  upcoming: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+  },
+  future: {
+    bg: "bg-gray-50",
+    text: "text-gray-600",
+    border: "border-gray-200",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -215,7 +230,9 @@ function GovernanceCockpit() {
           title={t("governance.pendingApprovals")}
           value={kpis.pendingApprovals}
           icon={<Clock size={20} className="text-yellow-500" />}
-          valueClassName={kpis.pendingApprovals > 0 ? "text-yellow-600" : undefined}
+          valueClassName={
+            kpis.pendingApprovals > 0 ? "text-yellow-600" : undefined
+          }
         />
       </div>
 
@@ -234,11 +251,7 @@ function GovernanceCockpit() {
 
         {/* Roadmap Tab */}
         <TabsContent value="roadmap">
-          <RoadmapTab
-            items={roadmap}
-            loading={roadmapLoading}
-            t={t}
-          />
+          <RoadmapTab items={roadmap} loading={roadmapLoading} t={t} />
         </TabsContent>
 
         {/* Quality Tab */}
@@ -270,8 +283,12 @@ function KpiCard({
       <CardContent className="p-4">
         <div className="flex items-center justify-between">
           <div className="space-y-1">
-            <p className="text-xs font-medium text-gray-500 uppercase">{title}</p>
-            <p className={cn("text-2xl font-bold text-gray-900", valueClassName)}>
+            <p className="text-xs font-medium text-gray-500 uppercase">
+              {title}
+            </p>
+            <p
+              className={cn("text-2xl font-bold text-gray-900", valueClassName)}
+            >
               {value}
             </p>
           </div>
@@ -337,15 +354,27 @@ function DashboardTab({
               </ResponsiveContainer>
               <div className="space-y-1.5">
                 {statusDist.map((entry) => (
-                  <div key={entry.status} className="flex items-center gap-2 text-xs">
+                  <div
+                    key={entry.status}
+                    className="flex items-center gap-2 text-xs"
+                  >
                     <span
                       className="h-2.5 w-2.5 rounded-full flex-shrink-0"
-                      style={{ backgroundColor: STATUS_COLORS[entry.status] ?? "#9CA3AF" }}
+                      style={{
+                        backgroundColor:
+                          STATUS_COLORS[entry.status] ?? "#9CA3AF",
+                      }}
                     />
                     <span className="text-gray-600">
-                      {tProcess(`status.${entry.status}` as Parameters<typeof tProcess>[0])}
+                      {tProcess(
+                        `status.${entry.status}` as Parameters<
+                          typeof tProcess
+                        >[0],
+                      )}
                     </span>
-                    <span className="font-medium text-gray-900">{entry.count}</span>
+                    <span className="font-medium text-gray-900">
+                      {entry.count}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -396,8 +425,12 @@ function DashboardTab({
                 return (
                   <div key={dept.department} className="space-y-1">
                     <div className="flex items-center justify-between text-xs">
-                      <span className="text-gray-700">{dept.department || "N/A"}</span>
-                      <span className="font-medium text-gray-900">{dept.count}</span>
+                      <span className="text-gray-700">
+                        {dept.department || "N/A"}
+                      </span>
+                      <span className="font-medium text-gray-900">
+                        {dept.count}
+                      </span>
                     </div>
                     <div className="h-2 rounded-full bg-gray-100">
                       <div
@@ -428,10 +461,18 @@ function DashboardTab({
               <table className="w-full text-xs">
                 <thead>
                   <tr className="border-b border-gray-100">
-                    <th className="pb-2 text-left font-medium text-gray-500">Process</th>
-                    <th className="pb-2 text-left font-medium text-gray-500">Type</th>
-                    <th className="pb-2 text-left font-medium text-gray-500">Due</th>
-                    <th className="pb-2 text-left font-medium text-gray-500">Assignee</th>
+                    <th className="pb-2 text-left font-medium text-gray-500">
+                      Process
+                    </th>
+                    <th className="pb-2 text-left font-medium text-gray-500">
+                      Type
+                    </th>
+                    <th className="pb-2 text-left font-medium text-gray-500">
+                      Due
+                    </th>
+                    <th className="pb-2 text-left font-medium text-gray-500">
+                      Assignee
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -447,16 +488,22 @@ function DashboardTab({
                       </td>
                       <td className="py-2 text-gray-600">{task.type}</td>
                       <td className="py-2 text-gray-600">
-                        {task.dueDate ? new Date(task.dueDate).toLocaleDateString() : "-"}
+                        {task.dueDate
+                          ? new Date(task.dueDate).toLocaleDateString()
+                          : "-"}
                       </td>
-                      <td className="py-2 text-gray-600">{task.assignee ?? "-"}</td>
+                      <td className="py-2 text-gray-600">
+                        {task.assignee ?? "-"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           ) : (
-            <p className="text-sm text-gray-400 py-8 text-center">No open tasks</p>
+            <p className="text-sm text-gray-400 py-8 text-center">
+              No open tasks
+            </p>
           )}
         </CardContent>
       </Card>
@@ -489,7 +536,9 @@ function RoadmapTab({
     return (
       <div className="text-center py-12">
         <Calendar className="mx-auto h-8 w-8 text-gray-400" />
-        <p className="mt-2 text-sm text-gray-500">No upcoming reviews scheduled</p>
+        <p className="mt-2 text-sm text-gray-500">
+          No upcoming reviews scheduled
+        </p>
       </div>
     );
   }
@@ -539,11 +588,7 @@ function RoadmapTab({
 // Quality Tab (Placeholder)
 // ---------------------------------------------------------------------------
 
-function QualityTab({
-  t,
-}: {
-  t: ReturnType<typeof useTranslations>;
-}) {
+function QualityTab({ t }: { t: ReturnType<typeof useTranslations> }) {
   return (
     <div className="mt-4">
       <Card>

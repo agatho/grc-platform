@@ -133,8 +133,15 @@ export default function RegulatoryFeedPage() {
               {t("regulatory.description")}
             </p>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             {t("regulatory.refresh")}
           </Button>
         </div>
@@ -145,7 +152,9 @@ export default function RegulatoryFeedPage() {
             <div className="flex gap-4 items-center flex-wrap">
               <div className="flex items-center gap-2">
                 <Filter className="h-4 w-4 text-muted-foreground" />
-                <span className="text-sm font-medium">{t("regulatory.filters")}:</span>
+                <span className="text-sm font-medium">
+                  {t("regulatory.filters")}:
+                </span>
               </div>
               <Select value={source} onValueChange={setSource}>
                 <SelectTrigger className="w-36">
@@ -167,9 +176,13 @@ export default function RegulatoryFeedPage() {
                   <SelectValue placeholder={t("regulatory.relevance")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="0">{t("regulatory.allRelevance")}</SelectItem>
+                  <SelectItem value="0">
+                    {t("regulatory.allRelevance")}
+                  </SelectItem>
                   <SelectItem value="70">{t("regulatory.highOnly")}</SelectItem>
-                  <SelectItem value="40">{t("regulatory.mediumPlus")}</SelectItem>
+                  <SelectItem value="40">
+                    {t("regulatory.mediumPlus")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -208,10 +221,15 @@ export default function RegulatoryFeedPage() {
                           variant="outline"
                           className={relevanceBadge(item.relevanceScore)}
                         >
-                          {relevanceLabel(item.relevanceScore)} ({item.relevanceScore})
+                          {relevanceLabel(item.relevanceScore)} (
+                          {item.relevanceScore})
                         </Badge>
                         {item.frameworks?.map((fw) => (
-                          <Badge key={fw} variant="secondary" className="text-xs">
+                          <Badge
+                            key={fw}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             {fw}
                           </Badge>
                         ))}
@@ -258,20 +276,21 @@ export default function RegulatoryFeedPage() {
                           </p>
                         </div>
                       )}
-                      {item.affectedModules && item.affectedModules.length > 0 && (
-                        <div>
-                          <h4 className="text-sm font-medium mb-1">
-                            {t("regulatory.affectedModules")}
-                          </h4>
-                          <div className="flex gap-1 flex-wrap">
-                            {item.affectedModules.map((mod) => (
-                              <Badge key={mod} variant="secondary">
-                                {mod}
-                              </Badge>
-                            ))}
+                      {item.affectedModules &&
+                        item.affectedModules.length > 0 && (
+                          <div>
+                            <h4 className="text-sm font-medium mb-1">
+                              {t("regulatory.affectedModules")}
+                            </h4>
+                            <div className="flex gap-1 flex-wrap">
+                              {item.affectedModules.map((mod) => (
+                                <Badge key={mod} variant="secondary">
+                                  {mod}
+                                </Badge>
+                              ))}
+                            </div>
                           </div>
-                        </div>
-                      )}
+                        )}
                     </div>
                   )}
                 </CardContent>

@@ -7,12 +7,14 @@ const cesTrendValues = ["improving", "stable", "declining"] as const;
 // ─── Finding SLA Config ─────────────────────────────────────────
 
 export const updateFindingSlaConfigSchema = z.object({
-  configs: z.array(
-    z.object({
-      severity: z.string().min(1).max(50),
-      slaDays: z.number().int().min(1).max(365),
-    }),
-  ).min(1),
+  configs: z
+    .array(
+      z.object({
+        severity: z.string().min(1).max(50),
+        slaDays: z.number().int().min(1).max(365),
+      }),
+    )
+    .min(1),
 });
 
 // ─── CES Recompute Request ─────────────────────────────────────

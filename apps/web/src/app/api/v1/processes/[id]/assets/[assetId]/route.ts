@@ -37,23 +37,15 @@ export async function DELETE(
     .select({ id: processAsset.id })
     .from(processAsset)
     .where(
-      and(
-        eq(processAsset.processId, id),
-        eq(processAsset.assetId, assetId),
-      ),
+      and(eq(processAsset.processId, id), eq(processAsset.assetId, assetId)),
     );
 
   if (!link) {
-    return Response.json(
-      { error: "Asset link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Asset link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(processAsset)
-      .where(eq(processAsset.id, link.id));
+    await tx.delete(processAsset).where(eq(processAsset.id, link.id));
   });
 
   return Response.json({ success: true });

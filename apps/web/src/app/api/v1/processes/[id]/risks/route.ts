@@ -139,12 +139,7 @@ export async function GET(
     })
     .from(processRisk)
     .innerJoin(risk, eq(processRisk.riskId, risk.id))
-    .where(
-      and(
-        eq(processRisk.processId, id),
-        isNull(risk.deletedAt),
-      ),
-    );
+    .where(and(eq(processRisk.processId, id), isNull(risk.deletedAt)));
 
   return Response.json({ data: risks });
 }

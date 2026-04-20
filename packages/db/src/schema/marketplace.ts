@@ -34,22 +34,22 @@ export const marketplaceCategoryTypeEnum = pgEnum("marketplace_category_type", [
   "report",
 ]);
 
-export const marketplaceListingStatusEnum = pgEnum("marketplace_listing_status", [
-  "draft",
-  "pending_review",
-  "published",
-  "suspended",
-  "deprecated",
-  "rejected",
-]);
+export const marketplaceListingStatusEnum = pgEnum(
+  "marketplace_listing_status",
+  [
+    "draft",
+    "pending_review",
+    "published",
+    "suspended",
+    "deprecated",
+    "rejected",
+  ],
+);
 
-export const marketplaceVersionStatusEnum = pgEnum("marketplace_version_status", [
-  "draft",
-  "under_review",
-  "approved",
-  "rejected",
-  "deprecated",
-]);
+export const marketplaceVersionStatusEnum = pgEnum(
+  "marketplace_version_status",
+  ["draft", "under_review", "approved", "rejected", "deprecated"],
+);
 
 export const marketplaceScanStatusEnum = pgEnum("marketplace_scan_status", [
   "pending",
@@ -77,11 +77,19 @@ export const marketplacePublisher = pgTable(
     logoUrl: varchar("logo_url", { length: 2000 }),
     contactEmail: varchar("contact_email", { length: 500 }),
     isVerified: boolean("is_verified").notNull().default(false),
-    revenueSharePct: numeric("revenue_share_pct", { precision: 5, scale: 2 }).notNull().default("70.00"),
-    totalEarnings: numeric("total_earnings", { precision: 14, scale: 2 }).notNull().default("0.00"),
+    revenueSharePct: numeric("revenue_share_pct", { precision: 5, scale: 2 })
+      .notNull()
+      .default("70.00"),
+    totalEarnings: numeric("total_earnings", { precision: 14, scale: 2 })
+      .notNull()
+      .default("0.00"),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mp_pub_org_idx").on(t.orgId),
@@ -105,7 +113,9 @@ export const marketplaceCategory = pgTable(
     iconName: varchar("icon_name", { length: 100 }),
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     unique("mp_cat_slug_unique").on(t.slug),
@@ -135,8 +145,12 @@ export const marketplaceListing = pgTable(
     summary: varchar("summary", { length: 1000 }).notNull(),
     description: text("description"),
     iconUrl: varchar("icon_url", { length: 2000 }),
-    screenshotUrls: jsonb("screenshot_urls").notNull().default(sql`'[]'::jsonb`),
-    tags: jsonb("tags").notNull().default(sql`'[]'::jsonb`),
+    screenshotUrls: jsonb("screenshot_urls")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    tags: jsonb("tags")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     status: marketplaceListingStatusEnum("status").notNull().default("draft"),
     isFeatured: boolean("is_featured").notNull().default(false),
     isVerified: boolean("is_verified").notNull().default(false),
@@ -144,15 +158,21 @@ export const marketplaceListing = pgTable(
     priceAmount: numeric("price_amount", { precision: 10, scale: 2 }),
     priceCurrency: varchar("price_currency", { length: 3 }).default("EUR"),
     installCount: integer("install_count").notNull().default(0),
-    avgRating: numeric("avg_rating", { precision: 3, scale: 2 }).notNull().default("0.00"),
+    avgRating: numeric("avg_rating", { precision: 3, scale: 2 })
+      .notNull()
+      .default("0.00"),
     reviewCount: integer("review_count").notNull().default(0),
     minimumVersion: varchar("minimum_version", { length: 50 }),
     supportUrl: varchar("support_url", { length: 2000 }),
     documentationUrl: varchar("documentation_url", { length: 2000 }),
     createdBy: uuid("created_by").references(() => user.id),
     publishedAt: timestamp("published_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mp_list_org_idx").on(t.orgId),
@@ -184,10 +204,14 @@ export const marketplaceVersion = pgTable(
     packageSize: integer("package_size"),
     checksumSha256: varchar("checksum_sha256", { length: 64 }),
     status: marketplaceVersionStatusEnum("status").notNull().default("draft"),
-    compatibilityJson: jsonb("compatibility_json").notNull().default(sql`'{}'::jsonb`),
+    compatibilityJson: jsonb("compatibility_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     createdBy: uuid("created_by").references(() => user.id),
     publishedAt: timestamp("published_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mp_ver_org_idx").on(t.orgId),
@@ -216,12 +240,18 @@ export const marketplaceReview = pgTable(
     rating: integer("rating").notNull(),
     title: varchar("title", { length: 300 }),
     body: text("body"),
-    isVerifiedPurchase: boolean("is_verified_purchase").notNull().default(false),
+    isVerifiedPurchase: boolean("is_verified_purchase")
+      .notNull()
+      .default(false),
     helpfulCount: integer("helpful_count").notNull().default(0),
     publisherResponse: text("publisher_response"),
     respondedAt: timestamp("responded_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mp_rev_org_idx").on(t.orgId),
@@ -251,10 +281,16 @@ export const marketplaceInstallation = pgTable(
       .notNull()
       .references(() => user.id),
     status: varchar("status", { length: 30 }).notNull().default("active"),
-    configJson: jsonb("config_json").notNull().default(sql`'{}'::jsonb`),
+    configJson: jsonb("config_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     autoUpdate: boolean("auto_update").notNull().default(true),
-    installedAt: timestamp("installed_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    installedAt: timestamp("installed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     uninstalledAt: timestamp("uninstalled_at", { withTimezone: true }),
   },
   (t) => [
@@ -278,16 +314,24 @@ export const marketplaceSecurityScan = pgTable(
     versionId: uuid("version_id")
       .notNull()
       .references(() => marketplaceVersion.id, { onDelete: "cascade" }),
-    scanStatus: marketplaceScanStatusEnum("scan_status").notNull().default("pending"),
-    scanEngine: varchar("scan_engine", { length: 100 }).notNull().default("builtin"),
-    findingsJson: jsonb("findings_json").notNull().default(sql`'[]'::jsonb`),
+    scanStatus: marketplaceScanStatusEnum("scan_status")
+      .notNull()
+      .default("pending"),
+    scanEngine: varchar("scan_engine", { length: 100 })
+      .notNull()
+      .default("builtin"),
+    findingsJson: jsonb("findings_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     criticalCount: integer("critical_count").notNull().default(0),
     highCount: integer("high_count").notNull().default(0),
     mediumCount: integer("medium_count").notNull().default(0),
     lowCount: integer("low_count").notNull().default(0),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mp_scan_org_idx").on(t.orgId),

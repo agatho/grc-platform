@@ -2,7 +2,12 @@ import { db, crisisLog, crisisScenario } from "@grc/db";
 import { addCrisisLogEntrySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/bcms/crisis/[id]/log — Add immutable log entry
 export async function POST(
@@ -29,10 +34,15 @@ export async function POST(
   const [crisis] = await db
     .select({ id: crisisScenario.id })
     .from(crisisScenario)
-    .where(and(eq(crisisScenario.id, crisisId), eq(crisisScenario.orgId, ctx.orgId)));
+    .where(
+      and(eq(crisisScenario.id, crisisId), eq(crisisScenario.orgId, ctx.orgId)),
+    );
 
   if (!crisis) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {

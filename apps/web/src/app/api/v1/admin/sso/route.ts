@@ -104,10 +104,17 @@ export async function PUT(req: Request) {
     .where(eq(ssoConfig.orgId, ctx.orgId));
 
   if (!existing) {
-    return Response.json({ error: "No SSO configuration found" }, { status: 404 });
+    return Response.json(
+      { error: "No SSO configuration found" },
+      { status: 404 },
+    );
   }
 
-  const updateData: Record<string, unknown> = { ...parsed.data, updatedBy: ctx.userId, updatedAt: new Date() };
+  const updateData: Record<string, unknown> = {
+    ...parsed.data,
+    updatedBy: ctx.userId,
+    updatedAt: new Date(),
+  };
   // Remove undefined values
   for (const key of Object.keys(updateData)) {
     if (updateData[key] === undefined) delete updateData[key];
@@ -133,7 +140,12 @@ export async function DELETE(req: Request) {
   await withAuditContext(ctx, async (tx) => {
     await tx
       .update(ssoConfig)
-      .set({ deletedAt: new Date(), deletedBy: ctx.userId, isActive: false, enforceSSO: false })
+      .set({
+        deletedAt: new Date(),
+        deletedBy: ctx.userId,
+        isActive: false,
+        enforceSSO: false,
+      })
       .where(eq(ssoConfig.orgId, ctx.orgId));
   });
 

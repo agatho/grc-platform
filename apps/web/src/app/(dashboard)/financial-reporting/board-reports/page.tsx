@@ -61,11 +61,23 @@ export default function BoardReportsPage() {
   const typeBadge = (type: BoardReport["type"]) => {
     switch (type) {
       case "quartalsbericht":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">{typeLabel(type)}</Badge>;
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+            {typeLabel(type)}
+          </Badge>
+        );
       case "jahresbericht":
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-300">{typeLabel(type)}</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+            {typeLabel(type)}
+          </Badge>
+        );
       case "ad_hoc":
-        return <Badge className="bg-orange-100 text-orange-800 border-orange-300">{typeLabel(type)}</Badge>;
+        return (
+          <Badge className="bg-orange-100 text-orange-800 border-orange-300">
+            {typeLabel(type)}
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{type}</Badge>;
     }
@@ -76,9 +88,17 @@ export default function BoardReportsPage() {
       case "entwurf":
         return <Badge variant="outline">Entwurf</Badge>;
       case "in_pruefung":
-        return <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">In Pr&uuml;fung</Badge>;
+        return (
+          <Badge className="bg-yellow-100 text-yellow-800 border-yellow-300">
+            In Pr&uuml;fung
+          </Badge>
+        );
       case "genehmigt":
-        return <Badge className="bg-green-100 text-green-800 border-green-300">Genehmigt</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-300">
+            Genehmigt
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -89,13 +109,21 @@ export default function BoardReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Vorstandsberichte</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Vorstandsberichte
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Berichte f&uuml;r Vorstand und Aufsichtsrat mit Live-Datenverkn&uuml;pfung
+            Berichte f&uuml;r Vorstand und Aufsichtsrat mit
+            Live-Datenverkn&uuml;pfung
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -127,18 +155,32 @@ export default function BoardReportsPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Titel</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Typ</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Berichtszeitraum</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Sektionen</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Vorgestellt am</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Titel
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Typ
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Berichtszeitraum
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Sektionen
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Status
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Vorgestellt am
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {reports.map((report) => (
                 <tr key={report.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{report.title}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {report.title}
+                  </td>
                   <td className="px-4 py-3">{typeBadge(report.type)}</td>
                   <td className="px-4 py-3 text-gray-600">
                     <div className="flex items-center gap-1">
@@ -153,7 +195,9 @@ export default function BoardReportsPage() {
                     </div>
                   </td>
                   <td className="px-4 py-3">{statusBadge(report.status)}</td>
-                  <td className="px-4 py-3 text-gray-600">{report.presentedAt ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {report.presentedAt ?? "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -6,7 +6,11 @@ import { renderPDF } from "@grc/reporting";
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
-  return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
+  return s
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;");
 }
 
 function riskColor(score: number | null): string {
@@ -19,17 +23,24 @@ function riskColor(score: number | null): string {
 
 function statusLabel(status: string): string {
   const map: Record<string, string> = {
-    draft: "Entwurf", in_progress: "In Bearbeitung", completed: "Abgeschlossen",
-    pending_dpo_review: "Warte auf DSB-Freigabe", approved: "Freigegeben", rejected: "Abgelehnt",
+    draft: "Entwurf",
+    in_progress: "In Bearbeitung",
+    completed: "Abgeschlossen",
+    pending_dpo_review: "Warte auf DSB-Freigabe",
+    approved: "Freigegeben",
+    rejected: "Abgelehnt",
   };
   return map[status] ?? status;
 }
 
 function legalBasisLabel(basis: string | null): string {
   const map: Record<string, string> = {
-    consent: "Einwilligung (Art. 6(1)(a))", contract: "Vertragserfuellung (Art. 6(1)(b))",
-    legal_obligation: "Rechtliche Verpflichtung (Art. 6(1)(c))", vital_interest: "Lebenswichtige Interessen (Art. 6(1)(d))",
-    public_interest: "Oeffentliches Interesse (Art. 6(1)(e))", legitimate_interest: "Berechtigtes Interesse (Art. 6(1)(f))",
+    consent: "Einwilligung (Art. 6(1)(a))",
+    contract: "Vertragserfuellung (Art. 6(1)(b))",
+    legal_obligation: "Rechtliche Verpflichtung (Art. 6(1)(c))",
+    vital_interest: "Lebenswichtige Interessen (Art. 6(1)(d))",
+    public_interest: "Oeffentliches Interesse (Art. 6(1)(e))",
+    legitimate_interest: "Berechtigtes Interesse (Art. 6(1)(f))",
   };
   return basis ? (map[basis] ?? basis) : "Nicht angegeben";
 }
@@ -41,11 +52,24 @@ function buildDpiaHTML(
   orgName: string,
 ): string {
   const title = esc(data.title as string);
-  const now = new Date().toLocaleDateString("de-DE", { year: "numeric", month: "long", day: "numeric" });
+  const now = new Date().toLocaleDateString("de-DE", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   const transferRows = Array.isArray(data.thirdCountryTransfers)
-    ? (data.thirdCountryTransfers as Array<{ country: string; legalBasis: string; safeguards: string }>)
-        .map(t => `<tr><td>${esc(t.country)}</td><td>${esc(t.legalBasis)}</td><td>${esc(t.safeguards)}</td></tr>`)
+    ? (
+        data.thirdCountryTransfers as Array<{
+          country: string;
+          legalBasis: string;
+          safeguards: string;
+        }>
+      )
+        .map(
+          (t) =>
+            `<tr><td>${esc(t.country)}</td><td>${esc(t.legalBasis)}</td><td>${esc(t.safeguards)}</td></tr>`,
+        )
         .join("")
     : "";
 
@@ -65,13 +89,13 @@ function buildDpiaHTML(
 
   const measureRows = measures
     .map((m) => {
-      const linkedRisk = m.riskId
-        ? risks.find((r) => r.id === m.riskId)
-        : null;
+      const linkedRisk = m.riskId ? risks.find((r) => r.id === m.riskId) : null;
       const riskLabel = linkedRisk
         ? esc((linkedRisk.riskDescription as string).substring(0, 60)) + "..."
         : "DSFA-weit";
-      const cost = m.costOnetime ? `${Number(m.costOnetime).toLocaleString("de-DE")} ${m.costCurrency ?? "EUR"}` : "-";
+      const cost = m.costOnetime
+        ? `${Number(m.costOnetime).toLocaleString("de-DE")} ${m.costCurrency ?? "EUR"}`
+        : "-";
       return `<tr>
         <td>${esc(m.measureDescription as string)}</td>
         <td>${riskLabel}</td>
@@ -82,13 +106,17 @@ function buildDpiaHTML(
     .join("");
 
   const dataCategories = Array.isArray(data.dataCategories)
-    ? (data.dataCategories as string[]).map(c => `<span class="tag">${esc(c)}</span>`).join(" ")
+    ? (data.dataCategories as string[])
+        .map((c) => `<span class="tag">${esc(c)}</span>`)
+        .join(" ")
     : "<em>Nicht angegeben</em>";
   const subjectCategories = Array.isArray(data.dataSubjectCategories)
-    ? (data.dataSubjectCategories as string[]).map(c => `<span class="tag">${esc(c)}</span>`).join(" ")
+    ? (data.dataSubjectCategories as string[])
+        .map((c) => `<span class="tag">${esc(c)}</span>`)
+        .join(" ")
     : "<em>Nicht angegeben</em>";
   const recipientList = Array.isArray(data.recipients)
-    ? (data.recipients as string[]).map(r => `<li>${esc(r)}</li>`).join("")
+    ? (data.recipients as string[]).map((r) => `<li>${esc(r)}</li>`).join("")
     : "<li><em>Nicht angegeben</em></li>";
 
   return `<!DOCTYPE html>
@@ -149,10 +177,14 @@ function buildDpiaHTML(
 <div class="field-label">Systematische Beschreibung (Art. 35(7)(a))</div>
 <div class="field-value">${esc(data.systematicDescription as string) || esc(data.processingDescription as string) || "<em>Nicht ausgefuellt</em>"}</div>
 
-${data.processingDescription && data.systematicDescription ? `
+${
+  data.processingDescription && data.systematicDescription
+    ? `
 <div class="field-label">Verarbeitungsbeschreibung</div>
 <div class="field-value">${esc(data.processingDescription as string)}</div>
-` : ""}
+`
+    : ""
+}
 
 <!-- Section 2: Legal Basis -->
 <h2>2. Rechtsgrundlage &amp; Notwendigkeit</h2>
@@ -177,13 +209,17 @@ ${data.processingDescription && data.systematicDescription ? `
 <ul>${recipientList}</ul>
 
 <!-- Section 4: Third Country Transfers -->
-${transferRows ? `
+${
+  transferRows
+    ? `
 <h2>4. Drittlandtransfers</h2>
 <table>
   <thead><tr><th>Land</th><th>Rechtsgrundlage</th><th>Schutzma&szlig;nahmen</th></tr></thead>
   <tbody>${transferRows}</tbody>
 </table>
-` : `<h2>4. Drittlandtransfers</h2><p><em>Keine Drittlandtransfers</em></p>`}
+`
+    : `<h2>4. Drittlandtransfers</h2><p><em>Keine Drittlandtransfers</em></p>`
+}
 
 <!-- Section 5: Retention -->
 <h2>5. Aufbewahrungsfrist</h2>
@@ -211,42 +247,62 @@ ${transferRows ? `
 
 <!-- Section 8: DPO Consultation -->
 <h2>8. DSB-Stellungnahme</h2>
-${data.dpoOpinion ? `
+${
+  data.dpoOpinion
+    ? `
 <div class="opinion-box">
   <div class="field-label">Stellungnahme des Datenschutzbeauftragten</div>
   <div>${esc(data.dpoOpinion as string)}</div>
 </div>
-` : `<p><em>Noch keine Stellungnahme abgegeben</em></p>`}
+`
+    : `<p><em>Noch keine Stellungnahme abgegeben</em></p>`
+}
 
-${data.consultationResult ? `
+${
+  data.consultationResult
+    ? `
 <div class="field-label">Konsultationsergebnis</div>
 <div class="field-value">${esc(data.consultationResult as string)}</div>
-` : ""}
+`
+    : ""
+}
 
-${data.consultationDate ? `
+${
+  data.consultationDate
+    ? `
 <div class="field-label">Konsultationsdatum</div>
 <div class="field-value">${new Date(data.consultationDate as string).toLocaleDateString("de-DE")}</div>
-` : ""}
+`
+    : ""
+}
 
 <!-- Section 9: Sign-Off -->
 <h2>9. Freigabe</h2>
 <div class="section-box">
-${data.signOffName ? `
+${
+  data.signOffName
+    ? `
   <div class="field-label">Freigegeben durch</div>
   <div class="field-value">${esc(data.signOffName as string)}</div>
   <div class="field-label">Status</div>
   <div class="field-value"><span class="status-badge status-approved">${statusLabel(data.status as string)}</span></div>
-` : `
+`
+    : `
   <div class="field-value"><em>Ausstehend — DSFA wurde noch nicht freigegeben</em></div>
   <div class="field-label">Aktueller Status</div>
   <div class="field-value"><span class="status-badge status-${data.status === "rejected" ? "rejected" : "pending"}">${statusLabel(data.status as string)}</span></div>
-`}
+`
+}
 </div>
 
-${data.nextReviewDate ? `
+${
+  data.nextReviewDate
+    ? `
 <div class="field-label">N&auml;chster Pruefungstermin</div>
 <div class="field-value">${new Date(data.nextReviewDate as string).toLocaleDateString("de-DE")}</div>
-` : ""}
+`
+    : ""
+}
 
 <div class="footer">Vertraulich &mdash; Erstellt mit ARCTOS GRC Platform &mdash; ${now}</div>
 
@@ -268,25 +324,40 @@ export async function GET(
   // Fetch DPIA with all fields
   const [row] = await db
     .select({
-      id: dpia.id, title: dpia.title, processingDescription: dpia.processingDescription,
-      legalBasis: dpia.legalBasis, necessityAssessment: dpia.necessityAssessment,
+      id: dpia.id,
+      title: dpia.title,
+      processingDescription: dpia.processingDescription,
+      legalBasis: dpia.legalBasis,
+      necessityAssessment: dpia.necessityAssessment,
       dpoConsultationRequired: dpia.dpoConsultationRequired,
-      systematicDescription: dpia.systematicDescription, dataCategories: dpia.dataCategories,
-      dataSubjectCategories: dpia.dataSubjectCategories, recipients: dpia.recipients,
-      thirdCountryTransfers: dpia.thirdCountryTransfers, retentionPeriod: dpia.retentionPeriod,
-      consultationResult: dpia.consultationResult, consultationDate: dpia.consultationDate,
-      nextReviewDate: dpia.nextReviewDate, dpoOpinion: dpia.dpoOpinion,
-      status: dpia.status, residualRiskSignOffId: dpia.residualRiskSignOffId,
-      signOffName: user.name, createdAt: dpia.createdAt,
+      systematicDescription: dpia.systematicDescription,
+      dataCategories: dpia.dataCategories,
+      dataSubjectCategories: dpia.dataSubjectCategories,
+      recipients: dpia.recipients,
+      thirdCountryTransfers: dpia.thirdCountryTransfers,
+      retentionPeriod: dpia.retentionPeriod,
+      consultationResult: dpia.consultationResult,
+      consultationDate: dpia.consultationDate,
+      nextReviewDate: dpia.nextReviewDate,
+      dpoOpinion: dpia.dpoOpinion,
+      status: dpia.status,
+      residualRiskSignOffId: dpia.residualRiskSignOffId,
+      signOffName: user.name,
+      createdAt: dpia.createdAt,
     })
     .from(dpia)
     .leftJoin(user, eq(dpia.residualRiskSignOffId, user.id))
-    .where(and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)));
+    .where(
+      and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)),
+    );
 
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
 
   // Fetch org name
-  const [org] = await db.select({ name: organization.name }).from(organization).where(eq(organization.id, ctx.orgId));
+  const [org] = await db
+    .select({ name: organization.name })
+    .from(organization)
+    .where(eq(organization.id, ctx.orgId));
 
   // Fetch risks with numeric scores
   const risksResult = await db.execute(sql`
@@ -302,16 +373,19 @@ export async function GET(
   // Fetch measures with risk linkage
   const measures = await db
     .select({
-      id: dpiaMeasure.id, measureDescription: dpiaMeasure.measureDescription,
-      riskId: dpiaMeasure.riskId, implementationTimeline: dpiaMeasure.implementationTimeline,
-      costOnetime: dpiaMeasure.costOnetime, costCurrency: dpiaMeasure.costCurrency,
+      id: dpiaMeasure.id,
+      measureDescription: dpiaMeasure.measureDescription,
+      riskId: dpiaMeasure.riskId,
+      implementationTimeline: dpiaMeasure.implementationTimeline,
+      costOnetime: dpiaMeasure.costOnetime,
+      costCurrency: dpiaMeasure.costCurrency,
     })
     .from(dpiaMeasure)
     .where(and(eq(dpiaMeasure.dpiaId, id), eq(dpiaMeasure.orgId, ctx.orgId)));
 
   const html = buildDpiaHTML(
     row as unknown as Record<string, unknown>,
-    (risksResult.rows ?? []) as Record<string, unknown>[],
+    (risksResult ?? []) as unknown as Record<string, unknown>[],
     measures as unknown as Record<string, unknown>[],
     org?.name ?? "Organisation",
   );
@@ -321,7 +395,11 @@ export async function GET(
     const puppeteer = await import("puppeteer");
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
@@ -333,7 +411,7 @@ export async function GET(
     await browser.close();
 
     const filename = `DSFA-${(row.title ?? "Export").replace(/[^a-zA-Z0-9\-_]/g, "_")}.pdf`;
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,

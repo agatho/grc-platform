@@ -18,13 +18,21 @@ export async function POST(
   const { id: processId } = await params;
   const body = createSimulationScenarioSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [created] = await tx
       .insert(simulationScenario)
-      .values({ ...body.data, processId, orgId: ctx.orgId, createdBy: ctx.userId })
+      .values({
+        ...body.data,
+        processId,
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+      })
       .returning();
     return created;
   });

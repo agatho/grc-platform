@@ -93,13 +93,21 @@ export function runFAIRSimulation(
   if (params.lefMin < 0) {
     throw new Error("LEF minimum must be non-negative");
   }
-  if (params.lefMin > params.lefMostLikely || params.lefMostLikely > params.lefMax) {
-    throw new Error("LEF values must satisfy: lefMin <= lefMostLikely <= lefMax");
+  if (
+    params.lefMin > params.lefMostLikely ||
+    params.lefMostLikely > params.lefMax
+  ) {
+    throw new Error(
+      "LEF values must satisfy: lefMin <= lefMostLikely <= lefMax",
+    );
   }
   if (params.lmMin < 0) {
     throw new Error("LM minimum must be non-negative");
   }
-  if (params.lmMin > params.lmMostLikely || params.lmMostLikely > params.lmMax) {
+  if (
+    params.lmMin > params.lmMostLikely ||
+    params.lmMostLikely > params.lmMax
+  ) {
     throw new Error("LM values must satisfy: lmMin <= lmMostLikely <= lmMax");
   }
   if (iterations < 100 || iterations > 1_000_000) {
@@ -111,8 +119,16 @@ export function runFAIRSimulation(
   const lmValues: number[] = new Array(iterations);
 
   for (let i = 0; i < iterations; i++) {
-    const lef = pertDistribution(params.lefMin, params.lefMostLikely, params.lefMax);
-    const lm = pertDistribution(params.lmMin, params.lmMostLikely, params.lmMax);
+    const lef = pertDistribution(
+      params.lefMin,
+      params.lefMostLikely,
+      params.lefMax,
+    );
+    const lm = pertDistribution(
+      params.lmMin,
+      params.lmMostLikely,
+      params.lmMax,
+    );
     lefValues[i] = lef;
     lmValues[i] = lm;
     aleValues[i] = lef * lm; // ALE = LEF x LM
@@ -254,7 +270,11 @@ function computeSensitivity(
   // Vary LEF with LM fixed at mode
   const lefAleValues: number[] = [];
   for (let i = 0; i < subIterations; i++) {
-    const lef = pertDistribution(params.lefMin, params.lefMostLikely, params.lefMax);
+    const lef = pertDistribution(
+      params.lefMin,
+      params.lefMostLikely,
+      params.lefMax,
+    );
     lefAleValues.push(lef * params.lmMostLikely);
   }
   const lefVariance = stdDev(lefAleValues);
@@ -262,7 +282,11 @@ function computeSensitivity(
   // Vary LM with LEF fixed at mode
   const lmAleValues: number[] = [];
   for (let i = 0; i < subIterations; i++) {
-    const lm = pertDistribution(params.lmMin, params.lmMostLikely, params.lmMax);
+    const lm = pertDistribution(
+      params.lmMin,
+      params.lmMostLikely,
+      params.lmMax,
+    );
     lmAleValues.push(params.lefMostLikely * lm);
   }
   const lmVariance = stdDev(lmAleValues);
@@ -300,8 +324,13 @@ export function distributeLossComponents(
   totalAle: number,
   components: LossComponent,
 ): Record<string, number> {
-  const total = components.productivity + components.response + components.replacement +
-    components.fines + components.judgments + components.reputation;
+  const total =
+    components.productivity +
+    components.response +
+    components.replacement +
+    components.fines +
+    components.judgments +
+    components.reputation;
 
   if (total === 0) return {};
 

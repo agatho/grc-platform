@@ -83,7 +83,9 @@ function GraphCanvas({
 }: GraphCanvasProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const simulationRef = useRef<unknown>(null);
-  const [positions, setPositions] = useState<Map<string, { x: number; y: number }>>(new Map());
+  const [positions, setPositions] = useState<
+    Map<string, { x: number; y: number }>
+  >(new Map());
   const [transform, setTransform] = useState({ x: 0, y: 0, k: 1 });
   const [dragging, setDragging] = useState<string | null>(null);
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
@@ -107,7 +109,10 @@ function GraphCanvas({
     const height = containerRef.current?.clientHeight ?? 600;
 
     // Simple force simulation without D3 dependency (pure JS)
-    const nodePositions = new Map<string, { x: number; y: number; vx: number; vy: number }>();
+    const nodePositions = new Map<
+      string,
+      { x: number; y: number; vx: number; vy: number }
+    >();
 
     // Initialize positions
     nodes.forEach((node, i) => {
@@ -131,7 +136,14 @@ function GraphCanvas({
 
     const tick = () => {
       if (iteration >= maxIterations) {
-        setPositions(new Map(Array.from(nodePositions.entries()).map(([id, p]) => [id, { x: p.x, y: p.y }])));
+        setPositions(
+          new Map(
+            Array.from(nodePositions.entries()).map(([id, p]) => [
+              id,
+              { x: p.x, y: p.y },
+            ]),
+          ),
+        );
         return;
       }
 
@@ -193,7 +205,14 @@ function GraphCanvas({
       iteration++;
 
       if (iteration % 10 === 0 || iteration >= maxIterations) {
-        setPositions(new Map(Array.from(nodePositions.entries()).map(([id, p]) => [id, { x: p.x, y: p.y }])));
+        setPositions(
+          new Map(
+            Array.from(nodePositions.entries()).map(([id, p]) => [
+              id,
+              { x: p.x, y: p.y },
+            ]),
+          ),
+        );
       }
 
       if (iteration < maxIterations) {
@@ -242,7 +261,11 @@ function GraphCanvas({
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (panning) {
-      setTransform((prev) => ({ ...prev, x: e.clientX - panStart.x, y: e.clientY - panStart.y }));
+      setTransform((prev) => ({
+        ...prev,
+        x: e.clientX - panStart.x,
+        y: e.clientY - panStart.y,
+      }));
     }
     if (dragging) {
       const svgRect = svgRef.current?.getBoundingClientRect();
@@ -272,7 +295,10 @@ function GraphCanvas({
   };
 
   return (
-    <div ref={containerRef} className="relative w-full h-full bg-gray-50 dark:bg-gray-900 overflow-hidden">
+    <div
+      ref={containerRef}
+      className="relative w-full h-full bg-gray-50 dark:bg-gray-900 overflow-hidden"
+    >
       <svg
         ref={svgRef}
         className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -282,14 +308,19 @@ function GraphCanvas({
         onMouseLeave={handleMouseUp}
         onWheel={handleWheel}
       >
-        <g transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}>
+        <g
+          transform={`translate(${transform.x},${transform.y}) scale(${transform.k})`}
+        >
           {/* Edges */}
           {edges.map((edge) => {
             const source = positions.get(edge.sourceId);
             const target = positions.get(edge.targetId);
             if (!source || !target) return null;
             const opacity = blastRadiusNodeId
-              ? Math.min(getBlastRadiusOpacity(edge.sourceId), getBlastRadiusOpacity(edge.targetId))
+              ? Math.min(
+                  getBlastRadiusOpacity(edge.sourceId),
+                  getBlastRadiusOpacity(edge.targetId),
+                )
               : 0.4;
             return (
               <g key={edge.id}>
@@ -355,23 +386,48 @@ function GraphCanvas({
               >
                 {/* Blast radius glow */}
                 {strokeColor !== "transparent" && (
-                  <circle r={radius + 4} fill="none" stroke={strokeColor} strokeWidth={3} strokeOpacity={0.5} />
+                  <circle
+                    r={radius + 4}
+                    fill="none"
+                    stroke={strokeColor}
+                    strokeWidth={3}
+                    strokeOpacity={0.5}
+                  />
                 )}
                 {/* Selection ring */}
                 {isSelected && (
-                  <circle r={radius + 3} fill="none" stroke="#3b82f6" strokeWidth={2} strokeDasharray="4 2" />
+                  <circle
+                    r={radius + 3}
+                    fill="none"
+                    stroke="#3b82f6"
+                    strokeWidth={2}
+                    strokeDasharray="4 2"
+                  />
                 )}
                 {/* Node circle */}
                 <circle r={radius} fill={color} stroke="#fff" strokeWidth={2} />
                 {/* Node label */}
                 {transform.k > 0.4 && (
-                  <text y={radius + 14} textAnchor="middle" fontSize={10} fill="#334155" fontWeight={isSelected ? 600 : 400}>
-                    {node.name.length > 20 ? node.name.slice(0, 18) + "..." : node.name}
+                  <text
+                    y={radius + 14}
+                    textAnchor="middle"
+                    fontSize={10}
+                    fill="#334155"
+                    fontWeight={isSelected ? 600 : 400}
+                  >
+                    {node.name.length > 20
+                      ? node.name.slice(0, 18) + "..."
+                      : node.name}
                   </text>
                 )}
                 {/* Type badge */}
                 {transform.k > 0.7 && (
-                  <text y={-radius - 4} textAnchor="middle" fontSize={8} fill="#64748b">
+                  <text
+                    y={-radius - 4}
+                    textAnchor="middle"
+                    fontSize={8}
+                    fill="#64748b"
+                  >
                     {node.type}
                   </text>
                 )}
@@ -383,7 +439,8 @@ function GraphCanvas({
 
       {/* Node/Edge counts */}
       <div className="absolute bottom-4 left-4 text-xs text-muted-foreground bg-white/80 dark:bg-gray-800/80 px-2 py-1 rounded">
-        {t("explorer.nodeCount", { count: nodes.length })} | {t("explorer.edgeCount", { count: edges.length })}
+        {t("explorer.nodeCount", { count: nodes.length })} |{" "}
+        {t("explorer.edgeCount", { count: edges.length })}
       </div>
     </div>
   );
@@ -421,9 +478,12 @@ function ImpactPanel({
   };
 
   const getSeverityColor = (score: number): string => {
-    if (score >= 70) return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
-    if (score >= 50) return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-    if (score >= 30) return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
+    if (score >= 70)
+      return "bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200";
+    if (score >= 50)
+      return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
+    if (score >= 30)
+      return "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200";
     return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
   };
 
@@ -452,12 +512,20 @@ function ImpactPanel({
       {/* Summary cards */}
       <div className="grid grid-cols-2 gap-3">
         <Card className="p-3">
-          <div className="text-2xl font-bold">{impactData.affectedEntities.length}</div>
-          <div className="text-xs text-muted-foreground">{t("impact.affectedEntities")}</div>
+          <div className="text-2xl font-bold">
+            {impactData.affectedEntities.length}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {t("impact.affectedEntities")}
+          </div>
         </Card>
         <Card className="p-3">
-          <div className="text-2xl font-bold">{impactData.totalImpactScore}</div>
-          <div className="text-xs text-muted-foreground">{t("impact.totalImpactScore")}</div>
+          <div className="text-2xl font-bold">
+            {impactData.totalImpactScore}
+          </div>
+          <div className="text-xs text-muted-foreground">
+            {t("impact.totalImpactScore")}
+          </div>
         </Card>
       </div>
 
@@ -484,11 +552,18 @@ function ImpactPanel({
                   <div className="flex items-center gap-2 min-w-0">
                     <div
                       className="w-3 h-3 rounded-full shrink-0"
-                      style={{ backgroundColor: GRAPH_ENTITY_COLORS[entity.entityType] ?? "#6b7280" }}
+                      style={{
+                        backgroundColor:
+                          GRAPH_ENTITY_COLORS[entity.entityType] ?? "#6b7280",
+                      }}
                     />
                     <div className="min-w-0">
-                      <div className="text-sm font-medium truncate">{entity.entityName}</div>
-                      <div className="text-xs text-muted-foreground">{entity.entityType}</div>
+                      <div className="text-sm font-medium truncate">
+                        {entity.entityName}
+                      </div>
+                      <div className="text-xs text-muted-foreground">
+                        {entity.entityType}
+                      </div>
                     </div>
                   </div>
                   <Badge className={getSeverityColor(entity.impactScore)}>
@@ -500,7 +575,9 @@ function ImpactPanel({
                     {entity.path.map((id, i) => (
                       <span key={i} className="flex items-center gap-1">
                         {i > 0 && <ChevronRight className="h-3 w-3" />}
-                        <span className="truncate max-w-[80px]">{id.slice(0, 8)}</span>
+                        <span className="truncate max-w-[80px]">
+                          {id.slice(0, 8)}
+                        </span>
                       </span>
                     ))}
                   </div>
@@ -511,7 +588,9 @@ function ImpactPanel({
         ))}
 
       {impactData.affectedEntities.length === 0 && (
-        <p className="text-sm text-muted-foreground py-4 text-center">{t("impact.noAffected")}</p>
+        <p className="text-sm text-muted-foreground py-4 text-center">
+          {t("impact.noAffected")}
+        </p>
       )}
 
       {/* Critical paths */}
@@ -523,7 +602,9 @@ function ImpactPanel({
               <div className="flex items-center gap-1 text-xs flex-wrap">
                 {path.map((id, j) => (
                   <span key={j} className="flex items-center gap-1">
-                    {j > 0 && <ChevronRight className="h-3 w-3 text-muted-foreground" />}
+                    {j > 0 && (
+                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                    )}
                     <Badge variant="outline" className="text-xs">
                       {id.slice(0, 8)}
                     </Badge>
@@ -554,21 +635,27 @@ export default function GraphExplorerPage() {
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedNode, setSelectedNode] = useState<GraphNodeData | null>(null);
   const [blastRadiusNode, setBlastRadiusNode] = useState<string | null>(null);
-  const [impactData, setImpactData] = useState<ImpactAnalysisResponse | null>(null);
+  const [impactData, setImpactData] = useState<ImpactAnalysisResponse | null>(
+    null,
+  );
   const [impactLoading, setImpactLoading] = useState(false);
   const [showImpactPanel, setShowImpactPanel] = useState(false);
   const [layout, setLayout] = useState<GraphLayout>("force");
   const [depth, setDepth] = useState(3);
   const [showFilter, setShowFilter] = useState(true);
-  const [contextMenu, setContextMenu] = useState<{ node: GraphNodeData; x: number; y: number } | null>(null);
+  const [contextMenu, setContextMenu] = useState<{
+    node: GraphNodeData;
+    x: number;
+    y: number;
+  } | null>(null);
 
   // Filters
   const [selectedEntityTypes, setSelectedEntityTypes] = useState<Set<string>>(
     new Set(GRAPH_ENTITY_TYPES),
   );
-  const [selectedRelationships, setSelectedRelationships] = useState<Set<string>>(
-    new Set(GRAPH_RELATIONSHIP_TYPES),
-  );
+  const [selectedRelationships, setSelectedRelationships] = useState<
+    Set<string>
+  >(new Set(GRAPH_RELATIONSHIP_TYPES));
 
   // Starting entity from URL params
   const startEntityId = searchParams.get("entityId");
@@ -589,7 +676,10 @@ export default function GraphExplorerPage() {
           params.set("entityTypes", Array.from(selectedEntityTypes).join(","));
         }
         if (selectedRelationships.size < GRAPH_RELATIONSHIP_TYPES.length) {
-          params.set("relationshipTypes", Array.from(selectedRelationships).join(","));
+          params.set(
+            "relationshipTypes",
+            Array.from(selectedRelationships).join(","),
+          );
         }
 
         const res = await fetch(`/api/v1/graph/subgraph?${params}`);
@@ -621,7 +711,9 @@ export default function GraphExplorerPage() {
     const timer = setTimeout(async () => {
       setSearchLoading(true);
       try {
-        const res = await fetch(`/api/v1/graph/search?q=${encodeURIComponent(searchQuery)}&limit=10`);
+        const res = await fetch(
+          `/api/v1/graph/search?q=${encodeURIComponent(searchQuery)}&limit=10`,
+        );
         if (res.ok) {
           const { data } = await res.json();
           setSearchResults(data);
@@ -730,7 +822,11 @@ export default function GraphExplorerPage() {
           <div className="p-4 space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="font-semibold text-sm">{t("filter.title")}</h2>
-              <Button variant="ghost" size="sm" onClick={() => setShowFilter(false)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilter(false)}
+              >
                 <X className="h-4 w-4" />
               </Button>
             </div>
@@ -754,11 +850,18 @@ export default function GraphExplorerPage() {
                     >
                       <div
                         className="w-2.5 h-2.5 rounded-full shrink-0"
-                        style={{ backgroundColor: GRAPH_ENTITY_COLORS[result.entityType] ?? "#6b7280" }}
+                        style={{
+                          backgroundColor:
+                            GRAPH_ENTITY_COLORS[result.entityType] ?? "#6b7280",
+                        }}
                       />
                       <div className="min-w-0">
-                        <div className="text-sm font-medium truncate">{result.name}</div>
-                        <div className="text-xs text-muted-foreground">{result.entityType}</div>
+                        <div className="text-sm font-medium truncate">
+                          {result.name}
+                        </div>
+                        <div className="text-xs text-muted-foreground">
+                          {result.entityType}
+                        </div>
                       </div>
                     </button>
                   ))}
@@ -768,7 +871,9 @@ export default function GraphExplorerPage() {
 
             {/* Depth slider */}
             <div>
-              <Label className="text-xs">{t("filter.depthSlider")}: {depth}</Label>
+              <Label className="text-xs">
+                {t("filter.depthSlider")}: {depth}
+              </Label>
               <input
                 type="range"
                 min={1}
@@ -782,15 +887,26 @@ export default function GraphExplorerPage() {
             {/* Layout select */}
             <div>
               <Label className="text-xs">{t("explorer.layout")}</Label>
-              <Select value={layout} onValueChange={(v) => setLayout(v as GraphLayout)}>
+              <Select
+                value={layout}
+                onValueChange={(v) => setLayout(v as GraphLayout)}
+              >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="force">{t("explorer.layouts.force")}</SelectItem>
-                  <SelectItem value="hierarchical">{t("explorer.layouts.hierarchical")}</SelectItem>
-                  <SelectItem value="radial">{t("explorer.layouts.radial")}</SelectItem>
-                  <SelectItem value="circular">{t("explorer.layouts.circular")}</SelectItem>
+                  <SelectItem value="force">
+                    {t("explorer.layouts.force")}
+                  </SelectItem>
+                  <SelectItem value="hierarchical">
+                    {t("explorer.layouts.hierarchical")}
+                  </SelectItem>
+                  <SelectItem value="radial">
+                    {t("explorer.layouts.radial")}
+                  </SelectItem>
+                  <SelectItem value="circular">
+                    {t("explorer.layouts.circular")}
+                  </SelectItem>
                 </SelectContent>
               </Select>
             </div>
@@ -808,9 +924,14 @@ export default function GraphExplorerPage() {
                     />
                     <div
                       className="w-2.5 h-2.5 rounded-full"
-                      style={{ backgroundColor: GRAPH_ENTITY_COLORS[type] ?? "#6b7280" }}
+                      style={{
+                        backgroundColor: GRAPH_ENTITY_COLORS[type] ?? "#6b7280",
+                      }}
                     />
-                    <Label htmlFor={`type-${type}`} className="text-xs cursor-pointer">
+                    <Label
+                      htmlFor={`type-${type}`}
+                      className="text-xs cursor-pointer"
+                    >
                       {t(`entityTypes.${type}`)}
                     </Label>
                   </div>
@@ -829,7 +950,10 @@ export default function GraphExplorerPage() {
                       checked={selectedRelationships.has(rel)}
                       onCheckedChange={() => toggleRelationship(rel)}
                     />
-                    <Label htmlFor={`rel-${rel}`} className="text-xs cursor-pointer">
+                    <Label
+                      htmlFor={`rel-${rel}`}
+                      className="text-xs cursor-pointer"
+                    >
                       {t(`relationships.${rel}`)}
                     </Label>
                   </div>
@@ -857,7 +981,11 @@ export default function GraphExplorerPage() {
         <div className="flex items-center justify-between border-b px-4 py-2">
           <div className="flex items-center gap-2">
             {!showFilter && (
-              <Button variant="ghost" size="sm" onClick={() => setShowFilter(true)}>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => setShowFilter(true)}
+              >
                 <Filter className="h-4 w-4 mr-1" />
                 {t("filter.title")}
               </Button>
@@ -866,9 +994,14 @@ export default function GraphExplorerPage() {
             <h1 className="font-semibold">{t("explorer.title")}</h1>
           </div>
           <div className="flex items-center gap-1">
-            <Button variant="ghost" size="sm" onClick={() => {
-              if (startEntityId && startEntityType) fetchGraph(startEntityId, startEntityType);
-            }}>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                if (startEntityId && startEntityType)
+                  fetchGraph(startEntityId, startEntityType);
+              }}
+            >
               <RefreshCcw className="h-4 w-4" />
             </Button>
             <Link href="/graph/dependencies">
@@ -889,7 +1022,9 @@ export default function GraphExplorerPage() {
           {loading ? (
             <div className="flex items-center justify-center h-full">
               <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-              <span className="ml-2 text-muted-foreground">{t("explorer.loading")}</span>
+              <span className="ml-2 text-muted-foreground">
+                {t("explorer.loading")}
+              </span>
             </div>
           ) : !graphData || graphData.nodes.length === 0 ? (
             <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -943,7 +1078,9 @@ export default function GraphExplorerPage() {
             <button
               className="w-full text-left px-3 py-1.5 text-sm hover:bg-accent flex items-center gap-2"
               onClick={() => {
-                router.push(`${getEntityTypeUrl(contextMenu.node.type)}/${contextMenu.node.id}`);
+                router.push(
+                  `${getEntityTypeUrl(contextMenu.node.type)}/${contextMenu.node.id}`,
+                );
                 setContextMenu(null);
               }}
             >
@@ -955,7 +1092,10 @@ export default function GraphExplorerPage() {
 
         {/* Click outside to close context menu */}
         {contextMenu && (
-          <div className="fixed inset-0 z-40" onClick={() => setContextMenu(null)} />
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setContextMenu(null)}
+          />
         )}
       </div>
 
@@ -967,28 +1107,41 @@ export default function GraphExplorerPage() {
             <div className="p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="font-semibold text-sm">{selectedNode.name}</h3>
-                <Button variant="ghost" size="sm" onClick={() => setSelectedNode(null)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setSelectedNode(null)}
+                >
                   <X className="h-4 w-4" />
                 </Button>
               </div>
               <div className="flex items-center gap-2">
                 <div
                   className="w-3 h-3 rounded-full"
-                  style={{ backgroundColor: GRAPH_ENTITY_COLORS[selectedNode.type] ?? "#6b7280" }}
+                  style={{
+                    backgroundColor:
+                      GRAPH_ENTITY_COLORS[selectedNode.type] ?? "#6b7280",
+                  }}
                 />
-                <span className="text-sm text-muted-foreground">{t(`entityTypes.${selectedNode.type}`)}</span>
+                <span className="text-sm text-muted-foreground">
+                  {t(`entityTypes.${selectedNode.type}`)}
+                </span>
               </div>
               {selectedNode.status && (
                 <Badge variant="outline">{selectedNode.status}</Badge>
               )}
               <div className="text-xs text-muted-foreground">
-                {t("dependencies.connections", { count: selectedNode.connectionCount })}
+                {t("dependencies.connections", {
+                  count: selectedNode.connectionCount,
+                })}
               </div>
               <div className="space-y-2 pt-2">
                 <Button
                   size="sm"
                   className="w-full"
-                  onClick={() => runImpactAnalysis(selectedNode.id, selectedNode.type)}
+                  onClick={() =>
+                    runImpactAnalysis(selectedNode.id, selectedNode.type)
+                  }
                 >
                   <Target className="h-4 w-4 mr-1" />
                   {t("explorer.startImpactAnalysis")}
@@ -997,7 +1150,11 @@ export default function GraphExplorerPage() {
                   size="sm"
                   variant="outline"
                   className="w-full"
-                  onClick={() => router.push(`${getEntityTypeUrl(selectedNode.type)}/${selectedNode.id}`)}
+                  onClick={() =>
+                    router.push(
+                      `${getEntityTypeUrl(selectedNode.type)}/${selectedNode.id}`,
+                    )
+                  }
                 >
                   <ExternalLink className="h-4 w-4 mr-1" />
                   {t("explorer.openEntity")}

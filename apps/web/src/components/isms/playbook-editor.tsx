@@ -153,7 +153,8 @@ export function PlaybookEditor({
               description: d.description ?? "",
               triggerCategory: d.triggerCategory,
               triggerMinSeverity: d.triggerMinSeverity,
-              estimatedDurationHours: d.estimatedDurationHours?.toString() ?? "",
+              estimatedDurationHours:
+                d.estimatedDurationHours?.toString() ?? "",
               phases: d.phases.map(
                 (p: {
                   name: string;
@@ -285,7 +286,9 @@ export function PlaybookEditor({
 
     try {
       const url =
-        mode === "edit" ? `/api/v1/playbooks/${playbookId}` : "/api/v1/playbooks";
+        mode === "edit"
+          ? `/api/v1/playbooks/${playbookId}`
+          : "/api/v1/playbooks";
       const method = mode === "edit" ? "PUT" : "POST";
 
       const res = await fetch(url, {
@@ -299,9 +302,7 @@ export function PlaybookEditor({
       } else {
         const err = await res.json();
         setError(
-          typeof err.error === "string"
-            ? err.error
-            : JSON.stringify(err.error),
+          typeof err.error === "string" ? err.error : JSON.stringify(err.error),
         );
       }
     } catch {
@@ -359,9 +360,7 @@ export function PlaybookEditor({
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{t("delete")}</DialogTitle>
-                  <DialogDescription>
-                    {t("deleteConfirm")}
-                  </DialogDescription>
+                  <DialogDescription>{t("deleteConfirm")}</DialogDescription>
                 </DialogHeader>
                 <DialogFooter>
                   <Button variant="destructive" onClick={handleDelete}>
@@ -422,9 +421,7 @@ export function PlaybookEditor({
               </label>
               <Select
                 value={form.triggerCategory}
-                onValueChange={(v) =>
-                  setForm({ ...form, triggerCategory: v })
-                }
+                onValueChange={(v) => setForm({ ...form, triggerCategory: v })}
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -555,7 +552,8 @@ export function PlaybookEditor({
                           value={phase.deadlineHoursRelative}
                           onChange={(e) =>
                             updatePhase(phaseIdx, {
-                              deadlineHoursRelative: parseInt(e.target.value, 10) || 1,
+                              deadlineHoursRelative:
+                                parseInt(e.target.value, 10) || 1,
                             })
                           }
                           className="mt-0.5 block w-full rounded-md border border-gray-300 px-2 py-1 text-xs focus:border-blue-500 focus:outline-none"
@@ -716,11 +714,7 @@ export function PlaybookEditor({
           ))}
         </div>
 
-        <Button
-          variant="outline"
-          onClick={addPhase}
-          className="w-full text-sm"
-        >
+        <Button variant="outline" onClick={addPhase} className="w-full text-sm">
           <Plus size={14} /> {t("addPhase")}
         </Button>
       </div>

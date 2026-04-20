@@ -106,7 +106,9 @@ function TiaListInner() {
           >
             <option value="">{t("tia.allCountries")}</option>
             {countries.map((c) => (
-              <option key={c} value={c}>{c}</option>
+              <option key={c} value={c}>
+                {c}
+              </option>
             ))}
           </select>
         )}
@@ -117,23 +119,41 @@ function TiaListInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">{t("tia.empty")}</p>
+        <p className="text-sm text-gray-400 text-center py-8">
+          {t("tia.empty")}
+        </p>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("tia.titleField")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("tia.country")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("tia.legalBasis")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("tia.riskRatingLabel")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("tia.nextReview")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("tia.titleField")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("tia.country")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("tia.legalBasis")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("tia.riskRatingLabel")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("tia.nextReview")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer" onClick={() => router.push(`/dpms/tia/${item.id}`)}>
-                  <td className="px-4 py-3 font-medium text-gray-900">{item.title}</td>
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 cursor-pointer"
+                  onClick={() => router.push(`/dpms/tia/${item.id}`)}
+                >
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {item.title}
+                  </td>
                   <td className="px-4 py-3">
                     <div className="flex items-center gap-1">
                       <Globe size={12} className="text-gray-400" />
@@ -146,11 +166,16 @@ function TiaListInner() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={`text-xs ${RISK_COLORS[item.riskRating] ?? ""}`}>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${RISK_COLORS[item.riskRating] ?? ""}`}
+                    >
                       {item.riskRating}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{item.nextReviewDate ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {item.nextReviewDate ?? "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

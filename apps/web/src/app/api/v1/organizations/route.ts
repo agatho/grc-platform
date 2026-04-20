@@ -1,8 +1,19 @@
-import { db, organization, userOrganizationRole, moduleDefinition, moduleConfig } from "@grc/db";
+import {
+  db,
+  organization,
+  userOrganizationRole,
+  moduleDefinition,
+  moduleConfig,
+} from "@grc/db";
 import { createOrganizationSchema } from "@grc/shared";
 import { eq, and, isNull, inArray, count, or, sql } from "drizzle-orm";
 import { getAccessibleOrgIds } from "@grc/auth";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/organizations — List organizations (admin)
 export async function GET(req: Request) {
@@ -47,7 +58,10 @@ export async function POST(req: Request) {
 
   const body = createOrganizationSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {

@@ -128,9 +128,7 @@ export const processMiningSuggestion = pgTable(
     }),
     status: varchar("status", { length: 20 }).notNull().default("pending"),
   },
-  (table) => [
-    index("pms_result_idx").on(table.conformanceResultId),
-  ],
+  (table) => [index("pms_result_idx").on(table.conformanceResultId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -307,19 +305,18 @@ export const valueStreamMap = pgTable(
 // 47.10 process_template — Pre-built BPMN templates (NOT org-scoped)
 // ──────────────────────────────────────────────────────────────
 
-export const processTemplate = pgTable(
-  "process_template",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    domain: varchar("domain", { length: 30 }).notNull(),
-    name: jsonb("name").notNull(),
-    description: jsonb("description"),
-    bpmnXml: text("bpmn_xml").notNull(),
-    typicalKpis: jsonb("typical_kpis").default("[]"),
-    typicalRisks: jsonb("typical_risks").default("[]"),
-    typicalControls: jsonb("typical_controls").default("[]"),
-    requiredRoles: text("required_roles").array().default([]),
-    complexity: varchar("complexity", { length: 20 }).notNull().default("moderate"),
-    isPublished: boolean("is_published").notNull().default(true),
-  },
-);
+export const processTemplate = pgTable("process_template", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  domain: varchar("domain", { length: 30 }).notNull(),
+  name: jsonb("name").notNull(),
+  description: jsonb("description"),
+  bpmnXml: text("bpmn_xml").notNull(),
+  typicalKpis: jsonb("typical_kpis").default("[]"),
+  typicalRisks: jsonb("typical_risks").default("[]"),
+  typicalControls: jsonb("typical_controls").default("[]"),
+  requiredRoles: text("required_roles").array().default([]),
+  complexity: varchar("complexity", { length: 20 })
+    .notNull()
+    .default("moderate"),
+  isPublished: boolean("is_published").notNull().default(true),
+});

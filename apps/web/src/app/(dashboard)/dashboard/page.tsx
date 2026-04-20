@@ -29,13 +29,7 @@ import {
   User,
   Activity,
 } from "lucide-react";
-import {
-  PieChart,
-  Pie,
-  Cell,
-  ResponsiveContainer,
-  Tooltip,
-} from "recharts";
+import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
 import { useModuleConfig } from "@/hooks/use-module-config";
 
 // ---------------------------------------------------------------------------
@@ -71,7 +65,12 @@ interface DashboardTask {
 
 interface PaginatedResponse<T> {
   data: T[];
-  pagination: { page: number; limit: number; total: number; totalPages: number };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }
 
 interface RiskDashboardSummary {
@@ -90,14 +89,21 @@ interface RiskDashboardSummary {
     ownerId: string | null;
   }[];
   kriSummary: { green: number; yellow: number; red: number };
-  heatMapCells: { likelihood: number | null; impact: number | null; count: number }[];
+  heatMapCells: {
+    likelihood: number | null;
+    impact: number | null;
+    count: number;
+  }[];
 }
 
 // ---------------------------------------------------------------------------
 // Relative time helper
 // ---------------------------------------------------------------------------
 
-function timeAgo(date: string, t: (key: string, values?: Record<string, number>) => string): string {
+function timeAgo(
+  date: string,
+  t: (key: string, values?: Record<string, number>) => string,
+): string {
   const now = Date.now();
   const then = new Date(date).getTime();
   const diffMs = now - then;
@@ -128,10 +134,30 @@ const actionIcons = {
 // ---------------------------------------------------------------------------
 
 const statCards = [
-  { key: "openRisks", icon: ShieldAlert, color: "text-orange-600 bg-orange-50", accent: "border-l-orange-400" },
-  { key: "activeControls", icon: ShieldCheck, color: "text-green-600 bg-green-50", accent: "border-l-green-400" },
-  { key: "pendingFindings", icon: ClipboardCheck, color: "text-red-600 bg-red-50", accent: "border-l-red-400" },
-  { key: "complianceScore", icon: TrendingUp, color: "text-blue-600 bg-blue-50", accent: "border-l-blue-400" },
+  {
+    key: "openRisks",
+    icon: ShieldAlert,
+    color: "text-orange-600 bg-orange-50",
+    accent: "border-l-orange-400",
+  },
+  {
+    key: "activeControls",
+    icon: ShieldCheck,
+    color: "text-green-600 bg-green-50",
+    accent: "border-l-green-400",
+  },
+  {
+    key: "pendingFindings",
+    icon: ClipboardCheck,
+    color: "text-red-600 bg-red-50",
+    accent: "border-l-red-400",
+  },
+  {
+    key: "complianceScore",
+    icon: TrendingUp,
+    color: "text-blue-600 bg-blue-50",
+    accent: "border-l-blue-400",
+  },
 ] as const;
 
 // ---------------------------------------------------------------------------
@@ -162,9 +188,7 @@ function DashboardHeatMap({
   }
 
   function getCellCount(l: number, i: number): number {
-    const cell = cells.find(
-      (c) => c.likelihood === l && c.impact === i,
-    );
+    const cell = cells.find((c) => c.likelihood === l && c.impact === i);
     return cell?.count ?? 0;
   }
 
@@ -185,7 +209,11 @@ function DashboardHeatMap({
                 key={i}
                 role={count > 0 ? "button" : undefined}
                 tabIndex={count > 0 ? 0 : undefined}
-                onClick={count > 0 ? () => router.push(`/risks?likelihood=${l}&impact=${i}`) : undefined}
+                onClick={
+                  count > 0
+                    ? () => router.push(`/risks?likelihood=${l}&impact=${i}`)
+                    : undefined
+                }
                 className={`rounded-sm flex items-center justify-center text-[9px] font-bold ${cellColor(l, i)} ${count > 0 ? "text-white cursor-pointer hover:ring-2 hover:ring-white/60 hover:scale-105 transition-transform" : "text-transparent"}`}
                 style={{ width: cellSize, height: cellSize }}
                 title={`L${l} × I${i}: ${count} risk(s)`}
@@ -244,7 +272,9 @@ export default function DashboardPage() {
   const [tasksError, setTasksError] = useState(false);
 
   // Risk dashboard summary
-  const [riskSummary, setRiskSummary] = useState<RiskDashboardSummary | null>(null);
+  const [riskSummary, setRiskSummary] = useState<RiskDashboardSummary | null>(
+    null,
+  );
   const [riskSummaryLoading, setRiskSummaryLoading] = useState(true);
 
   // Fetch recent audit log entries
@@ -271,7 +301,9 @@ export default function DashboardPage() {
       .finally(() => {
         if (!cancelled) setAuditLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch notifications
@@ -323,7 +355,9 @@ export default function DashboardPage() {
       .finally(() => {
         if (!cancelled) setTasksLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Fetch risk dashboard summary (only when ERM module is enabled)
@@ -348,13 +382,17 @@ export default function DashboardPage() {
       .finally(() => {
         if (!cancelled) setRiskSummaryLoading(false);
       });
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [ermEnabled]);
 
   // Mark notification as read
   async function markAsRead(id: string) {
     try {
-      const res = await fetch(`/api/v1/notifications/${id}/read`, { method: "PUT" });
+      const res = await fetch(`/api/v1/notifications/${id}/read`, {
+        method: "PUT",
+      });
       if (res.ok) {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
@@ -375,8 +413,12 @@ export default function DashboardPage() {
     return (
       <ModernDashboard
         userName={userName}
-        t={(key: string, values?: Record<string, unknown>) => t(key, values as Record<string, string | number | Date> | undefined)}
-        rt={(key: string, values?: Record<string, unknown>) => rt(key, values as Record<string, string | number | Date> | undefined)}
+        t={(key: string, values?: Record<string, unknown>) =>
+          t(key, values as Record<string, string | number | Date> | undefined)
+        }
+        rt={(key: string, values?: Record<string, unknown>) =>
+          rt(key, values as Record<string, string | number | Date> | undefined)
+        }
         ermEnabled={ermEnabled}
         auditEntries={auditEntries}
         auditLoading={auditLoading}
@@ -414,9 +456,10 @@ export default function DashboardPage() {
           if (ermEnabled && riskSummary) {
             if (key === "openRisks") {
               displayValue = String(riskSummary.totalRisks);
-              subtitle = riskSummary.appetiteExceededCount > 0
-                ? `${riskSummary.appetiteExceededCount} ${t("risk.appetite.exceeded")}`
-                : null;
+              subtitle =
+                riskSummary.appetiteExceededCount > 0
+                  ? `${riskSummary.appetiteExceededCount} ${t("risk.appetite.exceeded")}`
+                  : null;
             } else if (key === "activeControls") {
               // Controls count from treatment actions
               const treatedCount = riskSummary.byStatus?.treated ?? 0;
@@ -424,7 +467,10 @@ export default function DashboardPage() {
               displayValue = String(treatedCount + closedCount);
             } else if (key === "pendingFindings") {
               displayValue = String(riskSummary.appetiteExceededCount);
-              subtitle = riskSummary.appetiteExceededCount > 0 ? t("risk.appetite.exceeded") : null;
+              subtitle =
+                riskSummary.appetiteExceededCount > 0
+                  ? t("risk.appetite.exceeded")
+                  : null;
             } else if (key === "complianceScore") {
               const total = riskSummary.totalRisks || 1;
               const closed = riskSummary.byStatus?.closed ?? 0;
@@ -448,11 +494,17 @@ export default function DashboardPage() {
                 </p>
                 {displayValue ? (
                   <>
-                    <p className="text-2xl font-bold text-gray-900 mt-1">{displayValue}</p>
-                    {subtitle && <p className="text-xs text-red-500 mt-1">{subtitle}</p>}
+                    <p className="text-2xl font-bold text-gray-900 mt-1">
+                      {displayValue}
+                    </p>
+                    {subtitle && (
+                      <p className="text-xs text-red-500 mt-1">{subtitle}</p>
+                    )}
                   </>
                 ) : (
-                  <p className="text-2xl font-bold text-gray-400 dark:text-gray-500 mt-1">&mdash;</p>
+                  <p className="text-2xl font-bold text-gray-400 dark:text-gray-500 mt-1">
+                    &mdash;
+                  </p>
                 )}
               </div>
             </div>
@@ -462,7 +514,6 @@ export default function DashboardPage() {
 
       {/* ── Widgets grid ────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
         {/* ── Recent Changes (real data) ────────────────────────── */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
           <div className="flex items-center gap-2 px-5 py-4 border-b border-gray-100">
@@ -490,14 +541,17 @@ export default function DashboardPage() {
             ) : (
               <ul className="space-y-1">
                 {auditEntries.map((entry) => {
-                  const actionDef = actionIcons[entry.action] ?? actionIcons.update;
+                  const actionDef =
+                    actionIcons[entry.action] ?? actionIcons.update;
                   const ActionIcon = actionDef.icon;
                   return (
                     <li
                       key={entry.id}
                       className="flex items-start gap-3 rounded-md px-2 py-2.5 hover:bg-gray-50 transition-colors"
                     >
-                      <div className={`mt-0.5 p-1.5 rounded-md ${actionDef.color}`}>
+                      <div
+                        className={`mt-0.5 p-1.5 rounded-md ${actionDef.color}`}
+                      >
                         <ActionIcon size={14} />
                       </div>
                       <div className="flex-1 min-w-0">
@@ -506,7 +560,9 @@ export default function DashboardPage() {
                             {entry.userName ?? entry.userEmail ?? "System"}
                           </span>{" "}
                           <span className="text-gray-500">{entry.action}</span>{" "}
-                          <span className="text-gray-600">{entry.entityType}</span>
+                          <span className="text-gray-600">
+                            {entry.entityType}
+                          </span>
                           {entry.entityTitle && (
                             <>
                               {" "}
@@ -517,7 +573,10 @@ export default function DashboardPage() {
                           )}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          <Clock size={11} className="inline-block mr-1 -mt-0.5" />
+                          <Clock
+                            size={11}
+                            className="inline-block mr-1 -mt-0.5"
+                          />
                           {timeAgo(entry.createdAt, t)}
                         </p>
                       </div>
@@ -562,7 +621,8 @@ export default function DashboardPage() {
                     tabIndex={0}
                     onClick={() => !notif.isRead && markAsRead(notif.id)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !notif.isRead) markAsRead(notif.id);
+                      if (e.key === "Enter" && !notif.isRead)
+                        markAsRead(notif.id);
                     }}
                     className={`flex items-start gap-3 rounded-md px-2 py-2.5 transition-colors cursor-pointer ${
                       notif.isRead
@@ -572,7 +632,10 @@ export default function DashboardPage() {
                   >
                     <div className="mt-0.5">
                       {notif.isRead ? (
-                        <CheckCircle2 size={16} className="text-gray-400 dark:text-gray-500" />
+                        <CheckCircle2
+                          size={16}
+                          className="text-gray-400 dark:text-gray-500"
+                        />
                       ) : (
                         <div className="h-2 w-2 mt-1.5 rounded-full bg-amber-500" />
                       )}
@@ -587,7 +650,10 @@ export default function DashboardPage() {
                         </p>
                       )}
                       <p className="text-xs text-gray-400 mt-1">
-                        <Clock size={11} className="inline-block mr-1 -mt-0.5" />
+                        <Clock
+                          size={11}
+                          className="inline-block mr-1 -mt-0.5"
+                        />
                         {timeAgo(notif.createdAt, t)}
                         {!notif.isRead && (
                           <span className="ml-2 text-amber-600 font-medium">
@@ -633,23 +699,32 @@ export default function DashboardPage() {
               </div>
             ) : myTasks.length === 0 ? (
               <div className="flex flex-col items-center justify-center h-48 text-gray-400">
-                <ListTodo size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
-                <p className="text-sm font-medium text-gray-500">{t("myTasks.empty")}</p>
+                <ListTodo
+                  size={32}
+                  className="mb-2 text-gray-400 dark:text-gray-500"
+                />
+                <p className="text-sm font-medium text-gray-500">
+                  {t("myTasks.empty")}
+                </p>
               </div>
             ) : (
               <ul className="space-y-1">
                 {myTasks.map((task) => {
                   const dueDateClass = (() => {
                     if (!task.dueDate) return "text-gray-400";
-                    const diffDays = (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+                    const diffDays =
+                      (new Date(task.dueDate).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24);
                     if (diffDays < 0) return "text-red-600 font-medium";
                     if (diffDays <= 3) return "text-orange-600 font-medium";
                     return "text-gray-500";
                   })();
                   const priorityColor: Record<string, string> = {
-                    critical: "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-300",
+                    critical:
+                      "bg-red-100 text-red-900 dark:bg-red-900/40 dark:text-red-300",
                     high: "bg-orange-100 text-orange-900 dark:bg-orange-900/40 dark:text-orange-300",
-                    medium: "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300",
+                    medium:
+                      "bg-blue-100 text-blue-900 dark:bg-blue-900/40 dark:text-blue-300",
                     low: "bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-400",
                   };
                   return (
@@ -664,12 +739,17 @@ export default function DashboardPage() {
                           </p>
                           {task.dueDate && (
                             <p className={`text-xs mt-0.5 ${dueDateClass}`}>
-                              <Clock size={11} className="inline-block mr-1 -mt-0.5" />
+                              <Clock
+                                size={11}
+                                className="inline-block mr-1 -mt-0.5"
+                              />
                               {new Date(task.dueDate).toLocaleDateString()}
                             </p>
                           )}
                         </div>
-                        <span className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${priorityColor[task.priority] ?? ""}`}>
+                        <span
+                          className={`inline-flex items-center rounded-md px-2 py-0.5 text-xs font-medium ${priorityColor[task.priority] ?? ""}`}
+                        >
                           {task.priority}
                         </span>
                       </Link>
@@ -691,11 +771,15 @@ export default function DashboardPage() {
           </div>
 
           <div className="flex flex-col items-center justify-center h-48 px-5 text-gray-400">
-            <Calendar size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
-            <p className="text-sm font-medium text-gray-500">{t("upcomingAudits.empty")}</p>
+            <Calendar
+              size={32}
+              className="mb-2 text-gray-400 dark:text-gray-500"
+            />
+            <p className="text-sm font-medium text-gray-500">
+              {t("upcomingAudits.empty")}
+            </p>
           </div>
         </div>
-
       </div>
 
       {/* ── Risk Management Section (ERM module) ──────────────── */}
@@ -704,7 +788,9 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShieldAlert size={20} className="text-orange-600" />
-              <h2 className="text-lg font-bold text-gray-900">{rt("sectionTitle")}</h2>
+              <h2 className="text-lg font-bold text-gray-900">
+                {rt("sectionTitle")}
+              </h2>
             </div>
             <Link
               href="/risks"
@@ -720,7 +806,10 @@ export default function DashboardPage() {
             </div>
           ) : !riskSummary ? (
             <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-              <ShieldAlert size={32} className="mb-2 text-gray-400 dark:text-gray-500" />
+              <ShieldAlert
+                size={32}
+                className="mb-2 text-gray-400 dark:text-gray-500"
+              />
               <p className="text-sm">{rt("noRisks")}</p>
             </div>
           ) : (
@@ -729,14 +818,24 @@ export default function DashboardPage() {
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                 {/* Total Risks */}
                 <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-blue-400 p-5 shadow-sm">
-                  <p className="text-sm font-medium text-gray-500">{rt("totalRisks")}</p>
-                  <p className="text-3xl font-bold text-gray-900 mt-1">{riskSummary.totalRisks}</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    {rt("totalRisks")}
+                  </p>
+                  <p className="text-3xl font-bold text-gray-900 mt-1">
+                    {riskSummary.totalRisks}
+                  </p>
                 </div>
 
                 {/* Appetite Exceeded */}
-                <div className={`bg-white rounded-lg border border-gray-200 border-l-4 ${riskSummary.appetiteExceededCount > 0 ? "border-l-red-500" : "border-l-green-400"} p-5 shadow-sm`}>
-                  <p className="text-sm font-medium text-gray-500">{rt("appetiteExceeded")}</p>
-                  <p className={`text-3xl font-bold mt-1 ${riskSummary.appetiteExceededCount > 0 ? "text-red-600" : "text-green-600"}`}>
+                <div
+                  className={`bg-white rounded-lg border border-gray-200 border-l-4 ${riskSummary.appetiteExceededCount > 0 ? "border-l-red-500" : "border-l-green-400"} p-5 shadow-sm`}
+                >
+                  <p className="text-sm font-medium text-gray-500">
+                    {rt("appetiteExceeded")}
+                  </p>
+                  <p
+                    className={`text-3xl font-bold mt-1 ${riskSummary.appetiteExceededCount > 0 ? "text-red-600" : "text-green-600"}`}
+                  >
                     {riskSummary.appetiteExceededCount}
                   </p>
                   {riskSummary.appetiteExceededCount > 0 && (
@@ -749,19 +848,27 @@ export default function DashboardPage() {
 
                 {/* KRI Status */}
                 <div className="bg-white rounded-lg border border-gray-200 border-l-4 border-l-amber-400 p-5 shadow-sm">
-                  <p className="text-sm font-medium text-gray-500">{rt("kriStatus")}</p>
+                  <p className="text-sm font-medium text-gray-500">
+                    {rt("kriStatus")}
+                  </p>
                   <div className="flex items-center gap-4 mt-2">
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full bg-green-500" />
-                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.green}</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {riskSummary.kriSummary.green}
+                      </span>
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full bg-yellow-400" />
-                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.yellow}</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {riskSummary.kriSummary.yellow}
+                      </span>
                     </span>
                     <span className="flex items-center gap-1.5">
                       <span className="w-3 h-3 rounded-full bg-red-500" />
-                      <span className="text-lg font-bold text-gray-900">{riskSummary.kriSummary.red}</span>
+                      <span className="text-lg font-bold text-gray-900">
+                        {riskSummary.kriSummary.red}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -772,7 +879,9 @@ export default function DashboardPage() {
                 {/* Compact Heat Map */}
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                   <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">{rt("heatMap")}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {rt("heatMap")}
+                    </h3>
                     <Link
                       href="/risks"
                       className="text-xs text-blue-600 hover:text-blue-800"
@@ -788,7 +897,9 @@ export default function DashboardPage() {
                 {/* Status Distribution Donut */}
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                   <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">{rt("statusDistribution")}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {rt("statusDistribution")}
+                    </h3>
                   </div>
                   <div className="p-5">
                     {Object.keys(riskSummary.byStatus).length === 0 ? (
@@ -800,10 +911,12 @@ export default function DashboardPage() {
                         <ResponsiveContainer width={160} height={160}>
                           <PieChart>
                             <Pie
-                              data={Object.entries(riskSummary.byStatus).map(([name, value]) => ({
-                                name,
-                                value,
-                              }))}
+                              data={Object.entries(riskSummary.byStatus).map(
+                                ([name, value]) => ({
+                                  name,
+                                  value,
+                                }),
+                              )}
                               cx="50%"
                               cy="50%"
                               innerRadius={40}
@@ -811,26 +924,46 @@ export default function DashboardPage() {
                               dataKey="value"
                               stroke="none"
                             >
-                              {Object.entries(riskSummary.byStatus).map(([status]) => (
-                                <Cell key={status} fill={STATUS_COLORS[status] ?? "#d1d5db"} />
-                              ))}
+                              {Object.entries(riskSummary.byStatus).map(
+                                ([status]) => (
+                                  <Cell
+                                    key={status}
+                                    fill={STATUS_COLORS[status] ?? "#d1d5db"}
+                                  />
+                                ),
+                              )}
                             </Pie>
                             <Tooltip
-                              contentStyle={{ fontSize: "12px", padding: "4px 8px" }}
+                              contentStyle={{
+                                fontSize: "12px",
+                                padding: "4px 8px",
+                              }}
                             />
                           </PieChart>
                         </ResponsiveContainer>
                         <div className="space-y-1.5">
-                          {Object.entries(riskSummary.byStatus).map(([status, count]) => (
-                            <div key={status} className="flex items-center gap-2 text-xs">
-                              <span
-                                className="w-2.5 h-2.5 rounded-sm"
-                                style={{ backgroundColor: STATUS_COLORS[status] ?? "#d1d5db" }}
-                              />
-                              <span className="text-gray-600 capitalize">{status.replace("_", " ")}</span>
-                              <span className="font-semibold text-gray-900">{count}</span>
-                            </div>
-                          ))}
+                          {Object.entries(riskSummary.byStatus).map(
+                            ([status, count]) => (
+                              <div
+                                key={status}
+                                className="flex items-center gap-2 text-xs"
+                              >
+                                <span
+                                  className="w-2.5 h-2.5 rounded-sm"
+                                  style={{
+                                    backgroundColor:
+                                      STATUS_COLORS[status] ?? "#d1d5db",
+                                  }}
+                                />
+                                <span className="text-gray-600 capitalize">
+                                  {status.replace("_", " ")}
+                                </span>
+                                <span className="font-semibold text-gray-900">
+                                  {count}
+                                </span>
+                              </div>
+                            ),
+                          )}
                         </div>
                       </div>
                     )}
@@ -840,7 +973,9 @@ export default function DashboardPage() {
                 {/* Top 5 Risks by Score */}
                 <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
                   <div className="px-5 py-4 border-b border-gray-100">
-                    <h3 className="text-sm font-semibold text-gray-900">{rt("topRisks")}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900">
+                      {rt("topRisks")}
+                    </h3>
                   </div>
                   <div className="p-5">
                     {riskSummary.top10Risks.length === 0 ? (
@@ -866,7 +1001,9 @@ export default function DashboardPage() {
                                 href={`/risks/${risk.id}`}
                                 className="flex items-center gap-3 rounded-md px-2 py-2 hover:bg-gray-50 transition-colors"
                               >
-                                <span className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${scoreColor}`}>
+                                <span
+                                  className={`inline-flex items-center justify-center w-8 h-8 rounded-lg text-xs font-bold ${scoreColor}`}
+                                >
                                   {score ?? "-"}
                                 </span>
                                 <div className="flex-1 min-w-0">
@@ -878,7 +1015,10 @@ export default function DashboardPage() {
                                   </p>
                                 </div>
                                 {risk.riskAppetiteExceeded && (
-                                  <AlertTriangle size={14} className="text-red-500 flex-shrink-0" />
+                                  <AlertTriangle
+                                    size={14}
+                                    className="text-red-500 flex-shrink-0"
+                                  />
                                 )}
                               </Link>
                             </li>

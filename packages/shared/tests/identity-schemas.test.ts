@@ -30,7 +30,8 @@ describe("SSOConfigSchemas", () => {
   it("should validate a complete OIDC config", () => {
     const result = createSsoConfigSchema.safeParse({
       provider: "oidc",
-      oidcDiscoveryUrl: "https://accounts.example.com/.well-known/openid-configuration",
+      oidcDiscoveryUrl:
+        "https://accounts.example.com/.well-known/openid-configuration",
       oidcClientId: "client-123",
       oidcClientSecret: "secret-456",
       oidcScopes: "openid profile email",
@@ -104,9 +105,7 @@ describe("SCIMSchemas", () => {
   it("should validate SCIM PatchOp", () => {
     const result = scimPatchOpSchema.safeParse({
       schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
-      Operations: [
-        { op: "replace", path: "active", value: false },
-      ],
+      Operations: [{ op: "replace", path: "active", value: false }],
     });
     expect(result.success).toBe(true);
   });
@@ -114,15 +113,17 @@ describe("SCIMSchemas", () => {
   it("should reject PatchOp with invalid operation", () => {
     const result = scimPatchOpSchema.safeParse({
       schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
-      Operations: [
-        { op: "merge", path: "active", value: false },
-      ],
+      Operations: [{ op: "merge", path: "active", value: false }],
     });
     expect(result.success).toBe(false);
   });
 
   it("should reject PatchOp with >100 operations", () => {
-    const ops = Array.from({ length: 101 }, () => ({ op: "replace" as const, path: "active", value: true }));
+    const ops = Array.from({ length: 101 }, () => ({
+      op: "replace" as const,
+      path: "active",
+      value: true,
+    }));
     const result = scimPatchOpSchema.safeParse({
       schemas: ["urn:ietf:params:scim:api:messages:2.0:PatchOp"],
       Operations: ops,
@@ -148,7 +149,8 @@ describe("MetadataSchemas", () => {
 
   it("should validate OIDC discovery URL", () => {
     const result = discoverOidcSchema.safeParse({
-      discoveryUrl: "https://accounts.example.com/.well-known/openid-configuration",
+      discoveryUrl:
+        "https://accounts.example.com/.well-known/openid-configuration",
     });
     expect(result.success).toBe(true);
   });

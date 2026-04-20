@@ -20,7 +20,12 @@ export async function GET(
   const [row] = await db
     .select()
     .from(continuityStrategy)
-    .where(and(eq(continuityStrategy.id, id), eq(continuityStrategy.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(continuityStrategy.id, id),
+        eq(continuityStrategy.orgId, ctx.orgId),
+      ),
+    );
 
   if (!row) {
     return Response.json({ error: "Strategy not found" }, { status: 404 });
@@ -50,7 +55,10 @@ export async function PUT(
     );
   }
 
-  const updateData: Record<string, unknown> = { ...body.data, updatedAt: new Date() };
+  const updateData: Record<string, unknown> = {
+    ...body.data,
+    updatedAt: new Date(),
+  };
   if (body.data.estimatedCostEur !== undefined) {
     updateData.estimatedCostEur = body.data.estimatedCostEur?.toString();
   }
@@ -62,7 +70,12 @@ export async function PUT(
     const [row] = await tx
       .update(continuityStrategy)
       .set(updateData)
-      .where(and(eq(continuityStrategy.id, id), eq(continuityStrategy.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(continuityStrategy.id, id),
+          eq(continuityStrategy.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return row;
   });
@@ -90,7 +103,12 @@ export async function DELETE(
   const deleted = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
       .delete(continuityStrategy)
-      .where(and(eq(continuityStrategy.id, id), eq(continuityStrategy.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(continuityStrategy.id, id),
+          eq(continuityStrategy.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return row;
   });

@@ -2,18 +2,44 @@
   "title": "Whistleblowing Advanced",
   "investigation": {
     "title": "Investigation Management",
-    "phase": { "intake": "Intake", "triage": "Triage", "investigation": "Investigation", "decision": "Decision", "resolution": "Resolution", "closed": "Closed" },
-    "priority": { "low": "Low", "medium": "Medium", "high": "High", "critical": "Critical" },
+    "phase": {
+      "intake": "Intake",
+      "triage": "Triage",
+      "investigation": "Investigation",
+      "decision": "Decision",
+      "resolution": "Resolution",
+      "closed": "Closed"
+    },
+    "priority": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical"
+    },
     "assignInvestigator": "Assign Investigator",
-    "outcome": { "substantiated": "Substantiated", "unsubstantiated": "Unsubstantiated", "inconclusive": "Inconclusive", "partially_substantiated": "Partially Substantiated" },
+    "outcome": {
+      "substantiated": "Substantiated",
+      "unsubstantiated": "Unsubstantiated",
+      "inconclusive": "Inconclusive",
+      "partially_substantiated": "Partially Substantiated"
+    },
     "timeline": "Investigation Timeline",
     "report": "Investigation Report",
-    "hinschg": { "acknowledgmentDeadline": "Acknowledgment Deadline (7 days)", "feedbackDeadline": "Feedback Deadline (3 months)", "overdue": "Overdue" }
+    "hinschg": {
+      "acknowledgmentDeadline": "Acknowledgment Deadline (7 days)",
+      "feedbackDeadline": "Feedback Deadline (3 months)",
+      "overdue": "Overdue"
+    }
   },
   "evidence": {
     "title": "Evidence Management",
     "upload": "Upload Evidence",
-    "source": { "reporter_upload": "Reporter Upload", "investigator_upload": "Investigator Upload", "system_generated": "System Generated", "interview_recording": "Interview Recording" },
+    "source": {
+      "reporter_upload": "Reporter Upload",
+      "investigator_upload": "Investigator Upload",
+      "system_generated": "System Generated",
+      "interview_recording": "Interview Recording"
+    },
     "chainOfCustody": "Chain of Custody",
     "permanentWarning": "Evidence cannot be deleted. It can only be superseded by new evidence.",
     "superseded": "Superseded"
@@ -27,10 +53,26 @@
   "protection": {
     "title": "Whistleblower Protection",
     "case": "Protection Case",
-    "status": { "active": "Active Monitoring", "monitoring": "Monitoring", "concluded": "Concluded" },
+    "status": {
+      "active": "Active Monitoring",
+      "monitoring": "Monitoring",
+      "concluded": "Concluded"
+    },
     "event": "Employment Event",
-    "eventType": { "role_change": "Role Change", "salary_change": "Salary Change", "performance_review": "Performance Review", "disciplinary": "Disciplinary Action", "assignment_change": "Assignment Change", "location_change": "Location Change", "termination": "Termination" },
-    "flag": { "normal": "Normal", "suspicious": "Suspicious", "critical": "Critical" },
+    "eventType": {
+      "role_change": "Role Change",
+      "salary_change": "Salary Change",
+      "performance_review": "Performance Review",
+      "disciplinary": "Disciplinary Action",
+      "assignment_change": "Assignment Change",
+      "location_change": "Location Change",
+      "termination": "Termination"
+    },
+    "flag": {
+      "normal": "Normal",
+      "suspicious": "Suspicious",
+      "critical": "Critical"
+    },
     "retaliationAlert": "Retaliation Alert",
     "dashboard": "Protection Dashboard"
   },
@@ -39,7 +81,13 @@
     "telephone": "Telephone Report",
     "postal": "Postal Report",
     "walkIn": "Walk-In Report",
-    "channel": { "web_form": "Web Form", "telephone": "Telephone", "postal": "Postal", "walk_in": "Walk-In", "ombudsperson": "Ombudsperson" },
+    "channel": {
+      "web_form": "Web Form",
+      "telephone": "Telephone",
+      "postal": "Postal",
+      "walk_in": "Walk-In",
+      "ombudsperson": "Ombudsperson"
+    },
     "analytics": "Channel Analytics"
   },
   "routing": {
@@ -54,7 +102,10 @@
     "title": "Ombudsperson Portal",
     "invite": "Invite Ombudsperson",
     "assignment": "Case Assignment",
-    "scope": { "full_investigation": "Full Investigation", "consultation": "Consultation Only" },
+    "scope": {
+      "full_investigation": "Full Investigation",
+      "consultation": "Consultation Only"
+    },
     "workspace": "Ombudsperson Workspace",
     "activityLog": "Activity Log",
     "expiry": "Access Expires"

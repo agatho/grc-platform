@@ -13,17 +13,28 @@ export async function POST(req: Request) {
 
   const body = exportBoardPresentationSchema.parse(await req.json());
 
-  const [summary] = await db.select().from(riskExecutiveSummary)
-    .where(and(eq(riskExecutiveSummary.id, body.summaryId), eq(riskExecutiveSummary.orgId, ctx.orgId)));
-  if (!summary) return Response.json({ error: "Summary not found" }, { status: 404 });
+  const [summary] = await db
+    .select()
+    .from(riskExecutiveSummary)
+    .where(
+      and(
+        eq(riskExecutiveSummary.id, body.summaryId),
+        eq(riskExecutiveSummary.orgId, ctx.orgId),
+      ),
+    );
+  if (!summary)
+    return Response.json({ error: "Summary not found" }, { status: 404 });
 
   // Placeholder: In production, this would generate PPTX/PDF via a worker
-  return Response.json({
-    data: {
-      summaryId: summary.id,
-      format: body.format,
-      status: "queued",
-      message: "Export has been queued for processing",
+  return Response.json(
+    {
+      data: {
+        summaryId: summary.id,
+        format: body.format,
+        status: "queued",
+        message: "Export has been queued for processing",
+      },
     },
-  }, { status: 202 });
+    { status: 202 },
+  );
 }

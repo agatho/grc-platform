@@ -10,10 +10,18 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const portalConfigId = url.searchParams.get("portalConfigId");
-  if (!portalConfigId) return Response.json({ error: "portalConfigId required" }, { status: 400 });
+  if (!portalConfigId)
+    return Response.json({ error: "portalConfigId required" }, { status: 400 });
 
-  const [row] = await db.select().from(portalBranding)
-    .where(and(eq(portalBranding.portalConfigId, portalConfigId), eq(portalBranding.orgId, ctx.orgId)));
+  const [row] = await db
+    .select()
+    .from(portalBranding)
+    .where(
+      and(
+        eq(portalBranding.portalConfigId, portalConfigId),
+        eq(portalBranding.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json({ data: row ?? null });
 }
@@ -25,15 +33,28 @@ export async function PUT(req: Request) {
   const body = upsertPortalBrandingSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [existing] = await tx.select().from(portalBranding)
-      .where(and(eq(portalBranding.portalConfigId, body.portalConfigId), eq(portalBranding.orgId, ctx.orgId)));
+    const [existing] = await tx
+      .select()
+      .from(portalBranding)
+      .where(
+        and(
+          eq(portalBranding.portalConfigId, body.portalConfigId),
+          eq(portalBranding.orgId, ctx.orgId),
+        ),
+      );
 
     if (existing) {
-      const [updated] = await tx.update(portalBranding).set({ ...body, updatedAt: new Date() })
-        .where(eq(portalBranding.id, existing.id)).returning();
+      const [updated] = await tx
+        .update(portalBranding)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(portalBranding.id, existing.id))
+        .returning();
       return updated;
     } else {
-      const [created] = await tx.insert(portalBranding).values({ orgId: ctx.orgId, ...body }).returning();
+      const [created] = await tx
+        .insert(portalBranding)
+        .values({ orgId: ctx.orgId, ...body })
+        .returning();
       return created;
     }
   });

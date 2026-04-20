@@ -37,6 +37,7 @@ sudo arctos-update
 ```
 
 Was das tut:
+
 1. `git pull` im `/opt/arctos`
 2. Docker-Image-Rebuild aus aktuellem HEAD
 3. Container-Restart pro Tenant (web-\*)
@@ -111,12 +112,12 @@ docker compose exec postgres psql -U grc -c "DROP DATABASE grc_restore_test;"
 
 ## Disaster Recovery
 
-| Szenario | RTO | RPO | Prozedur |
-|---|---|---|---|
-| Einzelner Container crasht | 1 min | 0s | Docker-Restart-Policy (`unless-stopped`) greift automatisch |
-| Tenant-DB korrupt | 30 min | ≤ 24h | Restore aus lokalem Backup (siehe oben) |
-| Host kompromittiert (Ransomware) | 4h | ≤ 24h | Neuer Host + Restore aus B2 (ADR-015) |
-| Schrems-III / B2 nicht verfügbar | 8h | ≤ 24h | Fallback auf lokalen Backup-Bestand; B2-Restore via rclone ohne DR |
+| Szenario                         | RTO    | RPO   | Prozedur                                                           |
+| -------------------------------- | ------ | ----- | ------------------------------------------------------------------ |
+| Einzelner Container crasht       | 1 min  | 0s    | Docker-Restart-Policy (`unless-stopped`) greift automatisch        |
+| Tenant-DB korrupt                | 30 min | ≤ 24h | Restore aus lokalem Backup (siehe oben)                            |
+| Host kompromittiert (Ransomware) | 4h     | ≤ 24h | Neuer Host + Restore aus B2 (ADR-015)                              |
+| Schrems-III / B2 nicht verfügbar | 8h     | ≤ 24h | Fallback auf lokalen Backup-Bestand; B2-Restore via rclone ohne DR |
 
 ## Monitoring
 
@@ -134,6 +135,7 @@ docker compose exec postgres psql -U grc -c "DROP DATABASE grc_restore_test;"
 ### Log-Korrelation
 
 Jede Response trägt `X-Request-ID`. Filter im Log-Shipper:
+
 ```
 {request_id="abc123"}
 ```

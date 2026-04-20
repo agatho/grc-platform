@@ -65,7 +65,7 @@ export async function submitToCalendar(
         Accept: "application/vnd.opentimestamps.v1",
         "User-Agent": "ARCTOS-audit-anchor/1.0",
       },
-      body: sha256Hash,
+      body: new Uint8Array(sha256Hash),
       signal: controller.signal,
     });
   } finally {
@@ -93,7 +93,9 @@ export async function submitToAnyCalendar(
   calendars: string[] = DEFAULT_CALENDARS,
   timeoutMs = 15_000,
 ): Promise<OtsSubmitResult> {
-  const attempts = calendars.map((url) => submitToCalendar(sha256Hash, url, timeoutMs));
+  const attempts = calendars.map((url) =>
+    submitToCalendar(sha256Hash, url, timeoutMs),
+  );
   return Promise.any(attempts);
 }
 

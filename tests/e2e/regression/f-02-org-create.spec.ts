@@ -4,7 +4,9 @@ import { login, getSession } from "../fixtures/auth";
 // F-02: POST /api/v1/organizations grants admin role to the creator in the
 // same transaction, so the new org is immediately visible to them.
 
-test("F-02: org create assigns admin role and shows in list after re-login", async ({ page }) => {
+test("F-02: org create assigns admin role and shows in list after re-login", async ({
+  page,
+}) => {
   await login(page);
 
   const name = `E2E-F02-${Date.now().toString().slice(-6)}`;
@@ -36,6 +38,8 @@ test("F-02: org create assigns admin role and shows in list after re-login", asy
     const r = await fetch("/api/v1/organizations?limit=200");
     return await r.json();
   });
-  const names: string[] = (orgs.data ?? []).map((o: { name: string }) => o.name);
+  const names: string[] = (orgs.data ?? []).map(
+    (o: { name: string }) => o.name,
+  );
   expect(names).toContain(name);
 });

@@ -126,18 +126,26 @@ function FAIRPortfolioInner() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           <Card className="p-4 border-l-4 border-l-blue-500">
             <p className="text-sm text-muted-foreground">{t("totalALE")}</p>
-            <p className="text-2xl font-bold">{formatEUR(aggregate.totalAleP50)}</p>
-            <p className="text-xs text-muted-foreground">P50 {t("aggregate")}</p>
+            <p className="text-2xl font-bold">
+              {formatEUR(aggregate.totalAleP50)}
+            </p>
+            <p className="text-xs text-muted-foreground">
+              P50 {t("aggregate")}
+            </p>
           </Card>
           <Card className="p-4 border-l-4 border-l-red-500">
             <p className="text-sm text-muted-foreground">{t("totalVaR")}</p>
             <p className="text-2xl font-bold text-red-700">
               {formatEUR(aggregate.totalAleP95)}
             </p>
-            <p className="text-xs text-muted-foreground">P95 {t("aggregate")}</p>
+            <p className="text-xs text-muted-foreground">
+              P95 {t("aggregate")}
+            </p>
           </Card>
           <Card className="p-4 border-l-4 border-l-green-500">
-            <p className="text-sm text-muted-foreground">{t("quantifiedRisks")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("quantifiedRisks")}
+            </p>
             <p className="text-2xl font-bold">{aggregate.riskCount}</p>
           </Card>
           <Card className="p-4 border-l-4 border-l-purple-500">
@@ -155,7 +163,9 @@ function FAIRPortfolioInner() {
       {topRisks.length > 0 && (
         <Card className="p-6">
           <h3 className="text-lg font-semibold mb-4">{t("riskScatter")}</h3>
-          <p className="text-sm text-muted-foreground mb-4">{t("riskScatterDesc")}</p>
+          <p className="text-sm text-muted-foreground mb-4">
+            {t("riskScatterDesc")}
+          </p>
           <div className="h-96">
             <ResponsiveContainer width="100%" height="100%">
               <ScatterChart>
@@ -202,10 +212,7 @@ function FAIRPortfolioInner() {
                     );
                   }}
                 />
-                <Scatter
-                  data={scatterData}
-                  fill="#3b82f6"
-                />
+                <Scatter data={scatterData} fill="#3b82f6" />
               </ScatterChart>
             </ResponsiveContainer>
           </div>
@@ -226,7 +233,9 @@ function FAIRPortfolioInner() {
       {/* Category Breakdown */}
       {aggregate && aggregate.byCategory.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold mb-4">{t("categoryBreakdown")}</h3>
+          <h3 className="text-lg font-semibold mb-4">
+            {t("categoryBreakdown")}
+          </h3>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
@@ -296,11 +305,15 @@ function FAIRPortfolioInner() {
                   <td className="p-2">
                     <Badge variant="outline">{r.riskCategory}</Badge>
                   </td>
-                  <td className="p-2 text-right font-mono">{formatEUR(r.aleP50)}</td>
+                  <td className="p-2 text-right font-mono">
+                    {formatEUR(r.aleP50)}
+                  </td>
                   <td className="p-2 text-right font-mono text-red-600">
                     {formatEUR(r.aleP95)}
                   </td>
-                  <td className="p-2 text-muted-foreground">{r.ownerName ?? "-"}</td>
+                  <td className="p-2 text-muted-foreground">
+                    {r.ownerName ?? "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -2,13 +2,52 @@ import { z } from "zod";
 
 // Sprint 8: Audit Management schemas
 
-const auditTypeValues = ["internal", "external", "certification", "surveillance", "follow_up"] as const;
-const auditStatusValues = ["planned", "preparation", "fieldwork", "reporting", "review", "completed", "cancelled"] as const;
-const auditPlanStatusValues = ["draft", "approved", "active", "completed"] as const;
-const checklistResultValues = ["conforming", "nonconforming", "observation", "not_applicable"] as const;
-const auditConclusionValues = ["conforming", "minor_nonconformity", "major_nonconformity", "not_applicable"] as const;
-const universeEntityTypeValues = ["process", "department", "it_system", "vendor", "custom"] as const;
-const checklistSourceTypeValues = ["auto_controls", "template", "custom"] as const;
+const auditTypeValues = [
+  "internal",
+  "external",
+  "certification",
+  "surveillance",
+  "follow_up",
+] as const;
+const auditStatusValues = [
+  "planned",
+  "preparation",
+  "fieldwork",
+  "reporting",
+  "review",
+  "completed",
+  "cancelled",
+] as const;
+const auditPlanStatusValues = [
+  "draft",
+  "approved",
+  "active",
+  "completed",
+] as const;
+const checklistResultValues = [
+  "conforming",
+  "nonconforming",
+  "observation",
+  "not_applicable",
+] as const;
+const auditConclusionValues = [
+  "conforming",
+  "minor_nonconformity",
+  "major_nonconformity",
+  "not_applicable",
+] as const;
+const universeEntityTypeValues = [
+  "process",
+  "department",
+  "it_system",
+  "vendor",
+  "custom",
+] as const;
+const checklistSourceTypeValues = [
+  "auto_controls",
+  "template",
+  "custom",
+] as const;
 
 // ─── Audit Status Transitions ────────────────────────────────
 
@@ -40,7 +79,8 @@ export const createAuditUniverseEntrySchema = z.object({
   notes: z.string().optional(),
 });
 
-export const updateAuditUniverseEntrySchema = createAuditUniverseEntrySchema.partial();
+export const updateAuditUniverseEntrySchema =
+  createAuditUniverseEntrySchema.partial();
 
 // ─── Audit Plan ──────────────────────────────────────────────
 

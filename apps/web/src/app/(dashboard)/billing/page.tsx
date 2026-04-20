@@ -149,20 +149,30 @@ export default function BillingPage() {
                   {planInfo.plan.priceMonthly
                     ? formatCurrency(
                         planInfo.subscription.billingCycle === "yearly"
-                          ? planInfo.plan.priceYearly ?? 0
+                          ? (planInfo.plan.priceYearly ?? 0)
                           : planInfo.plan.priceMonthly,
                         "EUR",
                       )
                     : t("contactSales")}
-                  {planInfo.plan.priceMonthly && `/${planInfo.subscription.billingCycle === "yearly" ? t("year") : t("month")}`}
+                  {planInfo.plan.priceMonthly &&
+                    `/${planInfo.subscription.billingCycle === "yearly" ? t("year") : t("month")}`}
                 </p>
               </div>
               <div className="text-right">
-                <Badge variant={planInfo.subscription.status === "active" ? "default" : "secondary"}>
+                <Badge
+                  variant={
+                    planInfo.subscription.status === "active"
+                      ? "default"
+                      : "secondary"
+                  }
+                >
                   {planInfo.subscription.status}
                 </Badge>
                 <p className="text-sm text-muted-foreground mt-1">
-                  {t("periodEnds")}: {new Date(planInfo.subscription.currentPeriodEnd).toLocaleDateString()}
+                  {t("periodEnds")}:{" "}
+                  {new Date(
+                    planInfo.subscription.currentPeriodEnd,
+                  ).toLocaleDateString()}
                 </p>
               </div>
             </div>
@@ -186,14 +196,18 @@ export default function BillingPage() {
               {t("usage.title")}
             </CardTitle>
             <CardDescription>
-              {t("usage.period")}: {new Date(usage.period.start).toLocaleDateString()} - {new Date(usage.period.end).toLocaleDateString()}
+              {t("usage.period")}:{" "}
+              {new Date(usage.period.start).toLocaleDateString()} -{" "}
+              {new Date(usage.period.end).toLocaleDateString()}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid gap-4 md:grid-cols-3">
               {usage.meters.map((meter) => (
                 <div key={meter.meterKey} className="rounded-lg border p-3">
-                  <p className="text-sm text-muted-foreground">{meter.meterName}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {meter.meterName}
+                  </p>
                   <p className="text-xl font-bold">
                     {Number(meter.totalQuantity).toLocaleString()} {meter.unit}
                   </p>
@@ -214,22 +228,34 @@ export default function BillingPage() {
         </CardHeader>
         <CardContent>
           {invoices.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">{t("invoices.empty")}</p>
+            <p className="text-muted-foreground text-center py-8">
+              {t("invoices.empty")}
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 px-3 font-medium">{t("invoices.number")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("invoices.status")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("invoices.period")}</th>
-                    <th className="text-right py-2 px-3 font-medium">{t("invoices.total")}</th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("invoices.number")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("invoices.status")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("invoices.period")}
+                    </th>
+                    <th className="text-right py-2 px-3 font-medium">
+                      {t("invoices.total")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
                   {invoices.map((inv) => (
                     <tr key={inv.id} className="border-b">
-                      <td className="py-2 px-3 font-mono text-xs">{inv.invoiceNumber}</td>
+                      <td className="py-2 px-3 font-mono text-xs">
+                        {inv.invoiceNumber}
+                      </td>
                       <td className="py-2 px-3">
                         <Badge
                           variant={
@@ -244,7 +270,8 @@ export default function BillingPage() {
                         </Badge>
                       </td>
                       <td className="py-2 px-3 text-xs">
-                        {new Date(inv.periodStart).toLocaleDateString()} - {new Date(inv.periodEnd).toLocaleDateString()}
+                        {new Date(inv.periodStart).toLocaleDateString()} -{" "}
+                        {new Date(inv.periodEnd).toLocaleDateString()}
                       </td>
                       <td className="py-2 px-3 text-right font-medium">
                         {formatCurrency(inv.total, inv.currency)}

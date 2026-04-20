@@ -14,7 +14,13 @@
  * 4. Fallback: first available provider
  */
 
-export type AiProvider = "claude_cli" | "claude_api" | "openai" | "gemini" | "ollama" | "lmstudio";
+export type AiProvider =
+  | "claude_cli"
+  | "claude_api"
+  | "openai"
+  | "gemini"
+  | "ollama"
+  | "lmstudio";
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";

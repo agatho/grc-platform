@@ -10,7 +10,12 @@ export const agentConfigSchema = z.object({
 });
 
 export const createAgentSchema = z.object({
-  agentType: z.enum(["evidence_review", "compliance_monitor", "vendor_signal", "sla_monitor"]),
+  agentType: z.enum([
+    "evidence_review",
+    "compliance_monitor",
+    "vendor_signal",
+    "sla_monitor",
+  ]),
   name: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
   config: agentConfigSchema,
@@ -33,11 +38,14 @@ export const agentRunOptionsSchema = z.object({
   dryRun: z.boolean().default(false),
 });
 
-export const agentDefaultConfigs: Record<string, {
-  name: string;
-  description: string;
-  config: z.infer<typeof agentConfigSchema>;
-}> = {
+export const agentDefaultConfigs: Record<
+  string,
+  {
+    name: string;
+    description: string;
+    config: z.infer<typeof agentConfigSchema>;
+  }
+> = {
   evidence_review: {
     name: "Evidence Review Agent",
     description: "Reviews evidence freshness and quality for controls",

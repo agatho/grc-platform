@@ -108,8 +108,7 @@ export default function ReviewCyclesPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Review-Zyklen</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Strukturierte Freigabeprozesse mit Eskalation bei
-            Zeitüberschreitung
+            Strukturierte Freigabeprozesse mit Eskalation bei Zeitüberschreitung
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -119,10 +118,7 @@ export default function ReviewCyclesPage() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
@@ -207,9 +203,7 @@ export default function ReviewCyclesPage() {
                         {cycle.entityName}
                       </td>
                       <td className="py-3 px-3">
-                        <Badge variant="secondary">
-                          {cycle.reviewerCount}
-                        </Badge>
+                        <Badge variant="secondary">{cycle.reviewerCount}</Badge>
                       </td>
                       <td className="py-3 px-3">
                         <Badge

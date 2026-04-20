@@ -49,7 +49,11 @@ export interface BCExercise {
   scenarioId?: string;
   scheduledDate: string;
   status: "planned" | "in_progress" | "completed" | "cancelled";
-  objectives: Array<{ objective: string; successCriteria: string; achieved?: boolean }>;
+  objectives: Array<{
+    objective: string;
+    successCriteria: string;
+    achieved?: boolean;
+  }>;
   overallScore?: number;
   actualStart?: string;
   actualEnd?: string;
@@ -80,7 +84,12 @@ export interface BCExerciseInjectLog {
   triggeredAt: string;
   teamResponse?: string;
   observerNotes?: string;
-  scores?: { timeliness: number; completeness: number; communication: number; decision: number };
+  scores?: {
+    timeliness: number;
+    completeness: number;
+    communication: number;
+    decision: number;
+  };
   respondedAt?: string;
 }
 

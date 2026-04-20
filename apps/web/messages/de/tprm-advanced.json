@@ -3,8 +3,22 @@
   "scorecards": {
     "title": "Lieferanten-Scorecards",
     "overallScore": "Gesamtbewertung",
-    "tier": { "strategic": "Strategisch", "preferred": "Bevorzugt", "approved": "Zugelassen", "under_review": "In Prüfung", "exit_candidate": "Exit-Kandidat" },
-    "dimensions": { "due_diligence": "Due Diligence", "sla_compliance": "SLA-Einhaltung", "incident_history": "Vorfallshistorie", "financial_stability": "Finanzielle Stabilität", "esg_rating": "ESG-Bewertung", "contract_compliance": "Vertragseinhaltung", "security_posture": "Sicherheitslage" },
+    "tier": {
+      "strategic": "Strategisch",
+      "preferred": "Bevorzugt",
+      "approved": "Zugelassen",
+      "under_review": "In Prüfung",
+      "exit_candidate": "Exit-Kandidat"
+    },
+    "dimensions": {
+      "due_diligence": "Due Diligence",
+      "sla_compliance": "SLA-Einhaltung",
+      "incident_history": "Vorfallshistorie",
+      "financial_stability": "Finanzielle Stabilität",
+      "esg_rating": "ESG-Bewertung",
+      "contract_compliance": "Vertragseinhaltung",
+      "security_posture": "Sicherheitslage"
+    },
     "recompute": "Neu berechnen",
     "history": "Bewertungsverlauf",
     "weights": "Gewichtung konfigurieren",
@@ -14,7 +28,11 @@
     "title": "Konzentrationsrisiko",
     "spend": "Ausgabenkonzentration",
     "hhi": "HHI-Index",
-    "hhiLevel": { "low": "Geringe Konzentration", "moderate": "Moderate Konzentration", "high": "Hohe Konzentration" },
+    "hhiLevel": {
+      "low": "Geringe Konzentration",
+      "moderate": "Moderate Konzentration",
+      "high": "Hohe Konzentration"
+    },
     "singleSource": "Single-Source-Lieferanten",
     "geographic": "Geographische Konzentration",
     "technology": "Technologie-Abhängigkeit",
@@ -24,17 +42,33 @@
     "title": "SLA-Überwachung",
     "definition": "SLA-Definition",
     "measurement": "Messung",
-    "metricType": { "availability": "Verfügbarkeit", "response_time": "Reaktionszeit", "resolution_time": "Lösungszeit", "delivery_time": "Lieferzeit", "quality": "Qualität", "custom": "Benutzerdefiniert" },
+    "metricType": {
+      "availability": "Verfügbarkeit",
+      "response_time": "Reaktionszeit",
+      "resolution_time": "Lösungszeit",
+      "delivery_time": "Lieferzeit",
+      "quality": "Qualität",
+      "custom": "Benutzerdefiniert"
+    },
     "met": "Erfüllt",
     "breached": "Verletzt",
-    "breachSeverity": { "minor": "Geringfügig", "major": "Wesentlich", "critical": "Kritisch" },
+    "breachSeverity": {
+      "minor": "Geringfügig",
+      "major": "Wesentlich",
+      "critical": "Kritisch"
+    },
     "consecutive": "Aufeinanderfolgende Verletzungen",
     "dashboard": "SLA-Dashboard",
     "report": "Quartals-SLA-Bericht"
   },
   "exitPlanning": {
     "title": "Exit-Planung",
-    "transitionApproach": { "in_house": "Intern", "alternative_vendor": "Alternativer Lieferant", "hybrid": "Hybrid", "decommission": "Stilllegung" },
+    "transitionApproach": {
+      "in_house": "Intern",
+      "alternative_vendor": "Alternativer Lieferant",
+      "hybrid": "Hybrid",
+      "decommission": "Stilllegung"
+    },
     "readinessScore": "Exit-Bereitschaftsbewertung",
     "doraRegister": "DORA Auslagerungsregister",
     "reviewCycle": "Prüfungszyklus",
@@ -47,7 +81,11 @@
     "isEu": "EU/EWR",
     "isAdequate": "Angemessenes Schutzniveau",
     "requiresTia": "TIA erforderlich",
-    "approval": { "approved": "Genehmigt", "pending_review": "Prüfung ausstehend", "rejected": "Abgelehnt" },
+    "approval": {
+      "approved": "Genehmigt",
+      "pending_review": "Prüfung ausstehend",
+      "rejected": "Abgelehnt"
+    },
     "notification": "Änderungsbenachrichtigung",
     "reviewDeadline": "Prüfungsfrist (30 Tage)",
     "riskCascade": "Risikokaskade"

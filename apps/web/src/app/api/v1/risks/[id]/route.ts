@@ -1,10 +1,4 @@
-import {
-  db,
-  risk,
-  riskTreatment,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, risk, riskTreatment, workItem, user } from "@grc/db";
 import { updateRiskSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
@@ -62,11 +56,7 @@ export async function GET(
     .leftJoin(workItem, eq(risk.workItemId, workItem.id))
     .leftJoin(user, eq(risk.ownerId, user.id))
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!row) {
@@ -105,11 +95,7 @@ export async function PUT(
     .select()
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -131,20 +117,28 @@ export async function PUT(
     };
 
     if (body.data.title !== undefined) updateValues.title = body.data.title;
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
-    if (body.data.riskCategory !== undefined) updateValues.riskCategory = body.data.riskCategory;
-    if (body.data.riskSource !== undefined) updateValues.riskSource = body.data.riskSource;
-    if (body.data.ownerId !== undefined) updateValues.ownerId = body.data.ownerId;
-    if (body.data.department !== undefined) updateValues.department = body.data.department;
-    if (body.data.reviewDate !== undefined) updateValues.reviewDate = body.data.reviewDate;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
+    if (body.data.riskCategory !== undefined)
+      updateValues.riskCategory = body.data.riskCategory;
+    if (body.data.riskSource !== undefined)
+      updateValues.riskSource = body.data.riskSource;
+    if (body.data.ownerId !== undefined)
+      updateValues.ownerId = body.data.ownerId;
+    if (body.data.department !== undefined)
+      updateValues.department = body.data.department;
+    if (body.data.reviewDate !== undefined)
+      updateValues.reviewDate = body.data.reviewDate;
     if (body.data.treatmentStrategy !== undefined)
       updateValues.treatmentStrategy = body.data.treatmentStrategy;
     if (body.data.treatmentRationale !== undefined)
       updateValues.treatmentRationale = body.data.treatmentRationale;
     if (body.data.financialImpactMin !== undefined)
-      updateValues.financialImpactMin = body.data.financialImpactMin?.toString() ?? null;
+      updateValues.financialImpactMin =
+        body.data.financialImpactMin?.toString() ?? null;
     if (body.data.financialImpactMax !== undefined)
-      updateValues.financialImpactMax = body.data.financialImpactMax?.toString() ?? null;
+      updateValues.financialImpactMax =
+        body.data.financialImpactMax?.toString() ?? null;
     if (body.data.financialImpactExpected !== undefined)
       updateValues.financialImpactExpected =
         body.data.financialImpactExpected?.toString() ?? null;
@@ -153,11 +147,7 @@ export async function PUT(
       .update(risk)
       .set(updateValues)
       .where(
-        and(
-          eq(risk.id, id),
-          eq(risk.orgId, ctx.orgId),
-          isNull(risk.deletedAt),
-        ),
+        and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
       )
       .returning();
 
@@ -206,11 +196,7 @@ export async function DELETE(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(risk.id, id),
-          eq(risk.orgId, ctx.orgId),
-          isNull(risk.deletedAt),
-        ),
+        and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
       )
       .returning({ id: risk.id, workItemId: risk.workItemId });
 

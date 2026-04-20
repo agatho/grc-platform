@@ -1,7 +1,12 @@
 import { db } from "@grc/db";
 import { createScheduledNotificationSchema } from "@grc/shared";
 import { sql } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/notifications/scheduled — Create scheduled notification (admin only)
 export async function POST(req: Request) {
@@ -16,7 +21,14 @@ export async function POST(req: Request) {
     );
   }
 
-  const { recipientRole, recipientUserIds, subject, message, scheduledFor, templateKey } = body.data;
+  const {
+    recipientRole,
+    recipientUserIds,
+    subject,
+    message,
+    scheduledFor,
+    templateKey,
+  } = body.data;
 
   // Must specify at least one of recipientRole or recipientUserIds
   if (!recipientRole && (!recipientUserIds || recipientUserIds.length === 0)) {
@@ -31,14 +43,14 @@ export async function POST(req: Request) {
 
     if (recipientRole) {
       // Find all users with the specified role in the current org
-      const roleUsers = await tx.execute(sql`
+      const roleUsers = (await tx.execute(sql`
         SELECT uor.user_id
         FROM user_organization_role uor
         JOIN "user" u ON u.id = uor.user_id AND u.deleted_at IS NULL AND u.is_active = true
         WHERE uor.org_id = ${ctx.orgId}
           AND uor.role = ${recipientRole}::user_role
           AND uor.deleted_at IS NULL
-      `) as { user_id: string }[];
+      `)) as { user_id: string }[];
       userIds = roleUsers.map((r) => r.user_id);
     }
 

@@ -22,12 +22,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       email: user.email,
     })
     .from(user)
-    .where(
-      and(
-        eq(user.icalToken, token),
-        isNotNull(user.icalToken),
-      ),
-    );
+    .where(and(eq(user.icalToken, token), isNotNull(user.icalToken)));
 
   if (!tokenUser) {
     return new Response("Unauthorized", { status: 401 });
@@ -46,7 +41,9 @@ export async function GET(req: Request, { params }: RouteParams) {
   const orgId = String(orgRows[0]!.org_id);
 
   // Set RLS context for the aggregation queries
-  await db.execute(sql`SELECT set_config('app.current_org_id', ${orgId}, false)`);
+  await db.execute(
+    sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
+  );
 
   const icalContent = await generateICalFeed(orgId);
 

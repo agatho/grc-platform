@@ -30,7 +30,8 @@ export async function frameworkCoverageSnapshotJob(): Promise<void> {
       }
     }
 
-    const frameworkScores: Record<string, { coverage: number; gaps: number }> = {};
+    const frameworkScores: Record<string, { coverage: number; gaps: number }> =
+      {};
     let totalCoverage = 0;
     let fullyCompliant = 0;
     let partiallyCompliant = 0;
@@ -38,7 +39,10 @@ export async function frameworkCoverageSnapshotJob(): Promise<void> {
 
     for (const [framework, analysis] of frameworkMap) {
       const coverage = Number(analysis.coveragePercentage);
-      frameworkScores[framework] = { coverage, gaps: analysis.notCoveredControls };
+      frameworkScores[framework] = {
+        coverage,
+        gaps: analysis.notCoveredControls,
+      };
       totalCoverage += coverage;
 
       if (coverage >= 90) fullyCompliant++;
@@ -47,7 +51,8 @@ export async function frameworkCoverageSnapshotJob(): Promise<void> {
     }
 
     const totalFrameworks = frameworkMap.size;
-    const overallCoverage = totalFrameworks > 0 ? Math.round(totalCoverage / totalFrameworks) : 0;
+    const overallCoverage =
+      totalFrameworks > 0 ? Math.round(totalCoverage / totalFrameworks) : 0;
 
     await db.insert(frameworkCoverageSnapshot).values({
       orgId,

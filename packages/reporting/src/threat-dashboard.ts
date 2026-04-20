@@ -21,7 +21,8 @@ export async function getThreatDashboardKPIs(
   const [threatsResult] = await db.execute(sql`
     SELECT count(*)::int as cnt FROM threat WHERE org_id = ${orgId}
   `);
-  const activeThreats = (threatsResult as Record<string, unknown>).cnt as number;
+  const activeThreats = (threatsResult as Record<string, unknown>)
+    .cnt as number;
 
   // New CVEs in last 7 days
   const [cvesResult] = await db.execute(sql`
@@ -36,7 +37,8 @@ export async function getThreatDashboardKPIs(
     WHERE org_id = ${orgId}
       AND status NOT IN ('closed', 'lessons_learned')
   `);
-  const openIncidents = (incidentsResult as Record<string, unknown>).cnt as number;
+  const openIncidents = (incidentsResult as Record<string, unknown>)
+    .cnt as number;
 
   // Average CVSS
   const [cvssResult] = await db.execute(sql`

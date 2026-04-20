@@ -1,10 +1,4 @@
-import {
-  db,
-  contract,
-  workItem,
-  user,
-  vendor,
-} from "@grc/db";
+import { db, contract, workItem, user, vendor } from "@grc/db";
 import { createContractSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -110,7 +104,14 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "draft" | "negotiation" | "pending_approval" | "active" | "renewal" | "expired" | "terminated" | "archived"
+      | "draft"
+      | "negotiation"
+      | "pending_approval"
+      | "active"
+      | "renewal"
+      | "expired"
+      | "terminated"
+      | "archived"
     >;
     conditions.push(inArray(contract.status, statuses));
   }
@@ -118,7 +119,15 @@ export async function GET(req: Request) {
   const typeParam = searchParams.get("contractType");
   if (typeParam) {
     const types = typeParam.split(",") as Array<
-      "master_agreement" | "service_agreement" | "nda" | "dpa" | "sla" | "license" | "maintenance" | "consulting" | "other"
+      | "master_agreement"
+      | "service_agreement"
+      | "nda"
+      | "dpa"
+      | "sla"
+      | "license"
+      | "maintenance"
+      | "consulting"
+      | "other"
     >;
     conditions.push(inArray(contract.contractType, types));
   }
@@ -135,9 +144,7 @@ export async function GET(req: Request) {
       conditions.push(
         sql`${contract.expirationDate}::date <= CURRENT_DATE + interval '${sql.raw(String(days))} days'`,
       );
-      conditions.push(
-        sql`${contract.expirationDate}::date >= CURRENT_DATE`,
-      );
+      conditions.push(sql`${contract.expirationDate}::date >= CURRENT_DATE`);
     }
   }
 

@@ -1,5 +1,8 @@
 import { db, vendor, vendorDueDiligence } from "@grc/db";
-import { createDueDiligenceSchema, reviewDueDiligenceSchema } from "@grc/shared";
+import {
+  createDueDiligenceSchema,
+  reviewDueDiligenceSchema,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -22,7 +25,13 @@ export async function POST(
   const [v] = await db
     .select({ id: vendor.id, name: vendor.name })
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) {
     return Response.json({ error: "Vendor not found" }, { status: 404 });
   }
@@ -53,18 +62,29 @@ export async function POST(
     // Update vendor status to onboarding if still prospect
     await tx
       .update(vendor)
-      .set({ status: "onboarding", updatedBy: ctx.userId, updatedAt: new Date() })
+      .set({
+        status: "onboarding",
+        updatedBy: ctx.userId,
+        updatedAt: new Date(),
+      })
       .where(
-        and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), eq(vendor.status, "prospect")),
+        and(
+          eq(vendor.id, id),
+          eq(vendor.orgId, ctx.orgId),
+          eq(vendor.status, "prospect"),
+        ),
       );
 
     return row;
   });
 
-  return Response.json({
-    data: created,
-    submissionUrl: `/api/v1/vendors/dd/submit?token=${accessToken}`,
-  }, { status: 201 });
+  return Response.json(
+    {
+      data: created,
+      submissionUrl: `/api/v1/vendors/dd/submit?token=${accessToken}`,
+    },
+    { status: 201 },
+  );
 }
 
 // GET /api/v1/vendors/:id/due-diligence — List DD responses
@@ -83,7 +103,12 @@ export async function GET(
   const records = await db
     .select()
     .from(vendorDueDiligence)
-    .where(and(eq(vendorDueDiligence.vendorId, id), eq(vendorDueDiligence.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(vendorDueDiligence.vendorId, id),
+        eq(vendorDueDiligence.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(vendorDueDiligence.createdAt));
 
   return Response.json({ data: records });

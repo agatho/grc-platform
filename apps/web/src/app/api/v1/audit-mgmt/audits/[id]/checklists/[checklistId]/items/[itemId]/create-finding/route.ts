@@ -74,7 +74,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
 
   if (!item) {
-    return Response.json({ error: "Checklist item not found" }, { status: 404 });
+    return Response.json(
+      { error: "Checklist item not found" },
+      { status: 404 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {

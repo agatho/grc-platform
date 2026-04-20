@@ -5,17 +5,37 @@ import { z } from "zod";
 // ─── CCM Connectors ─────────────────────────────────────────
 export const createCcmConnectorSchema = z.object({
   name: z.string().min(1).max(300),
-  connectorType: z.enum(["azure_ad", "aws_cloudtrail", "jira", "servicenow", "qualys", "nessus", "custom_api"]),
+  connectorType: z.enum([
+    "azure_ad",
+    "aws_cloudtrail",
+    "jira",
+    "servicenow",
+    "qualys",
+    "nessus",
+    "custom_api",
+  ]),
   config: z.record(z.unknown()),
   credentialRef: z.string().max(200).optional(),
   targetControlIds: z.array(z.string().uuid()).min(1).max(50),
   schedule: z.enum(["hourly", "daily", "weekly"]).default("daily"),
-  evaluationRules: z.array(z.object({
-    field: z.string().min(1),
-    operator: z.enum(["gte", "lte", "eq", "ne", "contains", "not_contains"]),
-    expectedValue: z.unknown(),
-    threshold: z.number().optional(),
-  })).min(1).max(20),
+  evaluationRules: z
+    .array(
+      z.object({
+        field: z.string().min(1),
+        operator: z.enum([
+          "gte",
+          "lte",
+          "eq",
+          "ne",
+          "contains",
+          "not_contains",
+        ]),
+        expectedValue: z.unknown(),
+        threshold: z.number().optional(),
+      }),
+    )
+    .min(1)
+    .max(20),
 });
 
 export const updateCcmConnectorSchema = createCcmConnectorSchema.partial();
@@ -24,11 +44,15 @@ export const updateCcmConnectorSchema = createCcmConnectorSchema.partial();
 export const createSoxScopeSchema = z.object({
   fiscalYear: z.number().int().min(2020).max(2099),
   inScopeProcessIds: z.array(z.string().uuid()).optional(),
-  inScopeAccounts: z.array(z.object({
-    name: z.string().min(1),
-    significance: z.enum(["significant", "material"]),
-    balance: z.number().optional(),
-  })).optional(),
+  inScopeAccounts: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        significance: z.enum(["significant", "material"]),
+        balance: z.number().optional(),
+      }),
+    )
+    .optional(),
   inScopeLocationIds: z.array(z.string().uuid()).optional(),
   inScopeItSystemIds: z.array(z.string().uuid()).optional(),
   scopingCriteria: z.record(z.unknown()).optional(),
@@ -56,7 +80,11 @@ export const createDeficiencySchema = z.object({
   findingId: z.string().uuid().optional(),
   title: z.string().min(1).max(500),
   description: z.string().max(5000).optional(),
-  classification: z.enum(["deficiency", "significant_deficiency", "material_weakness"]),
+  classification: z.enum([
+    "deficiency",
+    "significant_deficiency",
+    "material_weakness",
+  ]),
   rootCauseMethod: z.enum(["five_why", "fishbone", "other"]).optional(),
   rootCause: z.string().max(10000).optional(),
   remediationPlan: z.string().max(10000).optional(),
@@ -65,7 +93,14 @@ export const createDeficiencySchema = z.object({
 });
 
 export const updateDeficiencyStatusSchema = z.object({
-  remediationStatus: z.enum(["open", "in_progress", "remediated", "retesting", "closed", "accepted"]),
+  remediationStatus: z.enum([
+    "open",
+    "in_progress",
+    "remediated",
+    "retesting",
+    "closed",
+    "accepted",
+  ]),
   retestDate: z.string().date().optional(),
   retestResult: z.enum(["pass", "fail"]).optional(),
 });
@@ -101,7 +136,10 @@ export interface CCMConnectorInterface {
   type: string;
   connect(config: Record<string, unknown>): Promise<void>;
   collectEvidence(controlIds: string[]): Promise<CCMEvidenceResult[]>;
-  evaluate(evidence: Record<string, unknown>, rules: EvaluationRule[]): EvaluationResult;
+  evaluate(
+    evidence: Record<string, unknown>,
+    rules: EvaluationRule[],
+  ): EvaluationResult;
 }
 
 export interface CCMEvidenceResult {

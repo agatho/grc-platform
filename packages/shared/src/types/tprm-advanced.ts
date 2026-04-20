@@ -5,7 +5,12 @@ export interface VendorScorecard {
   orgId: string;
   vendorId: string;
   overallScore: number;
-  tier: "strategic" | "preferred" | "approved" | "under_review" | "exit_candidate";
+  tier:
+    | "strategic"
+    | "preferred"
+    | "approved"
+    | "under_review"
+    | "exit_candidate";
   dimensionScores: VendorDimensionScores;
   weights: Record<string, number>;
   computedAt: string;
@@ -46,7 +51,13 @@ export interface VendorSlaDefinition {
   vendorId: string;
   contractId?: string;
   metricName: string;
-  metricType: "availability" | "response_time" | "resolution_time" | "delivery_time" | "quality" | "custom";
+  metricType:
+    | "availability"
+    | "response_time"
+    | "resolution_time"
+    | "delivery_time"
+    | "quality"
+    | "custom";
   targetValue: number;
   unit: string;
   measurementPeriod: "monthly" | "quarterly" | "annually";
@@ -69,7 +80,11 @@ export interface VendorSlaMeasurement {
 export interface VendorExitPlan {
   id: string;
   vendorId: string;
-  transitionApproach: "in_house" | "alternative_vendor" | "hybrid" | "decommission";
+  transitionApproach:
+    | "in_house"
+    | "alternative_vendor"
+    | "hybrid"
+    | "decommission";
   dataMigrationPlan?: string;
   knowledgeTransferRequirements?: string;
   terminationNoticeDays?: number;

@@ -29,8 +29,10 @@ export async function callClaudeCli(
 
   // Build CLI args
   const args: string[] = [
-    "-p", prompt,          // print mode: non-interactive, outputs response and exits
-    "--output-format", "text",
+    "-p",
+    prompt, // print mode: non-interactive, outputs response and exits
+    "--output-format",
+    "text",
   ];
 
   // Add max tokens if specified

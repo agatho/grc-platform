@@ -7,7 +7,11 @@ import { createCipheriv, randomBytes } from "crypto";
 
 const ENCRYPTION_KEY = process.env.CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64);
 
-function encryptPayload(payload: string): { encryptedPayload: string; iv: string; authTag: string } {
+function encryptPayload(payload: string): {
+  encryptedPayload: string;
+  iv: string;
+  authTag: string;
+} {
   const iv = randomBytes(16);
   const key = Buffer.from(ENCRYPTION_KEY, "hex");
   const cipher = createCipheriv("aes-256-gcm", key, iv);
@@ -18,7 +22,10 @@ function encryptPayload(payload: string): { encryptedPayload: string; iv: string
 }
 
 // POST /api/v1/connectors/:id/credentials — Store encrypted credential
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -31,7 +38,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const [connector] = await db
     .select({ id: evidenceConnector.id })
     .from(evidenceConnector)
-    .where(and(eq(evidenceConnector.id, id), eq(evidenceConnector.orgId, ctx.orgId), isNull(evidenceConnector.deletedAt)));
+    .where(
+      and(
+        eq(evidenceConnector.id, id),
+        eq(evidenceConnector.orgId, ctx.orgId),
+        isNull(evidenceConnector.deletedAt),
+      ),
+    );
 
   if (!connector) {
     return Response.json({ error: "Connector not found" }, { status: 404 });
@@ -39,7 +52,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const body = createConnectorCredentialSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { encryptedPayload, iv, authTag } = encryptPayload(body.data.payload);
@@ -57,7 +73,11 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
         scopes: body.data.scopes ?? [],
         createdBy: ctx.userId,
       })
-      .returning({ id: connectorCredential.id, credentialType: connectorCredential.credentialType, createdAt: connectorCredential.createdAt });
+      .returning({
+        id: connectorCredential.id,
+        credentialType: connectorCredential.credentialType,
+        createdAt: connectorCredential.createdAt,
+      });
     return row;
   });
 
@@ -65,7 +85,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 // GET /api/v1/connectors/:id/credentials — List credentials (metadata only, no secrets)
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -85,7 +108,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
       createdAt: connectorCredential.createdAt,
     })
     .from(connectorCredential)
-    .where(and(eq(connectorCredential.connectorId, id), eq(connectorCredential.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(connectorCredential.connectorId, id),
+        eq(connectorCredential.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json({ data: items });
 }

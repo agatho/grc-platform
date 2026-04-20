@@ -41,7 +41,9 @@ export const updateMilestoneSchema = z.object({
   description: z.string().max(5000).optional(),
   deadline: z.string().date().optional(),
   responsibleId: z.string().uuid().optional(),
-  status: z.enum(["planned", "in_progress", "completed", "overdue", "cancelled"]).optional(),
+  status: z
+    .enum(["planned", "in_progress", "completed", "overdue", "cancelled"])
+    .optional(),
   percentComplete: z.number().int().min(0).max(100).optional(),
   actualEffortHours: z.number().min(0).optional(),
 });
@@ -50,9 +52,16 @@ export const updateMilestoneSchema = z.object({
 export const createInterconnectionSchema = z.object({
   sourceRiskId: z.string().uuid(),
   targetRiskId: z.string().uuid(),
-  correlationType: z.enum(["amplifies", "triggers", "shares_cause", "shares_consequence"]),
+  correlationType: z.enum([
+    "amplifies",
+    "triggers",
+    "shares_cause",
+    "shares_consequence",
+  ]),
   strength: z.enum(["weak", "moderate", "strong"]),
-  direction: z.enum(["unidirectional", "bidirectional"]).default("unidirectional"),
+  direction: z
+    .enum(["unidirectional", "bidirectional"])
+    .default("unidirectional"),
   description: z.string().max(5000).optional(),
 });
 
@@ -67,16 +76,32 @@ export const createEmergingRiskSchema = z.object({
   description: z.string().max(5000).optional(),
   category: z.string().min(1).max(50),
   timeHorizon: z.enum(["1y", "3y", "5y", "10y"]),
-  potentialImpact: z.enum(["low", "moderate", "significant", "critical", "catastrophic"]),
+  potentialImpact: z.enum([
+    "low",
+    "moderate",
+    "significant",
+    "critical",
+    "catastrophic",
+  ]),
   probabilityTrend: z.enum(["increasing", "stable", "decreasing"]),
   monitoringTriggers: z.string().max(5000).optional(),
   responsibleId: z.string().uuid().optional(),
   nextReviewDate: z.string().date().optional(),
 });
 
-export const updateEmergingRiskSchema = createEmergingRiskSchema.partial().extend({
-  status: z.enum(["monitoring", "escalating", "materializing", "promoted", "archived"]).optional(),
-});
+export const updateEmergingRiskSchema = createEmergingRiskSchema
+  .partial()
+  .extend({
+    status: z
+      .enum([
+        "monitoring",
+        "escalating",
+        "materializing",
+        "promoted",
+        "archived",
+      ])
+      .optional(),
+  });
 
 // ─── Risk Events ────────────────────────────────────────────
 export const createRiskEventSchema = z.object({
@@ -86,12 +111,18 @@ export const createRiskEventSchema = z.object({
   eventDate: z.string().date(),
   eventType: z.enum(["materialized", "near_miss"]),
   actualImpactEur: z.number().min(0).optional(),
-  actualImpactQualitative: z.enum(["low", "moderate", "significant", "critical", "catastrophic"]).optional(),
-  affectedEntities: z.array(z.object({
-    type: z.string(),
-    id: z.string().uuid(),
-    name: z.string(),
-  })).optional(),
+  actualImpactQualitative: z
+    .enum(["low", "moderate", "significant", "critical", "catastrophic"])
+    .optional(),
+  affectedEntities: z
+    .array(
+      z.object({
+        type: z.string(),
+        id: z.string().uuid(),
+        name: z.string(),
+      }),
+    )
+    .optional(),
   rootCause: z.string().max(5000).optional(),
   responseActions: z.string().max(5000).optional(),
   durationDays: z.number().int().min(0).optional(),

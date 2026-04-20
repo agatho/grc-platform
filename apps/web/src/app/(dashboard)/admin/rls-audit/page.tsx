@@ -30,7 +30,12 @@ interface TableStatus {
   rlsForced: boolean;
   policies: string[];
   coveredCommands: string[];
-  status: "ok" | "missing_rls" | "missing_force" | "missing_policies" | "platform_ignored";
+  status:
+    | "ok"
+    | "missing_rls"
+    | "missing_force"
+    | "missing_policies"
+    | "platform_ignored";
   note?: string;
 }
 
@@ -97,7 +102,8 @@ export default function RlsAuditPage() {
     }
   }, [report, filter]);
 
-  const allGood = report && report.counts.tenantsOk === report.counts.tenantTables;
+  const allGood =
+    report && report.counts.tenantsOk === report.counts.tenantTables;
 
   return (
     <div className="space-y-6">
@@ -126,7 +132,11 @@ export default function RlsAuditPage() {
           disabled={loading}
           className="inline-flex items-center gap-1.5 rounded-md border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
         >
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <RefreshCw size={14} />}
+          {loading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <RefreshCw size={14} />
+          )}
           {t("Erneut prüfen", "Re-run")}
         </button>
       </div>
@@ -141,14 +151,20 @@ export default function RlsAuditPage() {
           }`}
         >
           {allGood ? (
-            <ShieldCheck size={22} className="mt-0.5 shrink-0 text-emerald-700" />
+            <ShieldCheck
+              size={22}
+              className="mt-0.5 shrink-0 text-emerald-700"
+            />
           ) : (
             <ShieldAlert size={22} className="mt-0.5 shrink-0 text-red-700" />
           )}
           <div className="flex-1">
             <div className="text-lg font-semibold">
               {allGood
-                ? t("Alle Mandanten-Tabellen sind RLS-geschützt", "All tenant tables are RLS-protected")
+                ? t(
+                    "Alle Mandanten-Tabellen sind RLS-geschützt",
+                    "All tenant tables are RLS-protected",
+                  )
                 : t(
                     `${report.counts.tenantTables - report.counts.tenantsOk} von ${report.counts.tenantTables} Mandanten-Tabellen haben Lücken`,
                     `${report.counts.tenantTables - report.counts.tenantsOk} of ${report.counts.tenantTables} tenant tables have gaps`,
@@ -210,11 +226,13 @@ export default function RlsAuditPage() {
 
       {/* Filter tabs */}
       <div className="flex items-center gap-2">
-        {([
-          ["gaps", t("Nur Lücken", "Gaps only")],
-          ["tenant", t("Alle Mandanten-Tabellen", "All tenant tables")],
-          ["all", t("Alles", "Everything")],
-        ] as const).map(([mode, label]) => (
+        {(
+          [
+            ["gaps", t("Nur Lücken", "Gaps only")],
+            ["tenant", t("Alle Mandanten-Tabellen", "All tenant tables")],
+            ["all", t("Alles", "Everything")],
+          ] as const
+        ).map(([mode, label]) => (
           <button
             key={mode}
             onClick={() => setFilter(mode)}
@@ -245,7 +263,10 @@ export default function RlsAuditPage() {
           <TableBody>
             {filtered.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center text-sm text-gray-500">
+                <TableCell
+                  colSpan={6}
+                  className="text-center text-sm text-gray-500"
+                >
                   {filter === "gaps"
                     ? t("Keine Lücken — gut gemacht.", "No gaps — well done.")
                     : t("Keine Einträge.", "No entries.")}
@@ -303,19 +324,28 @@ function AuditRow({ row }: { row: TableStatus }) {
         );
       case "missing_force":
         return (
-          <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-800">
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-200 bg-amber-50 text-amber-800"
+          >
             <AlertTriangle size={10} /> FORCE missing
           </Badge>
         );
       case "missing_policies":
         return (
-          <Badge variant="outline" className="gap-1 border-amber-200 bg-amber-50 text-amber-800">
+          <Badge
+            variant="outline"
+            className="gap-1 border-amber-200 bg-amber-50 text-amber-800"
+          >
             <AlertTriangle size={10} /> Policies missing
           </Badge>
         );
       case "platform_ignored":
         return (
-          <Badge variant="outline" className="gap-1 border-gray-200 bg-gray-50 text-gray-600">
+          <Badge
+            variant="outline"
+            className="gap-1 border-gray-200 bg-gray-50 text-gray-600"
+          >
             <Info size={10} /> Platform
           </Badge>
         );

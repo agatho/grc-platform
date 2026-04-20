@@ -42,7 +42,9 @@ export async function GET(req: Request) {
     )
     .groupBy(risk.riskCategory);
 
-  const statsMap = new Map<string, typeof riskStats[number]>(riskStats.map((s) => [s.category, s]));
+  const statsMap = new Map<string, (typeof riskStats)[number]>(
+    riskStats.map((s) => [s.category, s]),
+  );
 
   const dashboard: RiskAppetiteDashboardItem[] = thresholds.map((t) => {
     const stats = statsMap.get(t.riskCategory);
@@ -63,9 +65,7 @@ export async function GET(req: Request) {
 
   // Compute breach counts
   for (const item of dashboard) {
-    const threshold = thresholds.find(
-      (t) => t.riskCategory === item.category,
-    );
+    const threshold = thresholds.find((t) => t.riskCategory === item.category);
     if (!threshold) continue;
 
     const [result] = await db

@@ -4,7 +4,10 @@ import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { triggerMaturityRoadmapSchema } from "@grc/shared";
 import { aiComplete } from "@grc/ai";
-import { buildMaturityRoadmapPrompt, parseMaturityRoadmapResponse } from "@grc/ai";
+import {
+  buildMaturityRoadmapPrompt,
+  parseMaturityRoadmapResponse,
+} from "@grc/ai";
 
 // POST /api/v1/isms/maturity/ai-roadmap — Generate AI maturity roadmap
 export async function POST(req: Request) {
@@ -17,7 +20,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = triggerMaturityRoadmapSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   // Rate limit: 1 generation per org per 5 minutes
@@ -55,16 +61,27 @@ export async function POST(req: Request) {
 
   if (maturityRows.length === 0) {
     return Response.json(
-      { error: "No maturity data found. Please complete a maturity assessment first." },
+      {
+        error:
+          "No maturity data found. Please complete a maturity assessment first.",
+      },
       { status: 400 },
     );
   }
 
   // Aggregate by domain
-  const domainMap = new Map<string, { total: number; sumCurrent: number; sumTarget: number; count: number }>();
+  const domainMap = new Map<
+    string,
+    { total: number; sumCurrent: number; sumTarget: number; count: number }
+  >();
   for (const row of maturityRows) {
     const domain = row.controlDepartment ?? "General";
-    const existing = domainMap.get(domain) ?? { total: 0, sumCurrent: 0, sumTarget: 0, count: 0 };
+    const existing = domainMap.get(domain) ?? {
+      total: 0,
+      sumCurrent: 0,
+      sumTarget: 0,
+      count: 0,
+    };
     existing.total++;
     existing.sumCurrent += row.currentMaturity;
     existing.sumTarget += row.targetMaturity;
@@ -72,12 +89,17 @@ export async function POST(req: Request) {
     domainMap.set(domain, existing);
   }
 
-  const maturityData = Array.from(domainMap.entries()).map(([domain, data]) => ({
-    domain,
-    currentLevel: Math.round(data.sumCurrent / data.count),
-    targetLevel: Math.max(Math.round(data.sumTarget / data.count), parsed.data.targetMaturity),
-    controlCount: data.count,
-  }));
+  const maturityData = Array.from(domainMap.entries()).map(
+    ([domain, data]) => ({
+      domain,
+      currentLevel: Math.round(data.sumCurrent / data.count),
+      targetLevel: Math.max(
+        Math.round(data.sumTarget / data.count),
+        parsed.data.targetMaturity,
+      ),
+      controlCount: data.count,
+    }),
+  );
 
   // Build prompt and call AI
   const prompt = buildMaturityRoadmapPrompt({
@@ -87,7 +109,11 @@ export async function POST(req: Request) {
 
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are an ISMS maturity consultant. Respond only with valid JSON." },
+      {
+        role: "system",
+        content:
+          "You are an ISMS maturity consultant. Respond only with valid JSON.",
+      },
       { role: "user", content: prompt },
     ],
     model: "claude-sonnet-4-20250514",
@@ -144,7 +170,7 @@ export async function POST(req: Request) {
     data: {
       roadmapRunId,
       totalActions: result.length,
-      quickWins: result.filter(a => a.isQuickWin).length,
+      quickWins: result.filter((a) => a.isQuickWin).length,
       actions: result,
       generatedAt: new Date().toISOString(),
     },

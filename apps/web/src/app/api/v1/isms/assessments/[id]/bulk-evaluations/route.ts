@@ -17,7 +17,13 @@ type RouteParams = { params: Promise<{ id: string }> };
 const updateItem = z.object({
   evalId: z.string().uuid(),
   result: z
-    .enum(["effective", "partially_effective", "ineffective", "not_applicable", "not_evaluated"])
+    .enum([
+      "effective",
+      "partially_effective",
+      "ineffective",
+      "not_applicable",
+      "not_evaluated",
+    ])
     .optional(),
   currentMaturity: z.number().int().min(0).max(5).optional(),
   targetMaturity: z.number().int().min(0).max(5).optional(),
@@ -51,9 +57,14 @@ export async function PATCH(req: Request, { params }: RouteParams) {
   const [run] = await db
     .select({ id: assessmentRun.id, orgId: assessmentRun.orgId })
     .from(assessmentRun)
-    .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+    .where(
+      and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+    );
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   // Batch-Update
@@ -66,8 +77,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         updatedAt: new Date(),
       };
       if (item.result !== undefined) setValues.result = item.result;
-      if (item.currentMaturity !== undefined) setValues.currentMaturity = item.currentMaturity;
-      if (item.targetMaturity !== undefined) setValues.targetMaturity = item.targetMaturity;
+      if (item.currentMaturity !== undefined)
+        setValues.currentMaturity = item.currentMaturity;
+      if (item.targetMaturity !== undefined)
+        setValues.targetMaturity = item.targetMaturity;
       if (item.notes !== undefined) setValues.notes = item.notes;
       if (item.evidence !== undefined) setValues.evidence = item.evidence;
 
@@ -90,7 +103,10 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         .returning({ id: assessmentControlEval.id });
 
       if (result.length === 0) {
-        failedEvals.push({ evalId: item.evalId, reason: "Eval nicht gefunden oder nicht in diesem Run" });
+        failedEvals.push({
+          evalId: item.evalId,
+          reason: "Eval nicht gefunden oder nicht in diesem Run",
+        });
       } else {
         updated++;
       }
@@ -110,7 +126,8 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         ),
       );
 
-    const pct = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+    const pct =
+      totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
     await tx
       .update(assessmentRun)
       .set({
@@ -119,7 +136,9 @@ export async function PATCH(req: Request, { params }: RouteParams) {
         completionPercentage: pct,
         updatedAt: new Date(),
       })
-      .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+      .where(
+        and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+      );
   });
 
   return Response.json({

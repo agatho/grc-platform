@@ -63,16 +63,28 @@ function CreateIncidentInner() {
   return (
     <div className="max-w-2xl mx-auto space-y-6">
       <div>
-        <Button variant="ghost" size="sm" onClick={() => router.push("/isms/incidents")} className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/isms/incidents")}
+          className="mb-2"
+        >
           <ArrowLeft size={14} className="mr-1" /> {t("backToIncidents")}
         </Button>
-        <h1 className="text-2xl font-bold text-gray-900">{t("createIncident")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("createIncident")}
+        </h1>
       </div>
 
-      <form onSubmit={handleSubmit} className="rounded-lg border border-gray-200 bg-white p-6 space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        className="rounded-lg border border-gray-200 bg-white p-6 space-y-5"
+      >
         {/* Title */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t("titleField")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("titleField")}
+          </label>
           <input
             type="text"
             value={title}
@@ -85,21 +97,27 @@ function CreateIncidentInner() {
 
         {/* Severity */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t("severity")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("severity")}
+          </label>
           <select
             value={severity}
             onChange={(e) => setSeverity(e.target.value as IncidentSeverity)}
             className="h-10 w-full rounded-md border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
           >
             {SEVERITIES.map((s) => (
-              <option key={s} value={s}>{t(`incidentSeverity.${s}`)}</option>
+              <option key={s} value={s}>
+                {t(`incidentSeverity.${s}`)}
+              </option>
             ))}
           </select>
         </div>
 
         {/* Incident Type */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t("incidentTypeField")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("incidentTypeField")}
+          </label>
           <input
             type="text"
             value={incidentType}
@@ -111,7 +129,9 @@ function CreateIncidentInner() {
 
         {/* Description */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">{t("description")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            {t("description")}
+          </label>
           <textarea
             value={description}
             onChange={(e) => setDescription(e.target.value)}
@@ -131,7 +151,10 @@ function CreateIncidentInner() {
             className="mt-0.5 h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
           />
           <div>
-            <label htmlFor="isDataBreach" className="text-sm font-medium text-gray-900 cursor-pointer">
+            <label
+              htmlFor="isDataBreach"
+              className="text-sm font-medium text-gray-900 cursor-pointer"
+            >
               {t("dataBreach")}
             </label>
             <p className="text-xs text-gray-500 mt-0.5">
@@ -144,7 +167,9 @@ function CreateIncidentInner() {
           <div className="rounded-lg border-2 border-yellow-300 bg-yellow-50 p-4 flex items-start gap-2">
             <AlertTriangle className="h-5 w-5 text-yellow-600 shrink-0 mt-0.5" />
             <div>
-              <p className="text-sm font-semibold text-yellow-800">{t("breach72h")}</p>
+              <p className="text-sm font-semibold text-yellow-800">
+                {t("breach72h")}
+              </p>
               <p className="text-xs text-yellow-700 mt-0.5">
                 {t("breachDeadline")}
               </p>

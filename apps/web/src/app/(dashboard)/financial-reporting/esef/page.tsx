@@ -47,7 +47,10 @@ export default function EsefPage() {
     void fetchData();
   }, [fetchData]);
 
-  const validationIndicator = (status: EsefFiling["validationStatus"], errorCount: number) => {
+  const validationIndicator = (
+    status: EsefFiling["validationStatus"],
+    errorCount: number,
+  ) => {
     switch (status) {
       case "bestanden":
         return (
@@ -61,7 +64,8 @@ export default function EsefPage() {
           <div className="flex items-center gap-1.5">
             <XCircle size={16} className="text-red-600" />
             <span className="text-sm text-red-700">
-              Fehlgeschlagen ({errorCount} {errorCount === 1 ? "Fehler" : "Fehler"})
+              Fehlgeschlagen ({errorCount}{" "}
+              {errorCount === 1 ? "Fehler" : "Fehler"})
             </span>
           </div>
         );
@@ -82,9 +86,17 @@ export default function EsefPage() {
       case "entwurf":
         return <Badge variant="outline">Entwurf</Badge>;
       case "validiert":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">Validiert</Badge>;
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+            Validiert
+          </Badge>
+        );
       case "eingereicht":
-        return <Badge className="bg-green-100 text-green-800 border-green-300">Eingereicht</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-300">
+            Eingereicht
+          </Badge>
+        );
       case "abgelehnt":
         return <Badge variant="destructive">Abgelehnt</Badge>;
       default:
@@ -99,11 +111,17 @@ export default function EsefPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">ESEF-Einreichung</h1>
           <p className="text-sm text-gray-500 mt-1">
-            European Single Electronic Format &mdash; Jahresfinanzberichte im iXBRL-Format
+            European Single Electronic Format &mdash; Jahresfinanzberichte im
+            iXBRL-Format
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -126,7 +144,8 @@ export default function EsefPage() {
               Keine ESEF-Einreichungen vorhanden
             </p>
             <p className="mt-1 text-xs text-gray-400">
-              Erstellen Sie eine neue Einreichung im European Single Electronic Format.
+              Erstellen Sie eine neue Einreichung im European Single Electronic
+              Format.
             </p>
           </div>
         </div>
@@ -135,24 +154,45 @@ export default function EsefPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Gesch&auml;ftsjahr</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">LEI</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Taxonomie</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Validierungsstatus</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Eingereicht am</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Gesch&auml;ftsjahr
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  LEI
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Taxonomie
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Validierungsstatus
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Eingereicht am
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filings.map((filing) => (
                 <tr key={filing.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{filing.fiscalYear}</td>
-                  <td className="px-4 py-3 font-mono text-xs text-gray-600">{filing.lei}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {filing.fiscalYear}
+                  </td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                    {filing.lei}
+                  </td>
                   <td className="px-4 py-3 text-gray-600">{filing.taxonomy}</td>
                   <td className="px-4 py-3">
-                    {validationIndicator(filing.validationStatus, filing.errorCount)}
+                    {validationIndicator(
+                      filing.validationStatus,
+                      filing.errorCount,
+                    )}
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{filing.submittedAt ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {filing.submittedAt ?? "-"}
+                  </td>
                   <td className="px-4 py-3">{statusBadge(filing.status)}</td>
                 </tr>
               ))}

@@ -21,7 +21,9 @@ export async function GET(req: Request) {
     .where(and(eq(featureGate.key, key), eq(featureGate.isActive, true)));
 
   if (!gate) {
-    return Response.json({ data: { enabled: false, reason: "Feature gate not found" } });
+    return Response.json({
+      data: { enabled: false, reason: "Feature gate not found" },
+    });
   }
 
   // Get org's subscription plan
@@ -31,7 +33,10 @@ export async function GET(req: Request) {
       plan: subscriptionPlan,
     })
     .from(orgSubscription)
-    .innerJoin(subscriptionPlan, eq(orgSubscription.planId, subscriptionPlan.id))
+    .innerJoin(
+      subscriptionPlan,
+      eq(orgSubscription.planId, subscriptionPlan.id),
+    )
     .where(eq(orgSubscription.orgId, ctx.orgId));
 
   if (!sub) {

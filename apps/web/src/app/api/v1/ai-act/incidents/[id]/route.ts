@@ -4,8 +4,17 @@ import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { updateAiIncidentSchema } from "@grc/shared";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -22,7 +31,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ data: row });
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
@@ -30,20 +42,34 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const parsed = updateAiIncidentSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const {
-    title, description, severity, is_serious, status,
-    affected_persons_count, root_cause, root_cause_category,
-    remediation_actions, preventive_measures, lessons_learned,
-    harm_type, harm_description,
-    authority_notified_at, authority_reference,
+    title,
+    description,
+    severity,
+    is_serious,
+    status,
+    affected_persons_count,
+    root_cause,
+    root_cause_category,
+    remediation_actions,
+    preventive_measures,
+    lessons_learned,
+    harm_type,
+    harm_description,
+    authority_notified_at,
+    authority_reference,
   } = parsed.data;
 
   // If being resolved, set resolved_at
-  const resolvedClause = status === "resolved"
-    ? sql`, resolved_at = COALESCE(resolved_at, now())`
-    : sql``;
+  const resolvedClause =
+    status === "resolved"
+      ? sql`, resolved_at = COALESCE(resolved_at, now())`
+      : sql``;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

@@ -25,7 +25,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(crisisScenario)
     .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)));
   if (!crisis) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   if (!crisis.activatedAt) {
@@ -44,7 +47,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   // Urgency-Level fuer UI-Farbe
   let urgency: "green" | "yellow" | "orange" | "red" = "green";
-  if (dora.nextDeadlineLabel !== "none" && dora.secondsToNextDeadline !== null) {
+  if (
+    dora.nextDeadlineLabel !== "none" &&
+    dora.secondsToNextDeadline !== null
+  ) {
     const minutesLeft = dora.secondsToNextDeadline / 60;
     if (dora.finalOverdue || dora.intermediateOverdue) {
       urgency = "red";

@@ -33,10 +33,14 @@ export default function AnomaliesPage() {
     try {
       const res = await fetch("/api/v1/predictive-risk/anomalies?limit=50");
       if (res.ok) setAnomalies((await res.json()).data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const updateStatus = async (id: string, status: string) => {
     await fetch(`/api/v1/predictive-risk/anomalies/${id}`, {
@@ -48,7 +52,11 @@ export default function AnomaliesPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -63,25 +71,46 @@ export default function AnomaliesPage() {
                   <AlertTriangle className="h-5 w-5 text-muted-foreground" />
                   <div>
                     <p className="font-medium">{anomaly.metricName}</p>
-                    <p className="text-sm text-muted-foreground">{anomaly.description}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {anomaly.description}
+                    </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                       <span>{anomaly.entityType}</span>
                       <span>{anomaly.anomalyType}</span>
-                      {anomaly.deviationPercent && <span>{Number(anomaly.deviationPercent).toFixed(1)}% {t("anomalies.deviation")}</span>}
+                      {anomaly.deviationPercent && (
+                        <span>
+                          {Number(anomaly.deviationPercent).toFixed(1)}%{" "}
+                          {t("anomalies.deviation")}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={SEVERITY_COLORS[anomaly.severity] ?? ""}>{anomaly.severity}</Badge>
-                  <Badge className={STATUS_COLORS[anomaly.status] ?? ""}>{anomaly.status}</Badge>
+                  <Badge className={SEVERITY_COLORS[anomaly.severity] ?? ""}>
+                    {anomaly.severity}
+                  </Badge>
+                  <Badge className={STATUS_COLORS[anomaly.status] ?? ""}>
+                    {anomaly.status}
+                  </Badge>
                   {anomaly.status === "new" && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatus(anomaly.id, "investigating")}>
-                      <Eye className="h-3 w-3 mr-1" />{t("anomalies.investigate")}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateStatus(anomaly.id, "investigating")}
+                    >
+                      <Eye className="h-3 w-3 mr-1" />
+                      {t("anomalies.investigate")}
                     </Button>
                   )}
                   {anomaly.status === "investigating" && (
-                    <Button size="sm" variant="outline" onClick={() => updateStatus(anomaly.id, "resolved")}>
-                      <Check className="h-3 w-3 mr-1" />{t("anomalies.resolve")}
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => updateStatus(anomaly.id, "resolved")}
+                    >
+                      <Check className="h-3 w-3 mr-1" />
+                      {t("anomalies.resolve")}
                     </Button>
                   )}
                 </div>

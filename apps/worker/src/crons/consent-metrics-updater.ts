@@ -16,7 +16,9 @@ export async function processConsentMetrics(): Promise<MetricsResult> {
   const now = new Date();
   let alerts = 0;
 
-  console.log(`[cron:consent-metrics-updater] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:consent-metrics-updater] Starting at ${now.toISOString()}`,
+  );
 
   const types = await db.select().from(consentType);
 
@@ -39,9 +41,10 @@ export async function processConsentMetrics(): Promise<MetricsResult> {
       );
 
     const activeConsents = Number(totalGiven) - Number(totalWithdrawn);
-    const withdrawalRate = Number(totalGiven) > 0
-      ? (Number(totalWithdrawn) / Number(totalGiven)) * 100
-      : 0;
+    const withdrawalRate =
+      Number(totalGiven) > 0
+        ? (Number(totalWithdrawn) / Number(totalGiven)) * 100
+        : 0;
 
     // Update consent type metrics
     await db
@@ -65,12 +68,18 @@ export async function processConsentMetrics(): Promise<MetricsResult> {
         message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
         entityType: "consent_type",
         entityId: ct.id,
-        templateData: { module: "dpms", priority: "high", subtype: "consent_withdrawal_alert" },
+        templateData: {
+          module: "dpms",
+          priority: "high",
+          subtype: "consent_withdrawal_alert",
+        },
       });
       alerts++;
     }
   }
 
-  console.log(`[cron:consent-metrics-updater] Completed: ${types.length} types, ${alerts} alerts`);
+  console.log(
+    `[cron:consent-metrics-updater] Completed: ${types.length} types, ${alerts} alerts`,
+  );
   return { processed: types.length, alerts };
 }

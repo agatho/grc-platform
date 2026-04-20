@@ -208,7 +208,12 @@ function CveDashboardInner() {
               {t("lastSync")}: {new Date(kpis.lastSyncAt).toLocaleString()}
             </span>
           )}
-          <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSync}
+            disabled={syncing}
+          >
             <RefreshCcw size={14} className={syncing ? "animate-spin" : ""} />
             <span className="ml-1">{t("actions.syncNow")}</span>
           </Button>
@@ -223,7 +228,9 @@ function CveDashboardInner() {
               <ShieldAlert size={16} className="text-blue-600" />
               <p className="text-xs text-gray-500">{t("kpi.openMatches")}</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">{kpis.openMatches}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {kpis.openMatches}
+            </p>
             <p className="text-xs text-gray-400 mt-1">
               +{kpis.newMatchesLast7Days} {t("kpi.newLast7Days")}
             </p>
@@ -233,19 +240,25 @@ function CveDashboardInner() {
               <AlertTriangle size={16} className="text-red-600" />
               <p className="text-xs text-red-600">{t("kpi.criticalCves")}</p>
             </div>
-            <p className="text-2xl font-bold text-red-700 mt-2">{kpis.criticalCves}</p>
+            <p className="text-2xl font-bold text-red-700 mt-2">
+              {kpis.criticalCves}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex items-center gap-2">
               <Server size={16} className="text-purple-600" />
               <p className="text-xs text-gray-500">{t("kpi.affectedAssets")}</p>
             </div>
-            <p className="text-2xl font-bold text-gray-900 mt-2">{kpis.affectedAssets}</p>
+            <p className="text-2xl font-bold text-gray-900 mt-2">
+              {kpis.affectedAssets}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <div className="flex items-center gap-2">
               <Clock size={16} className="text-green-600" />
-              <p className="text-xs text-gray-500">{t("kpi.meanRemediation")}</p>
+              <p className="text-xs text-gray-500">
+                {t("kpi.meanRemediation")}
+              </p>
             </div>
             <p className="text-2xl font-bold text-gray-900 mt-2">
               {kpis.meanRemediationDays.toFixed(1)}
@@ -259,7 +272,10 @@ function CveDashboardInner() {
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-3">
           <div className="relative">
-            <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Search
+              size={14}
+              className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="text"
               value={search}
@@ -273,10 +289,16 @@ function CveDashboardInner() {
               <SelectValue placeholder={t("filters.allStatuses")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">{t("filters.allStatuses")}</SelectItem>
-              {["new", "acknowledged", "mitigated", "not_applicable"].map((s) => (
-                <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>
-              ))}
+              <SelectItem value="__all__">
+                {t("filters.allStatuses")}
+              </SelectItem>
+              {["new", "acknowledged", "mitigated", "not_applicable"].map(
+                (s) => (
+                  <SelectItem key={s} value={s}>
+                    {t(`status.${s}`)}
+                  </SelectItem>
+                ),
+              )}
             </SelectContent>
           </Select>
           <Select value={severityFilter} onValueChange={setSeverityFilter}>
@@ -284,9 +306,13 @@ function CveDashboardInner() {
               <SelectValue placeholder={t("filters.allSeverities")} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="__all__">{t("filters.allSeverities")}</SelectItem>
+              <SelectItem value="__all__">
+                {t("filters.allSeverities")}
+              </SelectItem>
               {SEVERITIES.map((s) => (
-                <SelectItem key={s} value={s}>{t(`severity.${s}`)}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {t(`severity.${s}`)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -323,13 +349,27 @@ function CveDashboardInner() {
                     className="rounded border-gray-300"
                   />
                 </th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">{t("table.cveId")}</th>
-                <th className="text-center px-3 py-3 font-medium text-gray-600">{t("table.cvssScore")}</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">{t("table.title")}</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">{t("table.assetName")}</th>
-                <th className="text-center px-3 py-3 font-medium text-gray-600">{t("table.status")}</th>
-                <th className="text-left px-3 py-3 font-medium text-gray-600">{t("table.matchedAt")}</th>
-                <th className="text-right px-3 py-3 font-medium text-gray-600">{t("table.actions")}</th>
+                <th className="text-left px-3 py-3 font-medium text-gray-600">
+                  {t("table.cveId")}
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-gray-600">
+                  {t("table.cvssScore")}
+                </th>
+                <th className="text-left px-3 py-3 font-medium text-gray-600">
+                  {t("table.title")}
+                </th>
+                <th className="text-left px-3 py-3 font-medium text-gray-600">
+                  {t("table.assetName")}
+                </th>
+                <th className="text-center px-3 py-3 font-medium text-gray-600">
+                  {t("table.status")}
+                </th>
+                <th className="text-left px-3 py-3 font-medium text-gray-600">
+                  {t("table.matchedAt")}
+                </th>
+                <th className="text-right px-3 py-3 font-medium text-gray-600">
+                  {t("table.actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -358,15 +398,23 @@ function CveDashboardInner() {
                       variant="outline"
                       className={severityStyles[match.cvssSeverity ?? "none"]}
                     >
-                      {match.cvssScore ?? "-"} {match.cvssSeverity ? t(`severity.${match.cvssSeverity}`) : ""}
+                      {match.cvssScore ?? "-"}{" "}
+                      {match.cvssSeverity
+                        ? t(`severity.${match.cvssSeverity}`)
+                        : ""}
                     </Badge>
                   </td>
                   <td className="px-3 py-3 text-gray-900 max-w-xs truncate">
                     {match.cveTitle?.slice(0, 100) ?? "-"}
                   </td>
-                  <td className="px-3 py-3 text-gray-700">{match.assetName ?? "-"}</td>
+                  <td className="px-3 py-3 text-gray-700">
+                    {match.assetName ?? "-"}
+                  </td>
                   <td className="px-3 py-3 text-center">
-                    <Badge variant="outline" className={statusStyles[match.status] ?? ""}>
+                    <Badge
+                      variant="outline"
+                      className={statusStyles[match.status] ?? ""}
+                    >
                       {t(`status.${match.status}`)}
                     </Badge>
                   </td>
@@ -379,17 +427,22 @@ function CveDashboardInner() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleAcknowledge(match.id, "acknowledged")}
+                          onClick={() =>
+                            handleAcknowledge(match.id, "acknowledged")
+                          }
                           title={t("actions.acknowledge")}
                         >
                           <Check size={14} className="text-green-600" />
                         </Button>
                       )}
-                      {(match.status === "new" || match.status === "acknowledged") && (
+                      {(match.status === "new" ||
+                        match.status === "acknowledged") && (
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleAcknowledge(match.id, "not_applicable")}
+                          onClick={() =>
+                            handleAcknowledge(match.id, "not_applicable")
+                          }
                           title={t("actions.markNotApplicable")}
                         >
                           <X size={14} className="text-gray-400" />

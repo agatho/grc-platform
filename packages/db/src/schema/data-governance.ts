@@ -26,20 +26,28 @@ import { connectorInstance } from "./connector";
 
 export const dataLineageSource = pgTable("data_lineage_source", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   sourceName: varchar("source_name", { length: 255 }).notNull(),
   // manual | connector | calculation | import | api
-  sourceType: varchar("source_type", { length: 50 }).default("manual").notNull(),
+  sourceType: varchar("source_type", { length: 50 })
+    .default("manual")
+    .notNull(),
   connectionId: uuid("connection_id").references(() => connectorInstance.id),
   description: text("description"),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
 export const dataLineageEntry = pgTable("data_lineage_entry", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   entityType: varchar("entity_type", { length: 50 }).notNull(),
   entityId: uuid("entity_id").notNull(),
   fieldName: varchar("field_name", { length: 100 }).notNull(),
@@ -51,8 +59,12 @@ export const dataLineageEntry = pgTable("data_lineage_entry", {
   confidence: varchar("confidence", { length: 20 }).default("verified"),
   verifiedBy: uuid("verified_by").references(() => user.id),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
@@ -60,7 +72,9 @@ export const dataLineageEntry = pgTable("data_lineage_entry", {
 
 export const dataLink = pgTable("data_link", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   sourceType: varchar("source_type", { length: 50 }).notNull(),
   sourceId: uuid("source_id").notNull(),
   sourceField: varchar("source_field", { length: 100 }).notNull(),
@@ -71,7 +85,9 @@ export const dataLink = pgTable("data_link", {
   linkType: varchar("link_type", { length: 30 }).default("reference").notNull(),
   isBidirectional: boolean("is_bidirectional").default(false),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
@@ -79,7 +95,9 @@ export const dataLink = pgTable("data_link", {
 
 export const dataValidationRule = pgTable("data_validation_rule", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   entityType: varchar("entity_type", { length: 50 }).notNull(),
@@ -90,19 +108,27 @@ export const dataValidationRule = pgTable("data_validation_rule", {
   // info | warning | error | critical
   severity: varchar("severity", { length: 20 }).default("warning").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
 export const dataValidationResult = pgTable("data_validation_result", {
   id: uuid("id").primaryKey().defaultRandom(),
-  ruleId: uuid("rule_id").notNull().references(() => dataValidationRule.id, { onDelete: "cascade" }),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  ruleId: uuid("rule_id")
+    .notNull()
+    .references(() => dataValidationRule.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   entityType: varchar("entity_type", { length: 50 }).notNull(),
   entityId: uuid("entity_id").notNull(),
   fieldName: varchar("field_name", { length: 100 }).notNull(),
   fieldValue: text("field_value"),
   isValid: boolean("is_valid").notNull(),
   message: text("message"),
-  checkedAt: timestamp("checked_at", { withTimezone: true }).defaultNow().notNull(),
+  checkedAt: timestamp("checked_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });

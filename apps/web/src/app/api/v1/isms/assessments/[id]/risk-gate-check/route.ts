@@ -28,7 +28,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(assessmentRun)
     .where(and(eq(assessmentRun.id, id), eq(assessmentRun.orgId, ctx.orgId)));
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   const [{ total }] = await db
@@ -81,7 +84,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
           ? Math.round((stats.decided / stats.totalRiskEvals) * 100)
           : 0,
       scoreCoverage:
-        stats.totalRiskEvals > 0 ? Math.round((stats.scored / stats.totalRiskEvals) * 100) : 0,
+        stats.totalRiskEvals > 0
+          ? Math.round((stats.scored / stats.totalRiskEvals) * 100)
+          : 0,
       blockers,
       passed: blockers.filter((b) => b.severity === "error").length === 0,
     },

@@ -52,13 +52,15 @@ const MODULE_SETTINGS: Record<
         labelDe: "Risikoappetit",
         labelEn: "Risk appetite",
         descriptionDe: "Appetitdeklaration und Toleranzschwellen je Kategorie.",
-        descriptionEn: "Appetite statements and tolerance thresholds per category.",
+        descriptionEn:
+          "Appetite statements and tolerance thresholds per category.",
       },
       {
         href: "/catalogs?module=erm",
         labelDe: "Risikokataloge",
         labelEn: "Risk catalogs",
-        descriptionDe: "Cambridge, WEF, MITRE ATT&CK, BSI Elementargefährdungen.",
+        descriptionDe:
+          "Cambridge, WEF, MITRE ATT&CK, BSI Elementargefährdungen.",
         descriptionEn: "Cambridge, WEF, MITRE ATT&CK, BSI threats.",
       },
     ],
@@ -73,7 +75,8 @@ const MODULE_SETTINGS: Record<
         href: "/isms/soa",
         labelDe: "Statement of Applicability",
         labelEn: "Statement of Applicability",
-        descriptionDe: "93 Annex-A-Kontrollen aktivieren / ausschließen + Begründung.",
+        descriptionDe:
+          "93 Annex-A-Kontrollen aktivieren / ausschließen + Begründung.",
         descriptionEn: "Activate/exclude 93 Annex A controls with rationale.",
       },
       {
@@ -109,8 +112,10 @@ const MODULE_SETTINGS: Record<
         href: "/admin/review-cycles",
         labelDe: "Test-Zyklen",
         labelEn: "Test cycles",
-        descriptionDe: "Automatische Kontrolltest-Kampagnen (monatlich, quartalsweise, jährlich).",
-        descriptionEn: "Automatic control test campaigns (monthly, quarterly, yearly).",
+        descriptionDe:
+          "Automatische Kontrolltest-Kampagnen (monatlich, quartalsweise, jährlich).",
+        descriptionEn:
+          "Automatic control test campaigns (monthly, quarterly, yearly).",
       },
     ],
   },
@@ -125,7 +130,8 @@ const MODULE_SETTINGS: Record<
         labelDe: "Aufbewahrungsfristen (Art. 5)",
         labelEn: "Retention (Art. 5)",
         descriptionDe: "Löschfristen je Datenkategorie — Speicherbegrenzung.",
-        descriptionEn: "Deletion deadlines per data category — storage limitation.",
+        descriptionEn:
+          "Deletion deadlines per data category — storage limitation.",
       },
       {
         href: "/dpms/tia",
@@ -523,11 +529,7 @@ export default function ModuleSettingsPage() {
                       : "border-red-200 bg-red-50 text-red-700"
               }`}
             >
-              {isEnabled ? (
-                <Check size={12} />
-              ) : (
-                <XIcon size={12} />
-              )}
+              {isEnabled ? <Check size={12} /> : <XIcon size={12} />}
               {config.uiStatus}
             </span>
             <span className="inline-flex items-center rounded-full border border-blue-200 bg-blue-50 px-2 py-0.5 text-blue-700">
@@ -596,7 +598,10 @@ export default function ModuleSettingsPage() {
       {/* Raw config */}
       <details className="rounded-xl border border-gray-200 bg-white shadow-sm">
         <summary className="cursor-pointer px-5 py-3 text-sm font-semibold text-gray-700">
-          {t("Erweitert: Rohkonfiguration (JSON)", "Advanced: raw config (JSON)")}
+          {t(
+            "Erweitert: Rohkonfiguration (JSON)",
+            "Advanced: raw config (JSON)",
+          )}
         </summary>
         <pre className="overflow-x-auto border-t border-gray-100 bg-gray-50 p-4 font-mono text-[11px] text-gray-700">
           {JSON.stringify(config.config ?? {}, null, 2)}

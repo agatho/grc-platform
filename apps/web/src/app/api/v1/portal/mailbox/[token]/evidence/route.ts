@@ -40,7 +40,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     where: eq(wbAnonymousMailbox.token, token),
   });
   if (!mailbox || new Date() > new Date(mailbox.expiresAt)) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
 
   const report = await db.query.wbReport.findFirst({

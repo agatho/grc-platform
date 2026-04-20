@@ -8,7 +8,9 @@ export async function processPredictiveRiskTrainer(): Promise<{
   modelsChecked: number;
   modelsRetrained: number;
 }> {
-  console.log("[predictive-risk-trainer] Checking for models due for retraining");
+  console.log(
+    "[predictive-risk-trainer] Checking for models due for retraining",
+  );
 
   const now = new Date();
 
@@ -32,7 +34,9 @@ export async function processPredictiveRiskTrainer(): Promise<{
 
     if (Date.now() - lastTrained >= retrainDays * 24 * 60 * 60 * 1000) {
       try {
-        console.log(`[predictive-risk-trainer] Retraining model: ${model.name}`);
+        console.log(
+          `[predictive-risk-trainer] Retraining model: ${model.name}`,
+        );
 
         // Mark as training
         await db
@@ -53,7 +57,10 @@ export async function processPredictiveRiskTrainer(): Promise<{
 
         modelsRetrained++;
       } catch (err) {
-        console.error(`[predictive-risk-trainer] Model ${model.name} failed:`, err);
+        console.error(
+          `[predictive-risk-trainer] Model ${model.name} failed:`,
+          err,
+        );
         await db
           .update(riskPredictionModel)
           .set({ status: "degraded", updatedAt: now })
@@ -62,6 +69,8 @@ export async function processPredictiveRiskTrainer(): Promise<{
     }
   }
 
-  console.log(`[predictive-risk-trainer] Checked ${dueModels.length} models, retrained ${modelsRetrained}`);
+  console.log(
+    `[predictive-risk-trainer] Checked ${dueModels.length} models, retrained ${modelsRetrained}`,
+  );
   return { modelsChecked: dueModels.length, modelsRetrained };
 }

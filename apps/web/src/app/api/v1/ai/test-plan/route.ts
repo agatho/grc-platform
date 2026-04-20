@@ -6,7 +6,12 @@ import { aiComplete } from "@grc/ai";
 
 // POST /api/v1/ai/test-plan — AI-generated test plan for a control
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = aiTestPlanSchema.safeParse(await req.json());
@@ -54,10 +59,7 @@ export async function POST(req: Request) {
     })
     .from(controlTest)
     .where(
-      and(
-        eq(controlTest.controlId, ctrl.id),
-        eq(controlTest.orgId, ctx.orgId),
-      ),
+      and(eq(controlTest.controlId, ctrl.id), eq(controlTest.orgId, ctx.orgId)),
     )
     .orderBy(desc(controlTest.testDate))
     .limit(5);
@@ -110,7 +112,11 @@ Return JSON:
 
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are a GRC audit expert. Respond with valid JSON only, no markdown." },
+      {
+        role: "system",
+        content:
+          "You are a GRC audit expert. Respond with valid JSON only, no markdown.",
+      },
       { role: "user", content: prompt },
     ],
     maxTokens: 3000,
@@ -128,8 +134,8 @@ Return JSON:
     model: aiResponse.model,
     latencyMs,
     costUsd: String(
-      ((aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015),
+      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
+        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
     ),
     cachedResult: false,
   });

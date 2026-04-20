@@ -1,7 +1,12 @@
 import { db, customFieldDefinition } from "@grc/db";
 import { createCustomFieldSchema } from "@grc/shared";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/admin/custom-fields — List all custom field definitions
 export async function GET(req: Request) {
@@ -13,9 +18,16 @@ export async function GET(req: Request) {
   const where = eq(customFieldDefinition.orgId, ctx.orgId);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(customFieldDefinition).where(where)
-      .orderBy(customFieldDefinition.entityType, customFieldDefinition.sortOrder)
-      .limit(limit).offset(offset),
+    db
+      .select()
+      .from(customFieldDefinition)
+      .where(where)
+      .orderBy(
+        customFieldDefinition.entityType,
+        customFieldDefinition.sortOrder,
+      )
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(customFieldDefinition).where(where),
   ]);
 
@@ -29,14 +41,20 @@ export async function POST(req: Request) {
 
   const body = createCustomFieldSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [field] = await tx.insert(customFieldDefinition).values({
-      orgId: ctx.orgId,
-      ...body.data,
-    }).returning();
+    const [field] = await tx
+      .insert(customFieldDefinition)
+      .values({
+        orgId: ctx.orgId,
+        ...body.data,
+      })
+      .returning();
     return field;
   });
 

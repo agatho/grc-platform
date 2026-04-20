@@ -144,7 +144,9 @@ export const auditRiskPredictionModel = pgTable(
       .notNull()
       .references(() => organization.id),
     version: varchar("version", { length: 50 }).notNull(),
-    algorithm: varchar("algorithm", { length: 30 }).notNull().default("linear_regression"),
+    algorithm: varchar("algorithm", { length: 30 })
+      .notNull()
+      .default("linear_regression"),
     featureImportanceJson: jsonb("feature_importance_json").notNull(),
     trainingMetrics: jsonb("training_metrics").notNull(), // { mae, rmse, r2, sampleSize }
     trainedAt: timestamp("trained_at", { withTimezone: true })

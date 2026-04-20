@@ -44,10 +44,7 @@ export async function validateScimToken(
     })
     .from(scimToken)
     .where(
-      and(
-        eq(scimToken.tokenHash, tokenHash),
-        eq(scimToken.isActive, true),
-      ),
+      and(eq(scimToken.tokenHash, tokenHash), eq(scimToken.isActive, true)),
     );
 
   if (!found) return null;

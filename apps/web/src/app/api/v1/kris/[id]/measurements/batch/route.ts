@@ -10,7 +10,9 @@ const batchMeasurementSchema = z.object({
       z.object({
         value: z.number(),
         measuredAt: z.string().datetime(),
-        source: z.enum(["manual", "api_import", "calculated"]).default("api_import"),
+        source: z
+          .enum(["manual", "api_import", "calculated"])
+          .default("api_import"),
         notes: z.string().optional(),
       }),
     )
@@ -86,11 +88,7 @@ export async function POST(
     .select()
     .from(kri)
     .where(
-      and(
-        eq(kri.id, kriId),
-        eq(kri.orgId, ctx.orgId),
-        isNull(kri.deletedAt),
-      ),
+      and(eq(kri.id, kriId), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
     );
 
   if (!kriRow) {
@@ -124,7 +122,10 @@ export async function POST(
 
     // Recompute KRI current state from latest measurement
     const [latestMeasurement] = await tx
-      .select({ value: kriMeasurement.value, measuredAt: kriMeasurement.measuredAt })
+      .select({
+        value: kriMeasurement.value,
+        measuredAt: kriMeasurement.measuredAt,
+      })
       .from(kriMeasurement)
       .where(eq(kriMeasurement.kriId, kriId))
       .orderBy(desc(kriMeasurement.measuredAt))
@@ -149,7 +150,9 @@ export async function POST(
         .orderBy(desc(kriMeasurement.measuredAt))
         .limit(3);
 
-      const recentValues = recentMeasurements.map((m: { value: string }) => parseFloat(m.value));
+      const recentValues = recentMeasurements.map((m: { value: string }) =>
+        parseFloat(m.value),
+      );
       const newTrend = computeTrend(recentValues, kriRow.direction);
 
       await tx

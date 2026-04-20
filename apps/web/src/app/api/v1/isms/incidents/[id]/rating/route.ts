@@ -96,7 +96,9 @@ export async function GET(
     return Response.json({ error: "Incident not found" }, { status: 404 });
   }
 
-  const isEditable = ["recovered", "lessons_learned", "closed"].includes(String(incident.status));
+  const isEditable = ["recovered", "lessons_learned", "closed"].includes(
+    String(incident.status),
+  );
 
   return Response.json({
     data: {

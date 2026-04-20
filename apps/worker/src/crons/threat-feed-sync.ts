@@ -25,10 +25,7 @@ interface ParsedFeedItem {
  * Extracts content between opening and closing tags.
  */
 function extractTag(xml: string, tag: string): string | null {
-  const pattern = new RegExp(
-    `<${tag}[^>]*>([\\s\\S]*?)</${tag}>`,
-    "i",
-  );
+  const pattern = new RegExp(`<${tag}[^>]*>([\\s\\S]*?)</${tag}>`, "i");
   const match = pattern.exec(xml);
   return match ? match[1].trim() : null;
 }
@@ -88,7 +85,8 @@ function parseAtomFeed(xml: string): ParsedFeedItem[] {
   while ((match = entryPattern.exec(xml)) !== null) {
     const entryXml = match[1];
     const title = extractTag(entryXml, "title");
-    const summary = extractTag(entryXml, "summary") || extractTag(entryXml, "content");
+    const summary =
+      extractTag(entryXml, "summary") || extractTag(entryXml, "content");
     const linkMatch = /<link[^>]*href="([^"]*)"[^>]*\/?>/i.exec(entryXml);
     const link = linkMatch ? linkMatch[1] : null;
     const updated =
@@ -99,9 +97,7 @@ function parseAtomFeed(xml: string): ParsedFeedItem[] {
     if (title) {
       items.push({
         title: stripTags(title).substring(0, 1000),
-        description: summary
-          ? stripTags(summary).substring(0, 5000)
-          : null,
+        description: summary ? stripTags(summary).substring(0, 5000) : null,
         link: link ? link.substring(0, 2000) : null,
         publishedAt: updated ? new Date(stripTags(updated)) : null,
         guid: idTag ? stripTags(idTag).substring(0, 500) : null,

@@ -67,9 +67,12 @@ export default function RcsaCampaignsListPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{t("campaigns") || "RCSA-Kampagnen"}</h1>
+            <h1 className="text-2xl font-bold">
+              {t("campaigns") || "RCSA-Kampagnen"}
+            </h1>
             <p className="text-muted-foreground">
-              {t("campaignsSubtitle") || "Risk & Control Self-Assessments verwalten"}
+              {t("campaignsSubtitle") ||
+                "Risk & Control Self-Assessments verwalten"}
             </p>
           </div>
           <div className="flex gap-2">
@@ -93,7 +96,13 @@ export default function RcsaCampaignsListPage() {
               size="sm"
               onClick={() => setStatusFilter(s)}
             >
-              {s === "" ? "Alle" : s === "draft" ? "Entwurf" : s === "active" ? "Aktiv" : "Abgeschlossen"}
+              {s === ""
+                ? "Alle"
+                : s === "draft"
+                  ? "Entwurf"
+                  : s === "active"
+                    ? "Aktiv"
+                    : "Abgeschlossen"}
             </Button>
           ))}
         </div>
@@ -109,7 +118,10 @@ export default function RcsaCampaignsListPage() {
             <p className="text-muted-foreground mt-1">
               Erstellen Sie Ihre erste RCSA-Kampagne
             </p>
-            <Button className="mt-4" onClick={() => router.push("/rcsa/campaigns/new")}>
+            <Button
+              className="mt-4"
+              onClick={() => router.push("/rcsa/campaigns/new")}
+            >
               <Plus className="mr-2 h-4 w-4" />
               Kampagne erstellen
             </Button>
@@ -130,21 +142,36 @@ export default function RcsaCampaignsListPage() {
                       <div className="flex items-center gap-2 mt-1 text-sm text-muted-foreground">
                         <Users className="h-3.5 w-3.5" />
                         <span>
-                          {campaign.completedAssessments}/{campaign.totalAssessments} abgeschlossen
+                          {campaign.completedAssessments}/
+                          {campaign.totalAssessments} abgeschlossen
                         </span>
                         {campaign.dueDate && (
                           <>
                             <Clock className="h-3.5 w-3.5 ml-2" />
                             <span>
-                              Fällig: {new Date(campaign.dueDate).toLocaleDateString("de-DE")}
+                              Fällig:{" "}
+                              {new Date(campaign.dueDate).toLocaleDateString(
+                                "de-DE",
+                              )}
                             </span>
                           </>
                         )}
                       </div>
                     </div>
                   </div>
-                  <Badge className={statusColors[campaign.status] || "bg-gray-100 text-gray-900"}>
-                    {campaign.status === "draft" ? "Entwurf" : campaign.status === "active" ? "Aktiv" : campaign.status === "completed" ? "Abgeschlossen" : campaign.status}
+                  <Badge
+                    className={
+                      statusColors[campaign.status] ||
+                      "bg-gray-100 text-gray-900"
+                    }
+                  >
+                    {campaign.status === "draft"
+                      ? "Entwurf"
+                      : campaign.status === "active"
+                        ? "Aktiv"
+                        : campaign.status === "completed"
+                          ? "Abgeschlossen"
+                          : campaign.status}
                   </Badge>
                 </div>
               </Link>

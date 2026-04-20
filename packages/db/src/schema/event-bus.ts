@@ -51,8 +51,16 @@ export const entityReference = pgTable(
       table.relationship,
     ),
     // Sprint 29: Graph traversal performance indices
-    index("er_graph_source_idx").on(table.orgId, table.sourceType, table.sourceId),
-    index("er_graph_target_idx").on(table.orgId, table.targetType, table.targetId),
+    index("er_graph_source_idx").on(
+      table.orgId,
+      table.sourceType,
+      table.sourceId,
+    ),
+    index("er_graph_target_idx").on(
+      table.orgId,
+      table.targetType,
+      table.targetId,
+    ),
     index("er_relationship_idx").on(table.relationship),
     index("er_weight_idx").on(table.orgId, table.weight),
   ],

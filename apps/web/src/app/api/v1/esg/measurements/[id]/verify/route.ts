@@ -28,15 +28,10 @@ export async function PUT(
   const [existing] = await db
     .select()
     .from(esgMeasurement)
-    .where(
-      and(eq(esgMeasurement.id, id), eq(esgMeasurement.orgId, ctx.orgId)),
-    );
+    .where(and(eq(esgMeasurement.id, id), eq(esgMeasurement.orgId, ctx.orgId)));
 
   if (!existing) {
-    return Response.json(
-      { error: "Measurement not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Measurement not found" }, { status: 404 });
   }
 
   const updated = await withAuditContext(ctx, async (tx) => {

@@ -9,7 +9,12 @@ export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
@@ -61,7 +66,10 @@ export async function PATCH(
 
   if (!validation.valid) {
     return Response.json(
-      { error: "Phase transition not allowed", missingFields: validation.missingFields },
+      {
+        error: "Phase transition not allowed",
+        missingFields: validation.missingFields,
+      },
       { status: 422 },
     );
   }

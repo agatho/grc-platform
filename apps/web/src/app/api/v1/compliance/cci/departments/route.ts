@@ -2,7 +2,11 @@ import { db, complianceCultureSnapshot } from "@grc/db";
 import { eq, and, isNotNull, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { cciDepartmentsQuerySchema } from "@grc/shared";
-import type { CCIDepartmentEntry, CCITrend, CCIFactorScores } from "@grc/shared";
+import type {
+  CCIDepartmentEntry,
+  CCITrend,
+  CCIFactorScores,
+} from "@grc/shared";
 
 // GET /api/v1/compliance/cci/departments — CCI per department (heatmap data)
 export async function GET(req: Request) {

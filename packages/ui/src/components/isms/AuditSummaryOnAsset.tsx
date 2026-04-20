@@ -45,7 +45,7 @@ export function AuditSummaryOnAsset({
             {labels?.lastAuditDate ?? "Date"}
           </span>
           <span className="text-sm font-medium text-gray-900">
-            {lastAuditDate ?? (labels?.notAudited ?? "Not audited")}
+            {lastAuditDate ?? labels?.notAudited ?? "Not audited"}
           </span>
         </div>
 
@@ -53,10 +53,12 @@ export function AuditSummaryOnAsset({
           <span className="text-sm text-gray-600">
             {labels?.result ?? "Result"}
           </span>
-          <span className={cn(
-            "text-xs font-medium px-2 py-0.5 rounded-full",
-            RESULT_COLORS[lastAuditResult] ?? RESULT_COLORS.not_audited,
-          )}>
+          <span
+            className={cn(
+              "text-xs font-medium px-2 py-0.5 rounded-full",
+              RESULT_COLORS[lastAuditResult] ?? RESULT_COLORS.not_audited,
+            )}
+          >
             {lastAuditResult.replace(/_/g, " ")}
           </span>
         </div>
@@ -66,7 +68,9 @@ export function AuditSummaryOnAsset({
             <span className="text-sm text-gray-600">
               {labels?.findings ?? "Major Findings"}
             </span>
-            <span className="text-sm font-bold text-red-600">{majorFindings}</span>
+            <span className="text-sm font-bold text-red-600">
+              {majorFindings}
+            </span>
           </div>
         )}
 

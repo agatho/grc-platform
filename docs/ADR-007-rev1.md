@@ -1,12 +1,12 @@
 ## ADR-007: Authentication & Authorization (Revision 1)
 
-| **ADR-ID** | **007** |
-| --- | --- |
-| **Title** | **Auth.js (Self-Hosted) + Custom RBAC with Three Lines of Defense Model** |
-| **Status** | **Accepted (Rev. 1 — replaces Clerk decision)** |
-| **Date** | 2026-03-23 |
-| **Revision** | Rev. 1 (Original: 2026-03-22 — Clerk + Custom RBAC) |
-| **Context** | G-04: SSO, MFA, Session Management. Data sovereignty: No dependency on US cloud services for auth in a GRC platform. |
+| **ADR-ID**   | **007**                                                                                                              |
+| ------------ | -------------------------------------------------------------------------------------------------------------------- |
+| **Title**    | **Auth.js (Self-Hosted) + Custom RBAC with Three Lines of Defense Model**                                            |
+| **Status**   | **Accepted (Rev. 1 — replaces Clerk decision)**                                                                      |
+| **Date**     | 2026-03-23                                                                                                           |
+| **Revision** | Rev. 1 (Original: 2026-03-22 — Clerk + Custom RBAC)                                                                  |
+| **Context**  | G-04: SSO, MFA, Session Management. Data sovereignty: No dependency on US cloud services for auth in a GRC platform. |
 
 ### Reason for Change (Rev. 1)
 
@@ -50,16 +50,16 @@ The original decision to use Clerk (hosted US auth service) contradicts the core
 
 ### Auth.js Configuration
 
-| Feature | Implementation |
-| --- | --- |
-| **Session Strategy** | Database sessions (JWT optional for API clients) |
-| **Session Storage** | PostgreSQL via Drizzle adapter (`session`, `account`, `verification_token` tables) |
-| **Credentials Login** | Email + password (bcrypt/argon2), with rate limiting |
-| **SSO / Azure AD** | OIDC provider in Auth.js (`AzureADProvider`) |
-| **MFA (TOTP)** | Custom implementation with `otpauth` library, secret in `user` table (encrypted) |
-| **MFA (WebAuthn)** | `@simplewebauthn/server` for FIDO2/Passkey support |
-| **User Sync** | Not needed — users are stored directly in own DB |
-| **Invitations** | Custom: invitation table + signed link + email via Resend/Nodemailer |
+| Feature               | Implementation                                                                     |
+| --------------------- | ---------------------------------------------------------------------------------- |
+| **Session Strategy**  | Database sessions (JWT optional for API clients)                                   |
+| **Session Storage**   | PostgreSQL via Drizzle adapter (`session`, `account`, `verification_token` tables) |
+| **Credentials Login** | Email + password (bcrypt/argon2), with rate limiting                               |
+| **SSO / Azure AD**    | OIDC provider in Auth.js (`AzureADProvider`)                                       |
+| **MFA (TOTP)**        | Custom implementation with `otpauth` library, secret in `user` table (encrypted)   |
+| **MFA (WebAuthn)**    | `@simplewebauthn/server` for FIDO2/Passkey support                                 |
+| **User Sync**         | Not needed — users are stored directly in own DB                                   |
+| **Invitations**       | Custom: invitation table + signed link + email via Resend/Nodemailer               |
 
 ### RBAC (unchanged from Rev. 0)
 
@@ -68,6 +68,7 @@ The role model remains identical to the original ADR:
 **Predefined Roles:** `admin`, `risk_manager`, `control_owner`, `auditor`, `dpo`, `process_owner`, `viewer`
 
 **Three Lines of Defense Model:**
+
 - 1st Line: `process_owner`, `control_owner` — operational management
 - 2nd Line: `risk_manager`, `dpo` — oversight functions
 - 3rd Line: `auditor` — independent assurance
@@ -76,27 +77,27 @@ The role model remains identical to the original ADR:
 
 ### Evaluated Alternatives
 
-| **Option** | **Advantages** | **Disadvantages** | **Choice** |
-| --- | --- | --- | --- |
-| **Auth.js (Self-Hosted)** | Runs in Next.js process, no external service, DB sessions in own PostgreSQL, OIDC/OAuth for SSO, MIT license, large community | MFA must be custom-built, no admin dashboard out-of-the-box | **✅** |
-| **Keycloak (Self-Hosted)** | Enterprise IAM, SAML+OIDC, admin UI, MFA built-in, identity brokering | Java stack, requires own container, overhead for Phase 1, higher ops complexity | Future |
-| **Authentik (Self-Hosted)** | More modern than Keycloak, Python, easier to set up | Fewer enterprise references, smaller community | Future |
-| ~~**Clerk (Cloud)**~~ | ~~Fastest integration, SSO/MFA/webhooks out-of-the-box~~ | ~~US cloud dependency, contradicts data sovereignty, vendor lock-in, availability risk~~ | ~~Rev. 0~~ |
-| **Auth0 (Cloud)** | Enterprise features, Universal Login | US cloud (Okta), expensive, same sovereignty issues as Clerk | — |
-| **Supabase Auth (Self-Hosted)** | GoTrue server, can be self-hosted | Separate infrastructure, GoLang dependency, tightly coupled to Supabase ecosystem | — |
+| **Option**                      | **Advantages**                                                                                                                | **Disadvantages**                                                                        | **Choice** |
+| ------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------- | ---------- |
+| **Auth.js (Self-Hosted)**       | Runs in Next.js process, no external service, DB sessions in own PostgreSQL, OIDC/OAuth for SSO, MIT license, large community | MFA must be custom-built, no admin dashboard out-of-the-box                              | **✅**     |
+| **Keycloak (Self-Hosted)**      | Enterprise IAM, SAML+OIDC, admin UI, MFA built-in, identity brokering                                                         | Java stack, requires own container, overhead for Phase 1, higher ops complexity          | Future     |
+| **Authentik (Self-Hosted)**     | More modern than Keycloak, Python, easier to set up                                                                           | Fewer enterprise references, smaller community                                           | Future     |
+| ~~**Clerk (Cloud)**~~           | ~~Fastest integration, SSO/MFA/webhooks out-of-the-box~~                                                                      | ~~US cloud dependency, contradicts data sovereignty, vendor lock-in, availability risk~~ | ~~Rev. 0~~ |
+| **Auth0 (Cloud)**               | Enterprise features, Universal Login                                                                                          | US cloud (Okta), expensive, same sovereignty issues as Clerk                             | —          |
+| **Supabase Auth (Self-Hosted)** | GoTrue server, can be self-hosted                                                                                             | Separate infrastructure, GoLang dependency, tightly coupled to Supabase ecosystem        | —          |
 
 ### Migration Path to Keycloak/Authentik
 
 Estimated effort: **~3 days**, assuming the provider interface is cleanly implemented.
 
-| Task | Effort |
-| --- | --- |
-| Set up Keycloak/Authentik container | 0.5 days |
-| Implement new adapter in `packages/auth` | 0.5 days |
-| User migration (DB script or password reset flow) | 0.5 days |
+| Task                                                     | Effort   |
+| -------------------------------------------------------- | -------- |
+| Set up Keycloak/Authentik container                      | 0.5 days |
+| Implement new adapter in `packages/auth`                 | 0.5 days |
+| User migration (DB script or password reset flow)        | 0.5 days |
 | Adapt login/logout pages (redirect instead of own forms) | 0.5 days |
-| Transfer SSO configuration | 0.5 days |
-| Testing | 0.5 days |
+| Transfer SSO configuration                               | 0.5 days |
+| Testing                                                  | 0.5 days |
 
 **Migration Trigger:** When SAML federation, identity brokering across multiple IdPs, or fine-grained token policies are needed (expected from Sprint 5+).
 

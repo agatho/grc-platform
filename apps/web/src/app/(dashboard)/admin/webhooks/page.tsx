@@ -49,12 +49,24 @@ const TEMPLATE_TYPES = [
 ];
 
 const ENTITY_TYPES = [
-  "risk", "control", "process", "asset", "vendor", "contract",
-  "document", "finding", "incident", "audit", "kri",
+  "risk",
+  "control",
+  "process",
+  "asset",
+  "vendor",
+  "contract",
+  "document",
+  "finding",
+  "incident",
+  "audit",
+  "kri",
 ];
 
 const EVENT_TYPES = [
-  "entity.created", "entity.updated", "entity.deleted", "entity.status_changed",
+  "entity.created",
+  "entity.updated",
+  "entity.deleted",
+  "entity.status_changed",
 ];
 
 // ── Component ─────────────────────────────────────────────────
@@ -151,7 +163,9 @@ export default function WebhooksAdminPage() {
     setTestingId(id);
     setTestResult(null);
     try {
-      const res = await fetch(`/api/v1/webhooks/${id}/test`, { method: "POST" });
+      const res = await fetch(`/api/v1/webhooks/${id}/test`, {
+        method: "POST",
+      });
       if (res.ok) {
         const json = await res.json();
         setTestResult(json.data);
@@ -219,7 +233,9 @@ export default function WebhooksAdminPage() {
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => navigator.clipboard.writeText(createdSecret)}
+                      onClick={() =>
+                        navigator.clipboard.writeText(createdSecret)
+                      }
                     >
                       <Copy className="h-3.5 w-3.5" />
                     </Button>
@@ -273,12 +289,16 @@ export default function WebhooksAdminPage() {
                   </Select>
                 </div>
                 <div>
-                  <Label className="mb-2 block">{t("webhooks.entityFilter")}</Label>
+                  <Label className="mb-2 block">
+                    {t("webhooks.entityFilter")}
+                  </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {ENTITY_TYPES.map((et) => (
                       <Badge
                         key={et}
-                        variant={formEntityTypes.includes(et) ? "default" : "outline"}
+                        variant={
+                          formEntityTypes.includes(et) ? "default" : "outline"
+                        }
                         className="cursor-pointer"
                         onClick={() => toggleEntityType(et)}
                       >
@@ -288,12 +308,16 @@ export default function WebhooksAdminPage() {
                   </div>
                 </div>
                 <div>
-                  <Label className="mb-2 block">{t("webhooks.eventFilter")}</Label>
+                  <Label className="mb-2 block">
+                    {t("webhooks.eventFilter")}
+                  </Label>
                   <div className="flex flex-wrap gap-1.5">
                     {EVENT_TYPES.map((et) => (
                       <Badge
                         key={et}
-                        variant={formEventTypes.includes(et) ? "default" : "outline"}
+                        variant={
+                          formEventTypes.includes(et) ? "default" : "outline"
+                        }
                         className="cursor-pointer"
                         onClick={() => toggleEventType(et)}
                       >
@@ -303,14 +327,19 @@ export default function WebhooksAdminPage() {
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setCreateOpen(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setCreateOpen(false)}
+                  >
                     {t("webhooks.cancel")}
                   </Button>
                   <Button
                     onClick={handleCreate}
                     disabled={!formName || !formUrl || submitting}
                   >
-                    {submitting && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+                    {submitting && (
+                      <Loader2 className="h-4 w-4 animate-spin mr-1" />
+                    )}
                     {t("webhooks.create")}
                   </Button>
                 </DialogFooter>
@@ -373,7 +402,9 @@ export default function WebhooksAdminPage() {
                             : "bg-gray-100 text-gray-500"
                         }
                       >
-                        {wh.isActive ? t("webhooks.active") : t("webhooks.inactive")}
+                        {wh.isActive
+                          ? t("webhooks.active")
+                          : t("webhooks.inactive")}
                       </Badge>
                       {wh.templateType && (
                         <Badge variant="outline">{wh.templateType}</Badge>
@@ -384,12 +415,20 @@ export default function WebhooksAdminPage() {
                     </p>
                     <div className="flex flex-wrap gap-1 mt-1.5">
                       {filter?.entityTypes?.map((et) => (
-                        <Badge key={et} variant="outline" className="text-[10px] px-1.5">
+                        <Badge
+                          key={et}
+                          variant="outline"
+                          className="text-[10px] px-1.5"
+                        >
                           {et}
                         </Badge>
                       ))}
                       {filter?.events?.map((ev) => (
-                        <Badge key={ev} variant="outline" className="text-[10px] px-1.5 bg-blue-50">
+                        <Badge
+                          key={ev}
+                          variant="outline"
+                          className="text-[10px] px-1.5 bg-blue-50"
+                        >
                           {ev.replace("entity.", "")}
                         </Badge>
                       ))}
@@ -398,7 +437,9 @@ export default function WebhooksAdminPage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Switch
                       checked={wh.isActive}
-                      onCheckedChange={() => handleToggleActive(wh.id, wh.isActive)}
+                      onCheckedChange={() =>
+                        handleToggleActive(wh.id, wh.isActive)
+                      }
                     />
                     <Button
                       variant="outline"

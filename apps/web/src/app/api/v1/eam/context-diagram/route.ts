@@ -13,24 +13,36 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const elementId = url.searchParams.get("elementId");
-  if (!elementId) return Response.json({ error: "elementId required" }, { status: 400 });
+  if (!elementId)
+    return Response.json({ error: "elementId required" }, { status: 400 });
 
   // Get central element
-  const element = await db.select().from(architectureElement)
-    .where(and(eq(architectureElement.id, elementId), eq(architectureElement.orgId, ctx.orgId)))
+  const element = await db
+    .select()
+    .from(architectureElement)
+    .where(
+      and(
+        eq(architectureElement.id, elementId),
+        eq(architectureElement.orgId, ctx.orgId),
+      ),
+    )
     .limit(1);
-  if (!element.length) return Response.json({ error: "Element not found" }, { status: 404 });
+  if (!element.length)
+    return Response.json({ error: "Element not found" }, { status: 404 });
 
   // Get all relationships involving this element
-  const relationships = await db.select()
+  const relationships = await db
+    .select()
     .from(architectureRelationship)
-    .where(and(
-      eq(architectureRelationship.orgId, ctx.orgId),
-      or(
-        eq(architectureRelationship.sourceId, elementId),
-        eq(architectureRelationship.targetId, elementId),
+    .where(
+      and(
+        eq(architectureRelationship.orgId, ctx.orgId),
+        or(
+          eq(architectureRelationship.sourceId, elementId),
+          eq(architectureRelationship.targetId, elementId),
+        ),
       ),
-    ));
+    );
 
   // Get related element IDs
   const relatedIds = new Set<string>();
@@ -40,18 +52,28 @@ export async function GET(req: Request) {
   }
 
   // Fetch related elements
-  const relatedElements = relatedIds.size > 0
-    ? await db.select().from(architectureElement)
-        .where(and(
-          eq(architectureElement.orgId, ctx.orgId),
-          sql`${architectureElement.id} = ANY(${sql.raw(`ARRAY[${[...relatedIds].map((id) => `'${id}'`).join(",")}]::uuid[]`)})`,
-        ))
-    : [];
+  const relatedElements =
+    relatedIds.size > 0
+      ? await db
+          .select()
+          .from(architectureElement)
+          .where(
+            and(
+              eq(architectureElement.orgId, ctx.orgId),
+              sql`${architectureElement.id} = ANY(${sql.raw(`ARRAY[${[...relatedIds].map((id) => `'${id}'`).join(",")}]::uuid[]`)})`,
+            ),
+          )
+      : [];
 
   // Classify into sectors
   const sectorMap: Record<string, typeof relatedElements> = {
-    business: [], organization: [], integration: [],
-    data: [], technology: [], risk: [], provider: [],
+    business: [],
+    organization: [],
+    integration: [],
+    data: [],
+    technology: [],
+    risk: [],
+    provider: [],
   };
 
   for (const el of relatedElements) {
@@ -59,7 +81,8 @@ export async function GET(req: Request) {
     else if (el.layer === "technology") sectorMap.technology.push(el);
     else if (el.type === "app_interface") sectorMap.integration.push(el);
     else if (el.type === "data_object") sectorMap.data.push(el);
-    else if (el.type === "provider") sectorMap.provider.push(el);
+    // "provider" is not a valid architecture_type anymore; vendor-provided
+    // apps come through as "application" with a vendor link instead.
     else sectorMap.integration.push(el);
   }
 

@@ -83,11 +83,16 @@ export async function PUT(
       lastReviewed: new Date(),
     };
     if (data.controlId !== undefined) updates.controlId = data.controlId;
-    if (data.applicability !== undefined) updates.applicability = data.applicability;
-    if (data.applicabilityJustification !== undefined) updates.applicabilityJustification = data.applicabilityJustification;
-    if (data.implementation !== undefined) updates.implementation = data.implementation;
-    if (data.implementationNotes !== undefined) updates.implementationNotes = data.implementationNotes;
-    if (data.responsibleId !== undefined) updates.responsibleId = data.responsibleId;
+    if (data.applicability !== undefined)
+      updates.applicability = data.applicability;
+    if (data.applicabilityJustification !== undefined)
+      updates.applicabilityJustification = data.applicabilityJustification;
+    if (data.implementation !== undefined)
+      updates.implementation = data.implementation;
+    if (data.implementationNotes !== undefined)
+      updates.implementationNotes = data.implementationNotes;
+    if (data.responsibleId !== undefined)
+      updates.responsibleId = data.responsibleId;
 
     const [updated] = await tx
       .update(soaEntry)

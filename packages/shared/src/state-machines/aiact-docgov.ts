@@ -23,7 +23,9 @@ export interface DataGovernanceResult {
   readyForHighRisk: boolean;
 }
 
-export function assessDataGovernance(ctx: DataGovernanceQuality): DataGovernanceResult {
+export function assessDataGovernance(
+  ctx: DataGovernanceQuality,
+): DataGovernanceResult {
   const checks: Array<[boolean, string]> = [
     [ctx.hasTrainingDataDescription, "training_data_description"],
     [ctx.hasDataCollectionProcess, "data_collection_process"],
@@ -54,7 +56,10 @@ export function assessDataGovernance(ctx: DataGovernanceQuality): DataGovernance
     biasTestingCoverage,
     missing,
     hasCriticalGaps: criticalMissing > 0,
-    readyForHighRisk: completenessPercent >= 80 && criticalMissing === 0 && biasTestingCoverage >= 3,
+    readyForHighRisk:
+      completenessPercent >= 80 &&
+      criticalMissing === 0 &&
+      biasTestingCoverage >= 3,
   };
 }
 
@@ -92,7 +97,9 @@ export interface AnnexIvResult {
 
 const MIN_SECTION_CHARS = 200;
 
-export function assessAnnexIvCompleteness(sections: AnnexIvSections): AnnexIvResult {
+export function assessAnnexIvCompleteness(
+  sections: AnnexIvSections,
+): AnnexIvResult {
   const entries: Array<[string, string | null]> = [
     ["section1_GeneralDescription", sections.section1_GeneralDescription],
     ["section2_DetailedElements", sections.section2_DetailedElements],
@@ -101,11 +108,16 @@ export function assessAnnexIvCompleteness(sections: AnnexIvSections): AnnexIvRes
     ["section5_RiskManagement", sections.section5_RiskManagement],
     ["section6_LifecycleChanges", sections.section6_LifecycleChanges],
     ["section7_HarmonisedStandards", sections.section7_HarmonisedStandards],
-    ["section8_DeclarationOfConformity", sections.section8_DeclarationOfConformity],
+    [
+      "section8_DeclarationOfConformity",
+      sections.section8_DeclarationOfConformity,
+    ],
     ["section9_PostMarketMonitoring", sections.section9_PostMarketMonitoring],
   ];
 
-  const completed = entries.filter(([, text]) => text && text.trim().length >= MIN_SECTION_CHARS);
+  const completed = entries.filter(
+    ([, text]) => text && text.trim().length >= MIN_SECTION_CHARS,
+  );
   const missing = entries
     .filter(([, text]) => !text || text.trim().length < MIN_SECTION_CHARS)
     .map(([key]) => key);
@@ -176,7 +188,10 @@ export function validateDeclarationOfConformity(
   }
 
   // Bei annex_vii-Procedure ist notified_body pflicht
-  if (input.conformityAssessmentProcedure === "annex_vii" && !input.notifiedBodyId) {
+  if (
+    input.conformityAssessmentProcedure === "annex_vii" &&
+    !input.notifiedBodyId
+  ) {
     missing.push("notifiedBodyId (Annex VII erfordert notified body)");
   }
 
@@ -208,7 +223,9 @@ export interface SubstantialChangeAssessment {
   reason: string;
 }
 
-export function assessSubstantialChange(signals: ChangeSignal): SubstantialChangeAssessment {
+export function assessSubstantialChange(
+  signals: ChangeSignal,
+): SubstantialChangeAssessment {
   const entries = Object.entries(signals);
   const triggered = entries.filter(([, v]) => v).map(([k]) => k);
 

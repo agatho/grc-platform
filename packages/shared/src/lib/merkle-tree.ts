@@ -40,7 +40,10 @@ function hashPair(left: string, right: string): string {
   // Using concatenated hex strings would bloat the input 2x and change
   // the root compared to "standard" Merkle implementations in other
   // ecosystems.
-  const buf = Buffer.concat([Buffer.from(left, "hex"), Buffer.from(right, "hex")]);
+  const buf = Buffer.concat([
+    Buffer.from(left, "hex"),
+    Buffer.from(right, "hex"),
+  ]);
   return sha256Hex(buf);
 }
 
@@ -69,7 +72,10 @@ export function merkleRoot(leaves: string[]): string | null {
  * Build a Merkle inclusion proof for the leaf at `index`.
  * Returns `null` if the index is out of range.
  */
-export function merkleProof(leaves: string[], index: number): MerkleProof[] | null {
+export function merkleProof(
+  leaves: string[],
+  index: number,
+): MerkleProof[] | null {
   if (index < 0 || index >= leaves.length) return null;
   if (leaves.length === 1) return []; // single-leaf tree: root == leaf
 
@@ -110,7 +116,9 @@ export function verifyMerkleProof(
   let running = leaf;
   for (const step of proof) {
     running =
-      step.side === "R" ? hashPair(running, step.sibling) : hashPair(step.sibling, running);
+      step.side === "R"
+        ? hashPair(running, step.sibling)
+        : hashPair(step.sibling, running);
   }
   return running === expectedRoot;
 }

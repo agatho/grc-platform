@@ -86,7 +86,9 @@ export const copilotMessage = pgTable(
     orgId: uuid("org_id").notNull(),
     role: varchar("role", { length: 20 }).notNull(), // user | assistant | system
     content: text("content").notNull(),
-    contentType: varchar("content_type", { length: 20 }).notNull().default("text"), // text | markdown | chart | table
+    contentType: varchar("content_type", { length: 20 })
+      .notNull()
+      .default("text"), // text | markdown | chart | table
     ragSources: jsonb("rag_sources").default("[]"), // [{entityType, entityId, title, relevance}]
     model: varchar("model", { length: 100 }),
     inputTokens: integer("input_tokens"),
@@ -124,8 +126,7 @@ export const copilotPromptTemplate = pgTable(
   "copilot_prompt_template",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organization.id), // NULL = platform-wide
+    orgId: uuid("org_id").references(() => organization.id), // NULL = platform-wide
     key: varchar("key", { length: 100 }).notNull(),
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
@@ -218,8 +219,7 @@ export const copilotSuggestedAction = pgTable(
       .notNull()
       .references(() => copilotConversation.id, { onDelete: "cascade" }),
     orgId: uuid("org_id").notNull(),
-    messageId: uuid("message_id")
-      .references(() => copilotMessage.id),
+    messageId: uuid("message_id").references(() => copilotMessage.id),
     actionType: varchar("action_type", { length: 50 }).notNull(), // create_task | create_finding | update_risk | navigate | export
     label: varchar("label", { length: 500 }).notNull(),
     description: text("description"),

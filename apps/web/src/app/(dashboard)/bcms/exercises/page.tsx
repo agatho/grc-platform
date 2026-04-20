@@ -113,7 +113,9 @@ function ExerciseListInner() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t("exercise.title")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("exercise.title")}
+        </h1>
         <div className="flex gap-2">
           <div className="flex rounded-md border border-gray-200">
             <button
@@ -150,9 +152,13 @@ function ExerciseListInner() {
               onChange={(e) => setNewType(e.target.value)}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
-              {["tabletop", "walkthrough", "functional", "full_simulation"].map((et) => (
-                <option key={et} value={et}>{t(`exercise.type.${et}`)}</option>
-              ))}
+              {["tabletop", "walkthrough", "functional", "full_simulation"].map(
+                (et) => (
+                  <option key={et} value={et}>
+                    {t(`exercise.type.${et}`)}
+                  </option>
+                ),
+              )}
             </select>
             <input
               type="date"
@@ -163,7 +169,11 @@ function ExerciseListInner() {
           </div>
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : t("common.create")}
+              {creating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                t("common.create")
+              )}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
               {t("common.cancel")}
@@ -179,35 +189,61 @@ function ExerciseListInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("exercise.plannedDate")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.status")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Result</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.name")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Type
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("exercise.plannedDate")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.status")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Result
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((ex) => (
-                <tr key={ex.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/bcms/exercises/${ex.id}`)}>
+                <tr
+                  key={ex.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => router.push(`/bcms/exercises/${ex.id}`)}
+                >
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/bcms/exercises/${ex.id}`} className="text-blue-700 hover:text-blue-900">
+                    <Link
+                      href={`/bcms/exercises/${ex.id}`}
+                      className="text-blue-700 hover:text-blue-900"
+                    >
                       {ex.title}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={TYPE_COLORS[ex.exerciseType]}>
+                    <Badge
+                      variant="outline"
+                      className={TYPE_COLORS[ex.exerciseType]}
+                    >
                       {t(`exercise.type.${ex.exerciseType}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-gray-600">{ex.plannedDate}</td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={STATUS_COLORS[ex.status]}>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[ex.status]}
+                    >
                       {t(`exercise.status.${ex.status}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
                     {ex.overallResult ? (
-                      <Badge variant="outline" className={RESULT_COLORS[ex.overallResult]}>
+                      <Badge
+                        variant="outline"
+                        className={RESULT_COLORS[ex.overallResult]}
+                      >
                         {t(`exercise.result.${ex.overallResult}`)}
                       </Badge>
                     ) : (
@@ -225,9 +261,15 @@ function ExerciseListInner() {
           {Object.entries(byMonth)
             .sort(([a], [b]) => a.localeCompare(b))
             .map(([month, exercises]) => (
-              <div key={month} className="rounded-lg border border-gray-200 bg-white p-4">
+              <div
+                key={month}
+                className="rounded-lg border border-gray-200 bg-white p-4"
+              >
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  {new Date(month + "-01").toLocaleDateString(undefined, { year: "numeric", month: "long" })}
+                  {new Date(month + "-01").toLocaleDateString(undefined, {
+                    year: "numeric",
+                    month: "long",
+                  })}
                 </h3>
                 <div className="space-y-2">
                   {exercises.map((ex) => (
@@ -237,12 +279,21 @@ function ExerciseListInner() {
                       className="w-full flex items-center justify-between rounded-lg bg-gray-50 px-4 py-2 hover:bg-blue-50 cursor-pointer transition-colors text-left"
                     >
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className={TYPE_COLORS[ex.exerciseType] + " text-[10px]"}>
+                        <Badge
+                          variant="outline"
+                          className={
+                            TYPE_COLORS[ex.exerciseType] + " text-[10px]"
+                          }
+                        >
                           {t(`exercise.type.${ex.exerciseType}`)}
                         </Badge>
-                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">{ex.title}</span>
+                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">
+                          {ex.title}
+                        </span>
                       </div>
-                      <span className="text-xs text-gray-500">{ex.plannedDate}</span>
+                      <span className="text-xs text-gray-500">
+                        {ex.plannedDate}
+                      </span>
                     </Link>
                   ))}
                 </div>
@@ -253,12 +304,16 @@ function ExerciseListInner() {
 
       {/* Legend */}
       <div className="flex gap-4 text-xs text-gray-500">
-        {["tabletop", "walkthrough", "functional", "full_simulation"].map((et) => (
-          <div key={et} className="flex items-center gap-1">
-            <span className={`w-3 h-3 rounded-full ${TYPE_COLORS[et].split(" ")[0]}`} />
-            {t(`exercise.type.${et}`)}
-          </div>
-        ))}
+        {["tabletop", "walkthrough", "functional", "full_simulation"].map(
+          (et) => (
+            <div key={et} className="flex items-center gap-1">
+              <span
+                className={`w-3 h-3 rounded-full ${TYPE_COLORS[et].split(" ")[0]}`}
+              />
+              {t(`exercise.type.${et}`)}
+            </div>
+          ),
+        )}
       </div>
     </div>
   );

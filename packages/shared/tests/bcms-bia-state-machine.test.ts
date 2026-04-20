@@ -52,7 +52,10 @@ describe("validateBcmsGate1Setup", () => {
     expect(blockers.some((b) => b.code === "missing_name")).toBe(true);
   });
   it("blocks if lead-assessor missing", () => {
-    const blockers = validateBcmsGate1Setup({ ...validSnapshot, leadAssessorId: null });
+    const blockers = validateBcmsGate1Setup({
+      ...validSnapshot,
+      leadAssessorId: null,
+    });
     expect(blockers.some((b) => b.code === "missing_lead_assessor")).toBe(true);
   });
   it("blocks if period too short", () => {
@@ -84,7 +87,9 @@ describe("validateBcmsGate2Coverage", () => {
       ...validCoverage,
       scoredImpacts: 7, // 7/10 = 70%
     });
-    expect(blockers.some((b) => b.code === "score_coverage_below_threshold")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "score_coverage_below_threshold"),
+    ).toBe(true);
   });
   it("warns if not enough essentials (< minimumEssentialCount)", () => {
     const blockers = validateBcmsGate2Coverage({
@@ -135,7 +140,9 @@ describe("validateBiaTransition", () => {
       // Note: coverageStats missing
     });
     expect(result.allowed).toBe(false);
-    expect(result.blockers.some((b) => b.code === "missing_coverage_stats")).toBe(true);
+    expect(
+      result.blockers.some((b) => b.code === "missing_coverage_stats"),
+    ).toBe(true);
   });
 
   it("runs B2 on in_progress -> review", () => {

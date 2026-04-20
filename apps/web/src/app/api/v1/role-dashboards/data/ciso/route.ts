@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = cisoDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = cisoDashboardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Aggregate risk posture, threat intel, top-10 risks
   const [riskSummary] = await db.execute(sql`

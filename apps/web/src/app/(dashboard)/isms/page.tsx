@@ -101,9 +101,12 @@ function IsmsDashboardInner() {
   const ta = useTranslations("ismsAssessment");
   const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
-  const [latestAssessment, setLatestAssessment] = useState<AssessmentSummary | null>(null);
+  const [latestAssessment, setLatestAssessment] =
+    useState<AssessmentSummary | null>(null);
   const [soaStats, setSoaStats] = useState<SoaStats | null>(null);
-  const [maturityStats, setMaturityStats] = useState<MaturityStats | null>(null);
+  const [maturityStats, setMaturityStats] = useState<MaturityStats | null>(
+    null,
+  );
   const [latestReview, setLatestReview] = useState<ReviewSummary | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -165,10 +168,17 @@ function IsmsDashboardInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{ta("complianceScore.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {ta("complianceScore.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("title")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchDashboard} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchDashboard}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -179,20 +189,40 @@ function IsmsDashboardInner() {
         <div className="lg:col-span-2 rounded-lg border border-gray-200 bg-white p-6 flex flex-col items-center justify-center">
           <div className="relative w-32 h-32">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="12" />
               <circle
-                cx="60" cy="60" r="52" fill="none"
-                stroke={complianceScore >= 75 ? "#22c55e" : complianceScore >= 50 ? "#eab308" : "#ef4444"}
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="12"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke={
+                  complianceScore >= 75
+                    ? "#22c55e"
+                    : complianceScore >= 50
+                      ? "#eab308"
+                      : "#ef4444"
+                }
                 strokeWidth="12"
                 strokeDasharray={`${(complianceScore / 100) * 327} 327`}
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-3xl font-bold text-gray-900">{complianceScore}%</span>
+              <span className="text-3xl font-bold text-gray-900">
+                {complianceScore}%
+              </span>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mt-3">{ta("complianceScore.label")}</p>
+          <p className="text-sm font-medium text-gray-600 mt-3">
+            {ta("complianceScore.label")}
+          </p>
         </div>
 
         {/* KPI Cards */}
@@ -228,14 +258,19 @@ function IsmsDashboardInner() {
           <KpiCard
             icon={<Bug className="h-5 w-5 text-orange-600" />}
             label={t("criticalVulnerabilities")}
-            value={String((d?.vulnerabilities.bySeverity?.critical ?? 0) + (d?.vulnerabilities.bySeverity?.high ?? 0))}
+            value={String(
+              (d?.vulnerabilities.bySeverity?.critical ?? 0) +
+                (d?.vulnerabilities.bySeverity?.high ?? 0),
+            )}
             subtitle={`${d?.vulnerabilities.total ?? 0} ${t("total")}`}
             onClick={() => router.push("/isms/vulnerabilities")}
           />
           <KpiCard
             icon={<CalendarCheck className="h-5 w-5 text-teal-600" />}
             label={ta("review.title")}
-            value={latestReview ? ta(`review.statuses.${latestReview.status}`) : "-"}
+            value={
+              latestReview ? ta(`review.statuses.${latestReview.status}`) : "-"
+            }
             subtitle={latestReview?.reviewDate ?? ta("review.noneYet")}
             onClick={() => router.push("/isms/reviews")}
           />
@@ -245,19 +280,27 @@ function IsmsDashboardInner() {
       {/* Latest Assessment Card */}
       {latestAssessment && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">{ta("assessment.latest")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">
+            {ta("assessment.latest")}
+          </h2>
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-medium text-gray-900">{latestAssessment.name}</p>
+              <p className="font-medium text-gray-900">
+                {latestAssessment.name}
+              </p>
               <p className="text-sm text-gray-500 mt-1">
                 <AssessmentStatusBadge status={latestAssessment.status} />
                 <span className="ml-2">
-                  {latestAssessment.completedEvaluations}/{latestAssessment.totalEvaluations} {ta("evaluation.evaluated")}
+                  {latestAssessment.completedEvaluations}/
+                  {latestAssessment.totalEvaluations}{" "}
+                  {ta("evaluation.evaluated")}
                 </span>
               </p>
             </div>
             <Link href={`/isms/assessments/${latestAssessment.id}`}>
-              <Button variant="outline" size="sm">{ta("assessment.continue")}</Button>
+              <Button variant="outline" size="sm">
+                {ta("assessment.continue")}
+              </Button>
             </Link>
           </div>
           {/* Progress bar */}
@@ -283,7 +326,10 @@ function IsmsDashboardInner() {
               const pct = total > 0 ? Math.round((count / total) * 100) : 0;
               return (
                 <div key={level} className="flex items-center gap-3">
-                  <ProtectionLevelBadge level={level} className="w-24 justify-center" />
+                  <ProtectionLevelBadge
+                    level={level}
+                    className="w-24 justify-center"
+                  />
                   <div className="flex-1 h-6 bg-gray-100 rounded-full overflow-hidden">
                     <div
                       className={`h-full rounded-full transition-all ${
@@ -310,19 +356,33 @@ function IsmsDashboardInner() {
             {t("quickStats")}
           </h2>
           <div className="grid grid-cols-2 gap-4">
-            <Link href="/isms/threats" className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+            <Link
+              href="/isms/threats"
+              className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center gap-2 mb-1">
                 <Zap className="h-4 w-4 text-yellow-600" />
-                <span className="text-sm font-medium text-gray-600">{t("threats")}</span>
+                <span className="text-sm font-medium text-gray-600">
+                  {t("threats")}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{d?.threats.total ?? 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {d?.threats.total ?? 0}
+              </p>
             </Link>
-            <Link href="/isms/vulnerabilities" className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors">
+            <Link
+              href="/isms/vulnerabilities"
+              className="rounded-lg border border-gray-200 p-4 hover:bg-gray-50 transition-colors"
+            >
               <div className="flex items-center gap-2 mb-1">
                 <Bug className="h-4 w-4 text-orange-600" />
-                <span className="text-sm font-medium text-gray-600">{t("vulnerabilities")}</span>
+                <span className="text-sm font-medium text-gray-600">
+                  {t("vulnerabilities")}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{d?.vulnerabilities.total ?? 0}</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {d?.vulnerabilities.total ?? 0}
+              </p>
             </Link>
           </div>
         </div>
@@ -333,16 +393,22 @@ function IsmsDashboardInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between">
             <div>
-              <h2 className="text-base font-semibold text-gray-900">{ta("review.title")}</h2>
+              <h2 className="text-base font-semibold text-gray-900">
+                {ta("review.title")}
+              </h2>
               <p className="text-sm text-gray-500 mt-1">
                 {ta("review.last")}: {latestReview.reviewDate}
                 {latestReview.nextReviewDate && (
-                  <span className="ml-3">{ta("review.nextReview")}: {latestReview.nextReviewDate}</span>
+                  <span className="ml-3">
+                    {ta("review.nextReview")}: {latestReview.nextReviewDate}
+                  </span>
                 )}
               </p>
             </div>
             <Link href="/isms/reviews">
-              <Button variant="outline" size="sm">{ta("review.create")}</Button>
+              <Button variant="outline" size="sm">
+                {ta("review.create")}
+              </Button>
             </Link>
           </div>
         </div>
@@ -351,13 +417,20 @@ function IsmsDashboardInner() {
       {/* Recent Incidents */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900">{t("recentIncidents")}</h2>
-          <Link href="/isms/incidents" className="text-sm text-blue-600 hover:text-blue-800">
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("recentIncidents")}
+          </h2>
+          <Link
+            href="/isms/incidents"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
             {t("viewAll")}
           </Link>
         </div>
         {!d?.incidents.recent?.length ? (
-          <p className="text-sm text-gray-400 py-8 text-center">{t("noIncidents")}</p>
+          <p className="text-sm text-gray-400 py-8 text-center">
+            {t("noIncidents")}
+          </p>
         ) : (
           <div className="space-y-2">
             {d.incidents.recent.slice(0, 5).map((inc) => (
@@ -374,7 +447,10 @@ function IsmsDashboardInner() {
                     {inc.title}
                   </span>
                   {inc.isDataBreach && (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="bg-red-50 text-red-700 border-red-200 text-[10px]"
+                    >
                       {t("breach72h")}
                     </Badge>
                   )}
@@ -428,7 +504,10 @@ function KpiCard({
       onClick={onClick}
       className="rounded-lg border border-gray-200 bg-white p-4 text-left hover:shadow-sm transition-shadow w-full"
     >
-      <div className="flex items-center gap-2 mb-2">{icon}<span className="text-xs font-medium text-gray-600">{label}</span></div>
+      <div className="flex items-center gap-2 mb-2">
+        {icon}
+        <span className="text-xs font-medium text-gray-600">{label}</span>
+      </div>
       <p className="text-2xl font-bold text-gray-900">{value}</p>
       <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
     </button>

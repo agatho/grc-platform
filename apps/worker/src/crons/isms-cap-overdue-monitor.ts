@@ -3,7 +3,12 @@
 // Flags open nonconformities + corrective actions whose due_date has passed.
 // Fires one notification at 3d remaining, at-deadline, and every 7d while overdue.
 
-import { db, ismsNonconformity, ismsCorrectiveAction, notification } from "@grc/db";
+import {
+  db,
+  ismsNonconformity,
+  ismsCorrectiveAction,
+  notification,
+} from "@grc/db";
 import { and, eq, not, inArray, isNotNull, sql } from "drizzle-orm";
 
 interface IsmsCapMonitorResult {
@@ -58,7 +63,11 @@ export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResu
       if (!recipientId) continue;
 
       const urgencyLevel =
-        diffDays <= -30 ? "CRITICAL_OVERDUE" : diffDays < 0 ? "OVERDUE" : "WARNING";
+        diffDays <= -30
+          ? "CRITICAL_OVERDUE"
+          : diffDays < 0
+            ? "OVERDUE"
+            : "WARNING";
 
       await db.insert(notification).values({
         userId: recipientId,
@@ -129,7 +138,11 @@ export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResu
       if (!recipientId) continue;
 
       const urgencyLevel =
-        diffDays <= -30 ? "CRITICAL_OVERDUE" : diffDays < 0 ? "OVERDUE" : "WARNING";
+        diffDays <= -30
+          ? "CRITICAL_OVERDUE"
+          : diffDays < 0
+            ? "OVERDUE"
+            : "WARNING";
 
       await db.insert(notification).values({
         userId: recipientId,
@@ -159,7 +172,10 @@ export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResu
       notified++;
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:isms-cap-overdue] Failed for CAPA ${ca.id}:`, message);
+      console.error(
+        `[cron:isms-cap-overdue] Failed for CAPA ${ca.id}:`,
+        message,
+      );
     }
   }
 

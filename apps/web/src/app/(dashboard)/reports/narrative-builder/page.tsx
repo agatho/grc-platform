@@ -116,12 +116,20 @@ export default function NarrativeBuilderPage() {
             Narrative Builder
           </h1>
           <p className="mt-1 text-sm text-gray-500">
-            Textbausteine mit automatischen Datenverkn&uuml;pfungen f&uuml;r Berichte
+            Textbausteine mit automatischen Datenverkn&uuml;pfungen f&uuml;r
+            Berichte
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             Aktualisieren
           </Button>
           <Button>
@@ -136,22 +144,32 @@ export default function NarrativeBuilderPage() {
         <Card>
           <CardContent className="flex flex-col items-center justify-center py-12 text-sm text-gray-400">
             <BookOpen className="mb-3 h-10 w-10" />
-            <p className="font-medium text-gray-500">Keine Templates vorhanden</p>
+            <p className="font-medium text-gray-500">
+              Keine Templates vorhanden
+            </p>
             <p className="mt-1 text-gray-400">
-              Erstellen Sie Ihr erstes Narrative-Template f&uuml;r automatisierte Berichte.
+              Erstellen Sie Ihr erstes Narrative-Template f&uuml;r
+              automatisierte Berichte.
             </p>
           </CardContent>
         </Card>
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {templates.map((tpl) => (
-            <Card key={tpl.id} className="hover:shadow-md transition-shadow cursor-pointer">
+            <Card
+              key={tpl.id}
+              className="hover:shadow-md transition-shadow cursor-pointer"
+            >
               <CardHeader className="pb-3">
                 <div className="flex items-start justify-between">
                   <CardTitle className="text-base font-semibold">
                     {tpl.name}
                   </CardTitle>
-                  <Badge className={statusColors[tpl.status] ?? "bg-gray-100 text-gray-800"}>
+                  <Badge
+                    className={
+                      statusColors[tpl.status] ?? "bg-gray-100 text-gray-800"
+                    }
+                  >
                     {statusLabels[tpl.status] ?? tpl.status}
                   </Badge>
                 </div>

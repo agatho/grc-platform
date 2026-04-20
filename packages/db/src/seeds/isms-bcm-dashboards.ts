@@ -44,9 +44,7 @@ const ISMS_DASHBOARD_SEEDS = [
     key: "isms_single_risk",
     module: "isms",
     layout: {
-      widgets: [
-        { type: "single_risk_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "single_risk_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
   {
@@ -65,9 +63,7 @@ const ISMS_DASHBOARD_SEEDS = [
     key: "isms_finding_bcm",
     module: "isms",
     layout: {
-      widgets: [
-        { type: "findings_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "findings_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
   {
@@ -90,9 +86,7 @@ const BCM_DASHBOARD_SEEDS = [
     key: "bcm_essential",
     module: "bcms",
     layout: {
-      widgets: [
-        { type: "essential_processes_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "essential_processes_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
   {
@@ -111,9 +105,7 @@ const BCM_DASHBOARD_SEEDS = [
     key: "bcm_strategy",
     module: "bcms",
     layout: {
-      widgets: [
-        { type: "strategies_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "strategies_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
   {
@@ -121,9 +113,7 @@ const BCM_DASHBOARD_SEEDS = [
     key: "bcm_emergency",
     module: "bcms",
     layout: {
-      widgets: [
-        { type: "emergency_plans_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "emergency_plans_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
   {
@@ -142,9 +132,7 @@ const BCM_DASHBOARD_SEEDS = [
     key: "bcm_finding",
     module: "bcms",
     layout: {
-      widgets: [
-        { type: "findings_table", w: 12, h: 6, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "findings_table", w: 12, h: 6, x: 0, y: 0 }],
     },
   },
 ];

@@ -29,7 +29,10 @@ export const complianceCultureSnapshot = pgTable(
       .references(() => organization.id),
     orgEntityId: uuid("org_entity_id"), // null = org-wide; FK via migration SQL
     period: varchar("period", { length: 7 }).notNull(), // YYYY-MM
-    overallScore: decimal("overall_score", { precision: 5, scale: 2 }).notNull(), // 0–100
+    overallScore: decimal("overall_score", {
+      precision: 5,
+      scale: 2,
+    }).notNull(), // 0–100
     factorScores: jsonb("factor_scores").notNull(), // { task_compliance: 85.2, ... }
     factorWeights: jsonb("factor_weights").notNull(), // { task_compliance: 0.20, ... }
     rawMetrics: jsonb("raw_metrics").notNull(), // { task_compliance: { total: 100, on_time: 85 }, ... }
@@ -71,7 +74,5 @@ export const cciConfiguration = pgTable(
       .defaultNow(),
     updatedBy: uuid("updated_by"),
   },
-  (table) => [
-    uniqueIndex("cci_config_org_idx").on(table.orgId),
-  ],
+  (table) => [uniqueIndex("cci_config_org_idx").on(table.orgId)],
 );

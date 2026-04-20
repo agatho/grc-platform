@@ -3,28 +3,96 @@ import { z } from "zod";
 // Sprint 62: Evidence Connector Framework Zod schemas
 
 export const connectorTypeValues = [
-  "aws", "azure", "gcp", "entra_id", "google_workspace", "m365",
-  "git_platform", "issue_tracker", "endpoint_mgmt", "network_firewall",
-  "wiki", "hr_system", "custom_api", "file_import",
+  "aws",
+  "azure",
+  "gcp",
+  "entra_id",
+  "google_workspace",
+  "m365",
+  "git_platform",
+  "issue_tracker",
+  "endpoint_mgmt",
+  "network_firewall",
+  "wiki",
+  "hr_system",
+  "custom_api",
+  "file_import",
 ] as const;
 
-export const connectorStatusValues = ["inactive", "active", "error", "disabled", "pending_setup"] as const;
+export const connectorStatusValues = [
+  "inactive",
+  "active",
+  "error",
+  "disabled",
+  "pending_setup",
+] as const;
 
-export const connectorAuthMethodValues = ["oauth2", "api_key", "service_account", "certificate", "basic_auth"] as const;
+export const connectorAuthMethodValues = [
+  "oauth2",
+  "api_key",
+  "service_account",
+  "certificate",
+  "basic_auth",
+] as const;
 
-export const connectorHealthStatusValues = ["healthy", "degraded", "unhealthy", "unknown"] as const;
+export const connectorHealthStatusValues = [
+  "healthy",
+  "degraded",
+  "unhealthy",
+  "unknown",
+] as const;
 
-export const credentialTypeValues = ["oauth2_token", "api_key", "service_account_json", "client_certificate", "basic_credentials"] as const;
+export const credentialTypeValues = [
+  "oauth2_token",
+  "api_key",
+  "service_account_json",
+  "client_certificate",
+  "basic_credentials",
+] as const;
 
-export const artifactTypeValues = ["screenshot", "json_export", "csv_export", "pdf_report", "log_extract", "config_snapshot", "api_response"] as const;
+export const artifactTypeValues = [
+  "screenshot",
+  "json_export",
+  "csv_export",
+  "pdf_report",
+  "log_extract",
+  "config_snapshot",
+  "api_response",
+] as const;
 
-export const testResultStatusValues = ["pass", "fail", "error", "skipped", "warning"] as const;
+export const testResultStatusValues = [
+  "pass",
+  "fail",
+  "error",
+  "skipped",
+  "warning",
+] as const;
 
-export const testSeverityValues = ["critical", "high", "medium", "low", "informational"] as const;
+export const testSeverityValues = [
+  "critical",
+  "high",
+  "medium",
+  "low",
+  "informational",
+] as const;
 
-export const testCategoryValues = ["iam", "encryption", "logging", "network", "data_protection", "access_control", "configuration", "monitoring"] as const;
+export const testCategoryValues = [
+  "iam",
+  "encryption",
+  "logging",
+  "network",
+  "data_protection",
+  "access_control",
+  "configuration",
+  "monitoring",
+] as const;
 
-export const healthCheckTypeValues = ["connectivity", "authentication", "authorization", "data_access"] as const;
+export const healthCheckTypeValues = [
+  "connectivity",
+  "authentication",
+  "authorization",
+  "data_access",
+] as const;
 
 // ─── Connector CRUD ────────────────────────────────────────
 

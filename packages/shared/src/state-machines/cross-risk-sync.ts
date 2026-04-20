@@ -20,7 +20,14 @@ export interface DpiaRiskSource {
 export interface SyncedRiskDraft {
   title: string;
   description: string;
-  riskCategory: "strategic" | "operational" | "financial" | "compliance" | "cyber" | "reputational" | "esg";
+  riskCategory:
+    | "strategic"
+    | "operational"
+    | "financial"
+    | "compliance"
+    | "cyber"
+    | "reputational"
+    | "esg";
   riskSource: "isms" | "erm" | "bcm" | "project" | "process";
   inherentLikelihood: number; // 1-5
   inherentImpact: number; // 1-5
@@ -47,9 +54,10 @@ function toScale(level: string): number {
 export function mapDpiaRiskToErm(src: DpiaRiskSource): SyncedRiskDraft {
   const lh = toScale(src.likelihood);
   const im = toScale(src.impact);
-  const title = src.riskDescription.length > 100
-    ? src.riskDescription.slice(0, 97) + "..."
-    : src.riskDescription;
+  const title =
+    src.riskDescription.length > 100
+      ? src.riskDescription.slice(0, 97) + "..."
+      : src.riskDescription;
 
   return {
     title: `[DPIA] ${title}`,
@@ -152,7 +160,10 @@ export interface SyncDecision {
   score: number;
 }
 
-export function decideRiskSync(draft: SyncedRiskDraft, minScore = 6): SyncDecision {
+export function decideRiskSync(
+  draft: SyncedRiskDraft,
+  minScore = 6,
+): SyncDecision {
   if (draft.riskScoreInherent < minScore) {
     return {
       shouldSync: false,
@@ -194,7 +205,10 @@ export function buildSyncBatch(input: SyncBatchInput): SyncBatchResult {
     if (decision.shouldSync) {
       drafts.push(draft);
     } else {
-      skipped.push({ catalogEntryId: draft.catalogEntryId, reason: decision.reason });
+      skipped.push({
+        catalogEntryId: draft.catalogEntryId,
+        reason: decision.reason,
+      });
     }
   };
 

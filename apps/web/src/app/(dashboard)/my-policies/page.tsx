@@ -49,7 +49,9 @@ export default function MyPoliciesPage() {
   }, [fetchData]);
 
   const overdue = policies.filter((p) => p.status === "overdue");
-  const pending = policies.filter((p) => p.status === "pending" || p.status === "failed_quiz");
+  const pending = policies.filter(
+    (p) => p.status === "pending" || p.status === "failed_quiz",
+  );
   const acknowledged = policies.filter((p) => p.status === "acknowledged");
 
   const [showAcknowledged, setShowAcknowledged] = useState(false);
@@ -105,7 +107,9 @@ export default function MyPoliciesPage() {
               <h2 className="text-lg font-semibold text-yellow-600">
                 {t("myPolicies.open")}
               </h2>
-              <Badge className="bg-yellow-100 text-yellow-800">{pending.length}</Badge>
+              <Badge className="bg-yellow-100 text-yellow-800">
+                {pending.length}
+              </Badge>
             </div>
             <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
               {pending.map((policy) => (
@@ -126,15 +130,23 @@ export default function MyPoliciesPage() {
               <h2 className="text-lg font-semibold text-green-600">
                 {t("myPolicies.acknowledged")}
               </h2>
-              <Badge className="bg-green-100 text-green-800">{acknowledged.length}</Badge>
+              <Badge className="bg-green-100 text-green-800">
+                {acknowledged.length}
+              </Badge>
               <span className="text-xs text-muted-foreground">
-                {showAcknowledged ? t("myPolicies.collapse") : t("myPolicies.expand")}
+                {showAcknowledged
+                  ? t("myPolicies.collapse")
+                  : t("myPolicies.expand")}
               </span>
             </button>
             {showAcknowledged && (
               <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
                 {acknowledged.map((policy) => (
-                  <PolicyCard key={policy.distributionId} policy={policy} t={t} />
+                  <PolicyCard
+                    key={policy.distributionId}
+                    policy={policy}
+                    t={t}
+                  />
                 ))}
               </div>
             )}

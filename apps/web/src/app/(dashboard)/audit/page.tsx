@@ -108,7 +108,12 @@ function AuditDashboardInner() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("dashboard")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchDashboard} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchDashboard}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -159,14 +164,17 @@ function AuditDashboardInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center gap-2 mb-4">
             <Globe className="h-5 w-5 text-indigo-600" />
-            <h2 className="text-base font-semibold text-gray-900">{t("universeCoverage")}</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("universeCoverage")}
+            </h2>
           </div>
           <div className="flex items-end gap-4 mb-4">
             <span className="text-4xl font-bold text-gray-900">
               {d?.universe.coveragePercent ?? 0}%
             </span>
             <span className="text-sm text-gray-500 mb-1">
-              {(d?.universe.total ?? 0) - (d?.universe.neverAudited ?? 0)} / {d?.universe.total ?? 0} {t("entitiesAudited")}
+              {(d?.universe.total ?? 0) - (d?.universe.neverAudited ?? 0)} /{" "}
+              {d?.universe.total ?? 0} {t("entitiesAudited")}
             </span>
           </div>
           <div className="space-y-2">
@@ -201,14 +209,36 @@ function AuditDashboardInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center gap-2 mb-4">
             <ClipboardCheck className="h-5 w-5 text-red-600" />
-            <h2 className="text-base font-semibold text-gray-900">{t("findingsBreakdown")}</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("findingsBreakdown")}
+            </h2>
           </div>
           <div className="space-y-2">
-            <SeverityRow label={t("severity.significantNonconformity")} count={d?.findingsBySeverity?.significant_nonconformity ?? 0} color="bg-red-500" />
-            <SeverityRow label={t("severity.insignificantNonconformity")} count={d?.findingsBySeverity?.insignificant_nonconformity ?? 0} color="bg-orange-500" />
-            <SeverityRow label={t("severity.improvementRequirement")} count={d?.findingsBySeverity?.improvement_requirement ?? 0} color="bg-yellow-500" />
-            <SeverityRow label={t("severity.recommendation")} count={d?.findingsBySeverity?.recommendation ?? 0} color="bg-blue-400" />
-            <SeverityRow label={t("severity.observation")} count={d?.findingsBySeverity?.observation ?? 0} color="bg-gray-400" />
+            <SeverityRow
+              label={t("severity.significantNonconformity")}
+              count={d?.findingsBySeverity?.significant_nonconformity ?? 0}
+              color="bg-red-500"
+            />
+            <SeverityRow
+              label={t("severity.insignificantNonconformity")}
+              count={d?.findingsBySeverity?.insignificant_nonconformity ?? 0}
+              color="bg-orange-500"
+            />
+            <SeverityRow
+              label={t("severity.improvementRequirement")}
+              count={d?.findingsBySeverity?.improvement_requirement ?? 0}
+              color="bg-yellow-500"
+            />
+            <SeverityRow
+              label={t("severity.recommendation")}
+              count={d?.findingsBySeverity?.recommendation ?? 0}
+              color="bg-blue-400"
+            />
+            <SeverityRow
+              label={t("severity.observation")}
+              count={d?.findingsBySeverity?.observation ?? 0}
+              color="bg-gray-400"
+            />
           </div>
         </div>
       </div>
@@ -222,7 +252,8 @@ function AuditDashboardInner() {
                 Audit-Impact-KRIs
               </h2>
               <p className="text-xs text-gray-500 mt-0.5">
-                Kennzahlen für Audit-getriebenes Risikomanagement · ISO 31000 6.6 · COSO ERM Principle 17
+                Kennzahlen für Audit-getriebenes Risikomanagement · ISO 31000
+                6.6 · COSO ERM Principle 17
               </p>
             </div>
             <span className="text-xs text-gray-400">
@@ -264,8 +295,8 @@ function AuditDashboardInner() {
           {kris.auditsCompletedLast12Months > 0 && (
             <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-500">
               <strong>{kris.auditsCompletedLast12Months}</strong> Audit
-              {kris.auditsCompletedLast12Months === 1 ? "" : "s"} in den
-              letzten 12 Monaten abgeschlossen
+              {kris.auditsCompletedLast12Months === 1 ? "" : "s"} in den letzten
+              12 Monaten abgeschlossen
               {Object.keys(kris.auditsByConclusion).length > 0 && (
                 <>
                   {" · "}
@@ -281,12 +312,30 @@ function AuditDashboardInner() {
 
       {/* Quick Navigation */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("quickNav")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("quickNav")}
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-          <NavCard href="/audit/universe" label={t("universe")} icon={<Globe className="h-4 w-4" />} />
-          <NavCard href="/audit/plans" label={t("plans")} icon={<Calendar className="h-4 w-4" />} />
-          <NavCard href="/audit/executions" label={t("executions")} icon={<ClipboardCheck className="h-4 w-4" />} />
-          <NavCard href="/audit/executions" label={t("findings")} icon={<List className="h-4 w-4" />} />
+          <NavCard
+            href="/audit/universe"
+            label={t("universe")}
+            icon={<Globe className="h-4 w-4" />}
+          />
+          <NavCard
+            href="/audit/plans"
+            label={t("plans")}
+            icon={<Calendar className="h-4 w-4" />}
+          />
+          <NavCard
+            href="/audit/executions"
+            label={t("executions")}
+            icon={<ClipboardCheck className="h-4 w-4" />}
+          />
+          <NavCard
+            href="/audit/executions"
+            label={t("findings")}
+            icon={<List className="h-4 w-4" />}
+          />
         </div>
       </div>
     </div>
@@ -320,7 +369,9 @@ function KpiCard({
         {icon}
         <span className="text-xs font-medium text-gray-600">{label}</span>
       </div>
-      <p className={`text-2xl font-bold ${highlight ? "text-red-700" : "text-gray-900"}`}>
+      <p
+        className={`text-2xl font-bold ${highlight ? "text-red-700" : "text-gray-900"}`}
+      >
         {value}
       </p>
       {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}

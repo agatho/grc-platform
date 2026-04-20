@@ -67,13 +67,21 @@ export const scenarioEngineScenario = pgTable(
     description: text("description"),
     tag: simulationScenarioTagEnum("tag").notNull().default("as_is"),
     status: simulationStatusEnum("status").notNull().default("draft"),
-    inputParametersJson: jsonb("input_parameters_json").notNull().default(sql`'{}'::jsonb`),
-    assumptionsJson: jsonb("assumptions_json").notNull().default(sql`'[]'::jsonb`),
+    inputParametersJson: jsonb("input_parameters_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    assumptionsJson: jsonb("assumptions_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     sourceEntityType: varchar("source_entity_type", { length: 100 }),
     sourceEntityId: uuid("source_entity_id"),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("ses_org_idx").on(t.orgId),
@@ -99,14 +107,20 @@ export const simulationRun = pgTable(
       .references(() => scenarioEngineScenario.id, { onDelete: "cascade" }),
     runNumber: integer("run_number").notNull().default(1),
     iterations: integer("iterations").notNull().default(10000),
-    confidenceLevel: numeric("confidence_level", { precision: 5, scale: 2 }).notNull().default("95.00"),
+    confidenceLevel: numeric("confidence_level", { precision: 5, scale: 2 })
+      .notNull()
+      .default("95.00"),
     status: simulationStatusEnum("status").notNull().default("running"),
     durationMs: integer("duration_ms"),
     executedBy: uuid("executed_by").references(() => user.id),
-    startedAt: timestamp("started_at", { withTimezone: true }).notNull().defaultNow(),
+    startedAt: timestamp("started_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     errorMessage: text("error_message"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("sr_org_idx").on(t.orgId),
@@ -131,13 +145,17 @@ export const simulationParameter = pgTable(
       .references(() => scenarioEngineScenario.id, { onDelete: "cascade" }),
     parameterKey: varchar("parameter_key", { length: 200 }).notNull(),
     displayName: varchar("display_name", { length: 300 }).notNull(),
-    parameterType: varchar("parameter_type", { length: 50 }).notNull().default("number"),
+    parameterType: varchar("parameter_type", { length: 50 })
+      .notNull()
+      .default("number"),
     minValue: numeric("min_value", { precision: 20, scale: 6 }),
     maxValue: numeric("max_value", { precision: 20, scale: 6 }),
     defaultValue: numeric("default_value", { precision: 20, scale: 6 }),
     distribution: varchar("distribution", { length: 50 }).default("normal"),
     unit: varchar("unit", { length: 50 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("sp_org_idx").on(t.orgId),
@@ -169,14 +187,15 @@ export const simulationRunResult = pgTable(
     minValue: numeric("min_value", { precision: 20, scale: 6 }),
     maxValue: numeric("max_value", { precision: 20, scale: 6 }),
     stdDev: numeric("std_dev", { precision: 20, scale: 6 }),
-    histogramJson: jsonb("histogram_json").notNull().default(sql`'[]'::jsonb`),
+    histogramJson: jsonb("histogram_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     unit: varchar("unit", { length: 50 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (t) => [
-    index("sres_org_idx").on(t.orgId),
-    index("sres_run_idx").on(t.runId),
-  ],
+  (t) => [index("sres_org_idx").on(t.orgId), index("sres_run_idx").on(t.runId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -192,15 +211,23 @@ export const simulationComparison = pgTable(
       .references(() => organization.id),
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
-    scenarioIds: jsonb("scenario_ids").notNull().default(sql`'[]'::jsonb`),
-    comparisonMetrics: jsonb("comparison_metrics").notNull().default(sql`'[]'::jsonb`),
-    resultSummaryJson: jsonb("result_summary_json").notNull().default(sql`'{}'::jsonb`),
+    scenarioIds: jsonb("scenario_ids")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    comparisonMetrics: jsonb("comparison_metrics")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    resultSummaryJson: jsonb("result_summary_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     exportUrl: varchar("export_url", { length: 2000 }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (t) => [
-    index("sc_org_idx").on(t.orgId),
-  ],
+  (t) => [index("sc_org_idx").on(t.orgId)],
 );

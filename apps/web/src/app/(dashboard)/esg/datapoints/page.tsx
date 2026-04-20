@@ -62,10 +62,19 @@ function DatapointsInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("datapoints.title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("datapoints.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("datapoints.title")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("datapoints.subtitle")}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -73,7 +82,10 @@ function DatapointsInner() {
       {/* Filters */}
       <div className="flex flex-wrap gap-3">
         <div className="relative flex-1 min-w-[200px]">
-          <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             placeholder={t("searchPlaceholder")}
@@ -89,7 +101,9 @@ function DatapointsInner() {
         >
           <option value="">{t("allStandards")}</option>
           {standards.map((s) => (
-            <option key={s} value={s}>{s}</option>
+            <option key={s} value={s}>
+              {s}
+            </option>
           ))}
         </select>
         <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer">
@@ -114,33 +128,59 @@ function DatapointsInner() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("datapoints.code")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("datapoints.datapointName")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("datapoints.standard")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("unit")}</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">{t("datapoints.mandatory")}</th>
-                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">{t("datapoints.metricAssigned")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("datapoints.code")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("datapoints.datapointName")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("datapoints.standard")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("unit")}
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                    {t("datapoints.mandatory")}
+                  </th>
+                  <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                    {t("datapoints.metricAssigned")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {datapoints.map((dp) => (
                   <tr key={dp.id} className="hover:bg-gray-50">
                     <td className="px-4 py-3">
-                      <span className="font-mono text-xs text-gray-700">{dp.datapointCode}</span>
+                      <span className="font-mono text-xs text-gray-700">
+                        {dp.datapointCode}
+                      </span>
                     </td>
                     <td className="px-4 py-3">
-                      <span className="font-medium text-gray-900">{dp.nameEn}</span>
-                      <p className="text-xs text-gray-500 mt-0.5">{dp.disclosureRequirement}</p>
+                      <span className="font-medium text-gray-900">
+                        {dp.nameEn}
+                      </span>
+                      <p className="text-xs text-gray-500 mt-0.5">
+                        {dp.disclosureRequirement}
+                      </p>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className="text-[10px]">{dp.esrsStandard}</Badge>
+                      <Badge variant="outline" className="text-[10px]">
+                        {dp.esrsStandard}
+                      </Badge>
                     </td>
-                    <td className="px-4 py-3 text-gray-600">{dp.unit ?? "-"}</td>
+                    <td className="px-4 py-3 text-gray-600">
+                      {dp.unit ?? "-"}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       {dp.isMandatory ? (
-                        <Badge className="bg-red-100 text-red-900 text-[10px]">{t("datapoints.mandatory")}</Badge>
+                        <Badge className="bg-red-100 text-red-900 text-[10px]">
+                          {t("datapoints.mandatory")}
+                        </Badge>
                       ) : (
-                        <span className="text-xs text-gray-400">{t("datapoints.optional")}</span>
+                        <span className="text-xs text-gray-400">
+                          {t("datapoints.optional")}
+                        </span>
                       )}
                     </td>
                     <td className="px-4 py-3 text-center">
@@ -150,14 +190,21 @@ function DatapointsInner() {
                           {t("datapoints.metricAssigned")}
                         </Badge>
                       ) : (
-                        <span className="text-xs text-gray-400">{t("datapoints.noMetric")}</span>
+                        <span className="text-xs text-gray-400">
+                          {t("datapoints.noMetric")}
+                        </span>
                       )}
                     </td>
                   </tr>
                 ))}
                 {datapoints.length === 0 && !loading && (
                   <tr>
-                    <td colSpan={6} className="px-4 py-8 text-center text-gray-400">{t("empty")}</td>
+                    <td
+                      colSpan={6}
+                      className="px-4 py-8 text-center text-gray-400"
+                    >
+                      {t("empty")}
+                    </td>
                   </tr>
                 )}
               </tbody>

@@ -25,6 +25,7 @@ export async function DELETE(
     return deleted;
   });
 
-  if (!result) return Response.json({ error: "Assignment not found" }, { status: 404 });
+  if (!result)
+    return Response.json({ error: "Assignment not found" }, { status: 404 });
   return Response.json({ data: { deleted: true } });
 }

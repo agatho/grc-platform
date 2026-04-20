@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = auditorDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = auditorDashboardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Findings overview
   const findingsOverview = await db.execute(sql`

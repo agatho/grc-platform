@@ -24,9 +24,7 @@ export async function GET(
   }
 
   const def = getEntityDefinition(job.entityType);
-  const allFields = def
-    ? [...def.requiredFields, ...def.optionalFields]
-    : [];
+  const allFields = def ? [...def.requiredFields, ...def.optionalFields] : [];
 
   return Response.json({
     mapping: job.columnMapping,

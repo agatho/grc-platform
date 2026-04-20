@@ -61,10 +61,7 @@ export const createReportTemplateSchema = z.object({
   description: z.string().max(5000).optional(),
   moduleScope: z.enum(reportModuleScopeValues).default("all"),
   sectionsJson: z.array(reportSectionConfigSchema).max(100).default([]),
-  parametersJson: z
-    .array(reportParameterDefinitionSchema)
-    .max(50)
-    .default([]),
+  parametersJson: z.array(reportParameterDefinitionSchema).max(50).default([]),
   brandingJson: reportBrandingConfigSchema.optional(),
 });
 
@@ -108,16 +105,12 @@ export const createReportScheduleSchema = z.object({
   name: z.string().min(1).max(500).optional(),
   cronExpression: z.string().min(1).max(100),
   parametersJson: z.record(z.unknown()).default({}),
-  recipientEmails: z
-    .array(z.string().email().max(254))
-    .min(1)
-    .max(50),
+  recipientEmails: z.array(z.string().email().max(254)).min(1).max(50),
   outputFormat: z.enum(reportOutputFormatValues).default("pdf"),
   isActive: z.boolean().default(true),
 });
 
-export const updateReportScheduleSchema =
-  createReportScheduleSchema.partial();
+export const updateReportScheduleSchema = createReportScheduleSchema.partial();
 
 export const listReportSchedulesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),

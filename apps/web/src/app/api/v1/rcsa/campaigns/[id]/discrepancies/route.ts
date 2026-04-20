@@ -34,13 +34,14 @@ export async function GET(req: Request, { params }: RouteParams) {
     );
   }
 
-  const rawDiscrepancies = (result.discrepancies as Array<{
-    entityType: string;
-    entityId: string;
-    rcsaRating: string;
-    auditRating: string;
-    type: string;
-  }>) ?? [];
+  const rawDiscrepancies =
+    (result.discrepancies as Array<{
+      entityType: string;
+      entityId: string;
+      rcsaRating: string;
+      auditRating: string;
+      type: string;
+    }>) ?? [];
 
   // Enrich with entity titles
   const enriched = await Promise.all(

@@ -9,7 +9,16 @@ import { createHash } from "crypto";
 
 // ── Supported languages ────────────────────────────────────────────
 
-export const SUPPORTED_LANGUAGES = ["de", "en", "fr", "nl", "it", "es", "pl", "cs"] as const;
+export const SUPPORTED_LANGUAGES = [
+  "de",
+  "en",
+  "fr",
+  "nl",
+  "it",
+  "es",
+  "pl",
+  "cs",
+] as const;
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
 
 export const LANGUAGE_LABELS: Record<string, string> = {
@@ -26,7 +35,11 @@ export const LANGUAGE_LABELS: Record<string, string> = {
 // ── Types ────────────────────────────────────────────────────────
 
 /** A translatable JSONB field: { "de": "Risiko", "en": "Risk" } */
-export type TranslatableField = Record<string, string> | string | null | undefined;
+export type TranslatableField =
+  | Record<string, string>
+  | string
+  | null
+  | undefined;
 
 export interface ResolveOptions {
   userLang: string;
@@ -82,10 +95,15 @@ export function resolveEntity<T extends Record<string, unknown>>(
     if (value && typeof value === "object" && !Array.isArray(value)) {
       const translations = value as Record<string, string>;
       // Preserve original translations
-      (resolved as Record<string, unknown>)[`${field}_translations`] = translations;
+      (resolved as Record<string, unknown>)[`${field}_translations`] =
+        translations;
 
       // Resolve to string
-      const resolvedValue = resolveField(translations, userLang, orgDefaultLang);
+      const resolvedValue = resolveField(
+        translations,
+        userLang,
+        orgDefaultLang,
+      );
       (resolved as Record<string, unknown>)[field] = resolvedValue;
 
       // Track fallbacks
@@ -126,7 +144,11 @@ export function resolveContentLanguage(options: {
   userContentLanguage?: string | null;
   orgDefaultLanguage?: string;
 }): string {
-  const { queryLocale, userContentLanguage, orgDefaultLanguage = "de" } = options;
+  const {
+    queryLocale,
+    userContentLanguage,
+    orgDefaultLanguage = "de",
+  } = options;
   if (queryLocale && queryLocale !== "all") return queryLocale;
   if (userContentLanguage) return userContentLanguage;
   return orgDefaultLanguage;
@@ -165,7 +187,9 @@ export function mergeTranslation(
  */
 export function getAvailableLanguages(field: TranslatableField): string[] {
   if (!field || typeof field !== "object") return [];
-  return Object.keys(field).filter((k) => field[k] !== undefined && field[k] !== "");
+  return Object.keys(field).filter(
+    (k) => field[k] !== undefined && field[k] !== "",
+  );
 }
 
 /**

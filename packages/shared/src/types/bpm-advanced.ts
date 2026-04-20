@@ -86,7 +86,11 @@ export interface Bottleneck {
 export interface ProcessMiningSuggestion {
   id: string;
   conformanceResultId: string;
-  suggestionType: "add_activity" | "remove_activity" | "add_path" | "modify_path";
+  suggestionType:
+    | "add_activity"
+    | "remove_activity"
+    | "add_path"
+    | "modify_path";
   description: string;
   evidenceFrequency?: number;
   status: "pending" | "accepted" | "rejected";
@@ -97,7 +101,13 @@ export interface ProcessKpiDefinition {
   orgId: string;
   processId: string;
   name: string;
-  metricType: "cycle_time" | "cost" | "throughput" | "error_rate" | "compliance_rate" | "custom";
+  metricType:
+    | "cycle_time"
+    | "cost"
+    | "throughput"
+    | "error_rate"
+    | "compliance_rate"
+    | "custom";
   unit: string;
   targetValue: number;
   thresholdGreen: number;
@@ -143,7 +153,12 @@ export interface MaturityGapAction {
 
 export interface MaturityQuestionnaireItem {
   id: string;
-  dimension: "documentation" | "adherence" | "measurement" | "improvement" | "satisfaction";
+  dimension:
+    | "documentation"
+    | "adherence"
+    | "measurement"
+    | "improvement"
+    | "satisfaction";
   questionNumber: number;
   questionText: { en: string; de: string };
   levelMapping: number;
@@ -202,8 +217,17 @@ export interface ProcessTemplate {
   name: { en: string; de: string };
   description?: { en: string; de: string };
   bpmnXml: string;
-  typicalKpis: Array<{ name: string; metricType: string; typicalTarget: number }>;
-  typicalRisks: Array<{ title: string; category: string; typicalLikelihood: number; typicalImpact: number }>;
+  typicalKpis: Array<{
+    name: string;
+    metricType: string;
+    typicalTarget: number;
+  }>;
+  typicalRisks: Array<{
+    title: string;
+    category: string;
+    typicalLikelihood: number;
+    typicalImpact: number;
+  }>;
   typicalControls: Array<{ title: string; type: string; frequency: string }>;
   requiredRoles: string[];
   complexity: "simple" | "moderate" | "complex";

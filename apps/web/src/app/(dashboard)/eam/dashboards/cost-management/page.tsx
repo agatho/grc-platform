@@ -10,11 +10,18 @@ import { useEffect, useState } from "react";
 export default function CostManagementDashboardPage() {
   const t = useTranslations("eamDashboards");
   const [data, setData] = useState<Record<string, unknown> | null>(null);
-  const [treemapApps, setTreemapApps] = useState<Record<string, unknown> | null>(null);
+  const [treemapApps, setTreemapApps] = useState<Record<
+    string,
+    unknown
+  > | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/eam/dashboards/cost-management").then((r) => r.json()).then((r) => setData(r.data));
-    fetch("/api/v1/eam/dashboards/cost-management/treemap-apps").then((r) => r.json()).then((r) => setTreemapApps(r.data));
+    fetch("/api/v1/eam/dashboards/cost-management")
+      .then((r) => r.json())
+      .then((r) => setData(r.data));
+    fetch("/api/v1/eam/dashboards/cost-management/treemap-apps")
+      .then((r) => r.json())
+      .then((r) => setTreemapApps(r.data));
   }, []);
 
   return (
@@ -26,19 +33,28 @@ export default function CostManagementDashboardPage() {
         <div className="grid grid-cols-4 gap-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">{t("costManagement.totalApps")}</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("costManagement.totalApps")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{(data as Record<string, number>)?.totalApplications ?? 0}</p>
+              <p className="text-3xl font-bold">
+                {(data as Record<string, number>)?.totalApplications ?? 0}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">{t("costManagement.totalAppCost")}</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("costManagement.totalAppCost")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(
+                {new Intl.NumberFormat("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(
                   (data as Record<string, number>)?.totalApplicationCost ?? 0,
                 )}
               </p>
@@ -46,19 +62,28 @@ export default function CostManagementDashboardPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">{t("costManagement.totalComponents")}</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("costManagement.totalComponents")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-3xl font-bold">{(data as Record<string, number>)?.totalComponents ?? 0}</p>
+              <p className="text-3xl font-bold">
+                {(data as Record<string, number>)?.totalComponents ?? 0}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">{t("costManagement.totalComponentCost")}</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("costManagement.totalComponentCost")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-3xl font-bold">
-                {new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(
+                {new Intl.NumberFormat("de-DE", {
+                  style: "currency",
+                  currency: "EUR",
+                }).format(
                   (data as Record<string, number>)?.totalComponentCost ?? 0,
                 )}
               </p>
@@ -98,7 +123,9 @@ export default function CostManagementDashboardPage() {
             </CardHeader>
             <CardContent>
               {/* DataTable with application costs */}
-              <div className="text-sm text-muted-foreground">{t("costManagement.loadingData")}</div>
+              <div className="text-sm text-muted-foreground">
+                {t("costManagement.loadingData")}
+              </div>
             </CardContent>
           </Card>
           <Card>
@@ -106,7 +133,9 @@ export default function CostManagementDashboardPage() {
               <CardTitle>{t("costManagement.componentCostTable")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="text-sm text-muted-foreground">{t("costManagement.loadingData")}</div>
+              <div className="text-sm text-muted-foreground">
+                {t("costManagement.loadingData")}
+              </div>
             </CardContent>
           </Card>
         </div>

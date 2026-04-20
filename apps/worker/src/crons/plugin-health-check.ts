@@ -19,7 +19,9 @@ export async function pluginHealthCheck(): Promise<void> {
     .from(pluginExecutionLog)
     .where(gte(pluginExecutionLog.createdAt, since))
     .groupBy(pluginExecutionLog.installationId, pluginExecutionLog.orgId)
-    .having(sql`count(*) FILTER (WHERE ${pluginExecutionLog.status} = 'error') >= ${ERROR_THRESHOLD}`);
+    .having(
+      sql`count(*) FILTER (WHERE ${pluginExecutionLog.status} = 'error') >= ${ERROR_THRESHOLD}`,
+    );
 
   for (const failing of failingInstallations) {
     await db
@@ -28,14 +30,16 @@ export async function pluginHealthCheck(): Promise<void> {
         status: "error",
         updatedAt: new Date(),
       })
-      .where(and(
-        eq(pluginInstallation.id, failing.installationId),
-        eq(pluginInstallation.status, "active"),
-      ));
+      .where(
+        and(
+          eq(pluginInstallation.id, failing.installationId),
+          eq(pluginInstallation.status, "active"),
+        ),
+      );
 
     console.log(
       `[plugin-health] Disabled plugin installation ${failing.installationId} ` +
-      `due to ${failing.errorCount} errors in ${CHECK_WINDOW_HOURS}h`,
+        `due to ${failing.errorCount} errors in ${CHECK_WINDOW_HOURS}h`,
     );
   }
 }

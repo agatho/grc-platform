@@ -3,7 +3,15 @@
 import { useEffect, useState, useMemo } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
-import { Loader2, Plus, Trash2, BookOpen, Shield, Filter, Search } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Trash2,
+  BookOpen,
+  Shield,
+  Filter,
+  Search,
+} from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -66,7 +74,8 @@ const MODULE_OPTIONS = [
 export default function CatalogActivationPage() {
   const t = useTranslations("catalogs");
   const { data: session } = useSession();
-  const orgId = (session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId) as string | undefined;
+  const orgId = (session?.user?.currentOrgId ??
+    session?.user?.roles?.[0]?.orgId) as string | undefined;
 
   const [activeCatalogs, setActiveCatalogs] = useState<ActiveCatalog[]>([]);
   const [allCatalogs, setAllCatalogs] = useState<AvailableCatalog[]>([]);
@@ -83,7 +92,9 @@ export default function CatalogActivationPage() {
   useEffect(() => {
     if (!orgId) return;
     Promise.all([
-      fetch(`/api/v1/organizations/${orgId}/active-catalogs`).then((r) => r.json()),
+      fetch(`/api/v1/organizations/${orgId}/active-catalogs`).then((r) =>
+        r.json(),
+      ),
       fetch("/api/v1/catalogs?limit=200").then((r) => r.json()),
     ]).then(([activeRes, catalogsRes]) => {
       setActiveCatalogs(activeRes.data ?? []);
@@ -138,7 +149,11 @@ export default function CatalogActivationPage() {
       const refreshJson = await refreshRes.json();
       setActiveCatalogs(refreshJson.data ?? []);
       setShowActivateDialog(false);
-      setActivateForm({ catalogType: "risk", catalogId: "", enforcementLevel: "optional" });
+      setActivateForm({
+        catalogType: "risk",
+        catalogId: "",
+        enforcementLevel: "optional",
+      });
       setModuleFilter("");
       setSearchFilter("");
       toast.success(t("enforcement.activated"));
@@ -281,7 +296,11 @@ export default function CatalogActivationPage() {
                 >
                   {catalogTypes.map((ct) => (
                     <option key={ct} value={ct}>
-                      {ct === "risk" ? t("riskCatalogs") : ct === "control" ? t("controlCatalogs") : ct}
+                      {ct === "risk"
+                        ? t("riskCatalogs")
+                        : ct === "control"
+                          ? t("controlCatalogs")
+                          : ct}
                     </option>
                   ))}
                 </select>
@@ -337,7 +356,9 @@ export default function CatalogActivationPage() {
                   }
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="">{t("enforcement.selectCatalogPlaceholder")}</option>
+                  <option value="">
+                    {t("enforcement.selectCatalogPlaceholder")}
+                  </option>
                   {filteredCatalogs.map((c) => (
                     <option key={c.id} value={c.id}>
                       {c.name} ({c.source})
@@ -355,24 +376,29 @@ export default function CatalogActivationPage() {
               </div>
 
               {/* Selected catalog module badges preview */}
-              {activateForm.catalogId && (() => {
-                const selected = allCatalogs.find((c) => c.id === activateForm.catalogId);
-                if (!selected?.targetModules?.length) return null;
-                return (
-                  <div className="flex flex-wrap items-center gap-1.5">
-                    <span className="text-xs text-gray-500">{t("enforcement.targetModules")}:</span>
-                    {selected.targetModules.map((mod) => (
-                      <Badge
-                        key={mod}
-                        variant="outline"
-                        className={`text-xs uppercase ${moduleColors[mod] ?? "bg-gray-50 text-gray-600 border-gray-200"}`}
-                      >
-                        {mod}
-                      </Badge>
-                    ))}
-                  </div>
-                );
-              })()}
+              {activateForm.catalogId &&
+                (() => {
+                  const selected = allCatalogs.find(
+                    (c) => c.id === activateForm.catalogId,
+                  );
+                  if (!selected?.targetModules?.length) return null;
+                  return (
+                    <div className="flex flex-wrap items-center gap-1.5">
+                      <span className="text-xs text-gray-500">
+                        {t("enforcement.targetModules")}:
+                      </span>
+                      {selected.targetModules.map((mod) => (
+                        <Badge
+                          key={mod}
+                          variant="outline"
+                          className={`text-xs uppercase ${moduleColors[mod] ?? "bg-gray-50 text-gray-600 border-gray-200"}`}
+                        >
+                          {mod}
+                        </Badge>
+                      ))}
+                    </div>
+                  );
+                })()}
 
               {/* Enforcement Level */}
               <div>
@@ -390,7 +416,9 @@ export default function CatalogActivationPage() {
                   className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
                   <option value="optional">{t("enforcement.optional")}</option>
-                  <option value="recommended">{t("enforcement.recommended")}</option>
+                  <option value="recommended">
+                    {t("enforcement.recommended")}
+                  </option>
                   <option value="mandatory">{t("enforcement.required")}</option>
                 </select>
               </div>

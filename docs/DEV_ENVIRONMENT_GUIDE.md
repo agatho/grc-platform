@@ -64,13 +64,13 @@
 
 Erstellen Sie eine VM mit folgenden Specs:
 
-| Ressource | Empfehlung |
-|-----------|-----------|
-| OS | Ubuntu 26.04 LTS Beta Server (kein Desktop/GUI nötig) |
-| CPU | 8 Cores |
-| RAM | 32 GB |
-| SSD | 256 GB |
-| Netzwerk | Statische IP im internen Netz, SSH-Zugang von außen |
+| Ressource | Empfehlung                                            |
+| --------- | ----------------------------------------------------- |
+| OS        | Ubuntu 26.04 LTS Beta Server (kein Desktop/GUI nötig) |
+| CPU       | 8 Cores                                               |
+| RAM       | 32 GB                                                 |
+| SSD       | 256 GB                                                |
+| Netzwerk  | Statische IP im internen Netz, SSH-Zugang von außen   |
 
 Bei der Installation: OpenSSH-Server aktivieren, alles andere minimal.
 
@@ -90,6 +90,7 @@ sudo ./dev-vm-setup.sh
 ```
 
 Das Script installiert automatisch:
+
 - Docker Engine (nicht native Installation — keine Lizenzkosten)
 - Node.js 25 LTS
 - Claude Code CLI
@@ -181,18 +182,18 @@ Im GitHub Repo unter Settings → Secrets and Variables → Actions:
 
 **Secrets:**
 
-| Name | Wert | Zweck |
-|------|------|-------|
-| `STAGING_HOST` | IP der Dev-VM | SSH-Deploy auf die VM |
-| `STAGING_USER` | `grcdev` | SSH-User |
-| `STAGING_SSH_KEY` | Inhalt von `~/.ssh/id_ed25519` | SSH-Authentifizierung |
-| `CLERK_SECRET_KEY` | `sk_test_...` | Clerk Auth (für Tests) |
-| `ANTHROPIC_API_KEY` | `sk-ant-...` | Claude API (optional für Tests) |
+| Name                | Wert                           | Zweck                           |
+| ------------------- | ------------------------------ | ------------------------------- |
+| `STAGING_HOST`      | IP der Dev-VM                  | SSH-Deploy auf die VM           |
+| `STAGING_USER`      | `grcdev`                       | SSH-User                        |
+| `STAGING_SSH_KEY`   | Inhalt von `~/.ssh/id_ed25519` | SSH-Authentifizierung           |
+| `CLERK_SECRET_KEY`  | `sk_test_...`                  | Clerk Auth (für Tests)          |
+| `ANTHROPIC_API_KEY` | `sk-ant-...`                   | Claude API (optional für Tests) |
 
 **Variables (Settings → Variables):**
 
-| Name | Wert |
-|------|------|
+| Name           | Wert                                                    |
+| -------------- | ------------------------------------------------------- |
 | `STAGING_HOST` | IP der Dev-VM (gleich wie Secret, aber für URL-Anzeige) |
 
 ### 3.2 Pipeline-Dateien ins Repo
@@ -234,11 +235,13 @@ Push/PR auf main oder develop
 ### 3.4 CD-Pipeline: Wie wird deployed?
 
 **Stufe 1 (Sprint 1-4): Dev-VM**
+
 - Push auf `main` → CI erfolgreich → automatischer Deploy auf die Dev-VM
 - SSH-Login → `git pull` → `npm ci` → `npm run db:migrate` → `turbo build` → PM2 restart
 - Health Check: HTTP 200 auf Port 3000
 
 **Stufe 2 (ab Sprint 5): Hetzner Cloud**
+
 - Manueller Trigger via "Run workflow" auf GitHub
 - Docker Images werden gepullt → Migrations → Rolling Update
 - Zero-Downtime-Deployment

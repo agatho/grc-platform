@@ -78,7 +78,9 @@ export default function GraphOverviewPage() {
                   </div>
                   <h2 className="font-semibold">{t("explorer.title")}</h2>
                 </div>
-                <p className="text-sm text-muted-foreground">{t("explorer.subtitle")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("explorer.subtitle")}
+                </p>
                 <div className="mt-3 flex items-center gap-1 text-sm text-primary">
                   {t("explorer.title")}
                   <ArrowRight className="h-4 w-4" />
@@ -94,7 +96,9 @@ export default function GraphOverviewPage() {
                   </div>
                   <h2 className="font-semibold">{t("dependencies.title")}</h2>
                 </div>
-                <p className="text-sm text-muted-foreground">{t("dependencies.subtitle")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("dependencies.subtitle")}
+                </p>
                 <div className="mt-3 flex items-center gap-1 text-sm text-primary">
                   {t("dependencies.title")}
                   <ArrowRight className="h-4 w-4" />
@@ -110,7 +114,9 @@ export default function GraphOverviewPage() {
                   </div>
                   <h2 className="font-semibold">{t("orphans.title")}</h2>
                 </div>
-                <p className="text-sm text-muted-foreground">{t("orphans.subtitle")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("orphans.subtitle")}
+                </p>
                 <div className="mt-3 flex items-center gap-1 text-sm text-primary">
                   {t("orphans.title")}
                   <ArrowRight className="h-4 w-4" />
@@ -126,44 +132,72 @@ export default function GraphOverviewPage() {
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <Card className="p-4">
                   <div className="text-3xl font-bold">{stats.totalNodes}</div>
-                  <div className="text-xs text-muted-foreground">{t("stats.totalNodes")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("stats.totalNodes")}
+                  </div>
                 </Card>
                 <Card className="p-4">
                   <div className="text-3xl font-bold">{stats.totalEdges}</div>
-                  <div className="text-xs text-muted-foreground">{t("stats.totalEdges")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("stats.totalEdges")}
+                  </div>
                 </Card>
                 <Card className="p-4">
-                  <div className="text-3xl font-bold">{stats.avgConnections}</div>
-                  <div className="text-xs text-muted-foreground">{t("stats.avgConnections")}</div>
+                  <div className="text-3xl font-bold">
+                    {stats.avgConnections}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("stats.avgConnections")}
+                  </div>
                 </Card>
                 <Card className="p-4">
-                  <div className={`text-3xl font-bold ${stats.orphanCount > 0 ? "text-orange-500" : "text-green-500"}`}>
+                  <div
+                    className={`text-3xl font-bold ${stats.orphanCount > 0 ? "text-orange-500" : "text-green-500"}`}
+                  >
                     {stats.orphanCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">{t("stats.orphans")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("stats.orphans")}
+                  </div>
                 </Card>
                 <Card className="p-4">
-                  <div className={`text-3xl font-bold ${stats.hubCount > 0 ? "text-red-500" : ""}`}>
+                  <div
+                    className={`text-3xl font-bold ${stats.hubCount > 0 ? "text-red-500" : ""}`}
+                  >
                     {stats.hubCount}
                   </div>
-                  <div className="text-xs text-muted-foreground">{t("stats.hubs")}</div>
+                  <div className="text-xs text-muted-foreground">
+                    {t("stats.hubs")}
+                  </div>
                 </Card>
               </div>
 
               {/* Nodes by type */}
               <div className="grid md:grid-cols-2 gap-4">
                 <Card className="p-4 space-y-3">
-                  <h3 className="font-medium text-sm">{t("stats.nodesByType")}</h3>
+                  <h3 className="font-medium text-sm">
+                    {t("stats.nodesByType")}
+                  </h3>
                   {Object.entries(stats.nodesByType)
                     .sort(([, a], [, b]) => b - a)
                     .map(([type, count]) => (
-                      <div key={type} className="flex items-center justify-between">
+                      <div
+                        key={type}
+                        className="flex items-center justify-between"
+                      >
                         <div className="flex items-center gap-2">
                           <div
                             className="w-3 h-3 rounded-full"
-                            style={{ backgroundColor: GRAPH_ENTITY_COLORS[type] ?? "#6b7280" }}
+                            style={{
+                              backgroundColor:
+                                GRAPH_ENTITY_COLORS[type] ?? "#6b7280",
+                            }}
                           />
-                          <span className="text-sm">{t(`entityTypes.${type}` as Parameters<typeof t>[0])}</span>
+                          <span className="text-sm">
+                            {t(
+                              `entityTypes.${type}` as Parameters<typeof t>[0],
+                            )}
+                          </span>
                         </div>
                         <Badge variant="outline">{count}</Badge>
                       </div>
@@ -171,12 +205,19 @@ export default function GraphOverviewPage() {
                 </Card>
 
                 <Card className="p-4 space-y-3">
-                  <h3 className="font-medium text-sm">{t("stats.edgesByRelationship")}</h3>
+                  <h3 className="font-medium text-sm">
+                    {t("stats.edgesByRelationship")}
+                  </h3>
                   {Object.entries(stats.edgesByRelationship)
                     .sort(([, a], [, b]) => b - a)
                     .map(([rel, count]) => (
-                      <div key={rel} className="flex items-center justify-between">
-                        <span className="text-sm">{t(`relationships.${rel}` as Parameters<typeof t>[0])}</span>
+                      <div
+                        key={rel}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-sm">
+                          {t(`relationships.${rel}` as Parameters<typeof t>[0])}
+                        </span>
                         <Badge variant="outline">{count}</Badge>
                       </div>
                     ))}

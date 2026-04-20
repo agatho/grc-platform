@@ -41,33 +41,29 @@ export const upsertFairParametersSchema = z
     lossComponents: lossComponentSchema.optional(),
   })
   .refine(
-    (data) => data.lefMin <= data.lefMostLikely && data.lefMostLikely <= data.lefMax,
+    (data) =>
+      data.lefMin <= data.lefMostLikely && data.lefMostLikely <= data.lefMax,
     {
       message: "LEF values must satisfy: min <= mostLikely <= max",
       path: ["lefMostLikely"],
     },
   )
   .refine(
-    (data) => data.lmMin <= data.lmMostLikely && data.lmMostLikely <= data.lmMax,
+    (data) =>
+      data.lmMin <= data.lmMostLikely && data.lmMostLikely <= data.lmMax,
     {
       message: "LM values must satisfy: min <= mostLikely <= max",
       path: ["lmMostLikely"],
     },
   )
-  .refine(
-    (data) => data.lefMax > 0,
-    {
-      message: "LEF max must be greater than 0",
-      path: ["lefMax"],
-    },
-  )
-  .refine(
-    (data) => data.lmMax > 0,
-    {
-      message: "LM max must be greater than 0",
-      path: ["lmMax"],
-    },
-  );
+  .refine((data) => data.lefMax > 0, {
+    message: "LEF max must be greater than 0",
+    path: ["lefMax"],
+  })
+  .refine((data) => data.lmMax > 0, {
+    message: "LM max must be greater than 0",
+    path: ["lmMax"],
+  });
 
 // ─── Simulation Request ─────────────────────────────────────
 

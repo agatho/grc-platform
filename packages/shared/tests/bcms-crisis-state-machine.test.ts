@@ -55,11 +55,17 @@ describe("validateCrisisGate9Activate", () => {
     expect(blockers.some((b) => b.code === "missing_activator")).toBe(true);
   });
   it("blocks without severity", () => {
-    const blockers = validateCrisisGate9Activate({ ...standbySnapshot, severity: null }, "uuid");
+    const blockers = validateCrisisGate9Activate(
+      { ...standbySnapshot, severity: null },
+      "uuid",
+    );
     expect(blockers.some((b) => b.code === "missing_severity")).toBe(true);
   });
   it("warns without linked BCP", () => {
-    const blockers = validateCrisisGate9Activate({ ...standbySnapshot, bcpId: null }, "uuid");
+    const blockers = validateCrisisGate9Activate(
+      { ...standbySnapshot, bcpId: null },
+      "uuid",
+    );
     const warn = blockers.find((b) => b.code === "no_bcp_linked");
     expect(warn?.severity).toBe("warning");
   });
@@ -71,15 +77,24 @@ describe("validateCrisisGate10Resolve", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks not activated", () => {
-    const blockers = validateCrisisGate10Resolve({ ...activatedSnapshot, activatedAt: null });
+    const blockers = validateCrisisGate10Resolve({
+      ...activatedSnapshot,
+      activatedAt: null,
+    });
     expect(blockers.some((b) => b.code === "not_activated")).toBe(true);
   });
   it("blocks no log entries", () => {
-    const blockers = validateCrisisGate10Resolve({ ...activatedSnapshot, logEntryCount: 0 });
+    const blockers = validateCrisisGate10Resolve({
+      ...activatedSnapshot,
+      logEntryCount: 0,
+    });
     expect(blockers.some((b) => b.code === "no_crisis_log_entries")).toBe(true);
   });
   it("warns no communication log", () => {
-    const blockers = validateCrisisGate10Resolve({ ...activatedSnapshot, communicationCount: 0 });
+    const blockers = validateCrisisGate10Resolve({
+      ...activatedSnapshot,
+      communicationCount: 0,
+    });
     const warn = blockers.find((b) => b.code === "no_communication_log");
     expect(warn?.severity).toBe("warning");
   });
@@ -117,14 +132,22 @@ describe("computeDoraDeadlines", () => {
   const classifiedAt = new Date("2026-04-18T10:00:00Z");
 
   it("computes all 3 deadlines correctly", () => {
-    const d = computeDoraDeadlines(classifiedAt, new Date("2026-04-18T10:30:00Z"));
+    const d = computeDoraDeadlines(
+      classifiedAt,
+      new Date("2026-04-18T10:30:00Z"),
+    );
     expect(d.earlyWarningDueAt.toISOString()).toBe("2026-04-18T14:00:00.000Z"); // +4h
-    expect(d.intermediateReportDueAt.toISOString()).toBe("2026-04-21T10:00:00.000Z"); // +72h
+    expect(d.intermediateReportDueAt.toISOString()).toBe(
+      "2026-04-21T10:00:00.000Z",
+    ); // +72h
     expect(d.finalReportDueAt.toISOString()).toBe("2026-05-18T10:00:00.000Z"); // +1m
   });
 
   it("flags all as not-overdue shortly after classification", () => {
-    const d = computeDoraDeadlines(classifiedAt, new Date("2026-04-18T10:30:00Z"));
+    const d = computeDoraDeadlines(
+      classifiedAt,
+      new Date("2026-04-18T10:30:00Z"),
+    );
     expect(d.earlyWarningOverdue).toBe(false);
     expect(d.intermediateOverdue).toBe(false);
     expect(d.finalOverdue).toBe(false);
@@ -132,19 +155,28 @@ describe("computeDoraDeadlines", () => {
   });
 
   it("flags early warning overdue after 5h", () => {
-    const d = computeDoraDeadlines(classifiedAt, new Date("2026-04-18T15:00:00Z"));
+    const d = computeDoraDeadlines(
+      classifiedAt,
+      new Date("2026-04-18T15:00:00Z"),
+    );
     expect(d.earlyWarningOverdue).toBe(true);
     expect(d.nextDeadlineLabel).toBe("intermediate");
   });
 
   it("flags intermediate overdue after 73h", () => {
-    const d = computeDoraDeadlines(classifiedAt, new Date("2026-04-21T11:00:00Z"));
+    const d = computeDoraDeadlines(
+      classifiedAt,
+      new Date("2026-04-21T11:00:00Z"),
+    );
     expect(d.intermediateOverdue).toBe(true);
     expect(d.nextDeadlineLabel).toBe("final");
   });
 
   it("flags final overdue after 1 month+1d", () => {
-    const d = computeDoraDeadlines(classifiedAt, new Date("2026-05-19T11:00:00Z"));
+    const d = computeDoraDeadlines(
+      classifiedAt,
+      new Date("2026-05-19T11:00:00Z"),
+    );
     expect(d.finalOverdue).toBe(true);
     expect(d.nextDeadlineLabel).toBe("none");
     expect(d.secondsToNextDeadline).toBe(null);

@@ -4,11 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  Layers,
-} from "lucide-react";
+import { Plus, Loader2, Layers } from "lucide-react";
 import { toast } from "sonner";
 
 import type { WorkItem, WorkItemType } from "@grc/shared";
@@ -203,7 +199,10 @@ function CreateWorkItemDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tActions("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={!name.trim() || !typeKey || submitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={!name.trim() || !typeKey || submitting}
+          >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             {tActions("create")}
           </Button>
@@ -237,9 +236,16 @@ function FilterBar({
   t: ReturnType<typeof useTranslations>;
 }) {
   const allStatuses = [
-    "draft", "in_evaluation", "in_review", "in_approval",
-    "management_approved", "active", "in_treatment", "completed",
-    "obsolete", "cancelled",
+    "draft",
+    "in_evaluation",
+    "in_review",
+    "in_approval",
+    "management_approved",
+    "active",
+    "in_treatment",
+    "completed",
+    "obsolete",
+    "cancelled",
   ] as const;
 
   const toggleType = (key: string) => {
@@ -274,7 +280,9 @@ function FilterBar({
 
       {/* Type chips */}
       <div className="flex flex-wrap gap-1.5">
-        <span className="text-xs font-medium text-gray-500 self-center mr-1">{t("filterByType")}:</span>
+        <span className="text-xs font-medium text-gray-500 self-center mr-1">
+          {t("filterByType")}:
+        </span>
         {workItemTypes
           .filter((wit) => wit.isActiveInPlatform)
           .map((wit) => (
@@ -294,7 +302,9 @@ function FilterBar({
 
       {/* Status chips */}
       <div className="flex flex-wrap gap-1.5">
-        <span className="text-xs font-medium text-gray-500 self-center mr-1">{t("filterByStatus")}:</span>
+        <span className="text-xs font-medium text-gray-500 self-center mr-1">
+          {t("filterByStatus")}:
+        </span>
         {allStatuses.map((status) => (
           <button
             key={status}
@@ -330,7 +340,9 @@ export default function WorkItemsPage() {
 
   // Filters
   const [selectedTypes, setSelectedTypes] = useState<Set<string>>(new Set());
-  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(new Set());
+  const [selectedStatuses, setSelectedStatuses] = useState<Set<string>>(
+    new Set(),
+  );
   const [searchTerm, setSearchTerm] = useState("");
 
   const fetchData = useCallback(async () => {
@@ -371,12 +383,13 @@ export default function WorkItemsPage() {
   // Filter logic
   const filtered = workItems.filter((wi) => {
     if (selectedTypes.size > 0 && !selectedTypes.has(wi.typeKey)) return false;
-    if (selectedStatuses.size > 0 && !selectedStatuses.has(wi.status)) return false;
+    if (selectedStatuses.size > 0 && !selectedStatuses.has(wi.status))
+      return false;
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       if (
         !wi.name.toLowerCase().includes(term) &&
-        !(wi.elementId?.toLowerCase().includes(term))
+        !wi.elementId?.toLowerCase().includes(term)
       ) {
         return false;
       }
@@ -416,7 +429,9 @@ export default function WorkItemsPage() {
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <SortableHeader column={column}>{t("name")}</SortableHeader>,
+      header: ({ column }) => (
+        <SortableHeader column={column}>{t("name")}</SortableHeader>
+      ),
       cell: ({ row }) => (
         <button
           onClick={() => router.push(`/work-items/${row.original.id}`)}
@@ -430,7 +445,9 @@ export default function WorkItemsPage() {
       accessorKey: "status",
       header: t("status"),
       cell: ({ row }) => (
-        <Badge className={`border-0 text-xs ${statusColor(row.original.status)}`}>
+        <Badge
+          className={`border-0 text-xs ${statusColor(row.original.status)}`}
+        >
           {t(`statuses.${row.original.status as "draft" | "active"}`)}
         </Badge>
       ),
@@ -446,7 +463,9 @@ export default function WorkItemsPage() {
     },
     {
       accessorKey: "updatedAt",
-      header: ({ column }) => <SortableHeader column={column}>{t("lastModified")}</SortableHeader>,
+      header: ({ column }) => (
+        <SortableHeader column={column}>{t("lastModified")}</SortableHeader>
+      ),
       cell: ({ row }) => (
         <span className="text-xs text-gray-500">
           {new Date(row.original.updatedAt).toLocaleDateString()}

@@ -29,12 +29,7 @@ import {
 import { ProcessGalleryCard } from "@/components/process/process-gallery-card";
 import { ProcessBulkActions } from "@/components/process/process-bulk-actions";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Select,
   SelectContent,
@@ -117,25 +112,27 @@ function ProcessLandscape() {
   }, [fetchTree]);
 
   // Flatten for filtering
-  const flattenTree = useCallback(
-    (nodes: TreeNode[]): TreeNode[] => {
-      const result: TreeNode[] = [];
-      for (const node of nodes) {
-        result.push(node);
-        if (node.children?.length) {
-          result.push(...flattenTree(node.children));
-        }
+  const flattenTree = useCallback((nodes: TreeNode[]): TreeNode[] => {
+    const result: TreeNode[] = [];
+    for (const node of nodes) {
+      result.push(node);
+      if (node.children?.length) {
+        result.push(...flattenTree(node.children));
       }
-      return result;
-    },
-    [],
-  );
+    }
+    return result;
+  }, []);
 
-  const allNodes = useMemo(() => flattenTree(treeData), [treeData, flattenTree]);
+  const allNodes = useMemo(
+    () => flattenTree(treeData),
+    [treeData, flattenTree],
+  );
 
   // Compute total and published counts
   const totalCount = allNodes.length;
-  const publishedCount = allNodes.filter((n) => n.status === "published").length;
+  const publishedCount = allNodes.filter(
+    (n) => n.status === "published",
+  ).length;
 
   // Selected process
   const selectedProcess = useMemo(
@@ -147,7 +144,8 @@ function ProcessLandscape() {
   const matchesFilters = useCallback(
     (node: TreeNode): boolean => {
       if (statusFilter !== "all" && node.status !== statusFilter) return false;
-      if (levelFilter !== "all" && node.level !== Number(levelFilter)) return false;
+      if (levelFilter !== "all" && node.level !== Number(levelFilter))
+        return false;
       if (
         searchQuery.length >= 2 &&
         !node.name.toLowerCase().includes(searchQuery.toLowerCase())
@@ -175,7 +173,10 @@ function ProcessLandscape() {
     [matchesFilters],
   );
 
-  const filteredTree = useMemo(() => filterTree(treeData), [filterTree, treeData]);
+  const filteredTree = useMemo(
+    () => filterTree(treeData),
+    [filterTree, treeData],
+  );
 
   // Filtered flat nodes for gallery view
   const filteredFlatNodes = useMemo(
@@ -348,7 +349,10 @@ function ProcessLandscape() {
         </div>
       ) : (
         /* List View (Tree) */
-        <div className="flex gap-4" style={{ minHeight: "calc(100vh - 220px)" }}>
+        <div
+          className="flex gap-4"
+          style={{ minHeight: "calc(100vh - 220px)" }}
+        >
           {/* Left panel: Process Tree */}
           <div className="w-[280px] flex-shrink-0 rounded-lg border border-gray-200 bg-white">
             {/* Search */}
@@ -366,16 +370,23 @@ function ProcessLandscape() {
             </div>
 
             {/* Tree */}
-            <div className="overflow-y-auto p-2" style={{ maxHeight: "calc(100vh - 400px)" }}>
+            <div
+              className="overflow-y-auto p-2"
+              style={{ maxHeight: "calc(100vh - 400px)" }}
+            >
               {loading ? (
                 <div className="flex items-center justify-center py-12">
                   <Loader2 className="h-5 w-5 animate-spin text-gray-400" />
                 </div>
               ) : error ? (
-                <div className="p-4 text-center text-sm text-red-500">{error}</div>
+                <div className="p-4 text-center text-sm text-red-500">
+                  {error}
+                </div>
               ) : filteredTree.length === 0 ? (
                 <div className="p-4 text-center text-sm text-gray-500">
-                  {searchQuery || statusFilter !== "all" || levelFilter !== "all"
+                  {searchQuery ||
+                  statusFilter !== "all" ||
+                  levelFilter !== "all"
                     ? t("empty.noResults")
                     : t("empty.title")}
                 </div>
@@ -463,12 +474,18 @@ function ProcessLandscape() {
                   <div className="space-y-1">
                     <span className="text-gray-500">{t("detail.level")}</span>
                     <p className="font-medium">
-                      {t(`levels.${selectedProcess.level}` as Parameters<typeof t>[0])}
+                      {t(
+                        `levels.${selectedProcess.level}` as Parameters<
+                          typeof t
+                        >[0],
+                      )}
                     </p>
                   </div>
                   <div className="space-y-1">
                     <span className="text-gray-500">{t("detail.version")}</span>
-                    <p className="font-medium">v{selectedProcess.currentVersion}</p>
+                    <p className="font-medium">
+                      v{selectedProcess.currentVersion}
+                    </p>
                   </div>
                   {selectedProcess.ownerName && (
                     <div className="space-y-1">
@@ -481,7 +498,9 @@ function ProcessLandscape() {
                   )}
                   {selectedProcess.reviewerName && (
                     <div className="space-y-1">
-                      <span className="text-gray-500">{t("detail.reviewer")}</span>
+                      <span className="text-gray-500">
+                        {t("detail.reviewer")}
+                      </span>
                       <p className="font-medium flex items-center gap-1">
                         <User size={14} className="text-gray-400" />
                         {selectedProcess.reviewerName}
@@ -503,7 +522,9 @@ function ProcessLandscape() {
               <div className="flex h-full items-center justify-center p-12">
                 <div className="text-center space-y-3">
                   <Workflow className="mx-auto h-12 w-12 text-gray-400" />
-                  <p className="text-sm text-gray-500">{t("empty.selectProcess")}</p>
+                  <p className="text-sm text-gray-500">
+                    {t("empty.selectProcess")}
+                  </p>
                   {totalCount === 0 && (
                     <Link href="/processes/new">
                       <Button variant="outline" className="mt-2">

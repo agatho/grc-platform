@@ -1,8 +1,4 @@
-import {
-  db,
-  soaEntry,
-  catalogEntry,
-} from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, or } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -62,18 +58,22 @@ export async function POST(req: Request) {
 
   scored.sort((a, b) => b.priority - a.priority);
 
-  const priorities: PriorityRecommendation[] = scored.slice(0, 3).map((g, i) => ({
-    rank: i + 1,
-    catalogCode: g.catalogCode ?? "",
-    catalogTitle: g.catalogTitleDe ?? g.catalogTitleEn ?? "",
-    implementation: g.implementation ?? "not_implemented",
-    reason:
-      g.implementation === "not_implemented"
-        ? "Dieses Control ist noch nicht implementiert und hat hohe Relevanz fuer die Zertifizierung."
-        : "Dieses Control ist geplant, sollte aber priorisiert umgesetzt werden.",
-    estimatedEffort:
-      g.catalogLevel && g.catalogLevel <= 2 ? "Hoch (strategisch)" : "Mittel (operativ)",
-  }));
+  const priorities: PriorityRecommendation[] = scored
+    .slice(0, 3)
+    .map((g, i) => ({
+      rank: i + 1,
+      catalogCode: g.catalogCode ?? "",
+      catalogTitle: g.catalogTitleDe ?? g.catalogTitleEn ?? "",
+      implementation: g.implementation ?? "not_implemented",
+      reason:
+        g.implementation === "not_implemented"
+          ? "Dieses Control ist noch nicht implementiert und hat hohe Relevanz fuer die Zertifizierung."
+          : "Dieses Control ist geplant, sollte aber priorisiert umgesetzt werden.",
+      estimatedEffort:
+        g.catalogLevel && g.catalogLevel <= 2
+          ? "Hoch (strategisch)"
+          : "Mittel (operativ)",
+    }));
 
   return Response.json({
     data: {

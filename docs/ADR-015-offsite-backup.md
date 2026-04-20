@@ -1,10 +1,10 @@
 ## ADR-015: Off-Site Backup Strategy
 
-| **ADR-ID** | **015** |
-| --- | --- |
-| **Title** | **Off-Site Backup via Backblaze B2 + rclone** |
-| **Status** | **Proposed** |
-| **Date** | 2026-04-18 |
+| **ADR-ID**  | **015**                                                                                                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | **Off-Site Backup via Backblaze B2 + rclone**                                                                                                                                                           |
+| **Status**  | **Proposed**                                                                                                                                                                                            |
+| **Date**    | 2026-04-18                                                                                                                                                                                              |
 | **Context** | ADR-014 setzte den On-Host-Backup-Prozess (`deploy/db-backup.sh`) auf. Ein zweites Failure-Domain fehlt noch: wenn der Hetzner-Host ausfällt (Disk, Ransomware, Storage-Delete), sind alle Backups weg. |
 
 ### Decision
@@ -13,12 +13,12 @@ Wir pushen jeden erfolgreichen `db-backup.sh`-Lauf zusätzlich nach **Backblaze 
 
 ### Alternatives Considered
 
-| Option | Pro | Contra | Entscheidung |
-|---|---|---|---|
-| **B2 + rclone** | billig, S3-kompatibel, EU-Hosting, einfacher Setup | Zusätzliche Drittpartei (aber verschlüsselte Dumps → minimal) | ✅ Angenommen |
-| AWS S3 Glacier | Sehr billig, Enterprise | Hohe Retrieval-Kosten, US-Anbieter (DSGVO-Abwägung) | ❌ |
-| Hetzner Storage Box | Same-Provider, günstig | Same-Provider-Risiko (Hetzner-Ausfall = Backup weg) | ❌ — **Kernmotivation ist zweite Failure-Domain** |
-| Selber Rsync zu anderem VPS | Vollkontrolle | Betriebsaufwand, zweiter Root | ❌ Ops-Overhead hoch |
+| Option                      | Pro                                                | Contra                                                        | Entscheidung                                      |
+| --------------------------- | -------------------------------------------------- | ------------------------------------------------------------- | ------------------------------------------------- |
+| **B2 + rclone**             | billig, S3-kompatibel, EU-Hosting, einfacher Setup | Zusätzliche Drittpartei (aber verschlüsselte Dumps → minimal) | ✅ Angenommen                                     |
+| AWS S3 Glacier              | Sehr billig, Enterprise                            | Hohe Retrieval-Kosten, US-Anbieter (DSGVO-Abwägung)           | ❌                                                |
+| Hetzner Storage Box         | Same-Provider, günstig                             | Same-Provider-Risiko (Hetzner-Ausfall = Backup weg)           | ❌ — **Kernmotivation ist zweite Failure-Domain** |
+| Selber Rsync zu anderem VPS | Vollkontrolle                                      | Betriebsaufwand, zweiter Root                                 | ❌ Ops-Overhead hoch                              |
 
 ### Architecture
 
@@ -30,8 +30,9 @@ Wir pushen jeden erfolgreichen `db-backup.sh`-Lauf zusätzlich nach **Backblaze 
 ```
 
 Reihenfolge:
-1. Cron (0 2 * * *): `db-backup.sh` erzeugt lokale Dumps unter `/opt/arctos/backups/`
-2. Cron (0 3 * * *): `offsite-sync.sh` pusht alle Dateien < 48h alt nach B2
+
+1. Cron (0 2 \* \* \*): `db-backup.sh` erzeugt lokale Dumps unter `/opt/arctos/backups/`
+2. Cron (0 3 \* \* \*): `offsite-sync.sh` pusht alle Dateien < 48h alt nach B2
 3. Backups älter als 30 Tage lokal gelöscht (`db-backup.sh` Rotation)
 4. Backups älter als 90 Tage in B2 gelöscht (B2 Lifecycle Policy)
 
@@ -81,6 +82,7 @@ docker compose exec postgres psql -U grc -c "DROP DATABASE grc_restore_test;"
 ### Metrics + Monitoring
 
 `offsite-sync.sh` schreibt in `/var/log/arctos-offsite.log` strukturiert (`jq`-parseable):
+
 - `timestamp`
 - `tenant`
 - `dump_size_bytes`
@@ -92,11 +94,13 @@ Optional: Prometheus-node-exporter-textfile parst das Log und stellt `arctos_off
 ### Consequences
 
 **Positiv:**
+
 - Ransomware-resistent (append-only B2 Key)
 - GDPR-compliant EU-Region
 - ~1 €/Jahr Infra-Kosten
 
 **Negativ:**
+
 - Dritter Anbieter (Backblaze)
 - Schlüssel-Management auf dem Hetzner-Host
 - Erstmalige Restore-Übung vierteljährlich nötig (nicht zu unterschätzender Operations-Aufwand)

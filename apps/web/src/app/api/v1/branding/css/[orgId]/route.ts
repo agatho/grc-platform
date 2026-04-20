@@ -1,9 +1,6 @@
 import { db, orgBranding, organization } from "@grc/db";
 import { eq } from "drizzle-orm";
-import {
-  computeContrastForeground,
-  computeDarkModeColor,
-} from "@grc/shared";
+import { computeContrastForeground, computeDarkModeColor } from "@grc/shared";
 
 const DEFAULT_COLORS = {
   primaryColor: "#2563eb",

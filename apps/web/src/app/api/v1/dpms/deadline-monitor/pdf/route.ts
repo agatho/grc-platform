@@ -8,17 +8,45 @@ import { renderHtmlToPdfResponse, escHtml, STANDARD_PDF_CSS } from "@/lib/pdf";
 
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
-function classify(deadlineAt: Date | null, closedAt: Date | null, now: Date): {
+function classify(
+  deadlineAt: Date | null,
+  closedAt: Date | null,
+  now: Date,
+): {
   level: EscalationLevel;
   hoursUntilDeadline: number | null;
   hoursOverdue: number | null;
   isClosed: boolean;
 } {
-  if (closedAt) return { level: "none", hoursUntilDeadline: null, hoursOverdue: null, isClosed: true };
-  if (!deadlineAt) return { level: "none", hoursUntilDeadline: null, hoursOverdue: null, isClosed: false };
+  if (closedAt)
+    return {
+      level: "none",
+      hoursUntilDeadline: null,
+      hoursOverdue: null,
+      isClosed: true,
+    };
+  if (!deadlineAt)
+    return {
+      level: "none",
+      hoursUntilDeadline: null,
+      hoursOverdue: null,
+      isClosed: false,
+    };
   const h = (deadlineAt.getTime() - now.getTime()) / (1000 * 60 * 60);
-  if (h > 24) return { level: "none", hoursUntilDeadline: Math.round(h), hoursOverdue: null, isClosed: false };
-  if (h > 0) return { level: "approaching", hoursUntilDeadline: Math.round(h), hoursOverdue: null, isClosed: false };
+  if (h > 24)
+    return {
+      level: "none",
+      hoursUntilDeadline: Math.round(h),
+      hoursOverdue: null,
+      isClosed: false,
+    };
+  if (h > 0)
+    return {
+      level: "approaching",
+      hoursUntilDeadline: Math.round(h),
+      hoursOverdue: null,
+      isClosed: false,
+    };
   const overdue = Math.round(-h);
   return {
     level: overdue > 48 ? "critical_overdue" : "overdue",
@@ -71,11 +99,16 @@ export async function GET(_req: Request) {
       };
     }),
     ...breachRows.map((r) => {
-      const requiresNotification = r.isDpaNotificationRequired && !r.dpaNotifiedAt;
+      const requiresNotification =
+        r.isDpaNotificationRequired && !r.dpaNotifiedAt;
       const deadline = requiresNotification
         ? new Date(new Date(r.detectedAt).getTime() + 72 * 60 * 60 * 1000)
         : null;
-      const closed = r.dpaNotifiedAt ? new Date(r.dpaNotifiedAt) : r.closedAt ? new Date(r.closedAt) : null;
+      const closed = r.dpaNotifiedAt
+        ? new Date(r.dpaNotifiedAt)
+        : r.closedAt
+          ? new Date(r.closedAt)
+          : null;
       return {
         kind: "breach" as const,
         title: r.title,
@@ -89,14 +122,22 @@ export async function GET(_req: Request) {
 
   const summary = {
     total: items.length,
-    criticalOverdue: items.filter((i) => i.escalation.level === "critical_overdue").length,
+    criticalOverdue: items.filter(
+      (i) => i.escalation.level === "critical_overdue",
+    ).length,
     overdue: items.filter((i) => i.escalation.level === "overdue").length,
-    approaching: items.filter((i) => i.escalation.level === "approaching").length,
+    approaching: items.filter((i) => i.escalation.level === "approaching")
+      .length,
     ok: items.filter((i) => i.escalation.level === "none").length,
   };
 
   items.sort((a, b) => {
-    const order: Record<string, number> = { critical_overdue: 0, overdue: 1, approaching: 2, none: 3 };
+    const order: Record<string, number> = {
+      critical_overdue: 0,
+      overdue: 1,
+      approaching: 2,
+      none: 3,
+    };
     const cmp = order[a.escalation.level] - order[b.escalation.level];
     if (cmp !== 0) return cmp;
     return a.createdAt.getTime() - b.createdAt.getTime();
@@ -146,12 +187,14 @@ export async function GET(_req: Request) {
 </div>
 
 <h2>Items (${summary.total})</h2>
-${rowsHtml
-  ? `<table>
+${
+  rowsHtml
+    ? `<table>
   <thead><tr><th>Typ</th><th>Titel</th><th>Status</th><th>Erfasst</th><th>Frist</th><th>Escalation</th><th>Rest</th></tr></thead>
   <tbody>${rowsHtml}</tbody>
 </table>`
-  : `<div class="empty">Keine DSRs oder Breaches vorhanden.</div>`}
+    : `<div class="empty">Keine DSRs oder Breaches vorhanden.</div>`
+}
 
 <div class="footer">Vertraulich — Erstellt mit ARCTOS GRC Platform — ${exportTs}</div>
 </body></html>`;

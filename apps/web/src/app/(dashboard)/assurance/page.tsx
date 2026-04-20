@@ -45,7 +45,9 @@ export default function AssuranceDashboardPage() {
   const router = useRouter();
   const [modules, setModules] = useState<ModuleScore[]>([]);
   const [overallScore, setOverallScore] = useState(0);
-  const [selectedModule, setSelectedModule] = useState<ModuleScore | null>(null);
+  const [selectedModule, setSelectedModule] = useState<ModuleScore | null>(
+    null,
+  );
   const [trendData, setTrendData] = useState<TrendData[]>([]);
   const [hasEnoughTrendData, setHasEnoughTrendData] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -98,8 +100,10 @@ export default function AssuranceDashboardPage() {
   };
 
   const getTrendIcon = (trend?: string) => {
-    if (trend === "improving") return <TrendingUp className="h-4 w-4 text-green-600" />;
-    if (trend === "declining") return <TrendingDown className="h-4 w-4 text-red-600" />;
+    if (trend === "improving")
+      return <TrendingUp className="h-4 w-4 text-green-600" />;
+    if (trend === "declining")
+      return <TrendingDown className="h-4 w-4 text-red-600" />;
     return <Minus className="h-4 w-4 text-gray-400" />;
   };
 
@@ -123,7 +127,12 @@ export default function AssuranceDashboardPage() {
             {t("assurance.subtitle")}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -133,17 +142,35 @@ export default function AssuranceDashboardPage() {
         <div className="text-center">
           <div className="relative w-28 h-28 mx-auto">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="12" />
               <circle
-                cx="60" cy="60" r="52" fill="none"
-                stroke={overallScore >= 80 ? "#22c55e" : overallScore >= 50 ? "#eab308" : "#ef4444"}
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="12"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke={
+                  overallScore >= 80
+                    ? "#22c55e"
+                    : overallScore >= 50
+                      ? "#eab308"
+                      : "#ef4444"
+                }
                 strokeWidth="12"
                 strokeDasharray={`${(overallScore / 100) * 327} 327`}
                 strokeLinecap="round"
               />
             </svg>
             <div className="absolute inset-0 flex items-center justify-center">
-              <span className="text-3xl font-bold text-gray-900">{overallScore}</span>
+              <span className="text-3xl font-bold text-gray-900">
+                {overallScore}
+              </span>
             </div>
           </div>
           <p className="text-sm font-medium text-gray-600 mt-3">
@@ -158,7 +185,11 @@ export default function AssuranceDashboardPage() {
           <button
             key={mod.module}
             type="button"
-            onClick={() => setSelectedModule(selectedModule?.module === mod.module ? null : mod)}
+            onClick={() =>
+              setSelectedModule(
+                selectedModule?.module === mod.module ? null : mod,
+              )
+            }
             className={`rounded-lg border p-4 text-left transition-all hover:shadow-sm ${
               selectedModule?.module === mod.module
                 ? "border-blue-400 ring-2 ring-blue-100"
@@ -172,7 +203,9 @@ export default function AssuranceDashboardPage() {
               {getTrendIcon(mod.trend)}
             </div>
             <div className="flex items-baseline gap-2">
-              <span className={`text-2xl font-bold ${getScoreColor(mod.score)}`}>
+              <span
+                className={`text-2xl font-bold ${getScoreColor(mod.score)}`}
+              >
                 {mod.score}
               </span>
               <span className="text-xs text-gray-400">/100</span>
@@ -200,7 +233,10 @@ export default function AssuranceDashboardPage() {
             <h2 className="text-base font-semibold text-gray-900">
               {selectedModule.module.toUpperCase()} — {t("assurance.drilldown")}
             </h2>
-            <Badge variant="outline" className={`${getScoreBg(selectedModule.score)} text-sm`}>
+            <Badge
+              variant="outline"
+              className={`${getScoreBg(selectedModule.score)} text-sm`}
+            >
               {selectedModule.score}/100
             </Badge>
           </div>
@@ -246,7 +282,10 @@ export default function AssuranceDashboardPage() {
                   className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3"
                 >
                   <span className="text-sm text-gray-700">{rec.action}</span>
-                  <Badge variant="outline" className="bg-green-50 text-green-700 border-green-200">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-50 text-green-700 border-green-200"
+                  >
                     +{rec.impactPercent}%
                   </Badge>
                 </div>

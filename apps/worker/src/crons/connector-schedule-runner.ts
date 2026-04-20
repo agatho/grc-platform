@@ -1,7 +1,13 @@
 // Sprint 62: Evidence Connector Framework — Schedule Runner
 // Runs connector schedules that are due for execution
 
-import { db, connectorSchedule, evidenceConnector, connectorTestResult, connectorTestDefinition } from "@grc/db";
+import {
+  db,
+  connectorSchedule,
+  evidenceConnector,
+  connectorTestResult,
+  connectorTestDefinition,
+} from "@grc/db";
 import { eq, and, lte, isNull } from "drizzle-orm";
 
 export const connectorScheduleRunnerCron = "*/15 * * * *"; // Every 15 minutes
@@ -55,7 +61,11 @@ export async function connectorScheduleRunner(): Promise<void> {
       for (const testDef of testDefs) {
         // Skip if testIds filter is set and this test is not included
         const testIds = schedule.testIds as string[];
-        if (testIds && testIds.length > 0 && !testIds.includes(testDef.testKey)) {
+        if (
+          testIds &&
+          testIds.length > 0 &&
+          !testIds.includes(testDef.testKey)
+        ) {
           continue;
         }
 

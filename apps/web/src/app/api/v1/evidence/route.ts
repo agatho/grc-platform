@@ -1,19 +1,7 @@
-import {
-  db,
-  evidence,
-  user,
-} from "@grc/db";
+import { db, evidence, user } from "@grc/db";
 import { createEvidenceSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  asc,
-  inArray,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, asc, inArray } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -97,7 +85,15 @@ export async function GET(req: Request) {
   const categoryParam = searchParams.get("category");
   if (categoryParam) {
     const categories = categoryParam.split(",") as Array<
-      "screenshot" | "document" | "log_export" | "email" | "certificate" | "report" | "photo" | "config_export" | "other"
+      | "screenshot"
+      | "document"
+      | "log_export"
+      | "email"
+      | "certificate"
+      | "report"
+      | "photo"
+      | "config_export"
+      | "other"
     >;
     conditions.push(inArray(evidence.category, categories));
   }

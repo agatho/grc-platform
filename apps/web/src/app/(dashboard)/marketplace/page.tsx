@@ -102,9 +102,16 @@ function MarketplaceBrowse() {
             </Button>
           </Link>
           <Link href="/marketplace/publishers">
-            <Button variant="outline" size="sm">{t("publisherPortal")}</Button>
+            <Button variant="outline" size="sm">
+              {t("publisherPortal")}
+            </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -113,7 +120,10 @@ function MarketplaceBrowse() {
       {/* Search & Filter */}
       <div className="flex gap-4">
         <div className="relative flex-1">
-          <Search size={16} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={16}
+            className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -129,7 +139,9 @@ function MarketplaceBrowse() {
         >
           <option value="">{t("allCategories")}</option>
           {categories.map((cat) => (
-            <option key={cat.id} value={cat.id}>{cat.name}</option>
+            <option key={cat.id} value={cat.id}>
+              {cat.name}
+            </option>
           ))}
         </select>
       </div>
@@ -152,19 +164,30 @@ function MarketplaceBrowse() {
               <div className="flex items-start gap-3">
                 <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center shrink-0">
                   {listing.iconUrl ? (
-                    <img src={listing.iconUrl} alt="" className="h-8 w-8 rounded" />
+                    <img
+                      src={listing.iconUrl}
+                      alt=""
+                      className="h-8 w-8 rounded"
+                    />
                   ) : (
                     <Package size={20} className="text-gray-400" />
                   )}
                 </div>
                 <div className="min-w-0">
                   <div className="flex items-center gap-2">
-                    <h3 className="text-sm font-semibold text-gray-900 truncate">{listing.name}</h3>
+                    <h3 className="text-sm font-semibold text-gray-900 truncate">
+                      {listing.name}
+                    </h3>
                     {listing.isVerified && (
-                      <ShieldCheck size={14} className="text-blue-500 shrink-0" />
+                      <ShieldCheck
+                        size={14}
+                        className="text-blue-500 shrink-0"
+                      />
                     )}
                   </div>
-                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">{listing.summary}</p>
+                  <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                    {listing.summary}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center justify-between mt-4">
@@ -183,7 +206,9 @@ function MarketplaceBrowse() {
                 </Badge>
               </div>
               {listing.isFeatured && (
-                <Badge className="mt-2 bg-yellow-100 text-yellow-800 text-[10px]">{t("featured")}</Badge>
+                <Badge className="mt-2 bg-yellow-100 text-yellow-800 text-[10px]">
+                  {t("featured")}
+                </Badge>
               )}
             </Link>
           ))}

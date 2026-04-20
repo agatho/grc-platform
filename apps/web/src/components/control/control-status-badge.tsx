@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@grc/ui";
 import type { ControlStatus } from "@grc/shared";
 
-const STATUS_STYLES: Record<ControlStatus, { bg: string; text: string; border: string }> = {
+const STATUS_STYLES: Record<
+  ControlStatus,
+  { bg: string; text: string; border: string }
+> = {
   designed: {
     bg: "bg-gray-100",
     text: "text-gray-700",

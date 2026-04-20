@@ -176,7 +176,14 @@ export async function GET(req: Request) {
   const freqParam = searchParams.get("frequency");
   if (freqParam) {
     const freqs = freqParam.split(",") as Array<
-      "event_driven" | "continuous" | "daily" | "weekly" | "monthly" | "quarterly" | "annually" | "ad_hoc"
+      | "event_driven"
+      | "continuous"
+      | "daily"
+      | "weekly"
+      | "monthly"
+      | "quarterly"
+      | "annually"
+      | "ad_hoc"
     >;
     conditions.push(inArray(control.frequency, freqs));
   }
@@ -215,10 +222,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(control.title, pattern),
-        ilike(control.description, pattern),
-      )!,
+      or(ilike(control.title, pattern), ilike(control.description, pattern))!,
     );
   }
 

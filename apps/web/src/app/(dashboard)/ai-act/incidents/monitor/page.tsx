@@ -111,7 +111,9 @@ export default function IncidentsMonitorPage() {
         const aOrder = ESCALATION_META[a.overdue.escalationLevel].order;
         const bOrder = ESCALATION_META[b.overdue.escalationLevel].order;
         if (aOrder !== bOrder) return aOrder - bOrder;
-        return new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime();
+        return (
+          new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime()
+        );
       });
       setRows(sorted);
     } catch (e) {
@@ -126,9 +128,13 @@ export default function IncidentsMonitorPage() {
   }, [fetchData]);
 
   const bucket = {
-    critical: rows.filter((r) => r.overdue.escalationLevel === "critical_overdue"),
+    critical: rows.filter(
+      (r) => r.overdue.escalationLevel === "critical_overdue",
+    ),
     overdue: rows.filter((r) => r.overdue.escalationLevel === "overdue"),
-    approaching: rows.filter((r) => r.overdue.escalationLevel === "approaching"),
+    approaching: rows.filter(
+      (r) => r.overdue.escalationLevel === "approaching",
+    ),
     ok: rows.filter((r) => r.overdue.escalationLevel === "none"),
   };
 
@@ -197,10 +203,17 @@ export default function IncidentsMonitorPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{r.title}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                  <span>Erkannt: {new Date(r.detectedAt).toLocaleString("de-DE")}</span>
-                  <span>Frist: {new Date(r.deadlineAt).toLocaleString("de-DE")}</span>
+                  <span>
+                    Erkannt: {new Date(r.detectedAt).toLocaleString("de-DE")}
+                  </span>
+                  <span>
+                    Frist: {new Date(r.deadlineAt).toLocaleString("de-DE")}
+                  </span>
                   {r.isSerious && (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-xs py-0">
+                    <Badge
+                      variant="outline"
+                      className="bg-red-50 text-red-700 border-red-200 text-xs py-0"
+                    >
                       serious
                     </Badge>
                   )}
@@ -255,10 +268,12 @@ export default function IncidentsMonitorPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zur Incidents-Liste
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">Incidents Monitor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Incidents Monitor
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Art. 73 Frist-Ueberwachung fuer alle AI-Incidents. Escalation-Level basiert auf
-            time-to-deadline (kritisch wenn &gt; 48h ueberfaellig).
+            Art. 73 Frist-Ueberwachung fuer alle AI-Incidents. Escalation-Level
+            basiert auf time-to-deadline (kritisch wenn &gt; 48h ueberfaellig).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -279,14 +294,24 @@ export default function IncidentsMonitorPage() {
 
       {/* KPIs */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-        <Card className={bucket.critical.length > 0 ? "border-red-500 bg-red-50/50 dark:bg-red-950/20" : ""}>
+        <Card
+          className={
+            bucket.critical.length > 0
+              ? "border-red-500 bg-red-50/50 dark:bg-red-950/20"
+              : ""
+          }
+        >
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Siren className="h-3.5 w-3.5" />
               Critical Overdue
             </p>
-            <p className="text-3xl font-bold text-red-700">{bucket.critical.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">&gt; 48h ueberfaellig</p>
+            <p className="text-3xl font-bold text-red-700">
+              {bucket.critical.length}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              &gt; 48h ueberfaellig
+            </p>
           </CardContent>
         </Card>
         <Card className={bucket.overdue.length > 0 ? "border-red-300" : ""}>
@@ -295,18 +320,28 @@ export default function IncidentsMonitorPage() {
               <AlertTriangle className="h-3.5 w-3.5" />
               Overdue
             </p>
-            <p className="text-3xl font-bold text-red-600">{bucket.overdue.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">0-48h ueberfaellig</p>
+            <p className="text-3xl font-bold text-red-600">
+              {bucket.overdue.length}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              0-48h ueberfaellig
+            </p>
           </CardContent>
         </Card>
-        <Card className={bucket.approaching.length > 0 ? "border-amber-300" : ""}>
+        <Card
+          className={bucket.approaching.length > 0 ? "border-amber-300" : ""}
+        >
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
               Approaching
             </p>
-            <p className="text-3xl font-bold text-amber-600">{bucket.approaching.length}</p>
-            <p className="text-xs text-muted-foreground mt-1">&lt; 24h bis Frist</p>
+            <p className="text-3xl font-bold text-amber-600">
+              {bucket.approaching.length}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              &lt; 24h bis Frist
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -315,7 +350,9 @@ export default function IncidentsMonitorPage() {
               <CheckCircle2 className="h-3.5 w-3.5" />
               OK
             </p>
-            <p className="text-3xl font-bold text-emerald-600">{bucket.ok.length}</p>
+            <p className="text-3xl font-bold text-emerald-600">
+              {bucket.ok.length}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
               notified oder &gt; 24h verbleibend
             </p>
@@ -329,14 +366,18 @@ export default function IncidentsMonitorPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Siren className="h-5 w-5 text-red-700" />
-              <CardTitle className="text-red-800">Critical Overdue -- Sofortmeldung!</CardTitle>
+              <CardTitle className="text-red-800">
+                Critical Overdue -- Sofortmeldung!
+              </CardTitle>
             </div>
             <CardDescription>
-              Art. 73 Frist um mehr als 48h ueberschritten. Regulatorisches Risiko -- Board
-              sofort informieren.
+              Art. 73 Frist um mehr als 48h ueberschritten. Regulatorisches
+              Risiko -- Board sofort informieren.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.critical.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.critical.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -349,7 +390,9 @@ export default function IncidentsMonitorPage() {
               Overdue (&lt; 48h)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.overdue.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.overdue.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -362,7 +405,9 @@ export default function IncidentsMonitorPage() {
               Approaching (&lt; 24h)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.approaching.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.approaching.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -375,7 +420,9 @@ export default function IncidentsMonitorPage() {
               OK ({bucket.ok.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.ok.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.ok.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 

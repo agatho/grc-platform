@@ -4,8 +4,17 @@ import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { updateAiCorrectiveActionSchema } from "@grc/shared";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -22,7 +31,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ data: row });
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
@@ -30,23 +42,39 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const parsed = updateAiCorrectiveActionSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const {
-    title, description, non_conformity_description, action_type,
-    is_recall, is_withdrawal, recall_reason, priority,
-    assigned_to, due_date, status,
-    authority_notified, authority_notified_at, authority_reference,
-    verification_notes, effectiveness_rating,
+    title,
+    description,
+    non_conformity_description,
+    action_type,
+    is_recall,
+    is_withdrawal,
+    recall_reason,
+    priority,
+    assigned_to,
+    due_date,
+    status,
+    authority_notified,
+    authority_notified_at,
+    authority_reference,
+    verification_notes,
+    effectiveness_rating,
   } = parsed.data;
 
   // Auto-set completed_at/verified_at based on status transitions
-  const completedClause = status === "completed"
-    ? sql`, completed_at = COALESCE(completed_at, now())`
-    : sql``;
-  const verifiedClause = status === "verified"
-    ? sql`, verified_at = COALESCE(verified_at, now()), verified_by = COALESCE(verified_by, ${ctx.userId})`
-    : sql``;
+  const completedClause =
+    status === "completed"
+      ? sql`, completed_at = COALESCE(completed_at, now())`
+      : sql``;
+  const verifiedClause =
+    status === "verified"
+      ? sql`, verified_at = COALESCE(verified_at, now()), verified_by = COALESCE(verified_by, ${ctx.userId})`
+      : sql``;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

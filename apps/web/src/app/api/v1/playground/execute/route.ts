@@ -5,8 +5,8 @@ import { z } from "zod";
 const executeSchema = z.object({
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
   path: z.string().min(1).max(500),
-  headers: z.record(z.string()).default({}),
-  queryParams: z.record(z.string()).default({}),
+  headers: z.record(z.string(), z.string()).default({}),
+  queryParams: z.record(z.string(), z.string()).default({}),
   body: z.string().max(50000).optional(),
 });
 

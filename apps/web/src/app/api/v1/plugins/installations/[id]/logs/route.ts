@@ -16,10 +16,12 @@ export async function GET(
   const rows = await db
     .select()
     .from(pluginExecutionLog)
-    .where(and(
-      eq(pluginExecutionLog.installationId, id),
-      eq(pluginExecutionLog.orgId, ctx.orgId),
-    ))
+    .where(
+      and(
+        eq(pluginExecutionLog.installationId, id),
+        eq(pluginExecutionLog.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(pluginExecutionLog.createdAt))
     .limit(limit)
     .offset(offset);
@@ -27,10 +29,12 @@ export async function GET(
   const [{ count }] = await db
     .select({ count: sql<number>`count(*)` })
     .from(pluginExecutionLog)
-    .where(and(
-      eq(pluginExecutionLog.installationId, id),
-      eq(pluginExecutionLog.orgId, ctx.orgId),
-    ));
+    .where(
+      and(
+        eq(pluginExecutionLog.installationId, id),
+        eq(pluginExecutionLog.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json(paginatedResponse(rows, Number(count), page, limit));
 }

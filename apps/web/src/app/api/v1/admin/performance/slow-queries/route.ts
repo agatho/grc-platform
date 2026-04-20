@@ -26,22 +26,25 @@ export async function GET(req: Request) {
       LIMIT 20
     `);
 
-    queries = (result as Record<string, unknown>[]).map((row: Record<string, unknown>) => {
-      const queryText = String(row.query ?? "");
-      // Extract table names from query
-      const tableMatches = queryText.match(/(?:FROM|JOIN|UPDATE|INTO)\s+"?(\w+)"?/gi) ?? [];
-      const tables = tableMatches.map((m) =>
-        m.replace(/(?:FROM|JOIN|UPDATE|INTO)\s+"?/i, "").replace(/"$/, ""),
-      );
+    queries = (result as Record<string, unknown>[]).map(
+      (row: Record<string, unknown>) => {
+        const queryText = String(row.query ?? "");
+        // Extract table names from query
+        const tableMatches =
+          queryText.match(/(?:FROM|JOIN|UPDATE|INTO)\s+"?(\w+)"?/gi) ?? [];
+        const tables = tableMatches.map((m) =>
+          m.replace(/(?:FROM|JOIN|UPDATE|INTO)\s+"?/i, "").replace(/"$/, ""),
+        );
 
-      return {
-        query: queryText,
-        avgDurationMs: Number(row.avg_duration_ms ?? 0),
-        callCount: Number(row.call_count ?? 0),
-        tables,
-        indexRecommended: Number(row.avg_duration_ms ?? 0) > 500,
-      };
-    });
+        return {
+          query: queryText,
+          avgDurationMs: Number(row.avg_duration_ms ?? 0),
+          callCount: Number(row.call_count ?? 0),
+          tables,
+          indexRecommended: Number(row.avg_duration_ms ?? 0) > 500,
+        };
+      },
+    );
   } catch {
     // pg_stat_statements extension may not be available
     // Return empty list

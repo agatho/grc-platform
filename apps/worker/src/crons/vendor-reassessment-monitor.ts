@@ -13,7 +13,9 @@ export async function processVendorReassessmentMonitor(): Promise<VendorReassess
   const now = new Date();
   let notified = 0;
 
-  console.log(`[cron:vendor-reassessment-monitor] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:vendor-reassessment-monitor] Starting at ${now.toISOString()}`,
+  );
 
   // Find vendors with overdue assessment dates
   const overdueVendors = await db
@@ -35,7 +37,9 @@ export async function processVendorReassessmentMonitor(): Promise<VendorReassess
     );
 
   if (overdueVendors.length === 0) {
-    console.log("[cron:vendor-reassessment-monitor] No overdue vendor assessments found");
+    console.log(
+      "[cron:vendor-reassessment-monitor] No overdue vendor assessments found",
+    );
     return { processed: 0, notified: 0 };
   }
 
@@ -45,7 +49,8 @@ export async function processVendorReassessmentMonitor(): Promise<VendorReassess
       if (!recipientId) continue;
 
       const daysOverdue = Math.ceil(
-        (now.getTime() - new Date(v.nextAssessmentDate!).getTime()) / (1000 * 60 * 60 * 24),
+        (now.getTime() - new Date(v.nextAssessmentDate!).getTime()) /
+          (1000 * 60 * 60 * 24),
       );
 
       await db.insert(notification).values({

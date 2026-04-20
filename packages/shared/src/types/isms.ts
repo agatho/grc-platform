@@ -1,7 +1,14 @@
 // ISMS — Assets, Protection Requirements & Incidents (Sprint 5a + 5b)
 export type ProtectionLevel = "normal" | "high" | "very_high";
 export type IncidentSeverity = "low" | "medium" | "high" | "critical";
-export type IncidentStatus = "detected" | "triaged" | "contained" | "eradicated" | "recovered" | "lessons_learned" | "closed";
+export type IncidentStatus =
+  | "detected"
+  | "triaged"
+  | "contained"
+  | "eradicated"
+  | "recovered"
+  | "lessons_learned"
+  | "closed";
 export type DependencyType = "uses" | "produces" | "manages" | "depends_on";
 export type Criticality = "low" | "medium" | "high" | "critical";
 export type VulnerabilitySeverity = "low" | "medium" | "high" | "critical";
@@ -118,13 +125,43 @@ export interface IncidentTimelineEntry {
 
 // Sprint 5b: ISMS Assessment types
 
-export type AssessmentStatus = "planning" | "in_progress" | "review" | "completed" | "cancelled";
-export type AssessmentScopeType = "full" | "department" | "asset_group" | "custom";
-export type EvalResult = "effective" | "partially_effective" | "ineffective" | "not_applicable" | "not_evaluated";
-export type RiskDecision = "accept" | "mitigate" | "transfer" | "avoid" | "pending";
-export type SoaApplicability = "applicable" | "not_applicable" | "partially_applicable";
-export type SoaImplementation = "implemented" | "partially_implemented" | "planned" | "not_implemented";
-export type ReviewStatus = "planned" | "in_progress" | "completed" | "cancelled";
+export type AssessmentStatus =
+  | "planning"
+  | "in_progress"
+  | "review"
+  | "completed"
+  | "cancelled";
+export type AssessmentScopeType =
+  | "full"
+  | "department"
+  | "asset_group"
+  | "custom";
+export type EvalResult =
+  | "effective"
+  | "partially_effective"
+  | "ineffective"
+  | "not_applicable"
+  | "not_evaluated";
+export type RiskDecision =
+  | "accept"
+  | "mitigate"
+  | "transfer"
+  | "avoid"
+  | "pending";
+export type SoaApplicability =
+  | "applicable"
+  | "not_applicable"
+  | "partially_applicable";
+export type SoaImplementation =
+  | "implemented"
+  | "partially_implemented"
+  | "planned"
+  | "not_implemented";
+export type ReviewStatus =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
 
 export interface AssessmentRun {
   id: string;

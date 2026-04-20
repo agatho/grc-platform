@@ -1,7 +1,4 @@
-import {
-  db,
-  questionnaireTemplate,
-} from "@grc/db";
+import { db, questionnaireTemplate } from "@grc/db";
 import { createTemplateSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -119,10 +116,7 @@ export async function GET(req: Request) {
       .orderBy(orderBy)
       .limit(limit)
       .offset(offset),
-    db
-      .select({ value: count() })
-      .from(questionnaireTemplate)
-      .where(where),
+    db.select({ value: count() }).from(questionnaireTemplate).where(where),
   ]);
 
   return paginatedResponse(items, total, page, limit);

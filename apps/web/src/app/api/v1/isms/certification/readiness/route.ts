@@ -86,7 +86,9 @@ export async function GET(req: Request) {
           .orderBy(desc(managementReview.reviewDate))
           .limit(1);
         passed = !!review?.auditResults;
-        details = review?.auditResults ? "Audit results documented" : "No audit results found";
+        details = review?.auditResults
+          ? "Audit results documented"
+          : "No audit results found";
         break;
       }
 
@@ -112,7 +114,9 @@ export async function GET(req: Request) {
           .from(assetClassification)
           .where(eq(assetClassification.orgId, ctx.orgId));
 
-        passed = assetStats.totalAssets > 0 && classifiedStats.classified >= assetStats.totalAssets;
+        passed =
+          assetStats.totalAssets > 0 &&
+          classifiedStats.classified >= assetStats.totalAssets;
         details = `${classifiedStats.classified}/${assetStats.totalAssets} assets classified`;
         break;
       }
@@ -164,7 +168,9 @@ export async function GET(req: Request) {
           .orderBy(desc(managementReview.reviewDate))
           .limit(1);
         passed = !!review && new Date(review.reviewDate) >= twelveMonthsAgo;
-        details = review ? `Last policy review: ${review.reviewDate}` : "No policy review found";
+        details = review
+          ? `Last policy review: ${review.reviewDate}`
+          : "No policy review found";
         break;
       }
 
@@ -175,7 +181,9 @@ export async function GET(req: Request) {
           .from(soaEntry)
           .where(eq(soaEntry.orgId, ctx.orgId));
         passed = soaCount.count > 0;
-        details = passed ? "ISMS scope defined via SoA" : "No SoA entries found - scope not defined";
+        details = passed
+          ? "ISMS scope defined via SoA"
+          : "No SoA entries found - scope not defined";
         break;
       }
     }

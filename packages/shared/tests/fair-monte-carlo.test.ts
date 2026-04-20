@@ -76,9 +76,7 @@ describe("Beta Distribution", () => {
   });
 
   it("uniform for alpha=1, beta=1", () => {
-    const samples = Array.from({ length: 5000 }, () =>
-      betaDistribution(1, 1),
-    );
+    const samples = Array.from({ length: 5000 }, () => betaDistribution(1, 1));
     const avg = mean(samples);
     expect(avg).toBeGreaterThan(0.45);
     expect(avg).toBeLessThan(0.55);
@@ -186,7 +184,10 @@ describe("Monte Carlo Simulation", () => {
       lmMostLikely: 200000,
       lmMax: 1000000,
     });
-    const totalImpact = result.sensitivity.reduce((sum, s) => sum + s.impact, 0);
+    const totalImpact = result.sensitivity.reduce(
+      (sum, s) => sum + s.impact,
+      0,
+    );
     expect(totalImpact).toBeCloseTo(1.0, 1);
   });
 
@@ -304,9 +305,10 @@ describe("buildHistogram", () => {
 
 describe("buildExceedanceCurve", () => {
   it("produces monotonically decreasing probabilities", () => {
-    const values = Array.from({ length: 1000 }, () => Math.random() * 1000000).sort(
-      (a, b) => a - b,
-    );
+    const values = Array.from(
+      { length: 1000 },
+      () => Math.random() * 1000000,
+    ).sort((a, b) => a - b);
     const curve = buildExceedanceCurve(values, 20);
     for (let i = 1; i < curve.length; i++) {
       expect(curve[i].probability).toBeLessThanOrEqual(
@@ -379,28 +381,34 @@ describe("DEFAULT_LOSS_COMPONENTS", () => {
 describe("Performance", () => {
   it("10,000 iterations complete in under 500ms", () => {
     const start = performance.now();
-    runFAIRSimulation({
-      lefMin: 0.5,
-      lefMostLikely: 2,
-      lefMax: 10,
-      lmMin: 50000,
-      lmMostLikely: 200000,
-      lmMax: 1000000,
-    }, 10000);
+    runFAIRSimulation(
+      {
+        lefMin: 0.5,
+        lefMostLikely: 2,
+        lefMax: 10,
+        lmMin: 50000,
+        lmMostLikely: 200000,
+        lmMax: 1000000,
+      },
+      10000,
+    );
     const elapsed = performance.now() - start;
     expect(elapsed).toBeLessThan(500);
   });
 
   it("100,000 iterations complete in under 5000ms", () => {
     const start = performance.now();
-    runFAIRSimulation({
-      lefMin: 0.5,
-      lefMostLikely: 2,
-      lefMax: 10,
-      lmMin: 50000,
-      lmMostLikely: 200000,
-      lmMax: 1000000,
-    }, 100000);
+    runFAIRSimulation(
+      {
+        lefMin: 0.5,
+        lefMostLikely: 2,
+        lefMax: 10,
+        lmMin: 50000,
+        lmMostLikely: 200000,
+        lmMax: 1000000,
+      },
+      100000,
+    );
     const elapsed = performance.now() - start;
     expect(elapsed).toBeLessThan(5000);
   });

@@ -12,7 +12,9 @@ test("Audit-log hash-chain integrity", async ({ page }) => {
     const r = await fetch("/api/v1/audit-log/integrity");
     const t = await r.text();
     let d: any = null;
-    try { d = JSON.parse(t); } catch {}
+    try {
+      d = JSON.parse(t);
+    } catch {}
     return { status: r.status, data: d };
   });
 

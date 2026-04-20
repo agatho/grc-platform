@@ -25,10 +25,14 @@ export function WalkthroughStep({
   onCheck,
 }: WalkthroughStepProps) {
   return (
-    <div className={cn(
-      "flex items-start gap-3 p-3 rounded-lg transition-colors",
-      isChecked ? "bg-teal-50 border border-teal-200" : "bg-white border border-gray-200",
-    )}>
+    <div
+      className={cn(
+        "flex items-start gap-3 p-3 rounded-lg transition-colors",
+        isChecked
+          ? "bg-teal-50 border border-teal-200"
+          : "bg-white border border-gray-200",
+      )}
+    >
       <input
         type="checkbox"
         checked={isChecked}
@@ -37,10 +41,12 @@ export function WalkthroughStep({
       />
       <div className="flex-1">
         <div className="flex items-center gap-2">
-          <span className={cn(
-            "text-sm font-medium",
-            isChecked ? "text-teal-700 line-through" : "text-gray-900",
-          )}>
+          <span
+            className={cn(
+              "text-sm font-medium",
+              isChecked ? "text-teal-700 line-through" : "text-gray-900",
+            )}
+          >
             Step {stepNumber}: {name}
           </span>
           {type === "event" && (
@@ -50,12 +56,8 @@ export function WalkthroughStep({
           )}
         </div>
         <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
-          {responsible && (
-            <span>Role: {responsible}</span>
-          )}
-          {documents.length > 0 && (
-            <span>Docs: {documents.join(", ")}</span>
-          )}
+          {responsible && <span>Role: {responsible}</span>}
+          {documents.length > 0 && <span>Docs: {documents.join(", ")}</span>}
           {applications.length > 0 && (
             <span>Apps: {applications.join(", ")}</span>
           )}

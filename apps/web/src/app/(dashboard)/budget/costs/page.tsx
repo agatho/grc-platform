@@ -22,17 +22,32 @@ import type {
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const GRC_AREAS: GrcArea[] = [
-  "erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general",
+  "erm",
+  "isms",
+  "ics",
+  "dpms",
+  "audit",
+  "tprm",
+  "bcms",
+  "esg",
+  "general",
 ];
 const COST_CATEGORIES: CostCategory[] = [
-  "personnel", "external", "tools", "training", "measures", "certification",
+  "personnel",
+  "external",
+  "tools",
+  "training",
+  "measures",
+  "certification",
 ];
 const COST_TYPES: CostType[] = ["planned", "actual", "forecast"];
 
 export default function CostListPage() {
   const t = useTranslations("budget");
   const router = useRouter();
-  const [costs, setCosts] = useState<(GrcCostEntry & { grcArea?: GrcArea })[]>([]);
+  const [costs, setCosts] = useState<(GrcCostEntry & { grcArea?: GrcArea })[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
   const [page, setPage] = useState(1);
@@ -80,20 +95,35 @@ export default function CostListPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/budget")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/budget")}
+          >
             <ArrowLeft size={14} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("costs.title")}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t("costs.title")}
+            </h1>
             <p className="text-sm text-gray-500 mt-1">{t("costs.subtitle")}</p>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             <Filter size={14} className="mr-1" />
             {t("costs.filters")}
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchCosts} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchCosts}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -104,41 +134,62 @@ export default function CostListPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex flex-wrap gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("costs.area")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("costs.area")}
+              </label>
               <select
                 value={filterArea}
-                onChange={(e) => { setFilterArea(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setFilterArea(e.target.value);
+                  setPage(1);
+                }}
                 className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
               >
                 <option value="">{t("costs.allAreas")}</option>
                 {GRC_AREAS.map((a) => (
-                  <option key={a} value={a}>{t(`areas.${a}`)}</option>
+                  <option key={a} value={a}>
+                    {t(`areas.${a}`)}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("costs.category")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("costs.category")}
+              </label>
               <select
                 value={filterCategory}
-                onChange={(e) => { setFilterCategory(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setFilterCategory(e.target.value);
+                  setPage(1);
+                }}
                 className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
               >
                 <option value="">{t("costs.allCategories")}</option>
                 {COST_CATEGORIES.map((c) => (
-                  <option key={c} value={c}>{t(`categories.${c}`)}</option>
+                  <option key={c} value={c}>
+                    {t(`categories.${c}`)}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("costs.type")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("costs.type")}
+              </label>
               <select
                 value={filterType}
-                onChange={(e) => { setFilterType(e.target.value); setPage(1); }}
+                onChange={(e) => {
+                  setFilterType(e.target.value);
+                  setPage(1);
+                }}
                 className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
               >
                 <option value="">{t("costs.allTypes")}</option>
                 {COST_TYPES.map((ct) => (
-                  <option key={ct} value={ct}>{t(`costs.typeLabels.${ct}`)}</option>
+                  <option key={ct} value={ct}>
+                    {t(`costs.typeLabels.${ct}`)}
+                  </option>
                 ))}
               </select>
             </div>
@@ -163,13 +214,27 @@ export default function CostListPage() {
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.date")}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.entityType")}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.category")}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.type")}</th>
-                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("costs.amount")}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.department")}</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("costs.description")}</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.date")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.entityType")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.category")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.type")}
+                    </th>
+                    <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                      {t("costs.amount")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.department")}
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      {t("costs.description")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
@@ -187,15 +252,25 @@ export default function CostListPage() {
                         {t(`categories.${cost.costCategory}`)}
                       </td>
                       <td className="px-4 py-3">
-                        <Badge variant="outline" className={`${typeColors[cost.costType]} text-[10px]`}>
+                        <Badge
+                          variant="outline"
+                          className={`${typeColors[cost.costType]} text-[10px]`}
+                        >
                           {t(`costs.typeLabels.${cost.costType}`)}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-right font-medium text-gray-900">
-                        {Number(cost.amount).toLocaleString("de-DE", { minimumFractionDigits: 2 })} {cost.currency}
+                        {Number(cost.amount).toLocaleString("de-DE", {
+                          minimumFractionDigits: 2,
+                        })}{" "}
+                        {cost.currency}
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{cost.department ?? "-"}</td>
-                      <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{cost.description ?? "-"}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {cost.department ?? "-"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
+                        {cost.description ?? "-"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

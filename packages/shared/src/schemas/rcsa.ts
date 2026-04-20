@@ -43,7 +43,11 @@ export const submitRiskResponseSchema = z.object({
 // ──────────── Control Response ────────────
 
 export const submitControlResponseSchema = z.object({
-  controlEffectiveness: z.enum(["effective", "partially_effective", "ineffective"]),
+  controlEffectiveness: z.enum([
+    "effective",
+    "partially_effective",
+    "ineffective",
+  ]),
   controlOperating: z.boolean(),
   controlWeaknesses: z.string().max(5000).optional(),
   comment: z.string().max(5000).optional(),

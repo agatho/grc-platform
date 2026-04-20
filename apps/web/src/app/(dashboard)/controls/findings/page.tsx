@@ -27,7 +27,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { FindingSeverity, FindingStatus, FindingSource } from "@grc/shared";
+import type {
+  FindingSeverity,
+  FindingStatus,
+  FindingSource,
+} from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -109,7 +113,9 @@ function FindingsPageInner() {
   const fetchFindings = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/findings?limit=500&sortBy=createdAt&sortDir=desc");
+      const res = await fetch(
+        "/api/v1/findings?limit=500&sortBy=createdAt&sortDir=desc",
+      );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
       setFindings(json.data ?? []);
@@ -131,10 +137,15 @@ function FindingsPageInner() {
 
   // KPIs
   const total = findings.length;
-  const open = findings.filter((f) => !["closed", "verified", "accepted"].includes(f.status)).length;
+  const open = findings.filter(
+    (f) => !["closed", "verified", "accepted"].includes(f.status),
+  ).length;
   const overdue = findings.filter((f) => {
     if (!f.remediationDueDate) return false;
-    return new Date(f.remediationDueDate) < new Date() && !["closed", "verified"].includes(f.status);
+    return (
+      new Date(f.remediationDueDate) < new Date() &&
+      !["closed", "verified"].includes(f.status)
+    );
   }).length;
 
   // Severity distribution
@@ -166,7 +177,9 @@ function FindingsPageInner() {
       {
         accessorKey: "severity",
         header: t("form.severity"),
-        cell: ({ row }) => <FindingSeverityBadge severity={row.original.severity} />,
+        cell: ({ row }) => (
+          <FindingSeverityBadge severity={row.original.severity} />
+        ),
       },
       {
         accessorKey: "status",
@@ -174,7 +187,10 @@ function FindingsPageInner() {
           <SortableHeader column={column}>{t("form.status")}</SortableHeader>
         ),
         cell: ({ row }) => (
-          <Badge variant="outline" className={statusBadgeClass(row.original.status)}>
+          <Badge
+            variant="outline"
+            className={statusBadgeClass(row.original.status)}
+          >
             {t(`status.${row.original.status}`)}
           </Badge>
         ),
@@ -204,9 +220,14 @@ function FindingsPageInner() {
         ),
         cell: ({ row }) => {
           const due = row.original.remediationDueDate;
-          const isOverdue = due && new Date(due) < new Date() && !["closed", "verified"].includes(row.original.status);
+          const isOverdue =
+            due &&
+            new Date(due) < new Date() &&
+            !["closed", "verified"].includes(row.original.status);
           return (
-            <span className={`text-sm ${isOverdue ? "text-red-600 font-semibold" : "text-gray-600"}`}>
+            <span
+              className={`text-sm ${isOverdue ? "text-red-600 font-semibold" : "text-gray-600"}`}
+            >
               {formatDate(due)}
             </span>
           );
@@ -232,7 +253,12 @@ function FindingsPageInner() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={() => fetchFindings()} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => fetchFindings()}
+          disabled={loading}
+        >
           <RefreshCcw size={14} />
         </Button>
       </div>
@@ -277,7 +303,9 @@ function FindingsPageInner() {
       {/* Severity Distribution */}
       <Card>
         <CardContent className="py-4">
-          <p className="text-sm font-medium text-gray-700 mb-3">{t("distribution.title")}</p>
+          <p className="text-sm font-medium text-gray-700 mb-3">
+            {t("distribution.title")}
+          </p>
           <div className="flex items-end gap-2 h-24">
             {SEVERITIES.map((s) => {
               const count = severityDist[s] ?? 0;
@@ -291,8 +319,13 @@ function FindingsPageInner() {
                 significant_nonconformity: "bg-red-500",
               };
               return (
-                <div key={s} className="flex-1 flex flex-col items-center gap-1">
-                  <span className="text-[10px] font-medium text-gray-600">{count}</span>
+                <div
+                  key={s}
+                  className="flex-1 flex flex-col items-center gap-1"
+                >
+                  <span className="text-[10px] font-medium text-gray-600">
+                    {count}
+                  </span>
                   <div
                     className={`w-full rounded-t ${colorMap[s] ?? "bg-gray-300"}`}
                     style={{ height: `${Math.max(heightPct, 4)}%` }}
@@ -328,7 +361,9 @@ function FindingsPageInner() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <Search size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("empty.noFindings")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("empty.noFindings")}
+          </p>
         </div>
       ) : (
         <DataTable

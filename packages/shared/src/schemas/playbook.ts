@@ -24,7 +24,11 @@ export const playbookTriggerSeverity = z.enum([
 ]);
 export type PlaybookTriggerSeverity = z.infer<typeof playbookTriggerSeverity>;
 
-export const playbookActivationStatus = z.enum(["active", "completed", "aborted"]);
+export const playbookActivationStatus = z.enum([
+  "active",
+  "completed",
+  "aborted",
+]);
 export type PlaybookActivationStatus = z.infer<typeof playbookActivationStatus>;
 
 export const playbookAssignedRole = z.enum([
@@ -92,7 +96,9 @@ export const createPlaybookTemplateSchema = z.object({
   phases: z.array(playbookPhaseSchema).min(1).max(10),
 });
 
-export type CreatePlaybookTemplateInput = z.infer<typeof createPlaybookTemplateSchema>;
+export type CreatePlaybookTemplateInput = z.infer<
+  typeof createPlaybookTemplateSchema
+>;
 
 // ─── Update Playbook Template ───────────────────────────────────
 
@@ -106,7 +112,9 @@ export const updatePlaybookTemplateSchema = z.object({
   phases: z.array(playbookPhaseSchema).min(1).max(10).optional(),
 });
 
-export type UpdatePlaybookTemplateInput = z.infer<typeof updatePlaybookTemplateSchema>;
+export type UpdatePlaybookTemplateInput = z.infer<
+  typeof updatePlaybookTemplateSchema
+>;
 
 // ─── Activate Playbook ──────────────────────────────────────────
 
@@ -211,16 +219,24 @@ export interface PlaybookStatusResponse {
 
 // ─── Helper Functions ───────────────────────────────────────────
 
-export function computeAbsoluteDeadline(activationTime: Date, relativeHours: number): Date {
+export function computeAbsoluteDeadline(
+  activationTime: Date,
+  relativeHours: number,
+): Date {
   return new Date(activationTime.getTime() + relativeHours * 60 * 60 * 1000);
 }
 
-export function countTotalTasks(template: { phases: Array<{ tasks: unknown[] }> }): number {
+export function countTotalTasks(template: {
+  phases: Array<{ tasks: unknown[] }>;
+}): number {
   return template.phases.reduce((sum, p) => sum + p.tasks.length, 0);
 }
 
 export function isPhaseComplete(tasks: Array<{ status: string }>): boolean {
-  return tasks.length > 0 && tasks.every((t) => t.status === "done" || t.status === "cancelled");
+  return (
+    tasks.length > 0 &&
+    tasks.every((t) => t.status === "done" || t.status === "cancelled")
+  );
 }
 
 export function getNextPhase<T extends { id: string; sortOrder: number }>(
@@ -237,7 +253,8 @@ export function matchesSeverityThreshold(
   incidentSeverity: string,
   templateMinSeverity: string,
 ): boolean {
-  const playbookSeverity = INCIDENT_TO_PLAYBOOK_SEVERITY[incidentSeverity] ?? "insignificant";
+  const playbookSeverity =
+    INCIDENT_TO_PLAYBOOK_SEVERITY[incidentSeverity] ?? "insignificant";
   const incidentLevel = SEVERITY_ORDER[playbookSeverity] ?? 0;
   const templateLevel = SEVERITY_ORDER[templateMinSeverity] ?? 0;
   return incidentLevel >= templateLevel;

@@ -63,11 +63,20 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const deltas = previousResult
     ? {
-        completionRate: toNum(currentResult.completionRate) - toNum(previousResult.completionRate),
-        avgLikelihood: toNum(currentResult.avgLikelihood) - toNum(previousResult.avgLikelihood),
-        avgImpact: toNum(currentResult.avgImpact) - toNum(previousResult.avgImpact),
-        controlsEffective: (currentResult.controlsEffective ?? 0) - (previousResult.controlsEffective ?? 0),
-        discrepancyCount: (currentResult.discrepancyCount ?? 0) - (previousResult.discrepancyCount ?? 0),
+        completionRate:
+          toNum(currentResult.completionRate) -
+          toNum(previousResult.completionRate),
+        avgLikelihood:
+          toNum(currentResult.avgLikelihood) -
+          toNum(previousResult.avgLikelihood),
+        avgImpact:
+          toNum(currentResult.avgImpact) - toNum(previousResult.avgImpact),
+        controlsEffective:
+          (currentResult.controlsEffective ?? 0) -
+          (previousResult.controlsEffective ?? 0),
+        discrepancyCount:
+          (currentResult.discrepancyCount ?? 0) -
+          (previousResult.discrepancyCount ?? 0),
       }
     : {
         completionRate: 0,

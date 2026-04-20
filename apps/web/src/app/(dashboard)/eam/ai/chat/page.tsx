@@ -11,7 +11,9 @@ export default function EamAiPage() {
   const [status, setStatus] = useState<Record<string, unknown> | null>(null);
 
   useEffect(() => {
-    fetch("/api/v1/eam/ai/config/status").then((r) => r.json()).then((r) => setStatus(r.data));
+    fetch("/api/v1/eam/ai/config/status")
+      .then((r) => r.json())
+      .then((r) => setStatus(r.data));
   }, []);
 
   return (
@@ -22,7 +24,9 @@ export default function EamAiPage() {
           <Card className="border-yellow-500">
             <CardContent className="pt-4">
               <p className="text-sm">{t("configureProvider")}</p>
-              <Button className="mt-2" variant="outline">{t("setupAi")}</Button>
+              <Button className="mt-2" variant="outline">
+                {t("setupAi")}
+              </Button>
             </CardContent>
           </Card>
         )}

@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
-  const [row] = await db.select().from(riskQuantificationConfig)
+  const [row] = await db
+    .select()
+    .from(riskQuantificationConfig)
     .where(eq(riskQuantificationConfig.orgId, ctx.orgId));
   return Response.json({ data: row ?? null });
 }
@@ -24,15 +26,22 @@ export async function PUT(req: Request) {
   const body = upsertRiskQuantConfigSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [existing] = await tx.select({ id: riskQuantificationConfig.id }).from(riskQuantificationConfig)
+    const [existing] = await tx
+      .select({ id: riskQuantificationConfig.id })
+      .from(riskQuantificationConfig)
       .where(eq(riskQuantificationConfig.orgId, ctx.orgId));
     if (existing) {
-      const [updated] = await tx.update(riskQuantificationConfig).set({ ...body, updatedAt: new Date() })
-        .where(eq(riskQuantificationConfig.orgId, ctx.orgId)).returning();
+      const [updated] = await tx
+        .update(riskQuantificationConfig)
+        .set({ ...body, updatedAt: new Date() })
+        .where(eq(riskQuantificationConfig.orgId, ctx.orgId))
+        .returning();
       return updated;
     }
-    const [created] = await tx.insert(riskQuantificationConfig)
-      .values({ orgId: ctx.orgId, ...body }).returning();
+    const [created] = await tx
+      .insert(riskQuantificationConfig)
+      .values({ orgId: ctx.orgId, ...body })
+      .returning();
     return created;
   });
 

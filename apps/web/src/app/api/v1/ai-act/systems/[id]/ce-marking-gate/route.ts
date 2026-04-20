@@ -46,7 +46,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {
@@ -79,14 +82,17 @@ export async function POST(req: Request, { params }: RouteParams) {
     .orderBy(desc(aiConformityAssessment.createdAt))
     .limit(1);
 
-  const conformityResult: CeMarkingGateContext["conformityResult"] = latestAssessment
-    ? ((latestAssessment.overallResult as CeMarkingGateContext["conformityResult"]) ?? "pending")
-    : "pending";
+  const conformityResult: CeMarkingGateContext["conformityResult"] =
+    latestAssessment
+      ? ((latestAssessment.overallResult as CeMarkingGateContext["conformityResult"]) ??
+        "pending")
+      : "pending";
 
   const gateCtx: CeMarkingGateContext = {
     conformityResult,
     procedure: parsed.data.procedure as ConformityProcedure,
-    hasSignedDeclarationOfConformity: parsed.data.hasSignedDeclarationOfConformity,
+    hasSignedDeclarationOfConformity:
+      parsed.data.hasSignedDeclarationOfConformity,
     annexIvSectionsCompleted: parsed.data.annexIvSectionsCompleted,
     hasNotifiedBodyCertificate: parsed.data.hasNotifiedBodyCertificate,
     registeredInEuDatabase: parsed.data.registeredInEuDatabase,

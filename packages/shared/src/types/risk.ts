@@ -1,13 +1,33 @@
 // Enterprise Risk Management types (Sprint 2)
-export type RiskCategory = "strategic" | "operational" | "financial" | "compliance" | "cyber" | "reputational" | "esg";
+export type RiskCategory =
+  | "strategic"
+  | "operational"
+  | "financial"
+  | "compliance"
+  | "cyber"
+  | "reputational"
+  | "esg";
 export type RiskSource = "isms" | "erm" | "bcm" | "project" | "process";
-export type RiskStatus = "identified" | "assessed" | "treated" | "accepted" | "closed";
+export type RiskStatus =
+  | "identified"
+  | "assessed"
+  | "treated"
+  | "accepted"
+  | "closed";
 export type TreatmentStrategy = "mitigate" | "accept" | "transfer" | "avoid";
-export type TreatmentStatus = "planned" | "in_progress" | "completed" | "cancelled";
+export type TreatmentStatus =
+  | "planned"
+  | "in_progress"
+  | "completed"
+  | "cancelled";
 export type KriAlertStatus = "green" | "yellow" | "red";
 export type KriTrend = "improving" | "stable" | "worsening";
 export type KriDirection = "asc" | "desc";
-export type KriMeasurementFrequency = "daily" | "weekly" | "monthly" | "quarterly";
+export type KriMeasurementFrequency =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly";
 export type KriMeasurementSource = "manual" | "api_import" | "calculated";
 
 export interface Risk {

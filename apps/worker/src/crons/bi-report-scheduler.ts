@@ -33,7 +33,11 @@ function computeNextRun(frequency: string, fromDate: Date): Date {
 
 export async function processBiReportScheduler(): Promise<BiReportSchedulerResult> {
   const now = new Date();
-  const result: BiReportSchedulerResult = { checked: 0, triggered: 0, errors: 0 };
+  const result: BiReportSchedulerResult = {
+    checked: 0,
+    triggered: 0,
+    errors: 0,
+  };
 
   const schedules = await db
     .select()
@@ -68,7 +72,10 @@ export async function processBiReportScheduler(): Promise<BiReportSchedulerResul
 
       result.triggered++;
     } catch (err) {
-      console.error(`[worker] bi-report-scheduler: Failed for schedule ${schedule.id}:`, err);
+      console.error(
+        `[worker] bi-report-scheduler: Failed for schedule ${schedule.id}:`,
+        err,
+      );
       result.errors++;
     }
   }

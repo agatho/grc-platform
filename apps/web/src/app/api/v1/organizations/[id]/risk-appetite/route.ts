@@ -36,12 +36,7 @@ export async function GET(
   const [row] = await db
     .select()
     .from(riskAppetite)
-    .where(
-      and(
-        eq(riskAppetite.orgId, id),
-        isNull(riskAppetite.deletedAt),
-      ),
-    );
+    .where(and(eq(riskAppetite.orgId, id), isNull(riskAppetite.deletedAt)));
 
   if (!row) {
     return Response.json({
@@ -78,12 +73,7 @@ export async function PUT(
   const [org] = await db
     .select({ id: organization.id })
     .from(organization)
-    .where(
-      and(
-        eq(organization.id, id),
-        isNull(organization.deletedAt),
-      ),
-    );
+    .where(and(eq(organization.id, id), isNull(organization.deletedAt)));
 
   if (!org) {
     return Response.json({ error: "Organization not found" }, { status: 404 });
@@ -102,12 +92,7 @@ export async function PUT(
     const [existing] = await tx
       .select({ id: riskAppetite.id })
       .from(riskAppetite)
-      .where(
-        and(
-          eq(riskAppetite.orgId, id),
-          isNull(riskAppetite.deletedAt),
-        ),
-      );
+      .where(and(eq(riskAppetite.orgId, id), isNull(riskAppetite.deletedAt)));
 
     if (existing) {
       // Update existing
@@ -118,7 +103,8 @@ export async function PUT(
           toleranceUpper: body.data.toleranceUpper?.toString(),
           toleranceLower: body.data.toleranceLower?.toString(),
           description: body.data.description,
-          effectiveDate: body.data.effectiveDate ?? new Date().toISOString().split("T")[0],
+          effectiveDate:
+            body.data.effectiveDate ?? new Date().toISOString().split("T")[0],
           updatedBy: ctx.userId,
           updatedAt: new Date(),
         })
@@ -137,7 +123,8 @@ export async function PUT(
         toleranceUpper: body.data.toleranceUpper?.toString(),
         toleranceLower: body.data.toleranceLower?.toString(),
         description: body.data.description,
-        effectiveDate: body.data.effectiveDate ?? new Date().toISOString().split("T")[0],
+        effectiveDate:
+          body.data.effectiveDate ?? new Date().toISOString().split("T")[0],
         createdBy: ctx.userId,
         updatedBy: ctx.userId,
       })

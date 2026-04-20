@@ -2,7 +2,12 @@ import { db, evidenceFreshnessConfig } from "@grc/db";
 import { createFreshnessConfigSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/connectors/freshness-config
@@ -15,7 +20,10 @@ export async function POST(req: Request) {
 
   const body = createFreshnessConfigSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -60,7 +68,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(evidenceFreshnessConfig).where(where).orderBy(desc(evidenceFreshnessConfig.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(evidenceFreshnessConfig)
+      .where(where)
+      .orderBy(desc(evidenceFreshnessConfig.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(evidenceFreshnessConfig).where(where),
   ]);
 

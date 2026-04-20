@@ -176,9 +176,9 @@ export function LanguageTabs({
     return (
       <InputComponent
         value={normalizedValue[defaultLanguage] ?? ""}
-        onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) =>
-          onChange({ [defaultLanguage]: e.target.value })
-        }
+        onChange={(
+          e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+        ) => onChange({ [defaultLanguage]: e.target.value })}
         placeholder={placeholder}
         disabled={disabled}
       />
@@ -231,9 +231,9 @@ export function LanguageTabs({
       <div className="relative">
         <InputComponent
           value={currentText}
-          onChange={(e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>) =>
-            handleTextChange(e.target.value)
-          }
+          onChange={(
+            e: React.ChangeEvent<HTMLTextAreaElement | HTMLInputElement>,
+          ) => handleTextChange(e.target.value)}
           placeholder={
             placeholder ??
             (activeTab !== defaultLanguage && !currentText

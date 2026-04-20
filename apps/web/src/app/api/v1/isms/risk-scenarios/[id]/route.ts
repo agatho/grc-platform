@@ -36,11 +36,12 @@ export async function GET(
     LIMIT 1
   `);
 
-  if (result.rows.length === 0) {
+  const arr = result as unknown as Record<string, unknown>[];
+  if (arr.length === 0) {
     return Response.json({ error: "Risk scenario not found" }, { status: 404 });
   }
 
-  return Response.json({ data: result.rows[0] });
+  return Response.json({ data: arr[0] });
 }
 
 // DELETE /api/v1/isms/risk-scenarios/[id]

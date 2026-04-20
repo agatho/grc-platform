@@ -73,7 +73,9 @@ export const reportTemplate = pgTable(
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
     moduleScope: reportModuleScopeEnum("module_scope").notNull().default("all"),
-    sectionsJson: jsonb("sections_json").notNull().default(sql`'[]'::jsonb`),
+    sectionsJson: jsonb("sections_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     parametersJson: jsonb("parameters_json")
       .notNull()
       .default(sql`'[]'::jsonb`),

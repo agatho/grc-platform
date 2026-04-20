@@ -34,7 +34,8 @@ export async function GET(req: Request) {
           {
             key: "isae3402_soc2",
             label: "ISAE 3402 / SOC 2 Trust Criteria",
-            description: "SOC 2 trust service criteria as checklist template items",
+            description:
+              "SOC 2 trust service criteria as checklist template items",
           },
           {
             key: "cobit_2019",

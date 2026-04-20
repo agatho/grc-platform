@@ -1,7 +1,12 @@
 // Sprint 63: Cloud Infrastructure Connectors — Compliance Snapshot
 // Takes daily compliance posture snapshots per cloud provider
 
-import { db, cloudTestSuite, cloudComplianceSnapshot, evidenceConnector } from "@grc/db";
+import {
+  db,
+  cloudTestSuite,
+  cloudComplianceSnapshot,
+  evidenceConnector,
+} from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 
 export const cloudComplianceSnapshotCron = "0 1 * * *"; // Daily at 1 AM
@@ -37,7 +42,10 @@ export async function cloudComplianceSnapshotJob(): Promise<void> {
     const totalChecks = suites.reduce((sum, s) => sum + s.totalTests, 0);
     const passingChecks = suites.reduce((sum, s) => sum + s.passingTests, 0);
     const failingChecks = suites.reduce((sum, s) => sum + s.failingTests, 0);
-    const overallScore = totalChecks > 0 ? Math.round((passingChecks / totalChecks) * 10000) / 100 : 0;
+    const overallScore =
+      totalChecks > 0
+        ? Math.round((passingChecks / totalChecks) * 10000) / 100
+        : 0;
 
     await db.insert(cloudComplianceSnapshot).values({
       orgId: connector.orgId,

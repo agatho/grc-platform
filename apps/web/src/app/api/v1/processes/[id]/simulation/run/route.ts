@@ -1,4 +1,9 @@
-import { db, simulationScenario, simulationActivityParam, processSimulationResult } from "@grc/db";
+import {
+  db,
+  simulationScenario,
+  simulationActivityParam,
+  processSimulationResult,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -22,7 +27,10 @@ export async function POST(
   const { id: processId } = await params;
   const parsed = runSimulationSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const { scenarioId } = parsed.data;
 
@@ -52,12 +60,19 @@ export async function POST(
     .where(eq(simulationActivityParam.scenarioId, scenarioId));
 
   if (activityParams.length === 0) {
-    return Response.json({ error: "No activity parameters configured" }, { status: 422 });
+    return Response.json(
+      { error: "No activity parameters configured" },
+      { status: 422 },
+    );
   }
 
   // Run Monte Carlo simulation with PERT distribution
   const caseCount = scenario.caseCount ?? 1000;
-  const caseResults: { duration: number; cost: number; taskTimes: Record<string, number> }[] = [];
+  const caseResults: {
+    duration: number;
+    cost: number;
+    taskTimes: Record<string, number>;
+  }[] = [];
 
   for (let i = 0; i < caseCount; i++) {
     let totalDuration = 0;
@@ -105,16 +120,18 @@ export async function POST(
   const totalCost = costs.reduce((a, b) => a + b, 0);
 
   // Find bottlenecks
-  const bottlenecks = activityParams.map((p) => {
-    const times = caseResults.map((r) => r.taskTimes[p.activityId] ?? 0);
-    return {
-      activityId: p.activityId,
-      activityName: p.activityName ?? p.activityId,
-      avgDuration: mean(times),
-      avgWaitTime: 0,
-      utilizationPct: (mean(times) / avgCycleTime) * 100,
-    };
-  }).sort((a, b) => b.avgDuration - a.avgDuration);
+  const bottlenecks = activityParams
+    .map((p) => {
+      const times = caseResults.map((r) => r.taskTimes[p.activityId] ?? 0);
+      return {
+        activityId: p.activityId,
+        activityName: p.activityName ?? p.activityId,
+        avgDuration: mean(times),
+        avgWaitTime: 0,
+        utilizationPct: (mean(times) / avgCycleTime) * 100,
+      };
+    })
+    .sort((a, b) => b.avgDuration - a.avgDuration);
 
   // Build histogram
   const binCount = 30;
@@ -163,7 +180,8 @@ export async function POST(
 function pertSample(min: number, ml: number, max: number): number {
   const lambda = 4;
   const mu = (min + lambda * ml + max) / (lambda + 2);
-  const alpha = ((mu - min) * (2 * ml - min - max)) / ((ml - mu) * (max - min)) || 2;
+  const alpha =
+    ((mu - min) * (2 * ml - min - max)) / ((ml - mu) * (max - min)) || 2;
   const beta = (alpha * (max - mu)) / (mu - min) || 2;
 
   const alphaClamp = Math.max(0.5, Math.min(alpha, 20));
@@ -215,5 +233,8 @@ function percentile(sorted: number[], p: number): number {
   const lower = Math.floor(idx);
   const upper = Math.ceil(idx);
   if (lower === upper) return sorted[lower] ?? 0;
-  return (sorted[lower] ?? 0) + (idx - lower) * ((sorted[upper] ?? 0) - (sorted[lower] ?? 0));
+  return (
+    (sorted[lower] ?? 0) +
+    (idx - lower) * ((sorted[upper] ?? 0) - (sorted[lower] ?? 0))
+  );
 }

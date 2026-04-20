@@ -17,8 +17,11 @@ export async function POST(req: Request) {
       dueDate: body.dueDate ? new Date(body.dueDate) : undefined,
     }));
 
-    const created = await tx.insert(academyEnrollment).values(values)
-      .onConflictDoNothing().returning();
+    const created = await tx
+      .insert(academyEnrollment)
+      .values(values)
+      .onConflictDoNothing()
+      .returning();
     return created;
   });
 

@@ -59,7 +59,13 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     await client`UPDATE organization SET name = ${orgName + "-v2"} WHERE id = ${orgId}`;
     await client`UPDATE organization SET name = ${orgName + "-v3"} WHERE id = ${orgId}`;
 
-    const rows = await client<{ previous_hash_scope: string; entry_hash: string; previous_hash: string | null }[]>`
+    const rows = await client<
+      {
+        previous_hash_scope: string;
+        entry_hash: string;
+        previous_hash: string | null;
+      }[]
+    >`
       SELECT previous_hash_scope, entry_hash, previous_hash
       FROM audit_log
       WHERE org_id = ${orgId}
@@ -76,12 +82,20 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
       expect(rows[i].previous_hash).toBe(rows[i - 1].entry_hash);
     }
 
-    await client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     await client`DELETE FROM audit_log WHERE org_id = ${orgId}`;
     await client`DELETE FROM organization WHERE id = ${orgId}`;
-    await client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
   });
 
   it("parallel inserts within one tenant produce a non-branching chain", async () => {
@@ -97,12 +111,16 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
 
     // Spawn 10 concurrent updates — with a global chain these would race
     // on prev_hash and fork. With the per-tenant lock they serialise.
-    const updates = Array.from({ length: 10 }, (_, i) =>
-      client`UPDATE organization SET name = ${"parallel-" + now + "-" + i} WHERE id = ${orgId}`,
+    const updates = Array.from(
+      { length: 10 },
+      (_, i) =>
+        client`UPDATE organization SET name = ${"parallel-" + now + "-" + i} WHERE id = ${orgId}`,
     );
     await Promise.all(updates);
 
-    const rows = await client<{ previous_hash: string | null; entry_hash: string }[]>`
+    const rows = await client<
+      { previous_hash: string | null; entry_hash: string }[]
+    >`
       SELECT previous_hash, entry_hash
       FROM audit_log
       WHERE org_id = ${orgId}
@@ -122,12 +140,20 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     const hashes = rows.map((r) => r.entry_hash);
     expect(new Set(hashes).size).toBe(hashes.length);
 
-    await client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     await client`DELETE FROM audit_log WHERE org_id = ${orgId}`;
     await client`DELETE FROM organization WHERE id = ${orgId}`;
-    await client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
   });
 
   it("two tenants' chains are independent (no cross-contamination)", async () => {
@@ -149,13 +175,25 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
       await client`UPDATE organization SET name = ${"b-" + now + "-" + i} WHERE id = ${orgB.id}`;
     }
 
-    const rowsA = await client<{ previous_hash: string | null; entry_hash: string; previous_hash_scope: string }[]>`
+    const rowsA = await client<
+      {
+        previous_hash: string | null;
+        entry_hash: string;
+        previous_hash_scope: string;
+      }[]
+    >`
       SELECT previous_hash, entry_hash, previous_hash_scope
       FROM audit_log
       WHERE org_id = ${orgA.id}
       ORDER BY created_at ASC, id ASC
     `;
-    const rowsB = await client<{ previous_hash: string | null; entry_hash: string; previous_hash_scope: string }[]>`
+    const rowsB = await client<
+      {
+        previous_hash: string | null;
+        entry_hash: string;
+        previous_hash_scope: string;
+      }[]
+    >`
       SELECT previous_hash, entry_hash, previous_hash_scope
       FROM audit_log
       WHERE org_id = ${orgB.id}
@@ -182,17 +220,29 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     }
 
     // Scope labels are tenant-specific
-    expect(rowsA.every((r) => r.previous_hash_scope === `org:${orgA.id}`)).toBe(true);
-    expect(rowsB.every((r) => r.previous_hash_scope === `org:${orgB.id}`)).toBe(true);
+    expect(rowsA.every((r) => r.previous_hash_scope === `org:${orgA.id}`)).toBe(
+      true,
+    );
+    expect(rowsB.every((r) => r.previous_hash_scope === `org:${orgB.id}`)).toBe(
+      true,
+    );
 
-    await client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     await client`DELETE FROM audit_log WHERE org_id = ${orgA.id}`;
     await client`DELETE FROM audit_log WHERE org_id = ${orgB.id}`;
     await client`DELETE FROM organization WHERE id = ${orgA.id}`;
     await client`DELETE FROM organization WHERE id = ${orgB.id}`;
-    await client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
   });
 
   it("tombstone_audit_entry redacts PII without touching entry_hash", async () => {
@@ -217,13 +267,15 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
 
     await client`SELECT tombstone_audit_entry(${row.id}::uuid, 'gdpr_art_17')`;
 
-    const [after] = await client<{
-      entry_hash: string;
-      user_email: string;
-      user_name: string;
-      pii_tombstoned_at: Date | null;
-      pii_tombstone_reason: string | null;
-    }[]>`
+    const [after] = await client<
+      {
+        entry_hash: string;
+        user_email: string;
+        user_name: string;
+        pii_tombstoned_at: Date | null;
+        pii_tombstone_reason: string | null;
+      }[]
+    >`
       SELECT entry_hash, user_email, user_name, pii_tombstoned_at, pii_tombstone_reason
       FROM audit_log WHERE id = ${row.id}
     `;
@@ -242,11 +294,19 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
 
     await client`SELECT set_config('app.current_user_email', '', false)`;
     await client`SELECT set_config('app.current_user_name', '', false)`;
-    await client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     await client`DELETE FROM audit_log WHERE org_id = ${org.id}`;
     await client`DELETE FROM organization WHERE id = ${org.id}`;
-    await client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
   });
 });

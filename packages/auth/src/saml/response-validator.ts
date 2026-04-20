@@ -37,7 +37,10 @@ export function decodeSamlResponse(base64Response: string): string {
  */
 function extractTag(xml: string, tagName: string): string | null {
   const patterns = [
-    new RegExp(`<(?:saml[p2]?:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:saml[p2]?:)?${tagName}>`, "i"),
+    new RegExp(
+      `<(?:saml[p2]?:)?${tagName}[^>]*>([\\s\\S]*?)<\\/(?:saml[p2]?:)?${tagName}>`,
+      "i",
+    ),
     new RegExp(`<${tagName}[^>]*>([\\s\\S]*?)<\\/${tagName}>`, "i"),
   ];
   for (const p of patterns) {
@@ -47,7 +50,11 @@ function extractTag(xml: string, tagName: string): string | null {
   return null;
 }
 
-function extractAttr(xml: string, tagName: string, attrName: string): string | null {
+function extractAttr(
+  xml: string,
+  tagName: string,
+  attrName: string,
+): string | null {
   const patterns = [
     new RegExp(`<(?:saml[p2]?:)?${tagName}[^>]*?${attrName}="([^"]*)"`, "i"),
     new RegExp(`<${tagName}[^>]*?${attrName}="([^"]*)"`, "i"),
@@ -63,8 +70,14 @@ function extractAttr(xml: string, tagName: string, attrName: string): string | n
  * Reject XML with XXE attack vectors.
  */
 function rejectXXE(xml: string): void {
-  if (/<!DOCTYPE/i.test(xml) || /<!ENTITY/i.test(xml) || /SYSTEM\s+["']/i.test(xml)) {
-    throw new Error("SAML response contains forbidden XML declarations (XXE prevention)");
+  if (
+    /<!DOCTYPE/i.test(xml) ||
+    /<!ENTITY/i.test(xml) ||
+    /SYSTEM\s+["']/i.test(xml)
+  ) {
+    throw new Error(
+      "SAML response contains forbidden XML declarations (XXE prevention)",
+    );
   }
 }
 
@@ -93,7 +106,8 @@ export function validateSAMLSignature(
   }
 
   // Determine the signature algorithm
-  const sigAlgUri = extractAttr(responseXml, "SignatureMethod", "Algorithm") ?? "";
+  const sigAlgUri =
+    extractAttr(responseXml, "SignatureMethod", "Algorithm") ?? "";
   let algorithm = "SHA256";
   if (sigAlgUri.includes("sha1")) algorithm = "SHA1";
   else if (sigAlgUri.includes("sha512")) algorithm = "SHA512";
@@ -130,8 +144,9 @@ export function validateSAMLAssertion(
   rejectXXE(assertionXml);
 
   // Check NotOnOrAfter
-  const notOnOrAfter = extractAttr(assertionXml, "Conditions", "NotOnOrAfter")
-    ?? extractAttr(assertionXml, "SubjectConfirmationData", "NotOnOrAfter");
+  const notOnOrAfter =
+    extractAttr(assertionXml, "Conditions", "NotOnOrAfter") ??
+    extractAttr(assertionXml, "SubjectConfirmationData", "NotOnOrAfter");
   if (notOnOrAfter) {
     const expiry = new Date(notOnOrAfter);
     if (expiry < new Date()) {
@@ -154,13 +169,16 @@ export function validateSAMLAssertion(
   if (expectedAudience) {
     const audience = extractTag(assertionXml, "Audience");
     if (audience && audience !== expectedAudience) {
-      throw new Error(`Audience mismatch: expected ${expectedAudience}, got ${audience}`);
+      throw new Error(
+        `Audience mismatch: expected ${expectedAudience}, got ${audience}`,
+      );
     }
   }
 
   // Replay protection: check InResponseTo
-  const assertionId = extractAttr(assertionXml, "Assertion", "ID")
-    ?? extractAttr(assertionXml, "saml:Assertion", "ID");
+  const assertionId =
+    extractAttr(assertionXml, "Assertion", "ID") ??
+    extractAttr(assertionXml, "saml:Assertion", "ID");
   if (assertionId) {
     if (consumedAssertionIds.has(assertionId)) {
       throw new Error("Replay attack detected: assertion ID already consumed");
@@ -183,13 +201,15 @@ export function extractSAMLAttributes(
   // Extract all Attribute elements and their values
   const attrMap = new Map<string, string[]>();
 
-  const attrRegex = /<(?:saml:)?Attribute\s+Name="([^"]*)"[^>]*>([\s\S]*?)<\/(?:saml:)?Attribute>/gi;
+  const attrRegex =
+    /<(?:saml:)?Attribute\s+Name="([^"]*)"[^>]*>([\s\S]*?)<\/(?:saml:)?Attribute>/gi;
   let match: RegExpExecArray | null;
   while ((match = attrRegex.exec(assertionXml)) !== null) {
     const name = match[1];
     const valueBlock = match[2];
     const values: string[] = [];
-    const valueRegex = /<(?:saml:)?AttributeValue[^>]*>([\s\S]*?)<\/(?:saml:)?AttributeValue>/gi;
+    const valueRegex =
+      /<(?:saml:)?AttributeValue[^>]*>([\s\S]*?)<\/(?:saml:)?AttributeValue>/gi;
     let vm: RegExpExecArray | null;
     while ((vm = valueRegex.exec(valueBlock)) !== null) {
       values.push(vm[1].trim());

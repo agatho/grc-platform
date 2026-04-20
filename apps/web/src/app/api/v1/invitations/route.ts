@@ -1,6 +1,11 @@
 import { db, invitation, user } from "@grc/db";
 import { createInvitationSchema } from "@grc/shared";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { eq, and, count, desc, isNull } from "drizzle-orm";
 
 // POST /api/v1/invitations — Create invitation (admin only)
@@ -75,8 +80,16 @@ export async function GET(req: Request) {
     isNull(invitation.deletedAt),
   ];
 
-  if (statusFilter && ["pending", "accepted", "expired", "revoked"].includes(statusFilter)) {
-    conditions.push(eq(invitation.status, statusFilter as "pending" | "accepted" | "expired" | "revoked"));
+  if (
+    statusFilter &&
+    ["pending", "accepted", "expired", "revoked"].includes(statusFilter)
+  ) {
+    conditions.push(
+      eq(
+        invitation.status,
+        statusFilter as "pending" | "accepted" | "expired" | "revoked",
+      ),
+    );
   }
 
   const where = and(...conditions);

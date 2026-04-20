@@ -36,12 +36,17 @@ export async function POST(
     .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)));
 
   if (!current) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   if (current.status !== "standby") {
     return Response.json(
-      { error: `Cannot activate crisis in '${current.status}' status. Must be 'standby'.` },
+      {
+        error: `Cannot activate crisis in '${current.status}' status. Must be 'standby'.`,
+      },
       { status: 422 },
     );
   }

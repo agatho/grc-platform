@@ -102,7 +102,12 @@ function NIS2DashboardInner() {
               {t("reportingTracker")}
             </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -114,10 +119,22 @@ function NIS2DashboardInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6 flex flex-col items-center justify-center">
           <div className="relative w-24 h-24">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="12" />
               <circle
-                cx="60" cy="60" r="52" fill="none"
-                stroke={score >= 75 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"}
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="12"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke={
+                  score >= 75 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"
+                }
                 strokeWidth="12"
                 strokeDasharray={`${(score / 100) * 327} 327`}
                 strokeLinecap="round"
@@ -127,45 +144,69 @@ function NIS2DashboardInner() {
               <span className="text-2xl font-bold text-gray-900">{score}%</span>
             </div>
           </div>
-          <p className="text-xs font-medium text-gray-500 mt-2">{t("overallStatus")}</p>
+          <p className="text-xs font-medium text-gray-500 mt-2">
+            {t("overallStatus")}
+          </p>
         </div>
 
         {/* Compliant */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center gap-2 mb-2">
             <CheckCircle2 className="h-5 w-5 text-green-600" />
-            <span className="text-xs font-medium text-gray-500">{t("status.compliant")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("status.compliant")}
+            </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{data?.compliantCount ?? 0}</p>
-          <p className="text-xs text-gray-400 mt-1">/ {data?.totalRequirements ?? 10} {t("requirements")}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {data?.compliantCount ?? 0}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            / {data?.totalRequirements ?? 10} {t("requirements")}
+          </p>
         </div>
 
         {/* Partially Compliant */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center gap-2 mb-2">
             <Minus className="h-5 w-5 text-yellow-600" />
-            <span className="text-xs font-medium text-gray-500">{t("status.partiallyCompliant")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("status.partiallyCompliant")}
+            </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{data?.partiallyCompliantCount ?? 0}</p>
-          <p className="text-xs text-gray-400 mt-1">/ {data?.totalRequirements ?? 10} {t("requirements")}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {data?.partiallyCompliantCount ?? 0}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            / {data?.totalRequirements ?? 10} {t("requirements")}
+          </p>
         </div>
 
         {/* Non-Compliant */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center gap-2 mb-2">
             <XCircle className="h-5 w-5 text-red-600" />
-            <span className="text-xs font-medium text-gray-500">{t("status.nonCompliant")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("status.nonCompliant")}
+            </span>
           </div>
-          <p className="text-3xl font-bold text-gray-900">{data?.nonCompliantCount ?? 0}</p>
-          <p className="text-xs text-gray-400 mt-1">/ {data?.totalRequirements ?? 10} {t("requirements")}</p>
+          <p className="text-3xl font-bold text-gray-900">
+            {data?.nonCompliantCount ?? 0}
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            / {data?.totalRequirements ?? 10} {t("requirements")}
+          </p>
         </div>
       </div>
 
       {/* Requirements Table */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("requirementsCatalog")}</h2>
-          <p className="text-sm text-gray-500 mt-1">{t("requirementsDescription")}</p>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("requirementsCatalog")}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("requirementsDescription")}
+          </p>
         </div>
         <div className="divide-y divide-gray-100">
           {data?.requirements.map((req) => (
@@ -179,7 +220,9 @@ function NIS2DashboardInner() {
                   <StatusIcon status={req.status} />
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-gray-400">{req.article}</span>
+                      <span className="text-xs font-mono text-gray-400">
+                        {req.article}
+                      </span>
                       <span className="text-sm font-medium text-gray-900 truncate">
                         {req.nameDE}
                       </span>
@@ -192,12 +235,18 @@ function NIS2DashboardInner() {
                         {req.controlCount} Controls
                       </Badge>
                       {req.missingControls.length > 0 && (
-                        <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-red-50 text-red-700 border-red-200"
+                        >
                           {req.missingControls.length} {t("missing")}
                         </Badge>
                       )}
                       {req.evidenceComplete && (
-                        <Badge variant="outline" className="text-[10px] bg-green-50 text-green-700 border-green-200">
+                        <Badge
+                          variant="outline"
+                          className="text-[10px] bg-green-50 text-green-700 border-green-200"
+                        >
                           {t("evidenceComplete")}
                         </Badge>
                       )}
@@ -213,7 +262,9 @@ function NIS2DashboardInner() {
 
       {/* NIS2 Timeline */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("timeline")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("timeline")}
+        </h2>
         <div className="flex items-center justify-between">
           <TimelineMilestone
             icon={<Shield className="h-5 w-5 text-blue-600" />}

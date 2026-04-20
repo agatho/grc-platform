@@ -2,7 +2,14 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Plus, Loader2, TrendingUp, TrendingDown, Minus, Radar } from "lucide-react";
+import {
+  Plus,
+  Loader2,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Radar,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -35,11 +42,15 @@ function EmergingRisksInner() {
     }
   }, []);
 
-  useEffect(() => { fetchData(); }, [fetchData]);
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
 
   const trendIcon = (trend: string) => {
-    if (trend === "increasing") return <TrendingUp className="h-4 w-4 text-red-500" />;
-    if (trend === "decreasing") return <TrendingDown className="h-4 w-4 text-green-500" />;
+    if (trend === "increasing")
+      return <TrendingUp className="h-4 w-4 text-red-500" />;
+    if (trend === "decreasing")
+      return <TrendingDown className="h-4 w-4 text-green-500" />;
     return <Minus className="h-4 w-4 text-yellow-500" />;
   };
 
@@ -55,9 +66,14 @@ function EmergingRisksInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold">{t("emergingRisks")}</h1>
-          <p className="text-muted-foreground">{t("emergingRisksDescription")}</p>
+          <p className="text-muted-foreground">
+            {t("emergingRisksDescription")}
+          </p>
         </div>
-        <Button><Plus className="mr-2 h-4 w-4" />{t("addEmergingRisk")}</Button>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          {t("addEmergingRisk")}
+        </Button>
       </div>
 
       {loading ? (
@@ -70,16 +86,25 @@ function EmergingRisksInner() {
             <Card key={risk.id}>
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
-                  <Badge variant={statusColor(risk.status)}>{risk.status}</Badge>
+                  <Badge variant={statusColor(risk.status)}>
+                    {risk.status}
+                  </Badge>
                   {trendIcon(risk.probabilityTrend)}
                 </div>
                 <CardTitle className="text-base">{risk.title}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-1 text-sm text-muted-foreground">
-                  <div>{t("category")}: {risk.category}</div>
-                  <div>{t("timeHorizon")}: {risk.timeHorizon}</div>
-                  <div>{t("potentialImpact")}: <Badge variant="outline">{risk.potentialImpact}</Badge></div>
+                  <div>
+                    {t("category")}: {risk.category}
+                  </div>
+                  <div>
+                    {t("timeHorizon")}: {risk.timeHorizon}
+                  </div>
+                  <div>
+                    {t("potentialImpact")}:{" "}
+                    <Badge variant="outline">{risk.potentialImpact}</Badge>
+                  </div>
                 </div>
               </CardContent>
             </Card>

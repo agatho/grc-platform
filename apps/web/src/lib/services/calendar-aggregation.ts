@@ -4,7 +4,11 @@
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
-import type { AggregatedCalendarEvent, CalendarFilters, CapacityHeatmapEntry } from "@grc/shared";
+import type {
+  AggregatedCalendarEvent,
+  CalendarFilters,
+  CapacityHeatmapEntry,
+} from "@grc/shared";
 import { MODULE_COLORS } from "@grc/shared";
 
 interface EnabledModulesMap {
@@ -267,7 +271,9 @@ export async function getCapacityHeatmap(
   to: Date,
   filterModules?: string[],
 ): Promise<CapacityHeatmapEntry[]> {
-  const events = await getCalendarEvents(orgId, from, to, { modules: filterModules });
+  const events = await getCalendarEvents(orgId, from, to, {
+    modules: filterModules,
+  });
 
   // Count events per day
   const dayCounts: Record<string, number> = {};

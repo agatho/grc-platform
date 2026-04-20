@@ -18,8 +18,11 @@ export async function GET(req: Request) {
   const conditions = [eq(biReportWidget.orgId, ctx.orgId)];
   if (reportId) conditions.push(eq(biReportWidget.reportId, reportId));
 
-  const rows = await db.select().from(biReportWidget)
-    .where(and(...conditions)).orderBy(biReportWidget.sortOrder);
+  const rows = await db
+    .select()
+    .from(biReportWidget)
+    .where(and(...conditions))
+    .orderBy(biReportWidget.sortOrder);
 
   return Response.json({ data: rows });
 }
@@ -35,22 +38,28 @@ export async function POST(req: Request) {
   const body = createBiReportWidgetSchema.parse(await req.json());
 
   // Verify report belongs to org
-  const [report] = await db.select({ id: biReport.id }).from(biReport)
+  const [report] = await db
+    .select({ id: biReport.id })
+    .from(biReport)
     .where(and(eq(biReport.id, body.reportId), eq(biReport.orgId, ctx.orgId)));
-  if (!report) return Response.json({ error: "Report not found" }, { status: 404 });
+  if (!report)
+    return Response.json({ error: "Report not found" }, { status: 404 });
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(biReportWidget).values({
-      orgId: ctx.orgId,
-      reportId: body.reportId,
-      widgetType: body.widgetType,
-      title: body.title,
-      dataSourceType: body.dataSourceType,
-      queryId: body.queryId,
-      configJson: body.configJson,
-      positionJson: body.positionJson ?? {},
-      sortOrder: body.sortOrder,
-    }).returning();
+    const [created] = await tx
+      .insert(biReportWidget)
+      .values({
+        orgId: ctx.orgId,
+        reportId: body.reportId,
+        widgetType: body.widgetType,
+        title: body.title,
+        dataSourceType: body.dataSourceType,
+        queryId: body.queryId,
+        configJson: body.configJson,
+        positionJson: body.positionJson ?? {},
+        sortOrder: body.sortOrder,
+      })
+      .returning();
     return created;
   });
 

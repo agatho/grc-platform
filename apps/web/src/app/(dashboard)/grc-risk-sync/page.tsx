@@ -96,7 +96,8 @@ export default function GrcRiskSyncPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ minScore, dryRun }),
         });
-        if (!res.ok) throw new Error(`API returned ${res.status}: ${await res.text()}`);
+        if (!res.ok)
+          throw new Error(`API returned ${res.status}: ${await res.text()}`);
         const json = (await res.json()) as { data: ApiResponse };
         if (dryRun) {
           setPreview(json.data as DryRunResponse);
@@ -135,10 +136,13 @@ export default function GrcRiskSyncPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cross-Module Risk Sync</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Cross-Module Risk Sync
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Synchronisiert DPIA-Risks, AI-Act FRIA Rechte und AI-Incidents ins Enterprise
-            Risk Register. Idempotent via (catalogSource, catalogEntryId).
+            Synchronisiert DPIA-Risks, AI-Act FRIA Rechte und AI-Incidents ins
+            Enterprise Risk Register. Idempotent via (catalogSource,
+            catalogEntryId).
           </p>
         </div>
       </div>
@@ -148,8 +152,8 @@ export default function GrcRiskSyncPage() {
         <CardHeader>
           <CardTitle>Konfiguration</CardTitle>
           <CardDescription>
-            Minimum-Score filtert irrelevante Risiken aus. Empfehlung: 6 (medium x medium -
-            hohe Impakte weiter unten haben Score &gt;= 9).
+            Minimum-Score filtert irrelevante Risiken aus. Empfehlung: 6 (medium
+            x medium - hohe Impakte weiter unten haben Score &gt;= 9).
           </CardDescription>
         </CardHeader>
         <CardContent className="flex items-end gap-4">
@@ -164,12 +168,18 @@ export default function GrcRiskSyncPage() {
               max="25"
               value={minScore}
               onChange={(e) =>
-                setMinScore(Math.min(25, Math.max(1, parseInt(e.target.value) || 1)))
+                setMinScore(
+                  Math.min(25, Math.max(1, parseInt(e.target.value) || 1)),
+                )
               }
               className="h-9"
             />
           </div>
-          <Button onClick={() => void runSync(true)} disabled={loading} variant="outline">
+          <Button
+            onClick={() => void runSync(true)}
+            disabled={loading}
+            variant="outline"
+          >
             {loading && preview === null ? (
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
             ) : (
@@ -210,7 +220,8 @@ export default function GrcRiskSyncPage() {
             </CardTitle>
             <CardDescription>
               Dies erstellt oder aktualisiert{" "}
-              <strong>{preview.eligibleForSync}</strong> Eintraege im ERM Risk Register.
+              <strong>{preview.eligibleForSync}</strong> Eintraege im ERM Risk
+              Register.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex gap-2">
@@ -238,8 +249,8 @@ export default function GrcRiskSyncPage() {
               Sync abgeschlossen
             </CardTitle>
             <CardDescription>
-              {liveResult.createdCount} neue Risiken erstellt, {liveResult.updatedCount}{" "}
-              bestehende aktualisiert.
+              {liveResult.createdCount} neue Risiken erstellt,{" "}
+              {liveResult.updatedCount} bestehende aktualisiert.
             </CardDescription>
           </CardHeader>
           <CardContent className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -255,7 +266,9 @@ export default function GrcRiskSyncPage() {
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Aktualisiert</p>
-              <p className="text-2xl font-bold text-sky-700">{liveResult.updatedCount}</p>
+              <p className="text-2xl font-bold text-sky-700">
+                {liveResult.updatedCount}
+              </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Gefiltert</p>
@@ -274,11 +287,17 @@ export default function GrcRiskSyncPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
             <Card>
               <CardContent className="p-4">
-                <p className="text-xs text-muted-foreground">Kandidaten gesamt</p>
+                <p className="text-xs text-muted-foreground">
+                  Kandidaten gesamt
+                </p>
                 <p className="text-2xl font-bold">{preview.totalCandidates}</p>
               </CardContent>
             </Card>
-            <Card className={preview.eligibleForSync > 0 ? "border-emerald-300" : ""}>
+            <Card
+              className={
+                preview.eligibleForSync > 0 ? "border-emerald-300" : ""
+              }
+            >
               <CardContent className="p-4">
                 <p className="text-xs text-muted-foreground flex items-center gap-1">
                   <ArrowRight className="h-3 w-3" />
@@ -314,8 +333,8 @@ export default function GrcRiskSyncPage() {
               <CardHeader>
                 <CardTitle>Zum Sync bereit ({preview.drafts.length})</CardTitle>
                 <CardDescription>
-                  Diese Risiken werden im ERM Register erstellt oder aktualisiert (idempotent
-                  via catalogSource + catalogEntryId).
+                  Diese Risiken werden im ERM Register erstellt oder
+                  aktualisiert (idempotent via catalogSource + catalogEntryId).
                 </CardDescription>
               </CardHeader>
               <CardContent className="p-0">
@@ -323,9 +342,15 @@ export default function GrcRiskSyncPage() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b bg-muted/30">
-                        <th className="text-left p-3 font-medium text-xs uppercase">Score</th>
-                        <th className="text-left p-3 font-medium text-xs uppercase">Quelle</th>
-                        <th className="text-left p-3 font-medium text-xs uppercase">Titel</th>
+                        <th className="text-left p-3 font-medium text-xs uppercase">
+                          Score
+                        </th>
+                        <th className="text-left p-3 font-medium text-xs uppercase">
+                          Quelle
+                        </th>
+                        <th className="text-left p-3 font-medium text-xs uppercase">
+                          Titel
+                        </th>
                         <th className="text-left p-3 font-medium text-xs uppercase">
                           Kategorie
                         </th>
@@ -336,8 +361,13 @@ export default function GrcRiskSyncPage() {
                     </thead>
                     <tbody>
                       {preview.drafts.map((d) => (
-                        <tr key={d.catalogEntryId} className="border-b hover:bg-muted/30">
-                          <td className="p-3">{scoreBadge(d.riskScoreInherent)}</td>
+                        <tr
+                          key={d.catalogEntryId}
+                          className="border-b hover:bg-muted/30"
+                        >
+                          <td className="p-3">
+                            {scoreBadge(d.riskScoreInherent)}
+                          </td>
                           <td className="p-3 text-xs text-muted-foreground">
                             {SOURCE_LABELS[d.catalogSource] ?? d.catalogSource}
                           </td>
@@ -366,7 +396,8 @@ export default function GrcRiskSyncPage() {
                   Gefiltert ({preview.skipped.length})
                 </CardTitle>
                 <CardDescription>
-                  Diese Kandidaten wurden nicht aufgenommen (Score unter Threshold).
+                  Diese Kandidaten wurden nicht aufgenommen (Score unter
+                  Threshold).
                 </CardDescription>
               </CardHeader>
               <CardContent className="max-h-64 overflow-y-auto">
@@ -391,8 +422,8 @@ export default function GrcRiskSyncPage() {
             <Card>
               <CardContent className="p-6 text-center text-muted-foreground">
                 <Info className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                Keine Risiken erreichen den Minimum-Score von {minScore}. Threshold senken
-                oder neue DPIAs/FRIAs/Incidents erfassen.
+                Keine Risiken erreichen den Minimum-Score von {minScore}.
+                Threshold senken oder neue DPIAs/FRIAs/Incidents erfassen.
               </CardContent>
             </Card>
           )}
@@ -404,8 +435,9 @@ export default function GrcRiskSyncPage() {
           <CardContent className="p-8 text-center">
             <FlaskConical className="h-12 w-12 mx-auto text-muted-foreground mb-4 opacity-50" />
             <p className="text-muted-foreground">
-              Klicke auf <strong>Preview</strong> um zu sehen welche DPIA-Risks, FRIA-Rechte
-              und AI-Incidents ins ERM Register synchronisiert werden wuerden.
+              Klicke auf <strong>Preview</strong> um zu sehen welche DPIA-Risks,
+              FRIA-Rechte und AI-Incidents ins ERM Register synchronisiert
+              werden wuerden.
             </p>
             <Link
               href="/grc-composite"

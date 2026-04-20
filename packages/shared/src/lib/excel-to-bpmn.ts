@@ -81,7 +81,13 @@ export async function convertExcelToBPMN(
 
   // Validate columns
   if (rawData.length === 0) {
-    return { bpmnXml: "", activityCount: 0, laneCount: 0, warnings, errors: ["Empty spreadsheet"] };
+    return {
+      bpmnXml: "",
+      activityCount: 0,
+      laneCount: 0,
+      warnings,
+      errors: ["Empty spreadsheet"],
+    };
   }
 
   const columns = Object.keys(rawData[0]);
@@ -112,7 +118,9 @@ export async function convertExcelToBPMN(
     }
 
     const responsibleRole = String(raw["Responsible Role"] ?? "Default").trim();
-    const activityType = normalizeActivityType(String(raw["Activity Type"] ?? "task"));
+    const activityType = normalizeActivityType(
+      String(raw["Activity Type"] ?? "task"),
+    );
     const nextStep = String(raw["Next Step"] ?? "").trim();
 
     if (!nextStep && i < rawData.length - 1) {
@@ -132,7 +140,13 @@ export async function convertExcelToBPMN(
   }
 
   if (rows.length === 0) {
-    return { bpmnXml: "", activityCount: 0, laneCount: 0, warnings, errors: ["No valid rows found"] };
+    return {
+      bpmnXml: "",
+      activityCount: 0,
+      laneCount: 0,
+      warnings,
+      errors: ["No valid rows found"],
+    };
   }
 
   // Extract unique lanes
@@ -196,7 +210,9 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
   const laneXml = lanes
     .map((lane, idx) => {
       const refs = laneFlowRefs.get(lane) ?? [];
-      const flowNodeRefXml = refs.map((r) => `          <bpmn:flowNodeRef>${r}</bpmn:flowNodeRef>`).join("\n");
+      const flowNodeRefXml = refs
+        .map((r) => `          <bpmn:flowNodeRef>${r}</bpmn:flowNodeRef>`)
+        .join("\n");
       return `        <bpmn:lane id="Lane_${idx + 1}" name="${escapeXml(lane)}">\n${flowNodeRefXml}\n        </bpmn:lane>`;
     })
     .join("\n");
@@ -227,7 +243,10 @@ function generateBPMNXml(rows: ExcelRow[], lanes: string[]): string {
   // Step -> Next Step flows
   for (const row of rows) {
     const sourceId = nodeIds.get(row.stepNumber)!;
-    const nextSteps = row.nextStep.split(",").map((s) => s.trim()).filter(Boolean);
+    const nextSteps = row.nextStep
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
 
     if (nextSteps.length === 0 && row.activityType !== "decision") {
       // Last step -> end event

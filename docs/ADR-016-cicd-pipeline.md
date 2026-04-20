@@ -1,10 +1,10 @@
 ## ADR-016: CI/CD Pipeline Architecture
 
-| **ADR-ID** | **016** |
-| --- | --- |
-| **Title** | **GitHub Actions CI + manueller Deploy via `arctos-update`** |
-| **Status** | **Accepted (dokumentiert den Ist-Stand)** |
-| **Date** | 2026-04-18 |
+| **ADR-ID**  | **016**                                                                                                                                                                                                                                                                                                                     |
+| ----------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | **GitHub Actions CI + manueller Deploy via `arctos-update`**                                                                                                                                                                                                                                                                |
+| **Status**  | **Accepted (dokumentiert den Ist-Stand)**                                                                                                                                                                                                                                                                                   |
+| **Date**    | 2026-04-18                                                                                                                                                                                                                                                                                                                  |
 | **Context** | Der Deploy-Workflow existierte bisher nur implizit: `arctos-update` auf dem Hetzner-Host zog `git pull` + `docker compose up -d` an. Die CI lief parallel (`.github/workflows/ci.yml`) ohne formale Verbindung. Dieses ADR hält die faktische Pipeline fest und benennt die Guardrails, die mit ADR-014 Phase 3 hinzukamen. |
 
 ### Pipeline Stages
@@ -43,17 +43,17 @@ Dev pushes to branch
 
 **Aber: Pre-Deploy-Gates werden in CI erzwungen:**
 
-| Gate | Tool | Blockiert Merge |
-|---|---|---|
-| Lint + TypeScript | `ci.yml` | ✅ |
-| Unit Tests | `ci.yml` | ✅ |
-| Integration Tests | `ci.yml` | ✅ |
-| DB-Integrity Tests (RLS) | `ci.yml` | ✅ |
-| Build | `ci.yml` | ✅ |
-| Security-Scan (CodeQL) | `codeql.yml` | warn-only (non-blocking) |
-| Migration-Location-Policy | `migration-policy.yml` | ✅ |
-| RLS-Coverage-Regression | `schema-drift.yml` | ✅ |
-| Dependency-Review | `dependency-review.yml` | warn-only |
+| Gate                      | Tool                    | Blockiert Merge          |
+| ------------------------- | ----------------------- | ------------------------ |
+| Lint + TypeScript         | `ci.yml`                | ✅                       |
+| Unit Tests                | `ci.yml`                | ✅                       |
+| Integration Tests         | `ci.yml`                | ✅                       |
+| DB-Integrity Tests (RLS)  | `ci.yml`                | ✅                       |
+| Build                     | `ci.yml`                | ✅                       |
+| Security-Scan (CodeQL)    | `codeql.yml`            | warn-only (non-blocking) |
+| Migration-Location-Policy | `migration-policy.yml`  | ✅                       |
+| RLS-Coverage-Regression   | `schema-drift.yml`      | ✅                       |
+| Dependency-Review         | `dependency-review.yml` | warn-only                |
 
 **Post-Deploy-Verifikation** (manuell, durch Ops):
 
@@ -65,11 +65,13 @@ Dev pushes to branch
 ### Rationale
 
 **Gegen Auto-Deploy:**
+
 - Change-Control-Anforderung aus ISO 27001 A.14.2.2 / ITIL Change-Management
 - DB-Migrations können nicht einfach "rolled back" werden (data loss)
 - Pre-Migration-Backup (ADR-014) muss manuell gestartet werden
 
 **Für CI-Gates:**
+
 - 95% der Regressionen lassen sich pre-merge fangen (Typ-Fehler, fehlende RLS, neue src/migrations/-Files)
 - Keine Notfall-Hotfixes ohne CI-Review möglich
 

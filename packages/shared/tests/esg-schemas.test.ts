@@ -92,7 +92,14 @@ describe("submitVoteSchema", () => {
   });
 
   it("accepts all valid voter types", () => {
-    for (const vt of ["internal", "customer", "supplier", "investor", "ngo", "regulator"]) {
+    for (const vt of [
+      "internal",
+      "customer",
+      "supplier",
+      "investor",
+      "ngo",
+      "regulator",
+    ]) {
       const result = submitVoteSchema.safeParse({
         topicId: UUID,
         impactScore: 5,

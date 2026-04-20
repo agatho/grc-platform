@@ -43,13 +43,17 @@ export async function GET(req: Request) {
   const tableName = ENTITY_TABLE_MAP[entityType];
   const fields = TRANSLATABLE_FIELDS[entityType];
   if (!tableName || !fields) {
-    return Response.json({ error: "Entity type not translatable" }, { status: 400 });
+    return Response.json(
+      { error: "Entity type not translatable" },
+      { status: 400 },
+    );
   }
 
   // Build parameterized query
   // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
   const fieldSelects = fields.map((f) => sql.raw(`"${f}"`));
-  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const isCatalogTable =
+    tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
 
   const conditions: ReturnType<typeof sql>[] = [sql`deleted_at IS NULL`];
   if (!isCatalogTable) {
@@ -77,7 +81,10 @@ export async function GET(req: Request) {
 
     for (const entity of entities) {
       for (const field of fields) {
-        const fieldValue = entity[field] as Record<string, string> | string | null;
+        const fieldValue = entity[field] as
+          | Record<string, string>
+          | string
+          | null;
         const sourceText = resolveField(fieldValue, source, source);
         const targetText = resolveField(fieldValue, target, source);
 
@@ -108,7 +115,10 @@ export async function GET(req: Request) {
 
   for (const entity of entities) {
     for (const field of fields) {
-      const fieldValue = entity[field] as Record<string, string> | string | null;
+      const fieldValue = entity[field] as
+        | Record<string, string>
+        | string
+        | null;
       const sourceText = resolveField(fieldValue, source, source);
       const targetText = resolveField(fieldValue, target, source);
 

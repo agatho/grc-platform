@@ -51,11 +51,7 @@ export async function GET(_req: Request) {
         name: c.name,
         severity: c.severity,
         activatedAtIso: classifiedAt.toISOString(),
-        frameworks: [
-          "DORA Art. 19",
-          "ISO 22301 Kap. 8.4",
-          "NIS2 Art. 23",
-        ],
+        frameworks: ["DORA Art. 19", "ISO 22301 Kap. 8.4", "NIS2 Art. 23"],
         dora: {
           earlyWarningAtIso: dora.earlyWarningDueAt.toISOString(),
           intermediateAtIso: dora.intermediateReportDueAt.toISOString(),
@@ -130,8 +126,9 @@ export async function GET(_req: Request) {
 
   const summary = {
     activeCrisesCount: activeCrises.length,
-    crisesWithOverdueDora: activeCrises.filter((c) => c.dora.intermediateOverdue || c.dora.finalOverdue)
-      .length,
+    crisesWithOverdueDora: activeCrises.filter(
+      (c) => c.dora.intermediateOverdue || c.dora.finalOverdue,
+    ).length,
     bcpTotal: bcpIssues.length,
     bcpWithIssues: bcpWithIssues.length,
     bcpReviewOverdue: bcpIssues.filter((b) => b.reviewOverdue).length,

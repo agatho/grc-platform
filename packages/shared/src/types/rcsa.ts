@@ -2,10 +2,17 @@
 
 export type RcsaCampaignStatus = "draft" | "active" | "closed" | "archived";
 export type RcsaCampaignFrequency = "quarterly" | "semi_annual" | "annual";
-export type RcsaAssignmentStatus = "pending" | "in_progress" | "submitted" | "overdue";
+export type RcsaAssignmentStatus =
+  | "pending"
+  | "in_progress"
+  | "submitted"
+  | "overdue";
 export type RcsaEntityType = "risk" | "control";
 export type RcsaRiskTrend = "increasing" | "stable" | "decreasing";
-export type RcsaControlEffectiveness = "effective" | "partially_effective" | "ineffective";
+export type RcsaControlEffectiveness =
+  | "effective"
+  | "partially_effective"
+  | "ineffective";
 export type RcsaDiscrepancyType = "overconfident" | "underconfident";
 
 export interface RcsaTargetScope {

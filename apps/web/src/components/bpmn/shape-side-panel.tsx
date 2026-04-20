@@ -63,18 +63,13 @@ function getStepTypeFromBpmnType(bpmnType: string): StepType {
   const lower = bpmnType.toLowerCase();
   if (lower.includes("gateway")) return "gateway";
   if (lower.includes("event")) return "event";
-  if (lower.includes("subprocess") || lower.includes("transaction")) return "subprocess";
+  if (lower.includes("subprocess") || lower.includes("transaction"))
+    return "subprocess";
   if (lower.includes("callactivity")) return "call_activity";
   return "task";
 }
 
-function StepTypeIcon({
-  type,
-  size = 18,
-}: {
-  type: StepType;
-  size?: number;
-}) {
+function StepTypeIcon({ type, size = 18 }: { type: StepType; size?: number }) {
   switch (type) {
     case "task":
       return <CheckSquare size={size} className="text-blue-500" />;

@@ -53,10 +53,12 @@ export async function GET(req: Request) {
     if (!tableName || !fields) continue;
 
     // Count total entities
-    const countResult = await db.execute(sql.raw(`
+    const countResult = await db.execute(
+      sql.raw(`
       SELECT COUNT(*) as cnt FROM "${tableName}"
       WHERE org_id = '${ctx.orgId}' AND deleted_at IS NULL
-    `));
+    `),
+    );
 
     const totalEntities = Number(
       (countResult as unknown as Array<{ cnt: string }>)[0]?.cnt ?? 0,
@@ -90,7 +92,10 @@ export async function GET(req: Request) {
       GROUP BY status
     `);
 
-    const counts = statusCounts as unknown as Array<{ status: string; cnt: string }>;
+    const counts = statusCounts as unknown as Array<{
+      status: string;
+      cnt: string;
+    }>;
     let verified = 0;
     let draft = 0;
     let outdated = 0;

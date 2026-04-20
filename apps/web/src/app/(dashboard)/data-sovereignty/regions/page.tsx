@@ -5,11 +5,14 @@ import { useTranslations } from "next-intl";
 import { Globe, Plus, Loader2, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
-  Card, CardContent, CardHeader, CardTitle,
-} from "@/components/ui/card";
-import {
-  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
 } from "@/components/ui/table";
 
 interface DataRegionRecord {
@@ -38,11 +41,16 @@ export default function DataRegionsPage() {
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "active": return "default";
-      case "provisioning": return "secondary";
-      case "maintenance": return "outline";
-      case "decommissioned": return "destructive";
-      default: return "secondary";
+      case "active":
+        return "default";
+      case "provisioning":
+        return "secondary";
+      case "maintenance":
+        return "outline";
+      case "decommissioned":
+        return "destructive";
+      default:
+        return "secondary";
     }
   };
 
@@ -83,18 +91,31 @@ export default function DataRegionsPage() {
                     <div className="flex items-center gap-2">
                       <Globe className="h-4 w-4 text-muted-foreground" />
                       {region.code}
-                      {region.isDefault && <Badge variant="outline">{t("default")}</Badge>}
+                      {region.isDefault && (
+                        <Badge variant="outline">{t("default")}</Badge>
+                      )}
                     </div>
                   </TableCell>
                   <TableCell>{region.name}</TableCell>
                   <TableCell>{region.location}</TableCell>
                   <TableCell>{region.provider}</TableCell>
                   <TableCell>
-                    <Badge variant={statusColor(region.status) as "default" | "secondary" | "destructive" | "outline"}>
+                    <Badge
+                      variant={
+                        statusColor(region.status) as
+                          | "default"
+                          | "secondary"
+                          | "destructive"
+                          | "outline"
+                      }
+                    >
                       {region.status}
                     </Badge>
                   </TableCell>
-                  <TableCell>{region.currentTenants}{region.maxTenants ? `/${region.maxTenants}` : ""}</TableCell>
+                  <TableCell>
+                    {region.currentTenants}
+                    {region.maxTenants ? `/${region.maxTenants}` : ""}
+                  </TableCell>
                 </TableRow>
               ))}
             </TableBody>

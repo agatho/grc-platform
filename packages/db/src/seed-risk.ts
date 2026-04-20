@@ -33,7 +33,8 @@ interface DemoRisk {
 const demoRisks: DemoRisk[] = [
   {
     title: "Ransomware attack on critical infrastructure",
-    description: "Potential ransomware infection targeting production control systems, leading to operational downtime and data loss. ISMS Annex A.12 relevant.",
+    description:
+      "Potential ransomware infection targeting production control systems, leading to operational downtime and data loss. ISMS Annex A.12 relevant.",
     riskCategory: "cyber",
     riskSource: "isms",
     status: "assessed",
@@ -49,7 +50,8 @@ const demoRisks: DemoRisk[] = [
   },
   {
     title: "Supply chain disruption — key raw material supplier",
-    description: "Single-source dependency for critical raw materials. Geopolitical instability and logistics bottlenecks increase risk of delivery failure.",
+    description:
+      "Single-source dependency for critical raw materials. Geopolitical instability and logistics bottlenecks increase risk of delivery failure.",
     riskCategory: "operational",
     riskSource: "erm",
     status: "treated",
@@ -65,7 +67,8 @@ const demoRisks: DemoRisk[] = [
   },
   {
     title: "GDPR compliance gap — consent management",
-    description: "Incomplete consent management processes across customer-facing systems. Risk of supervisory authority investigation and fines under Art. 83 GDPR.",
+    description:
+      "Incomplete consent management processes across customer-facing systems. Risk of supervisory authority investigation and fines under Art. 83 GDPR.",
     riskCategory: "compliance",
     riskSource: "erm",
     status: "identified",
@@ -81,7 +84,8 @@ const demoRisks: DemoRisk[] = [
   },
   {
     title: "Key personnel departure — leadership vacuum",
-    description: "Loss of critical knowledge carriers in senior management positions without adequate succession planning.",
+    description:
+      "Loss of critical knowledge carriers in senior management positions without adequate succession planning.",
     riskCategory: "strategic",
     riskSource: "erm",
     status: "assessed",
@@ -97,7 +101,8 @@ const demoRisks: DemoRisk[] = [
   },
   {
     title: "ESG reporting non-compliance under CSRD",
-    description: "Failure to meet Corporate Sustainability Reporting Directive requirements by FY2026 deadline. Reputational and regulatory risk.",
+    description:
+      "Failure to meet Corporate Sustainability Reporting Directive requirements by FY2026 deadline. Reputational and regulatory risk.",
     riskCategory: "esg",
     riskSource: "erm",
     status: "identified",
@@ -132,7 +137,8 @@ interface DemoKri {
 const demoKris: DemoKri[] = [
   {
     name: "Mean Time to Patch Critical Vulnerabilities",
-    description: "Average number of days to deploy patches for critical CVEs across all production systems.",
+    description:
+      "Average number of days to deploy patches for critical CVEs across all production systems.",
     unit: "days",
     direction: "asc",
     thresholdGreen: 7,
@@ -147,7 +153,8 @@ const demoKris: DemoKri[] = [
   },
   {
     name: "Supplier On-Time Delivery Rate",
-    description: "Percentage of deliveries from critical suppliers arriving within agreed lead time.",
+    description:
+      "Percentage of deliveries from critical suppliers arriving within agreed lead time.",
     unit: "%",
     direction: "desc",
     thresholdGreen: 95,
@@ -162,7 +169,8 @@ const demoKris: DemoKri[] = [
   },
   {
     name: "Open Data Subject Requests",
-    description: "Number of unresolved data subject access requests older than 20 days (GDPR Art. 12 deadline: 30 days).",
+    description:
+      "Number of unresolved data subject access requests older than 20 days (GDPR Art. 12 deadline: 30 days).",
     unit: "count",
     direction: "asc",
     thresholdGreen: 3,
@@ -193,7 +201,8 @@ interface DemoTreatment {
 const demoTreatments: DemoTreatment[] = [
   {
     riskIndex: 0,
-    description: "Deploy EDR solution across all endpoints and implement network micro-segmentation for OT/IT boundary.",
+    description:
+      "Deploy EDR solution across all endpoints and implement network micro-segmentation for OT/IT boundary.",
     expectedRiskReduction: 40,
     costEstimate: 180000,
     status: "in_progress",
@@ -201,7 +210,8 @@ const demoTreatments: DemoTreatment[] = [
   },
   {
     riskIndex: 0,
-    description: "Implement immutable backup strategy with air-gapped copies and quarterly restore testing.",
+    description:
+      "Implement immutable backup strategy with air-gapped copies and quarterly restore testing.",
     expectedRiskReduction: 25,
     costEstimate: 45000,
     status: "planned",
@@ -209,7 +219,8 @@ const demoTreatments: DemoTreatment[] = [
   },
   {
     riskIndex: 1,
-    description: "Qualify secondary suppliers for top 5 critical raw materials and negotiate framework agreements.",
+    description:
+      "Qualify secondary suppliers for top 5 critical raw materials and negotiate framework agreements.",
     expectedRiskReduction: 35,
     costEstimate: 25000,
     status: "completed",
@@ -217,7 +228,8 @@ const demoTreatments: DemoTreatment[] = [
   },
   {
     riskIndex: 1,
-    description: "Establish 6-week safety stock buffer for single-source materials.",
+    description:
+      "Establish 6-week safety stock buffer for single-source materials.",
     expectedRiskReduction: 20,
     costEstimate: 350000,
     status: "in_progress",
@@ -230,7 +242,11 @@ async function seedRisks() {
 
   await db.transaction(async (tx) => {
     // ── 1. Get org IDs with ARC-* codes ──────────────────────
-    const orgs = await tx.execute<{ id: string; org_code: string; name: string }>(sql`
+    const orgs = await tx.execute<{
+      id: string;
+      org_code: string;
+      name: string;
+    }>(sql`
       SELECT id, org_code, name FROM organization
       WHERE org_code LIKE 'ARC%' AND deleted_at IS NULL
       ORDER BY org_code
@@ -255,7 +271,9 @@ async function seedRisks() {
       console.log(`\n  Org: ${org.name} (${org.org_code})`);
 
       // Set org context for RLS bypass
-      await tx.execute(sql`SELECT set_config('app.current_org_id', ${org.id}, true)`);
+      await tx.execute(
+        sql`SELECT set_config('app.current_org_id', ${org.id}, true)`,
+      );
       await tx.execute(sql`SELECT set_config('app.bypass_rls', 'true', true)`);
 
       // ── 2. Risk Appetite (idempotent) ──────────────────────
@@ -330,7 +348,9 @@ async function seedRisks() {
         `);
 
         riskIds.push(result[0].id);
-        console.log(`    Risk created: "${riskDef.title.substring(0, 40)}..." (${result[0].id.substring(0, 8)})`);
+        console.log(
+          `    Risk created: "${riskDef.title.substring(0, 40)}..." (${result[0].id.substring(0, 8)})`,
+        );
       }
 
       // ── 4. Treatments (idempotent via description match) ──
@@ -371,7 +391,9 @@ async function seedRisks() {
             ${adminId}
           )
         `);
-        console.log(`    Treatment created for risk #${treatDef.riskIndex} (${treatDef.status})`);
+        console.log(
+          `    Treatment created for risk #${treatDef.riskIndex} (${treatDef.status})`,
+        );
       }
 
       // ── 5. KRIs + Measurements (idempotent via name match) ──
@@ -415,7 +437,9 @@ async function seedRisks() {
         `);
 
         const kriId = kriResult[0].id;
-        console.log(`    KRI created: "${kriDef.name.substring(0, 40)}..." (${kriId.substring(0, 8)})`);
+        console.log(
+          `    KRI created: "${kriDef.name.substring(0, 40)}..." (${kriId.substring(0, 8)})`,
+        );
 
         // Insert measurements
         for (const m of kriDef.measurements) {
@@ -438,15 +462,18 @@ async function seedRisks() {
         console.log(`      ${kriDef.measurements.length} measurements added`);
 
         // Update KRI last_measured_at and compute alert status
-        const latestValue = kriDef.measurements[kriDef.measurements.length - 1].value;
+        const latestValue =
+          kriDef.measurements[kriDef.measurements.length - 1].value;
         let alertStatus: string;
         if (kriDef.direction === "asc") {
           if (latestValue <= kriDef.thresholdGreen) alertStatus = "green";
-          else if (latestValue <= kriDef.thresholdYellow) alertStatus = "yellow";
+          else if (latestValue <= kriDef.thresholdYellow)
+            alertStatus = "yellow";
           else alertStatus = "red";
         } else {
           if (latestValue >= kriDef.thresholdGreen) alertStatus = "green";
-          else if (latestValue >= kriDef.thresholdYellow) alertStatus = "yellow";
+          else if (latestValue >= kriDef.thresholdYellow)
+            alertStatus = "yellow";
           else alertStatus = "red";
         }
 
@@ -458,10 +485,12 @@ async function seedRisks() {
           const prev = values[values.length - 2];
           if (kriDef.direction === "asc") {
             // Lower is better
-            trend = last < prev ? "improving" : last > prev ? "worsening" : "stable";
+            trend =
+              last < prev ? "improving" : last > prev ? "worsening" : "stable";
           } else {
             // Higher is better
-            trend = last > prev ? "improving" : last < prev ? "worsening" : "stable";
+            trend =
+              last > prev ? "improving" : last < prev ? "worsening" : "stable";
           }
         }
 

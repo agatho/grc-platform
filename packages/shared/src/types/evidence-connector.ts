@@ -16,19 +16,55 @@ export type ConnectorType =
   | "custom_api"
   | "file_import";
 
-export type ConnectorStatus = "inactive" | "active" | "error" | "disabled" | "pending_setup";
+export type ConnectorStatus =
+  | "inactive"
+  | "active"
+  | "error"
+  | "disabled"
+  | "pending_setup";
 
-export type ConnectorAuthMethod = "oauth2" | "api_key" | "service_account" | "certificate" | "basic_auth";
+export type ConnectorAuthMethod =
+  | "oauth2"
+  | "api_key"
+  | "service_account"
+  | "certificate"
+  | "basic_auth";
 
-export type ConnectorHealthStatus = "healthy" | "degraded" | "unhealthy" | "unknown";
+export type ConnectorHealthStatus =
+  | "healthy"
+  | "degraded"
+  | "unhealthy"
+  | "unknown";
 
-export type CredentialType = "oauth2_token" | "api_key" | "service_account_json" | "client_certificate" | "basic_credentials";
+export type CredentialType =
+  | "oauth2_token"
+  | "api_key"
+  | "service_account_json"
+  | "client_certificate"
+  | "basic_credentials";
 
-export type ArtifactType = "screenshot" | "json_export" | "csv_export" | "pdf_report" | "log_extract" | "config_snapshot" | "api_response";
+export type ArtifactType =
+  | "screenshot"
+  | "json_export"
+  | "csv_export"
+  | "pdf_report"
+  | "log_extract"
+  | "config_snapshot"
+  | "api_response";
 
-export type TestResultStatus = "pass" | "fail" | "error" | "skipped" | "warning";
+export type TestResultStatus =
+  | "pass"
+  | "fail"
+  | "error"
+  | "skipped"
+  | "warning";
 
-export type TestSeverity = "critical" | "high" | "medium" | "low" | "informational";
+export type TestSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "informational";
 
 export type TestCategory =
   | "iam"
@@ -42,7 +78,11 @@ export type TestCategory =
 
 export type ScheduleRunStatus = "success" | "partial_failure" | "failure";
 
-export type HealthCheckType = "connectivity" | "authentication" | "authorization" | "data_access";
+export type HealthCheckType =
+  | "connectivity"
+  | "authentication"
+  | "authorization"
+  | "data_access";
 
 export interface FrameworkMappingRef {
   framework: string;

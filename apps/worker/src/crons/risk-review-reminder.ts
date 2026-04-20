@@ -45,7 +45,8 @@ export async function processRiskReviewReminders(): Promise<RiskReviewResult> {
       const reviewDate = riskRow.reviewDate;
       const daysUntilReview = reviewDate
         ? Math.ceil(
-            (new Date(reviewDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+            (new Date(reviewDate).getTime() - now.getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : 0;
 

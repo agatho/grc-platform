@@ -23,29 +23,34 @@ Issue-Reports, Documentation-PRs und Bug-Fixes aus der Community.
 ## Conventions
 
 ### Branching
+
 - Default-Branch: `main`
 - Feature-Branch-Format: `feature/S{sprint}-{nr}-{kurz-desc}`, z. B. `feature/S4b-03-finding-list`
 - Bug-Fix-Branch: `fix/F{nr}-{kurz-desc}`, z. B. `fix/F-08-catalog-dedupe`
 - Rebase vor dem Push, keine Merge-Commits im Feature-Branch
 
 ### Commit-Messages
+
 - Conventional Commits: `feat:`, `fix:`, `chore:`, `docs:`, `test:`, `refactor:`
 - Erste Zeile unter 80 Zeichen
 - Bei groesseren Aenderungen: Body mit Motivation + Was-Anders + Test-Plan
 
 ### Code-Style
+
 - TypeScript strict mode, `any` nur in Type-Guards
 - Zod fuer **jede** API-Input-Validierung
 - ESLint + Prettier laufen im Pre-Commit (siehe `.husky/pre-commit`)
 - Keine kommentierten Code-Blocks — loeschen statt kommentieren
 
 ### Naming
+
 - Files: `kebab-case.ts`
 - DB-Tabellen: `snake_case`
 - TS-Types/Interfaces: `PascalCase`
 - Variables: `camelCase`
 
 ### Testing
+
 - Backend-Tests: Vitest, Coverage-Ziel >80 %
 - Frontend-Tests: Vitest + Testing Library, >60 %
 - E2E: Playwright in `tests/e2e/`

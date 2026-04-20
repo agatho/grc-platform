@@ -33,14 +33,12 @@ export async function GET(req: Request) {
     .orderBy(desc(complianceCultureSnapshot.period))
     .limit(query.data.months);
 
-  const history: CCIHistoryEntry[] = snapshots
-    .reverse()
-    .map((s) => ({
-      period: s.period,
-      overallScore: Number(s.overallScore),
-      factorScores: s.factorScores as CCIFactorScores,
-      trend: s.trend as CCITrend | null,
-    }));
+  const history: CCIHistoryEntry[] = snapshots.reverse().map((s) => ({
+    period: s.period,
+    overallScore: Number(s.overallScore),
+    factorScores: s.factorScores as CCIFactorScores,
+    trend: s.trend as CCITrend | null,
+  }));
 
   return Response.json({ data: history });
 }

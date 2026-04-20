@@ -20,7 +20,9 @@ export async function processScheduledNotifications(): Promise<ScheduledNotifica
   let sent = 0;
   let failed = 0;
 
-  console.log(`[cron:scheduled-notifications] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:scheduled-notifications] Starting at ${now.toISOString()}`,
+  );
 
   // Find notifications that are due for email delivery
   const pendingNotifications = await db
@@ -43,8 +45,8 @@ export async function processScheduledNotifications(): Promise<ScheduledNotifica
         isNull(notification.emailSentAt),
         isNull(notification.deletedAt),
         inArray(notification.channel, ["email", "both"]),
-        lt(notification.retryCount, MAX_RETRIES)
-      )
+        lt(notification.retryCount, MAX_RETRIES),
+      ),
     );
 
   if (pendingNotifications.length === 0) {
@@ -127,13 +129,13 @@ export async function processScheduledNotifications(): Promise<ScheduledNotifica
       failed++;
       console.error(
         `[cron:scheduled-notifications] Failed to send notification ${notif.id}:`,
-        message
+        message,
       );
     }
   }
 
   console.log(
-    `[cron:scheduled-notifications] Processed ${pendingNotifications.length}: ${sent} sent, ${failed} failed`
+    `[cron:scheduled-notifications] Processed ${pendingNotifications.length}: ${sent} sent, ${failed} failed`,
   );
 
   return { processed: pendingNotifications.length, sent, failed };

@@ -119,7 +119,9 @@ export default function FriaDetailPage() {
         aiSystemId: data.aiSystemId,
         overallImpact: data.overallImpact,
         status: data.status,
-        rightsAssessed: Array.isArray(data.rightsAssessed) ? data.rightsAssessed : [],
+        rightsAssessed: Array.isArray(data.rightsAssessed)
+          ? data.rightsAssessed
+          : [],
         mitigationMeasures: data.mitigationMeasures ?? null,
         nextReviewDate: data.nextReviewDate ?? null,
       });
@@ -159,7 +161,10 @@ export default function FriaDetailPage() {
     value: boolean,
     onChange: (v: boolean) => void,
   ) => (
-    <div className="flex items-start justify-between py-2 border-b last:border-0" key={key}>
+    <div
+      className="flex items-start justify-between py-2 border-b last:border-0"
+      key={key}
+    >
       <div className="flex-1 pr-4">
         <Label htmlFor={key} className="text-sm cursor-pointer">
           {label}
@@ -207,15 +212,24 @@ export default function FriaDetailPage() {
             Zurueck zur FRIA-Liste
           </Link>
           <div className="flex items-center gap-3">
-            <h1 className="text-3xl font-bold tracking-tight">{fria.assessmentCode}</h1>
-            <Badge variant="outline" className={IMPACT_PILL[fria.overallImpact]}>
+            <h1 className="text-3xl font-bold tracking-tight">
+              {fria.assessmentCode}
+            </h1>
+            <Badge
+              variant="outline"
+              className={IMPACT_PILL[fria.overallImpact]}
+            >
               Overall: {fria.overallImpact}
             </Badge>
             <Badge variant="outline">{fria.status}</Badge>
           </div>
           <p className="text-muted-foreground mt-1 text-sm">
-            Art. 27 Fundamental-Rights-Impact-Assessment — verlinkt mit AI-System{" "}
-            <Link href={`/ai-act/systems/${fria.aiSystemId}`} className="text-primary hover:underline">
+            Art. 27 Fundamental-Rights-Impact-Assessment — verlinkt mit
+            AI-System{" "}
+            <Link
+              href={`/ai-act/systems/${fria.aiSystemId}`}
+              className="text-primary hover:underline"
+            >
               {fria.aiSystemId.slice(0, 8)}...
             </Link>
           </p>
@@ -238,23 +252,29 @@ export default function FriaDetailPage() {
             Assessed Fundamental Rights ({fria.rightsAssessed.length})
           </CardTitle>
           <CardDescription>
-            Ein vollstaendiger FRIA sollte mindestens 5 der 10 Core Rights adressieren.
+            Ein vollstaendiger FRIA sollte mindestens 5 der 10 Core Rights
+            adressieren.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {fria.rightsAssessed.length === 0 ? (
             <p className="text-sm text-muted-foreground text-center py-6">
-              Noch keine Rights erfasst. Rights-Assessments werden ueber das FRIA-Formular
-              eingepflegt (Detail-Edit).
+              Noch keine Rights erfasst. Rights-Assessments werden ueber das
+              FRIA-Formular eingepflegt (Detail-Edit).
             </p>
           ) : (
             <div className="space-y-3">
               {fria.rightsAssessed.map((r, i) => (
                 <div key={i} className="border rounded p-3">
                   <div className="flex items-center justify-between mb-1">
-                    <p className="font-medium text-sm">{RIGHT_LABEL[r.right] ?? r.right}</p>
+                    <p className="font-medium text-sm">
+                      {RIGHT_LABEL[r.right] ?? r.right}
+                    </p>
                     <div className="flex items-center gap-1">
-                      <Badge variant="outline" className={`text-xs ${IMPACT_PILL[r.impact]}`}>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${IMPACT_PILL[r.impact]}`}
+                      >
                         Impact: {r.impact}
                       </Badge>
                       <Badge
@@ -267,7 +287,8 @@ export default function FriaDetailPage() {
                   </div>
                   {r.mitigation && (
                     <p className="text-xs text-muted-foreground mt-1">
-                      <span className="font-medium">Mitigation:</span> {r.mitigation}
+                      <span className="font-medium">Mitigation:</span>{" "}
+                      {r.mitigation}
                     </p>
                   )}
                 </div>
@@ -285,7 +306,8 @@ export default function FriaDetailPage() {
             Quality Flags
           </CardTitle>
           <CardDescription>
-            Assessor bestaetigt welche Teilbereiche dokumentiert und geprueft wurden.
+            Assessor bestaetigt welche Teilbereiche dokumentiert und geprueft
+            wurden.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-0">
@@ -294,42 +316,63 @@ export default function FriaDetailPage() {
             "Discrimination-Analyse",
             "Bias + Ungleichbehandlung systematisch bewertet.",
             quality_flags.hasDiscriminationAnalysis,
-            (v) => setQualityFlags({ ...quality_flags, hasDiscriminationAnalysis: v }),
+            (v) =>
+              setQualityFlags({
+                ...quality_flags,
+                hasDiscriminationAnalysis: v,
+              }),
           )}
           {boolRow(
             "q-dpi",
             "Data-Protection-Impact",
             "Datenschutz-Folgen separat dokumentiert (ggf. DPIA-Verknuepfung).",
             quality_flags.hasDataProtectionImpact,
-            (v) => setQualityFlags({ ...quality_flags, hasDataProtectionImpact: v }),
+            (v) =>
+              setQualityFlags({ ...quality_flags, hasDataProtectionImpact: v }),
           )}
           {boolRow(
             "q-atj",
             "Access-to-Justice-Analyse",
             "Rechtsschutz, Beschwerden, Widerrufsmoeglichkeiten geprueft.",
             quality_flags.hasAccessToJusticeAnalysis,
-            (v) => setQualityFlags({ ...quality_flags, hasAccessToJusticeAnalysis: v }),
+            (v) =>
+              setQualityFlags({
+                ...quality_flags,
+                hasAccessToJusticeAnalysis: v,
+              }),
           )}
           {boolRow(
             "q-cons",
             "Betroffenen-Konsultation",
             "Affected persons oder deren Vertreter in den Prozess einbezogen.",
             quality_flags.hasAffectedPersonsConsultation,
-            (v) => setQualityFlags({ ...quality_flags, hasAffectedPersonsConsultation: v }),
+            (v) =>
+              setQualityFlags({
+                ...quality_flags,
+                hasAffectedPersonsConsultation: v,
+              }),
           )}
           {boolRow(
             "q-oi",
             "Overall-Impact-Statement",
             "Abschliessende Bewertung liegt vor.",
             quality_flags.hasOverallImpactStatement,
-            (v) => setQualityFlags({ ...quality_flags, hasOverallImpactStatement: v }),
+            (v) =>
+              setQualityFlags({
+                ...quality_flags,
+                hasOverallImpactStatement: v,
+              }),
           )}
           {boolRow(
             "q-mit",
             "Mitigation-Measures dokumentiert",
             "Konkrete Massnahmen fuer jedes identifizierte Risiko.",
             quality_flags.hasMitigationMeasuresDocumented,
-            (v) => setQualityFlags({ ...quality_flags, hasMitigationMeasuresDocumented: v }),
+            (v) =>
+              setQualityFlags({
+                ...quality_flags,
+                hasMitigationMeasuresDocumented: v,
+              }),
           )}
         </CardContent>
       </Card>
@@ -354,11 +397,17 @@ export default function FriaDetailPage() {
                 Quality-Check Ergebnis
               </CardTitle>
               {quality.isApprovable ? (
-                <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                <Badge
+                  variant="outline"
+                  className="bg-emerald-100 text-emerald-800 border-emerald-300"
+                >
                   Approvable
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+                <Badge
+                  variant="outline"
+                  className="bg-amber-100 text-amber-800 border-amber-300"
+                >
                   Nicht approvable
                 </Badge>
               )}
@@ -376,9 +425,14 @@ export default function FriaDetailPage() {
               <div>
                 <div className="flex justify-between text-xs mb-1">
                   <span>Quality-Checks (6)</span>
-                  <span className="font-medium">{quality.qualityChecksPercent}%</span>
+                  <span className="font-medium">
+                    {quality.qualityChecksPercent}%
+                  </span>
                 </div>
-                <Progress value={quality.qualityChecksPercent} className="h-2" />
+                <Progress
+                  value={quality.qualityChecksPercent}
+                  className="h-2"
+                />
               </div>
             </div>
 
@@ -400,15 +454,17 @@ export default function FriaDetailPage() {
                   ))}
                 </div>
                 <p className="text-xs text-red-700 mt-2">
-                  Blockt die Approval. Mitigation-Massnahmen verstaerken oder System nicht
-                  einsetzen.
+                  Blockt die Approval. Mitigation-Massnahmen verstaerken oder
+                  System nicht einsetzen.
                 </p>
               </div>
             )}
 
             {quality.missing.length > 0 && (
               <div>
-                <p className="text-xs text-muted-foreground mb-1">Fehlende Quality-Checks:</p>
+                <p className="text-xs text-muted-foreground mb-1">
+                  Fehlende Quality-Checks:
+                </p>
                 <div className="flex flex-wrap gap-1">
                   {quality.missing.map((m, i) => (
                     <Badge key={i} variant="outline" className="text-xs">
@@ -421,8 +477,8 @@ export default function FriaDetailPage() {
 
             {!quality.isApprovable && !quality.hasHighResidualRisk && (
               <p className="text-sm text-muted-foreground">
-                Zum Approval noetig: &ge; 5 Rights erfasst, alle 6 Quality-Checks erfuellt,
-                keine High-Residual-Risks.
+                Zum Approval noetig: &ge; 5 Rights erfasst, alle 6
+                Quality-Checks erfuellt, keine High-Residual-Risks.
               </p>
             )}
           </CardContent>
@@ -434,7 +490,9 @@ export default function FriaDetailPage() {
         <CardContent className="p-4">
           <div className="grid md:grid-cols-3 gap-4 text-sm">
             <div>
-              <p className="text-xs text-muted-foreground mb-1">Naechste Review</p>
+              <p className="text-xs text-muted-foreground mb-1">
+                Naechste Review
+              </p>
               <p className="flex items-center gap-1 text-sm">
                 <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
                 {fria.nextReviewDate ?? "—"}

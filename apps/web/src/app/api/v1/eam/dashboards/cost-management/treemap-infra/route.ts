@@ -22,16 +22,35 @@ export async function GET(req: Request) {
     ORDER BY (ae.metadata->>'annual_cost')::numeric DESC
   `);
 
-  const rows = result as unknown as Array<{ id: string; name: string; provider_name: string; annual_cost: string }>;
-  const providerMap: Record<string, { name: string; value: number; children: { name: string; value: number; id: string }[] }> = {};
+  const rows = result as unknown as Array<{
+    id: string;
+    name: string;
+    provider_name: string;
+    annual_cost: string;
+  }>;
+  const providerMap: Record<
+    string,
+    {
+      name: string;
+      value: number;
+      children: { name: string; value: number; id: string }[];
+    }
+  > = {};
 
   for (const row of rows) {
     const provider = row.provider_name;
-    if (!providerMap[provider]) providerMap[provider] = { name: provider, value: 0, children: [] };
+    if (!providerMap[provider])
+      providerMap[provider] = { name: provider, value: 0, children: [] };
     const cost = Number(row.annual_cost);
     providerMap[provider].value += cost;
-    providerMap[provider].children.push({ name: row.name, value: cost, id: row.id });
+    providerMap[provider].children.push({
+      name: row.name,
+      value: cost,
+      id: row.id,
+    });
   }
 
-  return Response.json({ data: { name: "IT Components", children: Object.values(providerMap) } });
+  return Response.json({
+    data: { name: "IT Components", children: Object.values(providerMap) },
+  });
 }

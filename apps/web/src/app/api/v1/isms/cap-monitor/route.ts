@@ -32,7 +32,11 @@ function classifyByDueDate(
     return { level: "none", daysUntilDeadline: diffDays, daysOverdue: null };
   }
   if (diffDays >= 0) {
-    return { level: "approaching", daysUntilDeadline: diffDays, daysOverdue: null };
+    return {
+      level: "approaching",
+      daysUntilDeadline: diffDays,
+      daysOverdue: null,
+    };
   }
   const overdue = -diffDays;
   return {
@@ -159,7 +163,9 @@ export async function GET(_req: Request) {
         r.effectivenessReviewDate !== null,
     )
     .map((r) => {
-      const due = r.effectivenessReviewDate ? new Date(r.effectivenessReviewDate) : null;
+      const due = r.effectivenessReviewDate
+        ? new Date(r.effectivenessReviewDate)
+        : null;
       const c = classifyByDueDate(due, now);
       return {
         kind: "effectiveness_review" as const,
@@ -176,19 +182,29 @@ export async function GET(_req: Request) {
   const summary = {
     ncTotal: ncEnriched.length,
     ncOverdue: ncEnriched.filter(
-      (e) => e.escalationLevel === "overdue" || e.escalationLevel === "critical_overdue",
+      (e) =>
+        e.escalationLevel === "overdue" ||
+        e.escalationLevel === "critical_overdue",
     ).length,
-    ncCriticalOverdue: ncEnriched.filter((e) => e.escalationLevel === "critical_overdue").length,
+    ncCriticalOverdue: ncEnriched.filter(
+      (e) => e.escalationLevel === "critical_overdue",
+    ).length,
     caTotal: caEnriched.length,
     caOverdue: caEnriched.filter(
-      (e) => e.escalationLevel === "overdue" || e.escalationLevel === "critical_overdue",
+      (e) =>
+        e.escalationLevel === "overdue" ||
+        e.escalationLevel === "critical_overdue",
     ).length,
-    caCriticalOverdue: caEnriched.filter((e) => e.escalationLevel === "critical_overdue").length,
+    caCriticalOverdue: caEnriched.filter(
+      (e) => e.escalationLevel === "critical_overdue",
+    ).length,
     effectivenessReviewsDue: effectivenessDue.filter(
       (e) => e.escalationLevel !== "none",
     ).length,
     effectivenessReviewsOverdue: effectivenessDue.filter(
-      (e) => e.escalationLevel === "overdue" || e.escalationLevel === "critical_overdue",
+      (e) =>
+        e.escalationLevel === "overdue" ||
+        e.escalationLevel === "critical_overdue",
     ).length,
   };
 

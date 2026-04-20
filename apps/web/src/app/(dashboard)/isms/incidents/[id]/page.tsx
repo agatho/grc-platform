@@ -22,7 +22,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PlaybookTab } from "@/components/isms/playbook-tab";
-import type { SecurityIncident, IncidentTimelineEntry, IncidentStatus } from "@grc/shared";
+import type {
+  SecurityIncident,
+  IncidentTimelineEntry,
+  IncidentStatus,
+} from "@grc/shared";
 
 const STATUS_ORDER: IncidentStatus[] = [
   "detected",
@@ -102,20 +106,23 @@ function IncidentDetailInner() {
     void fetchData();
   }, [fetchData]);
 
-  const handleStatusTransition = useCallback(async (newStatus: string) => {
-    const res = await fetch(`/api/v1/isms/incidents/${incidentId}/status`, {
-      method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ status: newStatus }),
-    });
-    if (res.ok) {
-      toast.success(t("statusUpdated"));
-      fetchData();
-    } else {
-      const err = await res.json();
-      toast.error(err.error ?? t("statusError"));
-    }
-  }, [incidentId, fetchData, t]);
+  const handleStatusTransition = useCallback(
+    async (newStatus: string) => {
+      const res = await fetch(`/api/v1/isms/incidents/${incidentId}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        toast.success(t("statusUpdated"));
+        fetchData();
+      } else {
+        const err = await res.json();
+        toast.error(err.error ?? t("statusError"));
+      }
+    },
+    [incidentId, fetchData, t],
+  );
 
   const handleAddTimelineEntry = useCallback(async () => {
     if (!newDescription.trim()) return;
@@ -161,18 +168,29 @@ function IncidentDetailInner() {
     <div className="max-w-4xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" size="sm" onClick={() => router.push("/isms/incidents")} className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/isms/incidents")}
+          className="mb-2"
+        >
           <ArrowLeft size={14} className="mr-1" /> {t("backToIncidents")}
         </Button>
         <div className="flex items-center gap-3">
-          <span className="font-mono text-sm text-gray-400">{incident.elementId}</span>
+          <span className="font-mono text-sm text-gray-400">
+            {incident.elementId}
+          </span>
           <h1 className="text-2xl font-bold text-gray-900">{incident.title}</h1>
         </div>
         <div className="flex items-center gap-2 mt-2">
           <IncidentSeverityBadge severity={incident.severity} />
-          <Badge variant="outline">{t(`incidentStatus.${incident.status}`)}</Badge>
+          <Badge variant="outline">
+            {t(`incidentStatus.${incident.status}`)}
+          </Badge>
           {incident.incidentType && (
-            <Badge variant="outline" className="text-[10px]">{incident.incidentType}</Badge>
+            <Badge variant="outline" className="text-[10px]">
+              {incident.incidentType}
+            </Badge>
           )}
         </div>
       </div>
@@ -186,10 +204,7 @@ function IncidentDetailInner() {
       {nextStatus && (
         <div className="flex items-center gap-2">
           <span className="text-sm text-gray-500">{t("advanceTo")}:</span>
-          <Button
-            size="sm"
-            onClick={() => handleStatusTransition(nextStatus)}
-          >
+          <Button size="sm" onClick={() => handleStatusTransition(nextStatus)}>
             {t(`incidentStatus.${nextStatus}`)}
           </Button>
         </div>
@@ -219,24 +234,38 @@ function IncidentDetailInner() {
         <TabsContent value="overview" className="mt-4 space-y-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">{t("description")}</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">
+                {t("description")}
+              </h3>
               <p className="text-sm text-gray-900 whitespace-pre-wrap">
                 {incident.description || "--"}
               </p>
             </div>
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">{t("detectedAt")}</h3>
-                <p className="text-sm text-gray-900">{new Date(incident.detectedAt).toLocaleString()}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  {t("detectedAt")}
+                </h3>
+                <p className="text-sm text-gray-900">
+                  {new Date(incident.detectedAt).toLocaleString()}
+                </p>
               </div>
               <div>
-                <h3 className="text-sm font-medium text-gray-500 mb-1">{t("dataBreach")}</h3>
-                <p className="text-sm text-gray-900">{incident.isDataBreach ? "Yes" : "No"}</p>
+                <h3 className="text-sm font-medium text-gray-500 mb-1">
+                  {t("dataBreach")}
+                </h3>
+                <p className="text-sm text-gray-900">
+                  {incident.isDataBreach ? "Yes" : "No"}
+                </p>
               </div>
               {incident.closedAt && (
                 <div>
-                  <h3 className="text-sm font-medium text-gray-500 mb-1">{t("closedAt")}</h3>
-                  <p className="text-sm text-gray-900">{new Date(incident.closedAt).toLocaleString()}</p>
+                  <h3 className="text-sm font-medium text-gray-500 mb-1">
+                    {t("closedAt")}
+                  </h3>
+                  <p className="text-sm text-gray-900">
+                    {new Date(incident.closedAt).toLocaleString()}
+                  </p>
                 </div>
               )}
             </div>
@@ -247,7 +276,9 @@ function IncidentDetailInner() {
         <TabsContent value="timeline" className="mt-4 space-y-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             {timeline.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">{t("noTimelineEntries")}</p>
+              <p className="text-sm text-gray-400 text-center py-8">
+                {t("noTimelineEntries")}
+              </p>
             ) : (
               <div className="relative space-y-6 pl-8 before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-gray-200">
                 {timeline.map((entry) => (
@@ -264,7 +295,9 @@ function IncidentDetailInner() {
                           {entry.actionType}
                         </Badge>
                       </div>
-                      <p className="text-sm text-gray-900 mt-1">{entry.description}</p>
+                      <p className="text-sm text-gray-900 mt-1">
+                        {entry.description}
+                      </p>
                     </div>
                   </div>
                 ))}
@@ -273,7 +306,9 @@ function IncidentDetailInner() {
 
             {/* Add Entry Form */}
             <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-4 space-y-3">
-              <h4 className="text-sm font-medium text-gray-700">{t("addTimelineEntry")}</h4>
+              <h4 className="text-sm font-medium text-gray-700">
+                {t("addTimelineEntry")}
+              </h4>
               <div className="flex gap-2">
                 <select
                   value={newActionType}
@@ -291,7 +326,9 @@ function IncidentDetailInner() {
                     "lessons_learned",
                     "other",
                   ].map((at) => (
-                    <option key={at} value={at}>{at}</option>
+                    <option key={at} value={at}>
+                      {at}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -307,7 +344,9 @@ function IncidentDetailInner() {
                 onClick={handleAddTimelineEntry}
                 disabled={addingEntry || !newDescription.trim()}
               >
-                {addingEntry && <Loader2 size={14} className="mr-1 animate-spin" />}
+                {addingEntry && (
+                  <Loader2 size={14} className="mr-1 animate-spin" />
+                )}
                 {t("addEntry")}
               </Button>
             </div>
@@ -318,13 +357,20 @@ function IncidentDetailInner() {
         <TabsContent value="assets" className="mt-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             {incident.affectedAssetIds.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-8">{t("noAffectedAssets")}</p>
+              <p className="text-sm text-gray-400 text-center py-8">
+                {t("noAffectedAssets")}
+              </p>
             ) : (
               <div className="space-y-2">
                 {incident.affectedAssetIds.map((assetId) => (
-                  <div key={assetId} className="flex items-center gap-2 rounded-lg border border-gray-100 p-3">
+                  <div
+                    key={assetId}
+                    className="flex items-center gap-2 rounded-lg border border-gray-100 p-3"
+                  >
                     <Shield size={14} className="text-gray-400" />
-                    <span className="font-mono text-xs text-gray-600">{assetId}</span>
+                    <span className="font-mono text-xs text-gray-600">
+                      {assetId}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -341,19 +387,25 @@ function IncidentDetailInner() {
         <TabsContent value="rootcause" className="mt-4">
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">{t("rootCause")}</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">
+                {t("rootCause")}
+              </h3>
               <p className="text-sm text-gray-900 whitespace-pre-wrap">
                 {incident.rootCause || "--"}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">{t("remediationActions")}</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">
+                {t("remediationActions")}
+              </h3>
               <p className="text-sm text-gray-900 whitespace-pre-wrap">
                 {incident.remediationActions || "--"}
               </p>
             </div>
             <div>
-              <h3 className="text-sm font-medium text-gray-500 mb-1">{t("lessonsLearned")}</h3>
+              <h3 className="text-sm font-medium text-gray-500 mb-1">
+                {t("lessonsLearned")}
+              </h3>
               <p className="text-sm text-gray-900 whitespace-pre-wrap">
                 {incident.lessonsLearned || "--"}
               </p>

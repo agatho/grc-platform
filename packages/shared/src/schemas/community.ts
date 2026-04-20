@@ -5,11 +5,22 @@ import { z } from "zod";
 export const editionTypeValues = ["community", "enterprise"] as const;
 
 export const contributionStatusValues = [
-  "submitted", "under_review", "accepted", "rejected", "merged",
+  "submitted",
+  "under_review",
+  "accepted",
+  "rejected",
+  "merged",
 ] as const;
 
 export const contributionTypeValues = [
-  "plugin", "framework", "template", "translation", "documentation", "bug_fix", "feature", "rfc",
+  "plugin",
+  "framework",
+  "template",
+  "translation",
+  "documentation",
+  "bug_fix",
+  "feature",
+  "rfc",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -18,13 +29,19 @@ export const contributionTypeValues = [
 
 export const upsertCommunityEditionConfigSchema = z.object({
   editionType: z.enum(editionTypeValues).default("community"),
-  enabledModules: z.array(z.string().max(50)).min(1).max(20).default(["erm", "bpm", "ics", "dms"]),
+  enabledModules: z
+    .array(z.string().max(50))
+    .min(1)
+    .max(20)
+    .default(["erm", "bpm", "ics", "dms"]),
   maxUsers: z.number().int().min(1).max(10000).default(25),
   maxEntities: z.number().int().min(1).max(1000).default(3),
   pluginSdkEnabled: z.boolean().default(true),
   apiAccessEnabled: z.boolean().default(true),
   communityForumUrl: z.string().url().max(2000).optional(),
-  deploymentType: z.enum(["docker_compose", "kubernetes", "native"]).default("docker_compose"),
+  deploymentType: z
+    .enum(["docker_compose", "kubernetes", "native"])
+    .default("docker_compose"),
   helmChartVersion: z.string().max(50).optional(),
   licenseKey: z.string().max(500).optional(),
   telemetryOptIn: z.boolean().default(false),
@@ -61,5 +78,7 @@ export const listContributionsQuerySchema = z.object({
 // Type exports
 // ──────────────────────────────────────────────────────────────
 
-export type UpsertCommunityEditionConfigInput = z.infer<typeof upsertCommunityEditionConfigSchema>;
+export type UpsertCommunityEditionConfigInput = z.infer<
+  typeof upsertCommunityEditionConfigSchema
+>;
 export type CreateContributionInput = z.infer<typeof createContributionSchema>;

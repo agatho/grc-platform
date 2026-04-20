@@ -79,9 +79,13 @@ export async function GET(req: Request, { params }: RouteParams) {
         questionEn: q.questionEn,
         helpTextDe: q.helpTextDe,
         helpTextEn: q.helpTextEn,
-        options: (q.options as Array<{ value: string; labelDe: string; labelEn: string }>)?.map(
-          ({ value, labelDe, labelEn }) => ({ value, labelDe, labelEn }),
-        ),
+        options: (
+          q.options as Array<{
+            value: string;
+            labelDe: string;
+            labelEn: string;
+          }>
+        )?.map(({ value, labelDe, labelEn }) => ({ value, labelDe, labelEn })),
         isRequired: q.isRequired,
         isEvidenceRequired: q.isEvidenceRequired,
         conditionalOn: q.conditionalOn,

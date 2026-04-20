@@ -2,7 +2,12 @@ import { db, threat } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createThreatSchema } from "@grc/shared";
 import { eq, and, ilike } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/threats
 export async function GET(req: Request) {

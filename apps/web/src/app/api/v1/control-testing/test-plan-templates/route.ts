@@ -10,10 +10,19 @@
 // in the codebase rather than the DB so it's reviewed via PRs).
 
 import { withAuth } from "@/lib/api";
-import { listTestPlanTemplates, FRAMEWORK_TEST_PLAN_TEMPLATES } from "@grc/shared";
+import {
+  listTestPlanTemplates,
+  FRAMEWORK_TEST_PLAN_TEMPLATES,
+} from "@grc/shared";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
@@ -21,7 +30,8 @@ export async function GET(req: Request) {
   const controlRef = url.searchParams.get("controlRef") ?? undefined;
 
   if (framework && controlRef) {
-    const template = FRAMEWORK_TEST_PLAN_TEMPLATES[`${framework}::${controlRef}`];
+    const template =
+      FRAMEWORK_TEST_PLAN_TEMPLATES[`${framework}::${controlRef}`];
     if (!template) {
       return Response.json({ error: "Template not found" }, { status: 404 });
     }
@@ -31,7 +41,9 @@ export async function GET(req: Request) {
   const templates = listTestPlanTemplates(framework ?? undefined);
 
   // Group by framework for the picker UI
-  const byFramework = templates.reduce<Record<string, { count: number; controlRefs: string[] }>>((acc, t) => {
+  const byFramework = templates.reduce<
+    Record<string, { count: number; controlRefs: string[] }>
+  >((acc, t) => {
     if (!acc[t.framework]) acc[t.framework] = { count: 0, controlRefs: [] };
     acc[t.framework].count++;
     acc[t.framework].controlRefs.push(t.controlRef);

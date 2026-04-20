@@ -5,13 +5,23 @@ import { withAuth } from "@/lib/api";
 
 // GET /api/v1/control-testing/executions — List executions
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "control_owner", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "control_owner",
+    "auditor",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = testExecutionQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = testExecutionQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, controlId, scriptId, status, result } = query.data;
@@ -24,11 +34,16 @@ export async function GET(req: Request) {
   if (result) conditions.push(eq(controlTestExecution.result, result));
 
   const [executions, countResult] = await Promise.all([
-    db.select().from(controlTestExecution)
+    db
+      .select()
+      .from(controlTestExecution)
       .where(and(...conditions))
       .orderBy(desc(controlTestExecution.createdAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(controlTestExecution)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(controlTestExecution)
       .where(and(...conditions)),
   ]);
 

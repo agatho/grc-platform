@@ -85,12 +85,27 @@ function assertionBadgeClass(assertion: string): string {
   return map[assertion] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function testResultBadge(result?: TestResult): { className: string; label: string } {
+function testResultBadge(result?: TestResult): {
+  className: string;
+  label: string;
+} {
   const map: Record<string, { className: string; label: string }> = {
-    effective: { className: "bg-emerald-100 text-emerald-800 border-emerald-200", label: "Effective" },
-    ineffective: { className: "bg-red-100 text-red-800 border-red-200", label: "Ineffective" },
-    partially_effective: { className: "bg-yellow-100 text-yellow-800 border-yellow-200", label: "Partially Effective" },
-    not_tested: { className: "bg-gray-100 text-gray-600 border-gray-200", label: "Not Tested" },
+    effective: {
+      className: "bg-emerald-100 text-emerald-800 border-emerald-200",
+      label: "Effective",
+    },
+    ineffective: {
+      className: "bg-red-100 text-red-800 border-red-200",
+      label: "Ineffective",
+    },
+    partially_effective: {
+      className: "bg-yellow-100 text-yellow-800 border-yellow-200",
+      label: "Partially Effective",
+    },
+    not_tested: {
+      className: "bg-gray-100 text-gray-600 border-gray-200",
+      label: "Not Tested",
+    },
   };
   if (!result) return map.not_tested;
   return map[result] ?? map.not_tested;
@@ -140,13 +155,16 @@ function ControlDetailInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [controlRes, testsRes, findingsRes, rcmRes, logRes] = await Promise.all([
-        fetch(`/api/v1/controls/${controlId}`),
-        fetch(`/api/v1/controls/${controlId}/tests`),
-        fetch(`/api/v1/controls/${controlId}/findings`),
-        fetch(`/api/v1/controls/${controlId}/rcm`),
-        fetch(`/api/v1/audit-log?entityType=control&entityId=${controlId}&limit=50`),
-      ]);
+      const [controlRes, testsRes, findingsRes, rcmRes, logRes] =
+        await Promise.all([
+          fetch(`/api/v1/controls/${controlId}`),
+          fetch(`/api/v1/controls/${controlId}/tests`),
+          fetch(`/api/v1/controls/${controlId}/findings`),
+          fetch(`/api/v1/controls/${controlId}/rcm`),
+          fetch(
+            `/api/v1/audit-log?entityType=control&entityId=${controlId}&limit=50`,
+          ),
+        ]);
 
       if (controlRes.ok) {
         const json = await controlRes.json();
@@ -190,7 +208,11 @@ function ControlDetailInner() {
   if (!control) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/controls")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/controls")}
+        >
           <ArrowLeft size={16} />
           {t("backToList")}
         </Button>
@@ -207,11 +229,17 @@ function ControlDetailInner() {
       {/* Back + Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/controls")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/controls")}
+          >
             <ArrowLeft size={16} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{control.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {control.title}
+            </h1>
             <div className="flex items-center gap-2 mt-1">
               <ControlStatusBadge status={control.status} />
               <Badge
@@ -254,31 +282,45 @@ function ControlDetailInner() {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
             <Card className="lg:col-span-2">
               <CardHeader>
-                <CardTitle className="text-base">{t("tabs.overview")}</CardTitle>
+                <CardTitle className="text-base">
+                  {t("tabs.overview")}
+                </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
                 {control.description && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">{t("form.description")}</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{control.description}</p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      {t("form.description")}
+                    </p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {control.description}
+                    </p>
                   </div>
                 )}
                 {control.objective && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">{t("form.objective")}</p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      {t("form.objective")}
+                    </p>
                     <p className="text-sm text-gray-700">{control.objective}</p>
                   </div>
                 )}
                 {control.testInstructions && (
                   <div>
-                    <p className="text-xs font-medium text-gray-500 mb-1">{t("form.testInstructions")}</p>
-                    <p className="text-sm text-gray-700 whitespace-pre-wrap">{control.testInstructions}</p>
+                    <p className="text-xs font-medium text-gray-500 mb-1">
+                      {t("form.testInstructions")}
+                    </p>
+                    <p className="text-sm text-gray-700 whitespace-pre-wrap">
+                      {control.testInstructions}
+                    </p>
                   </div>
                 )}
 
                 {/* Assertions COSO Badges */}
                 <div>
-                  <p className="text-xs font-medium text-gray-500 mb-2">{t("assertions.title")}</p>
+                  <p className="text-xs font-medium text-gray-500 mb-2">
+                    {t("assertions.title")}
+                  </p>
                   <div className="flex flex-wrap gap-1.5">
                     {(control.assertions ?? []).map((a) => (
                       <Badge
@@ -373,22 +415,35 @@ function ControlDetailInner() {
                           </div>
                           <p className="text-xs text-gray-500">
                             {formatDate(test.testDate)}
-                            {test.sampleSize && ` | ${t("tests.sampleSize")}: ${test.sampleSize}`}
+                            {test.sampleSize &&
+                              ` | ${t("tests.sampleSize")}: ${test.sampleSize}`}
                           </p>
                           {test.conclusion && (
-                            <p className="text-xs text-gray-600 mt-1">{test.conclusion}</p>
+                            <p className="text-xs text-gray-600 mt-1">
+                              {test.conclusion}
+                            </p>
                           )}
                         </div>
                         <div className="flex items-center gap-3">
                           <div className="text-center">
-                            <p className="text-[10px] font-medium text-gray-400 mb-0.5">ToD</p>
-                            <Badge variant="outline" className={todBadge.className}>
+                            <p className="text-[10px] font-medium text-gray-400 mb-0.5">
+                              ToD
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className={todBadge.className}
+                            >
                               {todBadge.label}
                             </Badge>
                           </div>
                           <div className="text-center">
-                            <p className="text-[10px] font-medium text-gray-400 mb-0.5">ToE</p>
-                            <Badge variant="outline" className={toeBadge.className}>
+                            <p className="text-[10px] font-medium text-gray-400 mb-0.5">
+                              ToE
+                            </p>
+                            <Badge
+                              variant="outline"
+                              className={toeBadge.className}
+                            >
                               {toeBadge.label}
                             </Badge>
                           </div>
@@ -419,7 +474,9 @@ function ControlDetailInner() {
                 >
                   <div className="flex items-center gap-3">
                     <FindingSeverityBadge severity={f.severity} />
-                    <span className="text-sm font-medium text-gray-900">{f.title}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {f.title}
+                    </span>
                   </div>
                   <Badge
                     variant="outline"
@@ -449,7 +506,9 @@ function ControlDetailInner() {
                   className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 hover:bg-blue-50/30 transition-colors"
                 >
                   <div className="flex items-center gap-3">
-                    <span className="text-sm font-medium text-gray-900">{risk.title}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {risk.title}
+                    </span>
                     <Badge variant="outline" className="text-xs">
                       {risk.riskCategory}
                     </Badge>
@@ -485,11 +544,15 @@ function ControlDetailInner() {
                   key={entry.id}
                   className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3"
                 >
-                  <Activity size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                  <Activity
+                    size={14}
+                    className="text-gray-400 mt-0.5 shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">{entry.userName ?? "System"}</span>
-                      {" "}
+                      <span className="font-medium">
+                        {entry.userName ?? "System"}
+                      </span>{" "}
                       <span className="text-gray-500">{entry.action}</span>
                     </p>
                     {entry.changes && (
@@ -497,14 +560,20 @@ function ControlDetailInner() {
                         {Object.entries(entry.changes).map(([key, val]) => (
                           <p key={key}>
                             <span className="font-mono">{key}</span>:{" "}
-                            <span className="line-through text-red-400">{String(val.old ?? "\u2014")}</span>
+                            <span className="line-through text-red-400">
+                              {String(val.old ?? "\u2014")}
+                            </span>
                             {" -> "}
-                            <span className="text-emerald-600">{String(val.new ?? "\u2014")}</span>
+                            <span className="text-emerald-600">
+                              {String(val.new ?? "\u2014")}
+                            </span>
                           </p>
                         ))}
                       </div>
                     )}
-                    <p className="text-[10px] text-gray-400 mt-1">{formatDate(entry.createdAt)}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {formatDate(entry.createdAt)}
+                    </p>
                   </div>
                 </div>
               ))}

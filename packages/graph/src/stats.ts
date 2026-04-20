@@ -42,7 +42,7 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
   `);
 
   // Total counts
-  const [totals] = await execSql(sql`
+  const [totals] = (await execSql(sql`
     WITH all_nodes AS (
       SELECT source_type as entity_type, source_id as entity_id FROM entity_reference WHERE org_id = ${orgId}::uuid
       UNION
@@ -51,10 +51,10 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
     SELECT
       (SELECT COUNT(DISTINCT entity_id) FROM all_nodes)::int as total_nodes,
       (SELECT COUNT(*) FROM entity_reference WHERE org_id = ${orgId}::uuid)::int as total_edges
-  `) as unknown as [{ total_nodes: number; total_edges: number }];
+  `)) as unknown as [{ total_nodes: number; total_edges: number }];
 
   // Orphan count: entities in only one direction with no return references
-  const [orphanResult] = await execSql(sql`
+  const [orphanResult] = (await execSql(sql`
     WITH all_entities AS (
       SELECT source_type as entity_type, source_id as entity_id FROM entity_reference WHERE org_id = ${orgId}::uuid
       UNION
@@ -72,10 +72,10 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
     SELECT COUNT(*)::int as orphan_count
     FROM connection_counts
     WHERE conn_count = 1
-  `) as unknown as [{ orphan_count: number }];
+  `)) as unknown as [{ orphan_count: number }];
 
   // Hub count
-  const [hubResult] = await execSql(sql`
+  const [hubResult] = (await execSql(sql`
     WITH connection_counts AS (
       SELECT entity_id, COUNT(*) as conn_count
       FROM (
@@ -88,18 +88,24 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
     SELECT COUNT(*)::int as hub_count
     FROM connection_counts
     WHERE conn_count >= ${HUB_CONNECTION_THRESHOLD}
-  `) as unknown as [{ hub_count: number }];
+  `)) as unknown as [{ hub_count: number }];
 
   const totalNodes = totals?.total_nodes ?? 0;
   const totalEdges = totals?.total_edges ?? 0;
 
   const nodesByType: Record<string, number> = {};
-  for (const row of nodeCountRows as unknown as Array<{ entity_type: string; count: number }>) {
+  for (const row of nodeCountRows as unknown as Array<{
+    entity_type: string;
+    count: number;
+  }>) {
     nodesByType[row.entity_type] = row.count;
   }
 
   const edgesByRelationship: Record<string, number> = {};
-  for (const row of edgeCountRows as unknown as Array<{ relationship: string; count: number }>) {
+  for (const row of edgeCountRows as unknown as Array<{
+    relationship: string;
+    count: number;
+  }>) {
     edgesByRelationship[row.relationship] = row.count;
   }
 
@@ -110,7 +116,10 @@ export async function getGraphStats(orgId: string): Promise<GraphStats> {
     edgesByRelationship,
     orphanCount: orphanResult?.orphan_count ?? 0,
     hubCount: hubResult?.hub_count ?? 0,
-    avgConnections: totalNodes > 0 ? Math.round((totalEdges * 2 / totalNodes) * 10) / 10 : 0,
+    avgConnections:
+      totalNodes > 0
+        ? Math.round(((totalEdges * 2) / totalNodes) * 10) / 10
+        : 0,
   };
 }
 
@@ -188,8 +197,20 @@ export async function findOrphans(orgId: string): Promise<{
     LIMIT 100
   `);
 
-  const mapOrphans = (rows: unknown[], entityType: string, missingRel: string, fixPath: string): OrphanEntity[] =>
-    (rows as Array<{ entity_id: string; entity_type: string; entity_name: string; element_id?: string }>).map((r) => ({
+  const mapOrphans = (
+    rows: unknown[],
+    entityType: string,
+    missingRel: string,
+    fixPath: string,
+  ): OrphanEntity[] =>
+    (
+      rows as Array<{
+        entity_id: string;
+        entity_type: string;
+        entity_name: string;
+        element_id?: string;
+      }>
+    ).map((r) => ({
       entityId: r.entity_id,
       entityType: r.entity_type ?? entityType,
       entityName: r.entity_name ?? r.entity_id,
@@ -199,10 +220,30 @@ export async function findOrphans(orgId: string): Promise<{
     }));
 
   return {
-    risksWithoutControls: mapOrphans(risksWithoutControls as unknown as unknown[], "risk", "mitigates", "risks"),
-    controlsWithoutTests: mapOrphans(controlsWithoutTests as unknown as unknown[], "control", "tested_by", "controls"),
-    assetsWithoutProtection: mapOrphans(assetsWithoutProtection as unknown as unknown[], "asset", "any", "assets"),
-    processesWithoutControls: mapOrphans(processesWithoutControls as unknown as unknown[], "process", "owned_by", "processes"),
+    risksWithoutControls: mapOrphans(
+      risksWithoutControls as unknown as unknown[],
+      "risk",
+      "mitigates",
+      "risks",
+    ),
+    controlsWithoutTests: mapOrphans(
+      controlsWithoutTests as unknown as unknown[],
+      "control",
+      "tested_by",
+      "controls",
+    ),
+    assetsWithoutProtection: mapOrphans(
+      assetsWithoutProtection as unknown as unknown[],
+      "asset",
+      "any",
+      "assets",
+    ),
+    processesWithoutControls: mapOrphans(
+      processesWithoutControls as unknown as unknown[],
+      "process",
+      "owned_by",
+      "processes",
+    ),
   };
 }
 
@@ -236,13 +277,15 @@ export async function getHubs(
     LIMIT ${limit}
   `);
 
-  const hubs = (rows as unknown as Array<{
-    entity_id: string;
-    entity_type: string;
-    connection_count: number;
-    inbound: number;
-    outbound: number;
-  }>).map((r) => ({
+  const hubs = (
+    rows as unknown as Array<{
+      entity_id: string;
+      entity_type: string;
+      connection_count: number;
+      inbound: number;
+      outbound: number;
+    }>
+  ).map((r) => ({
     entityId: r.entity_id,
     entityType: r.entity_type,
     entityName: r.entity_id, // enriched below
@@ -262,7 +305,13 @@ export async function getHubs(
       connectionCount: h.connectionCount,
     })),
     edges: [],
-    meta: { rootId: "", rootType: "", depth: 0, nodeCount: hubs.length, edgeCount: 0 },
+    meta: {
+      rootId: "",
+      rootType: "",
+      depth: 0,
+      nodeCount: hubs.length,
+      edgeCount: 0,
+    },
   };
   const enriched = await enrichGraphNodes(fakeGraph);
   const nameMap = new Map(enriched.nodes.map((n) => [n.id, n.name]));
@@ -276,7 +325,9 @@ export async function getHubs(
 /**
  * Dependency matrix: count of edges between each pair of entity types.
  */
-export async function getDependencyMatrix(orgId: string): Promise<DependencyMatrixEntry[]> {
+export async function getDependencyMatrix(
+  orgId: string,
+): Promise<DependencyMatrixEntry[]> {
   const rows = await execSql(sql`
     SELECT
       source_type,
@@ -289,12 +340,14 @@ export async function getDependencyMatrix(orgId: string): Promise<DependencyMatr
     ORDER BY count DESC
   `);
 
-  return (rows as unknown as Array<{
-    source_type: string;
-    target_type: string;
-    count: number;
-    avg_weight: number;
-  }>).map((r) => ({
+  return (
+    rows as unknown as Array<{
+      source_type: string;
+      target_type: string;
+      count: number;
+      avg_weight: number;
+    }>
+  ).map((r) => ({
     sourceType: r.source_type,
     targetType: r.target_type,
     count: r.count,
@@ -309,7 +362,14 @@ export async function searchEntities(
   orgId: string,
   query: string,
   limit: number = 20,
-): Promise<Array<{ entityId: string; entityType: string; name: string; elementId?: string }>> {
+): Promise<
+  Array<{
+    entityId: string;
+    entityType: string;
+    name: string;
+    elementId?: string;
+  }>
+> {
   const searchTerm = `%${query}%`;
 
   const rows = await execSql(sql`
@@ -334,7 +394,14 @@ export async function searchEntities(
     LIMIT ${limit}
   `);
 
-  return (rows as unknown as Array<{ entity_id: string; entity_type: string; name: string; element_id?: string }>).map((r) => ({
+  return (
+    rows as unknown as Array<{
+      entity_id: string;
+      entity_type: string;
+      name: string;
+      element_id?: string;
+    }>
+  ).map((r) => ({
     entityId: r.entity_id,
     entityType: r.entity_type,
     name: r.name,

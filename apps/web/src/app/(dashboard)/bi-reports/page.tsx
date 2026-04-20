@@ -3,15 +3,29 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Plus, FileBarChart2, LayoutTemplate, Loader2, Search } from "lucide-react";
+import {
+  Plus,
+  FileBarChart2,
+  LayoutTemplate,
+  Loader2,
+  Search,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 interface BiReportRecord {
@@ -46,14 +60,20 @@ export default function BiReportsPage() {
     }
   }, [search, statusFilter]);
 
-  useEffect(() => { fetchReports(); }, [fetchReports]);
+  useEffect(() => {
+    fetchReports();
+  }, [fetchReports]);
 
   const statusColor = (s: string) => {
     switch (s) {
-      case "published": return "default";
-      case "draft": return "secondary";
-      case "archived": return "outline";
-      default: return "secondary";
+      case "published":
+        return "default";
+      case "draft":
+        return "secondary";
+      case "archived":
+        return "outline";
+      default:
+        return "secondary";
     }
   };
 
@@ -110,15 +130,21 @@ export default function BiReportsPage() {
             <Card
               key={report.id}
               className="cursor-pointer hover:border-primary transition-colors"
-              onClick={() => router.push(`/bi-reports/designer?id=${report.id}`)}
+              onClick={() =>
+                router.push(`/bi-reports/designer?id=${report.id}`)
+              }
             >
               <CardHeader className="pb-2">
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-base">{report.name}</CardTitle>
-                  <Badge variant={statusColor(report.status)}>{report.status}</Badge>
+                  <Badge variant={statusColor(report.status)}>
+                    {report.status}
+                  </Badge>
                 </div>
                 {report.description && (
-                  <CardDescription className="line-clamp-2">{report.description}</CardDescription>
+                  <CardDescription className="line-clamp-2">
+                    {report.description}
+                  </CardDescription>
                 )}
               </CardHeader>
               <CardContent>

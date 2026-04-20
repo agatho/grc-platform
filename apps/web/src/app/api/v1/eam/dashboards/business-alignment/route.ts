@@ -22,7 +22,11 @@ export async function GET(req: Request) {
     ORDER BY ae_cap.name
   `);
 
-  const rows = result as unknown as Array<{ capability_id: string; capability_name: string; application_count: number }>;
+  const rows = result as unknown as Array<{
+    capability_id: string;
+    capability_name: string;
+    application_count: number;
+  }>;
   const total = rows.length || 1;
   const covered = rows.filter((r) => r.application_count > 0).length;
 
@@ -32,7 +36,12 @@ export async function GET(req: Request) {
         capabilityId: r.capability_id,
         capabilityName: r.capability_name,
         applicationCount: r.application_count,
-        status: r.application_count >= 2 ? "full" : r.application_count === 1 ? "partial" : "none",
+        status:
+          r.application_count >= 2
+            ? "full"
+            : r.application_count === 1
+              ? "partial"
+              : "none",
       })),
       coverageScorePct: Math.round((covered / total) * 100),
     },

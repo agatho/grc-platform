@@ -21,7 +21,10 @@ export async function GET(req: Request) {
       lifecycleStatus: applicationPortfolio.lifecycleStatus,
     })
     .from(applicationPortfolio)
-    .innerJoin(architectureElement, eq(applicationPortfolio.elementId, architectureElement.id))
+    .innerJoin(
+      architectureElement,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
     .where(eq(applicationPortfolio.orgId, ctx.orgId))
     .orderBy(asc(applicationPortfolio.plannedEol));
 

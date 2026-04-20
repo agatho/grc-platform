@@ -1,11 +1,34 @@
 // GRC Budget, Cost Tracking & ROI types (Sprint 13)
 
 export type BudgetStatus = "draft" | "submitted" | "approved" | "closed";
-export type BudgetType = "management_system" | "department" | "project" | "custom";
-export type GrcArea = "erm" | "isms" | "ics" | "dpms" | "audit" | "tprm" | "bcms" | "esg" | "general";
-export type CostCategory = "personnel" | "external" | "tools" | "training" | "measures" | "certification";
+export type BudgetType =
+  | "management_system"
+  | "department"
+  | "project"
+  | "custom";
+export type GrcArea =
+  | "erm"
+  | "isms"
+  | "ics"
+  | "dpms"
+  | "audit"
+  | "tprm"
+  | "bcms"
+  | "esg"
+  | "general";
+export type CostCategory =
+  | "personnel"
+  | "external"
+  | "tools"
+  | "training"
+  | "measures"
+  | "certification";
 export type CostType = "planned" | "actual" | "forecast";
-export type RoiMethod = "ale_reduction" | "penalty_avoidance" | "incident_prevention" | "roni";
+export type RoiMethod =
+  | "ale_reduction"
+  | "penalty_avoidance"
+  | "incident_prevention"
+  | "roni";
 
 export interface GrcBudget {
   id: string;

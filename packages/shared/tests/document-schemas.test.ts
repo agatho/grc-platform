@@ -37,8 +37,16 @@ describe("createDocumentSchema", () => {
 
   it("accepts all valid categories", () => {
     const cats = [
-      "policy", "procedure", "guideline", "template",
-      "record", "tom", "dpa", "bcp", "soa", "other",
+      "policy",
+      "procedure",
+      "guideline",
+      "template",
+      "record",
+      "tom",
+      "dpa",
+      "bcp",
+      "soa",
+      "other",
     ];
     for (const category of cats) {
       const result = createDocumentSchema.safeParse({ title: "Doc", category });
@@ -127,7 +135,14 @@ describe("documentStatusTransitionSchema", () => {
   });
 
   it("accepts all valid document statuses", () => {
-    for (const s of ["draft", "in_review", "approved", "published", "archived", "expired"]) {
+    for (const s of [
+      "draft",
+      "in_review",
+      "approved",
+      "published",
+      "archived",
+      "expired",
+    ]) {
       const result = documentStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }

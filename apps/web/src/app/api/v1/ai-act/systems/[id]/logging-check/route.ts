@@ -50,7 +50,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {

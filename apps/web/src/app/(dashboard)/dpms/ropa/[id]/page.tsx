@@ -8,7 +8,12 @@ import { Loader2, ArrowLeft, CheckCircle } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import type { RopaEntry, RopaDataCategory, RopaDataSubject, RopaRecipient } from "@grc/shared";
+import type {
+  RopaEntry,
+  RopaDataCategory,
+  RopaDataSubject,
+  RopaRecipient,
+} from "@grc/shared";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -38,7 +43,9 @@ function RopaDetailInner() {
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<RopaDetailData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"overview" | "categories" | "subjects" | "recipients">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "categories" | "subjects" | "recipients"
+  >("overview");
   const [reviewing, setReviewing] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -61,7 +68,9 @@ function RopaDetailInner() {
   const handleReview = async () => {
     setReviewing(true);
     try {
-      const res = await fetch(`/api/v1/dpms/ropa/${id}/review`, { method: "POST" });
+      const res = await fetch(`/api/v1/dpms/ropa/${id}/review`, {
+        method: "POST",
+      });
       if (res.ok) {
         await fetchData();
       }
@@ -79,7 +88,9 @@ function RopaDetailInner() {
   }
 
   if (!data) {
-    return <p className="text-center text-gray-500 py-8">{t("ropa.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-500 py-8">{t("ropa.notFound")}</p>
+    );
   }
 
   const tabs = ["overview", "categories", "subjects", "recipients"] as const;
@@ -89,16 +100,26 @@ function RopaDetailInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dpms/ropa")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dpms/ropa")}
+          >
             <ArrowLeft size={16} />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className={STATUS_COLORS[data.status] ?? ""}>
+              <Badge
+                variant="outline"
+                className={STATUS_COLORS[data.status] ?? ""}
+              >
                 {data.status.replace(/_/g, " ")}
               </Badge>
-              <span className="text-sm text-gray-500">{t("ropa.legalBasisLabel")}: {data.legalBasis.replace(/_/g, " ")}</span>
+              <span className="text-sm text-gray-500">
+                {t("ropa.legalBasisLabel")}:{" "}
+                {data.legalBasis.replace(/_/g, " ")}
+              </span>
             </div>
           </div>
         </div>
@@ -130,41 +151,94 @@ function RopaDetailInner() {
       {activeTab === "overview" && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">{t("ropa.art30Fields")}</h2>
+            <h2 className="font-semibold text-gray-900">
+              {t("ropa.art30Fields")}
+            </h2>
             <FieldRow label={t("ropa.purpose")} value={data.purpose} />
-            <FieldRow label={t("ropa.legalBasisLabel")} value={data.legalBasis.replace(/_/g, " ")} />
-            {data.legalBasisDetail && <FieldRow label={t("ropa.legalBasisDetail")} value={data.legalBasisDetail} />}
-            <FieldRow label={t("ropa.processingDescription")} value={data.processingDescription ?? "-"} />
-            <FieldRow label={t("ropa.processorName")} value={data.processorName ?? "-"} />
+            <FieldRow
+              label={t("ropa.legalBasisLabel")}
+              value={data.legalBasis.replace(/_/g, " ")}
+            />
+            {data.legalBasisDetail && (
+              <FieldRow
+                label={t("ropa.legalBasisDetail")}
+                value={data.legalBasisDetail}
+              />
+            )}
+            <FieldRow
+              label={t("ropa.processingDescription")}
+              value={data.processingDescription ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.processorName")}
+              value={data.processorName ?? "-"}
+            />
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
-            <h2 className="font-semibold text-gray-900">{t("ropa.retentionAndTransfer")}</h2>
-            <FieldRow label={t("ropa.retentionPeriod")} value={data.retentionPeriod ?? "-"} />
-            <FieldRow label={t("ropa.retentionJustification")} value={data.retentionJustification ?? "-"} />
-            <FieldRow label={t("ropa.technicalMeasures")} value={data.technicalMeasures ?? "-"} />
-            <FieldRow label={t("ropa.organizationalMeasures")} value={data.organizationalMeasures ?? "-"} />
-            <FieldRow label={t("ropa.internationalTransfer")} value={data.internationalTransfer ? t("ropa.yes") : t("ropa.no")} />
+            <h2 className="font-semibold text-gray-900">
+              {t("ropa.retentionAndTransfer")}
+            </h2>
+            <FieldRow
+              label={t("ropa.retentionPeriod")}
+              value={data.retentionPeriod ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.retentionJustification")}
+              value={data.retentionJustification ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.technicalMeasures")}
+              value={data.technicalMeasures ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.organizationalMeasures")}
+              value={data.organizationalMeasures ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.internationalTransfer")}
+              value={data.internationalTransfer ? t("ropa.yes") : t("ropa.no")}
+            />
             {data.internationalTransfer && (
               <>
-                <FieldRow label={t("ropa.transferCountry")} value={data.transferCountry ?? "-"} />
-                <FieldRow label={t("ropa.transferSafeguard")} value={data.transferSafeguard ?? "-"} />
+                <FieldRow
+                  label={t("ropa.transferCountry")}
+                  value={data.transferCountry ?? "-"}
+                />
+                <FieldRow
+                  label={t("ropa.transferSafeguard")}
+                  value={data.transferSafeguard ?? "-"}
+                />
               </>
             )}
-            <FieldRow label={t("ropa.nextReview")} value={data.nextReviewDate ?? "-"} />
-            <FieldRow label={t("ropa.lastReviewed")} value={data.lastReviewed ? new Date(data.lastReviewed).toLocaleDateString() : "-"} />
+            <FieldRow
+              label={t("ropa.nextReview")}
+              value={data.nextReviewDate ?? "-"}
+            />
+            <FieldRow
+              label={t("ropa.lastReviewed")}
+              value={
+                data.lastReviewed
+                  ? new Date(data.lastReviewed).toLocaleDateString()
+                  : "-"
+              }
+            />
           </div>
         </div>
       )}
 
       {activeTab === "categories" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">{t("ropa.dataCategories")}</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">
+            {t("ropa.dataCategories")}
+          </h2>
           {data.categories.length === 0 ? (
             <p className="text-sm text-gray-400">{t("ropa.noCategories")}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {data.categories.map((cat) => (
-                <Badge key={cat.id} variant="outline">{cat.category}</Badge>
+                <Badge key={cat.id} variant="outline">
+                  {cat.category}
+                </Badge>
               ))}
             </div>
           )}
@@ -173,13 +247,17 @@ function RopaDetailInner() {
 
       {activeTab === "subjects" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">{t("ropa.dataSubjects")}</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">
+            {t("ropa.dataSubjects")}
+          </h2>
           {data.subjects.length === 0 ? (
             <p className="text-sm text-gray-400">{t("ropa.noSubjects")}</p>
           ) : (
             <div className="flex flex-wrap gap-2">
               {data.subjects.map((sub) => (
-                <Badge key={sub.id} variant="outline">{sub.subjectCategory}</Badge>
+                <Badge key={sub.id} variant="outline">
+                  {sub.subjectCategory}
+                </Badge>
               ))}
             </div>
           )}
@@ -188,15 +266,26 @@ function RopaDetailInner() {
 
       {activeTab === "recipients" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="font-semibold text-gray-900 mb-4">{t("ropa.recipients")}</h2>
+          <h2 className="font-semibold text-gray-900 mb-4">
+            {t("ropa.recipients")}
+          </h2>
           {data.recipients.length === 0 ? (
             <p className="text-sm text-gray-400">{t("ropa.noRecipients")}</p>
           ) : (
             <div className="space-y-2">
               {data.recipients.map((rec) => (
-                <div key={rec.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
-                  <span className="text-sm text-gray-900">{rec.recipientName}</span>
-                  {rec.recipientType && <Badge variant="outline" className="text-xs">{rec.recipientType}</Badge>}
+                <div
+                  key={rec.id}
+                  className="flex items-center justify-between border-b border-gray-100 pb-2"
+                >
+                  <span className="text-sm text-gray-900">
+                    {rec.recipientName}
+                  </span>
+                  {rec.recipientType && (
+                    <Badge variant="outline" className="text-xs">
+                      {rec.recipientType}
+                    </Badge>
+                  )}
                 </div>
               ))}
             </div>

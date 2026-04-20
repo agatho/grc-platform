@@ -75,7 +75,9 @@ export async function GET(_req: Request) {
     .where(eq(soaEntry.orgId, ctx.orgId));
 
   const [maturity] = await db
-    .select({ avg: sql<number | null>`avg(${controlMaturity.currentMaturity})` })
+    .select({
+      avg: sql<number | null>`avg(${controlMaturity.currentMaturity})`,
+    })
     .from(controlMaturity)
     .where(eq(controlMaturity.orgId, ctx.orgId));
 
@@ -95,7 +97,9 @@ export async function GET(_req: Request) {
     .from(ismsNonconformity)
     .where(eq(ismsNonconformity.orgId, ctx.orgId));
 
-  const maturity0to100 = maturity?.avg ? Math.round(Number(maturity.avg) * 20) : 50; // 1-5 => 20-100
+  const maturity0to100 = maturity?.avg
+    ? Math.round(Number(maturity.avg) * 20)
+    : 50; // 1-5 => 20-100
 
   // ─── BCMS Metrics ────────────────────────────────────────
   const [biaCounts] = await db
@@ -123,13 +127,17 @@ export async function GET(_req: Request) {
     .where(eq(bcExercise.orgId, ctx.orgId));
 
   const [crisisCounts] = await db
-    .select({ active: sql<number>`count(*) filter (where ${crisisScenario.status} = 'activated')::int` })
+    .select({
+      active: sql<number>`count(*) filter (where ${crisisScenario.status} = 'activated')::int`,
+    })
     .from(crisisScenario)
     .where(eq(crisisScenario.orgId, ctx.orgId));
 
   // ─── DPMS Metrics ────────────────────────────────────────
   const [ropaCounts] = await db
-    .select({ active: sql<number>`count(*) filter (where ${ropaEntry.status} = 'active')::int` })
+    .select({
+      active: sql<number>`count(*) filter (where ${ropaEntry.status} = 'active')::int`,
+    })
     .from(ropaEntry)
     .where(eq(ropaEntry.orgId, ctx.orgId));
 
@@ -183,7 +191,10 @@ export async function GET(_req: Request) {
     .from(aiSystem)
     .where(and(eq(aiSystem.orgId, ctx.orgId), isNull(aiSystem.deletedAt)));
 
-  const qmsRows = await db.select().from(aiProviderQms).where(eq(aiProviderQms.orgId, ctx.orgId));
+  const qmsRows = await db
+    .select()
+    .from(aiProviderQms)
+    .where(eq(aiProviderQms.orgId, ctx.orgId));
   let totalMaturity = 0;
   for (const q of qmsRows) {
     const checklist: QmsProcedureChecklist = {
@@ -200,7 +211,8 @@ export async function GET(_req: Request) {
     };
     totalMaturity += assessQmsReadinessForCe(checklist).maturityScore;
   }
-  const qmsAverageMaturity = qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
+  const qmsAverageMaturity =
+    qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
 
   const [friaCounts] = await db
     .select({
@@ -231,7 +243,9 @@ export async function GET(_req: Request) {
       assessmentsCompleted: ismsAssessments?.completed ?? 0,
       soaCoveragePercent:
         (soaCounts?.total ?? 0) > 0
-          ? Math.round(((soaCounts?.implemented ?? 0) / (soaCounts?.total ?? 1)) * 100)
+          ? Math.round(
+              ((soaCounts?.implemented ?? 0) / (soaCounts?.total ?? 1)) * 100,
+            )
           : 0,
       openFindingsCount: findingCounts?.open ?? 0,
       criticalFindingsCount: findingCounts?.critical ?? 0,
@@ -259,7 +273,9 @@ export async function GET(_req: Request) {
       tiaReviewedCount: tiaCounts?.reviewed ?? 0,
       consentValidPercent:
         (consentCounts?.total ?? 0) > 0
-          ? Math.round(((consentCounts?.valid ?? 0) / (consentCounts?.total ?? 1)) * 100)
+          ? Math.round(
+              ((consentCounts?.valid ?? 0) / (consentCounts?.total ?? 1)) * 100,
+            )
           : 100,
     },
     aiAct: {

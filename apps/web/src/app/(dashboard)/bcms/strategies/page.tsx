@@ -3,7 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, AlertTriangle, CheckCircle, Trash2 } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  AlertTriangle,
+  CheckCircle,
+  Trash2,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -106,13 +112,19 @@ function StrategyListInner() {
 
   const formatCurrency = (val: string | undefined) => {
     if (!val) return "-";
-    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(parseFloat(val));
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+      maximumFractionDigits: 0,
+    }).format(parseFloat(val));
   };
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t("strategy.title")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("strategy.title")}
+        </h1>
         <Button onClick={() => setShowCreate(true)}>
           <Plus size={14} className="mr-1" /> {t("strategy.create")}
         </Button>
@@ -140,8 +152,17 @@ function StrategyListInner() {
               onChange={(e) => setNewType(e.target.value)}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
-              {["active_active", "active_passive", "cold_standby", "manual_workaround", "outsource", "do_nothing"].map((st) => (
-                <option key={st} value={st}>{t(`strategy.type.${st}`)}</option>
+              {[
+                "active_active",
+                "active_passive",
+                "cold_standby",
+                "manual_workaround",
+                "outsource",
+                "do_nothing",
+              ].map((st) => (
+                <option key={st} value={st}>
+                  {t(`strategy.type.${st}`)}
+                </option>
               ))}
             </select>
             <input
@@ -154,7 +175,11 @@ function StrategyListInner() {
           </div>
           <div className="flex gap-2">
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : t("common.create")}
+              {creating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                t("common.create")
+              )}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
               {t("common.cancel")}
@@ -170,39 +195,72 @@ function StrategyListInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("strategy.rtoTarget")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("strategy.annualCost")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("strategy.estimatedCost")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("strategy.requiredStaff")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Active</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.actions")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.name")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Type
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("strategy.rtoTarget")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("strategy.annualCost")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("strategy.estimatedCost")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("strategy.requiredStaff")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Active
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((strat) => (
                 <tr key={strat.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{strat.name}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {strat.name}
+                  </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={STRATEGY_COLORS[strat.strategyType]}>
+                    <Badge
+                      variant="outline"
+                      className={STRATEGY_COLORS[strat.strategyType]}
+                    >
                       {t(`strategy.type.${strat.strategyType}`)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-gray-600">{strat.rtoTargetHours}h</td>
-                  <td className="px-4 py-3 text-gray-600">{formatCurrency(strat.annualCostEur)}</td>
-                  <td className="px-4 py-3 text-gray-600">{formatCurrency(strat.estimatedCostEur)}</td>
-                  <td className="px-4 py-3 text-gray-600">{strat.requiredStaff ?? "-"} FTE</td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {strat.rtoTargetHours}h
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {formatCurrency(strat.annualCostEur)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {formatCurrency(strat.estimatedCostEur)}
+                  </td>
+                  <td className="px-4 py-3 text-gray-600">
+                    {strat.requiredStaff ?? "-"} FTE
+                  </td>
                   <td className="px-4 py-3">
                     <button onClick={() => handleToggleActive(strat)}>
-                      {strat.isActive
-                        ? <CheckCircle size={16} className="text-green-600" />
-                        : <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" />
-                      }
+                      {strat.isActive ? (
+                        <CheckCircle size={16} className="text-green-600" />
+                      ) : (
+                        <span className="w-4 h-4 rounded-full border-2 border-gray-300 inline-block" />
+                      )}
                     </button>
                   </td>
                   <td className="px-4 py-3">
-                    <button onClick={() => handleDelete(strat.id)} className="text-gray-400 hover:text-red-500">
+                    <button
+                      onClick={() => handleDelete(strat.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </td>
@@ -216,25 +274,36 @@ function StrategyListInner() {
       {/* Cost-RTO scatter hint */}
       {items.length > 1 && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-3">{t("strategy.comparison")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-3">
+            {t("strategy.comparison")}
+          </h2>
           <div className="space-y-1">
             {items
               .sort((a, b) => a.rtoTargetHours - b.rtoTargetHours)
               .map((strat) => {
-                const maxCost = Math.max(...items.map((s) => parseFloat(s.annualCostEur ?? "0") || 0), 1);
+                const maxCost = Math.max(
+                  ...items.map((s) => parseFloat(s.annualCostEur ?? "0") || 0),
+                  1,
+                );
                 const cost = parseFloat(strat.annualCostEur ?? "0") || 0;
                 const pct = Math.round((cost / maxCost) * 100);
                 return (
                   <div key={strat.id} className="flex items-center gap-2">
-                    <span className="text-xs text-gray-500 w-32 truncate">{strat.name}</span>
+                    <span className="text-xs text-gray-500 w-32 truncate">
+                      {strat.name}
+                    </span>
                     <div className="flex-1 h-4 bg-gray-100 rounded">
                       <div
                         className={`h-full rounded transition-all ${strat.isActive ? "bg-green-400" : "bg-blue-300"}`}
                         style={{ width: `${pct}%` }}
                       />
                     </div>
-                    <span className="text-xs text-gray-600 w-16 text-right">{strat.rtoTargetHours}h</span>
-                    <span className="text-xs text-gray-600 w-24 text-right">{formatCurrency(strat.annualCostEur)}</span>
+                    <span className="text-xs text-gray-600 w-16 text-right">
+                      {strat.rtoTargetHours}h
+                    </span>
+                    <span className="text-xs text-gray-600 w-24 text-right">
+                      {formatCurrency(strat.annualCostEur)}
+                    </span>
                   </div>
                 );
               })}

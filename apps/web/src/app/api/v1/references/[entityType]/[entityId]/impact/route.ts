@@ -13,7 +13,10 @@ export async function GET(
 
   const { entityType, entityId } = await params;
   const url = new URL(req.url);
-  const maxDepth = Math.min(5, Math.max(1, Number(url.searchParams.get("maxDepth")) || 3));
+  const maxDepth = Math.min(
+    5,
+    Math.max(1, Number(url.searchParams.get("maxDepth")) || 3),
+  );
 
   // Recursive CTE with visited-set to prevent circular references
   const result = await db.execute<{
@@ -84,7 +87,10 @@ export async function GET(
   }>;
 
   // Group by depth for the response
-  const byDepth: Record<number, Array<{ entityType: string; entityId: string; relationship: string }>> = {};
+  const byDepth: Record<
+    number,
+    Array<{ entityType: string; entityId: string; relationship: string }>
+  > = {};
   for (const row of rows) {
     const d = row.depth;
     if (!byDepth[d]) byDepth[d] = [];

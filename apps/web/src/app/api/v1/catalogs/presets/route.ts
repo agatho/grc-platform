@@ -15,23 +15,55 @@ import { z } from "zod";
 
 const PRESETS = {
   cloud_saas: {
-    sources: ["iso_27001_2022_annex_a", "iso27002_2022", "iso_27017_2015", "iso_27018_2019", "isae3402_soc2", "csa_ccm_v4"],
+    sources: [
+      "iso_27001_2022_annex_a",
+      "iso27002_2022",
+      "iso_27017_2015",
+      "iso_27018_2019",
+      "isae3402_soc2",
+      "csa_ccm_v4",
+    ],
     suggestedModules: ["isms", "ics", "tprm", "dpms"],
   },
   cloud_saas_eu: {
-    sources: ["iso_27001_2022_annex_a", "iso_27017_2015", "iso_27018_2019", "bsi_c5_2020", "eu_gdpr", "iso_27701_2019"],
+    sources: [
+      "iso_27001_2022_annex_a",
+      "iso_27017_2015",
+      "iso_27018_2019",
+      "bsi_c5_2020",
+      "eu_gdpr",
+      "iso_27701_2019",
+    ],
     suggestedModules: ["isms", "ics", "dpms", "tprm"],
   },
   fintech: {
-    sources: ["iso_27001_2022_annex_a", "eu_dora", "pci_dss_v4", "swift_cscf_v2024", "isae3402_soc2"],
+    sources: [
+      "iso_27001_2022_annex_a",
+      "eu_dora",
+      "pci_dss_v4",
+      "swift_cscf_v2024",
+      "isae3402_soc2",
+    ],
     suggestedModules: ["isms", "ics", "tprm", "bcms"],
   },
   healthcare_us: {
-    sources: ["hipaa_security", "iso_27001_2022_annex_a", "nist_800_53_r5", "nist_csf_2", "iso_27701_2019"],
+    sources: [
+      "hipaa_security",
+      "iso_27001_2022_annex_a",
+      "nist_800_53_r5",
+      "nist_csf_2",
+      "iso_27701_2019",
+    ],
     suggestedModules: ["isms", "dpms", "ics"],
   },
   kritis_energy: {
-    sources: ["iso_27001_2022_annex_a", "iso_27019_2017", "bsi_itgs_bausteine", "eu_nis2", "iec_62443"],
+    sources: [
+      "iso_27001_2022_annex_a",
+      "iso_27019_2017",
+      "bsi_itgs_bausteine",
+      "eu_nis2",
+      "iec_62443",
+    ],
     suggestedModules: ["isms", "bcms", "ics"],
   },
   us_dod_supplier: {
@@ -39,7 +71,12 @@ const PRESETS = {
     suggestedModules: ["isms", "ics", "tprm"],
   },
   ai_provider: {
-    sources: ["iso_42001_2023", "eu_ai_act", "iso_27001_2022_annex_a", "eu_gdpr"],
+    sources: [
+      "iso_42001_2023",
+      "eu_ai_act",
+      "iso_27001_2022_annex_a",
+      "eu_gdpr",
+    ],
     suggestedModules: ["isms", "dpms"],
   },
   iot_manufacturer: {
@@ -55,11 +92,20 @@ export async function GET(_req: Request) {
   if (ctx instanceof Response) return ctx;
 
   // Resolve which catalogs of each preset are actually seeded
-  const allSources = Array.from(new Set(Object.values(PRESETS).flatMap((p) => p.sources)));
+  const allSources = Array.from(
+    new Set(Object.values(PRESETS).flatMap((p) => p.sources)),
+  );
   const seeded = await db
-    .select({ source: catalog.source, name: catalog.name, version: catalog.version, id: catalog.id })
+    .select({
+      source: catalog.source,
+      name: catalog.name,
+      version: catalog.version,
+      id: catalog.id,
+    })
     .from(catalog)
-    .where(and(eq(catalog.isActive, true), inArray(catalog.source, allSources)));
+    .where(
+      and(eq(catalog.isActive, true), inArray(catalog.source, allSources)),
+    );
   const seededMap = new Map(seeded.map((c) => [c.source, c]));
 
   // Which catalogs are already active for this org? So we can show "X of Y already active"
@@ -96,8 +142,12 @@ export async function GET(_req: Request) {
 }
 
 const activateSchema = z.object({
-  preset: z.string().refine((s): s is PresetKey => s in PRESETS, { message: "Unknown preset" }),
-  enforcementLevel: z.enum(["optional", "recommended", "mandatory"]).default("recommended"),
+  preset: z
+    .string()
+    .refine((s): s is PresetKey => s in PRESETS, { message: "Unknown preset" }),
+  enforcementLevel: z
+    .enum(["optional", "recommended", "mandatory"])
+    .default("recommended"),
 });
 
 export async function POST(req: Request) {
@@ -106,18 +156,33 @@ export async function POST(req: Request) {
 
   const body = activateSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
   const preset = PRESETS[body.data.preset as PresetKey];
 
   const seeded = await db
-    .select({ id: catalog.id, source: catalog.source, catalogType: catalog.catalogType })
+    .select({
+      id: catalog.id,
+      source: catalog.source,
+      catalogType: catalog.catalogType,
+    })
     .from(catalog)
-    .where(and(eq(catalog.isActive, true), inArray(catalog.source, [...preset.sources])));
+    .where(
+      and(
+        eq(catalog.isActive, true),
+        inArray(catalog.source, [...preset.sources]),
+      ),
+    );
 
   if (seeded.length === 0) {
     return Response.json(
-      { error: `No catalogs of preset "${body.data.preset}" are seeded yet`, missing: preset.sources },
+      {
+        error: `No catalogs of preset "${body.data.preset}" are seeded yet`,
+        missing: preset.sources,
+      },
       { status: 404 },
     );
   }
@@ -146,7 +211,9 @@ export async function POST(req: Request) {
     return { inserted, skipped };
   });
 
-  const missing = preset.sources.filter((s) => !seeded.find((c) => c.source === s));
+  const missing = preset.sources.filter(
+    (s) => !seeded.find((c) => c.source === s),
+  );
 
   return Response.json(
     {

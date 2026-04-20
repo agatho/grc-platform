@@ -1,7 +1,12 @@
 import { db, ssoConfig, user, userOrganizationRole } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { cookies } from "next/headers";
-import { discoverOIDCEndpoints, exchangeCode, validateIdToken, extractOidcAttributes } from "@grc/auth/oidc";
+import {
+  discoverOIDCEndpoints,
+  exchangeCode,
+  validateIdToken,
+  extractOidcAttributes,
+} from "@grc/auth/oidc";
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import type { OidcClaimMapping, GroupRoleMapping } from "@grc/shared";
@@ -15,11 +20,17 @@ export async function GET(req: Request) {
 
   if (error) {
     const errorDesc = url.searchParams.get("error_description") ?? error;
-    return Response.json({ error: `OIDC error: ${errorDesc}` }, { status: 401 });
+    return Response.json(
+      { error: `OIDC error: ${errorDesc}` },
+      { status: 401 },
+    );
   }
 
   if (!code || !stateParam) {
-    return Response.json({ error: "Missing code or state parameter" }, { status: 400 });
+    return Response.json(
+      { error: "Missing code or state parameter" },
+      { status: 400 },
+    );
   }
 
   // Validate state against cookie (CSRF protection)
@@ -50,7 +61,9 @@ export async function GET(req: Request) {
   let callbackUrl = "/dashboard";
   let nonce: string | undefined;
   try {
-    const state = JSON.parse(Buffer.from(stateParam, "base64url").toString("utf-8"));
+    const state = JSON.parse(
+      Buffer.from(stateParam, "base64url").toString("utf-8"),
+    );
     orgId = state.orgId;
     callbackUrl = state.callbackUrl ?? "/dashboard";
     nonce = state.nonce;
@@ -72,7 +85,10 @@ export async function GET(req: Request) {
     );
 
   if (!config?.oidcDiscoveryUrl || !config?.oidcClientId) {
-    return Response.json({ error: "OIDC configuration not found" }, { status: 404 });
+    return Response.json(
+      { error: "OIDC configuration not found" },
+      { status: 404 },
+    );
   }
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
@@ -99,7 +115,10 @@ export async function GET(req: Request) {
     });
 
     // Extract user attributes
-    const claimMapping = (config.oidcClaimMapping as Record<string, string>) ?? {
+    const claimMapping = (config.oidcClaimMapping as Record<
+      string,
+      string
+    >) ?? {
       email: "email",
       firstName: "given_name",
       lastName: "family_name",
@@ -109,7 +128,8 @@ export async function GET(req: Request) {
 
     // JIT Provisioning
     const email = attrs.email.toLowerCase();
-    const name = [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
+    const name =
+      [attrs.firstName, attrs.lastName].filter(Boolean).join(" ") || email;
 
     const [existing] = await db
       .select()
@@ -155,7 +175,11 @@ export async function GET(req: Request) {
 
       const groupMapping = (config.groupRoleMapping as GroupRoleMapping) ?? {};
       const mappingEntries = groupRoleMappingToEntries(groupMapping);
-      const role = resolveRole(attrs.groups ?? [], mappingEntries, config.defaultRole ?? "viewer");
+      const role = resolveRole(
+        attrs.groups ?? [],
+        mappingEntries,
+        config.defaultRole ?? "viewer",
+      );
 
       await db.insert(userOrganizationRole).values({
         userId,
@@ -174,7 +198,8 @@ export async function GET(req: Request) {
     const redirectUrl = new URL(`${baseUrl}${callbackUrl}`);
     return Response.redirect(redirectUrl.toString(), 302);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "OIDC authentication failed";
+    const message =
+      err instanceof Error ? err.message : "OIDC authentication failed";
     await logAccessEvent({
       emailAttempted: "unknown",
       eventType: "login_failed",

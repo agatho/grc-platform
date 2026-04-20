@@ -62,12 +62,17 @@ export async function PUT(
     let dataBreachDeadline: Date | null | undefined;
     if (data.isDataBreach === true) {
       const [existing] = await tx
-        .select({ detectedAt: securityIncident.detectedAt, dataBreachDeadline: securityIncident.dataBreachDeadline })
+        .select({
+          detectedAt: securityIncident.detectedAt,
+          dataBreachDeadline: securityIncident.dataBreachDeadline,
+        })
         .from(securityIncident)
         .where(eq(securityIncident.id, id))
         .limit(1);
       if (existing && !existing.dataBreachDeadline) {
-        dataBreachDeadline = new Date(new Date(existing.detectedAt).getTime() + 72 * 60 * 60 * 1000);
+        dataBreachDeadline = new Date(
+          new Date(existing.detectedAt).getTime() + 72 * 60 * 60 * 1000,
+        );
       }
     } else if (data.isDataBreach === false) {
       dataBreachDeadline = null;

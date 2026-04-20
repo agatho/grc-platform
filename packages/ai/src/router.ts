@@ -39,7 +39,10 @@ export function getAvailableProviders(): AiProvider[] {
   if (process.env.OLLAMA_BASE_URL || process.env.OLLAMA_ENABLED === "true") {
     available.push("ollama");
   }
-  if (process.env.LMSTUDIO_BASE_URL || process.env.LMSTUDIO_ENABLED === "true") {
+  if (
+    process.env.LMSTUDIO_BASE_URL ||
+    process.env.LMSTUDIO_ENABLED === "true"
+  ) {
     available.push("lmstudio");
   }
   return available;
@@ -82,7 +85,6 @@ export async function aiComplete(
   } else {
     provider = getDefaultProvider();
   }
-
 
   const fn = PROVIDER_FNS[provider];
   if (!fn) {

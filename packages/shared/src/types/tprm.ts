@@ -1,12 +1,57 @@
 // TPRM + Contract Management types (Sprint 9 + 9b)
-export type VendorStatus = "prospect" | "onboarding" | "active" | "under_review" | "suspended" | "terminated";
+export type VendorStatus =
+  | "prospect"
+  | "onboarding"
+  | "active"
+  | "under_review"
+  | "suspended"
+  | "terminated";
 export type VendorTier = "critical" | "important" | "standard" | "low_risk";
-export type VendorCategory = "it_services" | "cloud_provider" | "consulting" | "facility" | "logistics" | "raw_materials" | "financial" | "hr_services" | "other";
-export type DueDiligenceStatus = "pending" | "in_progress" | "completed" | "expired";
-export type ContractStatus = "draft" | "negotiation" | "pending_approval" | "active" | "renewal" | "expired" | "terminated" | "archived";
-export type ContractType = "master_agreement" | "service_agreement" | "nda" | "dpa" | "sla" | "license" | "maintenance" | "consulting" | "other";
-export type ObligationStatus = "pending" | "in_progress" | "completed" | "overdue";
-export type ObligationType = "deliverable" | "payment" | "reporting" | "compliance" | "audit_right";
+export type VendorCategory =
+  | "it_services"
+  | "cloud_provider"
+  | "consulting"
+  | "facility"
+  | "logistics"
+  | "raw_materials"
+  | "financial"
+  | "hr_services"
+  | "other";
+export type DueDiligenceStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "expired";
+export type ContractStatus =
+  | "draft"
+  | "negotiation"
+  | "pending_approval"
+  | "active"
+  | "renewal"
+  | "expired"
+  | "terminated"
+  | "archived";
+export type ContractType =
+  | "master_agreement"
+  | "service_agreement"
+  | "nda"
+  | "dpa"
+  | "sla"
+  | "license"
+  | "maintenance"
+  | "consulting"
+  | "other";
+export type ObligationStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "overdue";
+export type ObligationType =
+  | "deliverable"
+  | "payment"
+  | "reporting"
+  | "compliance"
+  | "audit_right";
 
 export interface Vendor {
   id: string;
@@ -206,8 +251,20 @@ export interface LksgAssessment {
 // Sprint 9b: Supplier Portal
 
 export type QuestionnaireTemplateStatus = "draft" | "published" | "archived";
-export type QuestionType = "single_choice" | "multi_choice" | "text" | "yes_no" | "number" | "date" | "file_upload";
-export type DdSessionStatus = "invited" | "in_progress" | "submitted" | "expired" | "revoked";
+export type QuestionType =
+  | "single_choice"
+  | "multi_choice"
+  | "text"
+  | "yes_no"
+  | "number"
+  | "date"
+  | "file_upload";
+export type DdSessionStatus =
+  | "invited"
+  | "in_progress"
+  | "submitted"
+  | "expired"
+  | "revoked";
 
 export interface QuestionOption {
   value: string;

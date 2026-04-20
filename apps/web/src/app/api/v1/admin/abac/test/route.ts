@@ -10,7 +10,10 @@ export async function POST(req: Request) {
 
   const body = abacTestSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const startTime = Date.now();
@@ -31,7 +34,7 @@ export async function POST(req: Request) {
   // Evaluate policies - lower priority number wins
   let matchedPolicy = null;
   let decision: "granted" | "denied" = "granted";
-  let accessLevel = body.data.accessLevel;
+  const accessLevel = body.data.accessLevel;
 
   for (const policy of policies) {
     const subjectMatch = evaluateCondition(
@@ -77,7 +80,11 @@ export async function POST(req: Request) {
       decision,
       accessLevel: matchedPolicy?.accessLevel ?? accessLevel,
       matchedPolicy: matchedPolicy
-        ? { id: matchedPolicy.id, name: matchedPolicy.name, priority: matchedPolicy.priority }
+        ? {
+            id: matchedPolicy.id,
+            name: matchedPolicy.name,
+            priority: matchedPolicy.priority,
+          }
         : null,
       evaluatedPolicies: policies.length,
       durationMs,
@@ -107,7 +114,9 @@ function evaluateCondition(
         ? attrValue.includes(value)
         : String(attrValue).includes(String(value));
     case "in":
-      return Array.isArray(value) ? (value as unknown[]).includes(attrValue) : false;
+      return Array.isArray(value)
+        ? (value as unknown[]).includes(attrValue)
+        : false;
     default:
       return true;
   }

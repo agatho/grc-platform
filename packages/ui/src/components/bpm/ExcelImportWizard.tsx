@@ -4,7 +4,10 @@ import React, { useState } from "react";
 import { cn } from "../../utils";
 
 interface ExcelImportWizardProps {
-  onImport: (file: File, title: string) => Promise<{
+  onImport: (
+    file: File,
+    title: string,
+  ) => Promise<{
     bpmnXml: string;
     activityCount: number;
     laneCount: number;
@@ -84,11 +87,24 @@ export function ExcelImportWizard({
       <div className="flex items-center justify-center gap-2 mb-6">
         {[1, 2, 3].map((s) => (
           <React.Fragment key={s}>
-            {s > 1 && <div className={cn("h-0.5 w-8", s <= step ? "bg-teal-600" : "bg-gray-200")} />}
-            <div className={cn(
-              "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
-              s === step ? "bg-teal-600 text-white" : s < step ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-gray-400",
-            )}>
+            {s > 1 && (
+              <div
+                className={cn(
+                  "h-0.5 w-8",
+                  s <= step ? "bg-teal-600" : "bg-gray-200",
+                )}
+              />
+            )}
+            <div
+              className={cn(
+                "w-8 h-8 rounded-full flex items-center justify-center text-sm font-medium",
+                s === step
+                  ? "bg-teal-600 text-white"
+                  : s < step
+                    ? "bg-teal-100 text-teal-700"
+                    : "bg-gray-100 text-gray-400",
+              )}
+            >
               {s}
             </div>
           </React.Fragment>
@@ -96,11 +112,12 @@ export function ExcelImportWizard({
       </div>
 
       <h2 className="text-lg font-semibold text-gray-900 mb-4 text-center">
-        {labels?.title ?? "Import Process from Excel"} - {
-          step === 1 ? (labels?.step1 ?? "Upload") :
-          step === 2 ? (labels?.step2 ?? "Preview") :
-          (labels?.step3 ?? "Complete")
-        }
+        {labels?.title ?? "Import Process from Excel"} -{" "}
+        {step === 1
+          ? (labels?.step1 ?? "Upload")
+          : step === 2
+            ? (labels?.step2 ?? "Preview")
+            : (labels?.step3 ?? "Complete")}
       </h2>
 
       {/* Step 1: Upload */}
@@ -139,11 +156,17 @@ export function ExcelImportWizard({
           </a>
 
           {error && (
-            <div className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">{error}</div>
+            <div className="text-sm text-red-600 bg-red-50 rounded-md px-3 py-2">
+              {error}
+            </div>
           )}
 
           <div className="flex justify-end gap-3 mt-6">
-            <button type="button" onClick={onCancel} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+            <button
+              type="button"
+              onClick={onCancel}
+              className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
               {labels?.cancel ?? "Cancel"}
             </button>
             <button
@@ -167,7 +190,8 @@ export function ExcelImportWizard({
 
           <div className="space-y-1">
             <p className="text-sm text-green-600">
-              {preview.activityCount} {labels?.activitiesParsed ?? "activities parsed"}
+              {preview.activityCount}{" "}
+              {labels?.activitiesParsed ?? "activities parsed"}
             </p>
             <p className="text-sm text-green-600">
               {preview.laneCount} {labels?.lanesCreated ?? "lanes created"}
@@ -180,7 +204,11 @@ export function ExcelImportWizard({
           </div>
 
           <div className="flex justify-between mt-6">
-            <button type="button" onClick={() => setStep(1)} className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200">
+            <button
+              type="button"
+              onClick={() => setStep(1)}
+              className="px-4 py-2 text-sm text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200"
+            >
               {labels?.back ?? "Back"}
             </button>
             <button

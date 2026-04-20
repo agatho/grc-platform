@@ -1,10 +1,7 @@
 // Sprint 30: PDF Renderer — Puppeteer HTML-to-PDF
 // Renders resolved sections + branding into A4 PDF
 
-import type {
-  ReportBrandingConfig,
-  ReportSectionConfig,
-} from "@grc/shared";
+import type { ReportBrandingConfig, ReportSectionConfig } from "@grc/shared";
 import type { TableData, ChartData, KPIData } from "../section-data-fetcher";
 
 export interface ResolvedSection {
@@ -236,7 +233,8 @@ function renderSVGBarChart(data: ChartData): string {
 
   const maxVal = Math.max(...dataset.data, 1);
   const barWidth = Math.min(40, chartWidth / dataset.data.length - 4);
-  const gap = (chartWidth - barWidth * dataset.data.length) / (dataset.data.length + 1);
+  const gap =
+    (chartWidth - barWidth * dataset.data.length) / (dataset.data.length + 1);
 
   let bars = "";
   for (let i = 0; i < dataset.data.length; i++) {

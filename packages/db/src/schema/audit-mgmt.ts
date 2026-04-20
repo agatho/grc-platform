@@ -95,8 +95,12 @@ export const auditUniverseEntry = pgTable(
     nextAuditDue: date("next_audit_due", { mode: "string" }),
     priority: integer("priority"),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
@@ -125,8 +129,12 @@ export const auditPlan = pgTable(
     totalPlannedDays: integer("total_planned_days"),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
@@ -149,8 +157,9 @@ export const auditPlanItem = pgTable(
     auditPlanId: uuid("audit_plan_id")
       .notNull()
       .references(() => auditPlan.id, { onDelete: "cascade" }),
-    universeEntryId: uuid("universe_entry_id")
-      .references(() => auditUniverseEntry.id),
+    universeEntryId: uuid("universe_entry_id").references(
+      () => auditUniverseEntry.id,
+    ),
     title: varchar("title", { length: 500 }).notNull(),
     scopeDescription: text("scope_description"),
     plannedStart: date("planned_start", { mode: "string" }),
@@ -158,7 +167,9 @@ export const auditPlanItem = pgTable(
     estimatedDays: integer("estimated_days"),
     leadAuditorId: uuid("lead_auditor_id").references(() => user.id),
     status: varchar("status", { length: 50 }).notNull().default("planned"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("api_plan_idx").on(table.auditPlanId),
@@ -177,10 +188,10 @@ export const audit = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
-    auditPlanItemId: uuid("audit_plan_item_id")
-      .references(() => auditPlanItem.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
+    auditPlanItemId: uuid("audit_plan_item_id").references(
+      () => auditPlanItem.id,
+    ),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     auditType: auditTypeEnum("audit_type").notNull().default("internal"),
@@ -199,8 +210,12 @@ export const audit = pgTable(
     findingCount: integer("finding_count").default(0),
     conclusion: auditConclusionEnum("conclusion"),
     reportDocumentId: uuid("report_document_id"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
@@ -230,10 +245,14 @@ export const auditActivity = pgTable(
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     performedBy: uuid("performed_by").references(() => user.id),
-    performedAt: timestamp("performed_at", { withTimezone: true }).notNull().defaultNow(),
+    performedAt: timestamp("performed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     duration: integer("duration"),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("aa_audit_idx").on(table.auditId),
@@ -259,7 +278,9 @@ export const auditChecklist = pgTable(
     sourceType: checklistSourceTypeEnum("source_type"),
     totalItems: integer("total_items").default(0),
     completedItems: integer("completed_items").default(0),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
@@ -282,8 +303,7 @@ export const auditChecklistItem = pgTable(
     checklistId: uuid("checklist_id")
       .notNull()
       .references(() => auditChecklist.id, { onDelete: "cascade" }),
-    controlId: uuid("control_id")
-      .references(() => control.id),
+    controlId: uuid("control_id").references(() => control.id),
     question: text("question").notNull(),
     expectedEvidence: text("expected_evidence"),
     result: checklistResultEnum("result"),
@@ -292,7 +312,9 @@ export const auditChecklistItem = pgTable(
     sortOrder: integer("sort_order").default(0),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     completedBy: uuid("completed_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("aci_checklist_idx").on(table.checklistId),
@@ -315,12 +337,13 @@ export const auditEvidence = pgTable(
     auditId: uuid("audit_id")
       .notNull()
       .references(() => audit.id),
-    evidenceId: uuid("evidence_id")
-      .references(() => evidence.id),
+    evidenceId: uuid("evidence_id").references(() => evidence.id),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     filePath: varchar("file_path", { length: 1000 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [

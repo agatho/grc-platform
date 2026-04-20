@@ -18,7 +18,10 @@ export async function POST(
   const { id } = await params;
   const body = dmnEvaluateSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [decision] = await db
@@ -31,7 +34,10 @@ export async function POST(
   }
 
   // Parse DMN XML and evaluate rules
-  const result = evaluateDmnRules(decision, body.data.inputs as Record<string, unknown>);
+  const result = evaluateDmnRules(
+    decision,
+    body.data.inputs as Record<string, unknown>,
+  );
 
   return Response.json({ data: result });
 }
@@ -41,8 +47,12 @@ function evaluateDmnRules(
   inputs: Record<string, unknown>,
 ) {
   // Parse input/output schema
-  const inputSchema = (decision.inputSchema as { id: string; name: string; type: string }[]) ?? [];
-  const outputSchema = (decision.outputSchema as { id: string; name: string; type: string }[]) ?? [];
+  const inputSchema =
+    (decision.inputSchema as { id: string; name: string; type: string }[]) ??
+    [];
+  const outputSchema =
+    (decision.outputSchema as { id: string; name: string; type: string }[]) ??
+    [];
   const hitPolicy = decision.hitPolicy ?? "UNIQUE";
 
   // Extract rules from DMN XML (simplified parser for decision tables)
@@ -88,14 +98,18 @@ function evaluateDmnRules(
   };
 }
 
-function extractRulesFromXml(xml: string): { inputs: string[]; outputs: string[] }[] {
+function extractRulesFromXml(
+  xml: string,
+): { inputs: string[]; outputs: string[] }[] {
   // Simplified XML parsing for DMN decision tables
   const rules: { inputs: string[]; outputs: string[] }[] = [];
   const ruleMatches = xml.match(/<rule[^>]*>[\s\S]*?<\/rule>/gi) ?? [];
 
   for (const ruleXml of ruleMatches) {
-    const inputEntries = ruleXml.match(/<inputEntry[^>]*>[\s\S]*?<\/inputEntry>/gi) ?? [];
-    const outputEntries = ruleXml.match(/<outputEntry[^>]*>[\s\S]*?<\/outputEntry>/gi) ?? [];
+    const inputEntries =
+      ruleXml.match(/<inputEntry[^>]*>[\s\S]*?<\/inputEntry>/gi) ?? [];
+    const outputEntries =
+      ruleXml.match(/<outputEntry[^>]*>[\s\S]*?<\/outputEntry>/gi) ?? [];
 
     const inputs = inputEntries.map((entry) => {
       const textMatch = entry.match(/<text>([\s\S]*?)<\/text>/i);
@@ -117,12 +131,19 @@ function matchesCondition(value: string, condition: string): boolean {
   if (condition.startsWith('"') && condition.endsWith('"')) {
     return value === condition.slice(1, -1);
   }
-  if (condition.startsWith(">=")) return Number(value) >= Number(condition.slice(2));
-  if (condition.startsWith("<=")) return Number(value) <= Number(condition.slice(2));
-  if (condition.startsWith(">")) return Number(value) > Number(condition.slice(1));
-  if (condition.startsWith("<")) return Number(value) < Number(condition.slice(1));
+  if (condition.startsWith(">="))
+    return Number(value) >= Number(condition.slice(2));
+  if (condition.startsWith("<="))
+    return Number(value) <= Number(condition.slice(2));
+  if (condition.startsWith(">"))
+    return Number(value) > Number(condition.slice(1));
+  if (condition.startsWith("<"))
+    return Number(value) < Number(condition.slice(1));
   if (condition.includes(",")) {
-    return condition.split(",").map((s) => s.trim().replace(/"/g, "")).includes(value);
+    return condition
+      .split(",")
+      .map((s) => s.trim().replace(/"/g, ""))
+      .includes(value);
   }
   return value === condition;
 }

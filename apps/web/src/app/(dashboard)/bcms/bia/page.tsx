@@ -105,9 +105,16 @@ function BiaListInner() {
               onKeyDown={(e) => e.key === "Enter" && handleCreate()}
             />
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : t("common.create")}
+              {creating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                t("common.create")
+              )}
             </Button>
-            <Button variant="outline" onClick={() => setShowCreateDialog(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCreateDialog(false)}
+            >
               {t("common.cancel")}
             </Button>
           </div>
@@ -122,25 +129,43 @@ function BiaListInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.status")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.created")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.name")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.status")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.created")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/bcms/bia/${item.id}`)}>
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => router.push(`/bcms/bia/${item.id}`)}
+                >
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/bcms/bia/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                    <Link
+                      href={`/bcms/bia/${item.id}`}
+                      className="text-blue-700 hover:text-blue-900"
+                    >
                       {item.name}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={STATUS_COLORS[item.status]}>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[item.status]}
+                    >
                       {t(`bia.status.${item.status}`)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{new Date(item.createdAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">
+                    {new Date(item.createdAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -123,8 +123,10 @@ export async function renderExcel(
  * Sanitize sheet name for Excel (max 31 chars, no special chars)
  */
 function sanitizeSheetName(name: string): string {
-  return name
-    .replace(/[\\/*?\[\]:]/g, "")
-    .substring(0, 31)
-    .trim() || "Sheet";
+  return (
+    name
+      .replace(/[\\/*?\[\]:]/g, "")
+      .substring(0, 31)
+      .trim() || "Sheet"
+  );
 }

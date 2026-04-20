@@ -89,7 +89,9 @@ export default function DependencyMapPage() {
             <Network className="h-6 w-6" />
             {t("dependencies.title")}
           </h1>
-          <p className="text-muted-foreground mt-1">{t("dependencies.subtitle")}</p>
+          <p className="text-muted-foreground mt-1">
+            {t("dependencies.subtitle")}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Button variant="ghost" size="sm" onClick={fetchData}>
@@ -113,23 +115,33 @@ export default function DependencyMapPage() {
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
           <Card className="p-4">
             <div className="text-2xl font-bold">{stats.totalNodes}</div>
-            <div className="text-xs text-muted-foreground">{t("stats.totalNodes")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("stats.totalNodes")}
+            </div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold">{stats.totalEdges}</div>
-            <div className="text-xs text-muted-foreground">{t("stats.totalEdges")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("stats.totalEdges")}
+            </div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold">{stats.orphanCount}</div>
-            <div className="text-xs text-muted-foreground">{t("stats.orphans")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("stats.orphans")}
+            </div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold">{stats.hubCount}</div>
-            <div className="text-xs text-muted-foreground">{t("stats.hubs")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("stats.hubs")}
+            </div>
           </Card>
           <Card className="p-4">
             <div className="text-2xl font-bold">{stats.avgConnections}</div>
-            <div className="text-xs text-muted-foreground">{t("stats.avgConnections")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("stats.avgConnections")}
+            </div>
           </Card>
         </div>
       )}
@@ -140,7 +152,10 @@ export default function DependencyMapPage() {
           <div className="flex items-center gap-2 text-orange-700 dark:text-orange-400">
             <AlertTriangle className="h-5 w-5" />
             <span className="font-medium">
-              {t("dependencies.spofDetected", { count: spofHubs.length, threshold: 10 })}
+              {t("dependencies.spofDetected", {
+                count: spofHubs.length,
+                threshold: 10,
+              })}
             </span>
           </div>
         </Card>
@@ -160,8 +175,11 @@ export default function DependencyMapPage() {
           size="sm"
           onClick={() => setActiveTab("hubs")}
         >
-          {t("dependencies.hubs")} {spofHubs.length > 0 && (
-            <Badge variant="destructive" className="ml-1">{spofHubs.length}</Badge>
+          {t("dependencies.hubs")}{" "}
+          {spofHubs.length > 0 && (
+            <Badge variant="destructive" className="ml-1">
+              {spofHubs.length}
+            </Badge>
           )}
         </Button>
       </div>
@@ -177,14 +195,18 @@ export default function DependencyMapPage() {
             <thead>
               <tr className="border-b">
                 <th className="p-3 text-left text-xs font-medium text-muted-foreground">
-                  {t("dependencies.sourceType")} / {t("dependencies.targetType")}
+                  {t("dependencies.sourceType")} /{" "}
+                  {t("dependencies.targetType")}
                 </th>
                 {typeList.map((type) => (
                   <th key={type} className="p-3 text-center text-xs">
                     <div className="flex flex-col items-center gap-1">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: GRAPH_ENTITY_COLORS[type] ?? "#6b7280" }}
+                        style={{
+                          backgroundColor:
+                            GRAPH_ENTITY_COLORS[type] ?? "#6b7280",
+                        }}
                       />
                       <span>{type}</span>
                     </div>
@@ -199,13 +221,18 @@ export default function DependencyMapPage() {
                     <div className="flex items-center gap-2">
                       <div
                         className="w-3 h-3 rounded-full"
-                        style={{ backgroundColor: GRAPH_ENTITY_COLORS[sourceType] ?? "#6b7280" }}
+                        style={{
+                          backgroundColor:
+                            GRAPH_ENTITY_COLORS[sourceType] ?? "#6b7280",
+                        }}
                       />
                       {sourceType}
                     </div>
                   </td>
                   {typeList.map((targetType) => {
-                    const entry = matrixLookup.get(`${sourceType}:${targetType}`);
+                    const entry = matrixLookup.get(
+                      `${sourceType}:${targetType}`,
+                    );
                     return (
                       <td key={targetType} className="p-3 text-center">
                         {entry ? (
@@ -243,7 +270,9 @@ export default function DependencyMapPage() {
           {hubs.length === 0 ? (
             <Card className="p-8 text-center">
               <Shield className="h-12 w-12 mx-auto mb-4 text-green-500 opacity-50" />
-              <p className="text-muted-foreground">{t("dependencies.noHubs")}</p>
+              <p className="text-muted-foreground">
+                {t("dependencies.noHubs")}
+              </p>
             </Card>
           ) : (
             hubs.map((hub) => (
@@ -252,7 +281,10 @@ export default function DependencyMapPage() {
                   <div className="flex items-center gap-3">
                     <div
                       className="w-4 h-4 rounded-full"
-                      style={{ backgroundColor: GRAPH_ENTITY_COLORS[hub.entityType] ?? "#6b7280" }}
+                      style={{
+                        backgroundColor:
+                          GRAPH_ENTITY_COLORS[hub.entityType] ?? "#6b7280",
+                      }}
                     />
                     <div>
                       <div className="font-medium flex items-center gap-2">
@@ -266,16 +298,24 @@ export default function DependencyMapPage() {
                       </div>
                       <div className="text-xs text-muted-foreground flex items-center gap-3 mt-0.5">
                         <span>{hub.entityType}</span>
-                        <span>{t("dependencies.inbound")}: {hub.inbound}</span>
-                        <span>{t("dependencies.outbound")}: {hub.outbound}</span>
+                        <span>
+                          {t("dependencies.inbound")}: {hub.inbound}
+                        </span>
+                        <span>
+                          {t("dependencies.outbound")}: {hub.outbound}
+                        </span>
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
                     <Badge variant="outline" className="text-sm">
-                      {t("dependencies.connections", { count: hub.connectionCount })}
+                      {t("dependencies.connections", {
+                        count: hub.connectionCount,
+                      })}
                     </Badge>
-                    <Link href={`/graph/explorer?entityId=${hub.entityId}&entityType=${hub.entityType}`}>
+                    <Link
+                      href={`/graph/explorer?entityId=${hub.entityId}&entityType=${hub.entityType}`}
+                    >
                       <Button variant="ghost" size="sm">
                         <ArrowRight className="h-4 w-4" />
                       </Button>

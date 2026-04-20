@@ -44,12 +44,10 @@ export const maturityModuleKeyEnum = pgEnum("maturity_module_key", [
   "overall",
 ]);
 
-export const maturityAssessmentStatusEnum = pgEnum("maturity_assessment_status", [
-  "draft",
-  "in_progress",
-  "completed",
-  "approved",
-]);
+export const maturityAssessmentStatusEnum = pgEnum(
+  "maturity_assessment_status",
+  ["draft", "in_progress", "completed", "approved"],
+);
 
 export const roadmapItemStatusEnum = pgEnum("maturity_roadmap_item_status", [
   "planned",
@@ -58,12 +56,10 @@ export const roadmapItemStatusEnum = pgEnum("maturity_roadmap_item_status", [
   "deferred",
 ]);
 
-export const roadmapItemPriorityEnum = pgEnum("maturity_roadmap_item_priority", [
-  "critical",
-  "high",
-  "medium",
-  "low",
-]);
+export const roadmapItemPriorityEnum = pgEnum(
+  "maturity_roadmap_item_priority",
+  ["critical", "high", "medium", "low"],
+);
 
 export const benchmarkIndustryEnum = pgEnum("benchmark_industry", [
   "financial_services",
@@ -90,15 +86,23 @@ export const maturityModel = pgTable(
       .notNull()
       .references(() => organization.id),
     moduleKey: maturityModuleKeyEnum("module_key").notNull(),
-    currentLevel: maturityLevelEnum("current_level").notNull().default("initial"),
+    currentLevel: maturityLevelEnum("current_level")
+      .notNull()
+      .default("initial"),
     targetLevel: maturityLevelEnum("target_level"),
     targetDate: timestamp("target_date", { withTimezone: true }),
-    scoreBreakdown: jsonb("score_breakdown").notNull().default(sql`'{}'::jsonb`),
+    scoreBreakdown: jsonb("score_breakdown")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     autoCalculated: boolean("auto_calculated").notNull().default(true),
     lastCalculatedAt: timestamp("last_calculated_at", { withTimezone: true }),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mm_org_idx").on(t.orgId),
@@ -122,16 +126,28 @@ export const maturityAssessment = pgTable(
     assessorId: uuid("assessor_id").references(() => user.id),
     overallScore: numeric("overall_score", { precision: 5, scale: 2 }),
     level: maturityLevelEnum("level"),
-    criteriaScores: jsonb("criteria_scores").notNull().default(sql`'[]'::jsonb`),
-    evidenceRefs: jsonb("evidence_refs").notNull().default(sql`'[]'::jsonb`),
-    findings: jsonb("findings").notNull().default(sql`'[]'::jsonb`),
-    recommendations: jsonb("recommendations").notNull().default(sql`'[]'::jsonb`),
+    criteriaScores: jsonb("criteria_scores")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    evidenceRefs: jsonb("evidence_refs")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    findings: jsonb("findings")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    recommendations: jsonb("recommendations")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     periodStart: timestamp("period_start", { withTimezone: true }),
     periodEnd: timestamp("period_end", { withTimezone: true }),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bma_org_idx").on(t.orgId),
@@ -162,8 +178,12 @@ export const maturityRoadmapItem = pgTable(
     estimatedEffortDays: integer("estimated_effort_days"),
     dueDate: timestamp("due_date", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("mri_org_idx").on(t.orgId),
@@ -188,10 +208,16 @@ export const benchmarkPool = pgTable(
     medianScore: numeric("median_score", { precision: 5, scale: 2 }),
     p25Score: numeric("p25_score", { precision: 5, scale: 2 }),
     p75Score: numeric("p75_score", { precision: 5, scale: 2 }),
-    distribution: jsonb("distribution").notNull().default(sql`'{}'::jsonb`),
+    distribution: jsonb("distribution")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     periodLabel: varchar("period_label", { length: 50 }).notNull(),
-    calculatedAt: timestamp("calculated_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    calculatedAt: timestamp("calculated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bp_module_idx").on(t.moduleKey),
@@ -216,11 +242,17 @@ export const benchmarkSubmission = pgTable(
     orgSizeRange: varchar("org_size_range", { length: 50 }).notNull(),
     score: numeric("score", { precision: 5, scale: 2 }).notNull(),
     level: maturityLevelEnum("level").notNull(),
-    anonymizedData: jsonb("anonymized_data").notNull().default(sql`'{}'::jsonb`),
+    anonymizedData: jsonb("anonymized_data")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     consentGiven: boolean("consent_given").notNull().default(false),
     submittedBy: uuid("submitted_by").references(() => user.id),
-    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("bs_org_idx").on(t.orgId),

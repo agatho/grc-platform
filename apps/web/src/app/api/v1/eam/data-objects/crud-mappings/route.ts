@@ -14,12 +14,16 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const parsed = createCrudMappingSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const created = await db.insert(eamDataObjectCrud).values({
-    ...parsed.data,
-    orgId: ctx.orgId,
-  }).returning();
+  const created = await db
+    .insert(eamDataObjectCrud)
+    .values({
+      ...parsed.data,
+      orgId: ctx.orgId,
+    })
+    .returning();
 
   return Response.json({ data: created[0] }, { status: 201 });
 }
@@ -34,17 +38,26 @@ export async function PUT(req: Request) {
 
   const url = new URL(req.url);
   const mappingId = url.searchParams.get("mappingId");
-  if (!mappingId) return Response.json({ error: "mappingId required" }, { status: 400 });
+  if (!mappingId)
+    return Response.json({ error: "mappingId required" }, { status: 400 });
 
   const body = await req.json();
   const parsed = updateCrudMappingSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const updated = await db.update(eamDataObjectCrud)
+  const updated = await db
+    .update(eamDataObjectCrud)
     .set(parsed.data)
-    .where(and(eq(eamDataObjectCrud.id, mappingId), eq(eamDataObjectCrud.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(eamDataObjectCrud.id, mappingId),
+        eq(eamDataObjectCrud.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
-  if (!updated.length) return Response.json({ error: "Mapping not found" }, { status: 404 });
+  if (!updated.length)
+    return Response.json({ error: "Mapping not found" }, { status: 404 });
   return Response.json({ data: updated[0] });
 }

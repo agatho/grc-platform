@@ -1,6 +1,9 @@
 import { db, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { incidentStatusTransitionSchema, isValidIncidentTransition } from "@grc/shared";
+import {
+  incidentStatusTransitionSchema,
+  isValidIncidentTransition,
+} from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -44,7 +47,9 @@ export async function PUT(
     }
 
     if (!isValidIncidentTransition(current.status, newStatus)) {
-      return { error: `Invalid transition from ${current.status} to ${newStatus}` };
+      return {
+        error: `Invalid transition from ${current.status} to ${newStatus}`,
+      };
     }
 
     const setValues: Record<string, unknown> = {

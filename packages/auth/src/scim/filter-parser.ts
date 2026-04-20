@@ -19,9 +19,9 @@ export function parseScimFilter(filterStr: string): ScimFilter | null {
   if (!filterStr?.trim()) return null;
 
   // Match: attribute operator "value" or attribute operator 'value'
-  const match = filterStr.trim().match(
-    /^(\w+(?:\.\w+)?)\s+(eq|co|sw)\s+["']([^"']*)["']$/i,
-  );
+  const match = filterStr
+    .trim()
+    .match(/^(\w+(?:\.\w+)?)\s+(eq|co|sw)\s+["']([^"']*)["']$/i);
 
   if (!match) return null;
 

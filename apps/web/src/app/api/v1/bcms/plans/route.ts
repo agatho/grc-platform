@@ -2,7 +2,12 @@ import { db, bcp } from "@grc/db";
 import { createBcpSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc, ilike, or, inArray } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/plans — Create BCP
@@ -56,20 +61,35 @@ export async function GET(req: Request) {
 
   const statusParam = searchParams.get("status");
   if (statusParam) {
-    const statuses = statusParam.split(",") as Array<"draft" | "in_review" | "approved" | "published" | "archived" | "superseded">;
+    const statuses = statusParam.split(",") as Array<
+      | "draft"
+      | "in_review"
+      | "approved"
+      | "published"
+      | "archived"
+      | "superseded"
+    >;
     conditions.push(inArray(bcp.status, statuses));
   }
 
   const search = searchParams.get("search");
   if (search) {
     const pattern = `%${search}%`;
-    conditions.push(or(ilike(bcp.title, pattern), ilike(bcp.description, pattern))!);
+    conditions.push(
+      or(ilike(bcp.title, pattern), ilike(bcp.description, pattern))!,
+    );
   }
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(bcp).where(where).orderBy(desc(bcp.updatedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(bcp)
+      .where(where)
+      .orderBy(desc(bcp.updatedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(bcp).where(where),
   ]);
 

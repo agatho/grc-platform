@@ -1,4 +1,9 @@
-import { db, evidenceConnector, connectorTestResult, evidenceArtifact } from "@grc/db";
+import {
+  db,
+  evidenceConnector,
+  connectorTestResult,
+  evidenceArtifact,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, sql, gte } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -17,26 +22,53 @@ export async function GET(req: Request) {
   const connectors = await db
     .select()
     .from(evidenceConnector)
-    .where(and(eq(evidenceConnector.orgId, ctx.orgId), isNull(evidenceConnector.deletedAt)));
+    .where(
+      and(
+        eq(evidenceConnector.orgId, ctx.orgId),
+        isNull(evidenceConnector.deletedAt),
+      ),
+    );
 
   const totalConnectors = connectors.length;
-  const activeConnectors = connectors.filter((c) => c.status === "active").length;
-  const healthyConnectors = connectors.filter((c) => c.healthStatus === "healthy").length;
-  const degradedConnectors = connectors.filter((c) => c.healthStatus === "degraded").length;
-  const unhealthyConnectors = connectors.filter((c) => c.healthStatus === "unhealthy").length;
+  const activeConnectors = connectors.filter(
+    (c) => c.status === "active",
+  ).length;
+  const healthyConnectors = connectors.filter(
+    (c) => c.healthStatus === "healthy",
+  ).length;
+  const degradedConnectors = connectors.filter(
+    (c) => c.healthStatus === "degraded",
+  ).length;
+  const unhealthyConnectors = connectors.filter(
+    (c) => c.healthStatus === "unhealthy",
+  ).length;
 
   const [testsResult] = await db
     .select({ value: count() })
     .from(connectorTestResult)
-    .where(and(eq(connectorTestResult.orgId, ctx.orgId), gte(connectorTestResult.executedAt, twentyFourHoursAgo)));
+    .where(
+      and(
+        eq(connectorTestResult.orgId, ctx.orgId),
+        gte(connectorTestResult.executedAt, twentyFourHoursAgo),
+      ),
+    );
 
   const [passResult] = await db
     .select({ value: count() })
     .from(connectorTestResult)
-    .where(and(eq(connectorTestResult.orgId, ctx.orgId), gte(connectorTestResult.executedAt, twentyFourHoursAgo), eq(connectorTestResult.status, "pass")));
+    .where(
+      and(
+        eq(connectorTestResult.orgId, ctx.orgId),
+        gte(connectorTestResult.executedAt, twentyFourHoursAgo),
+        eq(connectorTestResult.status, "pass"),
+      ),
+    );
 
   const totalTestsRun24h = Number(testsResult.value);
-  const passRate24h = totalTestsRun24h > 0 ? Math.round((Number(passResult.value) / totalTestsRun24h) * 100) : 0;
+  const passRate24h =
+    totalTestsRun24h > 0
+      ? Math.round((Number(passResult.value) / totalTestsRun24h) * 100)
+      : 0;
 
   const [artifactCount] = await db
     .select({ value: count() })

@@ -34,7 +34,10 @@ export async function POST(
     );
 
   if (!result) {
-    return Response.json({ error: "Analysis result not found" }, { status: 404 });
+    return Response.json(
+      { error: "Analysis result not found" },
+      { status: 404 },
+    );
   }
 
   if (result.findingId) {
@@ -44,9 +47,15 @@ export async function POST(
     );
   }
 
-  const summary = result.summaryJson as { flaggedCount: number; totalAnalyzed: number };
-  const title = parsed.data.title ?? `Analytics Finding: ${result.analysisType} — ${summary.flaggedCount} flagged items`;
-  const description = parsed.data.description ??
+  const summary = result.summaryJson as {
+    flaggedCount: number;
+    totalAnalyzed: number;
+  };
+  const title =
+    parsed.data.title ??
+    `Analytics Finding: ${result.analysisType} — ${summary.flaggedCount} flagged items`;
+  const description =
+    parsed.data.description ??
     `Automated finding from ${result.analysisType} analysis. ${summary.flaggedCount} of ${summary.totalAnalyzed} items flagged for review.`;
 
   // Create finding would use the finding entity from Sprint 4/8
@@ -60,12 +69,15 @@ export async function POST(
       .where(eq(auditAnalyticsResult.id, id));
   });
 
-  return Response.json({
-    data: {
-      findingId,
-      title,
-      description,
-      linkedAnalysisResultId: id,
+  return Response.json(
+    {
+      data: {
+        findingId,
+        title,
+        description,
+        linkedAnalysisResultId: id,
+      },
     },
-  }, { status: 201 });
+    { status: 201 },
+  );
 }

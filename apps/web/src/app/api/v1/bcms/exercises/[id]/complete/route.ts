@@ -36,7 +36,9 @@ export async function POST(
 
   if (current.status === "completed" || current.status === "cancelled") {
     return Response.json(
-      { error: `Exercise is already '${current.status}' and cannot be completed.` },
+      {
+        error: `Exercise is already '${current.status}' and cannot be completed.`,
+      },
       { status: 422 },
     );
   }

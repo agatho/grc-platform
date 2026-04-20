@@ -88,7 +88,9 @@ function ListingDetail() {
     }
   }, [id]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const handleInstall = async () => {
     const latestVersion = versions.find((v) => v.status === "approved");
@@ -112,19 +114,28 @@ function ListingDetail() {
   }
 
   if (!listing) {
-    return <div className="text-center py-12 text-gray-400">{t("notFound")}</div>;
+    return (
+      <div className="text-center py-12 text-gray-400">{t("notFound")}</div>
+    );
   }
 
   return (
     <div className="space-y-6">
-      <button onClick={() => router.back()} className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700">
+      <button
+        onClick={() => router.back()}
+        className="flex items-center gap-1 text-sm text-gray-500 hover:text-gray-700"
+      >
         <ArrowLeft size={14} /> {t("backToMarketplace")}
       </button>
 
       <div className="flex items-start gap-6">
         <div className="h-20 w-20 rounded-xl bg-gray-100 flex items-center justify-center shrink-0">
           {listing.iconUrl ? (
-            <img src={listing.iconUrl} alt="" className="h-16 w-16 rounded-lg" />
+            <img
+              src={listing.iconUrl}
+              alt=""
+              className="h-16 w-16 rounded-lg"
+            />
           ) : (
             <Package size={32} className="text-gray-400" />
           )}
@@ -132,9 +143,13 @@ function ListingDetail() {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <h1 className="text-2xl font-bold text-gray-900">{listing.name}</h1>
-            {listing.isVerified && <ShieldCheck size={18} className="text-blue-500" />}
+            {listing.isVerified && (
+              <ShieldCheck size={18} className="text-blue-500" />
+            )}
             {listing.isFeatured && (
-              <Badge className="bg-yellow-100 text-yellow-800">{t("featured")}</Badge>
+              <Badge className="bg-yellow-100 text-yellow-800">
+                {t("featured")}
+              </Badge>
             )}
           </div>
           <p className="text-sm text-gray-500 mt-1">{listing.summary}</p>
@@ -156,8 +171,12 @@ function ListingDetail() {
       {/* Description */}
       {listing.description && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold mb-3">{t("detailDescription")}</h2>
-          <div className="prose prose-sm max-w-none text-gray-700">{listing.description}</div>
+          <h2 className="text-base font-semibold mb-3">
+            {t("detailDescription")}
+          </h2>
+          <div className="prose prose-sm max-w-none text-gray-700">
+            {listing.description}
+          </div>
         </div>
       )}
 
@@ -169,13 +188,20 @@ function ListingDetail() {
         ) : (
           <div className="space-y-2">
             {versions.map((v) => (
-              <div key={v.id} className="flex items-center justify-between rounded border border-gray-100 p-3">
+              <div
+                key={v.id}
+                className="flex items-center justify-between rounded border border-gray-100 p-3"
+              >
                 <div>
                   <span className="text-sm font-medium">{v.version}</span>
-                  <Badge variant="outline" className="ml-2 text-[10px]">{v.status}</Badge>
+                  <Badge variant="outline" className="ml-2 text-[10px]">
+                    {v.status}
+                  </Badge>
                 </div>
                 {v.publishedAt && (
-                  <span className="text-xs text-gray-400">{new Date(v.publishedAt).toLocaleDateString()}</span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(v.publishedAt).toLocaleDateString()}
+                  </span>
                 )}
               </div>
             ))}
@@ -185,25 +211,45 @@ function ListingDetail() {
 
       {/* Reviews */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold mb-3">{t("reviews")} ({reviews.length})</h2>
+        <h2 className="text-base font-semibold mb-3">
+          {t("reviews")} ({reviews.length})
+        </h2>
         {reviews.length === 0 ? (
           <p className="text-sm text-gray-400">{t("noReviews")}</p>
         ) : (
           <div className="space-y-4">
             {reviews.map((r) => (
-              <div key={r.id} className="border-b border-gray-100 pb-4 last:border-0">
+              <div
+                key={r.id}
+                className="border-b border-gray-100 pb-4 last:border-0"
+              >
                 <div className="flex items-center gap-2">
                   <div className="flex">
                     {Array.from({ length: 5 }).map((_, i) => (
-                      <Star key={i} size={12} className={i < r.rating ? "text-yellow-500 fill-yellow-500" : "text-gray-400"} />
+                      <Star
+                        key={i}
+                        size={12}
+                        className={
+                          i < r.rating
+                            ? "text-yellow-500 fill-yellow-500"
+                            : "text-gray-400"
+                        }
+                      />
                     ))}
                   </div>
-                  {r.title && <span className="text-sm font-medium">{r.title}</span>}
+                  {r.title && (
+                    <span className="text-sm font-medium">{r.title}</span>
+                  )}
                 </div>
-                {r.body && <p className="text-sm text-gray-600 mt-1">{r.body}</p>}
+                {r.body && (
+                  <p className="text-sm text-gray-600 mt-1">{r.body}</p>
+                )}
                 {r.publisherResponse && (
                   <div className="mt-2 ml-4 p-2 bg-blue-50 rounded text-sm text-blue-800">
-                    <span className="font-medium">{t("publisherResponse")}:</span> {r.publisherResponse}
+                    <span className="font-medium">
+                      {t("publisherResponse")}:
+                    </span>{" "}
+                    {r.publisherResponse}
                   </div>
                 )}
               </div>

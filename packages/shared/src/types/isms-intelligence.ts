@@ -3,12 +3,20 @@
 // ─── CVE Feed Types ──────────────────────────────────────────
 
 export type CveSeverity = "critical" | "high" | "medium" | "low" | "none";
-export type CveMatchStatus = "new" | "acknowledged" | "mitigated" | "not_applicable";
+export type CveMatchStatus =
+  | "new"
+  | "acknowledged"
+  | "mitigated"
+  | "not_applicable";
 export type SoaGapType = "not_covered" | "partial" | "full";
 export type SoaSuggestionStatus = "pending" | "accepted" | "rejected";
 export type SoaGapPriority = "critical" | "high" | "medium" | "low";
 export type RoadmapEffort = "S" | "M" | "L";
-export type RoadmapActionStatus = "proposed" | "in_progress" | "completed" | "dismissed";
+export type RoadmapActionStatus =
+  | "proposed"
+  | "in_progress"
+  | "completed"
+  | "dismissed";
 
 export interface CveReference {
   url: string;

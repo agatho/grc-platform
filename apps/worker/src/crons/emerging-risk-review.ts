@@ -42,11 +42,17 @@ export async function processEmergingRiskReviews(): Promise<ReviewResult> {
       message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
       entityType: "emerging_risk",
       entityId: risk.id,
-      templateData: { module: "erm", priority: "normal", subtype: "emerging_risk_review" },
+      templateData: {
+        module: "erm",
+        priority: "normal",
+        subtype: "emerging_risk_review",
+      },
     });
     notified++;
   }
 
-  console.log(`[cron:emerging-risk-review] Completed: ${upcomingReviews.length} found, ${notified} notified`);
+  console.log(
+    `[cron:emerging-risk-review] Completed: ${upcomingReviews.length} found, ${notified} notified`,
+  );
   return { processed: upcomingReviews.length, notified };
 }

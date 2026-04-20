@@ -79,12 +79,25 @@ export async function GET(req: Request) {
 
   const costCategory = searchParams.get("cost_category");
   if (costCategory) {
-    conditions.push(eq(grcCostEntry.costCategory, costCategory as "personnel" | "external" | "tools" | "training" | "measures" | "certification"));
+    conditions.push(
+      eq(
+        grcCostEntry.costCategory,
+        costCategory as
+          | "personnel"
+          | "external"
+          | "tools"
+          | "training"
+          | "measures"
+          | "certification",
+      ),
+    );
   }
 
   const costType = searchParams.get("cost_type");
   if (costType) {
-    conditions.push(eq(grcCostEntry.costType, costType as "planned" | "actual" | "forecast"));
+    conditions.push(
+      eq(grcCostEntry.costType, costType as "planned" | "actual" | "forecast"),
+    );
   }
 
   const where = and(...conditions);

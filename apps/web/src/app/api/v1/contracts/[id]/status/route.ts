@@ -1,5 +1,8 @@
 import { db, contract } from "@grc/db";
-import { contractStatusTransitionSchema, VALID_CONTRACT_TRANSITIONS } from "@grc/shared";
+import {
+  contractStatusTransitionSchema,
+  VALID_CONTRACT_TRANSITIONS,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -28,7 +31,13 @@ export async function PUT(
   const [current] = await db
     .select({ status: contract.status })
     .from(contract)
-    .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)));
+    .where(
+      and(
+        eq(contract.id, id),
+        eq(contract.orgId, ctx.orgId),
+        isNull(contract.deletedAt),
+      ),
+    );
 
   if (!current) {
     return Response.json({ error: "Not found" }, { status: 404 });

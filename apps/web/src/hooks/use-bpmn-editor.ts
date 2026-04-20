@@ -56,7 +56,9 @@ function downloadFile(content: string, filename: string, mimeType: string) {
 async function svgToPng(svgContent: string): Promise<Blob> {
   return new Promise((resolve, reject) => {
     const img = new Image();
-    const svgBlob = new Blob([svgContent], { type: "image/svg+xml;charset=utf-8" });
+    const svgBlob = new Blob([svgContent], {
+      type: "image/svg+xml;charset=utf-8",
+    });
     const url = URL.createObjectURL(svgBlob);
 
     img.onload = () => {
@@ -75,13 +77,10 @@ async function svgToPng(svgContent: string): Promise<Blob> {
       ctx.drawImage(img, 0, 0);
       URL.revokeObjectURL(url);
 
-      canvas.toBlob(
-        (blob) => {
-          if (blob) resolve(blob);
-          else reject(new Error("Failed to create PNG blob"));
-        },
-        "image/png",
-      );
+      canvas.toBlob((blob) => {
+        if (blob) resolve(blob);
+        else reject(new Error("Failed to create PNG blob"));
+      }, "image/png");
     };
 
     img.onerror = () => {

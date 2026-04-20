@@ -1,8 +1,4 @@
-import {
-  db,
-  risk,
-  riskFrameworkMapping,
-} from "@grc/db";
+import { db, risk, riskFrameworkMapping } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -25,11 +21,7 @@ export async function DELETE(
     .select({ id: risk.id })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {

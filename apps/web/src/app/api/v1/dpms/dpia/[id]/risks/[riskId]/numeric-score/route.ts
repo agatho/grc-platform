@@ -47,8 +47,11 @@ export async function PATCH(
     LIMIT 1
   `);
 
-  if (!existing.rows?.length) {
-    return Response.json({ error: "DSFA-Risiko nicht gefunden" }, { status: 404 });
+  if (!(existing as unknown as unknown[])?.length) {
+    return Response.json(
+      { error: "DSFA-Risiko nicht gefunden" },
+      { status: 404 },
+    );
   }
 
   // Update numeric scores (risk_score is GENERATED ALWAYS, auto-updates)

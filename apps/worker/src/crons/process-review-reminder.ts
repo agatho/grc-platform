@@ -7,7 +7,17 @@
 // for schedules where nextReviewDate is approaching (30 days, 0 days, overdue).
 
 import { db, process, processReviewSchedule, notification } from "@grc/db";
-import { and, isNull, sql, isNotNull, or, inArray, eq, lte, gte } from "drizzle-orm";
+import {
+  and,
+  isNull,
+  sql,
+  isNotNull,
+  or,
+  inArray,
+  eq,
+  lte,
+  gte,
+} from "drizzle-orm";
 
 interface ProcessReviewResult {
   processed: number;
@@ -21,7 +31,9 @@ export async function processReviewReminders(): Promise<ProcessReviewResult> {
   let notified = 0;
   let scheduleNotified = 0;
 
-  console.log(`[cron:process-review-reminders] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:process-review-reminders] Starting at ${now.toISOString()}`,
+  );
 
   // ──────────────────────────────────────────────────────────────
   // Part 1: Legacy process table review fields
@@ -75,7 +87,9 @@ export async function processReviewReminders(): Promise<ProcessReviewResult> {
         const baseDate = proc.lastReviewedAt
           ? new Date(proc.lastReviewedAt)
           : new Date(proc.id); // fallback — should use createdAt
-        const nextReview = new Date(baseDate.getTime() + proc.reviewCycleDays * 86400000);
+        const nextReview = new Date(
+          baseDate.getTime() + proc.reviewCycleDays * 86400000,
+        );
         daysUntilReview = Math.ceil(
           (nextReview.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
         );
@@ -138,7 +152,10 @@ export async function processReviewReminders(): Promise<ProcessReviewResult> {
     .where(
       and(
         eq(processReviewSchedule.isActive, true),
-        lte(processReviewSchedule.nextReviewDate, thirtyDaysFromNow.toISOString().split("T")[0]),
+        lte(
+          processReviewSchedule.nextReviewDate,
+          thirtyDaysFromNow.toISOString().split("T")[0],
+        ),
         isNull(process.deletedAt),
         or(
           // No reminder sent yet
@@ -174,13 +191,17 @@ export async function processReviewReminders(): Promise<ProcessReviewResult> {
       await db.insert(notification).values({
         userId: recipientId,
         orgId: sched.orgId,
-        type: isOverdue ? "escalation" as const : "deadline_approaching" as const,
+        type: isOverdue
+          ? ("escalation" as const)
+          : ("deadline_approaching" as const),
         entityType: "process",
         entityId: sched.processId,
         title: `Process review ${urgencyLabel}: ${sched.processName}`,
         message: `Process "${sched.processName}" review is ${urgencyLabel} (${reviewDateStr}).`,
         channel: "both" as const,
-        templateKey: isOverdue ? "process_review_overdue" : "process_review_reminder",
+        templateKey: isOverdue
+          ? "process_review_overdue"
+          : "process_review_reminder",
         templateData: {
           processName: sched.processName,
           reviewDate: reviewDateStr,

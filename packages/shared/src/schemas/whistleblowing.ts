@@ -2,10 +2,29 @@ import { z } from "zod";
 
 // Sprint 12: Whistleblowing (HinSchG) schemas
 
-export const wbCategoryValues = ["fraud", "corruption", "discrimination", "privacy", "environmental", "health_safety", "other"] as const;
-export const wbCaseStatusValues = ["received", "acknowledged", "investigating", "resolved", "closed"] as const;
+export const wbCategoryValues = [
+  "fraud",
+  "corruption",
+  "discrimination",
+  "privacy",
+  "environmental",
+  "health_safety",
+  "other",
+] as const;
+export const wbCaseStatusValues = [
+  "received",
+  "acknowledged",
+  "investigating",
+  "resolved",
+  "closed",
+] as const;
 export const wbPriorityValues = ["low", "medium", "high", "critical"] as const;
-export const wbResolutionCategoryValues = ["substantiated", "unsubstantiated", "inconclusive", "referred"] as const;
+export const wbResolutionCategoryValues = [
+  "substantiated",
+  "unsubstantiated",
+  "inconclusive",
+  "referred",
+] as const;
 
 export const submitReportSchema = z.object({
   category: z.enum(wbCategoryValues),

@@ -149,14 +149,11 @@ export default function EditRulePage() {
     setTesting(true);
     setTestResult(null);
     try {
-      const res = await fetch(
-        `/api/v1/automation/rules/${ruleId}/test`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        },
-      );
+      const res = await fetch(`/api/v1/automation/rules/${ruleId}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
       if (res.ok) {
         const json = await res.json();
         setTestResult(json.data);
@@ -167,14 +164,11 @@ export default function EditRulePage() {
   };
 
   const handleToggleActive = async () => {
-    const res = await fetch(
-      `/api/v1/automation/rules/${ruleId}/activate`,
-      {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ isActive: !isActive }),
-      },
-    );
+    const res = await fetch(`/api/v1/automation/rules/${ruleId}/activate`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ isActive: !isActive }),
+    });
     if (res.ok) {
       setIsActive(!isActive);
     }
@@ -221,11 +215,7 @@ export default function EditRulePage() {
             )}
             {t("designer.dryRun")}
           </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleToggleActive}
-          >
+          <Button variant="outline" size="sm" onClick={handleToggleActive}>
             {isActive ? t("designer.deactivate") : t("designer.activate")}
           </Button>
           <Button
@@ -237,11 +227,7 @@ export default function EditRulePage() {
             <Trash2 size={14} className="mr-1" />
             {t("designer.delete")}
           </Button>
-          <Button
-            size="sm"
-            onClick={handleSave}
-            disabled={saving}
-          >
+          <Button size="sm" onClick={handleSave} disabled={saving}>
             {saving && <Loader2 size={14} className="animate-spin mr-1" />}
             <Save size={14} className="mr-1" />
             {t("designer.save")}
@@ -318,9 +304,7 @@ export default function EditRulePage() {
             <input
               type="number"
               value={maxExecutionsPerHour}
-              onChange={(e) =>
-                setMaxExecutionsPerHour(Number(e.target.value))
-              }
+              onChange={(e) => setMaxExecutionsPerHour(Number(e.target.value))}
               min={1}
               max={1000}
               className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm"

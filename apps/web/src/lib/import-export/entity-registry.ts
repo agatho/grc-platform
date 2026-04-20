@@ -206,11 +206,7 @@ const controlDefinition: EntityDefinition = {
     {
       name: "automation_level",
       type: "enum",
-      aliases: [
-        "Automatisierungsgrad",
-        "Automation Level",
-        "Automation",
-      ],
+      aliases: ["Automatisierungsgrad", "Automation Level", "Automation"],
       enumValues: ["manual", "semi_automated", "fully_automated"],
     },
     {
@@ -221,12 +217,7 @@ const controlDefinition: EntityDefinition = {
     {
       name: "owner_email",
       type: "fk",
-      aliases: [
-        "Verantwortlicher",
-        "Owner",
-        "Control Owner",
-        "Owner Email",
-      ],
+      aliases: ["Verantwortlicher", "Owner", "Control Owner", "Owner Email"],
     },
   ],
   fkResolutionRules: [
@@ -623,11 +614,7 @@ const incidentDefinition: EntityDefinition = {
     {
       name: "severity",
       type: "enum",
-      aliases: [
-        "Schweregrad",
-        "Severity",
-        "Kritikalitaet",
-      ],
+      aliases: ["Schweregrad", "Severity", "Kritikalitaet"],
       enumValues: ["low", "medium", "high", "critical"],
       required: true,
     },
@@ -734,11 +721,7 @@ const processDefinition: EntityDefinition = {
     {
       name: "owner_email",
       type: "fk",
-      aliases: [
-        "Prozessverantwortlicher",
-        "Process Owner",
-        "Owner Email",
-      ],
+      aliases: ["Prozessverantwortlicher", "Process Owner", "Owner Email"],
     },
     {
       name: "is_essential",

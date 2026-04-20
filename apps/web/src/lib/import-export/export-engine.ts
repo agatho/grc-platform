@@ -4,7 +4,11 @@ import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import type { EntityDefinition } from "@grc/shared";
 import { getEntityDefinition } from "./entity-registry";
-import { objectsToCsv, escapeCsvField, sanitizeCsvValue } from "./csv-sanitizer";
+import {
+  objectsToCsv,
+  escapeCsvField,
+  sanitizeCsvValue,
+} from "./csv-sanitizer";
 
 const MAX_EXPORT_ROWS = 5000;
 const BACKGROUND_THRESHOLD = 1000;
@@ -67,10 +71,7 @@ async function fetchEntityData(
 
   // Apply filters from query params
   for (const [key, value] of Object.entries(filters)) {
-    if (
-      ["format", "page", "limit"].includes(key) ||
-      !value
-    ) {
+    if (["format", "page", "limit"].includes(key) || !value) {
       continue;
     }
     // Sanitize filter values to prevent SQL injection

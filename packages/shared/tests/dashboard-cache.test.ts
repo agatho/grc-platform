@@ -2,7 +2,9 @@ import { describe, it, expect, beforeEach } from "vitest";
 import { DashboardCache } from "../src/cache/dashboard-cache";
 import type { CacheAdapter } from "../src/cache/dashboard-cache";
 
-function createMockAdapter(): CacheAdapter & { store: Map<string, { value: string; ttl: number }> } {
+function createMockAdapter(): CacheAdapter & {
+  store: Map<string, { value: string; ttl: number }>;
+} {
   const store = new Map<string, { value: string; ttl: number }>();
   return {
     store,
@@ -65,9 +67,15 @@ describe("DashboardCache", () => {
   });
 
   it("should invalidate all keys for org", async () => {
-    await cache.getOrCompute("cache:org:org1:dashboard:erm", async () => ({ data: 1 }));
-    await cache.getOrCompute("cache:org:org1:dashboard:ics", async () => ({ data: 2 }));
-    await cache.getOrCompute("cache:org:org2:dashboard:erm", async () => ({ data: 3 }));
+    await cache.getOrCompute("cache:org:org1:dashboard:erm", async () => ({
+      data: 1,
+    }));
+    await cache.getOrCompute("cache:org:org1:dashboard:ics", async () => ({
+      data: 2,
+    }));
+    await cache.getOrCompute("cache:org:org2:dashboard:erm", async () => ({
+      data: 3,
+    }));
 
     const removed = await cache.invalidateForOrg("org1");
     expect(removed).toBe(2);

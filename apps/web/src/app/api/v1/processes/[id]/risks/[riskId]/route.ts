@@ -36,24 +36,14 @@ export async function DELETE(
   const [link] = await db
     .select({ id: processRisk.id })
     .from(processRisk)
-    .where(
-      and(
-        eq(processRisk.processId, id),
-        eq(processRisk.riskId, riskId),
-      ),
-    );
+    .where(and(eq(processRisk.processId, id), eq(processRisk.riskId, riskId)));
 
   if (!link) {
-    return Response.json(
-      { error: "Risk link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Risk link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(processRisk)
-      .where(eq(processRisk.id, link.id));
+    await tx.delete(processRisk).where(eq(processRisk.id, link.id));
   });
 
   return Response.json({ data: { processId: id, riskId, deleted: true } });

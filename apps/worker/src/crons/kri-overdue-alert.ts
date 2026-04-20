@@ -69,7 +69,8 @@ export async function processKriOverdueAlerts(): Promise<KriOverdueResult> {
 
       const daysOverdue = overdueKri.lastMeasuredAt
         ? Math.floor(
-            (now.getTime() - overdueKri.lastMeasuredAt.getTime()) / (1000 * 60 * 60 * 24),
+            (now.getTime() - overdueKri.lastMeasuredAt.getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : null;
 
@@ -79,9 +80,10 @@ export async function processKriOverdueAlerts(): Promise<KriOverdueResult> {
         entityType: "kri",
         entityId: overdueKri.id,
         title: `KRI measurement overdue: ${overdueKri.name}`,
-        message: daysOverdue !== null
-          ? `KRI "${overdueKri.name}" (${overdueKri.measurementFrequency}) has not been measured for ${daysOverdue} day(s).`
-          : `KRI "${overdueKri.name}" (${overdueKri.measurementFrequency}) has never been measured.`,
+        message:
+          daysOverdue !== null
+            ? `KRI "${overdueKri.name}" (${overdueKri.measurementFrequency}) has not been measured for ${daysOverdue} day(s).`
+            : `KRI "${overdueKri.name}" (${overdueKri.measurementFrequency}) has never been measured.`,
         channel: "both" as const,
         templateKey: "kri_overdue_measurement",
         templateData: {

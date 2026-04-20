@@ -1,10 +1,4 @@
-import {
-  db,
-  process,
-  processComment,
-  notification,
-  user,
-} from "@grc/db";
+import { db, process, processComment, notification, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createCommentSchema } from "@grc/shared";
 import { eq, and, isNull, desc, asc, sql } from "drizzle-orm";
@@ -141,7 +135,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "process_owner", "risk_manager", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "process_owner",
+    "risk_manager",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);

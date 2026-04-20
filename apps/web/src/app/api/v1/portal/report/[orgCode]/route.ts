@@ -1,7 +1,13 @@
 // POST /api/v1/portal/report/:orgCode — Submit whistleblower report (public, no auth)
 // GET  /api/v1/portal/report/:orgCode — Load org info for report form
 
-import { db, organization, wbReport, wbCase, wbAnonymousMailbox } from "@grc/db";
+import {
+  db,
+  organization,
+  wbReport,
+  wbCase,
+  wbAnonymousMailbox,
+} from "@grc/db";
 import { submitReportSchema } from "@grc/shared";
 import { encrypt, hashIp, generateMailboxToken } from "@grc/shared";
 import { eq } from "drizzle-orm";

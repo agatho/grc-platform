@@ -2,7 +2,12 @@ import { db, cloudTestSuite } from "@grc/db";
 import { createCloudTestSuiteSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/cloud-connectors/suites
@@ -15,7 +20,10 @@ export async function POST(req: Request) {
 
   const body = createCloudTestSuiteSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -59,7 +67,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(cloudTestSuite).where(where).orderBy(desc(cloudTestSuite.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(cloudTestSuite)
+      .where(where)
+      .orderBy(desc(cloudTestSuite.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(cloudTestSuite).where(where),
   ]);
 

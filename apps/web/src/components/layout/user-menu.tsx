@@ -35,7 +35,8 @@ export function UserMenu() {
 
   const handleLanguageSwitch = useCallback(
     async (lang: string) => {
-      if (lang === currentLanguage || switchingLang || !session?.user?.id) return;
+      if (lang === currentLanguage || switchingLang || !session?.user?.id)
+        return;
       setSwitchingLang(true);
       try {
         const res = await fetch(`/api/v1/users/${session.user.id}/profile`, {
@@ -80,8 +81,12 @@ export function UserMenu() {
       {open && (
         <div className="absolute right-0 top-full mt-1 w-56 bg-white border border-gray-200 rounded-lg shadow-lg z-50 py-1">
           <div className="px-4 py-3 border-b border-gray-100">
-            <p className="text-sm font-medium text-gray-900">{session?.user?.name}</p>
-            <p className="text-xs text-gray-500 truncate">{session?.user?.email}</p>
+            <p className="text-sm font-medium text-gray-900">
+              {session?.user?.name}
+            </p>
+            <p className="text-xs text-gray-500 truncate">
+              {session?.user?.email}
+            </p>
           </div>
 
           <Link

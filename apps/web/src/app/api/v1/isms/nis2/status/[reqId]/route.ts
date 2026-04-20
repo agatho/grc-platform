@@ -1,9 +1,4 @@
-import {
-  db,
-  soaEntry,
-  catalogEntry,
-  controlMaturity,
-} from "@grc/db";
+import { db, soaEntry, catalogEntry, controlMaturity } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -27,7 +22,10 @@ export async function GET(
   const { reqId } = await params;
   const reqDef = NIS2_ART21_REQUIREMENTS.find((r) => r.id === reqId);
   if (!reqDef) {
-    return Response.json({ error: "NIS2 requirement not found" }, { status: 404 });
+    return Response.json(
+      { error: "NIS2 requirement not found" },
+      { status: 404 },
+    );
   }
 
   // Find catalog entries matching the ISO mapping codes
@@ -48,7 +46,11 @@ export async function GET(
 
   const catalogIds = catalogEntries.map((e) => e.id);
 
-  const controls: (ControlWithCES & { catalogCode: string; catalogTitle: string; implementation: string })[] = [];
+  const controls: (ControlWithCES & {
+    catalogCode: string;
+    catalogTitle: string;
+    implementation: string;
+  })[] = [];
   if (catalogIds.length > 0) {
     const soaRows = await db
       .select({

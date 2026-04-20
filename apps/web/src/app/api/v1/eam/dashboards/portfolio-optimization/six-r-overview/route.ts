@@ -4,7 +4,12 @@ import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 const EFFORT_MONTHS: Record<string, number> = {
-  retain: 0, replatform: 2, refactor: 4, rearchitect: 6, rebuild: 8, replace: 3,
+  retain: 0,
+  replatform: 2,
+  refactor: 4,
+  rearchitect: 6,
+  rebuild: 8,
+  replace: 3,
 };
 
 // GET /api/v1/eam/dashboards/portfolio-optimization/6r-overview — 6R strategy distribution

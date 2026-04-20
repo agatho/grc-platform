@@ -18,19 +18,75 @@ interface EntityDetail {
 }
 
 // Entity type -> table name + columns mapping
-const ENTITY_TABLE_MAP: Record<string, { table: string; nameCol: string; statusCol?: string; severityCol?: string; elementIdCol?: string }> = {
-  risk: { table: "risk", nameCol: "title", statusCol: "status", severityCol: "inherent_severity", elementIdCol: "element_id" },
-  control: { table: "control", nameCol: "title", statusCol: "status", elementIdCol: "element_id" },
-  asset: { table: "asset", nameCol: "name", statusCol: "status", elementIdCol: "element_id" },
-  process: { table: "process", nameCol: "name", statusCol: "status", elementIdCol: "element_id" },
-  vendor: { table: "vendor", nameCol: "name", statusCol: "status", elementIdCol: "element_id" },
-  document: { table: "document", nameCol: "title", statusCol: "status", elementIdCol: "element_id" },
-  finding: { table: "finding", nameCol: "title", statusCol: "status", severityCol: "severity", elementIdCol: "element_id" },
-  incident: { table: "incident", nameCol: "title", statusCol: "status", severityCol: "severity", elementIdCol: "element_id" },
+const ENTITY_TABLE_MAP: Record<
+  string,
+  {
+    table: string;
+    nameCol: string;
+    statusCol?: string;
+    severityCol?: string;
+    elementIdCol?: string;
+  }
+> = {
+  risk: {
+    table: "risk",
+    nameCol: "title",
+    statusCol: "status",
+    severityCol: "inherent_severity",
+    elementIdCol: "element_id",
+  },
+  control: {
+    table: "control",
+    nameCol: "title",
+    statusCol: "status",
+    elementIdCol: "element_id",
+  },
+  asset: {
+    table: "asset",
+    nameCol: "name",
+    statusCol: "status",
+    elementIdCol: "element_id",
+  },
+  process: {
+    table: "process",
+    nameCol: "name",
+    statusCol: "status",
+    elementIdCol: "element_id",
+  },
+  vendor: {
+    table: "vendor",
+    nameCol: "name",
+    statusCol: "status",
+    elementIdCol: "element_id",
+  },
+  document: {
+    table: "document",
+    nameCol: "title",
+    statusCol: "status",
+    elementIdCol: "element_id",
+  },
+  finding: {
+    table: "finding",
+    nameCol: "title",
+    statusCol: "status",
+    severityCol: "severity",
+    elementIdCol: "element_id",
+  },
+  incident: {
+    table: "incident",
+    nameCol: "title",
+    statusCol: "status",
+    severityCol: "severity",
+    elementIdCol: "element_id",
+  },
   audit: { table: "audit", nameCol: "title", statusCol: "status" },
   kri: { table: "kri", nameCol: "name", statusCol: "status" },
   bcp: { table: "bcp", nameCol: "name", statusCol: "status" },
-  ropa_entry: { table: "ropa_entry", nameCol: "processing_name", statusCol: "status" },
+  ropa_entry: {
+    table: "ropa_entry",
+    nameCol: "processing_name",
+    statusCol: "status",
+  },
   dpia: { table: "dpia", nameCol: "title", statusCol: "status" },
   contract: { table: "contract", nameCol: "title", statusCol: "status" },
   process_step: { table: "process_step", nameCol: "name" },
@@ -40,7 +96,9 @@ const ENTITY_TABLE_MAP: Record<string, { table: string; nameCol: string; statusC
  * Batch-fetch entity details per type (one query per entity type, not per node).
  * Enriches GraphResult nodes with name, status, severity.
  */
-export async function enrichGraphNodes(graph: GraphResult): Promise<GraphResult> {
+export async function enrichGraphNodes(
+  graph: GraphResult,
+): Promise<GraphResult> {
   // Group node IDs by type
   const nodesByType = new Map<string, string[]>();
   for (const node of graph.nodes) {
@@ -62,16 +120,30 @@ export async function enrichGraphNodes(graph: GraphResult): Promise<GraphResult>
         const selectCols = [
           `id::text as id`,
           `${tableConfig.nameCol} as name`,
-          tableConfig.statusCol ? `${tableConfig.statusCol} as status` : `NULL as status`,
-          tableConfig.severityCol ? `${tableConfig.severityCol} as severity` : `NULL as severity`,
-          tableConfig.elementIdCol ? `${tableConfig.elementIdCol} as element_id` : `NULL as element_id`,
+          tableConfig.statusCol
+            ? `${tableConfig.statusCol} as status`
+            : `NULL as status`,
+          tableConfig.severityCol
+            ? `${tableConfig.severityCol} as severity`
+            : `NULL as severity`,
+          tableConfig.elementIdCol
+            ? `${tableConfig.elementIdCol} as element_id`
+            : `NULL as element_id`,
         ].join(", ");
 
         const rows = await execSql(
-          sql.raw(`SELECT ${selectCols} FROM ${tableConfig.table} WHERE id IN (${idList})`),
+          sql.raw(
+            `SELECT ${selectCols} FROM ${tableConfig.table} WHERE id IN (${idList})`,
+          ),
         );
 
-        for (const row of rows as unknown as Array<{ id: string; name: string; status?: string; severity?: string; element_id?: string }>) {
+        for (const row of rows as unknown as Array<{
+          id: string;
+          name: string;
+          status?: string;
+          severity?: string;
+          element_id?: string;
+        }>) {
           detailsMap.set(row.id, {
             id: row.id,
             name: row.name ?? row.id,

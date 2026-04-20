@@ -196,16 +196,18 @@ export const organization = pgTable(
     hierarchyLevel: integer("hierarchy_level").default(0),
     hierarchyPath: text("hierarchy_path"),
     // Cross-cutting mandatory fields (Data_Model.md §Architecture)
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
   },
-  (table) => [
-    index("org_parent_idx").on(table.parentOrgId),
-  ],
+  (table) => [index("org_parent_idx").on(table.parentOrgId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -227,14 +229,22 @@ export const user = pgTable("user", {
   notificationPreferences: jsonb("notification_preferences").default({}),
   // Sprint 17: iCal token for calendar subscription
   icalToken: varchar("ical_token", { length: 128 }),
-  icalTokenCreatedAt: timestamp("ical_token_created_at", { withTimezone: true }),
+  icalTokenCreatedAt: timestamp("ical_token_created_at", {
+    withTimezone: true,
+  }),
   // Sprint 20: Identity provider fields (SSO/SCIM)
   externalId: varchar("external_id", { length: 200 }),
-  identityProvider: varchar("identity_provider", { length: 50 }).default("local"),
+  identityProvider: varchar("identity_provider", { length: 50 }).default(
+    "local",
+  ),
   lastSyncedAt: timestamp("last_synced_at", { withTimezone: true }),
   // Cross-cutting mandatory fields
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
   createdBy: uuid("created_by"),
   updatedBy: uuid("updated_by"),
   deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -259,8 +269,12 @@ export const userOrganizationRole = pgTable(
     department: varchar("department", { length: 255 }),
     lineOfDefense: lineOfDefenseEnum("line_of_defense"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -305,14 +319,24 @@ export const auditLog = pgTable(
     // entry_hash is preserved when tombstoned so the chain stays verifiable.
     piiTombstonedAt: timestamp("pii_tombstoned_at", { withTimezone: true }),
     piiTombstoneReason: text("pii_tombstone_reason"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    index("al_entity_idx").on(table.entityType, table.entityId, table.createdAt),
+    index("al_entity_idx").on(
+      table.entityType,
+      table.entityId,
+      table.createdAt,
+    ),
     index("al_org_idx").on(table.orgId, table.createdAt),
     index("al_user_idx").on(table.userId),
     // ADR-011 rev.2 — efficient per-tenant chain read
-    index("audit_log_org_created_idx").on(table.orgId, table.createdAt, table.id),
+    index("audit_log_org_created_idx").on(
+      table.orgId,
+      table.createdAt,
+      table.id,
+    ),
   ],
 );
 
@@ -334,10 +358,14 @@ export const auditAnchor = pgTable(
     // bytea — the `postgres` driver returns this as a Buffer; we expose it
     // as a base64 string at API boundaries for JSON compatibility.
     proof: text("proof").notNull(),
-    proofStatus: varchar("proof_status", { length: 16 }).notNull().default("complete"),
+    proofStatus: varchar("proof_status", { length: 16 })
+      .notNull()
+      .default("complete"),
     bitcoinBlockHeight: bigint("bitcoin_block_height", { mode: "number" }),
     lastError: text("last_error"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     upgradedAt: timestamp("upgraded_at", { withTimezone: true }),
     verifiedAt: timestamp("verified_at", { withTimezone: true }),
   },
@@ -374,7 +402,9 @@ export const accessLog = pgTable(
     geoLocation: varchar("geo_location", { length: 255 }),
     failureReason: varchar("failure_reason", { length: 255 }),
     sessionId: varchar("session_id", { length: 255 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("acl_user_idx").on(table.userId),
@@ -402,11 +432,15 @@ export const dataExportLog = pgTable(
     entityId: uuid("entity_id"),
     description: varchar("description", { length: 500 }),
     recordCount: integer("record_count"),
-    containsPersonalData: boolean("contains_personal_data").notNull().default(false),
+    containsPersonalData: boolean("contains_personal_data")
+      .notNull()
+      .default(false),
     fileName: varchar("file_name", { length: 255 }),
     fileSizeBytes: bigint("file_size_bytes", { mode: "number" }),
     ipAddress: inet("ip_address"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("del_org_idx").on(table.orgId, table.createdAt),
@@ -444,8 +478,12 @@ export const notification = pgTable(
     emailError: text("email_error"),
     retryCount: integer("retry_count").notNull().default(0),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -484,8 +522,12 @@ export const invitation = pgTable(
     expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
     acceptedAt: timestamp("accepted_at", { withTimezone: true }),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -511,7 +553,9 @@ export const account = pgTable(
       .references(() => user.id, { onDelete: "cascade" }),
     type: varchar("type", { length: 255 }).notNull(),
     provider: varchar("provider", { length: 255 }).notNull(),
-    providerAccountId: varchar("provider_account_id", { length: 255 }).notNull(),
+    providerAccountId: varchar("provider_account_id", {
+      length: 255,
+    }).notNull(),
     refreshToken: text("refresh_token"),
     accessToken: text("access_token"),
     expiresAt: integer("expires_at"),
@@ -543,9 +587,7 @@ export const verificationToken = pgTable(
     token: varchar("token", { length: 255 }).notNull(),
     expires: timestamp("expires", { withTimezone: true }).notNull(),
   },
-  (table) => [
-    primaryKey({ columns: [table.identifier, table.token] }),
-  ],
+  (table) => [primaryKey({ columns: [table.identifier, table.token] })],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -649,8 +691,12 @@ export const organizationContact = pgTable(
     validFrom: date("valid_from", { mode: "string" }),
     validUntil: date("valid_until", { mode: "string" }),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

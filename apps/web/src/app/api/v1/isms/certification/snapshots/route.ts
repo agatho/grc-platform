@@ -98,9 +98,17 @@ export async function POST(req: Request) {
       }
       case "mgmt_review": {
         const [latest] = await db
-          .select({ reviewDate: managementReview.reviewDate, status: managementReview.status })
+          .select({
+            reviewDate: managementReview.reviewDate,
+            status: managementReview.status,
+          })
           .from(managementReview)
-          .where(and(eq(managementReview.orgId, ctx.orgId), eq(managementReview.status, "completed")))
+          .where(
+            and(
+              eq(managementReview.orgId, ctx.orgId),
+              eq(managementReview.status, "completed"),
+            ),
+          )
           .orderBy(desc(managementReview.reviewDate))
           .limit(1);
         passed = !!latest && new Date(latest.reviewDate) >= twelveMonthsAgo;
@@ -110,7 +118,12 @@ export async function POST(req: Request) {
         const [review] = await db
           .select({ auditResults: managementReview.auditResults })
           .from(managementReview)
-          .where(and(eq(managementReview.orgId, ctx.orgId), eq(managementReview.status, "completed")))
+          .where(
+            and(
+              eq(managementReview.orgId, ctx.orgId),
+              eq(managementReview.status, "completed"),
+            ),
+          )
           .orderBy(desc(managementReview.reviewDate))
           .limit(1);
         passed = !!review?.auditResults;
@@ -128,7 +141,9 @@ export async function POST(req: Request) {
           .select({ classified: sql<number>`count(*)::int` })
           .from(assetClassification)
           .where(eq(assetClassification.orgId, ctx.orgId));
-        passed = assetStats.totalAssets > 0 && classifiedStats.classified >= assetStats.totalAssets;
+        passed =
+          assetStats.totalAssets > 0 &&
+          classifiedStats.classified >= assetStats.totalAssets;
         break;
       }
       case "risk_treatment":
@@ -144,7 +159,12 @@ export async function POST(req: Request) {
             withEvidence: sql<number>`count(*) filter (where ${soaEntry.controlId} is not null and ${soaEntry.implementation} = 'implemented')::int`,
           })
           .from(soaEntry)
-          .where(and(eq(soaEntry.orgId, ctx.orgId), eq(soaEntry.applicability, "applicable")));
+          .where(
+            and(
+              eq(soaEntry.orgId, ctx.orgId),
+              eq(soaEntry.applicability, "applicable"),
+            ),
+          );
         passed = stats.total > 0 && stats.withEvidence >= stats.total * 0.8;
         break;
       }
@@ -152,7 +172,12 @@ export async function POST(req: Request) {
         const [review] = await db
           .select({ reviewDate: managementReview.reviewDate })
           .from(managementReview)
-          .where(and(eq(managementReview.orgId, ctx.orgId), eq(managementReview.status, "completed")))
+          .where(
+            and(
+              eq(managementReview.orgId, ctx.orgId),
+              eq(managementReview.status, "completed"),
+            ),
+          )
           .orderBy(desc(managementReview.reviewDate))
           .limit(1);
         passed = !!review && new Date(review.reviewDate) >= twelveMonthsAgo;
@@ -186,7 +211,10 @@ export async function POST(req: Request) {
     .where(
       and(
         eq(soaEntry.orgId, ctx.orgId),
-        or(eq(soaEntry.applicability, "applicable"), eq(soaEntry.applicability, "partially_applicable")),
+        or(
+          eq(soaEntry.applicability, "applicable"),
+          eq(soaEntry.applicability, "partially_applicable"),
+        ),
         or(
           eq(soaEntry.implementation, "not_implemented"),
           eq(soaEntry.implementation, "planned"),

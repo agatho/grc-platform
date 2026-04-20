@@ -69,7 +69,9 @@ export async function GET(req: Request) {
         )`,
       ),
     )
-    .orderBy(sql`COALESCE(${processReviewSchedule.nextReviewDate}, ${process.reviewDate}::date) ASC`);
+    .orderBy(
+      sql`COALESCE(${processReviewSchedule.nextReviewDate}, ${process.reviewDate}::date) ASC`,
+    );
 
   // Compute urgency for each row
   const todayStr = now.toISOString().split("T")[0];
@@ -88,7 +90,9 @@ export async function GET(req: Request) {
         urgency = "overdue";
       } else if (reviewDateStr <= urgentThreshold.toISOString().split("T")[0]) {
         urgency = "urgent";
-      } else if (reviewDateStr <= upcomingThreshold.toISOString().split("T")[0]) {
+      } else if (
+        reviewDateStr <= upcomingThreshold.toISOString().split("T")[0]
+      ) {
         urgency = "upcoming";
       }
     }

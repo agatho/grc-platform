@@ -79,8 +79,12 @@ export async function GET(
     )
     .groupBy(grcCostEntry.costCategory);
 
-  const actualMap = new Map(actuals.map((a) => [a.costCategory, Number(a.actual)]));
-  const forecastMap = new Map(forecasts.map((f) => [f.costCategory, Number(f.forecast)]));
+  const actualMap = new Map(
+    actuals.map((a) => [a.costCategory, Number(a.actual)]),
+  );
+  const forecastMap = new Map(
+    forecasts.map((f) => [f.costCategory, Number(f.forecast)]),
+  );
 
   const breakdown = planned.map((p) => {
     const plannedVal = Number(p.planned);
@@ -89,9 +93,10 @@ export async function GET(
 
     // Linear projection: actual/month * remaining months + actuals + known forecast
     const monthlyRate = actualToDate / monthsElapsed;
-    const projected = existingForecast > 0
-      ? actualToDate + existingForecast
-      : actualToDate + monthlyRate * monthsRemaining;
+    const projected =
+      existingForecast > 0
+        ? actualToDate + existingForecast
+        : actualToDate + monthlyRate * monthsRemaining;
 
     const forecast = Math.round(projected * 100) / 100;
     const overUnder = Math.round((plannedVal - forecast) * 100) / 100;

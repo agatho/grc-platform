@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { Loader2, Shield, Target } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 
 export default function BoardDashboardPage() {
@@ -20,10 +24,17 @@ export default function BoardDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   if (!data) return null;
 
-  const compliance = data.compliancePosture as Record<string, number> | undefined;
+  const compliance = data.compliancePosture as
+    | Record<string, number>
+    | undefined;
   const maturity = data.maturityRadar as Array<Record<string, string>>;
   const topRisks = data.topRisks as Array<Record<string, string>>;
 
@@ -43,9 +54,12 @@ export default function BoardDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-4xl font-bold">{compliance?.compliance_pct ?? 0}%</div>
+            <div className="text-4xl font-bold">
+              {compliance?.compliance_pct ?? 0}%
+            </div>
             <p className="text-sm text-muted-foreground">
-              {compliance?.compliant ?? 0} / {compliance?.total_controls ?? 0} {t("controlsCompliant")}
+              {compliance?.compliant ?? 0} / {compliance?.total_controls ?? 0}{" "}
+              {t("controlsCompliant")}
             </p>
           </CardContent>
         </Card>
@@ -61,8 +75,12 @@ export default function BoardDashboardPage() {
             <div className="space-y-2">
               {maturity?.map((m, i) => (
                 <div key={i} className="flex items-center justify-between">
-                  <span className="text-sm font-medium">{m.module_key?.toUpperCase()}</span>
-                  <Badge variant="outline">{m.current_level?.replace(/_/g, " ")}</Badge>
+                  <span className="text-sm font-medium">
+                    {m.module_key?.toUpperCase()}
+                  </span>
+                  <Badge variant="outline">
+                    {m.current_level?.replace(/_/g, " ")}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -78,12 +96,21 @@ export default function BoardDashboardPage() {
         <CardContent>
           <div className="space-y-3">
             {topRisks?.map((risk, idx) => (
-              <div key={idx} className="flex items-center justify-between p-3 border rounded-lg">
+              <div
+                key={idx}
+                className="flex items-center justify-between p-3 border rounded-lg"
+              >
                 <div>
                   <p className="font-medium">{risk.title}</p>
-                  <p className="text-sm text-muted-foreground">{risk.description?.substring(0, 100)}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {risk.description?.substring(0, 100)}
+                  </p>
                 </div>
-                <Badge variant={risk.risk_level === "critical" ? "destructive" : "secondary"}>
+                <Badge
+                  variant={
+                    risk.risk_level === "critical" ? "destructive" : "secondary"
+                  }
+                >
                   {risk.risk_level}
                 </Badge>
               </div>

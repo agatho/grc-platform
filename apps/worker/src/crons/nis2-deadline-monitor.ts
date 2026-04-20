@@ -45,7 +45,10 @@ export async function processNis2DeadlineMonitor(): Promise<Nis2DeadlineResult> 
             incidentElementId: securityIncident.elementId,
           })
           .from(nis2IncidentReport)
-          .innerJoin(securityIncident, eq(nis2IncidentReport.incidentId, securityIncident.id))
+          .innerJoin(
+            securityIncident,
+            eq(nis2IncidentReport.incidentId, securityIncident.id),
+          )
           .where(
             and(
               eq(nis2IncidentReport.orgId, org.id),

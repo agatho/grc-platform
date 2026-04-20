@@ -111,14 +111,24 @@ describe("upsertFairParametersSchema", () => {
 
 describe("runSimulationSchema", () => {
   it("validates correct iterations", () => {
-    expect(runSimulationSchema.safeParse({ iterations: 10000 }).success).toBe(true);
-    expect(runSimulationSchema.safeParse({ iterations: 1000 }).success).toBe(true);
-    expect(runSimulationSchema.safeParse({ iterations: 100000 }).success).toBe(true);
+    expect(runSimulationSchema.safeParse({ iterations: 10000 }).success).toBe(
+      true,
+    );
+    expect(runSimulationSchema.safeParse({ iterations: 1000 }).success).toBe(
+      true,
+    );
+    expect(runSimulationSchema.safeParse({ iterations: 100000 }).success).toBe(
+      true,
+    );
   });
 
   it("rejects out-of-range iterations", () => {
-    expect(runSimulationSchema.safeParse({ iterations: 50 }).success).toBe(false);
-    expect(runSimulationSchema.safeParse({ iterations: 200000 }).success).toBe(false);
+    expect(runSimulationSchema.safeParse({ iterations: 50 }).success).toBe(
+      false,
+    );
+    expect(runSimulationSchema.safeParse({ iterations: 200000 }).success).toBe(
+      false,
+    );
   });
 });
 
@@ -163,19 +173,23 @@ describe("fairCompareQuerySchema", () => {
 describe("updateRiskMethodologySchema", () => {
   it("validates all methodologies", () => {
     expect(
-      updateRiskMethodologySchema.safeParse({ riskMethodology: "qualitative" }).success,
+      updateRiskMethodologySchema.safeParse({ riskMethodology: "qualitative" })
+        .success,
     ).toBe(true);
     expect(
-      updateRiskMethodologySchema.safeParse({ riskMethodology: "fair" }).success,
+      updateRiskMethodologySchema.safeParse({ riskMethodology: "fair" })
+        .success,
     ).toBe(true);
     expect(
-      updateRiskMethodologySchema.safeParse({ riskMethodology: "hybrid" }).success,
+      updateRiskMethodologySchema.safeParse({ riskMethodology: "hybrid" })
+        .success,
     ).toBe(true);
   });
 
   it("rejects invalid methodology", () => {
     expect(
-      updateRiskMethodologySchema.safeParse({ riskMethodology: "invalid" }).success,
+      updateRiskMethodologySchema.safeParse({ riskMethodology: "invalid" })
+        .success,
     ).toBe(false);
   });
 });

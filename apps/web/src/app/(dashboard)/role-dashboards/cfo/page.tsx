@@ -4,7 +4,11 @@ import React, { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Euro, FileSearch, Loader2 } from "lucide-react";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 
 export default function CfoDashboardPage() {
@@ -19,10 +23,17 @@ export default function CfoDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   if (!data) return null;
 
-  const financial = data.financialExposure as Record<string, number> | undefined;
+  const financial = data.financialExposure as
+    | Record<string, number>
+    | undefined;
   const audit = data.auditEffort as Record<string, number> | undefined;
 
   return (
@@ -38,7 +49,9 @@ export default function CfoDashboardPage() {
             <CardDescription>{t("expectedLossP50")}</CardDescription>
             <CardTitle className="text-2xl flex items-center gap-2">
               <Euro className="h-5 w-5" />
-              {Number(financial?.total_expected_loss_p50 ?? 0).toLocaleString("de-DE")}
+              {Number(financial?.total_expected_loss_p50 ?? 0).toLocaleString(
+                "de-DE",
+              )}
             </CardTitle>
           </CardHeader>
         </Card>
@@ -60,7 +73,9 @@ export default function CfoDashboardPage() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">{t("criticalFindings")}: {audit?.critical_findings ?? 0}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("criticalFindings")}: {audit?.critical_findings ?? 0}
+            </p>
           </CardContent>
         </Card>
       </div>

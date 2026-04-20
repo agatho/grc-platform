@@ -31,10 +31,7 @@ export async function GET(
   }
 
   // Check visibility: personal dashboards only visible to owner
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
@@ -117,10 +114,7 @@ export async function PUT(
   }
 
   // Only owner or admin can edit personal dashboards
-  if (
-    existing.visibility === "personal" &&
-    existing.userId !== ctx.userId
-  ) {
+  if (existing.visibility === "personal" && existing.userId !== ctx.userId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -130,11 +124,15 @@ export async function PUT(
     };
 
     if (data.name !== undefined) updateFields.name = data.name;
-    if (data.description !== undefined) updateFields.description = data.description;
-    if (data.visibility !== undefined) updateFields.visibility = data.visibility;
-    if (data.layoutJson !== undefined) updateFields.layoutJson = data.layoutJson;
+    if (data.description !== undefined)
+      updateFields.description = data.description;
+    if (data.visibility !== undefined)
+      updateFields.visibility = data.visibility;
+    if (data.layoutJson !== undefined)
+      updateFields.layoutJson = data.layoutJson;
     if (data.isDefault !== undefined) updateFields.isDefault = data.isDefault;
-    if (data.isFavorite !== undefined) updateFields.isFavorite = data.isFavorite;
+    if (data.isFavorite !== undefined)
+      updateFields.isFavorite = data.isFavorite;
 
     const [updated] = await tx
       .update(customDashboard)
@@ -171,10 +169,7 @@ export async function DELETE(
   }
 
   // Only owner or admin can delete
-  if (
-    existing.visibility === "personal" &&
-    existing.userId !== ctx.userId
-  ) {
+  if (existing.visibility === "personal" && existing.userId !== ctx.userId) {
     const roleCtx = await withAuth("admin");
     if (roleCtx instanceof Response) return roleCtx;
   }

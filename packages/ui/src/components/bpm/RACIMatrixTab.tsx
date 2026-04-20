@@ -16,7 +16,11 @@ interface RACIMatrixTabProps {
   activities: { id: string; name: string }[];
   participants: { id: string; name: string }[];
   entries: RACIEntry[];
-  onCellClick?: (activityId: string, participantId: string, currentRole: string | null) => void;
+  onCellClick?: (
+    activityId: string,
+    participantId: string,
+    currentRole: string | null,
+  ) => void;
   onExport?: () => void;
   canEdit: boolean;
   labels?: {
@@ -49,7 +53,10 @@ export function RACIMatrixTab({
     ? participants.filter((p) => p.id === filterParticipant)
     : participants;
 
-  const getEntry = (activityId: string, participantId: string): RACIEntry | undefined => {
+  const getEntry = (
+    activityId: string,
+    participantId: string,
+  ): RACIEntry | undefined => {
     return entries.find(
       (e) => e.activityId === activityId && e.participantId === participantId,
     );
@@ -69,7 +76,9 @@ export function RACIMatrixTab({
           >
             <option value="">{labels?.filter ?? "All Participants"}</option>
             {participants.map((p) => (
-              <option key={p.id} value={p.id}>{p.name}</option>
+              <option key={p.id} value={p.id}>
+                {p.name}
+              </option>
             ))}
           </select>
           {onExport && (
@@ -103,7 +112,10 @@ export function RACIMatrixTab({
           </thead>
           <tbody>
             {activities.map((activity, idx) => (
-              <tr key={activity.id} className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}>
+              <tr
+                key={activity.id}
+                className={idx % 2 === 0 ? "bg-white" : "bg-gray-50"}
+              >
                 <td className="sticky left-0 bg-inherit px-4 py-2 text-sm text-gray-700 border-b border-gray-200">
                   {idx + 1}. {activity.name}
                 </td>
@@ -118,7 +130,12 @@ export function RACIMatrixTab({
                         <button
                           type="button"
                           onClick={() =>
-                            canEdit && onCellClick?.(activity.id, participant.id, entry.role)
+                            canEdit &&
+                            onCellClick?.(
+                              activity.id,
+                              participant.id,
+                              entry.role,
+                            )
                           }
                           disabled={!canEdit}
                           className={cn(
@@ -135,7 +152,9 @@ export function RACIMatrixTab({
                       ) : canEdit ? (
                         <button
                           type="button"
-                          onClick={() => onCellClick?.(activity.id, participant.id, null)}
+                          onClick={() =>
+                            onCellClick?.(activity.id, participant.id, null)
+                          }
                           className="w-8 h-8 rounded-md border border-dashed border-gray-300 hover:border-teal-400 transition-colors"
                         />
                       ) : null}

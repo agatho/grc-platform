@@ -63,7 +63,9 @@ function DpiaListInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("dpia.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("dpia.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("dpia.subtitle")}</p>
         </div>
         <Button size="sm" onClick={() => router.push("/dpms/dpia/new")}>
@@ -89,7 +91,9 @@ function DpiaListInner() {
           <option value="draft">{t("dpia.status.draft")}</option>
           <option value="in_progress">{t("dpia.status.in_progress")}</option>
           <option value="completed">{t("dpia.status.completed")}</option>
-          <option value="pending_dpo_review">{t("dpia.status.pending_dpo_review")}</option>
+          <option value="pending_dpo_review">
+            {t("dpia.status.pending_dpo_review")}
+          </option>
           <option value="approved">{t("dpia.status.approved")}</option>
           <option value="rejected">{t("dpia.status.rejected")}</option>
         </select>
@@ -100,7 +104,9 @@ function DpiaListInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">{t("dpia.empty")}</p>
+        <p className="text-sm text-gray-400 text-center py-8">
+          {t("dpia.empty")}
+        </p>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {items.map((item) => (
@@ -110,15 +116,24 @@ function DpiaListInner() {
               className="rounded-lg border border-gray-200 bg-white p-4 text-left hover:shadow-sm transition-shadow cursor-pointer transition-colors block"
             >
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{item.title}</h3>
-                <Badge variant="outline" className={`text-[10px] ${STATUS_COLORS[item.status] ?? ""}`}>
+                <h3 className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
+                  {item.title}
+                </h3>
+                <Badge
+                  variant="outline"
+                  className={`text-[10px] ${STATUS_COLORS[item.status] ?? ""}`}
+                >
                   {item.status.replace(/_/g, " ")}
                 </Badge>
               </div>
               <p className="text-xs text-gray-500">
-                {item.dpoConsultationRequired ? t("dpia.consultationRequired") : t("dpia.noConsultation")}
+                {item.dpoConsultationRequired
+                  ? t("dpia.consultationRequired")
+                  : t("dpia.noConsultation")}
               </p>
-              <p className="text-xs text-gray-400 mt-2">{new Date(item.updatedAt).toLocaleDateString()}</p>
+              <p className="text-xs text-gray-400 mt-2">
+                {new Date(item.updatedAt).toLocaleDateString()}
+              </p>
             </Link>
           ))}
         </div>

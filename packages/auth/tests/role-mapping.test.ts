@@ -18,7 +18,9 @@ describe("GroupRoleMapping", () => {
 
   it("should use default role when no group matches", () => {
     expect(resolveRole(["Engineering"], mappings, "viewer")).toBe("viewer");
-    expect(resolveRole(["Unknown-Group"], mappings, "process_owner")).toBe("process_owner");
+    expect(resolveRole(["Unknown-Group"], mappings, "process_owner")).toBe(
+      "process_owner",
+    );
   });
 
   it("should use default role when no mappings provided", () => {
@@ -31,7 +33,9 @@ describe("GroupRoleMapping", () => {
 
   it("should use highest-privilege role when multiple groups match", () => {
     expect(resolveRole(["GRC-Admins", "Viewers"], mappings)).toBe("admin");
-    expect(resolveRole(["Viewers", "Risk-Team"], mappings)).toBe("risk_manager");
+    expect(resolveRole(["Viewers", "Risk-Team"], mappings)).toBe(
+      "risk_manager",
+    );
     expect(resolveRole(["Auditors", "Viewers"], mappings)).toBe("auditor");
   });
 

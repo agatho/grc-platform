@@ -1,5 +1,8 @@
 import { db, audit } from "@grc/db";
-import { auditStatusTransitionSchema, isValidAuditTransition } from "@grc/shared";
+import {
+  auditStatusTransitionSchema,
+  isValidAuditTransition,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -68,12 +71,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
     const [row] = await tx
       .update(audit)
       .set(setValues)
-      .where(
-        and(
-          eq(audit.id, id),
-          eq(audit.orgId, ctx.orgId),
-        ),
-      )
+      .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId)))
       .returning();
     return row;
   });

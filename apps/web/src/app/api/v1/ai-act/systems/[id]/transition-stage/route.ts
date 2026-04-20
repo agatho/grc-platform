@@ -3,7 +3,13 @@
 // Sprint 5.1: Development-Stage-Transition mit Prohibited-Hard-Stop
 // + High-Risk-Production-Gate.
 
-import { db, aiSystem, aiProhibitedScreening, aiConformityAssessment, aiProviderQms } from "@grc/db";
+import {
+  db,
+  aiSystem,
+  aiProhibitedScreening,
+  aiConformityAssessment,
+  aiProviderQms,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   AI_STAGE_ALLOWED_TRANSITIONS,
@@ -46,7 +52,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [system] = await db
@@ -98,7 +107,12 @@ export async function POST(req: Request, { params }: RouteParams) {
     const [screening] = await db
       .select()
       .from(aiProhibitedScreening)
-      .where(and(eq(aiProhibitedScreening.aiSystemId, id), eq(aiProhibitedScreening.orgId, ctx.orgId)));
+      .where(
+        and(
+          eq(aiProhibitedScreening.aiSystemId, id),
+          eq(aiProhibitedScreening.orgId, ctx.orgId),
+        ),
+      );
 
     if (!screening) {
       return Response.json(
@@ -129,7 +143,10 @@ export async function POST(req: Request, { params }: RouteParams) {
       screening.exceptionJustification,
     );
     if (!prodCheck.allowed) {
-      return Response.json({ blocked: true, reason: prodCheck.reason }, { status: 422 });
+      return Response.json(
+        { blocked: true, reason: prodCheck.reason },
+        { status: 422 },
+      );
     }
 
     // Fuer High-Risk zusaetzlich alle 8 Gates pruefen
@@ -143,20 +160,36 @@ export async function POST(req: Request, { params }: RouteParams) {
         const [qms] = await db
           .select({ maturity: aiProviderQms.overallMaturity })
           .from(aiProviderQms)
-          .where(and(eq(aiProviderQms.orgId, ctx.orgId), eq(aiProviderQms.aiSystemId, id)));
+          .where(
+            and(
+              eq(aiProviderQms.orgId, ctx.orgId),
+              eq(aiProviderQms.aiSystemId, id),
+            ),
+          );
         const [conformity] = await db
           .select({
             overallResult: aiConformityAssessment.overallResult,
             certificateReference: aiConformityAssessment.certificateReference,
           })
           .from(aiConformityAssessment)
-          .where(and(eq(aiConformityAssessment.orgId, ctx.orgId), eq(aiConformityAssessment.aiSystemId, id)));
+          .where(
+            and(
+              eq(aiConformityAssessment.orgId, ctx.orgId),
+              eq(aiConformityAssessment.aiSystemId, id),
+            ),
+          );
         readiness = {
           hasQms: (qms?.maturity ?? 0) > 0,
           hasRiskManagement: false,
           hasDataGovernance: false,
-          hasTechnicalDocumentation: (system.technicalDocumentation as Record<string, unknown> | null)
-            ? Object.keys((system.technicalDocumentation as Record<string, unknown>) ?? {}).length > 0
+          hasTechnicalDocumentation: (system.technicalDocumentation as Record<
+            string,
+            unknown
+          > | null)
+            ? Object.keys(
+                (system.technicalDocumentation as Record<string, unknown>) ??
+                  {},
+              ).length > 0
             : false,
           hasOperationalLogging: false,
           hasHumanOversight: system.humanOversightRequired ?? false,

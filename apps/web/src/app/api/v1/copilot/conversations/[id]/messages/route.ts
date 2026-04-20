@@ -4,23 +4,43 @@ import { eq, and, desc, sql, lt } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/copilot/conversations/:id/messages — Send message + get AI response
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "auditor", "dpo", "viewer");
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "auditor",
+    "dpo",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
   const body = sendMessageSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Verify conversation exists and belongs to user
   const [conv] = await db
     .select()
     .from(copilotConversation)
-    .where(and(eq(copilotConversation.id, id), eq(copilotConversation.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(copilotConversation.id, id),
+        eq(copilotConversation.orgId, ctx.orgId),
+      ),
+    );
 
-  if (!conv) return Response.json({ error: "Conversation not found" }, { status: 404 });
+  if (!conv)
+    return Response.json({ error: "Conversation not found" }, { status: 404 });
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Insert user message
@@ -77,15 +97,31 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 // GET /api/v1/copilot/conversations/:id/messages — List messages
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "auditor", "dpo", "viewer");
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "auditor",
+    "dpo",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
   const url = new URL(req.url);
-  const query = messageQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = messageQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, before } = query.data;

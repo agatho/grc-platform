@@ -130,7 +130,10 @@ export const esgMaterialityVote = pgTable(
     voterName: varchar("voter_name", { length: 200 }),
     voterType: varchar("voter_type", { length: 50 }).notNull(),
     impactScore: numeric("impact_score", { precision: 4, scale: 2 }).notNull(),
-    financialScore: numeric("financial_score", { precision: 4, scale: 2 }).notNull(),
+    financialScore: numeric("financial_score", {
+      precision: 4,
+      scale: 2,
+    }).notNull(),
     comment: text("comment"),
     votedAt: timestamp("voted_at", { withTimezone: true })
       .notNull()

@@ -29,7 +29,13 @@ import {
 } from "@/components/ui/select";
 
 type Severity = "critical" | "high" | "medium" | "low" | "observation";
-type Status = "open" | "in_progress" | "resolved" | "verified" | "closed" | "accepted";
+type Status =
+  | "open"
+  | "in_progress"
+  | "resolved"
+  | "verified"
+  | "closed"
+  | "accepted";
 type Module =
   | "ics"
   | "audit"
@@ -101,7 +107,11 @@ const SEVERITY_META: Record<
     className: "bg-amber-100 text-amber-800 border-amber-300",
     weight: 3,
   },
-  low: { label: "LOW", className: "bg-sky-100 text-sky-800 border-sky-300", weight: 2 },
+  low: {
+    label: "LOW",
+    className: "bg-sky-100 text-sky-800 border-sky-300",
+    weight: 2,
+  },
   observation: {
     label: "OBS",
     className: "bg-slate-100 text-slate-700 border-slate-300",
@@ -158,7 +168,8 @@ export default function GrcFindingsPage() {
     if (!data) return [];
     return data.topPrioritized.filter((f) => {
       if (filterModule !== "all" && f.module !== filterModule) return false;
-      if (filterSeverity !== "all" && f.severity !== filterSeverity) return false;
+      if (filterSeverity !== "all" && f.severity !== filterSeverity)
+        return false;
       if (showOnlyOverdue && !f.isOverdue) return false;
       return true;
     });
@@ -179,7 +190,9 @@ export default function GrcFindingsPage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-2 text-red-800">
               <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">Findings konnten nicht geladen werden</p>
+              <p className="font-medium">
+                Findings konnten nicht geladen werden
+              </p>
             </div>
             <p className="text-sm text-red-700 mt-2">{error}</p>
             <Button onClick={fetchData} className="mt-4" variant="outline">
@@ -200,9 +213,12 @@ export default function GrcFindingsPage() {
     <div className="space-y-6 p-6">
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">Cross-Module Findings</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            Cross-Module Findings
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Vereinheitlichte Ansicht aus ICS, Audit, ISMS-CAP, AI-Act, DPMS, BCMS.
+            Vereinheitlichte Ansicht aus ICS, Audit, ISMS-CAP, AI-Act, DPMS,
+            BCMS.
           </p>
         </div>
         <Button onClick={fetchData} variant="outline" size="sm">
@@ -234,13 +250,21 @@ export default function GrcFindingsPage() {
               <AlertTriangle className="h-3.5 w-3.5" />
               Ueberfaellig
             </p>
-            <p className="text-2xl font-bold text-red-600">{agg.overdueCount}</p>
+            <p className="text-2xl font-bold text-red-600">
+              {agg.overdueCount}
+            </p>
           </CardContent>
         </Card>
-        <Card className={agg.criticalOpenCount > 0 ? "border-red-500 bg-red-50/30" : ""}>
+        <Card
+          className={
+            agg.criticalOpenCount > 0 ? "border-red-500 bg-red-50/30" : ""
+          }
+        >
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">Critical offen</p>
-            <p className="text-2xl font-bold text-red-700">{agg.criticalOpenCount}</p>
+            <p className="text-2xl font-bold text-red-700">
+              {agg.criticalOpenCount}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -274,7 +298,8 @@ export default function GrcFindingsPage() {
               .filter(([, c]) => c > 0)
               .sort(
                 ([a], [b]) =>
-                  SEVERITY_META[b as Severity].weight - SEVERITY_META[a as Severity].weight,
+                  SEVERITY_META[b as Severity].weight -
+                  SEVERITY_META[a as Severity].weight,
               )
               .map(([sev, count]) => (
                 <div key={sev} className="flex justify-between items-center">
@@ -293,7 +318,9 @@ export default function GrcFindingsPage() {
               .filter(([, c]) => c > 0)
               .map(([s, count]) => (
                 <div key={s} className="flex justify-between">
-                  <span className="text-muted-foreground">{STATUS_LABEL[s as Status]}</span>
+                  <span className="text-muted-foreground">
+                    {STATUS_LABEL[s as Status]}
+                  </span>
                   <span className="font-medium">{count}</span>
                 </div>
               ))}
@@ -312,7 +339,10 @@ export default function GrcFindingsPage() {
         <CardContent className="flex flex-wrap gap-3 items-center">
           <div className="flex items-center gap-2">
             <label className="text-xs text-muted-foreground">Modul:</label>
-            <Select value={filterModule} onValueChange={(v) => setFilterModule(v as Module | "all")}>
+            <Select
+              value={filterModule}
+              onValueChange={(v) => setFilterModule(v as Module | "all")}
+            >
               <SelectTrigger className="w-40 h-8">
                 <SelectValue />
               </SelectTrigger>
@@ -378,13 +408,27 @@ export default function GrcFindingsPage() {
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b bg-muted/30">
-                    <th className="text-left p-3 font-medium text-xs uppercase">Score</th>
-                    <th className="text-left p-3 font-medium text-xs uppercase">Schwere</th>
-                    <th className="text-left p-3 font-medium text-xs uppercase">Modul</th>
-                    <th className="text-left p-3 font-medium text-xs uppercase">Titel</th>
-                    <th className="text-left p-3 font-medium text-xs uppercase">Status</th>
-                    <th className="text-right p-3 font-medium text-xs uppercase">Tage offen</th>
-                    <th className="text-right p-3 font-medium text-xs uppercase">Faellig</th>
+                    <th className="text-left p-3 font-medium text-xs uppercase">
+                      Score
+                    </th>
+                    <th className="text-left p-3 font-medium text-xs uppercase">
+                      Schwere
+                    </th>
+                    <th className="text-left p-3 font-medium text-xs uppercase">
+                      Modul
+                    </th>
+                    <th className="text-left p-3 font-medium text-xs uppercase">
+                      Titel
+                    </th>
+                    <th className="text-left p-3 font-medium text-xs uppercase">
+                      Status
+                    </th>
+                    <th className="text-right p-3 font-medium text-xs uppercase">
+                      Tage offen
+                    </th>
+                    <th className="text-right p-3 font-medium text-xs uppercase">
+                      Faellig
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -393,7 +437,9 @@ export default function GrcFindingsPage() {
                       key={f.id}
                       className={`border-b hover:bg-muted/30 ${f.isOverdue ? "bg-red-50/30 dark:bg-red-950/10" : ""}`}
                     >
-                      <td className="p-3 font-mono font-bold">{f.priorityScore}</td>
+                      <td className="p-3 font-mono font-bold">
+                        {f.priorityScore}
+                      </td>
                       <td className="p-3">
                         <SeverityPill severity={f.severity} />
                       </td>
@@ -409,7 +455,10 @@ export default function GrcFindingsPage() {
                       <td className="p-3 text-right text-xs">{f.daysOpen}d</td>
                       <td className="p-3 text-right text-xs">
                         {f.isOverdue ? (
-                          <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                          <Badge
+                            variant="outline"
+                            className="bg-red-100 text-red-800 border-red-300"
+                          >
                             ueberfaellig
                           </Badge>
                         ) : f.dueDate ? (

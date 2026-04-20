@@ -2,7 +2,12 @@ import { db, continuityStrategy } from "@grc/db";
 import { createContinuityStrategySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc, ilike, or } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/strategies — Create strategy
@@ -65,13 +70,24 @@ export async function GET(req: Request) {
   const search = searchParams.get("search");
   if (search) {
     const pattern = `%${search}%`;
-    conditions.push(or(ilike(continuityStrategy.name, pattern), ilike(continuityStrategy.description, pattern))!);
+    conditions.push(
+      or(
+        ilike(continuityStrategy.name, pattern),
+        ilike(continuityStrategy.description, pattern),
+      )!,
+    );
   }
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(continuityStrategy).where(where).orderBy(desc(continuityStrategy.updatedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(continuityStrategy)
+      .where(where)
+      .orderBy(desc(continuityStrategy.updatedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(continuityStrategy).where(where),
   ]);
 

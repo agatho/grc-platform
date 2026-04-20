@@ -9,7 +9,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = apiUsageQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = apiUsageQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
     return Response.json(
       { error: "Validation failed", details: query.error.flatten() },
@@ -18,9 +20,12 @@ export async function GET(req: Request) {
   }
 
   const conditions = [eq(apiUsageLog.orgId, ctx.orgId)];
-  if (query.data.apiKeyId) conditions.push(eq(apiUsageLog.apiKeyId, query.data.apiKeyId));
-  if (query.data.startDate) conditions.push(gte(apiUsageLog.createdAt, new Date(query.data.startDate)));
-  if (query.data.endDate) conditions.push(lte(apiUsageLog.createdAt, new Date(query.data.endDate)));
+  if (query.data.apiKeyId)
+    conditions.push(eq(apiUsageLog.apiKeyId, query.data.apiKeyId));
+  if (query.data.startDate)
+    conditions.push(gte(apiUsageLog.createdAt, new Date(query.data.startDate)));
+  if (query.data.endDate)
+    conditions.push(lte(apiUsageLog.createdAt, new Date(query.data.endDate)));
 
   const { page, limit, offset } = paginate(req);
 

@@ -68,11 +68,15 @@ export function evaluateConformityChecklist(
   const fail = requirements.filter((r) => r.status === "fail").length;
   const partial = requirements.filter((r) => r.status === "partial").length;
   const na = requirements.filter((r) => r.status === "not_applicable").length;
-  const notAssessed = requirements.filter((r) => r.status === "not_assessed").length;
+  const notAssessed = requirements.filter(
+    (r) => r.status === "not_assessed",
+  ).length;
 
   const applicable = total - na;
   const coveragePercent =
-    applicable > 0 ? Math.round(((pass + fail + partial) / applicable) * 100) : 100;
+    applicable > 0
+      ? Math.round(((pass + fail + partial) / applicable) * 100)
+      : 100;
 
   const readyForDecision = notAssessed === 0;
 
@@ -128,12 +132,16 @@ export interface CeMarkingGateResult {
   certificateExpiresInDays: number | null;
 }
 
-export function validateCeMarkingGate(ctx: CeMarkingGateContext): CeMarkingGateResult {
+export function validateCeMarkingGate(
+  ctx: CeMarkingGateContext,
+): CeMarkingGateResult {
   const blockers: string[] = [];
   const warnings: string[] = [];
 
   if (ctx.conformityResult === "fail") {
-    blockers.push("Conformity-Assessment result = fail -- CE-Marking unzulaessig.");
+    blockers.push(
+      "Conformity-Assessment result = fail -- CE-Marking unzulaessig.",
+    );
   }
   if (ctx.conformityResult === "pending") {
     blockers.push("Conformity-Assessment noch nicht abgeschlossen.");
@@ -164,7 +172,8 @@ export function validateCeMarkingGate(ctx: CeMarkingGateContext): CeMarkingGateR
   let certificateExpiresInDays: number | null = null;
   if (ctx.certificateValidUntil) {
     certificateExpiresInDays = Math.floor(
-      (ctx.certificateValidUntil.getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      (ctx.certificateValidUntil.getTime() - Date.now()) /
+        (1000 * 60 * 60 * 24),
     );
     if (certificateExpiresInDays < 0) {
       blockers.push("Notified-body certificate abgelaufen.");
@@ -202,7 +211,9 @@ export interface PostMarketPlanResult {
   warnings: string[];
 }
 
-export function assessPostMarketPlan(plan: PostMarketPlanQuality): PostMarketPlanResult {
+export function assessPostMarketPlan(
+  plan: PostMarketPlanQuality,
+): PostMarketPlanResult {
   const checks: Array<[boolean, string]> = [
     [plan.hasDataCollectionProcess, "data_collection_process"],
     [plan.hasPerformanceMetricsTracking, "performance_metrics_tracking"],
@@ -224,7 +235,10 @@ export function assessPostMarketPlan(plan: PostMarketPlanQuality): PostMarketPla
   }
 
   // Adequate = alle 6 Prozesse vorhanden + Review <= 365d
-  const isAdequate = passed === checks.length && plan.reviewFrequencyDays <= 365 && plan.reviewFrequencyDays >= 1;
+  const isAdequate =
+    passed === checks.length &&
+    plan.reviewFrequencyDays <= 365 &&
+    plan.reviewFrequencyDays >= 1;
 
   return { completenessPercent, isAdequate, missing, warnings };
 }

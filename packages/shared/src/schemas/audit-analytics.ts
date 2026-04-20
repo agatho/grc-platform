@@ -47,7 +47,9 @@ export const runAnalysisSchema = z.object({
     matchFields: z.array(z.string().max(200)).max(20).optional(),
     threshold: z.number().min(0).max(100).optional(),
     minCount: z.number().int().min(1).optional(),
-    method: z.enum([...outlierMethodValues, ...samplingMethodValues]).optional(),
+    method: z
+      .enum([...outlierMethodValues, ...samplingMethodValues])
+      .optional(),
     sampleSize: z.number().int().min(1).max(10000).optional(),
     amountField: z.string().max(200).optional(),
   }),
@@ -67,5 +69,8 @@ export const createFindingFromAnalysisSchema = z.object({
 // ──────────────────────────────────────────────────────────────
 
 export const trainAuditAnalyticsModelSchema = z.object({
-  algorithm: z.enum(["linear_regression", "arima"]).optional().default("linear_regression"),
+  algorithm: z
+    .enum(["linear_regression", "arima"])
+    .optional()
+    .default("linear_regression"),
 });

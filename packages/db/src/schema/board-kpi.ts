@@ -34,8 +34,12 @@ export const riskAppetiteThreshold = pgTable(
     escalationRole: varchar("escalation_role", { length: 50 }).default("admin"),
     isActive: boolean("is_active").notNull().default(true),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
@@ -62,10 +66,16 @@ export const assuranceScoreSnapshot = pgTable(
     factors: jsonb("factors").notNull(),
     recommendations: jsonb("recommendations").default("[]"),
     snapshotDate: date("snapshot_date").notNull(),
-    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
+    computedAt: timestamp("computed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    uniqueIndex("ass_org_mod_date_idx").on(table.orgId, table.module, table.snapshotDate),
+    uniqueIndex("ass_org_mod_date_idx").on(
+      table.orgId,
+      table.module,
+      table.snapshotDate,
+    ),
     index("ass_org_idx").on(table.orgId),
     index("ass_org_date_idx").on(table.orgId, table.snapshotDate),
   ],
@@ -86,7 +96,9 @@ export const securityPostureSnapshot = pgTable(
     factors: jsonb("factors").notNull(),
     domainScores: jsonb("domain_scores").default("{}"),
     snapshotDate: date("snapshot_date").notNull(),
-    computedAt: timestamp("computed_at", { withTimezone: true }).notNull().defaultNow(),
+    computedAt: timestamp("computed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     uniqueIndex("sps_org_date_idx").on(table.orgId, table.snapshotDate),

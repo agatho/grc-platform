@@ -9,9 +9,14 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = correlationQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = correlationQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { entityType, entityId, minCorrelation } = query.data;
@@ -26,12 +31,14 @@ export async function GET(req: Request) {
       confidence: riskPrediction.confidence,
     })
     .from(riskPrediction)
-    .where(and(
-      eq(riskPrediction.orgId, ctx.orgId),
-      eq(riskPrediction.entityType, entityType),
-      eq(riskPrediction.entityId, entityId),
-      eq(riskPrediction.isActive, true),
-    ))
+    .where(
+      and(
+        eq(riskPrediction.orgId, ctx.orgId),
+        eq(riskPrediction.entityType, entityType),
+        eq(riskPrediction.entityId, entityId),
+        eq(riskPrediction.isActive, true),
+      ),
+    )
     .limit(50);
 
   return Response.json({ data: predictions });

@@ -57,7 +57,12 @@ interface QuizQuestion {
 // Steps
 // ---------------------------------------------------------------------------
 
-const STEPS = ["selectPolicy", "targetAudience", "configuration", "review"] as const;
+const STEPS = [
+  "selectPolicy",
+  "targetAudience",
+  "configuration",
+  "review",
+] as const;
 
 export default function CreateDistributionPage() {
   const t = useTranslations("policies");
@@ -139,7 +144,10 @@ export default function CreateDistributionPage() {
   const addOption = (qIdx: number) => {
     const updated = [...quizQuestions];
     if (updated[qIdx].options.length < 6) {
-      updated[qIdx] = { ...updated[qIdx], options: [...updated[qIdx].options, ""] };
+      updated[qIdx] = {
+        ...updated[qIdx],
+        options: [...updated[qIdx].options, ""],
+      };
       setQuizQuestions(updated);
     }
   };
@@ -148,9 +156,10 @@ export default function CreateDistributionPage() {
     const updated = [...quizQuestions];
     if (updated[qIdx].options.length > 2) {
       const options = updated[qIdx].options.filter((_, i) => i !== oIdx);
-      const correctIndex = updated[qIdx].correctIndex >= oIdx
-        ? Math.max(0, updated[qIdx].correctIndex - 1)
-        : updated[qIdx].correctIndex;
+      const correctIndex =
+        updated[qIdx].correctIndex >= oIdx
+          ? Math.max(0, updated[qIdx].correctIndex - 1)
+          : updated[qIdx].correctIndex;
       updated[qIdx] = { ...updated[qIdx], options, correctIndex };
       setQuizQuestions(updated);
     }
@@ -261,10 +270,10 @@ export default function CreateDistributionPage() {
               >
                 {i < step ? <Check className="h-4 w-4" /> : i + 1}
               </div>
-              <span className="text-sm hidden sm:inline">{t(`create.steps.${s}`)}</span>
-              {i < STEPS.length - 1 && (
-                <div className="h-px w-8 bg-border" />
-              )}
+              <span className="text-sm hidden sm:inline">
+                {t(`create.steps.${s}`)}
+              </span>
+              {i < STEPS.length - 1 && <div className="h-px w-8 bg-border" />}
             </div>
           ))}
         </div>
@@ -285,11 +294,14 @@ export default function CreateDistributionPage() {
                     {t("loading")}
                   </div>
                 ) : (
-                  <Select value={documentId} onValueChange={(v) => {
-                    setDocumentId(v);
-                    const doc = documents.find((d) => d.id === v);
-                    if (doc && !title) setTitle(doc.title);
-                  }}>
+                  <Select
+                    value={documentId}
+                    onValueChange={(v) => {
+                      setDocumentId(v);
+                      const doc = documents.find((d) => d.id === v);
+                      if (doc && !title) setTitle(doc.title);
+                    }}
+                  >
                     <SelectTrigger>
                       <SelectValue placeholder={t("create.selectDocument")} />
                     </SelectTrigger>
@@ -305,8 +317,14 @@ export default function CreateDistributionPage() {
               </div>
               {selectedDoc && (
                 <div className="rounded-md bg-muted p-3 text-sm">
-                  <p><strong>{t("create.version")}:</strong> v{selectedDoc.currentVersion}</p>
-                  <p><strong>{t("create.category")}:</strong> {selectedDoc.category}</p>
+                  <p>
+                    <strong>{t("create.version")}:</strong> v
+                    {selectedDoc.currentVersion}
+                  </p>
+                  <p>
+                    <strong>{t("create.category")}:</strong>{" "}
+                    {selectedDoc.category}
+                  </p>
                 </div>
               )}
               <div className="space-y-2">
@@ -352,7 +370,10 @@ export default function CreateDistributionPage() {
                           if (e.key === "Enter" && deptInput.trim()) {
                             setTargetScope({
                               ...targetScope,
-                              departments: [...targetScope.departments, deptInput.trim()],
+                              departments: [
+                                ...targetScope.departments,
+                                deptInput.trim(),
+                              ],
                             });
                             setDeptInput("");
                           }
@@ -365,7 +386,10 @@ export default function CreateDistributionPage() {
                           if (deptInput.trim()) {
                             setTargetScope({
                               ...targetScope,
-                              departments: [...targetScope.departments, deptInput.trim()],
+                              departments: [
+                                ...targetScope.departments,
+                                deptInput.trim(),
+                              ],
                             });
                             setDeptInput("");
                           }
@@ -411,13 +435,19 @@ export default function CreateDistributionPage() {
                         <SelectValue placeholder={t("create.selectRole")} />
                       </SelectTrigger>
                       <SelectContent>
-                        {["admin", "risk_manager", "control_owner", "auditor", "dpo", "process_owner", "viewer"].map(
-                          (role) => (
-                            <SelectItem key={role} value={role}>
-                              {role}
-                            </SelectItem>
-                          ),
-                        )}
+                        {[
+                          "admin",
+                          "risk_manager",
+                          "control_owner",
+                          "auditor",
+                          "dpo",
+                          "process_owner",
+                          "viewer",
+                        ].map((role) => (
+                          <SelectItem key={role} value={role}>
+                            {role}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                     <div className="flex flex-wrap gap-1">
@@ -429,7 +459,9 @@ export default function CreateDistributionPage() {
                           onClick={() =>
                             setTargetScope({
                               ...targetScope,
-                              roles: targetScope.roles.filter((_, j) => j !== i),
+                              roles: targetScope.roles.filter(
+                                (_, j) => j !== i,
+                              ),
                             })
                           }
                         >
@@ -487,14 +519,18 @@ export default function CreateDistributionPage() {
                       min={50}
                       max={100}
                       value={quizPassThreshold}
-                      onChange={(e) => setQuizPassThreshold(Number(e.target.value))}
+                      onChange={(e) =>
+                        setQuizPassThreshold(Number(e.target.value))
+                      }
                     />
                   </div>
 
                   {quizQuestions.map((q, qIdx) => (
                     <Card key={qIdx} className="p-4 space-y-3">
                       <div className="flex items-center justify-between">
-                        <Label>{t("create.question")} {qIdx + 1}</Label>
+                        <Label>
+                          {t("create.question")} {qIdx + 1}
+                        </Label>
                         <Button
                           variant="ghost"
                           size="icon"
@@ -505,7 +541,9 @@ export default function CreateDistributionPage() {
                       </div>
                       <Input
                         value={q.question}
-                        onChange={(e) => updateQuestion(qIdx, "question", e.target.value)}
+                        onChange={(e) =>
+                          updateQuestion(qIdx, "question", e.target.value)
+                        }
                         placeholder={t("create.questionPlaceholder")}
                       />
                       <div className="space-y-2">
@@ -515,11 +553,15 @@ export default function CreateDistributionPage() {
                               type="radio"
                               name={`correct-${qIdx}`}
                               checked={q.correctIndex === oIdx}
-                              onChange={() => updateQuestion(qIdx, "correctIndex", oIdx)}
+                              onChange={() =>
+                                updateQuestion(qIdx, "correctIndex", oIdx)
+                              }
                             />
                             <Input
                               value={opt}
-                              onChange={(e) => updateOption(qIdx, oIdx, e.target.value)}
+                              onChange={(e) =>
+                                updateOption(qIdx, oIdx, e.target.value)
+                              }
                               placeholder={`${t("create.option")} ${oIdx + 1}`}
                               className="flex-1"
                             />
@@ -582,15 +624,23 @@ export default function CreateDistributionPage() {
             <CardContent className="space-y-4">
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.document")}</p>
-                  <p>{selectedDoc?.title ?? "-"} (v{selectedDoc?.currentVersion})</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.document")}
+                  </p>
+                  <p>
+                    {selectedDoc?.title ?? "-"} (v{selectedDoc?.currentVersion})
+                  </p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.distributionTitle")}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.distributionTitle")}
+                  </p>
                   <p>{title}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.target")}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.target")}
+                  </p>
                   <p>
                     {targetScope.allUsers
                       ? t("create.allEmployees")
@@ -601,15 +651,25 @@ export default function CreateDistributionPage() {
                   </p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.deadline")}</p>
-                  <p>{deadline ? new Date(deadline).toLocaleDateString("de-DE") : "-"}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.deadline")}
+                  </p>
+                  <p>
+                    {deadline
+                      ? new Date(deadline).toLocaleDateString("de-DE")
+                      : "-"}
+                  </p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.mandatoryReading")}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.mandatoryReading")}
+                  </p>
                   <p>{isMandatory ? t("mandatory") : t("optional")}</p>
                 </div>
                 <div>
-                  <p className="font-medium text-muted-foreground">{t("create.enableQuiz")}</p>
+                  <p className="font-medium text-muted-foreground">
+                    {t("create.enableQuiz")}
+                  </p>
                   <p>
                     {requiresQuiz
                       ? `${t("yes")} (${quizQuestions.length} ${t("create.questions")}, ${quizPassThreshold}%)`
@@ -647,14 +707,18 @@ export default function CreateDistributionPage() {
                   onClick={() => handleSubmit(false)}
                   disabled={submitting}
                 >
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {submitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {t("create.saveAsDraft")}
                 </Button>
                 <Button
                   onClick={() => handleSubmit(true)}
                   disabled={submitting}
                 >
-                  {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  {submitting && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   <Send className="mr-2 h-4 w-4" />
                   {t("create.sendNow")}
                 </Button>

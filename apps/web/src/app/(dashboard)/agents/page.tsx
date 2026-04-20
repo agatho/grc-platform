@@ -47,7 +47,11 @@ export default function AgentDashboardPage() {
   }, [fetchData]);
 
   if (loading || !data) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -70,25 +74,37 @@ export default function AgentDashboardPage() {
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("activeAgents")}</p>
-            <p className="text-2xl font-bold">{data.activeAgents} / {data.totalAgents}</p>
+            <p className="text-2xl font-bold">
+              {data.activeAgents} / {data.totalAgents}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("lastScan")}</p>
-            <p className="text-2xl font-bold">{data.lastScanAt ? new Date(data.lastScanAt).toLocaleString() : "-"}</p>
+            <p className="text-2xl font-bold">
+              {data.lastScanAt
+                ? new Date(data.lastScanAt).toLocaleString()
+                : "-"}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("openRecommendations")}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("openRecommendations")}
+            </p>
             <p className="text-2xl font-bold">{data.pendingRecommendations}</p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("criticalAlerts")}</p>
-            <p className="text-2xl font-bold text-red-600">{data.criticalAlerts}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("criticalAlerts")}
+            </p>
+            <p className="text-2xl font-bold text-red-600">
+              {data.criticalAlerts}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -109,10 +125,17 @@ export default function AgentDashboardPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-2">
-              <p className="text-sm text-muted-foreground">{agent.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {agent.description}
+              </p>
               <div className="flex items-center justify-between text-sm">
-                <span>{t("log.itemsFound")}: {agent.totalRunCount} runs</span>
-                <span>{agent.totalRecommendations} {t("recommendations.title").toLowerCase()}</span>
+                <span>
+                  {t("log.itemsFound")}: {agent.totalRunCount} runs
+                </span>
+                <span>
+                  {agent.totalRecommendations}{" "}
+                  {t("recommendations.title").toLowerCase()}
+                </span>
               </div>
               <div className="flex gap-2">
                 <Link href={`/agents/${agent.id}`}>
@@ -121,10 +144,16 @@ export default function AgentDashboardPage() {
                     {t("configure")}
                   </Button>
                 </Link>
-                <Button size="sm" variant="outline" onClick={async () => {
-                  await fetch(`/api/v1/agents/${agent.id}/run`, { method: "POST" });
-                  fetchData();
-                }}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={async () => {
+                    await fetch(`/api/v1/agents/${agent.id}/run`, {
+                      method: "POST",
+                    });
+                    fetchData();
+                  }}
+                >
                   <Play className="h-3 w-3 mr-1" />
                   {t("runNow")}
                 </Button>

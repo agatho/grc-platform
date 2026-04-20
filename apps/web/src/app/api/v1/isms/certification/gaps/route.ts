@@ -1,8 +1,4 @@
-import {
-  db,
-  soaEntry,
-  catalogEntry,
-} from "@grc/db";
+import { db, soaEntry, catalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, or } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";

@@ -164,8 +164,13 @@ function TreeNode({
         )}
 
         {/* Type badge */}
-        <Badge variant={typeBadgeVariant(node.type)} className="text-[10px] px-1.5 py-0">
-          {t(`types.${node.type as "subsidiary" | "holding" | "joint_venture" | "branch"}`)}
+        <Badge
+          variant={typeBadgeVariant(node.type)}
+          className="text-[10px] px-1.5 py-0"
+        >
+          {t(
+            `types.${node.type as "subsidiary" | "holding" | "joint_venture" | "branch"}`,
+          )}
         </Badge>
 
         {/* Country flag */}
@@ -209,7 +214,7 @@ export default function OrganizationTreePage() {
     try {
       const res = await fetch("/api/v1/organizations/tree");
       if (!res.ok) throw new Error("Failed to fetch tree");
-      const json = await res.json() as { data: OrgNode[] };
+      const json = (await res.json()) as { data: OrgNode[] };
       setTree(json.data);
       // Auto-expand the first level
       const firstLevelIds = new Set(

@@ -1,7 +1,12 @@
 import { db, retentionSchedule } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { createRetentionScheduleSchema } from "@grc/shared";
 
 // GET /api/v1/dpms/retention-schedules — List retention schedules
@@ -15,8 +20,13 @@ export async function GET(req: Request) {
   const where = eq(retentionSchedule.orgId, ctx.orgId);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(retentionSchedule).where(where)
-      .orderBy(desc(retentionSchedule.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(retentionSchedule)
+      .where(where)
+      .orderBy(desc(retentionSchedule.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(retentionSchedule).where(where),
   ]);
 
@@ -32,15 +42,21 @@ export async function POST(req: Request) {
 
   const body = createRetentionScheduleSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [item] = await tx.insert(retentionSchedule).values({
-      orgId: ctx.orgId,
-      createdBy: ctx.userId,
-      ...body.data,
-    }).returning();
+    const [item] = await tx
+      .insert(retentionSchedule)
+      .values({
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+        ...body.data,
+      })
+      .returning();
     return item;
   });
 

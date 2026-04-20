@@ -20,10 +20,15 @@ export async function GET(
   const [bia] = await db
     .select({ id: biaAssessment.id })
     .from(biaAssessment)
-    .where(and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)));
+    .where(
+      and(eq(biaAssessment.id, biaId), eq(biaAssessment.orgId, ctx.orgId)),
+    );
 
   if (!bia) {
-    return Response.json({ error: "BIA assessment not found" }, { status: 404 });
+    return Response.json(
+      { error: "BIA assessment not found" },
+      { status: 404 },
+    );
   }
 
   const impacts = await db

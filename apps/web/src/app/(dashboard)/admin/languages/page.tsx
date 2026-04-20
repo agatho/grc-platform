@@ -2,14 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Globe,
-  Check,
-  Plus,
-  Star,
-  ArrowRight,
-  Settings2,
-} from "lucide-react";
+import { Globe, Check, Plus, Star, ArrowRight, Settings2 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -246,9 +239,7 @@ export default function LanguageConfigPage() {
                 .filter((l) => l.isActive)
                 .map((lang) => (
                   <TableRow key={lang.code}>
-                    <TableCell className="font-medium">
-                      {lang.label}
-                    </TableCell>
+                    <TableCell className="font-medium">{lang.label}</TableCell>
                     <TableCell>
                       <Badge variant="outline">{lang.code}</Badge>
                     </TableCell>
@@ -324,8 +315,7 @@ export default function LanguageConfigPage() {
                         .filter((l) => l !== defaultLanguage)
                         .map((lang) => {
                           const cell = heatmap.find(
-                            (h) =>
-                              h.entityType === et && h.language === lang,
+                            (h) => h.entityType === et && h.language === lang,
                           );
                           const pct = cell?.percentage ?? 0;
                           return (

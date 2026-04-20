@@ -111,9 +111,7 @@ export default function ImportJobDetailPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">
-            Import: {job.fileName}
-          </h1>
+          <h1 className="text-2xl font-bold">Import: {job.fileName}</h1>
           <p className="text-muted-foreground">
             {t(`entityTypes.${job.entityType}`)} |{" "}
             {new Date(job.createdAt).toLocaleDateString("de-DE")}
@@ -122,10 +120,7 @@ export default function ImportJobDetailPage() {
         <Button
           variant="outline"
           onClick={() =>
-            window.open(
-              `/api/v1/import/${jobId}/log?format=csv`,
-              "_blank",
-            )
+            window.open(`/api/v1/import/${jobId}/log?format=csv`, "_blank")
           }
         >
           <Download className="mr-2 h-4 w-4" />
@@ -186,7 +181,9 @@ export default function ImportJobDetailPage() {
                 <div key={csv} className="flex items-center gap-2 text-sm">
                   <span className="font-mono">{csv}</span>
                   <span className="text-muted-foreground">→</span>
-                  <span className={db ? "font-medium" : "text-muted-foreground"}>
+                  <span
+                    className={db ? "font-medium" : "text-muted-foreground"}
+                  >
                     {db ?? "(unmapped)"}
                   </span>
                 </div>
@@ -208,8 +205,12 @@ export default function ImportJobDetailPage() {
                 <thead className="bg-muted sticky top-0">
                   <tr>
                     <th className="p-2 text-left">{t("wizard.step4.row")}</th>
-                    <th className="p-2 text-left">{t("wizard.step4.status")}</th>
-                    <th className="p-2 text-left">{t("wizard.step4.entityId")}</th>
+                    <th className="p-2 text-left">
+                      {t("wizard.step4.status")}
+                    </th>
+                    <th className="p-2 text-left">
+                      {t("wizard.step4.entityId")}
+                    </th>
                     <th className="p-2 text-left">{t("wizard.step4.error")}</th>
                   </tr>
                 </thead>

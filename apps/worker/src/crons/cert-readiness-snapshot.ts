@@ -25,7 +25,9 @@ interface CertSnapshotResult {
 
 export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult> {
   const now = new Date();
-  console.log(`[cron:cert-readiness-snapshot] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:cert-readiness-snapshot] Starting at ${now.toISOString()}`,
+  );
 
   let orgsProcessed = 0;
   let snapshotsCreated = 0;
@@ -64,19 +66,33 @@ export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult
             }
             case "mgmt_review": {
               const [latest] = await db
-                .select({ reviewDate: managementReview.reviewDate, status: managementReview.status })
+                .select({
+                  reviewDate: managementReview.reviewDate,
+                  status: managementReview.status,
+                })
                 .from(managementReview)
-                .where(and(eq(managementReview.orgId, org.id), eq(managementReview.status, "completed")))
+                .where(
+                  and(
+                    eq(managementReview.orgId, org.id),
+                    eq(managementReview.status, "completed"),
+                  ),
+                )
                 .orderBy(desc(managementReview.reviewDate))
                 .limit(1);
-              passed = !!latest && new Date(latest.reviewDate) >= twelveMonthsAgo;
+              passed =
+                !!latest && new Date(latest.reviewDate) >= twelveMonthsAgo;
               break;
             }
             case "internal_audit": {
               const [review] = await db
                 .select({ auditResults: managementReview.auditResults })
                 .from(managementReview)
-                .where(and(eq(managementReview.orgId, org.id), eq(managementReview.status, "completed")))
+                .where(
+                  and(
+                    eq(managementReview.orgId, org.id),
+                    eq(managementReview.status, "completed"),
+                  ),
+                )
                 .orderBy(desc(managementReview.reviewDate))
                 .limit(1);
               passed = !!review?.auditResults;
@@ -94,7 +110,9 @@ export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult
                 .select({ classified: sql<number>`count(*)::int` })
                 .from(assetClassification)
                 .where(eq(assetClassification.orgId, org.id));
-              passed = assetStats.totalAssets > 0 && classifiedStats.classified >= assetStats.totalAssets;
+              passed =
+                assetStats.totalAssets > 0 &&
+                classifiedStats.classified >= assetStats.totalAssets;
               break;
             }
             case "risk_treatment":
@@ -110,18 +128,30 @@ export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult
                   withEvidence: sql<number>`count(*) filter (where ${soaEntry.controlId} is not null and ${soaEntry.implementation} = 'implemented')::int`,
                 })
                 .from(soaEntry)
-                .where(and(eq(soaEntry.orgId, org.id), eq(soaEntry.applicability, "applicable")));
-              passed = stats.total > 0 && stats.withEvidence >= stats.total * 0.8;
+                .where(
+                  and(
+                    eq(soaEntry.orgId, org.id),
+                    eq(soaEntry.applicability, "applicable"),
+                  ),
+                );
+              passed =
+                stats.total > 0 && stats.withEvidence >= stats.total * 0.8;
               break;
             }
             case "policy_current": {
               const [review] = await db
                 .select({ reviewDate: managementReview.reviewDate })
                 .from(managementReview)
-                .where(and(eq(managementReview.orgId, org.id), eq(managementReview.status, "completed")))
+                .where(
+                  and(
+                    eq(managementReview.orgId, org.id),
+                    eq(managementReview.status, "completed"),
+                  ),
+                )
                 .orderBy(desc(managementReview.reviewDate))
                 .limit(1);
-              passed = !!review && new Date(review.reviewDate) >= twelveMonthsAgo;
+              passed =
+                !!review && new Date(review.reviewDate) >= twelveMonthsAgo;
               break;
             }
             case "scope_defined": {
@@ -152,7 +182,10 @@ export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult
           .where(
             and(
               eq(soaEntry.orgId, org.id),
-              or(eq(soaEntry.applicability, "applicable"), eq(soaEntry.applicability, "partially_applicable")),
+              or(
+                eq(soaEntry.applicability, "applicable"),
+                eq(soaEntry.applicability, "partially_applicable"),
+              ),
               or(
                 eq(soaEntry.implementation, "not_implemented"),
                 eq(soaEntry.implementation, "planned"),

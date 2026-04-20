@@ -18,7 +18,9 @@ export async function callGemini(
   const parts: string[] = [];
   if (systemMsg) parts.push(`[System Instructions]\n${systemMsg.content}\n`);
   for (const msg of userMsgs) {
-    parts.push(`[${msg.role === "user" ? "User" : "Assistant"}]\n${msg.content}`);
+    parts.push(
+      `[${msg.role === "user" ? "User" : "Assistant"}]\n${msg.content}`,
+    );
   }
 
   const result = await generativeModel.generateContent({

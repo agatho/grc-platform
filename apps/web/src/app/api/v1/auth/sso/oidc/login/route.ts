@@ -10,7 +10,10 @@ export async function GET(req: Request) {
   const orgId = url.searchParams.get("orgId");
 
   if (!orgId) {
-    return Response.json({ error: "orgId parameter required" }, { status: 400 });
+    return Response.json(
+      { error: "orgId parameter required" },
+      { status: 400 },
+    );
   }
 
   const [config] = await db
@@ -79,7 +82,8 @@ export async function GET(req: Request) {
     const redirectUrl = `${discovery.authorization_endpoint}?${params.toString()}`;
     return Response.redirect(redirectUrl, 302);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "OIDC discovery failed";
+    const message =
+      err instanceof Error ? err.message : "OIDC discovery failed";
     return Response.json({ error: message }, { status: 500 });
   }
 }

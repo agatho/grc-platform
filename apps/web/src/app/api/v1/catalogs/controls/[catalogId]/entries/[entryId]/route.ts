@@ -16,10 +16,7 @@ export async function GET(
     .select()
     .from(catalogEntry)
     .where(
-      and(
-        eq(catalogEntry.id, entryId),
-        eq(catalogEntry.catalogId, catalogId),
-      ),
+      and(eq(catalogEntry.id, entryId), eq(catalogEntry.catalogId, catalogId)),
     );
 
   if (!entry) {

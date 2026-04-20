@@ -47,7 +47,10 @@ interface CheckResult {
 function statusPill(status: CheckStatus) {
   if (status === "pass") {
     return (
-      <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+      <Badge
+        variant="outline"
+        className="bg-emerald-100 text-emerald-800 border-emerald-300"
+      >
         <CheckCircle2 className="h-3 w-3 mr-1" />
         Pass
       </Badge>
@@ -55,7 +58,10 @@ function statusPill(status: CheckStatus) {
   }
   if (status === "fail") {
     return (
-      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+      <Badge
+        variant="outline"
+        className="bg-red-100 text-red-800 border-red-300"
+      >
         <XCircle className="h-3 w-3 mr-1" />
         Fail
       </Badge>
@@ -63,7 +69,10 @@ function statusPill(status: CheckStatus) {
   }
   if (status === "warning") {
     return (
-      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+      <Badge
+        variant="outline"
+        className="bg-amber-100 text-amber-800 border-amber-300"
+      >
         <AlertTriangle className="h-3 w-3 mr-1" />
         Warnung
       </Badge>
@@ -109,7 +118,9 @@ export default function ComplianceWizardPage() {
     section8_DeclarationOfConformity: "",
     section9_PostMarketMonitoring: "",
   });
-  const [annexIvResult, setAnnexIvResult] = useState<CheckResult>({ status: "not_run" });
+  const [annexIvResult, setAnnexIvResult] = useState<CheckResult>({
+    status: "not_run",
+  });
 
   // ─── Logging ─────────────────────────────────────────────
   const [logging, setLogging] = useState({
@@ -121,7 +132,9 @@ export default function ComplianceWizardPage() {
     includeOutput: true,
     includeIncident: true,
   });
-  const [loggingResult, setLoggingResult] = useState<CheckResult>({ status: "not_run" });
+  const [loggingResult, setLoggingResult] = useState<CheckResult>({
+    status: "not_run",
+  });
 
   // ─── Oversight ───────────────────────────────────────────
   const [oversight, setOversight] = useState({
@@ -132,7 +145,9 @@ export default function ComplianceWizardPage() {
     hasDefinedRoles: false,
     assignedOversightPersonnel: 2,
   });
-  const [oversightResult, setOversightResult] = useState<CheckResult>({ status: "not_run" });
+  const [oversightResult, setOversightResult] = useState<CheckResult>({
+    status: "not_run",
+  });
 
   // ─── CE Marking Gate ─────────────────────────────────────
   const [ceGate, setCeGate] = useState({
@@ -161,10 +176,15 @@ export default function ComplianceWizardPage() {
         });
         if (!res.ok) {
           const err = await res.text();
-          setResult({ status: "fail", warnings: [`API error ${res.status}: ${err}`] });
+          setResult({
+            status: "fail",
+            warnings: [`API error ${res.status}: ${err}`],
+          });
           return;
         }
-        const { data } = (await res.json()) as { data: Record<string, unknown> };
+        const { data } = (await res.json()) as {
+          data: Record<string, unknown>;
+        };
         setResult({
           status: extractStatus(data),
           score:
@@ -227,7 +247,11 @@ export default function ComplianceWizardPage() {
     if (logging.includeInput) categories.push("input_data");
     if (logging.includeOutput) categories.push("output_decision");
     if (logging.includeIncident) categories.push("incident");
-    categories.push("user_interaction", "performance_metric", "model_version_change");
+    categories.push(
+      "user_interaction",
+      "performance_metric",
+      "model_version_change",
+    );
     return runCheck(
       `/api/v1/ai-act/systems/${id}/logging-check`,
       { ...logging, loggedCategories: categories },
@@ -256,7 +280,13 @@ export default function ComplianceWizardPage() {
     );
 
   const runAll = async () => {
-    await Promise.all([runDg(), runAnnexIv(), runLogging(), runOversight(), runCe()]);
+    await Promise.all([
+      runDg(),
+      runAnnexIv(),
+      runLogging(),
+      runOversight(),
+      runCe(),
+    ]);
   };
 
   const section = (
@@ -281,7 +311,11 @@ export default function ComplianceWizardPage() {
             </div>
             <div className="flex items-center gap-2">
               {statusPill(result.status)}
-              <Button size="sm" onClick={onRun} disabled={result.status === "running"}>
+              <Button
+                size="sm"
+                onClick={onRun}
+                disabled={result.status === "running"}
+              >
                 Pruefen
               </Button>
             </div>
@@ -315,7 +349,10 @@ export default function ComplianceWizardPage() {
               {result.warnings && result.warnings.length > 0 && (
                 <ul className="space-y-1">
                   {result.warnings.map((w, i) => (
-                    <li key={i} className="flex items-start gap-2 text-xs text-amber-700">
+                    <li
+                      key={i}
+                      className="flex items-start gap-2 text-xs text-amber-700"
+                    >
                       <AlertTriangle className="h-3 w-3 mt-0.5 flex-shrink-0" />
                       <span>{w}</span>
                     </li>
@@ -355,11 +392,13 @@ export default function ComplianceWizardPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zu System
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">AI-Act Compliance Wizard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            AI-Act Compliance Wizard
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Fuehrt alle relevanten Compliance-Checks gegen das AI-System aus: Art. 10
-            Data-Governance, Art. 11 Annex IV, Art. 12 Logging, Art. 14 Oversight, Art. 43
-            CE-Marking-Gate.
+            Fuehrt alle relevanten Compliance-Checks gegen das AI-System aus:
+            Art. 10 Data-Governance, Art. 11 Annex IV, Art. 12 Logging, Art. 14
+            Oversight, Art. 43 CE-Marking-Gate.
           </p>
         </div>
         <Button onClick={runAll}>
@@ -382,23 +421,41 @@ export default function ComplianceWizardPage() {
             dg.hasTrainingDataDescription,
             (v) => setDg({ ...dg, hasTrainingDataDescription: v }),
           )}
-          {boolRow("dg-coll", "Daten-Erhebungsprozess dokumentiert", dg.hasDataCollectionProcess, (v) =>
-            setDg({ ...dg, hasDataCollectionProcess: v }),
+          {boolRow(
+            "dg-coll",
+            "Daten-Erhebungsprozess dokumentiert",
+            dg.hasDataCollectionProcess,
+            (v) => setDg({ ...dg, hasDataCollectionProcess: v }),
           )}
-          {boolRow("dg-lab", "Labeling-Prozess dokumentiert", dg.hasLabelingProcess, (v) =>
-            setDg({ ...dg, hasLabelingProcess: v }),
+          {boolRow(
+            "dg-lab",
+            "Labeling-Prozess dokumentiert",
+            dg.hasLabelingProcess,
+            (v) => setDg({ ...dg, hasLabelingProcess: v }),
           )}
-          {boolRow("dg-clean", "Data-Cleaning Steps dokumentiert", dg.hasDataCleaningSteps, (v) =>
-            setDg({ ...dg, hasDataCleaningSteps: v }),
+          {boolRow(
+            "dg-clean",
+            "Data-Cleaning Steps dokumentiert",
+            dg.hasDataCleaningSteps,
+            (v) => setDg({ ...dg, hasDataCleaningSteps: v }),
           )}
-          {boolRow("dg-demo", "Demographische Abdeckung analysiert", dg.hasDemographicCoverage, (v) =>
-            setDg({ ...dg, hasDemographicCoverage: v }),
+          {boolRow(
+            "dg-demo",
+            "Demographische Abdeckung analysiert",
+            dg.hasDemographicCoverage,
+            (v) => setDg({ ...dg, hasDemographicCoverage: v }),
           )}
-          {boolRow("dg-bias", "Bias-Testing durchgefuehrt", dg.hasBiasTestingDone, (v) =>
-            setDg({ ...dg, hasBiasTestingDone: v }),
+          {boolRow(
+            "dg-bias",
+            "Bias-Testing durchgefuehrt",
+            dg.hasBiasTestingDone,
+            (v) => setDg({ ...dg, hasBiasTestingDone: v }),
           )}
-          {boolRow("dg-prov", "Data-Provenance dokumentiert", dg.hasDataProvenance, (v) =>
-            setDg({ ...dg, hasDataProvenance: v }),
+          {boolRow(
+            "dg-prov",
+            "Data-Provenance dokumentiert",
+            dg.hasDataProvenance,
+            (v) => setDg({ ...dg, hasDataProvenance: v }),
           )}
           {boolRow(
             "dg-legal",
@@ -415,7 +472,9 @@ export default function ComplianceWizardPage() {
               type="number"
               min="0"
               value={dg.datasetSize}
-              onChange={(e) => setDg({ ...dg, datasetSize: parseInt(e.target.value) || 0 })}
+              onChange={(e) =>
+                setDg({ ...dg, datasetSize: parseInt(e.target.value) || 0 })
+              }
               className="h-8"
             />
           </div>
@@ -433,14 +492,23 @@ export default function ComplianceWizardPage() {
           {(
             [
               ["section1_GeneralDescription", "Section 1: General description"],
-              ["section2_DetailedElements", "Section 2: Detailed elements + dev process"],
+              [
+                "section2_DetailedElements",
+                "Section 2: Detailed elements + dev process",
+              ],
               ["section3_Monitoring", "Section 3: Monitoring + functioning"],
               ["section4_PerformanceMetrics", "Section 4: Performance metrics"],
               ["section5_RiskManagement", "Section 5: Risk management system"],
               ["section6_LifecycleChanges", "Section 6: Lifecycle changes"],
-              ["section7_HarmonisedStandards", "Section 7: Harmonised standards"],
+              [
+                "section7_HarmonisedStandards",
+                "Section 7: Harmonised standards",
+              ],
               ["section8_DeclarationOfConformity", "Section 8: DoC copy"],
-              ["section9_PostMarketMonitoring", "Section 9: Post-market monitoring"],
+              [
+                "section9_PostMarketMonitoring",
+                "Section 9: Post-market monitoring",
+              ],
             ] as const
           ).map(([key, label]) => {
             const v = annexIv[key as keyof typeof annexIv];
@@ -459,7 +527,9 @@ export default function ComplianceWizardPage() {
                 <Textarea
                   rows={2}
                   value={v}
-                  onChange={(e) => setAnnexIv({ ...annexIv, [key]: e.target.value })}
+                  onChange={(e) =>
+                    setAnnexIv({ ...annexIv, [key]: e.target.value })
+                  }
                   className="text-xs"
                 />
               </div>
@@ -488,17 +558,29 @@ export default function ComplianceWizardPage() {
             logging.tamperEvidentStorage,
             (v) => setLogging({ ...logging, tamperEvidentStorage: v }),
           )}
-          {boolRow("log-export", "Logs exportierbar fuer Behoerden", logging.logsExportable, (v) =>
-            setLogging({ ...logging, logsExportable: v }),
+          {boolRow(
+            "log-export",
+            "Logs exportierbar fuer Behoerden",
+            logging.logsExportable,
+            (v) => setLogging({ ...logging, logsExportable: v }),
           )}
-          {boolRow("log-input", "Input-Daten geloggt", logging.includeInput, (v) =>
-            setLogging({ ...logging, includeInput: v }),
+          {boolRow(
+            "log-input",
+            "Input-Daten geloggt",
+            logging.includeInput,
+            (v) => setLogging({ ...logging, includeInput: v }),
           )}
-          {boolRow("log-output", "Output-Entscheidungen geloggt", logging.includeOutput, (v) =>
-            setLogging({ ...logging, includeOutput: v }),
+          {boolRow(
+            "log-output",
+            "Output-Entscheidungen geloggt",
+            logging.includeOutput,
+            (v) => setLogging({ ...logging, includeOutput: v }),
           )}
-          {boolRow("log-incident", "Incidents geloggt", logging.includeIncident, (v) =>
-            setLogging({ ...logging, includeIncident: v }),
+          {boolRow(
+            "log-incident",
+            "Incidents geloggt",
+            logging.includeIncident,
+            (v) => setLogging({ ...logging, includeIncident: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="log-retention" className="text-xs">
@@ -510,7 +592,10 @@ export default function ComplianceWizardPage() {
               min="0"
               value={logging.logRetentionDays}
               onChange={(e) =>
-                setLogging({ ...logging, logRetentionDays: parseInt(e.target.value) || 0 })
+                setLogging({
+                  ...logging,
+                  logRetentionDays: parseInt(e.target.value) || 0,
+                })
               }
               className="h-8"
             />
@@ -532,8 +617,11 @@ export default function ComplianceWizardPage() {
             oversight.hasUnderstandableOutputs,
             (v) => setOversight({ ...oversight, hasUnderstandableOutputs: v }),
           )}
-          {boolRow("ov-override", "Override-Capability", oversight.hasOverrideCapability, (v) =>
-            setOversight({ ...oversight, hasOverrideCapability: v }),
+          {boolRow(
+            "ov-override",
+            "Override-Capability",
+            oversight.hasOverrideCapability,
+            (v) => setOversight({ ...oversight, hasOverrideCapability: v }),
           )}
           {boolRow("ov-stop", "Stop-Funktion", oversight.hasStopFunction, (v) =>
             setOversight({ ...oversight, hasStopFunction: v }),
@@ -544,8 +632,11 @@ export default function ComplianceWizardPage() {
             oversight.hasAutomationBiasTraining,
             (v) => setOversight({ ...oversight, hasAutomationBiasTraining: v }),
           )}
-          {boolRow("ov-roles", "Rollen definiert", oversight.hasDefinedRoles, (v) =>
-            setOversight({ ...oversight, hasDefinedRoles: v }),
+          {boolRow(
+            "ov-roles",
+            "Rollen definiert",
+            oversight.hasDefinedRoles,
+            (v) => setOversight({ ...oversight, hasDefinedRoles: v }),
           )}
           <div className="col-span-2">
             <Label htmlFor="ov-personnel" className="text-xs">
@@ -585,7 +676,10 @@ export default function ComplianceWizardPage() {
               className="w-full h-8 border rounded px-2 text-sm"
               value={ceGate.procedure}
               onChange={(e) =>
-                setCeGate({ ...ceGate, procedure: e.target.value as "annex_vi" | "annex_vii" })
+                setCeGate({
+                  ...ceGate,
+                  procedure: e.target.value as "annex_vi" | "annex_vii",
+                })
               }
             >
               <option value="annex_vi">Annex VI (Self-Assessment)</option>
@@ -596,7 +690,8 @@ export default function ComplianceWizardPage() {
             "ce-doc",
             "Declaration-of-Conformity unterzeichnet",
             ceGate.hasSignedDeclarationOfConformity,
-            (v) => setCeGate({ ...ceGate, hasSignedDeclarationOfConformity: v }),
+            (v) =>
+              setCeGate({ ...ceGate, hasSignedDeclarationOfConformity: v }),
           )}
           {boolRow(
             "ce-nb",

@@ -96,9 +96,7 @@ export async function PUT(
         assetTier: asset.assetTier,
       })
       .from(asset)
-      .where(
-        and(eq(asset.id, newParentId), isNull(asset.deletedAt)),
-      );
+      .where(and(eq(asset.id, newParentId), isNull(asset.deletedAt)));
 
     if (!parent) {
       return Response.json(

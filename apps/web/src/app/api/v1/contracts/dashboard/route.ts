@@ -17,7 +17,10 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("contract", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const baseWhere = and(eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt));
+  const baseWhere = and(
+    eq(contract.orgId, ctx.orgId),
+    isNull(contract.deletedAt),
+  );
 
   const [
     [{ value: totalContracts }],

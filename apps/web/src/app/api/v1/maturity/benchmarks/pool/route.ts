@@ -12,17 +12,27 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const query = listBenchmarksQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = listBenchmarksQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   const conditions = [];
-  if (query.moduleKey) conditions.push(eq(benchmarkPool.moduleKey, query.moduleKey));
-  if (query.industry) conditions.push(eq(benchmarkPool.industry, query.industry));
-  if (query.orgSizeRange) conditions.push(eq(benchmarkPool.orgSizeRange, query.orgSizeRange));
-  if (query.periodLabel) conditions.push(eq(benchmarkPool.periodLabel, query.periodLabel));
+  if (query.moduleKey)
+    conditions.push(eq(benchmarkPool.moduleKey, query.moduleKey));
+  if (query.industry)
+    conditions.push(eq(benchmarkPool.industry, query.industry));
+  if (query.orgSizeRange)
+    conditions.push(eq(benchmarkPool.orgSizeRange, query.orgSizeRange));
+  if (query.periodLabel)
+    conditions.push(eq(benchmarkPool.periodLabel, query.periodLabel));
 
-  const rows = conditions.length > 0
-    ? await db.select().from(benchmarkPool).where(and(...conditions))
-    : await db.select().from(benchmarkPool);
+  const rows =
+    conditions.length > 0
+      ? await db
+          .select()
+          .from(benchmarkPool)
+          .where(and(...conditions))
+      : await db.select().from(benchmarkPool);
 
   return Response.json({ data: rows });
 }

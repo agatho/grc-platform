@@ -10,10 +10,18 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const listingId = url.searchParams.get("listingId");
-  if (!listingId) return Response.json({ error: "listingId is required" }, { status: 400 });
+  if (!listingId)
+    return Response.json({ error: "listingId is required" }, { status: 400 });
 
-  const rows = await db.select().from(marketplaceVersion)
-    .where(and(eq(marketplaceVersion.listingId, listingId), eq(marketplaceVersion.orgId, ctx.orgId)))
+  const rows = await db
+    .select()
+    .from(marketplaceVersion)
+    .where(
+      and(
+        eq(marketplaceVersion.listingId, listingId),
+        eq(marketplaceVersion.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(marketplaceVersion.createdAt));
 
   return Response.json({ data: rows });
@@ -26,9 +34,14 @@ export async function POST(req: Request) {
   const body = createMarketplaceVersionSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(marketplaceVersion).values({
-      orgId: ctx.orgId, ...body, createdBy: ctx.userId,
-    }).returning();
+    const [created] = await tx
+      .insert(marketplaceVersion)
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+        createdBy: ctx.userId,
+      })
+      .returning();
     return created;
   });
 

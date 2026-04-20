@@ -1,4 +1,9 @@
-import { db, riskPredictionModel, riskPrediction, riskAnomalyDetection } from "@grc/db";
+import {
+  db,
+  riskPredictionModel,
+  riskPrediction,
+  riskAnomalyDetection,
+} from "@grc/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -21,7 +26,12 @@ export async function GET(req: Request) {
       earlyWarnings: sql<number>`count(*) filter (where ${riskPrediction.earlyWarning} = true)`,
     })
     .from(riskPrediction)
-    .where(and(eq(riskPrediction.orgId, ctx.orgId), eq(riskPrediction.isActive, true)));
+    .where(
+      and(
+        eq(riskPrediction.orgId, ctx.orgId),
+        eq(riskPrediction.isActive, true),
+      ),
+    );
 
   const [anomalyStats] = await db
     .select({
@@ -31,20 +41,28 @@ export async function GET(req: Request) {
     .from(riskAnomalyDetection)
     .where(eq(riskAnomalyDetection.orgId, ctx.orgId));
 
-  const topAnomalies = await db.select().from(riskAnomalyDetection)
-    .where(and(
-      eq(riskAnomalyDetection.orgId, ctx.orgId),
-      sql`${riskAnomalyDetection.status} in ('new', 'investigating')`,
-    ))
+  const topAnomalies = await db
+    .select()
+    .from(riskAnomalyDetection)
+    .where(
+      and(
+        eq(riskAnomalyDetection.orgId, ctx.orgId),
+        sql`${riskAnomalyDetection.status} in ('new', 'investigating')`,
+      ),
+    )
     .orderBy(desc(riskAnomalyDetection.detectedAt))
     .limit(10);
 
-  const topEarlyWarnings = await db.select().from(riskPrediction)
-    .where(and(
-      eq(riskPrediction.orgId, ctx.orgId),
-      eq(riskPrediction.isActive, true),
-      eq(riskPrediction.earlyWarning, true),
-    ))
+  const topEarlyWarnings = await db
+    .select()
+    .from(riskPrediction)
+    .where(
+      and(
+        eq(riskPrediction.orgId, ctx.orgId),
+        eq(riskPrediction.isActive, true),
+        eq(riskPrediction.earlyWarning, true),
+      ),
+    )
     .orderBy(desc(riskPrediction.createdAt))
     .limit(10);
 

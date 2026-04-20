@@ -84,8 +84,10 @@ async function loadIndividualFiles(locale: string) {
 
   const modules = await Promise.all(
     namespaceMap.map(([file]) =>
-      import(`../../messages/${locale}/${file}.json`).catch(() => ({ default: {} }))
-    )
+      import(`../../messages/${locale}/${file}.json`).catch(() => ({
+        default: {},
+      })),
+    ),
   );
 
   const merged: Record<string, unknown> = {};
@@ -117,7 +119,10 @@ export default getRequestConfig(async () => {
   try {
     const cookieStore = await cookies();
     const stored = cookieStore.get(LOCALE_COOKIE)?.value;
-    if (stored && SUPPORTED_LOCALES.includes(stored as typeof SUPPORTED_LOCALES[number])) {
+    if (
+      stored &&
+      SUPPORTED_LOCALES.includes(stored as (typeof SUPPORTED_LOCALES)[number])
+    ) {
       locale = stored;
     }
   } catch {

@@ -113,7 +113,9 @@ export async function processFairAppetiteCheck(): Promise<FAIRAppetiteCheckResul
                 title: `FAIR ALE Breach: ${row.risk_title}`,
                 message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
                 channel: "in_app",
-                templateData: { link: `/erm/risks/${row.risk_id}/fair/results` },
+                templateData: {
+                  link: `/erm/risks/${row.risk_id}/fair/results`,
+                },
               });
               notificationsCreated++;
             }

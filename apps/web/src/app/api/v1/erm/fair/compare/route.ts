@@ -57,21 +57,23 @@ export async function GET(req: Request) {
     ORDER BY fsr.risk_id, fsr.computed_at DESC
   `);
 
-  const compareData = (rows as unknown as Array<Record<string, unknown>>).map((row) => ({
-    riskId: row.risk_id,
-    riskTitle: row.risk_title,
-    riskCategory: row.risk_category,
-    riskStatus: row.risk_status,
-    aleP5: Number(row.ale_p5),
-    aleP25: Number(row.ale_p25),
-    aleP50: Number(row.ale_p50),
-    aleP75: Number(row.ale_p75),
-    aleP95: Number(row.ale_p95),
-    aleMean: Number(row.ale_mean),
-    aleStdDev: Number(row.ale_std_dev),
-    iterations: row.iterations,
-    computedAt: row.computed_at,
-  }));
+  const compareData = (rows as unknown as Array<Record<string, unknown>>).map(
+    (row) => ({
+      riskId: row.risk_id,
+      riskTitle: row.risk_title,
+      riskCategory: row.risk_category,
+      riskStatus: row.risk_status,
+      aleP5: Number(row.ale_p5),
+      aleP25: Number(row.ale_p25),
+      aleP50: Number(row.ale_p50),
+      aleP75: Number(row.ale_p75),
+      aleP95: Number(row.ale_p95),
+      aleMean: Number(row.ale_mean),
+      aleStdDev: Number(row.ale_std_dev),
+      iterations: row.iterations,
+      computedAt: row.computed_at,
+    }),
+  );
 
   return Response.json({ data: compareData });
 }

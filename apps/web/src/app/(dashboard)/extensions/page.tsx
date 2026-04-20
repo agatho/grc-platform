@@ -151,7 +151,13 @@ export default function ExtensionsPage() {
                 </CardHeader>
                 <CardContent>
                   <div className="flex items-center justify-between">
-                    <Badge variant={installation.status === "active" ? "default" : "secondary"}>
+                    <Badge
+                      variant={
+                        installation.status === "active"
+                          ? "default"
+                          : "secondary"
+                      }
+                    >
                       {installation.status}
                     </Badge>
                     <Link href={`/extensions/installed/${installation.id}`}>
@@ -173,7 +179,10 @@ export default function ExtensionsPage() {
           <h2 className="text-xl font-semibold mb-4">{t("featured.title")}</h2>
           <div className="grid gap-4 md:grid-cols-3">
             {featured.map(({ listing, plugin: p }) => (
-              <Card key={listing.id} className="cursor-pointer hover:border-primary transition-colors">
+              <Card
+                key={listing.id}
+                className="cursor-pointer hover:border-primary transition-colors"
+              >
                 <CardHeader>
                   <div className="flex items-center gap-3">
                     <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -181,12 +190,16 @@ export default function ExtensionsPage() {
                     </div>
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <CardTitle className="text-base">{listing.title}</CardTitle>
+                        <CardTitle className="text-base">
+                          {listing.title}
+                        </CardTitle>
                         {p.isVerified && (
                           <CheckCircle2 className="h-4 w-4 text-green-500" />
                         )}
                       </div>
-                      <CardDescription>{p.author ?? t("featured.unknown")}</CardDescription>
+                      <CardDescription>
+                        {p.author ?? t("featured.unknown")}
+                      </CardDescription>
                     </div>
                   </div>
                 </CardHeader>

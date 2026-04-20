@@ -36,7 +36,9 @@ export function WalkthroughTab({
   const storageKey = `walkthrough_${processId}`;
 
   const [checkedSteps, setCheckedSteps] = useState<Set<number>>(new Set());
-  const [selectedDecisions, setSelectedDecisions] = useState<Map<number, number>>(new Map());
+  const [selectedDecisions, setSelectedDecisions] = useState<
+    Map<number, number>
+  >(new Map());
 
   // Load from localStorage
   useEffect(() => {
@@ -46,7 +48,11 @@ export function WalkthroughTab({
         if (saved) {
           const { checked, decisions } = JSON.parse(saved);
           setCheckedSteps(new Set(checked));
-          setSelectedDecisions(new Map(Object.entries(decisions).map(([k, v]) => [Number(k), Number(v)])));
+          setSelectedDecisions(
+            new Map(
+              Object.entries(decisions).map(([k, v]) => [Number(k), Number(v)]),
+            ),
+          );
         }
       } catch {
         // ignore parse errors
@@ -57,10 +63,13 @@ export function WalkthroughTab({
   // Save to localStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
-      localStorage.setItem(storageKey, JSON.stringify({
-        checked: Array.from(checkedSteps),
-        decisions: Object.fromEntries(selectedDecisions),
-      }));
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({
+          checked: Array.from(checkedSteps),
+          decisions: Object.fromEntries(selectedDecisions),
+        }),
+      );
     }
   }, [checkedSteps, selectedDecisions, storageKey]);
 
@@ -148,7 +157,8 @@ export function WalkthroughTab({
 
         {hiddenCount > 0 && (
           <div className="text-center py-2 text-xs text-gray-400 border-t border-dashed border-gray-200">
-            {labels?.stepsHidden ?? `${hiddenCount} steps hidden (not applicable)`}
+            {labels?.stepsHidden ??
+              `${hiddenCount} steps hidden (not applicable)`}
           </div>
         )}
       </div>
@@ -166,11 +176,18 @@ function getVisibleSteps(
   const hiddenRanges: [number, number][] = [];
 
   for (const step of steps) {
-    if (step.type === "decision" && step.decisionOptions && decisions.has(step.stepNumber)) {
+    if (
+      step.type === "decision" &&
+      step.decisionOptions &&
+      decisions.has(step.stepNumber)
+    ) {
       const selectedTarget = decisions.get(step.stepNumber)!;
       // All branches except the selected one should be hidden
       for (const option of step.decisionOptions) {
-        if (option.targetStepNumber !== selectedTarget && option.targetStepNumber > step.stepNumber) {
+        if (
+          option.targetStepNumber !== selectedTarget &&
+          option.targetStepNumber > step.stepNumber
+        ) {
           hiddenRanges.push([option.targetStepNumber, selectedTarget - 1]);
         }
       }

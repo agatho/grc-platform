@@ -106,9 +106,7 @@ export const soxScope = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("ss_org_year_idx").on(table.orgId, table.fiscalYear),
-  ],
+  (table) => [index("ss_org_year_idx").on(table.orgId, table.fiscalYear)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -246,19 +244,16 @@ export const soxScopeRelations = relations(soxScope, ({ one }) => ({
   }),
 }));
 
-export const soxWalkthroughRelations = relations(
-  soxWalkthrough,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [soxWalkthrough.orgId],
-      references: [organization.id],
-    }),
-    control: one(control, {
-      fields: [soxWalkthrough.controlId],
-      references: [control.id],
-    }),
+export const soxWalkthroughRelations = relations(soxWalkthrough, ({ one }) => ({
+  organization: one(organization, {
+    fields: [soxWalkthrough.orgId],
+    references: [organization.id],
   }),
-);
+  control: one(control, {
+    fields: [soxWalkthrough.controlId],
+    references: [control.id],
+  }),
+}));
 
 export const controlDeficiencyRelations = relations(
   controlDeficiency,

@@ -16,30 +16,58 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForTimeout(5000);
 
     // Welcome heading
-    await expect(
-      page.getByText(/willkommen|welcome/i).first()
-    ).toBeVisible();
+    await expect(page.getByText(/willkommen|welcome/i).first()).toBeVisible();
 
     // Stat cards
-    await expect(page.getByText(/offene risiken|open risks/i).first()).toBeVisible();
-    await expect(page.getByText(/aktive kontrollen|active controls/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/offene risiken|open risks/i).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/aktive kontrollen|active controls/i).first(),
+    ).toBeVisible();
     await expect(page.getByText(/compliance.score/i).first()).toBeVisible();
 
     // Activity sections
-    await expect(page.getByText(/letzte.*nderungen|recent changes/i).first()).toBeVisible();
-    await expect(page.getByText(/meine aufgaben|my tasks/i).first()).toBeVisible();
-    await expect(page.getByText(/benachrichtigungen|notifications/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/letzte.*nderungen|recent changes/i).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/meine aufgaben|my tasks/i).first(),
+    ).toBeVisible();
+    await expect(
+      page.getByText(/benachrichtigungen|notifications/i).first(),
+    ).toBeVisible();
   });
 
   // ── 2. All Sidebar Pages Load (HTTP 200) ──────────────────
   const sidebarRoutes = [
-    "/risks", "/risks/kris", "/controls", "/controls/campaigns",
-    "/controls/findings", "/controls/evidence", "/audit",
-    "/audit/universe", "/isms", "/isms/assets", "/isms/threats",
-    "/isms/soa", "/bcms", "/bcms/bia", "/dpms", "/dpms/ropa",
-    "/dpms/dpia", "/tprm", "/tprm/vendors", "/contracts",
-    "/processes", "/documents", "/esg", "/esg/materiality",
-    "/whistleblowing/cases", "/catalogs", "/budget",
+    "/risks",
+    "/risks/kris",
+    "/controls",
+    "/controls/campaigns",
+    "/controls/findings",
+    "/controls/evidence",
+    "/audit",
+    "/audit/universe",
+    "/isms",
+    "/isms/assets",
+    "/isms/threats",
+    "/isms/soa",
+    "/bcms",
+    "/bcms/bia",
+    "/dpms",
+    "/dpms/ropa",
+    "/dpms/dpia",
+    "/tprm",
+    "/tprm/vendors",
+    "/contracts",
+    "/processes",
+    "/documents",
+    "/esg",
+    "/esg/materiality",
+    "/whistleblowing/cases",
+    "/catalogs",
+    "/budget",
   ];
 
   for (const route of sidebarRoutes) {
@@ -58,14 +86,18 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForTimeout(5000);
 
     // Title
-    await expect(page.getByText(/risikoregister|risk register/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/risikoregister|risk register/i).first(),
+    ).toBeVisible();
 
     // Should have risk rows (demo data)
     const rows = page.locator("tr, [role='row']");
     await expect(rows.first()).toBeVisible();
 
     // Filter controls present
-    await expect(page.getByText(/alle status|all statuses/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/alle status|all statuses/i).first(),
+    ).toBeVisible();
   });
 
   test("risk creation form renders", async ({ page }) => {
@@ -75,7 +107,9 @@ test.describe("Platform Smoke Tests", () => {
 
     // Page should contain form elements or risk-related content
     const body = await page.locator("body").innerText();
-    expect(body).toMatch(/risiko|risk|erstellen|create|neues|new|titel|title|beschreibung|description/i);
+    expect(body).toMatch(
+      /risiko|risk|erstellen|create|neues|new|titel|title|beschreibung|description/i,
+    );
 
     // Should have input fields
     const inputs = page.locator("input, textarea, select");
@@ -89,7 +123,9 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
 
-    await expect(page.getByText(/kontrollregister|control register/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/kontrollregister|control register/i).first(),
+    ).toBeVisible();
     const rows = page.locator("tr, [role='row']");
     await expect(rows.first()).toBeVisible();
   });
@@ -111,7 +147,9 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
 
-    await expect(page.getByText(/datenschutz|data privacy/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/datenschutz|data privacy/i).first(),
+    ).toBeVisible();
   });
 
   // ── 7. Organizations ──────────────────────────────────────
@@ -120,7 +158,9 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
 
-    await expect(page.getByText(/organisationen|organizations/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/organisationen|organizations/i).first(),
+    ).toBeVisible();
     // Should show Meridian Holdings
     await expect(page.getByText(/meridian/i).first()).toBeVisible();
   });
@@ -133,7 +173,9 @@ test.describe("Platform Smoke Tests", () => {
 
     await expect(page.getByText(/kataloge|catalogs/i).first()).toBeVisible();
     // Should show catalog type cards
-    await expect(page.getByText(/risikokatalog|risk catalog/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/risikokatalog|risk catalog/i).first(),
+    ).toBeVisible();
   });
 
   // ── 9. Audit Log ──────────────────────────────────────────
@@ -143,10 +185,12 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForTimeout(5000);
 
     await expect(
-      page.getByText(/nderungshistorie|audit.*trail|change.*history/i).first()
+      page.getByText(/nderungshistorie|audit.*trail|change.*history/i).first(),
     ).toBeVisible();
     // Hash chain integrity badge
-    await expect(page.getByText(/hash.*kette|hash.*chain/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/hash.*kette|hash.*chain/i).first(),
+    ).toBeVisible();
   });
 
   // ── 10. Theme Switching ───────────────────────────────────
@@ -161,7 +205,9 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForTimeout(1000);
 
     // Click Obsidian theme button (inside the dropdown menu)
-    const obsidianBtn = page.locator('[class*="shadow-lg"] button', { hasText: "Obsidian" });
+    const obsidianBtn = page.locator('[class*="shadow-lg"] button', {
+      hasText: "Obsidian",
+    });
     await obsidianBtn.click();
     await page.waitForTimeout(1000);
 
@@ -184,7 +230,9 @@ test.describe("Platform Smoke Tests", () => {
     await page.waitForTimeout(1000);
 
     // Click EN button (it's a small button inside the language switcher)
-    const enBtn = page.locator('button[aria-label*="English"], button:text-is("EN")').first();
+    const enBtn = page
+      .locator('button[aria-label*="English"], button:text-is("EN")')
+      .first();
     await enBtn.click();
     await page.waitForTimeout(5000);
 
@@ -194,7 +242,9 @@ test.describe("Platform Smoke Tests", () => {
 
     // Reset language back to German via API (more reliable than UI click)
     await page.evaluate(async () => {
-      const session = await fetch("/api/auth/session").then(r => r.json()).catch(() => null);
+      const session = await fetch("/api/auth/session")
+        .then((r) => r.json())
+        .catch(() => null);
       const userId = session?.user?.id;
       if (userId) {
         await fetch(`/api/v1/users/${userId}/profile`, {
@@ -258,7 +308,8 @@ test.describe("Platform Smoke Tests", () => {
 
     // Filter out known non-critical warnings
     const critical = errors.filter(
-      (e) => !e.includes("Encountered two children") && !e.includes("hydration")
+      (e) =>
+        !e.includes("Encountered two children") && !e.includes("hydration"),
     );
     expect(critical).toHaveLength(0);
   });

@@ -19,7 +19,9 @@ const DEFAULT_PHASES = [
 ];
 
 const PHASE_INDEX: Record<string, number> = {};
-DEFAULT_PHASES.forEach((p, i) => { PHASE_INDEX[p] = i; });
+DEFAULT_PHASES.forEach((p, i) => {
+  PHASE_INDEX[p] = i;
+});
 
 export function EvaluationProgressBar({
   currentPhase,
@@ -57,8 +59,18 @@ export function EvaluationProgressBar({
               )}
             >
               {isCompleted && (
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                <svg
+                  className="w-3.5 h-3.5"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                  strokeWidth={3}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M5 13l4 4L19 7"
+                  />
                 </svg>
               )}
               {isCurrent && (

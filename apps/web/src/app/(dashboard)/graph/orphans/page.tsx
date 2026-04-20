@@ -43,7 +43,10 @@ function OrphanSection({
         <div className="flex items-center gap-2">
           <CheckCircle2 className="h-5 w-5 text-green-500" />
           <span className="font-medium">{title}</span>
-          <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300">
+          <Badge
+            variant="outline"
+            className="bg-green-50 text-green-700 dark:bg-green-950 dark:text-green-300"
+          >
             0
           </Badge>
         </div>
@@ -67,18 +70,27 @@ function OrphanSection({
             <div className="flex items-center gap-2 min-w-0">
               <div
                 className="w-3 h-3 rounded-full shrink-0"
-                style={{ backgroundColor: GRAPH_ENTITY_COLORS[orphan.entityType] ?? "#6b7280" }}
+                style={{
+                  backgroundColor:
+                    GRAPH_ENTITY_COLORS[orphan.entityType] ?? "#6b7280",
+                }}
               />
               <div className="min-w-0">
-                <div className="text-sm font-medium truncate">{orphan.entityName}</div>
+                <div className="text-sm font-medium truncate">
+                  {orphan.entityName}
+                </div>
                 <div className="text-xs text-muted-foreground">
-                  {orphan.elementId && <span className="mr-2">{orphan.elementId}</span>}
+                  {orphan.elementId && (
+                    <span className="mr-2">{orphan.elementId}</span>
+                  )}
                   <span>{orphan.missingRelationship}</span>
                 </div>
               </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
-              <Link href={`/graph/explorer?entityId=${orphan.entityId}&entityType=${orphan.entityType}`}>
+              <Link
+                href={`/graph/explorer?entityId=${orphan.entityId}&entityType=${orphan.entityType}`}
+              >
                 <Button variant="ghost" size="sm">
                   <Network className="h-4 w-4" />
                 </Button>
@@ -159,7 +171,9 @@ export default function OrphanDetectionPage() {
 
       {/* Summary */}
       {orphans && (
-        <Card className={`p-4 ${totalOrphans > 0 ? "border-orange-300 bg-orange-50 dark:bg-orange-950/20" : "border-green-300 bg-green-50 dark:bg-green-950/20"}`}>
+        <Card
+          className={`p-4 ${totalOrphans > 0 ? "border-orange-300 bg-orange-50 dark:bg-orange-950/20" : "border-green-300 bg-green-50 dark:bg-green-950/20"}`}
+        >
           <div className="flex items-center gap-2">
             {totalOrphans > 0 ? (
               <>

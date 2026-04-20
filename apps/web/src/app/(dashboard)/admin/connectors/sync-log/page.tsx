@@ -127,9 +127,7 @@ export default function SyncLogPage() {
       const json = await res.json().catch(() => ({ data: [] }));
       setLogs(json.data ?? []);
     } catch {
-      setError(
-        "Synchronisations-Protokoll konnte nicht geladen werden.",
-      );
+      setError("Synchronisations-Protokoll konnte nicht geladen werden.");
     } finally {
       setLoading(false);
     }
@@ -141,9 +139,7 @@ export default function SyncLogPage() {
 
   // Unique connector names for filter dropdown
   const connectorOptions = Array.from(
-    new Map(
-      logs.map((l) => [l.connectorInstanceId, l.connectorName]),
-    ),
+    new Map(logs.map((l) => [l.connectorInstanceId, l.connectorName])),
   );
 
   // Stats
@@ -264,9 +260,7 @@ export default function SyncLogPage() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Cable className="mx-auto mb-3 h-10 w-10 opacity-50" />
-            <p className="font-medium">
-              Keine Synchronisationen gefunden
-            </p>
+            <p className="font-medium">Keine Synchronisationen gefunden</p>
             <p className="mt-1 text-sm">
               Sobald Konnektoren synchronisieren, erscheinen die Einträge hier.
             </p>
@@ -293,12 +287,8 @@ export default function SyncLogPage() {
                     <th className="pb-3 pr-4 font-medium text-right">
                       Geschrieben
                     </th>
-                    <th className="pb-3 pr-4 font-medium text-right">
-                      Fehler
-                    </th>
-                    <th className="pb-3 pr-4 font-medium text-right">
-                      Dauer
-                    </th>
+                    <th className="pb-3 pr-4 font-medium text-right">Fehler</th>
+                    <th className="pb-3 pr-4 font-medium text-right">Dauer</th>
                     <th className="pb-3 font-medium">Zeitpunkt</th>
                   </tr>
                 </thead>
@@ -325,9 +315,7 @@ export default function SyncLogPage() {
                       <td className="py-3 pr-4 text-right tabular-nums">
                         <span
                           className={
-                            log.errorCount > 0
-                              ? "font-medium text-red-600"
-                              : ""
+                            log.errorCount > 0 ? "font-medium text-red-600" : ""
                           }
                         >
                           {log.errorCount.toLocaleString("de-DE")}

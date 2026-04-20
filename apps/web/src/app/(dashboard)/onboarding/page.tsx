@@ -44,7 +44,16 @@ interface OnboardingData {
   }>;
 }
 
-const STEP_ICONS = [Rocket, Building2, Shield, Blocks, Users, FileText, Database, CheckCircle2];
+const STEP_ICONS = [
+  Rocket,
+  Building2,
+  Shield,
+  Blocks,
+  Users,
+  FileText,
+  Database,
+  CheckCircle2,
+];
 
 const FRAMEWORKS = [
   { key: "iso27001", name: "ISO 27001:2022" },
@@ -86,8 +95,10 @@ export default function OnboardingPage() {
       if (res.ok) {
         const json = await res.json();
         setData(json.data);
-        if (json.data?.selectedFrameworks) setSelectedFrameworks(json.data.selectedFrameworks);
-        if (json.data?.selectedModules) setSelectedModules(json.data.selectedModules);
+        if (json.data?.selectedFrameworks)
+          setSelectedFrameworks(json.data.selectedFrameworks);
+        if (json.data?.selectedModules)
+          setSelectedModules(json.data.selectedModules);
       }
     } finally {
       setLoading(false);
@@ -136,7 +147,9 @@ export default function OnboardingPage() {
       <div className="flex flex-col items-center justify-center h-[60vh] space-y-4">
         <Rocket className="h-16 w-16 text-primary" />
         <h1 className="text-3xl font-bold">{t("welcome")}</h1>
-        <p className="text-muted-foreground text-center max-w-md">{t("welcomeDesc")}</p>
+        <p className="text-muted-foreground text-center max-w-md">
+          {t("welcomeDesc")}
+        </p>
         <Button size="lg" onClick={startOnboarding}>
           {t("startSetup")}
           <ArrowRight className="ml-2 h-4 w-4" />
@@ -145,7 +158,9 @@ export default function OnboardingPage() {
     );
   }
 
-  const currentStepData = data.steps.find((s) => s.stepNumber === data.currentStep);
+  const currentStepData = data.steps.find(
+    (s) => s.stepNumber === data.currentStep,
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
@@ -179,7 +194,9 @@ export default function OnboardingPage() {
                     : "border-muted"
               }`}
             >
-              <Icon className={`h-4 w-4 mx-auto mb-1 ${isCompleted ? "text-green-500" : isCurrent ? "text-primary" : "text-muted-foreground"}`} />
+              <Icon
+                className={`h-4 w-4 mx-auto mb-1 ${isCompleted ? "text-green-500" : isCurrent ? "text-primary" : "text-muted-foreground"}`}
+              />
               {step.stepNumber}
             </div>
           );
@@ -201,7 +218,9 @@ export default function OnboardingPage() {
                 <label
                   key={fw.key}
                   className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer ${
-                    selectedFrameworks.includes(fw.key) ? "border-primary bg-primary/5" : ""
+                    selectedFrameworks.includes(fw.key)
+                      ? "border-primary bg-primary/5"
+                      : ""
                   }`}
                 >
                   <input
@@ -228,7 +247,9 @@ export default function OnboardingPage() {
                 <label
                   key={mod.key}
                   className={`flex items-center gap-3 rounded-lg border p-3 cursor-pointer ${
-                    selectedModules.includes(mod.key) ? "border-primary bg-primary/5" : ""
+                    selectedModules.includes(mod.key)
+                      ? "border-primary bg-primary/5"
+                      : ""
                   }`}
                 >
                   <input

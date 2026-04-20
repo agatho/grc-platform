@@ -4,8 +4,24 @@
     "title": "Doppelte Wesentlichkeitsanalyse",
     "assessment": "Bewertung",
     "iro": "IRO-Identifikation",
-    "iroTypes": { "impact": "Auswirkung", "risk": "Risiko", "opportunity": "Chance" },
-    "esrsTopics": { "E1": "Klimawandel", "E2": "Umweltverschmutzung", "E3": "Wasser- und Meeresressourcen", "E4": "Biodiversität", "E5": "Ressourcennutzung und Kreislaufwirtschaft", "S1": "Eigene Belegschaft", "S2": "Arbeitskräfte in der Wertschöpfungskette", "S3": "Betroffene Gemeinschaften", "S4": "Verbraucher und Endnutzer", "G1": "Geschäftsgebaren", "G2": "Unternehmensführung" },
+    "iroTypes": {
+      "impact": "Auswirkung",
+      "risk": "Risiko",
+      "opportunity": "Chance"
+    },
+    "esrsTopics": {
+      "E1": "Klimawandel",
+      "E2": "Umweltverschmutzung",
+      "E3": "Wasser- und Meeresressourcen",
+      "E4": "Biodiversität",
+      "E5": "Ressourcennutzung und Kreislaufwirtschaft",
+      "S1": "Eigene Belegschaft",
+      "S2": "Arbeitskräfte in der Wertschöpfungskette",
+      "S3": "Betroffene Gemeinschaften",
+      "S4": "Verbraucher und Endnutzer",
+      "G1": "Geschäftsgebaren",
+      "G2": "Unternehmensführung"
+    },
     "financialMateriality": "Finanzielle Wesentlichkeit",
     "impactMateriality": "Auswirkungswesentlichkeit",
     "matrix": "Wesentlichkeitsmatrix",
@@ -21,8 +37,16 @@
     "activityData": "Aktivitätsdaten",
     "factors": "Emissionsfaktoren",
     "customFactor": "Eigenen Faktor hinzufügen",
-    "scope": { "1": "Scope 1 (Direkt)", "2": "Scope 2 (Indirekt Energie)", "3": "Scope 3 (Wertschöpfungskette)" },
-    "dataQuality": { "measured": "Gemessen", "calculated": "Berechnet", "estimated": "Geschätzt" },
+    "scope": {
+      "1": "Scope 1 (Direkt)",
+      "2": "Scope 2 (Indirekt Energie)",
+      "3": "Scope 3 (Wertschöpfungskette)"
+    },
+    "dataQuality": {
+      "measured": "Gemessen",
+      "calculated": "Berechnet",
+      "estimated": "Geschätzt"
+    },
     "dualReporting": "Scope 2 Duale Berichterstattung",
     "locationBased": "Standortbasiert",
     "marketBased": "Marktbasiert",
@@ -46,14 +70,22 @@
     "submit": "Daten einreichen",
     "review": "Einreichung prüfen",
     "progress": "Erhebungsfortschritt",
-    "validation": { "error": "Fehler (blockiert Einreichung)", "warning": "Warnung (Prüfung empfohlen)" },
+    "validation": {
+      "error": "Fehler (blockiert Einreichung)",
+      "warning": "Warnung (Prüfung empfohlen)"
+    },
     "myAssignments": "Meine Zuweisungen"
   },
   "supplyChain": {
     "title": "Lieferketten-ESG",
     "assessment": "Lieferanten-ESG-Bewertung",
     "questionnaire": "ESG-Fragebogen",
-    "riskClassification": { "low": "Geringes Risiko", "medium": "Mittleres Risiko", "high": "Hohes Risiko", "critical": "Kritisches Risiko" },
+    "riskClassification": {
+      "low": "Geringes Risiko",
+      "medium": "Mittleres Risiko",
+      "high": "Hohes Risiko",
+      "critical": "Kritisches Risiko"
+    },
     "correctiveAction": "Korrekturmaßnahme",
     "lksg": "LkSG-Sorgfaltspflichten",
     "dashboard": "Lieferketten-ESG-Dashboard",

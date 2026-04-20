@@ -20,10 +20,12 @@ export async function GET(req: Request) {
     })
     .from(usageRecord)
     .innerJoin(usageMeter, eq(usageRecord.meterId, usageMeter.id))
-    .where(and(
-      eq(usageRecord.orgId, ctx.orgId),
-      gte(usageRecord.periodStart, periodStart),
-    ))
+    .where(
+      and(
+        eq(usageRecord.orgId, ctx.orgId),
+        gte(usageRecord.periodStart, periodStart),
+      ),
+    )
     .groupBy(usageMeter.key, usageMeter.name, usageMeter.unit);
 
   return Response.json({

@@ -6,27 +6,27 @@ Zusammenfassung der autonomen Overnight-Session auf `main`. Drei Commits auf mai
 
 ### Abgeschlossen
 
-| # | Task | Status | Dateien / Evidence |
-|---|------|--------|-------------------|
-| 1 | Settings-Seite befüllen | ✅ | [settings/page.tsx](../apps/web/src/app/(dashboard)/settings/page.tsx) — 6 Sektionen × ~4 Karten |
-| 2 | AI-Provider-Layer um LM Studio erweitern | ✅ | [packages/ai/src/providers/lmstudio.ts](../packages/ai/src/providers/lmstudio.ts) + Router + 7 Tests |
-| 3 | AI-Providers-Settings-Seite | ✅ | [settings/ai-providers/page.tsx](../apps/web/src/app/(dashboard)/settings/ai-providers/page.tsx) + [/api/v1/ai/providers](../apps/web/src/app/api/v1/ai/providers/route.ts) |
-| 4 | Module-Settings-Seite (Config-Button funktional) | ✅ | [settings/modules/[moduleKey]/page.tsx](../apps/web/src/app/(dashboard)/settings/modules/[moduleKey]/page.tsx) |
-| 5 | ARCTOS-Namens-Erklärung im Login | ✅ | [login/page.tsx](../apps/web/src/app/(auth)/login/page.tsx) + identity.json DE/EN |
-| 6 | Vertikales Menü auf CONDENSED | ✅ | [modern-sidebar.tsx](../apps/web/src/components/layout/modern-sidebar.tsx), [mobile-sidebar.tsx](../apps/web/src/components/layout/mobile-sidebar.tsx) |
-| 7 | Inline-Handbuch 15 Kernmodule | ✅ | [module-handbook.ts](../apps/web/src/lib/module-handbook.ts) + [module-help-button.tsx](../apps/web/src/components/help/module-help-button.tsx) → Help-Icon im Header |
-| 8 | Testplan für alle 15 Module | ✅ | [TEST_PLAN_MODULES.md](./TEST_PLAN_MODULES.md) |
-| 9 | Academy-Migrationen nach drizzle/ übernommen | ✅ | [0108-0112_academy_*.sql](../packages/db/drizzle/) |
-| 10 | .env.example um LMSTUDIO_* erweitert | ✅ | [.env.example](../.env.example) |
+| #   | Task                                             | Status | Dateien / Evidence                                                                                                                                                            |
+| --- | ------------------------------------------------ | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | Settings-Seite befüllen                          | ✅     | [settings/page.tsx](<../apps/web/src/app/(dashboard)/settings/page.tsx>) — 6 Sektionen × ~4 Karten                                                                            |
+| 2   | AI-Provider-Layer um LM Studio erweitern         | ✅     | [packages/ai/src/providers/lmstudio.ts](../packages/ai/src/providers/lmstudio.ts) + Router + 7 Tests                                                                          |
+| 3   | AI-Providers-Settings-Seite                      | ✅     | [settings/ai-providers/page.tsx](<../apps/web/src/app/(dashboard)/settings/ai-providers/page.tsx>) + [/api/v1/ai/providers](../apps/web/src/app/api/v1/ai/providers/route.ts) |
+| 4   | Module-Settings-Seite (Config-Button funktional) | ✅     | [settings/modules/[moduleKey]/page.tsx](<../apps/web/src/app/(dashboard)/settings/modules/[moduleKey]/page.tsx>)                                                              |
+| 5   | ARCTOS-Namens-Erklärung im Login                 | ✅     | [login/page.tsx](<../apps/web/src/app/(auth)/login/page.tsx>) + identity.json DE/EN                                                                                           |
+| 6   | Vertikales Menü auf CONDENSED                    | ✅     | [modern-sidebar.tsx](../apps/web/src/components/layout/modern-sidebar.tsx), [mobile-sidebar.tsx](../apps/web/src/components/layout/mobile-sidebar.tsx)                        |
+| 7   | Inline-Handbuch 15 Kernmodule                    | ✅     | [module-handbook.ts](../apps/web/src/lib/module-handbook.ts) + [module-help-button.tsx](../apps/web/src/components/help/module-help-button.tsx) → Help-Icon im Header         |
+| 8   | Testplan für alle 15 Module                      | ✅     | [TEST_PLAN_MODULES.md](./TEST_PLAN_MODULES.md)                                                                                                                                |
+| 9   | Academy-Migrationen nach drizzle/ übernommen     | ✅     | [0108-0112*academy*\*.sql](../packages/db/drizzle/)                                                                                                                           |
+| 10  | .env.example um LMSTUDIO\_\* erweitert           | ✅     | [.env.example](../.env.example)                                                                                                                                               |
 
 ### Review-Punkte (nicht automatisch gefixt, absichtlich)
 
-| # | Thema | Begründung |
-|---|------|------------|
-| A | **Audit-Log Hash-Chain: 4756/5008 chainMismatch** | `/api/v1/audit-log/integrity` zeigt `healthy: false`. Row-Hashes OK, aber `previous_hash`-Verknüpfung zwischen Rows bricht. Vermutlich Race-Condition im `audit_trigger()` bei parallelem Seed. Braucht ADR-011-Review + advisory_xact_lock oder Single-Writer-Pattern, nicht Overnight-Fix. |
-| B | **Zwei parallele Migrationsordner** | `packages/db/drizzle/` (0001-0112) vs `packages/db/src/migrations/` (100-1057). `migrate-all.ts` liest nur ersteren. Ein frisches Setup verpasst systematisch 59 Migrationen. Empfehlung: `drizzle/` als source-of-truth festlegen, `src/migrations/` archivieren. |
-| C | **Modul-Konsolidierung** | CLAUDE.md sagt „15 Kernmodule", die UI hat aber in `(dashboard)/` noch ~90 Ordner (meist Unterseiten dieser 15). Das ist struktuell in Ordnung (Next.js App-Router-Konvention), aber für die User-Kommunikation konsistenter, wenn wir die Top-15-Keys als „Module", alles darunter als „Features" bezeichnen. Ist Sprachregelung, kein Code-Fix. |
-| D | **Rate-Limit noch In-Memory** | `apps/web/src/lib/rate-limit.ts` Zeile 83 hat `// TODO: Phase 2 — echte Redis-Implementation`. Für Produktion mit >1 Instanz ein echtes Thema. |
+| #   | Thema                                             | Begründung                                                                                                                                                                                                                                                                                                                                        |
+| --- | ------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A   | **Audit-Log Hash-Chain: 4756/5008 chainMismatch** | `/api/v1/audit-log/integrity` zeigt `healthy: false`. Row-Hashes OK, aber `previous_hash`-Verknüpfung zwischen Rows bricht. Vermutlich Race-Condition im `audit_trigger()` bei parallelem Seed. Braucht ADR-011-Review + advisory_xact_lock oder Single-Writer-Pattern, nicht Overnight-Fix.                                                      |
+| B   | **Zwei parallele Migrationsordner**               | `packages/db/drizzle/` (0001-0112) vs `packages/db/src/migrations/` (100-1057). `migrate-all.ts` liest nur ersteren. Ein frisches Setup verpasst systematisch 59 Migrationen. Empfehlung: `drizzle/` als source-of-truth festlegen, `src/migrations/` archivieren.                                                                                |
+| C   | **Modul-Konsolidierung**                          | CLAUDE.md sagt „15 Kernmodule", die UI hat aber in `(dashboard)/` noch ~90 Ordner (meist Unterseiten dieser 15). Das ist struktuell in Ordnung (Next.js App-Router-Konvention), aber für die User-Kommunikation konsistenter, wenn wir die Top-15-Keys als „Module", alles darunter als „Features" bezeichnen. Ist Sprachregelung, kein Code-Fix. |
+| D   | **Rate-Limit noch In-Memory**                     | `apps/web/src/lib/rate-limit.ts` Zeile 83 hat `// TODO: Phase 2 — echte Redis-Implementation`. Für Produktion mit >1 Instanz ein echtes Thema.                                                                                                                                                                                                    |
 
 ## AI-Provider-Konfiguration
 
@@ -48,6 +48,7 @@ Keys werden ausschließlich aus ENV gelesen — die UI zeigt nur "konfiguriert/n
 Der Help-Button (`?`-Icon) im Header erscheint automatisch, wenn der aktuelle Pfad zu einem der 15 Module gehört. Ein Pfad-Alias-Mapping sorgt dafür, dass `/risks`, `/rcsa`, `/erm/fair`, `/budget` alle das ERM-Handbuch öffnen. Neue Module erweitern [module-handbook.ts](../apps/web/src/lib/module-handbook.ts) — kein UI-Code nötig.
 
 Das Handbuch pro Modul enthält:
+
 - Titel + Tagline
 - Regulatorische Frameworks als Badge-Strip
 - Abschnitte: Zweck, Kernartefakte, typischer Workflow, Three-Lines-of-Defense-Attribution, wichtige Einstellungen

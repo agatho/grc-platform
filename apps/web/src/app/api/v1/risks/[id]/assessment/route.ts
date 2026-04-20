@@ -27,11 +27,7 @@ export async function PUT(
     .select()
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -46,7 +42,12 @@ export async function PUT(
     );
   }
 
-  const { inherentLikelihood, inherentImpact, residualLikelihood, residualImpact } = body.data;
+  const {
+    inherentLikelihood,
+    inherentImpact,
+    residualLikelihood,
+    residualImpact,
+  } = body.data;
 
   // Compute scores
   const riskScoreInherent = inherentLikelihood * inherentImpact;
@@ -60,10 +61,7 @@ export async function PUT(
     .select()
     .from(riskAppetite)
     .where(
-      and(
-        eq(riskAppetite.orgId, ctx.orgId),
-        isNull(riskAppetite.deletedAt),
-      ),
+      and(eq(riskAppetite.orgId, ctx.orgId), isNull(riskAppetite.deletedAt)),
     );
 
   const scoreToCheck = riskScoreResidual ?? riskScoreInherent;
@@ -94,11 +92,7 @@ export async function PUT(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(risk.id, id),
-          eq(risk.orgId, ctx.orgId),
-          isNull(risk.deletedAt),
-        ),
+        and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
       )
       .returning();
 
@@ -139,7 +133,8 @@ export async function PUT(
         );
 
       for (const rm of riskManagers) {
-        if (rm.userId === existing.ownerId || rm.userId === ctx.userId) continue;
+        if (rm.userId === existing.ownerId || rm.userId === ctx.userId)
+          continue;
         await tx.insert(notification).values({
           userId: rm.userId,
           orgId: ctx.orgId,

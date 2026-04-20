@@ -49,7 +49,10 @@ export async function GET(req: Request) {
 
   const overallScore = Number(latest.overallScore);
   const prevScore = previous ? Number(previous.overallScore) : null;
-  const delta = prevScore !== null ? Math.round((overallScore - prevScore) * 100) / 100 : null;
+  const delta =
+    prevScore !== null
+      ? Math.round((overallScore - prevScore) * 100) / 100
+      : null;
 
   return Response.json({
     data: {

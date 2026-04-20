@@ -14,23 +14,36 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const parsed = bulkAssessmentSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { applicationIds, assessment } = parsed.data;
 
-  const elements = await db.select({ id: architectureElement.id })
+  const elements = await db
+    .select({ id: architectureElement.id })
     .from(architectureElement)
-    .where(and(
-      eq(architectureElement.orgId, ctx.orgId),
-      inArray(architectureElement.id, applicationIds),
-    ));
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        inArray(architectureElement.id, applicationIds),
+      ),
+    );
 
   const validIds = elements.map((e) => e.id);
-  if (validIds.length === 0) return Response.json({ error: "No valid applications found" }, { status: 404 });
+  if (validIds.length === 0)
+    return Response.json(
+      { error: "No valid applications found" },
+      { status: 404 },
+    );
 
-  const updateData: Record<string, unknown> = { ...assessment, assessedBy: ctx.userId, lastAssessedAt: new Date() };
+  const updateData: Record<string, unknown> = {
+    ...assessment,
+    assessedBy: ctx.userId,
+    lastAssessedAt: new Date(),
+  };
 
-  const updated = await db.update(applicationPortfolio)
+  const updated = await db
+    .update(applicationPortfolio)
     .set(updateData)
     .where(inArray(applicationPortfolio.elementId, validIds))
     .returning();

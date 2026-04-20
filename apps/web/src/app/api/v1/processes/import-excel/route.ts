@@ -21,7 +21,10 @@ export async function POST(req: Request) {
   }
 
   if (!processTitle?.trim()) {
-    return Response.json({ error: "Process title is required" }, { status: 400 });
+    return Response.json(
+      { error: "Process title is required" },
+      { status: 400 },
+    );
   }
 
   // Validate file type
@@ -29,13 +32,23 @@ export async function POST(req: Request) {
     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
     "application/vnd.ms-excel",
   ];
-  if (!validTypes.includes(file.type) && !file.name.endsWith(".xlsx") && !file.name.endsWith(".xls")) {
-    return Response.json({ error: "File must be an Excel spreadsheet (.xlsx)" }, { status: 400 });
+  if (
+    !validTypes.includes(file.type) &&
+    !file.name.endsWith(".xlsx") &&
+    !file.name.endsWith(".xls")
+  ) {
+    return Response.json(
+      { error: "File must be an Excel spreadsheet (.xlsx)" },
+      { status: 400 },
+    );
   }
 
   // Max 10MB
   if (file.size > 10 * 1024 * 1024) {
-    return Response.json({ error: "File too large (max 10MB)" }, { status: 400 });
+    return Response.json(
+      { error: "File too large (max 10MB)" },
+      { status: 400 },
+    );
   }
 
   const buffer = await file.arrayBuffer();
@@ -43,7 +56,11 @@ export async function POST(req: Request) {
 
   if (result.errors.length > 0) {
     return Response.json(
-      { error: "Import failed", errors: result.errors, warnings: result.warnings },
+      {
+        error: "Import failed",
+        errors: result.errors,
+        warnings: result.warnings,
+      },
       { status: 422 },
     );
   }

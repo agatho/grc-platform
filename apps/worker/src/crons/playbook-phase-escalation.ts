@@ -4,7 +4,14 @@
 // 2. All tasks in phase complete → auto-advance to next phase
 // 3. All phases complete → mark activation as completed
 
-import { db, playbookActivation, playbookPhase, task, incidentTimelineEntry, notification } from "@grc/db";
+import {
+  db,
+  playbookActivation,
+  playbookPhase,
+  task,
+  incidentTimelineEntry,
+  notification,
+} from "@grc/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
 
 interface PhaseEscalationResult {
@@ -20,7 +27,9 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
   let advanced = 0;
   let completed = 0;
 
-  console.log(`[cron:playbook-phase-escalation] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:playbook-phase-escalation] Starting at ${now.toISOString()}`,
+  );
 
   // Find all active playbook activations
   const activeActivations = await db
@@ -29,7 +38,9 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
     .where(eq(playbookActivation.status, "active"));
 
   if (activeActivations.length === 0) {
-    console.log("[cron:playbook-phase-escalation] No active playbook activations");
+    console.log(
+      "[cron:playbook-phase-escalation] No active playbook activations",
+    );
     return { processed: 0, escalated: 0, advanced: 0, completed: 0 };
   }
 
@@ -63,8 +74,11 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
         );
 
       // Check if all tasks in current phase are complete
-      const allComplete = phaseTasks.length > 0 &&
-        phaseTasks.every((t) => t.status === "done" || t.status === "cancelled");
+      const allComplete =
+        phaseTasks.length > 0 &&
+        phaseTasks.every(
+          (t) => t.status === "done" || t.status === "cancelled",
+        );
 
       if (allComplete) {
         // Get all phases for this template
@@ -75,9 +89,10 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
           .orderBy(playbookPhase.sortOrder);
 
         const currentIdx = allPhases.findIndex((p) => p.id === currentPhase.id);
-        const nextPhase = currentIdx >= 0 && currentIdx < allPhases.length - 1
-          ? allPhases[currentIdx + 1]
-          : null;
+        const nextPhase =
+          currentIdx >= 0 && currentIdx < allPhases.length - 1
+            ? allPhases[currentIdx + 1]
+            : null;
 
         // Count all completed tasks
         const allTasks = await db
@@ -115,7 +130,9 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
           });
 
           advanced++;
-          console.log(`[cron:playbook-phase-escalation] Auto-advanced activation ${activation.id} to phase "${nextPhase.name}"`);
+          console.log(
+            `[cron:playbook-phase-escalation] Auto-advanced activation ${activation.id} to phase "${nextPhase.name}"`,
+          );
         } else {
           // All phases complete — mark activation as completed
           await db
@@ -136,13 +153,16 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
           });
 
           completed++;
-          console.log(`[cron:playbook-phase-escalation] Completed activation ${activation.id}`);
+          console.log(
+            `[cron:playbook-phase-escalation] Completed activation ${activation.id}`,
+          );
         }
       } else {
         // Check for overdue phase deadline
         const activationTime = new Date(activation.activatedAt);
         const phaseDeadline = new Date(
-          activationTime.getTime() + currentPhase.deadlineHoursRelative * 60 * 60 * 1000,
+          activationTime.getTime() +
+            currentPhase.deadlineHoursRelative * 60 * 60 * 1000,
         );
 
         if (now > phaseDeadline && currentPhase.escalationRoleOnOverdue) {
@@ -189,17 +209,24 @@ export async function processPlaybookPhaseEscalation(): Promise<PhaseEscalationR
               });
 
               escalated++;
-              console.log(`[cron:playbook-phase-escalation] Escalated phase "${currentPhase.name}" for activation ${activation.id}`);
+              console.log(
+                `[cron:playbook-phase-escalation] Escalated phase "${currentPhase.name}" for activation ${activation.id}`,
+              );
             }
           }
         }
       }
     } catch (err) {
-      console.error(`[cron:playbook-phase-escalation] Error processing activation ${activation.id}:`, err);
+      console.error(
+        `[cron:playbook-phase-escalation] Error processing activation ${activation.id}:`,
+        err,
+      );
     }
   }
 
-  console.log(`[cron:playbook-phase-escalation] Done. Processed: ${activeActivations.length}, Escalated: ${escalated}, Advanced: ${advanced}, Completed: ${completed}`);
+  console.log(
+    `[cron:playbook-phase-escalation] Done. Processed: ${activeActivations.length}, Escalated: ${escalated}, Advanced: ${advanced}, Completed: ${completed}`,
+  );
 
   return {
     processed: activeActivations.length,

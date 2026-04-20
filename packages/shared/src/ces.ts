@@ -58,10 +58,21 @@ export function computeCES(params: {
 
   const score = Math.max(
     0,
-    Math.min(100, Math.round(testScoreAvg - overduePenalty - findingPenalty + automationBonus)),
+    Math.min(
+      100,
+      Math.round(
+        testScoreAvg - overduePenalty - findingPenalty + automationBonus,
+      ),
+    ),
   );
 
-  return { score, testScoreAvg, overduePenalty, findingPenalty, automationBonus };
+  return {
+    score,
+    testScoreAvg,
+    overduePenalty,
+    findingPenalty,
+    automationBonus,
+  };
 }
 
 /**

@@ -68,14 +68,18 @@ function MaturityInner() {
 
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold text-gray-900">{t("maturity.title")}</h1>
+      <h1 className="text-2xl font-bold text-gray-900">
+        {t("maturity.title")}
+      </h1>
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200">
         <button
           onClick={() => setActiveTab("gap")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "gap" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            activeTab === "gap"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
           {t("maturity.gapAnalysis")}
@@ -83,7 +87,9 @@ function MaturityInner() {
         <button
           onClick={() => setActiveTab("radar")}
           className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-            activeTab === "radar" ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+            activeTab === "radar"
+              ? "border-blue-500 text-blue-600"
+              : "border-transparent text-gray-500 hover:text-gray-700"
           }`}
         >
           {t("maturity.radar")}
@@ -95,19 +101,29 @@ function MaturityInner() {
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">{t("maturity.avgCurrent")}</p>
-            <p className="text-2xl font-bold text-purple-600 mt-1">{stats.avgCurrent}</p>
+            <p className="text-2xl font-bold text-purple-600 mt-1">
+              {stats.avgCurrent}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">{t("maturity.avgTarget")}</p>
-            <p className="text-2xl font-bold text-purple-400 mt-1">{stats.avgTarget}</p>
+            <p className="text-2xl font-bold text-purple-400 mt-1">
+              {stats.avgTarget}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4">
             <p className="text-xs text-gray-500">{t("maturity.avgGap")}</p>
-            <p className="text-2xl font-bold text-orange-600 mt-1">{stats.avgGap}</p>
+            <p className="text-2xl font-bold text-orange-600 mt-1">
+              {stats.avgGap}
+            </p>
           </div>
           <div className="rounded-lg border border-gray-200 bg-white p-4">
-            <p className="text-xs text-gray-500">{t("maturity.totalControls")}</p>
-            <p className="text-2xl font-bold text-gray-900 mt-1">{stats.totalControls}</p>
+            <p className="text-xs text-gray-500">
+              {t("maturity.totalControls")}
+            </p>
+            <p className="text-2xl font-bold text-gray-900 mt-1">
+              {stats.totalControls}
+            </p>
           </div>
         </div>
       )}
@@ -118,22 +134,45 @@ function MaturityInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("maturity.control")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("maturity.department")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("maturity.current")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("maturity.target")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("maturity.gap")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("maturity.severity")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.control")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.department")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.current")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.target")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.gap")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("maturity.severity")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {gaps.length === 0 ? (
-                <tr><td colSpan={6} className="px-4 py-8 text-center text-gray-400">{t("maturity.noGaps")}</td></tr>
+                <tr>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-gray-400"
+                  >
+                    {t("maturity.noGaps")}
+                  </td>
+                </tr>
               ) : (
                 gaps.map((row) => (
                   <tr key={row.controlId} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{row.controlTitle}</td>
-                    <td className="px-4 py-3 text-gray-500">{row.department ?? "-"}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {row.controlTitle}
+                    </td>
+                    <td className="px-4 py-3 text-gray-500">
+                      {row.department ?? "-"}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <MaturityBadge level={row.currentMaturity} />
                     </td>
@@ -141,17 +180,28 @@ function MaturityInner() {
                       <MaturityBadge level={row.targetMaturity} />
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <span className={`font-bold ${row.gap >= 3 ? "text-red-600" : row.gap >= 2 ? "text-orange-600" : "text-yellow-600"}`}>
+                      <span
+                        className={`font-bold ${row.gap >= 3 ? "text-red-600" : row.gap >= 2 ? "text-orange-600" : "text-yellow-600"}`}
+                      >
                         {row.gap}
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className={
-                        row.gap >= 3 ? "bg-red-100 text-red-900" :
-                        row.gap >= 2 ? "bg-orange-100 text-orange-900" :
-                        "bg-yellow-100 text-yellow-900"
-                      }>
-                        {row.gap >= 3 ? t("maturity.critical") : row.gap >= 2 ? t("maturity.high") : t("maturity.medium")}
+                      <Badge
+                        variant="outline"
+                        className={
+                          row.gap >= 3
+                            ? "bg-red-100 text-red-900"
+                            : row.gap >= 2
+                              ? "bg-orange-100 text-orange-900"
+                              : "bg-yellow-100 text-yellow-900"
+                        }
+                      >
+                        {row.gap >= 3
+                          ? t("maturity.critical")
+                          : row.gap >= 2
+                            ? t("maturity.high")
+                            : t("maturity.medium")}
                       </Badge>
                     </td>
                   </tr>
@@ -166,17 +216,23 @@ function MaturityInner() {
       {activeTab === "radar" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           {radarData.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-8">{t("maturity.noData")}</p>
+            <p className="text-sm text-gray-400 text-center py-8">
+              {t("maturity.noData")}
+            </p>
           ) : (
             <div className="space-y-4">
-              <p className="text-sm text-gray-500 text-center">{t("maturity.radarDescription")}</p>
+              <p className="text-sm text-gray-500 text-center">
+                {t("maturity.radarDescription")}
+              </p>
               {/* Simplified radar as domain bars */}
               <div className="space-y-3 max-w-lg mx-auto">
                 {radarData.map((point) => (
                   <div key={point.axis} className="space-y-1">
                     <div className="flex justify-between text-xs text-gray-600">
                       <span className="font-medium">{point.axis}</span>
-                      <span>{point.current} / {point.target}</span>
+                      <span>
+                        {point.current} / {point.target}
+                      </span>
                     </div>
                     <div className="relative h-5 bg-gray-100 rounded-full overflow-hidden">
                       <div
@@ -192,8 +248,14 @@ function MaturityInner() {
                 ))}
               </div>
               <div className="flex items-center justify-center gap-6 text-xs text-gray-500 mt-4">
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-500 rounded" /> {t("maturity.current")}</span>
-                <span className="flex items-center gap-1"><span className="w-3 h-3 bg-blue-200 rounded" /> {t("maturity.target")}</span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 bg-blue-500 rounded" />{" "}
+                  {t("maturity.current")}
+                </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-3 h-3 bg-blue-200 rounded" />{" "}
+                  {t("maturity.target")}
+                </span>
               </div>
             </div>
           )}
@@ -213,7 +275,14 @@ function MaturityInner() {
 }
 
 function MaturityBadge({ level }: { level: number }) {
-  const colors = ["", "bg-red-100 text-red-900", "bg-orange-100 text-orange-900", "bg-yellow-100 text-yellow-900", "bg-blue-100 text-blue-900", "bg-green-100 text-green-900"];
+  const colors = [
+    "",
+    "bg-red-100 text-red-900",
+    "bg-orange-100 text-orange-900",
+    "bg-yellow-100 text-yellow-900",
+    "bg-blue-100 text-blue-900",
+    "bg-green-100 text-green-900",
+  ];
   return (
     <Badge variant="outline" className={colors[level] ?? ""}>
       {level}

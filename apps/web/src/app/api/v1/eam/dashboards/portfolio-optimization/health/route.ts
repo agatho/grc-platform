@@ -29,8 +29,12 @@ export async function GET(req: Request) {
 
   return Response.json({
     data: {
-      insufficientFunctionalFitPct: Math.round(((row?.insufficient_fit ?? 0) / total) * 100),
-      approachingEolPct: Math.round(((row?.approaching_eol ?? 0) / total) * 100),
+      insufficientFunctionalFitPct: Math.round(
+        ((row?.insufficient_fit ?? 0) / total) * 100,
+      ),
+      approachingEolPct: Math.round(
+        ((row?.approaching_eol ?? 0) / total) * 100,
+      ),
       unassessedPct: Math.round(((row?.unassessed ?? 0) / total) * 100),
       noSixRDecisionPct: Math.round(((row?.no_six_r ?? 0) / total) * 100),
       avgAssessmentAgeDays: row?.avg_assessment_age_days ?? 0,

@@ -17,7 +17,7 @@ import {
   index,
   uniqueIndex,
 } from "drizzle-orm/pg-core";
-import { relations } from "drizzle-orm";
+import { relations, sql } from "drizzle-orm";
 import { organization, user } from "./platform";
 import { asset } from "./asset";
 import { process } from "./process";
@@ -83,7 +83,16 @@ export const architectureElement = pgTable(
     criticality: varchar("criticality", { length: 20 }).default("normal"),
     tags: text("tags").array(),
     metadata: jsonb("metadata").default("{}"),
-    governanceStatus: varchar("governance_status", { length: 20 }).default("draft"),
+    governanceStatus: varchar("governance_status", { length: 20 }).default(
+      "draft",
+    ),
+    // Sprint 52 / 53 extensions
+    keywords: text("keywords")
+      .array()
+      .default(sql`'{}'::text[]`),
+    predecessorId: uuid("predecessor_id"),
+    examinerId: uuid("examiner_id").references(() => user.id),
+    responsibleId: uuid("responsible_id").references(() => user.id),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -205,6 +214,20 @@ export const businessCapability = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     maturityLevel: integer("maturity_level"),
     strategicImportance: varchar("strategic_importance", { length: 20 }),
+    // Sprint 48 (migration 0060) — lifecycle/alignment/coverage
+    functionalCoverage: varchar("functional_coverage", { length: 20 }),
+    strategicAlignment: varchar("strategic_alignment", { length: 20 }),
+    lifecycleStatus: varchar("lifecycle_status", { length: 20 }),
+    // Sprint 52 / 53 extensions
+    keywords: text("keywords")
+      .array()
+      .default(sql`'{}'::text[]`),
+    governanceStatus: varchar("governance_status", { length: 20 }).default(
+      "draft",
+    ),
+    predecessorId: uuid("predecessor_id"),
+    examinerId: uuid("examiner_id").references(() => user.id),
+    responsibleId: uuid("responsible_id").references(() => user.id),
   },
   (table) => ({
     orgIdx: index("bc_org_idx").on(table.orgId),

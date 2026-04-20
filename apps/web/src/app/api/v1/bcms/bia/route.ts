@@ -2,7 +2,12 @@ import { db, biaAssessment } from "@grc/db";
 import { createBiaAssessmentSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc, ilike, or } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/bia — Create BIA assessment
@@ -56,14 +61,19 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(ilike(biaAssessment.name, pattern), ilike(biaAssessment.description, pattern))!,
+      or(
+        ilike(biaAssessment.name, pattern),
+        ilike(biaAssessment.description, pattern),
+      )!,
     );
   }
 
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const { inArray } = await import("drizzle-orm");
-    const statuses = statusParam.split(",") as Array<"draft" | "in_progress" | "review" | "approved" | "archived">;
+    const statuses = statusParam.split(",") as Array<
+      "draft" | "in_progress" | "review" | "approved" | "archived"
+    >;
     conditions.push(inArray(biaAssessment.status, statuses));
   }
 

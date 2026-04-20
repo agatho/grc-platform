@@ -70,7 +70,9 @@ describe("hasProhibitedPractice + countProhibitedPractices", () => {
     expect(countProhibitedPractices(noFlags)).toBe(0);
   });
   it("true with any flag", () => {
-    expect(hasProhibitedPractice({ ...noFlags, socialScoring: true })).toBe(true);
+    expect(hasProhibitedPractice({ ...noFlags, socialScoring: true })).toBe(
+      true,
+    );
   });
   it("counts correctly", () => {
     expect(
@@ -93,7 +95,12 @@ describe("canTransitionToProduction", () => {
     expect(r.allowed).toBe(false);
   });
   it("HARD-STOP bei prohibited ohne exception", () => {
-    const r = canTransitionToProduction("prototype", { ...noFlags, socialScoring: true }, false, null);
+    const r = canTransitionToProduction(
+      "prototype",
+      { ...noFlags, socialScoring: true },
+      false,
+      null,
+    );
     expect(r.allowed).toBe(false);
     expect(r.reason).toContain("HARD-STOP");
   });
@@ -107,14 +114,22 @@ describe("canTransitionToProduction", () => {
     expect(r.allowed).toBe(true);
   });
   it("blocks bei exception ohne genuegend justification", () => {
-    const r = canTransitionToProduction("prototype", { ...noFlags, socialScoring: true }, true, "short");
+    const r = canTransitionToProduction(
+      "prototype",
+      { ...noFlags, socialScoring: true },
+      true,
+      "short",
+    );
     expect(r.allowed).toBe(false);
   });
 });
 
 describe("classifyAiSystem", () => {
   it("prohibited when any prohibited flag set", () => {
-    const ctx = { ...baseClassificationCtx, prohibitedFlags: { ...noFlags, socialScoring: true } };
+    const ctx = {
+      ...baseClassificationCtx,
+      prohibitedFlags: { ...noFlags, socialScoring: true },
+    };
     const r = classifyAiSystem(ctx);
     expect(r.category).toBe("prohibited");
   });
@@ -129,12 +144,18 @@ describe("classifyAiSystem", () => {
   });
 
   it("gpai when foundation no systemic", () => {
-    const r = classifyAiSystem({ ...baseClassificationCtx, isGpaiFoundation: true });
+    const r = classifyAiSystem({
+      ...baseClassificationCtx,
+      isGpaiFoundation: true,
+    });
     expect(r.category).toBe("gpai");
   });
 
   it("high_risk for Annex-III ohne Art. 6(3)", () => {
-    const r = classifyAiSystem({ ...baseClassificationCtx, annexIIIEmployment: true });
+    const r = classifyAiSystem({
+      ...baseClassificationCtx,
+      annexIIIEmployment: true,
+    });
     expect(r.category).toBe("high_risk");
   });
 
@@ -177,7 +198,10 @@ describe("validateHighRiskProductionGate", () => {
     expect(blockers).toHaveLength(0);
   });
   it("blockiert jedes fehlende Element", () => {
-    const blockers = validateHighRiskProductionGate({ ...prodReady, hasQms: false });
+    const blockers = validateHighRiskProductionGate({
+      ...prodReady,
+      hasQms: false,
+    });
     expect(blockers.some((b) => b.code === "missing_qms")).toBe(true);
   });
   it("sammelt mehrere Blocker", () => {

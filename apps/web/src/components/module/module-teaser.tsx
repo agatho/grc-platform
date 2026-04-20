@@ -3,7 +3,10 @@
 import { useState } from "react";
 import { useTranslations, useLocale } from "next-intl";
 import type { ModuleKey } from "@grc/shared";
-import { useModuleConfig, useAllModuleConfigs } from "@/hooks/use-module-config";
+import {
+  useModuleConfig,
+  useAllModuleConfigs,
+} from "@/hooks/use-module-config";
 import { getLucideIcon } from "./icon-map";
 
 interface ModuleTeaserProps {
@@ -27,9 +30,7 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
       : (definition?.displayNameEn ?? moduleKey);
 
   const description =
-    locale === "de"
-      ? definition?.descriptionDe
-      : definition?.descriptionEn;
+    locale === "de" ? definition?.descriptionDe : definition?.descriptionEn;
 
   const isAddon = definition?.licenseTier === "addon";
   const Icon = getLucideIcon(definition?.icon ?? "Box");
@@ -88,9 +89,7 @@ export function ModuleTeaser({ moduleKey }: ModuleTeaserProps) {
         )}
 
         {isAddon && (
-          <button
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
-          >
+          <button className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
             {t("modules.teaser.contact")}
           </button>
         )}

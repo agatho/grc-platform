@@ -32,12 +32,15 @@ export default function RiskMethodologySettingsPage() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
-  const orgId = (session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId) as string | undefined;
+  const orgId = (session?.user?.currentOrgId ??
+    session?.user?.roles?.[0]?.orgId) as string | undefined;
 
   useEffect(() => {
     if (!orgId) return;
     (async () => {
-      const res = await fetch(`/api/v1/organizations/${orgId}/risk-methodology`);
+      const res = await fetch(
+        `/api/v1/organizations/${orgId}/risk-methodology`,
+      );
       const json = await res.json();
       setConfig(json.data ?? null);
       setLoading(false);
@@ -128,7 +131,9 @@ export default function RiskMethodologySettingsPage() {
       </div>
 
       {/* Matrix Size (for ISO/COSO) */}
-      {(config.methodology === "iso_31000" || config.methodology === "coso_erm" || config.methodology === "custom") && (
+      {(config.methodology === "iso_31000" ||
+        config.methodology === "coso_erm" ||
+        config.methodology === "custom") && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <h3 className="text-sm font-medium text-gray-900">
             {t("methodology.matrixSize")}

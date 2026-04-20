@@ -14,7 +14,13 @@ import {
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -108,7 +114,11 @@ export default function CalendarSettingsPage() {
               <div className="flex items-center gap-2">
                 <Input value={icalUrl} readOnly className="font-mono text-sm" />
                 <Button variant="outline" size="icon" onClick={copyToClipboard}>
-                  {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4 text-green-600" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </Button>
               </div>
               {justGenerated && (
@@ -117,16 +127,23 @@ export default function CalendarSettingsPage() {
                     <Shield className="h-4 w-4" />
                     {t("tokenWarning")}
                   </div>
-                  <p className="mt-1 text-amber-700">{t("tokenWarningDetail")}</p>
+                  <p className="mt-1 text-amber-700">
+                    {t("tokenWarningDetail")}
+                  </p>
                 </div>
               )}
               {tokenCreatedAt && (
                 <div className="text-sm text-muted-foreground">
-                  {t("tokenCreated")}: {new Date(tokenCreatedAt).toLocaleDateString()}
+                  {t("tokenCreated")}:{" "}
+                  {new Date(tokenCreatedAt).toLocaleDateString()}
                 </div>
               )}
               <div className="flex gap-2">
-                <Button variant="outline" onClick={generateToken} disabled={loading}>
+                <Button
+                  variant="outline"
+                  onClick={generateToken}
+                  disabled={loading}
+                >
                   {loading && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
                   <Key className="h-4 w-4 mr-2" />
                   {t("regenerateToken")}
@@ -141,11 +158,15 @@ export default function CalendarSettingsPage() {
                   <DialogContent>
                     <DialogHeader>
                       <DialogTitle>{t("revokeConfirmTitle")}</DialogTitle>
-                      <DialogDescription>{t("revokeConfirmDescription")}</DialogDescription>
+                      <DialogDescription>
+                        {t("revokeConfirmDescription")}
+                      </DialogDescription>
                     </DialogHeader>
                     <DialogFooter>
                       <Button variant="outline">{t("cancel")}</Button>
-                      <Button variant="destructive" onClick={revokeToken}>{t("revokeConfirm")}</Button>
+                      <Button variant="destructive" onClick={revokeToken}>
+                        {t("revokeConfirm")}
+                      </Button>
                     </DialogFooter>
                   </DialogContent>
                 </Dialog>

@@ -7,23 +7,53 @@ import { z } from "zod";
 // ──────────────────────────────────────────────────────────────
 
 export const dataRegionCodeValues = [
-  "eu_central", "eu_west", "eu_north", "ch", "uk", "us_east", "us_west", "ap_southeast",
+  "eu_central",
+  "eu_west",
+  "eu_north",
+  "ch",
+  "uk",
+  "us_east",
+  "us_west",
+  "ap_southeast",
 ] as const;
 
-export const regionStatusValues = ["active", "provisioning", "maintenance", "decommissioned"] as const;
+export const regionStatusValues = [
+  "active",
+  "provisioning",
+  "maintenance",
+  "decommissioned",
+] as const;
 
 export const residencyRuleTypeValues = [
-  "data_at_rest", "data_in_transit", "backup", "logging", "processing",
+  "data_at_rest",
+  "data_in_transit",
+  "backup",
+  "logging",
+  "processing",
 ] as const;
 
-export const replicationStatusValues = ["active", "paused", "failed", "pending_approval"] as const;
+export const replicationStatusValues = [
+  "active",
+  "paused",
+  "failed",
+  "pending_approval",
+] as const;
 
 export const sovereigntyEventTypeValues = [
-  "data_access", "data_transfer", "region_change", "policy_violation", "replication_event", "compliance_check",
+  "data_access",
+  "data_transfer",
+  "region_change",
+  "policy_violation",
+  "replication_event",
+  "compliance_check",
 ] as const;
 
 export const complianceFrameworkTagValues = [
-  "gdpr", "bsi_c5", "soc2_type2", "iso27001", "nis2",
+  "gdpr",
+  "bsi_c5",
+  "soc2_type2",
+  "iso27001",
+  "nis2",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -82,7 +112,8 @@ export const createDataResidencyRuleSchema = z.object({
   conditionsJson: z.record(z.unknown()).default({}),
 });
 
-export const updateDataResidencyRuleSchema = createDataResidencyRuleSchema.partial();
+export const updateDataResidencyRuleSchema =
+  createDataResidencyRuleSchema.partial();
 
 export const listDataResidencyRulesQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -136,6 +167,12 @@ export const listSovereigntyAuditLogQuerySchema = z.object({
 
 export type CreateDataRegionInput = z.infer<typeof createDataRegionSchema>;
 export type UpdateDataRegionInput = z.infer<typeof updateDataRegionSchema>;
-export type UpsertRegionTenantConfigInput = z.infer<typeof upsertRegionTenantConfigSchema>;
-export type CreateDataResidencyRuleInput = z.infer<typeof createDataResidencyRuleSchema>;
-export type CreateCrossRegionReplicationInput = z.infer<typeof createCrossRegionReplicationSchema>;
+export type UpsertRegionTenantConfigInput = z.infer<
+  typeof upsertRegionTenantConfigSchema
+>;
+export type CreateDataResidencyRuleInput = z.infer<
+  typeof createDataResidencyRuleSchema
+>;
+export type CreateCrossRegionReplicationInput = z.infer<
+  typeof createCrossRegionReplicationSchema
+>;

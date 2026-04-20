@@ -52,17 +52,31 @@ export const createPromptTemplateSchema = z.object({
   description: z.string().max(5000).optional(),
   systemPrompt: z.string().min(1).max(50000),
   userPromptTemplate: z.string().min(1).max(50000),
-  category: z.enum(["risk", "control", "compliance", "general", "audit", "process"]),
+  category: z.enum([
+    "risk",
+    "control",
+    "compliance",
+    "general",
+    "audit",
+    "process",
+  ]),
   moduleKey: z.string().max(50).optional(),
-  variables: z.array(z.object({
-    name: z.string().min(1).max(100),
-    type: z.enum(["string", "number", "boolean", "date"]),
-    required: z.boolean().default(false),
-    description: z.string().max(500).optional(),
-  })).max(20).optional(),
+  variables: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(100),
+        type: z.enum(["string", "number", "boolean", "date"]),
+        required: z.boolean().default(false),
+        description: z.string().max(500).optional(),
+      }),
+    )
+    .max(20)
+    .optional(),
 });
 
-export const updatePromptTemplateSchema = createPromptTemplateSchema.partial().omit({ key: true });
+export const updatePromptTemplateSchema = createPromptTemplateSchema
+  .partial()
+  .omit({ key: true });
 
 export const promptTemplateQuerySchema = z.object({
   category: z.string().max(50).optional(),
@@ -73,7 +87,12 @@ export const promptTemplateQuerySchema = z.object({
 // ─── RAG Source ──────────────────────────────────────────────
 
 export const ragIndexRequestSchema = z.object({
-  sourceTypes: z.array(z.enum(["risk", "control", "process", "document", "policy", "finding"])).min(1).max(10),
+  sourceTypes: z
+    .array(
+      z.enum(["risk", "control", "process", "document", "policy", "finding"]),
+    )
+    .min(1)
+    .max(10),
   forceReindex: z.boolean().default(false),
 });
 
@@ -86,7 +105,12 @@ export const updateSuggestedActionSchema = z.object({
 // ─── Feedback ────────────────────────────────────────────────
 
 export const createFeedbackSchema = z.object({
-  rating: z.number().int().min(-1).max(1).refine((v) => v !== 0, "Rating must be -1 or 1"),
+  rating: z
+    .number()
+    .int()
+    .min(-1)
+    .max(1)
+    .refine((v) => v !== 0, "Rating must be -1 or 1"),
   comment: z.string().max(2000).optional(),
 });
 

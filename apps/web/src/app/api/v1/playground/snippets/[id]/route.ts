@@ -15,7 +15,12 @@ export async function GET(
   const [row] = await db
     .select()
     .from(apiPlaygroundSnippet)
-    .where(and(eq(apiPlaygroundSnippet.id, id), eq(apiPlaygroundSnippet.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(apiPlaygroundSnippet.id, id),
+        eq(apiPlaygroundSnippet.orgId, ctx.orgId),
+      ),
+    );
 
   if (!row) {
     return Response.json({ error: "Snippet not found" }, { status: 404 });
@@ -44,15 +49,20 @@ export async function PATCH(
   const [updated] = await db
     .update(apiPlaygroundSnippet)
     .set({ ...body.data, updatedAt: new Date() })
-    .where(and(
-      eq(apiPlaygroundSnippet.id, id),
-      eq(apiPlaygroundSnippet.orgId, ctx.orgId),
-      eq(apiPlaygroundSnippet.createdBy, ctx.userId),
-    ))
+    .where(
+      and(
+        eq(apiPlaygroundSnippet.id, id),
+        eq(apiPlaygroundSnippet.orgId, ctx.orgId),
+        eq(apiPlaygroundSnippet.createdBy, ctx.userId),
+      ),
+    )
     .returning();
 
   if (!updated) {
-    return Response.json({ error: "Snippet not found or no permission" }, { status: 404 });
+    return Response.json(
+      { error: "Snippet not found or no permission" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: updated });
@@ -69,15 +79,20 @@ export async function DELETE(
 
   const [deleted] = await db
     .delete(apiPlaygroundSnippet)
-    .where(and(
-      eq(apiPlaygroundSnippet.id, id),
-      eq(apiPlaygroundSnippet.orgId, ctx.orgId),
-      eq(apiPlaygroundSnippet.createdBy, ctx.userId),
-    ))
+    .where(
+      and(
+        eq(apiPlaygroundSnippet.id, id),
+        eq(apiPlaygroundSnippet.orgId, ctx.orgId),
+        eq(apiPlaygroundSnippet.createdBy, ctx.userId),
+      ),
+    )
     .returning();
 
   if (!deleted) {
-    return Response.json({ error: "Snippet not found or no permission" }, { status: 404 });
+    return Response.json(
+      { error: "Snippet not found or no permission" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: { id } });

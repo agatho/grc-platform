@@ -2,9 +2,24 @@ import { z } from "zod";
 
 // Sprint 50: EAM Data Architecture & Scenario Planning Zod Schemas
 
-export const dataCategoryEnum = z.enum(["master_data", "transaction_data", "reference_data", "analytical_data"]);
-export const dataClassificationEnum = z.enum(["public", "internal", "confidential", "restricted"]);
-export const contextTypeEnum = z.enum(["as_is", "to_be", "scenario", "historical"]);
+export const dataCategoryEnum = z.enum([
+  "master_data",
+  "transaction_data",
+  "reference_data",
+  "analytical_data",
+]);
+export const dataClassificationEnum = z.enum([
+  "public",
+  "internal",
+  "confidential",
+  "restricted",
+]);
+export const contextTypeEnum = z.enum([
+  "as_is",
+  "to_be",
+  "scenario",
+  "historical",
+]);
 export const contextStatusEnum = z.enum(["draft", "active", "archived"]);
 
 export const createDataObjectSchema = z.object({
@@ -82,4 +97,5 @@ export const createBusinessContextSchema = z.object({
   applicationIds: z.array(z.string().uuid()).max(100).optional(),
 });
 
-export const updateBusinessContextSchema = createBusinessContextSchema.partial();
+export const updateBusinessContextSchema =
+  createBusinessContextSchema.partial();

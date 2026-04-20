@@ -114,9 +114,7 @@ export function calcIncidentResponseScore(
 /**
  * Validate that weights sum to 1.0 (within tolerance).
  */
-export function validateWeights(
-  weights: Partial<CCIFactorWeights>,
-): boolean {
+export function validateWeights(weights: Partial<CCIFactorWeights>): boolean {
   const values = Object.values(weights);
   if (values.some((v) => v < 0)) return false;
   if (values.length !== CCI_FACTOR_KEYS.length) return false;

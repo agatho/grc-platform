@@ -96,7 +96,10 @@ function FAIRCompareInner() {
 
   // Prepare box-plot-style data for bar chart
   const chartData = risks.map((r) => ({
-    name: r.riskTitle.length > 30 ? r.riskTitle.substring(0, 30) + "..." : r.riskTitle,
+    name:
+      r.riskTitle.length > 30
+        ? r.riskTitle.substring(0, 30) + "..."
+        : r.riskTitle,
     P5: r.aleP5,
     P25: r.aleP25,
     P50: r.aleP50,
@@ -118,9 +121,15 @@ function FAIRCompareInner() {
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={chartData} layout="vertical">
               <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" tickFormatter={formatCompactEUR} fontSize={11} />
+              <XAxis
+                type="number"
+                tickFormatter={formatCompactEUR}
+                fontSize={11}
+              />
               <YAxis type="category" dataKey="name" width={200} fontSize={11} />
-              <RechartsTooltip formatter={(val: unknown) => formatEUR(Number(val))} />
+              <RechartsTooltip
+                formatter={(val: unknown) => formatEUR(Number(val))}
+              />
               <Legend />
               <Bar dataKey="P5" fill="#86efac" name="P5" stackId="range" />
               <Bar dataKey="P25" fill="#4ade80" name="P25" stackId="iqr" />
@@ -134,7 +143,9 @@ function FAIRCompareInner() {
 
       {/* Comparison Table */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold mb-4">{t("detailedComparison")}</h3>
+        <h3 className="text-lg font-semibold mb-4">
+          {t("detailedComparison")}
+        </h3>
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead>
@@ -156,10 +167,18 @@ function FAIRCompareInner() {
                     <td className="p-2">
                       <Badge variant="outline">{r.riskCategory}</Badge>
                     </td>
-                    <td className="p-2 text-right font-mono">{formatEUR(r.aleP50)}</td>
-                    <td className="p-2 text-right font-mono">{formatEUR(r.aleP95)}</td>
-                    <td className="p-2 text-right font-mono">{formatEUR(r.aleP95)}</td>
-                    <td className="p-2 text-right font-mono">{formatEUR(r.aleMean)}</td>
+                    <td className="p-2 text-right font-mono">
+                      {formatEUR(r.aleP50)}
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {formatEUR(r.aleP95)}
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {formatEUR(r.aleP95)}
+                    </td>
+                    <td className="p-2 text-right font-mono">
+                      {formatEUR(r.aleMean)}
+                    </td>
                   </tr>
                 ))}
             </tbody>

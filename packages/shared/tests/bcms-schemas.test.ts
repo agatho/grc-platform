@@ -333,7 +333,14 @@ describe("bcpStatusTransitions", () => {
 
 describe("bcpStatusTransitionSchema", () => {
   it("accepts all valid BCP statuses", () => {
-    for (const s of ["draft", "in_review", "approved", "published", "archived", "superseded"]) {
+    for (const s of [
+      "draft",
+      "in_review",
+      "approved",
+      "published",
+      "archived",
+      "superseded",
+    ]) {
       const result = bcpStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
@@ -371,11 +378,19 @@ describe("createCrisisScenarioSchema", () => {
 
   it("accepts all valid crisis categories", () => {
     const cats = [
-      "cyber_attack", "fire", "pandemic", "supply_chain",
-      "natural_disaster", "it_outage", "other",
+      "cyber_attack",
+      "fire",
+      "pandemic",
+      "supply_chain",
+      "natural_disaster",
+      "it_outage",
+      "other",
     ];
     for (const category of cats) {
-      const result = createCrisisScenarioSchema.safeParse({ name: "Test", category });
+      const result = createCrisisScenarioSchema.safeParse({
+        name: "Test",
+        category,
+      });
       expect(result.success).toBe(true);
     }
   });
@@ -389,7 +404,12 @@ describe("createCrisisScenarioSchema", () => {
   });
 
   it("accepts all valid severity levels", () => {
-    for (const severity of ["level_1_incident", "level_2_emergency", "level_3_crisis", "level_4_catastrophe"]) {
+    for (const severity of [
+      "level_1_incident",
+      "level_2_emergency",
+      "level_3_crisis",
+      "level_4_catastrophe",
+    ]) {
       const result = createCrisisScenarioSchema.safeParse({
         name: "Test",
         category: "other",
@@ -445,7 +465,12 @@ describe("createBcExerciseSchema", () => {
   });
 
   it("accepts all valid exercise types", () => {
-    for (const et of ["tabletop", "walkthrough", "functional", "full_simulation"]) {
+    for (const et of [
+      "tabletop",
+      "walkthrough",
+      "functional",
+      "full_simulation",
+    ]) {
       const result = createBcExerciseSchema.safeParse({
         title: "Exercise",
         exerciseType: et,
@@ -517,7 +542,11 @@ describe("createBcExerciseSchema", () => {
       plannedDate: "2026-09-01",
       objectives: [
         { title: "Test RTO compliance", met: false },
-        { title: "Validate communication plan", met: false, notes: "Focus on email chain" },
+        {
+          title: "Validate communication plan",
+          met: false,
+          notes: "Focus on email chain",
+        },
       ],
     });
     expect(result.success).toBe(true);

@@ -40,7 +40,12 @@ interface WhereUsedTabProps {
 
 const ENTITY_TYPE_META: Record<
   string,
-  { label: string; icon: typeof ShieldAlert; color: string; href: (id: string) => string }
+  {
+    label: string;
+    icon: typeof ShieldAlert;
+    color: string;
+    href: (id: string) => string;
+  }
 > = {
   risk: {
     label: "Risks",
@@ -155,14 +160,14 @@ export function WhereUsedTab({ entityType, entityId }: WhereUsedTabProps) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(
-        `/api/v1/references/${entityType}/${entityId}`,
-      );
+      const res = await fetch(`/api/v1/references/${entityType}/${entityId}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const json = await res.json();
       setReferences(json.data ?? []);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to load references");
+      setError(
+        err instanceof Error ? err.message : "Failed to load references",
+      );
     } finally {
       setLoading(false);
     }
@@ -342,19 +347,24 @@ function ImpactAnalysisDialog({
         ) : impact ? (
           <div className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-3 text-sm">
-              {t("whereUsed.totalAffected")}: <strong>{impact.totalAffected}</strong>
+              {t("whereUsed.totalAffected")}:{" "}
+              <strong>{impact.totalAffected}</strong>
             </div>
             {[1, 2, 3].map((depth) => {
               const items = impact.byDepth[depth];
               if (!items?.length) return null;
-              const depthStyle = DEPTH_COLORS[depth] ?? "border-gray-300 bg-gray-50";
+              const depthStyle =
+                DEPTH_COLORS[depth] ?? "border-gray-300 bg-gray-50";
               return (
-                <div key={depth} className={`rounded-lg border-2 p-3 ${depthStyle}`}>
+                <div
+                  key={depth}
+                  className={`rounded-lg border-2 p-3 ${depthStyle}`}
+                >
                   <h4 className="text-sm font-semibold mb-2">
                     {depth === 1
                       ? t("whereUsed.directlyAffected")
-                      : t("whereUsed.indirectlyAffected", { depth })}
-                    {" "}({items.length})
+                      : t("whereUsed.indirectlyAffected", { depth })}{" "}
+                    ({items.length})
                   </h4>
                   <ul className="space-y-1">
                     {items.map((item, idx) => {

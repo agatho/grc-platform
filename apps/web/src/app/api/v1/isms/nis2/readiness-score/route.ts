@@ -1,9 +1,4 @@
-import {
-  db,
-  soaEntry,
-  catalogEntry,
-  controlMaturity,
-} from "@grc/db";
+import { db, soaEntry, catalogEntry, controlMaturity } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -76,10 +71,18 @@ export async function GET(req: Request) {
 
         if (ces === 0) {
           switch (row.implementation) {
-            case "implemented": ces = 80; hasEvidence = true; break;
-            case "partially_implemented": ces = 50; break;
-            case "planned": ces = 20; break;
-            default: ces = 0;
+            case "implemented":
+              ces = 80;
+              hasEvidence = true;
+              break;
+            case "partially_implemented":
+              ces = 50;
+              break;
+            case "planned":
+              ces = 20;
+              break;
+            default:
+              ces = 0;
           }
         }
 

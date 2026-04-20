@@ -97,7 +97,7 @@ const translations = {
 
 export function getSubject(
   _data: Record<string, unknown>,
-  lang: "de" | "en"
+  lang: "de" | "en",
 ): string {
   return lang === "de" ? "ARCTOS Tagesübersicht" : "ARCTOS Daily Digest";
 }
@@ -121,7 +121,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
       acc[type].push(notification);
       return acc;
     },
-    {}
+    {},
   );
 
   return (
@@ -175,9 +175,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
                   </Text>
                   {items.map((item, idx) => (
                     <Section key={idx} style={styles.notificationItem}>
-                      <Text style={styles.notificationTitle}>
-                        {item.title}
-                      </Text>
+                      <Text style={styles.notificationTitle}>{item.title}</Text>
                       <Text style={styles.notificationTime}>
                         {item.timestamp}
                       </Text>
@@ -201,9 +199,7 @@ export const NotificationDigest: React.FC<NotificationDigestProps> = ({
             {orgName && <Text style={styles.footerOrg}>{orgName}</Text>}
             <Text style={styles.digestNote}>{t.digestSettings}</Text>
             <Text style={styles.footerText}>{t.footer}</Text>
-            <Text style={styles.footerBrand}>
-              ARCTOS GRC Platform
-            </Text>
+            <Text style={styles.footerBrand}>ARCTOS GRC Platform</Text>
           </Section>
         </Container>
       </Body>

@@ -70,15 +70,30 @@ export async function GET(
     db
       .select()
       .from(ropaDataCategory)
-      .where(and(eq(ropaDataCategory.ropaEntryId, id), eq(ropaDataCategory.orgId, ctx.orgId))),
+      .where(
+        and(
+          eq(ropaDataCategory.ropaEntryId, id),
+          eq(ropaDataCategory.orgId, ctx.orgId),
+        ),
+      ),
     db
       .select()
       .from(ropaDataSubject)
-      .where(and(eq(ropaDataSubject.ropaEntryId, id), eq(ropaDataSubject.orgId, ctx.orgId))),
+      .where(
+        and(
+          eq(ropaDataSubject.ropaEntryId, id),
+          eq(ropaDataSubject.orgId, ctx.orgId),
+        ),
+      ),
     db
       .select()
       .from(ropaRecipient)
-      .where(and(eq(ropaRecipient.ropaEntryId, id), eq(ropaRecipient.orgId, ctx.orgId))),
+      .where(
+        and(
+          eq(ropaRecipient.ropaEntryId, id),
+          eq(ropaRecipient.orgId, ctx.orgId),
+        ),
+      ),
   ]);
 
   return Response.json({ data: { ...row, categories, subjects, recipients } });

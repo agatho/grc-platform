@@ -157,7 +157,13 @@ describe("controlStatusTransitionSchema", () => {
   });
 
   it("accepts all valid status values", () => {
-    for (const s of ["designed", "implemented", "effective", "ineffective", "retired"]) {
+    for (const s of [
+      "designed",
+      "implemented",
+      "effective",
+      "ineffective",
+      "retired",
+    ]) {
       const result = controlStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
@@ -379,7 +385,10 @@ describe("createFindingSchema", () => {
       "significant_nonconformity",
     ];
     for (const severity of severities) {
-      const result = createFindingSchema.safeParse({ title: "Finding", severity });
+      const result = createFindingSchema.safeParse({
+        title: "Finding",
+        severity,
+      });
       expect(result.success).toBe(true);
     }
   });
@@ -409,7 +418,13 @@ describe("createFindingSchema", () => {
   });
 
   it("accepts all valid source values", () => {
-    const sources = ["control_test", "audit", "incident", "self_assessment", "external"];
+    const sources = [
+      "control_test",
+      "audit",
+      "incident",
+      "self_assessment",
+      "external",
+    ];
     for (const source of sources) {
       const result = createFindingSchema.safeParse({
         title: "Finding",
@@ -434,7 +449,14 @@ describe("findingStatusTransitionSchema", () => {
   });
 
   it("accepts all valid finding statuses", () => {
-    for (const s of ["identified", "in_remediation", "remediated", "verified", "accepted", "closed"]) {
+    for (const s of [
+      "identified",
+      "in_remediation",
+      "remediated",
+      "verified",
+      "accepted",
+      "closed",
+    ]) {
       const result = findingStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
@@ -508,8 +530,15 @@ describe("createEvidenceSchema", () => {
 
   it("accepts all valid evidence categories", () => {
     const cats = [
-      "screenshot", "document", "log_export", "email",
-      "certificate", "report", "photo", "config_export", "other",
+      "screenshot",
+      "document",
+      "log_export",
+      "email",
+      "certificate",
+      "report",
+      "photo",
+      "config_export",
+      "other",
     ];
     for (const category of cats) {
       const result = createEvidenceSchema.safeParse({

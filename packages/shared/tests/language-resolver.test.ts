@@ -58,7 +58,12 @@ describe("resolveEntity", () => {
       status: "identified",
     };
 
-    const resolved = resolveEntity(entity, ["title", "description"], "en", "de");
+    const resolved = resolveEntity(
+      entity,
+      ["title", "description"],
+      "en",
+      "de",
+    );
 
     expect(resolved.title).toBe("Title");
     expect(resolved.description).toBe("Beschreibung"); // fallback to de
@@ -73,7 +78,12 @@ describe("resolveEntity", () => {
       description: { de: "Beschreibung", en: "Description" },
     };
 
-    const resolved = resolveEntity(entity, ["title", "description"], "en", "de");
+    const resolved = resolveEntity(
+      entity,
+      ["title", "description"],
+      "en",
+      "de",
+    );
 
     expect(resolved._fallback).toEqual(["title"]);
     expect(resolved._resolvedLanguage).toBe("en");
@@ -81,7 +91,12 @@ describe("resolveEntity", () => {
 
   it("should handle null fields gracefully", () => {
     const entity = { title: null, description: undefined };
-    const resolved = resolveEntity(entity, ["title", "description"], "en", "de");
+    const resolved = resolveEntity(
+      entity,
+      ["title", "description"],
+      "en",
+      "de",
+    );
     expect(resolved.title).toBeNull();
     expect(resolved.description).toBeUndefined();
   });

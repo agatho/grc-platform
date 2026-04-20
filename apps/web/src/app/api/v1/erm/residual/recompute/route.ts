@@ -1,9 +1,4 @@
-import {
-  db,
-  risk,
-  riskControl,
-  controlEffectivenessScore,
-} from "@grc/db";
+import { db, risk, riskControl, controlEffectivenessScore } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

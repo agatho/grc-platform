@@ -22,7 +22,13 @@ export async function GET(req: Request) {
 
   const where = and(...conditions);
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(saasComplianceCheck).where(where).orderBy(desc(saasComplianceCheck.executedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(saasComplianceCheck)
+      .where(where)
+      .orderBy(desc(saasComplianceCheck.executedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(saasComplianceCheck).where(where),
   ]);
   return paginatedResponse(items, total, page, limit);
