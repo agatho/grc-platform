@@ -418,7 +418,7 @@ jobs:
         run: npm audit --omit=dev --audit-level=high
 
       - name: Check for leaked secrets
-        uses: trufflesecurity/trufflehog@v3.94.1
+        uses: trufflesecurity/trufflehog@v3.94.3
         with:
           extra_args: --only-verified --results=verified
 
