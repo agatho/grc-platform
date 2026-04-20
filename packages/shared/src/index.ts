@@ -302,10 +302,14 @@ export * from "./lib/bpmn-raci-engine";
 export * from "./lib/bpmn-walkthrough-engine";
 export * from "./lib/excel-to-bpmn";
 export * from "./lib/framework-test-plans";
-// ADR-011 rev.3 — external audit-chain anchors
-export * from "./lib/merkle-tree";
-export * as freetsa from "./lib/freetsa";
-export * as opentimestamps from "./lib/opentimestamps";
+// ADR-011 rev.3 — external audit-chain anchors.
+// These modules import node: built-ins (crypto, fs, tls via the OTS lib)
+// and cannot be re-exported here or client bundles break. Server callers
+// (worker cron, Next API routes) import via explicit subpaths:
+//   @grc/shared/lib/merkle-tree
+//   @grc/shared/lib/freetsa
+//   @grc/shared/lib/opentimestamps
+//   @grc/shared/lib/opentimestamps-upgrade
 export * from "./utils/distributions";
 export * from "./cpe-matcher";
 export * from "./cci";

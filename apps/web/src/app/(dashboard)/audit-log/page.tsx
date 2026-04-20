@@ -192,15 +192,24 @@ function AnchorBadges({
   canAnchor,
   onTrigger,
   busy,
+  onUpgrade,
+  upgradeBusy,
 }: {
   status: AnchorStatusResponse | null;
   t: ReturnType<typeof useTranslations>;
   canAnchor: boolean;
   onTrigger: () => void;
   busy: boolean;
+  onUpgrade: () => void;
+  upgradeBusy: boolean;
 }) {
   const freetsa = status?.latest.freetsa;
   const ots = status?.latest.opentimestamps;
+
+  // Show upgrade button when at least one OTS anchor is pending
+  const hasPendingOts = !!status?.data.some(
+    (a) => a.provider === "opentimestamps" && a.proofStatus === "pending",
+  );
 
   const freetsaBadge = renderAnchorBadge({
     provider: "freetsa",
@@ -219,6 +228,18 @@ function AnchorBadges({
     <div className="flex items-center gap-2">
       {freetsaBadge}
       {otsBadge}
+      {canAnchor && hasPendingOts && (
+        <button
+          type="button"
+          onClick={onUpgrade}
+          disabled={upgradeBusy}
+          className="inline-flex items-center gap-1.5 rounded-md border border-amber-300 bg-amber-50 px-3 py-1.5 text-xs font-medium text-amber-800 transition-colors hover:border-amber-400 hover:bg-amber-100 disabled:opacity-50"
+          title={t("anchorUpgradeHint")}
+        >
+          {upgradeBusy ? <Loader2 size={12} className="animate-spin" /> : <Bitcoin size={12} />}
+          {t("anchorUpgrade")}
+        </button>
+      )}
       {canAnchor && (
         <button
           type="button"
@@ -296,13 +317,17 @@ function renderAnchorBadge({
   }
 
   // complete
+  const blockSuffix = anchor.bitcoinBlockHeight
+    ? ` · block ${anchor.bitcoinBlockHeight.toLocaleString()}`
+    : "";
   return (
     <Badge
       className="gap-1.5 border-emerald-200 bg-emerald-50 px-2.5 py-1.5 text-emerald-800 shadow-none"
-      title={`${anchor.leafCount} leaves, root ${anchor.merkleRoot.slice(0, 12)}…`}
+      title={`${anchor.leafCount} leaves · root ${anchor.merkleRoot.slice(0, 12)}…${anchor.bitcoinBlockHeight ? ` · Bitcoin block ${anchor.bitcoinBlockHeight}` : ""}`}
     >
       {icon}
       {label}: {t("anchorAnchored")} · {ageText}
+      {blockSuffix}
     </Badge>
   );
 }
@@ -665,6 +690,7 @@ export default function AuditLogPage() {
   // Anchor state
   const [anchorStatus, setAnchorStatus] = useState<AnchorStatusResponse | null>(null);
   const [anchorBusy, setAnchorBusy] = useState(false);
+  const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [anchorError, setAnchorError] = useState<string | null>(null);
 
   // Derive unique entity types from data
@@ -753,6 +779,25 @@ export default function AuditLogPage() {
       setAnchorError(e instanceof Error ? e.message : String(e));
     } finally {
       setAnchorBusy(false);
+    }
+  }
+
+  async function triggerUpgrade() {
+    setUpgradeBusy(true);
+    setAnchorError(null);
+    try {
+      const res = await fetch("/api/v1/audit-log/anchor/upgrade", {
+        method: "POST",
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      await fetchAnchorStatus();
+    } catch (e) {
+      setAnchorError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setUpgradeBusy(false);
     }
   }
 
@@ -942,6 +987,8 @@ export default function AuditLogPage() {
             canAnchor={canAnchor}
             onTrigger={triggerAnchor}
             busy={anchorBusy}
+            onUpgrade={triggerUpgrade}
+            upgradeBusy={upgradeBusy}
           />
         </div>
       </div>

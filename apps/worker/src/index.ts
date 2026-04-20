@@ -1,6 +1,7 @@
 import { Hono } from "hono";
 import { processOverdueTasks } from "./crons/overdue-tasks";
 import { processDailyAuditAnchor } from "./crons/daily-audit-anchor";
+import { processOtsUpgrade } from "./crons/ots-upgrade";
 import { processScheduledNotifications } from "./crons/scheduled-notifications";
 import { processNotificationDigest } from "./crons/notification-digest";
 import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
@@ -193,6 +194,17 @@ app.post("/crons/daily-audit-anchor", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] daily-audit-anchor cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/ots-upgrade", async (c) => {
+  try {
+    const result = await processOtsUpgrade();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] ots-upgrade cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

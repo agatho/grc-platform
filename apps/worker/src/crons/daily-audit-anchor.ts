@@ -14,11 +14,9 @@
 
 import { db, auditLog, organization, auditAnchor } from "@grc/db";
 import { and, eq, isNotNull, sql, asc, gte, lt } from "drizzle-orm";
-import {
-  merkleRoot,
-  freetsa,
-  opentimestamps,
-} from "@grc/shared";
+import { merkleRoot } from "@grc/shared/lib/merkle-tree";
+import * as freetsa from "@grc/shared/lib/freetsa";
+import * as opentimestamps from "@grc/shared/lib/opentimestamps";
 
 interface AnchorResult {
   orgsProcessed: number;

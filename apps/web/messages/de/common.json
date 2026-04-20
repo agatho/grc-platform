@@ -709,7 +709,9 @@
     "anchorHoursAgo": "vor {h} h",
     "anchorDaysAgo": "vor {d} Tagen",
     "anchorNow": "Jetzt verankern",
-    "anchorNowHint": "Erzeugt einen externen Tamper-Evidence-Beweis über den heutigen Audit-Trail. FreeTSA liefert sofort einen signierten Zeitstempel, OpenTimestamps schreibt den Merkle-Root in die nächste Bitcoin-Aggregat-Transaktion."
+    "anchorNowHint": "Erzeugt einen externen Tamper-Evidence-Beweis über den heutigen Audit-Trail. FreeTSA liefert sofort einen signierten Zeitstempel, OpenTimestamps schreibt den Merkle-Root in die nächste Bitcoin-Aggregat-Transaktion.",
+    "anchorUpgrade": "Bitcoin-Upgrade prüfen",
+    "anchorUpgradeHint": "Fragt die OpenTimestamps-Calendar-Server, ob die Bitcoin-Bestätigung für ausstehende Anker inzwischen verfügbar ist. Bestätigt Anker bekommen einen Block-Höhenwert und sind ab dann dauerhaft über die Blockchain verifizierbar."
   },
   "invitations": {
     "title": "Einladungen",

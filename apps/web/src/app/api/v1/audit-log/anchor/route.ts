@@ -1,6 +1,8 @@
 import { db, auditLog, auditAnchor } from "@grc/db";
 import { and, eq, isNotNull, gte, lt, asc, desc } from "drizzle-orm";
-import { merkleRoot, freetsa, opentimestamps } from "@grc/shared";
+import { merkleRoot } from "@grc/shared/lib/merkle-tree";
+import * as freetsa from "@grc/shared/lib/freetsa";
+import * as opentimestamps from "@grc/shared/lib/opentimestamps";
 import { withAuth } from "@/lib/api";
 
 // POST /api/v1/audit-log/anchor

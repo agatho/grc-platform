@@ -2,11 +2,19 @@
   "name": "@grc/shared",
   "version": "0.1.0",
   "main": "src/index.ts",
+  "exports": {
+    ".": "./src/index.ts",
+    "./lib/merkle-tree": "./src/lib/merkle-tree.ts",
+    "./lib/freetsa": "./src/lib/freetsa.ts",
+    "./lib/opentimestamps": "./src/lib/opentimestamps.ts",
+    "./lib/opentimestamps-upgrade": "./src/lib/opentimestamps-upgrade.ts"
+  },
   "scripts": {
     "test": "vitest run"
   },
   "dependencies": {
     "fast-xml-parser": "^5.5.9",
+    "javascript-opentimestamps": "^0.4.5",
     "zod": "^3.24"
   },
   "devDependencies": {
