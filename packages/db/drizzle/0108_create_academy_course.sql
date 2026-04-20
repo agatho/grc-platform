@@ -28,9 +28,9 @@ CREATE TABLE IF NOT EXISTS academy_course (
   updated_at TIMESTAMPTZ NOT NULL DEFAULT now()
 );
 
-CREATE INDEX ac_org_idx ON academy_course(org_id);
-CREATE INDEX ac_type_idx ON academy_course(org_id, course_type);
-CREATE INDEX ac_mandatory_idx ON academy_course(org_id, is_mandatory);
+CREATE INDEX academy_course_org_idx ON academy_course(org_id);
+CREATE INDEX academy_course_type_idx ON academy_course(org_id, course_type);
+CREATE INDEX academy_course_mandatory_idx ON academy_course(org_id, is_mandatory);
 
 ALTER TABLE academy_course ENABLE ROW LEVEL SECURITY;
 CREATE POLICY academy_course_org_isolation ON academy_course

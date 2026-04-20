@@ -1,0 +1,77 @@
+-- Sprint 58: Plugin Hook System
+-- Migration 902: Create plugin_hook table
+
+CREATE TABLE IF NOT EXISTS plugin_hook (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  key VARCHAR(150) NOT NULL UNIQUE,
+  name VARCHAR(255) NOT NULL,
+  description TEXT,
+  module VARCHAR(50),
+  hook_type VARCHAR(30) NOT NULL DEFAULT 'filter',
+  input_schema JSONB DEFAULT '{}',
+  output_schema JSONB DEFAULT '{}',
+  is_async BOOLEAN NOT NULL DEFAULT false,
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+CREATE INDEX plugin_hook_module_idx ON plugin_hook(module);
+CREATE INDEX plugin_hook_type_idx ON plugin_hook(hook_type);
+
+-- Seed 50+ hook points
+INSERT INTO plugin_hook (key, name, module, hook_type, is_async) VALUES
+  ('risk.before_create', 'Before Risk Create', 'erm', 'filter', false),
+  ('risk.after_create', 'After Risk Create', 'erm', 'action', true),
+  ('risk.before_update', 'Before Risk Update', 'erm', 'filter', false),
+  ('risk.after_update', 'After Risk Update', 'erm', 'action', true),
+  ('risk.before_delete', 'Before Risk Delete', 'erm', 'filter', false),
+  ('risk.after_assess', 'After Risk Assessment', 'erm', 'action', true),
+  ('risk.score_calculated', 'Risk Score Calculated', 'erm', 'filter', false),
+  ('control.before_create', 'Before Control Create', 'ics', 'filter', false),
+  ('control.after_create', 'After Control Create', 'ics', 'action', true),
+  ('control.before_test', 'Before Control Test', 'ics', 'filter', false),
+  ('control.after_test', 'After Control Test', 'ics', 'action', true),
+  ('control.effectiveness_changed', 'Control Effectiveness Changed', 'ics', 'action', true),
+  ('process.before_create', 'Before Process Create', 'bpm', 'filter', false),
+  ('process.after_create', 'After Process Create', 'bpm', 'action', true),
+  ('process.before_approve', 'Before Process Approve', 'bpm', 'filter', false),
+  ('process.after_approve', 'After Process Approve', 'bpm', 'action', true),
+  ('process.version_published', 'Process Version Published', 'bpm', 'action', true),
+  ('incident.before_create', 'Before Incident Create', 'isms', 'filter', false),
+  ('incident.after_create', 'After Incident Create', 'isms', 'action', true),
+  ('incident.status_changed', 'Incident Status Changed', 'isms', 'action', true),
+  ('incident.severity_escalated', 'Incident Severity Escalated', 'isms', 'action', true),
+  ('finding.before_create', 'Before Finding Create', 'ics', 'filter', false),
+  ('finding.after_create', 'After Finding Create', 'ics', 'action', true),
+  ('finding.status_changed', 'Finding Status Changed', 'ics', 'action', true),
+  ('document.before_upload', 'Before Document Upload', 'dms', 'filter', false),
+  ('document.after_upload', 'After Document Upload', 'dms', 'action', true),
+  ('document.before_approve', 'Before Document Approve', 'dms', 'filter', false),
+  ('audit.before_create', 'Before Audit Create', 'audit', 'filter', false),
+  ('audit.after_create', 'After Audit Create', 'audit', 'action', true),
+  ('audit.finding_created', 'Audit Finding Created', 'audit', 'action', true),
+  ('vendor.before_create', 'Before Vendor Create', 'tprm', 'filter', false),
+  ('vendor.after_create', 'After Vendor Create', 'tprm', 'action', true),
+  ('vendor.risk_changed', 'Vendor Risk Changed', 'tprm', 'action', true),
+  ('breach.before_create', 'Before Data Breach Create', 'dpms', 'filter', false),
+  ('breach.after_create', 'After Data Breach Create', 'dpms', 'action', true),
+  ('breach.notification_due', 'Data Breach Notification Due', 'dpms', 'action', true),
+  ('dsr.before_create', 'Before DSR Create', 'dpms', 'filter', false),
+  ('dsr.after_create', 'After DSR Create', 'dpms', 'action', true),
+  ('task.before_create', 'Before Task Create', NULL, 'filter', false),
+  ('task.after_create', 'After Task Create', NULL, 'action', true),
+  ('task.assigned', 'Task Assigned', NULL, 'action', true),
+  ('task.completed', 'Task Completed', NULL, 'action', true),
+  ('task.overdue', 'Task Overdue', NULL, 'action', true),
+  ('user.after_login', 'After User Login', NULL, 'action', true),
+  ('user.after_register', 'After User Register', NULL, 'action', true),
+  ('user.role_changed', 'User Role Changed', NULL, 'action', true),
+  ('notification.before_send', 'Before Notification Send', NULL, 'filter', false),
+  ('report.before_generate', 'Before Report Generate', NULL, 'filter', false),
+  ('report.after_generate', 'After Report Generate', NULL, 'action', true),
+  ('dashboard.data_loaded', 'Dashboard Data Loaded', NULL, 'filter', false),
+  ('bcms.exercise_completed', 'BC Exercise Completed', 'bcms', 'action', true),
+  ('bcms.bcp_activated', 'BCP Activated', 'bcms', 'action', true),
+  ('esg.metric_reported', 'ESG Metric Reported', NULL, 'action', true),
+  ('workflow.step_completed', 'Workflow Step Completed', NULL, 'action', true),
+  ('api.request_received', 'API Request Received', NULL, 'filter', false)
+ON CONFLICT (key) DO NOTHING;

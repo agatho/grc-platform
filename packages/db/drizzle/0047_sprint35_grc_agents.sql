@@ -24,11 +24,11 @@ CREATE TABLE "agent_registration" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX "ar_org_idx" ON "agent_registration" ("org_id");
+CREATE INDEX "agent_registration_org_idx" ON "agent_registration" ("org_id");
 --> statement-breakpoint
-CREATE INDEX "ar_type_idx" ON "agent_registration" ("org_id", "agent_type");
+CREATE INDEX "agent_registration_type_idx" ON "agent_registration" ("org_id", "agent_type");
 --> statement-breakpoint
-CREATE INDEX "ar_active_idx" ON "agent_registration" ("org_id", "is_active");
+CREATE INDEX "agent_registration_active_idx" ON "agent_registration" ("org_id", "is_active");
 
 -- ──────────────────────────────────────────────────────────────
 -- Agent Execution Log
@@ -51,11 +51,11 @@ CREATE TABLE "agent_execution_log" (
   "executed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX "ael_agent_idx" ON "agent_execution_log" ("agent_id");
+CREATE INDEX "agent_execution_log_agent_idx" ON "agent_execution_log" ("agent_id");
 --> statement-breakpoint
-CREATE INDEX "ael_date_idx" ON "agent_execution_log" ("org_id", "executed_at");
+CREATE INDEX "agent_execution_log_date_idx" ON "agent_execution_log" ("org_id", "executed_at");
 --> statement-breakpoint
-CREATE INDEX "ael_org_idx" ON "agent_execution_log" ("org_id");
+CREATE INDEX "agent_execution_log_org_idx" ON "agent_execution_log" ("org_id");
 
 -- ──────────────────────────────────────────────────────────────
 -- Agent Recommendation

@@ -36,15 +36,15 @@ CREATE TABLE "architecture_element" (
   "updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX "ae_org_idx" ON "architecture_element" ("org_id");
+CREATE INDEX "architecture_element_org_idx" ON "architecture_element" ("org_id");
 --> statement-breakpoint
-CREATE INDEX "ae_layer_idx" ON "architecture_element" ("org_id", "layer");
+CREATE INDEX "architecture_element_layer_idx" ON "architecture_element" ("org_id", "layer");
 --> statement-breakpoint
-CREATE INDEX "ae_type_idx" ON "architecture_element" ("org_id", "type");
+CREATE INDEX "architecture_element_type_idx" ON "architecture_element" ("org_id", "type");
 --> statement-breakpoint
-CREATE INDEX "ae_asset_idx" ON "architecture_element" ("asset_id");
+CREATE INDEX "architecture_element_asset_idx" ON "architecture_element" ("asset_id");
 --> statement-breakpoint
-CREATE INDEX "ae_status_idx" ON "architecture_element" ("org_id", "status");
+CREATE INDEX "architecture_element_status_idx" ON "architecture_element" ("org_id", "status");
 
 -- ──────────────────────────────────────────────────────────────
 -- Architecture Relationship
