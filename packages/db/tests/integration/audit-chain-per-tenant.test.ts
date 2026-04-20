@@ -32,8 +32,15 @@ const createTestDb = createSingleConnTestDb;
 let testDb: ReturnType<typeof createTestDb>;
 
 describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
-  beforeAll(() => {
+  beforeAll(async () => {
     testDb = createTestDb();
+    // Defensive: restore global state that a prior suite may have left
+    // disabled. The audit_trigger on organization must be on for the
+    // INSERT + UPDATE cascade below to produce audit_log entries.
+    await testDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(`SET session_replication_role = 'origin'`);
   });
 
   afterAll(async () => {
