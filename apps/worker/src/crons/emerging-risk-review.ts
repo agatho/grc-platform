@@ -37,14 +37,12 @@ export async function processEmergingRiskReviews(): Promise<ReviewResult> {
     await db.insert(notification).values({
       orgId: risk.orgId,
       userId: risk.responsibleId,
-      type: "emerging_risk_review",
+      type: "deadline_approaching",
       title: `Emerging Risk Review Due: ${risk.title}`,
-      body: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
+      message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
       entityType: "emerging_risk",
       entityId: risk.id,
-      module: "erm",
-      priority: "normal",
-      expiresAt: sql`now() + interval '90 days'`,
+      templateData: { module: "erm", priority: "normal", subtype: "emerging_risk_review" },
     });
     notified++;
   }

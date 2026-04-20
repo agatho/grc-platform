@@ -35,7 +35,13 @@ export async function convertExcelToBPMN(
   // Dynamic import of exceljs to keep bundling optional
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(Buffer.from(buffer));
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  // Recent @types/node narrows Buffer into a generic (`Buffer<ArrayBuffer>`)
+  // while the published exceljs d.ts still uses the legacy non-generic
+  // `Buffer`. Runtime behaviour is identical; any-cast bridges the types
+  // without pulling an incompatible exceljs version.
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  await wb.xlsx.load(Buffer.from(buffer) as any);
   const sheet = wb.worksheets[0];
 
   if (!sheet) {

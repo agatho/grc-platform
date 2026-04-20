@@ -20,7 +20,7 @@ export async function processEamTranslationReminder(): Promise<{
       )
   `);
 
-  const count = ((result.rows ?? result) as Array<{ missing_count: number }>)[0]?.missing_count ?? 0;
+  const count = (result as unknown as Array<{ missing_count: number }>)[0]?.missing_count ?? 0;
 
   console.log(`[eam-translation-reminder] Complete: ${count} objects with missing translations`);
 

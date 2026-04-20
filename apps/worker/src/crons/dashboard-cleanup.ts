@@ -28,7 +28,7 @@ export async function processDashboardCleanup(): Promise<DashboardCleanupResult>
           RETURNING id`,
     );
 
-    deleted = result.rows?.length ?? 0;
+    deleted = result?.length ?? 0;
 
     console.log(
       `[cron:dashboard-cleanup] Permanently deleted ${deleted} dashboards (soft-deleted > 30 days)`,

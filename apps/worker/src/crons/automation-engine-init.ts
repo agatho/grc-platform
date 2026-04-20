@@ -9,6 +9,26 @@ import { db, notification, task } from "@grc/db";
 import { sql } from "drizzle-orm";
 
 /**
+ * Resolve a user in the given org that holds one of the requested roles.
+ * Used to pick a createdBy/recipient for system-triggered automation actions,
+ * since the automation engine passes roles (not user IDs) but the task and
+ * notification tables require concrete user UUIDs.
+ */
+async function resolveOrgUserForRole(
+  orgId: string,
+  role: string,
+): Promise<string | null> {
+  const rows = await db.execute(sql`
+    SELECT user_id FROM user_organization_role
+    WHERE org_id = ${orgId}::uuid
+      AND role IN (${role}, 'admin')
+    ORDER BY CASE WHEN role = ${role} THEN 0 ELSE 1 END
+    LIMIT 1
+  `);
+  return (rows as unknown as Array<{ user_id: string }>)[0]?.user_id ?? null;
+}
+
+/**
  * Stub action services that integrate with existing platform services.
  * In production, these connect to the real task/notification/email services.
  */
@@ -16,6 +36,13 @@ const automationActionServices: ActionServices = {
   createTask: async (params) => {
     // Create task via direct DB insert (uses Sprint 1.2 task table)
     try {
+      const createdBy = await resolveOrgUserForRole(params.orgId, params.assigneeRole);
+      if (!createdBy) {
+        console.error(
+          `[AutomationServices] createTask: no user with role ${params.assigneeRole} or admin in org ${params.orgId}`,
+        );
+        return { id: "failed" };
+      }
       const [created] = await db
         .insert(task)
         .values({
@@ -26,6 +53,9 @@ const automationActionServices: ActionServices = {
           priority: "medium",
           sourceEntityType: params.sourceEntityType,
           sourceEntityId: params.sourceEntityId,
+          assigneeRole: params.assigneeRole,
+          assigneeId: createdBy,
+          createdBy,
           dueDate: new Date(
             Date.now() + params.deadlineDays * 24 * 60 * 60 * 1000,
           ),
@@ -40,13 +70,16 @@ const automationActionServices: ActionServices = {
 
   sendNotification: async (params) => {
     try {
+      const userId = await resolveOrgUserForRole(params.orgId, params.role);
+      if (!userId) return;
       await db.insert(notification).values({
         orgId: params.orgId,
+        userId,
         type: "escalation",
         title: "Automation Notification",
         message: params.message,
         channel: "in_app",
-        link: params.link ?? null,
+        templateData: params.link ? { link: params.link } : {},
       });
     } catch (err) {
       console.error("[AutomationServices] sendNotification failed:", err);
@@ -74,11 +107,16 @@ const automationActionServices: ActionServices = {
   escalate: async (params) => {
     // Escalation = high-priority notification to target role
     try {
+      const userId = await resolveOrgUserForRole(params.orgId, params.targetRole);
+      if (!userId) return;
       await db.insert(notification).values({
         orgId: params.orgId,
+        userId,
         type: "escalation",
         title: `Escalation: ${params.entityType}`,
         message: params.message,
+        entityType: params.entityType,
+        entityId: params.entityId,
         channel: "both",
       });
     } catch (err) {

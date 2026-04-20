@@ -35,7 +35,11 @@ export async function callOllama(
     throw new Error(`Ollama error (${response.status}): ${err}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    message?: { content?: string };
+    prompt_eval_count?: number;
+    eval_count?: number;
+  };
 
   return {
     text: data.message?.content ?? "",

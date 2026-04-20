@@ -26,7 +26,7 @@ export async function processEamSuggestionCompute(): Promise<{
       AND ae.owner IS NOT NULL
   `);
 
-  for (const row of (eolApproaching.rows ?? eolApproaching) as Array<Record<string, string>>) {
+  for (const row of eolApproaching as unknown as Array<Record<string, string>>) {
     await db.insert(eamObjectSuggestion).values({
       orgId: row.org_id,
       userId: row.user_id,
@@ -48,7 +48,7 @@ export async function processEamSuggestionCompute(): Promise<{
       AND ae.owner IS NOT NULL
   `);
 
-  for (const row of (unassessed.rows ?? unassessed) as Array<Record<string, string>>) {
+  for (const row of unassessed as unknown as Array<Record<string, string>>) {
     await db.insert(eamObjectSuggestion).values({
       orgId: row.org_id,
       userId: row.user_id,

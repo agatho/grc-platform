@@ -56,14 +56,12 @@ export async function processRetentionMonitoring(): Promise<MonitoringResult> {
           await db.insert(notification).values({
             orgId: schedule.orgId,
             userId: schedule.responsibleId,
-            type: "retention_overdue",
+            type: "escalation",
             title: `Retention Period Exceeded: ${schedule.name}`,
-            body: `Data under "${schedule.name}" has exceeded the retention period of ${schedule.retentionPeriodMonths} months. A deletion request has been automatically created.`,
+            message: `Data under "${schedule.name}" has exceeded the retention period of ${schedule.retentionPeriodMonths} months. A deletion request has been automatically created.`,
             entityType: "retention_schedule",
             entityId: schedule.id,
-            module: "dpms",
-            priority: "high",
-            expiresAt: sql`now() + interval '90 days'`,
+            templateData: { module: "dpms", priority: "high", subtype: "retention_overdue" },
           });
         }
       }

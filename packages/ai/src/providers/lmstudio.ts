@@ -42,7 +42,11 @@ export async function callLmStudio(
     throw new Error(`LM Studio error (${response.status}): ${err}`);
   }
 
-  const data = await response.json();
+  const data = (await response.json()) as {
+    choices?: Array<{ message?: { content?: string } }>;
+    model?: string;
+    usage?: { prompt_tokens?: number; completion_tokens?: number };
+  };
 
   return {
     text: data.choices?.[0]?.message?.content ?? "",

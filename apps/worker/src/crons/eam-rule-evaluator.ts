@@ -37,7 +37,7 @@ export async function processEamRuleEvaluator(): Promise<{
             AND ap.lifecycle_status IN ('end_of_life', 'retired')
             AND ae.status = 'active'
         `);
-        violatingElementIds = (results.rows as { id: string }[]).map((r) => r.id);
+        violatingElementIds = (results as unknown as { id: string }[]).map((r) => r.id);
       } else if (ruleType === "classification") {
         // Check for missing data classification
         const results = await db.execute(sql`
@@ -47,7 +47,7 @@ export async function processEamRuleEvaluator(): Promise<{
             AND ae.criticality = 'critical'
             AND ap.data_classification IS NULL
         `);
-        violatingElementIds = (results.rows as { id: string }[]).map((r) => r.id);
+        violatingElementIds = (results as unknown as { id: string }[]).map((r) => r.id);
       }
 
       // Create new violations

@@ -29,23 +29,34 @@ export async function processWbRetaliationCheck(): Promise<RetaliationCheckResul
           AND pe.flag IN ('suspicious', 'critical')`,
   );
 
-  for (const event of recentEvents as any[]) {
+  for (const event of recentEvents as Array<Record<string, unknown>>) {
     try {
-      // Find compliance officer for this org and send notification
+      // Resolve a whistleblowing officer (falls back to first admin) for this org
+      const recipients = await db.execute(sql`
+        SELECT uor.user_id FROM user_organization_role uor
+        WHERE uor.org_id = ${event.org_id as string}
+          AND uor.role IN ('whistleblowing_officer', 'admin')
+        ORDER BY CASE uor.role WHEN 'whistleblowing_officer' THEN 0 ELSE 1 END
+        LIMIT 1
+      `);
+      const recipientId = (recipients as unknown as Array<{ user_id: string }>)[0]?.user_id;
+      if (!recipientId) continue;
+
       await db.insert(notification).values({
-        userId: null as any, // Compliance officer lookup needed
-        orgId: event.org_id,
-        type: "alert" as const,
+        userId: recipientId,
+        orgId: String(event.org_id),
+        type: "escalation" as const,
         entityType: "wb_protection_event",
-        entityId: event.id,
-        title: `Retaliation alert: ${event.event_type} flagged as ${event.flag}`,
-        message: `Protection case ${event.reporter_reference}: A ${event.event_type} event on ${event.event_date} has been flagged as ${event.flag}. Review required per HinSchG section 36.`,
+        entityId: String(event.id),
+        title: `Retaliation alert: ${String(event.event_type)} flagged as ${String(event.flag)}`,
+        message: `Protection case ${String(event.reporter_reference)}: A ${String(event.event_type)} event on ${String(event.event_date)} has been flagged as ${String(event.flag)}. Review required per HinSchG section 36.`,
         channel: "both" as const,
+        templateData: { subtype: "retaliation_alert" },
       });
       alerts++;
     } catch { /* skip */ }
   }
 
   console.log(`[cron:wb-retaliation-check] ${alerts} retaliation alerts`);
-  return { processed: (recentEvents as any[]).length, alerts };
+  return { processed: (recentEvents as unknown as Array<unknown>).length, alerts };
 }

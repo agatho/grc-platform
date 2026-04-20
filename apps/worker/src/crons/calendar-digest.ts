@@ -35,14 +35,14 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
         WHERE u.is_active = true AND u.deleted_at IS NULL`,
   );
 
-  if (!orgs.rows || orgs.rows.length === 0) {
+  if (!orgs || orgs.length === 0) {
     console.log("[cron:calendar-digest] No active users found");
     return { processed: 0, emailsSent: 0, errors: [] };
   }
 
   // Group by user (a user may have multiple orgs)
   const userOrgMap = new Map<string, { email: string; name: string; orgIds: string[] }>();
-  for (const row of orgs.rows as Array<Record<string, unknown>>) {
+  for (const row of orgs as Array<Record<string, unknown>>) {
     const userId = String(row.user_id);
     const existing = userOrgMap.get(userId);
     if (existing) {
@@ -75,23 +75,23 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
           LIMIT 20
         `);
 
-        if (weekEvents.rows && weekEvents.rows.length > 0) {
+        if (weekEvents && weekEvents.length > 0) {
           // Create in-app notification as digest
           await db.insert(notification).values({
             orgId,
             userId,
             type: "deadline_approaching",
             entityType: "calendar_digest",
-            title: `Weekly Calendar Digest: ${weekEvents.rows.length} event(s) this week`,
-            message: `You have ${weekEvents.rows.length} compliance calendar event(s) scheduled this week.`,
+            title: `Weekly Calendar Digest: ${weekEvents.length} event(s) this week`,
+            message: `You have ${weekEvents.length} compliance calendar event(s) scheduled this week.`,
             channel: "both",
             templateKey: "calendar_weekly_digest",
             templateData: {
               userName: userData.name,
-              eventCount: weekEvents.rows.length,
+              eventCount: weekEvents.length,
               weekStart: weekStartStr,
               weekEnd: weekEndStr,
-              events: (weekEvents.rows as Array<Record<string, unknown>>).slice(0, 10).map((e) => ({
+              events: (weekEvents as Array<Record<string, unknown>>).slice(0, 10).map((e) => ({
                 title: String(e.title),
                 startAt: String(e.start_at),
                 module: String(e.module),

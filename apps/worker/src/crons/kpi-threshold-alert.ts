@@ -27,12 +27,13 @@ export async function processKpiThresholdAlert(): Promise<KpiAlertResult> {
       await db.insert(notification).values({
         userId: m.owner_id,
         orgId: m.org_id,
-        type: "alert" as const,
+        type: "escalation" as const,
         entityType: "process_kpi_measurement",
         entityId: m.id,
         title: `KPI ${urgency}: "${m.kpi_name}" is ${m.status}`,
         message: `KPI "${m.kpi_name}" measured ${m.actual_value} against target ${m.target_value}. Status: ${m.status.toUpperCase()}.`,
         channel: "both" as const,
+        templateData: { subtype: "kpi_threshold_alert", urgency },
       });
       alerts++;
     } catch { /* skip */ }

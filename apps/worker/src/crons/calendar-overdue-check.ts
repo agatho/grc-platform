@@ -24,11 +24,11 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
     sql`SELECT id FROM organization WHERE deleted_at IS NULL`,
   );
 
-  if (!orgs.rows || orgs.rows.length === 0) {
+  if (!orgs || orgs.length === 0) {
     return { processed: 0, overdueFound: 0, escalationsSent: 0, errors: [] };
   }
 
-  for (const org of orgs.rows as Array<Record<string, unknown>>) {
+  for (const org of orgs as Array<Record<string, unknown>>) {
     const orgId = String(org.id);
 
     try {
@@ -43,7 +43,7 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
           AND d.status IN ('received', 'verified', 'processing')
       `);
 
-      for (const dsr of (overdueDsrs.rows ?? []) as Array<Record<string, unknown>>) {
+      for (const dsr of (overdueDsrs ?? []) as Array<Record<string, unknown>>) {
         overdueFound++;
         if (dsr.handler_id) {
           try {
@@ -78,7 +78,7 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
           AND db.deleted_at IS NULL
       `);
 
-      for (const breach of (overdueBreaches.rows ?? []) as Array<Record<string, unknown>>) {
+      for (const breach of (overdueBreaches ?? []) as Array<Record<string, unknown>>) {
         overdueFound++;
         if (breach.assignee_id) {
           try {
@@ -113,7 +113,7 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
           AND f.deleted_at IS NULL
       `);
 
-      for (const finding of (overdueFindings.rows ?? []) as Array<Record<string, unknown>>) {
+      for (const finding of (overdueFindings ?? []) as Array<Record<string, unknown>>) {
         overdueFound++;
         if (finding.assignee_id) {
           try {
@@ -143,11 +143,11 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
   }
 
   console.log(
-    `[cron:calendar-overdue-check] Processed ${(orgs.rows ?? []).length} orgs, found ${overdueFound} overdue items, sent ${escalationsSent} escalations, ${errors.length} errors`,
+    `[cron:calendar-overdue-check] Processed ${(orgs ?? []).length} orgs, found ${overdueFound} overdue items, sent ${escalationsSent} escalations, ${errors.length} errors`,
   );
 
   return {
-    processed: (orgs.rows ?? []).length,
+    processed: (orgs ?? []).length,
     overdueFound,
     escalationsSent,
     errors,

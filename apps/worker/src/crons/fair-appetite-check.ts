@@ -80,7 +80,7 @@ export async function processFairAppetiteCheck(): Promise<FAIRAppetiteCheckResul
           ORDER BY fsr.risk_id, fsr.computed_at DESC
         `);
 
-        const rows = latestSims.rows as Array<{
+        const rows = latestSims as unknown as Array<{
           risk_id: string;
           ale_p50: string;
           risk_category: string;
@@ -108,10 +108,12 @@ export async function processFairAppetiteCheck(): Promise<FAIRAppetiteCheckResul
                 userId: recipientId,
                 orgId: org.id,
                 type: "escalation",
+                entityType: "risk",
+                entityId: row.risk_id,
                 title: `FAIR ALE Breach: ${row.risk_title}`,
                 message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
                 channel: "in_app",
-                link: `/erm/risks/${row.risk_id}/fair/results`,
+                templateData: { link: `/erm/risks/${row.risk_id}/fair/results` },
               });
               notificationsCreated++;
             }

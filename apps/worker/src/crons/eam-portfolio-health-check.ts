@@ -22,7 +22,7 @@ export async function processEamPortfolioHealthCheck(): Promise<{
     WHERE ae.status != 'retired'
   `);
 
-  const row = ((result.rows ?? result) as Array<Record<string, number>>)[0] ?? { total: 0 };
+  const row = (result as unknown as Array<Record<string, number>>)[0] ?? { total: 0 };
   const total = row.total || 1;
 
   const indicators = {
