@@ -23,6 +23,17 @@ describe("Audit Trigger & Hash Chain", () => {
   beforeAll(async () => {
     testDb = createTestDb();
 
+    // Defensive: a prior integration test may DISABLE the audit trigger
+    // in its cleanup and crash before the ENABLE runs. Restore the global
+    // state before this suite starts so we don't observe ghost failures.
+    await testDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE "user" ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(`SET session_replication_role = 'origin'`);
+
     // Create a real test user so the audit trigger FK is satisfied
     const [testUser] = await testDb.db
       .insert(schema.user)
