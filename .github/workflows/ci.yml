@@ -578,6 +578,11 @@ jobs:
           fi
           echo "worker image boots cleanly (no MODULE_NOT_FOUND)"
 
+      # Trivy scans the final images. We skip `/usr/local/lib/node_modules/npm`
+      # because that's the base image's bundled npm — our app never invokes
+      # npm at runtime in the container (entrypoint runs node directly). The
+      # npm-shipped deps there (picomatch 4.0.3 in node:22-alpine) bleed
+      # into the scan without being an actual attack surface for the app.
       - name: Trivy image scan — web
         uses: aquasecurity/trivy-action@master
         with:
@@ -587,6 +592,7 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: os,library
+          skip-dirs: /usr/local/lib/node_modules/npm
 
       - name: Trivy image scan — worker
         uses: aquasecurity/trivy-action@master
@@ -597,6 +603,7 @@ jobs:
           exit-code: "1"
           ignore-unfixed: true
           vuln-type: os,library
+          skip-dirs: /usr/local/lib/node_modules/npm
 
   # ────────────────────────────────────────────────
   # 6. Security audit
