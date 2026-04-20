@@ -58,7 +58,7 @@ echo "[6/6] Konfiguration..."
 
 if [ ! -f ".env" ]; then
   echo "Erstelle .env aus Template..."
-  cp deploy/.env.production .env
+  cp deploy/.env.production.example .env
   # Generiere sichere Secrets
   sed -i "s|CHANGE_ME_AUTH_SECRET|$(openssl rand -hex 32)|" .env
   sed -i "s|CHANGE_ME_WB_KEY|$(openssl rand -hex 32)|" .env
