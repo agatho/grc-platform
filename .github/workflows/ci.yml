@@ -189,6 +189,136 @@ jobs:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
   # ────────────────────────────────────────────────
+  # 3b. E2E smoke — release gate
+  # ────────────────────────────────────────────────
+  e2e-smoke:
+    name: E2E Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    needs: lint
+
+    services:
+      postgres:
+        image: timescale/timescaledb:latest-pg16
+        env:
+          POSTGRES_USER: grc
+          POSTGRES_PASSWORD: grc_test_password
+          POSTGRES_DB: grc_platform_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U grc -d grc_platform_test"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+          --shm-size 256mb
+
+    env:
+      DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
+      AUTH_SECRET: e2e-ci-secret-do-not-use-in-prod
+      AUTH_TRUST_HOST: "true"
+      E2E_BASE_URL: http://localhost:3000
+      NEXT_TELEMETRY_DISABLED: "1"
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - run: npm ci
+
+      - name: Setup PostgreSQL extensions
+        run: |
+          PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
+            CREATE EXTENSION IF NOT EXISTS pgcrypto;
+            CREATE EXTENSION IF NOT EXISTS \"uuid-ossp\";
+            CREATE EXTENSION IF NOT EXISTS vector;
+            CREATE EXTENSION IF NOT EXISTS timescaledb;
+          "
+
+      - name: Run Drizzle migrations
+        working-directory: packages/db
+        run: npx drizzle-kit migrate
+
+      - name: Run custom SQL migrations
+        run: |
+          for f in $(ls packages/db/drizzle/0*.sql | sort); do
+            IDX=$(basename "$f" .sql | grep -oP '^\d+' | sed 's/^0*//')
+            if [ "$IDX" -gt 24 ]; then
+              PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f" 2>&1 || true
+            fi
+          done
+
+      - name: Create missing schema tables
+        working-directory: packages/db
+        run: npx tsx src/create-missing-tables.ts
+
+      - name: Re-apply RLS gap-closure migrations
+        run: |
+          for f in packages/db/drizzle/0286_rls_gap_closure_v2.sql \
+                   packages/db/drizzle/0288_rls_gap_closure_v3.sql; do
+            PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f"
+          done
+
+      - name: Run seed (admin user + demo data)
+        working-directory: packages/db
+        run: npx tsx src/seed.ts
+
+      - name: Build web app
+        working-directory: apps/web
+        run: npm run build
+
+      - name: Install Playwright browsers
+        working-directory: apps/web
+        run: npx playwright install --with-deps chromium
+
+      - name: Start web server (background)
+        working-directory: apps/web
+        run: |
+          npm start > /tmp/web-server.log 2>&1 &
+          echo $! > /tmp/web-server.pid
+          # Wait up to 90 s for /login to answer
+          for i in $(seq 1 90); do
+            if curl -fsS -o /dev/null http://localhost:3000/login; then
+              echo "web server up after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "web server failed to start — tail of log:"
+          tail -200 /tmp/web-server.log
+          exit 1
+
+      - name: Run Playwright smoke
+        working-directory: apps/web
+        run: npx playwright test e2e/ci-smoke.spec.ts --reporter=list
+
+      - name: Upload server log on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-server-log
+          path: /tmp/web-server.log
+          retention-days: 7
+
+      - name: Upload Playwright report on failure
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: e2e-playwright-report
+          path: apps/web/playwright-report/
+          retention-days: 7
+
+      - name: Stop web server
+        if: always()
+        run: |
+          if [ -f /tmp/web-server.pid ]; then
+            kill "$(cat /tmp/web-server.pid)" 2>/dev/null || true
+          fi
+
+  # ────────────────────────────────────────────────
   # 4. Database migration & integrity verification
   # ────────────────────────────────────────────────
   database:
@@ -373,7 +503,7 @@ jobs:
     name: Build
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    needs: [unit-tests, integration-tests, database]
+    needs: [unit-tests, integration-tests, e2e-smoke, database]
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     permissions:
@@ -404,6 +534,16 @@ jobs:
             ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@0.30.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}/grc-web:${{ github.sha }}
+          format: table
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          ignore-unfixed: true
+          vuln-type: os,library
 
   # ────────────────────────────────────────────────
   # 6. Security audit
@@ -451,4 +591,4 @@ jobs:
       - name: License compliance check
         run: |
           npx license-checker --production --failOn "GPL-2.0;GPL-3.0;AGPL-1.0;AGPL-3.0" \
-            --excludePrivatePackages --summary || true
+            --excludePrivatePackages --summary

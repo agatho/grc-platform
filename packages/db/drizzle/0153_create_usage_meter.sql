@@ -49,5 +49,14 @@ ALTER TABLE usage_record ENABLE ROW LEVEL SECURITY;
 CREATE POLICY usage_record_org_isolation ON usage_record
   USING (org_id::text = current_setting('app.current_org_id', true));
 
--- TimescaleDB hypertable for usage data
-SELECT create_hypertable('usage_record', 'created_at', if_not_exists => true, migrate_data => true);
+-- TimescaleDB hypertable for usage data (skipped if the extension
+-- isn't installed — dev envs without TimescaleDB fall back to a
+-- plain table).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+    PERFORM create_hypertable('usage_record', 'created_at', if_not_exists => true, migrate_data => true);
+  ELSE
+    RAISE NOTICE 'timescaledb extension missing — usage_record stays a plain table';
+  END IF;
+END $$;

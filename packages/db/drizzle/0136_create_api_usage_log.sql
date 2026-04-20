@@ -27,5 +27,14 @@ ALTER TABLE api_usage_log ENABLE ROW LEVEL SECURITY;
 CREATE POLICY api_usage_log_org_isolation ON api_usage_log
   USING (org_id::text = current_setting('app.current_org_id', true));
 
--- TimescaleDB hypertable for time-series usage data
-SELECT create_hypertable('api_usage_log', 'created_at', if_not_exists => true, migrate_data => true);
+-- TimescaleDB hypertable for time-series usage data (skipped if
+-- the extension isn't installed — dev envs without TimescaleDB fall
+-- back to a plain table, which performs fine at Alpha volumes).
+DO $$
+BEGIN
+  IF EXISTS (SELECT 1 FROM pg_extension WHERE extname = 'timescaledb') THEN
+    PERFORM create_hypertable('api_usage_log', 'created_at', if_not_exists => true, migrate_data => true);
+  ELSE
+    RAISE NOTICE 'timescaledb extension missing — api_usage_log stays a plain table';
+  END IF;
+END $$;

@@ -33,15 +33,25 @@ COPY . .
 # Build i18n bundles
 RUN npx tsx apps/web/scripts/build-messages.ts
 
-# Build Next.js with standalone output
+# Build Next.js with standalone output.
+# AUTH_SECRET / AUTH_TRUST_HOST / DATABASE_URL are required by Next.js
+# build-time evaluation (auth config is imported during page analysis),
+# but must NEVER be baked into the runtime image. We pass them as ARG
+# values and surface them to the build command only via the RUN line's
+# environment — that way they don't appear as ENV layers in the
+# resulting image (Docker's `SecretsUsedInArgOrEnv` lint rule).
 ENV NODE_OPTIONS="--max-old-space-size=4096"
-ENV AUTH_SECRET="build-placeholder"
-ENV AUTH_TRUST_HOST="true"
-ENV DATABASE_URL="postgresql://placeholder:placeholder@localhost:5432/placeholder"
 ENV NEXT_TELEMETRY_DISABLED=1
 
+ARG AUTH_SECRET=build-placeholder
+ARG AUTH_TRUST_HOST=true
+ARG DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
+
 # Run from workspace root so hoisted node_modules are resolved
-RUN npx next build --dir apps/web || (cd apps/web && npx next build)
+RUN AUTH_SECRET="$AUTH_SECRET" \
+    AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
+    DATABASE_URL="$DATABASE_URL" \
+    sh -c 'npx next build --dir apps/web || (cd apps/web && npx next build)'
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
 FROM node:22-alpine AS runner

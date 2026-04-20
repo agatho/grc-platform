@@ -99,10 +99,14 @@ CREATE INDEX "sim_param_scenario_idx" ON "simulation_activity_param" ("scenario_
 CREATE UNIQUE INDEX "sim_param_unique_idx" ON "simulation_activity_param" ("scenario_id", "activity_id");
 
 -- ──────────────────────────────────────────────────────────────
--- Simulation Result
+-- BPM Simulation Result (Sprint 34)
 -- ──────────────────────────────────────────────────────────────
+-- Original migration created `simulation_result`, but that name was
+-- already taken by 0006 (risk Monte-Carlo result, different schema).
+-- The BPM simulation outputs moved into `process_simulation_result`
+-- (added in 0099) — keep the name reserved here for readability.
 --> statement-breakpoint
-CREATE TABLE "simulation_result" (
+CREATE TABLE IF NOT EXISTS "bpm_simulation_result" (
   "id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
   "scenario_id" uuid NOT NULL REFERENCES "simulation_scenario"("id") ON DELETE CASCADE,
   "org_id" uuid NOT NULL,
@@ -120,7 +124,7 @@ CREATE TABLE "simulation_result" (
   "executed_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
-CREATE INDEX "sim_result_scenario_idx" ON "simulation_result" ("scenario_id");
+CREATE INDEX IF NOT EXISTS "bpm_sim_result_scenario_idx" ON "bpm_simulation_result" ("scenario_id");
 
 -- ──────────────────────────────────────────────────────────────
 -- DMN Decision
