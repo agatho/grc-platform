@@ -711,7 +711,9 @@
     "anchorNow": "Anchor now",
     "anchorNowHint": "Produces an external tamper-evidence proof over today's audit trail. FreeTSA delivers a signed timestamp immediately; OpenTimestamps commits the Merkle root to the next Bitcoin aggregate transaction.",
     "anchorUpgrade": "Check Bitcoin upgrade",
-    "anchorUpgradeHint": "Asks the OpenTimestamps calendar servers whether Bitcoin confirmation for any pending anchors has arrived. Upgraded anchors get a block height and become permanently verifiable against the blockchain."
+    "anchorUpgradeHint": "Asks the OpenTimestamps calendar servers whether Bitcoin confirmation for any pending anchors has arrived. Upgraded anchors get a block height and become permanently verifiable against the blockchain.",
+    "archiveDownload": "Download archive",
+    "archiveDownloadHint": "Downloads a ZIP containing every audit entry of the last 30 days, all anchor proofs (FreeTSA + OpenTimestamps), a Python verification script, and a README with step-by-step instructions. An external auditor can verify the trail fully offline."
   },
   "invitations": {
     "title": "Invitations",

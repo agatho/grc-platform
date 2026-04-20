@@ -17,6 +17,7 @@ import {
   Anchor,
   Bitcoin,
   Clock,
+  Download,
 } from "lucide-react";
 
 import { SortableHeader } from "@/components/ui/data-table";
@@ -693,6 +694,9 @@ export default function AuditLogPage() {
   const [upgradeBusy, setUpgradeBusy] = useState(false);
   const [anchorError, setAnchorError] = useState<string | null>(null);
 
+  // Archive download state
+  const [archiveBusy, setArchiveBusy] = useState(false);
+
   // Derive unique entity types from data
   const entityTypes = useMemo(() => {
     const set = new Set<string>();
@@ -798,6 +802,38 @@ export default function AuditLogPage() {
       setAnchorError(e instanceof Error ? e.message : String(e));
     } finally {
       setUpgradeBusy(false);
+    }
+  }
+
+  async function downloadArchive() {
+    setArchiveBusy(true);
+    setAnchorError(null);
+    try {
+      // Last-30-days window by default. A future iteration can add a
+      // custom date picker; for now this covers most audit-prep needs.
+      const res = await fetch("/api/v1/audit-log/archive");
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        throw new Error(body.error ?? `HTTP ${res.status}`);
+      }
+      const blob = await res.blob();
+      // Extract filename from Content-Disposition if present
+      const disp = res.headers.get("content-disposition") ?? "";
+      const m = /filename="([^"]+)"/.exec(disp);
+      const filename = m ? m[1] : "arctos-audit-archive.zip";
+
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+    } catch (e) {
+      setAnchorError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setArchiveBusy(false);
     }
   }
 
@@ -990,6 +1026,18 @@ export default function AuditLogPage() {
             onUpgrade={triggerUpgrade}
             upgradeBusy={upgradeBusy}
           />
+          {canAnchor && (
+            <button
+              type="button"
+              onClick={downloadArchive}
+              disabled={archiveBusy}
+              className="inline-flex items-center gap-1.5 rounded-md border border-slate-300 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 transition-colors hover:border-slate-400 hover:bg-slate-50 disabled:opacity-50"
+              title={t("archiveDownloadHint")}
+            >
+              {archiveBusy ? <Loader2 size={12} className="animate-spin" /> : <Download size={12} />}
+              {t("archiveDownload")}
+            </button>
+          )}
         </div>
       </div>
 
