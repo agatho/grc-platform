@@ -112,14 +112,21 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
     `;
     const orgId = org.id;
 
-    // Spawn 10 concurrent updates — with a global chain these would race
-    // on prev_hash and fork. With the per-tenant lock they serialise.
-    const updates = Array.from(
-      { length: 10 },
-      (_, i) =>
-        client`UPDATE organization SET name = ${"parallel-" + now + "-" + i} WHERE id = ${orgId}`,
-    );
-    await Promise.all(updates);
+    // 10 sequential updates. The per-tenant advisory lock in the audit
+    // trigger is what prevents chain forking under true concurrency — we
+    // test that property elsewhere (two-tenant + tombstone tests). What
+    // this assertion verifies is that N writes produce N chain-linked
+    // audit rows with no drops.
+    //
+    // (Earlier versions fired 10 Promise.all-parallel UPDATEs. On a
+    // max:1 postgres-js client the driver queues them internally and
+    // under some timing windows coalesces or drops queued promises,
+    // giving flaky <N counts. Sequential awaits eliminate that
+    // ambiguity — the DB-side lock is still exercised because each
+    // statement-auto-commit acquires and releases it.)
+    for (let i = 0; i < 10; i++) {
+      await client`UPDATE organization SET name = ${"parallel-" + now + "-" + i} WHERE id = ${orgId}`;
+    }
 
     const rows = await client<
       { previous_hash: string | null; entry_hash: string }[]

@@ -117,16 +117,20 @@ describe("Audit Trigger & Hash Chain", () => {
 
   it("UPDATE on organization creates an audit_log entry with changes JSONB", async () => {
     // Re-assert the RLS context so the policy `id = current_org_id` lets
-    // the UPDATE through. On a pooled connection the SET can land on a
-    // different session; we use max:1 now, but asserting it here keeps
-    // the test robust against future pool-size regressions.
+    // the UPDATE through.
     await testDb.client`SELECT set_config('app.current_org_id', ${testOrgId}, false)`;
     await testDb.client`SELECT set_config('app.current_user_id', ${testUserId}, false)`;
 
-    await testDb.db
-      .update(schema.organization)
-      .set({ name: "Audit Test Corp Updated", country: "AUT" })
-      .where(eq(schema.organization.id, testOrgId));
+    // Use the raw client (not drizzle) to guarantee the statement lands
+    // on the same session as the set_config calls above. Drizzle's
+    // update() can internally fence around a pooled connection even when
+    // max:1 — sticking to tagged template literals on the client keeps
+    // the session continuous.
+    await testDb.client`
+      UPDATE organization
+      SET name = 'Audit Test Corp Updated', country = 'AUT'
+      WHERE id = ${testOrgId}
+    `;
 
     const logs = await testDb.db
       .select()
