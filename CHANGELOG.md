@@ -8,6 +8,124 @@ Unveroeffentlichte Aenderungen stehen unter `[Unreleased]`. Wenn ein
 Deploy erfolgt, wird dieser Abschnitt umbenannt mit Datum und ein
 neuer `[Unreleased]` eroeffnet.
 
+## [0.1.0-alpha] — 2026-04-20
+
+Erster Alpha-Release mit vollgrüner CI-Pipeline ohne jeden
+`continue-on-error`-Bypass.
+
+### CI / Release-Gate
+
+- Alle 6 CI-Jobs blockierend: Lint & Type Check, DB Migration & Integrity,
+  Unit Tests, Integration Tests, Security Audit, Build.
+- Neuer **E2E-Smoke-Job**: postgres + timescaledb hochfahren, Migrationen
+  + Seed + RLS-Gap-Closure anwenden, `apps/web` bauen + starten,
+  Playwright-Suite `ci-smoke.spec.ts` durchlaufen (Login →
+  Dashboard → Risk-API-CRUD → Audit-Log-Seite → Audit-Archive-ZIP).
+- **Trivy**-Image-Scan nach jedem Build-Push auf GHCR; CRITICAL/HIGH
+  bricht ab.
+- **License-Check** blockiert jetzt GPL-/AGPL-Abhängigkeiten in
+  Production-Deps (zuvor `|| true`).
+- `.env`-File-Check im Security-Audit-Job nutzt jetzt eine Regex, die
+  `.env.example`, `.env.sample`, `.env.template` und
+  `.env.<any>.example` sauber ausnimmt.
+- `vitest` v4 Pool-Config-Migration (`fileParallelism: false` +
+  `poolOptions.forks.singleFork`) in `packages/db/vitest.*.config.ts`
+  — ohne das rannten RLS-Tests parallel und produzierten
+  "tuple concurrently updated"-Races.
+
+### Dockerfile-Härtung
+
+- `AUTH_SECRET`, `AUTH_TRUST_HOST`, `DATABASE_URL` in der Build-Stage
+  von `ENV` auf `ARG` + inline-Env im `RUN` umgestellt — sie liegen
+  nicht mehr als ENV-Layer im Final-Image (Docker-Lint
+  `SecretsUsedInArgOrEnv` clean).
+- `deploy/.env.production` → `deploy/.env.production.example`,
+  `setup.sh` entsprechend angepasst.
+
+### Audit-Chain (ADR-011 rev.2 / rev.3)
+
+- `javascript-opentimestamps` entfernt — die Lib zog 14 CVEs nach
+  (6 critical) via `bitcore-lib` / `web3` / `request` / `crypto-js`.
+  Submit-Pfad bleibt zero-dep; Upgrade-Pfad ist jetzt ein explizit
+  dokumentierter No-Op-Stub, der darauf hinweist, dass stored OTS
+  stubs mit dem externen `ots` CLI offline upgradebar und
+  verifizierbar sind.
+- FreeTSA bleibt der primäre Tamper-Evidence-Kanal.
+- Append-only-Rules-Test-Teardown nutzt jetzt
+  `session_replication_role = 'replica'` (session-lokal) statt
+  globaler `DROP RULE`/`CREATE RULE` — eliminiert Test-Races.
+- CI prüft jetzt `audit_log_tombstone_guard`-Trigger + mindestens
+  5 `_no_`-Rules (vorher hart 6 erwartet, was seit 0284 falsch war).
+
+### RLS / Schema-Drift
+
+- Neue Migration `0288_rls_gap_closure_v3.sql`: RLS +
+  FORCE-RLS + 4 Policies (select/insert/update/delete) für
+  `ai_conformity_assessment`, `ai_framework_mapping`, `ai_fria`,
+  `ai_human_oversight_log`, `ai_system`, `ai_transparency_entry`,
+  `audit_risk_prediction`, `audit_risk_prediction_model`,
+  `process_simulation_result`, `scenario_engine_scenario`,
+  `simulation_run_result` (11 Tabellen, die die rls-audit-Systemtests
+  vorher als Lücke flaggten).
+- CI wendet `0286`- und `0288`-Gap-Closure **nach**
+  `create-missing-tables.ts` erneut an, damit Tabellen, die erst
+  dort entstehen, ebenfalls RLS bekommen.
+- EAM-Schema: fehlende Spalten aus 0060/0064/0065 (`keywords`,
+  `predecessorId`, `examinerId`, `responsibleId`, plus Business-
+  Capability-Erweiterungen) in Drizzle nachgezogen.
+- `import_job`-Schema: Template-Pack-Felder (`source`,
+  `templatePackId`, `totalItems`, `processedItems`, `failedItems`,
+  `errorLog`, `startedAt`, `updatedAt`) + Migration
+  `0287_import_job_template_pack_columns.sql`.
+
+### Migration-Triage (Schema-Drift-Altlasten)
+
+Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
+(`packages/db/MIGRATIONS_KNOWN_ISSUES.md`):
+
+- **D (fixed)**: 0026 Template-Seeds entfernt (hatten
+  `type='system'` + `user_id=NULL`), 0096 nutzt bereits
+  `IF NOT EXISTS`.
+- **E (fixed)**: 0046 nutzt jetzt `bpm_simulation_result` statt des
+  von 0006 belegten `simulation_result`.
+- **F (fixed)**: `create_hypertable()` in 0136 + 0153 ist jetzt in
+  einem `DO $$`-Block, der ohne TimescaleDB-Extension auf
+  Plain-Table-Fallback geht.
+- **B/C/A/G**: deferred nach `release/0.2-migration-cleanup`,
+  Status dokumentiert.
+
+### TypeScript-/Lint-/Prettier-Aufräumen
+
+- Worker TS: 109 → 0. Alles auf postgres-js-`RowList`-Semantik
+  umgestellt (kein `.rows`-Zugriff mehr), JSX-Flag im Worker-
+  tsconfig für die `@grc/email`-Templates, Notification-Inserts auf
+  gültige Enum-Werte + `userId`-Auflösung statt `null`, AI-Provider-
+  Response-Typen gecastet, Schema-Drift in EAM und import_job
+  geschlossen.
+- Web TS: 94 → 0. `IncidentStatus`-Barrel-Konflikt gelöst
+  (state-machine-Interface in `AiActIncidentSnapshot` umbenannt),
+  Zod-v4-Migration (`z.record(key, value)`), `@types/node`
+  Buffer-ArrayBuffer-Kompatibilitäts-Cast, RLS-Policy-Query-Filter
+  neu ausgerichtet, Target auf ES2020 für BigInt-Literals in der
+  ASN.1-DER-Hilfsbibliothek.
+- ESLint + Prettier: 0 Errors, 0 Warnings repo-weit.
+
+### Sonstiges
+
+- `apps/web/tsconfig.json` Target auf ES2020.
+- `packages/db/drizzle/0025_sprint14_rcsa.sql`: `pg_policies.polname`
+  → `policyname` (der korrekte View-Spaltenname; `polname` gehört zur
+  Low-Level-Katalogtabelle `pg_policy`).
+
+### Bekannt / Deferred auf 0.2
+
+- OTS-Upgrade-Walker als echte zero-dep-Implementierung (aktuell
+  Stub).
+- 20 restliche Schema-Drift-Migrationen (A-/B-Rest/C-Rest/G), die
+  idempotent nicht durchlaufen.
+- 137 N+1-Query-Kandidaten + 1738 fehlende Index-Vorschläge aus dem
+  Audit (siehe `scripts/audit-*.mjs`).
+
 ## [Unreleased]
 
 ### Added
