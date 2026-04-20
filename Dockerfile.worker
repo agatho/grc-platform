@@ -29,8 +29,15 @@ ENV NODE_ENV=production
 RUN addgroup --system --gid 1001 arctos && \
     adduser --system --uid 1001 arctos
 
-COPY --from=deps /app/node_modules ./node_modules
-COPY --from=deps /app/package.json ./package.json
+# Copy the deps-stage /app completely — that brings the root
+# node_modules AND every per-workspace node_modules. npm workspaces
+# don't hoist every dep; @anthropic-ai/sdk for example lives only
+# in packages/ai/node_modules/. Without this the worker crash-loops
+# with "Cannot find module '@anthropic-ai/sdk'".
+COPY --from=deps /app ./
+
+# Overlay the source. .dockerignore excludes node_modules, so the
+# tree above survives this copy.
 COPY . .
 
 USER arctos
