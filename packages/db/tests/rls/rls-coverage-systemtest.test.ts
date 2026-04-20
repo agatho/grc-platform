@@ -97,17 +97,36 @@ describe("RLS Coverage System Test (ADR-001)", () => {
   afterAll(async () => {
     await clearRlsContext(appDb.client);
 
-    // Clean up as superuser, bypassing our own policies
+    // Clean up as superuser, bypassing our own policies. The test itself
+    // only INSERTs risks + orgs + users, but Sprint 1.4's work-item
+    // triggers create work_item rows, and the AI-Act seeds / audit trail
+    // may create other org-scoped rows too. Delete from every
+    // tenant-scoped table generically before dropping the organization.
     await adminDb.client.unsafe(`
       ALTER TABLE organization DISABLE TRIGGER audit_trigger;
       ALTER TABLE "user"       DISABLE TRIGGER audit_trigger;
-      ALTER TABLE audit_log DISABLE RULE audit_log_no_delete;
+      DROP RULE IF EXISTS audit_log_no_delete ON audit_log;
     `);
-    await adminDb.client`DELETE FROM audit_log WHERE org_id IN (${orgAId}, ${orgBId})`;
+
+    await adminDb.client.unsafe(
+      `DO $$
+       DECLARE
+         t text;
+       BEGIN
+         FOR t IN
+           SELECT DISTINCT table_name FROM information_schema.columns
+           WHERE table_schema = 'public' AND column_name = 'org_id'
+             AND table_name NOT IN ('organization')
+         LOOP
+           EXECUTE format('DELETE FROM %I WHERE org_id IN ($1, $2)', t)
+             USING '${orgAId}'::uuid, '${orgBId}'::uuid;
+         END LOOP;
+       END $$;`,
+    );
     await adminDb.client`DELETE FROM "user" WHERE id IN (${userAId}, ${userBId})`;
     await adminDb.client`DELETE FROM organization WHERE id IN (${orgAId}, ${orgBId})`;
     await adminDb.client.unsafe(`
-      ALTER TABLE audit_log ENABLE RULE audit_log_no_delete;
+      CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING;
       ALTER TABLE organization ENABLE TRIGGER audit_trigger;
       ALTER TABLE "user"       ENABLE TRIGGER audit_trigger;
     `);

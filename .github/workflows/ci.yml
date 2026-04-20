@@ -51,13 +51,11 @@ jobs:
 
       - name: Prettier (format check)
         run: npx prettier --check "**/*.{ts,tsx,js,json,md}" --ignore-path .gitignore
-        continue-on-error: true
 
       - name: TypeScript (type check — web)
-        run: npx tsc --noEmit -p apps/web/tsconfig.json 2>&1 | tail -5; echo "TS check completed (errors are non-blocking — next build uses ignoreBuildErrors)"
+        run: npx tsc --noEmit -p apps/web/tsconfig.json
         env:
           NODE_OPTIONS: "--max-old-space-size=4096"
-        continue-on-error: true
 
       - name: TypeScript (type check — worker)
         run: npx tsc --noEmit -p apps/worker/tsconfig.json
@@ -170,14 +168,12 @@ jobs:
       - name: Integration tests
         working-directory: packages/db
         run: npm run test:integration
-        continue-on-error: true
         env:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
       - name: RLS isolation tests
         working-directory: packages/db
         run: npm run test:rls
-        continue-on-error: true
         env:
           DATABASE_URL: postgresql://grc:grc_test_password@localhost:5432/grc_platform_test
 
@@ -420,7 +416,6 @@ jobs:
 
       - name: npm audit (production deps)
         run: npm audit --omit=dev --audit-level=high
-        continue-on-error: true
 
       - name: Check for leaked secrets
         uses: trufflesecurity/trufflehog@v3.94.1
@@ -429,7 +424,14 @@ jobs:
 
       - name: Check for .env files in repo
         run: |
-          ENV_FILES=$(git ls-files '*.env' '*.env.*' '.env*' 2>/dev/null | grep -v '.gitignore' | grep -v '.env.example' | grep -v '.env.sample' || true)
+          # Exclude anything whose final segment is a recognized template
+          # marker: .env.example, .env.sample, .env.template, or .env.<any>.example
+          # (e.g. deploy/.env.production.example). Those are expected to live
+          # in the repo. Real .env files would match the pattern but not the
+          # template-suffix filter.
+          ENV_FILES=$(git ls-files '*.env' '*.env.*' '.env*' 2>/dev/null \
+            | grep -vE '(^|/)(\.gitignore|\.env\.example|\.env\.sample|\.env\.template|\.env\.[^/]+\.example)$' \
+            || true)
           if [ -n "$ENV_FILES" ]; then
             echo "::error::Environment files found in repo: $ENV_FILES"
             exit 1

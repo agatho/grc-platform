@@ -470,21 +470,20 @@ describe("createSlaSchema", () => {
 // ---------------------------------------------------------------------------
 
 describe("createSlaMeasurementSchema", () => {
+  const baseInput = {
+    slaDefinitionId: "11111111-1111-4111-8111-111111111111",
+    periodStart: "2026-01-01",
+    periodEnd: "2026-01-31",
+    actualValue: 99.95,
+  };
+
   it("accepts valid measurement with required fields", () => {
-    const result = createSlaMeasurementSchema.safeParse({
-      periodStart: "2026-01-01",
-      periodEnd: "2026-01-31",
-      actualValue: "99.95",
-    });
+    const result = createSlaMeasurementSchema.safeParse(baseInput);
     expect(result.success).toBe(true);
   });
 
   it("applies default isBreach to false", () => {
-    const result = createSlaMeasurementSchema.safeParse({
-      periodStart: "2026-01-01",
-      periodEnd: "2026-01-31",
-      actualValue: "99.95",
-    });
+    const result = createSlaMeasurementSchema.safeParse(baseInput);
     expect(result.success).toBe(true);
     if (result.success) {
       expect(result.data.isBreach).toBe(false);
@@ -493,44 +492,45 @@ describe("createSlaMeasurementSchema", () => {
 
   it("accepts measurement with optional fields", () => {
     const result = createSlaMeasurementSchema.safeParse({
+      ...baseInput,
       periodStart: "2026-02-01",
       periodEnd: "2026-02-28",
-      actualValue: "98.5",
+      actualValue: 98.5,
       isBreach: true,
+      evidence: "Screenshots attached",
       notes: "Downtime during maintenance window",
     });
     expect(result.success).toBe(true);
   });
 
+  it("rejects missing slaDefinitionId", () => {
+    const { slaDefinitionId: _, ...rest } = baseInput;
+    const result = createSlaMeasurementSchema.safeParse(rest);
+    expect(result.success).toBe(false);
+  });
+
   it("rejects missing periodStart", () => {
-    const result = createSlaMeasurementSchema.safeParse({
-      periodEnd: "2026-01-31",
-      actualValue: "99.9",
-    });
+    const { periodStart: _, ...rest } = baseInput;
+    const result = createSlaMeasurementSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 
   it("rejects missing periodEnd", () => {
-    const result = createSlaMeasurementSchema.safeParse({
-      periodStart: "2026-01-01",
-      actualValue: "99.9",
-    });
+    const { periodEnd: _, ...rest } = baseInput;
+    const result = createSlaMeasurementSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 
   it("rejects missing actualValue", () => {
-    const result = createSlaMeasurementSchema.safeParse({
-      periodStart: "2026-01-01",
-      periodEnd: "2026-01-31",
-    });
+    const { actualValue: _, ...rest } = baseInput;
+    const result = createSlaMeasurementSchema.safeParse(rest);
     expect(result.success).toBe(false);
   });
 
-  it("rejects empty actualValue", () => {
+  it("rejects non-numeric actualValue", () => {
     const result = createSlaMeasurementSchema.safeParse({
-      periodStart: "2026-01-01",
-      periodEnd: "2026-01-31",
-      actualValue: "",
+      ...baseInput,
+      actualValue: "99.9",
     });
     expect(result.success).toBe(false);
   });

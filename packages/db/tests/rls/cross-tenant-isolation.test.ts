@@ -93,19 +93,35 @@ describe("RLS Cross-Tenant Isolation", () => {
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
     await adminDb.client.unsafe(
-      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
     );
 
+    // Generic teardown: drop rows from every tenant-scoped table before
+    // removing the organization. Avoids FK-cascade order churn as new
+    // tables are added.
+    await adminDb.client.unsafe(
+      `DO $$
+       DECLARE
+         t text;
+       BEGIN
+         FOR t IN
+           SELECT DISTINCT table_name FROM information_schema.columns
+           WHERE table_schema = 'public' AND column_name = 'org_id'
+             AND table_name NOT IN ('organization')
+         LOOP
+           EXECUTE format('DELETE FROM %I WHERE org_id IN ($1, $2)', t)
+             USING '${orgAId}'::uuid, '${orgBId}'::uuid;
+         END LOOP;
+       END $$;`,
+    );
     await adminDb.client.unsafe(`
-      DELETE FROM user_organization_role WHERE org_id IN ('${orgAId}', '${orgBId}');
-      DELETE FROM audit_log WHERE org_id IN ('${orgAId}', '${orgBId}');
       DELETE FROM audit_log WHERE user_id IN ('${userAId}', '${userBId}');
       DELETE FROM "user" WHERE id IN ('${userAId}', '${userBId}');
       DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}');
     `);
 
     await adminDb.client.unsafe(
-      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
     );
     await adminDb.client.unsafe(
       `ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`,
