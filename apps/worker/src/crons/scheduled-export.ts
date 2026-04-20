@@ -37,7 +37,7 @@ export async function processScheduledExport(): Promise<ScheduledExportResult> {
           WHERE is_active = 'true'`,
     );
 
-    const schedules = (result.rows ?? []) as unknown as ExportScheduleRow[];
+    const schedules = (result ?? []) as unknown as ExportScheduleRow[];
     processed = schedules.length;
 
     for (const schedule of schedules) {
@@ -62,7 +62,7 @@ export async function processScheduledExport(): Promise<ScheduledExportResult> {
               ),
             );
             const count = Number(
-              (dataResult.rows[0] as { cnt: string })?.cnt ?? 0,
+              ((dataResult as unknown as Array<{ cnt: string }>)[0])?.cnt ?? 0,
             );
             entityExports.push({ entityType, rowCount: count });
           } catch (entityErr) {

@@ -61,7 +61,6 @@ jobs:
 
       - name: TypeScript (type check — worker)
         run: npx tsc --noEmit -p apps/worker/tsconfig.json
-        continue-on-error: true
 
   # ────────────────────────────────────────────────
   # 2. Unit tests with coverage

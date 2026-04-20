@@ -60,14 +60,12 @@ export async function processConsentMetrics(): Promise<MetricsResult> {
       await db.insert(notification).values({
         orgId: ct.orgId,
         userId: ct.createdBy,
-        type: "consent_withdrawal_alert",
+        type: "escalation",
         title: `High Withdrawal Rate: ${ct.name}`,
-        body: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
+        message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
         entityType: "consent_type",
         entityId: ct.id,
-        module: "dpms",
-        priority: "high",
-        expiresAt: sql`now() + interval '90 days'`,
+        templateData: { module: "dpms", priority: "high", subtype: "consent_withdrawal_alert" },
       });
       alerts++;
     }

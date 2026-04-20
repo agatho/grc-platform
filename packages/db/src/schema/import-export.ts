@@ -38,8 +38,19 @@ export const importJob = pgTable(
     logJson: jsonb("log_json").default("[]"),
     rawHeaders: jsonb("raw_headers").default("[]"),
     rawPreviewRows: jsonb("raw_preview_rows").default("[]"),
+    // Sprint 59: template-pack import source + progress tracking
+    source: varchar("source", { length: 30 }),
+    templatePackId: uuid("template_pack_id"),
+    totalItems: integer("total_items"),
+    processedItems: integer("processed_items"),
+    failedItems: integer("failed_items"),
+    errorLog: jsonb("error_log").default("[]"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
     completedAt: timestamp("completed_at", { withTimezone: true }),

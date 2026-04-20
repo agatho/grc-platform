@@ -269,6 +269,15 @@ export const applicationPortfolio = pgTable(
     authMethod: varchar("auth_method", { length: 50 }),
     dataClassification: varchar("data_classification", { length: 20 }),
     sixRStrategy: varchar("six_r_strategy", { length: 20 }),
+    // Sprint 48 extensions (migration 0060_sprint48_eam_dashboards)
+    functionalFit: varchar("functional_fit", { length: 20 }),
+    technicalFit: varchar("technical_fit", { length: 20 }),
+    businessCriticality: varchar("business_criticality", { length: 30 }),
+    lastAssessedAt: timestamp("last_assessed_at", { withTimezone: true }),
+    assessedBy: uuid("assessed_by"),
+    // Sprint 53 extensions (migration 0065_sprint53_eam_governance)
+    processesPersonalData: boolean("processes_personal_data").default(false),
+    personalDataDetail: text("personal_data_detail"),
   },
   (table) => ({
     elementIdx: uniqueIndex("ap_element_idx").on(table.elementId),

@@ -174,7 +174,7 @@ export async function processReviewReminders(): Promise<ProcessReviewResult> {
       await db.insert(notification).values({
         userId: recipientId,
         orgId: sched.orgId,
-        type: isOverdue ? "task_overdue" as const : "deadline_approaching" as const,
+        type: isOverdue ? "escalation" as const : "deadline_approaching" as const,
         entityType: "process",
         entityId: sched.processId,
         title: `Process review ${urgencyLabel}: ${sched.processName}`,

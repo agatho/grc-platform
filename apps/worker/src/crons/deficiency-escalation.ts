@@ -38,14 +38,16 @@ export async function processDeficiencyEscalation(): Promise<EscalationResult> {
     await db.insert(notification).values({
       orgId: def.orgId,
       userId: def.remediationResponsible,
-      type: "deficiency_overdue",
+      type: "escalation",
       title: `Overdue Remediation: ${def.title}`,
-      body: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
+      message: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
       entityType: "control_deficiency",
       entityId: def.id,
-      module: "ics",
-      priority: def.classification === "material_weakness" ? "urgent" : "high",
-      expiresAt: sql`now() + interval '90 days'`,
+      templateData: {
+        module: "ics",
+        priority: def.classification === "material_weakness" ? "urgent" : "high",
+        subtype: "deficiency_overdue",
+      },
     });
     escalated++;
   }

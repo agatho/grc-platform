@@ -1,7 +1,7 @@
 // Sprint 85: Simulation Runner Worker
 // Runs every 5 minutes — processes pending simulation runs
 
-import { db, simulationRun, simulationResult, simulationScenario } from "@grc/db";
+import { db, simulationRun, simulationRunResult, simulationScenario } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 
 export async function processSimulationRunner(): Promise<{
@@ -25,7 +25,7 @@ export async function processSimulationRunner(): Promise<{
       const durationMs = Date.now() - startTime;
 
       // Insert placeholder results
-      await db.insert(simulationResult).values({
+      await db.insert(simulationRunResult).values({
         orgId: run.orgId,
         runId: run.id,
         metricKey: "total_impact",
