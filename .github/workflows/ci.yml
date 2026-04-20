@@ -153,6 +153,17 @@ jobs:
         working-directory: packages/db
         run: DATABASE_URL="postgresql://grc:grc_test_password@localhost:5432/grc_platform_test" npx tsx src/create-missing-tables.ts
 
+      - name: Re-apply RLS gap-closure migrations
+        # create-missing-tables.ts can introduce tables that the earlier
+        # RLS migrations skipped because the table didn't exist yet. Run
+        # them again so every tenant-scoped table ends up with RLS +
+        # policies regardless of creation order.
+        run: |
+          for f in packages/db/drizzle/0286_rls_gap_closure_v2.sql \
+                   packages/db/drizzle/0288_rls_gap_closure_v3.sql; do
+            PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -f "$f"
+          done
+
       - name: Create grc_app role for RLS tests
         run: |
           PGPASSWORD=grc_test_password psql -h localhost -U grc -d grc_platform_test -c "
