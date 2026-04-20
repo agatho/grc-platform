@@ -136,16 +136,29 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
     await adminDb.client.unsafe(
-      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
     );
 
-    // Delete in reverse FK order
+    // Generic teardown: drop rows from every tenant-scoped table before
+    // removing the organization. Avoids FK-cascade order churn as new
+    // tables are added. Explicit user-level cleanup comes after because
+    // audit_log has a user_id FK too.
+    await adminDb.client.unsafe(
+      `DO $$
+       DECLARE
+         t text;
+       BEGIN
+         FOR t IN
+           SELECT DISTINCT table_name FROM information_schema.columns
+           WHERE table_schema = 'public' AND column_name = 'org_id'
+             AND table_name NOT IN ('organization')
+         LOOP
+           EXECUTE format('DELETE FROM %I WHERE org_id IN ($1, $2)', t)
+             USING '${orgAId}'::uuid, '${orgBId}'::uuid;
+         END LOOP;
+       END $$;`,
+    );
     await adminDb.client.unsafe(`
-      DELETE FROM grc_cost_entry WHERE id = '${costEntryId}';
-      DELETE FROM grc_budget WHERE id = '${budgetId}';
-      DELETE FROM org_active_catalog WHERE id = '${activeCatalogId}';
-      DELETE FROM user_organization_role WHERE org_id IN ('${orgAId}', '${orgBId}');
-      DELETE FROM audit_log WHERE org_id IN ('${orgAId}', '${orgBId}');
       DELETE FROM audit_log WHERE user_id IN ('${userAId}', '${userBId}');
       DELETE FROM "user" WHERE id IN ('${userAId}', '${userBId}');
       DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}');
@@ -153,7 +166,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
 
     // Re-enable triggers and rules
     await adminDb.client.unsafe(
-      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
     );
     await adminDb.client.unsafe(
       `ALTER TABLE grc_cost_entry ENABLE TRIGGER audit_trigger`,

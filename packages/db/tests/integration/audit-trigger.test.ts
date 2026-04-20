@@ -49,7 +49,7 @@ describe("Audit Trigger & Hash Chain", () => {
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
     await testDb.client.unsafe(
-      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
     );
     if (testUserId) {
       await testDb.client.unsafe(
@@ -71,7 +71,7 @@ describe("Audit Trigger & Hash Chain", () => {
     }
     // Re-enable everything
     await testDb.client.unsafe(
-      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
     );
     await testDb.client.unsafe(
       `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
