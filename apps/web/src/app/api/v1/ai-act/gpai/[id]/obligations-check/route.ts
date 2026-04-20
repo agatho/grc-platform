@@ -4,10 +4,7 @@
 
 import { db, aiGpaiModel } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  assessGpaiObligations,
-  type GpaiObligationContext,
-} from "@grc/shared";
+import { assessGpaiObligations, type GpaiObligationContext } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -48,11 +45,15 @@ export async function POST(req: Request, { params }: RouteParams) {
     return Response.json({ error: "GPAI model not found" }, { status: 404 });
   }
 
-  const adversarialResults = (model.adversarialTestingResults ?? {}) as Record<string, unknown>;
+  const adversarialResults = (model.adversarialTestingResults ?? {}) as Record<
+    string,
+    unknown
+  >;
   const hasAdversarialTesting = Object.keys(adversarialResults).length > 0;
 
   const input: GpaiObligationContext = {
-    hasTechnicalDocumentation: Boolean(model.capabilitiesSummary) && Boolean(model.intendedUse),
+    hasTechnicalDocumentation:
+      Boolean(model.capabilitiesSummary) && Boolean(model.intendedUse),
     hasTrainingDataSummary: Boolean(model.trainingDataSummary),
     respectsCopyrightDirective: parsed.data.respectsCopyrightDirective,
     downstreamProviderInfoShared: parsed.data.downstreamProviderInfoShared,

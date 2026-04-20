@@ -10,7 +10,10 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const months = Math.min(24, Math.max(1, Number(url.searchParams.get("months")) || 12));
+  const months = Math.min(
+    24,
+    Math.max(1, Number(url.searchParams.get("months")) || 12),
+  );
 
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - months);
@@ -29,7 +32,10 @@ export async function GET(req: Request) {
         gte(assuranceScoreSnapshot.snapshotDate, cutoffDate),
       ),
     )
-    .orderBy(assuranceScoreSnapshot.module, assuranceScoreSnapshot.snapshotDate);
+    .orderBy(
+      assuranceScoreSnapshot.module,
+      assuranceScoreSnapshot.snapshotDate,
+    );
 
   // Group by module
   const moduleMap = new Map<string, TrendPoint[]>();

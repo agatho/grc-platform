@@ -5,7 +5,10 @@ import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/connectors/:id/schedules — Create schedule
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -17,7 +20,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const [connector] = await db
     .select({ id: evidenceConnector.id })
     .from(evidenceConnector)
-    .where(and(eq(evidenceConnector.id, id), eq(evidenceConnector.orgId, ctx.orgId), isNull(evidenceConnector.deletedAt)));
+    .where(
+      and(
+        eq(evidenceConnector.id, id),
+        eq(evidenceConnector.orgId, ctx.orgId),
+        isNull(evidenceConnector.deletedAt),
+      ),
+    );
 
   if (!connector) {
     return Response.json({ error: "Connector not found" }, { status: 404 });
@@ -25,7 +34,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const body = createConnectorScheduleSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -48,7 +60,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 }
 
 // GET /api/v1/connectors/:id/schedules — List schedules
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -60,7 +75,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   const items = await db
     .select()
     .from(connectorSchedule)
-    .where(and(eq(connectorSchedule.connectorId, id), eq(connectorSchedule.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(connectorSchedule.connectorId, id),
+        eq(connectorSchedule.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json({ data: items });
 }

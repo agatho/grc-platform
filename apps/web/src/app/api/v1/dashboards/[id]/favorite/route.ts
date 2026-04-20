@@ -25,10 +25,7 @@ export async function PUT(
   }
 
   // Check visibility
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 

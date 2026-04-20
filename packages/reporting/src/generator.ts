@@ -16,7 +16,11 @@ import {
   fetchKPIValue,
   type FetchContext,
 } from "./section-data-fetcher";
-import { renderPDF, buildReportHTML, type ResolvedSection } from "./renderers/pdf-renderer";
+import {
+  renderPDF,
+  buildReportHTML,
+  type ResolvedSection,
+} from "./renderers/pdf-renderer";
 import { renderExcel } from "./renderers/excel-renderer";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -79,7 +83,7 @@ export class ReportGenerator {
       const variableContext: VariableContext = {
         org: {
           name: org?.name || "",
-          code: (org as Record<string, unknown>)?.orgCode as string || "",
+          code: ((org as Record<string, unknown>)?.orgCode as string) || "",
         },
         report: {
           date: new Date().toLocaleDateString("de-DE"),
@@ -134,10 +138,7 @@ export class ReportGenerator {
             case "kpi":
               return {
                 ...section,
-                value: await fetchKPIValue(
-                  section.config.dataSource,
-                  fetchCtx,
-                ),
+                value: await fetchKPIValue(section.config.dataSource, fetchCtx),
               };
             case "page_break":
               return section as ResolvedSection;
@@ -152,7 +153,10 @@ export class ReportGenerator {
       if (format === "xlsx") {
         buffer = await renderExcel(resolvedSections);
       } else {
-        buffer = await renderPDF(resolvedSections, template.brandingJson as ReportBrandingConfig | null);
+        buffer = await renderPDF(
+          resolvedSections,
+          template.brandingJson as ReportBrandingConfig | null,
+        );
       }
 
       // 6. Write to disk
@@ -181,8 +185,7 @@ export class ReportGenerator {
         generationTimeMs,
       };
     } catch (error) {
-      const message =
-        error instanceof Error ? error.message : String(error);
+      const message = error instanceof Error ? error.message : String(error);
       await db
         .update(reportGenerationLog)
         .set({
@@ -208,10 +211,7 @@ export class ReportGenerator {
       .select()
       .from(reportTemplate)
       .where(
-        and(
-          eq(reportTemplate.id, templateId),
-          eq(reportTemplate.orgId, orgId),
-        ),
+        and(eq(reportTemplate.id, templateId), eq(reportTemplate.orgId, orgId)),
       )
       .limit(1);
 
@@ -225,7 +225,10 @@ export class ReportGenerator {
 
     const variableContext: VariableContext = {
       org: { name: org?.name || "", code: "" },
-      report: { date: new Date().toLocaleDateString("de-DE"), title: template.name },
+      report: {
+        date: new Date().toLocaleDateString("de-DE"),
+        title: template.name,
+      },
       period: { start: "", end: "", label: "" },
       author: { name: "Preview" },
     };

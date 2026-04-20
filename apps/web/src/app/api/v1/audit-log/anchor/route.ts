@@ -61,15 +61,19 @@ export async function POST(req: Request) {
   const leafRows = await db
     .select({ entryHash: auditLog.entryHash })
     .from(auditLog)
-    .where(and(
-      eq(auditLog.orgId, ctx.orgId),
-      gte(auditLog.createdAt, dayStart),
-      lt(auditLog.createdAt, dayEnd),
-      isNotNull(auditLog.entryHash),
-    ))
+    .where(
+      and(
+        eq(auditLog.orgId, ctx.orgId),
+        gte(auditLog.createdAt, dayStart),
+        lt(auditLog.createdAt, dayEnd),
+        isNotNull(auditLog.entryHash),
+      ),
+    )
     .orderBy(asc(auditLog.createdAt), asc(auditLog.id));
 
-  const leaves = leafRows.map((r) => r.entryHash).filter((h): h is string => !!h);
+  const leaves = leafRows
+    .map((r) => r.entryHash)
+    .filter((h): h is string => !!h);
   const root = merkleRoot(leaves);
 
   const response: AnchorResponse = {
@@ -83,7 +87,10 @@ export async function POST(req: Request) {
   if (!root) {
     return Response.json({
       ...response,
-      results: providers.map((p) => ({ provider: p, status: "skipped" as const })),
+      results: providers.map((p) => ({
+        provider: p,
+        status: "skipped" as const,
+      })),
       message: "No audit entries on this day — nothing to anchor.",
     });
   }
@@ -95,11 +102,13 @@ export async function POST(req: Request) {
       const existing = await db
         .select({ proofStatus: auditAnchor.proofStatus })
         .from(auditAnchor)
-        .where(and(
-          eq(auditAnchor.orgId, ctx.orgId),
-          eq(auditAnchor.anchorDate, dateStr),
-          eq(auditAnchor.provider, provider),
-        ))
+        .where(
+          and(
+            eq(auditAnchor.orgId, ctx.orgId),
+            eq(auditAnchor.anchorDate, dateStr),
+            eq(auditAnchor.provider, provider),
+          ),
+        )
         .limit(1);
 
       if (existing.length > 0 && existing[0].proofStatus !== "failed") {
@@ -125,7 +134,11 @@ export async function POST(req: Request) {
           proof: tsa.proof.toString("base64"),
           proofStatus: "complete",
         });
-        response.results.push({ provider, status: "created", proofStatus: "complete" });
+        response.results.push({
+          provider,
+          status: "created",
+          proofStatus: "complete",
+        });
       } else {
         const ots = await opentimestamps.submitToAnyCalendar(rootBuffer);
         await upsertAnchor({
@@ -137,7 +150,11 @@ export async function POST(req: Request) {
           proof: ots.stub.toString("base64"),
           proofStatus: "pending",
         });
-        response.results.push({ provider, status: "created", proofStatus: "pending" });
+        response.results.push({
+          provider,
+          status: "created",
+          proofStatus: "pending",
+        });
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
@@ -152,7 +169,9 @@ export async function POST(req: Request) {
         proof: "",
         proofStatus: "failed",
         lastError: msg,
-      }).catch(() => {/* ignore nested failure */});
+      }).catch(() => {
+        /* ignore nested failure */
+      });
     }
   }
 
@@ -186,7 +205,8 @@ export async function GET(req: Request) {
     .limit(limit);
 
   // Latest anchor per provider — the UI uses this for the badge
-  const latestByProvider: Record<string, (typeof rows)[number] | undefined> = {};
+  const latestByProvider: Record<string, (typeof rows)[number] | undefined> =
+    {};
   for (const r of rows) {
     if (!latestByProvider[r.provider]) latestByProvider[r.provider] = r;
   }

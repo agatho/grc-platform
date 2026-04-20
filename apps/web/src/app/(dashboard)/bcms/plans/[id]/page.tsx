@@ -46,7 +46,9 @@ function BcpDetailInner() {
   const [plan, setPlan] = useState<Bcp | null>(null);
   const [procedures, setProcedures] = useState<BcpProcedure[]>([]);
   const [resources, setResources] = useState<BcpResource[]>([]);
-  const [activeTab, setActiveTab] = useState<"overview" | "procedures" | "resources" | "activation">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "procedures" | "resources" | "activation"
+  >("overview");
   const [loading, setLoading] = useState(true);
 
   // Procedure form
@@ -70,9 +72,18 @@ function BcpDetailInner() {
         fetch(`/api/v1/bcms/plans/${id}/procedures?limit=100`),
         fetch(`/api/v1/bcms/plans/${id}/resources?limit=100`),
       ]);
-      if (pRes.ok) { const j = await pRes.json(); setPlan(j.data); }
-      if (procRes.ok) { const j = await procRes.json(); setProcedures(j.data ?? []); }
-      if (rRes.ok) { const j = await rRes.json(); setResources(j.data ?? []); }
+      if (pRes.ok) {
+        const j = await pRes.json();
+        setPlan(j.data);
+      }
+      if (procRes.ok) {
+        const j = await procRes.json();
+        setProcedures(j.data ?? []);
+      }
+      if (rRes.ok) {
+        const j = await rRes.json();
+        setResources(j.data ?? []);
+      }
     } finally {
       setLoading(false);
     }
@@ -129,7 +140,9 @@ function BcpDetailInner() {
   };
 
   const handleDeleteProcedure = async (procId: string) => {
-    await fetch(`/api/v1/bcms/plans/${id}/procedures/${procId}`, { method: "DELETE" });
+    await fetch(`/api/v1/bcms/plans/${id}/procedures/${procId}`, {
+      method: "DELETE",
+    });
     void fetchData();
   };
 
@@ -142,24 +155,33 @@ function BcpDetailInner() {
   }
 
   if (!plan) {
-    return <p className="text-center text-gray-400 py-12">{t("bcp.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-400 py-12">{t("bcp.notFound")}</p>
+    );
   }
 
-  const totalDuration = procedures.reduce((sum, p) => sum + (p.estimatedDurationMinutes ?? 0), 0);
+  const totalDuration = procedures.reduce(
+    (sum, p) => sum + (p.estimatedDurationMinutes ?? 0),
+    0,
+  );
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/bcms/plans")} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => router.push("/bcms/plans")}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <ArrowLeft size={18} />
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">{plan.title}</h1>
             <p className="text-sm text-gray-500">
               {t("bcp.version")}: {plan.version}
-              {plan.lastTestedDate && ` | ${t("bcp.lastTested")}: ${plan.lastTestedDate}`}
+              {plan.lastTestedDate &&
+                ` | ${t("bcp.lastTested")}: ${plan.lastTestedDate}`}
             </p>
           </div>
         </div>
@@ -170,17 +192,23 @@ function BcpDetailInner() {
 
       {/* Tabs */}
       <div className="flex gap-1 border-b border-gray-200">
-        {(["overview", "procedures", "resources", "activation"] as const).map((tab) => (
-          <button
-            key={tab}
-            onClick={() => setActiveTab(tab)}
-            className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
-            }`}
-          >
-            {t(`bcp.${tab === "overview" ? "overview" : tab === "procedures" ? "procedures" : tab === "resources" ? "resources" : "activation"}`)}
-          </button>
-        ))}
+        {(["overview", "procedures", "resources", "activation"] as const).map(
+          (tab) => (
+            <button
+              key={tab}
+              onClick={() => setActiveTab(tab)}
+              className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
+                activeTab === tab
+                  ? "border-blue-500 text-blue-600"
+                  : "border-transparent text-gray-500 hover:text-gray-700"
+              }`}
+            >
+              {t(
+                `bcp.${tab === "overview" ? "overview" : tab === "procedures" ? "procedures" : tab === "resources" ? "resources" : "activation"}`,
+              )}
+            </button>
+          ),
+        )}
       </div>
 
       {/* Overview Tab */}
@@ -189,20 +217,37 @@ function BcpDetailInner() {
           <div className="rounded-lg border border-gray-200 bg-white p-6">
             <dl className="grid grid-cols-2 gap-4">
               <div>
-                <dt className="text-xs font-medium text-gray-500">{t("common.description")}</dt>
-                <dd className="text-sm text-gray-900 mt-1">{plan.description || "-"}</dd>
+                <dt className="text-xs font-medium text-gray-500">
+                  {t("common.description")}
+                </dt>
+                <dd className="text-sm text-gray-900 mt-1">
+                  {plan.description || "-"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-gray-500">{t("bcp.scope")}</dt>
-                <dd className="text-sm text-gray-900 mt-1">{plan.scope || "-"}</dd>
+                <dt className="text-xs font-medium text-gray-500">
+                  {t("bcp.scope")}
+                </dt>
+                <dd className="text-sm text-gray-900 mt-1">
+                  {plan.scope || "-"}
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-gray-500">{t("bcp.totalDuration")}</dt>
-                <dd className="text-sm text-gray-900 mt-1">{totalDuration} {t("bcp.minutes")} ({Math.round(totalDuration / 60 * 10) / 10}h)</dd>
+                <dt className="text-xs font-medium text-gray-500">
+                  {t("bcp.totalDuration")}
+                </dt>
+                <dd className="text-sm text-gray-900 mt-1">
+                  {totalDuration} {t("bcp.minutes")} (
+                  {Math.round((totalDuration / 60) * 10) / 10}h)
+                </dd>
               </div>
               <div>
-                <dt className="text-xs font-medium text-gray-500">{t("bcp.procedures")}</dt>
-                <dd className="text-sm text-gray-900 mt-1">{procedures.length} {t("bcp.step")}(s)</dd>
+                <dt className="text-xs font-medium text-gray-500">
+                  {t("bcp.procedures")}
+                </dt>
+                <dd className="text-sm text-gray-900 mt-1">
+                  {procedures.length} {t("bcp.step")}(s)
+                </dd>
               </div>
             </dl>
           </div>
@@ -213,32 +258,59 @@ function BcpDetailInner() {
       {activeTab === "procedures" && (
         <div className="space-y-4">
           {procedures.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">{t("common.noData")}</p>
+            <p className="text-center text-gray-400 py-8">
+              {t("common.noData")}
+            </p>
           ) : (
             <div className="space-y-3">
               {procedures.map((proc) => (
-                <div key={proc.id} className="rounded-lg border border-gray-200 bg-white p-4">
+                <div
+                  key={proc.id}
+                  className="rounded-lg border border-gray-200 bg-white p-4"
+                >
                   <div className="flex items-start justify-between">
                     <div className="flex items-start gap-3">
                       <span className="flex items-center justify-center w-8 h-8 rounded-full bg-blue-100 text-blue-900 font-bold text-sm shrink-0">
                         {proc.stepNumber}
                       </span>
                       <div>
-                        <p className="font-medium text-gray-900">{proc.title}</p>
-                        {proc.description && <p className="text-sm text-gray-500 mt-1">{proc.description}</p>}
+                        <p className="font-medium text-gray-900">
+                          {proc.title}
+                        </p>
+                        {proc.description && (
+                          <p className="text-sm text-gray-500 mt-1">
+                            {proc.description}
+                          </p>
+                        )}
                         <div className="flex gap-4 mt-2 text-xs text-gray-400">
-                          {proc.responsibleRole && <span>{t("bcp.responsible")}: {proc.responsibleRole}</span>}
-                          {proc.estimatedDurationMinutes && <span>~{proc.estimatedDurationMinutes} {t("bcp.minutes")}</span>}
+                          {proc.responsibleRole && (
+                            <span>
+                              {t("bcp.responsible")}: {proc.responsibleRole}
+                            </span>
+                          )}
+                          {proc.estimatedDurationMinutes && (
+                            <span>
+                              ~{proc.estimatedDurationMinutes}{" "}
+                              {t("bcp.minutes")}
+                            </span>
+                          )}
                         </div>
                         {proc.prerequisites && (
-                          <p className="text-xs text-gray-400 mt-1">{t("bcp.prerequisites")}: {proc.prerequisites}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {t("bcp.prerequisites")}: {proc.prerequisites}
+                          </p>
                         )}
                         {proc.successCriteria && (
-                          <p className="text-xs text-gray-400 mt-1">{t("bcp.successCriteria")}: {proc.successCriteria}</p>
+                          <p className="text-xs text-gray-400 mt-1">
+                            {t("bcp.successCriteria")}: {proc.successCriteria}
+                          </p>
                         )}
                       </div>
                     </div>
-                    <button onClick={() => handleDeleteProcedure(proc.id)} className="text-gray-400 hover:text-red-500">
+                    <button
+                      onClick={() => handleDeleteProcedure(proc.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>
@@ -250,7 +322,8 @@ function BcpDetailInner() {
           {/* Duration summary */}
           {procedures.length > 0 && (
             <div className="text-sm text-gray-600">
-              {t("bcp.totalDuration")}: ~{totalDuration} {t("bcp.minutes")} ({Math.round(totalDuration / 60 * 10) / 10}h)
+              {t("bcp.totalDuration")}: ~{totalDuration} {t("bcp.minutes")} (
+              {Math.round((totalDuration / 60) * 10) / 10}h)
             </div>
           )}
 
@@ -274,15 +347,27 @@ function BcpDetailInner() {
               <input
                 type="number"
                 value={stepDuration ?? ""}
-                onChange={(e) => setStepDuration(e.target.value ? Number(e.target.value) : undefined)}
+                onChange={(e) =>
+                  setStepDuration(
+                    e.target.value ? Number(e.target.value) : undefined,
+                  )
+                }
                 placeholder={`${t("bcp.duration")} (${t("bcp.minutes")})`}
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               />
               <div className="flex gap-2">
                 <Button onClick={handleAddStep} disabled={addingStep} size="sm">
-                  {addingStep ? <Loader2 size={14} className="animate-spin" /> : t("common.save")}
+                  {addingStep ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    t("common.save")
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowAddStep(false)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddStep(false)}
+                >
                   {t("common.cancel")}
                 </Button>
               </div>
@@ -299,31 +384,52 @@ function BcpDetailInner() {
       {activeTab === "resources" && (
         <div className="space-y-4">
           {resources.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">{t("common.noData")}</p>
+            <p className="text-center text-gray-400 py-8">
+              {t("common.noData")}
+            </p>
           ) : (
             <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 border-b border-gray-200">
                   <tr>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">Type</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t("bcp.resource.quantity")}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t("bcp.resource.offsite")}</th>
-                    <th className="text-left px-4 py-3 font-medium text-gray-600">{t("bcp.resource.alternativeResource")}</th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      {t("common.name")}
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      Type
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      {t("bcp.resource.quantity")}
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      {t("bcp.resource.offsite")}
+                    </th>
+                    <th className="text-left px-4 py-3 font-medium text-gray-600">
+                      {t("bcp.resource.alternativeResource")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {resources.map((res) => (
                     <tr key={res.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 font-medium text-gray-900">{res.name}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {res.name}
+                      </td>
                       <td className="px-4 py-3">
                         <Badge variant="outline" className="text-[10px]">
-                          {RESOURCE_TYPE_LABELS[res.resourceType] ?? res.resourceType}
+                          {RESOURCE_TYPE_LABELS[res.resourceType] ??
+                            res.resourceType}
                         </Badge>
                       </td>
-                      <td className="px-4 py-3 text-gray-600">{res.quantity}</td>
-                      <td className="px-4 py-3 text-gray-600">{res.isAvailableOffsite ? "Yes" : "No"}</td>
-                      <td className="px-4 py-3 text-gray-500 text-xs">{res.alternativeResource ?? "-"}</td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {res.quantity}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600">
+                        {res.isAvailableOffsite ? "Yes" : "No"}
+                      </td>
+                      <td className="px-4 py-3 text-gray-500 text-xs">
+                        {res.alternativeResource ?? "-"}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -346,21 +452,36 @@ function BcpDetailInner() {
                 className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               >
                 {Object.entries(RESOURCE_TYPE_LABELS).map(([key, label]) => (
-                  <option key={key} value={key}>{label}</option>
+                  <option key={key} value={key}>
+                    {label}
+                  </option>
                 ))}
               </select>
               <div className="flex gap-2">
-                <Button onClick={handleAddResource} disabled={addingResource} size="sm">
-                  {addingResource ? <Loader2 size={14} className="animate-spin" /> : t("common.save")}
+                <Button
+                  onClick={handleAddResource}
+                  disabled={addingResource}
+                  size="sm"
+                >
+                  {addingResource ? (
+                    <Loader2 size={14} className="animate-spin" />
+                  ) : (
+                    t("common.save")
+                  )}
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setShowAddResource(false)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddResource(false)}
+                >
                   {t("common.cancel")}
                 </Button>
               </div>
             </div>
           ) : (
             <Button variant="outline" onClick={() => setShowAddResource(true)}>
-              <Plus size={14} className="mr-1" /> {t("bcp.resource.addResource")}
+              <Plus size={14} className="mr-1" />{" "}
+              {t("bcp.resource.addResource")}
             </Button>
           )}
         </div>
@@ -370,12 +491,20 @@ function BcpDetailInner() {
       {activeTab === "activation" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
           <div>
-            <dt className="text-xs font-medium text-gray-500">{t("bcp.activation")}</dt>
-            <dd className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">{plan.activationCriteria || "-"}</dd>
+            <dt className="text-xs font-medium text-gray-500">
+              {t("bcp.activation")}
+            </dt>
+            <dd className="text-sm text-gray-900 mt-1 whitespace-pre-wrap">
+              {plan.activationCriteria || "-"}
+            </dd>
           </div>
           <div>
-            <dt className="text-xs font-medium text-gray-500">{t("bcp.activationAuthority")}</dt>
-            <dd className="text-sm text-gray-900 mt-1">{plan.activationAuthority || "-"}</dd>
+            <dt className="text-xs font-medium text-gray-500">
+              {t("bcp.activationAuthority")}
+            </dt>
+            <dd className="text-sm text-gray-900 mt-1">
+              {plan.activationAuthority || "-"}
+            </dd>
           </div>
         </div>
       )}

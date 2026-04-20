@@ -20,8 +20,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(ccmEvidence).where(where)
-      .orderBy(desc(ccmEvidence.collectedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(ccmEvidence)
+      .where(where)
+      .orderBy(desc(ccmEvidence.collectedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(ccmEvidence).where(where),
   ]);
 

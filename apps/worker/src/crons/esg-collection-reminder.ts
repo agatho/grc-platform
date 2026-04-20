@@ -1,10 +1,18 @@
 // Sprint 45: ESG Data Collection Reminder (Daily)
 // Send reminders for upcoming collection deadlines
 
-import { db, esgCollectionCampaign, esgCollectionAssignment, notification } from "@grc/db";
+import {
+  db,
+  esgCollectionCampaign,
+  esgCollectionAssignment,
+  notification,
+} from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 
-interface CollectionReminderResult { processed: number; reminders: number; }
+interface CollectionReminderResult {
+  processed: number;
+  reminders: number;
+}
 
 export async function processEsgCollectionReminder(): Promise<CollectionReminderResult> {
   console.log(`[cron:esg-collection-reminder] Starting`);
@@ -47,7 +55,9 @@ export async function processEsgCollectionReminder(): Promise<CollectionReminder
           channel: "both" as const,
         });
         reminders++;
-      } catch { /* skip */ }
+      } catch {
+        /* skip */
+      }
     }
   }
 

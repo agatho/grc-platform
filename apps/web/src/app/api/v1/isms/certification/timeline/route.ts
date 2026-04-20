@@ -1,8 +1,4 @@
-import {
-  db,
-  soaEntry,
-  certificationReadinessSnapshot,
-} from "@grc/db";
+import { db, soaEntry, certificationReadinessSnapshot } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, or, gte, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -59,7 +55,8 @@ export async function GET(req: Request) {
     const latest = snapshots[0];
     const previous = snapshots[1];
     const daysDiff =
-      (new Date(latest.createdAt).getTime() - new Date(previous.createdAt).getTime()) /
+      (new Date(latest.createdAt).getTime() -
+        new Date(previous.createdAt).getTime()) /
       (1000 * 60 * 60 * 24);
     const gapDiff = previous.gapCount - latest.gapCount;
     closedLastMonth = daysDiff > 0 ? Math.round((gapDiff / daysDiff) * 30) : 0;

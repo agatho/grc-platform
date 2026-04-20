@@ -28,9 +28,7 @@ export function emitEntityCreated(
       payload: { after: params.data },
       emittedAt: new Date(),
     })
-    .catch((err) =>
-      console.error("[emitEntityCreated] Error:", err),
-    );
+    .catch((err) => console.error("[emitEntityCreated] Error:", err));
 }
 
 /**
@@ -45,8 +43,7 @@ export function emitEntityUpdated(
 ): void {
   const changedFields = Object.keys(params.after).filter(
     (key) =>
-      JSON.stringify(params.before[key]) !==
-      JSON.stringify(params.after[key]),
+      JSON.stringify(params.before[key]) !== JSON.stringify(params.after[key]),
   );
 
   eventBus
@@ -63,9 +60,7 @@ export function emitEntityUpdated(
       },
       emittedAt: new Date(),
     })
-    .catch((err) =>
-      console.error("[emitEntityUpdated] Error:", err),
-    );
+    .catch((err) => console.error("[emitEntityUpdated] Error:", err));
 }
 
 /**
@@ -84,9 +79,7 @@ export function emitEntityDeleted(
       payload: { before: params.data },
       emittedAt: new Date(),
     })
-    .catch((err) =>
-      console.error("[emitEntityDeleted] Error:", err),
-    );
+    .catch((err) => console.error("[emitEntityDeleted] Error:", err));
 }
 
 /**
@@ -113,7 +106,5 @@ export function emitEntityStatusChanged(
       },
       emittedAt: new Date(),
     })
-    .catch((err) =>
-      console.error("[emitEntityStatusChanged] Error:", err),
-    );
+    .catch((err) => console.error("[emitEntityStatusChanged] Error:", err));
 }

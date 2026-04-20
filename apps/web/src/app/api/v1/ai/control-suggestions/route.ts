@@ -96,7 +96,11 @@ Return JSON: [{"title": string, "controlType": "preventive"|"detective"|"correct
 
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown." },
+      {
+        role: "system",
+        content:
+          "You are a GRC and internal controls expert. Respond with valid JSON only, no markdown.",
+      },
       { role: "user", content: prompt },
     ],
     maxTokens: 2000,
@@ -115,8 +119,8 @@ Return JSON: [{"title": string, "controlType": "preventive"|"detective"|"correct
     model: aiResponse.model,
     latencyMs,
     costUsd: String(
-      ((aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015),
+      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
+        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
     ),
     cachedResult: false,
   });

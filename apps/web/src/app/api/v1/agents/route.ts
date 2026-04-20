@@ -10,7 +10,10 @@ export async function POST(req: Request) {
 
   const body = createAgentSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Check if agent type already exists for org
@@ -25,7 +28,10 @@ export async function POST(req: Request) {
     );
 
   if (existing) {
-    return Response.json({ error: "Agent type already registered for this organization" }, { status: 409 });
+    return Response.json(
+      { error: "Agent type already registered for this organization" },
+      { status: 409 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

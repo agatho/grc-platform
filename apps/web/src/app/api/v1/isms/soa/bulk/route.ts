@@ -19,7 +19,10 @@ export async function POST(req: Request) {
   }
 
   if (parsed.data.entries.length > 100) {
-    return Response.json({ error: "Maximum 100 entries per bulk update" }, { status: 400 });
+    return Response.json(
+      { error: "Maximum 100 entries per bulk update" },
+      { status: 400 },
+    );
   }
 
   const results = await withAuditContext(ctx, async (tx) => {
@@ -39,7 +42,10 @@ export async function POST(req: Request) {
         .limit(1);
 
       if (!existing) {
-        errors.push({ catalogEntryId: entry.catalogEntryId, error: "SoA entry not found" });
+        errors.push({
+          catalogEntryId: entry.catalogEntryId,
+          error: "SoA entry not found",
+        });
         continue;
       }
 
@@ -48,11 +54,16 @@ export async function POST(req: Request) {
         lastReviewed: new Date(),
       };
       if (entry.controlId !== undefined) updates.controlId = entry.controlId;
-      if (entry.applicability !== undefined) updates.applicability = entry.applicability;
-      if (entry.applicabilityJustification !== undefined) updates.applicabilityJustification = entry.applicabilityJustification;
-      if (entry.implementation !== undefined) updates.implementation = entry.implementation;
-      if (entry.implementationNotes !== undefined) updates.implementationNotes = entry.implementationNotes;
-      if (entry.responsibleId !== undefined) updates.responsibleId = entry.responsibleId;
+      if (entry.applicability !== undefined)
+        updates.applicability = entry.applicability;
+      if (entry.applicabilityJustification !== undefined)
+        updates.applicabilityJustification = entry.applicabilityJustification;
+      if (entry.implementation !== undefined)
+        updates.implementation = entry.implementation;
+      if (entry.implementationNotes !== undefined)
+        updates.implementationNotes = entry.implementationNotes;
+      if (entry.responsibleId !== undefined)
+        updates.responsibleId = entry.responsibleId;
 
       const [result] = await tx
         .update(soaEntry)

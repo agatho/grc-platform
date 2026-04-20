@@ -38,12 +38,7 @@ export async function GET(req: Request) {
         eq(assetClassification.orgId, ctx.orgId),
       ),
     )
-    .where(
-      and(
-        eq(asset.orgId, ctx.orgId),
-        isNull(asset.deletedAt),
-      ),
-    );
+    .where(and(eq(asset.orgId, ctx.orgId), isNull(asset.deletedAt)));
 
   let filtered = rows;
 
@@ -51,7 +46,9 @@ export async function GET(req: Request) {
     if (protectionFilter === "unclassified") {
       filtered = filtered.filter((r) => !r.classificationId);
     } else {
-      filtered = filtered.filter((r) => r.overallProtection === protectionFilter);
+      filtered = filtered.filter(
+        (r) => r.overallProtection === protectionFilter,
+      );
     }
   }
 

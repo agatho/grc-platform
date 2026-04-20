@@ -135,10 +135,19 @@ function EmissionsInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("emissions.title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("emissions.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("emissions.title")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("emissions.subtitle")}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -164,7 +173,9 @@ function EmissionsInner() {
 
       {/* Comparison Chart */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("emissions.comparison")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("emissions.comparison")}
+        </h2>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart data={comparisonData}>
@@ -173,8 +184,18 @@ function EmissionsInner() {
               <YAxis tick={{ fontSize: 11 }} stroke="#9ca3af" />
               <Tooltip contentStyle={{ fontSize: 12, borderRadius: 8 }} />
               <Legend wrapperStyle={{ fontSize: 12 }} />
-              <Bar dataKey="current" fill="#2563eb" name={t("emissions.currentYear")} radius={[4, 4, 0, 0]} />
-              <Bar dataKey="previous" fill="#93c5fd" name={t("emissions.previousYear")} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="current"
+                fill="#2563eb"
+                name={t("emissions.currentYear")}
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="previous"
+                fill="#93c5fd"
+                name={t("emissions.previousYear")}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -206,18 +227,32 @@ function EmissionsInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("emissions.category")}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("emissions.activityData")}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("emissions.emissionFactor")}</th>
-                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("emissions.totalCo2e")}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("period")}</th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("source")}</th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                  {t("emissions.category")}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                  {t("emissions.activityData")}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                  {t("emissions.emissionFactor")}
+                </th>
+                <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                  {t("emissions.totalCo2e")}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                  {t("period")}
+                </th>
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                  {t("source")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {entries.map((entry) => (
                 <tr key={entry.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-medium text-gray-900">{entry.category}</td>
+                  <td className="px-4 py-3 font-medium text-gray-900">
+                    {entry.category}
+                  </td>
                   <td className="px-4 py-3 text-right text-gray-700">
                     {entry.activityData.toLocaleString()} {entry.activityUnit}
                   </td>
@@ -230,12 +265,19 @@ function EmissionsInner() {
                   <td className="px-4 py-3 text-gray-600 text-xs">
                     {entry.periodStart} - {entry.periodEnd}
                   </td>
-                  <td className="px-4 py-3 text-gray-500 text-xs">{entry.source ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-500 text-xs">
+                    {entry.source ?? "-"}
+                  </td>
                 </tr>
               ))}
               {entries.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="px-4 py-8 text-center text-gray-400">{t("noData")}</td>
+                  <td
+                    colSpan={6}
+                    className="px-4 py-8 text-center text-gray-400"
+                  >
+                    {t("noData")}
+                  </td>
                 </tr>
               )}
             </tbody>
@@ -246,11 +288,21 @@ function EmissionsInner() {
   );
 }
 
-function ScopeCard({ label, value, color }: { label: string; value: number; color: string }) {
+function ScopeCard({
+  label,
+  value,
+  color,
+}: {
+  label: string;
+  value: number;
+  color: string;
+}) {
   return (
     <div className={`rounded-lg border ${color} bg-white p-4`}>
       <p className="text-xs font-medium text-gray-600 mb-1">{label}</p>
-      <p className="text-2xl font-bold text-gray-900">{value.toLocaleString()} t</p>
+      <p className="text-2xl font-bold text-gray-900">
+        {value.toLocaleString()} t
+      </p>
     </div>
   );
 }

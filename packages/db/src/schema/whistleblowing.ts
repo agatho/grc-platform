@@ -63,14 +63,20 @@ export const wbReport = pgTable(
       .notNull()
       .references(() => organization.id),
     reportToken: varchar("report_token", { length: 128 }).notNull().unique(),
-    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true }).notNull(),
+    tokenExpiresAt: timestamp("token_expires_at", {
+      withTimezone: true,
+    }).notNull(),
     category: wbCategoryEnum("category").notNull(),
     description: text("description").notNull(), // AES-256-GCM encrypted
     contactEmail: varchar("contact_email", { length: 320 }), // optional, encrypted
     language: varchar("language", { length: 2 }).notNull().default("de"),
     ipHash: varchar("ip_hash", { length: 64 }), // SHA-256, NOT plaintext
-    submittedAt: timestamp("submitted_at", { withTimezone: true }).notNull().defaultNow(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    submittedAt: timestamp("submitted_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("wbr_org_idx").on(table.orgId),
@@ -97,14 +103,22 @@ export const wbCase = pgTable(
     priority: wbPriorityEnum("priority").default("medium"),
     assignedTo: uuid("assigned_to").references(() => user.id),
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
-    acknowledgeDeadline: timestamp("acknowledge_deadline", { withTimezone: true }).notNull(),
-    responseDeadline: timestamp("response_deadline", { withTimezone: true }).notNull(),
+    acknowledgeDeadline: timestamp("acknowledge_deadline", {
+      withTimezone: true,
+    }).notNull(),
+    responseDeadline: timestamp("response_deadline", {
+      withTimezone: true,
+    }).notNull(),
     resolution: text("resolution"), // encrypted
     resolutionCategory: wbResolutionCategoryEnum("resolution_category"),
     resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
   },
   (table) => [
@@ -133,11 +147,11 @@ export const wbCaseMessage = pgTable(
     authorType: varchar("author_type", { length: 20 }).notNull(), // whistleblower|ombudsperson
     authorId: uuid("author_id").references(() => user.id), // null for whistleblower
     readAt: timestamp("read_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("wcm_case_idx").on(table.caseId),
-  ],
+  (table) => [index("wcm_case_idx").on(table.caseId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -148,7 +162,9 @@ export const wbCaseEvidence = pgTable(
   "wb_case_evidence",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    caseId: uuid("case_id").references(() => wbCase.id, { onDelete: "cascade" }),
+    caseId: uuid("case_id").references(() => wbCase.id, {
+      onDelete: "cascade",
+    }),
     reportId: uuid("report_id").references(() => wbReport.id),
     orgId: uuid("org_id")
       .notNull()
@@ -159,29 +175,26 @@ export const wbCaseEvidence = pgTable(
     storagePath: varchar("storage_path", { length: 1000 }).notNull(),
     sha256Hash: varchar("sha256_hash", { length: 64 }).notNull(),
     uploadedBy: uuid("uploaded_by").references(() => user.id),
-    uploadedAt: timestamp("uploaded_at", { withTimezone: true }).notNull().defaultNow(),
+    uploadedAt: timestamp("uploaded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     isImmutable: boolean("is_immutable").notNull().default(true),
   },
-  (table) => [
-    index("wce_case_idx").on(table.caseId),
-  ],
+  (table) => [index("wce_case_idx").on(table.caseId)],
 );
 
 // ──────────────────────────────────────────────────────────────
 // 12.5 wbAnonymousMailbox — Token-based mailbox for whistleblower
 // ──────────────────────────────────────────────────────────────
 
-export const wbAnonymousMailbox = pgTable(
-  "wb_anonymous_mailbox",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    reportId: uuid("report_id")
-      .notNull()
-      .references(() => wbReport.id)
-      .unique(),
-    token: varchar("token", { length: 128 }).notNull().unique(),
-    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
-    lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
-    accessCount: integer("access_count").notNull().default(0),
-  },
-);
+export const wbAnonymousMailbox = pgTable("wb_anonymous_mailbox", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  reportId: uuid("report_id")
+    .notNull()
+    .references(() => wbReport.id)
+    .unique(),
+  token: varchar("token", { length: 128 }).notNull().unique(),
+  expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+  lastAccessedAt: timestamp("last_accessed_at", { withTimezone: true }),
+  accessCount: integer("access_count").notNull().default(0),
+});

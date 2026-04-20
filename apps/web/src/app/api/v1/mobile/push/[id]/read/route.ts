@@ -14,11 +14,13 @@ export async function POST(
   const [updated] = await db
     .update(pushNotification)
     .set({ readAt: new Date() })
-    .where(and(
-      eq(pushNotification.id, id),
-      eq(pushNotification.userId, ctx.userId),
-      eq(pushNotification.orgId, ctx.orgId),
-    ))
+    .where(
+      and(
+        eq(pushNotification.id, id),
+        eq(pushNotification.userId, ctx.userId),
+        eq(pushNotification.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!updated) {

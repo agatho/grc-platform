@@ -35,16 +35,24 @@ export async function GET(req: Request) {
     conditions.push(sql`${regulatoryFeedItem.source} = ${parsed.data.source}`);
   }
   if (parsed.data.category) {
-    conditions.push(sql`${regulatoryFeedItem.category} = ${parsed.data.category}`);
+    conditions.push(
+      sql`${regulatoryFeedItem.category} = ${parsed.data.category}`,
+    );
   }
   if (parsed.data.jurisdiction) {
-    conditions.push(sql`${parsed.data.jurisdiction} = ANY(${regulatoryFeedItem.jurisdictions})`);
+    conditions.push(
+      sql`${parsed.data.jurisdiction} = ANY(${regulatoryFeedItem.jurisdictions})`,
+    );
   }
   if (parsed.data.framework) {
-    conditions.push(sql`${parsed.data.framework} = ANY(${regulatoryFeedItem.frameworks})`);
+    conditions.push(
+      sql`${parsed.data.framework} = ANY(${regulatoryFeedItem.frameworks})`,
+    );
   }
   if (parsed.data.since) {
-    conditions.push(sql`${regulatoryFeedItem.publishedAt} >= ${parsed.data.since}`);
+    conditions.push(
+      sql`${regulatoryFeedItem.publishedAt} >= ${parsed.data.since}`,
+    );
   }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;

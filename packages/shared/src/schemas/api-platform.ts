@@ -31,7 +31,12 @@ export const createDeveloperAppSchema = z.object({
   name: z.string().min(1).max(255),
   description: z.string().max(2000).optional(),
   redirectUris: z.array(z.string().url().max(500)).min(1).max(10),
-  grantTypes: z.array(z.enum(["authorization_code", "client_credentials", "refresh_token"])).min(1).default(["authorization_code"]),
+  grantTypes: z
+    .array(
+      z.enum(["authorization_code", "client_credentials", "refresh_token"]),
+    )
+    .min(1)
+    .default(["authorization_code"]),
   logoUrl: z.string().url().max(500).optional(),
   homepageUrl: z.string().url().max(500).optional(),
   privacyUrl: z.string().url().max(500).optional(),
@@ -52,7 +57,8 @@ export const createPlaygroundSnippetSchema = z.object({
   isPublic: z.boolean().default(false),
 });
 
-export const updatePlaygroundSnippetSchema = createPlaygroundSnippetSchema.partial();
+export const updatePlaygroundSnippetSchema =
+  createPlaygroundSnippetSchema.partial();
 
 // API Usage query
 export const apiUsageQuerySchema = z.object({
@@ -69,6 +75,10 @@ export type CreateApiKeyInput = z.infer<typeof createApiKeySchema>;
 export type UpdateApiKeyInput = z.infer<typeof updateApiKeySchema>;
 export type CreateDeveloperAppInput = z.infer<typeof createDeveloperAppSchema>;
 export type UpdateDeveloperAppInput = z.infer<typeof updateDeveloperAppSchema>;
-export type CreatePlaygroundSnippetInput = z.infer<typeof createPlaygroundSnippetSchema>;
-export type UpdatePlaygroundSnippetInput = z.infer<typeof updatePlaygroundSnippetSchema>;
+export type CreatePlaygroundSnippetInput = z.infer<
+  typeof createPlaygroundSnippetSchema
+>;
+export type UpdatePlaygroundSnippetInput = z.infer<
+  typeof updatePlaygroundSnippetSchema
+>;
 export type ApiUsageQuery = z.infer<typeof apiUsageQuerySchema>;

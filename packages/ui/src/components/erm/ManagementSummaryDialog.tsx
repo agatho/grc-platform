@@ -5,7 +5,11 @@ import React, { useState } from "react";
 interface ManagementSummaryDialogProps {
   isOpen: boolean;
   onClose: () => void;
-  onGenerate: (params: { periodStart: string; periodEnd: string; language: "de" | "en" }) => void;
+  onGenerate: (params: {
+    periodStart: string;
+    periodEnd: string;
+    language: "de" | "en";
+  }) => void;
   isLoading?: boolean;
   labels?: {
     title: string;
@@ -100,7 +104,9 @@ export function ManagementSummaryDialog({
             disabled={isLoading || !periodStart || !periodEnd}
             className="px-4 py-2 text-sm font-medium text-white bg-teal-600 rounded-md hover:bg-teal-700 disabled:opacity-50"
           >
-            {isLoading ? (labels?.generating ?? "Generating...") : (labels?.generate ?? "Generate Report")}
+            {isLoading
+              ? (labels?.generating ?? "Generating...")
+              : (labels?.generate ?? "Generate Report")}
           </button>
         </div>
       </div>

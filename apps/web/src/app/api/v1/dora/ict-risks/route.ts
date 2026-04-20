@@ -10,11 +10,15 @@ export async function POST(req: Request) {
 
   const body = createDoraIctRiskSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(doraIctRisk)
+    const [created] = await tx
+      .insert(doraIctRisk)
       .values({ ...body.data, orgId: ctx.orgId })
       .returning();
     return created;
@@ -29,25 +33,38 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = doraIctRiskQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = doraIctRiskQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, riskLevel, status, ictAssetType } = query.data;
   const offset = (page - 1) * limit;
 
-  const conditions = [eq(doraIctRisk.orgId, ctx.orgId), isNull(doraIctRisk.deletedAt)];
+  const conditions = [
+    eq(doraIctRisk.orgId, ctx.orgId),
+    isNull(doraIctRisk.deletedAt),
+  ];
   if (riskLevel) conditions.push(eq(doraIctRisk.riskLevel, riskLevel));
   if (status) conditions.push(eq(doraIctRisk.status, status));
   if (ictAssetType) conditions.push(eq(doraIctRisk.ictAssetType, ictAssetType));
 
   const [rows, countResult] = await Promise.all([
-    db.select().from(doraIctRisk)
+    db
+      .select()
+      .from(doraIctRisk)
       .where(and(...conditions))
       .orderBy(desc(doraIctRisk.createdAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(doraIctRisk)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(doraIctRisk)
       .where(and(...conditions)),
   ]);
 

@@ -30,17 +30,26 @@ export async function PUT(
     .limit(1);
 
   if (!activation) {
-    return Response.json({ error: "No playbook activation found for this incident" }, { status: 404 });
+    return Response.json(
+      { error: "No playbook activation found for this incident" },
+      { status: 404 },
+    );
   }
 
   if (activation.status !== "active") {
     return Response.json(
-      { error: `Cannot advance phase: playbook status is "${activation.status}"` },
+      {
+        error: `Cannot advance phase: playbook status is "${activation.status}"`,
+      },
       { status: 400 },
     );
   }
 
-  const result = await checkAndAdvancePhase(activation.id, ctx.orgId, ctx.userId);
+  const result = await checkAndAdvancePhase(
+    activation.id,
+    ctx.orgId,
+    ctx.userId,
+  );
 
   if (!result.advanced) {
     return Response.json(

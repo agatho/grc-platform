@@ -1,4 +1,12 @@
-import { db, soaAiSuggestion, soaEntry, catalogEntry, control, asset, risk } from "@grc/db";
+import {
+  db,
+  soaAiSuggestion,
+  soaEntry,
+  catalogEntry,
+  control,
+  asset,
+  risk,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -17,7 +25,10 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = triggerSoaGapAnalysisSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   // Rate limit: 1 analysis per org per 5 minutes
@@ -61,14 +72,16 @@ export async function POST(req: Request) {
   }
 
   // Gather linked control titles for display
-  const controlIds = soaRows.filter(r => r.controlId).map(r => r.controlId!);
+  const controlIds = soaRows
+    .filter((r) => r.controlId)
+    .map((r) => r.controlId!);
   const controlTitles: Map<string, string> = new Map();
   if (controlIds.length > 0) {
     const controls = await db
       .select({ id: control.id, title: control.title })
       .from(control)
       .where(sql`${control.id} in ${controlIds}`);
-    controls.forEach(c => controlTitles.set(c.id, c.title));
+    controls.forEach((c) => controlTitles.set(c.id, c.title));
   }
 
   // Gather summaries
@@ -77,22 +90,29 @@ export async function POST(req: Request) {
     .from(asset)
     .where(eq(asset.orgId, ctx.orgId))
     .limit(50);
-  const assetSummary = assets.map(a => `${a.name} (${a.tier})`).join(", ") || "No assets registered";
+  const assetSummary =
+    assets.map((a) => `${a.name} (${a.tier})`).join(", ") ||
+    "No assets registered";
 
   const risks = await db
     .select({ title: risk.title, riskCategory: risk.riskCategory })
     .from(risk)
     .where(eq(risk.orgId, ctx.orgId))
     .limit(50);
-  const riskSummary = risks.map(r => `${r.title}${r.riskCategory ? ` [${r.riskCategory}]` : ""}`).join(", ") || "No risks registered";
+  const riskSummary =
+    risks
+      .map((r) => `${r.title}${r.riskCategory ? ` [${r.riskCategory}]` : ""}`)
+      .join(", ") || "No risks registered";
 
   // Build prompt
-  const soaData = soaRows.map(r => ({
+  const soaData = soaRows.map((r) => ({
     controlRef: r.controlRef ?? "Unknown",
     controlTitle: r.controlTitle ?? "Unknown",
     applicability: r.applicability,
     implementation: r.implementation,
-    linkedControlTitle: r.controlId ? controlTitles.get(r.controlId) : undefined,
+    linkedControlTitle: r.controlId
+      ? controlTitles.get(r.controlId)
+      : undefined,
   }));
 
   const prompt = buildSoaGapPrompt({
@@ -106,7 +126,11 @@ export async function POST(req: Request) {
   // Call AI
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are an ISO 27001 compliance auditor. Respond only with valid JSON." },
+      {
+        role: "system",
+        content:
+          "You are an ISO 27001 compliance auditor. Respond only with valid JSON.",
+      },
       { role: "user", content: prompt },
     ],
     model: "claude-sonnet-4-20250514",
@@ -158,9 +182,9 @@ export async function POST(req: Request) {
   });
 
   const gapsByType = {
-    not_covered: result.filter(s => s.gapType === "not_covered").length,
-    partial: result.filter(s => s.gapType === "partial").length,
-    full: result.filter(s => s.gapType === "full").length,
+    not_covered: result.filter((s) => s.gapType === "not_covered").length,
+    partial: result.filter((s) => s.gapType === "partial").length,
+    full: result.filter((s) => s.gapType === "full").length,
   };
 
   return Response.json({
@@ -224,9 +248,9 @@ export async function GET(req: Request) {
     );
 
   const gapsByType = {
-    not_covered: suggestions.filter(s => s.gapType === "not_covered").length,
-    partial: suggestions.filter(s => s.gapType === "partial").length,
-    full: suggestions.filter(s => s.gapType === "full").length,
+    not_covered: suggestions.filter((s) => s.gapType === "not_covered").length,
+    partial: suggestions.filter((s) => s.gapType === "partial").length,
+    full: suggestions.filter((s) => s.gapType === "full").length,
   };
 
   return Response.json({

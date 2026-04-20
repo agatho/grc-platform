@@ -3,11 +3,7 @@
 // No polling, no cron — purely event-driven.
 
 import type { GrcEvent } from "@grc/events";
-import {
-  db,
-  automationRule,
-  automationRuleExecution,
-} from "@grc/db";
+import { db, automationRule, automationRuleExecution } from "@grc/db";
 import { eq, and, sql, desc, gte } from "drizzle-orm";
 import type {
   AutomationTriggerConfig,
@@ -16,7 +12,10 @@ import type {
   AutomationExecutionStatus,
   ActionExecutionResult,
 } from "@grc/shared";
-import { evaluateConditions, evaluateConditionsWithTrace } from "./condition-evaluator";
+import {
+  evaluateConditions,
+  evaluateConditionsWithTrace,
+} from "./condition-evaluator";
 import {
   executeActions,
   determineExecutionStatus,
@@ -52,10 +51,7 @@ export class AutomationEngine {
         try {
           await this.evaluateAndExecuteRule(rule, event);
         } catch (err) {
-          console.error(
-            `[AutomationEngine] Rule ${rule.id} failed:`,
-            err,
-          );
+          console.error(`[AutomationEngine] Rule ${rule.id} failed:`, err);
         }
       }
     } catch (err) {
@@ -151,10 +147,7 @@ export class AutomationEngine {
     });
 
     // 8. Update cooldown cache
-    this.cooldownCache.set(
-      `${rule.id}:${event.entityId}`,
-      new Date(),
-    );
+    this.cooldownCache.set(`${rule.id}:${event.entityId}`, new Date());
 
     // 9. Update rate limit counter
     this.incrementRateCount(rule.id);
@@ -169,7 +162,11 @@ export class AutomationEngine {
   async dryRun(
     ruleId: string,
     orgId: string,
-    entityOverride?: { entityType: string; entityId: string; entity: Record<string, unknown> },
+    entityOverride?: {
+      entityType: string;
+      entityId: string;
+      entity: Record<string, unknown>;
+    },
   ): Promise<{
     conditionsMatched: boolean;
     trace: unknown;
@@ -180,7 +177,9 @@ export class AutomationEngine {
     const [rule] = await db
       .select()
       .from(automationRule)
-      .where(and(eq(automationRule.id, ruleId), eq(automationRule.orgId, orgId)));
+      .where(
+        and(eq(automationRule.id, ruleId), eq(automationRule.orgId, orgId)),
+      );
 
     if (!rule) {
       throw new Error("Rule not found");
@@ -317,10 +316,7 @@ export class AutomationEngine {
       .select()
       .from(automationRule)
       .where(
-        and(
-          eq(automationRule.orgId, orgId),
-          eq(automationRule.isActive, true),
-        ),
+        and(eq(automationRule.orgId, orgId), eq(automationRule.isActive, true)),
       );
   }
 

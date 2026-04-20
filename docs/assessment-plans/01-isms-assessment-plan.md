@@ -9,17 +9,18 @@
 Das ISMS-Modul ist das groesste und komplexeste der 4 Module. Es vereint
 drei parallel anwendbare Frameworks mit ueberlappendem Scope:
 
-| Framework | Fokus | In ARCTOS-Katalog |
-|---|---|---|
-| **ISO/IEC 27001:2022** | Management-System + 93 Annex-A-Controls | #16 (97 Entries) |
-| **ISO/IEC 27002:2022** | Implementation-Guidance fuer 27001-Controls | #4 (97 Entries, 1:1 Mapping) |
-| **ISO/IEC 27005:2022** | Risk-Management-Methodik (Threat × Vuln × Asset) | #30 Threats (31) + #31 Vulns (23) |
-| **NIST CSF 2.0** | 6 Funktionen: Govern, Identify, Protect, Detect, Respond, Recover | #5 (131 Subcategories) |
-| **BSI Grundschutz** | Katalog deutscher Baustein-Anforderungen | #15 (160 Bausteine) |
-| **TISAX 6.0** | Automotive-ISMS, basiert auf 27001 | #18 (110 Entries) |
-| **CIS Controls v8** | Prioritized control list, IG1/2/3 | #6 (35 Controls) |
+| Framework              | Fokus                                                             | In ARCTOS-Katalog                 |
+| ---------------------- | ----------------------------------------------------------------- | --------------------------------- |
+| **ISO/IEC 27001:2022** | Management-System + 93 Annex-A-Controls                           | #16 (97 Entries)                  |
+| **ISO/IEC 27002:2022** | Implementation-Guidance fuer 27001-Controls                       | #4 (97 Entries, 1:1 Mapping)      |
+| **ISO/IEC 27005:2022** | Risk-Management-Methodik (Threat × Vuln × Asset)                  | #30 Threats (31) + #31 Vulns (23) |
+| **NIST CSF 2.0**       | 6 Funktionen: Govern, Identify, Protect, Detect, Respond, Recover | #5 (131 Subcategories)            |
+| **BSI Grundschutz**    | Katalog deutscher Baustein-Anforderungen                          | #15 (160 Bausteine)               |
+| **TISAX 6.0**          | Automotive-ISMS, basiert auf 27001                                | #18 (110 Entries)                 |
+| **CIS Controls v8**    | Prioritized control list, IG1/2/3                                 | #6 (35 Controls)                  |
 
 Cross-Framework-Mappings (existierend):
+
 - ISO 27001 Annex A ↔ ISO 27002 (93, 1:1)
 - ISO 27001 ↔ BSI Grundschutz (64)
 - ISO 27001 ↔ TISAX (44)
@@ -34,44 +35,44 @@ gepflegt sind.
 
 ### ISO/IEC 27001 Clauses → Workflow-Phases
 
-| Clause | Anforderung | Workflow-Phase | ARCTOS-Entity |
-|---|---|---|---|
-| 4.1 | Context | Setup | `assessment_run.scope_filter.context_factors` |
-| 4.2 | Interested Parties | Setup | `stakeholder_portal` + `contract.vendor` |
-| 4.3 | Scope | Setup | `assessment_run.scope_filter` + SoA |
-| 4.4 | ISMS Establishment | Setup | Platform-weite Aktivierung via `module_config` |
-| 5.1 | Leadership | Governance | `management_review.attendees` + Board-Report |
-| 5.2 | Policy | Documentation | `document` (Kategorie: `policy`) |
-| 5.3 | Roles + Authorities | Governance | `user_organization_role` + `rci_matrix` |
-| 6.1.1 | Risks + Opportunities | Risk | `risk`, `risk_assessment` |
-| 6.1.2 | Risk Assessment | Risk | **ISO 27005** Workflow (siehe §3.3) |
-| 6.1.3 | Risk Treatment | Risk | `risk_treatment`, `risk_acceptance` + Authority |
-| 6.2 | Objectives | Governance | `management_review.objectives` |
-| 6.3 | Change Planning | Governance | `approval_workflow`, `approval_request` |
-| 7.1 | Resources | Budget | `grc_budget` |
-| 7.2 | Competence | Awareness | `academy.course`, `certification` |
-| 7.3 | Awareness | Awareness | `compliance_culture.campaign` |
-| 7.4 | Communication | Governance | `notification`, `incident.communication` |
-| 7.5 | Documented Info | Documentation | `document` + Versionierung |
-| 8.1 | Operational Control | Execution | `control_test_campaign`, `checklist_instance` |
-| 8.2 | Risk Assessment (Op) | Risk | Recurring `risk_assessment` (Worker-Job) |
-| 8.3 | Risk Treatment | Risk | `risk_treatment` Execution-Tasks |
-| 9.1 | Monitoring + KPI | Analytics | `kri`, `control_maturity`, `control_monitoring_rule` |
-| 9.2 | Internal Audit | Audit | Audit-Modul (Sprint 8) |
-| 9.3 | Management Review | Governance | `management_review` |
-| 10.1 | Nonconformity + CAP | CAP | `isms_nonconformity` + `isms_corrective_action` |
-| 10.2 | Improvement | CAP | CAP-Effectiveness-Review |
+| Clause | Anforderung           | Workflow-Phase | ARCTOS-Entity                                        |
+| ------ | --------------------- | -------------- | ---------------------------------------------------- |
+| 4.1    | Context               | Setup          | `assessment_run.scope_filter.context_factors`        |
+| 4.2    | Interested Parties    | Setup          | `stakeholder_portal` + `contract.vendor`             |
+| 4.3    | Scope                 | Setup          | `assessment_run.scope_filter` + SoA                  |
+| 4.4    | ISMS Establishment    | Setup          | Platform-weite Aktivierung via `module_config`       |
+| 5.1    | Leadership            | Governance     | `management_review.attendees` + Board-Report         |
+| 5.2    | Policy                | Documentation  | `document` (Kategorie: `policy`)                     |
+| 5.3    | Roles + Authorities   | Governance     | `user_organization_role` + `rci_matrix`              |
+| 6.1.1  | Risks + Opportunities | Risk           | `risk`, `risk_assessment`                            |
+| 6.1.2  | Risk Assessment       | Risk           | **ISO 27005** Workflow (siehe §3.3)                  |
+| 6.1.3  | Risk Treatment        | Risk           | `risk_treatment`, `risk_acceptance` + Authority      |
+| 6.2    | Objectives            | Governance     | `management_review.objectives`                       |
+| 6.3    | Change Planning       | Governance     | `approval_workflow`, `approval_request`              |
+| 7.1    | Resources             | Budget         | `grc_budget`                                         |
+| 7.2    | Competence            | Awareness      | `academy.course`, `certification`                    |
+| 7.3    | Awareness             | Awareness      | `compliance_culture.campaign`                        |
+| 7.4    | Communication         | Governance     | `notification`, `incident.communication`             |
+| 7.5    | Documented Info       | Documentation  | `document` + Versionierung                           |
+| 8.1    | Operational Control   | Execution      | `control_test_campaign`, `checklist_instance`        |
+| 8.2    | Risk Assessment (Op)  | Risk           | Recurring `risk_assessment` (Worker-Job)             |
+| 8.3    | Risk Treatment        | Risk           | `risk_treatment` Execution-Tasks                     |
+| 9.1    | Monitoring + KPI      | Analytics      | `kri`, `control_maturity`, `control_monitoring_rule` |
+| 9.2    | Internal Audit        | Audit          | Audit-Modul (Sprint 8)                               |
+| 9.3    | Management Review     | Governance     | `management_review`                                  |
+| 10.1   | Nonconformity + CAP   | CAP            | `isms_nonconformity` + `isms_corrective_action`      |
+| 10.2   | Improvement           | CAP            | CAP-Effectiveness-Review                             |
 
 ### NIST CSF 2.0 Funktionen → Workflow-Coverage
 
-| Funktion | Subcategories | ARCTOS-Coverage |
-|---|---|---|
-| **GV** (Govern) | 31 | `management_review`, `risk_appetite`, `process.governance` |
-| **ID** (Identify) | 21 | `asset`, `protection_requirement`, Threat-Landscape, `risk_scenario` |
-| **PR** (Protect) | 27 | `control`, `control_test`, Training, Access-Management |
-| **DE** (Detect) | 10 | `security_incident`, CVE-Feed, Monitoring-Rules, SIEM-Connector |
-| **RS** (Respond) | 19 | Incident-Response, `isms_corrective_action`, Playbooks |
-| **RC** (Recover) | 13 | BCMS-Modul (Cross-Link), `bcp` |
+| Funktion          | Subcategories | ARCTOS-Coverage                                                      |
+| ----------------- | ------------- | -------------------------------------------------------------------- |
+| **GV** (Govern)   | 31            | `management_review`, `risk_appetite`, `process.governance`           |
+| **ID** (Identify) | 21            | `asset`, `protection_requirement`, Threat-Landscape, `risk_scenario` |
+| **PR** (Protect)  | 27            | `control`, `control_test`, Training, Access-Management               |
+| **DE** (Detect)   | 10            | `security_incident`, CVE-Feed, Monitoring-Rules, SIEM-Connector      |
+| **RS** (Respond)  | 19            | Incident-Response, `isms_corrective_action`, Playbooks               |
+| **RC** (Recover)  | 13            | BCMS-Modul (Cross-Link), `bcp`                                       |
 
 Total: **131 Subcategories**, davon ca. 65 direkt durch 27001 Annex A
 abgedeckt (via Mapping). Restliche 66 brauchen NIST-spezifische Checks.
@@ -104,6 +105,7 @@ Kern: **Risk-Szenario = Threat × Vulnerability × Asset → Impact/Likelihood �
 ```
 
 Entity-Mapping (alles bereits vorhanden):
+
 - `threat` (Catalog #30 + Custom)
 - `vulnerability` (Catalog #31 + Custom + CVE-Feed via `cve_feed_item`)
 - `asset` (Custom, mit `asset_cpe` fuer CVE-Match)
@@ -124,11 +126,13 @@ Org-Change)
 **Aktoren**: admin, risk_manager
 
 **Inputs**:
+
 - Vorheriger Assessment-Run (optional)
 - Aktuelle Org-Struktur
 - Geschaefts-Kontext (CSRD-Materialitaet, Branche, Regulatorik)
 
 **Outputs**:
+
 - `assessment_run` mit `status='planning'`, `framework=<iso27001|nist_csf|combined>`
 - Scope-Filter (Asset-Typen, Geschaeftseinheiten, Standorte, Prozesse)
 - Team-Mapping (Lead-Assessor + Control-Owner + DPO)
@@ -136,23 +140,27 @@ Org-Change)
 - Budget-Allocation
 
 **Workflow-States**:
+
 ```
 [create] → planning → ready_to_execute → in_progress → under_review → completed
                                                                ↘ cancelled
 ```
 
 **Akzeptanz-Kriterien**:
+
 - [ ] Lead-Assessor zugewiesen
 - [ ] Scope-Statement dokumentiert (min. 200 Zeichen)
 - [ ] Mindestens ein Katalog via `org_active_catalog` referenziert
 - [ ] period_end >= period_start + 14 Tage
 
 **Existierend**:
+
 - ✅ `assessment_run` Tabelle
 - ✅ `/api/v1/isms/assessments` CRUD
 - 🟡 UI: Create-Wizard fehlt (derzeit nur Liste + Detail)
 
 **Gap**:
+
 - 🔴 Setup-Wizard (3-Step): Name+Framework → Scope-Filter → Team+Timeline
 - 🔴 Pre-Setup-Check: "Haben Sie eine gueltige ISMS-Policy?" (Link auf `document`)
 - 🔴 Template-basiertes Erstellen (aus Vorjahres-Run)
@@ -164,10 +172,12 @@ Org-Change)
 **Aktoren**: admin, risk_manager, auditor
 
 **Inputs**:
+
 - Scope-Statement aus Phase 1
 - Org-Context-Flags (Finanzsektor → DORA overlay, Automotive → TISAX)
 
 **Outputs**:
+
 - Per ausgewaehltem Katalog alle catalog_entries → `soa_entry` mit
   applicability='applicable|not_applicable|partially_applicable'
 - Default-Applicability-Rules aus `soa_ai_suggestion` (ML-based, falls
@@ -176,17 +186,20 @@ Org-Change)
   referenzieren via `catalog_entry_mapping`)
 
 **Akzeptanz-Kriterien**:
+
 - [ ] Jeder Annex-A-Control hat expliziten Applicability-Status
 - [ ] Jeder "not_applicable" braucht `applicability_justification` (min. 50 Zeichen)
 - [ ] Risk-Treatment referenziert existierende Controls
 
 **Existierend**:
+
 - ✅ `soa_entry` Tabelle + UNIQUE(org_id, catalog_entry_id)
 - ✅ `/api/v1/isms/soa` CRUD
 - ✅ UI unter `/isms/soa`
 - ✅ `soa_ai_suggestion` fuer AI-gestuetzte Befuellung
 
 **Gap**:
+
 - 🔴 Bulk-SoA-Initialization aus aktiviertem Katalog (heute per Hand pro Entry)
 - 🔴 SoA-Diff-View gegenueber vorheriger Version (Changed-Applicability)
 - 🔴 SoA-Export als ISO-27001-konformer Statement (PDF, strukturiert nach Annex-Sektionen)
@@ -200,21 +213,25 @@ Org-Change)
 **Workflow (Step-by-Step)**:
 
 **3.3.1 — Asset-Inventory-Review**
+
 - Liste aller Assets im Scope mit Protection-Requirements (CIA-Triade)
 - `asset_classification` muss vorliegen fuer jeden In-Scope-Asset
 - CPE-Match gegen `cve_feed_item` triggert automatische `vulnerability`-Eintraege
 
 **3.3.2 — Threat-Landscape-Mapping**
+
 - Aus Catalog #30 (31 ISO-27005-Threats) + #3 (47 BSI-Elementargefaehrdungen)
 - Threat-Category + Wahrscheinlichkeit initialisieren
 - Org-spezifische Custom-Threats im gleichen `threat`-Schema
 
 **3.3.3 — Vulnerability-Assessment**
+
 - Aus Catalog #31 (23 ISO-27005-Vulns) + CVE-Feed + Pentest-Findings
 - `vulnerability.severity` (cvss-basiert wenn CVE)
 - Link auf betroffene Assets via `asset_cpe` / `vulnerability.affected_assets`
 
 **3.3.4 — Risk-Scenario-Generation**
+
 - Fuer jede relevante (Threat × Vuln × Asset)-Kombination: ein
   `risk_scenario`
 - AI-Assist: `/api/v1/isms/risk-scenarios/suggest` (existierend?)
@@ -222,16 +239,19 @@ Org-Change)
 - Link auf existierende `risk`-Entitaet (1:1) oder Auto-Create
 
 **3.3.5 — Current-Risk-Evaluation**
+
 - Fuer jedes `risk_scenario`: `assessment_risk_eval` erzeugen
 - `residual_likelihood` / `residual_impact` = Scoring mit aktiven Controls
 - `decision`-Enum: accept | mitigate | transfer | avoid | pending
 
 **3.3.6 — Risk-Appetite-Check**
+
 - Vergleich mit `risk_appetite_statement` (aus Sprint 23)
 - Wenn residual > appetite → Treatment Pflicht
 - Wenn residual ≤ appetite → Akzeptanz moeglich (via `risk_acceptance`)
 
 **3.3.7 — Treatment-Plan-Design**
+
 - Fuer mitigate-Entscheidungen: `risk_treatment` mit Controls,
   Budget, Timeline
 - Fuer accept-Entscheidungen: `risk_acceptance` mit
@@ -239,6 +259,7 @@ Org-Change)
   `risk_acceptance_authority`-Matrix
 
 **Existierend**:
+
 - ✅ Alle Entitaeten (threat, vulnerability, asset, risk_scenario, risk, risk_assessment, risk_treatment, risk_acceptance)
 - ✅ APIs: `/isms/threats`, `/isms/vulnerabilities`, `/isms/risk-scenarios`
 - ✅ UI: `/isms/threats`, `/isms/vulnerabilities`, `/isms/risks`
@@ -246,6 +267,7 @@ Org-Change)
 - ✅ `risk_acceptance` + `risk_acceptance_authority` (Phase-3 neu)
 
 **Gap**:
+
 - 🔴 Guided-Risk-Assessment-Wizard: Asset waehlen → relevante Threats
   aus Katalog + Custom laden → Vulnerabilities matchen → Scenario-Gen
 - 🔴 Auto-Threat-Linkage per Asset-Typ (asset_type_risk_recommendation
@@ -262,6 +284,7 @@ Org-Change)
 **Workflow**:
 
 **3.4.1 — Evaluation-Item-Generation**
+
 - Fuer jeden `soa_entry` mit applicability='applicable' → automatisch
   ein `assessment_control_eval` in `assessmentRun`
 - Alternativ per Control-Typ filtern (z. B. nur physical-security-Controls)
@@ -269,6 +292,7 @@ Org-Change)
   einmal pro Asset (z. B. "Verschluesselung at-rest" je Datenbank)
 
 **3.4.2 — Per-Item-Bewertung**
+
 - `evalResult`-Enum: effective | partially_effective | ineffective |
   not_applicable | not_evaluated
 - Evidence-Attachment: `evidenceDocumentIds[]`
@@ -276,17 +300,20 @@ Org-Change)
 - Maturity-Score (CMMI 0-5): `currentMaturity`, `targetMaturity`
 
 **3.4.3 — Control-Testing-Kampagne**
+
 - Fuer Key-Controls: `control_test_campaign` starten
 - Test-Procedures aus Catalog
 - Sampling (audit_sample-Pattern, Sprint 79)
 - Findings automatisch erzeugen bei "ineffective"
 
 **3.4.4 — Maturity-Score-Aggregation**
+
 - `control_maturity` wird aus n-Assessments berechnet (average,
   weighted by criticality)
 - Trend-Analyse: current vs. previous run
 
 **Existierend**:
+
 - ✅ `assessment_control_eval`
 - ✅ `control_maturity`
 - ✅ `control_test_campaign`
@@ -294,6 +321,7 @@ Org-Change)
 - ✅ `audit_sample` (Phase-3 neu)
 
 **Gap**:
+
 - 🟡 Bulk-Evaluation-UI (heute per Hand pro Item)
 - 🔴 Evaluation-Templates pro Framework (z. B. alle Phys-Controls in einem Template)
 - 🔴 Peer-Review auf Evaluation (4-Augen-Prinzip vor Run-Finalize)
@@ -310,6 +338,7 @@ Org-Change)
 **Outputs**:
 
 **3.5.1 — Automatische Finding-Generation**
+
 - Fuer jede Control-Eval mit `result='ineffective'` → neues `finding`
   (shared entity) mit source='isms_assessment'
 - Finding-Severity aus: Control-Criticality × Residual-Risk-Score
@@ -317,29 +346,34 @@ Org-Change)
   `finding.risk_scenario_id` (optional)
 
 **3.5.2 — Maturity-Gap-Heatmap**
+
 - Pro Control: currentMaturity vs. targetMaturity
 - Gap-Groesse = (target - current)
 - Aggregiert pro Annex-A-Kategorie (Organizational, People, Physical, Technological)
 
 **3.5.3 — Framework-Coverage-Report**
+
 - Per Framework: % der Requirements die als "effective" bewertet sind
 - Trend gegen Vorjahr
 - Cross-Mapping-Nutzung: wenn ein Control-Eval 3 Frameworks abdeckt,
   zaehlt es 3x in der Coverage-Matrix
 
 **3.5.4 — Risk-Impact-Analysis**
+
 - Welche `risk_scenario`s sind betroffen wenn bewertete Controls
   "ineffective" sind
 - Re-Scoring der `risk_assessment.residualImpact` auf Basis der
   aktuellen Controls
 
 **Existierend**:
+
 - ✅ `finding` (shared entity)
 - 🟡 Auto-Finding-Generation (Finding-Generator-Route fehlt)
 - 🔴 Gap-Heatmap UI
 - 🔴 Framework-Coverage-Report-Generator
 
 **Gap**:
+
 - 🔴 API: `POST /api/v1/isms/assessments/{id}/finalize` → generiert Findings,
   berechnet Maturity-Gaps, triggert Framework-Coverage-Report
 - 🔴 UI: Heatmap-Widget fuer Control-Maturity-Gap
@@ -354,6 +388,7 @@ Org-Change)
 **Workflow**:
 
 **3.6.1 — Treatment-Plan-Erstellung**
+
 - Pro high-severity Finding: `risk_treatment` mit:
   - Target-Control (neu oder bestehend)
   - Owner (control_owner)
@@ -363,6 +398,7 @@ Org-Change)
 - Treatment-Stratgie: new_control | enhance_existing | accept | transfer
 
 **3.6.2 — CAP-Erstellung fuer ISO 27001 Clause 10**
+
 - Pro Nonconformity (= ineffective Control mit Finding):
   - `isms_nonconformity` (Pflicht wenn `severity >= 'major'`)
   - `isms_corrective_action` verknuepft
@@ -370,16 +406,19 @@ Org-Change)
   - Verification + Effectiveness-Review-Date (ISO 10.1 e + f)
 
 **3.6.3 — Risk-Acceptance-Dokumentation**
+
 - Fuer residual-Risks die unter Risk-Appetite liegen:
   - `risk_acceptance`-Record mit `risk_level_at_acceptance` (Snapshot)
   - Authority-Check: Role matching `risk_acceptance_authority.maxScore >= residual_score`
   - Revoke-Flow falls spaeter Re-Assessment einen hoeheren Score liefert
 
 **Existierend**:
+
 - ✅ `risk_treatment`, `isms_nonconformity`, `isms_corrective_action`, `root_cause_analysis`
 - ✅ `risk_acceptance` + Authority-Matrix
 
 **Gap**:
+
 - 🟡 Treatment-Plan ↔ Control-Implementation-Link (heute implizit)
 - 🔴 Effectiveness-Review-Reminder-Job (via `reminder_rule`)
 - 🔴 Treatment-Budget-vs-Actual-Tracking (heute nur Budget-Plan)
@@ -394,6 +433,7 @@ Org-Change)
 **Outputs**:
 
 **3.7.1 — Assessment-Report (strukturiert)**
+
 - **Executive Summary** (1-Seite): Maturity-Score, #Findings, Top-3-Risks
 - **Scope + Methodologie** (ISO 27001 Kap. 4)
 - **Per-Framework-Coverage** (27001 / NIST / BSI separat + aggregiert)
@@ -404,6 +444,7 @@ Org-Change)
 - **Appendix**: Full Control-Eval-List + Evidence-Register + Interview-Log
 
 **3.7.2 — Management-Review (ISO 27001 Clause 9.3)**
+
 - `management_review`-Record mit:
   - Input-Items: Assessment-Report + KRI-Trends + Audit-Findings + Customer-Complaints
   - Attendees (Board + CISO + DPO + Process-Owner)
@@ -412,21 +453,25 @@ Org-Change)
 - Mandatory-Felder nach ISO: Context-Changes, Performance, Nonconformities, Resources, Communications, Opportunities
 
 **3.7.3 — Board-Report (falls mandatiert)**
+
 - `board_report` (Phase-3) mit Aggregat-Sektionen
 - Signed-Off-By + Presented-To Zitat
 
 **3.7.4 — Framework-spezifische Zertifikats-Dokumente**
+
 - ISO 27001: Statement of Applicability + Risk-Treatment-Plan
 - NIST CSF: Target Profile + Current Profile + Gap Analysis
 - BSI Grundschutz: Referenzdokument A (Strukturanalyse)
 
 **Existierend**:
+
 - ✅ `management_review` (mit Attendees + Decisions)
 - ✅ `board_report` (Phase-3)
 - 🟡 `narrative_template` + `narrative_instance` (Phase-3, fuer Generated-Report-Sections)
 - 🟡 PDF-Export-Engine (Sprint 30 `packages/reporting`)
 
 **Gap**:
+
 - 🔴 Report-Template fuer ISMS-Assessment (analog zu Audit-Report)
 - 🔴 Framework-Coverage-Section-Generator
 - 🔴 Maturity-Roadmap-Section (naechste 12-36 Monate)
@@ -442,6 +487,7 @@ Org-Change)
 **Aktoren**: lead_assessor + alle Owner
 
 **Workflow**:
+
 - Effectiveness-Review der CAP-Actions nach 90 Tagen (ISO 10.1 f)
 - CVE-Feed-Delta seit letztem Run → neue Vulnerabilities
 - Reassessment-Bedarf-Check:
@@ -451,10 +497,12 @@ Org-Change)
   - Incident > critical seit letztem Run?
 
 **Output**:
+
 - Neuer `assessment_run` mit `previous_run_id` (wenn bereits existent, sonst neu)
 - Delta-Report gegenueber letztem Run
 
 **Gap**:
+
 - 🔴 `assessment_run.previous_run_id` Spalte (heute fehlt)
 - 🔴 Worker-Job `isms-reassessment-reminder` (derived aus compliance-calendar 0104)
 - 🔴 Delta-Report-Generator
@@ -463,39 +511,39 @@ Org-Change)
 
 ### 4.1 Vorhanden + OK
 
-| Entity | Tabelle | Verwendung |
-|---|---|---|
-| Assessment-Run | `assessment_run` | Meta + Scope |
-| Asset-Classification | `asset_classification` | CIA-Scoring pro Asset |
-| Threat | `threat` | Bedrohungs-Katalog-Entries + Custom |
-| Vulnerability | `vulnerability` | Schwachstellen (CVE + manual) |
-| Risk-Scenario | `risk_scenario` | Threat × Vuln × Asset |
-| Control-Eval | `assessment_control_eval` | Per-Control-Bewertung im Run |
-| Risk-Eval | `assessment_risk_eval` | Per-Scenario-Bewertung im Run |
-| Control-Maturity | `control_maturity` | CMMI-Scoring (aggregate) |
-| SoA-Entry | `soa_entry` | Statement of Applicability |
-| Management-Review | `management_review` | ISO 9.3 Dokumentation |
-| Security-Incident | `security_incident` | Incident-Lifecycle |
-| CVE-Feed | `cve_feed_item` | Externe Vulnerability-Quelle |
-| Asset-CPE | `asset_cpe` | CPE-Strings fuer CVE-Match |
-| CVE-Asset-Match | `cve_asset_match` | Verknuepfung |
-| SoA AI-Suggestion | `soa_ai_suggestion` | AI-Vorschlag fuer Applicability |
-| Maturity-Roadmap-Action | `maturity_roadmap_action` | Geplante Maturity-Verbesserungen |
-| ISMS-Nonconformity | `isms_nonconformity` | CAP-Input (ISO 10.1) |
-| ISMS-Corrective-Action | `isms_corrective_action` | CAP-Output |
-| Root-Cause-Analysis | `root_cause_analysis` | 5-Why etc. |
+| Entity                  | Tabelle                   | Verwendung                          |
+| ----------------------- | ------------------------- | ----------------------------------- |
+| Assessment-Run          | `assessment_run`          | Meta + Scope                        |
+| Asset-Classification    | `asset_classification`    | CIA-Scoring pro Asset               |
+| Threat                  | `threat`                  | Bedrohungs-Katalog-Entries + Custom |
+| Vulnerability           | `vulnerability`           | Schwachstellen (CVE + manual)       |
+| Risk-Scenario           | `risk_scenario`           | Threat × Vuln × Asset               |
+| Control-Eval            | `assessment_control_eval` | Per-Control-Bewertung im Run        |
+| Risk-Eval               | `assessment_risk_eval`    | Per-Scenario-Bewertung im Run       |
+| Control-Maturity        | `control_maturity`        | CMMI-Scoring (aggregate)            |
+| SoA-Entry               | `soa_entry`               | Statement of Applicability          |
+| Management-Review       | `management_review`       | ISO 9.3 Dokumentation               |
+| Security-Incident       | `security_incident`       | Incident-Lifecycle                  |
+| CVE-Feed                | `cve_feed_item`           | Externe Vulnerability-Quelle        |
+| Asset-CPE               | `asset_cpe`               | CPE-Strings fuer CVE-Match          |
+| CVE-Asset-Match         | `cve_asset_match`         | Verknuepfung                        |
+| SoA AI-Suggestion       | `soa_ai_suggestion`       | AI-Vorschlag fuer Applicability     |
+| Maturity-Roadmap-Action | `maturity_roadmap_action` | Geplante Maturity-Verbesserungen    |
+| ISMS-Nonconformity      | `isms_nonconformity`      | CAP-Input (ISO 10.1)                |
+| ISMS-Corrective-Action  | `isms_corrective_action`  | CAP-Output                          |
+| Root-Cause-Analysis     | `root_cause_analysis`     | 5-Why etc.                          |
 
 ### 4.2 Neu (benoetigt fuer vollstaendigen Zyklus)
 
-| Entity | Zweck | Priorisierung |
-|---|---|---|
-| `assessment_scope` | Strukturierte Scope-Definition (statt nur scope_filter JSON) | Medium |
-| `assessment_team_member` | Role-im-Assessment (lead, evaluator, observer) mit Berechtigung-Scope | Medium |
-| `interview_note` | Interview-Dokumentation pro Eval (wie audit_evidence, aber speziell fuer Interviews) | Low |
-| `assessment_report` | Snapshot-Container fuer generierten Report-Inhalt | High |
-| `framework_coverage_snapshot` | Pro Framework % der Requirements als erfuellt | High |
-| `assessment_delta` | Diff-View zwischen 2 Runs | Low |
-| `evaluation_template` | Vorlage fuer haeufig wiederholte Evaluations (z. B. "All Phys-Controls") | Low |
+| Entity                        | Zweck                                                                                | Priorisierung |
+| ----------------------------- | ------------------------------------------------------------------------------------ | ------------- |
+| `assessment_scope`            | Strukturierte Scope-Definition (statt nur scope_filter JSON)                         | Medium        |
+| `assessment_team_member`      | Role-im-Assessment (lead, evaluator, observer) mit Berechtigung-Scope                | Medium        |
+| `interview_note`              | Interview-Dokumentation pro Eval (wie audit_evidence, aber speziell fuer Interviews) | Low           |
+| `assessment_report`           | Snapshot-Container fuer generierten Report-Inhalt                                    | High          |
+| `framework_coverage_snapshot` | Pro Framework % der Requirements als erfuellt                                        | High          |
+| `assessment_delta`            | Diff-View zwischen 2 Runs                                                            | Low           |
+| `evaluation_template`         | Vorlage fuer haeufig wiederholte Evaluations (z. B. "All Phys-Controls")             | Low           |
 
 ## 5. API-Surface (neu + existierend)
 
@@ -682,16 +730,16 @@ if (moduleCheck) return moduleCheck;
 
 ## 8. Workflow-Gates (Mandatorisch)
 
-| Gate | Trigger | Check | Wenn Fehler |
-|---|---|---|---|
-| **G1** | Setup → Framework-Select | Scope-Statement >= 200 chars, Lead-Assessor zugewiesen, period >= 14d | BlockTransition |
-| **G2** | Framework-Select → Execution | SoA initialisiert, mind. 80 % Applicability gesetzt | BlockTransition |
-| **G3** | Risk-Assessment → Control-Evaluation | Jeder `risk_scenario` hat `decision != 'pending'` | BlockTransition |
-| **G4** | Control-Eval → Gap-Analysis | `completedEvaluations / totalEvaluations >= 0.8` | BlockTransition |
-| **G5** | Gap-Analysis → Treatment | Jeder `finding.severity >= 'major'` hat `risk_treatment` | BlockTransition |
-| **G6** | Treatment → Reporting | Jedes `risk_treatment.status != 'proposed'` | BlockTransition |
-| **G7** | Reporting → Management-Review | `assessment_report` generiert, alle Sections populated | BlockTransition |
-| **G8** | Management-Review → Archive | `management_review.status='completed'`, Follow-up-Tasks erzeugt | BlockTransition |
+| Gate   | Trigger                              | Check                                                                 | Wenn Fehler     |
+| ------ | ------------------------------------ | --------------------------------------------------------------------- | --------------- |
+| **G1** | Setup → Framework-Select             | Scope-Statement >= 200 chars, Lead-Assessor zugewiesen, period >= 14d | BlockTransition |
+| **G2** | Framework-Select → Execution         | SoA initialisiert, mind. 80 % Applicability gesetzt                   | BlockTransition |
+| **G3** | Risk-Assessment → Control-Evaluation | Jeder `risk_scenario` hat `decision != 'pending'`                     | BlockTransition |
+| **G4** | Control-Eval → Gap-Analysis          | `completedEvaluations / totalEvaluations >= 0.8`                      | BlockTransition |
+| **G5** | Gap-Analysis → Treatment             | Jeder `finding.severity >= 'major'` hat `risk_treatment`              | BlockTransition |
+| **G6** | Treatment → Reporting                | Jedes `risk_treatment.status != 'proposed'`                           | BlockTransition |
+| **G7** | Reporting → Management-Review        | `assessment_report` generiert, alle Sections populated                | BlockTransition |
+| **G8** | Management-Review → Archive          | `management_review.status='completed'`, Follow-up-Tasks erzeugt       | BlockTransition |
 
 Implementation: Zustaendig-Transitions als State-Machine in
 `packages/shared/src/state-machines/isms-assessment.ts`. Jeder State-
@@ -702,18 +750,18 @@ Transition-Check gibt Response-Objekt mit `blockers: []` zurueck.
 Nach erfolgreichem Zyklus muss ARCTOS ein "Evidence-Pack" liefern koennen,
 das Tenant-Auditor/Zertifizierer als Nachweis akzeptiert:
 
-| Dokument | Quelle | Format |
-|---|---|---|
-| Scope-Statement | `assessment_run.scope_filter` + Free-Text | PDF |
-| ISMS-Policy | `document` (category='isms_policy') | PDF (user-uploaded) |
-| SoA | `soa_entry` + catalog-Name-Join | PDF strukturiert nach Annex-Kategorien |
-| Risk-Assessment-Report | `assessment_risk_eval` aggregated | PDF mit Heatmap |
-| Risk-Treatment-Plan | `risk_treatment` aggregated | PDF mit Timeline + Budget |
-| Control-Evaluation | `assessment_control_eval` + evidence | PDF + ZIP (Evidence-Attachments) |
-| Management-Review-Minutes | `management_review` + attendees | PDF |
-| CAP-Register | `isms_nonconformity` + `isms_corrective_action` | PDF |
-| Audit-Trail-Integrity-Proof | `/api/v1/audit-log/integrity` Response-Snapshot | JSON + Hash |
-| Certification-Cross-Reference | `catalog_entry_mapping` angewendet | HTML/PDF |
+| Dokument                      | Quelle                                          | Format                                 |
+| ----------------------------- | ----------------------------------------------- | -------------------------------------- |
+| Scope-Statement               | `assessment_run.scope_filter` + Free-Text       | PDF                                    |
+| ISMS-Policy                   | `document` (category='isms_policy')             | PDF (user-uploaded)                    |
+| SoA                           | `soa_entry` + catalog-Name-Join                 | PDF strukturiert nach Annex-Kategorien |
+| Risk-Assessment-Report        | `assessment_risk_eval` aggregated               | PDF mit Heatmap                        |
+| Risk-Treatment-Plan           | `risk_treatment` aggregated                     | PDF mit Timeline + Budget              |
+| Control-Evaluation            | `assessment_control_eval` + evidence            | PDF + ZIP (Evidence-Attachments)       |
+| Management-Review-Minutes     | `management_review` + attendees                 | PDF                                    |
+| CAP-Register                  | `isms_nonconformity` + `isms_corrective_action` | PDF                                    |
+| Audit-Trail-Integrity-Proof   | `/api/v1/audit-log/integrity` Response-Snapshot | JSON + Hash                            |
+| Certification-Cross-Reference | `catalog_entry_mapping` angewendet              | HTML/PDF                               |
 
 **Report-Generator-Orchestrierung**:
 
@@ -730,14 +778,14 @@ POST /api/v1/isms/assessments/{id}/evidence-pack
 
 Analog zu Audit-Modul's `audit_qa_review`:
 
-| Check | Ausloeser | Kriterium |
-|---|---|---|
-| Evidence-Completeness | Jeder Eval mit `result='effective'` | evidence != null OR evidence_document_ids nicht leer |
-| Interview-Completeness | Jede Control-Eval mit specific types | Mindestens 1 `interview_note` |
-| Scope-Consistency | Finalize | Jeder evaluator-Eval liegt im Scope-Filter |
-| Maturity-Sanity | Finalize | `currentMaturity <= targetMaturity` fuer alle |
-| Evidence-Provenance | Finalize | Jede evidence_document_id verweist auf existierendes `document` |
-| Cross-Framework-Consistency | Finalize | Wenn ein Control in 2 Frameworks, ist Bewertung konsistent |
+| Check                       | Ausloeser                            | Kriterium                                                       |
+| --------------------------- | ------------------------------------ | --------------------------------------------------------------- |
+| Evidence-Completeness       | Jeder Eval mit `result='effective'`  | evidence != null OR evidence_document_ids nicht leer            |
+| Interview-Completeness      | Jede Control-Eval mit specific types | Mindestens 1 `interview_note`                                   |
+| Scope-Consistency           | Finalize                             | Jeder evaluator-Eval liegt im Scope-Filter                      |
+| Maturity-Sanity             | Finalize                             | `currentMaturity <= targetMaturity` fuer alle                   |
+| Evidence-Provenance         | Finalize                             | Jede evidence_document_id verweist auf existierendes `document` |
+| Cross-Framework-Consistency | Finalize                             | Wenn ein Control in 2 Frameworks, ist Bewertung konsistent      |
 
 Implementation: `POST /api/v1/isms/assessments/{id}/qa-check` liefert
 pro-Check-Status + blocker-Liste.
@@ -746,23 +794,24 @@ pro-Check-Status + blocker-Liste.
 
 Platform-seitige KRIs die pro-Org berechnet werden:
 
-| KRI | Formel | Quelle | Frequenz |
-|---|---|---|---|
-| ISMS-Maturity-Index | avg(control_maturity.currentMaturity) weighted | assessment_control_eval | pro Run + daily-roll-up |
-| Open-Nonconformities | count(isms_nonconformity WHERE status != 'closed') | `isms_nonconformity` | real-time |
-| Overdue-CAP-Rate | count(isms_corrective_action WHERE due_date < now AND status != 'closed') / total CAP | `isms_corrective_action` | daily |
-| Unresolved-Critical-Risks | count(risk WHERE severity='critical' AND status='open') | `risk` (ERM) | real-time |
-| CVE-Match-Rate | count(vulnerability WHERE source='cve_feed' AND age > 30d AND patched=false) | `vulnerability` | daily |
-| Control-Test-Pass-Rate | count(control_test WHERE result='pass') / total control_tests | `control_test` | weekly |
-| Incident-MTTD | avg(incident.detected_at - incident.occurred_at) | `security_incident` | weekly |
-| Incident-MTTR | avg(incident.closed_at - incident.detected_at) | `security_incident` | weekly |
-| Framework-Coverage-Score | per-framework % effective / applicable | `soa_entry` + `assessment_control_eval` | pro Run |
+| KRI                       | Formel                                                                                | Quelle                                  | Frequenz                |
+| ------------------------- | ------------------------------------------------------------------------------------- | --------------------------------------- | ----------------------- |
+| ISMS-Maturity-Index       | avg(control_maturity.currentMaturity) weighted                                        | assessment_control_eval                 | pro Run + daily-roll-up |
+| Open-Nonconformities      | count(isms_nonconformity WHERE status != 'closed')                                    | `isms_nonconformity`                    | real-time               |
+| Overdue-CAP-Rate          | count(isms_corrective_action WHERE due_date < now AND status != 'closed') / total CAP | `isms_corrective_action`                | daily                   |
+| Unresolved-Critical-Risks | count(risk WHERE severity='critical' AND status='open')                               | `risk` (ERM)                            | real-time               |
+| CVE-Match-Rate            | count(vulnerability WHERE source='cve_feed' AND age > 30d AND patched=false)          | `vulnerability`                         | daily                   |
+| Control-Test-Pass-Rate    | count(control_test WHERE result='pass') / total control_tests                         | `control_test`                          | weekly                  |
+| Incident-MTTD             | avg(incident.detected_at - incident.occurred_at)                                      | `security_incident`                     | weekly                  |
+| Incident-MTTR             | avg(incident.closed_at - incident.detected_at)                                        | `security_incident`                     | weekly                  |
+| Framework-Coverage-Score  | per-framework % effective / applicable                                                | `soa_entry` + `assessment_control_eval` | pro Run                 |
 
 Alle bereits in KRI-Template-Katalog (0103) vorgeschlagen oder implizit.
 
 ## 12. Session-Outcome + Next-Iteration
 
 **Dieses Dokument (Iter 1)**:
+
 - ✅ ISMS-Assessment-Plan in End-to-End-Struktur mit 8 Phasen
 - ✅ Entity-Katalog + Gap-List
 - ✅ API-Surface neu/existierend
@@ -773,6 +822,7 @@ Alle bereits in KRI-Template-Katalog (0103) vorgeschlagen oder implizit.
 - ✅ KPIs + Metriken
 
 **Geschaetzter Implementation-Aufwand** (vorlaeufig, ohne Sprint-Breakdown):
+
 - Backend (APIs neu + State-Machine + Report-Generator): 80-120 Stunden
 - Frontend (Wizards + Dashboards + Report-Viewer): 100-140 Stunden
 - Testing (Unit + RLS + E2E): 40-60 Stunden
@@ -780,6 +830,7 @@ Alle bereits in KRI-Template-Katalog (0103) vorgeschlagen oder implizit.
 - **Total: ~300 Stunden (etwa 4-5 Personen-Wochen)**
 
 **Offen fuer naechste Sessions** (Iterationen):
+
 - **Iter 2**: Detail-Specs fuer Phasen 1-3 (Setup-Wizard, SoA-Init, 27005-Risk-Flow)
 - **Iter 3**: Detail-Specs fuer Phasen 4-5 (Control-Eval, Gap-Analysis)
 - **Iter 4**: Detail-Specs fuer Phasen 6-8 (Treatment, Reporting, Follow-up)

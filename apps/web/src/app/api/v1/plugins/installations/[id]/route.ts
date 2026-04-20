@@ -15,7 +15,12 @@ export async function GET(
   const [row] = await db
     .select()
     .from(pluginInstallation)
-    .where(and(eq(pluginInstallation.id, id), eq(pluginInstallation.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(pluginInstallation.id, id),
+        eq(pluginInstallation.orgId, ctx.orgId),
+      ),
+    );
 
   if (!row) {
     return Response.json({ error: "Installation not found" }, { status: 404 });
@@ -44,7 +49,12 @@ export async function PATCH(
   const [updated] = await db
     .update(pluginInstallation)
     .set({ ...body.data, updatedAt: new Date() })
-    .where(and(eq(pluginInstallation.id, id), eq(pluginInstallation.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(pluginInstallation.id, id),
+        eq(pluginInstallation.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!updated) {
@@ -65,7 +75,12 @@ export async function DELETE(
 
   const [deleted] = await db
     .delete(pluginInstallation)
-    .where(and(eq(pluginInstallation.id, id), eq(pluginInstallation.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(pluginInstallation.id, id),
+        eq(pluginInstallation.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!deleted) {

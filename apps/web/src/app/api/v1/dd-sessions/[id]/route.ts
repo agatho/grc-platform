@@ -1,9 +1,4 @@
-import {
-  db,
-  ddSession,
-  vendor,
-  questionnaireTemplate,
-} from "@grc/db";
+import { db, ddSession, vendor, questionnaireTemplate } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -34,9 +29,7 @@ export async function GET(req: Request, { params }: RouteParams) {
       questionnaireTemplate,
       eq(ddSession.templateId, questionnaireTemplate.id),
     )
-    .where(
-      and(eq(ddSession.id, id), eq(ddSession.orgId, ctx.orgId)),
-    );
+    .where(and(eq(ddSession.id, id), eq(ddSession.orgId, ctx.orgId)));
 
   if (rows.length === 0) {
     return Response.json({ error: "Not found" }, { status: 404 });

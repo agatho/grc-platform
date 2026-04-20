@@ -59,10 +59,14 @@ export function RoleCommentFields({
               <span className="text-sm font-medium text-gray-700">
                 {section.label}
               </span>
-              <span className={cn(
-                "text-xs px-2 py-0.5 rounded-full",
-                isEditable ? "bg-teal-100 text-teal-700" : "bg-gray-100 text-gray-500",
-              )}>
+              <span
+                className={cn(
+                  "text-xs px-2 py-0.5 rounded-full",
+                  isEditable
+                    ? "bg-teal-100 text-teal-700"
+                    : "bg-gray-100 text-gray-500",
+                )}
+              >
                 {isEditable ? "Edit" : "Locked"}
               </span>
             </div>
@@ -76,10 +80,12 @@ export function RoleCommentFields({
                   maxLength={5000}
                 />
               ) : (
-                <p className={cn(
-                  "text-sm",
-                  section.value ? "text-gray-700" : "text-gray-400 italic",
-                )}>
+                <p
+                  className={cn(
+                    "text-sm",
+                    section.value ? "text-gray-700" : "text-gray-400 italic",
+                  )}
+                >
                   {section.value || (labels?.noComment ?? "No comment yet")}
                 </p>
               )}

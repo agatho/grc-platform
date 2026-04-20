@@ -2,8 +2,15 @@
 
 import { useEffect, useState } from "react";
 import {
-  Loader2, Plus, Dice5, BarChart3, CheckCircle2, AlertTriangle,
-  Calculator, Target, Layers,
+  Loader2,
+  Plus,
+  Dice5,
+  BarChart3,
+  CheckCircle2,
+  AlertTriangle,
+  Calculator,
+  Target,
+  Layers,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -42,7 +49,7 @@ export default function AuditSamplingPage() {
 
   useEffect(() => {
     fetch("/api/v1/audit/samples?limit=50")
-      .then((r) => r.ok ? r.json() : { data: [] })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((json) => setSamples(json.data ?? []))
       .catch(() => setSamples([]))
       .finally(() => setLoading(false));
@@ -60,9 +67,12 @@ export default function AuditSamplingPage() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Stichprobenprüfung</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Stichprobenprüfung
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Audit Sampling — Statistische und ermessensbasierte Stichprobenverfahren
+            Audit Sampling — Statistische und ermessensbasierte
+            Stichprobenverfahren
           </p>
         </div>
         <Button>
@@ -94,23 +104,37 @@ export default function AuditSamplingPage() {
         <CardContent>
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4 text-sm">
             <div>
-              <label className="text-gray-500 text-xs font-medium">Grundgesamtheit</label>
-              <input type="number" className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm" placeholder="z.B. 500" />
+              <label className="text-gray-500 text-xs font-medium">
+                Grundgesamtheit
+              </label>
+              <input
+                type="number"
+                className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                placeholder="z.B. 500"
+              />
             </div>
             <div>
-              <label className="text-gray-500 text-xs font-medium">Konfidenzniveau</label>
+              <label className="text-gray-500 text-xs font-medium">
+                Konfidenzniveau
+              </label>
               <select className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="90">90%</option>
-                <option value="95" selected>95%</option>
+                <option value="95" selected>
+                  95%
+                </option>
                 <option value="99">99%</option>
               </select>
             </div>
             <div>
-              <label className="text-gray-500 text-xs font-medium">Tolerierbare Fehlerrate</label>
+              <label className="text-gray-500 text-xs font-medium">
+                Tolerierbare Fehlerrate
+              </label>
               <select className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
                 <option value="1">1%</option>
                 <option value="3">3%</option>
-                <option value="5" selected>5%</option>
+                <option value="5" selected>
+                  5%
+                </option>
                 <option value="10">10%</option>
               </select>
             </div>
@@ -128,8 +152,12 @@ export default function AuditSamplingPage() {
       {samples.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <Dice5 size={32} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">Keine Stichproben vorhanden</p>
-          <p className="text-xs text-gray-400 mt-1">Erstellen Sie eine Stichprobe für Kontrollprüfungen</p>
+          <p className="text-sm font-medium text-gray-500">
+            Keine Stichproben vorhanden
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Erstellen Sie eine Stichprobe für Kontrollprüfungen
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -140,19 +168,33 @@ export default function AuditSamplingPage() {
             >
               <Dice5 size={16} className="text-indigo-600 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{s.controlTitle ?? "Stichprobe"}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {s.controlTitle ?? "Stichprobe"}
+                </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="outline" className="text-[10px]">{methodLabels[s.sampleMethod] ?? s.sampleMethod}</Badge>
-                  <span className="text-[10px] text-gray-400">{s.sampleSize}/{s.populationSize} Einträge</span>
-                  <span className="text-[10px] text-gray-400">{s.confidenceLevel}% Konfidenz</span>
+                  <Badge variant="outline" className="text-[10px]">
+                    {methodLabels[s.sampleMethod] ?? s.sampleMethod}
+                  </Badge>
+                  <span className="text-[10px] text-gray-400">
+                    {s.sampleSize}/{s.populationSize} Einträge
+                  </span>
+                  <span className="text-[10px] text-gray-400">
+                    {s.confidenceLevel}% Konfidenz
+                  </span>
                 </div>
               </div>
               {s.exceptionsFound > 0 && (
-                <Badge variant="outline" className="bg-red-100 text-red-900 border-red-300 text-xs">
+                <Badge
+                  variant="outline"
+                  className="bg-red-100 text-red-900 border-red-300 text-xs"
+                >
                   {s.exceptionsFound} Ausnahmen
                 </Badge>
               )}
-              <Badge variant="outline" className={`text-xs ${statusColors[s.status] ?? ""}`}>
+              <Badge
+                variant="outline"
+                className={`text-xs ${statusColors[s.status] ?? ""}`}
+              >
                 {s.status}
               </Badge>
             </div>

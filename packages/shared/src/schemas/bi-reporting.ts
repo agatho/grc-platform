@@ -8,16 +8,43 @@ import { z } from "zod";
 
 export const biReportStatusValues = ["draft", "published", "archived"] as const;
 export const biWidgetTypeValues = [
-  "kpi_card", "bar_chart", "line_chart", "donut_chart", "heatmap",
-  "table", "text_block", "radar_chart", "gauge", "treemap",
+  "kpi_card",
+  "bar_chart",
+  "line_chart",
+  "donut_chart",
+  "heatmap",
+  "table",
+  "text_block",
+  "radar_chart",
+  "gauge",
+  "treemap",
 ] as const;
 export const biDataSourceTypeValues = [
-  "erm", "isms", "audit", "bcms", "esg", "ics", "dpms", "tprm", "bpm", "custom_sql",
+  "erm",
+  "isms",
+  "audit",
+  "bcms",
+  "esg",
+  "ics",
+  "dpms",
+  "tprm",
+  "bpm",
+  "custom_sql",
 ] as const;
 export const biQueryStatusValues = ["draft", "validated", "failed"] as const;
 export const biShareAccessValues = ["view", "edit"] as const;
-export const biScheduleFrequencyValues = ["daily", "weekly", "monthly", "quarterly"] as const;
-export const biExecutionStatusValues = ["queued", "running", "completed", "failed"] as const;
+export const biScheduleFrequencyValues = [
+  "daily",
+  "weekly",
+  "monthly",
+  "quarterly",
+] as const;
+export const biExecutionStatusValues = [
+  "queued",
+  "running",
+  "completed",
+  "failed",
+] as const;
 export const biOutputFormatValues = ["pdf", "xlsx", "csv", "pptx"] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -74,7 +101,9 @@ export const createBiReportWidgetSchema = z.object({
   sortOrder: z.number().int().min(0).default(0),
 });
 
-export const updateBiReportWidgetSchema = createBiReportWidgetSchema.partial().omit({ reportId: true });
+export const updateBiReportWidgetSchema = createBiReportWidgetSchema
+  .partial()
+  .omit({ reportId: true });
 
 // ──────────────────────────────────────────────────────────────
 // BI Data Source CRUD
@@ -173,7 +202,9 @@ export const createBiScheduledReportSchema = z.object({
   isActive: z.boolean().default(true),
 });
 
-export const updateBiScheduledReportSchema = createBiScheduledReportSchema.partial().omit({ reportId: true });
+export const updateBiScheduledReportSchema = createBiScheduledReportSchema
+  .partial()
+  .omit({ reportId: true });
 
 // ──────────────────────────────────────────────────────────────
 // BI Report Execution
@@ -198,10 +229,18 @@ export const listBiExecutionsQuerySchema = z.object({
 
 export type CreateBiReportInput = z.infer<typeof createBiReportSchema>;
 export type UpdateBiReportInput = z.infer<typeof updateBiReportSchema>;
-export type CreateBiReportWidgetInput = z.infer<typeof createBiReportWidgetSchema>;
+export type CreateBiReportWidgetInput = z.infer<
+  typeof createBiReportWidgetSchema
+>;
 export type CreateBiDataSourceInput = z.infer<typeof createBiDataSourceSchema>;
 export type CreateBiQueryInput = z.infer<typeof createBiQuerySchema>;
 export type CreateBiShareInput = z.infer<typeof createBiShareSchema>;
-export type UpsertBiBrandConfigInput = z.infer<typeof upsertBiBrandConfigSchema>;
-export type CreateBiScheduledReportInput = z.infer<typeof createBiScheduledReportSchema>;
-export type TriggerBiReportExecutionInput = z.infer<typeof triggerBiReportExecutionSchema>;
+export type UpsertBiBrandConfigInput = z.infer<
+  typeof upsertBiBrandConfigSchema
+>;
+export type CreateBiScheduledReportInput = z.infer<
+  typeof createBiScheduledReportSchema
+>;
+export type TriggerBiReportExecutionInput = z.infer<
+  typeof triggerBiReportExecutionSchema
+>;

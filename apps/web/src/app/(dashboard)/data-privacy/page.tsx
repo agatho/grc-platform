@@ -9,7 +9,8 @@ export default function DataPrivacyPage() {
     <div>
       <h1 className="text-2xl font-bold text-gray-900">{t("dataPrivacy")}</h1>
       <p className="mt-2 text-sm text-gray-500">
-        GDPR management, data processing records, and privacy impact assessments.
+        GDPR management, data processing records, and privacy impact
+        assessments.
       </p>
       <div className="mt-6 flex items-center justify-center rounded-lg border-2 border-dashed border-gray-300 bg-gray-50 p-12">
         <div className="text-center">

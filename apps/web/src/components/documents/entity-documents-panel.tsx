@@ -136,7 +136,11 @@ export function EntityDocumentsPanel({
           <FileText className="h-4 w-4" />
           {t("title")} ({docs.length})
         </h3>
-        <Button size="sm" variant="outline" onClick={() => setLinkDialogOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setLinkDialogOpen(true)}
+        >
           <Plus className="h-3 w-3 mr-1" />
           {t("attachDocument")}
         </Button>
@@ -163,7 +167,9 @@ export function EntityDocumentsPanel({
                     {doc.title}
                   </Link>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                    <Badge className={`${STATUS_COLORS[doc.status] ?? ""} text-[10px]`}>
+                    <Badge
+                      className={`${STATUS_COLORS[doc.status] ?? ""} text-[10px]`}
+                    >
                       {doc.status}
                     </Badge>
                     <span>{doc.category}</span>
@@ -226,9 +232,7 @@ export function EntityDocumentsPanel({
                 </p>
               ) : (
                 availableDocs.map((d) => {
-                  const isLinked = docs.some(
-                    (ld) => ld.document_id === d.id,
-                  );
+                  const isLinked = docs.some((ld) => ld.document_id === d.id);
                   return (
                     <div
                       key={d.id}
@@ -243,7 +247,10 @@ export function EntityDocumentsPanel({
                         </span>
                       </div>
                       {isLinked ? (
-                        <Badge variant="secondary" className="text-[10px] shrink-0">
+                        <Badge
+                          variant="secondary"
+                          className="text-[10px] shrink-0"
+                        >
                           {t("alreadyLinked")}
                         </Badge>
                       ) : (

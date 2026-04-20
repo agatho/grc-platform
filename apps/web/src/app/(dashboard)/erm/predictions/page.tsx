@@ -22,7 +22,11 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@/components/ui/sheet";
-import type { AuditRiskPrediction, PredictionFactor, AuditRiskPredictionModel } from "@grc/shared";
+import type {
+  AuditRiskPrediction,
+  PredictionFactor,
+  AuditRiskPredictionModel,
+} from "@grc/shared";
 
 export default function PredictionsPage() {
   return (
@@ -36,8 +40,11 @@ function PredictionsInner() {
   const t = useTranslations("predictions");
   const [predictions, setPredictions] = useState<AuditRiskPrediction[]>([]);
   const [loading, setLoading] = useState(true);
-  const [selectedPrediction, setSelectedPrediction] = useState<AuditRiskPrediction | null>(null);
-  const [modelInfo, setModelInfo] = useState<AuditRiskPredictionModel | null>(null);
+  const [selectedPrediction, setSelectedPrediction] =
+    useState<AuditRiskPrediction | null>(null);
+  const [modelInfo, setModelInfo] = useState<AuditRiskPredictionModel | null>(
+    null,
+  );
   const [retraining, setRetraining] = useState(false);
 
   useEffect(() => {
@@ -83,7 +90,8 @@ function PredictionsInner() {
 
   const trendIcon = (trend: number) => {
     if (trend > 0.1) return <TrendingUp className="h-4 w-4 text-red-500" />;
-    if (trend < -0.1) return <TrendingDown className="h-4 w-4 text-green-500" />;
+    if (trend < -0.1)
+      return <TrendingDown className="h-4 w-4 text-green-500" />;
     return <Minus className="h-4 w-4 text-gray-500" />;
   };
 
@@ -122,7 +130,9 @@ function PredictionsInner() {
         </CardHeader>
         <CardContent>
           {predictions.length === 0 ? (
-            <p className="text-center text-muted-foreground p-8">{t("noPredictions")}</p>
+            <p className="text-center text-muted-foreground p-8">
+              {t("noPredictions")}
+            </p>
           ) : (
             <div className="rounded-md border">
               <table className="w-full text-sm">
@@ -139,7 +149,10 @@ function PredictionsInner() {
                   {predictions.map((pred) => {
                     const prob = Number(pred.escalationProbability);
                     const factors = pred.topFactorsJson as PredictionFactor[];
-                    const features = pred.featuresJson as unknown as Record<string, number>;
+                    const features = pred.featuresJson as unknown as Record<
+                      string,
+                      number
+                    >;
 
                     return (
                       <tr
@@ -147,7 +160,9 @@ function PredictionsInner() {
                         className="cursor-pointer border-b hover:bg-muted/25"
                         onClick={() => setSelectedPrediction(pred)}
                       >
-                        <td className="p-3 font-medium">{pred.riskId.slice(0, 8)}...</td>
+                        <td className="p-3 font-medium">
+                          {pred.riskId.slice(0, 8)}...
+                        </td>
                         <td className="p-3 text-right">
                           <Badge variant={probabilityColor(prob)}>
                             {prob.toFixed(1)}%
@@ -160,7 +175,9 @@ function PredictionsInner() {
                           {trendIcon(features?.scoreTrend ?? 0)}
                         </td>
                         <td className="p-3 text-right">
-                          {pred.confidence ? `${Number(pred.confidence).toFixed(0)}%` : "-"}
+                          {pred.confidence
+                            ? `${Number(pred.confidence).toFixed(0)}%`
+                            : "-"}
                         </td>
                       </tr>
                     );
@@ -177,11 +194,17 @@ function PredictionsInner() {
         <Card>
           <CardContent className="flex items-center gap-6 py-3 text-sm text-muted-foreground">
             <Info className="h-4 w-4" />
-            <span>{t("modelVersion")}: {modelInfo.version}</span>
-            <span>{t("algorithm")}: {modelInfo.algorithm}</span>
+            <span>
+              {t("modelVersion")}: {modelInfo.version}
+            </span>
+            <span>
+              {t("algorithm")}: {modelInfo.algorithm}
+            </span>
             {modelInfo.trainingMetrics && (
               <span>
-                R2: {(modelInfo.trainingMetrics as { r2: number }).r2?.toFixed(2) ?? "-"}
+                R2:{" "}
+                {(modelInfo.trainingMetrics as { r2: number }).r2?.toFixed(2) ??
+                  "-"}
               </span>
             )}
           </CardContent>
@@ -189,33 +212,49 @@ function PredictionsInner() {
       )}
 
       {/* Explainability Sheet */}
-      <Sheet open={!!selectedPrediction} onOpenChange={() => setSelectedPrediction(null)}>
+      <Sheet
+        open={!!selectedPrediction}
+        onOpenChange={() => setSelectedPrediction(null)}
+      >
         <SheetContent>
           <SheetHeader>
             <SheetTitle>{t("whyEscalation")}</SheetTitle>
           </SheetHeader>
           {selectedPrediction && (
             <div className="mt-4 space-y-4">
-              <Badge variant={probabilityColor(Number(selectedPrediction.escalationProbability))}>
-                {Number(selectedPrediction.escalationProbability).toFixed(1)}% {t("escalationProbability")}
+              <Badge
+                variant={probabilityColor(
+                  Number(selectedPrediction.escalationProbability),
+                )}
+              >
+                {Number(selectedPrediction.escalationProbability).toFixed(1)}%{" "}
+                {t("escalationProbability")}
               </Badge>
 
               <div className="space-y-3">
                 <h4 className="font-medium">{t("topFactors")}</h4>
-                {(selectedPrediction.topFactorsJson as PredictionFactor[]).map((factor, i) => (
-                  <div key={i} className="rounded border p-3">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium">{factor.description ?? factor.factor}</span>
-                      <Badge variant="outline">{(factor.weight * 100).toFixed(0)}%</Badge>
+                {(selectedPrediction.topFactorsJson as PredictionFactor[]).map(
+                  (factor, i) => (
+                    <div key={i} className="rounded border p-3">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium">
+                          {factor.description ?? factor.factor}
+                        </span>
+                        <Badge variant="outline">
+                          {(factor.weight * 100).toFixed(0)}%
+                        </Badge>
+                      </div>
+                      <div className="mt-2 h-2 rounded bg-muted">
+                        <div
+                          className="h-full rounded bg-primary"
+                          style={{
+                            width: `${Math.min(100, factor.weight * 100)}%`,
+                          }}
+                        />
+                      </div>
                     </div>
-                    <div className="mt-2 h-2 rounded bg-muted">
-                      <div
-                        className="h-full rounded bg-primary"
-                        style={{ width: `${Math.min(100, factor.weight * 100)}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
+                  ),
+                )}
               </div>
             </div>
           )}

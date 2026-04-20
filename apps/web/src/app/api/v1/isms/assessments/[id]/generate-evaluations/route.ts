@@ -46,9 +46,14 @@ export async function POST(req: Request, { params }: RouteParams) {
   let bodyData: z.infer<typeof bodySchema>;
   try {
     const raw = await req.text();
-    const parsed = bodySchema.safeParse(raw && raw.trim().length > 0 ? JSON.parse(raw) : {});
+    const parsed = bodySchema.safeParse(
+      raw && raw.trim().length > 0 ? JSON.parse(raw) : {},
+    );
     if (!parsed.success) {
-      return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+      return Response.json(
+        { error: "Validation failed", details: parsed.error.flatten() },
+        { status: 422 },
+      );
     }
     bodyData = parsed.data;
   } catch {
@@ -59,13 +64,20 @@ export async function POST(req: Request, { params }: RouteParams) {
   const [run] = await db
     .select()
     .from(assessmentRun)
-    .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+    .where(
+      and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+    );
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
   if (run.status !== "in_progress" && run.status !== "planning") {
     return Response.json(
-      { error: `Run status '${run.status}' -- Generate-Evaluations nur fuer planning/in_progress` },
+      {
+        error: `Run status '${run.status}' -- Generate-Evaluations nur fuer planning/in_progress`,
+      },
       { status: 422 },
     );
   }
@@ -75,7 +87,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   // verknuepft, wird der Eintrag uebersprungen (noch nicht auf konkrete
   // Org-Control gemappt).
 
-  const soaConditions = [eq(soaEntry.orgId, ctx.orgId), sql`${soaEntry.controlId} IS NOT NULL`];
+  const soaConditions = [
+    eq(soaEntry.orgId, ctx.orgId),
+    sql`${soaEntry.controlId} IS NOT NULL`,
+  ];
   if (bodyData.applicableOnly) {
     soaConditions.push(eq(soaEntry.applicability, "applicable"));
   }
@@ -174,7 +189,9 @@ export async function POST(req: Request, { params }: RouteParams) {
           totalEvaluations: sql`${assessmentRun.totalEvaluations} + ${created}`,
           updatedAt: new Date(),
         })
-        .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+        .where(
+          and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+        );
     });
   }
 

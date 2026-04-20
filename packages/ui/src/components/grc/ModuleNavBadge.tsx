@@ -9,7 +9,11 @@ interface ModuleNavBadgeProps {
   className?: string;
 }
 
-export function ModuleNavBadge({ count, hasOverdue, className }: ModuleNavBadgeProps) {
+export function ModuleNavBadge({
+  count,
+  hasOverdue,
+  className,
+}: ModuleNavBadgeProps) {
   if (count === 0) return null;
 
   return (

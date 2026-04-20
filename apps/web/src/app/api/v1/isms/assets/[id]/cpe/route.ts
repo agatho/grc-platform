@@ -52,7 +52,10 @@ export async function POST(
   const body = await req.json();
   const parsed = assignAssetCpeSchema.safeParse({ ...body, assetId: id });
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   // Verify asset belongs to org
@@ -104,7 +107,10 @@ export async function DELETE(
   const cpeId = url.searchParams.get("cpeId");
 
   if (!cpeId) {
-    return Response.json({ error: "cpeId query parameter required" }, { status: 400 });
+    return Response.json(
+      { error: "cpeId query parameter required" },
+      { status: 400 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

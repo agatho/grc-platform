@@ -46,10 +46,7 @@ export async function POST(
     );
 
   if (!assessment) {
-    return Response.json(
-      { error: "Assessment not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Assessment not found" }, { status: 404 });
   }
 
   if (assessment.status !== "in_progress") {

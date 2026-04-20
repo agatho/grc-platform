@@ -22,7 +22,10 @@ export function TripleTypeToggle({
   labels = DEFAULT_LABELS,
   disabled = false,
 }: TripleTypeToggleProps) {
-  const options: Array<{ key: "risk" | "mixed_case" | "chance"; label: string }> = [
+  const options: Array<{
+    key: "risk" | "mixed_case" | "chance";
+    label: string;
+  }> = [
     { key: "risk", label: labels.risk },
     { key: "mixed_case", label: labels.mixed_case },
     { key: "chance", label: labels.chance },

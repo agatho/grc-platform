@@ -61,8 +61,18 @@ describe("buildMaturityRoadmapPrompt", () => {
   it("should build a prompt with maturity data", () => {
     const prompt = buildMaturityRoadmapPrompt({
       maturityData: [
-        { domain: "A.5 Organizational Controls", currentLevel: 2, targetLevel: 4, controlCount: 15 },
-        { domain: "A.6 People Controls", currentLevel: 3, targetLevel: 4, controlCount: 8 },
+        {
+          domain: "A.5 Organizational Controls",
+          currentLevel: 2,
+          targetLevel: 4,
+          controlCount: 15,
+        },
+        {
+          domain: "A.6 People Controls",
+          currentLevel: 3,
+          targetLevel: 4,
+          controlCount: 8,
+        },
       ],
       targetMaturity: 4,
     });

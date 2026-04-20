@@ -116,7 +116,9 @@ export default function DeveloperPortalPage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.totalRequests")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.totalRequests")}
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -127,27 +129,37 @@ export default function DeveloperPortalPage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.avgResponseTime")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.avgResponseTime")}
+            </CardTitle>
             <Activity className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">
-              {stats?.avgResponseTime ? `${Math.round(stats.avgResponseTime)}ms` : "N/A"}
+              {stats?.avgResponseTime
+                ? `${Math.round(stats.avgResponseTime)}ms`
+                : "N/A"}
             </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.successRate")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.successRate")}
+            </CardTitle>
             <Shield className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats?.successRate ?? "0"}%</div>
+            <div className="text-2xl font-bold">
+              {stats?.successRate ?? "0"}%
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.apiKeys")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.apiKeys")}
+            </CardTitle>
             <Key className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -196,18 +208,32 @@ export default function DeveloperPortalPage() {
         </CardHeader>
         <CardContent>
           {apiKeys.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">{t("apiKeysTable.empty")}</p>
+            <p className="text-muted-foreground text-center py-8">
+              {t("apiKeysTable.empty")}
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-2 px-3 font-medium">{t("apiKeysTable.name")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("apiKeysTable.key")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("apiKeysTable.status")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("apiKeysTable.lastUsed")}</th>
-                    <th className="text-left py-2 px-3 font-medium">{t("apiKeysTable.rateLimit")}</th>
-                    <th className="text-right py-2 px-3 font-medium">{t("apiKeysTable.actions")}</th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("apiKeysTable.name")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("apiKeysTable.key")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("apiKeysTable.status")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("apiKeysTable.lastUsed")}
+                    </th>
+                    <th className="text-left py-2 px-3 font-medium">
+                      {t("apiKeysTable.rateLimit")}
+                    </th>
+                    <th className="text-right py-2 px-3 font-medium">
+                      {t("apiKeysTable.actions")}
+                    </th>
                   </tr>
                 </thead>
                 <tbody>
@@ -218,7 +244,11 @@ export default function DeveloperPortalPage() {
                         {key.keyPrefix}...{key.keyLast4}
                       </td>
                       <td className="py-2 px-3">
-                        <Badge variant={key.status === "active" ? "default" : "destructive"}>
+                        <Badge
+                          variant={
+                            key.status === "active" ? "default" : "destructive"
+                          }
+                        >
                           {key.status}
                         </Badge>
                       </td>
@@ -227,7 +257,9 @@ export default function DeveloperPortalPage() {
                           ? new Date(key.lastUsedAt).toLocaleDateString()
                           : t("apiKeysTable.neverUsed")}
                       </td>
-                      <td className="py-2 px-3">{key.rateLimitPerMinute}/min</td>
+                      <td className="py-2 px-3">
+                        {key.rateLimitPerMinute}/min
+                      </td>
                       <td className="py-2 px-3 text-right">
                         {key.status === "active" && (
                           <Button

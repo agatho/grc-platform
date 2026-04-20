@@ -29,7 +29,9 @@ function HistoryInner() {
   useEffect(() => {
     const fetchSimulations = async () => {
       try {
-        const res = await fetch("/api/v1/compliance/simulator/simulations?limit=100");
+        const res = await fetch(
+          "/api/v1/compliance/simulator/simulations?limit=100",
+        );
         if (res.ok) {
           const json = await res.json();
           setSimulations(json.data ?? []);
@@ -72,7 +74,11 @@ function HistoryInner() {
     <div className="space-y-6 p-6">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => router.push("/compliance/simulator")}>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => router.push("/compliance/simulator")}
+          >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h1 className="text-2xl font-bold">{t("historyTitle")}</h1>
@@ -109,19 +115,28 @@ function HistoryInner() {
                     onCheckedChange={() => toggleSelect(sim.id)}
                   />
                 </td>
-                <td className="p-3">{new Date(sim.createdAt).toLocaleDateString("de-DE")}</td>
+                <td className="p-3">
+                  {new Date(sim.createdAt).toLocaleDateString("de-DE")}
+                </td>
                 <td className="p-3 font-medium">{sim.regulationName}</td>
                 <td className="p-3">
                   <Badge variant="outline">{sim.scenarioType}</Badge>
                 </td>
-                <td className="p-3 text-right">{Number(sim.beforeScore).toFixed(1)}%</td>
-                <td className="p-3 text-right text-destructive">{Number(sim.afterScore).toFixed(1)}%</td>
+                <td className="p-3 text-right">
+                  {Number(sim.beforeScore).toFixed(1)}%
+                </td>
+                <td className="p-3 text-right text-destructive">
+                  {Number(sim.afterScore).toFixed(1)}%
+                </td>
                 <td className="p-3 text-right">{sim.gapCount}</td>
               </tr>
             ))}
             {simulations.length === 0 && (
               <tr>
-                <td colSpan={7} className="p-8 text-center text-muted-foreground">
+                <td
+                  colSpan={7}
+                  className="p-8 text-center text-muted-foreground"
+                >
                   {t("noSimulations")}
                 </td>
               </tr>

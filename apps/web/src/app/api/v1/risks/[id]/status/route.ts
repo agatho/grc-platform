@@ -47,11 +47,7 @@ export async function PUT(
     .select()
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -128,11 +124,7 @@ export async function PUT(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(risk.id, id),
-          eq(risk.orgId, ctx.orgId),
-          isNull(risk.deletedAt),
-        ),
+        and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
       )
       .returning();
 

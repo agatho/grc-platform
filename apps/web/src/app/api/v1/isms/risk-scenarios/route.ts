@@ -2,7 +2,12 @@ import { db, riskScenario, threat, vulnerability, asset } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createRiskScenarioSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/risk-scenarios
 export async function GET(req: Request) {

@@ -51,7 +51,12 @@ interface InitResponse {
     totalEntries: number;
     created: number;
     skipped: number;
-    catalogs: Array<{ id: string; name: string; source: string | null; version: string | null }>;
+    catalogs: Array<{
+      id: string;
+      name: string;
+      source: string | null;
+      version: string | null;
+    }>;
     frameworkCoverage: Record<string, { total: number; withSoa: number }>;
   };
 }
@@ -80,12 +85,18 @@ function SoaInitInner() {
   const assessmentIdParam = searchParams.get("assessmentId");
 
   const [runs, setRuns] = useState<AssessmentRun[]>([]);
-  const [selectedRunId, setSelectedRunId] = useState<string | null>(assessmentIdParam);
+  const [selectedRunId, setSelectedRunId] = useState<string | null>(
+    assessmentIdParam,
+  );
   const [loadingRuns, setLoadingRuns] = useState(true);
-  const [gateResult, setGateResult] = useState<GateCheckResponse["data"] | null>(null);
+  const [gateResult, setGateResult] = useState<
+    GateCheckResponse["data"] | null
+  >(null);
   const [gateLoading, setGateLoading] = useState(false);
   const [initLoading, setInitLoading] = useState(false);
-  const [initResult, setInitResult] = useState<InitResponse["data"] | null>(null);
+  const [initResult, setInitResult] = useState<InitResponse["data"] | null>(
+    null,
+  );
   const [error, setError] = useState<string | null>(null);
 
   const loadRuns = useCallback(async () => {
@@ -106,7 +117,9 @@ function SoaInitInner() {
     setGateLoading(true);
     setError(null);
     try {
-      const res = await fetch(`/api/v1/isms/assessments/${runId}/soa-gate-check`);
+      const res = await fetch(
+        `/api/v1/isms/assessments/${runId}/soa-gate-check`,
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `HTTP ${res.status}`);
@@ -136,11 +149,14 @@ function SoaInitInner() {
     setError(null);
     setInitResult(null);
     try {
-      const res = await fetch(`/api/v1/isms/assessments/${selectedRunId}/initialize-soa`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const res = await fetch(
+        `/api/v1/isms/assessments/${selectedRunId}/initialize-soa`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
         throw new Error(body?.error ?? `HTTP ${res.status}`);
@@ -159,17 +175,22 @@ function SoaInitInner() {
   async function triggerTransition() {
     if (!selectedRunId) return;
     try {
-      const res = await fetch(`/api/v1/isms/assessments/${selectedRunId}/transition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ targetStatus: "in_progress" }),
-      });
+      const res = await fetch(
+        `/api/v1/isms/assessments/${selectedRunId}/transition`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetStatus: "in_progress" }),
+        },
+      );
       const body = await res.json();
       if (!res.ok) {
         setError(
-          `Transition blockiert: ${(body.blockers ?? [])
-            .map((b: { message: string }) => b.message)
-            .join(" | ") || body.error}`,
+          `Transition blockiert: ${
+            (body.blockers ?? [])
+              .map((b: { message: string }) => b.message)
+              .join(" | ") || body.error
+          }`,
         );
         return;
       }
@@ -199,7 +220,8 @@ function SoaInitInner() {
           Statement of Applicability -- Initialization
         </h1>
         <p className="text-sm text-gray-600 mt-1">
-          Sprint 1.2: SoA-Bulk-Init aus aktivierten Katalogen + Gate-G2-Check vor Run-Start.
+          Sprint 1.2: SoA-Bulk-Init aus aktivierten Katalogen + Gate-G2-Check
+          vor Run-Start.
         </p>
       </div>
 
@@ -220,7 +242,10 @@ function SoaInitInner() {
         ) : runs.length === 0 ? (
           <div className="text-sm text-gray-500">
             Keine Assessment-Runs vorhanden.{" "}
-            <Link href="/isms/assessments/new" className="text-blue-600 underline">
+            <Link
+              href="/isms/assessments/new"
+              className="text-blue-600 underline"
+            >
               Ersten Run anlegen
             </Link>
           </div>
@@ -251,7 +276,11 @@ function SoaInitInner() {
               onClick={() => selectedRunId && loadGateStatus(selectedRunId)}
               disabled={gateLoading}
             >
-              {gateLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+              {gateLoading ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <RefreshCw className="h-4 w-4" />
+              )}
               Reload
             </Button>
           </div>
@@ -277,7 +306,9 @@ function SoaInitInner() {
                   label="N/A ohne Justification"
                   value={gateResult.stats.notApplicableWithoutJustification.toString()}
                   variant={
-                    gateResult.stats.notApplicableWithoutJustification === 0 ? "good" : "warning"
+                    gateResult.stats.notApplicableWithoutJustification === 0
+                      ? "good"
+                      : "warning"
                   }
                 />
               </div>
@@ -292,7 +323,9 @@ function SoaInitInner() {
                 {gateResult.passed ? (
                   <div className="flex items-center gap-2 text-green-800">
                     <CheckCircle className="h-5 w-5" />
-                    <span className="font-medium">Gate G2 bestanden -- Transition zu in_progress moeglich.</span>
+                    <span className="font-medium">
+                      Gate G2 bestanden -- Transition zu in_progress moeglich.
+                    </span>
                   </div>
                 ) : (
                   <div>
@@ -325,14 +358,17 @@ function SoaInitInner() {
         <div className="bg-white border border-gray-200 rounded-lg p-5 mb-4">
           <h2 className="font-semibold mb-3">3. SoA initialisieren</h2>
           <p className="text-sm text-gray-600 mb-3">
-            Legt fuer jeden catalog_entry der aktiven Kataloge (control + reference) einen
-            soa_entry an, wenn noch keiner existiert. Default-Applicability:{" "}
-            <code className="text-xs bg-gray-100 px-1 rounded">applicable</code>.
+            Legt fuer jeden catalog_entry der aktiven Kataloge (control +
+            reference) einen soa_entry an, wenn noch keiner existiert.
+            Default-Applicability:{" "}
+            <code className="text-xs bg-gray-100 px-1 rounded">applicable</code>
+            .
           </p>
           <Button onClick={runInit} disabled={!canInit || initLoading}>
             {initLoading ? (
               <>
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" /> Initialisiere...
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />{" "}
+                Initialisiere...
               </>
             ) : (
               <>
@@ -344,8 +380,9 @@ function SoaInitInner() {
           {initResult && (
             <div className="mt-4 p-3 bg-blue-50 border border-blue-200 rounded-md">
               <p className="text-sm font-medium text-blue-900">
-                Init abgeschlossen: {initResult.created} neu, {initResult.skipped} bereits vorhanden
-                (Total: {initResult.totalEntries})
+                Init abgeschlossen: {initResult.created} neu,{" "}
+                {initResult.skipped} bereits vorhanden (Total:{" "}
+                {initResult.totalEntries})
               </p>
               <div className="mt-2 text-xs text-blue-900">
                 Kataloge: {initResult.catalogs.map((c) => c.name).join(", ")}
@@ -353,11 +390,13 @@ function SoaInitInner() {
               <div className="mt-2 text-xs text-blue-900">
                 <strong>Framework-Coverage:</strong>
                 <ul className="list-disc list-inside mt-1">
-                  {Object.entries(initResult.frameworkCoverage).map(([fw, stats]) => (
-                    <li key={fw}>
-                      {fw}: {stats.withSoa} / {stats.total}
-                    </li>
-                  ))}
+                  {Object.entries(initResult.frameworkCoverage).map(
+                    ([fw, stats]) => (
+                      <li key={fw}>
+                        {fw}: {stats.withSoa} / {stats.total}
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             </div>
@@ -368,12 +407,18 @@ function SoaInitInner() {
       {/* Step 4: Transition */}
       {selectedRunId && canTransition && (
         <div className="bg-green-50 border border-green-300 rounded-lg p-5">
-          <h2 className="font-semibold mb-2 text-green-900">4. Bereit fuer Start</h2>
+          <h2 className="font-semibold mb-2 text-green-900">
+            4. Bereit fuer Start
+          </h2>
           <p className="text-sm text-green-900 mb-3">
-            Gate G2 bestanden. Du kannst jetzt den Run auf <code>in_progress</code> setzen und
-            mit der Risiko-Bewertung beginnen.
+            Gate G2 bestanden. Du kannst jetzt den Run auf{" "}
+            <code>in_progress</code> setzen und mit der Risiko-Bewertung
+            beginnen.
           </p>
-          <Button onClick={triggerTransition} className="bg-green-600 hover:bg-green-700">
+          <Button
+            onClick={triggerTransition}
+            className="bg-green-600 hover:bg-green-700"
+          >
             Run zu in_progress bewegen
           </Button>
         </div>

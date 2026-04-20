@@ -2,7 +2,12 @@ import { db, auditWorkingPaper, auditWpFolder } from "@grc/db";
 import { createWorkingPaperSchema, generateWpReference } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/audit-mgmt/working-papers?auditId=...
 export async function GET(req: Request) {
@@ -14,14 +19,20 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const auditId = url.searchParams.get("auditId");
-  if (!auditId) return Response.json({ error: "auditId required" }, { status: 400 });
+  if (!auditId)
+    return Response.json({ error: "auditId required" }, { status: 400 });
 
   const { limit, offset } = paginate(url.searchParams);
 
   const rows = await db
     .select()
     .from(auditWorkingPaper)
-    .where(and(eq(auditWorkingPaper.orgId, ctx.orgId), eq(auditWorkingPaper.auditId, auditId)))
+    .where(
+      and(
+        eq(auditWorkingPaper.orgId, ctx.orgId),
+        eq(auditWorkingPaper.auditId, auditId),
+      ),
+    )
     .orderBy(desc(auditWorkingPaper.createdAt))
     .limit(limit)
     .offset(offset);
@@ -39,11 +50,15 @@ export async function POST(req: Request) {
 
   const url = new URL(req.url);
   const auditId = url.searchParams.get("auditId");
-  if (!auditId) return Response.json({ error: "auditId required" }, { status: 400 });
+  if (!auditId)
+    return Response.json({ error: "auditId required" }, { status: 400 });
 
   const body = createWorkingPaperSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
@@ -61,9 +76,17 @@ export async function POST(req: Request) {
     const existingWps = await tx
       .select({ reference: auditWorkingPaper.reference })
       .from(auditWorkingPaper)
-      .where(and(eq(auditWorkingPaper.auditId, auditId), eq(auditWorkingPaper.folderId, body.data.folderId)));
+      .where(
+        and(
+          eq(auditWorkingPaper.auditId, auditId),
+          eq(auditWorkingPaper.folderId, body.data.folderId),
+        ),
+      );
 
-    const reference = generateWpReference(folder.code, existingWps.map((w: { reference: string | null }) => w.reference));
+    const reference = generateWpReference(
+      folder.code,
+      existingWps.map((w: { reference: string | null }) => w.reference),
+    );
 
     const [row] = await tx
       .insert(auditWorkingPaper)

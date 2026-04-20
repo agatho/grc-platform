@@ -42,23 +42,43 @@ describe("Audit Trigger & Hash Chain", () => {
     await testDb.client`SELECT set_config('app.current_org_id', '', false)`;
     await testDb.client`SELECT set_config('app.current_user_id', '', false)`;
     // Disable audit trigger on tables we'll delete from
-    await testDb.client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE "user" DISABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await testDb.client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
     if (testUserId) {
-      await testDb.client.unsafe(`DELETE FROM audit_log WHERE user_id = '${testUserId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM audit_log WHERE user_id = '${testUserId}'`,
+      );
     }
     if (testOrgId) {
-      await testDb.client.unsafe(`DELETE FROM audit_log WHERE org_id = '${testOrgId}' OR entity_id = '${testOrgId}'`);
-      await testDb.client.unsafe(`DELETE FROM organization WHERE id = '${testOrgId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM audit_log WHERE org_id = '${testOrgId}' OR entity_id = '${testOrgId}'`,
+      );
+      await testDb.client.unsafe(
+        `DELETE FROM organization WHERE id = '${testOrgId}'`,
+      );
     }
     if (testUserId) {
-      await testDb.client.unsafe(`DELETE FROM "user" WHERE id = '${testUserId}'`);
+      await testDb.client.unsafe(
+        `DELETE FROM "user" WHERE id = '${testUserId}'`,
+      );
     }
     // Re-enable everything
-    await testDb.client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await testDb.client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
-    await testDb.client.unsafe(`ALTER TABLE "user" ENABLE TRIGGER audit_trigger`);
+    await testDb.client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await testDb.client.unsafe(
+      `ALTER TABLE "user" ENABLE TRIGGER audit_trigger`,
+    );
     await testDb.client.end();
   });
 

@@ -39,7 +39,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [row] = await db
@@ -91,7 +94,12 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   if (!validation.allowed) {
     return Response.json(
-      { blocked: true, currentStatus: row.status, targetStatus: parsed.data.targetStatus, blockers: validation.blockers },
+      {
+        blocked: true,
+        currentStatus: row.status,
+        targetStatus: parsed.data.targetStatus,
+        blockers: validation.blockers,
+      },
       { status: 422 },
     );
   }

@@ -14,11 +14,17 @@
 type Level = "trace" | "debug" | "info" | "warn" | "error" | "fatal";
 
 const LEVEL_RANK: Record<Level, number> = {
-  trace: 0, debug: 10, info: 20, warn: 30, error: 40, fatal: 50,
+  trace: 0,
+  debug: 10,
+  info: 20,
+  warn: 30,
+  error: 40,
+  fatal: 50,
 };
 
 const ACTIVE_LEVEL: number =
-  LEVEL_RANK[(process.env.ARCTOS_LOG_LEVEL as Level | undefined) ?? "info"] ?? 20;
+  LEVEL_RANK[(process.env.ARCTOS_LOG_LEVEL as Level | undefined) ?? "info"] ??
+  20;
 
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-web";
 
@@ -49,12 +55,16 @@ function emit(level: Level, message: string, fields: LogFields = {}) {
 }
 
 export const log = {
-  trace: (message: string, fields?: LogFields) => emit("trace", message, fields),
-  debug: (message: string, fields?: LogFields) => emit("debug", message, fields),
+  trace: (message: string, fields?: LogFields) =>
+    emit("trace", message, fields),
+  debug: (message: string, fields?: LogFields) =>
+    emit("debug", message, fields),
   info: (message: string, fields?: LogFields) => emit("info", message, fields),
   warn: (message: string, fields?: LogFields) => emit("warn", message, fields),
-  error: (message: string, fields?: LogFields) => emit("error", message, fields),
-  fatal: (message: string, fields?: LogFields) => emit("fatal", message, fields),
+  error: (message: string, fields?: LogFields) =>
+    emit("error", message, fields),
+  fatal: (message: string, fields?: LogFields) =>
+    emit("fatal", message, fields),
   /**
    * Derive a logger with pre-bound context. Useful at the top of a route
    * handler:
@@ -62,11 +72,17 @@ export const log = {
    *   logger.info("audit created", { auditId });
    */
   withContext: (context: LogFields) => ({
-    trace: (message: string, fields?: LogFields) => emit("trace", message, { ...context, ...fields }),
-    debug: (message: string, fields?: LogFields) => emit("debug", message, { ...context, ...fields }),
-    info: (message: string, fields?: LogFields) => emit("info", message, { ...context, ...fields }),
-    warn: (message: string, fields?: LogFields) => emit("warn", message, { ...context, ...fields }),
-    error: (message: string, fields?: LogFields) => emit("error", message, { ...context, ...fields }),
-    fatal: (message: string, fields?: LogFields) => emit("fatal", message, { ...context, ...fields }),
+    trace: (message: string, fields?: LogFields) =>
+      emit("trace", message, { ...context, ...fields }),
+    debug: (message: string, fields?: LogFields) =>
+      emit("debug", message, { ...context, ...fields }),
+    info: (message: string, fields?: LogFields) =>
+      emit("info", message, { ...context, ...fields }),
+    warn: (message: string, fields?: LogFields) =>
+      emit("warn", message, { ...context, ...fields }),
+    error: (message: string, fields?: LogFields) =>
+      emit("error", message, { ...context, ...fields }),
+    fatal: (message: string, fields?: LogFields) =>
+      emit("fatal", message, { ...context, ...fields }),
   }),
 };

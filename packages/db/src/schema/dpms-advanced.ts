@@ -371,9 +371,7 @@ export const consentType = pgTable(
     informedStatus: varchar("informed_status", { length: 20 }),
     unambiguousStatus: varchar("unambiguous_status", { length: 20 }),
     validityNotes: text("validity_notes"),
-    validityAssessedBy: uuid("validity_assessed_by").references(
-      () => user.id,
-    ),
+    validityAssessedBy: uuid("validity_assessed_by").references(() => user.id),
     validityAssessedAt: timestamp("validity_assessed_at", {
       withTimezone: true,
     }),
@@ -415,8 +413,9 @@ export const consentRecord = pgTable(
     dataSubjectIdentifier: varchar("data_subject_identifier", {
       length: 256,
     }).notNull(),
-    consentGivenAt: timestamp("consent_given_at", { withTimezone: true })
-      .notNull(),
+    consentGivenAt: timestamp("consent_given_at", {
+      withTimezone: true,
+    }).notNull(),
     consentMechanism: varchar("consent_mechanism", { length: 30 }).notNull(),
     consentTextVersion: varchar("consent_text_version", { length: 50 }),
     withdrawnAt: timestamp("withdrawn_at", { withTimezone: true }),
@@ -505,26 +504,20 @@ export const subProcessorNotificationRelations = relations(
   }),
 );
 
-export const pbdAssessmentRelations = relations(
-  pbdAssessment,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [pbdAssessment.orgId],
-      references: [organization.id],
-    }),
+export const pbdAssessmentRelations = relations(pbdAssessment, ({ one }) => ({
+  organization: one(organization, {
+    fields: [pbdAssessment.orgId],
+    references: [organization.id],
   }),
-);
+}));
 
-export const consentTypeRelations = relations(
-  consentType,
-  ({ one, many }) => ({
-    organization: one(organization, {
-      fields: [consentType.orgId],
-      references: [organization.id],
-    }),
-    records: many(consentRecord),
+export const consentTypeRelations = relations(consentType, ({ one, many }) => ({
+  organization: one(organization, {
+    fields: [consentType.orgId],
+    references: [organization.id],
   }),
-);
+  records: many(consentRecord),
+}));
 
 export const consentRecordRelations = relations(consentRecord, ({ one }) => ({
   consentType: one(consentType, {

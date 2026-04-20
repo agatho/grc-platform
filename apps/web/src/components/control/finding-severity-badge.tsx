@@ -5,7 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { cn } from "@grc/ui";
 import type { FindingSeverity } from "@grc/shared";
 
-const SEVERITY_STYLES: Record<FindingSeverity, { bg: string; text: string; border: string }> = {
+const SEVERITY_STYLES: Record<
+  FindingSeverity,
+  { bg: string; text: string; border: string }
+> = {
   observation: {
     bg: "bg-gray-100",
     text: "text-gray-700",

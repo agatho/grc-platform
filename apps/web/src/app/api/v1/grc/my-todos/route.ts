@@ -17,7 +17,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const parsed = myTodosQuerySchema.safeParse({ module: url.searchParams.get("module") });
+  const parsed = myTodosQuerySchema.safeParse({
+    module: url.searchParams.get("module"),
+  });
   if (!parsed.success) {
     return Response.json(
       { error: "Validation failed", details: parsed.error.flatten() },
@@ -52,7 +54,11 @@ export async function GET(req: Request) {
   return Response.json({ data: response });
 }
 
-async function getERMTodos(orgId: string, userId: string, now: Date): Promise<TodoItem[]> {
+async function getERMTodos(
+  orgId: string,
+  userId: string,
+  now: Date,
+): Promise<TodoItem[]> {
   const items: TodoItem[] = [];
 
   // Risks awaiting evaluation (uses Sprint 54 evaluation_phase column)
@@ -65,15 +71,24 @@ async function getERMTodos(orgId: string, userId: string, now: Date): Promise<To
   for (const r of awaitingResult) {
     const dueDate = r.review_date ? String(r.review_date) : null;
     items.push({
-      id: String(r.id), elementId: "", title: String(r.title), type: "evaluation",
-      dueDate, isOverdue: dueDate ? new Date(dueDate) < now : false,
-      entityType: "risk", link: `/risks/${r.id}`,
+      id: String(r.id),
+      elementId: "",
+      title: String(r.title),
+      type: "evaluation",
+      dueDate,
+      isOverdue: dueDate ? new Date(dueDate) < now : false,
+      entityType: "risk",
+      link: `/risks/${r.id}`,
     });
   }
 
   // My treatment actions
   const myTreatments = await db
-    .select({ id: riskTreatment.id, title: riskTreatment.description, dueDate: riskTreatment.dueDate })
+    .select({
+      id: riskTreatment.id,
+      title: riskTreatment.description,
+      dueDate: riskTreatment.dueDate,
+    })
     .from(riskTreatment)
     .where(
       and(
@@ -87,16 +102,25 @@ async function getERMTodos(orgId: string, userId: string, now: Date): Promise<To
   for (const t of myTreatments) {
     const dueDate = t.dueDate ? String(t.dueDate) : null;
     items.push({
-      id: t.id, elementId: "", title: t.title ?? "", type: "treatment",
-      dueDate, isOverdue: dueDate ? new Date(dueDate) < now : false,
-      entityType: "risk_treatment", link: `/risks/treatments/${t.id}`,
+      id: t.id,
+      elementId: "",
+      title: t.title ?? "",
+      type: "treatment",
+      dueDate,
+      isOverdue: dueDate ? new Date(dueDate) < now : false,
+      entityType: "risk_treatment",
+      link: `/risks/treatments/${t.id}`,
     });
   }
 
   return items;
 }
 
-async function getISMSTodos(orgId: string, userId: string, now: Date): Promise<TodoItem[]> {
+async function getISMSTodos(
+  orgId: string,
+  userId: string,
+  now: Date,
+): Promise<TodoItem[]> {
   const items: TodoItem[] = [];
 
   const myWorkItems = await db
@@ -120,18 +144,30 @@ async function getISMSTodos(orgId: string, userId: string, now: Date): Promise<T
 
   for (const wi of myWorkItems) {
     const dueDate = wi.dueDate ? String(wi.dueDate) : null;
-    const type = wi.typeKey === "incident" ? "incident" as const : "assessment" as const;
+    const type =
+      wi.typeKey === "incident"
+        ? ("incident" as const)
+        : ("assessment" as const);
     items.push({
-      id: wi.id, elementId: wi.elementId ?? "", title: wi.title ?? "",
-      type, dueDate, isOverdue: dueDate ? new Date(dueDate) < now : false,
-      entityType: wi.typeKey ?? "", link: `/isms/${wi.typeKey}s/${wi.id}`,
+      id: wi.id,
+      elementId: wi.elementId ?? "",
+      title: wi.title ?? "",
+      type,
+      dueDate,
+      isOverdue: dueDate ? new Date(dueDate) < now : false,
+      entityType: wi.typeKey ?? "",
+      link: `/isms/${wi.typeKey}s/${wi.id}`,
     });
   }
 
   return items;
 }
 
-async function getBCMSTodos(orgId: string, userId: string, now: Date): Promise<TodoItem[]> {
+async function getBCMSTodos(
+  orgId: string,
+  userId: string,
+  now: Date,
+): Promise<TodoItem[]> {
   const items: TodoItem[] = [];
 
   const myWorkItems = await db
@@ -156,9 +192,14 @@ async function getBCMSTodos(orgId: string, userId: string, now: Date): Promise<T
   for (const wi of myWorkItems) {
     const dueDate = wi.dueDate ? String(wi.dueDate) : null;
     items.push({
-      id: wi.id, elementId: wi.elementId ?? "", title: wi.title ?? "",
-      type: "review", dueDate, isOverdue: dueDate ? new Date(dueDate) < now : false,
-      entityType: wi.typeKey ?? "", link: `/bcms/${wi.typeKey}s/${wi.id}`,
+      id: wi.id,
+      elementId: wi.elementId ?? "",
+      title: wi.title ?? "",
+      type: "review",
+      dueDate,
+      isOverdue: dueDate ? new Date(dueDate) < now : false,
+      entityType: wi.typeKey ?? "",
+      link: `/bcms/${wi.typeKey}s/${wi.id}`,
     });
   }
 

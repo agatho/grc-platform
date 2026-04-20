@@ -1,17 +1,25 @@
 // Sprint 37: Architecture Health Snapshot Worker
 // Runs monthly (1st of month) — computes and stores health score snapshot
 
-import { db, architectureHealthSnapshot, applicationPortfolio, technologyEntry, architectureRuleViolation, dataFlow, organization } from "@grc/db";
+import {
+  db,
+  architectureHealthSnapshot,
+  applicationPortfolio,
+  technologyEntry,
+  architectureRuleViolation,
+  dataFlow,
+  organization,
+} from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 
 export async function processArchitectureHealthSnapshot(): Promise<{
   orgsProcessed: number;
 }> {
-  console.log("[arch-health-snapshot] Computing monthly architecture health snapshots");
+  console.log(
+    "[arch-health-snapshot] Computing monthly architecture health snapshots",
+  );
 
-  const orgs = await db
-    .select({ id: organization.id })
-    .from(organization);
+  const orgs = await db.select({ id: organization.id }).from(organization);
 
   let orgsProcessed = 0;
 
@@ -26,7 +34,9 @@ export async function processArchitectureHealthSnapshot(): Promise<{
         .from(applicationPortfolio)
         .where(eq(applicationPortfolio.orgId, org.id));
 
-      const portfolioAge = appStats?.total ? Math.round((appStats.healthy / appStats.total) * 100) : 100;
+      const portfolioAge = appStats?.total
+        ? Math.round((appStats.healthy / appStats.total) * 100)
+        : 100;
 
       // Tech currency
       const [techStats] = await db
@@ -37,13 +47,20 @@ export async function processArchitectureHealthSnapshot(): Promise<{
         .from(technologyEntry)
         .where(eq(technologyEntry.orgId, org.id));
 
-      const techCurrency = techStats?.total ? Math.round((techStats.current / techStats.total) * 100) : 100;
+      const techCurrency = techStats?.total
+        ? Math.round((techStats.current / techStats.total) * 100)
+        : 100;
 
       // Violations
       const [violStats] = await db
         .select({ count: sql<number>`count(*)::int` })
         .from(architectureRuleViolation)
-        .where(and(eq(architectureRuleViolation.orgId, org.id), eq(architectureRuleViolation.status, "open")));
+        .where(
+          and(
+            eq(architectureRuleViolation.orgId, org.id),
+            eq(architectureRuleViolation.status, "open"),
+          ),
+        );
 
       const ruleViolationCount = violStats?.count ?? 0;
       const ruleCompliance = Math.max(0, 100 - ruleViolationCount * 5);
@@ -62,7 +79,12 @@ export async function processArchitectureHealthSnapshot(): Promise<{
         : 100;
 
       const overall = Math.round(
-        portfolioAge * 0.20 + techCurrency * 0.20 + 80 * 0.15 + 80 * 0.15 + ruleCompliance * 0.15 + dfCompliance * 0.15,
+        portfolioAge * 0.2 +
+          techCurrency * 0.2 +
+          80 * 0.15 +
+          80 * 0.15 +
+          ruleCompliance * 0.15 +
+          dfCompliance * 0.15,
       );
 
       await db.insert(architectureHealthSnapshot).values({

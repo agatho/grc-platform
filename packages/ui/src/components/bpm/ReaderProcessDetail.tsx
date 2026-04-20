@@ -42,7 +42,9 @@ export function ReaderProcessDetail({
 
   return (
     <div>
-      <h1 className="text-xl font-semibold text-gray-900 mb-4">{processTitle}</h1>
+      <h1 className="text-xl font-semibold text-gray-900 mb-4">
+        {processTitle}
+      </h1>
 
       <div className="border-b border-gray-200 mb-6">
         <nav className="flex space-x-1 -mb-px">

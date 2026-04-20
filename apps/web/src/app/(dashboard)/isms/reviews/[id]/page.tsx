@@ -39,7 +39,9 @@ function ReviewDetailInner() {
   const [review, setReview] = useState<ManagementReview | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [activeTab, setActiveTab] = useState<"inputs" | "decisions" | "actions" | "minutes">("inputs");
+  const [activeTab, setActiveTab] = useState<
+    "inputs" | "decisions" | "actions" | "minutes"
+  >("inputs");
 
   // Form state for editing
   const [changesInContext, setChangesInContext] = useState("");
@@ -63,8 +65,12 @@ function ReviewDetailInner() {
         setAuditResults(r.auditResults ?? "");
         setImprovementOpportunities(r.improvementOpportunities ?? "");
         setMinutes(r.minutes ?? "");
-        setDecisions(Array.isArray(r.decisions) ? r.decisions as Decision[] : []);
-        setActionItems(Array.isArray(r.actionItems) ? r.actionItems as ActionItem[] : []);
+        setDecisions(
+          Array.isArray(r.decisions) ? (r.decisions as Decision[]) : [],
+        );
+        setActionItems(
+          Array.isArray(r.actionItems) ? (r.actionItems as ActionItem[]) : [],
+        );
       }
     } finally {
       setLoading(false);
@@ -111,7 +117,10 @@ function ReviewDetailInner() {
   };
 
   const addAction = () => {
-    setActionItems([...actionItems, { title: "", responsible: "", dueDate: "", status: "open" }]);
+    setActionItems([
+      ...actionItems,
+      { title: "", responsible: "", dueDate: "", status: "open" },
+    ]);
   };
 
   if (loading) {
@@ -123,7 +132,9 @@ function ReviewDetailInner() {
   }
 
   if (!review) {
-    return <p className="text-center text-gray-400 py-12">{t("review.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-400 py-12">{t("review.notFound")}</p>
+    );
   }
 
   const STATUS_COLORS: Record<ReviewStatus, string> = {
@@ -138,23 +149,37 @@ function ReviewDetailInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/isms/reviews")} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => router.push("/isms/reviews")}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <ArrowLeft size={18} />
           </button>
           <div>
             <h1 className="text-xl font-bold text-gray-900">{review.title}</h1>
             <div className="flex items-center gap-3 mt-1">
-              <Badge variant="outline" className={STATUS_COLORS[review.status]}>{t(`review.statuses.${review.status}`)}</Badge>
-              <span className="text-sm text-gray-500">{t("review.date")}: {review.reviewDate}</span>
+              <Badge variant="outline" className={STATUS_COLORS[review.status]}>
+                {t(`review.statuses.${review.status}`)}
+              </Badge>
+              <span className="text-sm text-gray-500">
+                {t("review.date")}: {review.reviewDate}
+              </span>
             </div>
           </div>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleSave} disabled={saving}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSave}
+            disabled={saving}
+          >
             <Save size={14} className="mr-1" /> {t("actions.save")}
           </Button>
           {review.status !== "completed" && (
-            <Button size="sm" onClick={handleComplete}>{t("review.complete")}</Button>
+            <Button size="sm" onClick={handleComplete}>
+              {t("review.complete")}
+            </Button>
           )}
         </div>
       </div>
@@ -166,7 +191,9 @@ function ReviewDetailInner() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+              activeTab === tab
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             {t(`review.tabs.${tab}`)}
@@ -178,7 +205,9 @@ function ReviewDetailInner() {
       {activeTab === "inputs" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t("review.changesInContext")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t("review.changesInContext")}
+            </label>
             <textarea
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               rows={4}
@@ -188,7 +217,9 @@ function ReviewDetailInner() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t("review.performance")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t("review.performance")}
+            </label>
             <textarea
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               rows={4}
@@ -197,7 +228,9 @@ function ReviewDetailInner() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t("review.auditResults")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t("review.auditResults")}
+            </label>
             <textarea
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               rows={4}
@@ -206,7 +239,9 @@ function ReviewDetailInner() {
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">{t("review.improvements")}</label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              {t("review.improvements")}
+            </label>
             <textarea
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
               rows={4}
@@ -222,7 +257,9 @@ function ReviewDetailInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
           {decisions.map((d, i) => (
             <div key={i} className="flex items-center gap-3">
-              <span className="text-sm font-mono text-gray-400 shrink-0">{i + 1}.</span>
+              <span className="text-sm font-mono text-gray-400 shrink-0">
+                {i + 1}.
+              </span>
               <input
                 className="flex-1 rounded-md border border-gray-300 px-3 py-2 text-sm"
                 value={d.text}
@@ -233,14 +270,18 @@ function ReviewDetailInner() {
                 }}
               />
               <button
-                onClick={() => setDecisions(decisions.filter((_, j) => j !== i))}
+                onClick={() =>
+                  setDecisions(decisions.filter((_, j) => j !== i))
+                }
                 className="text-red-400 hover:text-red-600 text-sm"
               >
                 x
               </button>
             </div>
           ))}
-          <Button variant="outline" size="sm" onClick={addDecision}>{t("review.addDecision")}</Button>
+          <Button variant="outline" size="sm" onClick={addDecision}>
+            {t("review.addDecision")}
+          </Button>
         </div>
       )}
 
@@ -248,15 +289,25 @@ function ReviewDetailInner() {
       {activeTab === "actions" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-4">
           {actionItems.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-4">{t("review.noActions")}</p>
+            <p className="text-sm text-gray-400 text-center py-4">
+              {t("review.noActions")}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-gray-200">
-                  <th className="text-left py-2 font-medium text-gray-600">{t("review.actionTitle")}</th>
-                  <th className="text-left py-2 font-medium text-gray-600">{t("review.responsible")}</th>
-                  <th className="text-left py-2 font-medium text-gray-600">{t("review.dueDate")}</th>
-                  <th className="text-left py-2 font-medium text-gray-600">{t("review.actionStatus")}</th>
+                  <th className="text-left py-2 font-medium text-gray-600">
+                    {t("review.actionTitle")}
+                  </th>
+                  <th className="text-left py-2 font-medium text-gray-600">
+                    {t("review.responsible")}
+                  </th>
+                  <th className="text-left py-2 font-medium text-gray-600">
+                    {t("review.dueDate")}
+                  </th>
+                  <th className="text-left py-2 font-medium text-gray-600">
+                    {t("review.actionStatus")}
+                  </th>
                   <th />
                 </tr>
               </thead>
@@ -307,27 +358,44 @@ function ReviewDetailInner() {
                           setActionItems(next);
                         }}
                       >
-                        <option value="open">{t("review.actionStatuses.open")}</option>
-                        <option value="in_progress">{t("review.actionStatuses.in_progress")}</option>
-                        <option value="completed">{t("review.actionStatuses.completed")}</option>
+                        <option value="open">
+                          {t("review.actionStatuses.open")}
+                        </option>
+                        <option value="in_progress">
+                          {t("review.actionStatuses.in_progress")}
+                        </option>
+                        <option value="completed">
+                          {t("review.actionStatuses.completed")}
+                        </option>
                       </select>
                     </td>
                     <td className="py-2">
-                      <button onClick={() => setActionItems(actionItems.filter((_, j) => j !== i))} className="text-red-400 hover:text-red-600 text-sm">x</button>
+                      <button
+                        onClick={() =>
+                          setActionItems(actionItems.filter((_, j) => j !== i))
+                        }
+                        className="text-red-400 hover:text-red-600 text-sm"
+                      >
+                        x
+                      </button>
                     </td>
                   </tr>
                 ))}
               </tbody>
             </table>
           )}
-          <Button variant="outline" size="sm" onClick={addAction}>{t("review.addAction")}</Button>
+          <Button variant="outline" size="sm" onClick={addAction}>
+            {t("review.addAction")}
+          </Button>
         </div>
       )}
 
       {/* Minutes Tab */}
       {activeTab === "minutes" && (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <label className="block text-sm font-medium text-gray-700 mb-2">{t("review.minutesLabel")}</label>
+          <label className="block text-sm font-medium text-gray-700 mb-2">
+            {t("review.minutesLabel")}
+          </label>
           <textarea
             className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
             rows={15}

@@ -1,10 +1,21 @@
-import { db, controlTestScript, controlTestExecution, controlTestChecklist, controlTestLearning } from "@grc/db";
+import {
+  db,
+  controlTestScript,
+  controlTestExecution,
+  controlTestChecklist,
+  controlTestLearning,
+} from "@grc/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/control-testing/dashboard
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "control_owner", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "control_owner",
+    "auditor",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const [scriptStats] = await db
@@ -37,7 +48,9 @@ export async function GET(req: Request) {
     .from(controlTestLearning)
     .where(eq(controlTestLearning.orgId, ctx.orgId));
 
-  const recentExecutions = await db.select().from(controlTestExecution)
+  const recentExecutions = await db
+    .select()
+    .from(controlTestExecution)
     .where(eq(controlTestExecution.orgId, ctx.orgId))
     .orderBy(desc(controlTestExecution.createdAt))
     .limit(10);

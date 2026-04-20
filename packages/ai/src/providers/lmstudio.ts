@@ -13,8 +13,11 @@ import type { AiCompletionRequest, AiCompletionResponse } from "../types";
 export async function callLmStudio(
   request: AiCompletionRequest,
 ): Promise<AiCompletionResponse> {
-  const baseUrl = (process.env.LMSTUDIO_BASE_URL ?? "http://localhost:1234").replace(/\/$/, "");
-  const model = request.model ?? process.env.LMSTUDIO_DEFAULT_MODEL ?? "local-model";
+  const baseUrl = (
+    process.env.LMSTUDIO_BASE_URL ?? "http://localhost:1234"
+  ).replace(/\/$/, "");
+  const model =
+    request.model ?? process.env.LMSTUDIO_DEFAULT_MODEL ?? "local-model";
 
   const messages = request.messages.map((m) => ({
     role: m.role,

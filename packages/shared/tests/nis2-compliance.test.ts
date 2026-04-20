@@ -131,38 +131,44 @@ describe("computeSingleRequirement", () => {
 
 describe("computeNIS2OverallScore", () => {
   it("returns 100 when all requirements are compliant", () => {
-    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map((r) => ({
-      ...r,
-      status: "compliant" as const,
-      avgCES: 90,
-      controlCount: 3,
-      missingControls: [],
-      evidenceComplete: true,
-    }));
+    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map(
+      (r) => ({
+        ...r,
+        status: "compliant" as const,
+        avgCES: 90,
+        controlCount: 3,
+        missingControls: [],
+        evidenceComplete: true,
+      }),
+    );
     expect(computeNIS2OverallScore(requirements)).toBe(100);
   });
 
   it("returns 0 when all requirements are non-compliant", () => {
-    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map((r) => ({
-      ...r,
-      status: "non_compliant" as const,
-      avgCES: 0,
-      controlCount: 0,
-      missingControls: r.isoMapping,
-      evidenceComplete: false,
-    }));
+    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map(
+      (r) => ({
+        ...r,
+        status: "non_compliant" as const,
+        avgCES: 0,
+        controlCount: 0,
+        missingControls: r.isoMapping,
+        evidenceComplete: false,
+      }),
+    );
     expect(computeNIS2OverallScore(requirements)).toBe(0);
   });
 
   it("returns 50 when all requirements are partially compliant", () => {
-    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map((r) => ({
-      ...r,
-      status: "partially_compliant" as const,
-      avgCES: 60,
-      controlCount: 2,
-      missingControls: [],
-      evidenceComplete: false,
-    }));
+    const requirements: NIS2RequirementResult[] = NIS2_ART21_REQUIREMENTS.map(
+      (r) => ({
+        ...r,
+        status: "partially_compliant" as const,
+        avgCES: 60,
+        controlCount: 2,
+        missingControls: [],
+        evidenceComplete: false,
+      }),
+    );
     expect(computeNIS2OverallScore(requirements)).toBe(50);
   });
 
@@ -177,13 +183,16 @@ describe("computeNIS2OverallScore", () => {
 
 describe("computeCertReadinessScore", () => {
   it("returns 100% when all checks pass", () => {
-    const checks: CertReadinessCheckResult[] = Array.from({ length: 10 }, (_, i) => ({
-      id: `check_${i}`,
-      labelDE: `Pruefung ${i}`,
-      labelEN: `Check ${i}`,
-      category: "test",
-      passed: true,
-    }));
+    const checks: CertReadinessCheckResult[] = Array.from(
+      { length: 10 },
+      (_, i) => ({
+        id: `check_${i}`,
+        labelDE: `Pruefung ${i}`,
+        labelEN: `Check ${i}`,
+        category: "test",
+        passed: true,
+      }),
+    );
     const result = computeCertReadinessScore(checks);
     expect(result.score).toBe(100);
     expect(result.passedCount).toBe(10);
@@ -191,13 +200,16 @@ describe("computeCertReadinessScore", () => {
   });
 
   it("returns 0% when no checks pass", () => {
-    const checks: CertReadinessCheckResult[] = Array.from({ length: 10 }, (_, i) => ({
-      id: `check_${i}`,
-      labelDE: `Pruefung ${i}`,
-      labelEN: `Check ${i}`,
-      category: "test",
-      passed: false,
-    }));
+    const checks: CertReadinessCheckResult[] = Array.from(
+      { length: 10 },
+      (_, i) => ({
+        id: `check_${i}`,
+        labelDE: `Pruefung ${i}`,
+        labelEN: `Check ${i}`,
+        category: "test",
+        passed: false,
+      }),
+    );
     const result = computeCertReadinessScore(checks);
     expect(result.score).toBe(0);
     expect(result.passedCount).toBe(0);
@@ -218,8 +230,20 @@ describe("computeCertReadinessScore", () => {
 
   it("identifies specific failures", () => {
     const checks: CertReadinessCheckResult[] = [
-      { id: "soa_complete", labelDE: "SoA", labelEN: "SoA", category: "doc", passed: false },
-      { id: "mgmt_review", labelDE: "Review", labelEN: "Review", category: "gov", passed: true },
+      {
+        id: "soa_complete",
+        labelDE: "SoA",
+        labelEN: "SoA",
+        category: "doc",
+        passed: false,
+      },
+      {
+        id: "mgmt_review",
+        labelDE: "Review",
+        labelEN: "Review",
+        category: "gov",
+        passed: true,
+      },
     ];
     const result = computeCertReadinessScore(checks);
     const soaCheck = result.checks.find((c) => c.id === "soa_complete");
@@ -286,7 +310,10 @@ describe("NIS2_ART21_REQUIREMENTS", () => {
   });
 
   it("total weight sums to 100", () => {
-    const totalWeight = NIS2_ART21_REQUIREMENTS.reduce((sum, r) => sum + r.weight, 0);
+    const totalWeight = NIS2_ART21_REQUIREMENTS.reduce(
+      (sum, r) => sum + r.weight,
+      0,
+    );
     expect(totalWeight).toBe(100);
   });
 

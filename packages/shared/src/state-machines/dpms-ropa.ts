@@ -49,7 +49,10 @@ export function validateRopaGate1Activate(snapshot: RopaSnapshot): Blocker[] {
     });
   }
 
-  if (!snapshot.purposeDescription || snapshot.purposeDescription.trim().length < 50) {
+  if (
+    !snapshot.purposeDescription ||
+    snapshot.purposeDescription.trim().length < 50
+  ) {
     blockers.push({
       code: "purpose_description_too_short",
       message:
@@ -139,7 +142,9 @@ export interface RopaTransitionResult {
   updates?: Partial<RopaSnapshot>;
 }
 
-export function validateRopaTransition(req: RopaTransitionRequest): RopaTransitionResult {
+export function validateRopaTransition(
+  req: RopaTransitionRequest,
+): RopaTransitionResult {
   const { currentStatus, targetStatus, snapshot } = req;
 
   const allowed = ROPA_ALLOWED_TRANSITIONS[currentStatus] ?? [];

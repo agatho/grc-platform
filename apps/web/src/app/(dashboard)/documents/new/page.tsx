@@ -65,7 +65,10 @@ function CreateDocumentInner() {
     expiresAt: "",
   });
 
-  const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+  const updateField = <K extends keyof typeof form>(
+    key: K,
+    value: (typeof form)[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -105,7 +108,11 @@ function CreateDocumentInner() {
   return (
     <div className="space-y-6 max-w-3xl">
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/documents")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/documents")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">{t("create")}</h1>
@@ -119,7 +126,9 @@ function CreateDocumentInner() {
           <CardContent className="space-y-4">
             {/* Title */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.title")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.title")}
+              </label>
               <input
                 type="text"
                 value={form.title}
@@ -132,10 +141,14 @@ function CreateDocumentInner() {
 
             {/* Category */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.category")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.category")}
+              </label>
               <Select
                 value={form.category}
-                onValueChange={(v) => updateField("category", v as DocumentCategory)}
+                onValueChange={(v) =>
+                  updateField("category", v as DocumentCategory)
+                }
               >
                 <SelectTrigger className="mt-1">
                   <SelectValue />
@@ -152,7 +165,9 @@ function CreateDocumentInner() {
 
             {/* Content */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.content")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.content")}
+              </label>
               <textarea
                 value={form.content}
                 onChange={(e) => updateField("content", e.target.value)}
@@ -160,13 +175,17 @@ function CreateDocumentInner() {
                 rows={12}
                 className="mt-1 w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
-              <p className="text-[10px] text-gray-400 mt-1">{t("form.contentHint")}</p>
+              <p className="text-[10px] text-gray-400 mt-1">
+                {t("form.contentHint")}
+              </p>
             </div>
 
             {/* Owner / Reviewer row */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("form.owner")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("form.owner")}
+                </label>
                 <input
                   type="text"
                   value={form.ownerId}
@@ -176,7 +195,9 @@ function CreateDocumentInner() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("form.reviewer")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("form.reviewer")}
+                </label>
                 <input
                   type="text"
                   value={form.reviewerId}
@@ -189,7 +210,9 @@ function CreateDocumentInner() {
 
             {/* Tags */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.tags")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.tags")}
+              </label>
               <input
                 type="text"
                 value={form.tags}
@@ -201,7 +224,9 @@ function CreateDocumentInner() {
 
             {/* Expiry Date */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.expiresAt")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.expiresAt")}
+              </label>
               <input
                 type="date"
                 value={form.expiresAt}
@@ -219,7 +244,10 @@ function CreateDocumentInner() {
                   updateField("requiresAcknowledgment", checked === true)
                 }
               />
-              <label htmlFor="requiresAcknowledgment" className="text-sm text-gray-700 cursor-pointer">
+              <label
+                htmlFor="requiresAcknowledgment"
+                className="text-sm text-gray-700 cursor-pointer"
+              >
                 {t("form.requiresAcknowledgment")}
               </label>
             </div>
@@ -227,7 +255,11 @@ function CreateDocumentInner() {
         </Card>
 
         <div className="flex items-center justify-end gap-2 mt-4">
-          <Button type="button" variant="outline" onClick={() => router.push("/documents")}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => router.push("/documents")}
+          >
             {tActions("cancel")}
           </Button>
           <Button type="submit" disabled={saving}>

@@ -28,14 +28,21 @@ export interface GpaiSystemicRiskResult {
 const SYSTEMIC_FLOPS_THRESHOLD = 1e25;
 const HIGH_CAPABILITY_FLOPS = 1e24;
 
-export function classifyGpaiSystemicRisk(ctx: GpaiSystemicRiskContext): GpaiSystemicRiskResult {
+export function classifyGpaiSystemicRisk(
+  ctx: GpaiSystemicRiskContext,
+): GpaiSystemicRiskResult {
   const triggers: string[] = [];
 
   if (ctx.commissionDesignated) {
     triggers.push("commission_designation");
   }
-  if (ctx.trainingComputeFlops !== null && ctx.trainingComputeFlops >= SYSTEMIC_FLOPS_THRESHOLD) {
-    triggers.push(`training_compute_gte_${SYSTEMIC_FLOPS_THRESHOLD.toExponential()}_flops`);
+  if (
+    ctx.trainingComputeFlops !== null &&
+    ctx.trainingComputeFlops >= SYSTEMIC_FLOPS_THRESHOLD
+  ) {
+    triggers.push(
+      `training_compute_gte_${SYSTEMIC_FLOPS_THRESHOLD.toExponential()}_flops`,
+    );
   }
   if (ctx.hasHighImpactCapabilities) {
     triggers.push("high_impact_capabilities");
@@ -52,7 +59,8 @@ export function classifyGpaiSystemicRisk(ctx: GpaiSystemicRiskContext): GpaiSyst
 
   // Near-systemic: compute > 10^24 FLOPs oder advanced reasoning + multimodal
   const nearSystemic =
-    (ctx.trainingComputeFlops !== null && ctx.trainingComputeFlops >= HIGH_CAPABILITY_FLOPS) ||
+    (ctx.trainingComputeFlops !== null &&
+      ctx.trainingComputeFlops >= HIGH_CAPABILITY_FLOPS) ||
     (ctx.hasAdvancedReasoning && ctx.hasMultimodalCapabilities);
 
   if (nearSystemic) {
@@ -100,7 +108,9 @@ export interface GpaiObligationResult {
   isFullyCompliant: boolean;
 }
 
-export function assessGpaiObligations(ctx: GpaiObligationContext): GpaiObligationResult {
+export function assessGpaiObligations(
+  ctx: GpaiObligationContext,
+): GpaiObligationResult {
   const standardChecks: Array<[boolean, string]> = [
     [ctx.hasTechnicalDocumentation, "technical_documentation"],
     [ctx.hasTrainingDataSummary, "training_data_summary"],
@@ -130,7 +140,9 @@ export function assessGpaiObligations(ctx: GpaiObligationContext): GpaiObligatio
     ...systemicChecks.filter(([v]) => !v).map(([, k]) => k),
   ];
 
-  const standardPercent = Math.round((standardPassed / standardChecks.length) * 100);
+  const standardPercent = Math.round(
+    (standardPassed / standardChecks.length) * 100,
+  );
   const systemicPercent =
     systemicChecks.length > 0
       ? Math.round((systemicPassed / systemicChecks.length) * 100)
@@ -213,13 +225,17 @@ export interface AnnualReportResult {
   };
 }
 
-export function computeAnnualReport(input: AnnualReportInput): AnnualReportResult {
+export function computeAnnualReport(
+  input: AnnualReportInput,
+): AnnualReportResult {
   const critical: string[] = [];
   const highlights: string[] = [];
 
   // Systems health
   const systemsTotal = input.systems.total || 1;
-  const systemsHealth = Math.round((input.systems.compliant / systemsTotal) * 100);
+  const systemsHealth = Math.round(
+    (input.systems.compliant / systemsTotal) * 100,
+  );
   if (input.systems.byRisk.unacceptable > 0) {
     critical.push(
       `${input.systems.byRisk.unacceptable} AI-System(e) mit unacceptable risk im Portfolio.`,
@@ -234,7 +250,9 @@ export function computeAnnualReport(input: AnnualReportInput): AnnualReportResul
   );
   const conformityNarrative = `${input.conformityAssessments.completed} Assessments abgeschlossen (${input.conformityAssessments.passed} pass, ${input.conformityAssessments.failed} fail, ${input.conformityAssessments.pending} pending).`;
   if (input.conformityAssessments.failed > 0) {
-    critical.push(`${input.conformityAssessments.failed} Conformity-Assessment(s) gescheitert.`);
+    critical.push(
+      `${input.conformityAssessments.failed} Conformity-Assessment(s) gescheitert.`,
+    );
   }
 
   // Incidents health
@@ -253,14 +271,18 @@ export function computeAnnualReport(input: AnnualReportInput): AnnualReportResul
       : 100;
   const friaNarrative = `${input.fria.required} FRIAs erforderlich, ${input.fria.completed} completed, ${input.fria.approved} approved.`;
   if (friaHealth < 100 && input.fria.required > 0) {
-    critical.push(`FRIA-Coverage ${friaHealth}% -- nicht alle mandatory FRIAs abgeschlossen.`);
+    critical.push(
+      `FRIA-Coverage ${friaHealth}% -- nicht alle mandatory FRIAs abgeschlossen.`,
+    );
   }
 
   // QMS health
   const qmsHealth = input.qms.avgMaturity;
   const qmsNarrative = `Durchschnittliche QMS-Maturity: ${input.qms.avgMaturity}%. ${input.qms.readyForCe} von ${input.qms.readyForCe + input.qms.notReadyForCe} QMS CE-ready.`;
   if (input.qms.avgMaturity >= 80) {
-    highlights.push(`QMS-Maturity durchschnittlich ${input.qms.avgMaturity}% -- robuste QMS-Basis.`);
+    highlights.push(
+      `QMS-Maturity durchschnittlich ${input.qms.avgMaturity}% -- robuste QMS-Basis.`,
+    );
   }
 
   // GPAI health
@@ -286,13 +308,18 @@ export function computeAnnualReport(input: AnnualReportInput): AnnualReportResul
   );
 
   if (input.correctiveActions.overdue > 0) {
-    critical.push(`${input.correctiveActions.overdue} Corrective Actions ueberfaellig.`);
+    critical.push(
+      `${input.correctiveActions.overdue} Corrective Actions ueberfaellig.`,
+    );
   }
   if (input.correctiveActions.closed > input.correctiveActions.open * 2) {
-    highlights.push("Corrective-Action-Closure-Rate hoch: remediation effektiv.");
+    highlights.push(
+      "Corrective-Action-Closure-Rate hoch: remediation effektiv.",
+    );
   }
 
-  const readyForSubmission = critical.length === 0 && overallComplianceScore >= 70;
+  const readyForSubmission =
+    critical.length === 0 && overallComplianceScore >= 70;
 
   return {
     year: input.year,
@@ -302,8 +329,14 @@ export function computeAnnualReport(input: AnnualReportInput): AnnualReportResul
     readyForSubmission,
     sections: {
       systems: { healthScore: systemsHealth, narrative: systemsNarrative },
-      conformity: { healthScore: conformityHealth, narrative: conformityNarrative },
-      incidents: { healthScore: incidentsHealth, narrative: incidentsNarrative },
+      conformity: {
+        healthScore: conformityHealth,
+        narrative: conformityNarrative,
+      },
+      incidents: {
+        healthScore: incidentsHealth,
+        narrative: incidentsNarrative,
+      },
       fria: { healthScore: friaHealth, narrative: friaNarrative },
       qms: { healthScore: qmsHealth, narrative: qmsNarrative },
       gpai: { healthScore: gpaiHealth, narrative: gpaiNarrative },

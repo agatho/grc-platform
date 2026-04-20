@@ -3,8 +3,22 @@
   "scorecards": {
     "title": "Vendor Scorecards",
     "overallScore": "Overall Score",
-    "tier": { "strategic": "Strategic", "preferred": "Preferred", "approved": "Approved", "under_review": "Under Review", "exit_candidate": "Exit Candidate" },
-    "dimensions": { "due_diligence": "Due Diligence", "sla_compliance": "SLA Compliance", "incident_history": "Incident History", "financial_stability": "Financial Stability", "esg_rating": "ESG Rating", "contract_compliance": "Contract Compliance", "security_posture": "Security Posture" },
+    "tier": {
+      "strategic": "Strategic",
+      "preferred": "Preferred",
+      "approved": "Approved",
+      "under_review": "Under Review",
+      "exit_candidate": "Exit Candidate"
+    },
+    "dimensions": {
+      "due_diligence": "Due Diligence",
+      "sla_compliance": "SLA Compliance",
+      "incident_history": "Incident History",
+      "financial_stability": "Financial Stability",
+      "esg_rating": "ESG Rating",
+      "contract_compliance": "Contract Compliance",
+      "security_posture": "Security Posture"
+    },
     "recompute": "Recompute Score",
     "history": "Score History",
     "weights": "Configure Weights",
@@ -14,7 +28,11 @@
     "title": "Concentration Risk",
     "spend": "Spend Concentration",
     "hhi": "HHI Index",
-    "hhiLevel": { "low": "Low Concentration", "moderate": "Moderate Concentration", "high": "High Concentration" },
+    "hhiLevel": {
+      "low": "Low Concentration",
+      "moderate": "Moderate Concentration",
+      "high": "High Concentration"
+    },
     "singleSource": "Single-Source Vendors",
     "geographic": "Geographic Concentration",
     "technology": "Technology Lock-in",
@@ -24,17 +42,33 @@
     "title": "SLA Monitoring",
     "definition": "SLA Definition",
     "measurement": "Measurement",
-    "metricType": { "availability": "Availability", "response_time": "Response Time", "resolution_time": "Resolution Time", "delivery_time": "Delivery Time", "quality": "Quality", "custom": "Custom" },
+    "metricType": {
+      "availability": "Availability",
+      "response_time": "Response Time",
+      "resolution_time": "Resolution Time",
+      "delivery_time": "Delivery Time",
+      "quality": "Quality",
+      "custom": "Custom"
+    },
     "met": "Met",
     "breached": "Breached",
-    "breachSeverity": { "minor": "Minor", "major": "Major", "critical": "Critical" },
+    "breachSeverity": {
+      "minor": "Minor",
+      "major": "Major",
+      "critical": "Critical"
+    },
     "consecutive": "Consecutive Breaches",
     "dashboard": "SLA Dashboard",
     "report": "Quarterly SLA Report"
   },
   "exitPlanning": {
     "title": "Exit Planning",
-    "transitionApproach": { "in_house": "In-House", "alternative_vendor": "Alternative Vendor", "hybrid": "Hybrid", "decommission": "Decommission" },
+    "transitionApproach": {
+      "in_house": "In-House",
+      "alternative_vendor": "Alternative Vendor",
+      "hybrid": "Hybrid",
+      "decommission": "Decommission"
+    },
     "readinessScore": "Exit Readiness Score",
     "doraRegister": "DORA Outsourcing Register",
     "reviewCycle": "Review Cycle",
@@ -47,7 +81,11 @@
     "isEu": "EU/EEA",
     "isAdequate": "Adequate Country",
     "requiresTia": "Requires TIA",
-    "approval": { "approved": "Approved", "pending_review": "Pending Review", "rejected": "Rejected" },
+    "approval": {
+      "approved": "Approved",
+      "pending_review": "Pending Review",
+      "rejected": "Rejected"
+    },
     "notification": "Change Notification",
     "reviewDeadline": "Review Deadline (30 days)",
     "riskCascade": "Risk Cascade"

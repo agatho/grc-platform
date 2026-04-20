@@ -1,6 +1,12 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import { sql } from "drizzle-orm";
-import { createTestDb, createAppDb, setRlsContext, clearRlsContext, schema } from "../helpers";
+import {
+  createTestDb,
+  createAppDb,
+  setRlsContext,
+  clearRlsContext,
+  schema,
+} from "../helpers";
 import { runRlsAudit } from "../../src/rls-audit";
 
 /**
@@ -51,22 +57,38 @@ describe("RLS Coverage System Test (ADR-001)", () => {
 
     const [orgA] = await adminDb.db
       .insert(schema.organization)
-      .values({ name: `RLS-SysTest A ${suffix}`, type: "subsidiary", country: "DEU" })
+      .values({
+        name: `RLS-SysTest A ${suffix}`,
+        type: "subsidiary",
+        country: "DEU",
+      })
       .returning({ id: schema.organization.id });
     const [orgB] = await adminDb.db
       .insert(schema.organization)
-      .values({ name: `RLS-SysTest B ${suffix}`, type: "subsidiary", country: "AUT" })
+      .values({
+        name: `RLS-SysTest B ${suffix}`,
+        type: "subsidiary",
+        country: "AUT",
+      })
       .returning({ id: schema.organization.id });
     orgAId = orgA.id;
     orgBId = orgB.id;
 
     const [uA] = await adminDb.db
       .insert(schema.user)
-      .values({ email: `rls-sys-a-${suffix}@test.dev`, name: "RLS User A", passwordHash: "x" })
+      .values({
+        email: `rls-sys-a-${suffix}@test.dev`,
+        name: "RLS User A",
+        passwordHash: "x",
+      })
       .returning({ id: schema.user.id });
     const [uB] = await adminDb.db
       .insert(schema.user)
-      .values({ email: `rls-sys-b-${suffix}@test.dev`, name: "RLS User B", passwordHash: "x" })
+      .values({
+        email: `rls-sys-b-${suffix}@test.dev`,
+        name: "RLS User B",
+        passwordHash: "x",
+      })
       .returning({ id: schema.user.id });
     userAId = uA.id;
     userBId = uB.id;

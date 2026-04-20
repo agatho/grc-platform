@@ -3,14 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Loader2,
-  Play,
-  Plus,
-  GitBranch,
-  Zap,
-  BarChart3,
-} from "lucide-react";
+import { Loader2, Play, Plus, GitBranch, Zap, BarChart3 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -57,10 +50,13 @@ export default function PropagationPage() {
 function PropagationInner() {
   const t = useTranslations("propagation");
   const router = useRouter();
-  const [relationships, setRelationships] = useState<OrgEntityRelationship[]>([]);
+  const [relationships, setRelationships] = useState<OrgEntityRelationship[]>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [simulating, setSimulating] = useState(false);
-  const [simulationResult, setSimulationResult] = useState<RiskPropagationResult | null>(null);
+  const [simulationResult, setSimulationResult] =
+    useState<RiskPropagationResult | null>(null);
   const [dialogOpen, setDialogOpen] = useState(false);
 
   // Form state
@@ -71,7 +67,9 @@ function PropagationInner() {
   const fetchRelationships = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/erm/propagation/relationships?limit=100");
+      const res = await fetch(
+        "/api/v1/erm/propagation/relationships?limit=100",
+      );
       if (res.ok) {
         const json = await res.json();
         setRelationships(json.data ?? []);
@@ -128,7 +126,10 @@ function PropagationInner() {
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push("/erm/risks/propagation/heatmap")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/erm/risks/propagation/heatmap")}
+          >
             <BarChart3 className="mr-2 h-4 w-4" />
             {t("heatmap")}
           </Button>
@@ -154,7 +155,10 @@ function PropagationInner() {
                 </div>
                 <div className="space-y-2">
                   <Label>{t("relationshipType")}</Label>
-                  <Select value={relType} onValueChange={(v) => setRelType(v as OrgRelationshipType)}>
+                  <Select
+                    value={relType}
+                    onValueChange={(v) => setRelType(v as OrgRelationshipType)}
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -168,7 +172,9 @@ function PropagationInner() {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>{t("couplingStrength")}: {strength}%</Label>
+                  <Label>
+                    {t("couplingStrength")}: {strength}%
+                  </Label>
                   <input
                     type="range"
                     min="0"
@@ -234,7 +240,10 @@ function PropagationInner() {
                   ))}
                   {relationships.length === 0 && (
                     <tr>
-                      <td colSpan={4} className="p-8 text-center text-muted-foreground">
+                      <td
+                        colSpan={4}
+                        className="p-8 text-center text-muted-foreground"
+                      >
                         {t("noRelationships")}
                       </td>
                     </tr>
@@ -257,23 +266,41 @@ function PropagationInner() {
           </CardHeader>
           <CardContent>
             <div className="mb-4 flex gap-4">
-              <Badge>{t("affectedEntities")}: {simulationResult.totalAffectedEntities}</Badge>
-              <Badge variant="outline">{t("maxDepth")}: {simulationResult.maxDepth}</Badge>
+              <Badge>
+                {t("affectedEntities")}:{" "}
+                {simulationResult.totalAffectedEntities}
+              </Badge>
+              <Badge variant="outline">
+                {t("maxDepth")}: {simulationResult.maxDepth}
+              </Badge>
             </div>
             <div className="space-y-2">
-              {(simulationResult.resultsJson as Array<{
-                orgId: string;
-                level: number;
-                propagatedScore: number;
-                via: string;
-              }>).map((entry, i) => (
-                <div key={i} className="flex items-center justify-between rounded border p-3 text-sm">
+              {(
+                simulationResult.resultsJson as Array<{
+                  orgId: string;
+                  level: number;
+                  propagatedScore: number;
+                  via: string;
+                }>
+              ).map((entry, i) => (
+                <div
+                  key={i}
+                  className="flex items-center justify-between rounded border p-3 text-sm"
+                >
                   <div>
-                    <span className="font-medium">{t("level")} {entry.level}</span>
-                    <span className="ml-2 text-muted-foreground">{entry.orgId.slice(0, 8)}...</span>
-                    <Badge variant="outline" className="ml-2">{entry.via}</Badge>
+                    <span className="font-medium">
+                      {t("level")} {entry.level}
+                    </span>
+                    <span className="ml-2 text-muted-foreground">
+                      {entry.orgId.slice(0, 8)}...
+                    </span>
+                    <Badge variant="outline" className="ml-2">
+                      {entry.via}
+                    </Badge>
                   </div>
-                  <Badge variant="destructive">{entry.propagatedScore.toFixed(1)}</Badge>
+                  <Badge variant="destructive">
+                    {entry.propagatedScore.toFixed(1)}
+                  </Badge>
                 </div>
               ))}
             </div>

@@ -60,14 +60,18 @@ export async function GET(req: Request) {
 
     const avgInterval = intervals.reduce((s, v) => s + v, 0) / intervals.length;
     const stdDev = Math.sqrt(
-      intervals.reduce((s, v) => s + Math.pow(v - avgInterval, 2), 0) / intervals.length,
+      intervals.reduce((s, v) => s + Math.pow(v - avgInterval, 2), 0) /
+        intervals.length,
     );
 
     // Low variance = high confidence pattern
     const coefficientOfVariation = stdDev / avgInterval;
     const confidence: "high" | "medium" | "low" =
-      coefficientOfVariation < 0.3 ? "high" :
-      coefficientOfVariation < 0.6 ? "medium" : "low";
+      coefficientOfVariation < 0.3
+        ? "high"
+        : coefficientOfVariation < 0.6
+          ? "medium"
+          : "low";
 
     patterns.push({
       description: `'${category}' incidents occur approximately every ${Math.round(avgInterval)} days`,

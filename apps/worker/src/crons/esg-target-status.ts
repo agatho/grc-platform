@@ -2,7 +2,13 @@
 // Recalculates target status (on_track / at_risk / off_track / achieved)
 // based on current metric measurements vs. expected trajectory.
 
-import { db, esgTarget, esrsMetric, esgMeasurement, notification } from "@grc/db";
+import {
+  db,
+  esgTarget,
+  esrsMetric,
+  esgMeasurement,
+  notification,
+} from "@grc/db";
 import { and, eq, sql, desc } from "drizzle-orm";
 
 interface EsgTargetStatusResult {
@@ -61,7 +67,8 @@ export async function processEsgTargetStatus(): Promise<EsgTargetStatusResult> {
       if (totalYears <= 0) continue;
 
       const progressFraction = Math.min(1, elapsedYears / totalYears);
-      const expectedValue = baseline + (targetVal - baseline) * progressFraction;
+      const expectedValue =
+        baseline + (targetVal - baseline) * progressFraction;
 
       // 4. Determine new status
       let newStatus: string;
@@ -73,8 +80,12 @@ export async function processEsgTargetStatus(): Promise<EsgTargetStatusResult> {
         // For reduction targets: baseline > target, lower current is better
         // For increase targets: baseline < target, higher current is better
         const isReduction = targetVal < baseline;
-        const achievedRange = isReduction ? baseline - currentValue : currentValue - baseline;
-        const expectedRange = isReduction ? baseline - expectedValue : expectedValue - baseline;
+        const achievedRange = isReduction
+          ? baseline - currentValue
+          : currentValue - baseline;
+        const expectedRange = isReduction
+          ? baseline - expectedValue
+          : expectedValue - baseline;
 
         if (achievedRange >= totalRange) {
           newStatus = "achieved";
@@ -138,7 +149,10 @@ export async function processEsgTargetStatus(): Promise<EsgTargetStatusResult> {
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:esg-target-status] Failed for target ${target.id}:`, message);
+      console.error(
+        `[cron:esg-target-status] Failed for target ${target.id}:`,
+        message,
+      );
     }
   }
 

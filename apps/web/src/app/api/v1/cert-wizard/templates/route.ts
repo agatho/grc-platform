@@ -7,7 +7,14 @@
 // implementation status — not type names. Mappings to existing SoA/Maturity rows
 // are joined so already-assessed controls start as "implemented".
 
-import { db, certReadinessAssessment, catalog, catalogEntry, soaEntry, controlMaturity } from "@grc/db";
+import {
+  db,
+  certReadinessAssessment,
+  catalog,
+  catalogEntry,
+  soaEntry,
+  controlMaturity,
+} from "@grc/db";
 import { CERT_FRAMEWORK_VALUES } from "@grc/shared";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, count, inArray } from "drizzle-orm";
@@ -71,36 +78,47 @@ export async function GET(_req: Request) {
 
   // Count entries via a separate group-by query (avoids Drizzle correlated-subquery
   // pitfalls and is one extra round-trip — fine because catalogs is bounded ~25)
-  const entryCounts = catalogs.length === 0
-    ? []
-    : await db
-        .select({ catalogId: catalogEntry.catalogId, count: count() })
-        .from(catalogEntry)
-        .where(
-          and(
-            inArray(catalogEntry.catalogId, catalogs.map((c) => c.id)),
-            eq(catalogEntry.status, "active"),
-          ),
-        )
-        .groupBy(catalogEntry.catalogId);
-  const countByCatalog = new Map(entryCounts.map((r) => [r.catalogId, Number(r.count)]));
-
-  const sourceToCatalog = new Map(
-    catalogs.map((c) => [c.source, { ...c, entryCount: countByCatalog.get(c.id) ?? 0 }]),
+  const entryCounts =
+    catalogs.length === 0
+      ? []
+      : await db
+          .select({ catalogId: catalogEntry.catalogId, count: count() })
+          .from(catalogEntry)
+          .where(
+            and(
+              inArray(
+                catalogEntry.catalogId,
+                catalogs.map((c) => c.id),
+              ),
+              eq(catalogEntry.status, "active"),
+            ),
+          )
+          .groupBy(catalogEntry.catalogId);
+  const countByCatalog = new Map(
+    entryCounts.map((r) => [r.catalogId, Number(r.count)]),
   );
 
-  const templates = Object.entries(FRAMEWORK_TO_CATALOG_SOURCE).map(([framework, source]) => {
-    const cat = sourceToCatalog.get(source);
-    return {
-      framework,
-      catalogSource: source,
-      available: !!cat,
-      catalogName: cat?.name ?? null,
-      catalogVersion: cat?.version ?? null,
-      controlCount: cat?.entryCount ?? 0,
-      targetModules: cat?.targetModules ?? [],
-    };
-  });
+  const sourceToCatalog = new Map(
+    catalogs.map((c) => [
+      c.source,
+      { ...c, entryCount: countByCatalog.get(c.id) ?? 0 },
+    ]),
+  );
+
+  const templates = Object.entries(FRAMEWORK_TO_CATALOG_SOURCE).map(
+    ([framework, source]) => {
+      const cat = sourceToCatalog.get(source);
+      return {
+        framework,
+        catalogSource: source,
+        available: !!cat,
+        catalogName: cat?.name ?? null,
+        catalogVersion: cat?.version ?? null,
+        controlCount: cat?.entryCount ?? 0,
+        targetModules: cat?.targetModules ?? [],
+      };
+    },
+  );
 
   return Response.json({ data: templates });
 }
@@ -112,13 +130,26 @@ export async function POST(req: Request) {
 
   const body = instantiateSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
-  const { framework, assessmentCode, title, scope, targetCertDate, leadAssessorId } = body.data;
+  const {
+    framework,
+    assessmentCode,
+    title,
+    scope,
+    targetCertDate,
+    leadAssessorId,
+  } = body.data;
   const catalogSource = FRAMEWORK_TO_CATALOG_SOURCE[framework];
   if (!catalogSource) {
-    return Response.json({ error: `No catalog mapped for framework ${framework}` }, { status: 422 });
+    return Response.json(
+      { error: `No catalog mapped for framework ${framework}` },
+      { status: 422 },
+    );
   }
 
   // Resolve the catalog
@@ -130,7 +161,9 @@ export async function POST(req: Request) {
 
   if (!cat) {
     return Response.json(
-      { error: `Catalog "${catalogSource}" not seeded — run seed_catalog_*.sql first` },
+      {
+        error: `Catalog "${catalogSource}" not seeded — run seed_catalog_*.sql first`,
+      },
       { status: 404 },
     );
   }
@@ -144,7 +177,12 @@ export async function POST(req: Request) {
       level: catalogEntry.level,
     })
     .from(catalogEntry)
-    .where(and(eq(catalogEntry.catalogId, cat.id), eq(catalogEntry.status, "active")))
+    .where(
+      and(
+        eq(catalogEntry.catalogId, cat.id),
+        eq(catalogEntry.status, "active"),
+      ),
+    )
     .orderBy(catalogEntry.sortOrder);
 
   // Pre-fill: which catalog entries already have a SoA decision in this org?
@@ -157,19 +195,33 @@ export async function POST(req: Request) {
     })
     .from(soaEntry)
     .innerJoin(catalogEntry, eq(catalogEntry.id, soaEntry.catalogEntryId))
-    .where(and(eq(soaEntry.orgId, ctx.orgId), eq(catalogEntry.catalogId, cat.id)));
+    .where(
+      and(eq(soaEntry.orgId, ctx.orgId), eq(catalogEntry.catalogId, cat.id)),
+    );
 
   const soaByCode = new Map(soaWithCodes.map((s) => [s.code, s]));
 
   // Pre-fill: maturity per controlId
-  const controlIds = soaWithCodes.map((s) => s.controlId).filter((id): id is string => !!id);
+  const controlIds = soaWithCodes
+    .map((s) => s.controlId)
+    .filter((id): id is string => !!id);
   let maturityByControlId = new Map<string, number>();
   if (controlIds.length > 0) {
     const maturities = await db
-      .select({ controlId: controlMaturity.controlId, currentMaturity: controlMaturity.currentMaturity })
+      .select({
+        controlId: controlMaturity.controlId,
+        currentMaturity: controlMaturity.currentMaturity,
+      })
       .from(controlMaturity)
-      .where(and(eq(controlMaturity.orgId, ctx.orgId), inArray(controlMaturity.controlId, controlIds)));
-    maturityByControlId = new Map(maturities.map((m) => [m.controlId, m.currentMaturity]));
+      .where(
+        and(
+          eq(controlMaturity.orgId, ctx.orgId),
+          inArray(controlMaturity.controlId, controlIds),
+        ),
+      );
+    maturityByControlId = new Map(
+      maturities.map((m) => [m.controlId, m.currentMaturity]),
+    );
   }
 
   // Build pre-filled controlDetails. Status mapping mirrors cert_readiness_assessment summary fields.
@@ -177,11 +229,14 @@ export async function POST(req: Request) {
     .filter((e) => e.level > 0) // skip family/category headers
     .map((e) => {
       const s = soaByCode.get(e.code);
-      const maturity = s?.controlId ? maturityByControlId.get(s.controlId) : undefined;
+      const maturity = s?.controlId
+        ? maturityByControlId.get(s.controlId)
+        : undefined;
       let status: string;
       if (s?.applicability === "not_applicable") status = "not_applicable";
       else if (s?.implementation === "implemented") status = "implemented";
-      else if (s?.implementation === "partially_implemented") status = "partial";
+      else if (s?.implementation === "partially_implemented")
+        status = "partial";
       else if (s?.implementation === "planned") status = "planned";
       else status = "not_assessed";
       return {
@@ -190,20 +245,31 @@ export async function POST(req: Request) {
         status,
         gaps: status === "not_assessed" ? "Bisher nicht bewertet" : "",
         evidence: s?.controlId ? "Verlinkt mit aktivem Control" : "",
-        priority: status === "implemented" || status === "not_applicable" ? "low" : "high",
+        priority:
+          status === "implemented" || status === "not_applicable"
+            ? "low"
+            : "high",
         currentMaturity: maturity ?? null,
       };
     });
 
   // Roll up summary counts
   const total = controlDetails.length;
-  const implemented = controlDetails.filter((c) => c.status === "implemented").length;
+  const implemented = controlDetails.filter(
+    (c) => c.status === "implemented",
+  ).length;
   const partial = controlDetails.filter((c) => c.status === "partial").length;
-  const notImplemented = controlDetails.filter((c) => c.status === "not_assessed" || c.status === "planned").length;
-  const notApplicable = controlDetails.filter((c) => c.status === "not_applicable").length;
+  const notImplemented = controlDetails.filter(
+    (c) => c.status === "not_assessed" || c.status === "planned",
+  ).length;
+  const notApplicable = controlDetails.filter(
+    (c) => c.status === "not_applicable",
+  ).length;
   const applicable = total - notApplicable;
   const readinessScore =
-    applicable > 0 ? Math.round(((implemented + partial * 0.5) / applicable) * 10000) / 100 : 0;
+    applicable > 0
+      ? Math.round(((implemented + partial * 0.5) / applicable) * 10000) / 100
+      : 0;
 
   // Insert the assessment
   const created = await withAuditContext(ctx, async (tx) => {
@@ -230,9 +296,15 @@ export async function POST(req: Request) {
           .slice(0, 50)
           .map((c) => ({
             area: c.controlRef,
-            gap: c.status === "not_assessed" ? "Control noch nicht bewertet" : "Teilweise umgesetzt",
+            gap:
+              c.status === "not_assessed"
+                ? "Control noch nicht bewertet"
+                : "Teilweise umgesetzt",
             severity: c.priority,
-            recommendation: c.status === "not_assessed" ? "Implementierung planen und SoA-Eintrag anlegen" : "Implementierung vervollständigen",
+            recommendation:
+              c.status === "not_assessed"
+                ? "Implementierung planen und SoA-Eintrag anlegen"
+                : "Implementierung vervollständigen",
             effort: "medium",
           })),
         status: "draft",
@@ -241,5 +313,15 @@ export async function POST(req: Request) {
     return row;
   });
 
-  return Response.json({ data: created, instantiation: { catalogSource, total, prefilledFromSoa: soaWithCodes.length } }, { status: 201 });
+  return Response.json(
+    {
+      data: created,
+      instantiation: {
+        catalogSource,
+        total,
+        prefilledFromSoa: soaWithCodes.length,
+      },
+    },
+    { status: 201 },
+  );
 }

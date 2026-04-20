@@ -95,11 +95,20 @@ function NIS2ReportingInner() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("reporting.title")}</h1>
-            <p className="text-sm text-gray-500 mt-1">{t("reporting.subtitle")}</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t("reporting.title")}
+            </h1>
+            <p className="text-sm text-gray-500 mt-1">
+              {t("reporting.subtitle")}
+            </p>
           </div>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -109,50 +118,76 @@ function NIS2ReportingInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-1">
             <FileText className="h-4 w-4 text-blue-600" />
-            <span className="text-xs font-medium text-gray-500">{t("reporting.total")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("reporting.total")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{stats?.total ?? 0}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {stats?.total ?? 0}
+          </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-1">
             <AlertTriangle className="h-4 w-4 text-red-600" />
-            <span className="text-xs font-medium text-gray-500">{t("reporting.overdue")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("reporting.overdue")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-red-600">{stats?.overdue ?? 0}</p>
+          <p className="text-2xl font-bold text-red-600">
+            {stats?.overdue ?? 0}
+          </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-1">
             <Clock className="h-4 w-4 text-yellow-600" />
-            <span className="text-xs font-medium text-gray-500">{t("reporting.pending")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("reporting.pending")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-yellow-600">{stats?.pending ?? 0}</p>
+          <p className="text-2xl font-bold text-yellow-600">
+            {stats?.pending ?? 0}
+          </p>
         </div>
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-1">
             <CheckCircle2 className="h-4 w-4 text-green-600" />
-            <span className="text-xs font-medium text-gray-500">{t("reporting.submitted")}</span>
+            <span className="text-xs font-medium text-gray-500">
+              {t("reporting.submitted")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-green-600">{stats?.submitted ?? 0}</p>
+          <p className="text-2xl font-bold text-green-600">
+            {stats?.submitted ?? 0}
+          </p>
         </div>
       </div>
 
       {/* NIS2 Notification Stepper Info */}
       <div className="rounded-lg border border-blue-200 bg-blue-50 p-4">
-        <h3 className="text-sm font-semibold text-blue-900 mb-2">{t("reporting.art23Title")}</h3>
+        <h3 className="text-sm font-semibold text-blue-900 mb-2">
+          {t("reporting.art23Title")}
+        </h3>
         <div className="flex items-center gap-6 text-xs text-blue-800">
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-red-200 text-red-800 flex items-center justify-center font-bold text-[10px]">1</div>
+            <div className="w-6 h-6 rounded-full bg-red-200 text-red-800 flex items-center justify-center font-bold text-[10px]">
+              1
+            </div>
             <span>{t("reporting.earlyWarning")} (24h)</span>
           </div>
           <div className="h-px w-6 bg-blue-300" />
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-yellow-200 text-yellow-800 flex items-center justify-center font-bold text-[10px]">2</div>
+            <div className="w-6 h-6 rounded-full bg-yellow-200 text-yellow-800 flex items-center justify-center font-bold text-[10px]">
+              2
+            </div>
             <span>{t("reporting.fullNotification")} (72h)</span>
           </div>
           <div className="h-px w-6 bg-blue-300" />
           <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-full bg-green-200 text-green-800 flex items-center justify-center font-bold text-[10px]">3</div>
-            <span>{t("reporting.finalReport")} (1 {t("reporting.month")})</span>
+            <div className="w-6 h-6 rounded-full bg-green-200 text-green-800 flex items-center justify-center font-bold text-[10px]">
+              3
+            </div>
+            <span>
+              {t("reporting.finalReport")} (1 {t("reporting.month")})
+            </span>
           </div>
         </div>
       </div>
@@ -160,7 +195,9 @@ function NIS2ReportingInner() {
       {/* Reports Table */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("reporting.reports")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("reporting.reports")}
+          </h2>
         </div>
         {reports.length === 0 ? (
           <div className="p-8 text-center text-sm text-gray-400">
@@ -169,9 +206,13 @@ function NIS2ReportingInner() {
         ) : (
           <div className="divide-y divide-gray-100">
             {reports.map((report) => {
-              const isOverdue = report.status === "draft" && new Date(report.deadlineAt) < now;
+              const isOverdue =
+                report.status === "draft" && new Date(report.deadlineAt) < now;
               return (
-                <div key={report.id} className="px-4 py-3 hover:bg-gray-50 transition-colors">
+                <div
+                  key={report.id}
+                  className="px-4 py-3 hover:bg-gray-50 transition-colors"
+                >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 min-w-0">
                       <div className="min-w-0">
@@ -185,9 +226,15 @@ function NIS2ReportingInner() {
                         </div>
                         <div className="flex items-center gap-2 mt-1">
                           <ReportTypeBadge type={report.reportType} />
-                          <ReportStatusBadge status={report.status} isOverdue={isOverdue} />
+                          <ReportStatusBadge
+                            status={report.status}
+                            isOverdue={isOverdue}
+                          />
                           <span className="text-xs text-gray-500">
-                            {t("reporting.deadline")}: {new Date(report.deadlineAt).toLocaleDateString("de-DE")}
+                            {t("reporting.deadline")}:{" "}
+                            {new Date(report.deadlineAt).toLocaleDateString(
+                              "de-DE",
+                            )}
                           </span>
                           {report.bsiReference && (
                             <span className="text-xs text-gray-400">
@@ -228,10 +275,19 @@ function ReportTypeBadge({ type }: { type: string }) {
   );
 }
 
-function ReportStatusBadge({ status, isOverdue }: { status: string; isOverdue: boolean }) {
+function ReportStatusBadge({
+  status,
+  isOverdue,
+}: {
+  status: string;
+  isOverdue: boolean;
+}) {
   if (isOverdue) {
     return (
-      <Badge variant="outline" className="text-[10px] bg-red-50 text-red-700 border-red-200">
+      <Badge
+        variant="outline"
+        className="text-[10px] bg-red-50 text-red-700 border-red-200"
+      >
         Ueberfaellig
       </Badge>
     );

@@ -19,7 +19,15 @@ import type { GrcTimeEntry, GrcArea } from "@grc/shared";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 
 const GRC_AREAS: GrcArea[] = [
-  "erm", "isms", "ics", "dpms", "audit", "tprm", "bcms", "esg", "general",
+  "erm",
+  "isms",
+  "ics",
+  "dpms",
+  "audit",
+  "tprm",
+  "bcms",
+  "esg",
+  "general",
 ];
 
 const AREA_COLORS: Record<GrcArea, string> = {
@@ -130,11 +138,17 @@ export default function TimeTrackingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/budget")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/budget")}
+          >
             <ArrowLeft size={14} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("time.title")}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t("time.title")}
+            </h1>
             <p className="text-sm text-gray-500 mt-1">{t("time.subtitle")}</p>
           </div>
         </div>
@@ -157,7 +171,12 @@ export default function TimeTrackingPage() {
               {t("time.listView")}
             </button>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchEntries} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchEntries}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => setShowCreate(!showCreate)}>
@@ -172,21 +191,32 @@ export default function TimeTrackingPage() {
         <div className="rounded-lg border border-gray-200 bg-white p-4">
           <div className="flex items-center gap-2 mb-2">
             <Clock className="h-5 w-5 text-blue-600" />
-            <span className="text-xs font-medium text-gray-600">{t("time.totalHours")}</span>
+            <span className="text-xs font-medium text-gray-600">
+              {t("time.totalHours")}
+            </span>
           </div>
-          <p className="text-2xl font-bold text-gray-900">{totalHours.toFixed(1)}</p>
+          <p className="text-2xl font-bold text-gray-900">
+            {totalHours.toFixed(1)}
+          </p>
         </div>
         {GRC_AREAS.slice(0, 3).map((area) => {
           const areaHours = entries
             .filter((e) => e.grcArea === area)
             .reduce((sum, e) => sum + Number(e.hours || 0), 0);
           return (
-            <div key={area} className="rounded-lg border border-gray-200 bg-white p-4">
+            <div
+              key={area}
+              className="rounded-lg border border-gray-200 bg-white p-4"
+            >
               <div className="flex items-center gap-2 mb-2">
                 <div className={`w-3 h-3 rounded-full ${AREA_COLORS[area]}`} />
-                <span className="text-xs font-medium text-gray-600">{t(`areas.${area}`)}</span>
+                <span className="text-xs font-medium text-gray-600">
+                  {t(`areas.${area}`)}
+                </span>
               </div>
-              <p className="text-2xl font-bold text-gray-900">{areaHours.toFixed(1)}h</p>
+              <p className="text-2xl font-bold text-gray-900">
+                {areaHours.toFixed(1)}h
+              </p>
             </div>
           );
         })}
@@ -195,10 +225,14 @@ export default function TimeTrackingPage() {
       {/* Create Form */}
       {showCreate && (
         <div className="rounded-lg border border-blue-200 bg-blue-50 p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("time.recordTime")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("time.recordTime")}
+          </h2>
           <div className="flex flex-wrap items-end gap-4">
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("time.date")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("time.date")}
+              </label>
               <input
                 type="date"
                 value={newDate}
@@ -207,7 +241,9 @@ export default function TimeTrackingPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("time.hours")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("time.hours")}
+              </label>
               <input
                 type="number"
                 step="0.5"
@@ -219,19 +255,25 @@ export default function TimeTrackingPage() {
               />
             </div>
             <div className="flex flex-col gap-1">
-              <label className="text-xs font-medium text-gray-500">{t("time.area")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("time.area")}
+              </label>
               <select
                 value={newArea}
                 onChange={(e) => setNewArea(e.target.value as GrcArea)}
                 className="rounded-md border border-gray-300 px-3 py-1.5 text-sm"
               >
                 {GRC_AREAS.map((a) => (
-                  <option key={a} value={a}>{t(`areas.${a}`)}</option>
+                  <option key={a} value={a}>
+                    {t(`areas.${a}`)}
+                  </option>
                 ))}
               </select>
             </div>
             <div className="flex flex-col gap-1 flex-1 min-w-[200px]">
-              <label className="text-xs font-medium text-gray-500">{t("time.description")}</label>
+              <label className="text-xs font-medium text-gray-500">
+                {t("time.description")}
+              </label>
               <input
                 type="text"
                 value={newDescription}
@@ -243,7 +285,11 @@ export default function TimeTrackingPage() {
               {creating && <Loader2 size={14} className="animate-spin mr-1" />}
               {t("actions.save")}
             </Button>
-            <Button variant="outline" size="sm" onClick={() => setShowCreate(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowCreate(false)}
+            >
               {t("actions.cancel")}
             </Button>
           </div>
@@ -253,21 +299,36 @@ export default function TimeTrackingPage() {
       {/* Calendar / List View */}
       {view === "calendar" ? (
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("time.calendarView")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("time.calendarView")}
+          </h2>
           <div className="space-y-3">
             {Object.entries(entriesByDate)
               .sort(([a], [b]) => b.localeCompare(a))
               .map(([date, dayEntries]) => {
-                const dayTotal = dayEntries.reduce((s, e) => s + Number(e.hours || 0), 0);
+                const dayTotal = dayEntries.reduce(
+                  (s, e) => s + Number(e.hours || 0),
+                  0,
+                );
                 return (
-                  <div key={date} className="rounded-lg border border-gray-100 bg-gray-50 p-4">
+                  <div
+                    key={date}
+                    className="rounded-lg border border-gray-100 bg-gray-50 p-4"
+                  >
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-sm font-medium text-gray-900">{date}</span>
-                      <span className="text-sm font-bold text-gray-700">{dayTotal.toFixed(1)}h</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {date}
+                      </span>
+                      <span className="text-sm font-bold text-gray-700">
+                        {dayTotal.toFixed(1)}h
+                      </span>
                     </div>
                     <div className="flex gap-1 h-6">
                       {dayEntries.map((entry) => {
-                        const widthPct = dayTotal > 0 ? (Number(entry.hours) / dayTotal) * 100 : 0;
+                        const widthPct =
+                          dayTotal > 0
+                            ? (Number(entry.hours) / dayTotal) * 100
+                            : 0;
                         return (
                           <div
                             key={entry.id}
@@ -284,7 +345,9 @@ export default function TimeTrackingPage() {
                 );
               })}
             {Object.keys(entriesByDate).length === 0 && (
-              <p className="text-sm text-gray-400 text-center py-8">{t("time.noEntries")}</p>
+              <p className="text-sm text-gray-400 text-center py-8">
+                {t("time.noEntries")}
+              </p>
             )}
           </div>
         </div>
@@ -294,29 +357,52 @@ export default function TimeTrackingPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("time.date")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("time.area")}</th>
-                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">{t("time.hours")}</th>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("time.description")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("time.date")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("time.area")}
+                  </th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                    {t("time.hours")}
+                  </th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("time.description")}
+                  </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {entries.map((entry) => (
                   <tr key={entry.id} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">{entry.date}</td>
+                    <td className="px-4 py-3 text-gray-700 whitespace-nowrap">
+                      {entry.date}
+                    </td>
                     <td className="px-4 py-3">
                       <div className="flex items-center gap-2">
-                        <div className={`w-2.5 h-2.5 rounded-full ${AREA_COLORS[entry.grcArea]}`} />
-                        <span className="text-gray-700">{t(`areas.${entry.grcArea}`)}</span>
+                        <div
+                          className={`w-2.5 h-2.5 rounded-full ${AREA_COLORS[entry.grcArea]}`}
+                        />
+                        <span className="text-gray-700">
+                          {t(`areas.${entry.grcArea}`)}
+                        </span>
                       </div>
                     </td>
-                    <td className="px-4 py-3 text-right font-medium text-gray-900">{Number(entry.hours).toFixed(1)}</td>
-                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">{entry.description ?? "-"}</td>
+                    <td className="px-4 py-3 text-right font-medium text-gray-900">
+                      {Number(entry.hours).toFixed(1)}
+                    </td>
+                    <td className="px-4 py-3 text-gray-600 max-w-xs truncate">
+                      {entry.description ?? "-"}
+                    </td>
                   </tr>
                 ))}
                 {entries.length === 0 && (
                   <tr>
-                    <td colSpan={4} className="px-4 py-8 text-center text-gray-400">{t("time.noEntries")}</td>
+                    <td
+                      colSpan={4}
+                      className="px-4 py-8 text-center text-gray-400"
+                    >
+                      {t("time.noEntries")}
+                    </td>
                   </tr>
                 )}
               </tbody>
@@ -329,15 +415,22 @@ export default function TimeTrackingPage() {
       {deptAnalysis.length > 0 && (
         <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
           <div className="px-6 py-4 border-b border-gray-200">
-            <h2 className="text-base font-semibold text-gray-900">{t("time.departmentAnalysis")}</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("time.departmentAnalysis")}
+            </h2>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-sm">
               <thead className="bg-gray-50">
                 <tr>
-                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">{t("time.department")}</th>
+                  <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                    {t("time.department")}
+                  </th>
                   {GRC_AREAS.map((a) => (
-                    <th key={a} className="px-4 py-3 text-right text-xs font-medium text-gray-500">
+                    <th
+                      key={a}
+                      className="px-4 py-3 text-right text-xs font-medium text-gray-500"
+                    >
                       {t(`areas.${a}`)}
                     </th>
                   ))}
@@ -352,17 +445,26 @@ export default function TimeTrackingPage() {
               <tbody className="divide-y divide-gray-100">
                 {deptAnalysis.map((row) => (
                   <tr key={row.department} className="hover:bg-gray-50">
-                    <td className="px-4 py-3 font-medium text-gray-900">{row.department}</td>
+                    <td className="px-4 py-3 font-medium text-gray-900">
+                      {row.department}
+                    </td>
                     {GRC_AREAS.map((a) => (
-                      <td key={a} className="px-4 py-3 text-right text-gray-600">
-                        {(row.areas[a] ?? 0) > 0 ? (row.areas[a]).toFixed(1) : "-"}
+                      <td
+                        key={a}
+                        className="px-4 py-3 text-right text-gray-600"
+                      >
+                        {(row.areas[a] ?? 0) > 0
+                          ? row.areas[a].toFixed(1)
+                          : "-"}
                       </td>
                     ))}
                     <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
                       {row.totalHours.toFixed(1)}
                     </td>
                     <td className="px-4 py-3 text-right font-medium text-gray-900 bg-gray-50">
-                      {row.calculatedCost.toLocaleString("de-DE", { minimumFractionDigits: 2 })}
+                      {row.calculatedCost.toLocaleString("de-DE", {
+                        minimumFractionDigits: 2,
+                      })}
                     </td>
                   </tr>
                 ))}

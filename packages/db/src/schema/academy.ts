@@ -78,14 +78,24 @@ export const academyCourse = pgTable(
     isMandatory: boolean("is_mandatory").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     validityDays: integer("validity_days"),
-    targetRoles: jsonb("target_roles").notNull().default(sql`'[]'::jsonb`),
-    targetDepartments: jsonb("target_departments").notNull().default(sql`'[]'::jsonb`),
-    contentJson: jsonb("content_json").notNull().default(sql`'{}'::jsonb`),
+    targetRoles: jsonb("target_roles")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    targetDepartments: jsonb("target_departments")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    contentJson: jsonb("content_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     language: varchar("language", { length: 5 }).notNull().default("de"),
     version: integer("version").notNull().default(1),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("acad_org_idx").on(t.orgId),
@@ -110,13 +120,21 @@ export const academyLesson = pgTable(
       .references(() => academyCourse.id, { onDelete: "cascade" }),
     title: varchar("title", { length: 500 }).notNull(),
     lessonType: academyLessonTypeEnum("lesson_type").notNull(),
-    contentJson: jsonb("content_json").notNull().default(sql`'{}'::jsonb`),
+    contentJson: jsonb("content_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     durationMinutes: integer("duration_minutes").notNull().default(10),
     sortOrder: integer("sort_order").notNull().default(0),
-    quizQuestionsJson: jsonb("quiz_questions_json").notNull().default(sql`'[]'::jsonb`),
+    quizQuestionsJson: jsonb("quiz_questions_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("ales_org_idx").on(t.orgId),
@@ -143,15 +161,21 @@ export const academyEnrollment = pgTable(
       .references(() => academyCourse.id),
     status: academyEnrollmentStatusEnum("status").notNull().default("assigned"),
     progressPct: integer("progress_pct").notNull().default(0),
-    completedLessons: jsonb("completed_lessons").notNull().default(sql`'[]'::jsonb`),
+    completedLessons: jsonb("completed_lessons")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     lastLessonId: uuid("last_lesson_id"),
     assignedBy: uuid("assigned_by").references(() => user.id),
     dueDate: timestamp("due_date", { withTimezone: true }),
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("aenr_org_idx").on(t.orgId),
@@ -182,12 +206,16 @@ export const academyQuizAttempt = pgTable(
     userId: uuid("user_id")
       .notNull()
       .references(() => user.id),
-    answersJson: jsonb("answers_json").notNull().default(sql`'[]'::jsonb`),
+    answersJson: jsonb("answers_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     scorePct: integer("score_pct").notNull(),
     passed: boolean("passed").notNull(),
     attemptNumber: integer("attempt_number").notNull().default(1),
     durationSeconds: integer("duration_seconds"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("aqa_org_idx").on(t.orgId),
@@ -218,10 +246,14 @@ export const academyCertificate = pgTable(
       .references(() => academyCourse.id),
     certificateNumber: varchar("certificate_number", { length: 100 }).notNull(),
     pdfUrl: varchar("pdf_url", { length: 2000 }),
-    issuedAt: timestamp("issued_at", { withTimezone: true }).notNull().defaultNow(),
+    issuedAt: timestamp("issued_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     verificationHash: varchar("verification_hash", { length: 64 }).notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("acrt_org_idx").on(t.orgId),

@@ -1,10 +1,18 @@
 // Sprint 47: KPI Threshold Alert (on measurement INSERT / daily check)
 // Alert process owners when KPIs cross thresholds
 
-import { db, processKpiDefinition, processKpiMeasurement, notification } from "@grc/db";
+import {
+  db,
+  processKpiDefinition,
+  processKpiMeasurement,
+  notification,
+} from "@grc/db";
 import { eq, sql, desc } from "drizzle-orm";
 
-interface KpiAlertResult { processed: number; alerts: number; }
+interface KpiAlertResult {
+  processed: number;
+  alerts: number;
+}
 
 export async function processKpiThresholdAlert(): Promise<KpiAlertResult> {
   console.log(`[cron:kpi-threshold-alert] Starting`);
@@ -36,7 +44,9 @@ export async function processKpiThresholdAlert(): Promise<KpiAlertResult> {
         templateData: { subtype: "kpi_threshold_alert", urgency },
       });
       alerts++;
-    } catch { /* skip */ }
+    } catch {
+      /* skip */
+    }
   }
 
   console.log(`[cron:kpi-threshold-alert] ${alerts} KPI alerts sent`);

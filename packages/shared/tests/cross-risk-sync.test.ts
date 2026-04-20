@@ -71,7 +71,11 @@ describe("mapFriaRightToErm", () => {
   });
 
   it("negligible => 1", () => {
-    const draft = mapFriaRightToErm({ ...src, impact: "negligible", residualRisk: "negligible" });
+    const draft = mapFriaRightToErm({
+      ...src,
+      impact: "negligible",
+      residualRisk: "negligible",
+    });
     expect(draft.inherentImpact).toBe(1);
     expect(draft.riskScoreInherent).toBe(1);
   });
@@ -237,13 +241,23 @@ describe("buildSyncBatch", () => {
     });
     expect(result.totalCandidates).toBe(3);
     expect(result.eligibleForSync).toBe(3);
-    expect(result.drafts.some((d) => d.catalogSource === "dpms_dpia_risk")).toBe(true);
-    expect(result.drafts.some((d) => d.catalogSource === "ai_act_fria_right")).toBe(true);
-    expect(result.drafts.some((d) => d.catalogSource === "ai_act_incident")).toBe(true);
+    expect(
+      result.drafts.some((d) => d.catalogSource === "dpms_dpia_risk"),
+    ).toBe(true);
+    expect(
+      result.drafts.some((d) => d.catalogSource === "ai_act_fria_right"),
+    ).toBe(true);
+    expect(
+      result.drafts.some((d) => d.catalogSource === "ai_act_incident"),
+    ).toBe(true);
   });
 
   it("empty input", () => {
-    const result = buildSyncBatch({ dpiaRisks: [], friaRights: [], aiIncidents: [] });
+    const result = buildSyncBatch({
+      dpiaRisks: [],
+      friaRights: [],
+      aiIncidents: [],
+    });
     expect(result.totalCandidates).toBe(0);
     expect(result.eligibleForSync).toBe(0);
   });

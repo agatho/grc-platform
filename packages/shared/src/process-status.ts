@@ -7,7 +7,10 @@ import type { ProcessStatus } from "./types";
 // Status Transition Map
 // ──────────────────────────────────────────────────────────────
 
-export const PROCESS_STATUS_TRANSITIONS: Record<ProcessStatus, ProcessStatus[]> = {
+export const PROCESS_STATUS_TRANSITIONS: Record<
+  ProcessStatus,
+  ProcessStatus[]
+> = {
   draft: ["in_review"],
   in_review: ["approved", "draft"], // draft = rejection
   approved: ["published", "in_review"], // in_review = send back

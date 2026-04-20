@@ -142,10 +142,12 @@ export default function MailboxPage() {
   const currentStepIdx = STATUS_STEPS.indexOf(data.status);
 
   const daysUntilAck = Math.ceil(
-    (new Date(data.acknowledgeDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    (new Date(data.acknowledgeDeadline).getTime() - Date.now()) /
+      (1000 * 60 * 60 * 24),
   );
   const daysUntilResponse = Math.ceil(
-    (new Date(data.responseDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    (new Date(data.responseDeadline).getTime() - Date.now()) /
+      (1000 * 60 * 60 * 24),
   );
 
   return (
@@ -180,7 +182,8 @@ export default function MailboxPage() {
       <div className="bg-white border border-gray-200 rounded-xl p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
           {STATUS_STEPS.map((step, idx) => {
-            const isCompleted = idx < currentStepIdx || data.status === "closed";
+            const isCompleted =
+              idx < currentStepIdx || data.status === "closed";
             const isCurrent = idx === currentStepIdx;
 
             return (
@@ -224,13 +227,23 @@ export default function MailboxPage() {
             <span className="text-gray-600">
               {t("Eingangsbestaetigung", "Acknowledgment")}:{" "}
               {data.acknowledgedAt ? (
-                <span className="text-green-600 font-medium">{t("Erledigt", "Done")}</span>
+                <span className="text-green-600 font-medium">
+                  {t("Erledigt", "Done")}
+                </span>
               ) : daysUntilAck > 0 ? (
-                <span className={daysUntilAck <= 2 ? "text-yellow-600 font-medium" : "text-gray-900"}>
+                <span
+                  className={
+                    daysUntilAck <= 2
+                      ? "text-yellow-600 font-medium"
+                      : "text-gray-900"
+                  }
+                >
                   {daysUntilAck} {t("Tage", "days")}
                 </span>
               ) : (
-                <span className="text-red-600 font-medium">{t("Ueberfaellig", "Overdue")}</span>
+                <span className="text-red-600 font-medium">
+                  {t("Ueberfaellig", "Overdue")}
+                </span>
               )}
             </span>
           </div>
@@ -239,11 +252,19 @@ export default function MailboxPage() {
             <span className="text-gray-600">
               {t("Rueckmeldung", "Response")}:{" "}
               {daysUntilResponse > 0 ? (
-                <span className={daysUntilResponse <= 14 ? "text-yellow-600 font-medium" : "text-gray-900"}>
+                <span
+                  className={
+                    daysUntilResponse <= 14
+                      ? "text-yellow-600 font-medium"
+                      : "text-gray-900"
+                  }
+                >
                   {daysUntilResponse} {t("Tage", "days")}
                 </span>
               ) : (
-                <span className="text-red-600 font-medium">{t("Ueberfaellig", "Overdue")}</span>
+                <span className="text-red-600 font-medium">
+                  {t("Ueberfaellig", "Overdue")}
+                </span>
               )}
             </span>
           </div>
@@ -276,7 +297,9 @@ export default function MailboxPage() {
                 >
                   <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
                   <p className="text-xs text-gray-400 mt-1">
-                    {new Date(msg.createdAt).toLocaleString(language === "de" ? "de-DE" : "en-US")}
+                    {new Date(msg.createdAt).toLocaleString(
+                      language === "de" ? "de-DE" : "en-US",
+                    )}
                   </p>
                 </div>
               </div>
@@ -349,7 +372,10 @@ export default function MailboxPage() {
       <div className="text-center pb-8">
         <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
           <Shield className="h-3 w-3" />
-          {t("Alle Daten sind Ende-zu-Ende verschluesselt", "All data is end-to-end encrypted")}
+          {t(
+            "Alle Daten sind Ende-zu-Ende verschluesselt",
+            "All data is end-to-end encrypted",
+          )}
         </div>
       </div>
     </div>

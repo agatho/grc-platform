@@ -40,19 +40,35 @@ describe("validateAvvGateActivate", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks missing DPO contact", () => {
-    const blockers = validateAvvGateActivate({ ...activateSnapshot, processorDpoContact: null });
+    const blockers = validateAvvGateActivate({
+      ...activateSnapshot,
+      processorDpoContact: null,
+    });
     expect(blockers.some((b) => b.code === "missing_dpo_contact")).toBe(true);
   });
   it("blocks empty processing activities", () => {
-    const blockers = validateAvvGateActivate({ ...activateSnapshot, processingActivities: [] });
-    expect(blockers.some((b) => b.code === "missing_processing_activities")).toBe(true);
+    const blockers = validateAvvGateActivate({
+      ...activateSnapshot,
+      processingActivities: [],
+    });
+    expect(
+      blockers.some((b) => b.code === "missing_processing_activities"),
+    ).toBe(true);
   });
   it("blocks no signed document", () => {
-    const blockers = validateAvvGateActivate({ ...activateSnapshot, agreementDocumentId: null });
-    expect(blockers.some((b) => b.code === "missing_agreement_document")).toBe(true);
+    const blockers = validateAvvGateActivate({
+      ...activateSnapshot,
+      agreementDocumentId: null,
+    });
+    expect(blockers.some((b) => b.code === "missing_agreement_document")).toBe(
+      true,
+    );
   });
   it("warns missing expiry", () => {
-    const blockers = validateAvvGateActivate({ ...activateSnapshot, expiryDate: null });
+    const blockers = validateAvvGateActivate({
+      ...activateSnapshot,
+      expiryDate: null,
+    });
     const warn = blockers.find((b) => b.code === "missing_expiry_date");
     expect(warn?.severity).toBe("warning");
   });

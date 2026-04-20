@@ -110,9 +110,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
   const fetchStatus = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch(
-        `/api/v1/isms/incidents/${incidentId}/playbook`,
-      );
+      const res = await fetch(`/api/v1/isms/incidents/${incidentId}/playbook`);
       if (res.ok) {
         const json = await res.json();
         setStatusData(json.data);
@@ -144,14 +142,11 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
     if (!selectedTemplateId) return;
     setActivating(true);
     try {
-      const res = await fetch(
-        `/api/v1/isms/incidents/${incidentId}/playbook`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ templateId: selectedTemplateId }),
-        },
-      );
+      const res = await fetch(`/api/v1/isms/incidents/${incidentId}/playbook`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ templateId: selectedTemplateId }),
+      });
       if (res.ok) {
         await fetchStatus();
       }
@@ -163,10 +158,9 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
   const handleAbort = async () => {
     setAborting(true);
     try {
-      await fetch(
-        `/api/v1/isms/incidents/${incidentId}/playbook/abort`,
-        { method: "PUT" },
-      );
+      await fetch(`/api/v1/isms/incidents/${incidentId}/playbook/abort`, {
+        method: "PUT",
+      });
       await fetchStatus();
     } finally {
       setAborting(false);
@@ -174,10 +168,9 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
   };
 
   const handleAdvancePhase = async () => {
-    await fetch(
-      `/api/v1/isms/incidents/${incidentId}/playbook/advance-phase`,
-      { method: "PUT" },
-    );
+    await fetch(`/api/v1/isms/incidents/${incidentId}/playbook/advance-phase`, {
+      method: "PUT",
+    });
     await fetchStatus();
   };
 
@@ -246,10 +239,10 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                     </DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
-                    <Button variant="outline" size="sm">Cancel</Button>
-                    <Button onClick={handleActivate}>
-                      {t("activate")}
+                    <Button variant="outline" size="sm">
+                      Cancel
                     </Button>
+                    <Button onClick={handleActivate}>{t("activate")}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -282,7 +275,10 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
               ) : (
                 <XCircle size={14} className="text-red-500" />
               )}
-              {template?.name ?? "Playbook"} - {activation.status === "completed" ? t("completed") : t("aborted")}
+              {template?.name ?? "Playbook"} -{" "}
+              {activation.status === "completed"
+                ? t("completed")
+                : t("aborted")}
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -302,7 +298,8 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
               <div>
                 <span className="text-gray-500">{t("tasks")}</span>
                 <p className="font-medium">
-                  {activation.completedTasksCount} / {activation.totalTasksCount}
+                  {activation.completedTasksCount} /{" "}
+                  {activation.totalTasksCount}
                 </p>
               </div>
               <div>
@@ -383,11 +380,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
               </Button>
               <Dialog>
                 <DialogTrigger asChild>
-                  <Button
-                    size="sm"
-                    variant="destructive"
-                    disabled={aborting}
-                  >
+                  <Button size="sm" variant="destructive" disabled={aborting}>
                     {aborting ? (
                       <Loader2 size={14} className="animate-spin" />
                     ) : (
@@ -399,15 +392,13 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>{t("abort")}</DialogTitle>
-                    <DialogDescription>
-                      {t("abortConfirm")}
-                    </DialogDescription>
+                    <DialogDescription>{t("abortConfirm")}</DialogDescription>
                   </DialogHeader>
                   <DialogFooter>
-                    <Button variant="outline" size="sm">Cancel</Button>
-                    <Button onClick={handleAbort}>
-                      {t("abort")}
+                    <Button variant="outline" size="sm">
+                      Cancel
                     </Button>
+                    <Button onClick={handleAbort}>{t("abort")}</Button>
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
@@ -500,15 +491,9 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                           className="text-green-500 shrink-0"
                         />
                       ) : tk.status === "cancelled" ? (
-                        <XCircle
-                          size={14}
-                          className="text-gray-400 shrink-0"
-                        />
+                        <XCircle size={14} className="text-gray-400 shrink-0" />
                       ) : (
-                        <Clock
-                          size={14}
-                          className="text-blue-400 shrink-0"
-                        />
+                        <Clock size={14} className="text-blue-400 shrink-0" />
                       )}
                       <span
                         className={`text-xs truncate ${
@@ -519,8 +504,10 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
                       >
                         {tk.title}
                       </span>
-                      {Boolean((tk.metadata as Record<string, unknown> | null)
-                        ?.isCriticalPath) && (
+                      {Boolean(
+                        (tk.metadata as Record<string, unknown> | null)
+                          ?.isCriticalPath,
+                      ) && (
                         <Badge
                           variant="outline"
                           className="text-[8px] bg-red-50 text-red-600 border-red-200 shrink-0"
@@ -576,10 +563,7 @@ export function PlaybookTab({ incidentId }: { incidentId: string }) {
           <CardContent>
             <div className="space-y-2 max-h-48 overflow-y-auto">
               {timeline.map((entry) => (
-                <div
-                  key={entry.id}
-                  className="flex items-start gap-2 text-xs"
-                >
+                <div key={entry.id} className="flex items-start gap-2 text-xs">
                   <span className="text-gray-400 shrink-0 whitespace-nowrap">
                     {new Date(entry.occurredAt).toLocaleString()}
                   </span>

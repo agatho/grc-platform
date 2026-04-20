@@ -94,7 +94,9 @@ import { user } from "./user";
 
 export const vendorAudit = pgTable("vendor_audit", {
   id: uuid("id").defaultRandom().primaryKey(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   title: text("title").notNull(),
   // ... domain columns
   createdBy: uuid("created_by").references(() => user.id),
@@ -160,21 +162,39 @@ Create `apps/web/src/app/api/v1/vendor-audit/route.ts`. Follow the standard patt
 import { db, vendorAudit } from "@grc/db";
 import { createVendorAuditSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "auditor");
   if (ctx instanceof Response) return ctx;
-  const moduleCheck = await requireModule("vendor_audit", ctx.orgId, req.method);
+  const moduleCheck = await requireModule(
+    "vendor_audit",
+    ctx.orgId,
+    req.method,
+  );
   if (moduleCheck) return moduleCheck;
   const body = createVendorAuditSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
   const created = await withAuditContext(ctx, async (tx) => {
-    const [row] = await tx.insert(vendorAudit).values({
-      ...body.data, orgId: ctx.orgId, createdBy: ctx.userId, updatedBy: ctx.userId,
-    }).returning();
+    const [row] = await tx
+      .insert(vendorAudit)
+      .values({
+        ...body.data,
+        orgId: ctx.orgId,
+        createdBy: ctx.userId,
+        updatedBy: ctx.userId,
+      })
+      .returning();
     return row;
   });
   return Response.json({ data: created }, { status: 201 });
@@ -250,6 +270,7 @@ Status codes: 200 (ok), 201 (created), 400 (bad request), 401 (unauthorized),
 ### Table Requirements
 
 Every data table must have:
+
 - `id` (UUID, primary key, `defaultRandom()`)
 - `org_id` (FK to organization, not null)
 - `created_by` / `updated_by` (FK to user)

@@ -7,19 +7,39 @@ import { z } from "zod";
 // ──────────────────────────────────────────────────────────────
 
 export const marketplaceCategoryTypeValues = [
-  "connector", "framework", "template", "dashboard", "ai_prompt", "industry_pack", "workflow", "report",
+  "connector",
+  "framework",
+  "template",
+  "dashboard",
+  "ai_prompt",
+  "industry_pack",
+  "workflow",
+  "report",
 ] as const;
 
 export const marketplaceListingStatusValues = [
-  "draft", "pending_review", "published", "suspended", "deprecated", "rejected",
+  "draft",
+  "pending_review",
+  "published",
+  "suspended",
+  "deprecated",
+  "rejected",
 ] as const;
 
 export const marketplaceVersionStatusValues = [
-  "draft", "under_review", "approved", "rejected", "deprecated",
+  "draft",
+  "under_review",
+  "approved",
+  "rejected",
+  "deprecated",
 ] as const;
 
 export const marketplaceScanStatusValues = [
-  "pending", "scanning", "passed", "failed", "warning",
+  "pending",
+  "scanning",
+  "passed",
+  "failed",
+  "warning",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -28,14 +48,19 @@ export const marketplaceScanStatusValues = [
 
 export const createMarketplacePublisherSchema = z.object({
   name: z.string().min(1).max(300),
-  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(200)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().max(5000).optional(),
   websiteUrl: z.string().url().max(2000).optional(),
   logoUrl: z.string().url().max(2000).optional(),
   contactEmail: z.string().email().max(500).optional(),
 });
 
-export const updateMarketplacePublisherSchema = createMarketplacePublisherSchema.partial();
+export const updateMarketplacePublisherSchema =
+  createMarketplacePublisherSchema.partial();
 
 // ──────────────────────────────────────────────────────────────
 // Listing CRUD
@@ -45,7 +70,11 @@ export const createMktplaceListingSchema = z.object({
   publisherId: z.string().uuid(),
   categoryId: z.string().uuid(),
   name: z.string().min(1).max(500),
-  slug: z.string().min(1).max(300).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(300)
+    .regex(/^[a-z0-9-]+$/),
   summary: z.string().min(1).max(1000),
   description: z.string().max(50000).optional(),
   iconUrl: z.string().url().max(2000).optional(),
@@ -59,7 +88,8 @@ export const createMktplaceListingSchema = z.object({
   documentationUrl: z.string().url().max(2000).optional(),
 });
 
-export const updateMktplaceListingSchema = createMktplaceListingSchema.partial();
+export const updateMktplaceListingSchema =
+  createMktplaceListingSchema.partial();
 
 export const listMarketplaceListingsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -71,7 +101,9 @@ export const listMarketplaceListingsQuerySchema = z.object({
   isFeatured: z.coerce.boolean().optional(),
   isVerified: z.coerce.boolean().optional(),
   priceType: z.enum(["free", "paid", "freemium"]).optional(),
-  sortBy: z.enum(["created_at", "install_count", "avg_rating", "name"]).default("created_at"),
+  sortBy: z
+    .enum(["created_at", "install_count", "avg_rating", "name"])
+    .default("created_at"),
   sortOrder: z.enum(["asc", "desc"]).default("desc"),
 });
 
@@ -94,7 +126,9 @@ export const createMarketplaceVersionSchema = z.object({
   compatibilityJson: z.record(z.unknown()).default({}),
 });
 
-export const updateMarketplaceVersionSchema = createMarketplaceVersionSchema.partial().omit({ listingId: true });
+export const updateMarketplaceVersionSchema = createMarketplaceVersionSchema
+  .partial()
+  .omit({ listingId: true });
 
 // ──────────────────────────────────────────────────────────────
 // Review CRUD
@@ -140,7 +174,11 @@ export const updateInstallationSchema = z.object({
 
 export const createMarketplaceCategorySchema = z.object({
   name: z.string().min(1).max(200),
-  slug: z.string().min(1).max(200).regex(/^[a-z0-9-]+$/),
+  slug: z
+    .string()
+    .min(1)
+    .max(200)
+    .regex(/^[a-z0-9-]+$/),
   description: z.string().max(2000).optional(),
   categoryType: z.enum(marketplaceCategoryTypeValues),
   parentId: z.string().uuid().optional(),
@@ -157,9 +195,19 @@ export const listMarketplaceCategoriesQuerySchema = z.object({
 // Type exports
 // ──────────────────────────────────────────────────────────────
 
-export type CreateMarketplacePublisherInput = z.infer<typeof createMarketplacePublisherSchema>;
-export type CreateMktplaceListingInput = z.infer<typeof createMktplaceListingSchema>;
-export type CreateMarketplaceVersionInput = z.infer<typeof createMarketplaceVersionSchema>;
-export type CreateMarketplaceReviewInput = z.infer<typeof createMarketplaceReviewSchema>;
+export type CreateMarketplacePublisherInput = z.infer<
+  typeof createMarketplacePublisherSchema
+>;
+export type CreateMktplaceListingInput = z.infer<
+  typeof createMktplaceListingSchema
+>;
+export type CreateMarketplaceVersionInput = z.infer<
+  typeof createMarketplaceVersionSchema
+>;
+export type CreateMarketplaceReviewInput = z.infer<
+  typeof createMarketplaceReviewSchema
+>;
 export type InstallListingInput = z.infer<typeof installListingSchema>;
-export type CreateMarketplaceCategoryInput = z.infer<typeof createMarketplaceCategorySchema>;
+export type CreateMarketplaceCategoryInput = z.infer<
+  typeof createMarketplaceCategorySchema
+>;

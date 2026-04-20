@@ -2,7 +2,12 @@ import { db, bcpProcedure, bcp } from "@grc/db";
 import { createBcpProcedureSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, asc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/bcms/plans/[id]/procedures — Create procedure step
 export async function POST(
@@ -29,7 +34,9 @@ export async function POST(
   const [plan] = await db
     .select({ id: bcp.id })
     .from(bcp)
-    .where(and(eq(bcp.id, bcpId), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)));
+    .where(
+      and(eq(bcp.id, bcpId), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)),
+    );
 
   if (!plan) {
     return Response.json({ error: "BCP not found" }, { status: 404 });

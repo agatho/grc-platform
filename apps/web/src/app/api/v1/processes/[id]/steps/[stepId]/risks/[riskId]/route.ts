@@ -1,9 +1,4 @@
-import {
-  db,
-  process,
-  processStep,
-  processStepRisk,
-} from "@grc/db";
+import { db, process, processStep, processStepRisk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -67,16 +62,11 @@ export async function DELETE(
     );
 
   if (!link) {
-    return Response.json(
-      { error: "Risk link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Risk link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(processStepRisk)
-      .where(eq(processStepRisk.id, link.id));
+    await tx.delete(processStepRisk).where(eq(processStepRisk.id, link.id));
   });
 
   return Response.json({

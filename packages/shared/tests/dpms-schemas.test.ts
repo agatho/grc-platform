@@ -72,8 +72,12 @@ describe("createRopaEntrySchema", () => {
 
   it("accepts all valid legal basis values", () => {
     const bases = [
-      "consent", "contract", "legal_obligation",
-      "vital_interest", "public_interest", "legitimate_interest",
+      "consent",
+      "contract",
+      "legal_obligation",
+      "vital_interest",
+      "public_interest",
+      "legitimate_interest",
     ];
     for (const legalBasis of bases) {
       const result = createRopaEntrySchema.safeParse({
@@ -178,7 +182,13 @@ describe("createDsrSchema", () => {
   });
 
   it("accepts all valid DSR request types", () => {
-    for (const rt of ["access", "erasure", "restriction", "portability", "objection"]) {
+    for (const rt of [
+      "access",
+      "erasure",
+      "restriction",
+      "portability",
+      "objection",
+    ]) {
       const result = createDsrSchema.safeParse({
         requestType: rt,
         subjectName: "Subject",
@@ -252,7 +262,14 @@ describe("DSR_STATUS_TRANSITIONS", () => {
 
 describe("dsrStatusTransitionSchema", () => {
   it("accepts all valid DSR statuses", () => {
-    for (const s of ["received", "verified", "processing", "response_sent", "closed", "rejected"]) {
+    for (const s of [
+      "received",
+      "verified",
+      "processing",
+      "response_sent",
+      "closed",
+      "rejected",
+    ]) {
       const result = dsrStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
@@ -358,7 +375,9 @@ describe("BREACH_STATUS_TRANSITIONS", () => {
   });
 
   it("allows notifying_individuals -> remediation", () => {
-    expect(isValidBreachTransition("notifying_individuals", "remediation")).toBe(true);
+    expect(
+      isValidBreachTransition("notifying_individuals", "remediation"),
+    ).toBe(true);
   });
 
   it("allows remediation -> closed", () => {
@@ -380,14 +399,23 @@ describe("BREACH_STATUS_TRANSITIONS", () => {
 
 describe("breachStatusTransitionSchema", () => {
   it("accepts all valid breach statuses", () => {
-    for (const s of ["detected", "assessing", "notifying_dpa", "notifying_individuals", "remediation", "closed"]) {
+    for (const s of [
+      "detected",
+      "assessing",
+      "notifying_dpa",
+      "notifying_individuals",
+      "remediation",
+      "closed",
+    ]) {
       const result = breachStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }
   });
 
   it("rejects invalid breach status", () => {
-    const result = breachStatusTransitionSchema.safeParse({ status: "investigating" });
+    const result = breachStatusTransitionSchema.safeParse({
+      status: "investigating",
+    });
     expect(result.success).toBe(false);
   });
 });
@@ -449,11 +477,15 @@ describe("VALID_DPIA_STATUS_TRANSITIONS", () => {
   });
 
   it("allows pending_dpo_review -> approved", () => {
-    expect(VALID_DPIA_STATUS_TRANSITIONS["pending_dpo_review"]).toContain("approved");
+    expect(VALID_DPIA_STATUS_TRANSITIONS["pending_dpo_review"]).toContain(
+      "approved",
+    );
   });
 
   it("allows pending_dpo_review -> rejected", () => {
-    expect(VALID_DPIA_STATUS_TRANSITIONS["pending_dpo_review"]).toContain("rejected");
+    expect(VALID_DPIA_STATUS_TRANSITIONS["pending_dpo_review"]).toContain(
+      "rejected",
+    );
   });
 
   it("does not allow approved to transition further", () => {
@@ -467,7 +499,14 @@ describe("VALID_DPIA_STATUS_TRANSITIONS", () => {
 
 describe("dpiaStatusTransitionSchema", () => {
   it("accepts all valid DPIA statuses", () => {
-    for (const s of ["draft", "in_progress", "completed", "pending_dpo_review", "approved", "rejected"]) {
+    for (const s of [
+      "draft",
+      "in_progress",
+      "completed",
+      "pending_dpo_review",
+      "approved",
+      "rejected",
+    ]) {
       const result = dpiaStatusTransitionSchema.safeParse({ status: s });
       expect(result.success).toBe(true);
     }

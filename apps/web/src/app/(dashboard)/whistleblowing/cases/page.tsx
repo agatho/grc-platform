@@ -51,7 +51,10 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: "bg-gray-100 text-gray-600",
 };
 
-function deadlineBadge(deadline: string, completedAt?: string | null): React.ReactNode {
+function deadlineBadge(
+  deadline: string,
+  completedAt?: string | null,
+): React.ReactNode {
   if (completedAt) {
     return <Badge className="bg-green-100 text-green-900 text-xs">OK</Badge>;
   }
@@ -62,7 +65,9 @@ function deadlineBadge(deadline: string, completedAt?: string | null): React.Rea
     return <Badge className="bg-red-100 text-red-900 text-xs">Overdue</Badge>;
   }
   if (days <= 3) {
-    return <Badge className="bg-yellow-100 text-yellow-900 text-xs">{days}d</Badge>;
+    return (
+      <Badge className="bg-yellow-100 text-yellow-900 text-xs">{days}d</Badge>
+    );
   }
   return <Badge className="bg-green-100 text-green-900 text-xs">{days}d</Badge>;
 }
@@ -118,7 +123,10 @@ function CaseListInner() {
         <Filter className="h-4 w-4 text-gray-400" />
         <select
           value={statusFilter}
-          onChange={(e) => { setStatusFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setStatusFilter(e.target.value);
+            setPage(1);
+          }}
           className="text-sm border border-gray-300 rounded-md px-3 py-1.5"
         >
           <option value="">{t("allStatuses")}</option>
@@ -130,7 +138,10 @@ function CaseListInner() {
         </select>
         <select
           value={priorityFilter}
-          onChange={(e) => { setPriorityFilter(e.target.value); setPage(1); }}
+          onChange={(e) => {
+            setPriorityFilter(e.target.value);
+            setPage(1);
+          }}
           className="text-sm border border-gray-300 rounded-md px-3 py-1.5"
         >
           <option value="">{t("allPriorities")}</option>
@@ -156,14 +167,30 @@ function CaseListInner() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200 bg-gray-50">
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("caseNumber")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("category")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("statusLabel")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("priorityLabel")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("submitted")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("sla7d")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("sla3m")}</th>
-                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">{t("assignee")}</th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("caseNumber")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("category")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("statusLabel")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("priorityLabel")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("submitted")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("sla7d")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("sla3m")}
+                </th>
+                <th className="text-left text-xs font-medium text-gray-500 px-4 py-3">
+                  {t("assignee")}
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -182,17 +209,23 @@ function CaseListInner() {
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge className={`text-xs ${CATEGORY_COLORS[c.category] ?? ""}`}>
+                    <Badge
+                      className={`text-xs ${CATEGORY_COLORS[c.category] ?? ""}`}
+                    >
                       {t(`cat.${c.category}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge className={`text-xs ${STATUS_COLORS[c.status] ?? ""}`}>
+                    <Badge
+                      className={`text-xs ${STATUS_COLORS[c.status] ?? ""}`}
+                    >
                       {t(`status.${c.status}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge className={`text-xs ${PRIORITY_COLORS[c.priority] ?? ""}`}>
+                    <Badge
+                      className={`text-xs ${PRIORITY_COLORS[c.priority] ?? ""}`}
+                    >
                       {t(`priority.${c.priority}`)}
                     </Badge>
                   </td>
@@ -219,7 +252,8 @@ function CaseListInner() {
       {total > 20 && (
         <div className="flex items-center justify-between text-sm">
           <span className="text-gray-500">
-            {t("showing")} {(page - 1) * 20 + 1}-{Math.min(page * 20, total)} {t("of")} {total}
+            {t("showing")} {(page - 1) * 20 + 1}-{Math.min(page * 20, total)}{" "}
+            {t("of")} {total}
           </span>
           <div className="flex gap-2">
             <Button

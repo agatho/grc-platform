@@ -130,7 +130,12 @@ function CertificationsInner() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -141,10 +146,22 @@ function CertificationsInner() {
         <div className="rounded-lg border border-gray-200 bg-white p-6 flex flex-col items-center justify-center">
           <div className="relative w-32 h-32">
             <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-              <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="12" />
               <circle
-                cx="60" cy="60" r="52" fill="none"
-                stroke={score >= 75 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"}
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke="#e5e7eb"
+                strokeWidth="12"
+              />
+              <circle
+                cx="60"
+                cy="60"
+                r="52"
+                fill="none"
+                stroke={
+                  score >= 75 ? "#22c55e" : score >= 50 ? "#eab308" : "#ef4444"
+                }
                 strokeWidth="12"
                 strokeDasharray={`${(score / 100) * 327} 327`}
                 strokeLinecap="round"
@@ -154,36 +171,51 @@ function CertificationsInner() {
               <span className="text-3xl font-bold text-gray-900">{score}%</span>
             </div>
           </div>
-          <p className="text-sm font-medium text-gray-600 mt-3">{t("readinessScore")}</p>
+          <p className="text-sm font-medium text-gray-600 mt-3">
+            {t("readinessScore")}
+          </p>
           <p className="text-xs text-gray-400 mt-1">
-            {readiness?.passedCount}/{readiness?.totalChecks} {t("checksPassed")}
+            {readiness?.passedCount}/{readiness?.totalChecks}{" "}
+            {t("checksPassed")}
           </p>
         </div>
 
         {/* Timeline */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">{t("timelineTitle")}</h3>
+          <h3 className="text-sm font-semibold text-gray-900 mb-3">
+            {t("timelineTitle")}
+          </h3>
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-sm text-gray-600">{t("openGaps")}</span>
-              <span className="text-sm font-bold text-gray-900">{timeline?.openGaps ?? "-"}</span>
+              <span className="text-sm font-bold text-gray-900">
+                {timeline?.openGaps ?? "-"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-sm text-gray-600">{t("closedLastMonth")}</span>
-              <span className="text-sm font-bold text-gray-900">{timeline?.closedLastMonth ?? "-"}</span>
+              <span className="text-sm text-gray-600">
+                {t("closedLastMonth")}
+              </span>
+              <span className="text-sm font-bold text-gray-900">
+                {timeline?.closedLastMonth ?? "-"}
+              </span>
             </div>
             <div className="border-t pt-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-gray-700">{t("estimatedWeeks")}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  {t("estimatedWeeks")}
+                </span>
                 <span className="text-lg font-bold text-blue-600">
-                  {timeline?.estimatedWeeks !== null && timeline?.estimatedWeeks !== undefined
+                  {timeline?.estimatedWeeks !== null &&
+                  timeline?.estimatedWeeks !== undefined
                     ? `${timeline.estimatedWeeks} ${t("weeks")}`
                     : t("notEstimable")}
                 </span>
               </div>
               {timeline?.estimatedDate && (
                 <p className="text-xs text-gray-400 text-right mt-1">
-                  ~ {new Date(timeline.estimatedDate).toLocaleDateString("de-DE")}
+                  ~{" "}
+                  {new Date(timeline.estimatedDate).toLocaleDateString("de-DE")}
                 </p>
               )}
             </div>
@@ -193,7 +225,9 @@ function CertificationsInner() {
         {/* AI Priority */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-3">
-            <h3 className="text-sm font-semibold text-gray-900">{t("aiPriority")}</h3>
+            <h3 className="text-sm font-semibold text-gray-900">
+              {t("aiPriority")}
+            </h3>
             {priorities.length === 0 && (
               <Button variant="outline" size="sm" onClick={fetchPriorities}>
                 {t("analyze")}
@@ -220,7 +254,9 @@ function CertificationsInner() {
               ))}
             </div>
           ) : (
-            <p className="text-xs text-gray-400">{t("aiPriorityDescription")}</p>
+            <p className="text-xs text-gray-400">
+              {t("aiPriorityDescription")}
+            </p>
           )}
         </div>
       </div>
@@ -237,7 +273,9 @@ function CertificationsInner() {
               <div className="flex items-center gap-3">
                 <Award className="h-8 w-8 text-blue-600" />
                 <div>
-                  <h3 className="text-base font-semibold text-blue-700 hover:text-blue-900">{cert.name}</h3>
+                  <h3 className="text-base font-semibold text-blue-700 hover:text-blue-900">
+                    {cert.name}
+                  </h3>
                   <Badge variant="outline" className="text-[10px] mt-1">
                     {t("notStarted")}
                   </Badge>
@@ -261,12 +299,19 @@ function CertificationsInner() {
       {/* Readiness Checklist */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="p-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("checklist")}</h2>
-          <p className="text-sm text-gray-500 mt-1">{t("checklistDescription")}</p>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("checklist")}
+          </h2>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("checklistDescription")}
+          </p>
         </div>
         <div className="divide-y divide-gray-100">
           {readiness?.checks.map((check) => (
-            <div key={check.id} className="px-4 py-3 flex items-center justify-between">
+            <div
+              key={check.id}
+              className="px-4 py-3 flex items-center justify-between"
+            >
               <div className="flex items-center gap-3">
                 {check.passed ? (
                   <CheckCircle2 className="h-5 w-5 text-green-600" />
@@ -274,9 +319,13 @@ function CertificationsInner() {
                   <XCircle className="h-5 w-5 text-red-500" />
                 )}
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{check.labelDE}</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {check.labelDE}
+                  </p>
                   {check.details && (
-                    <p className="text-xs text-gray-500 mt-0.5">{check.details}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {check.details}
+                    </p>
                   )}
                 </div>
               </div>

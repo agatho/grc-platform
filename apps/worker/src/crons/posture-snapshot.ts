@@ -140,7 +140,12 @@ async function collectPostureData(orgId: string): Promise<PostureData> {
   const [soaStats] = await db
     .select({ assessedControls: sql<number>`COUNT(*)::integer` })
     .from(soaEntry)
-    .where(and(eq(soaEntry.orgId, orgId), sql`${soaEntry.implementation} != 'not_implemented'`));
+    .where(
+      and(
+        eq(soaEntry.orgId, orgId),
+        sql`${soaEntry.implementation} != 'not_implemented'`,
+      ),
+    );
 
   return {
     assetsWithPRQ: classifiedStats?.assetsWithPRQ ?? 0,
@@ -172,13 +177,13 @@ async function computeDomainScores(
       implementation: soaEntry.implementation,
     })
     .from(soaEntry)
-    .innerJoin(
-      catalogEntry,
-      eq(catalogEntry.id, soaEntry.catalogEntryId),
-    )
+    .innerJoin(catalogEntry, eq(catalogEntry.id, soaEntry.catalogEntryId))
     .where(eq(soaEntry.orgId, orgId));
 
-  const domainStats: Record<PostureDomain, { total: number; implemented: number }> = {
+  const domainStats: Record<
+    PostureDomain,
+    { total: number; implemented: number }
+  > = {
     organizational: { total: 0, implemented: 0 },
     people: { total: 0, implemented: 0 },
     physical: { total: 0, implemented: 0 },
@@ -193,7 +198,10 @@ async function computeDomainScores(
     if (!domain) continue;
 
     domainStats[domain].total++;
-    if (entry.implementation === "implemented" || entry.implementation === "partially_implemented") {
+    if (
+      entry.implementation === "implemented" ||
+      entry.implementation === "partially_implemented"
+    ) {
       domainStats[domain].implemented++;
     }
   }
@@ -205,11 +213,12 @@ async function computeDomainScores(
     technological: 0,
   };
 
-  for (const [domain, stats] of Object.entries(domainStats) as [PostureDomain, typeof domainStats.organizational][]) {
+  for (const [domain, stats] of Object.entries(domainStats) as [
+    PostureDomain,
+    typeof domainStats.organizational,
+  ][]) {
     scores[domain] =
-      stats.total > 0
-        ? Math.round((stats.implemented / stats.total) * 100)
-        : 0;
+      stats.total > 0 ? Math.round((stats.implemented / stats.total) * 100) : 0;
   }
 
   return scores;

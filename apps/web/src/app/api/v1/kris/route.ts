@@ -1,19 +1,6 @@
-import {
-  db,
-  kri,
-  risk,
-  notification,
-  userOrganizationRole,
-} from "@grc/db";
+import { db, kri, risk, notification, userOrganizationRole } from "@grc/db";
 import { createKriSchema } from "@grc/shared";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  sql,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, sql } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -22,7 +9,6 @@ import {
 } from "@/lib/api";
 import { requireModule } from "@grc/auth";
 import type { SQL } from "drizzle-orm";
-
 
 // POST /api/v1/kris -- Create KRI
 export async function POST(req: Request) {
@@ -110,10 +96,7 @@ export async function GET(req: Request) {
 
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [
-    eq(kri.orgId, ctx.orgId),
-    isNull(kri.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)];
 
   // Filter by alertStatus
   const alertStatus = searchParams.get("alertStatus");

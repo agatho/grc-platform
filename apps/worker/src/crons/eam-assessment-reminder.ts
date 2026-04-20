@@ -21,7 +21,10 @@ export async function processEamAssessmentReminder(): Promise<{
       owner: architectureElement.owner,
     })
     .from(applicationPortfolio)
-    .innerJoin(architectureElement, eq(applicationPortfolio.elementId, architectureElement.id))
+    .innerJoin(
+      architectureElement,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
     .where(
       and(
         eq(applicationPortfolio.lifecycleStatus, "active"),
@@ -36,7 +39,10 @@ export async function processEamAssessmentReminder(): Promise<{
 
   for (const app of unassessed) {
     const monthsSinceAssessment = app.lastAssessedAt
-      ? Math.floor((Date.now() - new Date(app.lastAssessedAt).getTime()) / (30 * 24 * 60 * 60 * 1000))
+      ? Math.floor(
+          (Date.now() - new Date(app.lastAssessedAt).getTime()) /
+            (30 * 24 * 60 * 60 * 1000),
+        )
       : null;
 
     console.log(
@@ -47,7 +53,9 @@ export async function processEamAssessmentReminder(): Promise<{
     if (app.owner) notificationsSent++;
   }
 
-  console.log(`[eam-assessment-reminder] Complete: ${unassessed.length} flagged, ${notificationsSent} notifications`);
+  console.log(
+    `[eam-assessment-reminder] Complete: ${unassessed.length} flagged, ${notificationsSent} notifications`,
+  );
 
   return { flagged: unassessed.length, notificationsSent };
 }

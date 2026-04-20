@@ -11,7 +11,11 @@ export async function GET(req: Request) {
   const ctx = await withAuth("admin", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
-  const moduleCheck = await requireModule("whistleblowing", ctx.orgId, req.method);
+  const moduleCheck = await requireModule(
+    "whistleblowing",
+    ctx.orgId,
+    req.method,
+  );
   if (moduleCheck) return moduleCheck;
 
   const { page, limit, offset, searchParams } = paginate(req);

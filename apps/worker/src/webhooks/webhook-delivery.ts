@@ -73,7 +73,7 @@ export async function processWebhookDelivery(
       method: "POST",
       headers: {
         ...formatted.headers,
-        ...(webhook.headers as Record<string, string> ?? {}),
+        ...((webhook.headers as Record<string, string>) ?? {}),
         "X-Arctos-Signature": signature,
         "X-Arctos-Event": event.eventType,
         "X-Arctos-Entity-Type": event.entityType,
@@ -111,13 +111,7 @@ export async function processWebhookDelivery(
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : "Unknown error";
-    await handleDeliveryFailure(
-      deliveryLogId,
-      retryCount,
-      null,
-      null,
-      message,
-    );
+    await handleDeliveryFailure(deliveryLogId, retryCount, null, null, message);
   }
 }
 
@@ -131,7 +125,8 @@ async function handleDeliveryFailure(
   if (retryCount < MAX_RETRIES) {
     // Schedule retry with exponential backoff
     const nextRetryAt = new Date(
-      Date.now() + (RETRY_DELAYS[retryCount] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1]),
+      Date.now() +
+        (RETRY_DELAYS[retryCount] ?? RETRY_DELAYS[RETRY_DELAYS.length - 1]),
     );
     await db
       .update(webhookDeliveryLog)

@@ -54,13 +54,7 @@ const LIKELIHOOD_KEYS = [
   "high",
   "veryHigh",
 ] as const;
-const IMPACT_KEYS = [
-  "veryLow",
-  "low",
-  "medium",
-  "high",
-  "veryHigh",
-] as const;
+const IMPACT_KEYS = ["veryLow", "low", "medium", "high", "veryHigh"] as const;
 
 // ---------------------------------------------------------------------------
 // RiskHeatMap Component
@@ -80,7 +74,6 @@ export function RiskHeatMap({
 
   // Listen for resize
   if (typeof window !== "undefined") {
-    
     useMemo(() => {
       const handleResize = () => setWindowWidth(window.innerWidth);
       window.addEventListener("resize", handleResize);
@@ -205,7 +198,8 @@ export function RiskHeatMap({
                           onCellClick
                             ? "cursor-pointer hover:scale-105 hover:shadow-md"
                             : "cursor-default",
-                          isSelected && "ring-2 ring-white ring-offset-1 ring-offset-gray-800 z-10",
+                          isSelected &&
+                            "ring-2 ring-white ring-offset-1 ring-offset-gray-800 z-10",
                           isDimmed && "opacity-60",
                         )}
                         style={{
@@ -229,8 +223,7 @@ export function RiskHeatMap({
                                 key={i}
                                 className="h-2.5 w-2.5 rounded-full bg-white shadow-sm"
                                 style={{
-                                  boxShadow:
-                                    "0 0 2px rgba(0,0,0,0.3)",
+                                  boxShadow: "0 0 2px rgba(0,0,0,0.3)",
                                 }}
                               />
                             ))}

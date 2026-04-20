@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import {
-  Loader2,
-  RefreshCcw,
-  Bot,
-  Coins,
-  Zap,
-  Database,
-} from "lucide-react";
+import { Loader2, RefreshCcw, Bot, Coins, Zap, Database } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -100,8 +93,15 @@ export default function AiUsagePage() {
             {t("aiUsage.description")}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-          <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
+          <RefreshCcw
+            className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+          />
           {t("aiUsage.refresh")}
         </Button>
       </div>
@@ -138,7 +138,8 @@ export default function AiUsagePage() {
                   {formatTokens(data.totalInputTokens + data.totalOutputTokens)}
                 </span>
                 <p className="text-xs text-muted-foreground mt-1">
-                  {formatTokens(data.totalInputTokens)} in / {formatTokens(data.totalOutputTokens)} out
+                  {formatTokens(data.totalInputTokens)} in /{" "}
+                  {formatTokens(data.totalOutputTokens)} out
                 </p>
               </CardContent>
             </Card>
@@ -171,7 +172,9 @@ export default function AiUsagePage() {
           <Card>
             <CardHeader>
               <CardTitle>{t("aiUsage.byTemplate")}</CardTitle>
-              <CardDescription>{t("aiUsage.byTemplateDescription")}</CardDescription>
+              <CardDescription>
+                {t("aiUsage.byTemplateDescription")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="overflow-x-auto">
@@ -196,27 +199,29 @@ export default function AiUsagePage() {
                     </tr>
                   </thead>
                   <tbody>
-                    {Object.entries(data.byTemplate).map(([template, stats]) => (
-                      <tr key={template} className="border-b">
-                        <td className="py-2 px-3">
-                          <Badge variant="secondary">
-                            {TEMPLATE_LABELS[template] ?? template}
-                          </Badge>
-                        </td>
-                        <td className="py-2 px-3 text-right text-sm">
-                          {stats.prompts}
-                        </td>
-                        <td className="py-2 px-3 text-right text-sm">
-                          {formatTokens(stats.tokens)}
-                        </td>
-                        <td className="py-2 px-3 text-right text-sm">
-                          {formatCost(stats.cost)}
-                        </td>
-                        <td className="py-2 px-3 text-right text-sm">
-                          {stats.avgLatencyMs}ms
-                        </td>
-                      </tr>
-                    ))}
+                    {Object.entries(data.byTemplate).map(
+                      ([template, stats]) => (
+                        <tr key={template} className="border-b">
+                          <td className="py-2 px-3">
+                            <Badge variant="secondary">
+                              {TEMPLATE_LABELS[template] ?? template}
+                            </Badge>
+                          </td>
+                          <td className="py-2 px-3 text-right text-sm">
+                            {stats.prompts}
+                          </td>
+                          <td className="py-2 px-3 text-right text-sm">
+                            {formatTokens(stats.tokens)}
+                          </td>
+                          <td className="py-2 px-3 text-right text-sm">
+                            {formatCost(stats.cost)}
+                          </td>
+                          <td className="py-2 px-3 text-right text-sm">
+                            {stats.avgLatencyMs}ms
+                          </td>
+                        </tr>
+                      ),
+                    )}
                     {Object.keys(data.byTemplate).length === 0 && (
                       <tr>
                         <td
@@ -245,8 +250,12 @@ export default function AiUsagePage() {
                     <CardContent className="pt-4">
                       <h4 className="font-medium text-sm mb-2">{model}</h4>
                       <div className="space-y-1 text-sm text-muted-foreground">
-                        <p>{stats.prompts} {t("aiUsage.calls")}</p>
-                        <p>{formatTokens(stats.tokens)} {t("aiUsage.tokens")}</p>
+                        <p>
+                          {stats.prompts} {t("aiUsage.calls")}
+                        </p>
+                        <p>
+                          {formatTokens(stats.tokens)} {t("aiUsage.tokens")}
+                        </p>
                         <p>{formatCost(stats.cost)}</p>
                       </div>
                     </CardContent>

@@ -27,7 +27,10 @@ export async function POST(req: Request) {
   );
 
   if (result.length === 0) {
-    return Response.json({ error: "Asset not found for scan data" }, { status: 404 });
+    return Response.json(
+      { error: "Asset not found for scan data" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: result[0] });

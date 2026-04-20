@@ -10,9 +10,18 @@ export const createCalendarEventSchema = z.object({
   startAt: z.string().datetime(),
   endAt: z.string().datetime().optional(),
   isAllDay: z.boolean().default(false),
-  eventType: z.enum(["meeting", "workshop", "review", "training", "deadline", "other"]),
+  eventType: z.enum([
+    "meeting",
+    "workshop",
+    "review",
+    "training",
+    "deadline",
+    "other",
+  ]),
   module: z.string().max(20).optional(),
-  recurrence: z.enum(["none", "weekly", "monthly", "quarterly", "annually"]).default("none"),
+  recurrence: z
+    .enum(["none", "weekly", "monthly", "quarterly", "annually"])
+    .default("none"),
   recurrenceEndAt: z.string().datetime().optional(),
 });
 
@@ -38,16 +47,16 @@ export const capacityHeatmapQuerySchema = z.object({
 // ──────────── Module Color Map ────────────
 
 export const MODULE_COLORS: Record<string, string> = {
-  erm: "#EF4444",       // Red
-  isms: "#3B82F6",      // Blue
-  dpms: "#8B5CF6",      // Purple
-  audit: "#F97316",     // Orange
-  tprm: "#14B8A6",      // Teal
-  bcms: "#166534",      // Dark Green
-  esg: "#86EFAC",       // Light Green
-  ics: "#EAB308",       // Yellow
-  rcsa: "#EC4899",      // Pink
-  manual: "#6B7280",    // Gray
+  erm: "#EF4444", // Red
+  isms: "#3B82F6", // Blue
+  dpms: "#8B5CF6", // Purple
+  audit: "#F97316", // Orange
+  tprm: "#14B8A6", // Teal
+  bcms: "#166534", // Dark Green
+  esg: "#86EFAC", // Light Green
+  ics: "#EAB308", // Yellow
+  rcsa: "#EC4899", // Pink
+  manual: "#6B7280", // Gray
 };
 
 // ──────────── Event Source Types ────────────

@@ -118,9 +118,7 @@ export default function AutomationOverviewPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">
-            {t("title")}
-          </h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
@@ -130,10 +128,7 @@ export default function AutomationOverviewPage() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Link href="/automation/templates">
             <Button variant="outline" size="sm">
@@ -244,10 +239,7 @@ export default function AutomationOverviewPage() {
                     className="shrink-0"
                   >
                     {rule.isActive ? (
-                      <ToggleRight
-                        size={24}
-                        className="text-green-600"
-                      />
+                      <ToggleRight size={24} className="text-green-600" />
                     ) : (
                       <ToggleLeft size={24} className="text-gray-400" />
                     )}

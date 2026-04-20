@@ -224,7 +224,7 @@ export {
   type FriaQualityResult,
   type IncidentClassification,
   type IncidentDeadlineResult,
-  type IncidentStatus,
+  type AiActIncidentSnapshot,
   type IncidentOverdueResult,
 } from "./state-machines/aiact-fria-incident";
 export {

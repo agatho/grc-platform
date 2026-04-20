@@ -11,11 +11,17 @@ export async function GET(req: Request) {
   try {
     const matrix = await getDependencyMatrix(ctx.orgId);
 
-    return Response.json({ data: matrix }, {
-      headers: { "Cache-Control": "private, max-age=60" },
-    });
+    return Response.json(
+      { data: matrix },
+      {
+        headers: { "Cache-Control": "private, max-age=60" },
+      },
+    );
   } catch (err) {
     console.error("[graph/matrix] Error:", err);
-    return Response.json({ error: "Failed to retrieve dependency matrix" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to retrieve dependency matrix" },
+      { status: 500 },
+    );
   }
 }

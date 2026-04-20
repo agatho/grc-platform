@@ -3,15 +3,27 @@ import { z } from "zod";
 // Sprint 83: External Stakeholder Portals — Zod schemas
 
 export const portalTypeValues = [
-  "vendor", "auditor", "board_member", "whistleblower", "custom",
+  "vendor",
+  "auditor",
+  "board_member",
+  "whistleblower",
+  "custom",
 ] as const;
 
 export const portalSessionStatusValues = [
-  "active", "expired", "revoked", "completed",
+  "active",
+  "expired",
+  "revoked",
+  "completed",
 ] as const;
 
 export const portalQuestionnaireStatusValues = [
-  "not_started", "in_progress", "submitted", "reviewed", "accepted", "rejected",
+  "not_started",
+  "in_progress",
+  "submitted",
+  "reviewed",
+  "accepted",
+  "rejected",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -24,14 +36,20 @@ export const createPortalConfigSchema = z.object({
   description: z.string().max(5000).optional(),
   requireMfa: z.boolean().default(true),
   sessionTimeoutMinutes: z.number().int().min(5).max(1440).default(60),
-  allowedLanguages: z.array(z.string().max(5)).min(1).max(10).default(["de", "en"]),
+  allowedLanguages: z
+    .array(z.string().max(5))
+    .min(1)
+    .max(10)
+    .default(["de", "en"]),
   accessPermissions: z.array(z.string().max(200)).max(50).default([]),
   customCss: z.string().max(50000).optional(),
   welcomeMessage: z.string().max(5000).optional(),
   privacyPolicyUrl: z.string().url().max(2000).optional(),
 });
 
-export const updatePortalConfigSchema = createPortalConfigSchema.partial().omit({ portalType: true });
+export const updatePortalConfigSchema = createPortalConfigSchema
+  .partial()
+  .omit({ portalType: true });
 
 export const listPortalConfigsQuerySchema = z.object({
   portalType: z.enum(portalTypeValues).optional(),
@@ -97,8 +115,14 @@ export const upsertPortalBrandingSchema = z.object({
   portalConfigId: z.string().uuid(),
   logoUrl: z.string().url().max(2000).optional(),
   faviconUrl: z.string().url().max(2000).optional(),
-  primaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#2563EB"),
-  secondaryColor: z.string().regex(/^#[0-9A-Fa-f]{6}$/).default("#1E40AF"),
+  primaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .default("#2563EB"),
+  secondaryColor: z
+    .string()
+    .regex(/^#[0-9A-Fa-f]{6}$/)
+    .default("#1E40AF"),
   fontFamily: z.string().max(200).default("Inter"),
   headerHtml: z.string().max(10000).optional(),
   footerHtml: z.string().max(10000).optional(),
@@ -109,5 +133,9 @@ export const upsertPortalBrandingSchema = z.object({
 // ──────────────────────────────────────────────────────────────
 
 export type CreatePortalConfigInput = z.infer<typeof createPortalConfigSchema>;
-export type CreatePortalSessionInput = z.infer<typeof createPortalSessionSchema>;
-export type UpsertPortalBrandingInput = z.infer<typeof upsertPortalBrandingSchema>;
+export type CreatePortalSessionInput = z.infer<
+  typeof createPortalSessionSchema
+>;
+export type UpsertPortalBrandingInput = z.infer<
+  typeof upsertPortalBrandingSchema
+>;

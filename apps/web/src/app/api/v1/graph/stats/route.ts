@@ -16,6 +16,9 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     console.error("[graph/stats] Error:", err);
-    return Response.json({ error: "Failed to retrieve graph statistics" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to retrieve graph statistics" },
+      { status: 500 },
+    );
   }
 }

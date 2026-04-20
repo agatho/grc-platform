@@ -15,7 +15,9 @@ describe("selectConformityProcedure", () => {
     expect(selectConformityProcedure("biometric", false)).toBe("annex_vii");
   });
   it("law_enforcement => annex_vii always", () => {
-    expect(selectConformityProcedure("law_enforcement", true)).toBe("annex_vii");
+    expect(selectConformityProcedure("law_enforcement", true)).toBe(
+      "annex_vii",
+    );
   });
   it("employment + harmonised standards => annex_vi", () => {
     expect(selectConformityProcedure("employment", true)).toBe("annex_vi");
@@ -117,13 +119,19 @@ describe("validateCeMarkingGate", () => {
   });
 
   it("conditional => warning but no blocker", () => {
-    const r = validateCeMarkingGate({ ...full, conformityResult: "conditional" });
+    const r = validateCeMarkingGate({
+      ...full,
+      conformityResult: "conditional",
+    });
     expect(r.canAffixCeMarking).toBe(true);
     expect(r.warnings.some((w) => w.includes("conditional"))).toBe(true);
   });
 
   it("unsigned DoC blocks", () => {
-    const r = validateCeMarkingGate({ ...full, hasSignedDeclarationOfConformity: false });
+    const r = validateCeMarkingGate({
+      ...full,
+      hasSignedDeclarationOfConformity: false,
+    });
     expect(r.canAffixCeMarking).toBe(false);
   });
 
@@ -186,7 +194,10 @@ describe("validateCeMarkingGate", () => {
   });
 
   it("no post-market plan blocks", () => {
-    const r = validateCeMarkingGate({ ...full, hasPostMarketMonitoringPlan: false });
+    const r = validateCeMarkingGate({
+      ...full,
+      hasPostMarketMonitoringPlan: false,
+    });
     expect(r.canAffixCeMarking).toBe(false);
   });
 });

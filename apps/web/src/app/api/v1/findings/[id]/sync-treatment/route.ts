@@ -47,7 +47,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
   if (!f.riskId) {
     return Response.json(
-      { error: "Finding has no riskId — link a risk first before syncing a treatment." },
+      {
+        error:
+          "Finding has no riskId — link a risk first before syncing a treatment.",
+      },
       { status: 422 },
     );
   }

@@ -96,7 +96,9 @@ export function ProcessBulkActions({
   return (
     <div className="sticky bottom-4 z-30 mx-auto max-w-3xl">
       <div className="flex items-center gap-3 rounded-lg border border-indigo-200 bg-indigo-50 px-4 py-3 shadow-lg">
-        {loading && <Loader2 size={16} className="animate-spin text-indigo-600" />}
+        {loading && (
+          <Loader2 size={16} className="animate-spin text-indigo-600" />
+        )}
 
         <span className="text-sm font-medium text-indigo-900">
           {t("bulk.selected", { count })}

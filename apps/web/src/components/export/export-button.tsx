@@ -53,14 +53,14 @@ export function ExportButton({
           format,
         });
 
-        const endpoint =
-          exportEndpoint ??
-          `/api/v1/export/${entityType}`;
+        const endpoint = exportEndpoint ?? `/api/v1/export/${entityType}`;
 
         const res = await fetch(`${endpoint}?${params.toString()}`);
 
         if (!res.ok) {
-          const err = await res.json().catch(() => ({ error: "Export failed" }));
+          const err = await res
+            .json()
+            .catch(() => ({ error: "Export failed" }));
           toast.error(err.error || "Export failed");
           return;
         }
@@ -73,9 +73,7 @@ export function ExportButton({
 
         // Extract filename from Content-Disposition or generate one
         const contentDisposition = res.headers.get("content-disposition");
-        const filenameMatch = contentDisposition?.match(
-          /filename="?([^"]+)"?/,
-        );
+        const filenameMatch = contentDisposition?.match(/filename="?([^"]+)"?/);
         a.download =
           filenameMatch?.[1] ??
           `${entityType}-export-${new Date().toISOString().slice(0, 10)}.${format}`;

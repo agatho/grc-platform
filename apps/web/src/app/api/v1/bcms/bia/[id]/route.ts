@@ -23,7 +23,10 @@ export async function GET(
     .where(and(eq(biaAssessment.id, id), eq(biaAssessment.orgId, ctx.orgId)));
 
   if (!row) {
-    return Response.json({ error: "BIA assessment not found" }, { status: 404 });
+    return Response.json(
+      { error: "BIA assessment not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: row });
@@ -60,7 +63,10 @@ export async function PUT(
   });
 
   if (!updated) {
-    return Response.json({ error: "BIA assessment not found" }, { status: 404 });
+    return Response.json(
+      { error: "BIA assessment not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: updated });

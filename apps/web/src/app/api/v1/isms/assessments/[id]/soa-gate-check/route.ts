@@ -35,7 +35,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(assessmentRun)
     .where(and(eq(assessmentRun.id, id), eq(assessmentRun.orgId, ctx.orgId)));
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   // SoA-Stats berechnen: Anzahl catalog_entries in aktiven Katalogen
@@ -76,12 +79,17 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .select({ count: sql<number>`count(*)::int` })
     .from(catalogEntry)
     .where(
-      and(inArray(catalogEntry.catalogId, catalogIds), eq(catalogEntry.status, "active")),
+      and(
+        inArray(catalogEntry.catalogId, catalogIds),
+        eq(catalogEntry.status, "active"),
+      ),
     );
 
   // Entries mit SoA
   const [{ count: soaCount }] = await db
-    .select({ count: sql<number>`count(DISTINCT ${soaEntry.catalogEntryId})::int` })
+    .select({
+      count: sql<number>`count(DISTINCT ${soaEntry.catalogEntryId})::int`,
+    })
     .from(soaEntry)
     .innerJoin(catalogEntry, eq(catalogEntry.id, soaEntry.catalogEntryId))
     .where(
@@ -118,9 +126,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     data: {
       assessmentRunId: run.id,
       stats,
-      coverage: stats.totalCatalogEntries > 0
-        ? Math.round((stats.entriesWithSoa / stats.totalCatalogEntries) * 100)
-        : 0,
+      coverage:
+        stats.totalCatalogEntries > 0
+          ? Math.round((stats.entriesWithSoa / stats.totalCatalogEntries) * 100)
+          : 0,
       blockers,
       passed: blockers.filter((b) => b.severity === "error").length === 0,
     },

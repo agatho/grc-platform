@@ -92,7 +92,9 @@ function IsmsAssetsInner() {
   const totalAssets = assets.length;
   const classifiedCount = assets.filter((a) => a.classificationId).length;
   const highCount = assets.filter((a) => a.overallProtection === "high").length;
-  const veryHighCount = assets.filter((a) => a.overallProtection === "very_high").length;
+  const veryHighCount = assets.filter(
+    (a) => a.overallProtection === "very_high",
+  ).length;
 
   if (loading && assets.length === 0) {
     return (
@@ -111,10 +113,18 @@ function IsmsAssetsInner() {
           <p className="text-sm text-gray-500 mt-1">{t("classification")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchAssets} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchAssets}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
-          <Button size="sm" onClick={() => router.push("/assets/new?module=isms")}>
+          <Button
+            size="sm"
+            onClick={() => router.push("/assets/new?module=isms")}
+          >
             <Plus size={14} className="mr-1" />
             Asset erstellen
           </Button>
@@ -132,16 +142,24 @@ function IsmsAssetsInner() {
           <p className="text-2xl font-bold text-gray-900">
             {classifiedCount}
             <span className="text-sm text-gray-400 ml-1">
-              ({totalAssets > 0 ? Math.round((classifiedCount / totalAssets) * 100) : 0}%)
+              (
+              {totalAssets > 0
+                ? Math.round((classifiedCount / totalAssets) * 100)
+                : 0}
+              %)
             </span>
           </p>
         </div>
         <div className="rounded-lg border border-orange-200 bg-orange-50 p-4">
-          <p className="text-xs text-orange-600">{t("protectionLevels.high")}</p>
+          <p className="text-xs text-orange-600">
+            {t("protectionLevels.high")}
+          </p>
           <p className="text-2xl font-bold text-orange-700">{highCount}</p>
         </div>
         <div className="rounded-lg border border-red-200 bg-red-50 p-4">
-          <p className="text-xs text-red-600">{t("protectionLevels.very_high")}</p>
+          <p className="text-xs text-red-600">
+            {t("protectionLevels.very_high")}
+          </p>
           <p className="text-2xl font-bold text-red-700">{veryHighCount}</p>
         </div>
       </div>
@@ -149,7 +167,10 @@ function IsmsAssetsInner() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -164,9 +185,13 @@ function IsmsAssetsInner() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">{t("allLevels")}</SelectItem>
-            <SelectItem value="normal">{t("protectionLevels.normal")}</SelectItem>
+            <SelectItem value="normal">
+              {t("protectionLevels.normal")}
+            </SelectItem>
             <SelectItem value="high">{t("protectionLevels.high")}</SelectItem>
-            <SelectItem value="very_high">{t("protectionLevels.very_high")}</SelectItem>
+            <SelectItem value="very_high">
+              {t("protectionLevels.very_high")}
+            </SelectItem>
             <SelectItem value="unclassified">{t("unclassified")}</SelectItem>
           </SelectContent>
         </Select>
@@ -176,9 +201,13 @@ function IsmsAssetsInner() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="__all__">Alle Tiers</SelectItem>
-            <SelectItem value="business_structure">Geschäftsstruktur</SelectItem>
+            <SelectItem value="business_structure">
+              Geschäftsstruktur
+            </SelectItem>
             <SelectItem value="primary_asset">Primäres Asset</SelectItem>
-            <SelectItem value="supporting_asset">Unterstützendes Asset</SelectItem>
+            <SelectItem value="supporting_asset">
+              Unterstützendes Asset
+            </SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -188,19 +217,34 @@ function IsmsAssetsInner() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">{t("assetName")}</th>
-              <th className="text-left px-4 py-3 font-medium text-gray-600">Tier</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">C</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">I</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">A</th>
-              <th className="text-center px-4 py-3 font-medium text-gray-600">{t("overallProtection")}</th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">
+                {t("assetName")}
+              </th>
+              <th className="text-left px-4 py-3 font-medium text-gray-600">
+                Tier
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">
+                C
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">
+                I
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">
+                A
+              </th>
+              <th className="text-center px-4 py-3 font-medium text-gray-600">
+                {t("overallProtection")}
+              </th>
               <th className="text-right px-4 py-3 font-medium text-gray-600" />
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {filtered.length === 0 ? (
               <tr>
-                <td colSpan={7} className="px-4 py-12 text-center text-gray-400">
+                <td
+                  colSpan={7}
+                  className="px-4 py-12 text-center text-gray-400"
+                >
                   <Shield className="h-8 w-8 mx-auto mb-2 text-gray-400" />
                   {t("noAssets")}
                 </td>
@@ -210,15 +254,26 @@ function IsmsAssetsInner() {
                 <tr
                   key={a.id}
                   className="hover:bg-gray-50 cursor-pointer transition-colors"
-                  onClick={() => window.location.href = `/isms/assets/${a.id}`}
+                  onClick={() =>
+                    (window.location.href = `/isms/assets/${a.id}`)
+                  }
                 >
                   <td className="px-4 py-3">
-                    <Link href={`/isms/assets/${a.id}`} className="font-medium text-blue-700 hover:text-blue-900 hover:underline">
+                    <Link
+                      href={`/isms/assets/${a.id}`}
+                      className="font-medium text-blue-700 hover:text-blue-900 hover:underline"
+                    >
                       {a.name}
                     </Link>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className="text-[10px]">{{ business_structure: "Geschäftsstruktur", primary_asset: "Primär", supporting_asset: "Unterstützend" }[a.assetTier] || a.assetTier}</Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {{
+                        business_structure: "Geschäftsstruktur",
+                        primary_asset: "Primär",
+                        supporting_asset: "Unterstützend",
+                      }[a.assetTier] || a.assetTier}
+                    </Badge>
                   </td>
                   <td className="px-4 py-3 text-center">
                     <ProtectionLevelBadge level={a.confidentialityLevel} />
@@ -232,7 +287,10 @@ function IsmsAssetsInner() {
                   <td className="px-4 py-3 text-center">
                     <ProtectionLevelBadge level={a.overallProtection} />
                   </td>
-                  <td className="px-4 py-3 text-right" onClick={(e) => e.stopPropagation()}>
+                  <td
+                    className="px-4 py-3 text-right"
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Link href={`/isms/assets/${a.id}/classify`}>
                       <Button variant="outline" size="sm">
                         {t("classify")}

@@ -1,21 +1,7 @@
-import {
-  db,
-  tia,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, tia, workItem, user } from "@grc/db";
 import { createTiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  asc,
-  inArray,
-  ilike,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, asc, inArray, ilike } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -89,14 +75,13 @@ export async function GET(req: Request) {
 
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [
-    eq(tia.orgId, ctx.orgId),
-    isNull(tia.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(tia.orgId, ctx.orgId), isNull(tia.deletedAt)];
 
   const riskRatingParam = searchParams.get("riskRating");
   if (riskRatingParam) {
-    const ratings = riskRatingParam.split(",") as Array<"low" | "medium" | "high">;
+    const ratings = riskRatingParam.split(",") as Array<
+      "low" | "medium" | "high"
+    >;
     conditions.push(inArray(tia.riskRating, ratings));
   }
 
@@ -107,7 +92,9 @@ export async function GET(req: Request) {
 
   const legalBasisParam = searchParams.get("legalBasis");
   if (legalBasisParam) {
-    const bases = legalBasisParam.split(",") as Array<"adequacy" | "sccs" | "bcrs" | "derogation">;
+    const bases = legalBasisParam.split(",") as Array<
+      "adequacy" | "sccs" | "bcrs" | "derogation"
+    >;
     conditions.push(inArray(tia.legalBasis, bases));
   }
 

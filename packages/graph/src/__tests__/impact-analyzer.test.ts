@@ -99,13 +99,19 @@ describe("What-If scenario multipliers", () => {
 
   it("amplified score is capped at 100", () => {
     const original = 70;
-    const amplified = Math.min(100, Math.round(original * SCENARIO_MULTIPLIERS.asset_compromised));
+    const amplified = Math.min(
+      100,
+      Math.round(original * SCENARIO_MULTIPLIERS.asset_compromised),
+    );
     expect(amplified).toBe(100); // 70 * 2.0 = 140 → capped at 100
   });
 
   it("moderate impact with control_disabled stays below 100", () => {
     const original = 50;
-    const amplified = Math.min(100, Math.round(original * SCENARIO_MULTIPLIERS.control_disabled));
+    const amplified = Math.min(
+      100,
+      Math.round(original * SCENARIO_MULTIPLIERS.control_disabled),
+    );
     expect(amplified).toBe(75); // 50 * 1.5 = 75
   });
 });

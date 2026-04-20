@@ -26,7 +26,12 @@ export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const { page, limit: rawLimit, offset: rawOffset, searchParams } = paginate(req);
+  const {
+    page,
+    limit: rawLimit,
+    offset: rawOffset,
+    searchParams,
+  } = paginate(req);
 
   // Override default page size to 25
   const limit = Math.min(

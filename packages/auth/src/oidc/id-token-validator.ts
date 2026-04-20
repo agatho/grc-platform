@@ -127,11 +127,18 @@ export function extractOidcAttributes(
   lastName?: string;
   groups?: string[];
 } {
-  const email = (claims[claimMapping.email ?? "email"] as string) ?? claims.email ?? "";
-  const firstName = (claims[claimMapping.firstName ?? "given_name"] as string) ?? claims.given_name;
-  const lastName = (claims[claimMapping.lastName ?? "family_name"] as string) ?? claims.family_name;
+  const email =
+    (claims[claimMapping.email ?? "email"] as string) ?? claims.email ?? "";
+  const firstName =
+    (claims[claimMapping.firstName ?? "given_name"] as string) ??
+    claims.given_name;
+  const lastName =
+    (claims[claimMapping.lastName ?? "family_name"] as string) ??
+    claims.family_name;
   const groupsClaim = claims[claimMapping.groups ?? "groups"];
-  const groups = Array.isArray(groupsClaim) ? groupsClaim as string[] : undefined;
+  const groups = Array.isArray(groupsClaim)
+    ? (groupsClaim as string[])
+    : undefined;
 
   if (!email) {
     throw new Error("No email claim found in ID token");

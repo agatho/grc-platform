@@ -11,7 +11,10 @@ export type AvvAgreementStatus =
   | "expired"
   | "terminated";
 
-export const AVV_ALLOWED_TRANSITIONS: Record<AvvAgreementStatus, AvvAgreementStatus[]> = {
+export const AVV_ALLOWED_TRANSITIONS: Record<
+  AvvAgreementStatus,
+  AvvAgreementStatus[]
+> = {
   pending: ["negotiated", "terminated"],
   negotiated: ["signed", "pending", "terminated"],
   signed: ["active", "terminated"],
@@ -44,19 +47,28 @@ export function validateAvvGateActivate(snapshot: AvvSnapshot): Blocker[] {
   const blockers: Blocker[] = [];
 
   if (!snapshot.processorName) {
-    blockers.push({ code: "missing_processor", message: "Processor-Name muss gesetzt sein.", gate: "AVV-1", severity: "error" });
-  }
-
-  if (!snapshot.processorDpoContact) {
     blockers.push({
-      code: "missing_dpo_contact",
-      message: "Art. 28(3)(h): DPO-Contact des Processors muss dokumentiert sein.",
+      code: "missing_processor",
+      message: "Processor-Name muss gesetzt sein.",
       gate: "AVV-1",
       severity: "error",
     });
   }
 
-  if (!Array.isArray(snapshot.processingActivities) || (snapshot.processingActivities as unknown[]).length === 0) {
+  if (!snapshot.processorDpoContact) {
+    blockers.push({
+      code: "missing_dpo_contact",
+      message:
+        "Art. 28(3)(h): DPO-Contact des Processors muss dokumentiert sein.",
+      gate: "AVV-1",
+      severity: "error",
+    });
+  }
+
+  if (
+    !Array.isArray(snapshot.processingActivities) ||
+    (snapshot.processingActivities as unknown[]).length === 0
+  ) {
     blockers.push({
       code: "missing_processing_activities",
       message: "Art. 28(3)(a): Processing-Activities muessen benannt sein.",
@@ -107,19 +119,23 @@ export interface AvvTransitionResult {
   updates?: Partial<AvvSnapshot>;
 }
 
-export function validateAvvTransition(req: AvvTransitionRequest): AvvTransitionResult {
+export function validateAvvTransition(
+  req: AvvTransitionRequest,
+): AvvTransitionResult {
   const { currentStatus, targetStatus, snapshot } = req;
 
   const allowed = AVV_ALLOWED_TRANSITIONS[currentStatus] ?? [];
   if (!allowed.includes(targetStatus)) {
     return {
       allowed: false,
-      blockers: [{
-        code: "invalid_transition",
-        message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
-        gate: "state_machine",
-        severity: "error",
-      }],
+      blockers: [
+        {
+          code: "invalid_transition",
+          message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
+          gate: "state_machine",
+          severity: "error",
+        },
+      ],
     };
   }
 
@@ -132,7 +148,11 @@ export function validateAvvTransition(req: AvvTransitionRequest): AvvTransitionR
     return { allowed: false, blockers: gateBlockers };
   }
 
-  return { allowed: true, blockers: gateBlockers, updates: { agreementStatus: targetStatus } };
+  return {
+    allowed: true,
+    blockers: gateBlockers,
+    updates: { agreementStatus: targetStatus },
+  };
 }
 
 // ─── AVV-Review-Helper ──────────────────────────────────────────
@@ -155,13 +175,15 @@ export function checkAvvReviewStatus(
     ? Math.floor((now.getTime() - reviewDate.getTime()) / DAY_MS)
     : null;
 
-  const overdueForReview = daysSinceLastReview !== null && daysSinceLastReview > 365;
+  const overdueForReview =
+    daysSinceLastReview !== null && daysSinceLastReview > 365;
 
   const daysUntilExpiry = expiryDate
     ? Math.floor((expiryDate.getTime() - now.getTime()) / DAY_MS)
     : null;
 
-  const expiringSoon = daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry < 90;
+  const expiringSoon =
+    daysUntilExpiry !== null && daysUntilExpiry >= 0 && daysUntilExpiry < 90;
 
   return {
     daysSinceLastReview,

@@ -67,8 +67,7 @@ export function computeRequirementStatus(
   controls: ControlWithCES[],
 ): NIS2RequirementStatus {
   if (controls.length === 0) return "non_compliant";
-  const avgCES =
-    controls.reduce((sum, c) => sum + c.ces, 0) / controls.length;
+  const avgCES = controls.reduce((sum, c) => sum + c.ces, 0) / controls.length;
   const evidenceComplete = controls.every((c) => c.hasEvidence);
   if (avgCES >= 80 && evidenceComplete) return "compliant";
   if (avgCES >= 50) return "partially_compliant";
@@ -100,10 +99,7 @@ export function computeSingleRequirement(
   const evidenceComplete =
     controls.length > 0 && controls.every((c) => c.hasEvidence);
   const status = computeRequirementStatus(controls);
-  const missingControls = findMissingControls(
-    req.isoMapping,
-    controls,
-  );
+  const missingControls = findMissingControls(req.isoMapping, controls);
 
   return {
     id: req.id,
@@ -135,7 +131,11 @@ export function computeNIS2OverallScore(
 
   const weightedScore = requirements.reduce((sum, r) => {
     const statusScore =
-      r.status === "compliant" ? 100 : r.status === "partially_compliant" ? 50 : 0;
+      r.status === "compliant"
+        ? 100
+        : r.status === "partially_compliant"
+          ? 50
+          : 0;
     return sum + (statusScore * r.weight) / totalWeight;
   }, 0);
 
@@ -151,7 +151,8 @@ export function computeCertReadinessScore(
 ): CertReadinessResult {
   const passedCount = checks.filter((c) => c.passed).length;
   const totalChecks = checks.length;
-  const score = totalChecks > 0 ? Math.round((passedCount / totalChecks) * 100) : 0;
+  const score =
+    totalChecks > 0 ? Math.round((passedCount / totalChecks) * 100) : 0;
 
   return { score, checks, passedCount, totalChecks };
 }

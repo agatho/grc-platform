@@ -19,7 +19,13 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 
 import type {
   ThreatDashboardKPIs,
@@ -265,15 +271,12 @@ export default function ThreatLandscapePage() {
                           </span>
                           <div className="flex-1 min-w-0">
                             <p className="text-xs font-medium truncate">
-                              {threat.code
-                                ? `${threat.code} — `
-                                : ""}
+                              {threat.code ? `${threat.code} — ` : ""}
                               {threat.title}
                             </p>
                             <div className="flex gap-2 text-xs text-muted-foreground">
                               <span>
-                                {threat.riskScenarioCount}{" "}
-                                {t("scenarios")}
+                                {threat.riskScenarioCount} {t("scenarios")}
                               </span>
                               <span>
                                 {threat.affectedAssets} {t("assets")}
@@ -377,7 +380,10 @@ export default function ThreatLandscapePage() {
                 {feedItems.length > 0 ? (
                   <div className="space-y-3 max-h-[300px] overflow-y-auto">
                     {feedItems.map((item) => (
-                      <div key={item.id} className="border-b pb-2 last:border-0">
+                      <div
+                        key={item.id}
+                        className="border-b pb-2 last:border-0"
+                      >
                         <div className="flex items-start justify-between gap-2">
                           <div className="min-w-0">
                             <p className="text-xs font-medium line-clamp-2">
@@ -427,9 +433,7 @@ export default function ThreatLandscapePage() {
           <div className="col-span-4">
             <Card>
               <CardHeader>
-                <CardTitle className="text-sm">
-                  {t("coverageTitle")}
-                </CardTitle>
+                <CardTitle className="text-sm">{t("coverageTitle")}</CardTitle>
               </CardHeader>
               <CardContent>
                 {coverage.length > 0 ? (

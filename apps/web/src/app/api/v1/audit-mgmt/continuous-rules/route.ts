@@ -2,7 +2,12 @@ import { db, continuousAuditRule } from "@grc/db";
 import { createContinuousAuditRuleSchema, isReadOnlySql } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/audit-mgmt/continuous-rules
 export async function GET(req: Request) {
@@ -36,7 +41,10 @@ export async function POST(req: Request) {
 
   const body = createContinuousAuditRuleSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Validate custom SQL is read-only
@@ -44,7 +52,10 @@ export async function POST(req: Request) {
     const query = (body.data.dataSource as Record<string, unknown>)?.query;
     if (typeof query === "string" && !isReadOnlySql(query)) {
       return Response.json(
-        { error: "Custom SQL must be read-only. INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE are not allowed." },
+        {
+          error:
+            "Custom SQL must be read-only. INSERT, UPDATE, DELETE, DROP, ALTER, TRUNCATE, CREATE are not allowed.",
+        },
         { status: 400 },
       );
     }

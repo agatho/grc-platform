@@ -73,9 +73,13 @@ function CompareContent() {
       .then((r) => (r.ok ? r.json() : { data: {} }))
       .then((json) => {
         const versionsList = (json.data?.versions ?? []) as ProcessVersion[];
-        setVersions(versionsList.sort((a, b) => b.versionNumber - a.versionNumber));
+        setVersions(
+          versionsList.sort((a, b) => b.versionNumber - a.versionNumber),
+        );
         if (!versionFrom && versionsList.length >= 2) {
-          const sorted = [...versionsList].sort((a, b) => a.versionNumber - b.versionNumber);
+          const sorted = [...versionsList].sort(
+            (a, b) => a.versionNumber - b.versionNumber,
+          );
           setVersionFrom(String(sorted[sorted.length - 2].versionNumber));
           setVersionTo(String(sorted[sorted.length - 1].versionNumber));
         }
@@ -108,10 +112,16 @@ function CompareContent() {
     }
   }, [fetchComparison, versionFrom, versionTo]);
 
-  const stats = comparison?.diff?.stats ?? { added: 0, removed: 0, modified: 0 };
+  const stats = comparison?.diff?.stats ?? {
+    added: 0,
+    removed: 0,
+    modified: 0,
+  };
 
   // Version details lookup
-  const fromVersion = versions.find((v) => v.versionNumber === Number(versionFrom));
+  const fromVersion = versions.find(
+    (v) => v.versionNumber === Number(versionFrom),
+  );
   const toVersion = versions.find((v) => v.versionNumber === Number(versionTo));
 
   return (
@@ -145,7 +155,10 @@ function CompareContent() {
             </SelectTrigger>
             <SelectContent>
               {versions.map((v) => (
-                <SelectItem key={v.versionNumber} value={String(v.versionNumber)}>
+                <SelectItem
+                  key={v.versionNumber}
+                  value={String(v.versionNumber)}
+                >
                   v{v.versionNumber} &mdash;{" "}
                   {new Date(v.createdAt).toLocaleDateString()}
                 </SelectItem>
@@ -166,7 +179,10 @@ function CompareContent() {
             </SelectTrigger>
             <SelectContent>
               {versions.map((v) => (
-                <SelectItem key={v.versionNumber} value={String(v.versionNumber)}>
+                <SelectItem
+                  key={v.versionNumber}
+                  value={String(v.versionNumber)}
+                >
                   v{v.versionNumber} &mdash;{" "}
                   {new Date(v.createdAt).toLocaleDateString()}
                 </SelectItem>
@@ -187,38 +203,38 @@ function CompareContent() {
             <Card className="border-green-200 bg-green-50">
               <CardContent className="p-4 text-center">
                 <Plus className="mx-auto h-5 w-5 text-green-600 mb-1" />
-                <p className="text-2xl font-bold text-green-700">{stats.added}</p>
+                <p className="text-2xl font-bold text-green-700">
+                  {stats.added}
+                </p>
                 <p className="text-xs text-green-600">{t("compare.added")}</p>
               </CardContent>
             </Card>
             <Card className="border-red-200 bg-red-50">
               <CardContent className="p-4 text-center">
                 <Minus className="mx-auto h-5 w-5 text-red-600 mb-1" />
-                <p className="text-2xl font-bold text-red-700">{stats.removed}</p>
+                <p className="text-2xl font-bold text-red-700">
+                  {stats.removed}
+                </p>
                 <p className="text-xs text-red-600">{t("compare.removed")}</p>
               </CardContent>
             </Card>
             <Card className="border-yellow-200 bg-yellow-50">
               <CardContent className="p-4 text-center">
                 <RefreshCw className="mx-auto h-5 w-5 text-yellow-600 mb-1" />
-                <p className="text-2xl font-bold text-yellow-700">{stats.modified}</p>
-                <p className="text-xs text-yellow-600">{t("compare.modified")}</p>
+                <p className="text-2xl font-bold text-yellow-700">
+                  {stats.modified}
+                </p>
+                <p className="text-xs text-yellow-600">
+                  {t("compare.modified")}
+                </p>
               </CardContent>
             </Card>
           </div>
 
           {/* Version detail panels */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <VersionPanel
-              label="From"
-              version={fromVersion}
-              t={t}
-            />
-            <VersionPanel
-              label="To"
-              version={toVersion}
-              t={t}
-            />
+            <VersionPanel label="From" version={fromVersion} t={t} />
+            <VersionPanel label="To" version={toVersion} t={t} />
           </div>
 
           {/* Element details table */}
@@ -234,16 +250,27 @@ function CompareContent() {
                   <table className="w-full text-sm">
                     <thead>
                       <tr className="border-b border-gray-200">
-                        <th className="pb-2 text-left font-medium text-gray-500">Element</th>
-                        <th className="pb-2 text-left font-medium text-gray-500">Attribute</th>
-                        <th className="pb-2 text-left font-medium text-gray-500">Old</th>
-                        <th className="pb-2 text-left font-medium text-gray-500">New</th>
+                        <th className="pb-2 text-left font-medium text-gray-500">
+                          Element
+                        </th>
+                        <th className="pb-2 text-left font-medium text-gray-500">
+                          Attribute
+                        </th>
+                        <th className="pb-2 text-left font-medium text-gray-500">
+                          Old
+                        </th>
+                        <th className="pb-2 text-left font-medium text-gray-500">
+                          New
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
                       {comparison.details.map((detail) =>
                         detail.changes.map((change, idx) => (
-                          <tr key={`${detail.elementId}-${change.attribute}`} className="border-b border-gray-50">
+                          <tr
+                            key={`${detail.elementId}-${change.attribute}`}
+                            className="border-b border-gray-50"
+                          >
                             {idx === 0 && (
                               <td
                                 className="py-2 text-gray-900 font-medium align-top"
@@ -257,7 +284,9 @@ function CompareContent() {
                                 </div>
                               </td>
                             )}
-                            <td className="py-2 text-gray-600">{change.attribute}</td>
+                            <td className="py-2 text-gray-600">
+                              {change.attribute}
+                            </td>
                             <td className="py-2">
                               <span className="text-red-600 bg-red-50 px-1 rounded text-xs">
                                 {change.oldValue ?? "-"}
@@ -309,7 +338,9 @@ function VersionPanel({
     <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-sm font-medium flex items-center gap-2">
-          <Badge variant="outline" className="text-xs">{label}</Badge>
+          <Badge variant="outline" className="text-xs">
+            {label}
+          </Badge>
           {t("compare.version")} {version.versionNumber}
         </CardTitle>
       </CardHeader>
@@ -323,13 +354,17 @@ function VersionPanel({
         {version.createdByName && (
           <div className="flex justify-between text-gray-600">
             <span>Creator</span>
-            <span className="font-medium text-gray-900">{version.createdByName}</span>
+            <span className="font-medium text-gray-900">
+              {version.createdByName}
+            </span>
           </div>
         )}
         {version.changeSummary && (
           <div className="pt-2 border-t border-gray-100">
             <p className="text-xs text-gray-500">Change Summary</p>
-            <p className="text-sm text-gray-700 mt-1">{version.changeSummary}</p>
+            <p className="text-sm text-gray-700 mt-1">
+              {version.changeSummary}
+            </p>
           </div>
         )}
       </CardContent>

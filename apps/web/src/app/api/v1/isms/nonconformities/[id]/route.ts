@@ -37,7 +37,8 @@ export async function GET(
     LIMIT 1
   `);
 
-  if (ncRows.rows.length === 0) {
+  const ncArr = ncRows as unknown as Record<string, unknown>[];
+  if (ncArr.length === 0) {
     return Response.json({ error: "Nonconformity not found" }, { status: 404 });
   }
 
@@ -55,8 +56,8 @@ export async function GET(
 
   return Response.json({
     data: {
-      ...ncRows.rows[0],
-      corrective_actions: actionRows.rows,
+      ...ncArr[0],
+      corrective_actions: actionRows,
     },
   });
 }
@@ -75,12 +76,15 @@ export async function PUT(
   const { id } = await params;
   const parsed = updateNonconformitySchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 
   const result = await withAuditContext(ctx, async () => {
-    const rows = await db.execute(sql`
+    const rows = (await db.execute(sql`
       UPDATE isms_nonconformity
       SET
         status = COALESCE(${d.status ?? null}, status),
@@ -91,8 +95,8 @@ export async function PUT(
         updated_at = now()
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
-    `);
-    return rows.rows[0];
+    `)) as unknown as Record<string, unknown>[];
+    return rows[0];
   });
 
   if (!result) {

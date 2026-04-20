@@ -94,9 +94,7 @@ export const ssoConfig = pgTable(
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
   },
-  (table) => [
-    uniqueIndex("sso_org_idx").on(table.orgId),
-  ],
+  (table) => [uniqueIndex("sso_org_idx").on(table.orgId)],
 );
 
 // ──────────────────────────────────────────────────────────────

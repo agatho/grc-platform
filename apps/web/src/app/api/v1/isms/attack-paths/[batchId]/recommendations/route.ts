@@ -27,11 +27,17 @@ export async function GET(
     );
 
   if (paths.length === 0) {
-    return Response.json({ error: "No paths found for this batch" }, { status: 404 });
+    return Response.json(
+      { error: "No paths found for this batch" },
+      { status: 404 },
+    );
   }
 
   // Aggregate blocking controls across all paths
-  const controlImpact = new Map<string, { controlId: string; controlName: string; eliminatedPaths: number }>();
+  const controlImpact = new Map<
+    string,
+    { controlId: string; controlName: string; eliminatedPaths: number }
+  >();
 
   for (const path of paths) {
     const blockingControls = (path.blockingControlsJson ?? []) as Array<{

@@ -39,7 +39,9 @@ export const catalog = pgTable(
     targetModules: text("target_modules")
       .array()
       .default(sql`'{}'::text[]`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow(),
   },
   (table) => [
@@ -65,7 +67,9 @@ export const catalogEntry = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     status: varchar("status", { length: 20 }).notNull().default("active"),
     metadata: jsonb("metadata"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     unique("catalog_entry_catalog_code_uniq").on(table.catalogId, table.code),
@@ -109,8 +113,12 @@ export const riskCatalog = pgTable(
     targetModules: text("target_modules")
       .array()
       .default(sql`'{}'::text[]`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("risk_catalog_source_idx").on(table.source),
@@ -129,8 +137,9 @@ export const riskCatalogEntry = pgTable(
     catalogId: uuid("catalog_id")
       .notNull()
       .references(() => riskCatalog.id, { onDelete: "cascade" }),
-    parentEntryId: uuid("parent_entry_id")
-      .references((): any => riskCatalogEntry.id),
+    parentEntryId: uuid("parent_entry_id").references(
+      (): any => riskCatalogEntry.id,
+    ),
     code: varchar("code", { length: 50 }).notNull(),
     titleDe: varchar("title_de", { length: 500 }).notNull(),
     titleEn: varchar("title_en", { length: 500 }),
@@ -143,7 +152,9 @@ export const riskCatalogEntry = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     metadataJson: jsonb("metadata_json"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     unique("risk_catalog_entry_code_uniq").on(table.catalogId, table.code),
@@ -172,8 +183,12 @@ export const controlCatalog = pgTable(
     targetModules: text("target_modules")
       .array()
       .default(sql`'{}'::text[]`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("control_catalog_source_idx").on(table.source),
@@ -192,8 +207,9 @@ export const controlCatalogEntry = pgTable(
     catalogId: uuid("catalog_id")
       .notNull()
       .references(() => controlCatalog.id, { onDelete: "cascade" }),
-    parentEntryId: uuid("parent_entry_id")
-      .references((): any => controlCatalogEntry.id),
+    parentEntryId: uuid("parent_entry_id").references(
+      (): any => controlCatalogEntry.id,
+    ),
     code: varchar("code", { length: 50 }).notNull(),
     titleDe: varchar("title_de", { length: 500 }).notNull(),
     titleEn: varchar("title_en", { length: 500 }),
@@ -207,7 +223,9 @@ export const controlCatalogEntry = pgTable(
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
     metadataJson: jsonb("metadata_json"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     unique("control_catalog_entry_code_uniq").on(table.catalogId, table.code),
@@ -234,14 +252,17 @@ export const generalCatalogEntry = pgTable(
     status: varchar("status", { length: 50 }).notNull().default("active"),
     lifecycleStart: date("lifecycle_start"),
     lifecycleEnd: date("lifecycle_end"),
-    ownerId: uuid("owner_id")
-      .references(() => user.id),
+    ownerId: uuid("owner_id").references(() => user.id),
     metadataJson: jsonb("metadata_json"),
     tags: text("tags")
       .array()
       .default(sql`'{}'::text[]`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
@@ -265,20 +286,27 @@ export const orgRiskMethodology = pgTable(
       .notNull()
       .references(() => organization.id)
       .unique(),
-    methodology: varchar("methodology", { length: 50 }).notNull().default("iso_31000"),
+    methodology: varchar("methodology", { length: 50 })
+      .notNull()
+      .default("iso_31000"),
     matrixSize: integer("matrix_size").notNull().default(5),
-    fairCurrency: varchar("fair_currency", { length: 10 }).notNull().default("EUR"),
-    fairSimulationRuns: integer("fair_simulation_runs").notNull().default(10000),
+    fairCurrency: varchar("fair_currency", { length: 10 })
+      .notNull()
+      .default("EUR"),
+    fairSimulationRuns: integer("fair_simulation_runs")
+      .notNull()
+      .default(10000),
     riskAppetiteThreshold: integer("risk_appetite_threshold"),
     customLabelsJson: jsonb("custom_labels_json"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedBy: uuid("updated_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedBy: uuid("updated_by").references(() => user.id),
   },
-  (table) => [
-    index("org_methodology_org_idx").on(table.orgId),
-  ],
+  (table) => [index("org_methodology_org_idx").on(table.orgId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -294,14 +322,23 @@ export const orgActiveCatalog = pgTable(
       .references(() => organization.id),
     catalogType: varchar("catalog_type", { length: 50 }).notNull(),
     catalogId: uuid("catalog_id").notNull(),
-    enforcementLevel: varchar("enforcement_level", { length: 50 }).notNull().default("optional"),
-    isMandatoryFromParent: boolean("is_mandatory_from_parent").notNull().default(false),
-    activatedAt: timestamp("activated_at", { withTimezone: true }).notNull().defaultNow(),
-    activatedBy: uuid("activated_by")
-      .references(() => user.id),
+    enforcementLevel: varchar("enforcement_level", { length: 50 })
+      .notNull()
+      .default("optional"),
+    isMandatoryFromParent: boolean("is_mandatory_from_parent")
+      .notNull()
+      .default(false),
+    activatedAt: timestamp("activated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    activatedBy: uuid("activated_by").references(() => user.id),
   },
   (table) => [
-    unique("org_active_catalog_uniq").on(table.orgId, table.catalogType, table.catalogId),
+    unique("org_active_catalog_uniq").on(
+      table.orgId,
+      table.catalogType,
+      table.catalogId,
+    ),
     index("oac_org_idx").on(table.orgId),
     index("oac_catalog_idx").on(table.catalogId),
   ],
@@ -321,12 +358,17 @@ export const orgCatalogExclusion = pgTable(
     entryType: varchar("entry_type", { length: 50 }).notNull(),
     entryId: uuid("entry_id").notNull(),
     reason: text("reason"),
-    excludedAt: timestamp("excluded_at", { withTimezone: true }).notNull().defaultNow(),
-    excludedBy: uuid("excluded_by")
-      .references(() => user.id),
+    excludedAt: timestamp("excluded_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    excludedBy: uuid("excluded_by").references(() => user.id),
   },
   (table) => [
-    unique("org_catalog_exclusion_uniq").on(table.orgId, table.entryType, table.entryId),
+    unique("org_catalog_exclusion_uniq").on(
+      table.orgId,
+      table.entryType,
+      table.entryId,
+    ),
     index("oce_org_idx").on(table.orgId),
   ],
 );
@@ -345,10 +387,16 @@ export const catalogEntryReference = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
-    unique("catalog_entry_ref_uniq").on(table.catalogEntryId, table.entityType, table.entityId),
+    unique("catalog_entry_ref_uniq").on(
+      table.catalogEntryId,
+      table.entityType,
+      table.entityId,
+    ),
     index("cer_org_idx").on(table.orgId),
     index("cer_entry_idx").on(table.catalogEntryId),
     index("cer_entity_idx").on(table.entityType, table.entityId),
@@ -372,7 +420,9 @@ export const catalogLifecyclePhase = pgTable(
     startDate: date("start_date").notNull(),
     endDate: date("end_date"),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("clp_org_idx").on(table.orgId),

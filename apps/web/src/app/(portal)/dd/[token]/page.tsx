@@ -101,7 +101,9 @@ export default function DdPortalPage() {
   const [responses, setResponses] = useState<Record<string, ResponseValue>>({});
   const [evidence, setEvidence] = useState<EvidenceFile[]>([]);
   const [currentSectionIdx, setCurrentSectionIdx] = useState(-1); // -1 = landing
-  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">("idle");
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saving" | "saved">(
+    "idle",
+  );
   const [confirmChecked, setConfirmChecked] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -225,7 +227,12 @@ export default function DdPortalPage() {
   // ──────────────────────────────────────────────────────────────
 
   const { totalRequired, answeredRequired, sectionProgress } = useMemo(() => {
-    if (!session) return { totalRequired: 0, answeredRequired: 0, sectionProgress: [] as number[] };
+    if (!session)
+      return {
+        totalRequired: 0,
+        answeredRequired: 0,
+        sectionProgress: [] as number[],
+      };
 
     let total = 0;
     let answered = 0;
@@ -244,14 +251,22 @@ export default function DdPortalPage() {
       }
       total += sTotal;
       answered += sAnswered;
-      sectionProg.push(sTotal > 0 ? Math.round((sAnswered / sTotal) * 100) : 100);
+      sectionProg.push(
+        sTotal > 0 ? Math.round((sAnswered / sTotal) * 100) : 100,
+      );
     }
 
-    return { totalRequired: total, answeredRequired: answered, sectionProgress: sectionProg };
+    return {
+      totalRequired: total,
+      answeredRequired: answered,
+      sectionProgress: sectionProg,
+    };
   }, [session, responses, isQuestionVisible]);
 
   const progressPercent =
-    totalRequired > 0 ? Math.round((answeredRequired / totalRequired) * 100) : 0;
+    totalRequired > 0
+      ? Math.round((answeredRequired / totalRequired) * 100)
+      : 0;
 
   // ──────────────────────────────────────────────────────────────
   // Submit
@@ -292,7 +307,9 @@ export default function DdPortalPage() {
     return (
       <div className="flex flex-col items-center justify-center py-20 text-center">
         <AlertCircle size={32} className="text-red-400 mb-4" />
-        <p className="text-gray-600">{error ?? "Unable to load questionnaire"}</p>
+        <p className="text-gray-600">
+          {error ?? "Unable to load questionnaire"}
+        </p>
       </div>
     );
   }
@@ -303,7 +320,8 @@ export default function DdPortalPage() {
   const daysRemaining = Math.max(
     0,
     Math.ceil(
-      (new Date(session.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+      (new Date(session.deadline).getTime() - Date.now()) /
+        (1000 * 60 * 60 * 24),
     ),
   );
 
@@ -329,9 +347,12 @@ export default function DdPortalPage() {
               {lang === "de" ? "Frist" : "Deadline"}
             </span>
             <span className="font-medium text-gray-900">
-              {new Date(session.deadline).toLocaleDateString(lang === "de" ? "de-DE" : "en-US")}
+              {new Date(session.deadline).toLocaleDateString(
+                lang === "de" ? "de-DE" : "en-US",
+              )}
               <span className="ml-2 text-gray-500">
-                ({daysRemaining} {lang === "de" ? "Tage verbleibend" : "days remaining"})
+                ({daysRemaining}{" "}
+                {lang === "de" ? "Tage verbleibend" : "days remaining"})
               </span>
             </span>
           </div>
@@ -389,7 +410,11 @@ export default function DdPortalPage() {
     return (
       <div className="space-y-6">
         {/* Progress bar */}
-        <ProgressBar percent={progressPercent} saveStatus={saveStatus} lang={lang} />
+        <ProgressBar
+          percent={progressPercent}
+          saveStatus={saveStatus}
+          lang={lang}
+        />
 
         <h2 className="text-xl font-bold text-gray-900">
           {lang === "de" ? "Zusammenfassung" : "Review & Submit"}
@@ -397,7 +422,8 @@ export default function DdPortalPage() {
 
         <div className="space-y-3">
           {sections.map((section, idx) => {
-            const visibleQuestions = section.questions.filter(isQuestionVisible);
+            const visibleQuestions =
+              section.questions.filter(isQuestionVisible);
             const requiredQs = visibleQuestions.filter((q) => q.isRequired);
             const answeredQs = requiredQs.filter(
               (q) => responses[q.id] && hasAnswer(responses[q.id]),
@@ -503,7 +529,11 @@ export default function DdPortalPage() {
   return (
     <div className="space-y-6">
       {/* Progress bar */}
-      <ProgressBar percent={progressPercent} saveStatus={saveStatus} lang={lang} />
+      <ProgressBar
+        percent={progressPercent}
+        saveStatus={saveStatus}
+        lang={lang}
+      />
 
       {/* Section navigation sidebar (horizontal on mobile) */}
       <div className="flex gap-2 overflow-x-auto pb-2">
@@ -541,9 +571,13 @@ export default function DdPortalPage() {
         <h2 className="text-lg font-bold text-gray-900">
           {lang === "de" ? currentSection.titleDe : currentSection.titleEn}
         </h2>
-        {(lang === "de" ? currentSection.descriptionDe : currentSection.descriptionEn) && (
+        {(lang === "de"
+          ? currentSection.descriptionDe
+          : currentSection.descriptionEn) && (
           <p className="text-sm text-gray-500 mt-1">
-            {lang === "de" ? currentSection.descriptionDe : currentSection.descriptionEn}
+            {lang === "de"
+              ? currentSection.descriptionDe
+              : currentSection.descriptionEn}
           </p>
         )}
       </div>
@@ -578,9 +612,12 @@ export default function DdPortalPage() {
             }}
             onEvidenceDelete={async (evidenceId) => {
               try {
-                await fetch(`/api/v1/portal/dd/${token}/evidence/${evidenceId}`, {
-                  method: "DELETE",
-                });
+                await fetch(
+                  `/api/v1/portal/dd/${token}/evidence/${evidenceId}`,
+                  {
+                    method: "DELETE",
+                  },
+                );
                 setEvidence((prev) => prev.filter((e) => e.id !== evidenceId));
               } catch {
                 // ignore
@@ -594,9 +631,7 @@ export default function DdPortalPage() {
       <div className="flex items-center justify-between pt-4 border-t border-gray-100">
         <button
           type="button"
-          onClick={() =>
-            setCurrentSectionIdx((prev) => Math.max(-1, prev - 1))
-          }
+          onClick={() => setCurrentSectionIdx((prev) => Math.max(-1, prev - 1))}
           disabled={currentSectionIdx <= 0}
           className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
         >
@@ -647,7 +682,8 @@ function ProgressBar({
           {lang === "de" ? "Fortschritt" : "Progress"}: {percent}%
         </span>
         <span className="text-gray-400">
-          {saveStatus === "saving" && (lang === "de" ? "Speichert..." : "Saving...")}
+          {saveStatus === "saving" &&
+            (lang === "de" ? "Speichert..." : "Saving...")}
           {saveStatus === "saved" && (lang === "de" ? "Gespeichert" : "Saved")}
         </span>
       </div>
@@ -696,9 +732,7 @@ function QuestionRenderer({
               <span className="text-red-500 ml-1">*</span>
             )}
           </p>
-          {helpText && (
-            <p className="text-xs text-gray-500 mt-1">{helpText}</p>
-          )}
+          {helpText && <p className="text-xs text-gray-500 mt-1">{helpText}</p>}
         </div>
       </div>
 
@@ -799,7 +833,10 @@ function QuestionRenderer({
 
         {question.questionType === "date" && (
           <div className="relative w-48">
-            <Calendar size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+            <Calendar
+              size={14}
+              className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+            />
             <input
               type="date"
               value={value?.answerDate ?? ""}
@@ -819,19 +856,20 @@ function QuestionRenderer({
         )}
 
         {/* Evidence upload for non-file questions that require evidence */}
-        {question.isEvidenceRequired && question.questionType !== "file_upload" && (
-          <div className="mt-3 pt-3 border-t border-gray-100">
-            <p className="text-xs font-medium text-gray-500 mb-2">
-              {lang === "de" ? "Nachweis hochladen" : "Upload evidence"}
-            </p>
-            <FileUploadZone
-              lang={lang}
-              evidence={evidence}
-              onUpload={onEvidenceUpload}
-              onDelete={onEvidenceDelete}
-            />
-          </div>
-        )}
+        {question.isEvidenceRequired &&
+          question.questionType !== "file_upload" && (
+            <div className="mt-3 pt-3 border-t border-gray-100">
+              <p className="text-xs font-medium text-gray-500 mb-2">
+                {lang === "de" ? "Nachweis hochladen" : "Upload evidence"}
+              </p>
+              <FileUploadZone
+                lang={lang}
+                evidence={evidence}
+                onUpload={onEvidenceUpload}
+                onDelete={onEvidenceDelete}
+              />
+            </div>
+          )}
       </div>
     </div>
   );

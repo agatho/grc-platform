@@ -168,9 +168,7 @@ export default function TranslationExchangePage() {
         <h1 className="text-2xl font-bold tracking-tight">
           {t("translationExchange")}
         </h1>
-        <p className="text-muted-foreground">
-          {t("translationExchangeDesc")}
-        </p>
+        <p className="text-muted-foreground">{t("translationExchangeDesc")}</p>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -261,7 +259,11 @@ export default function TranslationExchangePage() {
               </Select>
             </div>
 
-            <Button onClick={handleExport} disabled={exporting} className="w-full">
+            <Button
+              onClick={handleExport}
+              disabled={exporting}
+              className="w-full"
+            >
               {exporting ? (
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
               ) : (
@@ -301,11 +303,7 @@ export default function TranslationExchangePage() {
               <input
                 ref={fileInputRef}
                 type="file"
-                accept={
-                  importFormat === "xliff"
-                    ? ".xliff,.xlf,.xml"
-                    : ".csv"
-                }
+                accept={importFormat === "xliff" ? ".xliff,.xlf,.xml" : ".csv"}
                 onChange={handleFileSelect}
                 className="hidden"
               />
@@ -355,16 +353,24 @@ export default function TranslationExchangePage() {
                 <h4 className="text-sm font-medium">{t("previewResult")}</h4>
                 <div className="grid grid-cols-3 gap-2 text-sm">
                   <div>
-                    <span className="text-muted-foreground">{t("toImport")}:</span>{" "}
+                    <span className="text-muted-foreground">
+                      {t("toImport")}:
+                    </span>{" "}
                     <Badge>{dryRunResult.imported}</Badge>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{t("skipped")}:</span>{" "}
+                    <span className="text-muted-foreground">
+                      {t("skipped")}:
+                    </span>{" "}
                     <Badge variant="outline">{dryRunResult.skipped}</Badge>
                   </div>
                   <div>
-                    <span className="text-muted-foreground">{t("errors")}:</span>{" "}
-                    <Badge variant="destructive">{dryRunResult.errors.length}</Badge>
+                    <span className="text-muted-foreground">
+                      {t("errors")}:
+                    </span>{" "}
+                    <Badge variant="destructive">
+                      {dryRunResult.errors.length}
+                    </Badge>
                   </div>
                 </div>
               </div>

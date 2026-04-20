@@ -4,7 +4,10 @@
 import { db, vendorSubProcessorNotification, notification } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 
-interface SubProcessorDeadlineResult { processed: number; warnings: number; }
+interface SubProcessorDeadlineResult {
+  processed: number;
+  warnings: number;
+}
 
 export async function processSubProcessorReviewDeadline(): Promise<SubProcessorDeadlineResult> {
   console.log(`[cron:sub-processor-review-deadline] Starting`);
@@ -32,7 +35,9 @@ export async function processSubProcessorReviewDeadline(): Promise<SubProcessorD
         channel: "both" as const,
       });
       warnings++;
-    } catch { /* skip if notification insert fails */ }
+    } catch {
+      /* skip if notification insert fails */
+    }
   }
 
   console.log(`[cron:sub-processor-review-deadline] ${warnings} warnings sent`);

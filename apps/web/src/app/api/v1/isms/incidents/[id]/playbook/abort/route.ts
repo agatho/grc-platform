@@ -1,9 +1,4 @@
-import {
-  db,
-  playbookActivation,
-  task,
-  incidentTimelineEntry,
-} from "@grc/db";
+import { db, playbookActivation, task, incidentTimelineEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -33,7 +28,10 @@ export async function PUT(
     .limit(1);
 
   if (!activation) {
-    return Response.json({ error: "No playbook activation found for this incident" }, { status: 404 });
+    return Response.json(
+      { error: "No playbook activation found for this incident" },
+      { status: 404 },
+    );
   }
 
   if (activation.status !== "active") {

@@ -110,9 +110,7 @@ export const crisisCommunicationLog = pgTable(
     messageContent: text("message_content").notNull(),
     recipientName: varchar("recipient_name", { length: 300 }),
     recipientContact: varchar("recipient_contact", { length: 255 }),
-    sentAt: timestamp("sent_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
+    sentAt: timestamp("sent_at", { withTimezone: true }).notNull().defaultNow(),
     deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }),
     escalatedAt: timestamp("escalated_at", { withTimezone: true }),

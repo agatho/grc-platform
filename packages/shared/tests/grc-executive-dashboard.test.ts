@@ -65,13 +65,21 @@ describe("computeIsmsHealth", () => {
   });
 
   it("critical findings trigger concern", () => {
-    const r = computeIsmsHealth({ ...healthyIsms, criticalFindingsCount: 3, openFindingsCount: 10 });
+    const r = computeIsmsHealth({
+      ...healthyIsms,
+      criticalFindingsCount: 3,
+      openFindingsCount: 10,
+    });
     expect(r.topConcerns.some((c) => c.includes("critical"))).toBe(true);
     expect(r.score).toBeLessThan(healthyIsms.maturityAverage);
   });
 
   it("overdue CAPs flagged", () => {
-    const r = computeIsmsHealth({ ...healthyIsms, capOpenCount: 5, capOverdueCount: 3 });
+    const r = computeIsmsHealth({
+      ...healthyIsms,
+      capOpenCount: 5,
+      capOverdueCount: 3,
+    });
     expect(r.topConcerns.some((c) => c.includes("ueberfaellig"))).toBe(true);
   });
 });
@@ -102,7 +110,10 @@ describe("computeDpmsHealth", () => {
   });
 
   it("overdue breach notifications = red concern", () => {
-    const r = computeDpmsHealth({ ...healthyDpms, breachesOverdueNotifications: 2 });
+    const r = computeDpmsHealth({
+      ...healthyDpms,
+      breachesOverdueNotifications: 2,
+    });
     expect(r.topConcerns.some((c) => c.includes("Art. 33"))).toBe(true);
   });
 
@@ -131,7 +142,11 @@ describe("computeAiActHealth", () => {
   });
 
   it("incomplete FRIA coverage = concern", () => {
-    const r = computeAiActHealth({ ...healthyAi, friaRequired: 5, friaCompleted: 2 });
+    const r = computeAiActHealth({
+      ...healthyAi,
+      friaRequired: 5,
+      friaCompleted: 2,
+    });
     expect(r.topConcerns.some((c) => c.includes("FRIA"))).toBe(true);
   });
 });
@@ -169,7 +184,11 @@ describe("computeExecutiveDashboard", () => {
     const r = computeExecutiveDashboard({
       ...healthyInput,
       aiAct: { ...healthyAi, systemsUnacceptable: 1 },
-      dpms: { ...healthyDpms, breachesOverdueNotifications: 5, dsrOverdueCount: 5 },
+      dpms: {
+        ...healthyDpms,
+        breachesOverdueNotifications: 5,
+        dsrOverdueCount: 5,
+      },
     });
     expect(r.criticalCount).toBeGreaterThanOrEqual(1);
   });
@@ -202,8 +221,17 @@ describe("computeExecutiveDashboard", () => {
         maturityAverage: 30,
         soaCoveragePercent: 40,
       },
-      bcms: { ...healthyBcms, activeCrisisCount: 2, exercisesCompletedYtd: 0, rtoCoveragePercent: 30 },
-      dpms: { ...healthyDpms, breachesOverdueNotifications: 3, dsrOverdueCount: 5 },
+      bcms: {
+        ...healthyBcms,
+        activeCrisisCount: 2,
+        exercisesCompletedYtd: 0,
+        rtoCoveragePercent: 30,
+      },
+      dpms: {
+        ...healthyDpms,
+        breachesOverdueNotifications: 3,
+        dsrOverdueCount: 5,
+      },
       aiAct: { ...healthyAi, systemsUnacceptable: 2, incidentsOverdueCount: 3 },
       asOfDate: "2026-04-19",
       organizationName: "BrokenCo",

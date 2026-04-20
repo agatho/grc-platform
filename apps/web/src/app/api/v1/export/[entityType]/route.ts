@@ -48,7 +48,12 @@ export async function GET(
       await db.insert(dataExportLog).values({
         orgId: ctx.orgId,
         userId: ctx.userId,
-        exportType: format === "xlsx" ? "excel_export" : format === "pdf" ? "pdf_report" : "csv_export",
+        exportType:
+          format === "xlsx"
+            ? "excel_export"
+            : format === "pdf"
+              ? "pdf_report"
+              : "csv_export",
         entityType,
         description: `${entityType} export (${format.toUpperCase()}, ${result.rowCount} records)`,
         recordCount: result.rowCount,

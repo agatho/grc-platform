@@ -11,7 +11,11 @@
 
 import { db, ropaEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { countDpiaFlags, isDpiaRequired, type DpiaCriteriaFlags } from "@grc/shared";
+import {
+  countDpiaFlags,
+  isDpiaRequired,
+  type DpiaCriteriaFlags,
+} from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -66,7 +70,8 @@ export async function POST(req: Request, { params }: RouteParams) {
 
   let suggestion: string;
   if (count === 0) {
-    suggestion = "Kein DPIA-Trigger erkannt. Normale RoPA-Dokumentation ausreichend.";
+    suggestion =
+      "Kein DPIA-Trigger erkannt. Normale RoPA-Dokumentation ausreichend.";
   } else if (count === 1) {
     suggestion =
       "Ein Flag erkannt. DPIA empfohlen aber nicht zwingend. Konsultiere DPO fuer Einzelfall-Entscheidung.";

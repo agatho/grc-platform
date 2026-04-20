@@ -85,9 +85,10 @@ function LoginForm() {
     setSsoLoading(true);
     setError("");
 
-    const endpoint = ssoInfo.provider === "saml"
-      ? `/api/v1/auth/sso/saml/login?orgId=${orgId}&callbackUrl=${encodeURIComponent(callbackUrl)}`
-      : `/api/v1/auth/sso/oidc/login?orgId=${orgId}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
+    const endpoint =
+      ssoInfo.provider === "saml"
+        ? `/api/v1/auth/sso/saml/login?orgId=${orgId}&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        : `/api/v1/auth/sso/oidc/login?orgId=${orgId}&callbackUrl=${encodeURIComponent(callbackUrl)}`;
 
     window.location.href = endpoint;
   }
@@ -172,7 +173,10 @@ function LoginForm() {
       {(!ssoInfo || !ssoInfo.enforceSSO) && (
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label
+              htmlFor="email"
+              className="block text-sm font-medium text-gray-700 mb-1.5"
+            >
               {t("email")}
             </label>
             <input
@@ -187,7 +191,10 @@ function LoginForm() {
           </div>
 
           <div>
-            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1.5">
+            <label
+              htmlFor="password"
+              className="block text-sm font-medium text-gray-700 mb-1.5"
+            >
               {t("password")}
             </label>
             <input
@@ -220,7 +227,9 @@ function LoginForm() {
                 </span>
                 {t("signingIn")}
               </span>
-            ) : t("signIn")}
+            ) : (
+              t("signIn")
+            )}
           </button>
         </form>
       )}
@@ -240,7 +249,11 @@ function LoginForm() {
   );
 }
 
-function FeatureItem({ icon: Icon, title, description }: {
+function FeatureItem({
+  icon: Icon,
+  title,
+  description,
+}: {
   icon: React.ElementType;
   title: string;
   description: string;
@@ -289,7 +302,9 @@ export default function LoginPage() {
               <ShieldCheck className="h-5 w-5 text-white" />
             </div>
             <div className="flex flex-col">
-              <span className="text-xl font-bold tracking-tight text-white">ARCTOS</span>
+              <span className="text-xl font-bold tracking-tight text-white">
+                ARCTOS
+              </span>
               <span className="text-[10px] font-medium uppercase tracking-[0.15em] text-blue-200/70">
                 {t("brandAcronym")}
               </span>
@@ -371,9 +386,7 @@ export default function LoginPage() {
           transition={{ duration: 0.5, delay: 0.3 }}
           className="relative"
         >
-          <p className="text-xs text-blue-300/40">
-            {t("loginFooter")}
-          </p>
+          <p className="text-xs text-blue-300/40">{t("loginFooter")}</p>
         </motion.div>
       </div>
 
@@ -390,7 +403,9 @@ export default function LoginPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-br from-blue-600 to-indigo-600 shadow-lg shadow-blue-500/25">
               <ShieldCheck className="h-4.5 w-4.5 text-white" />
             </div>
-            <span className="text-lg font-bold tracking-tight text-gray-900">ARCTOS</span>
+            <span className="text-lg font-bold tracking-tight text-gray-900">
+              ARCTOS
+            </span>
           </div>
 
           <div className="rounded-2xl bg-white p-8 shadow-xl shadow-gray-200/60 ring-1 ring-gray-100">

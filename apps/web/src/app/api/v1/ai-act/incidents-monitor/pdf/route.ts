@@ -9,7 +9,7 @@ import {
   checkIncidentOverdue,
   classifyIncidentDeadline,
   type IncidentClassification,
-  type IncidentStatus,
+  type AiActIncidentSnapshot,
 } from "@grc/shared";
 import { desc, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -41,18 +41,27 @@ export async function GET(_req: Request) {
       const criteria = (r.seriousCriteria ?? []) as string[];
       const classification: IncidentClassification = {
         resultedInDeath: criteria.includes("death"),
-        resultedInSeriousHealthDamage: criteria.includes("serious_health_damage"),
+        resultedInSeriousHealthDamage: criteria.includes(
+          "serious_health_damage",
+        ),
         isWidespreadInfringement: criteria.includes("widespread"),
         violatesUnionLaw: criteria.includes("union_law_violation"),
-        affectsCriticalInfrastructure: criteria.includes("critical_infrastructure"),
+        affectsCriticalInfrastructure: criteria.includes(
+          "critical_infrastructure",
+        ),
         affectedPersonsCount: r.affectedPersonsCount ?? 0,
       };
-      deadlineAt = classifyIncidentDeadline(classification, new Date(r.detectedAt)).deadlineAt;
+      deadlineAt = classifyIncidentDeadline(
+        classification,
+        new Date(r.detectedAt),
+      ).deadlineAt;
     }
 
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date(r.detectedAt),
-      authorityNotifiedAt: r.authorityNotifiedAt ? new Date(r.authorityNotifiedAt) : null,
+      authorityNotifiedAt: r.authorityNotifiedAt
+        ? new Date(r.authorityNotifiedAt)
+        : null,
       deadlineAt,
       isSerious: r.isSerious ?? false,
     };
@@ -61,9 +70,14 @@ export async function GET(_req: Request) {
 
   const summary = {
     total: enriched.length,
-    criticalOverdue: enriched.filter((e) => e.overdue.escalationLevel === "critical_overdue").length,
-    overdue: enriched.filter((e) => e.overdue.escalationLevel === "overdue").length,
-    approaching: enriched.filter((e) => e.overdue.escalationLevel === "approaching").length,
+    criticalOverdue: enriched.filter(
+      (e) => e.overdue.escalationLevel === "critical_overdue",
+    ).length,
+    overdue: enriched.filter((e) => e.overdue.escalationLevel === "overdue")
+      .length,
+    approaching: enriched.filter(
+      (e) => e.overdue.escalationLevel === "approaching",
+    ).length,
     ok: enriched.filter((e) => e.overdue.escalationLevel === "none").length,
   };
 
@@ -74,7 +88,8 @@ export async function GET(_req: Request) {
       approaching: 2,
       none: 3,
     };
-    const cmp = order[a.overdue.escalationLevel] - order[b.overdue.escalationLevel];
+    const cmp =
+      order[a.overdue.escalationLevel] - order[b.overdue.escalationLevel];
     if (cmp !== 0) return cmp;
     return a.row.detectedAt > b.row.detectedAt ? -1 : 1;
   });
@@ -121,12 +136,14 @@ export async function GET(_req: Request) {
 </div>
 
 <h2>Incidents (${summary.total})</h2>
-${tableRows
-  ? `<table>
+${
+  tableRows
+    ? `<table>
   <thead><tr><th>Titel</th><th>Severity</th><th>Erkannt</th><th>Frist (Art. 73)</th><th>Status</th><th>Rest</th></tr></thead>
   <tbody>${tableRows}</tbody>
 </table>`
-  : `<div class="empty">Keine Incidents erfasst.</div>`}
+    : `<div class="empty">Keine Incidents erfasst.</div>`
+}
 
 <div class="footer">Vertraulich — Erstellt mit ARCTOS GRC Platform — ${now}</div>
 </body></html>`;

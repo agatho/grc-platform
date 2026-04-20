@@ -19,7 +19,9 @@ export async function POST(req: Request) {
 
   const clientId = randomBytes(32).toString("hex");
   const clientSecret = randomBytes(48).toString("hex");
-  const clientSecretHash = createHash("sha256").update(clientSecret).digest("hex");
+  const clientSecretHash = createHash("sha256")
+    .update(clientSecret)
+    .digest("hex");
   const clientSecretLast4 = clientSecret.slice(-4);
 
   const [created] = await db

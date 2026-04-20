@@ -11,14 +11,28 @@
     "procedure": "Procedure Performed",
     "results": "Results",
     "conclusion": "Conclusion",
-    "status": { "draft": "Draft", "in_review": "In Review", "needs_revision": "Needs Revision", "reviewed": "Reviewed", "approved": "Approved" },
+    "status": {
+      "draft": "Draft",
+      "in_review": "In Review",
+      "needs_revision": "Needs Revision",
+      "reviewed": "Reviewed",
+      "approved": "Approved"
+    },
     "submit": "Submit for Review",
     "review": "Review",
     "approve": "Approve",
     "reviewNotes": "Review Notes",
     "addNote": "Add Review Note",
-    "severity": { "informational": "Informational", "requires_action": "Requires Action", "blocking": "Blocking" },
-    "noteStatus": { "open": "Open", "addressed": "Addressed", "closed": "Closed" },
+    "severity": {
+      "informational": "Informational",
+      "requires_action": "Requires Action",
+      "blocking": "Blocking"
+    },
+    "noteStatus": {
+      "open": "Open",
+      "addressed": "Addressed",
+      "closed": "Closed"
+    },
     "blockingNotesWarning": "Cannot approve: Open blocking review notes exist",
     "threeRoleError": "Preparer, reviewer, and approver must be three different users",
     "evidenceDocuments": "Evidence Documents",
@@ -29,13 +43,24 @@
     "title": "Resource Planning",
     "auditorProfile": "Auditor Profile",
     "profiles": "Auditor Profiles",
-    "seniority": { "staff": "Staff", "senior": "Senior", "manager": "Manager", "director": "Director", "cae": "Chief Audit Executive" },
+    "seniority": {
+      "staff": "Staff",
+      "senior": "Senior",
+      "manager": "Manager",
+      "director": "Director",
+      "cae": "Chief Audit Executive"
+    },
     "certifications": "Certifications",
     "skills": "Skills",
     "availableHours": "Available Hours/Year",
     "hourlyRate": "Hourly Rate",
     "allocation": "Resource Allocation",
-    "role": { "lead": "Lead Auditor", "team_member": "Team Member", "specialist": "Specialist", "observer": "Observer" },
+    "role": {
+      "lead": "Lead Auditor",
+      "team_member": "Team Member",
+      "specialist": "Specialist",
+      "observer": "Observer"
+    },
     "plannedHours": "Planned Hours",
     "actualHours": "Actual Hours",
     "gantt": "Gantt View",
@@ -52,13 +77,26 @@
     "title": "Continuous Auditing",
     "rules": "Audit Rules",
     "createRule": "Create Rule",
-    "ruleType": { "builtin": "Built-in", "custom_sql": "Custom SQL", "api_check": "API Check" },
+    "ruleType": {
+      "builtin": "Built-in",
+      "custom_sql": "Custom SQL",
+      "api_check": "API Check"
+    },
     "schedule": { "daily": "Daily", "weekly": "Weekly", "monthly": "Monthly" },
     "execute": "Execute Now",
     "results": "Results",
-    "resultStatus": { "pass": "Pass", "exceptions_found": "Exceptions Found", "error": "Error" },
+    "resultStatus": {
+      "pass": "Pass",
+      "exceptions_found": "Exceptions Found",
+      "error": "Error"
+    },
     "exceptions": "Exceptions",
-    "exceptionStatus": { "new": "New", "acknowledged": "Acknowledged", "escalated": "Escalated", "false_positive": "False Positive" },
+    "exceptionStatus": {
+      "new": "New",
+      "acknowledged": "Acknowledged",
+      "escalated": "Escalated",
+      "false_positive": "False Positive"
+    },
     "acknowledge": "Acknowledge",
     "escalate": "Escalate to Finding",
     "falsePositive": "Mark as False Positive",
@@ -70,10 +108,25 @@
     "title": "Quality Assurance Review",
     "assignReviewer": "Assign QA Reviewer",
     "checklist": "QA Checklist",
-    "sections": { "planning": "Planning", "fieldwork": "Fieldwork", "reporting": "Reporting", "communication": "Communication", "documentation": "Documentation" },
-    "compliance": { "compliant": "Compliant", "partially_compliant": "Partially Compliant", "non_compliant": "Non-Compliant", "not_applicable": "Not Applicable" },
+    "sections": {
+      "planning": "Planning",
+      "fieldwork": "Fieldwork",
+      "reporting": "Reporting",
+      "communication": "Communication",
+      "documentation": "Documentation"
+    },
+    "compliance": {
+      "compliant": "Compliant",
+      "partially_compliant": "Partially Compliant",
+      "non_compliant": "Non-Compliant",
+      "not_applicable": "Not Applicable"
+    },
     "score": "QA Score",
-    "rating": { "green": "Green (Satisfactory)", "yellow": "Yellow (Needs Improvement)", "red": "Red (Unsatisfactory)" },
+    "rating": {
+      "green": "Green (Satisfactory)",
+      "yellow": "Yellow (Needs Improvement)",
+      "red": "Red (Unsatisfactory)"
+    },
     "independenceError": "QA reviewer must be independent from the audit team",
     "dashboard": "QA Dashboard"
   },
@@ -82,7 +135,10 @@
     "invite": "Invite External Auditor",
     "shares": "Shared Content",
     "shareEntity": "Share Entity",
-    "accessLevel": { "read_only": "Read Only", "read_comment": "Read + Comment" },
+    "accessLevel": {
+      "read_only": "Read Only",
+      "read_comment": "Read + Comment"
+    },
     "expiry": "Expires At",
     "revoke": "Revoke Access",
     "workspace": "External Workspace",

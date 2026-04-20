@@ -113,7 +113,8 @@ export async function POST(req: Request, { params }: RouteParams) {
       riskResponses.length > 0
         ? (
             riskResponses.reduce(
-              (sum: number, r: ResponseRow) => sum + (r.likelihoodAssessment ?? 0),
+              (sum: number, r: ResponseRow) =>
+                sum + (r.likelihoodAssessment ?? 0),
               0,
             ) / riskResponses.length
           ).toFixed(2)

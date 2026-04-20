@@ -67,7 +67,11 @@ export interface DistributionBucket {
  * Sample from a triangular distribution.
  * Uses inverse CDF method for exact triangular sampling.
  */
-function sampleTriangular(min: number, mostLikely: number, max: number): number {
+function sampleTriangular(
+  min: number,
+  mostLikely: number,
+  max: number,
+): number {
   if (min === max) return min;
   const u = Math.random();
   const fc = (mostLikely - min) / (max - min);
@@ -105,8 +109,13 @@ export function runFAIRSimulation(input: FAIRInput): FAIRResult {
   const currency = input.currency ?? "EUR";
 
   // Validate inputs
-  if (input.lefMin > input.lefMostLikely || input.lefMostLikely > input.lefMax) {
-    throw new Error("LEF values must satisfy: lefMin <= lefMostLikely <= lefMax");
+  if (
+    input.lefMin > input.lefMostLikely ||
+    input.lefMostLikely > input.lefMax
+  ) {
+    throw new Error(
+      "LEF values must satisfy: lefMin <= lefMostLikely <= lefMax",
+    );
   }
   if (input.lmMin > input.lmMostLikely || input.lmMostLikely > input.lmMax) {
     throw new Error("LM values must satisfy: lmMin <= lmMostLikely <= lmMax");
@@ -121,7 +130,11 @@ export function runFAIRSimulation(input: FAIRInput): FAIRResult {
   let sumLm = 0;
 
   for (let i = 0; i < iterations; i++) {
-    const lef = sampleTriangular(input.lefMin, input.lefMostLikely, input.lefMax);
+    const lef = sampleTriangular(
+      input.lefMin,
+      input.lefMostLikely,
+      input.lefMax,
+    );
     const lm = sampleTriangular(input.lmMin, input.lmMostLikely, input.lmMax);
     const ale = lef * lm;
     aleValues[i] = ale;

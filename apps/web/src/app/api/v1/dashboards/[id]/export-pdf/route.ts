@@ -43,10 +43,7 @@ export async function POST(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 

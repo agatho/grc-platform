@@ -16,14 +16,24 @@ export async function GET(req: Request) {
   const dimension = url.searchParams.get("dimension");
 
   if (!applicationPortfolioId) {
-    return Response.json({ error: "applicationPortfolioId required" }, { status: 400 });
+    return Response.json(
+      { error: "applicationPortfolioId required" },
+      { status: 400 },
+    );
   }
 
-  let query = db.select().from(applicationAssessmentHistory)
-    .where(and(
-      eq(applicationAssessmentHistory.orgId, ctx.orgId),
-      eq(applicationAssessmentHistory.applicationPortfolioId, applicationPortfolioId),
-    ))
+  const query = db
+    .select()
+    .from(applicationAssessmentHistory)
+    .where(
+      and(
+        eq(applicationAssessmentHistory.orgId, ctx.orgId),
+        eq(
+          applicationAssessmentHistory.applicationPortfolioId,
+          applicationPortfolioId,
+        ),
+      ),
+    )
     .orderBy(desc(applicationAssessmentHistory.changedAt))
     .limit(100);
 

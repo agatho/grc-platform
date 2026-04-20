@@ -18,7 +18,10 @@ export async function PUT(
   const { id } = await params;
   const body = updateBusinessCapabilitySchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -43,13 +46,21 @@ export async function PUT(
     const [updated] = await tx
       .update(businessCapability)
       .set(updateData)
-      .where(and(eq(businessCapability.id, id), eq(businessCapability.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(businessCapability.id, id),
+          eq(businessCapability.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return updated;
   });
 
   if (result === "depth_exceeded") {
-    return Response.json({ error: "Maximum capability depth is 4 levels" }, { status: 400 });
+    return Response.json(
+      { error: "Maximum capability depth is 4 levels" },
+      { status: 400 },
+    );
   }
   if (!result) {
     return Response.json({ error: "Capability not found" }, { status: 404 });

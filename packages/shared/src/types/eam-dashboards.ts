@@ -2,12 +2,33 @@
 
 export type FunctionalFit = "perfect" | "appropriate" | "insufficient";
 export type TechnicalFit = "perfect" | "appropriate" | "insufficient";
-export type SixRStrategy = "retain" | "replatform" | "refactor" | "rearchitect" | "rebuild" | "replace";
-export type BusinessCriticality = "mission_critical" | "business_critical" | "business_operational" | "administrative_service";
+export type SixRStrategy =
+  | "retain"
+  | "replatform"
+  | "refactor"
+  | "rearchitect"
+  | "rebuild"
+  | "replace";
+export type BusinessCriticality =
+  | "mission_critical"
+  | "business_critical"
+  | "business_operational"
+  | "administrative_service";
 export type FunctionalCoverage = "full" | "partial" | "none";
 export type StrategicAlignmentLevel = "aligned" | "partially" | "misaligned";
-export type CapabilityLifecycleStatus = "active" | "transforming" | "retiring" | "planned";
-export type AssessmentDimension = "functional_fit" | "technical_fit" | "six_r_strategy" | "time_classification" | "business_criticality" | "business_value" | "technical_condition";
+export type CapabilityLifecycleStatus =
+  | "active"
+  | "transforming"
+  | "retiring"
+  | "planned";
+export type AssessmentDimension =
+  | "functional_fit"
+  | "technical_fit"
+  | "six_r_strategy"
+  | "time_classification"
+  | "business_criticality"
+  | "business_value"
+  | "technical_condition";
 
 export interface AssessmentHistoryEntry {
   id: string;

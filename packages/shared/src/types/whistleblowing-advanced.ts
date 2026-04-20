@@ -4,7 +4,13 @@ export interface WbInvestigation {
   id: string;
   orgId: string;
   caseId: string;
-  phase: "intake" | "triage" | "investigation" | "decision" | "resolution" | "closed";
+  phase:
+    | "intake"
+    | "triage"
+    | "investigation"
+    | "decision"
+    | "resolution"
+    | "closed";
   priority: "low" | "medium" | "high" | "critical";
   assignedInvestigatorId?: string;
   assignedTeamId?: string;
@@ -13,7 +19,11 @@ export interface WbInvestigation {
   decisionDate?: string;
   resolutionDate?: string;
   closedDate?: string;
-  decisionOutcome?: "substantiated" | "unsubstantiated" | "inconclusive" | "partially_substantiated";
+  decisionOutcome?:
+    | "substantiated"
+    | "unsubstantiated"
+    | "inconclusive"
+    | "partially_substantiated";
   recommendedActions?: string;
   finalReportDocumentId?: string;
 }
@@ -26,7 +36,11 @@ export interface WbEvidence {
   fileUrl?: string;
   fileType?: string;
   fileSizeBytes?: number;
-  sourceType: "reporter_upload" | "investigator_upload" | "system_generated" | "interview_recording";
+  sourceType:
+    | "reporter_upload"
+    | "investigator_upload"
+    | "system_generated"
+    | "interview_recording";
   tags: string[];
   accessedLog: Array<{ userId: string; accessedAt: string }>;
   isSuperseded: boolean;
@@ -49,7 +63,13 @@ export interface WbInterview {
 export interface WbInvestigationLogEntry {
   id: string;
   investigationId: string;
-  activityType: "evidence_added" | "interview_conducted" | "status_changed" | "communication" | "decision" | "note";
+  activityType:
+    | "evidence_added"
+    | "interview_conducted"
+    | "status_changed"
+    | "communication"
+    | "decision"
+    | "note";
   description?: string;
   performedBy?: string;
   createdAt: string;
@@ -72,7 +92,14 @@ export interface WbProtectionCase {
 export interface WbProtectionEvent {
   id: string;
   protectionCaseId: string;
-  eventType: "role_change" | "salary_change" | "performance_review" | "disciplinary" | "assignment_change" | "location_change" | "termination";
+  eventType:
+    | "role_change"
+    | "salary_change"
+    | "performance_review"
+    | "disciplinary"
+    | "assignment_change"
+    | "location_change"
+    | "termination";
   eventDate: string;
   description?: string;
   flag: "normal" | "suspicious" | "critical";
@@ -94,7 +121,11 @@ export interface WbOmbudspersonAssignment {
 export interface WbOmbudspersonActivity {
   id: string;
   ombudspersonUserId: string;
-  action: "case_viewed" | "evidence_uploaded" | "message_sent" | "status_changed";
+  action:
+    | "case_viewed"
+    | "evidence_uploaded"
+    | "message_sent"
+    | "status_changed";
   caseId?: string;
   detail: Record<string, unknown>;
   createdAt: string;

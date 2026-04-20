@@ -37,10 +37,7 @@ export async function GET(
     .select({ bpmnXml: processVersion.bpmnXml })
     .from(processVersion)
     .where(
-      and(
-        eq(processVersion.processId, id),
-        eq(processVersion.isCurrent, true),
-      ),
+      and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
     );
 
   if (!version || !version.bpmnXml) {

@@ -38,7 +38,8 @@ export async function POST(
     payload: {
       after: {
         title: "Test event from ARCTOS",
-        description: "This is a test webhook delivery. If you see this, your webhook is configured correctly.",
+        description:
+          "This is a test webhook delivery. If you see this, your webhook is configured correctly.",
       },
     },
     emittedAt: new Date(),
@@ -55,7 +56,7 @@ export async function POST(
       method: "POST",
       headers: {
         ...formatted.headers,
-        ...(webhook.headers as Record<string, string> ?? {}),
+        ...((webhook.headers as Record<string, string>) ?? {}),
         "X-Arctos-Signature": signature,
         "X-Arctos-Event": "test",
         "User-Agent": "ARCTOS-Webhook/1.0",

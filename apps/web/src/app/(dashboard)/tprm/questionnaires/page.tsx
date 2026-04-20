@@ -150,9 +150,12 @@ function QuestionnairesInner() {
   const handlePublish = useCallback(
     async (id: string) => {
       try {
-        const res = await fetch(`/api/v1/questionnaire-templates/${id}/publish`, {
-          method: "POST",
-        });
+        const res = await fetch(
+          `/api/v1/questionnaire-templates/${id}/publish`,
+          {
+            method: "POST",
+          },
+        );
         if (res.ok) {
           toast.success(t("publishSuccess"));
           void fetchTemplates();
@@ -167,9 +170,12 @@ function QuestionnairesInner() {
   const handleArchive = useCallback(
     async (id: string) => {
       try {
-        const res = await fetch(`/api/v1/questionnaire-templates/${id}/archive`, {
-          method: "POST",
-        });
+        const res = await fetch(
+          `/api/v1/questionnaire-templates/${id}/archive`,
+          {
+            method: "POST",
+          },
+        );
         if (res.ok) {
           toast.success(t("archiveSuccess"));
           void fetchTemplates();
@@ -184,9 +190,12 @@ function QuestionnairesInner() {
   const handleDuplicate = useCallback(
     async (id: string) => {
       try {
-        const res = await fetch(`/api/v1/questionnaire-templates/${id}/duplicate`, {
-          method: "POST",
-        });
+        const res = await fetch(
+          `/api/v1/questionnaire-templates/${id}/duplicate`,
+          {
+            method: "POST",
+          },
+        );
         if (res.ok) {
           toast.success(t("createSuccess"));
           void fetchTemplates();
@@ -359,10 +368,7 @@ function QuestionnairesInner() {
             onClick={fetchTemplates}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
 
           <Dialog open={createOpen} onOpenChange={setCreateOpen}>
@@ -375,9 +381,7 @@ function QuestionnairesInner() {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{t("createTemplate")}</DialogTitle>
-                <DialogDescription>
-                  {t("templateDesc")}
-                </DialogDescription>
+                <DialogDescription>{t("templateDesc")}</DialogDescription>
               </DialogHeader>
               <div className="space-y-4 py-4">
                 <div>
@@ -405,10 +409,7 @@ function QuestionnairesInner() {
                 </div>
               </div>
               <DialogFooter>
-                <Button
-                  variant="outline"
-                  onClick={() => setCreateOpen(false)}
-                >
+                <Button variant="outline" onClick={() => setCreateOpen(false)}>
                   Cancel
                 </Button>
                 <Button

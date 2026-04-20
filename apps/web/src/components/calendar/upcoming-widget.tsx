@@ -78,9 +78,14 @@ export function CalendarUpcomingWidget() {
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Calendar className="h-4 w-4" />
-            <CardTitle className="text-sm font-medium">{t("upcomingTitle")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("upcomingTitle")}
+            </CardTitle>
           </div>
-          <Link href="/calendar" className="text-xs text-primary hover:underline flex items-center gap-1">
+          <Link
+            href="/calendar"
+            className="text-xs text-primary hover:underline flex items-center gap-1"
+          >
             {t("viewAll")}
             <ArrowRight className="h-3 w-3" />
           </Link>
@@ -108,7 +113,9 @@ export function CalendarUpcomingWidget() {
                   style={{ backgroundColor: event.color }}
                 />
                 <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium truncate">{event.title}</div>
+                  <div className="text-sm font-medium truncate">
+                    {event.title}
+                  </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
                     {new Date(event.startAt).toLocaleDateString()}
@@ -117,7 +124,9 @@ export function CalendarUpcomingWidget() {
                 <Badge variant="outline" className="text-xs flex-shrink-0">
                   {MODULE_LABELS[event.module] ?? event.module}
                 </Badge>
-                <Badge className={`text-xs flex-shrink-0 ${urgencyColors[event.urgency]}`}>
+                <Badge
+                  className={`text-xs flex-shrink-0 ${urgencyColors[event.urgency]}`}
+                >
                   {event.daysUntil <= 0 ? t("today") : `${event.daysUntil}d`}
                 </Badge>
               </Link>

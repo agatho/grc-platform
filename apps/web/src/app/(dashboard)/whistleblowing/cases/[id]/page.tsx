@@ -89,11 +89,14 @@ function CaseDetailInner() {
   const handleAcknowledge = async () => {
     setAcknowledging(true);
     try {
-      const res = await fetch(`/api/v1/whistleblowing/cases/${id}/acknowledge`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const res = await fetch(
+        `/api/v1/whistleblowing/cases/${id}/acknowledge`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
       if (res.ok) fetchCase();
     } finally {
       setAcknowledging(false);
@@ -142,17 +145,23 @@ function CaseDetailInner() {
   const currentStepIdx = STATUS_STEPS.indexOf(caseRow.status);
 
   const daysUntilAck = Math.ceil(
-    (new Date(caseRow.acknowledgeDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    (new Date(caseRow.acknowledgeDeadline).getTime() - Date.now()) /
+      (1000 * 60 * 60 * 24),
   );
   const daysUntilResponse = Math.ceil(
-    (new Date(caseRow.responseDeadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
+    (new Date(caseRow.responseDeadline).getTime() - Date.now()) /
+      (1000 * 60 * 60 * 24),
   );
 
   return (
     <div className="space-y-6">
       {/* Back + header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/whistleblowing/cases")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/whistleblowing/cases")}
+        >
           <ArrowLeft className="h-4 w-4 mr-1" />
           {t("backToCases")}
         </Button>
@@ -187,7 +196,9 @@ function CaseDetailInner() {
 
           {/* Messages */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-sm font-medium text-gray-700 mb-4">{t("messages")}</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-4">
+              {t("messages")}
+            </h2>
 
             {messages.length === 0 ? (
               <p className="text-sm text-gray-400 text-center py-6">
@@ -208,9 +219,13 @@ function CaseDetailInner() {
                       }`}
                     >
                       <p className="text-xs font-medium mb-1">
-                        {msg.authorType === "ombudsperson" ? t("ombudsperson") : t("whistleblower")}
+                        {msg.authorType === "ombudsperson"
+                          ? t("ombudsperson")
+                          : t("whistleblower")}
                       </p>
-                      <p className="text-sm whitespace-pre-wrap">{msg.content}</p>
+                      <p className="text-sm whitespace-pre-wrap">
+                        {msg.content}
+                      </p>
                       <p className="text-xs text-gray-400 mt-1">
                         {new Date(msg.createdAt).toLocaleString("de-DE")}
                       </p>
@@ -232,7 +247,11 @@ function CaseDetailInner() {
                   className="flex-1 rounded-lg border border-gray-300 p-3 text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500 resize-none"
                 />
                 <Button type="submit" disabled={sending || !messageText.trim()}>
-                  {sending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Send className="h-4 w-4" />}
+                  {sending ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Send className="h-4 w-4" />
+                  )}
                 </Button>
               </form>
             )}
@@ -240,17 +259,26 @@ function CaseDetailInner() {
 
           {/* Evidence */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h2 className="text-sm font-medium text-gray-700 mb-4">{t("evidence")}</h2>
+            <h2 className="text-sm font-medium text-gray-700 mb-4">
+              {t("evidence")}
+            </h2>
             {evidence.length === 0 ? (
-              <p className="text-sm text-gray-400 text-center py-4">{t("noEvidence")}</p>
+              <p className="text-sm text-gray-400 text-center py-4">
+                {t("noEvidence")}
+              </p>
             ) : (
               <div className="space-y-2">
                 {evidence.map((ev) => (
-                  <div key={ev.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                  <div
+                    key={ev.id}
+                    className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                  >
                     <div className="flex items-center gap-3">
                       <FileText className="h-4 w-4 text-gray-400" />
                       <div>
-                        <p className="text-sm font-medium text-gray-700">{ev.fileName}</p>
+                        <p className="text-sm font-medium text-gray-700">
+                          {ev.fileName}
+                        </p>
                         <p className="text-xs text-gray-400">
                           SHA-256: {ev.sha256Hash?.slice(0, 16)}...
                         </p>
@@ -268,24 +296,36 @@ function CaseDetailInner() {
           {/* Resolution form */}
           {showResolveForm && (
             <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h2 className="text-sm font-medium text-gray-700 mb-4">{t("resolveCase")}</h2>
+              <h2 className="text-sm font-medium text-gray-700 mb-4">
+                {t("resolveCase")}
+              </h2>
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">{t("resolutionCategory")}</label>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    {t("resolutionCategory")}
+                  </label>
                   <select
                     value={resolutionCategory}
                     onChange={(e) => setResolutionCategory(e.target.value)}
                     className="w-full text-sm border border-gray-300 rounded-md px-3 py-2"
                   >
                     <option value="">{t("selectCategory")}</option>
-                    <option value="substantiated">{t("res.substantiated")}</option>
-                    <option value="unsubstantiated">{t("res.unsubstantiated")}</option>
-                    <option value="inconclusive">{t("res.inconclusive")}</option>
+                    <option value="substantiated">
+                      {t("res.substantiated")}
+                    </option>
+                    <option value="unsubstantiated">
+                      {t("res.unsubstantiated")}
+                    </option>
+                    <option value="inconclusive">
+                      {t("res.inconclusive")}
+                    </option>
                     <option value="referred">{t("res.referred")}</option>
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">{t("resolutionText")}</label>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    {t("resolutionText")}
+                  </label>
                   <textarea
                     value={resolution}
                     onChange={(e) => setResolution(e.target.value)}
@@ -296,7 +336,9 @@ function CaseDetailInner() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm text-gray-600 mb-1">{t("finalMessage")}</label>
+                  <label className="block text-sm text-gray-600 mb-1">
+                    {t("finalMessage")}
+                  </label>
                   <textarea
                     value={resolutionMessage}
                     onChange={(e) => setResolutionMessage(e.target.value)}
@@ -309,12 +351,19 @@ function CaseDetailInner() {
                 <div className="flex gap-2">
                   <Button
                     onClick={handleResolve}
-                    disabled={resolving || resolution.length < 10 || !resolutionCategory}
+                    disabled={
+                      resolving || resolution.length < 10 || !resolutionCategory
+                    }
                   >
-                    {resolving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {resolving ? (
+                      <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    ) : null}
                     {t("resolveCase")}
                   </Button>
-                  <Button variant="outline" onClick={() => setShowResolveForm(false)}>
+                  <Button
+                    variant="outline"
+                    onClick={() => setShowResolveForm(false)}
+                  >
                     {t("cancel")}
                   </Button>
                 </div>
@@ -327,7 +376,9 @@ function CaseDetailInner() {
         <div className="space-y-6">
           {/* Deadlines */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">{t("deadlines")}</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-4">
+              {t("deadlines")}
+            </h3>
 
             <div className="space-y-4">
               {/* 7-day deadline */}
@@ -337,13 +388,21 @@ function CaseDetailInner() {
                   <span className="text-sm text-gray-600">{t("sla7d")}</span>
                 </div>
                 {caseRow.acknowledgedAt ? (
-                  <Badge className="bg-green-100 text-green-900 text-xs">{t("completed")}</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">
+                    {t("completed")}
+                  </Badge>
                 ) : daysUntilAck > 3 ? (
-                  <Badge className="bg-green-100 text-green-900 text-xs">{daysUntilAck}d</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">
+                    {daysUntilAck}d
+                  </Badge>
                 ) : daysUntilAck > 0 ? (
-                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">{daysUntilAck}d</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">
+                    {daysUntilAck}d
+                  </Badge>
                 ) : (
-                  <Badge className="bg-red-100 text-red-900 text-xs">{t("overdue")}</Badge>
+                  <Badge className="bg-red-100 text-red-900 text-xs">
+                    {t("overdue")}
+                  </Badge>
                 )}
               </div>
 
@@ -354,7 +413,11 @@ function CaseDetailInner() {
                   onClick={handleAcknowledge}
                   disabled={acknowledging}
                 >
-                  {acknowledging ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <CheckCircle2 className="h-4 w-4 mr-2" />}
+                  {acknowledging ? (
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                  ) : (
+                    <CheckCircle2 className="h-4 w-4 mr-2" />
+                  )}
                   {t("acknowledge")}
                 </Button>
               )}
@@ -366,13 +429,21 @@ function CaseDetailInner() {
                   <span className="text-sm text-gray-600">{t("sla3m")}</span>
                 </div>
                 {caseRow.resolvedAt ? (
-                  <Badge className="bg-green-100 text-green-900 text-xs">{t("completed")}</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">
+                    {t("completed")}
+                  </Badge>
                 ) : daysUntilResponse > 14 ? (
-                  <Badge className="bg-green-100 text-green-900 text-xs">{daysUntilResponse}d</Badge>
+                  <Badge className="bg-green-100 text-green-900 text-xs">
+                    {daysUntilResponse}d
+                  </Badge>
                 ) : daysUntilResponse > 0 ? (
-                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">{daysUntilResponse}d</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-900 text-xs">
+                    {daysUntilResponse}d
+                  </Badge>
                 ) : (
-                  <Badge className="bg-red-100 text-red-900 text-xs">{t("overdue")}</Badge>
+                  <Badge className="bg-red-100 text-red-900 text-xs">
+                    {t("overdue")}
+                  </Badge>
                 )}
               </div>
             </div>
@@ -380,7 +451,9 @@ function CaseDetailInner() {
 
           {/* Status workflow */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">{t("workflow")}</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-4">
+              {t("workflow")}
+            </h3>
             <div className="space-y-3">
               {STATUS_STEPS.map((step, idx) => {
                 const isCompleted = idx < currentStepIdx;
@@ -402,7 +475,9 @@ function CaseDetailInner() {
                         <Circle className="h-4 w-4" />
                       )}
                     </div>
-                    <span className={`text-sm ${isCurrent ? "font-medium text-gray-900" : "text-gray-500"}`}>
+                    <span
+                      className={`text-sm ${isCurrent ? "font-medium text-gray-900" : "text-gray-500"}`}
+                    >
                       {t(`status.${step}`)}
                     </span>
                   </div>
@@ -411,19 +486,31 @@ function CaseDetailInner() {
             </div>
 
             {/* Resolve button */}
-            {(caseRow.status === "investigating" || caseRow.status === "acknowledged") && !showResolveForm && (
-              <Button className="w-full mt-4" variant="outline" onClick={() => setShowResolveForm(true)}>
-                {t("resolveCase")}
-              </Button>
-            )}
+            {(caseRow.status === "investigating" ||
+              caseRow.status === "acknowledged") &&
+              !showResolveForm && (
+                <Button
+                  className="w-full mt-4"
+                  variant="outline"
+                  onClick={() => setShowResolveForm(true)}
+                >
+                  {t("resolveCase")}
+                </Button>
+              )}
           </div>
 
           {/* Resolution info */}
           {caseRow.resolution && (
             <div className="bg-white border border-gray-200 rounded-xl p-6">
-              <h3 className="text-sm font-medium text-gray-700 mb-3">{t("resolutionTitle")}</h3>
-              <Badge className="text-xs mb-2">{t(`res.${caseRow.resolutionCategory}`)}</Badge>
-              <p className="text-sm text-gray-600 whitespace-pre-wrap">{caseRow.resolution}</p>
+              <h3 className="text-sm font-medium text-gray-700 mb-3">
+                {t("resolutionTitle")}
+              </h3>
+              <Badge className="text-xs mb-2">
+                {t(`res.${caseRow.resolutionCategory}`)}
+              </Badge>
+              <p className="text-sm text-gray-600 whitespace-pre-wrap">
+                {caseRow.resolution}
+              </p>
               {caseRow.resolvedAt && (
                 <p className="text-xs text-gray-400 mt-2">
                   {new Date(caseRow.resolvedAt).toLocaleDateString("de-DE")}
@@ -434,7 +521,9 @@ function CaseDetailInner() {
 
           {/* Metadata */}
           <div className="bg-white border border-gray-200 rounded-xl p-6">
-            <h3 className="text-sm font-medium text-gray-700 mb-4">{t("metadata")}</h3>
+            <h3 className="text-sm font-medium text-gray-700 mb-4">
+              {t("metadata")}
+            </h3>
             <div className="space-y-3 text-sm">
               <div className="flex items-center gap-2 text-gray-500">
                 <Hash className="h-4 w-4" />

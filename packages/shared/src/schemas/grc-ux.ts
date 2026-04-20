@@ -58,8 +58,12 @@ export const resourceClassificationValues = [
   "non_critical",
 ] as const;
 
-export const resourceClassificationSchema = z.enum(resourceClassificationValues);
-export type ResourceClassification = z.infer<typeof resourceClassificationSchema>;
+export const resourceClassificationSchema = z.enum(
+  resourceClassificationValues,
+);
+export type ResourceClassification = z.infer<
+  typeof resourceClassificationSchema
+>;
 
 // ─── Damage Index ─────────────────────────────────────────────
 
@@ -78,7 +82,14 @@ export interface TodoItem {
   id: string;
   elementId: string;
   title: string;
-  type: "evaluation" | "approval" | "overdue" | "treatment" | "assessment" | "review" | "incident";
+  type:
+    | "evaluation"
+    | "approval"
+    | "overdue"
+    | "treatment"
+    | "assessment"
+    | "review"
+    | "incident";
   dueDate: string | null;
   isOverdue: boolean;
   entityType: string;

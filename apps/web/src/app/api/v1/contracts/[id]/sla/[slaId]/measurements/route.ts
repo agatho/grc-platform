@@ -9,7 +9,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string; slaId: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("contract", ctx.orgId, req.method);
@@ -71,7 +76,10 @@ export async function GET(
     .select()
     .from(contractSlaMeasurement)
     .where(
-      and(eq(contractSlaMeasurement.slaId, slaId), eq(contractSlaMeasurement.orgId, ctx.orgId)),
+      and(
+        eq(contractSlaMeasurement.slaId, slaId),
+        eq(contractSlaMeasurement.orgId, ctx.orgId),
+      ),
     )
     .orderBy(desc(contractSlaMeasurement.periodStart));
 

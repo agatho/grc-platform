@@ -58,16 +58,21 @@ export async function POST(req: Request) {
 
   // Temporal correlation: incidents within 48h with same category
   const sorted = [...incidents].sort(
-    (a, b) => new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime(),
+    (a, b) =>
+      new Date(a.detectedAt).getTime() - new Date(b.detectedAt).getTime(),
   );
 
   for (let i = 0; i < sorted.length; i++) {
     const cluster: typeof sorted = [sorted[i]];
     for (let j = i + 1; j < sorted.length; j++) {
       const timeDiff =
-        (new Date(sorted[j].detectedAt).getTime() - new Date(sorted[i].detectedAt).getTime()) /
+        (new Date(sorted[j].detectedAt).getTime() -
+          new Date(sorted[i].detectedAt).getTime()) /
         (1000 * 3600);
-      if (timeDiff <= TEMPORAL_WINDOW_HOURS && sorted[j].incidentType === sorted[i].incidentType) {
+      if (
+        timeDiff <= TEMPORAL_WINDOW_HOURS &&
+        sorted[j].incidentType === sorted[i].incidentType
+      ) {
         cluster.push(sorted[j]);
       }
     }
@@ -82,8 +87,14 @@ export async function POST(req: Request) {
           confidence,
           reasoning: `${cluster.length} incidents of type '${sorted[i].incidentType}' detected within ${TEMPORAL_WINDOW_HOURS}h window`,
           sharedFactorsJson: [
-            { factor: "temporal_proximity", description: `Within ${TEMPORAL_WINDOW_HOURS}h` },
-            { factor: "same_type", description: `Type: ${sorted[i].incidentType}` },
+            {
+              factor: "temporal_proximity",
+              description: `Within ${TEMPORAL_WINDOW_HOURS}h`,
+            },
+            {
+              factor: "same_type",
+              description: `Type: ${sorted[i].incidentType}`,
+            },
           ],
         });
       }
@@ -111,11 +122,14 @@ export async function POST(req: Request) {
     return rows;
   });
 
-  return Response.json({
-    data: saved,
-    meta: {
-      incidentsAnalyzed: incidents.length,
-      correlationsFound: saved.length,
+  return Response.json(
+    {
+      data: saved,
+      meta: {
+        incidentsAnalyzed: incidents.length,
+        correlationsFound: saved.length,
+      },
     },
-  }, { status: 201 });
+    { status: 201 },
+  );
 }

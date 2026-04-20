@@ -33,7 +33,10 @@ export async function processPushNotifications(): Promise<void> {
         } else {
           await db
             .update(pushNotification)
-            .set({ status: "failed", errorMessage: "Device not found or inactive" })
+            .set({
+              status: "failed",
+              errorMessage: "Device not found or inactive",
+            })
             .where(eq(pushNotification.id, notif.id));
         }
       }

@@ -2,7 +2,12 @@ import { db, assessmentRiskEval } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { submitRiskEvalSchema } from "@grc/shared";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/assessments/[id]/risk-evaluations
 export async function GET(
@@ -24,7 +29,17 @@ export async function GET(
     eq(assessmentRiskEval.assessmentRunId, id),
   ];
   if (decisionFilter) {
-    conditions.push(eq(assessmentRiskEval.decision, decisionFilter as "accept" | "mitigate" | "transfer" | "avoid" | "pending"));
+    conditions.push(
+      eq(
+        assessmentRiskEval.decision,
+        decisionFilter as
+          | "accept"
+          | "mitigate"
+          | "transfer"
+          | "avoid"
+          | "pending",
+      ),
+    );
   }
 
   const rows = await db

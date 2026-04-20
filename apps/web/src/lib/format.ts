@@ -40,7 +40,10 @@ export function formatDate(date: string | Date, locale: string = "de"): string {
  * DE: dd.MM.yyyy HH:mm (e.g., 25.03.2026 14:30)
  * EN: MM/dd/yyyy h:mm AM/PM (e.g., 03/25/2026 2:30 PM)
  */
-export function formatDateTime(date: string | Date, locale: string = "de"): string {
+export function formatDateTime(
+  date: string | Date,
+  locale: string = "de",
+): string {
   const d = toDate(date);
   const resolved = resolveLocale(locale);
 

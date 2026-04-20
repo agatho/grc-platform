@@ -8,13 +8,13 @@ Es ergaenzt [`docs/runbook.md`](./runbook.md) um Katastrophen-Faelle.
 
 ## RPO / RTO-Ziele
 
-| Szenario | RPO (max. Datenverlust) | RTO (max. Downtime) |
-|---|---|---|
-| Einzelner Container-Crash | 0 | 5 min |
-| DB-Korruption | 24h (nightly dump) | 2h |
-| Kompletter Host-Ausfall | 24h | 8h (neuer Hetzner-Host + Restore) |
-| Region-Ausfall (Falkenstein) | 24h | 12h (B2 -> neuer Host in anderer Region) |
-| Ransomware / Malware-Eindringen | 24h | 24h (forensischer Clean-Restore) |
+| Szenario                        | RPO (max. Datenverlust) | RTO (max. Downtime)                      |
+| ------------------------------- | ----------------------- | ---------------------------------------- |
+| Einzelner Container-Crash       | 0                       | 5 min                                    |
+| DB-Korruption                   | 24h (nightly dump)      | 2h                                       |
+| Kompletter Host-Ausfall         | 24h                     | 8h (neuer Hetzner-Host + Restore)        |
+| Region-Ausfall (Falkenstein)    | 24h                     | 12h (B2 -> neuer Host in anderer Region) |
+| Ransomware / Malware-Eindringen | 24h                     | 24h (forensischer Clean-Restore)         |
 
 RTO misst von "Incident Confirmed" bis "Service Back Online fuer >50 % der
 Tenants". RPO misst den max. Datenverlust, gemessen vom letzten bekannten
@@ -22,13 +22,13 @@ Guten-Backup.
 
 ## Backup-Inventar
 
-| Scope | Frequenz | Ort | Retention |
-|---|---|---|---|
-| PostgreSQL dump (alle DBs) | nightly 02:00 UTC | `/opt/arctos/backups/` | 30 Tage lokal |
-| PostgreSQL dump (off-site) | nightly, gestaged nach local | Backblaze B2 EU (ADR-015) | 90 Tage, append-only |
-| Docker-Images | bei Deploy | Registry + local cache | n/a |
-| Code (repo) | on commit | GitHub + local `/opt/arctos/source/` | unbegrenzt |
-| ENV-Files + Secrets | bei manueller Aenderung | `/opt/arctos/config/.env*` + 1Password-Vault | live |
+| Scope                      | Frequenz                     | Ort                                          | Retention            |
+| -------------------------- | ---------------------------- | -------------------------------------------- | -------------------- |
+| PostgreSQL dump (alle DBs) | nightly 02:00 UTC            | `/opt/arctos/backups/`                       | 30 Tage lokal        |
+| PostgreSQL dump (off-site) | nightly, gestaged nach local | Backblaze B2 EU (ADR-015)                    | 90 Tage, append-only |
+| Docker-Images              | bei Deploy                   | Registry + local cache                       | n/a                  |
+| Code (repo)                | on commit                    | GitHub + local `/opt/arctos/source/`         | unbegrenzt           |
+| ENV-Files + Secrets        | bei manueller Aenderung      | `/opt/arctos/config/.env*` + 1Password-Vault | live                 |
 
 ## Szenario 1 — Container-Crash
 
@@ -36,6 +36,7 @@ Guten-Backup.
 fehlt oder in Restart-Loop.
 
 **Vorgehen**:
+
 1. `cd /opt/arctos && docker compose logs web --tail=100` -- Error-Cause identifizieren
 2. `docker compose restart web` -- einfache Restart-Heilung
 3. Wenn wiederholt: `docker compose down web && docker compose up -d web`
@@ -49,6 +50,7 @@ fehlt oder in Restart-Loop.
 `schema-drift` meldet `mismatch`, oder psql-Errors in Web-Log.
 
 **Vorgehen**:
+
 1. Web-Container stoppen (Read-Only-Mode): `docker compose stop web web-daimon web-*`
 2. DB-Status pruefen: `docker compose exec postgres psql -U grc -d grc_platform -c "SELECT current_database(), pg_is_in_recovery();"`
 3. Backup-Liste anzeigen: `ls -lht /opt/arctos/backups/*.dump | head`
@@ -67,6 +69,7 @@ Restore-Test-DB validieren.
 Problem oder "deallocated".
 
 **Vorgehen**:
+
 1. Hetzner-Support-Ticket oeffnen (falls nicht klar ob Hetzner-seitig)
 2. **Paralleler Weg**: neuer Hetzner-Host bestellen (selbes Produkt) --
    CX42 oder grosses Dedicated je nach Setup
@@ -86,6 +89,7 @@ Geschaetzte RTO: 6-8h ab Bestaetigung des Ausfalls.
 pruefen).
 
 **Vorgehen**:
+
 1. Wie Szenario 3, aber **andere Region** waehlen (Helsinki oder Nuernberg)
 2. B2 ist multi-region, Download aus `eu-central` sollte weiterhin funktionieren
 3. DNS-TTL pruefen: bei 300s schnell, bei 86400s problematisch (CWS soll
@@ -100,6 +104,7 @@ Breakage via `/api/v1/audit-log/integrity`, ungewohnte Login-Events in
 `access_log`.
 
 **Vorgehen**:
+
 1. **Sofort**: Web-Container stoppen, Read-Only-Incident-Banner auf allen
    oeffentlichen URLs (Caddy-Static-Fallback)
 2. **Forensik vor Restore**: Live-DB-Snapshot in Forensic-Storage kopieren
@@ -120,23 +125,23 @@ einen "sauberen" Vorher-Stand als Evidenz.
 
 ## Regelmaessige Uebungen
 
-| Test | Frequenz | Owner | Naechster Termin |
-|---|---|---|---|
-| Backup-Restore in Restore-DB | monatlich | Ops | 2026-05-01 |
-| B2-Download + pg_restore Dry-Run | quartalsweise | Ops | 2026-07-01 |
-| Runbook-Durchspiel mit Szenario 2 | halbjaehrlich | Maintainer + Ops | 2026-10-01 |
-| Region-Ausfall Tabletop | jaehrlich | Maintainer | 2026-12-01 |
+| Test                              | Frequenz      | Owner            | Naechster Termin |
+| --------------------------------- | ------------- | ---------------- | ---------------- |
+| Backup-Restore in Restore-DB      | monatlich     | Ops              | 2026-05-01       |
+| B2-Download + pg_restore Dry-Run  | quartalsweise | Ops              | 2026-07-01       |
+| Runbook-Durchspiel mit Szenario 2 | halbjaehrlich | Maintainer + Ops | 2026-10-01       |
+| Region-Ausfall Tabletop           | jaehrlich     | Maintainer       | 2026-12-01       |
 
 Uebungs-Ergebnisse werden in `bc_exercise`-Tabelle (BCMS-Modul) erfasst.
 
 ## Kontakte
 
-| Rolle | Name | Kanal |
-|---|---|---|
-| Maintainer / Code-Owner | @agatho | GitHub, agatho@charliehund.de |
-| Hetzner-Support | Ticket-System | <https://console.hetzner.cloud> |
-| Backblaze-Support | Ticket-System | <https://secure.backblaze.com/contact_support.htm> |
-| Registrar (Charliehund.de) | tbd | tbd |
+| Rolle                      | Name          | Kanal                                              |
+| -------------------------- | ------------- | -------------------------------------------------- |
+| Maintainer / Code-Owner    | @agatho       | GitHub, agatho@charliehund.de                      |
+| Hetzner-Support            | Ticket-System | <https://console.hetzner.cloud>                    |
+| Backblaze-Support          | Ticket-System | <https://secure.backblaze.com/contact_support.htm> |
+| Registrar (Charliehund.de) | tbd           | tbd                                                |
 
 ## Verwandte Dokumente
 

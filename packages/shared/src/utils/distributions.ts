@@ -82,7 +82,7 @@ function standardNormal(): number {
     s = u * u + v * v;
   } while (s >= 1 || s === 0);
 
-  return u * Math.sqrt(-2 * Math.log(s) / s);
+  return u * Math.sqrt((-2 * Math.log(s)) / s);
 }
 
 /**
@@ -107,8 +107,8 @@ export function pertDistribution(
   if (min === max) return min;
 
   const range = max - min;
-  const alpha = 1 + lambda * (mostLikely - min) / range;
-  const beta = 1 + lambda * (max - mostLikely) / range;
+  const alpha = 1 + (lambda * (mostLikely - min)) / range;
+  const beta = 1 + (lambda * (max - mostLikely)) / range;
 
   const sample = betaDistribution(alpha, beta);
   return min + sample * range;

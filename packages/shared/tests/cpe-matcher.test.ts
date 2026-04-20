@@ -102,9 +102,7 @@ describe("cpeMatches", () => {
   });
 
   it("should NOT match when no CVE CPE matches", () => {
-    const cveCpes = [
-      "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
-    ];
+    const cveCpes = ["cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*"];
     const assetCpe = "cpe:2.3:a:microsoft:iis:*:*:*:*:*:*:*:*";
     expect(cpeMatches(cveCpes, assetCpe)).toBe(false);
   });
@@ -146,7 +144,9 @@ describe("cvssToSeverity", () => {
 
 describe("extractCpeVendorProduct", () => {
   it("should extract vendor and product from CPE", () => {
-    const result = extractCpeVendorProduct("cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*");
+    const result = extractCpeVendorProduct(
+      "cpe:2.3:a:apache:log4j:2.14.1:*:*:*:*:*:*:*",
+    );
     expect(result).toEqual({
       vendor: "apache",
       product: "log4j",

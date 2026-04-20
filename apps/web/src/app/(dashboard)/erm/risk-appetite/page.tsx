@@ -103,7 +103,12 @@ function RiskAppetiteInner() {
             {t("riskAppetite.subtitle")}
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -139,10 +144,14 @@ function RiskAppetiteInner() {
                 </span>
                 <div className="flex items-center gap-2">
                   <span className="text-xs text-gray-500">
-                    {t("riskAppetite.avg")}: {item.avgResidual} / {t("riskAppetite.threshold")}: {item.appetiteThreshold}
+                    {t("riskAppetite.avg")}: {item.avgResidual} /{" "}
+                    {t("riskAppetite.threshold")}: {item.appetiteThreshold}
                   </span>
                   {item.isBreached && (
-                    <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200 text-[10px]">
+                    <Badge
+                      variant="outline"
+                      className="bg-red-50 text-red-700 border-red-200 text-[10px]"
+                    >
                       {item.breachCount} {t("riskAppetite.breaches")}
                     </Badge>
                   )}
@@ -154,7 +163,9 @@ function RiskAppetiteInner() {
                   className={`absolute inset-y-0 left-0 rounded-full transition-all ${
                     item.isBreached ? "bg-red-400" : "bg-green-400"
                   }`}
-                  style={{ width: `${Math.min(100, (item.avgResidual / 25) * 100)}%` }}
+                  style={{
+                    width: `${Math.min(100, (item.avgResidual / 25) * 100)}%`,
+                  }}
                 />
                 {/* Appetite threshold line */}
                 <div
@@ -208,11 +219,16 @@ function RiskAppetiteInner() {
               </thead>
               <tbody>
                 {breaches.map((b) => (
-                  <tr key={b.riskId} className="border-b border-gray-100 hover:bg-gray-50">
+                  <tr
+                    key={b.riskId}
+                    className="border-b border-gray-100 hover:bg-gray-50"
+                  >
                     <td className="py-2 px-3 font-medium text-gray-900 max-w-[200px] truncate">
                       {b.riskTitle}
                     </td>
-                    <td className="py-2 px-3 text-gray-600 capitalize">{b.riskCategory}</td>
+                    <td className="py-2 px-3 text-gray-600 capitalize">
+                      {b.riskCategory}
+                    </td>
                     <td className="py-2 px-3 text-right font-mono text-red-600">
                       {b.residualScore}
                     </td>
@@ -220,7 +236,10 @@ function RiskAppetiteInner() {
                       {b.appetiteThreshold}
                     </td>
                     <td className="py-2 px-3 text-right">
-                      <Badge variant="outline" className="bg-red-50 text-red-700 border-red-200">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-50 text-red-700 border-red-200"
+                      >
                         +{b.delta}
                       </Badge>
                     </td>

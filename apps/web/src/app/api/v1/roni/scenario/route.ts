@@ -77,8 +77,7 @@ export async function POST(req: Request) {
 
   // Current baseline RONI (sum of all ALE reductions that would be lost)
   const currentTotalAleReduction = calculations.reduce(
-    (sum, c) =>
-      sum + (Number(c.inherentAle ?? 0) - Number(c.residualAle ?? 0)),
+    (sum, c) => sum + (Number(c.inherentAle ?? 0) - Number(c.residualAle ?? 0)),
     0,
   );
 
@@ -92,7 +91,8 @@ export async function POST(req: Request) {
       droppedCount: droppedTreatments.length,
       newRoni: Math.round(newRoni * 100) / 100,
       deltaRoni: Math.round(newRoni * 100) / 100,
-      currentTotalAleReduction: Math.round(currentTotalAleReduction * 100) / 100,
+      currentTotalAleReduction:
+        Math.round(currentTotalAleReduction * 100) / 100,
       remainingProtection:
         Math.round((currentTotalAleReduction - newRoni) * 100) / 100,
     },

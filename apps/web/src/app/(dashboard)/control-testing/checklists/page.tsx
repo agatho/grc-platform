@@ -26,13 +26,21 @@ export default function ControlTestChecklistsPage() {
     try {
       const res = await fetch("/api/v1/control-testing/checklists?limit=50");
       if (res.ok) setChecklists((await res.json()).data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -40,8 +48,14 @@ export default function ControlTestChecklistsPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("checklists.title")}</h1>
         <div className="flex gap-2">
-          <Button><Plus className="h-4 w-4 mr-2" />{t("checklists.create")}</Button>
-          <Button variant="outline"><Sparkles className="h-4 w-4 mr-2" />{t("checklists.aiGenerate")}</Button>
+          <Button>
+            <Plus className="h-4 w-4 mr-2" />
+            {t("checklists.create")}
+          </Button>
+          <Button variant="outline">
+            <Sparkles className="h-4 w-4 mr-2" />
+            {t("checklists.aiGenerate")}
+          </Button>
         </div>
       </div>
       <div className="space-y-3">
@@ -54,13 +68,28 @@ export default function ControlTestChecklistsPage() {
                   <div>
                     <p className="font-medium">{cl.name}</p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
-                      <span>{cl.completedItems}/{cl.totalItems} {t("checklists.items")}</span>
-                      {cl.aiGenerated && <Badge variant="secondary"><Sparkles className="h-3 w-3 mr-1" />AI</Badge>}
-                      {cl.dueDate && <span>{t("checklists.due")}: {new Date(cl.dueDate).toLocaleDateString()}</span>}
+                      <span>
+                        {cl.completedItems}/{cl.totalItems}{" "}
+                        {t("checklists.items")}
+                      </span>
+                      {cl.aiGenerated && (
+                        <Badge variant="secondary">
+                          <Sparkles className="h-3 w-3 mr-1" />
+                          AI
+                        </Badge>
+                      )}
+                      {cl.dueDate && (
+                        <span>
+                          {t("checklists.due")}:{" "}
+                          {new Date(cl.dueDate).toLocaleDateString()}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
-                <Badge className={STATUS_COLORS[cl.status] ?? ""}>{cl.status}</Badge>
+                <Badge className={STATUS_COLORS[cl.status] ?? ""}>
+                  {cl.status}
+                </Badge>
               </div>
             </CardContent>
           </Card>

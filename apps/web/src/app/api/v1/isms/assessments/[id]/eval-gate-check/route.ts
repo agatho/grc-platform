@@ -23,7 +23,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(assessmentRun)
     .where(and(eq(assessmentRun.id, id), eq(assessmentRun.orgId, ctx.orgId)));
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
 
   const snapshot: AssessmentSnapshot = {
@@ -44,7 +47,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const blockers = validateGate4Coverage(snapshot);
   const coverage =
     snapshot.totalEvaluations > 0
-      ? Math.round((snapshot.completedEvaluations / snapshot.totalEvaluations) * 100)
+      ? Math.round(
+          (snapshot.completedEvaluations / snapshot.totalEvaluations) * 100,
+        )
       : 0;
 
   return Response.json({

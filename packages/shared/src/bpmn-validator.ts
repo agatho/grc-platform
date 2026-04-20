@@ -35,28 +35,50 @@ const EXCLUSIVE_GATEWAY_TAGS = ["bpmn:exclusiveGateway", "exclusiveGateway"];
 const SEQUENCE_FLOW_TAGS = ["bpmn:sequenceFlow", "sequenceFlow"];
 
 const FLOW_NODE_TAGS = [
-  "bpmn:startEvent", "startEvent",
-  "bpmn:endEvent", "endEvent",
-  "bpmn:task", "task",
-  "bpmn:userTask", "userTask",
-  "bpmn:serviceTask", "serviceTask",
-  "bpmn:sendTask", "sendTask",
-  "bpmn:receiveTask", "receiveTask",
-  "bpmn:manualTask", "manualTask",
-  "bpmn:businessRuleTask", "businessRuleTask",
-  "bpmn:scriptTask", "scriptTask",
-  "bpmn:exclusiveGateway", "exclusiveGateway",
-  "bpmn:parallelGateway", "parallelGateway",
-  "bpmn:inclusiveGateway", "inclusiveGateway",
-  "bpmn:eventBasedGateway", "eventBasedGateway",
-  "bpmn:complexGateway", "complexGateway",
-  "bpmn:intermediateCatchEvent", "intermediateCatchEvent",
-  "bpmn:intermediateThrowEvent", "intermediateThrowEvent",
-  "bpmn:boundaryEvent", "boundaryEvent",
-  "bpmn:subProcess", "subProcess",
-  "bpmn:adHocSubProcess", "adHocSubProcess",
-  "bpmn:transaction", "transaction",
-  "bpmn:callActivity", "callActivity",
+  "bpmn:startEvent",
+  "startEvent",
+  "bpmn:endEvent",
+  "endEvent",
+  "bpmn:task",
+  "task",
+  "bpmn:userTask",
+  "userTask",
+  "bpmn:serviceTask",
+  "serviceTask",
+  "bpmn:sendTask",
+  "sendTask",
+  "bpmn:receiveTask",
+  "receiveTask",
+  "bpmn:manualTask",
+  "manualTask",
+  "bpmn:businessRuleTask",
+  "businessRuleTask",
+  "bpmn:scriptTask",
+  "scriptTask",
+  "bpmn:exclusiveGateway",
+  "exclusiveGateway",
+  "bpmn:parallelGateway",
+  "parallelGateway",
+  "bpmn:inclusiveGateway",
+  "inclusiveGateway",
+  "bpmn:eventBasedGateway",
+  "eventBasedGateway",
+  "bpmn:complexGateway",
+  "complexGateway",
+  "bpmn:intermediateCatchEvent",
+  "intermediateCatchEvent",
+  "bpmn:intermediateThrowEvent",
+  "intermediateThrowEvent",
+  "bpmn:boundaryEvent",
+  "boundaryEvent",
+  "bpmn:subProcess",
+  "subProcess",
+  "bpmn:adHocSubProcess",
+  "adHocSubProcess",
+  "bpmn:transaction",
+  "transaction",
+  "bpmn:callActivity",
+  "callActivity",
 ];
 
 interface BpmnElement {
@@ -78,9 +100,10 @@ function toArray<T>(val: T | T[] | undefined): T[] {
   return Array.isArray(val) ? val : [val];
 }
 
-function extractFromProcess(
-  proc: Record<string, unknown>,
-): { elements: BpmnElement[]; flows: SequenceFlow[] } {
+function extractFromProcess(proc: Record<string, unknown>): {
+  elements: BpmnElement[];
+  flows: SequenceFlow[];
+} {
   const elements: BpmnElement[] = [];
   const flows: SequenceFlow[] = [];
 
@@ -97,8 +120,7 @@ function extractFromProcess(
           sourceRef: (el["@_sourceRef"] as string) || "",
           targetRef: (el["@_targetRef"] as string) || "",
           hasCondition:
-            !!el["bpmn:conditionExpression"] ||
-            !!el["conditionExpression"],
+            !!el["bpmn:conditionExpression"] || !!el["conditionExpression"],
         });
       }
       continue;
@@ -143,10 +165,7 @@ export function validateBpmnAdvanced(
     ignoreAttributes: false,
     attributeNamePrefix: "@_",
     isArray: (name) => {
-      return (
-        FLOW_NODE_TAGS.includes(name) ||
-        SEQUENCE_FLOW_TAGS.includes(name)
-      );
+      return FLOW_NODE_TAGS.includes(name) || SEQUENCE_FLOW_TAGS.includes(name);
     },
   });
 
@@ -306,9 +325,7 @@ export function validateBpmnAdvanced(
     );
 
     for (const gw of exclusiveGateways) {
-      const outgoingFlows = allFlows.filter(
-        (f) => f.sourceRef === gw.id,
-      );
+      const outgoingFlows = allFlows.filter((f) => f.sourceRef === gw.id);
 
       // Only check gateways with more than 1 outgoing flow (split gateways)
       if (outgoingFlows.length > 1) {

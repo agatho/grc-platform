@@ -9,7 +9,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = billingQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = billingQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
     return Response.json(
       { error: "Validation failed", details: query.error.flatten() },
@@ -18,9 +20,16 @@ export async function GET(req: Request) {
   }
 
   const conditions = [eq(billingInvoice.orgId, ctx.orgId)];
-  if (query.data.status) conditions.push(eq(billingInvoice.status, query.data.status));
-  if (query.data.startDate) conditions.push(gte(billingInvoice.createdAt, new Date(query.data.startDate)));
-  if (query.data.endDate) conditions.push(lte(billingInvoice.createdAt, new Date(query.data.endDate)));
+  if (query.data.status)
+    conditions.push(eq(billingInvoice.status, query.data.status));
+  if (query.data.startDate)
+    conditions.push(
+      gte(billingInvoice.createdAt, new Date(query.data.startDate)),
+    );
+  if (query.data.endDate)
+    conditions.push(
+      lte(billingInvoice.createdAt, new Date(query.data.endDate)),
+    );
 
   const { page, limit, offset } = paginate(req);
 

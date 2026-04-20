@@ -11,6 +11,7 @@ ARCTOS hat aktuell **keine applikations-seitige Rate-Limitierung**. Caddy
 pro Endpoint, nicht pro Org.
 
 Risiken ohne Rate-Limit:
+
 - Auth-Brute-Force via `/api/auth/callback/credentials`
 - Account-Enumeration via `/api/v1/users/email?q=...`
 - Expensive-Query-DoS via `/api/v1/graph/impact` (Traversal auf grossen Graphs)
@@ -51,17 +52,20 @@ Fallback: wenn Redis nicht erreichbar, loggen und **durchlassen** (fail-open)
 ## Consequences
 
 ### Positiv
+
 - Brute-Force-Schutz auf Auth-Endpoints
 - AI-Endpoint-Kosten beherrschbar (Claude-API-Spend deckelbar)
 - DoS-Resilience ohne Infrastructure-Komplexitaet
 - Telemetry: 429-Responses in `audit_log.metadata` -> Missbrauch erkennbar
 
 ### Negativ
+
 - +1 Redis-Dependency (aktuell optional -> zwingend wenn Rate-Limit aktiv)
 - Kleiner Latency-Overhead (~2ms/Request fuer Bucket-Check)
 - 429-Handling im Frontend noetig (Retry-After-Header + User-Message)
 
 ### Neutral
+
 - Limits sind konfigurierbar per ENV: `RATE_LIMIT_DEFAULT=300`, `RATE_LIMIT_AUTH=10`,
   `RATE_LIMIT_COPILOT=30` etc.
 - Admins (RBAC `admin`) haben x5-Multiplikator auf alle Limits

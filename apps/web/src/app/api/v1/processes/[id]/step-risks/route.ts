@@ -1,10 +1,4 @@
-import {
-  db,
-  process,
-  processStep,
-  processStepRisk,
-  risk,
-} from "@grc/db";
+import { db, process, processStep, processStepRisk, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -103,7 +97,8 @@ export async function GET(
 
     if (
       row.riskScoreResidual !== null &&
-      (group.highestScore === null || row.riskScoreResidual > group.highestScore)
+      (group.highestScore === null ||
+        row.riskScoreResidual > group.highestScore)
     ) {
       group.highestScore = row.riskScoreResidual;
     }

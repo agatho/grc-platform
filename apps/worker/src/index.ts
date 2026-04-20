@@ -52,7 +52,10 @@ import { processFairAppetiteCheck } from "./crons/fair-appetite-check";
 import { processCveFeedSync } from "./crons/cve-feed-sync";
 import { processCCIMonthlyAggregation } from "./crons/cci-monthly-aggregation";
 import { processQueryCacheWarmer } from "./crons/query-cache-warmer";
-import { initAutomationEngine, getAutomationEngine } from "./crons/automation-engine-init";
+import {
+  initAutomationEngine,
+  getAutomationEngine,
+} from "./crons/automation-engine-init";
 import { processReportScheduler } from "./crons/report-scheduler";
 import { processThreatFeedSync } from "./crons/threat-feed-sync";
 import { processRiskPredictionWeekly } from "./crons/risk-prediction-weekly";
@@ -136,7 +139,10 @@ app.use("/crons/*", async (c, next) => {
   // Constant-time comparison to prevent timing attacks
   const secretBuf = Buffer.from(secret ?? "");
   const expectedBuf = Buffer.from(expected);
-  if (secretBuf.length !== expectedBuf.length || !require("crypto").timingSafeEqual(secretBuf, expectedBuf)) {
+  if (
+    secretBuf.length !== expectedBuf.length ||
+    !require("crypto").timingSafeEqual(secretBuf, expectedBuf)
+  ) {
     return c.json({ error: "Unauthorized" }, 401);
   }
 
@@ -148,7 +154,11 @@ app.use("/crons/*", async (c, next) => {
 // ──────────────────────────────────────────────────────────────
 
 app.get("/health", (c) =>
-  c.json({ status: "ok", service: "worker", timestamp: new Date().toISOString() }),
+  c.json({
+    status: "ok",
+    service: "worker",
+    timestamp: new Date().toISOString(),
+  }),
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -307,7 +317,10 @@ app.post("/crons/ai-act-incident-deadline-monitor", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] ai-act-incident-deadline-monitor cron failed:", message);
+    console.error(
+      "[worker] ai-act-incident-deadline-monitor cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -971,7 +984,10 @@ app.post("/crons/architecture-health-snapshot", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] architecture-health-snapshot cron failed:", message);
+    console.error(
+      "[worker] architecture-health-snapshot cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1047,7 +1063,10 @@ app.post("/crons/sub-processor-review-deadline", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] sub-processor-review-deadline cron failed:", message);
+    console.error(
+      "[worker] sub-processor-review-deadline cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1170,7 +1189,10 @@ app.post("/crons/dora-incident-deadline-monitor", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] dora-incident-deadline-monitor cron failed:", message);
+    console.error(
+      "[worker] dora-incident-deadline-monitor cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1271,7 +1293,10 @@ app.post("/crons/sovereignty-compliance-checker", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] sovereignty-compliance-checker cron failed:", message);
+    console.error(
+      "[worker] sovereignty-compliance-checker cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1297,7 +1322,10 @@ app.post("/crons/marketplace-security-scanner", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error("[worker] marketplace-security-scanner cron failed:", message);
+    console.error(
+      "[worker] marketplace-security-scanner cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });

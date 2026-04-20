@@ -1,10 +1,4 @@
-import {
-  db,
-  process,
-  processStep,
-  processStepAsset,
-  asset,
-} from "@grc/db";
+import { db, process, processStep, processStepAsset, asset } from "@grc/db";
 import { linkProcessAssetSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -173,10 +167,7 @@ export async function GET(
     .from(processStepAsset)
     .innerJoin(asset, eq(processStepAsset.assetId, asset.id))
     .where(
-      and(
-        eq(processStepAsset.processStepId, stepId),
-        isNull(asset.deletedAt),
-      ),
+      and(eq(processStepAsset.processStepId, stepId), isNull(asset.deletedAt)),
     );
 
   return Response.json({ data: assets });

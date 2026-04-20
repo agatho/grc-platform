@@ -105,5 +105,8 @@ export interface WidgetDataResult {
 }
 
 export interface BatchWidgetDataResponse {
-  widgetData: Record<string, { status: string; data?: unknown; error?: string }>;
+  widgetData: Record<
+    string,
+    { status: string; data?: unknown; error?: string }
+  >;
 }

@@ -30,9 +30,7 @@ export const materialityAssessment = pgTable(
       .notNull()
       .references(() => organization.id),
     reportingPeriodYear: integer("reporting_period_year").notNull(),
-    status: varchar("status", { length: 30 })
-      .notNull()
-      .default("draft"),
+    status: varchar("status", { length: 30 }).notNull().default("draft"),
     financialThreshold: jsonb("financial_threshold").default("{}"),
     impactThreshold: jsonb("impact_threshold").default("{}"),
     finalizedBy: uuid("finalized_by").references(() => user.id),
@@ -116,9 +114,7 @@ export const materialityStakeholderEngagement = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("mse_assessment_idx").on(table.assessmentId),
-  ],
+  (table) => [index("mse_assessment_idx").on(table.assessmentId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -184,10 +180,7 @@ export const emissionActivityData = pgTable(
   },
   (table) => [
     index("ead_source_idx").on(table.sourceId),
-    index("ead_org_period_idx").on(
-      table.orgId,
-      table.reportingPeriodStart,
-    ),
+    index("ead_org_period_idx").on(table.orgId, table.reportingPeriodStart),
   ],
 );
 
@@ -213,7 +206,11 @@ export const emissionFactor = pgTable(
     orgId: uuid("org_id"),
   },
   (table) => [
-    index("ef_lookup_idx").on(table.activityType, table.fuelType, table.validYear),
+    index("ef_lookup_idx").on(
+      table.activityType,
+      table.fuelType,
+      table.validYear,
+    ),
     index("ef_source_idx").on(table.factorSource),
   ],
 );
@@ -408,10 +405,7 @@ export const lksgDueDiligence = pgTable(
   },
   (table) => [
     index("ldd_org_idx").on(table.orgId),
-    uniqueIndex("ldd_vendor_year_idx").on(
-      table.vendorId,
-      table.reportingYear,
-    ),
+    uniqueIndex("ldd_vendor_year_idx").on(table.vendorId, table.reportingYear),
   ],
 );
 
@@ -466,14 +460,12 @@ export const climateRiskScenario = pgTable(
     description: text("description"),
 
     // Scenario classification
-    scenarioType: varchar("scenario_type", { length: 30 })
-      .notNull(), // 'physical' | 'transition'
-    riskCategory: varchar("risk_category", { length: 50 })
-      .notNull(), // physical: acute/chronic; transition: policy/technology/market/reputation
-    temperaturePathway: varchar("temperature_pathway", { length: 10 })
-      .notNull(), // '1.5', '2.0', '3.0', '4.0'
-    timeHorizon: varchar("time_horizon", { length: 20 })
-      .notNull(), // 'short' (<2030), 'medium' (2030-2040), 'long' (2040-2050+)
+    scenarioType: varchar("scenario_type", { length: 30 }).notNull(), // 'physical' | 'transition'
+    riskCategory: varchar("risk_category", { length: 50 }).notNull(), // physical: acute/chronic; transition: policy/technology/market/reputation
+    temperaturePathway: varchar("temperature_pathway", {
+      length: 10,
+    }).notNull(), // '1.5', '2.0', '3.0', '4.0'
+    timeHorizon: varchar("time_horizon", { length: 20 }).notNull(), // 'short' (<2030), 'medium' (2030-2040), 'long' (2040-2050+)
 
     // Impact assessment
     likelihoodScore: integer("likelihood_score"), // 1-5

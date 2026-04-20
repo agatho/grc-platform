@@ -9,28 +9,52 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = predictionQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = predictionQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
-  const { page, limit, entityType, entityId, riskLevel, earlyWarning, modelId, predictionType } = query.data;
+  const {
+    page,
+    limit,
+    entityType,
+    entityId,
+    riskLevel,
+    earlyWarning,
+    modelId,
+    predictionType,
+  } = query.data;
   const offset = (page - 1) * limit;
 
-  const conditions = [eq(riskPrediction.orgId, ctx.orgId), eq(riskPrediction.isActive, true)];
+  const conditions = [
+    eq(riskPrediction.orgId, ctx.orgId),
+    eq(riskPrediction.isActive, true),
+  ];
   if (entityType) conditions.push(eq(riskPrediction.entityType, entityType));
   if (entityId) conditions.push(eq(riskPrediction.entityId, entityId));
   if (riskLevel) conditions.push(eq(riskPrediction.riskLevel, riskLevel));
-  if (earlyWarning !== undefined) conditions.push(eq(riskPrediction.earlyWarning, earlyWarning));
+  if (earlyWarning !== undefined)
+    conditions.push(eq(riskPrediction.earlyWarning, earlyWarning));
   if (modelId) conditions.push(eq(riskPrediction.modelId, modelId));
-  if (predictionType) conditions.push(eq(riskPrediction.predictionType, predictionType));
+  if (predictionType)
+    conditions.push(eq(riskPrediction.predictionType, predictionType));
 
   const [predictions, countResult] = await Promise.all([
-    db.select().from(riskPrediction)
+    db
+      .select()
+      .from(riskPrediction)
       .where(and(...conditions))
       .orderBy(desc(riskPrediction.createdAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(riskPrediction)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(riskPrediction)
       .where(and(...conditions)),
   ]);
 

@@ -14,16 +14,22 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const limit = Math.min(parseInt(url.searchParams.get("limit") ?? "100"), 500);
 
-  const apps = await db.select({
-    element: architectureElement,
-    portfolio: applicationPortfolio,
-  })
+  const apps = await db
+    .select({
+      element: architectureElement,
+      portfolio: applicationPortfolio,
+    })
     .from(architectureElement)
-    .leftJoin(applicationPortfolio, eq(architectureElement.id, applicationPortfolio.elementId))
-    .where(and(
-      eq(architectureElement.orgId, ctx.orgId),
-      eq(architectureElement.type, "application"),
-    ))
+    .leftJoin(
+      applicationPortfolio,
+      eq(architectureElement.id, applicationPortfolio.elementId),
+    )
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        eq(architectureElement.type, "application"),
+      ),
+    )
     .orderBy(desc(architectureElement.updatedAt))
     .limit(limit);
 

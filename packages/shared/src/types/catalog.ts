@@ -1,5 +1,14 @@
 // Catalog & Framework Layer types (Sprint 4b)
-export type CatalogObjectType = "it_system" | "application" | "role" | "department" | "location" | "vendor" | "standard" | "regulation" | "custom";
+export type CatalogObjectType =
+  | "it_system"
+  | "application"
+  | "role"
+  | "department"
+  | "location"
+  | "vendor"
+  | "standard"
+  | "regulation"
+  | "custom";
 export type MethodologyType = "iso_31000" | "coso_erm" | "fair" | "custom";
 export type EnforcementLevel = "optional" | "recommended" | "mandatory";
 

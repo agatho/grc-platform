@@ -119,9 +119,7 @@ function RopaListInner() {
 
   const toggleCategory = (code: string) => {
     setSelectedCategories((prev) =>
-      prev.includes(code)
-        ? prev.filter((c) => c !== code)
-        : [...prev, code],
+      prev.includes(code) ? prev.filter((c) => c !== code) : [...prev, code],
     );
   };
 
@@ -157,7 +155,9 @@ function RopaListInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("ropa.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("ropa.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("ropa.subtitle")}</p>
         </div>
         <Button size="sm" onClick={handleOpenCreate}>
@@ -194,10 +194,18 @@ function RopaListInner() {
           <option value="">{t("ropa.allLegalBases")}</option>
           <option value="consent">{t("ropa.legalBasis.consent")}</option>
           <option value="contract">{t("ropa.legalBasis.contract")}</option>
-          <option value="legal_obligation">{t("ropa.legalBasis.legal_obligation")}</option>
-          <option value="legitimate_interest">{t("ropa.legalBasis.legitimate_interest")}</option>
-          <option value="vital_interest">{t("ropa.legalBasis.vital_interest")}</option>
-          <option value="public_interest">{t("ropa.legalBasis.public_interest")}</option>
+          <option value="legal_obligation">
+            {t("ropa.legalBasis.legal_obligation")}
+          </option>
+          <option value="legitimate_interest">
+            {t("ropa.legalBasis.legitimate_interest")}
+          </option>
+          <option value="vital_interest">
+            {t("ropa.legalBasis.vital_interest")}
+          </option>
+          <option value="public_interest">
+            {t("ropa.legalBasis.public_interest")}
+          </option>
         </select>
       </div>
 
@@ -207,39 +215,65 @@ function RopaListInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">{t("ropa.empty")}</p>
+        <p className="text-sm text-gray-400 text-center py-8">
+          {t("ropa.empty")}
+        </p>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("ropa.titleField")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("ropa.purpose")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("ropa.legalBasisLabel")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("ropa.statusLabel")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("ropa.nextReview")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("ropa.titleField")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("ropa.purpose")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("ropa.legalBasisLabel")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("ropa.statusLabel")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("ropa.nextReview")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => (
-                <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/dpms/ropa/${item.id}`)}>
+                <tr
+                  key={item.id}
+                  className="hover:bg-gray-50 cursor-pointer transition-colors"
+                  onClick={() => router.push(`/dpms/ropa/${item.id}`)}
+                >
                   <td className="px-4 py-3 font-medium">
-                    <Link href={`/dpms/ropa/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                    <Link
+                      href={`/dpms/ropa/${item.id}`}
+                      className="text-blue-700 hover:text-blue-900"
+                    >
                       {item.title}
                     </Link>
                   </td>
-                  <td className="px-4 py-3 text-gray-600 truncate max-w-xs">{item.purpose}</td>
+                  <td className="px-4 py-3 text-gray-600 truncate max-w-xs">
+                    {item.purpose}
+                  </td>
                   <td className="px-4 py-3">
                     <Badge variant="outline" className="text-xs">
                       {item.legalBasis?.replace(/_/g, " ") ?? "-"}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={`text-xs ${STATUS_COLORS[item.status] ?? ""}`}>
+                    <Badge
+                      variant="outline"
+                      className={`text-xs ${STATUS_COLORS[item.status] ?? ""}`}
+                    >
                       {item.status.replace(/_/g, " ")}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-gray-500">{item.nextReviewDate ?? "-"}</td>
+                  <td className="px-4 py-3 text-gray-500">
+                    {item.nextReviewDate ?? "-"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -258,7 +292,9 @@ function RopaListInner() {
           <div className="space-y-5">
             {/* Title */}
             <div>
-              <label className="text-xs font-medium text-gray-700">{t("ropa.titleField")}</label>
+              <label className="text-xs font-medium text-gray-700">
+                {t("ropa.titleField")}
+              </label>
               <input
                 type="text"
                 value={newTitle}
@@ -270,7 +306,9 @@ function RopaListInner() {
 
             {/* Purpose */}
             <div>
-              <label className="text-xs font-medium text-gray-700">{t("ropa.purpose")}</label>
+              <label className="text-xs font-medium text-gray-700">
+                {t("ropa.purpose")}
+              </label>
               <textarea
                 value={newPurpose}
                 onChange={(e) => setNewPurpose(e.target.value)}
@@ -282,7 +320,9 @@ function RopaListInner() {
 
             {/* Legal Basis from catalog */}
             <div>
-              <label className="text-xs font-medium text-gray-700">{t("ropa.legalBasisLabel")}</label>
+              <label className="text-xs font-medium text-gray-700">
+                {t("ropa.legalBasisLabel")}
+              </label>
               {catalogLoading ? (
                 <div className="flex items-center gap-2 mt-1 text-sm text-gray-400">
                   <Loader2 size={14} className="animate-spin" />
@@ -302,24 +342,35 @@ function RopaListInner() {
                   ))}
                 </select>
               )}
-              {newLegalBasis && legalBases.find((lb) => lb.code === newLegalBasis)?.description && (
-                <p className="text-xs text-gray-500 mt-1">
-                  {legalBases.find((lb) => lb.code === newLegalBasis)?.description}
-                </p>
-              )}
+              {newLegalBasis &&
+                legalBases.find((lb) => lb.code === newLegalBasis)
+                  ?.description && (
+                  <p className="text-xs text-gray-500 mt-1">
+                    {
+                      legalBases.find((lb) => lb.code === newLegalBasis)
+                        ?.description
+                    }
+                  </p>
+                )}
             </div>
 
             {/* Data Categories from catalog */}
             <div>
-              <label className="text-xs font-medium text-gray-700">{t("ropa.dataCategories")}</label>
-              <p className="text-xs text-gray-500 mt-0.5 mb-2">{t("ropa.selectCategories")}</p>
+              <label className="text-xs font-medium text-gray-700">
+                {t("ropa.dataCategories")}
+              </label>
+              <p className="text-xs text-gray-500 mt-0.5 mb-2">
+                {t("ropa.selectCategories")}
+              </p>
               {catalogLoading ? (
                 <div className="flex items-center gap-2 text-sm text-gray-400">
                   <Loader2 size={14} className="animate-spin" />
                   {t("ropa.loadingCatalog")}
                 </div>
               ) : dataCategories.length === 0 ? (
-                <p className="text-xs text-gray-400">{t("ropa.noCatalogCategories")}</p>
+                <p className="text-xs text-gray-400">
+                  {t("ropa.noCatalogCategories")}
+                </p>
               ) : (
                 <div className="space-y-1.5 max-h-48 overflow-y-auto rounded-md border border-gray-200 p-3">
                   {dataCategories.map((cat) => (
@@ -334,9 +385,13 @@ function RopaListInner() {
                         className="h-4 w-4 rounded text-blue-600 mt-0.5"
                       />
                       <div>
-                        <span className="text-sm text-gray-900">{cat.title}</span>
+                        <span className="text-sm text-gray-900">
+                          {cat.title}
+                        </span>
                         {cat.description && (
-                          <p className="text-xs text-gray-500">{cat.description}</p>
+                          <p className="text-xs text-gray-500">
+                            {cat.description}
+                          </p>
                         )}
                       </div>
                     </label>
@@ -365,7 +420,11 @@ function RopaListInner() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setCreateOpen(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setCreateOpen(false)}
+            >
               {t("ropa.cancel")}
             </Button>
             <Button

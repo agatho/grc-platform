@@ -25,16 +25,17 @@ export async function GET(req: Request) {
   ];
 
   if (query.success && query.data.category) {
-    conditions.push(
-      eq(automationRuleTemplate.category, query.data.category),
-    );
+    conditions.push(eq(automationRuleTemplate.category, query.data.category));
   }
 
   const rows = await db
     .select()
     .from(automationRuleTemplate)
     .where(and(...conditions))
-    .orderBy(desc(automationRuleTemplate.isBuiltIn), automationRuleTemplate.name)
+    .orderBy(
+      desc(automationRuleTemplate.isBuiltIn),
+      automationRuleTemplate.name,
+    )
     .limit(limit)
     .offset(offset);
 

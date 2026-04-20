@@ -164,10 +164,7 @@ export const processStep = pgTable(
   (table) => [
     index("process_step_process_idx").on(table.processId),
     index("process_step_org_idx").on(table.orgId),
-    uniqueIndex("process_step_unique").on(
-      table.processId,
-      table.bpmnElementId,
-    ),
+    uniqueIndex("process_step_unique").on(table.processId, table.bpmnElementId),
   ],
 );
 
@@ -297,9 +294,13 @@ export const processReviewSchedule = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
-    reviewIntervalMonths: integer("review_interval_months").notNull().default(12),
+    reviewIntervalMonths: integer("review_interval_months")
+      .notNull()
+      .default(12),
     nextReviewDate: date("next_review_date").notNull(),
-    lastReminderSentAt: timestamp("last_reminder_sent_at", { withTimezone: true }),
+    lastReminderSentAt: timestamp("last_reminder_sent_at", {
+      withTimezone: true,
+    }),
     assignedReviewerId: uuid("assigned_reviewer_id").references(() => user.id),
     isActive: boolean("is_active").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -330,7 +331,9 @@ export const processComment = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
-    entityType: varchar("entity_type", { length: 50 }).notNull().default("process"),
+    entityType: varchar("entity_type", { length: 50 })
+      .notNull()
+      .default("process"),
     entityId: uuid("entity_id").notNull(),
     content: text("content").notNull(),
     isResolved: boolean("is_resolved").notNull().default(false),

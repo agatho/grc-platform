@@ -14,7 +14,10 @@ export async function PUT(
   const { id } = await params;
   const body = updateRecommendationSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -37,7 +40,10 @@ export async function PUT(
   });
 
   if (!result) {
-    return Response.json({ error: "Recommendation not found" }, { status: 404 });
+    return Response.json(
+      { error: "Recommendation not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: result });

@@ -85,11 +85,16 @@ describe("validateGate1Setup", () => {
       ...validSnapshot,
       description: "too short",
     });
-    expect(blockers.some((b) => b.code === "scope_description_too_short")).toBe(true);
+    expect(blockers.some((b) => b.code === "scope_description_too_short")).toBe(
+      true,
+    );
   });
 
   it("blocks if no lead-assessor", () => {
-    const blockers = validateGate1Setup({ ...validSnapshot, leadAssessorId: null });
+    const blockers = validateGate1Setup({
+      ...validSnapshot,
+      leadAssessorId: null,
+    });
     expect(blockers.some((b) => b.code === "missing_lead_assessor")).toBe(true);
   });
 
@@ -135,7 +140,9 @@ describe("validateGate2SoaCoverage", () => {
       entriesWithSoa: 79,
       notApplicableWithoutJustification: 0,
     });
-    expect(blockers.some((b) => b.code === "soa_coverage_below_threshold")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "soa_coverage_below_threshold"),
+    ).toBe(true);
   });
 
   it("passes at 80% coverage", () => {
@@ -152,7 +159,9 @@ describe("validateGate2SoaCoverage", () => {
       ...validStats,
       notApplicableWithoutJustification: 3,
     });
-    expect(blockers.some((b) => b.code === "not_applicable_without_justification")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "not_applicable_without_justification"),
+    ).toBe(true);
   });
 
   it("reports both blockers when both conditions fail", () => {
@@ -231,7 +240,9 @@ describe("validateGate4Coverage", () => {
       totalEvaluations: 100,
       completedEvaluations: 0,
     });
-    expect(blockers.some((b) => b.code === "coverage_below_threshold")).toBe(true);
+    expect(blockers.some((b) => b.code === "coverage_below_threshold")).toBe(
+      true,
+    );
   });
 
   it("blocks with no evaluations at all", () => {
@@ -249,7 +260,9 @@ describe("validateGate4Coverage", () => {
       totalEvaluations: 100,
       completedEvaluations: 79,
     });
-    expect(blockers.some((b) => b.code === "coverage_below_threshold")).toBe(true);
+    expect(blockers.some((b) => b.code === "coverage_below_threshold")).toBe(
+      true,
+    );
   });
 
   it("passes at exactly 80%", () => {
@@ -338,7 +351,11 @@ describe("buildSetupChecklist", () => {
       leadAssessorId: null,
     });
     expect(checklist.progressPercentage).toBeLessThan(100);
-    expect(checklist.requiredSteps.find((s) => s.key === "scope_statement")?.done).toBe(false);
-    expect(checklist.requiredSteps.find((s) => s.key === "lead_assessor")?.done).toBe(false);
+    expect(
+      checklist.requiredSteps.find((s) => s.key === "scope_statement")?.done,
+    ).toBe(false);
+    expect(
+      checklist.requiredSteps.find((s) => s.key === "lead_assessor")?.done,
+    ).toBe(false);
   });
 });

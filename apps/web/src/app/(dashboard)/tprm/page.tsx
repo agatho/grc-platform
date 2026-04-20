@@ -132,7 +132,12 @@ function TprmDashboardInner() {
             <Link2 size={14} className={syncing ? "animate-spin" : ""} />
             Ins ERM synchronisieren
           </Button>
-          <Button variant="outline" size="sm" onClick={fetchDashboard} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDashboard}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => router.push("/tprm/vendors")}>
@@ -188,7 +193,9 @@ function TprmDashboardInner() {
       {/* Tier Distribution */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="rounded-lg border border-gray-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("tierDistribution")}</h2>
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("tierDistribution")}
+          </h2>
           <div className="space-y-3">
             {["critical", "important", "standard", "low_risk"].map((tier) => {
               const val = data?.byTier?.[tier] ?? 0;
@@ -196,7 +203,10 @@ function TprmDashboardInner() {
               const pct = Math.round((val / total) * 100);
               return (
                 <div key={tier} className="flex items-center gap-3">
-                  <Badge variant="outline" className={`${TIER_COLORS[tier]} w-24 justify-center`}>
+                  <Badge
+                    variant="outline"
+                    className={`${TIER_COLORS[tier]} w-24 justify-center`}
+                  >
                     {t(`tier.${tier}`)}
                   </Badge>
                   <div className="flex-1 h-2 bg-gray-100 rounded-full">
@@ -205,7 +215,9 @@ function TprmDashboardInner() {
                       style={{ width: `${pct}%` }}
                     />
                   </div>
-                  <span className="text-sm font-medium text-gray-700 w-12 text-right">{val}</span>
+                  <span className="text-sm font-medium text-gray-700 w-12 text-right">
+                    {val}
+                  </span>
                 </div>
               );
             })}
@@ -215,12 +227,15 @@ function TprmDashboardInner() {
         {/* DD Queue */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">{t("ddQueue")}</h2>
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("ddQueue")}
+            </h2>
             <span className="text-xs text-gray-400">
               {data?.pendingDueDiligence?.length ?? 0} {t("pending")}
             </span>
           </div>
-          {(!data?.pendingDueDiligence || data.pendingDueDiligence.length === 0) ? (
+          {!data?.pendingDueDiligence ||
+          data.pendingDueDiligence.length === 0 ? (
             <p className="text-sm text-gray-400">{t("noPendingDD")}</p>
           ) : (
             <div className="space-y-2">
@@ -229,7 +244,9 @@ function TprmDashboardInner() {
                   key={dd.id}
                   className="flex items-center justify-between rounded border border-gray-100 bg-gray-50 px-3 py-2 text-sm"
                 >
-                  <span className="text-gray-700">{dd.vendorId.slice(0, 8)}...</span>
+                  <span className="text-gray-700">
+                    {dd.vendorId.slice(0, 8)}...
+                  </span>
                   <Badge variant="outline" className="text-xs">
                     {dd.status}
                   </Badge>
@@ -254,13 +271,20 @@ function TprmDashboardInner() {
                 className="flex items-center justify-between rounded border border-yellow-200 bg-white px-4 py-2 hover:bg-yellow-50 transition-colors"
               >
                 <div className="flex items-center gap-3">
-                  <span className="text-sm font-medium text-gray-900">{v.name}</span>
-                  <Badge variant="outline" className={TIER_COLORS[v.tier] ?? ""}>
+                  <span className="text-sm font-medium text-gray-900">
+                    {v.name}
+                  </span>
+                  <Badge
+                    variant="outline"
+                    className={TIER_COLORS[v.tier] ?? ""}
+                  >
                     {t(`tier.${v.tier}`)}
                   </Badge>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="text-xs text-red-600">{v.nextAssessmentDate}</span>
+                  <span className="text-xs text-red-600">
+                    {v.nextAssessmentDate}
+                  </span>
                   <ArrowRight size={14} className="text-gray-400" />
                 </div>
               </Link>

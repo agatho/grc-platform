@@ -34,11 +34,7 @@ export async function POST(
     .select({ id: risk.id, title: risk.title })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -134,11 +130,7 @@ export async function GET(
     .select({ id: risk.id })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -181,10 +173,7 @@ export async function GET(
       .where(conditions)
       .limit(limit)
       .offset(offset),
-    db
-      .select({ value: count() })
-      .from(riskTreatment)
-      .where(conditions),
+    db.select({ value: count() }).from(riskTreatment).where(conditions),
   ]);
 
   return paginatedResponse(items, total, page, limit);

@@ -58,7 +58,8 @@ export async function POST(req: Request, { params }: RouteParams) {
   if (system.providerOrDeployer === "provider") {
     return Response.json(
       {
-        error: "System is provider-only -- Art. 26 deployer duties do not apply.",
+        error:
+          "System is provider-only -- Art. 26 deployer duties do not apply.",
         hint: "Use Art. 16 provider-compliance endpoint instead.",
       },
       { status: 422 },

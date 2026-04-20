@@ -28,11 +28,12 @@ export async function GET(req: Request) {
           kri_momentum: 0.28,
           incident_frequency: 0.15,
           finding_backlog: 0.12,
-          control_effectiveness: -0.20,
-          days_since_review: 0.10,
+          control_effectiveness: -0.2,
+          days_since_review: 0.1,
         },
         trainingMetrics: null,
-        message: "Using default model weights. Train a custom model for better accuracy.",
+        message:
+          "Using default model weights. Train a custom model for better accuracy.",
       },
     });
   }

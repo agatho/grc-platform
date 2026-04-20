@@ -1,8 +1,4 @@
-import {
-  db,
-  document,
-  documentEntityLink,
-} from "@grc/db";
+import { db, document, documentEntityLink } from "@grc/db";
 import { createDocumentEntityLinkSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -55,7 +51,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "dpo", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "dpo",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("dms", ctx.orgId, req.method);

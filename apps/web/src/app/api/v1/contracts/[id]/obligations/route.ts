@@ -21,7 +21,13 @@ export async function POST(
   const [c] = await db
     .select({ id: contract.id })
     .from(contract)
-    .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)));
+    .where(
+      and(
+        eq(contract.id, id),
+        eq(contract.orgId, ctx.orgId),
+        isNull(contract.deletedAt),
+      ),
+    );
   if (!c) {
     return Response.json({ error: "Contract not found" }, { status: 404 });
   }

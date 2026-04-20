@@ -68,15 +68,13 @@ export function RiskLinkSearch({
         );
         if (res.ok) {
           const json = await res.json();
-          const data = (json.data ?? []).map(
-            (r: Record<string, unknown>) => ({
-              id: r.id as string,
-              title: r.title as string,
-              elementId: r.elementId as string | undefined,
-              riskScoreInherent: r.riskScoreInherent as number | undefined,
-              status: r.status as string | undefined,
-            }),
-          );
+          const data = (json.data ?? []).map((r: Record<string, unknown>) => ({
+            id: r.id as string,
+            title: r.title as string,
+            elementId: r.elementId as string | undefined,
+            riskScoreInherent: r.riskScoreInherent as number | undefined,
+            status: r.status as string | undefined,
+          }));
           setResults(data);
           setShowDropdown(true);
         }
@@ -130,9 +128,7 @@ export function RiskLinkSearch({
         setShowDropdown(false);
         onRiskLinked();
       } catch (err) {
-        toast.error(
-          err instanceof Error ? err.message : "Failed to link risk",
-        );
+        toast.error(err instanceof Error ? err.message : "Failed to link risk");
       } finally {
         setLinking(null);
       }

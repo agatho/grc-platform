@@ -9,7 +9,14 @@ interface RouteParams {
 
 // PUT /api/v1/calendar/events/:id — Update manual calendar event
 export async function PUT(req: Request, { params }: RouteParams) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const { id } = await params;
@@ -29,15 +36,23 @@ export async function PUT(req: Request, { params }: RouteParams) {
     };
 
     if (body.data.title !== undefined) updateData.title = body.data.title;
-    if (body.data.description !== undefined) updateData.description = body.data.description;
-    if (body.data.startAt !== undefined) updateData.startAt = new Date(body.data.startAt);
-    if (body.data.endAt !== undefined) updateData.endAt = body.data.endAt ? new Date(body.data.endAt) : null;
-    if (body.data.isAllDay !== undefined) updateData.isAllDay = body.data.isAllDay;
-    if (body.data.eventType !== undefined) updateData.eventType = body.data.eventType;
+    if (body.data.description !== undefined)
+      updateData.description = body.data.description;
+    if (body.data.startAt !== undefined)
+      updateData.startAt = new Date(body.data.startAt);
+    if (body.data.endAt !== undefined)
+      updateData.endAt = body.data.endAt ? new Date(body.data.endAt) : null;
+    if (body.data.isAllDay !== undefined)
+      updateData.isAllDay = body.data.isAllDay;
+    if (body.data.eventType !== undefined)
+      updateData.eventType = body.data.eventType;
     if (body.data.module !== undefined) updateData.module = body.data.module;
-    if (body.data.recurrence !== undefined) updateData.recurrence = body.data.recurrence;
+    if (body.data.recurrence !== undefined)
+      updateData.recurrence = body.data.recurrence;
     if (body.data.recurrenceEndAt !== undefined) {
-      updateData.recurrenceEndAt = body.data.recurrenceEndAt ? new Date(body.data.recurrenceEndAt) : null;
+      updateData.recurrenceEndAt = body.data.recurrenceEndAt
+        ? new Date(body.data.recurrenceEndAt)
+        : null;
     }
 
     const [row] = await tx
@@ -63,7 +78,14 @@ export async function PUT(req: Request, { params }: RouteParams) {
 
 // DELETE /api/v1/calendar/events/:id — Soft-delete manual calendar event
 export async function DELETE(req: Request, { params }: RouteParams) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const { id } = await params;

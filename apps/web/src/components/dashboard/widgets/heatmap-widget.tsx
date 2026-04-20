@@ -10,7 +10,11 @@ interface HeatmapCell {
   label?: string;
 }
 
-function parseHeatmapData(data: unknown): { cells: HeatmapCell[]; rows: string[]; cols: string[] } {
+function parseHeatmapData(data: unknown): {
+  cells: HeatmapCell[];
+  rows: string[];
+  cols: string[];
+} {
   if (!data) return { cells: [], rows: [], cols: [] };
 
   let cells: HeatmapCell[] = [];
@@ -23,8 +27,12 @@ function parseHeatmapData(data: unknown): { cells: HeatmapCell[]; rows: string[]
   } else if ("matrix" in d && Array.isArray(d.matrix)) {
     // 2D matrix format: [[1,2],[3,4]]
     const matrix = d.matrix as number[][];
-    const rowLabels = (d.rowLabels as string[]) ?? matrix.map((_, i) => String(i + 1));
-    const colLabels = (d.colLabels as string[]) ?? (matrix[0]?.map((_, i) => String(i + 1)) ?? []);
+    const rowLabels =
+      (d.rowLabels as string[]) ?? matrix.map((_, i) => String(i + 1));
+    const colLabels =
+      (d.colLabels as string[]) ??
+      matrix[0]?.map((_, i) => String(i + 1)) ??
+      [];
 
     for (let r = 0; r < matrix.length; r++) {
       for (let c = 0; c < (matrix[r]?.length ?? 0); c++) {
@@ -95,7 +103,10 @@ export function HeatmapWidget({ data, config, isLoading, error }: WidgetProps) {
           <tr>
             <th className="p-1" />
             {cols.map((col) => (
-              <th key={col} className="p-1 text-center font-medium text-muted-foreground">
+              <th
+                key={col}
+                className="p-1 text-center font-medium text-muted-foreground"
+              >
                 {col}
               </th>
             ))}
@@ -118,7 +129,9 @@ export function HeatmapWidget({ data, config, isLoading, error }: WidgetProps) {
                   >
                     <div
                       className="mx-auto flex h-8 w-8 items-center justify-center rounded text-[10px] font-medium text-white"
-                      style={{ backgroundColor: getHeatmapColor(value, maxValue) }}
+                      style={{
+                        backgroundColor: getHeatmapColor(value, maxValue),
+                      }}
                     >
                       {value}
                     </div>

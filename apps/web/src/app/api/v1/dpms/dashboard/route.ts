@@ -27,18 +27,115 @@ export async function GET(req: Request) {
     tiaTotal,
     tiaHighRisk,
   ] = await Promise.all([
-    db.select({ value: count() }).from(ropaEntry).where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt))),
-    db.select({ value: count() }).from(ropaEntry).where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt), eq(ropaEntry.status, "draft"))),
-    db.select({ value: count() }).from(ropaEntry).where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt), eq(ropaEntry.status, "active"))),
-    db.select({ value: count() }).from(ropaEntry).where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt), eq(ropaEntry.status, "under_review"))),
-    db.select({ value: count() }).from(ropaEntry).where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt), eq(ropaEntry.status, "archived"))),
-    db.select({ value: count() }).from(dpia).where(and(eq(dpia.orgId, orgId), isNull(dpia.deletedAt), sql`${dpia.status} NOT IN ('approved', 'rejected')`)),
-    db.select({ value: count() }).from(dsr).where(and(eq(dsr.orgId, orgId), sql`${dsr.status} NOT IN ('closed', 'rejected')`)),
-    db.select({ value: count() }).from(dsr).where(and(eq(dsr.orgId, orgId), sql`${dsr.status} NOT IN ('closed', 'rejected')`, sql`${dsr.deadline} < NOW()`)),
-    db.select({ value: count() }).from(dataBreach).where(and(eq(dataBreach.orgId, orgId), isNull(dataBreach.deletedAt), sql`${dataBreach.status} != 'closed'`)),
-    db.select({ value: count() }).from(dataBreach).where(and(eq(dataBreach.orgId, orgId), isNull(dataBreach.deletedAt), eq(dataBreach.isDpaNotificationRequired, true), isNull(dataBreach.dpaNotifiedAt), sql`${dataBreach.status} != 'closed'`)),
-    db.select({ value: count() }).from(tia).where(and(eq(tia.orgId, orgId), isNull(tia.deletedAt))),
-    db.select({ value: count() }).from(tia).where(and(eq(tia.orgId, orgId), isNull(tia.deletedAt), eq(tia.riskRating, "high"))),
+    db
+      .select({ value: count() })
+      .from(ropaEntry)
+      .where(and(eq(ropaEntry.orgId, orgId), isNull(ropaEntry.deletedAt))),
+    db
+      .select({ value: count() })
+      .from(ropaEntry)
+      .where(
+        and(
+          eq(ropaEntry.orgId, orgId),
+          isNull(ropaEntry.deletedAt),
+          eq(ropaEntry.status, "draft"),
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(ropaEntry)
+      .where(
+        and(
+          eq(ropaEntry.orgId, orgId),
+          isNull(ropaEntry.deletedAt),
+          eq(ropaEntry.status, "active"),
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(ropaEntry)
+      .where(
+        and(
+          eq(ropaEntry.orgId, orgId),
+          isNull(ropaEntry.deletedAt),
+          eq(ropaEntry.status, "under_review"),
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(ropaEntry)
+      .where(
+        and(
+          eq(ropaEntry.orgId, orgId),
+          isNull(ropaEntry.deletedAt),
+          eq(ropaEntry.status, "archived"),
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(dpia)
+      .where(
+        and(
+          eq(dpia.orgId, orgId),
+          isNull(dpia.deletedAt),
+          sql`${dpia.status} NOT IN ('approved', 'rejected')`,
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(dsr)
+      .where(
+        and(
+          eq(dsr.orgId, orgId),
+          sql`${dsr.status} NOT IN ('closed', 'rejected')`,
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(dsr)
+      .where(
+        and(
+          eq(dsr.orgId, orgId),
+          sql`${dsr.status} NOT IN ('closed', 'rejected')`,
+          sql`${dsr.deadline} < NOW()`,
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(dataBreach)
+      .where(
+        and(
+          eq(dataBreach.orgId, orgId),
+          isNull(dataBreach.deletedAt),
+          sql`${dataBreach.status} != 'closed'`,
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(dataBreach)
+      .where(
+        and(
+          eq(dataBreach.orgId, orgId),
+          isNull(dataBreach.deletedAt),
+          eq(dataBreach.isDpaNotificationRequired, true),
+          isNull(dataBreach.dpaNotifiedAt),
+          sql`${dataBreach.status} != 'closed'`,
+        ),
+      ),
+    db
+      .select({ value: count() })
+      .from(tia)
+      .where(and(eq(tia.orgId, orgId), isNull(tia.deletedAt))),
+    db
+      .select({ value: count() })
+      .from(tia)
+      .where(
+        and(
+          eq(tia.orgId, orgId),
+          isNull(tia.deletedAt),
+          eq(tia.riskRating, "high"),
+        ),
+      ),
   ]);
 
   const dashboard = {

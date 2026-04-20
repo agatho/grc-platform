@@ -16,7 +16,9 @@ async function seed() {
   await db.execute(sql`SET app.bypass_rls = 'true'`);
 
   // Get first org for seeding
-  const orgs = await db.execute(sql`SELECT id FROM organization WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1`);
+  const orgs = await db.execute(
+    sql`SELECT id FROM organization WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1`,
+  );
   if (orgs.length === 0) {
     console.log("No organizations found. Run db:seed first.");
     process.exit(1);
@@ -24,7 +26,9 @@ async function seed() {
   const orgId = orgs[0].id;
 
   // Get admin user
-  const users = await db.execute(sql`SELECT id FROM "user" WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1`);
+  const users = await db.execute(
+    sql`SELECT id FROM "user" WHERE deleted_at IS NULL ORDER BY created_at LIMIT 1`,
+  );
   if (users.length === 0) {
     console.log("No users found. Run db:seed first.");
     process.exit(1);
@@ -32,7 +36,9 @@ async function seed() {
   const userId = users[0].id;
 
   // ─── Check idempotency ─────────────────────────────────────
-  const existingControls = await db.execute(sql`SELECT COUNT(*) as cnt FROM control WHERE org_id = ${orgId}`);
+  const existingControls = await db.execute(
+    sql`SELECT COUNT(*) as cnt FROM control WHERE org_id = ${orgId}`,
+  );
   if (Number(existingControls[0].cnt) > 0) {
     console.log("Control data already exists, skipping seed.");
     await client.end();
@@ -87,7 +93,9 @@ Die DSFA folgt einem strukturierten 4-Phasen-Modell.', 'guideline', 'approved', 
   `);
 
   // Create initial versions for documents
-  const docs = await db.execute(sql`SELECT id, content, title FROM document WHERE org_id = ${orgId} ORDER BY created_at`);
+  const docs = await db.execute(
+    sql`SELECT id, content, title FROM document WHERE org_id = ${orgId} ORDER BY created_at`,
+  );
   for (const doc of docs) {
     await db.execute(sql`
       INSERT INTO document_version (document_id, org_id, version_number, content, change_summary, is_current, created_by)
@@ -97,7 +105,9 @@ Die DSFA folgt einem strukturierten 4-Phasen-Modell.', 'guideline', 'approved', 
 
   console.log("Sprint 4 seed complete:");
   console.log("  - 5 controls (mixed types, statuses)");
-  console.log("  - 3 documents (policy published, procedure draft, guideline approved)");
+  console.log(
+    "  - 3 documents (policy published, procedure draft, guideline approved)",
+  );
   console.log("  - 3 document versions (v1 for each document)");
 
   await client.end();

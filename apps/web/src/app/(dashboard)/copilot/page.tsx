@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Bot, Send, ThumbsUp, ThumbsDown, Pin, Archive, Plus } from "lucide-react";
+import {
+  Bot,
+  Send,
+  ThumbsUp,
+  ThumbsDown,
+  Pin,
+  Archive,
+  Plus,
+} from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,7 +41,9 @@ export default function CopilotChatPage() {
   }, []);
 
   const fetchMessages = useCallback(async (convId: string) => {
-    const res = await fetch(`/api/v1/copilot/conversations/${convId}/messages?limit=100`);
+    const res = await fetch(
+      `/api/v1/copilot/conversations/${convId}/messages?limit=100`,
+    );
     if (res.ok) {
       const json = await res.json();
       setMessages(json.data.reverse());
@@ -69,11 +79,14 @@ export default function CopilotChatPage() {
     if (!input.trim() || !activeConv || sending) return;
     setSending(true);
     try {
-      const res = await fetch(`/api/v1/copilot/conversations/${activeConv}/messages`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content: input }),
-      });
+      const res = await fetch(
+        `/api/v1/copilot/conversations/${activeConv}/messages`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ content: input }),
+        },
+      );
       if (res.ok) {
         setInput("");
         await fetchMessages(activeConv);
@@ -117,7 +130,9 @@ export default function CopilotChatPage() {
                 {conv.isPinned && <Pin className="h-3 w-3 text-primary" />}
               </div>
               <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                <span>{conv.messageCount} {t("messages")}</span>
+                <span>
+                  {conv.messageCount} {t("messages")}
+                </span>
                 <span>{conv.language.toUpperCase()}</span>
               </div>
             </button>
@@ -162,7 +177,9 @@ export default function CopilotChatPage() {
                           <ThumbsDown className="h-3 w-3" />
                         </Button>
                         {msg.model && (
-                          <span className="text-xs text-muted-foreground ml-2">{msg.model}</span>
+                          <span className="text-xs text-muted-foreground ml-2">
+                            {msg.model}
+                          </span>
                         )}
                       </div>
                     )}
@@ -179,12 +196,17 @@ export default function CopilotChatPage() {
                   type="text"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && !e.shiftKey && sendMessage()}
+                  onKeyDown={(e) =>
+                    e.key === "Enter" && !e.shiftKey && sendMessage()
+                  }
                   placeholder={t("inputPlaceholder")}
                   className="flex-1 rounded-md border bg-background px-3 py-2 text-sm"
                   disabled={sending}
                 />
-                <Button onClick={sendMessage} disabled={sending || !input.trim()}>
+                <Button
+                  onClick={sendMessage}
+                  disabled={sending || !input.trim()}
+                >
                   <Send className="h-4 w-4" />
                 </Button>
               </div>

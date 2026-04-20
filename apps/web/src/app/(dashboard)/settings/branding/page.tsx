@@ -113,9 +113,9 @@ export default function BrandingSettingsPage() {
   const { data: session } = useSession();
   const t = useTranslations("branding");
 
-  const [activeTab, setActiveTab] = useState<
-    "colors" | "reports" | "email"
-  >("colors");
+  const [activeTab, setActiveTab] = useState<"colors" | "reports" | "email">(
+    "colors",
+  );
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [hasChanges, setHasChanges] = useState(false);
@@ -137,7 +137,8 @@ export default function BrandingSettingsPage() {
     customCss: "" as string | null,
   });
 
-  const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
+  const orgId =
+    session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   // Fetch branding on mount
   useEffect(() => {
@@ -199,9 +200,7 @@ export default function BrandingSettingsPage() {
 
       if (res.ok) {
         const { data } = await res.json();
-        setBranding((prev) =>
-          prev ? { ...prev, ...data } : prev,
-        );
+        setBranding((prev) => (prev ? { ...prev, ...data } : prev));
         setHasChanges(false);
       }
     } catch {
@@ -234,10 +233,10 @@ export default function BrandingSettingsPage() {
       const formData = new FormData();
       formData.append("file", file);
 
-      const res = await fetch(
-        `/api/v1/organizations/${orgId}/branding/logo`,
-        { method: "POST", body: formData },
-      );
+      const res = await fetch(`/api/v1/organizations/${orgId}/branding/logo`, {
+        method: "POST",
+        body: formData,
+      });
 
       if (res.ok) {
         const { data } = await res.json();
@@ -251,14 +250,11 @@ export default function BrandingSettingsPage() {
 
   const handleLogoDelete = useCallback(async () => {
     if (!orgId) return;
-    const res = await fetch(
-      `/api/v1/organizations/${orgId}/branding/logo`,
-      { method: "DELETE" },
-    );
+    const res = await fetch(`/api/v1/organizations/${orgId}/branding/logo`, {
+      method: "DELETE",
+    });
     if (res.ok) {
-      setBranding((prev) =>
-        prev ? { ...prev, logoUrl: null } : prev,
-      );
+      setBranding((prev) => (prev ? { ...prev, logoUrl: null } : prev));
     }
   }, [orgId]);
 
@@ -297,12 +293,8 @@ export default function BrandingSettingsPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">
-          {t("title")}
-        </h1>
-        <p className="mt-1 text-sm text-gray-500">
-          {t("description")}
-        </p>
+        <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
+        <p className="mt-1 text-sm text-gray-500">{t("description")}</p>
       </div>
 
       {/* Inheritance Banner */}
@@ -575,8 +567,8 @@ export default function BrandingSettingsPage() {
                     className="flex w-10 flex-col items-center gap-3 py-3"
                     style={{
                       backgroundColor: darkPreview
-                        ? (formValues.darkModePrimaryColor ||
-                          computeDarkModeColor(formValues.primaryColor, 15))
+                        ? formValues.darkModePrimaryColor ||
+                          computeDarkModeColor(formValues.primaryColor, 15)
                         : formValues.primaryColor,
                     }}
                   >
@@ -585,8 +577,9 @@ export default function BrandingSettingsPage() {
                         key={i}
                         className="h-4 w-4 rounded"
                         style={{
-                          backgroundColor:
-                            computeContrastForeground(formValues.primaryColor),
+                          backgroundColor: computeContrastForeground(
+                            formValues.primaryColor,
+                          ),
                           opacity: i === 0 ? 1 : 0.5,
                           borderLeft:
                             i === 0
@@ -852,9 +845,7 @@ export default function BrandingSettingsPage() {
                   <span
                     className="text-sm font-bold"
                     style={{
-                      color: computeContrastForeground(
-                        formValues.primaryColor,
-                      ),
+                      color: computeContrastForeground(formValues.primaryColor),
                     }}
                   >
                     ARCTOS
@@ -864,17 +855,13 @@ export default function BrandingSettingsPage() {
               {/* Email body */}
               <div className="p-6 text-sm text-gray-700">
                 <p className="font-medium">{t("emailPreviewGreeting")}</p>
-                <p className="mt-2 text-gray-600">
-                  {t("emailPreviewBody")}
-                </p>
+                <p className="mt-2 text-gray-600">{t("emailPreviewBody")}</p>
                 <div className="mt-4">
                   <button
                     className="rounded px-4 py-2 text-sm font-medium"
                     style={{
                       backgroundColor: formValues.primaryColor,
-                      color: computeContrastForeground(
-                        formValues.primaryColor,
-                      ),
+                      color: computeContrastForeground(formValues.primaryColor),
                     }}
                   >
                     {t("emailPreviewCta")}

@@ -96,13 +96,18 @@ function ThreatsInner() {
     return result;
   }, [threats, search, categoryFilter]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    const res = await fetch(`/api/v1/isms/threats/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      toast.success(t("deleted"));
-      setThreats((prev) => prev.filter((th) => th.id !== id));
-    }
-  }, [t]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/v1/isms/threats/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success(t("deleted"));
+        setThreats((prev) => prev.filter((th) => th.id !== id));
+      }
+    },
+    [t],
+  );
 
   if (loading && threats.length === 0) {
     return (
@@ -122,7 +127,12 @@ function ThreatsInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchThreats} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchThreats}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -150,7 +160,10 @@ function ThreatsInner() {
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -166,7 +179,9 @@ function ThreatsInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("allCategories")}</SelectItem>
             {categories.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -182,32 +197,44 @@ function ThreatsInner() {
         ) : (
           filtered.map((th) => (
             <Link key={th.id} href={`/isms/threats/${th.id}`}>
-            <div
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Zap size={16} className="text-yellow-600 shrink-0" />
-                {th.code && (
-                  <span className="font-mono text-xs text-gray-400 shrink-0">{th.code}</span>
-                )}
-                <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{th.title}</span>
-                {th.threatCategory && (
-                  <Badge variant="outline" className="text-[10px] shrink-0">
-                    {th.threatCategory}
-                  </Badge>
-                )}
-                {th.isSystem && (
-                  <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] shrink-0">
-                    System
-                  </Badge>
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Zap size={16} className="text-yellow-600 shrink-0" />
+                  {th.code && (
+                    <span className="font-mono text-xs text-gray-400 shrink-0">
+                      {th.code}
+                    </span>
+                  )}
+                  <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
+                    {th.title}
+                  </span>
+                  {th.threatCategory && (
+                    <Badge variant="outline" className="text-[10px] shrink-0">
+                      {th.threatCategory}
+                    </Badge>
+                  )}
+                  {th.isSystem && (
+                    <Badge
+                      variant="outline"
+                      className="bg-blue-50 text-blue-700 border-blue-200 text-[10px] shrink-0"
+                    >
+                      System
+                    </Badge>
+                  )}
+                </div>
+                {!th.isSystem && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      handleDelete(th.id);
+                    }}
+                  >
+                    <Trash2 size={14} className="text-gray-400" />
+                  </Button>
                 )}
               </div>
-              {!th.isSystem && (
-                <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); handleDelete(th.id); }}>
-                  <Trash2 size={14} className="text-gray-400" />
-                </Button>
-              )}
-            </div>
             </Link>
           ))
         )}
@@ -256,7 +283,9 @@ function CreateThreatForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("titleField")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("titleField")}
+        </label>
         <input
           type="text"
           value={title}
@@ -266,7 +295,9 @@ function CreateThreatForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("description")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("description")}
+        </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -275,7 +306,9 @@ function CreateThreatForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("category")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("category")}
+        </label>
         <input
           type="text"
           value={category}

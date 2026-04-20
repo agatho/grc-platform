@@ -2,10 +2,27 @@ import { z } from "zod";
 
 // Sprint 52: EAM UX & Unified Catalog Zod Schemas
 
-export const catalogObjectTypeEnum = z.enum(["application", "business_capability", "it_component", "data_object", "provider", "interface"]);
+export const catalogObjectTypeEnum = z.enum([
+  "application",
+  "business_capability",
+  "it_component",
+  "data_object",
+  "provider",
+  "interface",
+]);
 
 export const catalogFiltersSchema = z.object({
-  objectTypes: z.array(catalogObjectTypeEnum).min(1).default(["application", "business_capability", "it_component", "data_object", "provider", "interface"]),
+  objectTypes: z
+    .array(catalogObjectTypeEnum)
+    .min(1)
+    .default([
+      "application",
+      "business_capability",
+      "it_component",
+      "data_object",
+      "provider",
+      "interface",
+    ]),
   search: z.string().max(500).optional(),
   keywords: z.array(z.string().max(100)).max(20).optional(),
   lifecycleStatus: z.array(z.string().max(30)).max(10).optional(),
@@ -32,16 +49,20 @@ export const mergeKeywordsSchema = z.object({
 });
 
 export const updateHomepageLayoutSchema = z.object({
-  widgetConfig: z.array(z.object({
-    widgetType: z.string().max(50),
-    position: z.object({
-      x: z.number().int().min(0),
-      y: z.number().int().min(0),
-      w: z.number().int().min(1).max(12),
-      h: z.number().int().min(1).max(12),
-    }),
-    config: z.record(z.unknown()).optional(),
-  })).max(20),
+  widgetConfig: z
+    .array(
+      z.object({
+        widgetType: z.string().max(50),
+        position: z.object({
+          x: z.number().int().min(0),
+          y: z.number().int().min(0),
+          w: z.number().int().min(1).max(12),
+          h: z.number().int().min(1).max(12),
+        }),
+        config: z.record(z.unknown()).optional(),
+      }),
+    )
+    .max(20),
 });
 
 export const updateKeywordsOnObjectSchema = z.object({

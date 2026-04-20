@@ -163,7 +163,9 @@ export default function TaskDetailPage() {
   const [auditLog, setAuditLog] = useState<AuditEntry[]>([]);
   const [auditLoading, setAuditLoading] = useState(true);
 
-  const [transitionLoading, setTransitionLoading] = useState<string | null>(null);
+  const [transitionLoading, setTransitionLoading] = useState<string | null>(
+    null,
+  );
   const [reminderSending, setReminderSending] = useState(false);
 
   const isAdmin = (session?.user?.roles ?? []).some((r) => r.role === "admin");
@@ -204,7 +206,7 @@ export default function TaskDetailPage() {
     setAuditLoading(true);
     try {
       const res = await fetch(
-        `/api/v1/audit-log?entityType=task&entityId=${taskId}&limit=50`
+        `/api/v1/audit-log?entityType=task&entityId=${taskId}&limit=50`,
       );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
@@ -393,7 +395,9 @@ export default function TaskDetailPage() {
                 <span className="text-gray-500 block">{t("source")}</span>
                 <Badge variant="secondary" className="mt-0.5">
                   {task.sourceEntityType}
-                  {task.sourceEntityId ? ` #${task.sourceEntityId.slice(0, 8)}` : ""}
+                  {task.sourceEntityId
+                    ? ` #${task.sourceEntityId.slice(0, 8)}`
+                    : ""}
                 </Badge>
               </div>
             )}
@@ -551,7 +555,9 @@ export default function TaskDetailPage() {
                                     key={field}
                                     className="text-xs text-gray-500"
                                   >
-                                    <span className="font-medium">{field}:</span>{" "}
+                                    <span className="font-medium">
+                                      {field}:
+                                    </span>{" "}
                                     <span className="line-through text-red-400">
                                       {String(change.old ?? "\u2014")}
                                     </span>{" "}
@@ -560,7 +566,7 @@ export default function TaskDetailPage() {
                                       {String(change.new ?? "\u2014")}
                                     </span>
                                   </p>
-                                )
+                                ),
                               )}
                             </div>
                           )}

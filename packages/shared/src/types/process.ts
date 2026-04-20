@@ -1,7 +1,17 @@
 // BPMN Process Modeling types (Sprint 3 + 3b)
 export type ProcessNotation = "bpmn" | "value_chain" | "epc";
-export type ProcessStatus = "draft" | "in_review" | "approved" | "published" | "archived";
-export type StepType = "task" | "gateway" | "event" | "subprocess" | "call_activity";
+export type ProcessStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "published"
+  | "archived";
+export type StepType =
+  | "task"
+  | "gateway"
+  | "event"
+  | "subprocess"
+  | "call_activity";
 
 export interface Process {
   id: string;

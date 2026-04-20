@@ -145,9 +145,7 @@ export default function ScheduledReportsPage() {
               <h1 className="text-2xl font-bold tracking-tight">
                 {t("schedulesTitle")}
               </h1>
-              <p className="text-muted-foreground">
-                {t("schedulesSubtitle")}
-              </p>
+              <p className="text-muted-foreground">{t("schedulesSubtitle")}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -219,16 +217,12 @@ export default function ScheduledReportsPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
                         {schedule.nextRunAt
-                          ? new Date(schedule.nextRunAt).toLocaleString(
-                              "de-DE",
-                            )
+                          ? new Date(schedule.nextRunAt).toLocaleString("de-DE")
                           : "—"}
                       </td>
                       <td className="px-4 py-3">
                         <Badge
-                          variant={
-                            schedule.isActive ? "default" : "secondary"
-                          }
+                          variant={schedule.isActive ? "default" : "secondary"}
                         >
                           {schedule.isActive
                             ? t("scheduleActive")
@@ -286,7 +280,9 @@ export default function ScheduledReportsPage() {
             </DialogHeader>
             <div className="space-y-4 py-4">
               <div>
-                <label className="text-sm font-medium">{t("scheduleNameLabel")}</label>
+                <label className="text-sm font-medium">
+                  {t("scheduleNameLabel")}
+                </label>
                 <Input
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
@@ -295,7 +291,9 @@ export default function ScheduledReportsPage() {
                 />
               </div>
               <div>
-                <label className="text-sm font-medium">{t("selectTemplate")}</label>
+                <label className="text-sm font-medium">
+                  {t("selectTemplate")}
+                </label>
                 <Select
                   value={formTemplateId}
                   onValueChange={setFormTemplateId}
@@ -313,20 +311,28 @@ export default function ScheduledReportsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">{t("cronExpression")}</label>
+                <label className="text-sm font-medium">
+                  {t("cronExpression")}
+                </label>
                 <Select value={formCron} onValueChange={setFormCron}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="0 8 * * 1">{t("cronWeekly")}</SelectItem>
-                    <SelectItem value="0 8 1 * *">{t("cronMonthly")}</SelectItem>
-                    <SelectItem value="0 8 1 */3 *">{t("cronQuarterly")}</SelectItem>
+                    <SelectItem value="0 8 1 * *">
+                      {t("cronMonthly")}
+                    </SelectItem>
+                    <SelectItem value="0 8 1 */3 *">
+                      {t("cronQuarterly")}
+                    </SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">{t("outputFormat")}</label>
+                <label className="text-sm font-medium">
+                  {t("outputFormat")}
+                </label>
                 <Select
                   value={formFormat}
                   onValueChange={(v) => setFormFormat(v as "pdf" | "xlsx")}
@@ -341,7 +347,9 @@ export default function ScheduledReportsPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">{t("recipientEmails")}</label>
+                <label className="text-sm font-medium">
+                  {t("recipientEmails")}
+                </label>
                 <Input
                   value={formEmails}
                   onChange={(e) => setFormEmails(e.target.value)}
@@ -354,10 +362,7 @@ export default function ScheduledReportsPage() {
               </div>
             </div>
             <DialogFooter>
-              <Button
-                variant="outline"
-                onClick={() => setCreateOpen(false)}
-              >
+              <Button variant="outline" onClick={() => setCreateOpen(false)}>
                 {t("cancel")}
               </Button>
               <Button onClick={handleCreate} disabled={submitting}>

@@ -4,12 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import {
-  Loader2,
-  Plus,
-  RefreshCcw,
-  Search,
-} from "lucide-react";
+import { Loader2, Plus, RefreshCcw, Search } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -72,10 +67,10 @@ function ExecutionsInner() {
   const handleCreate = async (formData: FormData) => {
     const body = {
       title: formData.get("title") as string,
-      description: formData.get("description") as string || undefined,
+      description: (formData.get("description") as string) || undefined,
       auditType: formData.get("auditType") as string,
-      plannedStart: formData.get("plannedStart") as string || undefined,
-      plannedEnd: formData.get("plannedEnd") as string || undefined,
+      plannedStart: (formData.get("plannedStart") as string) || undefined,
+      plannedEnd: (formData.get("plannedEnd") as string) || undefined,
     };
 
     const res = await fetch("/api/v1/audit-mgmt/audits", {
@@ -92,13 +87,34 @@ function ExecutionsInner() {
 
   const statusBadge = (status: string) => {
     const map: Record<string, { className: string; label: string }> = {
-      planned: { className: "bg-gray-100 text-gray-700 border-gray-300", label: t("auditStatus.planned") },
-      preparation: { className: "bg-blue-100 text-blue-900 border-blue-300", label: t("auditStatus.preparation") },
-      fieldwork: { className: "bg-yellow-100 text-yellow-900 border-yellow-300", label: t("auditStatus.fieldwork") },
-      reporting: { className: "bg-orange-100 text-orange-900 border-orange-300", label: t("auditStatus.reporting") },
-      review: { className: "bg-purple-100 text-purple-900 border-purple-300", label: t("auditStatus.review") },
-      completed: { className: "bg-green-100 text-green-900 border-green-300", label: t("auditStatus.completed") },
-      cancelled: { className: "bg-red-100 text-red-900 border-red-300", label: t("auditStatus.cancelled") },
+      planned: {
+        className: "bg-gray-100 text-gray-700 border-gray-300",
+        label: t("auditStatus.planned"),
+      },
+      preparation: {
+        className: "bg-blue-100 text-blue-900 border-blue-300",
+        label: t("auditStatus.preparation"),
+      },
+      fieldwork: {
+        className: "bg-yellow-100 text-yellow-900 border-yellow-300",
+        label: t("auditStatus.fieldwork"),
+      },
+      reporting: {
+        className: "bg-orange-100 text-orange-900 border-orange-300",
+        label: t("auditStatus.reporting"),
+      },
+      review: {
+        className: "bg-purple-100 text-purple-900 border-purple-300",
+        label: t("auditStatus.review"),
+      },
+      completed: {
+        className: "bg-green-100 text-green-900 border-green-300",
+        label: t("auditStatus.completed"),
+      },
+      cancelled: {
+        className: "bg-red-100 text-red-900 border-red-300",
+        label: t("auditStatus.cancelled"),
+      },
     };
     const config = map[status] ?? map.planned;
     return <Badge className={config.className}>{config.label}</Badge>;
@@ -120,11 +136,20 @@ function ExecutionsInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("executions")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("executionsSubtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("executions")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("executionsSubtitle")}
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchAudits} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchAudits}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
@@ -146,34 +171,56 @@ function ExecutionsInner() {
                 className="space-y-4"
               >
                 <div>
-                  <label className="text-sm font-medium">{t("auditTitle")}</label>
+                  <label className="text-sm font-medium">
+                    {t("auditTitle")}
+                  </label>
                   <Input name="title" required />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("description")}</label>
+                  <label className="text-sm font-medium">
+                    {t("description")}
+                  </label>
                   <Input name="description" />
                 </div>
                 <div>
-                  <label className="text-sm font-medium">{t("auditType")}</label>
-                  <select name="auditType" required className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm">
+                  <label className="text-sm font-medium">
+                    {t("auditType")}
+                  </label>
+                  <select
+                    name="auditType"
+                    required
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  >
                     <option value="internal">{t("auditTypes.internal")}</option>
                     <option value="external">{t("auditTypes.external")}</option>
-                    <option value="certification">{t("auditTypes.certification")}</option>
-                    <option value="surveillance">{t("auditTypes.surveillance")}</option>
-                    <option value="follow_up">{t("auditTypes.followUp")}</option>
+                    <option value="certification">
+                      {t("auditTypes.certification")}
+                    </option>
+                    <option value="surveillance">
+                      {t("auditTypes.surveillance")}
+                    </option>
+                    <option value="follow_up">
+                      {t("auditTypes.followUp")}
+                    </option>
                   </select>
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm font-medium">{t("plannedStart")}</label>
+                    <label className="text-sm font-medium">
+                      {t("plannedStart")}
+                    </label>
                     <Input name="plannedStart" type="date" />
                   </div>
                   <div>
-                    <label className="text-sm font-medium">{t("plannedEnd")}</label>
+                    <label className="text-sm font-medium">
+                      {t("plannedEnd")}
+                    </label>
                     <Input name="plannedEnd" type="date" />
                   </div>
                 </div>
-                <Button type="submit" className="w-full">{t("save")}</Button>
+                <Button type="submit" className="w-full">
+                  {t("save")}
+                </Button>
               </form>
             </DialogContent>
           </Dialog>
@@ -213,7 +260,9 @@ function ExecutionsInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : audits.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">{t("emptyAudits")}</div>
+        <div className="text-center py-12 text-gray-400">
+          {t("emptyAudits")}
+        </div>
       ) : (
         <div className="space-y-3">
           {audits.map((a) => (
@@ -226,7 +275,9 @@ function ExecutionsInner() {
                 <div>
                   <h3 className="font-medium text-gray-900">{a.title}</h3>
                   <p className="text-sm text-gray-500 mt-1">
-                    {a.leadAuditorName ? `${t("lead")}: ${a.leadAuditorName}` : ""}{" "}
+                    {a.leadAuditorName
+                      ? `${t("lead")}: ${a.leadAuditorName}`
+                      : ""}{" "}
                     {a.plannedStart ? `| ${a.plannedStart}` : ""}{" "}
                     {a.plannedEnd ? `- ${a.plannedEnd}` : ""}
                   </p>
@@ -235,7 +286,9 @@ function ExecutionsInner() {
                   {auditTypeBadge(a.auditType)}
                   {statusBadge(a.status)}
                   {(a.findingCount ?? 0) > 0 && (
-                    <Badge variant="destructive">{a.findingCount} {t("findings")}</Badge>
+                    <Badge variant="destructive">
+                      {a.findingCount} {t("findings")}
+                    </Badge>
                   )}
                 </div>
               </div>

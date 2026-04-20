@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  Search,
-  RefreshCcw,
-  FileText,
-} from "lucide-react";
+import { Plus, Loader2, Search, RefreshCcw, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -54,8 +48,27 @@ const STATUS_COLORS: Record<string, string> = {
   archived: "bg-gray-200 text-gray-500",
 };
 
-const CONTRACT_TYPES = ["master_agreement", "service_agreement", "nda", "dpa", "sla", "license", "maintenance", "consulting", "other"] as const;
-const STATUSES = ["draft", "negotiation", "pending_approval", "active", "renewal", "expired", "terminated", "archived"] as const;
+const CONTRACT_TYPES = [
+  "master_agreement",
+  "service_agreement",
+  "nda",
+  "dpa",
+  "sla",
+  "license",
+  "maintenance",
+  "consulting",
+  "other",
+] as const;
+const STATUSES = [
+  "draft",
+  "negotiation",
+  "pending_approval",
+  "active",
+  "renewal",
+  "expired",
+  "terminated",
+  "archived",
+] as const;
 
 export default function ContractListPage() {
   return (
@@ -112,8 +125,10 @@ function ContractListInner() {
           c.vendorName?.toLowerCase().includes(q),
       );
     }
-    if (typeFilter !== "__all__") result = result.filter((c) => c.contractType === typeFilter);
-    if (statusFilter !== "__all__") result = result.filter((c) => c.status === statusFilter);
+    if (typeFilter !== "__all__")
+      result = result.filter((c) => c.contractType === typeFilter);
+    if (statusFilter !== "__all__")
+      result = result.filter((c) => c.status === statusFilter);
     return result;
   }, [contracts, debouncedSearch, typeFilter, statusFilter]);
 
@@ -121,14 +136,19 @@ function ContractListInner() {
     if (!val) return "\u2014";
     const num = parseFloat(val);
     if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", { style: "currency", currency: currency || "EUR" }).format(num);
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: currency || "EUR",
+    }).format(num);
   };
 
   const columns: ColumnDef<ContractRow, unknown>[] = useMemo(
     () => [
       {
         accessorKey: "title",
-        header: ({ column }) => <SortableHeader column={column}>{t("contract.title")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("contract.title")}</SortableHeader>
+        ),
         cell: ({ row }) => (
           <Link
             href={`/contracts/${row.original.id}`}
@@ -142,12 +162,16 @@ function ContractListInner() {
         accessorKey: "vendorName",
         header: t("contract.vendor"),
         cell: ({ row }) => (
-          <span className="text-sm text-gray-700">{row.original.vendorName ?? "\u2014"}</span>
+          <span className="text-sm text-gray-700">
+            {row.original.vendorName ?? "\u2014"}
+          </span>
         ),
       },
       {
         accessorKey: "contractType",
-        header: ({ column }) => <SortableHeader column={column}>{t("contract.type")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("contract.type")}</SortableHeader>
+        ),
         cell: ({ row }) => (
           <Badge variant="outline" className="text-xs">
             {t(`type.${row.original.contractType}`)}
@@ -165,16 +189,25 @@ function ContractListInner() {
       },
       {
         accessorKey: "expirationDate",
-        header: ({ column }) => <SortableHeader column={column}>{t("contract.expiration")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>
+            {t("contract.expiration")}
+          </SortableHeader>
+        ),
         cell: ({ row }) => {
           const d = row.original.expirationDate;
           if (!d) return <span className="text-gray-400">{"\u2014"}</span>;
           if (row.original.autoRenewal) {
-            return <span className="text-sm text-green-600">{t("autoRenewal")}</span>;
+            return (
+              <span className="text-sm text-green-600">{t("autoRenewal")}</span>
+            );
           }
-          const isExpiring = new Date(d).getTime() - Date.now() < 90 * 24 * 60 * 60 * 1000;
+          const isExpiring =
+            new Date(d).getTime() - Date.now() < 90 * 24 * 60 * 60 * 1000;
           return (
-            <span className={`text-sm ${isExpiring ? "text-yellow-700 font-medium" : "text-gray-600"}`}>
+            <span
+              className={`text-sm ${isExpiring ? "text-yellow-700 font-medium" : "text-gray-600"}`}
+            >
               {d}
             </span>
           );
@@ -182,9 +215,16 @@ function ContractListInner() {
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortableHeader column={column}>{t("contract.status")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>
+            {t("contract.status")}
+          </SortableHeader>
+        ),
         cell: ({ row }) => (
-          <Badge variant="outline" className={STATUS_COLORS[row.original.status] ?? ""}>
+          <Badge
+            variant="outline"
+            className={STATUS_COLORS[row.original.status] ?? ""}
+          >
             {t(`status.${row.original.status}`)}
           </Badge>
         ),
@@ -193,7 +233,9 @@ function ContractListInner() {
         accessorKey: "ownerName",
         header: t("contract.owner"),
         cell: ({ row }) => (
-          <span className="text-sm text-gray-600">{row.original.ownerName ?? "\u2014"}</span>
+          <span className="text-sm text-gray-600">
+            {row.original.ownerName ?? "\u2014"}
+          </span>
         ),
       },
     ],
@@ -212,14 +254,26 @@ function ContractListInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("contractRegister")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{filtered.length} {t("contracts")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("contractRegister")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {filtered.length} {t("contracts")}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchContracts} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchContracts}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
-          <Button size="sm" onClick={() => router.push("/contracts/list?new=true")}>
+          <Button
+            size="sm"
+            onClick={() => router.push("/contracts/list?new=true")}
+          >
             <Plus size={16} />
             {t("createContract")}
           </Button>
@@ -228,7 +282,10 @@ function ContractListInner() {
 
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -244,7 +301,9 @@ function ContractListInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("filter.allTypes")}</SelectItem>
             {CONTRACT_TYPES.map((ct) => (
-              <SelectItem key={ct} value={ct}>{t(`type.${ct}`)}</SelectItem>
+              <SelectItem key={ct} value={ct}>
+                {t(`type.${ct}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -255,7 +314,9 @@ function ContractListInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("filter.allStatuses")}</SelectItem>
             {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {t(`status.${s}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -264,10 +325,17 @@ function ContractListInner() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <FileText size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("empty.noContracts")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("empty.noContracts")}
+          </p>
         </div>
       ) : (
-        <DataTable columns={columns} data={filtered} searchKey="title" pageSize={20} />
+        <DataTable
+          columns={columns}
+          data={filtered}
+          searchKey="title"
+          pageSize={20}
+        />
       )}
     </div>
   );

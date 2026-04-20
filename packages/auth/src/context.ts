@@ -68,10 +68,18 @@ export async function withOrgContext<T>(
   const userEmail = session?.user?.email ?? "";
   const userName = session?.user?.name ?? "";
 
-  await db.execute(sql`SELECT set_config('app.current_org_id', ${orgId}, true)`);
-  await db.execute(sql`SELECT set_config('app.current_user_id', ${userId}, true)`);
-  await db.execute(sql`SELECT set_config('app.current_user_email', ${userEmail}, true)`);
-  await db.execute(sql`SELECT set_config('app.current_user_name', ${userName}, true)`);
+  await db.execute(
+    sql`SELECT set_config('app.current_org_id', ${orgId}, true)`,
+  );
+  await db.execute(
+    sql`SELECT set_config('app.current_user_id', ${userId}, true)`,
+  );
+  await db.execute(
+    sql`SELECT set_config('app.current_user_email', ${userEmail}, true)`,
+  );
+  await db.execute(
+    sql`SELECT set_config('app.current_user_name', ${userName}, true)`,
+  );
 
   return fn(db);
 }

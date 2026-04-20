@@ -232,9 +232,7 @@ describe("validateBpmnXml", () => {
 </bpmn:definitions>`;
     const result = validateBpmnXml(noDiagram);
     expect(result.valid).toBe(false);
-    expect(
-      result.errors.some((e) => e.includes("BPMNDiagram")),
-    ).toBe(true);
+    expect(result.errors.some((e) => e.includes("BPMNDiagram"))).toBe(true);
   });
 
   it("rejects completely invalid XML (not XML at all)", () => {

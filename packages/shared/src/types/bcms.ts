@@ -1,15 +1,62 @@
 // Business Continuity Management System (BCMS) types (Sprint 6)
-export type BiaStatus = "draft" | "in_progress" | "review" | "approved" | "archived";
-export type BcpStatus = "draft" | "in_review" | "approved" | "published" | "archived" | "superseded";
-export type CrisisSeverity = "level_1_incident" | "level_2_emergency" | "level_3_crisis" | "level_4_catastrophe";
+export type BiaStatus =
+  | "draft"
+  | "in_progress"
+  | "review"
+  | "approved"
+  | "archived";
+export type BcpStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "published"
+  | "archived"
+  | "superseded";
+export type CrisisSeverity =
+  | "level_1_incident"
+  | "level_2_emergency"
+  | "level_3_crisis"
+  | "level_4_catastrophe";
 export type CrisisStatus = "standby" | "activated" | "resolved" | "post_mortem";
-export type ExerciseType = "tabletop" | "walkthrough" | "functional" | "full_simulation";
-export type ExerciseStatus = "planned" | "preparation" | "executing" | "evaluation" | "completed" | "cancelled";
-export type StrategyType = "active_active" | "active_passive" | "cold_standby" | "manual_workaround" | "outsource" | "do_nothing";
-export type BcpResourceType = "people" | "it_system" | "facility" | "supplier" | "equipment" | "data" | "other";
+export type ExerciseType =
+  | "tabletop"
+  | "walkthrough"
+  | "functional"
+  | "full_simulation";
+export type ExerciseStatus =
+  | "planned"
+  | "preparation"
+  | "executing"
+  | "evaluation"
+  | "completed"
+  | "cancelled";
+export type StrategyType =
+  | "active_active"
+  | "active_passive"
+  | "cold_standby"
+  | "manual_workaround"
+  | "outsource"
+  | "do_nothing";
+export type BcpResourceType =
+  | "people"
+  | "it_system"
+  | "facility"
+  | "supplier"
+  | "equipment"
+  | "data"
+  | "other";
 export type ExerciseResult = "successful" | "partially_successful" | "failed";
-export type CrisisLogEntryType = "decision" | "communication" | "action" | "status_change" | "observation";
-export type ExerciseFindingSeverity = "critical" | "major" | "minor" | "observation";
+export type CrisisLogEntryType =
+  | "decision"
+  | "communication"
+  | "action"
+  | "status_change"
+  | "observation";
+export type ExerciseFindingSeverity =
+  | "critical"
+  | "major"
+  | "minor"
+  | "observation";
 
 export interface BiaAssessment {
   id: string;

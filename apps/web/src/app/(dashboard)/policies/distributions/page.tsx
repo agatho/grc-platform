@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  RefreshCcw,
-  Send,
-  FileText,
-} from "lucide-react";
+import { Plus, Loader2, RefreshCcw, Send, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -96,7 +90,9 @@ export default function PolicyDistributionsPage() {
       {
         accessorKey: "title",
         header: ({ column }) => (
-          <SortableHeader column={column}>{t("distribution.title")}</SortableHeader>
+          <SortableHeader column={column}>
+            {t("distribution.title")}
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <Link
@@ -139,7 +135,9 @@ export default function PolicyDistributionsPage() {
         accessorKey: "isMandatory",
         header: t("distribution.mandatory"),
         cell: ({ row }) => (
-          <Badge variant={row.original.isMandatory ? "destructive" : "secondary"}>
+          <Badge
+            variant={row.original.isMandatory ? "destructive" : "secondary"}
+          >
             {row.original.isMandatory ? t("mandatory") : t("optional")}
           </Badge>
         ),

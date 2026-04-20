@@ -65,8 +65,12 @@ export const task = pgTable(
     // Sprint 1.4: link to work_item (FK added in migration SQL)
     workItemId: uuid("work_item_id"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => user.id),
@@ -84,13 +88,13 @@ export const task = pgTable(
     index("task_due_date_idx")
       .on(table.dueDate)
       .where(
-        sql`${table.deletedAt} IS NULL AND ${table.status} NOT IN ('done', 'cancelled')`
+        sql`${table.deletedAt} IS NULL AND ${table.status} NOT IN ('done', 'cancelled')`,
       ),
     index("task_source_entity_idx").on(
       table.sourceEntityType,
-      table.sourceEntityId
+      table.sourceEntityId,
     ),
-  ]
+  ],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -108,15 +112,19 @@ export const taskComment = pgTable(
       .notNull()
       .references(() => organization.id),
     content: text("content").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by")
       .notNull()
       .references(() => user.id),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => [
     index("tc_task_idx").on(table.taskId),
     index("tc_org_idx").on(table.orgId),
-  ]
+  ],
 );

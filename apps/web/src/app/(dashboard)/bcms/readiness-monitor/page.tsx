@@ -80,7 +80,10 @@ function doraBadge(crisis: ActiveCrisis) {
   const { dora } = crisis;
   if (dora.finalOverdue) {
     return (
-      <Badge variant="outline" className="bg-red-200 text-red-900 border-red-500">
+      <Badge
+        variant="outline"
+        className="bg-red-200 text-red-900 border-red-500"
+      >
         <Siren className="h-3 w-3 mr-1" />
         FINAL OVERDUE (1-Monat-Report)
       </Badge>
@@ -88,7 +91,10 @@ function doraBadge(crisis: ActiveCrisis) {
   }
   if (dora.intermediateOverdue) {
     return (
-      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+      <Badge
+        variant="outline"
+        className="bg-red-100 text-red-800 border-red-300"
+      >
         <AlertTriangle className="h-3 w-3 mr-1" />
         72H OVERDUE
       </Badge>
@@ -96,14 +102,20 @@ function doraBadge(crisis: ActiveCrisis) {
   }
   if (dora.earlyWarningOverdue) {
     return (
-      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+      <Badge
+        variant="outline"
+        className="bg-amber-100 text-amber-800 border-amber-300"
+      >
         <Clock className="h-3 w-3 mr-1" />
         4H PASSED
       </Badge>
     );
   }
   return (
-    <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+    <Badge
+      variant="outline"
+      className="bg-emerald-100 text-emerald-800 border-emerald-300"
+    >
       <CheckCircle2 className="h-3 w-3 mr-1" />
       ON TRACK
     </Badge>
@@ -177,10 +189,12 @@ export default function BcmsReadinessMonitorPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zu BCMS
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">BCMS Readiness Monitor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            BCMS Readiness Monitor
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Aktive Krisen mit DORA 4h/72h/1-Monat-Timer + BCP-Freshness + ISO 22301 Kap. 8.5
-            Exercise-Coverage.
+            Aktive Krisen mit DORA 4h/72h/1-Monat-Timer + BCP-Freshness + ISO
+            22301 Kap. 8.5 Exercise-Coverage.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -218,11 +232,17 @@ export default function BcmsReadinessMonitorPage() {
               Overall BCMS Readiness
             </CardTitle>
             {s.overallReady ? (
-              <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+              <Badge
+                variant="outline"
+                className="bg-emerald-100 text-emerald-800 border-emerald-300"
+              >
                 READY
               </Badge>
             ) : (
-              <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300">
+              <Badge
+                variant="outline"
+                className="bg-amber-100 text-amber-800 border-amber-300"
+              >
                 LUECKEN
               </Badge>
             )}
@@ -232,25 +252,33 @@ export default function BcmsReadinessMonitorPage() {
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
             <div>
               <p className="text-xs text-muted-foreground">Aktive Krisen</p>
-              <p className={`text-2xl font-bold ${s.activeCrisesCount > 0 ? "text-red-700" : ""}`}>
+              <p
+                className={`text-2xl font-bold ${s.activeCrisesCount > 0 ? "text-red-700" : ""}`}
+              >
                 {s.activeCrisesCount}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">BCPs mit Luecken</p>
-              <p className={`text-2xl font-bold ${s.bcpWithIssues > 0 ? "text-amber-700" : ""}`}>
+              <p
+                className={`text-2xl font-bold ${s.bcpWithIssues > 0 ? "text-amber-700" : ""}`}
+              >
                 {s.bcpWithIssues}/{s.bcpTotal}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Uebungen YTD</p>
-              <p className={`text-2xl font-bold ${s.exerciseIsoGap ? "text-red-700" : ""}`}>
+              <p
+                className={`text-2xl font-bold ${s.exerciseIsoGap ? "text-red-700" : ""}`}
+              >
                 {s.exerciseCoverageYtd}
               </p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">DORA Overdue</p>
-              <p className={`text-2xl font-bold ${s.crisesWithOverdueDora > 0 ? "text-red-700" : ""}`}>
+              <p
+                className={`text-2xl font-bold ${s.crisesWithOverdueDora > 0 ? "text-red-700" : ""}`}
+              >
                 {s.crisesWithOverdueDora}
               </p>
             </div>
@@ -269,7 +297,8 @@ export default function BcmsReadinessMonitorPage() {
               </CardTitle>
             </div>
             <CardDescription>
-              DORA-Timer: 4h Early-Warning → 72h Intermediate → 1-Monat Final-Report.
+              DORA-Timer: 4h Early-Warning → 72h Intermediate → 1-Monat
+              Final-Report.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
@@ -283,7 +312,8 @@ export default function BcmsReadinessMonitorPage() {
                         {c.severity}
                       </Badge>
                       <span>
-                        Aktiviert: {new Date(c.activatedAtIso).toLocaleString("de-DE")}
+                        Aktiviert:{" "}
+                        {new Date(c.activatedAtIso).toLocaleString("de-DE")}
                       </span>
                       {c.frameworks?.map((fw) => (
                         <Badge
@@ -306,29 +336,43 @@ export default function BcmsReadinessMonitorPage() {
                         : "text-amber-700"
                     }
                   >
-                    <p className="text-muted-foreground mb-0.5">4h Early Warning</p>
+                    <p className="text-muted-foreground mb-0.5">
+                      4h Early Warning
+                    </p>
                     <p className="font-medium">
-                      {new Date(c.dora.earlyWarningAtIso).toLocaleString("de-DE")}
+                      {new Date(c.dora.earlyWarningAtIso).toLocaleString(
+                        "de-DE",
+                      )}
                     </p>
                   </div>
-                  <div className={c.dora.intermediateOverdue ? "text-red-700" : ""}>
-                    <p className="text-muted-foreground mb-0.5">72h Intermediate</p>
+                  <div
+                    className={c.dora.intermediateOverdue ? "text-red-700" : ""}
+                  >
+                    <p className="text-muted-foreground mb-0.5">
+                      72h Intermediate
+                    </p>
                     <p className="font-medium">
-                      {new Date(c.dora.intermediateAtIso).toLocaleString("de-DE")}
+                      {new Date(c.dora.intermediateAtIso).toLocaleString(
+                        "de-DE",
+                      )}
                     </p>
                   </div>
                   <div className={c.dora.finalOverdue ? "text-red-700" : ""}>
-                    <p className="text-muted-foreground mb-0.5">1-Monat Final</p>
+                    <p className="text-muted-foreground mb-0.5">
+                      1-Monat Final
+                    </p>
                     <p className="font-medium">
                       {new Date(c.dora.finalAtIso).toLocaleString("de-DE")}
                     </p>
                   </div>
                 </div>
-                {c.dora.nextDeadlineLabel !== "none" && c.dora.hoursUntilNext !== null && (
-                  <div className="mt-2 text-xs text-muted-foreground">
-                    Naechste Deadline ({c.dora.nextDeadlineLabel}): in {c.dora.hoursUntilNext}h
-                  </div>
-                )}
+                {c.dora.nextDeadlineLabel !== "none" &&
+                  c.dora.hoursUntilNext !== null && (
+                    <div className="mt-2 text-xs text-muted-foreground">
+                      Naechste Deadline ({c.dora.nextDeadlineLabel}): in{" "}
+                      {c.dora.hoursUntilNext}h
+                    </div>
+                  )}
               </div>
             ))}
           </CardContent>
@@ -341,8 +385,8 @@ export default function BcmsReadinessMonitorPage() {
               Keine aktiven Krisen
             </CardTitle>
             <CardDescription>
-              Alle Crisis-Scenarios im Standby. DORA-Timer werden aktiv sobald ein
-              Szenario auf "activated" transitioniert.
+              Alle Crisis-Scenarios im Standby. DORA-Timer werden aktiv sobald
+              ein Szenario auf "activated" transitioniert.
             </CardDescription>
           </CardHeader>
         </Card>
@@ -350,27 +394,39 @@ export default function BcmsReadinessMonitorPage() {
 
       {/* Exercise Coverage */}
       <Card
-        className={s.exerciseIsoGap ? "border-red-300 bg-red-50/30 dark:bg-red-950/10" : ""}
+        className={
+          s.exerciseIsoGap
+            ? "border-red-300 bg-red-50/30 dark:bg-red-950/10"
+            : ""
+        }
       >
         <CardHeader>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <FlaskConical className="h-5 w-5 text-primary" />
               <div>
-                <CardTitle className="text-base">ISO 22301 Kap. 8.5 Exercise-Coverage</CardTitle>
+                <CardTitle className="text-base">
+                  ISO 22301 Kap. 8.5 Exercise-Coverage
+                </CardTitle>
                 <CardDescription>
-                  Mindestens eine Uebung pro Kalenderjahr. Alternativ auch Live-Exercise
-                  waehrend tatsaechlicher Krise.
+                  Mindestens eine Uebung pro Kalenderjahr. Alternativ auch
+                  Live-Exercise waehrend tatsaechlicher Krise.
                 </CardDescription>
               </div>
             </div>
             {s.exerciseIsoGap ? (
-              <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+              <Badge
+                variant="outline"
+                className="bg-red-100 text-red-800 border-red-300"
+              >
                 <AlertTriangle className="h-3 w-3 mr-1" />
                 LUECKE
               </Badge>
             ) : (
-              <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+              <Badge
+                variant="outline"
+                className="bg-emerald-100 text-emerald-800 border-emerald-300"
+              >
                 <CheckCircle2 className="h-3 w-3 mr-1" />
                 ERFUELLT
               </Badge>
@@ -379,12 +435,16 @@ export default function BcmsReadinessMonitorPage() {
         </CardHeader>
         <CardContent>
           <p className="text-sm">
-            <span className="font-bold text-2xl mr-2">{data.exerciseCoverageYtd}</span>
-            abgeschlossene Uebung{data.exerciseCoverageYtd === 1 ? "" : "en"} in diesem Kalenderjahr.
+            <span className="font-bold text-2xl mr-2">
+              {data.exerciseCoverageYtd}
+            </span>
+            abgeschlossene Uebung{data.exerciseCoverageYtd === 1 ? "" : "en"} in
+            diesem Kalenderjahr.
           </p>
           {s.exerciseIsoGap && (
             <p className="text-xs text-red-700 mt-2">
-              ISO 22301 Kap. 8.5 Verstoss — Uebung einplanen bevor Kalenderjahr endet.
+              ISO 22301 Kap. 8.5 Verstoss — Uebung einplanen bevor Kalenderjahr
+              endet.
             </p>
           )}
         </CardContent>
@@ -396,10 +456,13 @@ export default function BcmsReadinessMonitorPage() {
           <CardHeader>
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-amber-600" />
-              <CardTitle>BCPs mit Freshness-Luecken ({data.bcpIssues.length})</CardTitle>
+              <CardTitle>
+                BCPs mit Freshness-Luecken ({data.bcpIssues.length})
+              </CardTitle>
             </div>
             <CardDescription>
-              Review-Date ueberfaellig, nicht getestet, oder letzter Test &gt; 1 Jahr.
+              Review-Date ueberfaellig, nicht getestet, oder letzter Test &gt; 1
+              Jahr.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-2">
@@ -426,17 +489,26 @@ export default function BcmsReadinessMonitorPage() {
                   </div>
                   <div className="flex flex-col gap-1 items-end flex-shrink-0">
                     {b.reviewOverdue && (
-                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-100 text-red-800 border-red-300 text-xs"
+                      >
                         Review {b.reviewOverdueDays}d ueberfaellig
                       </Badge>
                     )}
                     {b.untested && (
-                      <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="bg-red-100 text-red-800 border-red-300 text-xs"
+                      >
                         Nie getestet
                       </Badge>
                     )}
                     {b.testStale && (
-                      <Badge variant="outline" className="bg-amber-100 text-amber-800 border-amber-300 text-xs">
+                      <Badge
+                        variant="outline"
+                        className="bg-amber-100 text-amber-800 border-amber-300 text-xs"
+                      >
                         Test {b.testAgeDays}d alt
                       </Badge>
                     )}
@@ -454,8 +526,8 @@ export default function BcmsReadinessMonitorPage() {
               Alle BCPs aktuell ({s.bcpTotal})
             </CardTitle>
             <CardDescription>
-              Keine Reviews ueberfaellig, alle published/approved BCPs getestet innerhalb
-              der letzten 12 Monate.
+              Keine Reviews ueberfaellig, alle published/approved BCPs getestet
+              innerhalb der letzten 12 Monate.
             </CardDescription>
           </CardHeader>
         </Card>

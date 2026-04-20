@@ -23,11 +23,13 @@ export async function PATCH(
   const [updated] = await db
     .update(deviceRegistration)
     .set({ ...body.data, updatedAt: new Date() })
-    .where(and(
-      eq(deviceRegistration.id, id),
-      eq(deviceRegistration.userId, ctx.userId),
-      eq(deviceRegistration.orgId, ctx.orgId),
-    ))
+    .where(
+      and(
+        eq(deviceRegistration.id, id),
+        eq(deviceRegistration.userId, ctx.userId),
+        eq(deviceRegistration.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!updated) {
@@ -49,11 +51,13 @@ export async function DELETE(
   const [updated] = await db
     .update(deviceRegistration)
     .set({ isActive: false, updatedAt: new Date() })
-    .where(and(
-      eq(deviceRegistration.id, id),
-      eq(deviceRegistration.userId, ctx.userId),
-      eq(deviceRegistration.orgId, ctx.orgId),
-    ))
+    .where(
+      and(
+        eq(deviceRegistration.id, id),
+        eq(deviceRegistration.userId, ctx.userId),
+        eq(deviceRegistration.orgId, ctx.orgId),
+      ),
+    )
     .returning();
 
   if (!updated) {

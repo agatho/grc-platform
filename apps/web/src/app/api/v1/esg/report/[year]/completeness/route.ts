@@ -85,9 +85,7 @@ export async function GET(
       WHERE dp.is_mandatory = true
         AND dp.esrs_standard = ANY(${materialTopics})
     `);
-    coveredDatapoints = Number(
-      (coveredResult as any)[0]?.covered ?? 0,
-    );
+    coveredDatapoints = Number((coveredResult as any)[0]?.covered ?? 0);
   }
 
   const completenessPercent =

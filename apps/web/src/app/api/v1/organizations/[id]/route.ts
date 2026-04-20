@@ -1,5 +1,8 @@
 import { db, organization, user, userOrganizationRole } from "@grc/db";
-import { updateOrganizationSchema, updateOrganizationGdprSchema } from "@grc/shared";
+import {
+  updateOrganizationSchema,
+  updateOrganizationGdprSchema,
+} from "@grc/shared";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -71,7 +74,10 @@ export async function PUT(
     `);
     if (!dpoRoles[0]) {
       return Response.json(
-        { error: "dpoUserId must reference a user with 'dpo' role in this organization" },
+        {
+          error:
+            "dpoUserId must reference a user with 'dpo' role in this organization",
+        },
         { status: 422 },
       );
     }

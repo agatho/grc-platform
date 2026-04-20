@@ -1,9 +1,4 @@
-import {
-  db,
-  audit,
-  auditUniverseEntry,
-  finding,
-} from "@grc/db";
+import { db, audit, auditUniverseEntry, finding } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, sql, lte, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -18,10 +13,7 @@ export async function GET(req: Request) {
 
   const today = new Date().toISOString().split("T")[0];
 
-  const auditBase = and(
-    eq(audit.orgId, ctx.orgId),
-    isNull(audit.deletedAt),
-  );
+  const auditBase = and(eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt));
 
   const universeBase = and(
     eq(auditUniverseEntry.orgId, ctx.orgId),
@@ -78,10 +70,7 @@ export async function GET(req: Request) {
         ),
       ),
     // Universe total
-    db
-      .select({ value: count() })
-      .from(auditUniverseEntry)
-      .where(universeBase),
+    db.select({ value: count() }).from(auditUniverseEntry).where(universeBase),
     // Universe never audited
     db
       .select({ value: count() })
@@ -91,9 +80,7 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(auditUniverseEntry)
-      .where(
-        and(universeBase, lte(auditUniverseEntry.nextAuditDue, today)),
-      ),
+      .where(and(universeBase, lte(auditUniverseEntry.nextAuditDue, today))),
     // Findings by severity (for audits)
     db
       .select({

@@ -53,7 +53,8 @@ export function validateBcmsGate1Setup(snapshot: BiaSnapshot): Blocker[] {
   if (!snapshot.leadAssessorId) {
     blockers.push({
       code: "missing_lead_assessor",
-      message: "Lead-Assessor muss zugewiesen sein (typ. risk_manager oder Process-Owner).",
+      message:
+        "Lead-Assessor muss zugewiesen sein (typ. risk_manager oder Process-Owner).",
       gate: "B1",
       severity: "error",
     });
@@ -68,7 +69,8 @@ export function validateBcmsGate1Setup(snapshot: BiaSnapshot): Blocker[] {
     });
   } else {
     const diffDays =
-      (new Date(snapshot.periodEnd).getTime() - new Date(snapshot.periodStart).getTime()) /
+      (new Date(snapshot.periodEnd).getTime() -
+        new Date(snapshot.periodStart).getTime()) /
       (1000 * 60 * 60 * 24);
     if (diffDays < 7) {
       blockers.push({
@@ -140,7 +142,9 @@ export interface BiaTransitionResult {
   updates?: Partial<BiaSnapshot>;
 }
 
-export function validateBiaTransition(req: BiaTransitionRequest): BiaTransitionResult {
+export function validateBiaTransition(
+  req: BiaTransitionRequest,
+): BiaTransitionResult {
   const { currentStatus, targetStatus, snapshot, coverageStats } = req;
 
   const allowed = BIA_ALLOWED_TRANSITIONS[currentStatus] ?? [];
@@ -171,7 +175,8 @@ export function validateBiaTransition(req: BiaTransitionRequest): BiaTransitionR
         blockers: [
           {
             code: "missing_coverage_stats",
-            message: "Coverage-Stats erforderlich fuer Transition nach 'review'.",
+            message:
+              "Coverage-Stats erforderlich fuer Transition nach 'review'.",
             gate: "B2",
             severity: "error",
           },

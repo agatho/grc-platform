@@ -36,7 +36,10 @@ const automationActionServices: ActionServices = {
   createTask: async (params) => {
     // Create task via direct DB insert (uses Sprint 1.2 task table)
     try {
-      const createdBy = await resolveOrgUserForRole(params.orgId, params.assigneeRole);
+      const createdBy = await resolveOrgUserForRole(
+        params.orgId,
+        params.assigneeRole,
+      );
       if (!createdBy) {
         console.error(
           `[AutomationServices] createTask: no user with role ${params.assigneeRole} or admin in org ${params.orgId}`,
@@ -107,7 +110,10 @@ const automationActionServices: ActionServices = {
   escalate: async (params) => {
     // Escalation = high-priority notification to target role
     try {
-      const userId = await resolveOrgUserForRole(params.orgId, params.targetRole);
+      const userId = await resolveOrgUserForRole(
+        params.orgId,
+        params.targetRole,
+      );
       if (!userId) return;
       await db.insert(notification).values({
         orgId: params.orgId,
@@ -158,7 +164,9 @@ export function initAutomationEngine(): AutomationEngine {
     void engineInstance!.handleEvent(event);
   });
 
-  console.log("[Sprint28] AutomationEngine initialized and subscribed to Event Bus");
+  console.log(
+    "[Sprint28] AutomationEngine initialized and subscribed to Event Bus",
+  );
 
   return engineInstance;
 }

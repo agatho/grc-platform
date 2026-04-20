@@ -6,8 +6,15 @@ import { ENTITY_TYPE_COLORS, HUB_CONNECTION_THRESHOLD } from "../types";
 describe("Entity type colors", () => {
   it("defines colors for all core entity types", () => {
     const requiredTypes = [
-      "risk", "control", "asset", "process", "vendor",
-      "document", "finding", "incident", "audit",
+      "risk",
+      "control",
+      "asset",
+      "process",
+      "vendor",
+      "document",
+      "finding",
+      "incident",
+      "audit",
     ];
     for (const type of requiredTypes) {
       expect(ENTITY_TYPE_COLORS[type]).toBeDefined();
@@ -50,10 +57,26 @@ describe("Hub detection", () => {
 
 describe("Orphan categorization", () => {
   const ORPHAN_CATEGORIES = [
-    { type: "risk", missingRelationship: "mitigates", description: "Risks without controls" },
-    { type: "control", missingRelationship: "tested_by", description: "Controls without tests" },
-    { type: "asset", missingRelationship: "any", description: "Assets without references" },
-    { type: "process", missingRelationship: "owned_by", description: "Processes without controls" },
+    {
+      type: "risk",
+      missingRelationship: "mitigates",
+      description: "Risks without controls",
+    },
+    {
+      type: "control",
+      missingRelationship: "tested_by",
+      description: "Controls without tests",
+    },
+    {
+      type: "asset",
+      missingRelationship: "any",
+      description: "Assets without references",
+    },
+    {
+      type: "process",
+      missingRelationship: "owned_by",
+      description: "Processes without controls",
+    },
   ];
 
   it("defines 4 orphan categories", () => {
@@ -92,8 +115,12 @@ describe("Dependency matrix", () => {
       { sourceType: "control", targetType: "risk", count: 8, avgWeight: 60 },
     ];
     // Forward and reverse are separate entries
-    const forward = entries.find((e) => e.sourceType === "risk" && e.targetType === "control");
-    const reverse = entries.find((e) => e.sourceType === "control" && e.targetType === "risk");
+    const forward = entries.find(
+      (e) => e.sourceType === "risk" && e.targetType === "control",
+    );
+    const reverse = entries.find(
+      (e) => e.sourceType === "control" && e.targetType === "risk",
+    );
     expect(forward).toBeDefined();
     expect(reverse).toBeDefined();
     // Counts can differ (direction matters)

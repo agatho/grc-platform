@@ -72,7 +72,10 @@ export async function POST(req: Request) {
   const existingRows = Array.isArray(existing) ? existing : [];
 
   if (existingRows.length === 0) {
-    return Response.json({ error: "Audit log entry not found" }, { status: 404 });
+    return Response.json(
+      { error: "Audit log entry not found" },
+      { status: 404 },
+    );
   }
 
   if (existingRows[0].pii_tombstoned_at) {
@@ -96,10 +99,16 @@ export async function POST(req: Request) {
   } catch (err) {
     const msg = err instanceof Error ? err.message : String(err);
     if (msg.includes("already tombstoned")) {
-      return Response.json({ error: "Audit log entry is already tombstoned" }, { status: 409 });
+      return Response.json(
+        { error: "Audit log entry is already tombstoned" },
+        { status: 409 },
+      );
     }
     if (msg.includes("does not exist")) {
-      return Response.json({ error: "Audit log entry not found" }, { status: 404 });
+      return Response.json(
+        { error: "Audit log entry not found" },
+        { status: 404 },
+      );
     }
     throw err;
   }

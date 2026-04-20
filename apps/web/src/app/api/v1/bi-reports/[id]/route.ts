@@ -5,7 +5,10 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { updateBiReportSchema } from "@grc/shared";
 
 // GET /api/v1/bi-reports/:id
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -13,7 +16,9 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
-  const [row] = await db.select().from(biReport)
+  const [row] = await db
+    .select()
+    .from(biReport)
     .where(and(eq(biReport.id, id), eq(biReport.orgId, ctx.orgId)));
 
   if (!row) return Response.json({ error: "Not found" }, { status: 404 });
@@ -21,7 +26,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
 }
 
 // PATCH /api/v1/bi-reports/:id
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -32,8 +40,11 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   const body = updateBiReportSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [updated] = await tx.update(biReport).set({ ...body, updatedBy: ctx.userId, updatedAt: new Date() })
-      .where(and(eq(biReport.id, id), eq(biReport.orgId, ctx.orgId))).returning();
+    const [updated] = await tx
+      .update(biReport)
+      .set({ ...body, updatedBy: ctx.userId, updatedAt: new Date() })
+      .where(and(eq(biReport.id, id), eq(biReport.orgId, ctx.orgId)))
+      .returning();
     return updated;
   });
 
@@ -42,7 +53,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 }
 
 // DELETE /api/v1/bi-reports/:id
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
 
@@ -52,8 +66,10 @@ export async function DELETE(req: Request, { params }: { params: Promise<{ id: s
   const { id } = await params;
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [deleted] = await tx.delete(biReport)
-      .where(and(eq(biReport.id, id), eq(biReport.orgId, ctx.orgId))).returning();
+    const [deleted] = await tx
+      .delete(biReport)
+      .where(and(eq(biReport.id, id), eq(biReport.orgId, ctx.orgId)))
+      .returning();
     return deleted;
   });
 

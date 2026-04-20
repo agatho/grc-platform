@@ -80,7 +80,9 @@ interface MaturityRoadmapPromptInput {
   targetMaturity: number;
 }
 
-export function buildMaturityRoadmapPrompt(input: MaturityRoadmapPromptInput): string {
+export function buildMaturityRoadmapPrompt(
+  input: MaturityRoadmapPromptInput,
+): string {
   const maturityLines = input.maturityData
     .map(
       (m) =>
@@ -178,7 +180,9 @@ export function parseSoaGapResponse(text: string): ParsedSoaGap[] {
 /**
  * Parse AI response for maturity roadmap. Extracts JSON array from text.
  */
-export function parseMaturityRoadmapResponse(text: string): ParsedRoadmapAction[] {
+export function parseMaturityRoadmapResponse(
+  text: string,
+): ParsedRoadmapAction[] {
   try {
     const jsonMatch = text.match(/\[[\s\S]*\]/);
     if (!jsonMatch) return [];
@@ -192,8 +196,7 @@ export function parseMaturityRoadmapResponse(text: string): ParsedRoadmapAction[
     return parsed
       .filter(
         (item: Record<string, unknown>) =>
-          typeof item.domain === "string" &&
-          typeof item.title === "string",
+          typeof item.domain === "string" && typeof item.title === "string",
       )
       .map((item: Record<string, unknown>) => ({
         domain: String(item.domain).slice(0, 200),

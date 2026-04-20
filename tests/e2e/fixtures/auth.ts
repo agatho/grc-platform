@@ -6,17 +6,23 @@ const PASSWORD = process.env.E2E_PASSWORD ?? "admin123";
 /** Performs a fresh login and waits for the dashboard. */
 export async function login(page: Page): Promise<void> {
   await page.goto("/login");
-  await page.locator('input[type="email"], input[name="email"]').first().fill(EMAIL);
-  await page.locator('input[type="password"], input[name="password"]').first().fill(PASSWORD);
+  await page
+    .locator('input[type="email"], input[name="email"]')
+    .first()
+    .fill(EMAIL);
+  await page
+    .locator('input[type="password"], input[name="password"]')
+    .first()
+    .fill(PASSWORD);
   await page.locator('button[type="submit"]').first().click();
-  await page.waitForLoadState("networkidle", { timeout: 15_000 }).catch(() => {});
+  await page
+    .waitForLoadState("networkidle", { timeout: 15_000 })
+    .catch(() => {});
   await page.waitForTimeout(1000);
 }
 
 /** Returns the current session payload -- useful for derived assertions. */
-export async function getSession(
-  page: Page,
-): Promise<{
+export async function getSession(page: Page): Promise<{
   userId?: string;
   email?: string;
   currentOrgId?: string | null;

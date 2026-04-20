@@ -1,7 +1,12 @@
 import { db, user, userOrganizationRole, scimSyncLog } from "@grc/db";
 import { eq, and, isNull, sql, ilike } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
-import { scimToArctosUser, arctosToScimUser, buildScimListResponse, buildScimError } from "@grc/auth/scim";
+import {
+  scimToArctosUser,
+  arctosToScimUser,
+  buildScimListResponse,
+  buildScimError,
+} from "@grc/auth/scim";
 import { parseScimFilter } from "@grc/auth/scim";
 import { scimCreateUserSchema } from "@grc/shared";
 
@@ -22,8 +27,14 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const startIndex = Math.max(1, parseInt(url.searchParams.get("startIndex") ?? "1", 10));
-  const count = Math.min(100, Math.max(1, parseInt(url.searchParams.get("count") ?? "100", 10)));
+  const startIndex = Math.max(
+    1,
+    parseInt(url.searchParams.get("startIndex") ?? "1", 10),
+  );
+  const count = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("count") ?? "100", 10)),
+  );
   const filterStr = url.searchParams.get("filter");
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
@@ -33,7 +44,10 @@ export async function GET(req: Request) {
   if (filterStr) {
     const filter = parseScimFilter(filterStr);
     if (filter) {
-      if (filter.attribute === "userName" || filter.attribute === "emails.value") {
+      if (
+        filter.attribute === "userName" ||
+        filter.attribute === "emails.value"
+      ) {
         if (filter.operator === "eq") {
           filterCondition = sql`u.email = ${filter.value}`;
         } else if (filter.operator === "co") {
@@ -41,7 +55,10 @@ export async function GET(req: Request) {
         } else if (filter.operator === "sw") {
           filterCondition = sql`u.email ILIKE ${filter.value + "%"}`;
         }
-      } else if (filter.attribute === "externalId" && filter.operator === "eq") {
+      } else if (
+        filter.attribute === "externalId" &&
+        filter.operator === "eq"
+      ) {
         filterCondition = sql`u.external_id = ${filter.value}`;
       }
     }
@@ -85,7 +102,9 @@ export async function GET(req: Request) {
     ),
   );
 
-  return scimResponse(buildScimListResponse(resources, total, startIndex, count));
+  return scimResponse(
+    buildScimListResponse(resources, total, startIndex, count),
+  );
 }
 
 // POST /api/v1/scim/v2/Users — Create user (SCIM)
@@ -226,7 +245,8 @@ export async function POST(req: Request) {
 
     return scimResponse(scimUser, 201);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "SCIM user creation failed";
+    const message =
+      err instanceof Error ? err.message : "SCIM user creation failed";
 
     await db.insert(scimSyncLog).values({
       orgId: authCtx.orgId,

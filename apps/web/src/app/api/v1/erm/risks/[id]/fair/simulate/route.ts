@@ -47,7 +47,10 @@ export async function POST(
 
   if (!fairParams) {
     return Response.json(
-      { error: "FAIR parameters not configured for this risk. Set parameters first." },
+      {
+        error:
+          "FAIR parameters not configured for this risk. Set parameters first.",
+      },
       { status: 400 },
     );
   }

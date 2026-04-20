@@ -32,7 +32,12 @@ export async function GET(req: Request) {
   // Pivot into structured response
   const buckets = ["lt30", "30to60", "60to90", "gt90"] as const;
   const bySeverity: Record<string, Record<string, number>> = {};
-  const totals: Record<string, number> = { lt30: 0, "30to60": 0, "60to90": 0, gt90: 0 };
+  const totals: Record<string, number> = {
+    lt30: 0,
+    "30to60": 0,
+    "60to90": 0,
+    gt90: 0,
+  };
 
   for (const r of rows) {
     if (!bySeverity[r.severity]) {

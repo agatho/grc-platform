@@ -33,7 +33,10 @@ export async function GET(
   const tableName = ENTITY_TABLE_MAP[entityType];
   const translatableFields = TRANSLATABLE_FIELDS[entityType];
   if (!tableName || !translatableFields) {
-    return Response.json({ error: "Entity type not translatable" }, { status: 400 });
+    return Response.json(
+      { error: "Entity type not translatable" },
+      { status: 400 },
+    );
   }
 
   const url = new URL(req.url);
@@ -42,11 +45,16 @@ export async function GET(
   // Fetch entity with raw JSONB fields
   // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists above
   const fieldSelects = translatableFields.map((f) => sql.raw(`"${f}"`));
-  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const isCatalogTable =
+    tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
 
   const result = isCatalogTable
-    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
-    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
+    ? await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`,
+      )
+    : await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`,
+      );
 
   const rows = result as unknown as Record<string, unknown>[];
   if (!rows || rows.length === 0) {
@@ -101,7 +109,13 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ entityType: string; entityId: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+  );
   if (ctx instanceof Response) return ctx;
 
   const { entityType, entityId } = await params;
@@ -113,13 +127,19 @@ export async function PUT(
   const url = new URL(req.url);
   const locale = url.searchParams.get("locale");
   if (!locale) {
-    return Response.json({ error: "locale query parameter is required" }, { status: 400 });
+    return Response.json(
+      { error: "locale query parameter is required" },
+      { status: 400 },
+    );
   }
 
   const tableName = ENTITY_TABLE_MAP[entityType];
   const translatableFields = TRANSLATABLE_FIELDS[entityType];
   if (!tableName || !translatableFields) {
-    return Response.json({ error: "Entity type not translatable" }, { status: 400 });
+    return Response.json(
+      { error: "Entity type not translatable" },
+      { status: 400 },
+    );
   }
 
   const body = saveTranslationSchema.safeParse(await req.json());
@@ -143,12 +163,17 @@ export async function PUT(
 
   // Verify entity exists
   // Table/field names are validated via ENTITY_TABLE_MAP/TRANSLATABLE_FIELDS whitelists
-  const isCatalogTable = tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
+  const isCatalogTable =
+    tableName === "risk_catalog_entry" || tableName === "control_catalog_entry";
   const fieldSelects = translatableFields.map((f) => sql.raw(`"${f}"`));
 
   const existingResult = isCatalogTable
-    ? await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`)
-    : await db.execute(sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`);
+    ? await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND deleted_at IS NULL LIMIT 1`,
+      )
+    : await db.execute(
+        sql`SELECT id, ${sql.join(fieldSelects, sql`, `)} FROM ${sql.raw(`"${tableName}"`)} WHERE id = ${entityId} AND org_id = ${ctx.orgId} AND deleted_at IS NULL LIMIT 1`,
+      );
 
   const existingRows = existingResult as unknown as Record<string, unknown>[];
   if (!existingRows || existingRows.length === 0) {
@@ -164,7 +189,9 @@ export async function PUT(
     const sanitizedValue = sanitizeTranslation(value);
     const currentField = existing[field] as Record<string, string> | null;
     const merged = mergeTranslation(currentField, locale, sanitizedValue);
-    updateParts.push(sql`${sql.raw(`"${field}"`)} = ${JSON.stringify(merged)}::jsonb`);
+    updateParts.push(
+      sql`${sql.raw(`"${field}"`)} = ${JSON.stringify(merged)}::jsonb`,
+    );
   }
 
   updateParts.push(sql`updated_at = now()`);

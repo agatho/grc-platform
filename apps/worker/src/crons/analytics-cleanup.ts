@@ -7,7 +7,9 @@ import { lte } from "drizzle-orm";
 export async function processAnalyticsCleanup(): Promise<{
   deleted: number;
 }> {
-  console.log("[analytics-cleanup] Starting daily cleanup of expired analytics imports");
+  console.log(
+    "[analytics-cleanup] Starting daily cleanup of expired analytics imports",
+  );
 
   const now = new Date();
 

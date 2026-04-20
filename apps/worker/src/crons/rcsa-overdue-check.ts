@@ -54,15 +54,15 @@ export async function processRcsaOverdueCheck(): Promise<RcsaOverdueResult> {
           status: "overdue",
           updatedAt: now,
         })
-        .where(
-          sql`${rcsaAssignment.id} = ANY(${overdueIds}::uuid[])`,
-        );
+        .where(sql`${rcsaAssignment.id} = ANY(${overdueIds}::uuid[])`);
 
       markedOverdue += overdueAssignments.length;
 
       // Send escalation to campaign creator
       if (campaign.createdBy) {
-        const overdueUserIds = [...new Set(overdueAssignments.map((a) => a.userId))];
+        const overdueUserIds = [
+          ...new Set(overdueAssignments.map((a) => a.userId)),
+        ];
 
         try {
           await db.insert(notification).values({
@@ -100,5 +100,10 @@ export async function processRcsaOverdueCheck(): Promise<RcsaOverdueResult> {
     `[cron:rcsa-overdue-check] Processed ${activeCampaigns.length} campaigns, marked ${markedOverdue} overdue, sent ${escalationsSent} escalations, ${errors.length} errors`,
   );
 
-  return { processed: activeCampaigns.length, markedOverdue, escalationsSent, errors };
+  return {
+    processed: activeCampaigns.length,
+    markedOverdue,
+    escalationsSent,
+    errors,
+  };
 }

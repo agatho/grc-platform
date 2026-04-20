@@ -1,18 +1,6 @@
-import {
-  db,
-  document,
-  control,
-  risk,
-} from "@grc/db";
+import { db, document, control, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  ilike,
-  or,
-  desc,
-} from "drizzle-orm";
+import { eq, and, isNull, ilike, or, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/search — Full-text search across documents, controls, risks
@@ -22,8 +10,15 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const query = url.searchParams.get("q");
-  const entityTypes = url.searchParams.get("types")?.split(",") ?? ["document", "control", "risk"];
-  const limitParam = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || 20));
+  const entityTypes = url.searchParams.get("types")?.split(",") ?? [
+    "document",
+    "control",
+    "risk",
+  ];
+  const limitParam = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("limit")) || 20),
+  );
 
   if (!query || query.trim().length < 2) {
     return Response.json(
@@ -131,10 +126,7 @@ export async function GET(req: Request) {
           and(
             eq(risk.orgId, ctx.orgId),
             isNull(risk.deletedAt),
-            or(
-              ilike(risk.title, pattern),
-              ilike(risk.description, pattern),
-            ),
+            or(ilike(risk.title, pattern), ilike(risk.description, pattern)),
           ),
         )
         .orderBy(desc(risk.updatedAt))
@@ -151,7 +143,9 @@ export async function GET(req: Request) {
   }
 
   // Sort all results by updatedAt descending
-  results.sort((a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime());
+  results.sort(
+    (a, b) => new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+  );
 
   return Response.json({
     data: {

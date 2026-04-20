@@ -5,10 +5,7 @@
 
 import { db, aiSystem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  assessSubstantialChange,
-  type ChangeSignal,
-} from "@grc/shared";
+import { assessSubstantialChange, type ChangeSignal } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";

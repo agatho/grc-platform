@@ -11,7 +11,11 @@ interface BenchmarkAggregatorResult {
 }
 
 export async function processBenchmarkAggregator(): Promise<BenchmarkAggregatorResult> {
-  const result: BenchmarkAggregatorResult = { poolsUpdated: 0, submissionsProcessed: 0, errors: 0 };
+  const result: BenchmarkAggregatorResult = {
+    poolsUpdated: 0,
+    submissionsProcessed: 0,
+    errors: 0,
+  };
 
   const now = new Date();
   const currentQuarter = `Q${Math.ceil((now.getMonth() + 1) / 3)}-${now.getFullYear()}`;
@@ -38,8 +42,28 @@ export async function processBenchmarkAggregator(): Promise<BenchmarkAggregatorR
       try {
         // Upsert into benchmark_pool
         await db.insert(benchmarkPool).values({
-          moduleKey: agg.module_key as "erm" | "isms" | "bcms" | "dpms" | "audit" | "ics" | "esg" | "tprm" | "bpm" | "overall",
-          industry: agg.industry as "financial_services" | "healthcare" | "manufacturing" | "technology" | "energy" | "retail" | "public_sector" | "insurance" | "automotive" | "other",
+          moduleKey: agg.module_key as
+            | "erm"
+            | "isms"
+            | "bcms"
+            | "dpms"
+            | "audit"
+            | "ics"
+            | "esg"
+            | "tprm"
+            | "bpm"
+            | "overall",
+          industry: agg.industry as
+            | "financial_services"
+            | "healthcare"
+            | "manufacturing"
+            | "technology"
+            | "energy"
+            | "retail"
+            | "public_sector"
+            | "insurance"
+            | "automotive"
+            | "other",
           orgSizeRange: String(agg.org_size_range),
           participantCount: Number(agg.participant_count),
           avgScore: String(agg.avg_score),

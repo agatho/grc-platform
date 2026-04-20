@@ -47,34 +47,34 @@ npm run dev
 
 ## Login Credentials
 
-| User | Email | Password | Role | LoD |
-|------|-------|----------|------|-----|
-| Platform Admin | `admin@arctos.dev` | `admin123` | Admin (all orgs) | — |
-| Lisa Schneider | `risk.manager@arctos.dev` | `arctos2026!` | Risk Manager | 2nd |
-| Dr. Michael Braun | `auditor@arctos.dev` | `arctos2026!` | Auditor | 3rd |
-| Sarah Keller | `control.owner@arctos.dev` | `arctos2026!` | Control Owner | 1st |
-| Thomas Fischer | `process.owner@arctos.dev` | `arctos2026!` | Process Owner | 1st |
-| DPO ARC-TX | `dpo.arctx@arctos.dev` | `arctos2026!` | DPO (Arctis Textil) | 2nd |
+| User              | Email                      | Password      | Role                | LoD |
+| ----------------- | -------------------------- | ------------- | ------------------- | --- |
+| Platform Admin    | `admin@arctos.dev`         | `admin123`    | Admin (all orgs)    | —   |
+| Lisa Schneider    | `risk.manager@arctos.dev`  | `arctos2026!` | Risk Manager        | 2nd |
+| Dr. Michael Braun | `auditor@arctos.dev`       | `arctos2026!` | Auditor             | 3rd |
+| Sarah Keller      | `control.owner@arctos.dev` | `arctos2026!` | Control Owner       | 1st |
+| Thomas Fischer    | `process.owner@arctos.dev` | `arctos2026!` | Process Owner       | 1st |
+| DPO ARC-TX        | `dpo.arctx@arctos.dev`     | `arctos2026!` | DPO (Arctis Textil) | 2nd |
 
 ## Demo Data Overview
 
 After running `db:seed` + `db:seed-all`, the platform contains:
 
-| Entity | Count | Examples |
-|--------|-------|---------|
-| Organizations | 8 | Meridian Holdings (Holding), NovaTec, Arctis Group + 5 subsidiaries |
-| Risks | 20+ | DSGVO breach, ransomware, supply chain, NIS2, DORA, ESG |
-| Controls | 18+ | Patch management, PAM, security awareness, NIS2 response |
-| Findings | 7+ | PAM gaps, patch SLA violations, NIS2 process untested |
-| Documents | 8 | Policies, guidelines, procedures |
-| Tasks | 10 | Across CRITICAL/HIGH/MEDIUM priorities |
-| Assets | 10 | IT systems, servers, applications |
-| Vendors | 5 | Third-party service providers |
-| Processes | 3 | Business processes |
-| KRIs | 5 | Key Risk Indicators with measurements |
-| Catalogs | 11 | ISO 27002, NIST CSF 2, BSI, CIS, Cambridge Taxonomy |
-| Catalog Entries | 487 | Framework controls and risk categories |
-| Modules | 12 | All enabled for all organizations |
+| Entity          | Count | Examples                                                            |
+| --------------- | ----- | ------------------------------------------------------------------- |
+| Organizations   | 8     | Meridian Holdings (Holding), NovaTec, Arctis Group + 5 subsidiaries |
+| Risks           | 20+   | DSGVO breach, ransomware, supply chain, NIS2, DORA, ESG             |
+| Controls        | 18+   | Patch management, PAM, security awareness, NIS2 response            |
+| Findings        | 7+    | PAM gaps, patch SLA violations, NIS2 process untested               |
+| Documents       | 8     | Policies, guidelines, procedures                                    |
+| Tasks           | 10    | Across CRITICAL/HIGH/MEDIUM priorities                              |
+| Assets          | 10    | IT systems, servers, applications                                   |
+| Vendors         | 5     | Third-party service providers                                       |
+| Processes       | 3     | Business processes                                                  |
+| KRIs            | 5     | Key Risk Indicators with measurements                               |
+| Catalogs        | 11    | ISO 27002, NIST CSF 2, BSI, CIS, Cambridge Taxonomy                 |
+| Catalog Entries | 487   | Framework controls and risk categories                              |
+| Modules         | 12    | All enabled for all organizations                                   |
 
 ## Catalog Frameworks
 
@@ -103,6 +103,7 @@ cd packages/db && npx drizzle-kit studio  # Visual DB browser
 ## Themes
 
 Switch via user menu (PA avatar → top right):
+
 - **Arctic** — Light theme with warm stone neutrals (default)
 - **Obsidian** — Dark theme with navy/charcoal tones
 - **Polar** — High-contrast pure white/black
@@ -125,19 +126,26 @@ packages/shared/ → Zod schemas, types, constants
 ## Troubleshooting
 
 ### Tailwind CSS not loading (unstyled pages)
+
 Ensure `apps/web/postcss.config.mjs` exists with:
+
 ```js
 export default { plugins: { "@tailwindcss/postcss": {} } };
 ```
+
 And `@tailwindcss/postcss` is installed: `npm install @tailwindcss/postcss`
 
 ### db:migrate fails with "url: undefined"
+
 The `dotenv-cli` can't find `.env`. Either:
+
 - Run from the repo root with the env var: `DATABASE_URL=... npx drizzle-kit migrate`
 - Or ensure `.env` exists in the repo root
 
 ### Worker crashes with "Missing API key"
+
 The worker requires `RESEND_API_KEY`. For local dev, set `EMAIL_ENABLED=false` in `.env` — the worker crash is non-blocking (web app works fine without it).
 
 ### "Modul aktivieren" shown instead of page content
+
 Module configs are empty. Run `npm run db:seed` which auto-enables all modules for all orgs, then reload the page.

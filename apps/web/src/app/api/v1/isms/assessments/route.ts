@@ -2,7 +2,12 @@ import { db, assessmentRun } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createAssessmentRunSchema } from "@grc/shared";
 import { eq, and, ilike, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/assessments
 export async function GET(req: Request) {
@@ -20,7 +25,17 @@ export async function GET(req: Request) {
     eq(assessmentRun.orgId, ctx.orgId),
   ];
   if (statusFilter) {
-    conditions.push(eq(assessmentRun.status, statusFilter as "planning" | "in_progress" | "review" | "completed" | "cancelled"));
+    conditions.push(
+      eq(
+        assessmentRun.status,
+        statusFilter as
+          | "planning"
+          | "in_progress"
+          | "review"
+          | "completed"
+          | "cancelled",
+      ),
+    );
   }
   if (search) {
     conditions.push(ilike(assessmentRun.name, `%${search}%`));

@@ -1,5 +1,8 @@
 import { db, grcBudget, grcBudgetLine } from "@grc/db";
-import { createBudgetLineSchema, bulkCreateBudgetLinesSchema } from "@grc/shared";
+import {
+  createBudgetLineSchema,
+  bulkCreateBudgetLinesSchema,
+} from "@grc/shared";
 import { eq, and, count } from "drizzle-orm";
 import {
   withAuth,
@@ -68,23 +71,22 @@ export async function POST(
     : [parsed.data];
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const values = (linesToCreate as Array<Record<string, unknown>>).map((line) => ({
-      orgId: ctx.orgId,
-      budgetId: budget.id,
-      grcArea: line.grcArea as string,
-      costCategory: line.costCategory as string,
-      plannedAmount: String(line.plannedAmount),
-      q1Amount: line.q1Amount != null ? String(line.q1Amount) : undefined,
-      q2Amount: line.q2Amount != null ? String(line.q2Amount) : undefined,
-      q3Amount: line.q3Amount != null ? String(line.q3Amount) : undefined,
-      q4Amount: line.q4Amount != null ? String(line.q4Amount) : undefined,
-      notes: (line.notes as string) ?? undefined,
-    }));
+    const values = (linesToCreate as Array<Record<string, unknown>>).map(
+      (line) => ({
+        orgId: ctx.orgId,
+        budgetId: budget.id,
+        grcArea: line.grcArea as string,
+        costCategory: line.costCategory as string,
+        plannedAmount: String(line.plannedAmount),
+        q1Amount: line.q1Amount != null ? String(line.q1Amount) : undefined,
+        q2Amount: line.q2Amount != null ? String(line.q2Amount) : undefined,
+        q3Amount: line.q3Amount != null ? String(line.q3Amount) : undefined,
+        q4Amount: line.q4Amount != null ? String(line.q4Amount) : undefined,
+        notes: (line.notes as string) ?? undefined,
+      }),
+    );
 
-    const rows = await tx
-      .insert(grcBudgetLine)
-      .values(values)
-      .returning();
+    const rows = await tx.insert(grcBudgetLine).values(values).returning();
     return rows;
   });
 

@@ -1,7 +1,9 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("API Authentication", () => {
-  test("API routes return 401 JSON for unauthenticated requests", async ({ request }) => {
+  test("API routes return 401 JSON for unauthenticated requests", async ({
+    request,
+  }) => {
     const endpoints = [
       "/api/v1/catalogs/risks",
       "/api/v1/catalogs/controls",

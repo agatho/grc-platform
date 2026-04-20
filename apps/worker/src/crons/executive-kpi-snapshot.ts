@@ -21,7 +21,9 @@ interface SnapshotResult {
 export async function processExecutiveKpiSnapshot(): Promise<SnapshotResult> {
   const now = new Date();
   const snapshotDate = now.toISOString().slice(0, 10);
-  console.log(`[cron:executive-kpi-snapshot] Starting at ${now.toISOString()} for ${snapshotDate}`);
+  console.log(
+    `[cron:executive-kpi-snapshot] Starting at ${now.toISOString()} for ${snapshotDate}`,
+  );
 
   let processed = 0;
   let errors = 0;
@@ -110,12 +112,13 @@ export async function processExecutiveKpiSnapshot(): Promise<SnapshotResult> {
         totalControls: Number(cesRow?.total ?? 0),
         controlsBelowThreshold: Number(cesRow?.below ?? 0),
         openFindings: Number(findingRow?.open ?? 0),
-        findingSlaCompliance: slaTotal > 0 ? Math.round((slaCompliant / slaTotal) * 100) : 100,
+        findingSlaCompliance:
+          slaTotal > 0 ? Math.round((slaCompliant / slaTotal) * 100) : 100,
         riskScoreAvg: Number(riskRow?.avgResidual ?? 0),
         risksAboveAppetite: Number(riskRow?.above ?? 0),
         auditSlaCompliance: 0, // Placeholder for audit module
-        dsrSlaCompliance: 0,   // Placeholder for DPMS module
-        esgCompleteness: 0,    // Placeholder for ESG module
+        dsrSlaCompliance: 0, // Placeholder for DPMS module
+        esgCompleteness: 0, // Placeholder for ESG module
       };
 
       // Upsert snapshot
@@ -127,7 +130,10 @@ export async function processExecutiveKpiSnapshot(): Promise<SnapshotResult> {
           kpis,
         })
         .onConflictDoUpdate({
-          target: [executiveKpiSnapshot.orgId, executiveKpiSnapshot.snapshotDate],
+          target: [
+            executiveKpiSnapshot.orgId,
+            executiveKpiSnapshot.snapshotDate,
+          ],
           set: {
             kpis,
             createdAt: new Date(),

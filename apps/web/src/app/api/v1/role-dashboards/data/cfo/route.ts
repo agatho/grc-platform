@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = cfoDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = cfoDashboardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Financial risk exposure from FAIR simulations
   const [financialExposure] = await db.execute(sql`

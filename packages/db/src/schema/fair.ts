@@ -52,18 +52,28 @@ export const fairParameters = pgTable(
       .references(() => organization.id),
     // Loss Event Frequency (per year) — PERT distribution inputs
     lefMin: numeric("lef_min", { precision: 10, scale: 4 }).notNull(),
-    lefMostLikely: numeric("lef_most_likely", { precision: 10, scale: 4 }).notNull(),
+    lefMostLikely: numeric("lef_most_likely", {
+      precision: 10,
+      scale: 4,
+    }).notNull(),
     lefMax: numeric("lef_max", { precision: 10, scale: 4 }).notNull(),
     // Loss Magnitude (EUR) — PERT distribution inputs
     lmMin: numeric("lm_min", { precision: 15, scale: 2 }).notNull(),
-    lmMostLikely: numeric("lm_most_likely", { precision: 15, scale: 2 }).notNull(),
+    lmMostLikely: numeric("lm_most_likely", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
     lmMax: numeric("lm_max", { precision: 15, scale: 2 }).notNull(),
     // Loss component breakdown (percentages summing to 100)
     // { productivity: 40, response: 20, replacement: 10, fines: 15, judgments: 0, reputation: 15 }
     lossComponents: jsonb("loss_components").default("{}"),
     // Cross-cutting fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
   },
@@ -87,8 +97,7 @@ export const fairSimulationResult = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    parametersId: uuid("parameters_id")
-      .references(() => fairParameters.id),
+    parametersId: uuid("parameters_id").references(() => fairParameters.id),
     // Simulation config
     iterations: integer("iterations").notNull().default(10000),
     status: fairSimulationStatusEnum("status").notNull().default("pending"),
@@ -109,7 +118,9 @@ export const fairSimulationResult = pgTable(
     errorMessage: text("error_message"),
     // Timestamps
     computedAt: timestamp("computed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [

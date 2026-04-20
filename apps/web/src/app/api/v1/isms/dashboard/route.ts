@@ -1,4 +1,11 @@
-import { db, asset, assetClassification, securityIncident, threat, vulnerability } from "@grc/db";
+import {
+  db,
+  asset,
+  assetClassification,
+  securityIncident,
+  threat,
+  vulnerability,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -46,7 +53,12 @@ export async function GET(req: Request) {
       count: sql<number>`count(*)::int`,
     })
     .from(securityIncident)
-    .where(and(eq(securityIncident.orgId, ctx.orgId), isNull(securityIncident.deletedAt)))
+    .where(
+      and(
+        eq(securityIncident.orgId, ctx.orgId),
+        isNull(securityIncident.deletedAt),
+      ),
+    )
     .groupBy(securityIncident.status);
 
   const incidentsByStatus: Record<string, number> = {};
@@ -65,7 +77,12 @@ export async function GET(req: Request) {
       count: sql<number>`count(*)::int`,
     })
     .from(securityIncident)
-    .where(and(eq(securityIncident.orgId, ctx.orgId), isNull(securityIncident.deletedAt)))
+    .where(
+      and(
+        eq(securityIncident.orgId, ctx.orgId),
+        isNull(securityIncident.deletedAt),
+      ),
+    )
     .groupBy(securityIncident.severity);
 
   const incidentsBySeverity: Record<string, number> = {};
@@ -86,7 +103,9 @@ export async function GET(req: Request) {
       count: sql<number>`count(*)::int`,
     })
     .from(vulnerability)
-    .where(and(eq(vulnerability.orgId, ctx.orgId), isNull(vulnerability.deletedAt)))
+    .where(
+      and(eq(vulnerability.orgId, ctx.orgId), isNull(vulnerability.deletedAt)),
+    )
     .groupBy(vulnerability.severity);
 
   const vulnsBySeverity: Record<string, number> = {};
@@ -109,7 +128,12 @@ export async function GET(req: Request) {
       dataBreachDeadline: securityIncident.dataBreachDeadline,
     })
     .from(securityIncident)
-    .where(and(eq(securityIncident.orgId, ctx.orgId), isNull(securityIncident.deletedAt)))
+    .where(
+      and(
+        eq(securityIncident.orgId, ctx.orgId),
+        isNull(securityIncident.deletedAt),
+      ),
+    )
     .orderBy(sql`${securityIncident.detectedAt} DESC`)
     .limit(10);
 

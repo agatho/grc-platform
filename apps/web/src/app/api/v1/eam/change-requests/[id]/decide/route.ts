@@ -17,20 +17,34 @@ export async function POST(
   const { id } = await params;
   const body = acrDecisionSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [acr] = await db
     .select()
     .from(architectureChangeRequest)
-    .where(and(eq(architectureChangeRequest.id, id), eq(architectureChangeRequest.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(architectureChangeRequest.id, id),
+        eq(architectureChangeRequest.orgId, ctx.orgId),
+      ),
+    );
 
   if (!acr) {
-    return Response.json({ error: "Change request not found" }, { status: 404 });
+    return Response.json(
+      { error: "Change request not found" },
+      { status: 404 },
+    );
   }
 
   if (!["submitted", "under_review"].includes(acr.status)) {
-    return Response.json({ error: `Cannot decide from status '${acr.status}'` }, { status: 409 });
+    return Response.json(
+      { error: `Cannot decide from status '${acr.status}'` },
+      { status: 409 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

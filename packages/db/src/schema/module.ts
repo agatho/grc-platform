@@ -45,10 +45,17 @@ export const moduleDefinition = pgTable("module_definition", {
   navSection: varchar("nav_section", { length: 50 }),
   navOrder: integer("nav_order").notNull(),
   requiresModules: text("requires_modules").array().notNull().default([]),
-  licenseTier: varchar("license_tier", { length: 50 }).notNull().default("included"),
+  licenseTier: varchar("license_tier", { length: 50 })
+    .notNull()
+    .default("included"),
   isActiveInPlatform: boolean("is_active_in_platform").notNull().default(true),
-  backgroundProcesses: text("background_processes").array().notNull().default([]),
-  createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  backgroundProcesses: text("background_processes")
+    .array()
+    .notNull()
+    .default([]),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -76,13 +83,21 @@ export const moduleConfig = pgTable(
     disabledAt: timestamp("disabled_at", { withTimezone: true }),
     disabledBy: uuid("disabled_by").references(() => user.id),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by").references(() => user.id),
   },
   (table) => [
     unique("module_config_org_module_uq").on(table.orgId, table.moduleKey),
-    index("module_config_lookup_idx").on(table.orgId, table.moduleKey, table.uiStatus),
+    index("module_config_lookup_idx").on(
+      table.orgId,
+      table.moduleKey,
+      table.uiStatus,
+    ),
   ],
 );

@@ -38,10 +38,7 @@ export async function processBudgetForecast(): Promise<BudgetForecastResult> {
         .select({ id: grcBudget.id, totalAmount: grcBudget.totalAmount })
         .from(grcBudget)
         .where(
-          and(
-            eq(grcBudget.orgId, org.id),
-            eq(grcBudget.year, currentYear),
-          ),
+          and(eq(grcBudget.orgId, org.id), eq(grcBudget.year, currentYear)),
         )
         .limit(1);
 
@@ -88,21 +85,19 @@ export async function processBudgetForecast(): Promise<BudgetForecastResult> {
         const forecastTotal = actualTotal + forecastRemaining;
 
         // Upsert a forecast cost entry summarizing the projection
-        await db
-          .insert(grcCostEntry)
-          .values({
-            orgId: org.id,
-            entityType: "budget_forecast",
-            entityId: budget.id,
-            costCategory: actual.costCategory,
-            costType: "forecast",
-            amount: String(Math.round(forecastTotal * 100) / 100),
-            currency: "EUR",
-            periodStart: yearStart,
-            periodEnd: yearEnd,
-            budgetId: budget.id,
-            description: `Auto-forecast: ${monthlyBurnRate.toFixed(2)}/month x ${monthsRemaining} remaining`,
-          });
+        await db.insert(grcCostEntry).values({
+          orgId: org.id,
+          entityType: "budget_forecast",
+          entityId: budget.id,
+          costCategory: actual.costCategory,
+          costType: "forecast",
+          amount: String(Math.round(forecastTotal * 100) / 100),
+          currency: "EUR",
+          periodStart: yearStart,
+          periodEnd: yearEnd,
+          budgetId: budget.id,
+          description: `Auto-forecast: ${monthlyBurnRate.toFixed(2)}/month x ${monthsRemaining} remaining`,
+        });
 
         processed++;
       }

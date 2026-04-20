@@ -12,7 +12,9 @@ test("F-17: /api/v1/health/schema-drift returns healthy", async ({ page }) => {
     const r = await fetch("/api/v1/health/schema-drift");
     const t = await r.text();
     let d: any = null;
-    try { d = JSON.parse(t); } catch {}
+    try {
+      d = JSON.parse(t);
+    } catch {}
     return { status: r.status, data: d };
   });
 

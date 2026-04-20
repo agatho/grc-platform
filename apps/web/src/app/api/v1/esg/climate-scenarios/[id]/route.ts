@@ -4,8 +4,18 @@ import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { updateClimateRiskScenarioSchema } from "@grc/shared";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "esg_manager", "esg_contributor", "auditor", "viewer");
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -22,7 +32,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ data: row });
 }
 
-export async function PATCH(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PATCH(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "esg_manager");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
@@ -31,7 +44,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
 
   const parsed = updateClimateRiskScenarioSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const d = parsed.data;
 
@@ -69,7 +85,10 @@ export async function PATCH(req: Request, { params }: { params: Promise<{ id: st
   return Response.json({ data: result });
 }
 
-export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "esg_manager");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);

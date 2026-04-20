@@ -176,7 +176,8 @@ function TaxonomyInner() {
       activityName: formData.get("activityName") as string,
       naceCode: (formData.get("naceCode") as string) || undefined,
       objectiveId: formData.get("objectiveId") as string,
-      reportingYear: Number(formData.get("reportingYear")) || new Date().getFullYear(),
+      reportingYear:
+        Number(formData.get("reportingYear")) || new Date().getFullYear(),
     });
     setSaving(false);
     if (ok) {
@@ -213,10 +214,7 @@ function TaxonomyInner() {
             onClick={loadData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
@@ -232,16 +230,32 @@ function TaxonomyInner() {
               <form onSubmit={handleCreate} className="space-y-4">
                 <div className="space-y-2">
                   <Label htmlFor="activityName">Aktivit&auml;tsname</Label>
-                  <Input id="activityName" name="activityName" required placeholder="z.B. Stromerzeugung aus Windkraft" />
+                  <Input
+                    id="activityName"
+                    name="activityName"
+                    required
+                    placeholder="z.B. Stromerzeugung aus Windkraft"
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="naceCode">NACE-Code</Label>
-                    <Input id="naceCode" name="naceCode" placeholder="z.B. D35.1.1" />
+                    <Input
+                      id="naceCode"
+                      name="naceCode"
+                      placeholder="z.B. D35.1.1"
+                    />
                   </div>
                   <div className="space-y-2">
                     <Label htmlFor="reportingYear">Berichtsjahr</Label>
-                    <Input id="reportingYear" name="reportingYear" type="number" defaultValue={new Date().getFullYear()} min={2020} max={2035} />
+                    <Input
+                      id="reportingYear"
+                      name="reportingYear"
+                      type="number"
+                      defaultValue={new Date().getFullYear()}
+                      min={2020}
+                      max={2035}
+                    />
                   </div>
                 </div>
                 <div className="space-y-2">
@@ -251,19 +265,37 @@ function TaxonomyInner() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="climate_mitigation">Klimaschutz</SelectItem>
-                      <SelectItem value="climate_adaptation">Klimaanpassung</SelectItem>
+                      <SelectItem value="climate_mitigation">
+                        Klimaschutz
+                      </SelectItem>
+                      <SelectItem value="climate_adaptation">
+                        Klimaanpassung
+                      </SelectItem>
                       <SelectItem value="water">Wasser</SelectItem>
-                      <SelectItem value="circular_economy">Kreislaufwirtschaft</SelectItem>
-                      <SelectItem value="pollution">Umweltverschmutzung</SelectItem>
-                      <SelectItem value="biodiversity">Biodiversit&auml;t</SelectItem>
+                      <SelectItem value="circular_economy">
+                        Kreislaufwirtschaft
+                      </SelectItem>
+                      <SelectItem value="pollution">
+                        Umweltverschmutzung
+                      </SelectItem>
+                      <SelectItem value="biodiversity">
+                        Biodiversit&auml;t
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="flex justify-end gap-2 pt-2">
-                  <Button type="button" variant="outline" onClick={() => setDialogOpen(false)}>Abbrechen</Button>
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Abbrechen
+                  </Button>
                   <Button type="submit" disabled={saving}>
-                    {saving && <Loader2 size={14} className="mr-1 animate-spin" />}
+                    {saving && (
+                      <Loader2 size={14} className="mr-1 animate-spin" />
+                    )}
                     Erstellen
                   </Button>
                 </div>
@@ -481,10 +513,7 @@ function StatusBadge({ status }: { status: string }) {
   };
 
   return (
-    <Badge
-      variant="outline"
-      className={`${colors[status] ?? ""} text-[10px]`}
-    >
+    <Badge variant="outline" className={`${colors[status] ?? ""} text-[10px]`}>
       {labels[status] ?? status}
     </Badge>
   );

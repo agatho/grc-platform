@@ -1,4 +1,9 @@
-import { db, applicationPortfolio, architectureElement, architectureRelationship } from "@grc/db";
+import {
+  db,
+  applicationPortfolio,
+  architectureElement,
+  architectureRelationship,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -14,36 +19,55 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const groupBy = url.searchParams.get("groupBy") ?? "lifecycleStatus";
 
-  const apps = await db.select({
-    element: architectureElement,
-    portfolio: applicationPortfolio,
-  })
+  const apps = await db
+    .select({
+      element: architectureElement,
+      portfolio: applicationPortfolio,
+    })
     .from(architectureElement)
-    .leftJoin(applicationPortfolio, eq(applicationPortfolio.elementId, architectureElement.id))
-    .where(and(
-      eq(architectureElement.orgId, ctx.orgId),
-      eq(architectureElement.type, "application"),
-    ));
+    .leftJoin(
+      applicationPortfolio,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        eq(architectureElement.type, "application"),
+      ),
+    );
 
   // Get replacement relationships for dependency arrows
-  const replacements = await db.select()
+  const replacements = await db
+    .select()
     .from(architectureRelationship)
-    .where(and(
-      eq(architectureRelationship.orgId, ctx.orgId),
-      eq(architectureRelationship.relationshipType, "depends_on"),
-    ));
+    .where(
+      and(
+        eq(architectureRelationship.orgId, ctx.orgId),
+        eq(architectureRelationship.relationshipType, "depends_on"),
+      ),
+    );
 
   const entries = apps.map((app) => {
     const portfolio = app.portfolio;
-    const groupValue = portfolio ? (portfolio as Record<string, unknown>)[groupBy] ?? "unassigned" : "unassigned";
+    const groupValue = portfolio
+      ? ((portfolio as Record<string, unknown>)[groupBy] ?? "unassigned")
+      : "unassigned";
 
     return {
       id: app.element.id,
       name: app.element.name,
       group: String(groupValue),
       phases: [
-        { phase: "planning", start: portfolio?.plannedIntroduction, end: portfolio?.goLiveDate },
-        { phase: "active", start: portfolio?.goLiveDate, end: portfolio?.plannedEol },
+        {
+          phase: "planning",
+          start: portfolio?.plannedIntroduction,
+          end: portfolio?.goLiveDate,
+        },
+        {
+          phase: "active",
+          start: portfolio?.goLiveDate,
+          end: portfolio?.plannedEol,
+        },
         { phase: "retired", start: portfolio?.plannedEol, end: null },
       ].filter((p) => p.start),
       lifecycleStatus: portfolio?.lifecycleStatus ?? "unknown",
@@ -63,8 +87,15 @@ export async function GET(req: Request) {
   return Response.json({
     data: {
       entries,
-      groups: [...groups.entries()].map(([key, val]) => ({ key, label: key, count: val.count })),
-      dependencies: replacements.map((r) => ({ from: r.sourceId, to: r.targetId })),
+      groups: [...groups.entries()].map(([key, val]) => ({
+        key,
+        label: key,
+        count: val.count,
+      })),
+      dependencies: replacements.map((r) => ({
+        from: r.sourceId,
+        to: r.targetId,
+      })),
     },
   });
 }

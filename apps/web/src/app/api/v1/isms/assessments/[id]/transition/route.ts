@@ -21,7 +21,13 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 
 const transitionSchema = z.object({
-  targetStatus: z.enum(["planning", "in_progress", "review", "completed", "cancelled"]),
+  targetStatus: z.enum([
+    "planning",
+    "in_progress",
+    "review",
+    "completed",
+    "cancelled",
+  ]),
   reason: z.string().max(2000).optional(),
 });
 

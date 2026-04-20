@@ -2,7 +2,12 @@ import { db, orgEntityRelationship } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createOrgRelationshipSchema } from "@grc/shared";
 import { eq, and, or, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/erm/propagation/relationships — List org-entity relationships
 export async function GET(req: Request) {

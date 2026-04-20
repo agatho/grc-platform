@@ -1,12 +1,12 @@
 # ADR-011 rev.2 — Per-Tenant Audit Chain + Hierarchy-Aware Access
 
-| **ADR-ID**  | **011** |
-|-------------|---------|
-| **Title**   | **Audit Trail Architecture — rev.2 (per-tenant chain, hierarchy-aware reads)** |
-| **Status**  | **Accepted** |
-| **Date**    | 2026-04-20 |
-| **Supersedes** | ADR-011 rev.1 (global hash chain) |
-| **Context** | GDPR Art. 5, ISO 27001 A.12.4, A.9.4; DORA Art. 28; HinSchG; Stakeholder-Analyse 2026-04-20 |
+| **ADR-ID**     | **011**                                                                                     |
+| -------------- | ------------------------------------------------------------------------------------------- |
+| **Title**      | **Audit Trail Architecture — rev.2 (per-tenant chain, hierarchy-aware reads)**              |
+| **Status**     | **Accepted**                                                                                |
+| **Date**       | 2026-04-20                                                                                  |
+| **Supersedes** | ADR-011 rev.1 (global hash chain)                                                           |
+| **Context**    | GDPR Art. 5, ISO 27001 A.12.4, A.9.4; DORA Art. 28; HinSchG; Stakeholder-Analyse 2026-04-20 |
 
 ## Context
 
@@ -18,18 +18,18 @@ Die naive Lösung (advisory_xact_lock über die gesamte Tabelle) wurde verworfen
 
 ## Stakeholder Analysis
 
-| # | Stakeholder | Primary Need |
-|---|-------------|--------------|
-| 1 | Platform-Vendor (wir) | Nachweis, dass wir selbst nicht manipulieren können (ohne externen Anchor nicht möglich) |
-| 2 | Customer (Tenant-Admin) | Eigene Org-Daten forensisch nachprüfbar |
-| 3 | Customer (interner Revisor) | Read-only Vollzugriff auf eigene Org |
-| 4 | Externer Auditor (ISO, ISAE) | Scope- und zeitbegrenzter Read-Zugriff auf eigene Org |
-| 5 | Corporate-Parent-Admin | Aggregierter Read-Zugriff auf alle Child-Orgs in direkter Hierarchie |
-| 6 | Aufsichtsbehörde (BaFin, DSB, BSI) | Scope-begrenzter Zugriff auf Anfrage, **selbst wieder audit-gelogt** |
-| 7 | DPO | GDPR-Art.-15-Auskunft inkl. Audit-Log-Einträge zur Person |
-| 8 | Whistleblowing-Officer | **Kryptographisch isolierter** Trail — nicht einmal Admin darf sehen, dass Fall existiert |
-| 9 | Gericht / Strafverfolgung | Legal Hold, Chain-of-Custody-konformer Export |
-| 10 | Archiv (post-contract) | Read-only Retention für HGB/§147-AO-Fristen |
+| #   | Stakeholder                        | Primary Need                                                                              |
+| --- | ---------------------------------- | ----------------------------------------------------------------------------------------- |
+| 1   | Platform-Vendor (wir)              | Nachweis, dass wir selbst nicht manipulieren können (ohne externen Anchor nicht möglich)  |
+| 2   | Customer (Tenant-Admin)            | Eigene Org-Daten forensisch nachprüfbar                                                   |
+| 3   | Customer (interner Revisor)        | Read-only Vollzugriff auf eigene Org                                                      |
+| 4   | Externer Auditor (ISO, ISAE)       | Scope- und zeitbegrenzter Read-Zugriff auf eigene Org                                     |
+| 5   | Corporate-Parent-Admin             | Aggregierter Read-Zugriff auf alle Child-Orgs in direkter Hierarchie                      |
+| 6   | Aufsichtsbehörde (BaFin, DSB, BSI) | Scope-begrenzter Zugriff auf Anfrage, **selbst wieder audit-gelogt**                      |
+| 7   | DPO                                | GDPR-Art.-15-Auskunft inkl. Audit-Log-Einträge zur Person                                 |
+| 8   | Whistleblowing-Officer             | **Kryptographisch isolierter** Trail — nicht einmal Admin darf sehen, dass Fall existiert |
+| 9   | Gericht / Strafverfolgung          | Legal Hold, Chain-of-Custody-konformer Export                                             |
+| 10  | Archiv (post-contract)             | Read-only Retention für HGB/§147-AO-Fristen                                               |
 
 ## Decision
 
@@ -51,11 +51,13 @@ PERFORM pg_advisory_xact_lock(hashtext('audit_log_chain:' || v_org_id::text));
 ```
 
 **Vorteile:**
+
 - Parallele Inserts über Tenants hinweg sind unkorrelliert — kein Cross-Tenant-Bottleneck
 - Jeder Tenant-Export ist self-contained verifizierbar (forensisch sauber für externe Auditoren)
 - Cross-Tenant-Leak-Risiko fällt weg — das Integrity-Endpoint wird stark vereinfacht
 
 **Nachteil:**
+
 - Rows ohne `org_id` (z.B. platform-level Events) brauchen eigene Chain unter `NULL`-Bucket oder werden in `platform_audit_log` separiert. **Entscheidung:** Platform-Events kommen in eigene Tabelle — sind semantisch sowieso unterschiedlich.
 
 ### D2. **Hierarchy-aware Read-API** (Corporate-Hierarchy)
@@ -94,6 +96,7 @@ pii_tombstone_reason text,     -- z.B. 'gdpr_art_17', 'person_deceased', 'contra
 ```
 
 **Mechanik:** Die Tombstone-Operation ersetzt in `changes` die personenbezogenen Feldwerte durch deterministische Hashes. Der `entry_hash` der Row bleibt der originale, weil er zum Zeitpunkt des Inserts fixiert wurde. Dadurch:
+
 - Chain-Integrität wird nicht gebrochen
 - Betroffene_r kann Löschung beweisen (Reason + Tombstone-Marker sichtbar)
 - Forensischer Nachweis der ursprünglichen Operation bleibt möglich (Hash als Fingerprint)
@@ -103,14 +106,14 @@ pii_tombstone_reason text,     -- z.B. 'gdpr_art_17', 'person_deceased', 'contra
 
 ## Deferred (nicht in Alpha)
 
-| R | Thema | Status |
-|---|-------|--------|
-| R3 | Access-Log auf Audit-Log (wer liest Logs) | Phase 2 — neue Tabelle `audit_log_access` |
-| R4 | External Cryptographic Anchor (TSA / OpenTimestamps) | Phase 2 — nightly Merkle-Root pro Tenant |
-| R5 | Legal Hold Integration | Mit Legal-Modul in Phase 3 |
-| R8 | Signed JSON Export mit detached Signature | Phase 2 — GPG-basiert |
-| R9 | External-Auditor-Rolle (engagement-scoped) | Phase 2 — RBAC-Erweiterung |
-| R10 | Platform-Access Dual-Control | Phase 3 — erst bei Managed-Hosting relevant |
+| R   | Thema                                                | Status                                      |
+| --- | ---------------------------------------------------- | ------------------------------------------- |
+| R3  | Access-Log auf Audit-Log (wer liest Logs)            | Phase 2 — neue Tabelle `audit_log_access`   |
+| R4  | External Cryptographic Anchor (TSA / OpenTimestamps) | Phase 2 — nightly Merkle-Root pro Tenant    |
+| R5  | Legal Hold Integration                               | Mit Legal-Modul in Phase 3                  |
+| R8  | Signed JSON Export mit detached Signature            | Phase 2 — GPG-basiert                       |
+| R9  | External-Auditor-Rolle (engagement-scoped)           | Phase 2 — RBAC-Erweiterung                  |
+| R10 | Platform-Access Dual-Control                         | Phase 3 — erst bei Managed-Hosting relevant |
 
 ## Migration Plan (Alpha)
 

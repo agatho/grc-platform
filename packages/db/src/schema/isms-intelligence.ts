@@ -132,9 +132,13 @@ export const soaAiSuggestion = pgTable(
       .references(() => organization.id),
     analysisRunId: uuid("analysis_run_id").notNull(), // groups suggestions from one run
     framework: varchar("framework", { length: 100 }).notNull(),
-    frameworkControlRef: varchar("framework_control_ref", { length: 100 }).notNull(),
+    frameworkControlRef: varchar("framework_control_ref", {
+      length: 100,
+    }).notNull(),
     frameworkControlTitle: varchar("framework_control_title", { length: 500 }),
-    suggestedControlId: uuid("suggested_control_id").references(() => control.id),
+    suggestedControlId: uuid("suggested_control_id").references(
+      () => control.id,
+    ),
     confidence: integer("confidence").notNull(), // 0-100
     gapType: varchar("gap_type", { length: 30 }).notNull(), // not_covered | partial | full
     reasoning: text("reasoning"),

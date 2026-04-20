@@ -27,7 +27,10 @@ describe("evaluateConditions", () => {
   it("evaluates simple > condition", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "residual_score", op: ">", value: 15 }] },
+        {
+          operator: "AND",
+          rules: [{ field: "residual_score", op: ">", value: 15 }],
+        },
         { residual_score: 18 },
       ),
     ).toBe(true);
@@ -36,7 +39,10 @@ describe("evaluateConditions", () => {
   it("evaluates simple > condition (not matched)", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "residual_score", op: ">", value: 15 }] },
+        {
+          operator: "AND",
+          rules: [{ field: "residual_score", op: ">", value: 15 }],
+        },
         { residual_score: 10 },
       ),
     ).toBe(false);
@@ -54,7 +60,10 @@ describe("evaluateConditions", () => {
   it("evaluates = condition", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "status", op: "=", value: "active" }] },
+        {
+          operator: "AND",
+          rules: [{ field: "status", op: "=", value: "active" }],
+        },
         { status: "active" },
       ),
     ).toBe(true);
@@ -63,7 +72,10 @@ describe("evaluateConditions", () => {
   it("evaluates != condition", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "status", op: "!=", value: "closed" }] },
+        {
+          operator: "AND",
+          rules: [{ field: "status", op: "!=", value: "closed" }],
+        },
         { status: "active" },
       ),
     ).toBe(true);
@@ -90,7 +102,10 @@ describe("evaluateConditions", () => {
   it("evaluates contains condition", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "title", op: "contains", value: "cyber" }] },
+        {
+          operator: "AND",
+          rules: [{ field: "title", op: "contains", value: "cyber" }],
+        },
         { title: "Cyber Security Risk" },
       ),
     ).toBe(true);
@@ -99,7 +114,10 @@ describe("evaluateConditions", () => {
   it("evaluates contains condition (case insensitive)", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "title", op: "contains", value: "CYBER" }] },
+        {
+          operator: "AND",
+          rules: [{ field: "title", op: "contains", value: "CYBER" }],
+        },
         { title: "Cyber Security Risk" },
       ),
     ).toBe(true);
@@ -108,7 +126,10 @@ describe("evaluateConditions", () => {
   it("evaluates not_contains condition", () => {
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "title", op: "not_contains", value: "fire" }] },
+        {
+          operator: "AND",
+          rules: [{ field: "title", op: "not_contains", value: "fire" }],
+        },
         { title: "Cyber Security Risk" },
       ),
     ).toBe(true);
@@ -119,7 +140,10 @@ describe("evaluateConditions", () => {
     oldDate.setDate(oldDate.getDate() - 45);
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "updated_at", op: "days_since", value: 30 }] },
+        {
+          operator: "AND",
+          rules: [{ field: "updated_at", op: "days_since", value: 30 }],
+        },
         { updated_at: oldDate.toISOString() },
       ),
     ).toBe(true);
@@ -130,7 +154,10 @@ describe("evaluateConditions", () => {
     recentDate.setDate(recentDate.getDate() - 5);
     expect(
       evaluateConditions(
-        { operator: "AND", rules: [{ field: "updated_at", op: "days_since", value: 30 }] },
+        {
+          operator: "AND",
+          rules: [{ field: "updated_at", op: "days_since", value: 30 }],
+        },
         { updated_at: recentDate.toISOString() },
       ),
     ).toBe(false);
@@ -144,9 +171,15 @@ describe("evaluateConditions", () => {
         { field: "status", op: "=" as const, value: "active" },
       ],
     };
-    expect(evaluateConditions(conditions, { score: 15, status: "active" })).toBe(true);
-    expect(evaluateConditions(conditions, { score: 15, status: "closed" })).toBe(false);
-    expect(evaluateConditions(conditions, { score: 5, status: "active" })).toBe(false);
+    expect(
+      evaluateConditions(conditions, { score: 15, status: "active" }),
+    ).toBe(true);
+    expect(
+      evaluateConditions(conditions, { score: 15, status: "closed" }),
+    ).toBe(false);
+    expect(evaluateConditions(conditions, { score: 5, status: "active" })).toBe(
+      false,
+    );
   });
 
   it("evaluates OR group (any must match)", () => {
@@ -176,10 +209,18 @@ describe("evaluateConditions", () => {
         },
       ],
     };
-    expect(evaluateConditions(conditions, { score: 20, category: "cyber" })).toBe(true);
-    expect(evaluateConditions(conditions, { score: 20, category: "operational" })).toBe(true);
-    expect(evaluateConditions(conditions, { score: 20, category: "financial" })).toBe(false);
-    expect(evaluateConditions(conditions, { score: 10, category: "cyber" })).toBe(false);
+    expect(
+      evaluateConditions(conditions, { score: 20, category: "cyber" }),
+    ).toBe(true);
+    expect(
+      evaluateConditions(conditions, { score: 20, category: "operational" }),
+    ).toBe(true);
+    expect(
+      evaluateConditions(conditions, { score: 20, category: "financial" }),
+    ).toBe(false);
+    expect(
+      evaluateConditions(conditions, { score: 10, category: "cyber" }),
+    ).toBe(false);
   });
 
   it("handles deeply nested groups", () => {
@@ -202,9 +243,15 @@ describe("evaluateConditions", () => {
         },
       ],
     };
-    expect(evaluateConditions(conditions, { tier: "critical", risk_score: 85 })).toBe(true);
-    expect(evaluateConditions(conditions, { tier: "high", risk_score: 95 })).toBe(true);
-    expect(evaluateConditions(conditions, { tier: "high", risk_score: 70 })).toBe(false);
+    expect(
+      evaluateConditions(conditions, { tier: "critical", risk_score: 85 }),
+    ).toBe(true);
+    expect(
+      evaluateConditions(conditions, { tier: "high", risk_score: 95 }),
+    ).toBe(true);
+    expect(
+      evaluateConditions(conditions, { tier: "high", risk_score: 70 }),
+    ).toBe(false);
   });
 
   it("empty rules matches everything", () => {

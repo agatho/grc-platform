@@ -37,7 +37,12 @@ export async function POST(req: Request) {
     );
 
   // BFS propagation with decay
-  const results = computePropagation(ctx.orgId, riskId, simulatedLikelihood, relationships);
+  const results = computePropagation(
+    ctx.orgId,
+    riskId,
+    simulatedLikelihood,
+    relationships,
+  );
   const batchId = randomUUID();
 
   // Persist results (read-only projection)
@@ -100,7 +105,9 @@ function computePropagation(
 
     for (const conn of connections) {
       const targetOrg =
-        conn.sourceOrgId === current.orgId ? conn.targetOrgId : conn.sourceOrgId;
+        conn.sourceOrgId === current.orgId
+          ? conn.targetOrgId
+          : conn.sourceOrgId;
 
       if (visited.has(targetOrg)) continue;
       visited.add(targetOrg);

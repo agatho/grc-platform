@@ -11,10 +11,7 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const baseConditions = and(
-    eq(risk.orgId, ctx.orgId),
-    isNull(risk.deletedAt),
-  );
+  const baseConditions = and(eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt));
 
   const [
     totalResult,
@@ -26,10 +23,7 @@ export async function GET(req: Request) {
     heatMapResult,
   ] = await Promise.all([
     // Total risks
-    db
-      .select({ value: count() })
-      .from(risk)
-      .where(baseConditions),
+    db.select({ value: count() }).from(risk).where(baseConditions),
 
     // By status breakdown
     db
@@ -55,12 +49,7 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(risk)
-      .where(
-        and(
-          baseConditions,
-          eq(risk.riskAppetiteExceeded, true),
-        ),
-      ),
+      .where(and(baseConditions, eq(risk.riskAppetiteExceeded, true))),
 
     // Top 10 risks by residual score
     db
@@ -86,12 +75,7 @@ export async function GET(req: Request) {
         count: count(),
       })
       .from(kri)
-      .where(
-        and(
-          eq(kri.orgId, ctx.orgId),
-          isNull(kri.deletedAt),
-        ),
-      )
+      .where(and(eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)))
       .groupBy(kri.currentAlertStatus),
 
     // Heat map cells: likelihood x impact grouped with counts

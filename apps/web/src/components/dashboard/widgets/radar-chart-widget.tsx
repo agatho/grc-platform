@@ -33,7 +33,12 @@ function parseRadarData(data: unknown): RadarDataPoint[] {
   return [];
 }
 
-export function RadarChartWidget({ data, config, isLoading, error }: WidgetProps) {
+export function RadarChartWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">

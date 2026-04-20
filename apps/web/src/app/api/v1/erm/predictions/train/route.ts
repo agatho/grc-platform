@@ -23,8 +23,8 @@ export async function POST(req: Request) {
     kri_momentum: 0.28,
     incident_frequency: 0.15,
     finding_backlog: 0.12,
-    control_effectiveness: -0.20,
-    days_since_review: 0.10,
+    control_effectiveness: -0.2,
+    days_since_review: 0.1,
   };
 
   const version = `v1.${Date.now()}`;

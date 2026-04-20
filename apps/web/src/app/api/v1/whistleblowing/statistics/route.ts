@@ -9,7 +9,11 @@ export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
-  const moduleCheck = await requireModule("whistleblowing", ctx.orgId, req.method);
+  const moduleCheck = await requireModule(
+    "whistleblowing",
+    ctx.orgId,
+    req.method,
+  );
   if (moduleCheck) return moduleCheck;
 
   const now = new Date();
@@ -22,10 +26,7 @@ export async function GET(req: Request) {
     .select({ total: count() })
     .from(wbCase)
     .where(
-      and(
-        eq(wbCase.orgId, ctx.orgId),
-        gte(wbCase.createdAt, startOfYear),
-      ),
+      and(eq(wbCase.orgId, ctx.orgId), gte(wbCase.createdAt, startOfYear)),
     );
 
   // Total previous year
@@ -45,7 +46,9 @@ export async function GET(req: Request) {
     sql`SELECT COALESCE(AVG(EXTRACT(EPOCH FROM (resolved_at - created_at)) / 86400), 0) as avg_days
         FROM wb_case WHERE org_id = ${ctx.orgId} AND resolved_at IS NOT NULL`,
   );
-  const avgResolutionDays = Math.round(Number((avgResResult as any)[0]?.avg_days ?? 0));
+  const avgResolutionDays = Math.round(
+    Number((avgResResult as any)[0]?.avg_days ?? 0),
+  );
 
   // 7-day SLA compliance (acknowledged within 7 days)
   const sla7dResult = await db.execute(
@@ -55,9 +58,10 @@ export async function GET(req: Request) {
         FROM wb_case WHERE org_id = ${ctx.orgId}`,
   );
   const sla7dRow = (sla7dResult as any)[0];
-  const sla7dCompliance = sla7dRow?.total > 0
-    ? Math.round((sla7dRow.compliant / sla7dRow.total) * 100)
-    : 100;
+  const sla7dCompliance =
+    sla7dRow?.total > 0
+      ? Math.round((sla7dRow.compliant / sla7dRow.total) * 100)
+      : 100;
 
   // 3-month SLA compliance (resolved within 3 months)
   const sla3mResult = await db.execute(
@@ -67,9 +71,10 @@ export async function GET(req: Request) {
         FROM wb_case WHERE org_id = ${ctx.orgId}`,
   );
   const sla3mRow = (sla3mResult as any)[0];
-  const sla3mCompliance = sla3mRow?.total > 0
-    ? Math.round((sla3mRow.compliant / sla3mRow.total) * 100)
-    : 100;
+  const sla3mCompliance =
+    sla3mRow?.total > 0
+      ? Math.round((sla3mRow.compliant / sla3mRow.total) * 100)
+      : 100;
 
   // Category distribution (YTD)
   const categoryResult = await db.execute(

@@ -1,4 +1,11 @@
-import { db, rcsaAssignment, rcsaResponse, rcsaCampaign, risk, control } from "@grc/db";
+import {
+  db,
+  rcsaAssignment,
+  rcsaResponse,
+  rcsaCampaign,
+  risk,
+  control,
+} from "@grc/db";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 

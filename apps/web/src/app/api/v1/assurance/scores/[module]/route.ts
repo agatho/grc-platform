@@ -51,10 +51,7 @@ export async function GET(
     .limit(1);
 
   if (!moduleEnabled) {
-    return Response.json(
-      { error: "Module not enabled" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Module not enabled" }, { status: 404 });
   }
 
   const data = await collectModuleData(ctx.orgId);

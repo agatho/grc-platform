@@ -14,13 +14,15 @@ export default function EamGovernancePage() {
       <div className="space-y-6">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <div className="grid grid-cols-5 gap-4">
-          {["draft", "pending_review", "approved", "published", "archived"].map((status) => (
-            <Card key={status}>
-              <CardContent className="pt-4 text-center">
-                <Badge variant="outline">{t(`status.${status}`)}</Badge>
-              </CardContent>
-            </Card>
-          ))}
+          {["draft", "pending_review", "approved", "published", "archived"].map(
+            (status) => (
+              <Card key={status}>
+                <CardContent className="pt-4 text-center">
+                  <Badge variant="outline">{t(`status.${status}`)}</Badge>
+                </CardContent>
+              </Card>
+            ),
+          )}
         </div>
       </div>
     </ModuleGate>

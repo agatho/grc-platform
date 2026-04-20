@@ -25,11 +25,7 @@ const RISK_CATEGORIES = [
   "esg",
 ];
 
-const ESCALATION_ROLES = [
-  "admin",
-  "risk_manager",
-  "auditor",
-];
+const ESCALATION_ROLES = ["admin", "risk_manager", "auditor"];
 
 export default function BoardKpiConfigPage() {
   const t = useTranslations("boardKpi");
@@ -54,7 +50,11 @@ export default function BoardKpiConfigPage() {
     void fetchData();
   }, [fetchData]);
 
-  const saveThreshold = async (category: string, maxResidualScore: number, escalationRole: string) => {
+  const saveThreshold = async (
+    category: string,
+    maxResidualScore: number,
+    escalationRole: string,
+  ) => {
     setSaving(true);
     try {
       const existing = thresholds.find((t) => t.riskCategory === category);
@@ -68,7 +68,11 @@ export default function BoardKpiConfigPage() {
         await fetch("/api/v1/erm/risk-appetite", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ riskCategory: category, maxResidualScore, escalationRole }),
+          body: JSON.stringify({
+            riskCategory: category,
+            maxResidualScore,
+            escalationRole,
+          }),
         });
       }
       await fetchData();
@@ -135,11 +139,14 @@ export default function BoardKpiConfigPage() {
           <h1 className="text-2xl font-bold text-gray-900">
             {t("config.title")}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t("config.subtitle")}
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{t("config.subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -245,8 +252,13 @@ export default function BoardKpiConfigPage() {
             { key: "assessmentSource", default: "15%" },
             { key: "automationLevel", default: "15%" },
           ].map((w) => (
-            <div key={w.key} className="rounded-lg border border-gray-200 p-3 text-center">
-              <span className="text-lg font-bold text-gray-900">{w.default}</span>
+            <div
+              key={w.key}
+              className="rounded-lg border border-gray-200 p-3 text-center"
+            >
+              <span className="text-lg font-bold text-gray-900">
+                {w.default}
+              </span>
               <p className="text-xs text-gray-500 mt-1">
                 {t(`assurance.factors.${w.key}`)}
               </p>
@@ -273,8 +285,13 @@ export default function BoardKpiConfigPage() {
             { key: "freshness", default: "10%" },
             { key: "soaCompleteness", default: "10%" },
           ].map((w) => (
-            <div key={w.key} className="rounded-lg border border-gray-200 p-3 text-center">
-              <span className="text-lg font-bold text-gray-900">{w.default}</span>
+            <div
+              key={w.key}
+              className="rounded-lg border border-gray-200 p-3 text-center"
+            >
+              <span className="text-lg font-bold text-gray-900">
+                {w.default}
+              </span>
               <p className="text-xs text-gray-500 mt-1">
                 {t(`posture.factors.${w.key}`)}
               </p>

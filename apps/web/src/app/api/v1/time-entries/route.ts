@@ -60,7 +60,21 @@ export async function GET(req: Request) {
 
   const grcArea = searchParams.get("grc_area");
   if (grcArea) {
-    conditions.push(eq(grcTimeEntry.grcArea, grcArea as "erm" | "isms" | "ics" | "dpms" | "audit" | "tprm" | "bcms" | "esg" | "general"));
+    conditions.push(
+      eq(
+        grcTimeEntry.grcArea,
+        grcArea as
+          | "erm"
+          | "isms"
+          | "ics"
+          | "dpms"
+          | "audit"
+          | "tprm"
+          | "bcms"
+          | "esg"
+          | "general",
+      ),
+    );
   }
 
   const dateFrom = searchParams.get("date_from");

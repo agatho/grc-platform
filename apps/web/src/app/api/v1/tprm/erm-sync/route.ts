@@ -38,7 +38,7 @@ export async function GET(req: Request) {
     WHERE vra.org_id = ${ctx.orgId}
   `);
 
-  const row = result.rows?.[0] ?? {};
+  const row = (result as unknown as Record<string, unknown>[])[0] ?? {};
 
   return Response.json({
     data: {
@@ -64,10 +64,12 @@ export async function POST(req: Request) {
     LIMIT 1
   `);
 
-  const config = configResult.rows?.[0];
+  const config = (configResult as unknown as Record<string, unknown>[])[0];
   const threshold = Number(config?.score_threshold ?? 15);
   const riskCategory = String(config?.default_risk_category ?? "operational");
-  const treatmentStrategy = String(config?.default_treatment_strategy ?? "mitigate");
+  const treatmentStrategy = String(
+    config?.default_treatment_strategy ?? "mitigate",
+  );
 
   if (config && config.sync_enabled === false) {
     return Response.json(
@@ -92,11 +94,14 @@ export async function POST(req: Request) {
     ORDER BY vra.residual_risk_score DESC
   `);
 
-  const rows = unsyncedRows.rows ?? [];
+  const rows = (unsyncedRows as unknown as Record<string, unknown>[]) ?? [];
 
   if (rows.length === 0) {
     return Response.json({
-      data: { syncedCount: 0, message: "Keine unzugeordneten Hochrisiko-Bewertungen gefunden" },
+      data: {
+        syncedCount: 0,
+        message: "Keine unzugeordneten Hochrisiko-Bewertungen gefunden",
+      },
     });
   }
 
@@ -109,10 +114,22 @@ export async function POST(req: Request) {
       const residualScore = Number(row.residual_risk_score ?? 0);
 
       // Derive 1-5 likelihood/impact from the composite score
-      const inherentLikelihood = Math.min(5, Math.max(1, Math.ceil(inherentScore / 5)));
-      const inherentImpact = Math.min(5, Math.max(1, Math.ceil(inherentScore / inherentLikelihood)));
-      const residualLikelihood = Math.min(5, Math.max(1, Math.ceil(residualScore / 5)));
-      const residualImpact = Math.min(5, Math.max(1, Math.ceil(residualScore / residualLikelihood)));
+      const inherentLikelihood = Math.min(
+        5,
+        Math.max(1, Math.ceil(inherentScore / 5)),
+      );
+      const inherentImpact = Math.min(
+        5,
+        Math.max(1, Math.ceil(inherentScore / inherentLikelihood)),
+      );
+      const residualLikelihood = Math.min(
+        5,
+        Math.max(1, Math.ceil(residualScore / 5)),
+      );
+      const residualImpact = Math.min(
+        5,
+        Math.max(1, Math.ceil(residualScore / residualLikelihood)),
+      );
 
       // Insert into central risk table
       const riskInsert = await tx.execute(sql`

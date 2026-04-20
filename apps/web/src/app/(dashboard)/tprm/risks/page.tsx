@@ -124,10 +124,16 @@ function TprmRiskDashboardInner() {
             Lieferanten-Risiko&uuml;bersicht
           </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Aggregierte Risikoansicht aller Drittparteien mit ERM-Synchronisation
+            Aggregierte Risikoansicht aller Drittparteien mit
+            ERM-Synchronisation
           </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -169,16 +175,28 @@ function TprmRiskDashboardInner() {
           <table className="w-full text-sm">
             <thead>
               <tr className="border-b border-gray-100 bg-gray-50">
-                <th className="text-left px-4 py-3 font-medium text-gray-600">Lieferant</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Tier</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Inherent Score</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Residual Score</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">Status</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">ERM-Sync</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  Lieferant
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  Tier
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  Inherent Score
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  Residual Score
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  Status
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  ERM-Sync
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {(!data?.vendors || data.vendors.length === 0) ? (
+              {!data?.vendors || data.vendors.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="text-center py-8 text-gray-400">
                     Keine Lieferantenrisiken vorhanden
@@ -186,23 +204,33 @@ function TprmRiskDashboardInner() {
                 </tr>
               ) : (
                 data.vendors.map((v) => {
-                  const rScore = v.residualRiskScore ?? v.inherentRiskScore ?? 0;
+                  const rScore =
+                    v.residualRiskScore ?? v.inherentRiskScore ?? 0;
                   const isCritical = rScore >= 15;
                   return (
                     <tr
                       key={v.id}
                       className={`hover:bg-gray-50 transition-colors ${isCritical ? "bg-red-50/30" : ""}`}
                     >
-                      <td className="px-4 py-3 font-medium text-gray-900">{v.name}</td>
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        {v.name}
+                      </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge variant="outline" className={`text-xs ${TIER_COLORS[v.tier] ?? ""}`}>
+                        <Badge
+                          variant="outline"
+                          className={`text-xs ${TIER_COLORS[v.tier] ?? ""}`}
+                        >
                           {v.tier?.replace(/_/g, " ") ?? "-"}
                         </Badge>
                       </td>
-                      <td className={`px-4 py-3 text-center ${scoreColor(v.inherentRiskScore)}`}>
+                      <td
+                        className={`px-4 py-3 text-center ${scoreColor(v.inherentRiskScore)}`}
+                      >
                         {v.inherentRiskScore ?? "-"}
                       </td>
-                      <td className={`px-4 py-3 text-center ${scoreColor(v.residualRiskScore)}`}>
+                      <td
+                        className={`px-4 py-3 text-center ${scoreColor(v.residualRiskScore)}`}
+                      >
                         {v.residualRiskScore ?? "-"}
                       </td>
                       <td className="px-4 py-3 text-center">
@@ -212,7 +240,10 @@ function TprmRiskDashboardInner() {
                       </td>
                       <td className="px-4 py-3 text-center">
                         {isCritical ? (
-                          <Link2Off size={14} className="inline text-orange-500" />
+                          <Link2Off
+                            size={14}
+                            className="inline text-orange-500"
+                          />
                         ) : (
                           <span className="text-gray-300">-</span>
                         )}

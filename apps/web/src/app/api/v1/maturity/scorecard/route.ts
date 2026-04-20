@@ -12,10 +12,15 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const query = maturityScorecardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = maturityScorecardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Get all maturity models for this org
-  const models = await db.select().from(maturityModel).where(eq(maturityModel.orgId, ctx.orgId));
+  const models = await db
+    .select()
+    .from(maturityModel)
+    .where(eq(maturityModel.orgId, ctx.orgId));
 
   // Build scorecard
   const scorecard = models.map((m) => ({
@@ -27,9 +32,11 @@ export async function GET(req: Request) {
     lastCalculatedAt: m.lastCalculatedAt,
   }));
 
-  let benchmarks: Record<string, unknown> = {};
+  const benchmarks: Record<string, unknown> = {};
   if (query.compareBenchmark && query.industry) {
-    const poolData = await db.select().from(benchmarkPool)
+    const poolData = await db
+      .select()
+      .from(benchmarkPool)
       .where(eq(benchmarkPool.industry, query.industry));
     for (const p of poolData) {
       benchmarks[p.moduleKey] = {

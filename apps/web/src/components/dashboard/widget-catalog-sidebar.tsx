@@ -102,7 +102,9 @@ export function WidgetCatalogSidebar({
               <div key={type}>
                 <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground">
                   {TYPE_ICONS[type]}
-                  {locale === "de" ? TYPE_LABELS[type].de : TYPE_LABELS[type].en}
+                  {locale === "de"
+                    ? TYPE_LABELS[type].de
+                    : TYPE_LABELS[type].en}
                   <span className="ml-auto">{defs.length}</span>
                 </div>
                 <div className="space-y-1.5">
@@ -116,7 +118,9 @@ export function WidgetCatalogSidebar({
                         {locale === "de" ? def.nameDe : def.nameEn}
                       </div>
                       <div className="mt-0.5 text-[10px] text-muted-foreground line-clamp-2">
-                        {locale === "de" ? def.descriptionDe : def.descriptionEn}
+                        {locale === "de"
+                          ? def.descriptionDe
+                          : def.descriptionEn}
                       </div>
                     </button>
                   ))}

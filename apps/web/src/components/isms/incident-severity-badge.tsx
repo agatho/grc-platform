@@ -27,7 +27,10 @@ export function IncidentSeverityBadge({
   className = "",
 }: IncidentSeverityBadgeProps) {
   return (
-    <Badge variant="outline" className={`${severityStyles[severity]} ${className}`}>
+    <Badge
+      variant="outline"
+      className={`${severityStyles[severity]} ${className}`}
+    >
       {severityLabels[severity][locale]}
     </Badge>
   );

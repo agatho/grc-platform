@@ -35,12 +35,7 @@ export function MetroStation({
         stroke={lineColor}
         strokeWidth={3}
       />
-      <circle
-        cx={x}
-        cy={y}
-        r={6}
-        fill={HEALTH_COLORS[health] ?? "#9ca3af"}
-      />
+      <circle cx={x} cy={y} r={6} fill={HEALTH_COLORS[health] ?? "#9ca3af"} />
       <title>{processName}</title>
     </g>
   );

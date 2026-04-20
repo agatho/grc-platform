@@ -1,12 +1,7 @@
 "use client";
 
 import { useTranslations } from "next-intl";
-import {
-  RefreshCcw,
-  Clock,
-  BarChart3,
-  CalendarClock,
-} from "lucide-react";
+import { RefreshCcw, Clock, BarChart3, CalendarClock } from "lucide-react";
 
 interface TriggerConfigData {
   entityType: string;
@@ -24,10 +19,26 @@ interface TriggerConfigProps {
 }
 
 const TRIGGER_TYPES = [
-  { value: "entity_change", icon: RefreshCcw, color: "border-blue-300 bg-blue-50" },
-  { value: "deadline_expired", icon: Clock, color: "border-orange-300 bg-orange-50" },
-  { value: "score_threshold", icon: BarChart3, color: "border-red-300 bg-red-50" },
-  { value: "periodic", icon: CalendarClock, color: "border-purple-300 bg-purple-50" },
+  {
+    value: "entity_change",
+    icon: RefreshCcw,
+    color: "border-blue-300 bg-blue-50",
+  },
+  {
+    value: "deadline_expired",
+    icon: Clock,
+    color: "border-orange-300 bg-orange-50",
+  },
+  {
+    value: "score_threshold",
+    icon: BarChart3,
+    color: "border-red-300 bg-red-50",
+  },
+  {
+    value: "periodic",
+    icon: CalendarClock,
+    color: "border-purple-300 bg-purple-50",
+  },
 ];
 
 const EVENT_OPTIONS = [

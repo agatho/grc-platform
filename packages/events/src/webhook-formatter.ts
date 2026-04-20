@@ -44,8 +44,7 @@ export function formatSlackPayload(event: GrcEvent): FormattedPayload {
   }
 
   // Add title if available
-  const title =
-    event.payload.after?.title || event.payload.before?.title;
+  const title = event.payload.after?.title || event.payload.before?.title;
   if (title) {
     text += `\n>${title}`;
   }

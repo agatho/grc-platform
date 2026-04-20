@@ -77,7 +77,11 @@ export async function PUT(
   }
 
   // Only author or admin can edit
-  const allowed = await isAuthorOrAdmin(ctx.userId, ctx.orgId, existing.createdBy);
+  const allowed = await isAuthorOrAdmin(
+    ctx.userId,
+    ctx.orgId,
+    existing.createdBy,
+  );
   if (!allowed) {
     return Response.json(
       { error: "Only the comment author or admin can edit this comment" },
@@ -163,7 +167,11 @@ export async function DELETE(
   }
 
   // Only author or admin can delete
-  const allowed = await isAuthorOrAdmin(ctx.userId, ctx.orgId, existing.createdBy);
+  const allowed = await isAuthorOrAdmin(
+    ctx.userId,
+    ctx.orgId,
+    existing.createdBy,
+  );
   if (!allowed) {
     return Response.json(
       { error: "Only the comment author or admin can delete this comment" },

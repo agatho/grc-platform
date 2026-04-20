@@ -45,7 +45,8 @@ export async function GET(req: Request, { params }: RouteParams) {
       completedCount,
       overdueCount: Number(stats?.overdue ?? 0),
       pendingCount: Number(stats?.pending ?? 0),
-      completionRate: totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
+      completionRate:
+        totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0,
       participantCount: Number(stats?.participants ?? 0),
     },
   });
@@ -82,7 +83,11 @@ export async function PUT(req: Request, { params }: RouteParams) {
     );
   }
 
-  if (body.data.periodEnd && body.data.periodStart && body.data.periodEnd <= body.data.periodStart) {
+  if (
+    body.data.periodEnd &&
+    body.data.periodStart &&
+    body.data.periodEnd <= body.data.periodStart
+  ) {
     return Response.json(
       { error: "periodEnd must be after periodStart" },
       { status: 422 },

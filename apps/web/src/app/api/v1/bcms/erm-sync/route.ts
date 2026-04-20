@@ -41,7 +41,8 @@ export async function POST(req: Request) {
       return [];
     }
 
-    const results: Array<{ crisisId: string; riskId: string; title: string }> = [];
+    const results: Array<{ crisisId: string; riskId: string; title: string }> =
+      [];
 
     // 3. For each candidate, create a risk entry and link back
     for (const row of candidates.rows) {

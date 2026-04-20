@@ -36,7 +36,12 @@ export interface RlsTableStatus {
   /** Commands that have at least one policy */
   coveredCommands: string[];
   /** Overall judgement */
-  status: "ok" | "missing_rls" | "missing_force" | "missing_policies" | "platform_ignored";
+  status:
+    | "ok"
+    | "missing_rls"
+    | "missing_force"
+    | "missing_policies"
+    | "platform_ignored";
   /** Short explanation for the UI */
   note?: string;
 }
@@ -123,9 +128,15 @@ export async function runRlsAudit(): Promise<RlsAuditReport> {
     FROM pg_policies
     WHERE schemaname = 'public'
   `);
-  const policiesByTable = new Map<string, { names: string[]; cmds: Set<string> }>();
+  const policiesByTable = new Map<
+    string,
+    { names: string[]; cmds: Set<string> }
+  >();
   for (const p of Array.isArray(policyRows) ? policyRows : []) {
-    const slot = policiesByTable.get(p.tablename) ?? { names: [], cmds: new Set<string>() };
+    const slot = policiesByTable.get(p.tablename) ?? {
+      names: [],
+      cmds: new Set<string>(),
+    };
     slot.names.push(p.policyname);
     slot.cmds.add(p.cmd.toUpperCase());
     policiesByTable.set(p.tablename, slot);
@@ -135,7 +146,10 @@ export async function runRlsAudit(): Promise<RlsAuditReport> {
   const statuses: RlsTableStatus[] = tableRows.map((t) => {
     const isTenant = tenantSet.has(t.table_name);
     const rls = rlsMap.get(t.table_name) ?? { enabled: false, forced: false };
-    const pol = policiesByTable.get(t.table_name) ?? { names: [], cmds: new Set<string>() };
+    const pol = policiesByTable.get(t.table_name) ?? {
+      names: [],
+      cmds: new Set<string>(),
+    };
     const covered = Array.from(pol.cmds);
 
     if (!isTenant) {
@@ -229,9 +243,15 @@ export async function runRlsAudit(): Promise<RlsAuditReport> {
       tenantTables: tenantStatuses.length,
       platformTables: statuses.length - tenantStatuses.length,
       tenantsOk: tenantStatuses.filter((s) => s.status === "ok").length,
-      tenantsMissingRls: tenantStatuses.filter((s) => s.status === "missing_rls").length,
-      tenantsMissingForce: tenantStatuses.filter((s) => s.status === "missing_force").length,
-      tenantsMissingPolicies: tenantStatuses.filter((s) => s.status === "missing_policies").length,
+      tenantsMissingRls: tenantStatuses.filter(
+        (s) => s.status === "missing_rls",
+      ).length,
+      tenantsMissingForce: tenantStatuses.filter(
+        (s) => s.status === "missing_force",
+      ).length,
+      tenantsMissingPolicies: tenantStatuses.filter(
+        (s) => s.status === "missing_policies",
+      ).length,
     },
     tables: statuses,
   };

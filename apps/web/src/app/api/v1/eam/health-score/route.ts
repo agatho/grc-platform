@@ -1,4 +1,13 @@
-import { db, architectureElement, applicationPortfolio, technologyEntry, architectureRuleViolation, dataFlow, applicationInterface, architectureHealthSnapshot } from "@grc/db";
+import {
+  db,
+  architectureElement,
+  applicationPortfolio,
+  technologyEntry,
+  architectureRuleViolation,
+  dataFlow,
+  applicationInterface,
+  architectureHealthSnapshot,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -19,7 +28,9 @@ export async function GET(req: Request) {
     .from(applicationPortfolio)
     .where(eq(applicationPortfolio.orgId, ctx.orgId));
 
-  const portfolioAge = appStats?.total ? Math.round((appStats.healthy / appStats.total) * 100) : 100;
+  const portfolioAge = appStats?.total
+    ? Math.round((appStats.healthy / appStats.total) * 100)
+    : 100;
 
   // Tech currency: % in adopt or trial
   const [techStats] = await db
@@ -30,13 +41,20 @@ export async function GET(req: Request) {
     .from(technologyEntry)
     .where(eq(technologyEntry.orgId, ctx.orgId));
 
-  const techCurrency = techStats?.total ? Math.round((techStats.current / techStats.total) * 100) : 100;
+  const techCurrency = techStats?.total
+    ? Math.round((techStats.current / techStats.total) * 100)
+    : 100;
 
   // Rule violations
   const [violStats] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(architectureRuleViolation)
-    .where(and(eq(architectureRuleViolation.orgId, ctx.orgId), eq(architectureRuleViolation.status, "open")));
+    .where(
+      and(
+        eq(architectureRuleViolation.orgId, ctx.orgId),
+        eq(architectureRuleViolation.status, "open"),
+      ),
+    );
 
   const ruleCompliance = Math.max(0, 100 - (violStats?.count ?? 0) * 5);
 
@@ -54,17 +72,24 @@ export async function GET(req: Request) {
     : 100;
 
   // Compute overall
-  const weights = { portfolioAge: 0.20, techCurrency: 0.20, integrationComplexity: 0.15, spof: 0.15, ruleCompliance: 0.15, dataFlowCompliance: 0.15 };
+  const weights = {
+    portfolioAge: 0.2,
+    techCurrency: 0.2,
+    integrationComplexity: 0.15,
+    spof: 0.15,
+    ruleCompliance: 0.15,
+    dataFlowCompliance: 0.15,
+  };
   const integrationComplexity = 80; // placeholder
   const spofScore = 80; // placeholder
 
   const overall = Math.round(
     portfolioAge * weights.portfolioAge +
-    techCurrency * weights.techCurrency +
-    integrationComplexity * weights.integrationComplexity +
-    spofScore * weights.spof +
-    ruleCompliance * weights.ruleCompliance +
-    dataFlowCompliance * weights.dataFlowCompliance
+      techCurrency * weights.techCurrency +
+      integrationComplexity * weights.integrationComplexity +
+      spofScore * weights.spof +
+      ruleCompliance * weights.ruleCompliance +
+      dataFlowCompliance * weights.dataFlowCompliance,
   );
 
   return Response.json({

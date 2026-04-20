@@ -13,7 +13,10 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const months = Math.min(24, Math.max(1, Number(url.searchParams.get("months")) || 12));
+  const months = Math.min(
+    24,
+    Math.max(1, Number(url.searchParams.get("months")) || 12),
+  );
 
   const cutoff = new Date();
   cutoff.setMonth(cutoff.getMonth() - months);

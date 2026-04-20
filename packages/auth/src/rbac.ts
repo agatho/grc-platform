@@ -67,9 +67,7 @@ export function getRolesInOrg(
   orgId: string,
 ): UserRole[] {
   if (!session?.user?.roles) return [];
-  return session.user.roles
-    .filter((r) => r.orgId === orgId)
-    .map((r) => r.role);
+  return session.user.roles.filter((r) => r.orgId === orgId).map((r) => r.role);
 }
 
 /**

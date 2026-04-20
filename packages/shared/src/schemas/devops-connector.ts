@@ -2,23 +2,59 @@ import { z } from "zod";
 
 // Sprint 65: DevOps und IT Connectors Zod schemas
 
-export const devopsPlatformValues = ["github", "gitlab", "bitbucket", "jira", "confluence", "servicenow", "wiki_generic"] as const;
+export const devopsPlatformValues = [
+  "github",
+  "gitlab",
+  "bitbucket",
+  "jira",
+  "confluence",
+  "servicenow",
+  "wiki_generic",
+] as const;
 
-export const devopsPlatformCategoryValues = ["git_platform", "issue_tracker", "wiki", "endpoint_mgmt", "network_firewall"] as const;
+export const devopsPlatformCategoryValues = [
+  "git_platform",
+  "issue_tracker",
+  "wiki",
+  "endpoint_mgmt",
+  "network_firewall",
+] as const;
 
 export const devopsTestCategoryValues = [
-  "branch_protection", "code_review", "sast", "secret_scanning",
-  "sla_compliance", "docs_freshness", "endpoint_compliance", "firewall_rules",
+  "branch_protection",
+  "code_review",
+  "sast",
+  "secret_scanning",
+  "sla_compliance",
+  "docs_freshness",
+  "endpoint_compliance",
+  "firewall_rules",
 ] as const;
 
-export const devopsResourceTypeValues = ["repository", "project", "space", "endpoint", "firewall"] as const;
+export const devopsResourceTypeValues = [
+  "repository",
+  "project",
+  "space",
+  "endpoint",
+  "firewall",
+] as const;
 
 export const itCheckTypeValues = [
-  "endpoint_encryption", "endpoint_patching", "endpoint_antivirus",
-  "firewall_rule_review", "network_segmentation", "vpn_config", "certificate_expiry",
+  "endpoint_encryption",
+  "endpoint_patching",
+  "endpoint_antivirus",
+  "firewall_rule_review",
+  "network_segmentation",
+  "vpn_config",
+  "certificate_expiry",
 ] as const;
 
-export const infraComplianceStatusValues = ["compliant", "non_compliant", "warning", "error"] as const;
+export const infraComplianceStatusValues = [
+  "compliant",
+  "non_compliant",
+  "warning",
+  "error",
+] as const;
 
 // ─── DevOps Connector Config CRUD ──────────────────────────
 
@@ -82,5 +118,9 @@ export const itInfraCheckQuerySchema = z.object({
 
 export const triggerDevopsScanSchema = z.object({
   configId: z.string().uuid(),
-  categories: z.array(z.enum(devopsTestCategoryValues)).min(1).max(10).optional(),
+  categories: z
+    .array(z.enum(devopsTestCategoryValues))
+    .min(1)
+    .max(10)
+    .optional(),
 });

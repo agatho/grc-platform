@@ -52,7 +52,7 @@ export async function GET(req: Request) {
     data: {
       roadmapRunId: latestRun.roadmapRunId,
       totalActions: actions.length,
-      quickWins: actions.filter(a => a.isQuickWin).length,
+      quickWins: actions.filter((a) => a.isQuickWin).length,
       actions,
       byQuarter,
     },

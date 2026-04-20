@@ -50,7 +50,9 @@ export default function WebhookDetailPage() {
     try {
       const [whRes, dlRes] = await Promise.all([
         fetch(`/api/v1/webhooks/${id}`),
-        fetch(`/api/v1/webhooks/${id}/deliveries?page=${deliveryPage}&limit=20`),
+        fetch(
+          `/api/v1/webhooks/${id}/deliveries?page=${deliveryPage}&limit=20`,
+        ),
       ]);
       if (whRes.ok) {
         const whJson = await whRes.json();
@@ -87,14 +89,20 @@ export default function WebhookDetailPage() {
   }
 
   const filter = webhook.eventFilter as EventFilter;
-  const successCount = deliveries.filter((d) => d.status === "delivered").length;
+  const successCount = deliveries.filter(
+    (d) => d.status === "delivered",
+  ).length;
   const failedCount = deliveries.filter((d) => d.status === "failed").length;
 
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/admin/webhooks")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/admin/webhooks")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <div>
@@ -156,12 +164,18 @@ export default function WebhookDetailPage() {
                 </Badge>
               ))}
               {filter?.events?.map((ev) => (
-                <Badge key={ev} variant="outline" className="text-[10px] bg-blue-50">
+                <Badge
+                  key={ev}
+                  variant="outline"
+                  className="text-[10px] bg-blue-50"
+                >
                   {ev.replace("entity.", "")}
                 </Badge>
               ))}
               {!filter?.entityTypes?.length && !filter?.events?.length && (
-                <span className="text-xs text-muted-foreground">{t("webhooks.allEvents")}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t("webhooks.allEvents")}
+                </span>
               )}
             </div>
           </CardContent>
@@ -173,19 +187,27 @@ export default function WebhookDetailPage() {
         <Card>
           <CardContent className="py-4 text-center">
             <div className="text-2xl font-bold">{deliveryTotal}</div>
-            <div className="text-xs text-muted-foreground">{t("webhooks.totalDeliveries")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("webhooks.totalDeliveries")}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
-            <div className="text-2xl font-bold text-green-600">{successCount}</div>
-            <div className="text-xs text-muted-foreground">{t("webhooks.successful")}</div>
+            <div className="text-2xl font-bold text-green-600">
+              {successCount}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              {t("webhooks.successful")}
+            </div>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="py-4 text-center">
             <div className="text-2xl font-bold text-red-600">{failedCount}</div>
-            <div className="text-xs text-muted-foreground">{t("webhooks.failed")}</div>
+            <div className="text-xs text-muted-foreground">
+              {t("webhooks.failed")}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -207,7 +229,8 @@ export default function WebhookDetailPage() {
           ) : (
             <div className="space-y-2">
               {deliveries.map((d) => {
-                const statusMeta = STATUS_STYLES[d.status] ?? STATUS_STYLES.pending;
+                const statusMeta =
+                  STATUS_STYLES[d.status] ?? STATUS_STYLES.pending;
                 const Icon = statusMeta.icon;
                 return (
                   <div

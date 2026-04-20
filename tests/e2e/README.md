@@ -57,6 +57,7 @@ Jeder Test ist idempotent (nutzt eindeutige Org-Namen mit Timestamp, räumt am E
 ## CI-Integration (TBD)
 
 In `.github/workflows/e2e.yml`:
+
 - Per nightly cron gegen Staging
 - Per PR-trigger wenn `apps/web/**` oder `packages/**` geändert wurde
 - Reports als Artifact hochladen (`playwright-report/`)

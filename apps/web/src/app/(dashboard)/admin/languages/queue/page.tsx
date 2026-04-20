@@ -146,9 +146,7 @@ export default function TranslationQueuePage() {
           <h1 className="text-2xl font-bold tracking-tight">
             {t("translationQueue")}
           </h1>
-          <p className="text-muted-foreground">
-            {t("translationQueueDesc")}
-          </p>
+          <p className="text-muted-foreground">{t("translationQueueDesc")}</p>
         </div>
         <div className="flex gap-2">
           <Button variant="outline" onClick={handleExport}>
@@ -157,9 +155,7 @@ export default function TranslationQueuePage() {
           </Button>
           <Button
             variant="outline"
-            onClick={() =>
-              (window.location.href = "/admin/languages/exchange")
-            }
+            onClick={() => (window.location.href = "/admin/languages/exchange")}
           >
             <Upload className="mr-2 h-4 w-4" />
             {t("importTranslations")}
@@ -256,8 +252,7 @@ export default function TranslationQueuePage() {
                   <TableRow key={`${item.entityType}-${item.entityId}`}>
                     <TableCell>
                       <Badge variant="outline">
-                        {ENTITY_TYPE_LABELS[item.entityType] ??
-                          item.entityType}
+                        {ENTITY_TYPE_LABELS[item.entityType] ?? item.entityType}
                       </Badge>
                     </TableCell>
                     <TableCell className="max-w-xs truncate font-medium">

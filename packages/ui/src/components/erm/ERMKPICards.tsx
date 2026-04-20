@@ -54,9 +54,7 @@ export function ERMKPICards({ data, labels }: ERMKPICardsProps) {
           key={card.label}
           className={`${card.bgColor} rounded-lg p-4 text-center`}
         >
-          <div className={`text-3xl font-bold ${card.color}`}>
-            {card.value}
-          </div>
+          <div className={`text-3xl font-bold ${card.color}`}>{card.value}</div>
           <div className="text-xs text-gray-600 mt-1">{card.label}</div>
         </div>
       ))}

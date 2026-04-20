@@ -19,13 +19,18 @@ export async function PUT(
   const body = await req.json();
   const parsed = reviewSoaSuggestionSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const [existing] = await db
     .select()
     .from(soaAiSuggestion)
-    .where(and(eq(soaAiSuggestion.id, id), eq(soaAiSuggestion.orgId, ctx.orgId)))
+    .where(
+      and(eq(soaAiSuggestion.id, id), eq(soaAiSuggestion.orgId, ctx.orgId)),
+    )
     .limit(1);
 
   if (!existing) {
@@ -33,7 +38,10 @@ export async function PUT(
   }
 
   if (existing.status !== "pending") {
-    return Response.json({ error: "Suggestion already reviewed" }, { status: 409 });
+    return Response.json(
+      { error: "Suggestion already reviewed" },
+      { status: 409 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -41,11 +49,14 @@ export async function PUT(
       .update(soaAiSuggestion)
       .set({
         status: parsed.data.status,
-        suggestedControlId: parsed.data.controlId ?? existing.suggestedControlId,
+        suggestedControlId:
+          parsed.data.controlId ?? existing.suggestedControlId,
         reviewedBy: ctx.userId,
         reviewedAt: new Date(),
       })
-      .where(and(eq(soaAiSuggestion.id, id), eq(soaAiSuggestion.orgId, ctx.orgId)))
+      .where(
+        and(eq(soaAiSuggestion.id, id), eq(soaAiSuggestion.orgId, ctx.orgId)),
+      )
       .returning();
     return updated;
   });

@@ -5,15 +5,36 @@ import { z } from "zod";
 // ─── Entity Reference ───────────────────────────────────────
 
 const entityTypeValues = [
-  "risk", "control", "process", "process_step", "asset", "vendor",
-  "contract", "document", "finding", "incident", "audit", "kri",
-  "bcp", "ropa_entry", "dpia",
+  "risk",
+  "control",
+  "process",
+  "process_step",
+  "asset",
+  "vendor",
+  "contract",
+  "document",
+  "finding",
+  "incident",
+  "audit",
+  "kri",
+  "bcp",
+  "ropa_entry",
+  "dpia",
 ] as const;
 
 const relationshipValues = [
-  "mitigates", "linked_to", "depends_on", "owned_by", "documented_in",
-  "tested_by", "assessed_in", "affects", "implemented_in", "found_in",
-  "bound_by", "affected",
+  "mitigates",
+  "linked_to",
+  "depends_on",
+  "owned_by",
+  "documented_in",
+  "tested_by",
+  "assessed_in",
+  "affects",
+  "implemented_in",
+  "found_in",
+  "bound_by",
+  "affected",
 ] as const;
 
 export const entityReferenceQuerySchema = z.object({
@@ -34,7 +55,10 @@ export const referenceStatsQuerySchema = z.object({
 // ─── Event Log ──────────────────────────────────────────────
 
 const eventTypeValues = [
-  "entity.created", "entity.updated", "entity.deleted", "entity.status_changed",
+  "entity.created",
+  "entity.updated",
+  "entity.deleted",
+  "entity.status_changed",
 ] as const;
 
 export const eventLogQuerySchema = z.object({
@@ -81,4 +105,9 @@ export const webhookDeliveryQuerySchema = z.object({
 });
 
 // Re-export enum arrays for UI
-export { entityTypeValues, relationshipValues, eventTypeValues, templateTypeValues };
+export {
+  entityTypeValues,
+  relationshipValues,
+  eventTypeValues,
+  templateTypeValues,
+};

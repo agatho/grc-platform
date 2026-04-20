@@ -83,7 +83,10 @@ export async function PUT(req: Request) {
 
   if (body.data.defaultLanguage) {
     // Default language must be in active languages
-    if (body.data.activeLanguages && !body.data.activeLanguages.includes(body.data.defaultLanguage)) {
+    if (
+      body.data.activeLanguages &&
+      !body.data.activeLanguages.includes(body.data.defaultLanguage)
+    ) {
       return Response.json(
         { error: "Default language must be in active languages list" },
         { status: 422 },

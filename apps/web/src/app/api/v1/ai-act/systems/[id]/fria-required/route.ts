@@ -4,10 +4,7 @@
 
 import { db, aiSystem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  determineFriaRequirement,
-  type FriaDetermination,
-} from "@grc/shared";
+import { determineFriaRequirement, type FriaDetermination } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -51,7 +48,8 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const input: FriaDetermination = {
-    riskClassification: system.riskClassification as FriaDetermination["riskClassification"],
+    riskClassification:
+      system.riskClassification as FriaDetermination["riskClassification"],
     deployerType: parsed.data.deployerType,
     annexIIICategory: parsed.data.annexIIICategory,
     isCreditScoring: parsed.data.isCreditScoring,

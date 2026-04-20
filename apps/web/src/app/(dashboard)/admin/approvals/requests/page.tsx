@@ -1,12 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import {
-  Loader2,
-  ClipboardCheck,
-  RefreshCcw,
-  ArrowLeft,
-} from "lucide-react";
+import { Loader2, ClipboardCheck, RefreshCcw, ArrowLeft } from "lucide-react";
 import Link from "next/link";
 
 import { Button } from "@/components/ui/button";

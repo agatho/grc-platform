@@ -62,7 +62,7 @@ export async function processScheduledExport(): Promise<ScheduledExportResult> {
               ),
             );
             const count = Number(
-              ((dataResult as unknown as Array<{ cnt: string }>)[0])?.cnt ?? 0,
+              (dataResult as unknown as Array<{ cnt: string }>)[0]?.cnt ?? 0,
             );
             entityExports.push({ entityType, rowCount: count });
           } catch (entityErr) {

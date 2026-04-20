@@ -33,8 +33,12 @@ export const frameworkMapping = pgTable(
     targetControlId: varchar("target_control_id", { length: 100 }).notNull(),
     targetControlTitle: varchar("target_control_title", { length: 500 }),
     relationshipType: varchar("relationship_type", { length: 30 }).notNull(), // equal | subset | superset | intersect | not_related
-    confidence: numeric("confidence", { precision: 5, scale: 2 }).notNull().default("0.80"), // 0.00 - 1.00
-    mappingSource: varchar("mapping_source", { length: 30 }).notNull().default("nist_olir"), // nist_olir | manual | ai_suggested
+    confidence: numeric("confidence", { precision: 5, scale: 2 })
+      .notNull()
+      .default("0.80"), // 0.00 - 1.00
+    mappingSource: varchar("mapping_source", { length: 30 })
+      .notNull()
+      .default("nist_olir"), // nist_olir | manual | ai_suggested
     rationale: text("rationale"),
     isVerified: boolean("is_verified").notNull().default(false),
     verifiedBy: uuid("verified_by").references(() => user.id),
@@ -111,10 +115,14 @@ export const controlFrameworkCoverage = pgTable(
       .references(() => organization.id),
     controlId: uuid("control_id").notNull(), // references control table
     framework: varchar("framework", { length: 50 }).notNull(),
-    frameworkControlId: varchar("framework_control_id", { length: 100 }).notNull(),
+    frameworkControlId: varchar("framework_control_id", {
+      length: 100,
+    }).notNull(),
     coverageStatus: varchar("coverage_status", { length: 30 }).notNull(), // covered | partially_covered | not_covered | not_applicable
     coverageSource: varchar("coverage_source", { length: 30 }).notNull(), // direct_assessment | mapped | inherited | manual
-    evidenceStatus: varchar("evidence_status", { length: 30 }).notNull().default("missing"), // fresh | stale | missing | not_required
+    evidenceStatus: varchar("evidence_status", { length: 30 })
+      .notNull()
+      .default("missing"), // fresh | stale | missing | not_required
     lastAssessedAt: timestamp("last_assessed_at", { withTimezone: true }),
     assessmentResult: varchar("assessment_result", { length: 20 }), // effective | partially_effective | ineffective
     notes: text("notes"),
@@ -156,8 +164,13 @@ export const frameworkGapAnalysis = pgTable(
     coveredControls: integer("covered_controls").notNull(),
     partiallyCoveredControls: integer("partially_covered_controls").notNull(),
     notCoveredControls: integer("not_covered_controls").notNull(),
-    notApplicableControls: integer("not_applicable_controls").notNull().default(0),
-    coveragePercentage: numeric("coverage_percentage", { precision: 5, scale: 2 }).notNull(),
+    notApplicableControls: integer("not_applicable_controls")
+      .notNull()
+      .default(0),
+    coveragePercentage: numeric("coverage_percentage", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
     gapDetails: jsonb("gap_details").default("[]"), // [{controlId, controlTitle, status, recommendation}]
     prioritizedActions: jsonb("prioritized_actions").default("[]"), // [{action, priority, effort, impact}]
     riskExposure: varchar("risk_exposure", { length: 20 }), // critical | high | medium | low
@@ -187,7 +200,10 @@ export const frameworkCoverageSnapshot = pgTable(
       .references(() => organization.id),
     snapshotDate: timestamp("snapshot_date", { withTimezone: true }).notNull(),
     frameworkScores: jsonb("framework_scores").notNull(), // { ISO27001: { coverage: 87, gaps: 12 }, NIS2: { ... }, ... }
-    overallCoverage: numeric("overall_coverage", { precision: 5, scale: 2 }).notNull(),
+    overallCoverage: numeric("overall_coverage", {
+      precision: 5,
+      scale: 2,
+    }).notNull(),
     totalFrameworks: integer("total_frameworks").notNull(),
     fullyCompliant: integer("fully_compliant").notNull(),
     partiallyCompliant: integer("partially_compliant").notNull(),

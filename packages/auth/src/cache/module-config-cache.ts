@@ -78,10 +78,7 @@ export async function get(
       eq(moduleConfig.moduleKey, moduleDefinition.moduleKey),
     )
     .where(
-      and(
-        eq(moduleConfig.orgId, orgId),
-        eq(moduleConfig.moduleKey, moduleKey),
-      ),
+      and(eq(moduleConfig.orgId, orgId), eq(moduleConfig.moduleKey, moduleKey)),
     )
     .limit(1);
 

@@ -1,10 +1,35 @@
 // Audit Management types (Sprint 8)
-export type AuditType = "internal" | "external" | "certification" | "surveillance" | "follow_up";
-export type AuditStatus = "planned" | "preparation" | "fieldwork" | "reporting" | "review" | "completed" | "cancelled";
+export type AuditType =
+  | "internal"
+  | "external"
+  | "certification"
+  | "surveillance"
+  | "follow_up";
+export type AuditStatus =
+  | "planned"
+  | "preparation"
+  | "fieldwork"
+  | "reporting"
+  | "review"
+  | "completed"
+  | "cancelled";
 export type AuditPlanStatus = "draft" | "approved" | "active" | "completed";
-export type ChecklistResult = "conforming" | "nonconforming" | "observation" | "not_applicable";
-export type AuditConclusion = "conforming" | "minor_nonconformity" | "major_nonconformity" | "not_applicable";
-export type UniverseEntityType = "process" | "department" | "it_system" | "vendor" | "custom";
+export type ChecklistResult =
+  | "conforming"
+  | "nonconforming"
+  | "observation"
+  | "not_applicable";
+export type AuditConclusion =
+  | "conforming"
+  | "minor_nonconformity"
+  | "major_nonconformity"
+  | "not_applicable";
+export type UniverseEntityType =
+  | "process"
+  | "department"
+  | "it_system"
+  | "vendor"
+  | "custom";
 
 export interface AuditUniverseEntry {
   id: string;

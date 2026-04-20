@@ -129,8 +129,12 @@ export const vendor = pgTable(
     isLksgRelevant: boolean("is_lksg_relevant").notNull().default(false),
     lksgTier: varchar("lksg_tier", { length: 20 }),
     ownerId: uuid("owner_id").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -163,12 +167,14 @@ export const vendorContact = pgTable(
     phone: varchar("phone", { length: 50 }),
     role: varchar("role", { length: 255 }),
     isPrimary: boolean("is_primary").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("vendor_contact_vendor_idx").on(table.vendorId),
-  ],
+  (table) => [index("vendor_contact_vendor_idx").on(table.vendorId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -198,7 +204,9 @@ export const vendorRiskAssessment = pgTable(
     riskTrend: varchar("risk_trend", { length: 20 }),
     assessedBy: uuid("assessed_by").references(() => user.id),
     notes: text("notes"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("vra_vendor_idx").on(table.vendorId),
@@ -229,8 +237,12 @@ export const vendorDueDiligence = pgTable(
     riskScore: integer("risk_score"),
     reviewedBy: uuid("reviewed_by").references(() => user.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("vdd_vendor_idx").on(table.vendorId),
@@ -251,16 +263,23 @@ export const vendorDueDiligenceQuestion = pgTable(
       .references(() => organization.id),
     category: varchar("category", { length: 100 }).notNull(),
     questionText: text("question_text").notNull(),
-    answerType: varchar("answer_type", { length: 50 }).notNull().default("text"),
-    riskWeighting: numeric("risk_weighting", { precision: 5, scale: 2 }).default("1.00"),
+    answerType: varchar("answer_type", { length: 50 })
+      .notNull()
+      .default("text"),
+    riskWeighting: numeric("risk_weighting", {
+      precision: 5,
+      scale: 2,
+    }).default("1.00"),
     sortOrder: integer("sort_order").notNull().default(0),
     isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("vddq_org_category_idx").on(table.orgId, table.category),
-  ],
+  (table) => [index("vddq_org_category_idx").on(table.orgId, table.category)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -278,7 +297,9 @@ export const contract = pgTable(
     vendorId: uuid("vendor_id").references(() => vendor.id),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
-    contractType: contractTypeEnum("contract_type").notNull().default("service_agreement"),
+    contractType: contractTypeEnum("contract_type")
+      .notNull()
+      .default("service_agreement"),
     status: contractStatusEnum("status").notNull().default("draft"),
     contractNumber: varchar("contract_number", { length: 100 }),
     effectiveDate: date("effective_date", { mode: "string" }),
@@ -295,8 +316,12 @@ export const contract = pgTable(
     approverId: uuid("approver_id").references(() => user.id),
     signedDate: date("signed_date", { mode: "string" }),
     signedBy: uuid("signed_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -333,8 +358,12 @@ export const contractObligation = pgTable(
     status: obligationStatusEnum("status").notNull().default("pending"),
     responsibleId: uuid("responsible_id").references(() => user.id),
     completedAt: timestamp("completed_at", { withTimezone: true }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("obligation_contract_idx").on(table.contractId),
@@ -362,11 +391,11 @@ export const contractAmendment = pgTable(
     effectiveDate: date("effective_date", { mode: "string" }),
     documentId: uuid("document_id").references(() => document.id),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("amendment_contract_idx").on(table.contractId),
-  ],
+  (table) => [index("amendment_contract_idx").on(table.contractId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -386,14 +415,18 @@ export const contractSla = pgTable(
     metricName: varchar("metric_name", { length: 255 }).notNull(),
     targetValue: numeric("target_value", { precision: 10, scale: 4 }).notNull(),
     unit: varchar("unit", { length: 50 }).notNull(),
-    measurementFrequency: varchar("measurement_frequency", { length: 20 }).notNull(),
+    measurementFrequency: varchar("measurement_frequency", {
+      length: 20,
+    }).notNull(),
     penaltyClause: text("penalty_clause"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    index("sla_contract_idx").on(table.contractId),
-  ],
+  (table) => [index("sla_contract_idx").on(table.contractId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -416,7 +449,9 @@ export const contractSlaMeasurement = pgTable(
     isBreach: boolean("is_breach").notNull().default(false),
     notes: text("notes"),
     measuredBy: uuid("measured_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("sla_measurement_sla_idx").on(table.slaId),
@@ -448,8 +483,12 @@ export const lksgAssessment = pgTable(
     reviewedBy: uuid("reviewed_by").references(() => user.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     nextReviewDate: date("next_review_date", { mode: "string" }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("lksg_vendor_idx").on(table.vendorId),

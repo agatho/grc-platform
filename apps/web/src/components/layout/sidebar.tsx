@@ -48,7 +48,10 @@ function useUserRoles(orgId: string | null): UserRole[] {
   );
 }
 
-function isItemVisible(roles: UserRole[], itemRoles: UserRole[] | "all"): boolean {
+function isItemVisible(
+  roles: UserRole[],
+  itemRoles: UserRole[] | "all",
+): boolean {
   if (itemRoles === "all") return true;
   return itemRoles.some((r) => roles.includes(r));
 }
@@ -214,8 +217,15 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
   const roles = useUserRoles(currentOrgId);
-  const { isPinned, togglePin, isGroupCollapsed, toggleGroupCollapse, setActiveGroup, sidebarMode, toggleSidebarMode } =
-    useNavPreferences();
+  const {
+    isPinned,
+    togglePin,
+    isGroupCollapsed,
+    toggleGroupCollapse,
+    setActiveGroup,
+    sidebarMode,
+    toggleSidebarMode,
+  } = useNavPreferences();
 
   // Auto-expand the group that contains the current route
   const activeGroupKey = useMemo(() => {
@@ -228,15 +238,28 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
     }
     // Fallback: check URL prefix patterns
     const prefixMap: Record<string, string> = {
-      "/risks": "erm", "/erm": "erm", "/rcsa": "erm", "/predictive-risk": "erm",
-      "/budget": "erm", "/controls/heatmap": "erm",
-      "/isms": "isms", "/dora": "isms", "/ai-act": "isms",
-      "/controls": "icsAudit", "/audit": "icsAudit", "/control-testing": "icsAudit",
+      "/risks": "erm",
+      "/erm": "erm",
+      "/rcsa": "erm",
+      "/predictive-risk": "erm",
+      "/budget": "erm",
+      "/controls/heatmap": "erm",
+      "/isms": "isms",
+      "/dora": "isms",
+      "/ai-act": "isms",
+      "/controls": "icsAudit",
+      "/audit": "icsAudit",
+      "/control-testing": "icsAudit",
       "/bcms": "bcms",
       "/dpms": "dpms",
-      "/tprm": "tprmContracts", "/contracts": "tprmContracts",
-      "/processes": "bpmArchitecture", "/bpm": "bpmArchitecture", "/eam": "bpmArchitecture", "/documents": "bpmArchitecture",
-      "/esg": "esg", "/tax-cms": "esg",
+      "/tprm": "tprmContracts",
+      "/contracts": "tprmContracts",
+      "/processes": "bpmArchitecture",
+      "/bpm": "bpmArchitecture",
+      "/eam": "bpmArchitecture",
+      "/documents": "bpmArchitecture",
+      "/esg": "esg",
+      "/tax-cms": "esg",
       "/whistleblowing": "whistleblowing",
     };
     for (const [prefix, group] of Object.entries(prefixMap)) {
@@ -265,8 +288,7 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
 
   // Pinned items
   const pinnedItems = useMemo(
-    () =>
-      visibleItems.filter((item) => isPinned(item.href)),
+    () => visibleItems.filter((item) => isPinned(item.href)),
     [visibleItems, isPinned],
   );
 
@@ -289,13 +311,16 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
   // Grouped items by group key, filtered by role
   // Use condensed or full groups based on sidebar mode
   const groupedNav = useMemo(() => {
-    const source = sidebarMode === "condensed" ? NAV_GROUPS_CONDENSED : NAV_GROUPS;
-    return source.map((group) => {
-      const items = group.items.filter((item) =>
-        isItemVisible(roles, item.roles),
-      );
-      return { ...group, items };
-    }).filter((group) => group.items.length > 0);
+    const source =
+      sidebarMode === "condensed" ? NAV_GROUPS_CONDENSED : NAV_GROUPS;
+    return source
+      .map((group) => {
+        const items = group.items.filter((item) =>
+          isItemVisible(roles, item.roles),
+        );
+        return { ...group, items };
+      })
+      .filter((group) => group.items.length > 0);
   }, [roles, sidebarMode]);
 
   return (
@@ -401,14 +426,18 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
             {/* ── Grouped collapsible sections with sub-sections ── */}
             {groupedNav.map((group) => {
               // Group items by parentModule for sub-sections
-              const subSections: { key: string; items: typeof group.items }[] = [];
+              const subSections: { key: string; items: typeof group.items }[] =
+                [];
               let currentSection = "";
               let currentItems: typeof group.items = [];
 
               for (const item of group.items) {
                 const section = item.parentModule || group.key;
                 if (section !== currentSection && currentItems.length > 0) {
-                  subSections.push({ key: currentSection, items: currentItems });
+                  subSections.push({
+                    key: currentSection,
+                    items: currentItems,
+                  });
                   currentItems = [];
                 }
                 currentSection = section;
@@ -418,7 +447,8 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
                 subSections.push({ key: currentSection, items: currentItems });
               }
 
-              const showSubSectionDividers = subSections.length > 1 && !collapsed;
+              const showSubSectionDividers =
+                subSections.length > 1 && !collapsed;
 
               return (
                 <CollapsibleGroup
@@ -463,10 +493,19 @@ export function Sidebar({ collapsed, onToggle, currentOrgId }: SidebarProps) {
           <button
             onClick={toggleSidebarMode}
             className="flex items-center gap-2 w-full px-4 py-1.5 text-[11px] text-gray-400 hover:text-gray-600 transition-colors"
-            title={sidebarMode === "condensed" ? "Alle Menüpunkte anzeigen" : "Kompakte Ansicht"}
+            title={
+              sidebarMode === "condensed"
+                ? "Alle Menüpunkte anzeigen"
+                : "Kompakte Ansicht"
+            }
           >
-            <ChevronRight size={10} className={sidebarMode === "condensed" ? "" : "rotate-90"} />
-            {sidebarMode === "condensed" ? "Vollständiges Menü" : "Kompaktes Menü"}
+            <ChevronRight
+              size={10}
+              className={sidebarMode === "condensed" ? "" : "rotate-90"}
+            />
+            {sidebarMode === "condensed"
+              ? "Vollständiges Menü"
+              : "Kompaktes Menü"}
           </button>
         )}
         {collapsed && (

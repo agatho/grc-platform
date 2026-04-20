@@ -29,7 +29,11 @@ export async function GET(req: Request) {
       .select({ value: count() })
       .from(vendor)
       .where(
-        and(eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt), eq(vendor.isLksgRelevant, true)),
+        and(
+          eq(vendor.orgId, ctx.orgId),
+          isNull(vendor.deletedAt),
+          eq(vendor.isLksgRelevant, true),
+        ),
       ),
 
     // LkSG-relevant vendors with latest assessment
@@ -43,7 +47,11 @@ export async function GET(req: Request) {
       })
       .from(vendor)
       .where(
-        and(eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt), eq(vendor.isLksgRelevant, true)),
+        and(
+          eq(vendor.orgId, ctx.orgId),
+          isNull(vendor.deletedAt),
+          eq(vendor.isLksgRelevant, true),
+        ),
       ),
 
     // Assessments by status

@@ -50,7 +50,8 @@ function SimulatorInner() {
 
   // Form state
   const [regulationName, setRegulationName] = useState("");
-  const [scenarioType, setScenarioType] = useState<SimulationScenarioType>("add_requirement");
+  const [scenarioType, setScenarioType] =
+    useState<SimulationScenarioType>("add_requirement");
 
   const runSimulation = useCallback(async () => {
     if (!regulationName) return;
@@ -81,7 +82,10 @@ function SimulatorInner() {
           <h1 className="text-2xl font-bold">{t("title")}</h1>
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
-        <Button variant="outline" onClick={() => router.push("/compliance/simulator/history")}>
+        <Button
+          variant="outline"
+          onClick={() => router.push("/compliance/simulator/history")}
+        >
           <History className="mr-2 h-4 w-4" />
           {t("history")}
         </Button>
@@ -104,7 +108,12 @@ function SimulatorInner() {
             </div>
             <div className="space-y-2">
               <Label>{t("scenarioType")}</Label>
-              <Select value={scenarioType} onValueChange={(v) => setScenarioType(v as SimulationScenarioType)}>
+              <Select
+                value={scenarioType}
+                onValueChange={(v) =>
+                  setScenarioType(v as SimulationScenarioType)
+                }
+              >
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
@@ -117,8 +126,15 @@ function SimulatorInner() {
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={runSimulation} disabled={loading || !regulationName}>
-              {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Play className="mr-2 h-4 w-4" />}
+            <Button
+              onClick={runSimulation}
+              disabled={loading || !regulationName}
+            >
+              {loading ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Play className="mr-2 h-4 w-4" />
+              )}
               {t("runSimulation")}
             </Button>
           </CardContent>
@@ -136,13 +152,21 @@ function SimulatorInner() {
               <div className="space-y-4">
                 <div className="flex items-center gap-4">
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">{t("before")}</p>
-                    <p className="text-2xl font-bold">{Number(result.beforeScore).toFixed(1)}%</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("before")}
+                    </p>
+                    <p className="text-2xl font-bold">
+                      {Number(result.beforeScore).toFixed(1)}%
+                    </p>
                   </div>
                   <TrendingDown className="h-6 w-6 text-destructive" />
                   <div className="text-center">
-                    <p className="text-sm text-muted-foreground">{t("after")}</p>
-                    <p className="text-2xl font-bold text-destructive">{Number(result.afterScore).toFixed(1)}%</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("after")}
+                    </p>
+                    <p className="text-2xl font-bold text-destructive">
+                      {Number(result.afterScore).toFixed(1)}%
+                    </p>
                   </div>
                 </div>
 
@@ -153,18 +177,31 @@ function SimulatorInner() {
                   </Badge>
                   {result.estimatedTotalCost && (
                     <Badge variant="secondary">
-                      {Number(result.estimatedTotalCost).toLocaleString("de-DE")} EUR
+                      {Number(result.estimatedTotalCost).toLocaleString(
+                        "de-DE",
+                      )}{" "}
+                      EUR
                     </Badge>
                   )}
                 </div>
 
                 <div className="space-y-2">
                   <h4 className="font-medium">{t("identifiedGaps")}</h4>
-                  {(result.gapsJson as Array<{ requirement: string; missingControl: string; effort: string }>).map((gap, i) => (
+                  {(
+                    result.gapsJson as Array<{
+                      requirement: string;
+                      missingControl: string;
+                      effort: string;
+                    }>
+                  ).map((gap, i) => (
                     <div key={i} className="rounded border p-3 text-sm">
                       <p className="font-medium">{gap.requirement}</p>
-                      <p className="text-muted-foreground">{gap.missingControl}</p>
-                      <Badge variant="outline" className="mt-1">{gap.effort}</Badge>
+                      <p className="text-muted-foreground">
+                        {gap.missingControl}
+                      </p>
+                      <Badge variant="outline" className="mt-1">
+                        {gap.effort}
+                      </Badge>
                     </div>
                   ))}
                 </div>

@@ -120,7 +120,10 @@ export async function POST(
 }
 
 /** Resolve target scope to a list of user IDs */
-async function resolveTargetUsers(orgId: string, scope: TargetScope): Promise<string[]> {
+async function resolveTargetUsers(
+  orgId: string,
+  scope: TargetScope,
+): Promise<string[]> {
   // Build conditions
   const conditions = [
     eq(userOrganizationRole.orgId, orgId),
@@ -146,7 +149,11 @@ async function resolveTargetUsers(orgId: string, scope: TargetScope): Promise<st
 
       // Also resolve department/role filters and merge
       if (scope.departments?.length || scope.roles?.length) {
-        const filtered = await resolveByDeptAndRole(orgId, scope.departments, scope.roles);
+        const filtered = await resolveByDeptAndRole(
+          orgId,
+          scope.departments,
+          scope.roles,
+        );
         for (const uid of filtered) directIds.add(uid);
       }
 
@@ -185,7 +192,15 @@ async function resolveByDeptAndRole(
     conditions.push(
       inArray(
         userOrganizationRole.role,
-        roles as Array<"admin" | "risk_manager" | "control_owner" | "auditor" | "dpo" | "process_owner" | "viewer">,
+        roles as Array<
+          | "admin"
+          | "risk_manager"
+          | "control_owner"
+          | "auditor"
+          | "dpo"
+          | "process_owner"
+          | "viewer"
+        >,
       ),
     );
   }

@@ -26,7 +26,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface FAIRParams {
   lefMin: number;
@@ -55,7 +60,12 @@ interface SimResult {
   aleP95?: string;
   aleMean?: string;
   aleStdDev?: string;
-  histogram?: Array<{ bucket: number; bucketMax: number; count: number; percentage: number }>;
+  histogram?: Array<{
+    bucket: number;
+    bucketMax: number;
+    count: number;
+    percentage: number;
+  }>;
   lossExceedance?: Array<{ threshold: number; probability: number }>;
   sensitivity?: Array<{ parameter: string; impact: number; label: string }>;
   computedAt?: string;
@@ -134,13 +144,16 @@ function FAIRParametersInner() {
             lmMin: Number(paramsData.data.lmMin),
             lmMostLikely: Number(paramsData.data.lmMostLikely),
             lmMax: Number(paramsData.data.lmMax),
-            lossComponents: paramsData.data.lossComponents ?? DEFAULT_PARAMS.lossComponents,
+            lossComponents:
+              paramsData.data.lossComponents ?? DEFAULT_PARAMS.lossComponents,
           });
         }
       }
 
       // Fetch latest results
-      const resultsRes = await fetch(`/api/v1/erm/risks/${riskId}/fair/results`);
+      const resultsRes = await fetch(
+        `/api/v1/erm/risks/${riskId}/fair/results`,
+      );
       if (resultsRes.ok) {
         const resultsData = await resultsRes.json();
         setLatestResult(resultsData.data?.latest ?? null);
@@ -209,7 +222,10 @@ function FAIRParametersInner() {
     }
   };
 
-  const updateParam = (key: keyof Omit<FAIRParams, "lossComponents">, value: string) => {
+  const updateParam = (
+    key: keyof Omit<FAIRParams, "lossComponents">,
+    value: string,
+  ) => {
     const num = parseFloat(value);
     if (!isNaN(num)) {
       setFairParams((prev) => ({ ...prev, [key]: num }));
@@ -241,13 +257,18 @@ function FAIRParametersInner() {
           <AlertTriangle className="h-12 w-12 text-yellow-500 mx-auto mb-4" />
           <h2 className="text-lg font-semibold mb-2">{t("notEnabled")}</h2>
           <p className="text-muted-foreground mb-4">{t("notEnabledDesc")}</p>
-          <p className="text-sm text-muted-foreground">{t("enableInSettings")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("enableInSettings")}
+          </p>
         </Card>
       </div>
     );
   }
 
-  const componentSum = Object.values(fairParams.lossComponents).reduce((a, b) => a + b, 0);
+  const componentSum = Object.values(fairParams.lossComponents).reduce(
+    (a, b) => a + b,
+    0,
+  );
 
   return (
     <div className="p-6 space-y-6">
@@ -288,7 +309,9 @@ function FAIRParametersInner() {
                 value={fairParams.lefMin}
                 onChange={(e) => updateParam("lefMin", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t("lefMinHelp")}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("lefMinHelp")}
+              </p>
             </div>
             <div>
               <Label>{t("mostLikely")}</Label>
@@ -299,7 +322,9 @@ function FAIRParametersInner() {
                 value={fairParams.lefMostLikely}
                 onChange={(e) => updateParam("lefMostLikely", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t("lefMostLikelyHelp")}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("lefMostLikelyHelp")}
+              </p>
             </div>
             <div>
               <Label>{t("maximum")}</Label>
@@ -310,7 +335,9 @@ function FAIRParametersInner() {
                 value={fairParams.lefMax}
                 onChange={(e) => updateParam("lefMax", e.target.value)}
               />
-              <p className="text-xs text-muted-foreground mt-1">{t("lefMaxHelp")}</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("lefMaxHelp")}
+              </p>
             </div>
           </div>
         </Card>
@@ -365,11 +392,17 @@ function FAIRParametersInner() {
             <Settings2 className="h-5 w-5 text-purple-600" />
             <h2 className="text-lg font-semibold">{t("lossComponents")}</h2>
           </div>
-          <Badge variant={Math.abs(componentSum - 100) < 0.01 ? "default" : "destructive"}>
+          <Badge
+            variant={
+              Math.abs(componentSum - 100) < 0.01 ? "default" : "destructive"
+            }
+          >
             {componentSum.toFixed(0)}%
           </Badge>
         </div>
-        <p className="text-sm text-muted-foreground">{t("lossComponentsDesc")}</p>
+        <p className="text-sm text-muted-foreground">
+          {t("lossComponentsDesc")}
+        </p>
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
           {COMPONENT_KEYS.map((key) => (

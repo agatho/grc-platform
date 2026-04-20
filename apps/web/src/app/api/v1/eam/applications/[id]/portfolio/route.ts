@@ -19,7 +19,12 @@ export async function GET(
   const [portfolio] = await db
     .select()
     .from(applicationPortfolio)
-    .where(and(eq(applicationPortfolio.elementId, id), eq(applicationPortfolio.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(applicationPortfolio.elementId, id),
+        eq(applicationPortfolio.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json({ data: portfolio ?? null });
 }
@@ -38,20 +43,31 @@ export async function PUT(
   const { id } = await params;
   const body = applicationPortfolioSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Verify element is an application
   const [element] = await db
     .select({ type: architectureElement.type })
     .from(architectureElement)
-    .where(and(eq(architectureElement.id, id), eq(architectureElement.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(architectureElement.id, id),
+        eq(architectureElement.orgId, ctx.orgId),
+      ),
+    );
 
   if (!element) {
     return Response.json({ error: "Element not found" }, { status: 404 });
   }
   if (element.type !== "application") {
-    return Response.json({ error: "Portfolio data only for application type elements" }, { status: 400 });
+    return Response.json(
+      { error: "Portfolio data only for application type elements" },
+      { status: 400 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

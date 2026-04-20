@@ -99,7 +99,9 @@ export default function MobilePage() {
       <div className="grid gap-4 md:grid-cols-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.devices")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.devices")}
+            </CardTitle>
             <Smartphone className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -110,7 +112,9 @@ export default function MobilePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.notifications")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.notifications")}
+            </CardTitle>
             <Bell className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -121,7 +125,9 @@ export default function MobilePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.biometric")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.biometric")}
+            </CardTitle>
             <Fingerprint className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -132,7 +138,9 @@ export default function MobilePage() {
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">{t("stats.scanning")}</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              {t("stats.scanning")}
+            </CardTitle>
             <QrCode className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
@@ -149,7 +157,9 @@ export default function MobilePage() {
         </CardHeader>
         <CardContent>
           {devices.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">{t("devices.empty")}</p>
+            <p className="text-muted-foreground text-center py-8">
+              {t("devices.empty")}
+            </p>
           ) : (
             <div className="space-y-3">
               {devices.map((device) => (
@@ -164,7 +174,8 @@ export default function MobilePage() {
                         {device.deviceModel ?? device.platform}
                       </p>
                       <p className="text-sm text-muted-foreground">
-                        {device.platform} {device.osVersion} - v{device.appVersion}
+                        {device.platform} {device.osVersion} - v
+                        {device.appVersion}
                       </p>
                     </div>
                   </div>
@@ -173,10 +184,16 @@ export default function MobilePage() {
                       <Fingerprint className="h-4 w-4 text-green-500" />
                     )}
                     <Badge variant={device.isActive ? "default" : "secondary"}>
-                      {device.isActive ? t("devices.active") : t("devices.inactive")}
+                      {device.isActive
+                        ? t("devices.active")
+                        : t("devices.inactive")}
                     </Badge>
                     {device.isActive && (
-                      <Button variant="ghost" size="sm" onClick={() => deactivateDevice(device.id)}>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => deactivateDevice(device.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     )}
@@ -195,7 +212,9 @@ export default function MobilePage() {
         </CardHeader>
         <CardContent>
           {notifications.length === 0 ? (
-            <p className="text-muted-foreground text-center py-8">{t("notifications.empty")}</p>
+            <p className="text-muted-foreground text-center py-8">
+              {t("notifications.empty")}
+            </p>
           ) : (
             <div className="space-y-2">
               {notifications.map((notif) => (
@@ -208,11 +227,15 @@ export default function MobilePage() {
                   <div>
                     <p className="font-medium text-sm">{notif.title}</p>
                     {notif.body && (
-                      <p className="text-xs text-muted-foreground">{notif.body}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {notif.body}
+                      </p>
                     )}
                   </div>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{notif.category}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {notif.category}
+                    </Badge>
                     <span className="text-xs text-muted-foreground">
                       {new Date(notif.createdAt).toLocaleDateString()}
                     </span>

@@ -6,10 +6,7 @@
 
 import { db, aiSystem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  selectConformityProcedure,
-  type AnnexIIICategory,
-} from "@grc/shared";
+import { selectConformityProcedure, type AnnexIIICategory } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -48,7 +45,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {
@@ -76,7 +76,8 @@ export async function POST(req: Request, { params }: RouteParams) {
     data: {
       aiSystemId: id,
       annexIIICategory: parsed.data.annexIIICategory,
-      hasHarmonisedStandardCompliance: parsed.data.hasHarmonisedStandardCompliance,
+      hasHarmonisedStandardCompliance:
+        parsed.data.hasHarmonisedStandardCompliance,
       procedure,
       requiresNotifiedBody,
       reasoning: requiresNotifiedBody

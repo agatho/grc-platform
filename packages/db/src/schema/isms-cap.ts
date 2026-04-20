@@ -25,14 +25,18 @@ import { organization, user } from "./platform";
 
 export const ismsNonconformity = pgTable("isms_nonconformity", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   // Identifikation
   ncCode: varchar("nc_code", { length: 30 }),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   // internal_audit | management_review | incident | assessment |
   // external_audit | complaint
-  sourceType: varchar("source_type", { length: 50 }).default("internal_audit").notNull(),
+  sourceType: varchar("source_type", { length: 50 })
+    .default("internal_audit")
+    .notNull(),
   sourceId: uuid("source_id"),
   sourceReference: varchar("source_reference", { length: 200 }),
   // minor | major | observation
@@ -40,7 +44,9 @@ export const ismsNonconformity = pgTable("isms_nonconformity", {
   category: varchar("category", { length: 100 }),
   isoClause: varchar("iso_clause", { length: 50 }),
   // Zeitschiene
-  identifiedAt: timestamp("identified_at", { withTimezone: true }).defaultNow().notNull(),
+  identifiedAt: timestamp("identified_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   dueDate: date("due_date"),
   closedAt: timestamp("closed_at", { withTimezone: true }),
   // Zuweisung
@@ -55,24 +61,36 @@ export const ismsNonconformity = pgTable("isms_nonconformity", {
   status: varchar("status", { length: 30 }).default("open").notNull(),
   // DB-Typ: TEXT[] -- jsonb erspart einen weiteren Drizzle-Import
   tags: jsonb("tags").default([]).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const ismsCorrectiveAction = pgTable("isms_corrective_action", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
-  nonconformityId: uuid("nonconformity_id").notNull().references(() => ismsNonconformity.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
+  nonconformityId: uuid("nonconformity_id")
+    .notNull()
+    .references(() => ismsNonconformity.id, { onDelete: "cascade" }),
   // Aktion
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   // corrective | preventive | containment
-  actionType: varchar("action_type", { length: 50 }).default("corrective").notNull(),
+  actionType: varchar("action_type", { length: 50 })
+    .default("corrective")
+    .notNull(),
   assignedTo: uuid("assigned_to").references(() => user.id),
   dueDate: date("due_date"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
   // Verifikation (ISO 27001 10.1 e)
-  verificationRequired: boolean("verification_required").default(true).notNull(),
+  verificationRequired: boolean("verification_required")
+    .default(true)
+    .notNull(),
   verifiedBy: uuid("verified_by").references(() => user.id),
   verifiedAt: timestamp("verified_at", { withTimezone: true }),
   // effective | not_effective | partial | pending
@@ -85,19 +103,27 @@ export const ismsCorrectiveAction = pgTable("isms_corrective_action", {
   // planned | in_progress | completed | verified | closed | failed
   status: varchar("status", { length: 30 }).default("planned").notNull(),
   tags: jsonb("tags").default([]).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const rootCauseAnalysis = pgTable("root_cause_analysis", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   findingId: uuid("finding_id"),
   incidentId: uuid("incident_id"),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   // 5_why | fishbone | pareto | fault_tree | ishikawa
-  methodology: varchar("methodology", { length: 50 }).default("5_why").notNull(),
+  methodology: varchar("methodology", { length: 50 })
+    .default("5_why")
+    .notNull(),
   rootCauses: jsonb("root_causes").default([]).notNull(),
   contributingFactors: jsonb("contributing_factors").default([]),
   correctiveActions: jsonb("corrective_actions").default([]),
@@ -106,7 +132,11 @@ export const rootCauseAnalysis = pgTable("root_cause_analysis", {
   ownerId: uuid("owner_id").references(() => user.id),
   dueDate: date("due_date"),
   completedAt: timestamp("completed_at", { withTimezone: true }),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });

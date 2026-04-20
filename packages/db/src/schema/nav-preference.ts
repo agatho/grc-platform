@@ -28,10 +28,12 @@ export const userNavPreference = pgTable(
       .references(() => organization.id),
     pinnedRoutes: text("pinned_routes").array().default([]),
     collapsedGroups: text("collapsed_groups").array().default([]),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (table) => [
-    uniqueIndex("unp_user_org_idx").on(table.userId, table.orgId),
-  ],
+  (table) => [uniqueIndex("unp_user_org_idx").on(table.userId, table.orgId)],
 );

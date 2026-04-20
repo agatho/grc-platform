@@ -147,10 +147,17 @@ function scorePill(score: number) {
 function scoreBar(score: number) {
   const status = scoreStatus(score);
   const color =
-    status === "green" ? "bg-emerald-500" : status === "amber" ? "bg-amber-500" : "bg-red-500";
+    status === "green"
+      ? "bg-emerald-500"
+      : status === "amber"
+        ? "bg-amber-500"
+        : "bg-red-500";
   return (
     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-      <div className={`${color} h-full transition-all`} style={{ width: `${score}%` }} />
+      <div
+        className={`${color} h-full transition-all`}
+        style={{ width: `${score}%` }}
+      />
     </div>
   );
 }
@@ -197,7 +204,9 @@ export default function AiActAnnualReportPage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-2 text-red-800">
               <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">Annual Report konnte nicht geladen werden</p>
+              <p className="font-medium">
+                Annual Report konnte nicht geladen werden
+              </p>
             </div>
             <p className="text-sm text-red-700 mt-2">{error}</p>
           </CardContent>
@@ -209,7 +218,10 @@ export default function AiActAnnualReportPage() {
   if (!data) return null;
 
   const overallStatus = scoreStatus(data.overallComplianceScore);
-  const availableYears = Array.from({ length: 5 }, (_, i) => new Date().getUTCFullYear() - 2 + i);
+  const availableYears = Array.from(
+    { length: 5 },
+    (_, i) => new Date().getUTCFullYear() - 2 + i,
+  );
 
   return (
     <div className="space-y-6 p-6 print:p-0">
@@ -223,13 +235,17 @@ export default function AiActAnnualReportPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zur AI-Act-Uebersicht
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">AI-Act Annual Report {year}</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            AI-Act Annual Report {year}
+          </h1>
           <p className="text-muted-foreground mt-1">{data.organization.name}</p>
         </div>
         <div className="flex items-center gap-2 print:hidden">
           <select
             value={year}
-            onChange={(e) => router.push(`/ai-act/annual-report/${e.target.value}`)}
+            onChange={(e) =>
+              router.push(`/ai-act/annual-report/${e.target.value}`)
+            }
             className="h-9 px-3 border rounded-md text-sm"
           >
             {availableYears.map((y) => (
@@ -267,20 +283,28 @@ export default function AiActAnnualReportPage() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <div>
-              <CardTitle className="text-2xl">Overall Compliance Score</CardTitle>
+              <CardTitle className="text-2xl">
+                Overall Compliance Score
+              </CardTitle>
               <CardDescription>
-                Gewichteter Composite: Systems 25% / Conformity 20% / Incidents 15% /
-                FRIA 15% / QMS 15% / GPAI 10%.
+                Gewichteter Composite: Systems 25% / Conformity 20% / Incidents
+                15% / FRIA 15% / QMS 15% / GPAI 10%.
               </CardDescription>
             </div>
             <div className="flex items-center gap-2">
               {data.readyForSubmission ? (
-                <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-300">
+                <Badge
+                  variant="outline"
+                  className="bg-emerald-100 text-emerald-800 border-emerald-300"
+                >
                   <CheckCircle2 className="h-3 w-3 mr-1" />
                   Einreichbar
                 </Badge>
               ) : (
-                <Badge variant="outline" className="bg-red-100 text-red-800 border-red-300">
+                <Badge
+                  variant="outline"
+                  className="bg-red-100 text-red-800 border-red-300"
+                >
                   <AlertTriangle className="h-3 w-3 mr-1" />
                   Nicht einreichbar
                 </Badge>
@@ -290,7 +314,9 @@ export default function AiActAnnualReportPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-baseline gap-3">
-            <span className="text-5xl font-bold">{data.overallComplianceScore}</span>
+            <span className="text-5xl font-bold">
+              {data.overallComplianceScore}
+            </span>
             <span className="text-muted-foreground">/ 100</span>
           </div>
           <Progress value={data.overallComplianceScore} className="h-3" />
@@ -382,7 +408,8 @@ export default function AiActAnnualReportPage() {
             <CardTitle className="text-base">Zahlen-Drill-Down</CardTitle>
           </div>
           <CardDescription>
-            Rohdaten aus den Aggregations-Queries fuer Auditor-Nachvollziehbarkeit.
+            Rohdaten aus den Aggregations-Queries fuer
+            Auditor-Nachvollziehbarkeit.
           </CardDescription>
         </CardHeader>
         <CardContent className="grid md:grid-cols-3 gap-x-6 gap-y-4 text-sm">
@@ -449,7 +476,9 @@ export default function AiActAnnualReportPage() {
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Avg. Notify (h)</span>
-                <span>{data.rawInput.incidents.averageTimeToNotifyHours ?? "—"}</span>
+                <span>
+                  {data.rawInput.incidents.averageTimeToNotifyHours ?? "—"}
+                </span>
               </div>
             </div>
           </div>

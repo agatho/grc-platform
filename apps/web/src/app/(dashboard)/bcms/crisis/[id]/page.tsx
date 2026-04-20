@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
-import { Loader2, ArrowLeft, AlertTriangle, Plus, Trash2, Shield, ArrowRight } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  AlertTriangle,
+  Plus,
+  Trash2,
+  Shield,
+  ArrowRight,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -77,10 +85,17 @@ function CrisisDetailInner() {
         const j = await cRes.json();
         setCrisis(j.data);
         if (j.data.likelihood) setLikelihood(j.data.likelihood);
-        if (j.data.treatmentStrategy) setTreatmentStrategy(j.data.treatmentStrategy);
+        if (j.data.treatmentStrategy)
+          setTreatmentStrategy(j.data.treatmentStrategy);
       }
-      if (lRes.ok) { const j = await lRes.json(); setLogEntries(j.data ?? []); }
-      if (tRes.ok) { const j = await tRes.json(); setTeam(j.data ?? []); }
+      if (lRes.ok) {
+        const j = await lRes.json();
+        setLogEntries(j.data ?? []);
+      }
+      if (tRes.ok) {
+        const j = await tRes.json();
+        setTeam(j.data ?? []);
+      }
     } finally {
       setLoading(false);
     }
@@ -93,7 +108,9 @@ function CrisisDetailInner() {
   const handleActivate = async () => {
     setActivating(true);
     try {
-      const res = await fetch(`/api/v1/bcms/crisis/${id}/activate`, { method: "POST" });
+      const res = await fetch(`/api/v1/bcms/crisis/${id}/activate`, {
+        method: "POST",
+      });
       if (res.ok) void fetchData();
     } finally {
       setActivating(false);
@@ -103,7 +120,9 @@ function CrisisDetailInner() {
   const handleResolve = async () => {
     setResolving(true);
     try {
-      const res = await fetch(`/api/v1/bcms/crisis/${id}/resolve`, { method: "POST" });
+      const res = await fetch(`/api/v1/bcms/crisis/${id}/resolve`, {
+        method: "POST",
+      });
       if (res.ok) void fetchData();
     } finally {
       setResolving(false);
@@ -117,7 +136,11 @@ function CrisisDetailInner() {
       const res = await fetch(`/api/v1/bcms/crisis/${id}/log`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ entryType: logType, title: logTitle, description: logDesc || undefined }),
+        body: JSON.stringify({
+          entryType: logType,
+          title: logTitle,
+          description: logDesc || undefined,
+        }),
       });
       if (res.ok) {
         setLogTitle("");
@@ -131,7 +154,9 @@ function CrisisDetailInner() {
   };
 
   const handleRemoveTeamMember = async (memberId: string) => {
-    await fetch(`/api/v1/bcms/crisis/${id}/team/${memberId}`, { method: "DELETE" });
+    await fetch(`/api/v1/bcms/crisis/${id}/team/${memberId}`, {
+      method: "DELETE",
+    });
     void fetchData();
   };
 
@@ -215,7 +240,9 @@ function CrisisDetailInner() {
   }
 
   if (!crisis) {
-    return <p className="text-center text-gray-400 py-12">{t("crisis.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-400 py-12">{t("crisis.notFound")}</p>
+    );
   }
 
   const isActive = crisis.status === "activated";
@@ -233,7 +260,9 @@ function CrisisDetailInner() {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <AlertTriangle className="h-5 w-5 text-red-600" />
-              <span className="font-bold text-red-800 text-lg">{crisis.name}</span>
+              <span className="font-bold text-red-800 text-lg">
+                {crisis.name}
+              </span>
               <Badge variant="outline" className="bg-red-100 text-red-900 ml-2">
                 {crisis.severity.replace(/_/g, " ")}
               </Badge>
@@ -243,7 +272,10 @@ function CrisisDetailInner() {
                 {t("crisis.duration")}: {durationHours}h {durationMins}m
               </p>
               <p className="text-xs text-red-600">
-                {t("crisis.activatedAt")}: {crisis.activatedAt ? new Date(crisis.activatedAt).toLocaleString() : "-"}
+                {t("crisis.activatedAt")}:{" "}
+                {crisis.activatedAt
+                  ? new Date(crisis.activatedAt).toLocaleString()
+                  : "-"}
               </p>
             </div>
           </div>
@@ -253,16 +285,27 @@ function CrisisDetailInner() {
       {/* Header */}
       {!isActive && (
         <div className="flex items-center gap-3">
-          <button onClick={() => router.push("/bcms/crisis")} className="text-gray-400 hover:text-gray-600">
+          <button
+            onClick={() => router.push("/bcms/crisis")}
+            className="text-gray-400 hover:text-gray-600"
+          >
             <ArrowLeft size={18} />
           </button>
           <div className="flex-1">
             <h1 className="text-xl font-bold text-gray-900">{crisis.name}</h1>
             <p className="text-sm text-gray-500">
-              {t(`crisis.categories.${crisis.category}`)} | {crisis.severity.replace(/_/g, " ")}
+              {t(`crisis.categories.${crisis.category}`)} |{" "}
+              {crisis.severity.replace(/_/g, " ")}
             </p>
           </div>
-          <Badge variant="outline" className={crisis.status === "resolved" ? "bg-green-100 text-green-900" : "bg-gray-100 text-gray-600"}>
+          <Badge
+            variant="outline"
+            className={
+              crisis.status === "resolved"
+                ? "bg-green-100 text-green-900"
+                : "bg-gray-100 text-gray-600"
+            }
+          >
             {t(`crisis.status.${crisis.status}`)}
           </Badge>
         </div>
@@ -271,18 +314,36 @@ function CrisisDetailInner() {
       {/* Action Buttons */}
       <div className="flex gap-2">
         {crisis.status === "standby" && (
-          <Button onClick={handleActivate} disabled={activating} className="bg-red-600 hover:bg-red-700">
-            {activating ? <Loader2 size={14} className="animate-spin mr-1" /> : <AlertTriangle size={14} className="mr-1" />}
+          <Button
+            onClick={handleActivate}
+            disabled={activating}
+            className="bg-red-600 hover:bg-red-700"
+          >
+            {activating ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <AlertTriangle size={14} className="mr-1" />
+            )}
             {t("crisis.activate")}
           </Button>
         )}
         {isActive && (
-          <Button onClick={handleResolve} disabled={resolving} variant="outline" className="border-red-300 text-red-700 hover:bg-red-50">
-            {resolving ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+          <Button
+            onClick={handleResolve}
+            disabled={resolving}
+            variant="outline"
+            className="border-red-300 text-red-700 hover:bg-red-50"
+          >
+            {resolving ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : null}
             {t("crisis.resolve")}
           </Button>
         )}
-        <button onClick={() => router.push("/bcms/crisis")} className="text-sm text-gray-500 hover:text-gray-700 ml-auto">
+        <button
+          onClick={() => router.push("/bcms/crisis")}
+          className="text-sm text-gray-500 hover:text-gray-700 ml-auto"
+        >
           {t("common.back")}
         </button>
       </div>
@@ -294,7 +355,9 @@ function CrisisDetailInner() {
             key={tab}
             onClick={() => setActiveTab(tab)}
             className={`px-4 py-2 text-sm font-medium border-b-2 transition-colors ${
-              activeTab === tab ? "border-blue-500 text-blue-600" : "border-transparent text-gray-500 hover:text-gray-700"
+              activeTab === tab
+                ? "border-blue-500 text-blue-600"
+                : "border-transparent text-gray-500 hover:text-gray-700"
             }`}
           >
             {tab === "log" ? t("crisis.log") : t("crisis.team")}
@@ -309,7 +372,9 @@ function CrisisDetailInner() {
             <Shield size={16} className="text-blue-600" />
             Risikobewertung
           </h2>
-          {Boolean((crisis as unknown as Record<string, unknown>).ermRiskId) && (
+          {Boolean(
+            (crisis as unknown as Record<string, unknown>).ermRiskId,
+          ) && (
             <Badge variant="outline" className="text-blue-600 border-blue-200">
               <ArrowRight size={10} className="mr-1" /> ERM-Register
             </Badge>
@@ -352,7 +417,9 @@ function CrisisDetailInner() {
               Risikobewertung (L x S)
             </label>
             {likelihood > 0 ? (
-              <div className={`rounded-md px-3 py-2 text-sm font-bold text-center ${riskColor(riskScore)}`}>
+              <div
+                className={`rounded-md px-3 py-2 text-sm font-bold text-center ${riskColor(riskScore)}`}
+              >
                 {riskScore} - {riskLabel(riskScore)}
               </div>
             ) : (
@@ -389,24 +456,38 @@ function CrisisDetailInner() {
             onClick={handleSaveRiskAssessment}
             disabled={savingRisk || !likelihood}
           >
-            {savingRisk ? <Loader2 size={14} className="animate-spin mr-1" /> : null}
+            {savingRisk ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : null}
             Bewertung speichern
           </Button>
-          {likelihood > 0 && riskScore >= 12 && !(crisis as unknown as Record<string, unknown>).ermRiskId && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="border-blue-300 text-blue-700 hover:bg-blue-50"
-              onClick={handleErmSync}
-              disabled={syncingErm}
-            >
-              {syncingErm ? <Loader2 size={14} className="animate-spin mr-1" /> : <ArrowRight size={14} className="mr-1" />}
-              Ins ERM synchronisieren
-            </Button>
-          )}
-          {Boolean((crisis as unknown as Record<string, unknown>).ermSyncedAt) && (
+          {likelihood > 0 &&
+            riskScore >= 12 &&
+            !(crisis as unknown as Record<string, unknown>).ermRiskId && (
+              <Button
+                size="sm"
+                variant="outline"
+                className="border-blue-300 text-blue-700 hover:bg-blue-50"
+                onClick={handleErmSync}
+                disabled={syncingErm}
+              >
+                {syncingErm ? (
+                  <Loader2 size={14} className="animate-spin mr-1" />
+                ) : (
+                  <ArrowRight size={14} className="mr-1" />
+                )}
+                Ins ERM synchronisieren
+              </Button>
+            )}
+          {Boolean(
+            (crisis as unknown as Record<string, unknown>).ermSyncedAt,
+          ) && (
             <span className="text-xs text-gray-400 ml-auto">
-              Synchronisiert: {new Date((crisis as unknown as Record<string, unknown>).ermSyncedAt as string).toLocaleString("de-DE")}
+              Synchronisiert:{" "}
+              {new Date(
+                (crisis as unknown as Record<string, unknown>)
+                  .ermSyncedAt as string,
+              ).toLocaleString("de-DE")}
             </span>
           )}
         </div>
@@ -426,8 +507,16 @@ function CrisisDetailInner() {
                       onChange={(e) => setLogType(e.target.value)}
                       className="rounded-md border border-gray-300 px-3 py-2 text-sm"
                     >
-                      {["action", "decision", "communication", "status_change", "observation"].map((type) => (
-                        <option key={type} value={type}>{t(`crisis.logEntry.${type}`)}</option>
+                      {[
+                        "action",
+                        "decision",
+                        "communication",
+                        "status_change",
+                        "observation",
+                      ].map((type) => (
+                        <option key={type} value={type}>
+                          {t(`crisis.logEntry.${type}`)}
+                        </option>
                       ))}
                     </select>
                     <input
@@ -446,10 +535,22 @@ function CrisisDetailInner() {
                     rows={2}
                   />
                   <div className="flex gap-2">
-                    <Button onClick={handleAddLog} disabled={addingLog} size="sm">
-                      {addingLog ? <Loader2 size={14} className="animate-spin" /> : t("crisis.addLogEntry")}
+                    <Button
+                      onClick={handleAddLog}
+                      disabled={addingLog}
+                      size="sm"
+                    >
+                      {addingLog ? (
+                        <Loader2 size={14} className="animate-spin" />
+                      ) : (
+                        t("crisis.addLogEntry")
+                      )}
                     </Button>
-                    <Button variant="outline" size="sm" onClick={() => setShowAddLog(false)}>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setShowAddLog(false)}
+                    >
                       {t("common.cancel")}
                     </Button>
                   </div>
@@ -464,24 +565,30 @@ function CrisisDetailInner() {
 
           {/* Timeline */}
           {logEntries.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">{t("common.noData")}</p>
+            <p className="text-center text-gray-400 py-8">
+              {t("common.noData")}
+            </p>
           ) : (
             <div className="space-y-0">
               {logEntries.map((entry, idx) => (
                 <div key={entry.id} className="flex gap-4 pb-4">
                   <div className="flex flex-col items-center">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
-                      entry.entryType === "status_change"
-                        ? "bg-red-100 text-red-900"
-                        : entry.entryType === "decision"
-                          ? "bg-purple-100 text-purple-900"
-                          : entry.entryType === "communication"
-                            ? "bg-blue-100 text-blue-900"
-                            : "bg-gray-100 text-gray-600"
-                    }`}>
+                    <div
+                      className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold shrink-0 ${
+                        entry.entryType === "status_change"
+                          ? "bg-red-100 text-red-900"
+                          : entry.entryType === "decision"
+                            ? "bg-purple-100 text-purple-900"
+                            : entry.entryType === "communication"
+                              ? "bg-blue-100 text-blue-900"
+                              : "bg-gray-100 text-gray-600"
+                      }`}
+                    >
                       {LOG_TYPE_ICONS[entry.entryType] ?? "?"}
                     </div>
-                    {idx < logEntries.length - 1 && <div className="w-px flex-1 bg-gray-200 mt-1" />}
+                    {idx < logEntries.length - 1 && (
+                      <div className="w-px flex-1 bg-gray-200 mt-1" />
+                    )}
                   </div>
                   <div className="flex-1 pb-2">
                     <div className="flex items-baseline gap-2">
@@ -492,8 +599,14 @@ function CrisisDetailInner() {
                         {t(`crisis.logEntry.${entry.entryType}`)}
                       </Badge>
                     </div>
-                    <p className="text-sm font-medium text-gray-900 mt-1">{entry.title}</p>
-                    {entry.description && <p className="text-sm text-gray-500 mt-1">{entry.description}</p>}
+                    <p className="text-sm font-medium text-gray-900 mt-1">
+                      {entry.title}
+                    </p>
+                    {entry.description && (
+                      <p className="text-sm text-gray-500 mt-1">
+                        {entry.description}
+                      </p>
+                    )}
                   </div>
                 </div>
               ))}
@@ -506,32 +619,51 @@ function CrisisDetailInner() {
       {activeTab === "team" && (
         <div className="space-y-4">
           {team.length === 0 ? (
-            <p className="text-center text-gray-400 py-8">{t("common.noData")}</p>
+            <p className="text-center text-gray-400 py-8">
+              {t("common.noData")}
+            </p>
           ) : (
             <div className="space-y-2">
               {team.map((member) => (
-                <div key={member.id} className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4">
+                <div
+                  key={member.id}
+                  className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4"
+                >
                   <div className="flex items-center gap-3">
                     <div className="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center text-gray-600 font-medium text-sm">
-                      {(member.userName || member.userEmail || "?").charAt(0).toUpperCase()}
+                      {(member.userName || member.userEmail || "?")
+                        .charAt(0)
+                        .toUpperCase()}
                     </div>
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{member.userName || member.userEmail || member.userId}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {member.userName || member.userEmail || member.userId}
+                      </p>
                       <div className="flex items-center gap-2 mt-0.5">
                         <Badge variant="outline" className="text-[10px]">
                           {t(`crisis.teamRoles.${member.role}`)}
                         </Badge>
                         {member.isPrimary && (
-                          <Badge variant="outline" className="bg-green-50 text-green-700 text-[10px]">Primary</Badge>
+                          <Badge
+                            variant="outline"
+                            className="bg-green-50 text-green-700 text-[10px]"
+                          >
+                            Primary
+                          </Badge>
                         )}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
                     {member.phoneNumber && (
-                      <span className="text-xs text-gray-500">{member.phoneNumber}</span>
+                      <span className="text-xs text-gray-500">
+                        {member.phoneNumber}
+                      </span>
                     )}
-                    <button onClick={() => handleRemoveTeamMember(member.id)} className="text-gray-400 hover:text-red-500">
+                    <button
+                      onClick={() => handleRemoveTeamMember(member.id)}
+                      className="text-gray-400 hover:text-red-500"
+                    >
                       <Trash2 size={14} />
                     </button>
                   </div>

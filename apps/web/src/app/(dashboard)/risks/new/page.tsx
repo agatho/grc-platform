@@ -30,11 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@grc/ui";
-import type {
-  RiskCategory,
-  RiskSource,
-  TreatmentStrategy,
-} from "@grc/shared";
+import type { RiskCategory, RiskSource, TreatmentStrategy } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -143,7 +139,11 @@ function NewRiskForm() {
 
   const initialForm = useMemo<FormData>(() => {
     if (catalogName) {
-      return { ...EMPTY_FORM, title: catalogName, catalogEntryId: catalogEntryId ?? undefined } as FormData;
+      return {
+        ...EMPTY_FORM,
+        title: catalogName,
+        catalogEntryId: catalogEntryId ?? undefined,
+      } as FormData;
     }
     return EMPTY_FORM;
   }, [catalogName, catalogEntryId]);
@@ -161,13 +161,11 @@ function NewRiskForm() {
         return r.json();
       })
       .then((json) => {
-        const users = (json.data ?? []).map(
-          (u: Record<string, unknown>) => ({
-            id: u.id as string,
-            name: (u.name as string) || (u.email as string),
-            email: u.email as string,
-          }),
-        );
+        const users = (json.data ?? []).map((u: Record<string, unknown>) => ({
+          id: u.id as string,
+          name: (u.name as string) || (u.email as string),
+          email: u.email as string,
+        }));
         setOrgUsers(users);
       })
       .catch(() => {});
@@ -255,9 +253,7 @@ function NewRiskForm() {
       toast.success(t("form.created"));
       router.push(riskId ? `/risks/${riskId}` : "/risks");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("form.saveError"),
-      );
+      toast.error(err instanceof Error ? err.message : t("form.saveError"));
     } finally {
       setSaving(false);
     }
@@ -330,9 +326,12 @@ function NewRiskForm() {
           <BookOpen size={18} className="text-blue-600 shrink-0" />
           <div>
             <p className="text-sm font-medium text-blue-900">
-              Aus Katalog: <span className="font-mono">{catalogCode}</span> — {catalogName}
+              Aus Katalog: <span className="font-mono">{catalogCode}</span> —{" "}
+              {catalogName}
             </p>
-            <p className="text-xs text-blue-700 mt-0.5">Titel und Beschreibung wurden vorausgefüllt</p>
+            <p className="text-xs text-blue-700 mt-0.5">
+              Titel und Beschreibung wurden vorausgefüllt
+            </p>
           </div>
         </div>
       )}
@@ -368,13 +367,9 @@ function NewRiskForm() {
                 }}
                 className={cn(
                   "flex items-center gap-2 rounded-full px-3 py-1.5 text-sm font-medium transition-colors",
-                  isActive &&
-                    "bg-slate-900 text-white",
-                  isComplete &&
-                    "bg-emerald-100 text-emerald-800",
-                  !isActive &&
-                    !isComplete &&
-                    "bg-gray-100 text-gray-400",
+                  isActive && "bg-slate-900 text-white",
+                  isComplete && "bg-emerald-100 text-emerald-800",
+                  !isActive && !isComplete && "bg-gray-100 text-gray-400",
                 )}
               >
                 {isComplete ? (
@@ -423,9 +418,7 @@ function NewRiskForm() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-2">
-                <Label htmlFor="risk-category">
-                  {t("form.category")} *
-                </Label>
+                <Label htmlFor="risk-category">{t("form.category")} *</Label>
                 <Select
                   value={form.riskCategory || undefined}
                   onValueChange={(v) =>
@@ -449,9 +442,7 @@ function NewRiskForm() {
                 <Label htmlFor="risk-source">{t("form.source")} *</Label>
                 <Select
                   value={form.riskSource || undefined}
-                  onValueChange={(v) =>
-                    update("riskSource", v as RiskSource)
-                  }
+                  onValueChange={(v) => update("riskSource", v as RiskSource)}
                 >
                   <SelectTrigger id="risk-source">
                     <SelectValue placeholder={t("form.selectSource")} />
@@ -746,9 +737,7 @@ function NewRiskForm() {
               <Textarea
                 id="risk-rationale"
                 value={form.treatmentRationale}
-                onChange={(e) =>
-                  update("treatmentRationale", e.target.value)
-                }
+                onChange={(e) => update("treatmentRationale", e.target.value)}
                 rows={4}
                 placeholder={t("form.rationalePlaceholder")}
                 className={cn(
@@ -832,8 +821,7 @@ function NewRiskForm() {
             <Button
               onClick={() => setStep(step + 1)}
               disabled={
-                (step === 1 && !isStep1Valid) ||
-                (step === 2 && !isStep2Valid)
+                (step === 1 && !isStep1Valid) || (step === 2 && !isStep2Valid)
               }
             >
               {t("form.next")}

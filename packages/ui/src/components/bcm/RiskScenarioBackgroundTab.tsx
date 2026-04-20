@@ -52,7 +52,9 @@ export function RiskScenarioBackgroundTab({
                 </span>
               ))}
               {usedMethods.length === 0 && (
-                <span className="text-sm text-gray-400 italic">None specified</span>
+                <span className="text-sm text-gray-400 italic">
+                  None specified
+                </span>
               )}
             </div>
           </div>
@@ -93,7 +95,9 @@ export function RiskScenarioBackgroundTab({
               <span className="text-xs text-gray-500">
                 {labels?.catalogEntry ?? "Catalog Entry"}
               </span>
-              <span className="text-sm text-gray-700">{linkedCatalogEntry.title}</span>
+              <span className="text-sm text-gray-700">
+                {linkedCatalogEntry.title}
+              </span>
             </div>
           )}
           {linkedVulnerability && (
@@ -101,7 +105,9 @@ export function RiskScenarioBackgroundTab({
               <span className="text-xs text-gray-500">
                 {labels?.vulnerability ?? "Vulnerability"}
               </span>
-              <span className="text-sm text-gray-700">{linkedVulnerability.title}</span>
+              <span className="text-sm text-gray-700">
+                {linkedVulnerability.title}
+              </span>
             </div>
           )}
           {linkedThreat && (
@@ -109,7 +115,9 @@ export function RiskScenarioBackgroundTab({
               <span className="text-xs text-gray-500">
                 {labels?.threat ?? "Threat"}
               </span>
-              <span className="text-sm text-gray-700">{linkedThreat.title}</span>
+              <span className="text-sm text-gray-700">
+                {linkedThreat.title}
+              </span>
             </div>
           )}
         </div>

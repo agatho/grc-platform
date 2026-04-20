@@ -61,7 +61,9 @@ export default function AdminLoginPage() {
         <div className="text-center">
           <Shield className="mx-auto h-8 w-8 text-amber-600" />
           <h1 className="mt-2 text-xl font-bold">{t("breakGlassTitle")}</h1>
-          <p className="mt-1 text-sm text-gray-500">{t("breakGlassSubtitle")}</p>
+          <p className="mt-1 text-sm text-gray-500">
+            {t("breakGlassSubtitle")}
+          </p>
         </div>
 
         <div className="flex items-start gap-2 rounded-md bg-amber-50 p-3">
@@ -71,7 +73,10 @@ export default function AdminLoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label htmlFor="admin-email" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="admin-email"
+              className="block text-sm font-medium text-gray-700"
+            >
               {t("email")}
             </label>
             <input
@@ -85,7 +90,10 @@ export default function AdminLoginPage() {
           </div>
 
           <div>
-            <label htmlFor="admin-password" className="block text-sm font-medium text-gray-700">
+            <label
+              htmlFor="admin-password"
+              className="block text-sm font-medium text-gray-700"
+            >
               {t("password")}
             </label>
             <input
@@ -110,7 +118,10 @@ export default function AdminLoginPage() {
         </form>
 
         <div className="text-center">
-          <a href="/login" className="text-xs text-gray-500 hover:text-gray-700">
+          <a
+            href="/login"
+            className="text-xs text-gray-500 hover:text-gray-700"
+          >
             {t("backToLogin")}
           </a>
         </div>

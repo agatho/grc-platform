@@ -34,7 +34,12 @@ export async function POST(req: Request) {
   const [targetTreatment] = await db
     .select({ id: riskTreatment.id })
     .from(riskTreatment)
-    .where(and(eq(riskTreatment.id, body.data.treatmentId), eq(riskTreatment.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(riskTreatment.id, body.data.treatmentId),
+        eq(riskTreatment.orgId, ctx.orgId),
+      ),
+    );
 
   if (!targetTreatment) {
     return Response.json({ error: "Treatment not found" }, { status: 404 });
@@ -92,7 +97,10 @@ export async function GET(req: Request) {
     })
     .from(riskTreatmentLink)
     .leftJoin(risk, eq(riskTreatmentLink.riskId, risk.id))
-    .leftJoin(riskTreatment, eq(riskTreatmentLink.treatmentId, riskTreatment.id))
+    .leftJoin(
+      riskTreatment,
+      eq(riskTreatmentLink.treatmentId, riskTreatment.id),
+    )
     .where(eq(riskTreatmentLink.orgId, ctx.orgId))
     .$dynamic();
 

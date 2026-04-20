@@ -1,8 +1,4 @@
-import {
-  db,
-  customDashboard,
-  customDashboardWidget,
-} from "@grc/db";
+import { db, customDashboard, customDashboardWidget } from "@grc/db";
 import { updateWidgetSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -37,10 +33,7 @@ export async function PUT(
     return Response.json({ error: "Dashboard not found" }, { status: 404 });
   }
 
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 
@@ -61,7 +54,8 @@ export async function PUT(
 
     if (data.positionJson !== undefined)
       updateFields.positionJson = data.positionJson;
-    if (data.configJson !== undefined) updateFields.configJson = data.configJson;
+    if (data.configJson !== undefined)
+      updateFields.configJson = data.configJson;
     if (data.sortOrder !== undefined) updateFields.sortOrder = data.sortOrder;
 
     const [updated] = await tx
@@ -99,10 +93,7 @@ export async function DELETE(
     return Response.json({ error: "Dashboard not found" }, { status: 404 });
   }
 
-  if (
-    dashboard.visibility === "personal" &&
-    dashboard.userId !== ctx.userId
-  ) {
+  if (dashboard.visibility === "personal" && dashboard.userId !== ctx.userId) {
     return Response.json({ error: "Forbidden" }, { status: 403 });
   }
 

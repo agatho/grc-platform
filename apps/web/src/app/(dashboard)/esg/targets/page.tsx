@@ -59,11 +59,18 @@ function TargetsInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("targets.title")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("targets.title")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">{t("targets.subtitle")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchTargets} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchTargets}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -85,7 +92,10 @@ function TargetsInner() {
             // Calculate progress: for reduction targets (target < baseline), invert
             const range = Math.abs(baseline - targetVal);
             const achieved = Math.abs(baseline - current);
-            const progress = range > 0 ? Math.min(100, Math.max(0, (achieved / range) * 100)) : 0;
+            const progress =
+              range > 0
+                ? Math.min(100, Math.max(0, (achieved / range) * 100))
+                : 0;
 
             const statusColors: Record<string, string> = {
               on_track: "text-green-600",
@@ -107,20 +117,34 @@ function TargetsInner() {
                 className="rounded-lg border border-gray-200 bg-white p-6 hover:shadow-sm transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-sm font-semibold text-gray-900 leading-snug">{target.name}</h3>
+                  <h3 className="text-sm font-semibold text-gray-900 leading-snug">
+                    {target.name}
+                  </h3>
                   <TargetStatusBadge status={target.status} t={t} />
                 </div>
 
                 {/* Metric name */}
                 {target.metricName && (
-                  <p className="text-xs text-gray-500 mb-3">{target.metricName}</p>
+                  <p className="text-xs text-gray-500 mb-3">
+                    {target.metricName}
+                  </p>
                 )}
 
                 {/* Circular Progress Gauge */}
                 <div className="flex items-center gap-4 mb-4">
                   <div className="relative w-16 h-16 shrink-0">
-                    <svg className="w-full h-full -rotate-90" viewBox="0 0 60 60">
-                      <circle cx="30" cy="30" r="24" fill="none" stroke="#e5e7eb" strokeWidth="6" />
+                    <svg
+                      className="w-full h-full -rotate-90"
+                      viewBox="0 0 60 60"
+                    >
+                      <circle
+                        cx="30"
+                        cy="30"
+                        r="24"
+                        fill="none"
+                        stroke="#e5e7eb"
+                        strokeWidth="6"
+                      />
                       <circle
                         cx="30"
                         cy="30"
@@ -141,7 +165,9 @@ function TargetsInner() {
                       />
                     </svg>
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <span className={`text-xs font-bold ${statusColors[target.status] ?? "text-gray-900"}`}>
+                      <span
+                        className={`text-xs font-bold ${statusColors[target.status] ?? "text-gray-900"}`}
+                      >
                         {Math.round(progress)}%
                       </span>
                     </div>
@@ -151,15 +177,21 @@ function TargetsInner() {
                   <div className="flex-1 space-y-1 text-xs">
                     <div className="flex justify-between text-gray-500">
                       <span>{t("targets.baselineValue")}</span>
-                      <span className="font-medium text-gray-700">{baseline.toLocaleString()} ({target.baselineYear})</span>
+                      <span className="font-medium text-gray-700">
+                        {baseline.toLocaleString()} ({target.baselineYear})
+                      </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
                       <span>{t("targets.currentValue")}</span>
-                      <span className="font-medium text-gray-900">{current.toLocaleString()}</span>
+                      <span className="font-medium text-gray-900">
+                        {current.toLocaleString()}
+                      </span>
                     </div>
                     <div className="flex justify-between text-gray-500">
                       <span>{t("targets.targetValue")}</span>
-                      <span className="font-medium text-gray-700">{targetVal.toLocaleString()} ({target.targetYear})</span>
+                      <span className="font-medium text-gray-700">
+                        {targetVal.toLocaleString()} ({target.targetYear})
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -193,7 +225,13 @@ function TargetsInner() {
   );
 }
 
-function TargetStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
+function TargetStatusBadge({
+  status,
+  t,
+}: {
+  status: string;
+  t: (key: string) => string;
+}) {
   const colors: Record<string, string> = {
     on_track: "bg-green-100 text-green-900",
     at_risk: "bg-yellow-100 text-yellow-900",

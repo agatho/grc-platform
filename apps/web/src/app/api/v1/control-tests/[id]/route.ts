@@ -1,11 +1,4 @@
-import {
-  db,
-  controlTest,
-  control,
-  user,
-  evidence,
-  finding,
-} from "@grc/db";
+import { db, controlTest, control, user, evidence, finding } from "@grc/db";
 import { executeTestSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -13,9 +6,15 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { z } from "zod";
 
 const updateTestSchema = z.object({
-  testType: z.enum(["design_effectiveness", "operating_effectiveness"]).optional(),
-  todResult: z.enum(["effective", "ineffective", "partially_effective", "not_tested"]).optional(),
-  toeResult: z.enum(["effective", "ineffective", "partially_effective", "not_tested"]).optional(),
+  testType: z
+    .enum(["design_effectiveness", "operating_effectiveness"])
+    .optional(),
+  todResult: z
+    .enum(["effective", "ineffective", "partially_effective", "not_tested"])
+    .optional(),
+  toeResult: z
+    .enum(["effective", "ineffective", "partially_effective", "not_tested"])
+    .optional(),
   testDate: z.string().optional(),
   sampleSize: z.number().int().positive().optional(),
   sampleDescription: z.string().optional(),
@@ -109,7 +108,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
@@ -146,14 +150,22 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    if (body.data.testType !== undefined) updateValues.testType = body.data.testType;
-    if (body.data.todResult !== undefined) updateValues.todResult = body.data.todResult;
-    if (body.data.toeResult !== undefined) updateValues.toeResult = body.data.toeResult;
-    if (body.data.testDate !== undefined) updateValues.testDate = body.data.testDate;
-    if (body.data.sampleSize !== undefined) updateValues.sampleSize = body.data.sampleSize;
-    if (body.data.sampleDescription !== undefined) updateValues.sampleDescription = body.data.sampleDescription;
-    if (body.data.conclusion !== undefined) updateValues.conclusion = body.data.conclusion;
-    if (body.data.testerId !== undefined) updateValues.testerId = body.data.testerId;
+    if (body.data.testType !== undefined)
+      updateValues.testType = body.data.testType;
+    if (body.data.todResult !== undefined)
+      updateValues.todResult = body.data.todResult;
+    if (body.data.toeResult !== undefined)
+      updateValues.toeResult = body.data.toeResult;
+    if (body.data.testDate !== undefined)
+      updateValues.testDate = body.data.testDate;
+    if (body.data.sampleSize !== undefined)
+      updateValues.sampleSize = body.data.sampleSize;
+    if (body.data.sampleDescription !== undefined)
+      updateValues.sampleDescription = body.data.sampleDescription;
+    if (body.data.conclusion !== undefined)
+      updateValues.conclusion = body.data.conclusion;
+    if (body.data.testerId !== undefined)
+      updateValues.testerId = body.data.testerId;
 
     // Auto-set status based on results
     if (body.data.todResult || body.data.toeResult) {

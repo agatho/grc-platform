@@ -1,9 +1,4 @@
-import {
-  db,
-  ropaEntry,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, ropaEntry, workItem, user } from "@grc/db";
 import { createRopaEntrySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -113,7 +108,12 @@ export async function GET(req: Request) {
   const legalBasisParam = searchParams.get("legalBasis");
   if (legalBasisParam) {
     const bases = legalBasisParam.split(",") as Array<
-      "consent" | "contract" | "legal_obligation" | "vital_interest" | "public_interest" | "legitimate_interest"
+      | "consent"
+      | "contract"
+      | "legal_obligation"
+      | "vital_interest"
+      | "public_interest"
+      | "legitimate_interest"
     >;
     conditions.push(inArray(ropaEntry.legalBasis, bases));
   }
@@ -122,10 +122,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(ropaEntry.title, pattern),
-        ilike(ropaEntry.purpose, pattern),
-      )!,
+      or(ilike(ropaEntry.title, pattern), ilike(ropaEntry.purpose, pattern))!,
     );
   }
 

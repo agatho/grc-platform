@@ -38,13 +38,20 @@ export async function POST(_req: Request, { params }: RouteParams) {
   const [run] = await db
     .select()
     .from(assessmentRun)
-    .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)));
+    .where(
+      and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+    );
   if (!run) {
-    return Response.json({ error: "Assessment run not found" }, { status: 404 });
+    return Response.json(
+      { error: "Assessment run not found" },
+      { status: 404 },
+    );
   }
   if (run.status !== "in_progress") {
     return Response.json(
-      { error: `Run status must be 'in_progress' to finalize (ist: '${run.status}')` },
+      {
+        error: `Run status must be 'in_progress' to finalize (ist: '${run.status}')`,
+      },
       { status: 422 },
     );
   }
@@ -92,7 +99,10 @@ export async function POST(_req: Request, { params }: RouteParams) {
       and(
         eq(assessmentControlEval.assessmentRunId, runId),
         eq(assessmentControlEval.orgId, ctx.orgId),
-        inArray(assessmentControlEval.result, ["ineffective", "partially_effective"]),
+        inArray(assessmentControlEval.result, [
+          "ineffective",
+          "partially_effective",
+        ]),
       ),
     );
 
@@ -115,22 +125,30 @@ export async function POST(_req: Request, { params }: RouteParams) {
       );
   }
   const existingSet = new Set(
-    existingFindings.map((f) => f.controlId).filter((id): id is string => id !== null),
+    existingFindings
+      .map((f) => f.controlId)
+      .filter((id): id is string => id !== null),
   );
 
   const newFindings = badEvals.filter((e) => !existingSet.has(e.controlId));
 
   // Control-Namen fuer Finding-Titles laden
-  const controlRows = newFindings.length > 0
-    ? await db
-        .select({
-          id: control.id,
-          title: control.title,
-          catalogEntryId: control.catalogEntryId,
-        })
-        .from(control)
-        .where(inArray(control.id, newFindings.map((e) => e.controlId)))
-    : [];
+  const controlRows =
+    newFindings.length > 0
+      ? await db
+          .select({
+            id: control.id,
+            title: control.title,
+            catalogEntryId: control.catalogEntryId,
+          })
+          .from(control)
+          .where(
+            inArray(
+              control.id,
+              newFindings.map((e) => e.controlId),
+            ),
+          )
+      : [];
   const controlById = new Map(controlRows.map((c) => [c.id, c]));
 
   let findingsCreated = 0;
@@ -146,13 +164,15 @@ export async function POST(_req: Request, { params }: RouteParams) {
             const controlTitle = c?.title ?? "Unknown Control";
             const severity =
               e.result === "ineffective"
-                ? "significant_nonconformity" as const
-                : "improvement_requirement" as const;
+                ? ("significant_nonconformity" as const)
+                : ("improvement_requirement" as const);
             return {
               orgId: ctx.orgId,
               controlId: e.controlId,
               title: `[ISMS-Assessment] ${controlTitle}: ${e.result === "ineffective" ? "Ineffective" : "Partially Effective"}`,
-              description: e.notes ?? "Finding automatisch aus ISMS-Assessment-Eval generiert.",
+              description:
+                e.notes ??
+                "Finding automatisch aus ISMS-Assessment-Eval generiert.",
               severity,
               status: "identified" as const,
               source: "self_assessment" as const,
@@ -173,7 +193,9 @@ export async function POST(_req: Request, { params }: RouteParams) {
         status: "review",
         updatedAt: new Date(),
       })
-      .where(and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)))
+      .where(
+        and(eq(assessmentRun.id, runId), eq(assessmentRun.orgId, ctx.orgId)),
+      )
       .returning();
   });
 
@@ -193,7 +215,10 @@ export async function POST(_req: Request, { params }: RouteParams) {
   }
 
   // Framework-Coverage (pro Framework: % effective)
-  const frameworkCoverage: Record<string, { total: number; effective: number; percentage: number }> = {};
+  const frameworkCoverage: Record<
+    string,
+    { total: number; effective: number; percentage: number }
+  > = {};
   if (run.framework) {
     const frameworks = run.framework.split(",").map((f) => f.trim());
     for (const fw of frameworks) {
@@ -211,11 +236,16 @@ export async function POST(_req: Request, { params }: RouteParams) {
             sql`${catalogEntry.code} IS NOT NULL`,
           ),
         );
-      const effective = evalsForFw.filter((e) => e.result === "effective").length;
+      const effective = evalsForFw.filter(
+        (e) => e.result === "effective",
+      ).length;
       frameworkCoverage[fw] = {
         total: evalsForFw.length,
         effective,
-        percentage: evalsForFw.length > 0 ? Math.round((effective / evalsForFw.length) * 100) : 0,
+        percentage:
+          evalsForFw.length > 0
+            ? Math.round((effective / evalsForFw.length) * 100)
+            : 0,
       };
     }
   }

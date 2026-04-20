@@ -174,10 +174,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(process.name, pattern),
-        ilike(process.description, pattern),
-      )!,
+      or(ilike(process.name, pattern), ilike(process.description, pattern))!,
     );
   }
 

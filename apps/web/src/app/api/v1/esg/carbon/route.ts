@@ -1,8 +1,21 @@
-import { db, emissionSource, emissionActivityData, emissionFactor } from "@grc/db";
-import { createEmissionSourceSchema, createActivityDataSchema } from "@grc/shared";
+import {
+  db,
+  emissionSource,
+  emissionActivityData,
+  emissionFactor,
+} from "@grc/db";
+import {
+  createEmissionSourceSchema,
+  createActivityDataSchema,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc, sql } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/esg/carbon — Carbon dashboard data
 export async function GET(req: Request) {
@@ -12,7 +25,8 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const year = url.searchParams.get("year") || new Date().getFullYear().toString();
+  const year =
+    url.searchParams.get("year") || new Date().getFullYear().toString();
 
   // Aggregate emissions by scope
   const emissions = await db.execute(sql`

@@ -32,8 +32,8 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
       and(
         lt(task.dueDate, sql`NOW()`),
         notInArray(task.status, ["done", "cancelled", "overdue"]),
-        isNull(task.deletedAt)
-      )
+        isNull(task.deletedAt),
+      ),
     );
 
   if (overdueTasks.length === 0) {
@@ -52,10 +52,7 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
         updatedAt: now,
       })
       .where(
-        and(
-          sql`${task.id} = ANY(${taskIds}::uuid[])`,
-          isNull(task.deletedAt)
-        )
+        and(sql`${task.id} = ANY(${taskIds}::uuid[])`, isNull(task.deletedAt)),
       );
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
@@ -69,7 +66,8 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
     try {
       const daysOverdue = overdueTask.dueDate
         ? Math.floor(
-            (now.getTime() - overdueTask.dueDate.getTime()) / (1000 * 60 * 60 * 24)
+            (now.getTime() - overdueTask.dueDate.getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : 0;
 
@@ -115,13 +113,13 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
       errors.push(`Notification for task ${overdueTask.id}: ${message}`);
       console.error(
         `[cron:overdue-tasks] Notification error for task ${overdueTask.id}:`,
-        message
+        message,
       );
     }
   }
 
   console.log(
-    `[cron:overdue-tasks] Processed ${overdueTasks.length} tasks, ${errors.length} errors`
+    `[cron:overdue-tasks] Processed ${overdueTasks.length} tasks, ${errors.length} errors`,
   );
 
   return { processed: overdueTasks.length, errors };

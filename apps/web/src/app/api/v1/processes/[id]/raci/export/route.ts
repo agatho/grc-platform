@@ -72,11 +72,14 @@ export async function GET(
   }
 
   // Generate CSV
-  const header = ["Activity", ...matrix.participants.map((p) => p.name)].join(",");
+  const header = ["Activity", ...matrix.participants.map((p) => p.name)].join(
+    ",",
+  );
   const rows = matrix.activities.map((activity) => {
     const cells = matrix.participants.map((participant) => {
       const entry = matrix.entries.find(
-        (e) => e.activityId === activity.id && e.participantId === participant.id,
+        (e) =>
+          e.activityId === activity.id && e.participantId === participant.id,
       );
       return entry ? entry.role : "";
     });

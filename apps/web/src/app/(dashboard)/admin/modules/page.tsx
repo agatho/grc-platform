@@ -4,7 +4,13 @@ import { useState, useCallback } from "react";
 import Link from "next/link";
 import { useSession } from "next-auth/react";
 import { useTranslations, useLocale } from "next-intl";
-import { Blocks, Check, X as XIcon, AlertTriangle, Settings2 } from "lucide-react";
+import {
+  Blocks,
+  Check,
+  X as XIcon,
+  AlertTriangle,
+  Settings2,
+} from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
@@ -29,14 +35,10 @@ import type { ModuleConfig, ModuleKey, ModuleUiStatus } from "@grc/shared";
 // ── Status badge config ──────────────────────────────────────────────
 
 const statusBadgeStyles: Record<ModuleUiStatus, string> = {
-  enabled:
-    "bg-green-100 text-green-900 border-green-200",
-  preview:
-    "bg-amber-100 text-amber-900 border-amber-200",
-  disabled:
-    "bg-gray-100 text-gray-500 border-gray-200",
-  maintenance:
-    "bg-red-100 text-red-900 border-red-200",
+  enabled: "bg-green-100 text-green-900 border-green-200",
+  preview: "bg-amber-100 text-amber-900 border-amber-200",
+  disabled: "bg-gray-100 text-gray-500 border-gray-200",
+  maintenance: "bg-red-100 text-red-900 border-red-200",
 };
 
 const licenseBadgeStyles: Record<string, string> = {
@@ -95,10 +97,8 @@ function ModuleCard({
   const [confirmOpen, setConfirmOpen] = useState(false);
 
   const Icon = getLucideIcon(mod.icon);
-  const displayName =
-    locale === "de" ? mod.displayNameDe : mod.displayNameEn;
-  const description =
-    locale === "de" ? mod.descriptionDe : mod.descriptionEn;
+  const displayName = locale === "de" ? mod.displayNameDe : mod.displayNameEn;
+  const description = locale === "de" ? mod.descriptionDe : mod.descriptionEn;
 
   // Check dependencies
   const deps = mod.requiresModules ?? [];
@@ -168,9 +168,7 @@ function ModuleCard({
                         onCheckedChange={handleSwitchChange}
                         disabled={isToggling || (!depsAreMet && !isEnabled)}
                         aria-label={
-                          isEnabled
-                            ? t("modules.disable")
-                            : t("modules.enable")
+                          isEnabled ? t("modules.disable") : t("modules.enable")
                         }
                       />
                     </span>
@@ -290,7 +288,8 @@ export default function AdminModulesPage() {
     [],
   );
 
-  const currentOrgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
+  const currentOrgId =
+    session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId;
 
   const handleToggle = async (
     moduleKey: ModuleKey,

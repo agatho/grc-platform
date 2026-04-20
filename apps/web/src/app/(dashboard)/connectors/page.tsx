@@ -108,7 +108,12 @@ export default function ConnectorDashboardPage() {
           <p className="text-sm text-gray-500 mt-1">{t("subtitle")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Link href="/connectors/new">
@@ -122,45 +127,92 @@ export default function ConnectorDashboardPage() {
 
       {stats && (
         <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-          <KpiCard icon={<Plug className="h-5 w-5 text-blue-600" />} label={t("dashboard.totalConnectors")} value={String(stats.totalConnectors)} subtitle={`${stats.activeConnectors} ${t("dashboard.active")}`} />
-          <KpiCard icon={<Heart className="h-5 w-5 text-green-600" />} label={t("dashboard.healthy")} value={String(stats.healthyConnectors)} subtitle={`${stats.degradedConnectors} ${t("dashboard.degraded")}`} />
-          <KpiCard icon={<Activity className="h-5 w-5 text-purple-600" />} label={t("dashboard.testsRun24h")} value={String(stats.totalTestsRun24h)} subtitle={t("dashboard.last24h")} />
-          <KpiCard icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />} label={t("dashboard.passRate")} value={`${stats.passRate24h}%`} subtitle={t("dashboard.last24h")} />
-          <KpiCard icon={<Layers className="h-5 w-5 text-indigo-600" />} label={t("dashboard.artifacts")} value={String(stats.totalArtifacts)} subtitle={`${stats.staleEvidence} ${t("dashboard.stale")}`} />
+          <KpiCard
+            icon={<Plug className="h-5 w-5 text-blue-600" />}
+            label={t("dashboard.totalConnectors")}
+            value={String(stats.totalConnectors)}
+            subtitle={`${stats.activeConnectors} ${t("dashboard.active")}`}
+          />
+          <KpiCard
+            icon={<Heart className="h-5 w-5 text-green-600" />}
+            label={t("dashboard.healthy")}
+            value={String(stats.healthyConnectors)}
+            subtitle={`${stats.degradedConnectors} ${t("dashboard.degraded")}`}
+          />
+          <KpiCard
+            icon={<Activity className="h-5 w-5 text-purple-600" />}
+            label={t("dashboard.testsRun24h")}
+            value={String(stats.totalTestsRun24h)}
+            subtitle={t("dashboard.last24h")}
+          />
+          <KpiCard
+            icon={<CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+            label={t("dashboard.passRate")}
+            value={`${stats.passRate24h}%`}
+            subtitle={t("dashboard.last24h")}
+          />
+          <KpiCard
+            icon={<Layers className="h-5 w-5 text-indigo-600" />}
+            label={t("dashboard.artifacts")}
+            value={String(stats.totalArtifacts)}
+            subtitle={`${stats.staleEvidence} ${t("dashboard.stale")}`}
+          />
         </div>
       )}
 
       {/* Quick Navigation */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link href="/connectors/cloud" className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors">
+        <Link
+          href="/connectors/cloud"
+          className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+        >
           <Cloud className="h-6 w-6 text-orange-600 mb-2" />
           <p className="text-sm font-medium text-gray-900">{t("nav.cloud")}</p>
           <p className="text-xs text-gray-500 mt-1">{t("nav.cloudDesc")}</p>
         </Link>
-        <Link href="/connectors/identity" className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors">
+        <Link
+          href="/connectors/identity"
+          className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+        >
           <Shield className="h-6 w-6 text-blue-600 mb-2" />
-          <p className="text-sm font-medium text-gray-900">{t("nav.identity")}</p>
+          <p className="text-sm font-medium text-gray-900">
+            {t("nav.identity")}
+          </p>
           <p className="text-xs text-gray-500 mt-1">{t("nav.identityDesc")}</p>
         </Link>
-        <Link href="/connectors/devops" className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors">
+        <Link
+          href="/connectors/devops"
+          className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+        >
           <GitBranch className="h-6 w-6 text-green-600 mb-2" />
           <p className="text-sm font-medium text-gray-900">{t("nav.devops")}</p>
           <p className="text-xs text-gray-500 mt-1">{t("nav.devopsDesc")}</p>
         </Link>
-        <Link href="/connectors/framework-mappings" className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors">
+        <Link
+          href="/connectors/framework-mappings"
+          className="rounded-lg border border-gray-200 bg-white p-4 hover:bg-gray-50 transition-colors"
+        >
           <Layers className="h-6 w-6 text-purple-600 mb-2" />
-          <p className="text-sm font-medium text-gray-900">{t("nav.frameworks")}</p>
-          <p className="text-xs text-gray-500 mt-1">{t("nav.frameworksDesc")}</p>
+          <p className="text-sm font-medium text-gray-900">
+            {t("nav.frameworks")}
+          </p>
+          <p className="text-xs text-gray-500 mt-1">
+            {t("nav.frameworksDesc")}
+          </p>
         </Link>
       </div>
 
       {/* Connector List */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">{t("connectorList.title")}</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("connectorList.title")}
+          </h2>
         </div>
         {connectors.length === 0 ? (
-          <p className="text-sm text-gray-400 py-12 text-center">{t("connectorList.empty")}</p>
+          <p className="text-sm text-gray-400 py-12 text-center">
+            {t("connectorList.empty")}
+          </p>
         ) : (
           <div className="divide-y divide-gray-100">
             {connectors.map((connector) => (
@@ -172,12 +224,19 @@ export default function ConnectorDashboardPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   {healthIcon[connector.healthStatus] ?? healthIcon.unknown}
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-gray-900 truncate">{connector.name}</p>
-                    <p className="text-xs text-gray-500">{connector.connectorType} / {connector.providerKey}</p>
+                    <p className="text-sm font-medium text-gray-900 truncate">
+                      {connector.name}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {connector.connectorType} / {connector.providerKey}
+                    </p>
                   </div>
                 </div>
                 <div className="flex items-center gap-3 shrink-0 ml-4">
-                  <Badge variant="outline" className={`text-[10px] ${statusColor[connector.status] ?? ""}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${statusColor[connector.status] ?? ""}`}
+                  >
                     {t(`statuses.${connector.status}`)}
                   </Badge>
                   {connector.lastHealthCheck && (
@@ -195,7 +254,17 @@ export default function ConnectorDashboardPage() {
   );
 }
 
-function KpiCard({ icon, label, value, subtitle }: { icon: React.ReactNode; label: string; value: string; subtitle: string }) {
+function KpiCard({
+  icon,
+  label,
+  value,
+  subtitle,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+  subtitle: string;
+}) {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-4">
       <div className="flex items-center gap-2 mb-2">

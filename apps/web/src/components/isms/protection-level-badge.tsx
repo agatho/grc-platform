@@ -26,7 +26,10 @@ export function ProtectionLevelBadge({
 }: ProtectionLevelBadgeProps) {
   if (!level) {
     return (
-      <Badge variant="outline" className={`bg-gray-50 text-gray-400 border-gray-200 ${className}`}>
+      <Badge
+        variant="outline"
+        className={`bg-gray-50 text-gray-400 border-gray-200 ${className}`}
+      >
         --
       </Badge>
     );

@@ -44,11 +44,7 @@ export async function GET(
     .from(kri)
     .leftJoin(risk, eq(kri.riskId, risk.id))
     .where(
-      and(
-        eq(kri.id, id),
-        eq(kri.orgId, ctx.orgId),
-        isNull(kri.deletedAt),
-      ),
+      and(eq(kri.id, id), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
     );
 
   if (!row) {
@@ -94,11 +90,7 @@ export async function PUT(
     .select()
     .from(kri)
     .where(
-      and(
-        eq(kri.id, id),
-        eq(kri.orgId, ctx.orgId),
-        isNull(kri.deletedAt),
-      ),
+      and(eq(kri.id, id), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
     );
 
   if (!existing) {
@@ -141,14 +133,18 @@ export async function PUT(
     };
 
     if (body.data.name !== undefined) updateValues.name = body.data.name;
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
     if (body.data.riskId !== undefined) updateValues.riskId = body.data.riskId;
     if (body.data.unit !== undefined) updateValues.unit = body.data.unit;
-    if (body.data.direction !== undefined) updateValues.direction = body.data.direction;
+    if (body.data.direction !== undefined)
+      updateValues.direction = body.data.direction;
     if (body.data.thresholdGreen !== undefined)
-      updateValues.thresholdGreen = body.data.thresholdGreen?.toString() ?? null;
+      updateValues.thresholdGreen =
+        body.data.thresholdGreen?.toString() ?? null;
     if (body.data.thresholdYellow !== undefined)
-      updateValues.thresholdYellow = body.data.thresholdYellow?.toString() ?? null;
+      updateValues.thresholdYellow =
+        body.data.thresholdYellow?.toString() ?? null;
     if (body.data.thresholdRed !== undefined)
       updateValues.thresholdRed = body.data.thresholdRed?.toString() ?? null;
     if (body.data.measurementFrequency !== undefined)
@@ -160,11 +156,7 @@ export async function PUT(
       .update(kri)
       .set(updateValues)
       .where(
-        and(
-          eq(kri.id, id),
-          eq(kri.orgId, ctx.orgId),
-          isNull(kri.deletedAt),
-        ),
+        and(eq(kri.id, id), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
       )
       .returning();
 
@@ -201,11 +193,7 @@ export async function DELETE(
         updatedAt: new Date(),
       })
       .where(
-        and(
-          eq(kri.id, id),
-          eq(kri.orgId, ctx.orgId),
-          isNull(kri.deletedAt),
-        ),
+        and(eq(kri.id, id), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
       )
       .returning({ id: kri.id });
 

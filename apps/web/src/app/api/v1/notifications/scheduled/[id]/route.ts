@@ -58,7 +58,10 @@ export async function DELETE(
   });
 
   if (!deleted) {
-    return Response.json({ error: "Not found or already sent" }, { status: 404 });
+    return Response.json(
+      { error: "Not found or already sent" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: { id, cancelled: true } });

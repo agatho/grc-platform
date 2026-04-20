@@ -1,24 +1,7 @@
-import {
-  db,
-  controlTest,
-  control,
-  user,
-} from "@grc/db";
+import { db, controlTest, control, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  asc,
-  inArray,
-} from "drizzle-orm";
-import {
-  withAuth,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { eq, and, isNull, count, desc, asc, inArray } from "drizzle-orm";
+import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // GET /api/v1/control-tests — List control tests

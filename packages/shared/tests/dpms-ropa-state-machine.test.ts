@@ -9,7 +9,8 @@ import {
   type DpiaCriteriaFlags,
 } from "../src/state-machines/dpms-ropa";
 
-const LONG_PURPOSE = "Verarbeitung personenbezogener Daten im Rahmen der Kunden-Akquise und Vertragsabwicklung.";
+const LONG_PURPOSE =
+  "Verarbeitung personenbezogener Daten im Rahmen der Kunden-Akquise und Vertragsabwicklung.";
 
 const validSnapshot: RopaSnapshot = {
   status: "draft",
@@ -46,7 +47,10 @@ describe("validateRopaGate1Activate", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks missing purpose title", () => {
-    const blockers = validateRopaGate1Activate({ ...validSnapshot, purposeTitle: null });
+    const blockers = validateRopaGate1Activate({
+      ...validSnapshot,
+      purposeTitle: null,
+    });
     expect(blockers.some((b) => b.code === "missing_purpose_title")).toBe(true);
   });
   it("blocks purpose description < 50 chars", () => {
@@ -54,10 +58,15 @@ describe("validateRopaGate1Activate", () => {
       ...validSnapshot,
       purposeDescription: "too short",
     });
-    expect(blockers.some((b) => b.code === "purpose_description_too_short")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "purpose_description_too_short"),
+    ).toBe(true);
   });
   it("blocks no data categories", () => {
-    const blockers = validateRopaGate1Activate({ ...validSnapshot, dataCategoryCount: 0 });
+    const blockers = validateRopaGate1Activate({
+      ...validSnapshot,
+      dataCategoryCount: 0,
+    });
     expect(blockers.some((b) => b.code === "no_data_categories")).toBe(true);
   });
   it("blocks dpia_required without dpiaId", () => {
@@ -66,7 +75,9 @@ describe("validateRopaGate1Activate", () => {
       hasDpiaRequired: true,
       dpiaId: null,
     });
-    expect(blockers.some((b) => b.code === "dpia_required_not_linked")).toBe(true);
+    expect(blockers.some((b) => b.code === "dpia_required_not_linked")).toBe(
+      true,
+    );
   });
   it("blocks cross-border without TIA", () => {
     const blockers = validateRopaGate1Activate({
@@ -74,7 +85,9 @@ describe("validateRopaGate1Activate", () => {
       hasCrossBorderTransfer: true,
       hasTiaLinked: false,
     });
-    expect(blockers.some((b) => b.code === "cross_border_without_tia")).toBe(true);
+    expect(blockers.some((b) => b.code === "cross_border_without_tia")).toBe(
+      true,
+    );
   });
   it("blocks missing DPO review", () => {
     const blockers = validateRopaGate1Activate({
@@ -85,7 +98,10 @@ describe("validateRopaGate1Activate", () => {
     expect(blockers.some((b) => b.code === "missing_dpo_review")).toBe(true);
   });
   it("warns no recipients", () => {
-    const blockers = validateRopaGate1Activate({ ...validSnapshot, recipientCount: 0 });
+    const blockers = validateRopaGate1Activate({
+      ...validSnapshot,
+      recipientCount: 0,
+    });
     const warn = blockers.find((b) => b.code === "no_recipients");
     expect(warn?.severity).toBe("warning");
   });
@@ -149,12 +165,18 @@ describe("DPIA Flags", () => {
   });
 
   it("isDpiaRequired: 1 flag = false", () => {
-    expect(isDpiaRequired({ ...allFalse, specialCategories: true })).toBe(false);
+    expect(isDpiaRequired({ ...allFalse, specialCategories: true })).toBe(
+      false,
+    );
   });
 
   it("isDpiaRequired: 2 flags = true", () => {
     expect(
-      isDpiaRequired({ ...allFalse, specialCategories: true, largeScale: true }),
+      isDpiaRequired({
+        ...allFalse,
+        specialCategories: true,
+        largeScale: true,
+      }),
     ).toBe(true);
   });
 

@@ -2,7 +2,12 @@
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import type { GraphResult, GraphEdge, GraphNode, RawTraversalRow } from "./types";
+import type {
+  GraphResult,
+  GraphEdge,
+  GraphNode,
+  RawTraversalRow,
+} from "./types";
 import { MAX_GRAPH_DEPTH, DEFAULT_GRAPH_DEPTH } from "./types";
 
 /** Type-safe wrapper for db.execute with sql template literals */
@@ -81,8 +86,13 @@ export async function getSubgraph(
     ORDER BY edge_id, depth ASC
   `);
 
-  return buildGraphResult(rows as unknown as RawTraversalRow[], startEntityId, startEntityType, effectiveDepth, options);
-
+  return buildGraphResult(
+    rows as unknown as RawTraversalRow[],
+    startEntityId,
+    startEntityType,
+    effectiveDepth,
+    options,
+  );
 }
 
 /**
@@ -91,7 +101,16 @@ export async function getSubgraph(
 export async function getAllEdges(
   orgId: string,
   limit: number = 5000,
-): Promise<{ sourceId: string; sourceType: string; targetId: string; targetType: string; relationship: string; weight: number }[]> {
+): Promise<
+  {
+    sourceId: string;
+    sourceType: string;
+    targetId: string;
+    targetType: string;
+    relationship: string;
+    weight: number;
+  }[]
+> {
   const rows = await execSql(sql`
     SELECT
       source_id::text as source_id,
@@ -105,7 +124,14 @@ export async function getAllEdges(
     ORDER BY created_at DESC
     LIMIT ${limit}
   `);
-  return rows as unknown as { sourceId: string; sourceType: string; targetId: string; targetType: string; relationship: string; weight: number }[];
+  return rows as unknown as {
+    sourceId: string;
+    sourceType: string;
+    targetId: string;
+    targetType: string;
+    relationship: string;
+    weight: number;
+  }[];
 }
 
 /**
@@ -236,7 +262,10 @@ function buildGraphResult(
 
   for (const row of rows) {
     // Apply filters
-    if (options.relationshipTypes?.length && !options.relationshipTypes.includes(row.relationship)) {
+    if (
+      options.relationshipTypes?.length &&
+      !options.relationshipTypes.includes(row.relationship)
+    ) {
       continue;
     }
     if (options.minWeight != null && row.weight < options.minWeight) {
@@ -257,8 +286,10 @@ function buildGraphResult(
     }
 
     // Collect node IDs
-    if (!nodeIds.has(row.source_id)) nodeIds.set(row.source_id, row.source_type);
-    if (!nodeIds.has(row.target_id)) nodeIds.set(row.target_id, row.target_type);
+    if (!nodeIds.has(row.source_id))
+      nodeIds.set(row.source_id, row.source_type);
+    if (!nodeIds.has(row.target_id))
+      nodeIds.set(row.target_id, row.target_type);
   }
 
   // Apply entity type filter (always keep root)
@@ -282,16 +313,24 @@ function buildGraphResult(
   // Count connections per node
   const connectionCounts = new Map<string, number>();
   for (const edge of filteredEdges) {
-    connectionCounts.set(edge.sourceId, (connectionCounts.get(edge.sourceId) ?? 0) + 1);
-    connectionCounts.set(edge.targetId, (connectionCounts.get(edge.targetId) ?? 0) + 1);
+    connectionCounts.set(
+      edge.sourceId,
+      (connectionCounts.get(edge.sourceId) ?? 0) + 1,
+    );
+    connectionCounts.set(
+      edge.targetId,
+      (connectionCounts.get(edge.targetId) ?? 0) + 1,
+    );
   }
 
-  const nodes: GraphNode[] = Array.from(filteredNodeIds.entries()).map(([id, type]) => ({
-    id,
-    type,
-    name: id, // placeholder, enriched later
-    connectionCount: connectionCounts.get(id) ?? 0,
-  }));
+  const nodes: GraphNode[] = Array.from(filteredNodeIds.entries()).map(
+    ([id, type]) => ({
+      id,
+      type,
+      name: id, // placeholder, enriched later
+      connectionCount: connectionCounts.get(id) ?? 0,
+    }),
+  );
 
   return {
     nodes,

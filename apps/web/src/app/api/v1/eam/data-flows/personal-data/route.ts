@@ -13,7 +13,12 @@ export async function GET(req: Request) {
   const flows = await db
     .select()
     .from(dataFlow)
-    .where(and(eq(dataFlow.orgId, ctx.orgId), eq(dataFlow.containsPersonalData, true)));
+    .where(
+      and(
+        eq(dataFlow.orgId, ctx.orgId),
+        eq(dataFlow.containsPersonalData, true),
+      ),
+    );
 
   return Response.json({ data: flows });
 }

@@ -1,5 +1,12 @@
 // Sprint 61: Worker — Generate monthly invoices for active subscriptions
-import { db, orgSubscription, subscriptionPlan, billingInvoice, usageRecord, usageMeter } from "@grc/db";
+import {
+  db,
+  orgSubscription,
+  subscriptionPlan,
+  billingInvoice,
+  usageRecord,
+  usageMeter,
+} from "@grc/db";
 import { eq, and, sql, gte, lte } from "drizzle-orm";
 
 function generateInvoiceNumber(): string {
@@ -20,16 +27,22 @@ export async function generateInvoices(): Promise<void> {
       plan: subscriptionPlan,
     })
     .from(orgSubscription)
-    .innerJoin(subscriptionPlan, eq(orgSubscription.planId, subscriptionPlan.id))
-    .where(and(
-      eq(orgSubscription.status, "active"),
-      lte(orgSubscription.currentPeriodEnd, now),
-    ));
+    .innerJoin(
+      subscriptionPlan,
+      eq(orgSubscription.planId, subscriptionPlan.id),
+    )
+    .where(
+      and(
+        eq(orgSubscription.status, "active"),
+        lte(orgSubscription.currentPeriodEnd, now),
+      ),
+    );
 
   for (const { subscription, plan } of dueSubscriptions) {
-    const price = subscription.billingCycle === "yearly"
-      ? plan.priceYearly
-      : plan.priceMonthly;
+    const price =
+      subscription.billingCycle === "yearly"
+        ? plan.priceYearly
+        : plan.priceMonthly;
 
     if (!price || price === 0) continue;
 
@@ -50,12 +63,14 @@ export async function generateInvoices(): Promise<void> {
         currency: plan.currency,
         periodStart: subscription.currentPeriodStart,
         periodEnd: subscription.currentPeriodEnd,
-        lineItems: [{
-          description: `${plan.name} - ${subscription.billingCycle}`,
-          quantity: 1,
-          unitPrice: price,
-          total: price,
-        }],
+        lineItems: [
+          {
+            description: `${plan.name} - ${subscription.billingCycle}`,
+            quantity: 1,
+            unitPrice: price,
+            total: price,
+          },
+        ],
         dueDate,
       });
 
@@ -77,7 +92,9 @@ export async function generateInvoices(): Promise<void> {
         })
         .where(eq(orgSubscription.id, subscription.id));
 
-      console.log(`[invoice-gen] Generated invoice for org ${subscription.orgId}`);
+      console.log(
+        `[invoice-gen] Generated invoice for org ${subscription.orgId}`,
+      );
     } catch (err) {
       console.error(
         `[invoice-gen] Failed to generate invoice for org ${subscription.orgId}:`,

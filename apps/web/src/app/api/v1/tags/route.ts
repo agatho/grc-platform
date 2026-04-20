@@ -8,11 +8,19 @@ import { sql } from "drizzle-orm";
 import { z } from "zod";
 
 // Strip HTML/script tags from user input
-const safeString = (max: number) => z.string().max(max).transform(s => s.replace(/<[^>]*>/g, ""));
+const safeString = (max: number) =>
+  z
+    .string()
+    .max(max)
+    .transform((s) => s.replace(/<[^>]*>/g, ""));
 
 const createTagSchema = z.object({
   name: safeString(200).pipe(z.string().min(1)),
-  color: z.string().max(20).regex(/^#[0-9a-fA-F]{3,8}$/).default("#6B7280"),
+  color: z
+    .string()
+    .max(20)
+    .regex(/^#[0-9a-fA-F]{3,8}$/)
+    .default("#6B7280"),
   category: safeString(100).optional(),
   description: safeString(1000).optional(),
 });
@@ -34,22 +42,34 @@ export async function GET(req: Request) {
   const result = await db.execute(query);
 
   const catResult = await db.execute(
-    sql`SELECT DISTINCT category FROM tag_definition WHERE org_id = ${ctx.orgId} AND category IS NOT NULL ORDER BY category`
+    sql`SELECT DISTINCT category FROM tag_definition WHERE org_id = ${ctx.orgId} AND category IS NOT NULL ORDER BY category`,
   );
 
   return Response.json({
-    data: result.rows,
-    categories: (catResult.rows as Record<string, string>[]).map((r) => r.category),
+    data: result,
+    categories: (catResult as unknown as Record<string, string>[]).map(
+      (r) => r.category,
+    ),
   });
 }
 
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "auditor", "dpo", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "auditor",
+    "dpo",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const parsed = createTagSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const { name, color, category, description } = parsed.data;
 
@@ -63,5 +83,8 @@ export async function POST(req: Request) {
     RETURNING id, name, color, category, description, usage_count
   `);
 
-  return Response.json({ data: result.rows[0] }, { status: 201 });
+  return Response.json(
+    { data: (result as unknown as Record<string, unknown>[])[0] },
+    { status: 201 },
+  );
 }

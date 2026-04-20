@@ -1,7 +1,11 @@
 // Sprint 20: SAML Service Unit Tests
 import { describe, it, expect } from "vitest";
 import { parseSAMLMetadata } from "../src/saml/metadata-parser";
-import { buildAuthnRequest, encodeAuthnRequestForRedirect, buildSamlRedirectUrl } from "../src/saml/request-builder";
+import {
+  buildAuthnRequest,
+  encodeAuthnRequestForRedirect,
+  buildSamlRedirectUrl,
+} from "../src/saml/request-builder";
 import {
   decodeSamlResponse,
   validateSAMLSignature,
@@ -191,8 +195,10 @@ describe("SAMLResponseValidator", () => {
       </saml:Assertion>
     `;
     const attrs = extractSAMLAttributes(assertion, {
-      email: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
-      firstName: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
+      email:
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress",
+      firstName:
+        "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/givenname",
       lastName: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/surname",
       groups: "http://schemas.xmlsoap.org/ws/2005/05/identity/claims/groups",
     });

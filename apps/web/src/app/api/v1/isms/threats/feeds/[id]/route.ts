@@ -23,10 +23,7 @@ export async function PUT(
       .update(threatFeedSource)
       .set(body)
       .where(
-        and(
-          eq(threatFeedSource.id, id),
-          eq(threatFeedSource.orgId, ctx.orgId),
-        ),
+        and(eq(threatFeedSource.id, id), eq(threatFeedSource.orgId, ctx.orgId)),
       )
       .returning();
     return updated;
@@ -56,10 +53,7 @@ export async function DELETE(
     await tx
       .delete(threatFeedSource)
       .where(
-        and(
-          eq(threatFeedSource.id, id),
-          eq(threatFeedSource.orgId, ctx.orgId),
-        ),
+        and(eq(threatFeedSource.id, id), eq(threatFeedSource.orgId, ctx.orgId)),
       );
   });
 

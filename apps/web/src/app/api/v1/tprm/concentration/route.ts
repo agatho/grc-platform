@@ -18,10 +18,12 @@ export async function GET(req: Request) {
   const rows = await db
     .select()
     .from(vendorConcentrationAnalysis)
-    .where(and(
-      eq(vendorConcentrationAnalysis.orgId, ctx.orgId),
-      eq(vendorConcentrationAnalysis.analysisType, analysisType),
-    ))
+    .where(
+      and(
+        eq(vendorConcentrationAnalysis.orgId, ctx.orgId),
+        eq(vendorConcentrationAnalysis.analysisType, analysisType),
+      ),
+    )
     .orderBy(desc(vendorConcentrationAnalysis.analysisDate))
     .limit(1);
 

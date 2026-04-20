@@ -47,7 +47,10 @@ export const abacPolicy = pgTable(
   },
   (table) => ({
     orgIdx: index("abac_policy_org_idx").on(table.orgId),
-    entityIdx: index("abac_policy_entity_idx").on(table.orgId, table.entityType),
+    entityIdx: index("abac_policy_entity_idx").on(
+      table.orgId,
+      table.entityType,
+    ),
     priorityIdx: index("abac_policy_priority_idx").on(
       table.orgId,
       table.entityType,
@@ -268,7 +271,9 @@ export const dmnDecision = pgTable(
   (table) => ({
     orgIdx: index("dmn_decision_org_idx").on(table.orgId),
     statusIdx: index("dmn_decision_status_idx").on(table.orgId, table.status),
-    processStepIdx: index("dmn_decision_step_idx").on(table.linkedProcessStepId),
+    processStepIdx: index("dmn_decision_step_idx").on(
+      table.linkedProcessStepId,
+    ),
   }),
 );
 

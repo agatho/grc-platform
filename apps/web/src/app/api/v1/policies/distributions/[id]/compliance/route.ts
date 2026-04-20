@@ -1,7 +1,4 @@
-import {
-  db,
-  policyDistribution,
-} from "@grc/db";
+import { db, policyDistribution } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";

@@ -42,8 +42,8 @@ export async function POST(
   }
 
   // Use provided mapping or fall back to stored mapping
-  const mapping = body.data.mapping ??
-    (job.columnMapping as Record<string, string | null>);
+  const mapping =
+    body.data.mapping ?? (job.columnMapping as Record<string, string | null>);
 
   if (!mapping) {
     return Response.json(

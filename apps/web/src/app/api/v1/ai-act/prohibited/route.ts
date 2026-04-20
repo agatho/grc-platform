@@ -5,7 +5,13 @@ import { sql } from "drizzle-orm";
 import { createAiProhibitedScreeningSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -28,8 +34,14 @@ export async function GET(req: Request) {
     db.execute(countQuery),
   ]);
   return Response.json({
-    data: rows.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: Number(countResult.rows?.[0] ? (countResult.rows[0] as any).count : 0) },
+    data: rows,
+    pagination: {
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      total: Number(
+        (countResult as unknown as Array<{ count?: unknown }>)[0]?.count ?? 0,
+      ),
+    },
   });
 }
 
@@ -41,16 +53,38 @@ export async function POST(req: Request) {
 
   const parsed = createAiProhibitedScreeningSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
-  const { ai_system_id, social_scoring, real_time_biometric, emotion_recognition, predictive_policing, untargeted_scraping, subliminal_manipulation, exploiting_vulnerabilities, biometric_categorization } = parsed.data;
+  const {
+    ai_system_id,
+    social_scoring,
+    real_time_biometric,
+    emotion_recognition,
+    predictive_policing,
+    untargeted_scraping,
+    subliminal_manipulation,
+    exploiting_vulnerabilities,
+    biometric_categorization,
+  } = parsed.data;
 
-  const isProhibited = !!(social_scoring || real_time_biometric || emotion_recognition || predictive_policing || untargeted_scraping || subliminal_manipulation || exploiting_vulnerabilities || biometric_categorization);
+  const isProhibited = !!(
+    social_scoring ||
+    real_time_biometric ||
+    emotion_recognition ||
+    predictive_policing ||
+    untargeted_scraping ||
+    subliminal_manipulation ||
+    exploiting_vulnerabilities ||
+    biometric_categorization
+  );
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`
       INSERT INTO ai_prohibited_screening (org_id, ai_system_id, social_scoring, real_time_biometric, emotion_recognition, predictive_policing, untargeted_scraping, subliminal_manipulation, exploiting_vulnerabilities, biometric_categorization, overall_result, screened_by, created_by)
-      VALUES (${ctx.orgId}, ${ai_system_id}, ${social_scoring ?? false}, ${real_time_biometric ?? false}, ${emotion_recognition ?? false}, ${predictive_policing ?? false}, ${untargeted_scraping ?? false}, ${subliminal_manipulation ?? false}, ${exploiting_vulnerabilities ?? false}, ${biometric_categorization ?? false}, ${isProhibited ? 'prohibited' : 'clear'}, ${ctx.userId}, ${ctx.userId})
+      VALUES (${ctx.orgId}, ${ai_system_id}, ${social_scoring ?? false}, ${real_time_biometric ?? false}, ${emotion_recognition ?? false}, ${predictive_policing ?? false}, ${untargeted_scraping ?? false}, ${subliminal_manipulation ?? false}, ${exploiting_vulnerabilities ?? false}, ${biometric_categorization ?? false}, ${isProhibited ? "prohibited" : "clear"}, ${ctx.userId}, ${ctx.userId})
       RETURNING *
     `);
 
@@ -59,13 +93,17 @@ export async function POST(req: Request) {
     if (isProhibited) {
       const prohibitedPractices: string[] = [];
       if (social_scoring) prohibitedPractices.push("Social Scoring");
-      if (real_time_biometric) prohibitedPractices.push("Biometrische Echtzeit-Fernidentifizierung");
+      if (real_time_biometric)
+        prohibitedPractices.push("Biometrische Echtzeit-Fernidentifizierung");
       if (emotion_recognition) prohibitedPractices.push("Emotionserkennung");
       if (predictive_policing) prohibitedPractices.push("Predictive Policing");
       if (untargeted_scraping) prohibitedPractices.push("Ungezieltes Scraping");
-      if (subliminal_manipulation) prohibitedPractices.push("Unterschwellige Manipulation");
-      if (exploiting_vulnerabilities) prohibitedPractices.push("Ausnutzung von Schwachstellen");
-      if (biometric_categorization) prohibitedPractices.push("Biometrische Kategorisierung");
+      if (subliminal_manipulation)
+        prohibitedPractices.push("Unterschwellige Manipulation");
+      if (exploiting_vulnerabilities)
+        prohibitedPractices.push("Ausnutzung von Schwachstellen");
+      if (biometric_categorization)
+        prohibitedPractices.push("Biometrische Kategorisierung");
 
       const blockNote = `[Art. 5 Auto-Blockierung] Verbotene Praxis erkannt: ${prohibitedPractices.join(", ")}. System automatisch als nicht konform markiert am ${new Date().toISOString()}.`;
 

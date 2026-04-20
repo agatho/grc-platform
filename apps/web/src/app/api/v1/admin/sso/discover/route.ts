@@ -20,7 +20,8 @@ export async function POST(req: Request) {
     const discovery = await discoverOIDCEndpoints(parsed.data.discoveryUrl);
     return Response.json({ data: discovery });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to discover OIDC endpoints";
+    const message =
+      err instanceof Error ? err.message : "Failed to discover OIDC endpoints";
     return Response.json({ error: message }, { status: 422 });
   }
 }

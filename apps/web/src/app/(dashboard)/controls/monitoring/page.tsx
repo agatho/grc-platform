@@ -1,7 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { Loader2, Plus, Activity, Clock, AlertTriangle, XCircle, CheckCircle2 } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  Activity,
+  Clock,
+  AlertTriangle,
+  XCircle,
+  CheckCircle2,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -79,7 +87,9 @@ function ControlMonitoringInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Kontinuierliche Kontroll\u00fcberwachung</h1>
+          <h1 className="text-2xl font-bold">
+            Kontinuierliche Kontroll\u00fcberwachung
+          </h1>
           <p className="text-sm text-muted-foreground mt-1">
             Automatisierte Pr\u00fcfregeln f\u00fcr Kontrollwirksamkeit
           </p>
@@ -127,7 +137,9 @@ function ControlMonitoringInner() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
-              {data?.errorRate != null ? `${(data.errorRate * 100).toFixed(1)}%` : "0%"}
+              {data?.errorRate != null
+                ? `${(data.errorRate * 100).toFixed(1)}%`
+                : "0%"}
             </div>
           </CardContent>
         </Card>
@@ -154,26 +166,44 @@ function ControlMonitoringInner() {
         <CardContent>
           {rules.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              Keine \u00dcberwachungsregeln vorhanden. Erstellen Sie Ihre erste Regel.
+              Keine \u00dcberwachungsregeln vorhanden. Erstellen Sie Ihre erste
+              Regel.
             </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Name</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Kontroll-Referenz</th>
-                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">Frequenz</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Letztes Ergebnis</th>
-                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">Status</th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Name
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Kontroll-Referenz
+                    </th>
+                    <th className="px-4 py-3 text-left text-xs font-medium text-gray-500">
+                      Frequenz
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                      Letztes Ergebnis
+                    </th>
+                    <th className="px-4 py-3 text-center text-xs font-medium text-gray-500">
+                      Status
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {rules.map((rule) => (
-                    <tr key={rule.id} className="hover:bg-gray-50 cursor-pointer">
+                    <tr
+                      key={rule.id}
+                      className="hover:bg-gray-50 cursor-pointer"
+                    >
                       <td className="px-4 py-3 font-medium">{rule.name}</td>
-                      <td className="px-4 py-3 font-mono text-xs text-gray-600">{rule.controlRef}</td>
-                      <td className="px-4 py-3 text-gray-600 capitalize">{rule.frequency}</td>
+                      <td className="px-4 py-3 font-mono text-xs text-gray-600">
+                        {rule.controlRef}
+                      </td>
+                      <td className="px-4 py-3 text-gray-600 capitalize">
+                        {rule.frequency}
+                      </td>
                       <td className="px-4 py-3 text-center">
                         <ResultBadge result={rule.lastResult} />
                       </td>
@@ -196,7 +226,10 @@ function ResultBadge({ result }: { result: string }) {
   switch (result) {
     case "pass":
       return (
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+        <Badge
+          variant="default"
+          className="bg-green-100 text-green-800 border-green-300"
+        >
           <CheckCircle2 className="h-3 w-3 mr-1" />
           Bestanden
         </Badge>

@@ -23,17 +23,27 @@ export async function POST(req: Request) {
 
   const url = new URL(req.url);
   const elementId = url.searchParams.get("elementId");
-  if (!elementId) return Response.json({ error: "elementId required" }, { status: 400 });
+  if (!elementId)
+    return Response.json({ error: "elementId required" }, { status: 400 });
 
   const body = await req.json();
   const parsed = governanceTransitionSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const element = await db.select().from(architectureElement)
-    .where(and(eq(architectureElement.id, elementId), eq(architectureElement.orgId, ctx.orgId)))
+  const element = await db
+    .select()
+    .from(architectureElement)
+    .where(
+      and(
+        eq(architectureElement.id, elementId),
+        eq(architectureElement.orgId, ctx.orgId),
+      ),
+    )
     .limit(1);
 
-  if (!element.length) return Response.json({ error: "Element not found" }, { status: 404 });
+  if (!element.length)
+    return Response.json({ error: "Element not found" }, { status: 404 });
 
   const currentStatus = element[0].governanceStatus ?? "draft";
   const actionToStatus: Record<string, string> = {
@@ -45,13 +55,17 @@ export async function POST(req: Request) {
   };
 
   const targetStatus = actionToStatus[parsed.data.action];
-  if (!targetStatus) return Response.json({ error: "Invalid action" }, { status: 400 });
+  if (!targetStatus)
+    return Response.json({ error: "Invalid action" }, { status: 400 });
 
   const validTransitions = GOVERNANCE_TRANSITIONS[currentStatus] ?? [];
   if (!validTransitions.includes(targetStatus)) {
-    return Response.json({
-      error: `Cannot transition from '${currentStatus}' to '${targetStatus}'`,
-    }, { status: 400 });
+    return Response.json(
+      {
+        error: `Cannot transition from '${currentStatus}' to '${targetStatus}'`,
+      },
+      { status: 400 },
+    );
   }
 
   // Enforce: only examiner/admin can approve/reject
@@ -59,17 +73,24 @@ export async function POST(req: Request) {
     const isExaminer = element[0].examinerId === ctx.userId;
     // Admin can always approve/reject (ctx already verified admin role)
     if (!isExaminer) {
-      return Response.json({ error: "Only the examiner or admin can approve/reject" }, { status: 403 });
+      return Response.json(
+        { error: "Only the examiner or admin can approve/reject" },
+        { status: 403 },
+      );
     }
   }
 
   // Reject requires justification
   if (parsed.data.action === "reject" && !parsed.data.justification) {
-    return Response.json({ error: "Justification is required for rejection" }, { status: 400 });
+    return Response.json(
+      { error: "Justification is required for rejection" },
+      { status: 400 },
+    );
   }
 
   // Update element status
-  await db.update(architectureElement)
+  await db
+    .update(architectureElement)
     .set({ governanceStatus: targetStatus, updatedAt: new Date() })
     .where(eq(architectureElement.id, elementId));
 

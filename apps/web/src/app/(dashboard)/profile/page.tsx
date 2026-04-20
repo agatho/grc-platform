@@ -53,7 +53,10 @@ export default function ProfilePage() {
 
         {/* Name */}
         <div>
-          <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="name"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             {t("name")}
           </label>
           <input
@@ -68,7 +71,10 @@ export default function ProfilePage() {
 
         {/* Language */}
         <div>
-          <label htmlFor="language" className="block text-sm font-medium text-gray-700 mb-1">
+          <label
+            htmlFor="language"
+            className="block text-sm font-medium text-gray-700 mb-1"
+          >
             {t("language")}
           </label>
           <select

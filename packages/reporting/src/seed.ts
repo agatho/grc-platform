@@ -25,7 +25,8 @@ export async function seedDefaultTemplates(orgId: string): Promise<number> {
     orgId,
     name: t.name,
     description: t.description,
-    moduleScope: t.moduleScope as typeof reportTemplate.$inferInsert.moduleScope,
+    moduleScope:
+      t.moduleScope as typeof reportTemplate.$inferInsert.moduleScope,
     sectionsJson: t.sectionsJson,
     parametersJson: t.parametersJson,
     isDefault: true,

@@ -108,7 +108,10 @@ function CreateControlInner() {
       .catch(() => {});
   }, []);
 
-  const updateField = <K extends keyof typeof form>(key: K, value: (typeof form)[K]) => {
+  const updateField = <K extends keyof typeof form>(
+    key: K,
+    value: (typeof form)[K],
+  ) => {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -132,9 +135,13 @@ function CreateControlInner() {
     try {
       const payload = {
         ...form,
-        costOnetime: form.costOnetime ? parseFloat(form.costOnetime) : undefined,
+        costOnetime: form.costOnetime
+          ? parseFloat(form.costOnetime)
+          : undefined,
         costAnnual: form.costAnnual ? parseFloat(form.costAnnual) : undefined,
-        effortHours: form.effortHours ? parseFloat(form.effortHours) : undefined,
+        effortHours: form.effortHours
+          ? parseFloat(form.effortHours)
+          : undefined,
         budgetId: form.budgetId || undefined,
       };
       const res = await fetch("/api/v1/controls", {
@@ -157,7 +164,11 @@ function CreateControlInner() {
     <div className="space-y-6 max-w-3xl">
       {/* Back */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/controls")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/controls")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">{t("create")}</h1>
@@ -171,7 +182,9 @@ function CreateControlInner() {
           <CardContent className="space-y-4">
             {/* Title */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.title")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.title")}
+              </label>
               <input
                 type="text"
                 value={form.title}
@@ -184,7 +197,9 @@ function CreateControlInner() {
 
             {/* Description */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.description")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.description")}
+              </label>
               <textarea
                 value={form.description}
                 onChange={(e) => updateField("description", e.target.value)}
@@ -197,10 +212,14 @@ function CreateControlInner() {
             {/* Type / Frequency / Automation row */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("form.type")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("form.type")}
+                </label>
                 <Select
                   value={form.controlType}
-                  onValueChange={(v) => updateField("controlType", v as ControlType)}
+                  onValueChange={(v) =>
+                    updateField("controlType", v as ControlType)
+                  }
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
@@ -216,10 +235,14 @@ function CreateControlInner() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("form.frequency")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("form.frequency")}
+                </label>
                 <Select
                   value={form.frequency}
-                  onValueChange={(v) => updateField("frequency", v as ControlFrequency)}
+                  onValueChange={(v) =>
+                    updateField("frequency", v as ControlFrequency)
+                  }
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
@@ -235,10 +258,14 @@ function CreateControlInner() {
               </div>
 
               <div>
-                <label className="text-sm font-medium text-gray-700">{t("form.automation")}</label>
+                <label className="text-sm font-medium text-gray-700">
+                  {t("form.automation")}
+                </label>
                 <Select
                   value={form.automationLevel}
-                  onValueChange={(v) => updateField("automationLevel", v as AutomationLevel)}
+                  onValueChange={(v) =>
+                    updateField("automationLevel", v as AutomationLevel)
+                  }
                 >
                   <SelectTrigger className="mt-1">
                     <SelectValue />
@@ -256,7 +283,9 @@ function CreateControlInner() {
 
             {/* LoD */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.lod")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.lod")}
+              </label>
               <Select
                 value={form.lineOfDefense}
                 onValueChange={(v) => updateField("lineOfDefense", v)}
@@ -276,7 +305,9 @@ function CreateControlInner() {
 
             {/* Owner */}
             <div>
-              <label className="text-sm font-medium text-gray-700">{t("form.owner")}</label>
+              <label className="text-sm font-medium text-gray-700">
+                {t("form.owner")}
+              </label>
               <input
                 type="text"
                 value={form.ownerId}
@@ -315,7 +346,9 @@ function CreateControlInner() {
         {/* Cost Tracking */}
         <Card className="mt-4">
           <CardHeader>
-            <CardTitle className="text-base">{t("costTracking.title")}</CardTitle>
+            <CardTitle className="text-base">
+              {t("costTracking.title")}
+            </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -382,12 +415,15 @@ function CreateControlInner() {
                 onValueChange={(v) => updateField("budgetId", v)}
               >
                 <SelectTrigger className="mt-1">
-                  <SelectValue placeholder={t("costTracking.budgetPlaceholder")} />
+                  <SelectValue
+                    placeholder={t("costTracking.budgetPlaceholder")}
+                  />
                 </SelectTrigger>
                 <SelectContent>
                   {budgets.map((b) => (
                     <SelectItem key={b.id} value={b.id}>
-                      {b.name} ({b.currency} {parseFloat(b.totalAmount).toLocaleString()})
+                      {b.name} ({b.currency}{" "}
+                      {parseFloat(b.totalAmount).toLocaleString()})
                     </SelectItem>
                   ))}
                 </SelectContent>

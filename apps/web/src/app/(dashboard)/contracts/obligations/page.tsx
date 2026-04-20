@@ -62,7 +62,9 @@ function ObligationsQueueInner() {
     setLoading(true);
     try {
       // Fetch all contracts, then obligations for each
-      const cRes = await fetch("/api/v1/contracts?limit=200&status=active,renewal");
+      const cRes = await fetch(
+        "/api/v1/contracts?limit=200&status=active,renewal",
+      );
       if (!cRes.ok) return;
       const cJson = await cRes.json();
       const contracts = cJson.data ?? [];
@@ -118,8 +120,12 @@ function ObligationsQueueInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("obligationsQueue")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{filtered.length} {t("obligations")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("obligationsQueue")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {filtered.length} {t("obligations")}
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
@@ -129,11 +135,18 @@ function ObligationsQueueInner() {
             <SelectContent>
               <SelectItem value="__all__">{t("filter.allStatuses")}</SelectItem>
               {STATUSES.map((s) => (
-                <SelectItem key={s} value={s}>{t(`oblStatus.${s}`)}</SelectItem>
+                <SelectItem key={s} value={s}>
+                  {t(`oblStatus.${s}`)}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
-          <Button variant="outline" size="sm" onClick={fetchObligations} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchObligations}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
@@ -142,7 +155,9 @@ function ObligationsQueueInner() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <ClipboardCheck size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("obligation.none")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("obligation.none")}
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -153,18 +168,31 @@ function ObligationsQueueInner() {
               className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 transition-colors"
             >
               <div className="flex items-center gap-3 min-w-0">
-                {o.status === "overdue" && <AlertTriangle size={14} className="text-red-500 shrink-0" />}
+                {o.status === "overdue" && (
+                  <AlertTriangle size={14} className="text-red-500 shrink-0" />
+                )}
                 <div className="min-w-0">
-                  <p className="text-sm font-medium text-gray-900 truncate">{o.title}</p>
-                  <p className="text-xs text-gray-500 truncate">{o.contractTitle}</p>
+                  <p className="text-sm font-medium text-gray-900 truncate">
+                    {o.title}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate">
+                    {o.contractTitle}
+                  </p>
                 </div>
               </div>
               <div className="flex items-center gap-2 shrink-0 ml-4">
-                <Badge variant="outline" className="text-xs">{o.obligationType}</Badge>
-                <Badge variant="outline" className={`text-xs ${OBL_STATUS_COLORS[o.status] ?? ""}`}>
+                <Badge variant="outline" className="text-xs">
+                  {o.obligationType}
+                </Badge>
+                <Badge
+                  variant="outline"
+                  className={`text-xs ${OBL_STATUS_COLORS[o.status] ?? ""}`}
+                >
                   {t(`oblStatus.${o.status}`)}
                 </Badge>
-                <span className={`text-xs ${o.status === "overdue" ? "text-red-600 font-medium" : "text-gray-500"}`}>
+                <span
+                  className={`text-xs ${o.status === "overdue" ? "text-red-600 font-medium" : "text-gray-500"}`}
+                >
                   {o.dueDate ?? "\u2014"}
                 </span>
               </div>

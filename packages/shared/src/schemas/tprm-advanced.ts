@@ -4,11 +4,11 @@ import { z } from "zod";
 
 // ─── Scorecard Weights ──────────────────────────────────────
 export const DEFAULT_SCORECARD_WEIGHTS = {
-  due_diligence: 0.20,
+  due_diligence: 0.2,
   sla_compliance: 0.15,
   incident_history: 0.15,
-  financial_stability: 0.10,
-  esg_rating: 0.10,
+  financial_stability: 0.1,
+  esg_rating: 0.1,
   contract_compliance: 0.15,
   security_posture: 0.15,
 };
@@ -33,7 +33,9 @@ export function classifyVendorTier(score: number): string {
 }
 
 // ─── HHI Computation ────────────────────────────────────────
-export function computeHHI(vendorSpend: Array<{ vendorId: string; spend: number }>): number {
+export function computeHHI(
+  vendorSpend: Array<{ vendorId: string; spend: number }>,
+): number {
   const totalSpend = vendorSpend.reduce((sum, v) => sum + v.spend, 0);
   if (totalSpend === 0) return 0;
   const hhi = vendorSpend.reduce((sum, v) => {
@@ -71,7 +73,14 @@ export const createSlaDefinitionSchema = z.object({
   vendorId: z.string().uuid(),
   contractId: z.string().uuid().optional(),
   metricName: z.string().min(1).max(200),
-  metricType: z.enum(["availability", "response_time", "resolution_time", "delivery_time", "quality", "custom"]),
+  metricType: z.enum([
+    "availability",
+    "response_time",
+    "resolution_time",
+    "delivery_time",
+    "quality",
+    "custom",
+  ]),
   targetValue: z.number(),
   unit: z.enum(["percent", "hours", "minutes", "days", "count"]),
   measurementPeriod: z.enum(["monthly", "quarterly", "annually"]),
@@ -119,7 +128,12 @@ export function computeBreachSeverity(
 
 // ─── Exit Plan ──────────────────────────────────────────────
 export const createExitPlanSchema = z.object({
-  transitionApproach: z.enum(["in_house", "alternative_vendor", "hybrid", "decommission"]),
+  transitionApproach: z.enum([
+    "in_house",
+    "alternative_vendor",
+    "hybrid",
+    "decommission",
+  ]),
   dataMigrationPlan: z.string().max(10000).optional(),
   knowledgeTransferRequirements: z.string().max(10000).optional(),
   terminationNoticeDays: z.number().int().min(0).max(730).optional(),

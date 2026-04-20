@@ -6,15 +6,7 @@ import {
   userOrganizationRole,
 } from "@grc/db";
 import { addKriMeasurementSchema } from "@grc/shared";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  gte,
-  lte,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, gte, lte } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -98,11 +90,7 @@ export async function POST(
     .select()
     .from(kri)
     .where(
-      and(
-        eq(kri.id, kriId),
-        eq(kri.orgId, ctx.orgId),
-        isNull(kri.deletedAt),
-      ),
+      and(eq(kri.id, kriId), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
     );
 
   if (!kriRow) {
@@ -149,7 +137,9 @@ export async function POST(
       .orderBy(desc(kriMeasurement.measuredAt))
       .limit(3);
 
-    const recentValues = recentMeasurements.map((m: { value: string }) => parseFloat(m.value));
+    const recentValues = recentMeasurements.map((m: { value: string }) =>
+      parseFloat(m.value),
+    );
     const newTrend = computeTrend(recentValues, kriRow.direction);
 
     // 4. Update KRI: currentValue, currentAlertStatus, trend, lastMeasuredAt
@@ -180,7 +170,10 @@ export async function POST(
       if (targetRoles.length > 0) {
         // Find users with target roles in this org
         const targetUsers: { userId: string; role: string }[] = await tx
-          .select({ userId: userOrganizationRole.userId, role: userOrganizationRole.role })
+          .select({
+            userId: userOrganizationRole.userId,
+            role: userOrganizationRole.role,
+          })
           .from(userOrganizationRole)
           .where(
             and(
@@ -192,7 +185,9 @@ export async function POST(
         const notifyUserIds = [
           ...new Set(
             targetUsers
-              .filter((u: { userId: string; role: string }) => targetRoles.includes(u.role as "admin" | "risk_manager"))
+              .filter((u: { userId: string; role: string }) =>
+                targetRoles.includes(u.role as "admin" | "risk_manager"),
+              )
               .map((u: { userId: string; role: string }) => u.userId),
           ),
         ];
@@ -250,11 +245,7 @@ export async function GET(
     .select({ id: kri.id })
     .from(kri)
     .where(
-      and(
-        eq(kri.id, kriId),
-        eq(kri.orgId, ctx.orgId),
-        isNull(kri.deletedAt),
-      ),
+      and(eq(kri.id, kriId), eq(kri.orgId, ctx.orgId), isNull(kri.deletedAt)),
     );
 
   if (!kriRow) {

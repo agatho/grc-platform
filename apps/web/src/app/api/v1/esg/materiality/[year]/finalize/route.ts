@@ -36,10 +36,7 @@ export async function PUT(
     );
 
   if (!assessment) {
-    return Response.json(
-      { error: "Assessment not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Assessment not found" }, { status: 404 });
   }
 
   if (assessment.status !== "in_progress") {
@@ -75,7 +72,9 @@ export async function PUT(
         .where(eq(esgMaterialityVote.topicId, topic.id));
 
       const agg = voteAggs[0];
-      const impactScore = agg?.avgImpact ? parseFloat(String(agg.avgImpact)) : 0;
+      const impactScore = agg?.avgImpact
+        ? parseFloat(String(agg.avgImpact))
+        : 0;
       const financialScore = agg?.avgFinancial
         ? parseFloat(String(agg.avgFinancial))
         : 0;

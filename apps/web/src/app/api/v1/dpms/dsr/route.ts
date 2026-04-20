@@ -1,11 +1,4 @@
-import {
-  db,
-  dsr,
-  dsrActivity,
-  workItem,
-  notification,
-  user,
-} from "@grc/db";
+import { db, dsr, dsrActivity, workItem, notification, user } from "@grc/db";
 import { createDsrSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -107,7 +100,12 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "received" | "verified" | "processing" | "response_sent" | "closed" | "rejected"
+      | "received"
+      | "verified"
+      | "processing"
+      | "response_sent"
+      | "closed"
+      | "rejected"
     >;
     conditions.push(inArray(dsr.status, statuses));
   }
@@ -124,10 +122,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(dsr.subjectName, pattern),
-        ilike(dsr.subjectEmail, pattern),
-      )!,
+      or(ilike(dsr.subjectName, pattern), ilike(dsr.subjectEmail, pattern))!,
     );
   }
 
@@ -137,7 +132,9 @@ export async function GET(req: Request) {
     conditions.push(sql`${dsr.deadline} < NOW()`);
     conditions.push(sql`${dsr.status} NOT IN ('closed', 'rejected')`);
   } else if (slaParam === "at_risk") {
-    conditions.push(sql`${dsr.deadline} BETWEEN NOW() AND NOW() + INTERVAL '5 days'`);
+    conditions.push(
+      sql`${dsr.deadline} BETWEEN NOW() AND NOW() + INTERVAL '5 days'`,
+    );
     conditions.push(sql`${dsr.status} NOT IN ('closed', 'rejected')`);
   }
 

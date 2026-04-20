@@ -23,7 +23,9 @@ export default function RecommendationsPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/agents/recommendations?status=pending&limit=100");
+      const res = await fetch(
+        "/api/v1/agents/recommendations?status=pending&limit=100",
+      );
       if (res.ok) {
         const json = await res.json();
         setRecs(json.data ?? []);
@@ -47,7 +49,11 @@ export default function RecommendationsPage() {
   };
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -63,7 +69,9 @@ export default function RecommendationsPage() {
                   <Badge className={SEVERITY_COLORS[rec.severity] ?? ""}>
                     {t(`recommendations.severity.${rec.severity}` as any)}
                   </Badge>
-                  <span className="text-sm text-muted-foreground">{rec.entityType}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {rec.entityType}
+                  </span>
                 </div>
                 <span className="text-xs text-muted-foreground">
                   {new Date(rec.createdAt).toLocaleString()}
@@ -72,11 +80,18 @@ export default function RecommendationsPage() {
               <p className="font-medium">{rec.title}</p>
               <p className="text-sm text-muted-foreground">{rec.reasoning}</p>
               <div className="flex gap-2">
-                <Button size="sm" onClick={() => handleAction(rec.id, "accepted")}>
+                <Button
+                  size="sm"
+                  onClick={() => handleAction(rec.id, "accepted")}
+                >
                   <Check className="h-3 w-3 mr-1" />
                   {t("recommendations.accept")}
                 </Button>
-                <Button size="sm" variant="outline" onClick={() => handleAction(rec.id, "dismissed")}>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleAction(rec.id, "dismissed")}
+                >
                   <X className="h-3 w-3 mr-1" />
                   {t("recommendations.dismiss")}
                 </Button>

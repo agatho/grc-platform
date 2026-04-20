@@ -10,7 +10,9 @@ interface MaturityCalculatorResult {
   errors: number;
 }
 
-function scoreToLevel(score: number): "initial" | "managed" | "defined" | "quantitatively_managed" | "optimizing" {
+function scoreToLevel(
+  score: number,
+): "initial" | "managed" | "defined" | "quantitatively_managed" | "optimizing" {
   if (score >= 4.5) return "optimizing";
   if (score >= 3.5) return "quantitatively_managed";
   if (score >= 2.5) return "defined";
@@ -19,9 +21,16 @@ function scoreToLevel(score: number): "initial" | "managed" | "defined" | "quant
 }
 
 export async function processMaturityAutoCalculator(): Promise<MaturityCalculatorResult> {
-  const result: MaturityCalculatorResult = { orgsProcessed: 0, modelsUpdated: 0, errors: 0 };
+  const result: MaturityCalculatorResult = {
+    orgsProcessed: 0,
+    modelsUpdated: 0,
+    errors: 0,
+  };
 
-  const models = await db.select().from(maturityModel).where(eq(maturityModel.autoCalculated, true));
+  const models = await db
+    .select()
+    .from(maturityModel)
+    .where(eq(maturityModel.autoCalculated, true));
 
   const orgIds = [...new Set(models.map((m) => m.orgId))];
   result.orgsProcessed = orgIds.length;
@@ -59,7 +68,10 @@ export async function processMaturityAutoCalculator(): Promise<MaturityCalculato
         }
       }
     } catch (err) {
-      console.error(`[worker] maturity-auto-calculator: Failed for model ${model.id}:`, err);
+      console.error(
+        `[worker] maturity-auto-calculator: Failed for model ${model.id}:`,
+        err,
+      );
       result.errors++;
     }
   }

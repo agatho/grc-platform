@@ -46,12 +46,7 @@ export async function GET(
       updatedAt: processStep.updatedAt,
     })
     .from(processStep)
-    .where(
-      and(
-        eq(processStep.processId, id),
-        isNull(processStep.deletedAt),
-      ),
-    )
+    .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)))
     .orderBy(asc(processStep.sequenceOrder));
 
   return Response.json({ data: steps });

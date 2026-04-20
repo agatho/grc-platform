@@ -2,7 +2,10 @@ import { db, dataRegion } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { createDataRegionSchema, listDataRegionsQuerySchema } from "@grc/shared";
+import {
+  createDataRegionSchema,
+  listDataRegionsQuerySchema,
+} from "@grc/shared";
 
 // GET /api/v1/data-sovereignty/regions
 export async function GET(req: Request) {
@@ -10,7 +13,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = listDataRegionsQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = listDataRegionsQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
   const conditions = [];
   if (query.status) conditions.push(eq(dataRegion.status, query.status));
 
@@ -18,14 +23,27 @@ export async function GET(req: Request) {
   const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
   const [rows, [{ total }]] = await Promise.all([
-    db.select().from(dataRegion).where(whereClause)
-      .orderBy(dataRegion.name).limit(query.limit).offset(offset),
-    db.select({ total: sql<number>`count(*)::int` }).from(dataRegion).where(whereClause),
+    db
+      .select()
+      .from(dataRegion)
+      .where(whereClause)
+      .orderBy(dataRegion.name)
+      .limit(query.limit)
+      .offset(offset),
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(dataRegion)
+      .where(whereClause),
   ]);
 
   return Response.json({
     data: rows,
-    pagination: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    pagination: {
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    },
   });
 }
 

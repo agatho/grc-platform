@@ -81,7 +81,8 @@ export async function PUT(
 
   const updated = await withAuditContext(ctx, async (tx) => {
     const values: Record<string, unknown> = { updatedAt: new Date() };
-    if (body.data.totalAmount !== undefined) values.totalAmount = body.data.totalAmount.toString();
+    if (body.data.totalAmount !== undefined)
+      values.totalAmount = body.data.totalAmount.toString();
     if (body.data.currency !== undefined) values.currency = body.data.currency;
     if (body.data.status !== undefined) values.status = body.data.status;
     if (body.data.notes !== undefined) values.notes = body.data.notes;

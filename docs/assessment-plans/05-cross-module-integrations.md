@@ -14,19 +14,19 @@ Duplikation zu vermeiden und Konsistenz zu garantieren.
 
 Eine zentrale `finding`-Tabelle mit `source`-Discriminator:
 
-| source-Wert | Ursprungs-Modul | Use-Case |
-|---|---|---|
-| `audit_execution` | Audit | Finding aus Audit-Checklist |
-| `audit_sampling` | Audit | Exception aus audit_sample |
-| `isms_assessment` | ISMS | Ineffective-Control aus assessment_control_eval |
-| `isms_control_test` | ISMS | Failed Control-Test |
-| `bcms_exercise` | BCMS | Lesson/Issue aus bc_exercise |
-| `bcms_crisis` | BCMS | Post-Mortem-Finding aus crisis_log |
-| `dpms_dpia` | DPMS | Unmitigierte DPIA-Risk |
-| `dpms_breach` | DPMS | Breach-Finding |
-| `aiact_incident` | AI-Act | AI-Incident-Finding |
-| `aiact_oversight` | AI-Act | Systematisches Oversight-Problem |
-| `regulatory_change` | Regulatory | Pending-Regulatory-Change-Finding |
+| source-Wert         | Ursprungs-Modul | Use-Case                                        |
+| ------------------- | --------------- | ----------------------------------------------- |
+| `audit_execution`   | Audit           | Finding aus Audit-Checklist                     |
+| `audit_sampling`    | Audit           | Exception aus audit_sample                      |
+| `isms_assessment`   | ISMS            | Ineffective-Control aus assessment_control_eval |
+| `isms_control_test` | ISMS            | Failed Control-Test                             |
+| `bcms_exercise`     | BCMS            | Lesson/Issue aus bc_exercise                    |
+| `bcms_crisis`       | BCMS            | Post-Mortem-Finding aus crisis_log              |
+| `dpms_dpia`         | DPMS            | Unmitigierte DPIA-Risk                          |
+| `dpms_breach`       | DPMS            | Breach-Finding                                  |
+| `aiact_incident`    | AI-Act          | AI-Incident-Finding                             |
+| `aiact_oversight`   | AI-Act          | Systematisches Oversight-Problem                |
+| `regulatory_change` | Regulatory      | Pending-Regulatory-Change-Finding               |
 
 **Empfehlung**: `finding.source`-Spalte ergaenzen (heute schon teilweise
 implementiert). Bei Queries immer mit orgId + source-Filter.
@@ -36,17 +36,17 @@ implementiert). Bei Queries immer mit orgId + source-Filter.
 Alle Module schieben Risks in die zentrale `risk`-Tabelle via
 `erm_sync_config` (Phase-3 neu). Diskriminiert via `risk.category`:
 
-| category | Quell-Modul |
-|---|---|
-| `operational` | ISMS/BCMS allgemein |
-| `cybersecurity` | ISMS |
-| `business_continuity` | BCMS |
-| `data_protection` | DPMS |
-| `ai_act` | AI-Act |
-| `compliance` | Querschnitt |
-| `strategic` | Board-level |
-| `reputational` | Querschnitt |
-| `financial` | FAIR-quantifiziert |
+| category              | Quell-Modul         |
+| --------------------- | ------------------- |
+| `operational`         | ISMS/BCMS allgemein |
+| `cybersecurity`       | ISMS                |
+| `business_continuity` | BCMS                |
+| `data_protection`     | DPMS                |
+| `ai_act`              | AI-Act              |
+| `compliance`          | Querschnitt         |
+| `strategic`           | Board-level         |
+| `reputational`        | Querschnitt         |
+| `financial`           | FAIR-quantifiziert  |
 
 **Pattern**: Modul triggert Risk-Create ueber standardisierte Helper-
 Funktion `createOrUpdateLinkedRisk(source_module, source_id, category,
@@ -85,15 +85,15 @@ Das ersetzt die UUID-Array-Spalten + macht Evidence-Multi-Use transparent.
 
 Jede aktionable Entity kann in `work_item` gewrappt werden:
 
-| Work-Item-Type | Quell-Entity |
-|---|---|
-| `audit_finding` | `finding` (source='audit*') |
-| `risk_treatment` | `risk_treatment` |
-| `corrective_action` | `isms_corrective_action` |
-| `dsr_task` | `dsr` (fuer DPMS-Coordination) |
-| `breach_response` | `data_breach` |
-| `ai_incident_response` | `ai_incident` |
-| `bc_exercise_lesson` | `bc_exercise_lesson` |
+| Work-Item-Type         | Quell-Entity                   |
+| ---------------------- | ------------------------------ |
+| `audit_finding`        | `finding` (source='audit\*')   |
+| `risk_treatment`       | `risk_treatment`               |
+| `corrective_action`    | `isms_corrective_action`       |
+| `dsr_task`             | `dsr` (fuer DPMS-Coordination) |
+| `breach_response`      | `data_breach`                  |
+| `ai_incident_response` | `ai_incident`                  |
+| `bc_exercise_lesson`   | `bc_exercise_lesson`           |
 
 **Pattern**: Neuer Workflow-Step-Completion muss immer ein `work_item`
 haben fuer Assignment + Tracking.
@@ -116,17 +116,17 @@ Via `catalog_entry_mapping` (bereits Phase-3) + Matrix:
 
 ### 2.1 Kern-Mappings (aktuell)
 
-| Source | Target | Count | Semantik |
-|---|---|---|---|
-| ISO 27001 Annex A | ISO 27002 | 93 | 1:1 Equivalent (ISO-selbst definiert) |
-| BSI Grundschutz | ISO 27001 | 64 | Kreuzreferenztabelle |
-| TISAX | ISO 27001 | 44 | VDA ISA basiert auf ISO |
-| NIS2 | ISO 27001 | 33 | Regulatorisch → Control |
-| DORA | ISO 27001 | 25 | Finanzsektor-Overlay |
-| COSO | COBIT | 24 | Governance-Alignment |
-| GDPR Art. 32 | TOMs | 23 | Requirements → Measures |
-| NIST CSF | ISO 27002 | 89 | Cross-Framework existing |
-| ISO 22301 | ISO 27001 | 6 | BCMS als Teil ISMS |
+| Source            | Target    | Count | Semantik                              |
+| ----------------- | --------- | ----- | ------------------------------------- |
+| ISO 27001 Annex A | ISO 27002 | 93    | 1:1 Equivalent (ISO-selbst definiert) |
+| BSI Grundschutz   | ISO 27001 | 64    | Kreuzreferenztabelle                  |
+| TISAX             | ISO 27001 | 44    | VDA ISA basiert auf ISO               |
+| NIS2              | ISO 27001 | 33    | Regulatorisch → Control               |
+| DORA              | ISO 27001 | 25    | Finanzsektor-Overlay                  |
+| COSO              | COBIT     | 24    | Governance-Alignment                  |
+| GDPR Art. 32      | TOMs      | 23    | Requirements → Measures               |
+| NIST CSF          | ISO 27002 | 89    | Cross-Framework existing              |
+| ISO 22301         | ISO 27001 | 6     | BCMS als Teil ISMS                    |
 
 ### 2.2 Zu ergaenzende Mappings (fuer Assessment-Plan-Initiative)
 
@@ -241,6 +241,7 @@ Ueber alle 4 Module hinweg sollte es aggregate Dashboards geben:
 **Zweck**: Ein-Bild-Ueberblick fuer Vorstand/CEO/CISO
 
 **Widgets**:
+
 - **Compliance-Score-Composite**: gewichtet aus ISMS (30%) + DPMS (30%) + BCMS (20%) + AI-Act (20%)
 - **Open-Findings-by-Module**: Stacked Bar, per Severity
 - **Risk-Heatmap-Aggregate**: alle Risks across Module auf einer 5x5 Matrix
@@ -252,16 +253,16 @@ Ueber alle 4 Module hinweg sollte es aggregate Dashboards geben:
 
 Framework-Coverage auf einen Blick:
 
-| Framework | Covered | Open-Gaps | Last-Assessment | Next-Due |
-|---|---|---|---|---|
-| ISO 27001 | 85 % | 12 | 2025-10 | 2026-10 |
-| ISO 27002 | 82 % | 18 | 2025-10 | 2026-10 |
-| GDPR | 94 % | 4 | Continuous | n/a |
-| NIS2 | 78 % | 16 | 2025-06 | 2026-06 |
-| DORA | 80 % | 10 | 2025-12 | 2026-12 |
-| ISO 22301 | 70 % | 8 | 2025-09 | 2026-09 |
-| EU AI Act | 45 % | 24 | 2026-03 (initial) | 2026-09 |
-| ESRS | 60 % | 12 | 2025-11 | 2026-11 |
+| Framework | Covered | Open-Gaps | Last-Assessment   | Next-Due |
+| --------- | ------- | --------- | ----------------- | -------- |
+| ISO 27001 | 85 %    | 12        | 2025-10           | 2026-10  |
+| ISO 27002 | 82 %    | 18        | 2025-10           | 2026-10  |
+| GDPR      | 94 %    | 4         | Continuous        | n/a      |
+| NIS2      | 78 %    | 16        | 2025-06           | 2026-06  |
+| DORA      | 80 %    | 10        | 2025-12           | 2026-12  |
+| ISO 22301 | 70 %    | 8         | 2025-09           | 2026-09  |
+| EU AI Act | 45 %    | 24        | 2026-03 (initial) | 2026-09  |
+| ESRS      | 60 %    | 12        | 2025-11           | 2026-11  |
 
 ### 4.3 Integrated-Risk-Register
 
@@ -282,15 +283,15 @@ Alle Risks (aus allen Modulen) in einer Ansicht:
 
 Erweiterter RBAC fuer Cross-Module-Workflows:
 
-| Rolle | Standard-Module | Cross-Module-Rechte |
-|---|---|---|
-| `admin` | alle | alle |
-| `risk_manager` (2nd-Line) | ERM, ISMS, BCMS, DPMS | Read all, Write ERM+Assessments |
-| `dpo` (2nd-Line) | DPMS | Read ISMS (fuer TOMs), Read AI-Act (fuer FRIAs+Personal-Data) |
-| `ciso` (virtual) | ISMS, BCMS, DPMS, AI-Act | Read-write all security-related |
-| `ai_compliance_manager` | AI-Act | Read DPMS (fuer DPIA-Linkage), Read ISMS (Data-Governance) |
-| `bcm_manager` | BCMS | Read ISMS (Incidents), Read DPMS (Breach-Impact) |
-| `auditor` (3rd-Line) | Audit | Read all (mit time-box-Share) |
+| Rolle                     | Standard-Module          | Cross-Module-Rechte                                           |
+| ------------------------- | ------------------------ | ------------------------------------------------------------- |
+| `admin`                   | alle                     | alle                                                          |
+| `risk_manager` (2nd-Line) | ERM, ISMS, BCMS, DPMS    | Read all, Write ERM+Assessments                               |
+| `dpo` (2nd-Line)          | DPMS                     | Read ISMS (fuer TOMs), Read AI-Act (fuer FRIAs+Personal-Data) |
+| `ciso` (virtual)          | ISMS, BCMS, DPMS, AI-Act | Read-write all security-related                               |
+| `ai_compliance_manager`   | AI-Act                   | Read DPMS (fuer DPIA-Linkage), Read ISMS (Data-Governance)    |
+| `bcm_manager`             | BCMS                     | Read ISMS (Incidents), Read DPMS (Breach-Impact)              |
+| `auditor` (3rd-Line)      | Audit                    | Read all (mit time-box-Share)                                 |
 
 **Empfehlung**: Neue Rolle `ciso` als virtuelle Super-Role die Read-Write auf
 alle 4 Sicherheits-Module hat (ohne Admin-Rechte wie Org-Management).
@@ -303,6 +304,7 @@ Zertifizierungen bedienen:
 ### 6.1 "Core GRC Bundle"
 
 Ein gemeinsames Assessment fuer:
+
 - ISO 27001 (ISMS)
 - ISO 22301 (BCMS-als-Teil)
 - GDPR-Compliance (DPMS-Continuous)
@@ -372,17 +374,17 @@ GET  /api/v1/integrated/evidence-pack
 Die Cross-Module-Integrationen sind **nicht Iter-1-Arbeit**, sondern
 werden parallel zu den Modul-Iterationen nachgezogen:
 
-| Priorisierung | Integration | Grund |
-|---|---|---|
-| **P0 (Iter 2+)** | Finding shared-entity mit source-Discriminator | schon teilweise da, muss komplett werden |
-| **P0** | Risk-Sync ueber `erm_sync_config` | Phase-3 bereits, aber nicht fully connected |
-| **P1** | Incident → Breach Auto-Trigger | Security-kritisch |
-| **P1** | GRC-Executive-Dashboard | fuer Tenant-Onboarding-UX |
-| **P2** | Evidence-Pool-Refactor (Join-Table) | Clean-Architecture |
-| **P2** | Compliance-Matrix-Dashboard | fuer Sales + Auditor-Preps |
-| **P3** | Certification-Bundle-API | fuer integrierte Audits |
-| **P3** | AI-System als Asset-Sub-Type | Feature-Parity |
-| **P4** | Regulatory-Change-Multi-Module-Triggers | nice-to-have, wenn Regulatory-Modul reifer ist |
+| Priorisierung    | Integration                                    | Grund                                          |
+| ---------------- | ---------------------------------------------- | ---------------------------------------------- |
+| **P0 (Iter 2+)** | Finding shared-entity mit source-Discriminator | schon teilweise da, muss komplett werden       |
+| **P0**           | Risk-Sync ueber `erm_sync_config`              | Phase-3 bereits, aber nicht fully connected    |
+| **P1**           | Incident → Breach Auto-Trigger                 | Security-kritisch                              |
+| **P1**           | GRC-Executive-Dashboard                        | fuer Tenant-Onboarding-UX                      |
+| **P2**           | Evidence-Pool-Refactor (Join-Table)            | Clean-Architecture                             |
+| **P2**           | Compliance-Matrix-Dashboard                    | fuer Sales + Auditor-Preps                     |
+| **P3**           | Certification-Bundle-API                       | fuer integrierte Audits                        |
+| **P3**           | AI-System als Asset-Sub-Type                   | Feature-Parity                                 |
+| **P4**           | Regulatory-Change-Multi-Module-Triggers        | nice-to-have, wenn Regulatory-Modul reifer ist |
 
 ## 9. Architektur-Entscheidungen (neue ADRs noetig)
 
@@ -397,6 +399,7 @@ Dieses Dokument triggert folgende ADR-Drafts:
 ## 10. Session-Outcome
 
 **Dieses Dokument (Iter 1)**:
+
 - ✅ Shared-Entity-Patterns (Finding, Risk, Evidence, Work-Item, Evidence-Pack)
 - ✅ Cross-Framework-Mappings-Uebersicht mit Gap-Identifikation
 - ✅ 7 Event-Flows dokumentiert (module → module)

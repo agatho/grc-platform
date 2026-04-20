@@ -38,8 +38,12 @@ function AttackPathsInner() {
   const [loading, setLoading] = useState(false);
   const [paths, setPaths] = useState<AttackPathResult[]>([]);
   const [batchId, setBatchId] = useState<string | null>(null);
-  const [selectedPath, setSelectedPath] = useState<AttackPathResult | null>(null);
-  const [recommendations, setRecommendations] = useState<Array<{ controlId: string; controlName: string; eliminatedPaths: number }>>([]);
+  const [selectedPath, setSelectedPath] = useState<AttackPathResult | null>(
+    null,
+  );
+  const [recommendations, setRecommendations] = useState<
+    Array<{ controlId: string; controlName: string; eliminatedPaths: number }>
+  >([]);
 
   const computePaths = useCallback(async () => {
     setLoading(true);
@@ -55,13 +59,17 @@ function AttackPathsInner() {
         setBatchId(newBatchId);
 
         if (json.data.pathCount > 0) {
-          const pathRes = await fetch(`/api/v1/isms/attack-paths/${newBatchId}`);
+          const pathRes = await fetch(
+            `/api/v1/isms/attack-paths/${newBatchId}`,
+          );
           if (pathRes.ok) {
             const pathJson = await pathRes.json();
             setPaths(pathJson.data ?? []);
           }
 
-          const recRes = await fetch(`/api/v1/isms/attack-paths/${newBatchId}/recommendations`);
+          const recRes = await fetch(
+            `/api/v1/isms/attack-paths/${newBatchId}/recommendations`,
+          );
           if (recRes.ok) {
             const recJson = await recRes.json();
             setRecommendations(recJson.data ?? []);
@@ -81,12 +89,19 @@ function AttackPathsInner() {
           <p className="text-muted-foreground">{t("description")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push("/isms/attack-paths/compare")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/isms/attack-paths/compare")}
+          >
             <GitCompare className="mr-2 h-4 w-4" />
             {t("compare")}
           </Button>
           <Button onClick={computePaths} disabled={loading}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCcw className="mr-2 h-4 w-4" />}
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <RefreshCcw className="mr-2 h-4 w-4" />
+            )}
             {t("calculatePaths")}
           </Button>
         </div>
@@ -191,14 +206,21 @@ function AttackPathsInner() {
           <CardContent>
             <div className="space-y-3">
               {recommendations.map((rec, i) => (
-                <div key={rec.controlId} className="flex items-center justify-between rounded border p-3">
+                <div
+                  key={rec.controlId}
+                  className="flex items-center justify-between rounded border p-3"
+                >
                   <div>
-                    <p className="font-medium">#{i + 1} {rec.controlName || rec.controlId}</p>
+                    <p className="font-medium">
+                      #{i + 1} {rec.controlName || rec.controlId}
+                    </p>
                     <p className="text-sm text-muted-foreground">
                       {t("wouldEliminate", { count: rec.eliminatedPaths })}
                     </p>
                   </div>
-                  <Badge>{rec.eliminatedPaths} {t("paths")}</Badge>
+                  <Badge>
+                    {rec.eliminatedPaths} {t("paths")}
+                  </Badge>
                 </div>
               ))}
             </div>
@@ -225,11 +247,17 @@ function AttackPathsInner() {
               <div className="space-y-2">
                 {(selectedPath.pathJson as AttackPathHop[]).map((hop, i) => (
                   <div key={i} className="rounded border p-3 text-sm">
-                    <p className="font-medium">{hop.assetName || hop.assetId}</p>
+                    <p className="font-medium">
+                      {hop.assetName || hop.assetId}
+                    </p>
                     {hop.cveIds.length > 0 && (
                       <div className="mt-1 flex flex-wrap gap-1">
                         {hop.cveIds.map((cve) => (
-                          <Badge key={cve} variant="outline" className="text-xs">
+                          <Badge
+                            key={cve}
+                            variant="outline"
+                            className="text-xs"
+                          >
                             {cve}
                           </Badge>
                         ))}
@@ -241,7 +269,8 @@ function AttackPathsInner() {
                       </p>
                     )}
                     <p className="mt-1 text-muted-foreground">
-                      {t("probability")}: {(hop.hopProbability * 100).toFixed(0)}%
+                      {t("probability")}:{" "}
+                      {(hop.hopProbability * 100).toFixed(0)}%
                     </p>
                   </div>
                 ))}

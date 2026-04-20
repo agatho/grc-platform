@@ -15,12 +15,18 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
   let emailsSent = 0;
   const now = new Date();
 
-  console.log(`[cron:calendar-digest] Starting weekly digest at ${now.toISOString()}`);
+  console.log(
+    `[cron:calendar-digest] Starting weekly digest at ${now.toISOString()}`,
+  );
 
   // Calculate this week's date range (Monday to Sunday)
   const dayOfWeek = now.getDay();
   const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-  const weekStart = new Date(now.getFullYear(), now.getMonth(), now.getDate() + mondayOffset);
+  const weekStart = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + mondayOffset,
+  );
   const weekEnd = new Date(weekStart.getTime() + 6 * 24 * 60 * 60 * 1000);
   weekEnd.setHours(23, 59, 59, 999);
 
@@ -41,7 +47,10 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
   }
 
   // Group by user (a user may have multiple orgs)
-  const userOrgMap = new Map<string, { email: string; name: string; orgIds: string[] }>();
+  const userOrgMap = new Map<
+    string,
+    { email: string; name: string; orgIds: string[] }
+  >();
   for (const row of orgs as Array<Record<string, unknown>>) {
     const userId = String(row.user_id);
     const existing = userOrgMap.get(userId);
@@ -61,7 +70,9 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
     try {
       for (const orgId of userData.orgIds) {
         // Set RLS context
-        await db.execute(sql`SELECT set_config('app.current_org_id', ${orgId}, false)`);
+        await db.execute(
+          sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
+        );
 
         // Query calendar events for this week across all sources
         // Simplified: check manual events + audit + control tests
@@ -91,11 +102,13 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
               eventCount: weekEvents.length,
               weekStart: weekStartStr,
               weekEnd: weekEndStr,
-              events: (weekEvents as Array<Record<string, unknown>>).slice(0, 10).map((e) => ({
-                title: String(e.title),
-                startAt: String(e.start_at),
-                module: String(e.module),
-              })),
+              events: (weekEvents as Array<Record<string, unknown>>)
+                .slice(0, 10)
+                .map((e) => ({
+                  title: String(e.title),
+                  startAt: String(e.start_at),
+                  module: String(e.module),
+                })),
             },
             createdAt: now,
             updatedAt: now,

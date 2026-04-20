@@ -65,39 +65,58 @@ export class OpenAIProvider implements LLMProvider {
   async validateConfig(): Promise<{ valid: boolean; error?: string }> {
     if (!this.isConfigured()) return { valid: false, error: "API key missing" };
     try {
-      const response = await fetch(`${this.config.baseUrl ?? "https://api.openai.com/v1"}/models`, {
-        headers: { Authorization: `Bearer ${this.config.apiKey}` },
-      });
-      return { valid: response.ok, error: response.ok ? undefined : `HTTP ${response.status}` };
+      const response = await fetch(
+        `${this.config.baseUrl ?? "https://api.openai.com/v1"}/models`,
+        {
+          headers: { Authorization: `Bearer ${this.config.apiKey}` },
+        },
+      );
+      return {
+        valid: response.ok,
+        error: response.ok ? undefined : `HTTP ${response.status}`,
+      };
     } catch (err) {
-      return { valid: false, error: err instanceof Error ? err.message : "Connection failed" };
+      return {
+        valid: false,
+        error: err instanceof Error ? err.message : "Connection failed",
+      };
     }
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
-    const response = await fetch(`${this.config.baseUrl ?? "https://api.openai.com/v1"}/chat/completions`, {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${this.config.apiKey}`,
-        "Content-Type": "application/json",
-        ...(this.config.organizationId ? { "OpenAI-Organization": this.config.organizationId } : {}),
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
+    const response = await fetch(
+      `${this.config.baseUrl ?? "https://api.openai.com/v1"}/chat/completions`,
+      {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${this.config.apiKey}`,
+          "Content-Type": "application/json",
+          ...(this.config.organizationId
+            ? { "OpenAI-Organization": this.config.organizationId }
+            : {}),
+        },
+        body: JSON.stringify({
+          model: this.config.model ?? "gpt-4o",
+          messages,
+          max_tokens: options?.maxTokens ?? this.config.maxTokens ?? 4096,
+          temperature: options?.temperature ?? this.config.temperature ?? 0.7,
+        }),
       },
-      body: JSON.stringify({
-        model: this.config.model ?? "gpt-4o",
-        messages,
-        max_tokens: options?.maxTokens ?? this.config.maxTokens ?? 4096,
-        temperature: options?.temperature ?? this.config.temperature ?? 0.7,
-      }),
-    });
+    );
 
     const data = await response.json();
     return {
       text: data.choices?.[0]?.message?.content ?? "",
-      usage: data.usage ? {
-        promptTokens: data.usage.prompt_tokens,
-        completionTokens: data.usage.completion_tokens,
-        totalTokens: data.usage.total_tokens,
-      } : undefined,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.prompt_tokens,
+            completionTokens: data.usage.completion_tokens,
+            totalTokens: data.usage.total_tokens,
+          }
+        : undefined,
       provider: "openai",
       model: this.config.model ?? "gpt-4o",
       finishReason: data.choices?.[0]?.finish_reason,
@@ -127,7 +146,10 @@ export class AnthropicProvider implements LLMProvider {
     return { valid: true };
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
     const systemMsg = messages.find((m) => m.role === "system");
     const nonSystemMessages = messages.filter((m) => m.role !== "system");
 
@@ -142,18 +164,24 @@ export class AnthropicProvider implements LLMProvider {
         model: this.config.model ?? "claude-sonnet-4-20250514",
         max_tokens: options?.maxTokens ?? this.config.maxTokens ?? 4096,
         system: systemMsg?.content,
-        messages: nonSystemMessages.map((m) => ({ role: m.role, content: m.content })),
+        messages: nonSystemMessages.map((m) => ({
+          role: m.role,
+          content: m.content,
+        })),
       }),
     });
 
     const data = await response.json();
     return {
       text: data.content?.[0]?.text ?? "",
-      usage: data.usage ? {
-        promptTokens: data.usage.input_tokens,
-        completionTokens: data.usage.output_tokens,
-        totalTokens: (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
-      } : undefined,
+      usage: data.usage
+        ? {
+            promptTokens: data.usage.input_tokens,
+            completionTokens: data.usage.output_tokens,
+            totalTokens:
+              (data.usage.input_tokens ?? 0) + (data.usage.output_tokens ?? 0),
+          }
+        : undefined,
       provider: "anthropic",
       model: this.config.model ?? "claude-sonnet-4-20250514",
       finishReason: data.stop_reason,
@@ -175,21 +203,35 @@ export class AzureOpenAIProvider implements LLMProvider {
   }
 
   isConfigured(): boolean {
-    return !!this.config.apiKey && !!this.config.baseUrl && !!this.config.azureDeployment;
+    return (
+      !!this.config.apiKey &&
+      !!this.config.baseUrl &&
+      !!this.config.azureDeployment
+    );
   }
 
   async validateConfig(): Promise<{ valid: boolean; error?: string }> {
-    if (!this.isConfigured()) return { valid: false, error: "API key, base URL, or deployment missing" };
+    if (!this.isConfigured())
+      return {
+        valid: false,
+        error: "API key, base URL, or deployment missing",
+      };
     return { valid: true };
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
     const apiVersion = this.config.azureApiVersion ?? "2024-02-15-preview";
     const url = `${this.config.baseUrl}/openai/deployments/${this.config.azureDeployment}/chat/completions?api-version=${apiVersion}`;
 
     const response = await fetch(url, {
       method: "POST",
-      headers: { "api-key": this.config.apiKey!, "Content-Type": "application/json" },
+      headers: {
+        "api-key": this.config.apiKey!,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         messages,
         max_tokens: options?.maxTokens ?? this.config.maxTokens ?? 4096,
@@ -225,23 +267,31 @@ export class OllamaProvider implements LLMProvider {
 
   async validateConfig(): Promise<{ valid: boolean; error?: string }> {
     try {
-      const response = await fetch(`${this.config.baseUrl ?? "http://localhost:11434"}/api/tags`);
+      const response = await fetch(
+        `${this.config.baseUrl ?? "http://localhost:11434"}/api/tags`,
+      );
       return { valid: response.ok };
     } catch {
       return { valid: false, error: "Cannot connect to Ollama" };
     }
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
-    const response = await fetch(`${this.config.baseUrl ?? "http://localhost:11434"}/api/chat`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        model: this.config.model ?? "llama3",
-        messages,
-        stream: false,
-      }),
-    });
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
+    const response = await fetch(
+      `${this.config.baseUrl ?? "http://localhost:11434"}/api/chat`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: this.config.model ?? "llama3",
+          messages,
+          stream: false,
+        }),
+      },
+    );
 
     const data = await response.json();
     return {
@@ -274,10 +324,16 @@ export class MistralProvider implements LLMProvider {
     return { valid: true };
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
     const response = await fetch("https://api.mistral.ai/v1/chat/completions", {
       method: "POST",
-      headers: { Authorization: `Bearer ${this.config.apiKey}`, "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${this.config.apiKey}`,
+        "Content-Type": "application/json",
+      },
       body: JSON.stringify({
         model: this.config.model ?? "mistral-large-latest",
         messages,
@@ -313,13 +369,20 @@ export class CustomOpenAICompatibleProvider implements LLMProvider {
   }
 
   async validateConfig(): Promise<{ valid: boolean; error?: string }> {
-    if (!this.config.baseUrl) return { valid: false, error: "Base URL missing" };
+    if (!this.config.baseUrl)
+      return { valid: false, error: "Base URL missing" };
     return { valid: true };
   }
 
-  async chat(messages: ChatMessage[], options?: LLMOptions): Promise<LLMResponse> {
-    const headers: Record<string, string> = { "Content-Type": "application/json" };
-    if (this.config.apiKey) headers.Authorization = `Bearer ${this.config.apiKey}`;
+  async chat(
+    messages: ChatMessage[],
+    options?: LLMOptions,
+  ): Promise<LLMResponse> {
+    const headers: Record<string, string> = {
+      "Content-Type": "application/json",
+    };
+    if (this.config.apiKey)
+      headers.Authorization = `Bearer ${this.config.apiKey}`;
 
     const response = await fetch(`${this.config.baseUrl}/chat/completions`, {
       method: "POST",

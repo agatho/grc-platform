@@ -1,17 +1,28 @@
 import { db, simulationParameter } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { createSimulationParameterSchema, bulkCreateParametersSchema } from "@grc/shared";
+import {
+  createSimulationParameterSchema,
+  bulkCreateParametersSchema,
+} from "@grc/shared";
 
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const url = new URL(req.url);
   const scenarioId = url.searchParams.get("scenarioId");
-  if (!scenarioId) return Response.json({ error: "scenarioId is required" }, { status: 400 });
+  if (!scenarioId)
+    return Response.json({ error: "scenarioId is required" }, { status: 400 });
 
-  const rows = await db.select().from(simulationParameter)
-    .where(and(eq(simulationParameter.scenarioId, scenarioId), eq(simulationParameter.orgId, ctx.orgId)));
+  const rows = await db
+    .select()
+    .from(simulationParameter)
+    .where(
+      and(
+        eq(simulationParameter.scenarioId, scenarioId),
+        eq(simulationParameter.orgId, ctx.orgId),
+      ),
+    );
 
   return Response.json({ data: rows });
 }
@@ -30,7 +41,10 @@ export async function POST(req: Request) {
       maxValue: p.maxValue != null ? String(p.maxValue) : undefined,
       defaultValue: p.defaultValue != null ? String(p.defaultValue) : undefined,
     }));
-    const created = await tx.insert(simulationParameter).values(values).returning();
+    const created = await tx
+      .insert(simulationParameter)
+      .values(values)
+      .returning();
     return created;
   });
 

@@ -1,10 +1,4 @@
-import {
-  db,
-  risk,
-  workItem,
-  user,
-  dataExportLog,
-} from "@grc/db";
+import { db, risk, workItem, user, dataExportLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   eq,
@@ -42,10 +36,7 @@ export async function GET(req: Request) {
   }
 
   // Build filter conditions (same as risk list endpoint)
-  const conditions: SQL[] = [
-    eq(risk.orgId, ctx.orgId),
-    isNull(risk.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
   const statusParam = url.searchParams.get("status");
   if (statusParam) {
@@ -58,7 +49,13 @@ export async function GET(req: Request) {
   const categoryParam = url.searchParams.get("category");
   if (categoryParam) {
     const categories = categoryParam.split(",") as Array<
-      "strategic" | "operational" | "financial" | "compliance" | "cyber" | "reputational" | "esg"
+      | "strategic"
+      | "operational"
+      | "financial"
+      | "compliance"
+      | "cyber"
+      | "reputational"
+      | "esg"
     >;
     conditions.push(inArray(risk.riskCategory, categories));
   }
@@ -94,10 +91,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(risk.title, pattern),
-        ilike(risk.description, pattern),
-      )!,
+      or(ilike(risk.title, pattern), ilike(risk.description, pattern))!,
     );
   }
 
@@ -157,7 +151,10 @@ export async function GET(req: Request) {
     });
   } catch (err) {
     // Log failure should not block the export
-    console.error("[risks/export] Failed to log export:", err instanceof Error ? err.message : String(err));
+    console.error(
+      "[risks/export] Failed to log export:",
+      err instanceof Error ? err.message : String(err),
+    );
   }
 
   if (format === "json") {

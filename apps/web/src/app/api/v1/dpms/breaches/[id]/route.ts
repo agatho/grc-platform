@@ -1,9 +1,4 @@
-import {
-  db,
-  dataBreach,
-  dataBreachNotification,
-  user,
-} from "@grc/db";
+import { db, dataBreach, dataBreachNotification, user } from "@grc/db";
 import { updateDataBreachSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -36,7 +31,8 @@ export async function GET(
       dpaNotifiedAt: dataBreach.dpaNotifiedAt,
       individualsNotifiedAt: dataBreach.individualsNotifiedAt,
       isDpaNotificationRequired: dataBreach.isDpaNotificationRequired,
-      isIndividualNotificationRequired: dataBreach.isIndividualNotificationRequired,
+      isIndividualNotificationRequired:
+        dataBreach.isIndividualNotificationRequired,
       dataCategoriesAffected: dataBreach.dataCategoriesAffected,
       estimatedRecordsAffected: dataBreach.estimatedRecordsAffected,
       affectedCountries: dataBreach.affectedCountries,

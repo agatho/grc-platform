@@ -27,22 +27,22 @@ export async function GET(
   const { id } = await params;
 
   try {
-    const [group] = await db.execute(sql`
+    const [group] = (await db.execute(sql`
       SELECT id, name, created_at, updated_at
       FROM user_group
       WHERE id = ${id} AND org_id = ${authCtx.orgId} AND deleted_at IS NULL
-    `) as any[];
+    `)) as any[];
 
     if (!group) {
       return scimResponse(buildScimError("Group not found", 404), 404);
     }
 
-    const members = await db.execute(sql`
+    const members = (await db.execute(sql`
       SELECT ugm.user_id AS value, u.name AS display
       FROM user_group_member ugm
       JOIN "user" u ON u.id = ugm.user_id
       WHERE ugm.group_id = ${id}
-    `) as any[];
+    `)) as any[];
 
     return scimResponse({
       schemas: [SCIM_GROUP_SCHEMA],
@@ -82,10 +82,10 @@ export async function PATCH(
 
   try {
     // Verify group exists and belongs to org
-    const [group] = await db.execute(sql`
+    const [group] = (await db.execute(sql`
       SELECT id FROM user_group
       WHERE id = ${id} AND org_id = ${authCtx.orgId} AND deleted_at IS NULL
-    `) as any[];
+    `)) as any[];
 
     if (!group) {
       return scimResponse(buildScimError("Group not found", 404), 404);
@@ -127,10 +127,10 @@ export async function PATCH(
     });
 
     // Return updated group
-    const [updated] = await db.execute(sql`
+    const [updated] = (await db.execute(sql`
       SELECT id, name, created_at, updated_at
       FROM user_group WHERE id = ${id}
-    `) as any[];
+    `)) as any[];
 
     return scimResponse({
       schemas: [SCIM_GROUP_SCHEMA],

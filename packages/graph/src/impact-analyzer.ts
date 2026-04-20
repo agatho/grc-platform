@@ -1,11 +1,7 @@
 // Sprint 29: Impact Analysis Engine — distance-based impact decay
 import { getSubgraph, findShortestPath, findCriticalPaths } from "./traversal";
 import { enrichGraphNodes, getEntityName } from "./enrichment";
-import type {
-  ImpactResult,
-  AffectedEntity,
-  GraphResult,
-} from "./types";
+import type { ImpactResult, AffectedEntity, GraphResult } from "./types";
 import {
   RELATIONSHIP_WEIGHTS,
   DEFAULT_GRAPH_DEPTH,
@@ -26,7 +22,10 @@ export async function analyzeImpact(
   entityType: string,
   options: { maxDepth?: number } = {},
 ): Promise<ImpactResult> {
-  const maxDepth = Math.min(options.maxDepth ?? DEFAULT_GRAPH_DEPTH, MAX_GRAPH_DEPTH);
+  const maxDepth = Math.min(
+    options.maxDepth ?? DEFAULT_GRAPH_DEPTH,
+    MAX_GRAPH_DEPTH,
+  );
 
   // 1. Get subgraph around entity
   const rawGraph = await getSubgraph(orgId, entityId, entityType, maxDepth);
@@ -69,8 +68,9 @@ export async function analyzeImpact(
   const criticalPaths = findCriticalPaths(graph, entityId);
 
   // 4. Get source entity name
-  const sourceName = graph.nodes.find((n) => n.id === entityId)?.name
-    ?? await getEntityName(entityType, entityId);
+  const sourceName =
+    graph.nodes.find((n) => n.id === entityId)?.name ??
+    (await getEntityName(entityType, entityId));
 
   return {
     sourceEntity: { id: entityId, type: entityType, name: sourceName },
@@ -99,7 +99,8 @@ function computePathWeight(graph: GraphResult, path: string[]): number {
     );
 
     if (edge) {
-      const weight = edge.weight || RELATIONSHIP_WEIGHTS[edge.relationship] || 40;
+      const weight =
+        edge.weight || RELATIONSHIP_WEIGHTS[edge.relationship] || 40;
       maxWeight = Math.max(maxWeight, weight);
     }
   }

@@ -4,8 +4,17 @@ import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { updateAiGpaiModelSchema } from "@grc/shared";
 
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -22,7 +31,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
   return Response.json({ data: row });
 }
 
-export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
@@ -30,15 +42,30 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   const { id } = await params;
   const parsed = updateAiGpaiModelSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const {
-    name, provider, model_type, is_systemic_risk, systemic_risk_justification,
-    training_data_summary, energy_consumption_kwh, version, status,
-    capabilities_summary, limitations_summary, intended_use,
-    computational_resources, cybersecurity_measures,
-    eu_representative_name, eu_representative_contact,
-    code_of_practice_adherence, code_of_practice_notes,
+    name,
+    provider,
+    model_type,
+    is_systemic_risk,
+    systemic_risk_justification,
+    training_data_summary,
+    energy_consumption_kwh,
+    version,
+    status,
+    capabilities_summary,
+    limitations_summary,
+    intended_use,
+    computational_resources,
+    cybersecurity_measures,
+    eu_representative_name,
+    eu_representative_contact,
+    code_of_practice_adherence,
+    code_of_practice_notes,
   } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {

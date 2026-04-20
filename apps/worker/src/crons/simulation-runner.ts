@@ -1,7 +1,12 @@
 // Sprint 85: Simulation Runner Worker
 // Runs every 5 minutes — processes pending simulation runs
 
-import { db, simulationRun, simulationRunResult, simulationScenario } from "@grc/db";
+import {
+  db,
+  simulationRun,
+  simulationRunResult,
+  simulationScenario,
+} from "@grc/db";
 import { eq, and } from "drizzle-orm";
 
 export async function processSimulationRunner(): Promise<{
@@ -11,7 +16,9 @@ export async function processSimulationRunner(): Promise<{
 }> {
   console.log("[simulation-runner] Processing pending simulation runs");
 
-  const pendingRuns = await db.select().from(simulationRun)
+  const pendingRuns = await db
+    .select()
+    .from(simulationRun)
     .where(eq(simulationRun.status, "running"));
 
   let runsCompleted = 0;
@@ -37,30 +44,41 @@ export async function processSimulationRunner(): Promise<{
         unit: "EUR",
       });
 
-      await db.update(simulationRun).set({
-        status: "completed",
-        durationMs,
-        completedAt: new Date(),
-      }).where(eq(simulationRun.id, run.id));
+      await db
+        .update(simulationRun)
+        .set({
+          status: "completed",
+          durationMs,
+          completedAt: new Date(),
+        })
+        .where(eq(simulationRun.id, run.id));
 
-      await db.update(simulationScenario).set({
-        status: "completed",
-        updatedAt: new Date(),
-      }).where(eq(simulationScenario.id, run.scenarioId));
+      await db
+        .update(simulationScenario)
+        .set({
+          status: "completed",
+          updatedAt: new Date(),
+        })
+        .where(eq(simulationScenario.id, run.scenarioId));
 
       runsCompleted++;
     } catch (err) {
       console.error(`[simulation-runner] Run ${run.id} failed:`, err);
-      await db.update(simulationRun).set({
-        status: "failed",
-        errorMessage: err instanceof Error ? err.message : String(err),
-        completedAt: new Date(),
-        durationMs: Date.now() - startTime,
-      }).where(eq(simulationRun.id, run.id));
+      await db
+        .update(simulationRun)
+        .set({
+          status: "failed",
+          errorMessage: err instanceof Error ? err.message : String(err),
+          completedAt: new Date(),
+          durationMs: Date.now() - startTime,
+        })
+        .where(eq(simulationRun.id, run.id));
       runsFailed++;
     }
   }
 
-  console.log(`[simulation-runner] Processed ${pendingRuns.length}: ${runsCompleted} completed, ${runsFailed} failed`);
+  console.log(
+    `[simulation-runner] Processed ${pendingRuns.length}: ${runsCompleted} completed, ${runsFailed} failed`,
+  );
   return { runsProcessed: pendingRuns.length, runsCompleted, runsFailed };
 }

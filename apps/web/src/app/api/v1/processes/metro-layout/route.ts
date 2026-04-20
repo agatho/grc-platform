@@ -32,7 +32,14 @@ export async function GET(req: Request) {
 
   const processes = result;
   const stations: MetroStation[] = [];
-  const lineColors = ["#3b82f6", "#22c55e", "#f97316", "#8b5cf6", "#ec4899", "#06b6d4"];
+  const lineColors = [
+    "#3b82f6",
+    "#22c55e",
+    "#f97316",
+    "#8b5cf6",
+    "#ec4899",
+    "#06b6d4",
+  ];
 
   // Group by top-level parent (main lines)
   const topLevel = processes.filter((p) => !p.parent_process_id);
@@ -41,10 +48,15 @@ export async function GET(req: Request) {
   topLevel.forEach((parent, idx) => {
     const color = lineColors[idx % lineColors.length];
     const children = processes.filter((p) => p.parent_process_id === parent.id);
-    const lineStationIds = [String(parent.id), ...children.map((c) => String(c.id))];
+    const lineStationIds = [
+      String(parent.id),
+      ...children.map((c) => String(c.id)),
+    ];
 
     const layoutData = parent.metro_layout
-      ? (typeof parent.metro_layout === "string" ? JSON.parse(parent.metro_layout) : parent.metro_layout)
+      ? typeof parent.metro_layout === "string"
+        ? JSON.parse(parent.metro_layout)
+        : parent.metro_layout
       : null;
 
     stations.push({
@@ -59,7 +71,9 @@ export async function GET(req: Request) {
 
     children.forEach((child, childIdx) => {
       const childLayout = child.metro_layout
-        ? (typeof child.metro_layout === "string" ? JSON.parse(child.metro_layout) : child.metro_layout)
+        ? typeof child.metro_layout === "string"
+          ? JSON.parse(child.metro_layout)
+          : child.metro_layout
         : null;
 
       stations.push({

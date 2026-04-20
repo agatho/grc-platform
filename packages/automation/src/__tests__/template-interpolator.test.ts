@@ -12,9 +12,9 @@ describe("interpolate", () => {
   });
 
   it("handles missing values", () => {
-    expect(
-      interpolate("Value: {entity.missing}", { other: 1 }),
-    ).toBe("Value: ");
+    expect(interpolate("Value: {entity.missing}", { other: 1 })).toBe(
+      "Value: ",
+    );
   });
 
   it("handles nested entity values", () => {
@@ -26,17 +26,18 @@ describe("interpolate", () => {
   });
 
   it("leaves non-entity placeholders unchanged", () => {
-    expect(
-      interpolate("Hello {name}", { title: "World" }),
-    ).toBe("Hello {name}");
+    expect(interpolate("Hello {name}", { title: "World" })).toBe(
+      "Hello {name}",
+    );
   });
 
   it("handles multiple replacements", () => {
     expect(
-      interpolate(
-        "{entity.title} ({entity.status}) - Score: {entity.score}",
-        { title: "Risk A", status: "open", score: 42 },
-      ),
+      interpolate("{entity.title} ({entity.status}) - Score: {entity.score}", {
+        title: "Risk A",
+        status: "open",
+        score: 42,
+      }),
     ).toBe("Risk A (open) - Score: 42");
   });
 });

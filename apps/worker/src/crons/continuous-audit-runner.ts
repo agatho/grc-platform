@@ -1,7 +1,13 @@
 // Sprint 43: Continuous Audit Rule Runner (per rule schedule)
 // Executes active rules based on their schedule (daily/weekly/monthly)
 
-import { db, continuousAuditRule, continuousAuditResult, continuousAuditException, notification } from "@grc/db";
+import {
+  db,
+  continuousAuditRule,
+  continuousAuditResult,
+  continuousAuditException,
+  notification,
+} from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
 
 interface ContinuousAuditRunnerResult {
@@ -17,7 +23,9 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
   let exceptionsFound = 0;
   let errors = 0;
 
-  console.log(`[cron:continuous-audit-runner] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:continuous-audit-runner] Starting at ${now.toISOString()}`,
+  );
 
   // Find active rules due for execution based on schedule
   const dueRules = await db
@@ -39,7 +47,12 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
     const startTime = Date.now();
     try {
       // Execute rule based on type
-      let ruleExceptions: Array<{ description: string; entityType?: string; entityId?: string; detail?: Record<string, unknown> }> = [];
+      let ruleExceptions: Array<{
+        description: string;
+        entityType?: string;
+        entityId?: string;
+        detail?: Record<string, unknown>;
+      }> = [];
 
       if (rule.ruleType === "builtin") {
         ruleExceptions = await executeBuiltinRule(rule);
@@ -48,16 +61,20 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
       }
 
       const executionTimeMs = Date.now() - startTime;
-      const resultStatus = ruleExceptions.length > 0 ? "exceptions_found" : "pass";
+      const resultStatus =
+        ruleExceptions.length > 0 ? "exceptions_found" : "pass";
 
       // Store immutable result
-      const [result] = await db.insert(continuousAuditResult).values({
-        ruleId: rule.id,
-        orgId: rule.orgId,
-        resultStatus,
-        exceptionCount: ruleExceptions.length,
-        executionTimeMs,
-      }).returning();
+      const [result] = await db
+        .insert(continuousAuditResult)
+        .values({
+          ruleId: rule.id,
+          orgId: rule.orgId,
+          resultStatus,
+          exceptionCount: ruleExceptions.length,
+          executionTimeMs,
+        })
+        .returning();
 
       // Store exceptions
       if (ruleExceptions.length > 0) {
@@ -78,10 +95,10 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
       }
 
       // Update last executed
-      await db.update(continuousAuditRule)
+      await db
+        .update(continuousAuditRule)
         .set({ lastExecutedAt: new Date() })
         .where(eq(continuousAuditRule.id, rule.id));
-
     } catch (error) {
       const executionTimeMs = Date.now() - startTime;
       await db.insert(continuousAuditResult).values({
@@ -96,11 +113,15 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
     }
   }
 
-  console.log(`[cron:continuous-audit-runner] Completed: ${dueRules.length} rules, ${passed} passed, ${exceptionsFound} with exceptions, ${errors} errors`);
+  console.log(
+    `[cron:continuous-audit-runner] Completed: ${dueRules.length} rules, ${passed} passed, ${exceptionsFound} with exceptions, ${errors} errors`,
+  );
   return { processed: dueRules.length, passed, exceptionsFound, errors };
 }
 
-async function executeBuiltinRule(rule: typeof continuousAuditRule.$inferSelect) {
+async function executeBuiltinRule(
+  rule: typeof continuousAuditRule.$inferSelect,
+) {
   const dataSource = rule.dataSource as Record<string, unknown>;
   const checkType = dataSource?.check_type as string;
   // Built-in rule implementations would go here
@@ -108,14 +129,18 @@ async function executeBuiltinRule(rule: typeof continuousAuditRule.$inferSelect)
   return [];
 }
 
-async function executeCustomSqlRule(rule: typeof continuousAuditRule.$inferSelect) {
+async function executeCustomSqlRule(
+  rule: typeof continuousAuditRule.$inferSelect,
+) {
   const dataSource = rule.dataSource as Record<string, unknown>;
   const query = dataSource?.query as string;
   if (!query) return [];
 
   // Execute with read-only role and timeout
   try {
-    const rows = await db.execute(sql.raw(`SET LOCAL statement_timeout = '60s'; ${query}`));
+    const rows = await db.execute(
+      sql.raw(`SET LOCAL statement_timeout = '60s'; ${query}`),
+    );
     return (rows as any[]).map((r) => ({
       description: JSON.stringify(r),
       detail: r,

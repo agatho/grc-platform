@@ -16,7 +16,11 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, RotateCcw, Save, Loader2 } from "lucide-react";
 import Link from "next/link";
 import type { CCIFactorKey, CCIFactorWeights } from "@grc/shared";
-import { DEFAULT_CCI_WEIGHTS, CCI_FACTOR_KEYS, calculateWeightedCCI } from "@grc/shared";
+import {
+  DEFAULT_CCI_WEIGHTS,
+  CCI_FACTOR_KEYS,
+  calculateWeightedCCI,
+} from "@grc/shared";
 
 const FACTOR_LABELS: Record<CCIFactorKey, string> = {
   task_compliance: "Task Compliance",
@@ -38,8 +42,12 @@ const SAMPLE_SCORES: Record<CCIFactorKey, number> = {
 
 export default function CCIConfigPage() {
   const t = useTranslations("cci");
-  const [weights, setWeights] = useState<CCIFactorWeights>({ ...DEFAULT_CCI_WEIGHTS });
-  const [originalWeights, setOriginalWeights] = useState<CCIFactorWeights>({ ...DEFAULT_CCI_WEIGHTS });
+  const [weights, setWeights] = useState<CCIFactorWeights>({
+    ...DEFAULT_CCI_WEIGHTS,
+  });
+  const [originalWeights, setOriginalWeights] = useState<CCIFactorWeights>({
+    ...DEFAULT_CCI_WEIGHTS,
+  });
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,11 +88,14 @@ export default function CCIConfigPage() {
     return CCI_FACTOR_KEYS.some((key) => weights[key] !== originalWeights[key]);
   }, [weights, originalWeights]);
 
-  const handleWeightChange = useCallback((key: CCIFactorKey, value: number[]) => {
-    setWeights((prev) => ({ ...prev, [key]: value[0] / 100 }));
-    setSuccess(false);
-    setError(null);
-  }, []);
+  const handleWeightChange = useCallback(
+    (key: CCIFactorKey, value: number[]) => {
+      setWeights((prev) => ({ ...prev, [key]: value[0] / 100 }));
+      setSuccess(false);
+      setError(null);
+    },
+    [],
+  );
 
   const handleRestore = useCallback(() => {
     setWeights({ ...DEFAULT_CCI_WEIGHTS });
@@ -138,8 +149,12 @@ export default function CCIConfigPage() {
             </Button>
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{t("configTitle")}</h1>
-            <p className="mt-1 text-sm text-gray-500">{t("configDescription")}</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {t("configTitle")}
+            </h1>
+            <p className="mt-1 text-sm text-gray-500">
+              {t("configDescription")}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -163,7 +178,9 @@ export default function CCIConfigPage() {
       </div>
 
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
       )}
       {success && (
         <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
@@ -200,8 +217,16 @@ export default function CCIConfigPage() {
               ))}
 
               <div className="mt-4 flex items-center justify-between border-t pt-4">
-                <span className="text-sm font-medium text-gray-700">{t("totalWeight")}</span>
-                <Badge className={isValid ? "bg-green-100 text-green-800" : "bg-red-100 text-red-800"}>
+                <span className="text-sm font-medium text-gray-700">
+                  {t("totalWeight")}
+                </span>
+                <Badge
+                  className={
+                    isValid
+                      ? "bg-green-100 text-green-800"
+                      : "bg-red-100 text-red-800"
+                  }
+                >
                   {(weightSum * 100).toFixed(0)}%
                   {isValid ? "" : ` (${t("mustEqual100")})`}
                 </Badge>
@@ -222,15 +247,20 @@ export default function CCIConfigPage() {
                 <span className="text-4xl font-bold text-blue-600">
                   {previewScore.toFixed(1)}
                 </span>
-                <span className="text-sm text-gray-500">{t("previewScore")}</span>
+                <span className="text-sm text-gray-500">
+                  {t("previewScore")}
+                </span>
               </div>
               <div className="mt-4 space-y-2">
                 {CCI_FACTOR_KEYS.map((key) => (
-                  <div key={key} className="flex items-center justify-between text-xs">
+                  <div
+                    key={key}
+                    className="flex items-center justify-between text-xs"
+                  >
                     <span className="text-gray-600">{FACTOR_LABELS[key]}</span>
                     <span className="font-medium">
-                      {SAMPLE_SCORES[key]} x {(weights[key] * 100).toFixed(0)}% ={" "}
-                      {(SAMPLE_SCORES[key] * weights[key]).toFixed(1)}
+                      {SAMPLE_SCORES[key]} x {(weights[key] * 100).toFixed(0)}%
+                      = {(SAMPLE_SCORES[key] * weights[key]).toFixed(1)}
                     </span>
                   </div>
                 ))}

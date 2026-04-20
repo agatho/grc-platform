@@ -129,7 +129,12 @@ function EsgDashboardInner() {
           <h1 className="text-2xl font-bold text-gray-900">{t("title")}</h1>
           <p className="text-sm text-gray-500 mt-1">{t("dashboard")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchDashboard} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchDashboard}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -166,11 +171,16 @@ function EsgDashboardInner() {
 
       {/* Data Quality Breakdown */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("metrics.dataQuality")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("metrics.dataQuality")}
+        </h2>
         <div className="grid grid-cols-3 gap-4">
           {(["measured", "estimated", "calculated"] as const).map((q) => {
             const count = d?.dataQuality?.[q] ?? 0;
-            const total = (d?.dataQuality?.measured ?? 0) + (d?.dataQuality?.estimated ?? 0) + (d?.dataQuality?.calculated ?? 0);
+            const total =
+              (d?.dataQuality?.measured ?? 0) +
+              (d?.dataQuality?.estimated ?? 0) +
+              (d?.dataQuality?.calculated ?? 0);
             const pct = total > 0 ? Math.round((count / total) * 100) : 0;
             return (
               <div key={q} className="text-center">
@@ -188,21 +198,48 @@ function EsgDashboardInner() {
         {/* Scope Emissions */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">{t("scopeEmissions")}</h2>
-            <Link href="/esg/emissions" className="text-sm text-blue-600 hover:text-blue-800">
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("scopeEmissions")}
+            </h2>
+            <Link
+              href="/esg/emissions"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
               {t("viewAll")}
             </Link>
           </div>
           <div className="space-y-3">
-            <ScopeBar label={t("scopes.scope1")} value={d?.scopeEmissions?.scope1 ?? 0} total={totalEmissions} color="bg-red-400" />
-            <ScopeBar label={t("scopes.scope2Location")} value={d?.scopeEmissions?.scope2 ?? 0} total={totalEmissions} color="bg-orange-400" />
-            <ScopeBar label={t("scopes.scope3")} value={d?.scopeEmissions?.scope3 ?? 0} total={totalEmissions} color="bg-yellow-400" />
+            <ScopeBar
+              label={t("scopes.scope1")}
+              value={d?.scopeEmissions?.scope1 ?? 0}
+              total={totalEmissions}
+              color="bg-red-400"
+            />
+            <ScopeBar
+              label={t("scopes.scope2Location")}
+              value={d?.scopeEmissions?.scope2 ?? 0}
+              total={totalEmissions}
+              color="bg-orange-400"
+            />
+            <ScopeBar
+              label={t("scopes.scope3")}
+              value={d?.scopeEmissions?.scope3 ?? 0}
+              total={totalEmissions}
+              color="bg-yellow-400"
+            />
           </div>
           <div className="mt-4 pt-3 border-t border-gray-100 flex items-center justify-between">
-            <span className="text-sm font-medium text-gray-700">{t("total")}: {totalEmissions.toLocaleString()} {t("co2e")}</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("total")}: {totalEmissions.toLocaleString()} {t("co2e")}
+            </span>
             {emissionDelta !== 0 && (
-              <span className={`text-xs flex items-center gap-1 ${emissionDelta < 0 ? "text-green-600" : "text-red-600"}`}>
-                <TrendingDown size={12} className={emissionDelta > 0 ? "rotate-180" : ""} />
+              <span
+                className={`text-xs flex items-center gap-1 ${emissionDelta < 0 ? "text-green-600" : "text-red-600"}`}
+              >
+                <TrendingDown
+                  size={12}
+                  className={emissionDelta > 0 ? "rotate-180" : ""}
+                />
                 {Math.abs(emissionDelta).toLocaleString()} {t("vsLastYear")}
               </span>
             )}
@@ -212,13 +249,20 @@ function EsgDashboardInner() {
         {/* Material Topics */}
         <div className="rounded-lg border border-gray-200 bg-white p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-semibold text-gray-900">{t("materialTopicsOverview")}</h2>
-            <Link href="/esg/materiality" className="text-sm text-blue-600 hover:text-blue-800">
+            <h2 className="text-base font-semibold text-gray-900">
+              {t("materialTopicsOverview")}
+            </h2>
+            <Link
+              href="/esg/materiality"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
               {t("viewAll")}
             </Link>
           </div>
           {!d?.materialTopics?.length ? (
-            <p className="text-sm text-gray-400 py-8 text-center">{t("noData")}</p>
+            <p className="text-sm text-gray-400 py-8 text-center">
+              {t("noData")}
+            </p>
           ) : (
             <div className="space-y-2">
               {d.materialTopics.slice(0, 8).map((topic) => (
@@ -227,9 +271,18 @@ function EsgDashboardInner() {
                   className="flex items-center justify-between rounded-lg border border-gray-100 bg-gray-50 px-3 py-2"
                 >
                   <div className="flex items-center gap-2 min-w-0">
-                    <Leaf size={14} className={topic.isMaterial ? "text-green-600" : "text-gray-400"} />
-                    <span className="text-sm font-medium text-gray-900 truncate">{topic.topicName}</span>
-                    <Badge variant="outline" className="text-[10px]">{topic.esrsStandard}</Badge>
+                    <Leaf
+                      size={14}
+                      className={
+                        topic.isMaterial ? "text-green-600" : "text-gray-400"
+                      }
+                    />
+                    <span className="text-sm font-medium text-gray-900 truncate">
+                      {topic.topicName}
+                    </span>
+                    <Badge variant="outline" className="text-[10px]">
+                      {topic.esrsStandard}
+                    </Badge>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-gray-500 shrink-0 ml-2">
                     <span>I: {topic.impactScore?.toFixed(1) ?? "-"}</span>
@@ -245,13 +298,20 @@ function EsgDashboardInner() {
       {/* Target Progress Cards */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-base font-semibold text-gray-900">{t("targetProgress")}</h2>
-          <Link href="/esg/targets" className="text-sm text-blue-600 hover:text-blue-800">
+          <h2 className="text-base font-semibold text-gray-900">
+            {t("targetProgress")}
+          </h2>
+          <Link
+            href="/esg/targets"
+            className="text-sm text-blue-600 hover:text-blue-800"
+          >
             {t("viewAll")}
           </Link>
         </div>
         {!d?.targets?.length ? (
-          <p className="text-sm text-gray-400 py-8 text-center">{t("noData")}</p>
+          <p className="text-sm text-gray-400 py-8 text-center">
+            {t("noData")}
+          </p>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {d.targets.slice(0, 6).map((target) => (
@@ -260,7 +320,9 @@ function EsgDashboardInner() {
                 href="/esg/targets"
                 className="rounded-lg border border-gray-100 bg-gray-50 p-4 hover:bg-blue-50 transition-colors"
               >
-                <p className="text-sm font-medium text-gray-900 mb-2">{target.name}</p>
+                <p className="text-sm font-medium text-gray-900 mb-2">
+                  {target.name}
+                </p>
                 <div className="flex items-center gap-2 mb-2">
                   <TargetStatusBadge status={target.status} t={t} />
                 </div>
@@ -275,10 +337,14 @@ function EsgDashboardInner() {
                             ? "bg-yellow-500"
                             : "bg-red-500"
                     }`}
-                    style={{ width: `${Math.min(100, Math.max(0, target.progress))}%` }}
+                    style={{
+                      width: `${Math.min(100, Math.max(0, target.progress))}%`,
+                    }}
                   />
                 </div>
-                <p className="text-xs text-gray-500 mt-1">{Math.round(target.progress)}%</p>
+                <p className="text-xs text-gray-500 mt-1">
+                  {Math.round(target.progress)}%
+                </p>
               </Link>
             ))}
           </div>
@@ -293,17 +359,26 @@ function EsgDashboardInner() {
               <Shield className="h-4 w-4 text-blue-600" />
               ESG-Risiken im ERM
             </h2>
-            <Link href="/esg/materiality" className="text-sm text-blue-600 hover:text-blue-800">
+            <Link
+              href="/esg/materiality"
+              className="text-sm text-blue-600 hover:text-blue-800"
+            >
               Wesentlichkeitsanalyse
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="rounded-lg bg-gray-50 border border-gray-200 p-4 text-center">
-              <p className="text-3xl font-bold text-gray-900">{esgErmStats.totalMaterialRisks}</p>
-              <p className="text-xs text-gray-500 mt-1">Wesentliche ESG-Risiken (IRO)</p>
+              <p className="text-3xl font-bold text-gray-900">
+                {esgErmStats.totalMaterialRisks}
+              </p>
+              <p className="text-xs text-gray-500 mt-1">
+                Wesentliche ESG-Risiken (IRO)
+              </p>
             </div>
             <div className="rounded-lg bg-blue-50 border border-blue-200 p-4 text-center">
-              <p className="text-3xl font-bold text-blue-700">{esgErmStats.syncedToErm}</p>
+              <p className="text-3xl font-bold text-blue-700">
+                {esgErmStats.syncedToErm}
+              </p>
               <p className="text-xs text-blue-600 mt-1 flex items-center justify-center gap-1">
                 <ArrowRight size={10} /> Im ERM-Register synchronisiert
               </p>
@@ -311,7 +386,8 @@ function EsgDashboardInner() {
           </div>
           {esgErmStats.syncedToErm < esgErmStats.totalMaterialRisks && (
             <p className="text-xs text-amber-600 mt-3">
-              {esgErmStats.totalMaterialRisks - esgErmStats.syncedToErm} Risiken noch nicht synchronisiert.
+              {esgErmStats.totalMaterialRisks - esgErmStats.syncedToErm} Risiken
+              noch nicht synchronisiert.
             </p>
           )}
         </div>
@@ -319,7 +395,9 @@ function EsgDashboardInner() {
 
       {/* Quick Navigation */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
-        <h2 className="text-base font-semibold text-gray-900 mb-4">{t("quickNav")}</h2>
+        <h2 className="text-base font-semibold text-gray-900 mb-4">
+          {t("quickNav")}
+        </h2>
         <div className="grid grid-cols-2 lg:grid-cols-3 gap-3">
           <NavCard href="/esg/materiality" label={t("materiality.title")} />
           <NavCard href="/esg/datapoints" label={t("datapoints.title")} />
@@ -360,7 +438,11 @@ function KpiCard({
         {icon}
         <span className="text-xs font-medium text-gray-600">{label}</span>
       </div>
-      <p className={`text-2xl font-bold ${highlight ? "text-red-700" : "text-gray-900"}`}>{value}</p>
+      <p
+        className={`text-2xl font-bold ${highlight ? "text-red-700" : "text-gray-900"}`}
+      >
+        {value}
+      </p>
       {subtitle && <p className="text-xs text-gray-400 mt-1">{subtitle}</p>}
     </button>
   );
@@ -377,15 +459,30 @@ function NavCard({ href, label }: { href: string; label: string }) {
   );
 }
 
-function ScopeBar({ label, value, total, color }: { label: string; value: number; total: number; color: string }) {
+function ScopeBar({
+  label,
+  value,
+  total,
+  color,
+}: {
+  label: string;
+  value: number;
+  total: number;
+  color: string;
+}) {
   const pct = total > 0 ? Math.round((value / total) * 100) : 0;
   return (
     <div className="flex items-center gap-3">
       <span className="text-sm text-gray-600 w-36 shrink-0">{label}</span>
       <div className="flex-1 h-5 bg-gray-100 rounded-full overflow-hidden">
-        <div className={`h-full rounded-full ${color}`} style={{ width: `${pct}%` }} />
+        <div
+          className={`h-full rounded-full ${color}`}
+          style={{ width: `${pct}%` }}
+        />
       </div>
-      <span className="text-sm font-medium text-gray-700 w-24 text-right">{value.toLocaleString()} t</span>
+      <span className="text-sm font-medium text-gray-700 w-24 text-right">
+        {value.toLocaleString()} t
+      </span>
     </div>
   );
 }
@@ -397,13 +494,21 @@ function QualityBadge({ quality }: { quality: string }) {
     calculated: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
-    <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${colors[quality] ?? "bg-gray-100 text-gray-700 border-gray-300"}`}>
+    <span
+      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold border ${colors[quality] ?? "bg-gray-100 text-gray-700 border-gray-300"}`}
+    >
       {quality}
     </span>
   );
 }
 
-function TargetStatusBadge({ status, t }: { status: string; t: (key: string) => string }) {
+function TargetStatusBadge({
+  status,
+  t,
+}: {
+  status: string;
+  t: (key: string) => string;
+}) {
   const colors: Record<string, string> = {
     on_track: "bg-green-100 text-green-900 border-green-300",
     at_risk: "bg-yellow-100 text-yellow-900 border-yellow-300",
@@ -411,7 +516,10 @@ function TargetStatusBadge({ status, t }: { status: string; t: (key: string) => 
     achieved: "bg-blue-100 text-blue-900 border-blue-300",
   };
   return (
-    <Badge variant="outline" className={`${colors[status] ?? "text-gray-700"} text-[10px]`}>
+    <Badge
+      variant="outline"
+      className={`${colors[status] ?? "text-gray-700"} text-[10px]`}
+    >
       {t(`targetStatus.${status}`)}
     </Badge>
   );

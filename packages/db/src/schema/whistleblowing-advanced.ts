@@ -118,9 +118,7 @@ export const wbInterview = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("wbint_investigation_idx").on(table.investigationId),
-  ],
+  (table) => [index("wbint_investigation_idx").on(table.investigationId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -141,9 +139,7 @@ export const wbInvestigationLog = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("wbil_investigation_idx").on(table.investigationId),
-  ],
+  (table) => [index("wbil_investigation_idx").on(table.investigationId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -249,17 +245,14 @@ export const wbOmbudspersonAssignment = pgTable(
 // 46.8 wb_ombudsperson_activity — IMMUTABLE activity log
 // ──────────────────────────────────────────────────────────────
 
-export const wbOmbudspersonActivity = pgTable(
-  "wb_ombudsperson_activity",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id").notNull(),
-    ombudspersonUserId: uuid("ombudsperson_user_id").notNull(),
-    action: varchar("action", { length: 30 }).notNull(),
-    caseId: uuid("case_id"),
-    detail: jsonb("detail").default("{}"),
-    createdAt: timestamp("created_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const wbOmbudspersonActivity = pgTable("wb_ombudsperson_activity", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  orgId: uuid("org_id").notNull(),
+  ombudspersonUserId: uuid("ombudsperson_user_id").notNull(),
+  action: varchar("action", { length: 30 }).notNull(),
+  caseId: uuid("case_id"),
+  detail: jsonb("detail").default("{}"),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});

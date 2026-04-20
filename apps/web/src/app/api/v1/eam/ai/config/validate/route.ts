@@ -11,17 +11,26 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const config = await db.select().from(eamAiConfig)
-    .where(and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)))
+  const config = await db
+    .select()
+    .from(eamAiConfig)
+    .where(
+      and(eq(eamAiConfig.orgId, ctx.orgId), eq(eamAiConfig.isActive, true)),
+    )
     .limit(1);
 
   if (!config.length) {
-    return Response.json({ error: "No AI provider configured" }, { status: 404 });
+    return Response.json(
+      { error: "No AI provider configured" },
+      { status: 404 },
+    );
   }
 
   try {
     // Decrypt and test connection
-    const decrypted = JSON.parse(Buffer.from(config[0].configEncrypted, "base64").toString());
+    const decrypted = JSON.parse(
+      Buffer.from(config[0].configEncrypted, "base64").toString(),
+    );
     const provider = decrypted.provider;
 
     // Simple validation — in production, each adapter would call the actual API
@@ -37,7 +46,8 @@ export async function POST(req: Request) {
     }
 
     // Update validation status
-    await db.update(eamAiConfig)
+    await db
+      .update(eamAiConfig)
       .set({
         validationStatus: valid ? "valid" : "invalid",
         lastValidatedAt: new Date(),
@@ -49,12 +59,20 @@ export async function POST(req: Request) {
       data: { valid, provider, error: errorMsg },
     });
   } catch (err) {
-    await db.update(eamAiConfig)
-      .set({ validationStatus: "invalid", lastValidatedAt: new Date(), updatedAt: new Date() })
+    await db
+      .update(eamAiConfig)
+      .set({
+        validationStatus: "invalid",
+        lastValidatedAt: new Date(),
+        updatedAt: new Date(),
+      })
       .where(eq(eamAiConfig.id, config[0].id));
 
     return Response.json({
-      data: { valid: false, error: err instanceof Error ? err.message : "Validation failed" },
+      data: {
+        valid: false,
+        error: err instanceof Error ? err.message : "Validation failed",
+      },
     });
   }
 }

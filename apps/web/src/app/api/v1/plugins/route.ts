@@ -16,10 +16,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const [created] = await db
-    .insert(plugin)
-    .values(body.data)
-    .returning();
+  const [created] = await db.insert(plugin).values(body.data).returning();
 
   return Response.json({ data: created }, { status: 201 });
 }
@@ -38,7 +35,10 @@ export async function GET(req: Request) {
   if (category) conditions.push(eq(plugin.category, category));
   if (search) conditions.push(ilike(plugin.name, `%${search}%`));
 
-  const whereClause = conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : undefined;
+  const whereClause =
+    conditions.length > 0
+      ? sql`${sql.join(conditions, sql` AND `)}`
+      : undefined;
 
   const rows = await db
     .select()

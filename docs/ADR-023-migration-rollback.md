@@ -7,6 +7,7 @@
 ## Context
 
 Aktueller Migrations-Flow (seit F-17 Fix in commit `f764147`):
+
 1. Drizzle-generierte Files in `packages/db/drizzle/NNNN_*.sql`
 2. Legacy-Files in `packages/db/src/migrations/*.sql` (Phase-2 zu Ende)
 3. `docker-entrypoint.sh` iteriert beide Verzeichnisse, `psql` mit
@@ -15,6 +16,7 @@ Aktueller Migrations-Flow (seit F-17 Fix in commit `f764147`):
 5. Bei Fehler: Container faehrt weiter hoch, DB ist halb-migriert
 
 Pain-Points:
+
 - **ON_ERROR_STOP=0 maskiert Fehler** — eine defekte Migration wird
   stillschweigend uebersprungen
 - **Kein Rollback-Skript** je Migration — DBA muss manuell ermitteln,
@@ -25,6 +27,7 @@ Pain-Points:
   oder Staging spiegeln
 
 Fragen die heute unbeantwortet sind:
+
 - Wie rollback-bar ist eine bereits geloschte-Spalte?
 - Wann ist eine Migration "breaking" fuer zurueck-gerollten Code?
 - Was macht man mit fehlgeschlagenen Migrations auf einem von drei
@@ -44,6 +47,7 @@ aber dann mit explizit zugewiesener ignore-list (Whitelist).
 ### 2. Vorwaerts-nur-Policy mit Compensating-Migrations
 
 **Kein** automatisches Rollback. Stattdessen:
+
 - Bricht Migration 0105 ab: keine automatische Reversierung
 - DBA-Entscheidung: (a) Fehler fixen und 0105 re-run, oder
   (b) 0106 als "Compensating-Migration" schreiben
@@ -84,6 +88,7 @@ CI-Check: neue Migration ohne Header -> Fail.
 ### 5. Prod-Runbook
 
 Neues Kapitel in `docs/runbook.md`:
+
 - Migration-Failure-Detection (Healthcheck + audit-log)
 - Manuelles-Rollback (selten, nur wenn echter Daten-Verlust droht)
 - Compensating-Migration (der Normalfall — schneller, sicherer)
@@ -104,11 +109,13 @@ Neues Kapitel in `docs/runbook.md`:
 ## Consequences
 
 ### Positiv
+
 - Fehlgeschlagene Deploys brechen statt zu maskieren
 - Rollback-Entscheidungen werden dokumentiert (Commit + audit_log)
 - Staging-Rehearsal findet Probleme vor Prod
 
 ### Negativ
+
 - Striktere Policy bedeutet: nicht jede kleine Schema-Aenderung ist
   gleich deployed. Code-Deploys-ohne-DB-Change sind der Default-Fall,
   DB-Aenderungen brauchen geplante Fenster
@@ -117,6 +124,7 @@ Neues Kapitel in `docs/runbook.md`:
   Anforderung
 
 ### Neutral
+
 - Bestehende Migrations werden NICHT nachtraeglich mit Header versehen
 - Drift-Check und RLS-Coverage-Check bleiben unveraendert
 - ADR-014 Migration-Policy bleibt das Framework, ADR-023 verfeinert

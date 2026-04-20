@@ -1,8 +1,4 @@
-import {
-  db,
-  regulatoryFeedItem,
-  regulatoryRelevanceScore,
-} from "@grc/db";
+import { db, regulatoryFeedItem, regulatoryRelevanceScore } from "@grc/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import { count } from "drizzle-orm";
@@ -15,12 +11,12 @@ export async function GET(req: Request) {
   const { page, limit, offset, searchParams } = paginate(req);
   const minRelevance = Number(searchParams.get("minRelevance") ?? 0);
 
-  const conditions = [
-    eq(regulatoryRelevanceScore.orgId, ctx.orgId),
-  ];
+  const conditions = [eq(regulatoryRelevanceScore.orgId, ctx.orgId)];
 
   if (minRelevance > 0) {
-    conditions.push(sql`${regulatoryRelevanceScore.relevanceScore} >= ${minRelevance}`);
+    conditions.push(
+      sql`${regulatoryRelevanceScore.relevanceScore} >= ${minRelevance}`,
+    );
   }
 
   const where = and(...conditions);

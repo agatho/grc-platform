@@ -20,7 +20,12 @@ function parseScoreData(data: unknown): ScoreData {
   };
 }
 
-export function ComplianceScoreWidget({ data, config, isLoading, error }: WidgetProps) {
+export function ComplianceScoreWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -92,7 +97,9 @@ export function ComplianceScoreWidget({ data, config, isLoading, error }: Widget
         </div>
       </div>
       {scoreData.label && (
-        <div className="mt-2 text-xs text-muted-foreground">{scoreData.label}</div>
+        <div className="mt-2 text-xs text-muted-foreground">
+          {scoreData.label}
+        </div>
       )}
     </div>
   );

@@ -14,7 +14,10 @@ const TEMPLATE_KEY_MAP: Record<string, string> = {
   custom: "task_custom",
 };
 
-const NOTIFICATION_TYPE_MAP: Record<string, "deadline_approaching" | "escalation" | "task_assigned"> = {
+const NOTIFICATION_TYPE_MAP: Record<
+  string,
+  "deadline_approaching" | "escalation" | "task_assigned"
+> = {
   reminder: "deadline_approaching",
   escalation: "escalation",
   custom: "task_assigned",
@@ -35,11 +38,7 @@ export async function POST(
     .select()
     .from(task)
     .where(
-      and(
-        eq(task.id, id),
-        eq(task.orgId, ctx.orgId),
-        isNull(task.deletedAt),
-      ),
+      and(eq(task.id, id), eq(task.orgId, ctx.orgId), isNull(task.deletedAt)),
     );
 
   if (!existing) {
@@ -72,7 +71,8 @@ export async function POST(
   if (recentCount >= 3) {
     return Response.json(
       {
-        error: "Rate limit exceeded: maximum 3 email notifications per task per 24 hours",
+        error:
+          "Rate limit exceeded: maximum 3 email notifications per task per 24 hours",
       },
       { status: 429 },
     );

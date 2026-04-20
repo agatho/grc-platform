@@ -32,10 +32,27 @@ export type CertFramework =
   | "eu_cra_2024"
   | "eu_dora"
   | "eu_ai_act";
-export type CertAssessmentStatus = "draft" | "in_progress" | "completed" | "approved" | "expired";
-export type CertMockAuditType = "stage_1" | "stage_2" | "surveillance" | "recertification";
-export type CertMockAuditStatus = "draft" | "in_progress" | "completed" | "reviewed";
-export type CertEvidenceStatus = "draft" | "generating" | "complete" | "submitted";
+export type CertAssessmentStatus =
+  | "draft"
+  | "in_progress"
+  | "completed"
+  | "approved"
+  | "expired";
+export type CertMockAuditType =
+  | "stage_1"
+  | "stage_2"
+  | "surveillance"
+  | "recertification";
+export type CertMockAuditStatus =
+  | "draft"
+  | "in_progress"
+  | "completed"
+  | "reviewed";
+export type CertEvidenceStatus =
+  | "draft"
+  | "generating"
+  | "complete"
+  | "submitted";
 
 export interface CertReadinessAssessment {
   id: string;

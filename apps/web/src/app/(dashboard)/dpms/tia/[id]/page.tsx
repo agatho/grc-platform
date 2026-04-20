@@ -4,8 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useParams, useRouter } from "next/navigation";
 import {
-  Loader2, ArrowLeft, Globe, Scale, FileText,
-  Calendar, User, ShieldAlert,
+  Loader2,
+  ArrowLeft,
+  Globe,
+  Scale,
+  FileText,
+  Calendar,
+  User,
+  ShieldAlert,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -55,7 +61,11 @@ const LEGAL_BASIS_LABELS: Record<string, string> = {
 
 function fmtDate(v: string | null | undefined): string {
   if (!v) return "—";
-  return new Date(v).toLocaleDateString("de-DE", { day: "2-digit", month: "2-digit", year: "numeric" });
+  return new Date(v).toLocaleDateString("de-DE", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+  });
 }
 
 function isReviewDue(nextReview: string | null): boolean {
@@ -106,7 +116,11 @@ function TiaDetailInner() {
   }
 
   if (!data) {
-    return <p className="text-center text-gray-500 py-12">Transfer Impact Assessment nicht gefunden.</p>;
+    return (
+      <p className="text-center text-gray-500 py-12">
+        Transfer Impact Assessment nicht gefunden.
+      </p>
+    );
   }
 
   const reviewDue = isReviewDue(data.nextReviewDate);
@@ -116,7 +130,11 @@ function TiaDetailInner() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dpms/tia")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dpms/tia")}
+          >
             <ArrowLeft size={16} />
           </Button>
           <div>
@@ -146,7 +164,10 @@ function TiaDetailInner() {
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           <FieldRow label="Zielland" value={data.transferCountry} />
-          <FieldRow label="Rechtsgrundlage" value={LEGAL_BASIS_LABELS[data.legalBasis] ?? data.legalBasis} />
+          <FieldRow
+            label="Rechtsgrundlage"
+            value={LEGAL_BASIS_LABELS[data.legalBasis] ?? data.legalBasis}
+          />
           <FieldRow
             label="Risikobewertung"
             value={RISK_LABELS[data.riskRating] ?? data.riskRating}
@@ -162,7 +183,9 @@ function TiaDetailInner() {
           <Scale size={14} /> Schrems-II-Bewertung
         </h2>
         {data.schremsIiAssessment ? (
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">{data.schremsIiAssessment}</p>
+          <p className="text-sm text-gray-800 whitespace-pre-wrap">
+            {data.schremsIiAssessment}
+          </p>
         ) : (
           <p className="text-sm text-gray-400 italic">
             Keine Schrems-II-Bewertung erfasst.
@@ -176,25 +199,35 @@ function TiaDetailInner() {
           <ShieldAlert size={14} /> Risikobewertung und Schutzmaßnahmen
         </h2>
         <div className="space-y-4">
-          <div className={`rounded-lg p-4 ${
-            data.riskRating === "high"
-              ? "bg-red-50 border border-red-200"
-              : data.riskRating === "medium"
-                ? "bg-yellow-50 border border-yellow-200"
-                : "bg-green-50 border border-green-200"
-          }`}>
+          <div
+            className={`rounded-lg p-4 ${
+              data.riskRating === "high"
+                ? "bg-red-50 border border-red-200"
+                : data.riskRating === "medium"
+                  ? "bg-yellow-50 border border-yellow-200"
+                  : "bg-green-50 border border-green-200"
+            }`}
+          >
             <div className="flex items-center gap-2">
-              <ShieldAlert size={16} className={
-                data.riskRating === "high" ? "text-red-600" :
-                data.riskRating === "medium" ? "text-yellow-600" : "text-green-600"
-              } />
+              <ShieldAlert
+                size={16}
+                className={
+                  data.riskRating === "high"
+                    ? "text-red-600"
+                    : data.riskRating === "medium"
+                      ? "text-yellow-600"
+                      : "text-green-600"
+                }
+              />
               <span className="font-medium text-sm">
-                Risikoeinstufung: {RISK_LABELS[data.riskRating] ?? data.riskRating}
+                Risikoeinstufung:{" "}
+                {RISK_LABELS[data.riskRating] ?? data.riskRating}
               </span>
             </div>
             {data.riskRating === "high" && (
               <p className="text-sm mt-2 text-red-700">
-                Hohes Risiko: Zusätzliche Schutzmaßnahmen und ggf. Aussetzung des Transfers erforderlich.
+                Hohes Risiko: Zusätzliche Schutzmaßnahmen und ggf. Aussetzung
+                des Transfers erforderlich.
               </p>
             )}
             {data.riskRating === "medium" && (
@@ -217,9 +250,13 @@ function TiaDetailInner() {
           <FileText size={14} /> Unterstützende Dokumente
         </h2>
         {data.supportingDocuments ? (
-          <p className="text-sm text-gray-800 whitespace-pre-wrap">{data.supportingDocuments}</p>
+          <p className="text-sm text-gray-800 whitespace-pre-wrap">
+            {data.supportingDocuments}
+          </p>
         ) : (
-          <p className="text-sm text-gray-400 italic">Keine Dokumente hinterlegt.</p>
+          <p className="text-sm text-gray-400 italic">
+            Keine Dokumente hinterlegt.
+          </p>
         )}
       </div>
 
@@ -229,8 +266,14 @@ function TiaDetailInner() {
           <User size={14} /> Verantwortung und Termine
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <FieldRow label="Verantwortlich" value={data.responsibleName ?? "—"} />
-          <FieldRow label="Bewertungsdatum" value={fmtDate(data.assessmentDate)} />
+          <FieldRow
+            label="Verantwortlich"
+            value={data.responsibleName ?? "—"}
+          />
+          <FieldRow
+            label="Bewertungsdatum"
+            value={fmtDate(data.assessmentDate)}
+          />
           <FieldRow
             label="Nächste Überprüfung"
             value={fmtDate(data.nextReviewDate)}
@@ -248,8 +291,8 @@ function TiaDetailInner() {
             Überprüfung überfällig
           </div>
           <p className="text-sm text-red-600 mt-1">
-            Die nächste Überprüfung war am {fmtDate(data.nextReviewDate)} fällig.
-            Bitte aktualisieren Sie die Bewertung zeitnah.
+            Die nächste Überprüfung war am {fmtDate(data.nextReviewDate)}{" "}
+            fällig. Bitte aktualisieren Sie die Bewertung zeitnah.
           </p>
         </div>
       )}
@@ -275,9 +318,13 @@ function FieldRow({
   return (
     <div>
       <dt className="text-xs font-medium text-gray-500">{label}</dt>
-      <dd className={`text-sm mt-0.5 ${highlight ? "text-red-600 font-semibold" : "text-gray-900"}`}>
+      <dd
+        className={`text-sm mt-0.5 ${highlight ? "text-red-600 font-semibold" : "text-gray-900"}`}
+      >
         {badge && badgeColors ? (
-          <Badge className={`${badgeColors[badge] ?? "bg-gray-100"} text-xs`}>{value}</Badge>
+          <Badge className={`${badgeColors[badge] ?? "bg-gray-100"} text-xs`}>
+            {value}
+          </Badge>
         ) : (
           value
         )}

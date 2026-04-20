@@ -109,6 +109,11 @@ export interface ExcelImportResult {
 
 export interface MyBPMHomepageData {
   recentlyViewed: { id: string; name: string; lastViewed: string }[];
-  ownedProcesses: { id: string; name: string; status: string; health: string }[];
+  ownedProcesses: {
+    id: string;
+    name: string;
+    status: string;
+    health: string;
+  }[];
   pendingGovernance: { id: string; name: string; action: string }[];
 }

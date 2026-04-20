@@ -1,11 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import type {
-  Process,
-  ProcessVersion,
-  ProcessStep,
-} from "@grc/shared";
+import type { Process, ProcessVersion, ProcessStep } from "@grc/shared";
 import type { RiskOverlayData } from "@/components/bpmn/bpmn-editor";
 
 // ---------------------------------------------------------------------------

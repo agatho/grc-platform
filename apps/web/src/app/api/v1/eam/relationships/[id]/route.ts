@@ -19,7 +19,12 @@ export async function DELETE(
   const result = await withAuditContext(ctx, async (tx) => {
     const [deleted] = await tx
       .delete(architectureRelationship)
-      .where(and(eq(architectureRelationship.id, id), eq(architectureRelationship.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(architectureRelationship.id, id),
+          eq(architectureRelationship.orgId, ctx.orgId),
+        ),
+      )
       .returning({ id: architectureRelationship.id });
     return deleted;
   });

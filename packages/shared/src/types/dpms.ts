@@ -1,11 +1,40 @@
 // Data Protection Management System (DPMS) types (Sprint 7)
-export type RopaLegalBasis = "consent" | "contract" | "legal_obligation" | "vital_interest" | "public_interest" | "legitimate_interest";
+export type RopaLegalBasis =
+  | "consent"
+  | "contract"
+  | "legal_obligation"
+  | "vital_interest"
+  | "public_interest"
+  | "legitimate_interest";
 export type RopaStatus = "draft" | "active" | "under_review" | "archived";
-export type DpiaStatus = "draft" | "in_progress" | "completed" | "pending_dpo_review" | "approved" | "rejected";
-export type DsrType = "access" | "erasure" | "restriction" | "portability" | "objection";
-export type DsrStatus = "received" | "verified" | "processing" | "response_sent" | "closed" | "rejected";
+export type DpiaStatus =
+  | "draft"
+  | "in_progress"
+  | "completed"
+  | "pending_dpo_review"
+  | "approved"
+  | "rejected";
+export type DsrType =
+  | "access"
+  | "erasure"
+  | "restriction"
+  | "portability"
+  | "objection";
+export type DsrStatus =
+  | "received"
+  | "verified"
+  | "processing"
+  | "response_sent"
+  | "closed"
+  | "rejected";
 export type BreachSeverity = "low" | "medium" | "high" | "critical";
-export type BreachStatus = "detected" | "assessing" | "notifying_dpa" | "notifying_individuals" | "remediation" | "closed";
+export type BreachStatus =
+  | "detected"
+  | "assessing"
+  | "notifying_dpa"
+  | "notifying_individuals"
+  | "remediation"
+  | "closed";
 export type TiaLegalBasis = "adequacy" | "sccs" | "bcrs" | "derogation";
 export type TiaRiskRating = "low" | "medium" | "high";
 

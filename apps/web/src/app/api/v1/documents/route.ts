@@ -101,25 +101,27 @@ export async function POST(req: Request) {
         ownerId: body.data.ownerId,
         reviewerId: body.data.reviewerId,
         approverId: body.data.approverId,
-        expiresAt: body.data.expiresAt ? new Date(body.data.expiresAt) : undefined,
-        reviewDate: body.data.reviewDate ? new Date(body.data.reviewDate) : undefined,
+        expiresAt: body.data.expiresAt
+          ? new Date(body.data.expiresAt)
+          : undefined,
+        reviewDate: body.data.reviewDate
+          ? new Date(body.data.reviewDate)
+          : undefined,
         createdBy: ctx.userId,
         updatedBy: ctx.userId,
       })
       .returning();
 
     // Create initial version
-    await tx
-      .insert(documentVersion)
-      .values({
-        documentId: row.id,
-        orgId: ctx.orgId,
-        versionNumber: 1,
-        content: body.data.content,
-        changeSummary: "Initial version",
-        isCurrent: true,
-        createdBy: ctx.userId,
-      });
+    await tx.insert(documentVersion).values({
+      documentId: row.id,
+      orgId: ctx.orgId,
+      versionNumber: 1,
+      content: body.data.content,
+      changeSummary: "Initial version",
+      isCurrent: true,
+      createdBy: ctx.userId,
+    });
 
     // Notify owner
     if (body.data.ownerId && body.data.ownerId !== ctx.userId) {
@@ -176,7 +178,16 @@ export async function GET(req: Request) {
   const categoryParam = searchParams.get("category");
   if (categoryParam) {
     const categories = categoryParam.split(",") as Array<
-      "policy" | "procedure" | "guideline" | "template" | "record" | "tom" | "dpa" | "bcp" | "soa" | "other"
+      | "policy"
+      | "procedure"
+      | "guideline"
+      | "template"
+      | "record"
+      | "tom"
+      | "dpa"
+      | "bcp"
+      | "soa"
+      | "other"
     >;
     conditions.push(inArray(document.category, categories));
   }
@@ -192,7 +203,10 @@ export async function GET(req: Request) {
   if (tagsParam) {
     const tags = tagsParam.split(",");
     conditions.push(
-      sql`${document.tags} && ARRAY[${sql.join(tags.map((t) => sql`${t}`), sql`,`)}]::text[]`,
+      sql`${document.tags} && ARRAY[${sql.join(
+        tags.map((t) => sql`${t}`),
+        sql`,`,
+      )}]::text[]`,
     );
   }
 
@@ -209,10 +223,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(document.title, pattern),
-        ilike(document.content, pattern),
-      )!,
+      or(ilike(document.title, pattern), ilike(document.content, pattern))!,
     );
   }
 

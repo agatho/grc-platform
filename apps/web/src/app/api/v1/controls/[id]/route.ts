@@ -1,10 +1,4 @@
-import {
-  db,
-  control,
-  workItem,
-  user,
-  riskControl,
-} from "@grc/db";
+import { db, control, workItem, user, riskControl } from "@grc/db";
 import { updateControlSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
@@ -75,10 +69,7 @@ export async function GET(
     .select()
     .from(riskControl)
     .where(
-      and(
-        eq(riskControl.controlId, id),
-        eq(riskControl.orgId, ctx.orgId),
-      ),
+      and(eq(riskControl.controlId, id), eq(riskControl.orgId, ctx.orgId)),
     );
 
   return Response.json({ data: { ...row, riskLinks } });
@@ -127,21 +118,36 @@ export async function PUT(
     };
 
     if (body.data.title !== undefined) updateValues.title = body.data.title;
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
-    if (body.data.controlType !== undefined) updateValues.controlType = body.data.controlType;
-    if (body.data.frequency !== undefined) updateValues.frequency = body.data.frequency;
-    if (body.data.automationLevel !== undefined) updateValues.automationLevel = body.data.automationLevel;
-    if (body.data.assertions !== undefined) updateValues.assertions = body.data.assertions;
-    if (body.data.ownerId !== undefined) updateValues.ownerId = body.data.ownerId;
-    if (body.data.department !== undefined) updateValues.department = body.data.department;
-    if (body.data.objective !== undefined) updateValues.objective = body.data.objective;
-    if (body.data.testInstructions !== undefined) updateValues.testInstructions = body.data.testInstructions;
-    if (body.data.reviewDate !== undefined) updateValues.reviewDate = body.data.reviewDate;
-    if (body.data.costOnetime !== undefined) updateValues.costOnetime = body.data.costOnetime?.toString() ?? null;
-    if (body.data.costAnnual !== undefined) updateValues.costAnnual = body.data.costAnnual?.toString() ?? null;
-    if (body.data.effortHours !== undefined) updateValues.effortHours = body.data.effortHours?.toString() ?? null;
-    if (body.data.budgetId !== undefined) updateValues.budgetId = body.data.budgetId;
-    if (body.data.costNote !== undefined) updateValues.costNote = body.data.costNote;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
+    if (body.data.controlType !== undefined)
+      updateValues.controlType = body.data.controlType;
+    if (body.data.frequency !== undefined)
+      updateValues.frequency = body.data.frequency;
+    if (body.data.automationLevel !== undefined)
+      updateValues.automationLevel = body.data.automationLevel;
+    if (body.data.assertions !== undefined)
+      updateValues.assertions = body.data.assertions;
+    if (body.data.ownerId !== undefined)
+      updateValues.ownerId = body.data.ownerId;
+    if (body.data.department !== undefined)
+      updateValues.department = body.data.department;
+    if (body.data.objective !== undefined)
+      updateValues.objective = body.data.objective;
+    if (body.data.testInstructions !== undefined)
+      updateValues.testInstructions = body.data.testInstructions;
+    if (body.data.reviewDate !== undefined)
+      updateValues.reviewDate = body.data.reviewDate;
+    if (body.data.costOnetime !== undefined)
+      updateValues.costOnetime = body.data.costOnetime?.toString() ?? null;
+    if (body.data.costAnnual !== undefined)
+      updateValues.costAnnual = body.data.costAnnual?.toString() ?? null;
+    if (body.data.effortHours !== undefined)
+      updateValues.effortHours = body.data.effortHours?.toString() ?? null;
+    if (body.data.budgetId !== undefined)
+      updateValues.budgetId = body.data.budgetId;
+    if (body.data.costNote !== undefined)
+      updateValues.costNote = body.data.costNote;
 
     const [row] = await tx
       .update(control)

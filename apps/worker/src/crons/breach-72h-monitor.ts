@@ -39,7 +39,9 @@ export async function processBreach72hMonitor(): Promise<Breach72hResult> {
     );
 
   if (activeBreaches.length === 0) {
-    console.log("[cron:breach-72h-monitor] No active breaches requiring DPA notification");
+    console.log(
+      "[cron:breach-72h-monitor] No active breaches requiring DPA notification",
+    );
     return { processed: 0, notified: 0 };
   }
 
@@ -53,7 +55,7 @@ export async function processBreach72hMonitor(): Promise<Breach72hResult> {
 
       // Only warn at specific thresholds: 48h, 24h, 0h (or overdue)
       const shouldWarn =
-        (hoursRemaining <= 0) ||
+        hoursRemaining <= 0 ||
         (hoursRemaining > 0 && hoursRemaining <= 1) ||
         (hoursRemaining > 23 && hoursRemaining <= 24) ||
         (hoursRemaining > 47 && hoursRemaining <= 48);
@@ -65,7 +67,11 @@ export async function processBreach72hMonitor(): Promise<Breach72hResult> {
       if (!recipientId) continue;
 
       const urgencyLevel =
-        hoursRemaining <= 0 ? "OVERDUE" : hoursRemaining <= 24 ? "CRITICAL" : "WARNING";
+        hoursRemaining <= 0
+          ? "OVERDUE"
+          : hoursRemaining <= 24
+            ? "CRITICAL"
+            : "WARNING";
 
       await db.insert(notification).values({
         userId: recipientId,

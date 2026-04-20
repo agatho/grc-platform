@@ -27,13 +27,18 @@ export async function POST(req: Request) {
   const { entityId, entityType, maxDepth } = parsed.data;
 
   try {
-    const result = await analyzeImpact(ctx.orgId, entityId, entityType, { maxDepth });
+    const result = await analyzeImpact(ctx.orgId, entityId, entityType, {
+      maxDepth,
+    });
 
     return Response.json(result, {
       headers: { "Cache-Control": "private, max-age=15" },
     });
   } catch (err) {
     console.error("[graph/impact] Error:", err);
-    return Response.json({ error: "Failed to run impact analysis" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to run impact analysis" },
+      { status: 500 },
+    );
   }
 }

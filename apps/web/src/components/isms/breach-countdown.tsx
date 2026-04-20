@@ -16,7 +16,10 @@ function formatTimeRemaining(ms: number): string {
   return `${String(hours).padStart(2, "0")}:${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
-export function BreachCountdown({ deadline, className = "" }: BreachCountdownProps) {
+export function BreachCountdown({
+  deadline,
+  className = "",
+}: BreachCountdownProps) {
   const [remaining, setRemaining] = useState<number>(0);
 
   useEffect(() => {
@@ -44,12 +47,16 @@ export function BreachCountdown({ deadline, className = "" }: BreachCountdownPro
   const textColor = isExpired || isUrgent ? "text-red-700" : "text-yellow-800";
 
   return (
-    <div className={`rounded-lg border-2 px-4 py-3 ${borderColor} ${className}`}>
+    <div
+      className={`rounded-lg border-2 px-4 py-3 ${borderColor} ${className}`}
+    >
       <div className="flex items-center gap-2">
         {isExpired ? (
           <AlertTriangle className="h-5 w-5 text-red-600 shrink-0" />
         ) : (
-          <Clock className={`h-5 w-5 shrink-0 ${isUrgent ? "text-red-600" : "text-yellow-600"}`} />
+          <Clock
+            className={`h-5 w-5 shrink-0 ${isUrgent ? "text-red-600" : "text-yellow-600"}`}
+          />
         )}
         <div>
           <p className={`text-sm font-semibold ${textColor}`}>

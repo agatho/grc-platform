@@ -30,8 +30,7 @@ const RadioGroup = React.forwardRef<HTMLDivElement, RadioGroupProps>(
 );
 RadioGroup.displayName = "RadioGroup";
 
-interface RadioGroupItemProps
-  extends React.InputHTMLAttributes<HTMLInputElement> {
+interface RadioGroupItemProps extends React.InputHTMLAttributes<HTMLInputElement> {
   value: string;
 }
 

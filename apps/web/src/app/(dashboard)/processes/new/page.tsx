@@ -181,7 +181,8 @@ function NewProcessForm() {
         level: form.level,
         notation: "bpmn",
       };
-      if (form.description.trim()) payload.description = form.description.trim();
+      if (form.description.trim())
+        payload.description = form.description.trim();
       if (form.parentProcessId) payload.parentProcessId = form.parentProcessId;
       if (form.processOwnerId) payload.processOwnerId = form.processOwnerId;
       if (form.reviewerId) payload.reviewerId = form.reviewerId;
@@ -208,9 +209,7 @@ function NewProcessForm() {
       toast.success(t("form.created"));
       router.push(processId ? `/processes/${processId}` : "/processes");
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("form.createError"),
-      );
+      toast.error(err instanceof Error ? err.message : t("form.createError"));
     } finally {
       setSaving(false);
     }
@@ -360,7 +359,9 @@ function NewProcessForm() {
                 <SelectValue placeholder={t("form.selectOwner")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="__none__">{t("form.selectOwner")}</SelectItem>
+                <SelectItem value="__none__">
+                  {t("form.selectOwner")}
+                </SelectItem>
                 {orgUsers.map((u) => (
                   <SelectItem key={u.id} value={u.id}>
                     {u.name}

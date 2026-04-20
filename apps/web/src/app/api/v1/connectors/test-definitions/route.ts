@@ -39,7 +39,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(connectorTestDefinition).where(where).orderBy(desc(connectorTestDefinition.severity)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(connectorTestDefinition)
+      .where(where)
+      .orderBy(desc(connectorTestDefinition.severity))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(connectorTestDefinition).where(where),
   ]);
 

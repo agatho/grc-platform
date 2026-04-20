@@ -1,8 +1,26 @@
 // Sprint 52: EAM UX & Unified Catalog types
 
-export type EamCatalogObjectType = "application" | "business_capability" | "it_component" | "data_object" | "provider" | "interface";
+export type EamCatalogObjectType =
+  | "application"
+  | "business_capability"
+  | "it_component"
+  | "data_object"
+  | "provider"
+  | "interface";
 export type CatalogTab = "list" | "dashboard" | "lifecycle" | "eam_dashboard";
-export type EamWidgetType = "donut_category" | "donut_lifecycle" | "donut_fit" | "capability_map" | "context_diagram" | "health_score" | "cost_summary" | "risk_count" | "cve_count" | "keyword_cloud" | "recent_changes" | "lifecycle_countdown";
+export type EamWidgetType =
+  | "donut_category"
+  | "donut_lifecycle"
+  | "donut_fit"
+  | "capability_map"
+  | "context_diagram"
+  | "health_score"
+  | "cost_summary"
+  | "risk_count"
+  | "cve_count"
+  | "keyword_cloud"
+  | "recent_changes"
+  | "lifecycle_countdown";
 
 export interface CatalogFilters {
   objectTypes: EamCatalogObjectType[];

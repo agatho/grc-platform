@@ -1,7 +1,12 @@
 // Sprint 80: Sovereignty Compliance Checker
 // Checks data residency rules and logs violations
 
-import { db, dataResidencyRule, regionTenantConfig, sovereigntyAuditLog } from "@grc/db";
+import {
+  db,
+  dataResidencyRule,
+  regionTenantConfig,
+  sovereigntyAuditLog,
+} from "@grc/db";
 import { eq, sql } from "drizzle-orm";
 
 interface SovereigntyCheckerResult {
@@ -11,10 +16,17 @@ interface SovereigntyCheckerResult {
 }
 
 export async function processSovereigntyComplianceChecker(): Promise<SovereigntyCheckerResult> {
-  const result: SovereigntyCheckerResult = { rulesChecked: 0, violations: 0, errors: 0 };
+  const result: SovereigntyCheckerResult = {
+    rulesChecked: 0,
+    violations: 0,
+    errors: 0,
+  };
 
   try {
-    const rules = await db.select().from(dataResidencyRule).where(eq(dataResidencyRule.isEnforced, true));
+    const rules = await db
+      .select()
+      .from(dataResidencyRule)
+      .where(eq(dataResidencyRule.isEnforced, true));
     result.rulesChecked = rules.length;
 
     for (const rule of rules) {
@@ -40,7 +52,8 @@ export async function processSovereigntyComplianceChecker(): Promise<Sovereignty
           const regionCode = (region as Record<string, string>).code;
 
           const isViolation =
-            (allowedRegions.length > 0 && !allowedRegions.includes(regionCode)) ||
+            (allowedRegions.length > 0 &&
+              !allowedRegions.includes(regionCode)) ||
             (deniedRegions.length > 0 && deniedRegions.includes(regionCode));
 
           if (isViolation) {

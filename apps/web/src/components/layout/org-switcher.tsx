@@ -84,7 +84,10 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
       >
         <Building2 size={16} className="text-gray-400" />
         <span>{currentOrg?.name ?? t("label")}</span>
-        <ChevronDown size={14} className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`} />
+        <ChevronDown
+          size={14}
+          className={`text-gray-400 transition-transform ${open ? "rotate-180" : ""}`}
+        />
       </button>
 
       {open && (
@@ -99,7 +102,9 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
               className="flex items-center justify-between w-full px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
             >
               <span>{org.name}</span>
-              {org.id === currentOrgId && <Check size={14} className="text-blue-600" />}
+              {org.id === currentOrgId && (
+                <Check size={14} className="text-blue-600" />
+              )}
             </button>
           ))}
         </div>

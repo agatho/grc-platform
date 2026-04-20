@@ -51,7 +51,11 @@ export interface SOXScope {
   fiscalYear: number;
   status: "draft" | "finalized" | "approved";
   inScopeProcessIds: string[];
-  inScopeAccounts: Array<{ name: string; significance: string; balance?: number }>;
+  inScopeAccounts: Array<{
+    name: string;
+    significance: string;
+    balance?: number;
+  }>;
 }
 
 export interface SOXWalkthrough {
@@ -69,7 +73,13 @@ export interface ControlDeficiency {
   controlId: string;
   title: string;
   classification: "deficiency" | "significant_deficiency" | "material_weakness";
-  remediationStatus: "open" | "in_progress" | "remediated" | "retesting" | "closed" | "accepted";
+  remediationStatus:
+    | "open"
+    | "in_progress"
+    | "remediated"
+    | "retesting"
+    | "closed"
+    | "accepted";
   rootCauseMethod?: string;
   rootCause?: string;
   remediationDeadline?: string;

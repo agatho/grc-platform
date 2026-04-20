@@ -12,17 +12,27 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const templates = await db.select().from(eamAiPromptTemplate)
-    .where(and(
-      eq(eamAiPromptTemplate.isActive, true),
-      or(isNull(eamAiPromptTemplate.orgId), eq(eamAiPromptTemplate.orgId, ctx.orgId)),
-    ));
+  const templates = await db
+    .select()
+    .from(eamAiPromptTemplate)
+    .where(
+      and(
+        eq(eamAiPromptTemplate.isActive, true),
+        or(
+          isNull(eamAiPromptTemplate.orgId),
+          eq(eamAiPromptTemplate.orgId, ctx.orgId),
+        ),
+      ),
+    );
 
   // Merge: org override wins over system default
-  const merged = new Map<string, typeof templates[0] & { isCustom: boolean }>();
+  const merged = new Map<
+    string,
+    (typeof templates)[0] & { isCustom: boolean }
+  >();
   for (const t of templates) {
     const existing = merged.get(t.templateKey);
-    if (!existing || (t.orgId !== null)) {
+    if (!existing || t.orgId !== null) {
       merged.set(t.templateKey, { ...t, isCustom: t.orgId !== null });
     }
   }
@@ -44,26 +54,38 @@ export async function PUT(req: Request) {
 
   const body = await req.json();
   const parsed = updatePromptSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   // Check if org override already exists
-  const existing = await db.select().from(eamAiPromptTemplate)
-    .where(and(eq(eamAiPromptTemplate.orgId, ctx.orgId), eq(eamAiPromptTemplate.templateKey, key)))
+  const existing = await db
+    .select()
+    .from(eamAiPromptTemplate)
+    .where(
+      and(
+        eq(eamAiPromptTemplate.orgId, ctx.orgId),
+        eq(eamAiPromptTemplate.templateKey, key),
+      ),
+    )
     .limit(1);
 
   let result;
   if (existing.length) {
-    result = await db.update(eamAiPromptTemplate)
+    result = await db
+      .update(eamAiPromptTemplate)
       .set({ ...parsed.data, updatedAt: new Date() })
       .where(eq(eamAiPromptTemplate.id, existing[0].id))
       .returning();
   } else {
-    result = await db.insert(eamAiPromptTemplate).values({
-      orgId: ctx.orgId,
-      templateKey: key,
-      templateText: parsed.data.templateText,
-      variables: parsed.data.variables ?? [],
-    }).returning();
+    result = await db
+      .insert(eamAiPromptTemplate)
+      .values({
+        orgId: ctx.orgId,
+        templateKey: key,
+        templateText: parsed.data.templateText,
+        variables: parsed.data.variables ?? [],
+      })
+      .returning();
   }
 
   return Response.json({ data: result[0] });

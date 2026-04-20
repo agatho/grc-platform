@@ -15,12 +15,27 @@ function classify(
   deadlineAt: Date | null,
   closedAt: Date | null,
   now: Date,
-): { level: EscalationLevel; hoursUntilDeadline: number | null; hoursOverdue: number | null; isClosed: boolean } {
+): {
+  level: EscalationLevel;
+  hoursUntilDeadline: number | null;
+  hoursOverdue: number | null;
+  isClosed: boolean;
+} {
   if (closedAt) {
-    return { level: "none", hoursUntilDeadline: null, hoursOverdue: null, isClosed: true };
+    return {
+      level: "none",
+      hoursUntilDeadline: null,
+      hoursOverdue: null,
+      isClosed: true,
+    };
   }
   if (!deadlineAt) {
-    return { level: "none", hoursUntilDeadline: null, hoursOverdue: null, isClosed: false };
+    return {
+      level: "none",
+      hoursUntilDeadline: null,
+      hoursOverdue: null,
+      isClosed: false,
+    };
   }
   const diffMs = deadlineAt.getTime() - now.getTime();
   const hoursDiff = diffMs / (1000 * 60 * 60);
@@ -110,12 +125,15 @@ export async function GET(_req: Request) {
 
   const breachEnriched = breachRows.map((r) => {
     // Art. 33: 72h after detection for DPA notification, if required and not yet notified
-    const requiresNotification = r.isDpaNotificationRequired && !r.dpaNotifiedAt;
+    const requiresNotification =
+      r.isDpaNotificationRequired && !r.dpaNotifiedAt;
     const deadline = requiresNotification
       ? new Date(new Date(r.detectedAt).getTime() + 72 * 60 * 60 * 1000)
       : null;
     const closed = r.closedAt ? new Date(r.closedAt) : null;
-    const effectiveClosed = r.dpaNotifiedAt ? new Date(r.dpaNotifiedAt) : closed;
+    const effectiveClosed = r.dpaNotifiedAt
+      ? new Date(r.dpaNotifiedAt)
+      : closed;
     const c = classify(deadline, effectiveClosed, now);
     // Art. 33 DSGVO primaer; high-severity breaches fallen zusaetzlich unter
     // NIS2 signifikante Meldepflicht und -- wenn high-risk -- Art. 34 zu
@@ -146,21 +164,28 @@ export async function GET(_req: Request) {
 
   const summary = {
     total: combined.length,
-    criticalOverdue: combined.filter((e) => e.escalationLevel === "critical_overdue").length,
+    criticalOverdue: combined.filter(
+      (e) => e.escalationLevel === "critical_overdue",
+    ).length,
     overdue: combined.filter((e) => e.escalationLevel === "overdue").length,
-    approaching: combined.filter((e) => e.escalationLevel === "approaching").length,
+    approaching: combined.filter((e) => e.escalationLevel === "approaching")
+      .length,
     ok: combined.filter((e) => e.escalationLevel === "none").length,
     byKind: {
       dsr: {
         total: dsrEnriched.length,
         overdue: dsrEnriched.filter(
-          (e) => e.escalationLevel === "overdue" || e.escalationLevel === "critical_overdue",
+          (e) =>
+            e.escalationLevel === "overdue" ||
+            e.escalationLevel === "critical_overdue",
         ).length,
       },
       breach: {
         total: breachEnriched.length,
         overdue: breachEnriched.filter(
-          (e) => e.escalationLevel === "overdue" || e.escalationLevel === "critical_overdue",
+          (e) =>
+            e.escalationLevel === "overdue" ||
+            e.escalationLevel === "critical_overdue",
         ).length,
       },
     },

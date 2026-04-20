@@ -1,10 +1,4 @@
-import {
-  db,
-  process,
-  processVersion,
-  processStep,
-  user,
-} from "@grc/db";
+import { db, process, processVersion, processStep, user } from "@grc/db";
 import { processRisk } from "@grc/db";
 import { updateProcessSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
@@ -71,10 +65,7 @@ export async function GET(
     .select()
     .from(processVersion)
     .where(
-      and(
-        eq(processVersion.processId, id),
-        eq(processVersion.isCurrent, true),
-      ),
+      and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
     );
 
   // Get step count and risk count
@@ -82,12 +73,7 @@ export async function GET(
     db
       .select({ value: count() })
       .from(processStep)
-      .where(
-        and(
-          eq(processStep.processId, id),
-          isNull(processStep.deletedAt),
-        ),
-      ),
+      .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt))),
     db
       .select({ value: count() })
       .from(processRisk)
@@ -175,12 +161,7 @@ export async function PUT(
         updatedBy: ctx.userId,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(process.id, id),
-          eq(process.orgId, ctx.orgId),
-        ),
-      )
+      .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)))
       .returning();
     return row;
   });
@@ -225,12 +206,7 @@ export async function DELETE(
         updatedBy: ctx.userId,
         updatedAt: new Date(),
       })
-      .where(
-        and(
-          eq(process.id, id),
-          eq(process.orgId, ctx.orgId),
-        ),
-      );
+      .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)));
   });
 
   return Response.json({ data: { id, deleted: true } });

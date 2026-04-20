@@ -4,8 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
 import {
-  Search, Loader2, Plus, GitBranch, AlertTriangle,
-  CheckCircle2, Clock, User, Calendar,
+  Search,
+  Loader2,
+  Plus,
+  GitBranch,
+  AlertTriangle,
+  CheckCircle2,
+  Clock,
+  User,
+  Calendar,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -45,7 +52,7 @@ export default function RootCauseAnalysisPage() {
   useEffect(() => {
     // Fetch RCAs — API may not exist yet, gracefully handle
     fetch("/api/v1/root-cause-analysis?limit=50")
-      .then((r) => r.ok ? r.json() : { data: [] })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((json) => setAnalyses(json.data ?? []))
       .catch(() => setAnalyses([]))
       .finally(() => setLoading(false));
@@ -65,7 +72,8 @@ export default function RootCauseAnalysisPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900">Ursachenanalyse</h1>
           <p className="text-sm text-gray-500 mt-1">
-            Root Cause Analysis für Feststellungen und Vorfälle — 5-Why, Ishikawa, Fehlerbaum
+            Root Cause Analysis für Feststellungen und Vorfälle — 5-Why,
+            Ishikawa, Fehlerbaum
           </p>
         </div>
         <Button>
@@ -90,8 +98,12 @@ export default function RootCauseAnalysisPage() {
       {analyses.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <GitBranch size={32} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">Keine Ursachenanalysen vorhanden</p>
-          <p className="text-xs text-gray-400 mt-1">Erstellen Sie eine Analyse aus einer Feststellung oder einem Vorfall</p>
+          <p className="text-sm font-medium text-gray-500">
+            Keine Ursachenanalysen vorhanden
+          </p>
+          <p className="text-xs text-gray-400 mt-1">
+            Erstellen Sie eine Analyse aus einer Feststellung oder einem Vorfall
+          </p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -102,15 +114,24 @@ export default function RootCauseAnalysisPage() {
             >
               <GitBranch size={16} className="text-blue-600 shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">{rca.title}</p>
+                <p className="text-sm font-medium text-gray-900 truncate">
+                  {rca.title}
+                </p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <Badge variant="outline" className="text-[10px]">{methodologyLabels[rca.methodology] ?? rca.methodology}</Badge>
+                  <Badge variant="outline" className="text-[10px]">
+                    {methodologyLabels[rca.methodology] ?? rca.methodology}
+                  </Badge>
                   {rca.rootCausesCount > 0 && (
-                    <span className="text-[10px] text-gray-400">{rca.rootCausesCount} Ursachen identifiziert</span>
+                    <span className="text-[10px] text-gray-400">
+                      {rca.rootCausesCount} Ursachen identifiziert
+                    </span>
                   )}
                 </div>
               </div>
-              <Badge variant="outline" className={`text-xs ${statusColors[rca.status] ?? ""}`}>
+              <Badge
+                variant="outline"
+                className={`text-xs ${statusColors[rca.status] ?? ""}`}
+              >
                 {rca.status}
               </Badge>
               {rca.dueDate && (

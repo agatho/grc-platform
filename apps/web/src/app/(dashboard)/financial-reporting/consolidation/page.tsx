@@ -33,7 +33,9 @@ export default function ConsolidationPage() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/financial-reporting/consolidation-groups");
+      const res = await fetch(
+        "/api/v1/financial-reporting/consolidation-groups",
+      );
       if (res.ok) {
         const json = await res.json();
         setGroups(json.data ?? []);
@@ -63,11 +65,23 @@ export default function ConsolidationPage() {
   const methodBadge = (method: ConsolidationGroup["method"]) => {
     switch (method) {
       case "vollkonsolidierung":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">{methodLabel(method)}</Badge>;
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+            {methodLabel(method)}
+          </Badge>
+        );
       case "equity":
-        return <Badge className="bg-purple-100 text-purple-800 border-purple-300">{methodLabel(method)}</Badge>;
+        return (
+          <Badge className="bg-purple-100 text-purple-800 border-purple-300">
+            {methodLabel(method)}
+          </Badge>
+        );
       case "quotenkonsolidierung":
-        return <Badge className="bg-teal-100 text-teal-800 border-teal-300">{methodLabel(method)}</Badge>;
+        return (
+          <Badge className="bg-teal-100 text-teal-800 border-teal-300">
+            {methodLabel(method)}
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{method}</Badge>;
     }
@@ -76,11 +90,19 @@ export default function ConsolidationPage() {
   const statusBadge = (status: ConsolidationGroup["status"]) => {
     switch (status) {
       case "aktiv":
-        return <Badge className="bg-green-100 text-green-800 border-green-300">Aktiv</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-300">
+            Aktiv
+          </Badge>
+        );
       case "entwurf":
         return <Badge variant="outline">Entwurf</Badge>;
       case "archiviert":
-        return <Badge className="bg-gray-100 text-gray-600 border-gray-300">Archiviert</Badge>;
+        return (
+          <Badge className="bg-gray-100 text-gray-600 border-gray-300">
+            Archiviert
+          </Badge>
+        );
       default:
         return <Badge variant="outline">{status}</Badge>;
     }
@@ -91,13 +113,20 @@ export default function ConsolidationPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Konzernkonsolidierung</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Konzernkonsolidierung
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             Mehrstufige Konsolidierung f&uuml;r Konzernberichterstattung
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -120,7 +149,8 @@ export default function ConsolidationPage() {
               Keine Konsolidierungskreise vorhanden
             </p>
             <p className="mt-1 text-xs text-gray-400">
-              Erstellen Sie einen Konsolidierungskreis, um mit der Konzernberichterstattung zu beginnen.
+              Erstellen Sie einen Konsolidierungskreis, um mit der
+              Konzernberichterstattung zu beginnen.
             </p>
           </div>
         </div>
@@ -130,7 +160,9 @@ export default function ConsolidationPage() {
             <Card key={group.id} className="hover:shadow-sm transition-shadow">
               <CardContent className="p-5">
                 <div className="flex items-start justify-between mb-3">
-                  <h3 className="text-base font-semibold text-gray-900">{group.name}</h3>
+                  <h3 className="text-base font-semibold text-gray-900">
+                    {group.name}
+                  </h3>
                   {statusBadge(group.status)}
                 </div>
 
@@ -143,17 +175,23 @@ export default function ConsolidationPage() {
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Percent size={14} className="text-gray-400" />
                     <span>Beteiligungsquote:</span>
-                    <span className="font-medium text-gray-900">{group.ownershipPercentage}%</span>
+                    <span className="font-medium text-gray-900">
+                      {group.ownershipPercentage}%
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Globe size={14} className="text-gray-400" />
                     <span>W&auml;hrung:</span>
-                    <span className="font-medium text-gray-900">{group.currency}</span>
+                    <span className="font-medium text-gray-900">
+                      {group.currency}
+                    </span>
                   </div>
                   <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Building2 size={14} className="text-gray-400" />
                     <span>Entit&auml;ten:</span>
-                    <span className="font-medium text-gray-900">{group.entityCount}</span>
+                    <span className="font-medium text-gray-900">
+                      {group.entityCount}
+                    </span>
                   </div>
                 </div>
               </CardContent>

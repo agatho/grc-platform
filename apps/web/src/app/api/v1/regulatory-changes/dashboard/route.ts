@@ -1,4 +1,10 @@
-import { db, regulatorySource, regulatoryChange, regulatoryCalendarEvent, regulatoryImpactAssessment } from "@grc/db";
+import {
+  db,
+  regulatorySource,
+  regulatoryChange,
+  regulatoryCalendarEvent,
+  regulatoryImpactAssessment,
+} from "@grc/db";
 import { eq, and, sql, desc, gte, or, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -13,7 +19,9 @@ export async function GET(req: Request) {
       activeSources: sql<number>`count(*) filter (where ${regulatorySource.isActive} = true)`,
     })
     .from(regulatorySource)
-    .where(or(eq(regulatorySource.orgId, ctx.orgId), isNull(regulatorySource.orgId)));
+    .where(
+      or(eq(regulatorySource.orgId, ctx.orgId), isNull(regulatorySource.orgId)),
+    );
 
   const [changeStats] = await db
     .select({
@@ -31,16 +39,25 @@ export async function GET(req: Request) {
     .from(regulatoryImpactAssessment)
     .where(eq(regulatoryImpactAssessment.orgId, ctx.orgId));
 
-  const upcomingDeadlines = await db.select().from(regulatoryCalendarEvent)
-    .where(and(
-      eq(regulatoryCalendarEvent.orgId, ctx.orgId),
-      eq(regulatoryCalendarEvent.isCompleted, false),
-      gte(regulatoryCalendarEvent.eventDate, new Date().toISOString().split("T")[0]),
-    ))
+  const upcomingDeadlines = await db
+    .select()
+    .from(regulatoryCalendarEvent)
+    .where(
+      and(
+        eq(regulatoryCalendarEvent.orgId, ctx.orgId),
+        eq(regulatoryCalendarEvent.isCompleted, false),
+        gte(
+          regulatoryCalendarEvent.eventDate,
+          new Date().toISOString().split("T")[0],
+        ),
+      ),
+    )
     .orderBy(regulatoryCalendarEvent.eventDate)
     .limit(10);
 
-  const recentChanges = await db.select().from(regulatoryChange)
+  const recentChanges = await db
+    .select()
+    .from(regulatoryChange)
     .where(eq(regulatoryChange.orgId, ctx.orgId))
     .orderBy(desc(regulatoryChange.publishedAt))
     .limit(10);

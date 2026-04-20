@@ -101,9 +101,11 @@ export async function POST(req: Request) {
       nextSteps: [
         {
           step: "initialize-soa",
-          label: "Statement of Applicability aus gewaehlten Frameworks aufbauen",
+          label:
+            "Statement of Applicability aus gewaehlten Frameworks aufbauen",
           endpoint: `/api/v1/isms/assessments/${result.id}/initialize-soa`,
-          ready: snapshot.description !== null && snapshot.description.length >= 200,
+          ready:
+            snapshot.description !== null && snapshot.description.length >= 200,
         },
       ],
     },

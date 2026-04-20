@@ -2,7 +2,12 @@ import { db, auditAnalyticsImport } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createAnalyticsImportSchema } from "@grc/shared";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/audit-mgmt/analytics/imports — List imports
 export async function GET(req: Request) {
@@ -81,5 +86,15 @@ export async function POST(req: Request) {
     return row;
   });
 
-  return Response.json({ data: { id: result.id, name: result.name, rowCount: result.rowCount, expiresAt: result.expiresAt } }, { status: 201 });
+  return Response.json(
+    {
+      data: {
+        id: result.id,
+        name: result.name,
+        rowCount: result.rowCount,
+        expiresAt: result.expiresAt,
+      },
+    },
+    { status: 201 },
+  );
 }

@@ -2,7 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Loader2, Plus, RefreshCcw, AlertTriangle, CheckCircle, Clock, Search as SearchIcon } from "lucide-react";
+import {
+  Loader2,
+  Plus,
+  RefreshCcw,
+  AlertTriangle,
+  CheckCircle,
+  Clock,
+  Search as SearchIcon,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -10,12 +18,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 
 interface Nonconformity {
@@ -75,7 +91,14 @@ function CapInner() {
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [form, setForm] = useState({ title: "", description: "", sourceType: "internal_audit", severity: "minor", isoClause: "", dueDate: "" });
+  const [form, setForm] = useState({
+    title: "",
+    description: "",
+    sourceType: "internal_audit",
+    severity: "minor",
+    isoClause: "",
+    dueDate: "",
+  });
   const [creating, setCreating] = useState(false);
 
   const fetchData = useCallback(async () => {
@@ -94,7 +117,9 @@ function CapInner() {
     }
   }, [statusFilter]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const handleCreate = async () => {
     setCreating(true);
@@ -106,7 +131,14 @@ function CapInner() {
       });
       if (res.ok) {
         setDialogOpen(false);
-        setForm({ title: "", description: "", sourceType: "internal_audit", severity: "minor", isoClause: "", dueDate: "" });
+        setForm({
+          title: "",
+          description: "",
+          sourceType: "internal_audit",
+          severity: "minor",
+          isoClause: "",
+          dueDate: "",
+        });
         await fetchData();
       }
     } finally {
@@ -114,8 +146,11 @@ function CapInner() {
     }
   };
 
-  const openCount = items.filter(i => i.status !== "closed").length;
-  const overdueCount = items.filter(i => i.due_date && new Date(i.due_date) < new Date() && i.status !== "closed").length;
+  const openCount = items.filter((i) => i.status !== "closed").length;
+  const overdueCount = items.filter(
+    (i) =>
+      i.due_date && new Date(i.due_date) < new Date() && i.status !== "closed",
+  ).length;
 
   return (
     <div className="space-y-6">
@@ -132,33 +167,67 @@ function CapInner() {
           </Button>
           <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
             <DialogTrigger asChild>
-              <Button size="sm"><Plus size={14} className="mr-1" /> Nichtkonformität melden</Button>
+              <Button size="sm">
+                <Plus size={14} className="mr-1" /> Nichtkonformität melden
+              </Button>
             </DialogTrigger>
             <DialogContent className="max-w-lg">
-              <DialogHeader><DialogTitle>Neue Nichtkonformität</DialogTitle></DialogHeader>
+              <DialogHeader>
+                <DialogTitle>Neue Nichtkonformität</DialogTitle>
+              </DialogHeader>
               <div className="space-y-4 mt-2">
                 <div>
                   <Label>Titel</Label>
-                  <Input value={form.title} onChange={e => setForm(f => ({ ...f, title: e.target.value }))} placeholder="Kurzbeschreibung der Abweichung" />
+                  <Input
+                    value={form.title}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, title: e.target.value }))
+                    }
+                    placeholder="Kurzbeschreibung der Abweichung"
+                  />
                 </div>
                 <div>
                   <Label>Beschreibung</Label>
-                  <Textarea value={form.description} onChange={e => setForm(f => ({ ...f, description: e.target.value }))} rows={3} />
+                  <Textarea
+                    value={form.description}
+                    onChange={(e) =>
+                      setForm((f) => ({ ...f, description: e.target.value }))
+                    }
+                    rows={3}
+                  />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>Quelle</Label>
-                    <Select value={form.sourceType} onValueChange={v => setForm(f => ({ ...f, sourceType: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={form.sourceType}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, sourceType: v }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
-                        {Object.entries(SOURCE_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+                        {Object.entries(SOURCE_LABELS).map(([k, v]) => (
+                          <SelectItem key={k} value={k}>
+                            {v}
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label>Schweregrad</Label>
-                    <Select value={form.severity} onValueChange={v => setForm(f => ({ ...f, severity: v }))}>
-                      <SelectTrigger><SelectValue /></SelectTrigger>
+                    <Select
+                      value={form.severity}
+                      onValueChange={(v) =>
+                        setForm((f) => ({ ...f, severity: v }))
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="major">Wesentlich</SelectItem>
                         <SelectItem value="minor">Geringfügig</SelectItem>
@@ -170,15 +239,33 @@ function CapInner() {
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <Label>ISO-Klausel (optional)</Label>
-                    <Input value={form.isoClause} onChange={e => setForm(f => ({ ...f, isoClause: e.target.value }))} placeholder="z.B. A.8.24" />
+                    <Input
+                      value={form.isoClause}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, isoClause: e.target.value }))
+                      }
+                      placeholder="z.B. A.8.24"
+                    />
                   </div>
                   <div>
                     <Label>Frist</Label>
-                    <Input type="date" value={form.dueDate} onChange={e => setForm(f => ({ ...f, dueDate: e.target.value }))} />
+                    <Input
+                      type="date"
+                      value={form.dueDate}
+                      onChange={(e) =>
+                        setForm((f) => ({ ...f, dueDate: e.target.value }))
+                      }
+                    />
                   </div>
                 </div>
-                <Button onClick={handleCreate} disabled={!form.title || creating} className="w-full">
-                  {creating && <Loader2 size={14} className="mr-2 animate-spin" />}
+                <Button
+                  onClick={handleCreate}
+                  disabled={!form.title || creating}
+                  className="w-full"
+                >
+                  {creating && (
+                    <Loader2 size={14} className="mr-2 animate-spin" />
+                  )}
                   Nichtkonformität erstellen
                 </Button>
               </div>
@@ -194,19 +281,32 @@ function CapInner() {
           <div className="text-2xl font-bold text-red-600">{openCount}</div>
         </div>
         <div className="rounded-lg border p-4">
-          <div className="text-sm text-muted-foreground flex items-center gap-1"><Clock size={12} /> Überfällig</div>
-          <div className="text-2xl font-bold text-orange-600">{overdueCount}</div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <Clock size={12} /> Überfällig
+          </div>
+          <div className="text-2xl font-bold text-orange-600">
+            {overdueCount}
+          </div>
         </div>
         <div className="rounded-lg border p-4">
-          <div className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle size={12} /> Geschlossen</div>
-          <div className="text-2xl font-bold text-green-600">{items.filter(i => i.status === "closed").length}</div>
+          <div className="text-sm text-muted-foreground flex items-center gap-1">
+            <CheckCircle size={12} /> Geschlossen
+          </div>
+          <div className="text-2xl font-bold text-green-600">
+            {items.filter((i) => i.status === "closed").length}
+          </div>
         </div>
       </div>
 
       {/* Filter */}
       <div className="flex gap-2">
-        {["", "open", "in_progress", "verification", "closed"].map(s => (
-          <Button key={s} variant={statusFilter === s ? "default" : "outline"} size="sm" onClick={() => setStatusFilter(s)}>
+        {["", "open", "in_progress", "verification", "closed"].map((s) => (
+          <Button
+            key={s}
+            variant={statusFilter === s ? "default" : "outline"}
+            size="sm"
+            onClick={() => setStatusFilter(s)}
+          >
             {s === "" ? "Alle" : STATUS_LABELS[s] || s}
           </Button>
         ))}
@@ -214,41 +314,78 @@ function CapInner() {
 
       {/* List */}
       {loading ? (
-        <div className="flex items-center justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
+        <div className="flex items-center justify-center py-12">
+          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+        </div>
       ) : items.length === 0 ? (
         <div className="text-center py-12">
           <CheckCircle className="h-12 w-12 mx-auto text-green-400 mb-4" />
           <h3 className="text-lg font-medium">Keine Nichtkonformitäten</h3>
-          <p className="text-muted-foreground mt-1">Alle Anforderungen werden erfüllt</p>
+          <p className="text-muted-foreground mt-1">
+            Alle Anforderungen werden erfüllt
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
-          {items.map(nc => (
-            <div key={nc.id} className="rounded-lg border p-4 hover:bg-accent/50 transition-colors cursor-pointer"
-              onClick={() => router.push(`/isms/cap/${nc.id}`)}>
+          {items.map((nc) => (
+            <div
+              key={nc.id}
+              className="rounded-lg border p-4 hover:bg-accent/50 transition-colors cursor-pointer"
+              onClick={() => router.push(`/isms/cap/${nc.id}`)}
+            >
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  <AlertTriangle size={18} className={nc.severity === "major" ? "text-red-500" : "text-yellow-500"} />
+                  <AlertTriangle
+                    size={18}
+                    className={
+                      nc.severity === "major"
+                        ? "text-red-500"
+                        : "text-yellow-500"
+                    }
+                  />
                   <div>
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs text-muted-foreground">{nc.nc_code}</span>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {nc.nc_code}
+                      </span>
                       <span className="font-medium">{nc.title}</span>
                     </div>
                     <div className="flex items-center gap-3 mt-1 text-xs text-muted-foreground">
-                      <span>{SOURCE_LABELS[nc.source_type] || nc.source_type}</span>
-                      {nc.iso_clause && <span className="font-mono">{nc.iso_clause}</span>}
-                      <span>{nc.action_count} Maßnahmen ({nc.completed_actions} abgeschlossen)</span>
+                      <span>
+                        {SOURCE_LABELS[nc.source_type] || nc.source_type}
+                      </span>
+                      {nc.iso_clause && (
+                        <span className="font-mono">{nc.iso_clause}</span>
+                      )}
+                      <span>
+                        {nc.action_count} Maßnahmen ({nc.completed_actions}{" "}
+                        abgeschlossen)
+                      </span>
                       {nc.due_date && (
-                        <span className={new Date(nc.due_date) < new Date() && nc.status !== "closed" ? "text-red-500 font-medium" : ""}>
-                          Frist: {new Date(nc.due_date).toLocaleDateString("de-DE")}
+                        <span
+                          className={
+                            new Date(nc.due_date) < new Date() &&
+                            nc.status !== "closed"
+                              ? "text-red-500 font-medium"
+                              : ""
+                          }
+                        >
+                          Frist:{" "}
+                          {new Date(nc.due_date).toLocaleDateString("de-DE")}
                         </span>
                       )}
                     </div>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge className={SEVERITY_COLORS[nc.severity] || "bg-gray-100"}>
-                    {nc.severity === "major" ? "Wesentlich" : nc.severity === "minor" ? "Geringfügig" : "Beobachtung"}
+                  <Badge
+                    className={SEVERITY_COLORS[nc.severity] || "bg-gray-100"}
+                  >
+                    {nc.severity === "major"
+                      ? "Wesentlich"
+                      : nc.severity === "minor"
+                        ? "Geringfügig"
+                        : "Beobachtung"}
                   </Badge>
                   <Badge className={STATUS_COLORS[nc.status] || "bg-gray-100"}>
                     {STATUS_LABELS[nc.status] || nc.status}

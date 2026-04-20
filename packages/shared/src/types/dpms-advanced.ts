@@ -34,7 +34,14 @@ export interface DeletionRequest {
   title: string;
   dataCategory: string;
   recordCountEstimate?: number;
-  status: "identified" | "pending_approval" | "approved" | "deletion_in_progress" | "verified" | "closed" | "rejected";
+  status:
+    | "identified"
+    | "pending_approval"
+    | "approved"
+    | "deletion_in_progress"
+    | "verified"
+    | "closed"
+    | "rejected";
   approvedBy?: string;
   verificationMethod?: string;
   evidenceDescription?: string;
@@ -48,7 +55,11 @@ export interface TransferImpactAssessment {
   legalTransferBasis: string;
   countryRiskLevel?: string;
   overallCountryRiskScore?: number;
-  assessmentResult?: "transfer_permitted" | "transfer_permitted_with_measures" | "transfer_suspended" | "further_assessment_needed";
+  assessmentResult?:
+    | "transfer_permitted"
+    | "transfer_permitted_with_measures"
+    | "transfer_suspended"
+    | "further_assessment_needed";
   version: number;
   status: string;
 }
@@ -72,19 +83,30 @@ export interface ProcessorAgreement {
   orgId: string;
   vendorId?: string;
   processorName: string;
-  agreementStatus: "pending" | "negotiation" | "active" | "terminated" | "expired";
+  agreementStatus:
+    | "pending"
+    | "negotiation"
+    | "active"
+    | "terminated"
+    | "expired";
   complianceChecklist: Array<{
     requirement: string;
     status: "compliant" | "partial" | "missing";
     notes?: string;
   }>;
-  overallComplianceStatus?: "compliant" | "partially_compliant" | "non_compliant";
+  overallComplianceStatus?:
+    | "compliant"
+    | "partially_compliant"
+    | "non_compliant";
 }
 
 export interface SubProcessorNotification {
   id: string;
   agreementId: string;
-  notificationType: "new_sub_processor" | "changed_sub_processor" | "removed_sub_processor";
+  notificationType:
+    | "new_sub_processor"
+    | "changed_sub_processor"
+    | "removed_sub_processor";
   subProcessorName: string;
   subProcessorCountry?: string;
   responseDeadline: string;

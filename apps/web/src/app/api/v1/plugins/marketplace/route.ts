@@ -14,10 +14,15 @@ export async function GET(req: Request) {
   const { page, limit, offset } = paginate(req);
 
   const conditions = [];
-  if (pricingModel) conditions.push(eq(extensionMarketplace.pricingModel, pricingModel));
-  if (featured === "true") conditions.push(eq(extensionMarketplace.isFeatured, true));
+  if (pricingModel)
+    conditions.push(eq(extensionMarketplace.pricingModel, pricingModel));
+  if (featured === "true")
+    conditions.push(eq(extensionMarketplace.isFeatured, true));
 
-  const whereClause = conditions.length > 0 ? sql`${sql.join(conditions, sql` AND `)}` : undefined;
+  const whereClause =
+    conditions.length > 0
+      ? sql`${sql.join(conditions, sql` AND `)}`
+      : undefined;
 
   const rows = await db
     .select({

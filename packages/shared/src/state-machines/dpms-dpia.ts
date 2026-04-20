@@ -43,9 +43,17 @@ export interface DpiaSnapshot {
 export function validateDpiaGate3Start(snapshot: DpiaSnapshot): Blocker[] {
   const blockers: Blocker[] = [];
   if (!snapshot.title || snapshot.title.trim().length === 0) {
-    blockers.push({ code: "missing_title", message: "DPIA braucht Titel.", gate: "G3a", severity: "error" });
+    blockers.push({
+      code: "missing_title",
+      message: "DPIA braucht Titel.",
+      gate: "G3a",
+      severity: "error",
+    });
   }
-  if (!snapshot.processingDescription || snapshot.processingDescription.trim().length < 50) {
+  if (
+    !snapshot.processingDescription ||
+    snapshot.processingDescription.trim().length < 50
+  ) {
     blockers.push({
       code: "processing_description_too_short",
       message: "Processing-Description muss mindestens 50 Zeichen umfassen.",
@@ -60,18 +68,26 @@ export function validateDpiaGate3Start(snapshot: DpiaSnapshot): Blocker[] {
 export function validateDpiaGate3Complete(snapshot: DpiaSnapshot): Blocker[] {
   const blockers: Blocker[] = [];
 
-  if (!snapshot.systematicDescription || snapshot.systematicDescription.trim().length < 100) {
+  if (
+    !snapshot.systematicDescription ||
+    snapshot.systematicDescription.trim().length < 100
+  ) {
     blockers.push({
       code: "missing_systematic_description",
-      message: "Art. 35(7)(a): Systematic-Description muss mind. 100 Zeichen umfassen.",
+      message:
+        "Art. 35(7)(a): Systematic-Description muss mind. 100 Zeichen umfassen.",
       gate: "G3b",
       severity: "error",
     });
   }
-  if (!snapshot.necessityAssessment || snapshot.necessityAssessment.trim().length < 50) {
+  if (
+    !snapshot.necessityAssessment ||
+    snapshot.necessityAssessment.trim().length < 50
+  ) {
     blockers.push({
       code: "missing_necessity_assessment",
-      message: "Art. 35(7)(b): Necessity+Proportionality-Assessment erforderlich.",
+      message:
+        "Art. 35(7)(b): Necessity+Proportionality-Assessment erforderlich.",
       gate: "G3b",
       severity: "error",
     });
@@ -84,7 +100,10 @@ export function validateDpiaGate3Complete(snapshot: DpiaSnapshot): Blocker[] {
       severity: "error",
     });
   }
-  if (!snapshot.dataSubjectCategories || snapshot.dataSubjectCategories.length === 0) {
+  if (
+    !snapshot.dataSubjectCategories ||
+    snapshot.dataSubjectCategories.length === 0
+  ) {
     blockers.push({
       code: "missing_subject_categories",
       message: "Mindestens 1 dataSubjectCategory muss dokumentiert sein.",
@@ -108,7 +127,10 @@ export function validateDpiaGate3Complete(snapshot: DpiaSnapshot): Blocker[] {
       severity: "error",
     });
   }
-  if (snapshot.riskCount > 0 && snapshot.mitigatedRiskCount / snapshot.riskCount < 0.8) {
+  if (
+    snapshot.riskCount > 0 &&
+    snapshot.mitigatedRiskCount / snapshot.riskCount < 0.8
+  ) {
     blockers.push({
       code: "insufficient_mitigation",
       message: `Nur ${snapshot.mitigatedRiskCount}/${snapshot.riskCount} Risks haben Measures. Mindestens 80% Abdeckung vor Completion.`,
@@ -144,7 +166,8 @@ export function validateDpiaGate3Approve(snapshot: DpiaSnapshot): Blocker[] {
   if (snapshot.priorConsultationRequired && !snapshot.consultationDate) {
     blockers.push({
       code: "prior_consultation_overdue",
-      message: "Prior-Consultation (Art. 36) erforderlich aber noch nicht erfolgt.",
+      message:
+        "Prior-Consultation (Art. 36) erforderlich aber noch nicht erfolgt.",
       gate: "G3c",
       severity: "error",
     });
@@ -165,19 +188,23 @@ export interface DpiaTransitionResult {
   updates?: Partial<DpiaSnapshot>;
 }
 
-export function validateDpiaTransition(req: DpiaTransitionRequest): DpiaTransitionResult {
+export function validateDpiaTransition(
+  req: DpiaTransitionRequest,
+): DpiaTransitionResult {
   const { currentStatus, targetStatus, snapshot } = req;
 
   const allowed = DPIA_ALLOWED_TRANSITIONS[currentStatus] ?? [];
   if (!allowed.includes(targetStatus)) {
     return {
       allowed: false,
-      blockers: [{
-        code: "invalid_transition",
-        message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
-        gate: "state_machine",
-        severity: "error",
-      }],
+      blockers: [
+        {
+          code: "invalid_transition",
+          message: `Transition ${currentStatus} → ${targetStatus} nicht erlaubt.`,
+          gate: "state_machine",
+          severity: "error",
+        },
+      ],
     };
   }
 
@@ -196,5 +223,9 @@ export function validateDpiaTransition(req: DpiaTransitionRequest): DpiaTransiti
     return { allowed: false, blockers: gateBlockers };
   }
 
-  return { allowed: true, blockers: gateBlockers, updates: { status: targetStatus } };
+  return {
+    allowed: true,
+    blockers: gateBlockers,
+    updates: { status: targetStatus },
+  };
 }

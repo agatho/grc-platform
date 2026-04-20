@@ -43,9 +43,9 @@ export const dataFlow = pgTable(
       .notNull()
       .default(false),
     transferMechanism: varchar("transfer_mechanism", { length: 50 }).notNull(),
-    encryptionInTransit: varchar("encryption_in_transit", { length: 20 }).default(
-      "tls",
-    ),
+    encryptionInTransit: varchar("encryption_in_transit", {
+      length: 20,
+    }).default("tls"),
     encryptionAtRest: varchar("encryption_at_rest", { length: 20 }).default(
       "aes256",
     ),
@@ -256,8 +256,13 @@ export const architectureChangeRequest = pgTable(
     description: text("description").notNull(),
     justification: text("justification"),
     changeType: varchar("change_type", { length: 30 }).notNull(),
-    affectedElementIds: uuid("affected_element_ids").array().notNull().default([]),
-    riskAssessment: varchar("risk_assessment", { length: 20 }).default("medium"),
+    affectedElementIds: uuid("affected_element_ids")
+      .array()
+      .notNull()
+      .default([]),
+    riskAssessment: varchar("risk_assessment", { length: 20 }).default(
+      "medium",
+    ),
     costEstimate: numeric("cost_estimate", { precision: 15, scale: 2 }),
     status: varchar("status", { length: 20 }).notNull().default("draft"),
     submittedBy: uuid("submitted_by").references(() => user.id),

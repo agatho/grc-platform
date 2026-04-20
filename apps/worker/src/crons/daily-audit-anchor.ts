@@ -32,16 +32,12 @@ export async function processDailyAuditAnchor(
 
   // Resolve the target day — default is "yesterday in UTC"
   const now = targetDate ?? new Date();
-  const dayStart = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate() - 1,
-  ));
-  const dayEnd = new Date(Date.UTC(
-    now.getUTCFullYear(),
-    now.getUTCMonth(),
-    now.getUTCDate(),
-  ));
+  const dayStart = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - 1),
+  );
+  const dayEnd = new Date(
+    Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate()),
+  );
   const dayIso = dayStart.toISOString().slice(0, 10);
 
   console.log(`[cron:daily-audit-anchor] Anchoring ${dayIso}`);
@@ -89,12 +85,14 @@ async function anchorOneTenant(
   const leafRows = await db
     .select({ entryHash: auditLog.entryHash })
     .from(auditLog)
-    .where(and(
-      eq(auditLog.orgId, orgId),
-      gte(auditLog.createdAt, dayStart),
-      lt(auditLog.createdAt, dayEnd),
-      isNotNull(auditLog.entryHash),
-    ))
+    .where(
+      and(
+        eq(auditLog.orgId, orgId),
+        gte(auditLog.createdAt, dayStart),
+        lt(auditLog.createdAt, dayEnd),
+        isNotNull(auditLog.entryHash),
+      ),
+    )
     .orderBy(asc(auditLog.createdAt), asc(auditLog.id));
 
   const leaves = leafRows
@@ -107,7 +105,9 @@ async function anchorOneTenant(
 
   const root = merkleRoot(leaves);
   if (!root) {
-    throw new Error("Merkle root computation returned null for non-empty leaves");
+    throw new Error(
+      "Merkle root computation returned null for non-empty leaves",
+    );
   }
   const rootBuffer = Buffer.from(root, "hex");
 
@@ -118,11 +118,13 @@ async function anchorOneTenant(
     const existing = await db
       .select({ id: auditAnchor.id })
       .from(auditAnchor)
-      .where(and(
-        eq(auditAnchor.orgId, orgId),
-        eq(auditAnchor.anchorDate, dayIso),
-        eq(auditAnchor.provider, "freetsa"),
-      ))
+      .where(
+        and(
+          eq(auditAnchor.orgId, orgId),
+          eq(auditAnchor.anchorDate, dayIso),
+          eq(auditAnchor.provider, "freetsa"),
+        ),
+      )
       .limit(1);
 
     if (existing.length === 0) {
@@ -150,11 +152,13 @@ async function anchorOneTenant(
     const existing = await db
       .select({ id: auditAnchor.id })
       .from(auditAnchor)
-      .where(and(
-        eq(auditAnchor.orgId, orgId),
-        eq(auditAnchor.anchorDate, dayIso),
-        eq(auditAnchor.provider, "opentimestamps"),
-      ))
+      .where(
+        and(
+          eq(auditAnchor.orgId, orgId),
+          eq(auditAnchor.anchorDate, dayIso),
+          eq(auditAnchor.provider, "opentimestamps"),
+        ),
+      )
       .limit(1);
 
     if (existing.length === 0) {
@@ -174,7 +178,14 @@ async function anchorOneTenant(
       created++;
     }
   } catch (err) {
-    await logAnchorFailure(orgId, dayIso, "opentimestamps", root, leaves.length, err);
+    await logAnchorFailure(
+      orgId,
+      dayIso,
+      "opentimestamps",
+      root,
+      leaves.length,
+      err,
+    );
   }
 
   return created;
@@ -189,7 +200,10 @@ async function logAnchorFailure(
   err: unknown,
 ): Promise<void> {
   const msg = err instanceof Error ? err.message : String(err);
-  console.error(`[cron:daily-audit-anchor] ${provider} failed for org ${orgId}:`, msg);
+  console.error(
+    `[cron:daily-audit-anchor] ${provider} failed for org ${orgId}:`,
+    msg,
+  );
 
   // Record the failure so an operator can retry or investigate. Upsert
   // pattern — if a prior failed row exists for (org, day, provider),

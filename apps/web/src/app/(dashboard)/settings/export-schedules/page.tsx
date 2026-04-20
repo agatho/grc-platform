@@ -16,12 +16,7 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
   DialogContent,
@@ -139,21 +134,18 @@ export default function ExportSchedulesPage() {
     }
   }, [formName, formEntityTypes, formFormat, formEmails, fetchSchedules]);
 
-  const handleDelete = useCallback(
-    async (id: string) => {
-      try {
-        const res = await fetch(`/api/v1/export/schedules/${id}`, {
-          method: "DELETE",
-        });
-        if (!res.ok) throw new Error("Failed to delete");
-        setSchedules((prev) => prev.filter((s) => s.id !== id));
-        toast.success("Schedule deleted");
-      } catch {
-        toast.error("Failed to delete schedule");
-      }
-    },
-    [],
-  );
+  const handleDelete = useCallback(async (id: string) => {
+    try {
+      const res = await fetch(`/api/v1/export/schedules/${id}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed to delete");
+      setSchedules((prev) => prev.filter((s) => s.id !== id));
+      toast.success("Schedule deleted");
+    } catch {
+      toast.error("Failed to delete schedule");
+    }
+  }, []);
 
   const toggleEntityType = useCallback((type: string) => {
     setFormEntityTypes((prev) =>
@@ -293,9 +285,7 @@ export default function ExportSchedulesPage() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm font-medium">
-                  {t("recipients")}
-                </label>
+                <label className="text-sm font-medium">{t("recipients")}</label>
                 <input
                   className="mt-1 w-full rounded border px-3 py-2 text-sm"
                   value={formEmails}
@@ -312,9 +302,7 @@ export default function ExportSchedulesPage() {
                 onClick={handleCreate}
                 disabled={creating}
               >
-                {creating && (
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                )}
+                {creating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 {t("create")}
               </Button>
             </div>

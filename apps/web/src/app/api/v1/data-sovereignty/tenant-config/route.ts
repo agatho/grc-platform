@@ -8,7 +8,9 @@ import { upsertRegionTenantConfigSchema } from "@grc/shared";
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
-  const [row] = await db.select().from(regionTenantConfig)
+  const [row] = await db
+    .select()
+    .from(regionTenantConfig)
     .where(eq(regionTenantConfig.orgId, ctx.orgId));
   return Response.json({ data: row ?? null });
 }
@@ -20,15 +22,32 @@ export async function PUT(req: Request) {
   const body = upsertRegionTenantConfigSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [existing] = await tx.select({ id: regionTenantConfig.id }).from(regionTenantConfig)
+    const [existing] = await tx
+      .select({ id: regionTenantConfig.id })
+      .from(regionTenantConfig)
       .where(eq(regionTenantConfig.orgId, ctx.orgId));
     if (existing) {
-      const [updated] = await tx.update(regionTenantConfig).set({ ...body, approvedBy: ctx.userId, approvedAt: new Date(), updatedAt: new Date() })
-        .where(eq(regionTenantConfig.orgId, ctx.orgId)).returning();
+      const [updated] = await tx
+        .update(regionTenantConfig)
+        .set({
+          ...body,
+          approvedBy: ctx.userId,
+          approvedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(regionTenantConfig.orgId, ctx.orgId))
+        .returning();
       return updated;
     }
-    const [created] = await tx.insert(regionTenantConfig)
-      .values({ orgId: ctx.orgId, ...body, approvedBy: ctx.userId, approvedAt: new Date() }).returning();
+    const [created] = await tx
+      .insert(regionTenantConfig)
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+        approvedBy: ctx.userId,
+        approvedAt: new Date(),
+      })
+      .returning();
     return created;
   });
 

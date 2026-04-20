@@ -4,8 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useSession } from "next-auth/react";
 import {
-  Shield, Users, CheckCircle2, AlertTriangle, Clock, Loader2,
-  UserCheck, UserX, RefreshCcw,
+  Shield,
+  Users,
+  CheckCircle2,
+  AlertTriangle,
+  Clock,
+  Loader2,
+  UserCheck,
+  UserX,
+  RefreshCcw,
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,21 +61,32 @@ export default function AccessReviewsPage() {
     }
   }, []);
 
-  useEffect(() => { void fetchUsers(); }, [fetchUsers]);
+  useEffect(() => {
+    void fetchUsers();
+  }, [fetchUsers]);
 
   const handleApprove = (userId: string) => {
     setApproved((prev) => new Set([...prev, userId]));
-    setRevoked((prev) => { const n = new Set(prev); n.delete(userId); return n; });
+    setRevoked((prev) => {
+      const n = new Set(prev);
+      n.delete(userId);
+      return n;
+    });
   };
 
   const handleRevoke = (userId: string) => {
     setRevoked((prev) => new Set([...prev, userId]));
-    setApproved((prev) => { const n = new Set(prev); n.delete(userId); return n; });
+    setApproved((prev) => {
+      const n = new Set(prev);
+      n.delete(userId);
+      return n;
+    });
   };
 
   const totalReviewed = approved.size + revoked.size;
   const totalUsers = users.length;
-  const progress = totalUsers > 0 ? Math.round((totalReviewed / totalUsers) * 100) : 0;
+  const progress =
+    totalUsers > 0 ? Math.round((totalReviewed / totalUsers) * 100) : 0;
 
   const roleColors: Record<string, string> = {
     admin: "bg-red-100 text-red-900 border-red-300",
@@ -93,9 +111,12 @@ export default function AccessReviewsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Berechtigungsprüfung</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Berechtigungsprüfung
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Periodische Überprüfung aller Nutzerzugriffe und Rollenberechtigungen
+            Periodische Überprüfung aller Nutzerzugriffe und
+            Rollenberechtigungen
           </p>
         </div>
         <Button variant="outline" size="sm" onClick={fetchUsers}>
@@ -122,7 +143,9 @@ export default function AccessReviewsPage() {
             <div className="flex items-center gap-3">
               <CheckCircle2 size={20} className="text-green-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{approved.size}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {approved.size}
+                </p>
                 <p className="text-xs text-gray-500">Bestätigt</p>
               </div>
             </div>
@@ -133,7 +156,9 @@ export default function AccessReviewsPage() {
             <div className="flex items-center gap-3">
               <AlertTriangle size={20} className="text-red-600" />
               <div>
-                <p className="text-2xl font-bold text-gray-900">{revoked.size}</p>
+                <p className="text-2xl font-bold text-gray-900">
+                  {revoked.size}
+                </p>
                 <p className="text-xs text-gray-500">Widerrufen</p>
               </div>
             </div>
@@ -176,16 +201,23 @@ export default function AccessReviewsPage() {
                 <div
                   key={user.userId}
                   className={`flex items-center gap-4 rounded-lg border px-4 py-3 transition-colors ${
-                    isRevoked ? "border-red-200 bg-red-50/50" :
-                    isApproved ? "border-green-200 bg-green-50/50" :
-                    "border-gray-200 bg-white hover:bg-gray-50"
+                    isRevoked
+                      ? "border-red-200 bg-red-50/50"
+                      : isApproved
+                        ? "border-green-200 bg-green-50/50"
+                        : "border-gray-200 bg-white hover:bg-gray-50"
                   }`}
                 >
                   {/* User Info */}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <p className="text-sm font-medium text-gray-900 truncate">{user.userName}</p>
-                      <Badge variant="outline" className={`text-[10px] ${roleColors[user.role] ?? ""}`}>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {user.userName}
+                      </p>
+                      <Badge
+                        variant="outline"
+                        className={`text-[10px] ${roleColors[user.role] ?? ""}`}
+                      >
                         {user.role}
                       </Badge>
                       {user.lineOfDefense !== "-" && (
@@ -194,9 +226,13 @@ export default function AccessReviewsPage() {
                         </Badge>
                       )}
                     </div>
-                    <p className="text-xs text-gray-500 mt-0.5">{user.userEmail}</p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {user.userEmail}
+                    </p>
                     {user.department && (
-                      <p className="text-xs text-gray-400 mt-0.5">Abteilung: {user.department}</p>
+                      <p className="text-xs text-gray-400 mt-0.5">
+                        Abteilung: {user.department}
+                      </p>
                     )}
                   </div>
 
@@ -204,7 +240,8 @@ export default function AccessReviewsPage() {
                   <div className="text-right shrink-0">
                     {user.lastLogin ? (
                       <p className="text-xs text-gray-500">
-                        Letzter Login: {new Date(user.lastLogin).toLocaleDateString("de-DE")}
+                        Letzter Login:{" "}
+                        {new Date(user.lastLogin).toLocaleDateString("de-DE")}
                       </p>
                     ) : (
                       <p className="text-xs text-red-500">Nie eingeloggt</p>
@@ -214,10 +251,14 @@ export default function AccessReviewsPage() {
                   {/* Actions */}
                   <div className="flex items-center gap-2 shrink-0">
                     {isReviewed ? (
-                      <Badge variant="outline" className={
-                        isApproved ? "bg-green-100 text-green-900 border-green-300" :
-                        "bg-red-100 text-red-900 border-red-300"
-                      }>
+                      <Badge
+                        variant="outline"
+                        className={
+                          isApproved
+                            ? "bg-green-100 text-green-900 border-green-300"
+                            : "bg-red-100 text-red-900 border-red-300"
+                        }
+                      >
                         {isApproved ? "✓ Bestätigt" : "✗ Widerrufen"}
                       </Badge>
                     ) : (

@@ -2,7 +2,12 @@ import { db, vulnerability } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createVulnerabilitySchema } from "@grc/shared";
 import { eq, and, isNull, ilike } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/vulnerabilities
 export async function GET(req: Request) {

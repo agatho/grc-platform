@@ -63,7 +63,11 @@ export async function GET(
     .leftJoin(vendor, eq(contract.vendorId, vendor.id))
     .leftJoin(user, eq(contract.ownerId, user.id))
     .where(
-      and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)),
+      and(
+        eq(contract.id, id),
+        eq(contract.orgId, ctx.orgId),
+        isNull(contract.deletedAt),
+      ),
     );
 
   if (!row) {
@@ -71,12 +75,24 @@ export async function GET(
   }
 
   // Counts
-  const [[{ value: obligationCount }], [{ value: slaCount }], [{ value: amendmentCount }]] =
-    await Promise.all([
-      db.select({ value: count() }).from(contractObligation).where(eq(contractObligation.contractId, id)),
-      db.select({ value: count() }).from(contractSla).where(eq(contractSla.contractId, id)),
-      db.select({ value: count() }).from(contractAmendment).where(eq(contractAmendment.contractId, id)),
-    ]);
+  const [
+    [{ value: obligationCount }],
+    [{ value: slaCount }],
+    [{ value: amendmentCount }],
+  ] = await Promise.all([
+    db
+      .select({ value: count() })
+      .from(contractObligation)
+      .where(eq(contractObligation.contractId, id)),
+    db
+      .select({ value: count() })
+      .from(contractSla)
+      .where(eq(contractSla.contractId, id)),
+    db
+      .select({ value: count() })
+      .from(contractAmendment)
+      .where(eq(contractAmendment.contractId, id)),
+  ]);
 
   return Response.json({
     data: { ...row, obligationCount, slaCount, amendmentCount },
@@ -112,7 +128,13 @@ export async function PUT(
         updatedBy: ctx.userId,
         updatedAt: new Date(),
       })
-      .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)))
+      .where(
+        and(
+          eq(contract.id, id),
+          eq(contract.orgId, ctx.orgId),
+          isNull(contract.deletedAt),
+        ),
+      )
       .returning();
     return row;
   });
@@ -140,8 +162,18 @@ export async function DELETE(
   const deleted = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
       .update(contract)
-      .set({ deletedAt: new Date(), deletedBy: ctx.userId, updatedBy: ctx.userId })
-      .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)))
+      .set({
+        deletedAt: new Date(),
+        deletedBy: ctx.userId,
+        updatedBy: ctx.userId,
+      })
+      .where(
+        and(
+          eq(contract.id, id),
+          eq(contract.orgId, ctx.orgId),
+          isNull(contract.deletedAt),
+        ),
+      )
       .returning({ id: contract.id });
     return row;
   });

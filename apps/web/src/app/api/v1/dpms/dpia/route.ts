@@ -1,21 +1,7 @@
-import {
-  db,
-  dpia,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, dpia, workItem, user } from "@grc/db";
 import { createDpiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  asc,
-  inArray,
-  ilike,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, asc, inArray, ilike } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -84,15 +70,17 @@ export async function GET(req: Request) {
 
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [
-    eq(dpia.orgId, ctx.orgId),
-    isNull(dpia.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)];
 
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "draft" | "in_progress" | "completed" | "pending_dpo_review" | "approved" | "rejected"
+      | "draft"
+      | "in_progress"
+      | "completed"
+      | "pending_dpo_review"
+      | "approved"
+      | "rejected"
     >;
     conditions.push(inArray(dpia.status, statuses));
   }

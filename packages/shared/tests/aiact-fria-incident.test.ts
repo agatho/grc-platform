@@ -7,7 +7,7 @@ import {
   type FriaDetermination,
   type FriaQualityInput,
   type IncidentClassification,
-  type IncidentStatus,
+  type AiActIncidentSnapshot,
 } from "../src/state-machines/aiact-fria-incident";
 
 describe("determineFriaRequirement", () => {
@@ -21,7 +21,10 @@ describe("determineFriaRequirement", () => {
   };
 
   it("public sector + high risk => mandatory", () => {
-    const r = determineFriaRequirement({ ...baseline, deployerType: "public_sector" });
+    const r = determineFriaRequirement({
+      ...baseline,
+      deployerType: "public_sector",
+    });
     expect(r.isFriaRequired).toBe(true);
     expect(r.recommendationLevel).toBe("mandatory");
   });
@@ -43,7 +46,10 @@ describe("determineFriaRequirement", () => {
   });
 
   it("limited risk => not required", () => {
-    const r = determineFriaRequirement({ ...baseline, riskClassification: "limited" });
+    const r = determineFriaRequirement({
+      ...baseline,
+      riskClassification: "limited",
+    });
     expect(r.isFriaRequired).toBe(false);
     expect(r.recommendationLevel).toBe("not_required");
   });
@@ -53,10 +59,30 @@ describe("assessFriaQuality", () => {
   const fullRights: FriaQualityInput = {
     rightsAssessed: [
       { right: "dignity", impact: "low", mitigation: "m", residualRisk: "low" },
-      { right: "equality_non_discrimination", impact: "medium", mitigation: "m", residualRisk: "low" },
-      { right: "privacy_data_protection", impact: "low", mitigation: "m", residualRisk: "low" },
-      { right: "access_to_justice", impact: "low", mitigation: "m", residualRisk: "low" },
-      { right: "workers_rights", impact: "low", mitigation: "m", residualRisk: "low" },
+      {
+        right: "equality_non_discrimination",
+        impact: "medium",
+        mitigation: "m",
+        residualRisk: "low",
+      },
+      {
+        right: "privacy_data_protection",
+        impact: "low",
+        mitigation: "m",
+        residualRisk: "low",
+      },
+      {
+        right: "access_to_justice",
+        impact: "low",
+        mitigation: "m",
+        residualRisk: "low",
+      },
+      {
+        right: "workers_rights",
+        impact: "low",
+        mitigation: "m",
+        residualRisk: "low",
+      },
     ],
     hasDiscriminationAnalysis: true,
     hasDataProtectionImpact: true,
@@ -77,7 +103,12 @@ describe("assessFriaQuality", () => {
     const r = assessFriaQuality({
       ...fullRights,
       rightsAssessed: [
-        { right: "dignity", impact: "high", mitigation: "m", residualRisk: "high" },
+        {
+          right: "dignity",
+          impact: "high",
+          mitigation: "m",
+          residualRisk: "high",
+        },
         ...fullRights.rightsAssessed.slice(1),
       ],
     });
@@ -95,7 +126,10 @@ describe("assessFriaQuality", () => {
   });
 
   it("missing quality check blocks approval", () => {
-    const r = assessFriaQuality({ ...fullRights, hasDiscriminationAnalysis: false });
+    const r = assessFriaQuality({
+      ...fullRights,
+      hasDiscriminationAnalysis: false,
+    });
     expect(r.missing).toContain("discrimination_analysis");
     expect(r.isApprovable).toBe(false);
   });
@@ -113,7 +147,10 @@ describe("classifyIncidentDeadline", () => {
   };
 
   it("death => immediate_2d", () => {
-    const r = classifyIncidentDeadline({ ...noIncident, resultedInDeath: true }, detectedAt);
+    const r = classifyIncidentDeadline(
+      { ...noIncident, resultedInDeath: true },
+      detectedAt,
+    );
     expect(r.deadlineCategory).toBe("immediate_2d");
     expect(r.notificationDeadlineDays).toBe(2);
   });
@@ -128,7 +165,11 @@ describe("classifyIncidentDeadline", () => {
 
   it("widespread => 2d", () => {
     const r = classifyIncidentDeadline(
-      { ...noIncident, isWidespreadInfringement: true, affectedPersonsCount: 5 },
+      {
+        ...noIncident,
+        isWidespreadInfringement: true,
+        affectedPersonsCount: 5,
+      },
       detectedAt,
     );
     expect(r.deadlineCategory).toBe("widespread_2d");
@@ -162,7 +203,7 @@ describe("classifyIncidentDeadline", () => {
 describe("checkIncidentOverdue", () => {
   it("notified => not overdue", () => {
     const now = new Date("2026-04-18T12:00:00Z");
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date("2026-04-16T10:00:00Z"),
       authorityNotifiedAt: new Date("2026-04-17T15:00:00Z"),
       deadlineAt: new Date("2026-04-18T10:00:00Z"),
@@ -176,7 +217,7 @@ describe("checkIncidentOverdue", () => {
 
   it("not notified + deadline in 12h => approaching", () => {
     const now = new Date("2026-04-18T00:00:00Z");
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date("2026-04-16T00:00:00Z"),
       authorityNotifiedAt: null,
       deadlineAt: new Date("2026-04-18T12:00:00Z"),
@@ -189,7 +230,7 @@ describe("checkIncidentOverdue", () => {
 
   it("not notified + 10h overdue => overdue", () => {
     const now = new Date("2026-04-18T22:00:00Z");
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date("2026-04-16T00:00:00Z"),
       authorityNotifiedAt: null,
       deadlineAt: new Date("2026-04-18T12:00:00Z"),
@@ -203,7 +244,7 @@ describe("checkIncidentOverdue", () => {
 
   it("> 48h overdue => critical_overdue", () => {
     const now = new Date("2026-04-21T15:00:00Z");
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date("2026-04-16T00:00:00Z"),
       authorityNotifiedAt: null,
       deadlineAt: new Date("2026-04-18T12:00:00Z"),
@@ -216,7 +257,7 @@ describe("checkIncidentOverdue", () => {
 
   it("deadline in 3 days => no escalation", () => {
     const now = new Date("2026-04-18T10:00:00Z");
-    const status: IncidentStatus = {
+    const status: AiActIncidentSnapshot = {
       detectedAt: new Date("2026-04-18T10:00:00Z"),
       authorityNotifiedAt: null,
       deadlineAt: new Date("2026-04-21T10:00:00Z"),

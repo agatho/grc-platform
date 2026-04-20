@@ -78,7 +78,9 @@ export default function TemplateLibraryPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("templates.title")}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("templates.title")}
+        </h1>
         <p className="text-muted-foreground">{t("templates.subtitle")}</p>
       </div>
 
@@ -97,12 +99,18 @@ export default function TemplateLibraryPage() {
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
-              <p className="text-sm text-muted-foreground">{pack.description}</p>
+              <p className="text-sm text-muted-foreground">
+                {pack.description}
+              </p>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Badge variant="outline">{pack.itemCount} {t("templates.items")}</Badge>
+                  <Badge variant="outline">
+                    {pack.itemCount} {t("templates.items")}
+                  </Badge>
                   {pack.isDefault && (
-                    <Badge variant="secondary">{t("templates.recommended")}</Badge>
+                    <Badge variant="secondary">
+                      {t("templates.recommended")}
+                    </Badge>
                   )}
                 </div>
                 <Button

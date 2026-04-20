@@ -1,14 +1,12 @@
-import {
-  db,
-  customDashboard,
-  customDashboardWidget,
-} from "@grc/db";
-import {
-  createDashboardSchema,
-  dashboardListQuerySchema,
-} from "@grc/shared";
+import { db, customDashboard, customDashboardWidget } from "@grc/db";
+import { createDashboardSchema, dashboardListQuerySchema } from "@grc/shared";
 import { eq, and, or, ilike, sql, desc, isNull } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/dashboards — List dashboards (personal + team + defaults)
 export async function GET(req: Request) {
@@ -16,7 +14,11 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const { page, limit, offset, searchParams } = paginate(req);
-  const visibility = searchParams.get("visibility") as "personal" | "team" | "org" | null;
+  const visibility = searchParams.get("visibility") as
+    | "personal"
+    | "team"
+    | "org"
+    | null;
   const isDefault = searchParams.get("isDefault");
   const isFavorite = searchParams.get("isFavorite");
   const search = searchParams.get("search");

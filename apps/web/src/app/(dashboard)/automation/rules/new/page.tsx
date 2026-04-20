@@ -57,7 +57,9 @@ export default function NewRulePage() {
   const [maxExecutionsPerHour, setMaxExecutionsPerHour] = useState(100);
 
   const [entityTypes, setEntityTypes] = useState<string[]>([]);
-  const [entityFields, setEntityFields] = useState<Record<string, EntityFieldOption[]>>({});
+  const [entityFields, setEntityFields] = useState<
+    Record<string, EntityFieldOption[]>
+  >({});
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [testResult, setTestResult] = useState<{
@@ -163,14 +165,11 @@ export default function NewRulePage() {
       if (!createRes.ok) return;
       const { data: rule } = await createRes.json();
 
-      const testRes = await fetch(
-        `/api/v1/automation/rules/${rule.id}/test`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({}),
-        },
-      );
+      const testRes = await fetch(`/api/v1/automation/rules/${rule.id}/test`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
 
       if (testRes.ok) {
         const json = await testRes.json();
@@ -228,11 +227,7 @@ export default function NewRulePage() {
             <Save size={14} className="mr-1" />
             {t("designer.save")}
           </Button>
-          <Button
-            size="sm"
-            onClick={() => handleSave(true)}
-            disabled={saving}
-          >
+          <Button size="sm" onClick={() => handleSave(true)} disabled={saving}>
             {saving && <Loader2 size={14} className="animate-spin mr-1" />}
             {t("designer.saveAndActivate")}
           </Button>
@@ -311,9 +306,7 @@ export default function NewRulePage() {
             <input
               type="number"
               value={maxExecutionsPerHour}
-              onChange={(e) =>
-                setMaxExecutionsPerHour(Number(e.target.value))
-              }
+              onChange={(e) => setMaxExecutionsPerHour(Number(e.target.value))}
               min={1}
               max={1000}
               className="w-full rounded-md border border-gray-300 px-3 py-1.5 text-sm"

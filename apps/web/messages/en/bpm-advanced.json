@@ -5,7 +5,11 @@
     "import": "Import Event Log",
     "eventLog": "Event Log",
     "format": { "csv": "CSV", "xes": "XES (IEEE Standard)" },
-    "status": { "importing": "Importing...", "ready": "Ready", "error": "Error" },
+    "status": {
+      "importing": "Importing...",
+      "ready": "Ready",
+      "error": "Error"
+    },
     "discovery": "Process Discovery",
     "dfg": "Directly-Follows Graph",
     "bottleneck": "Bottleneck",
@@ -22,7 +26,14 @@
     "title": "Process KPIs",
     "definition": "KPI Definition",
     "measurement": "Measurement",
-    "metricType": { "cycle_time": "Cycle Time", "cost": "Cost", "throughput": "Throughput", "error_rate": "Error Rate", "compliance_rate": "Compliance Rate", "custom": "Custom" },
+    "metricType": {
+      "cycle_time": "Cycle Time",
+      "cost": "Cost",
+      "throughput": "Throughput",
+      "error_rate": "Error Rate",
+      "compliance_rate": "Compliance Rate",
+      "custom": "Custom"
+    },
     "dataSource": { "manual": "Manual", "mining": "Mining Data", "api": "API" },
     "target": "Target",
     "actual": "Actual",
@@ -34,8 +45,20 @@
   "maturity": {
     "title": "Process Maturity Assessment",
     "questionnaire": "Assessment Questionnaire",
-    "dimensions": { "documentation": "Documentation", "adherence": "Adherence", "measurement": "Measurement", "improvement": "Improvement", "satisfaction": "Satisfaction" },
-    "levels": { "1": "Initial", "2": "Managed", "3": "Defined", "4": "Quantitatively Managed", "5": "Optimizing" },
+    "dimensions": {
+      "documentation": "Documentation",
+      "adherence": "Adherence",
+      "measurement": "Measurement",
+      "improvement": "Improvement",
+      "satisfaction": "Satisfaction"
+    },
+    "levels": {
+      "1": "Initial",
+      "2": "Managed",
+      "3": "Defined",
+      "4": "Quantitatively Managed",
+      "5": "Optimizing"
+    },
     "overallLevel": "Overall Maturity Level",
     "targetLevel": "Target Level",
     "gapActions": "Improvement Actions",
@@ -50,17 +73,37 @@
     "valueAddTime": "Value-Add Time",
     "valueAddRatio": "Value-Add Ratio",
     "wasteAnalysis": "Waste Analysis",
-    "wastes": { "defects": "Defects", "overproduction": "Overproduction", "waiting": "Waiting", "non_utilized_talent": "Non-Utilized Talent", "transportation": "Transportation", "inventory": "Inventory", "motion": "Motion", "extra_processing": "Extra Processing" },
+    "wastes": {
+      "defects": "Defects",
+      "overproduction": "Overproduction",
+      "waiting": "Waiting",
+      "non_utilized_talent": "Non-Utilized Talent",
+      "transportation": "Transportation",
+      "inventory": "Inventory",
+      "motion": "Motion",
+      "extra_processing": "Extra Processing"
+    },
     "comparison": "Current vs. Future Comparison",
     "export": "Export VSM"
   },
   "templates": {
     "title": "Process Template Library",
-    "domain": { "finance": "Finance", "hr": "Human Resources", "it": "IT", "compliance": "Compliance", "operations": "Operations", "procurement": "Procurement" },
+    "domain": {
+      "finance": "Finance",
+      "hr": "Human Resources",
+      "it": "IT",
+      "compliance": "Compliance",
+      "operations": "Operations",
+      "procurement": "Procurement"
+    },
     "adopt": "Adopt Template",
     "preview": "Preview BPMN",
     "suggestedRisks": "Suggested Risks",
     "suggestedControls": "Suggested Controls",
-    "complexity": { "simple": "Simple", "moderate": "Moderate", "complex": "Complex" }
+    "complexity": {
+      "simple": "Simple",
+      "moderate": "Moderate",
+      "complex": "Complex"
+    }
   }
 }

@@ -2,7 +2,12 @@ import { db, generalCatalogEntry } from "@grc/db";
 import { createGeneralCatalogEntrySchema } from "@grc/shared";
 import { eq, and, isNull, count, desc, ilike, or, inArray } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/catalogs/objects — List general catalog objects
 export async function GET(req: Request) {
@@ -20,7 +25,15 @@ export async function GET(req: Request) {
   const objectType = searchParams.get("objectType");
   if (objectType) {
     const types = objectType.split(",") as Array<
-      "it_system" | "application" | "role" | "department" | "location" | "vendor" | "standard" | "regulation" | "custom"
+      | "it_system"
+      | "application"
+      | "role"
+      | "department"
+      | "location"
+      | "vendor"
+      | "standard"
+      | "regulation"
+      | "custom"
     >;
     conditions.push(inArray(generalCatalogEntry.objectType, types));
   }
@@ -61,7 +74,12 @@ export async function GET(req: Request) {
 
 // POST /api/v1/catalogs/objects — Create general catalog object
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = createGeneralCatalogEntrySchema.safeParse(await req.json());

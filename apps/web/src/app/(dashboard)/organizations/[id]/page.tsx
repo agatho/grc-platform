@@ -194,9 +194,7 @@ export default function OrganizationDetailPage() {
               role: string;
               orgId: string;
             }>;
-            return roles.some(
-              (r) => r.role === "dpo" && r.orgId === orgId
-            );
+            return roles.some((r) => r.role === "dpo" && r.orgId === orgId);
           })
           .map((u: Record<string, unknown>) => ({
             id: u.id as string,

@@ -45,11 +45,16 @@ export function NetEvaluationTab({
   onLinkTreatment,
   labels,
 }: NetEvaluationTabProps) {
-  const grossScore = grossLikelihood && grossImpact ? grossLikelihood * grossImpact : null;
-  const netScore = residualLikelihood && residualImpact ? residualLikelihood * residualImpact : null;
-  const reduction = grossScore && netScore
-    ? Math.round(((grossScore - netScore) / grossScore) * 100)
-    : null;
+  const grossScore =
+    grossLikelihood && grossImpact ? grossLikelihood * grossImpact : null;
+  const netScore =
+    residualLikelihood && residualImpact
+      ? residualLikelihood * residualImpact
+      : null;
+  const reduction =
+    grossScore && netScore
+      ? Math.round(((grossScore - netScore) / grossScore) * 100)
+      : null;
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -67,7 +72,9 @@ export function NetEvaluationTab({
           >
             <option value="">--</option>
             {LEVELS.map((l) => (
-              <option key={l} value={l}>{l}</option>
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
           </select>
         </div>
@@ -84,7 +91,9 @@ export function NetEvaluationTab({
           >
             <option value="">--</option>
             {LEVELS.map((l) => (
-              <option key={l} value={l}>{l}</option>
+              <option key={l} value={l}>
+                {l}
+              </option>
             ))}
           </select>
         </div>
@@ -111,12 +120,17 @@ export function NetEvaluationTab({
               >
                 <span className="text-sm">{treatment.title}</span>
                 <div className="flex items-center gap-2">
-                  <span className={cn(
-                    "text-xs px-2 py-0.5 rounded-full",
-                    treatment.status === "completed" && "bg-green-100 text-green-700",
-                    treatment.status === "in_progress" && "bg-blue-100 text-blue-700",
-                    treatment.status === "planned" && "bg-gray-100 text-gray-700",
-                  )}>
+                  <span
+                    className={cn(
+                      "text-xs px-2 py-0.5 rounded-full",
+                      treatment.status === "completed" &&
+                        "bg-green-100 text-green-700",
+                      treatment.status === "in_progress" &&
+                        "bg-blue-100 text-blue-700",
+                      treatment.status === "planned" &&
+                        "bg-gray-100 text-gray-700",
+                    )}
+                  >
                     {treatment.status}
                   </span>
                   {treatment.sharedCount > 1 && (
@@ -148,20 +162,25 @@ export function NetEvaluationTab({
         {/* Mini heatmap with arrow */}
         <div className="relative">
           <div className="grid grid-cols-5 gap-1 opacity-50">
-            {LEVELS.slice().reverse().map((impact) =>
-              LEVELS.map((likelihood) => (
-                <div
-                  key={`${likelihood}-${impact}`}
-                  className={cn(
-                    "w-full aspect-square rounded-sm",
-                    likelihood * impact >= 16 ? "bg-red-300" :
-                    likelihood * impact >= 10 ? "bg-orange-200" :
-                    likelihood * impact >= 6 ? "bg-yellow-200" :
-                    "bg-green-200",
-                  )}
-                />
-              )),
-            )}
+            {LEVELS.slice()
+              .reverse()
+              .map((impact) =>
+                LEVELS.map((likelihood) => (
+                  <div
+                    key={`${likelihood}-${impact}`}
+                    className={cn(
+                      "w-full aspect-square rounded-sm",
+                      likelihood * impact >= 16
+                        ? "bg-red-300"
+                        : likelihood * impact >= 10
+                          ? "bg-orange-200"
+                          : likelihood * impact >= 6
+                            ? "bg-yellow-200"
+                            : "bg-green-200",
+                    )}
+                  />
+                )),
+              )}
           </div>
           {/* Gross position marker */}
           {grossLikelihood && grossImpact && (
@@ -186,11 +205,15 @@ export function NetEvaluationTab({
         </div>
         {/* Reduction percentage */}
         {reduction !== null && (
-          <div className={cn(
-            "mt-4 text-center text-lg font-bold",
-            reduction > 0 ? "text-green-600" : "text-red-600",
-          )}>
-            {reduction > 0 ? `${reduction}% \u2193` : `${Math.abs(reduction)}% \u2191`}
+          <div
+            className={cn(
+              "mt-4 text-center text-lg font-bold",
+              reduction > 0 ? "text-green-600" : "text-red-600",
+            )}
+          >
+            {reduction > 0
+              ? `${reduction}% \u2193`
+              : `${Math.abs(reduction)}% \u2191`}
           </div>
         )}
       </div>

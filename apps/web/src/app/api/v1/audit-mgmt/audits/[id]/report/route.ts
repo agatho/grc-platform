@@ -79,10 +79,7 @@ export async function GET(req: Request, { params }: RouteParams) {
     })
     .from(auditChecklist)
     .where(
-      and(
-        eq(auditChecklist.auditId, id),
-        eq(auditChecklist.orgId, ctx.orgId),
-      ),
+      and(eq(auditChecklist.auditId, id), eq(auditChecklist.orgId, ctx.orgId)),
     );
 
   // 3. Per-checklist result breakdown
@@ -97,7 +94,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   const breakdown: Breakdown[] = [];
   for (const cl of checklists) {
     const rows = await db
-      .select({ result: auditChecklistItem.result, cnt: sql<number>`count(*)::int` })
+      .select({
+        result: auditChecklistItem.result,
+        cnt: sql<number>`count(*)::int`,
+      })
       .from(auditChecklistItem)
       .where(eq(auditChecklistItem.checklistId, cl.id))
       .groupBy(auditChecklistItem.result);
@@ -198,7 +198,9 @@ export async function GET(req: Request, { params }: RouteParams) {
     );
 
   const distinctRiskIds = Array.from(
-    new Set(riskLinkedFindings.map((r) => r.riskId).filter((x): x is string => !!x)),
+    new Set(
+      riskLinkedFindings.map((r) => r.riskId).filter((x): x is string => !!x),
+    ),
   );
 
   type AffectedRisk = {
@@ -295,7 +297,8 @@ export async function GET(req: Request, { params }: RouteParams) {
         }
         const open = openStatuses.has(l.status);
         if (open) openFindingCount++;
-        if (open && criticalSeverities.has(l.severity)) needsReassessment = true;
+        if (open && criticalSeverities.has(l.severity))
+          needsReassessment = true;
       }
       affectedRisks.push({
         riskId: rr.id,
@@ -339,7 +342,9 @@ export async function GET(req: Request, { params }: RouteParams) {
       ),
     );
   const distinctControlIds = Array.from(
-    new Set(controlFindings.map((r) => r.controlId).filter((x): x is string => !!x)),
+    new Set(
+      controlFindings.map((r) => r.controlId).filter((x): x is string => !!x),
+    ),
   );
   type AffectedControl = {
     controlId: string;

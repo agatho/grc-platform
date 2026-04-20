@@ -29,7 +29,9 @@ export async function PUT(
   const [current] = await db
     .select()
     .from(bcp)
-    .where(and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)));
+    .where(
+      and(eq(bcp.id, id), eq(bcp.orgId, ctx.orgId), isNull(bcp.deletedAt)),
+    );
 
   if (!current) {
     return Response.json({ error: "BCP not found" }, { status: 404 });

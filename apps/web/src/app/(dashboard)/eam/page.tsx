@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import Link from "next/link";
-import { Layers, AppWindow, AlertTriangle, ShieldAlert, Plus, Upload, FileSpreadsheet } from "lucide-react";
+import {
+  Layers,
+  AppWindow,
+  AlertTriangle,
+  ShieldAlert,
+  Plus,
+  Upload,
+  FileSpreadsheet,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -51,8 +59,10 @@ function EamDashboardInner() {
         totalElements: elements.length,
         byLayer: {
           business: elements.filter((e: any) => e.layer === "business").length,
-          application: elements.filter((e: any) => e.layer === "application").length,
-          technology: elements.filter((e: any) => e.layer === "technology").length,
+          application: elements.filter((e: any) => e.layer === "application")
+            .length,
+          technology: elements.filter((e: any) => e.layer === "technology")
+            .length,
         },
         approachingEol: eolApps.length,
         spofCount: spofs.length,
@@ -68,7 +78,11 @@ function EamDashboardInner() {
   }, [fetchData]);
 
   if (loading || !data) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -76,8 +90,18 @@ function EamDashboardInner() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("title")}</h1>
         <div className="flex gap-2">
-          <Link href="/eam/applications"><Button><Plus className="h-4 w-4 mr-2" />{t("portfolio.registerApp")}</Button></Link>
-          <Link href="/eam/import"><Button variant="outline"><Upload className="h-4 w-4 mr-2" />{t("import.archimateImport")}</Button></Link>
+          <Link href="/eam/applications">
+            <Button>
+              <Plus className="h-4 w-4 mr-2" />
+              {t("portfolio.registerApp")}
+            </Button>
+          </Link>
+          <Link href="/eam/import">
+            <Button variant="outline">
+              <Upload className="h-4 w-4 mr-2" />
+              {t("import.archimateImport")}
+            </Button>
+          </Link>
         </div>
       </div>
 
@@ -88,26 +112,44 @@ function EamDashboardInner() {
             <p className="text-sm text-muted-foreground">{t("elements")}</p>
             <p className="text-2xl font-bold">{data.totalElements}</p>
             <p className="text-xs text-muted-foreground mt-1">
-              {t("layers.business")}: {data.byLayer.business} | {t("layers.application")}: {data.byLayer.application} | {t("layers.technology")}: {data.byLayer.technology}
+              {t("layers.business")}: {data.byLayer.business} |{" "}
+              {t("layers.application")}: {data.byLayer.application} |{" "}
+              {t("layers.technology")}: {data.byLayer.technology}
             </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("portfolio.approachingEol")}</p>
-            <p className={`text-2xl font-bold ${data.approachingEol > 0 ? "text-red-600" : ""}`}>{data.approachingEol}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("portfolio.approachingEol")}
+            </p>
+            <p
+              className={`text-2xl font-bold ${data.approachingEol > 0 ? "text-red-600" : ""}`}
+            >
+              {data.approachingEol}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("spof.title")}</p>
-            <p className={`text-2xl font-bold ${data.spofCount > 0 ? "text-red-600" : ""}`}>{data.spofCount}</p>
+            <p
+              className={`text-2xl font-bold ${data.spofCount > 0 ? "text-red-600" : ""}`}
+            >
+              {data.spofCount}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
-            <p className="text-sm text-muted-foreground">{t("rules.violations")}</p>
-            <p className={`text-2xl font-bold ${data.violations > 0 ? "text-amber-600" : ""}`}>{data.violations}</p>
+            <p className="text-sm text-muted-foreground">
+              {t("rules.violations")}
+            </p>
+            <p
+              className={`text-2xl font-bold ${data.violations > 0 ? "text-amber-600" : ""}`}
+            >
+              {data.violations}
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -120,7 +162,10 @@ function EamDashboardInner() {
               <Layers className="h-8 w-8 text-primary" />
               <div>
                 <p className="font-medium">{t("diagram.title")}</p>
-                <p className="text-sm text-muted-foreground">{t("layers.business")} + {t("layers.application")} + {t("layers.technology")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("layers.business")} + {t("layers.application")} +{" "}
+                  {t("layers.technology")}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -131,7 +176,9 @@ function EamDashboardInner() {
               <AppWindow className="h-8 w-8 text-primary" />
               <div>
                 <p className="font-medium">{t("capabilities.title")}</p>
-                <p className="text-sm text-muted-foreground">{t("capabilities.strategicImportance")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("capabilities.strategicImportance")}
+                </p>
               </div>
             </CardContent>
           </Card>
@@ -142,7 +189,9 @@ function EamDashboardInner() {
               <FileSpreadsheet className="h-8 w-8 text-primary" />
               <div>
                 <p className="font-medium">{t("portfolio.title")}</p>
-                <p className="text-sm text-muted-foreground">{t("portfolio.timeClassification")}</p>
+                <p className="text-sm text-muted-foreground">
+                  {t("portfolio.timeClassification")}
+                </p>
               </div>
             </CardContent>
           </Card>

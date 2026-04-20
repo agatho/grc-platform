@@ -72,11 +72,15 @@ function buildAnnualReportHTML(
     .join("");
 
   const criticalList = report.criticalFindings.length
-    ? report.criticalFindings.map((f) => `<li class="critical">${esc(f)}</li>`).join("")
+    ? report.criticalFindings
+        .map((f) => `<li class="critical">${esc(f)}</li>`)
+        .join("")
     : "<li><em>Keine kritischen Befunde.</em></li>";
 
   const highlightList = report.highlights.length
-    ? report.highlights.map((h) => `<li class="highlight">${esc(h)}</li>`).join("")
+    ? report.highlights
+        .map((h) => `<li class="highlight">${esc(h)}</li>`)
+        .join("")
     : "<li><em>Keine hervorgehobenen Erfolge.</em></li>";
 
   return `<!DOCTYPE html>
@@ -337,7 +341,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
       total: sql<number>`count(*)::int`,
       serious: sql<number>`count(*) filter (where ${aiIncident.isSerious} = true)::int`,
       overdue: sql<number>`count(*) filter (where ${aiIncident.authorityDeadline} < now() and ${aiIncident.authorityNotifiedAt} is null)::int`,
-      avgNotifyHours: sql<number | null>`avg(extract(epoch from (${aiIncident.authorityNotifiedAt} - ${aiIncident.detectedAt}))/3600) filter (where ${aiIncident.authorityNotifiedAt} is not null)`,
+      avgNotifyHours: sql<
+        number | null
+      >`avg(extract(epoch from (${aiIncident.authorityNotifiedAt} - ${aiIncident.detectedAt}))/3600) filter (where ${aiIncident.authorityNotifiedAt} is not null)`,
     })
     .from(aiIncident)
     .where(
@@ -357,7 +363,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .from(aiFria)
     .where(eq(aiFria.orgId, ctx.orgId));
 
-  const qmsRows = await db.select().from(aiProviderQms).where(eq(aiProviderQms.orgId, ctx.orgId));
+  const qmsRows = await db
+    .select()
+    .from(aiProviderQms)
+    .where(eq(aiProviderQms.orgId, ctx.orgId));
   let totalMaturity = 0;
   let readyForCe = 0;
   for (const q of qmsRows) {
@@ -377,7 +386,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
     totalMaturity += r.maturityScore;
     if (r.readyForCe) readyForCe++;
   }
-  const avgMaturity = qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
+  const avgMaturity =
+    qmsRows.length > 0 ? Math.round(totalMaturity / qmsRows.length) : 0;
   const notReadyForCe = qmsRows.length - readyForCe;
 
   const [gpaiCounts] = await db
@@ -431,7 +441,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
       approved: friaCounts?.approved ?? 0,
     },
     qms: { avgMaturity, readyForCe, notReadyForCe },
-    gpai: { total: gpaiCounts?.total ?? 0, systemic: gpaiCounts?.systemic ?? 0 },
+    gpai: {
+      total: gpaiCounts?.total ?? 0,
+      systemic: gpaiCounts?.systemic ?? 0,
+    },
     correctiveActions: {
       open: caCounts?.open ?? 0,
       closed: caCounts?.closed ?? 0,
@@ -447,7 +460,11 @@ export async function GET(_req: Request, { params }: RouteParams) {
     const puppeteer = await import("puppeteer");
     const browser = await puppeteer.launch({
       headless: true,
-      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-dev-shm-usage"],
+      args: [
+        "--no-sandbox",
+        "--disable-setuid-sandbox",
+        "--disable-dev-shm-usage",
+      ],
     });
     const page = await browser.newPage();
     await page.setContent(html, { waitUntil: "networkidle0" });
@@ -459,7 +476,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     await browser.close();
 
     const filename = `AI-Act-Annual-Report-${year}-${org.name.replace(/[^a-zA-Z0-9\-_]/g, "_")}.pdf`;
-    return new Response(pdfBuffer, {
+    return new Response(new Uint8Array(pdfBuffer), {
       headers: {
         "Content-Type": "application/pdf",
         "Content-Disposition": `attachment; filename="${filename}"`,

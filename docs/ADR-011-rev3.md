@@ -1,12 +1,12 @@
 # ADR-011 rev.3 — External Tamper-Evidence Anchors (FreeTSA + OpenTimestamps)
 
-| **ADR-ID**  | **011** |
-|-------------|---------|
-| **Title**   | **Audit Trail Architecture — rev.3 (external dual anchors)** |
-| **Status**  | **Accepted** |
-| **Date**    | 2026-04-20 |
-| **Supersedes** | — (extends rev.2) |
-| **Context** | GDPR Art. 5, ISO 27001 A.12.4, DORA Art. 28, eIDAS, Stakeholder-Analyse (Platform-Vendor-Trust) |
+| **ADR-ID**     | **011**                                                                                         |
+| -------------- | ----------------------------------------------------------------------------------------------- |
+| **Title**      | **Audit Trail Architecture — rev.3 (external dual anchors)**                                    |
+| **Status**     | **Accepted**                                                                                    |
+| **Date**       | 2026-04-20                                                                                      |
+| **Supersedes** | — (extends rev.2)                                                                               |
+| **Context**    | GDPR Art. 5, ISO 27001 A.12.4, DORA Art. 28, eIDAS, Stakeholder-Analyse (Platform-Vendor-Trust) |
 
 ## Context
 
@@ -23,6 +23,7 @@ Rev.3 schließt genau diese Lücke: die tägliche Merkle-Root jeder Tenant-Chain
 2. **OpenTimestamps (Bitcoin-Blockchain)** — aggregiert unseren Hash mit Millionen anderer in einem Calendar-Merkle-Tree, committet den Root alle 1-2 Stunden in eine Bitcoin-`OP_RETURN`-Transaktion. Trustless — keine einzelne Entität kann den Proof nachträglich zurückziehen. Latenz: ~1-2 h bis zum Bitcoin-Commit. Kosten: **0 €** (aggregiert).
 
 Beide parallel, weil jeder für sich eine Schwachstelle hat:
+
 - FreeTSA könnte offline gehen oder Keys verlieren → OTS überlebt
 - OpenTimestamps-Calendar-Server könnten zensieren → FreeTSA überlebt
 
@@ -48,6 +49,7 @@ Inkludsions-Beweis pro Leaf ist ~20 Knoten tief für 1 Million Einträge — ver
 ### D3. Nightly Worker (`apps/worker/src/crons/daily-audit-anchor.ts`)
 
 Läuft 00:05 UTC. Für jede Org mit Activity am Vortag:
+
 1. Baue Merkle-Tree
 2. POST Root an FreeTSA → insert row mit `proof_status='complete'`
 3. POST Root an OTS-Calendar-Pool (parallel an 3 Calendars) → insert row mit `proof_status='pending'`
@@ -56,6 +58,7 @@ Läuft 00:05 UTC. Für jede Org mit Activity am Vortag:
 ### D4. On-Demand Anchor API (`POST /api/v1/audit-log/anchor`)
 
 Ersetzt nicht den Nightly-Worker, ergänzt ihn. Use-Cases:
+
 - Admin fordert vor einer Prüfung einen sofortigen Anchor an
 - Tests / Alpha-Demos müssen nicht 24 h warten
 
@@ -77,23 +80,25 @@ Wir brauchen keinen eigenen Bitcoin-Full-Node. Wenn ein Customer Trust-Minimieru
 
 ## Evaluated Alternatives
 
-| Option | Advantages | Disadvantages | Choice |
-|---|---|---|---|
-| **FreeTSA + OpenTimestamps dual (aktuell)** | Redundanz, Bitcoin-Trustless + Sekunden-Latenz, Kosten 0 € | Zwei Integrations | ✅ |
-| Nur FreeTSA | Einfacher, sofort verifizierbar | Single Server → Point of Failure | — |
-| Nur OpenTimestamps | Trustless via Bitcoin | 1-2 h Latenz bis voller Proof | — |
-| Kommerzielle eIDAS-QTSP (D-Trust, DigiCert) | Qualified Electronic Timestamp, maximale juristische Anerkennung in DE/EU | ~500-2000 €/Jahr, kommerzielle Abhängigkeit | Phase 2, wenn GmbH existiert |
-| Eigener Bitcoin-Node + Direkt-OP_RETURN | Volle Autonomie | ~€5-20 BTC-Gebühr pro Commit, Node-Ops | — |
-| Ethereum-Smart-Contract | Billiger als BTC, programmierbar | Wenige Auditoren akzeptieren Ethereum-State als Beweis | — |
+| Option                                      | Advantages                                                                | Disadvantages                                          | Choice                       |
+| ------------------------------------------- | ------------------------------------------------------------------------- | ------------------------------------------------------ | ---------------------------- |
+| **FreeTSA + OpenTimestamps dual (aktuell)** | Redundanz, Bitcoin-Trustless + Sekunden-Latenz, Kosten 0 €                | Zwei Integrations                                      | ✅                           |
+| Nur FreeTSA                                 | Einfacher, sofort verifizierbar                                           | Single Server → Point of Failure                       | —                            |
+| Nur OpenTimestamps                          | Trustless via Bitcoin                                                     | 1-2 h Latenz bis voller Proof                          | —                            |
+| Kommerzielle eIDAS-QTSP (D-Trust, DigiCert) | Qualified Electronic Timestamp, maximale juristische Anerkennung in DE/EU | ~500-2000 €/Jahr, kommerzielle Abhängigkeit            | Phase 2, wenn GmbH existiert |
+| Eigener Bitcoin-Node + Direkt-OP_RETURN     | Volle Autonomie                                                           | ~€5-20 BTC-Gebühr pro Commit, Node-Ops                 | —                            |
+| Ethereum-Smart-Contract                     | Billiger als BTC, programmierbar                                          | Wenige Auditoren akzeptieren Ethereum-State als Beweis | —                            |
 
 ## Consequences
 
 ### Positive
+
 - Platform-Vendor verliert ab Anchor-Zeitpunkt die Möglichkeit, Audit-Events rückwirkend zu manipulieren — egal ob legal, illegal, oder forensisch erzwungen. Das ist der _eigentliche_ Wert des ganzen Tamper-Evidence-Konzepts.
 - Bei GmbH-Gründung später muss nichts umgebaut werden — eine QTSP wird einfach als dritter Provider (`provider='dtrust'`) hinzugefügt.
 - Kunden können ihre Anchors unabhängig verifizieren, auch wenn ARCTOS nicht mehr existiert.
 
 ### Negative / Trade-offs
+
 - **FreeTSA-Dependency**: Wenn freetsa.org permanent offline geht, gehen neue Anchors durch diesen Provider verloren. Alte bleiben verifizierbar (die X.509-Kette überlebt die TSA). OTS fängt das redundanz-bedingt ab.
 - **OTS-Latenz**: Ein Anchor ist erst ~1-2 h nach Erstellung Bitcoin-verifizierbar. In dem Fenster ist er nur gegen Calendar-Server verifizierbar. Für operationelle GRC-Use-Cases (monatliche/quartalsweise Audits) vernachlässigbar.
 - **Storage-Wachstum**: ~6 KB pro Anchor pro Provider pro Tag. Bei 1000 Tenants × 365 Tage × 2 Provider = ~4.4 GB/Jahr. Für Postgres-Scale unproblematisch.
@@ -104,11 +109,13 @@ Wir brauchen keinen eigenen Bitcoin-Full-Node. Wenn ein Customer Trust-Minimieru
 **Phase 1 (heute, dieser PR)**: FreeTSA + OTS Dual, on-demand API, nightly cron, UI-Badges.
 
 **Phase 2** (wenn GmbH existiert):
+
 - **QTSP-Integration** (D-Trust oder DigiCert) als `provider='qtsp_dtrust'`. Damit ist das Siegel eIDAS-qualifiziert.
 - **OTS-Upgrade-Job**: täglich die `proof_status='pending'` OTS-Rows gegen die Calendars pollen und mit dem vollen Bitcoin-Attestation-Proof ersetzen. Setzt `bitcoin_block_height`.
 - **Downloadable-Archive-Export**: ein Klick erzeugt eine ZIP mit audit_log-JSON + alle Anchor-Proofs + README mit Verification-Instructions für offline-Audit.
 
 **Phase 3** (bei Enterprise-Sale):
+
 - **Eigener Bitcoin-Pruned-Node** (~10 GB, 10€/Monat Hetzner) für vollständig autonome OTS-Verifikation ohne Explorer-API-Dependency.
 - **QTSP-Failover**: zwei QTSPs parallel (DE + NL), damit auch eine nationale Regulator-Intervention nicht zum Ausfall führt.
 

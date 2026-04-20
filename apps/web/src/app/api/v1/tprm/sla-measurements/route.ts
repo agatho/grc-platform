@@ -1,8 +1,17 @@
 import { db, vendorSlaMeasurement, vendorSlaDefinition } from "@grc/db";
-import { createSlaMeasurementSchema, computeSlaMet, computeBreachSeverity } from "@grc/shared";
+import {
+  createSlaMeasurementSchema,
+  computeSlaMet,
+  computeBreachSeverity,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/tprm/sla-measurements?slaDefinitionId=...
 export async function GET(req: Request) {
@@ -40,7 +49,10 @@ export async function POST(req: Request) {
 
   const body = createSlaMeasurementSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Lookup SLA definition to get metric type and target
@@ -49,11 +61,23 @@ export async function POST(req: Request) {
     .from(vendorSlaDefinition)
     .where(eq(vendorSlaDefinition.id, body.data.slaDefinitionId));
 
-  if (!slaDef) return Response.json({ error: "SLA definition not found" }, { status: 404 });
+  if (!slaDef)
+    return Response.json(
+      { error: "SLA definition not found" },
+      { status: 404 },
+    );
 
   const targetValue = Number(slaDef.targetValue);
-  const isMet = computeSlaMet(slaDef.metricType, body.data.actualValue, targetValue);
-  const breachSeverity = computeBreachSeverity(body.data.actualValue, targetValue, isMet);
+  const isMet = computeSlaMet(
+    slaDef.metricType,
+    body.data.actualValue,
+    targetValue,
+  );
+  const breachSeverity = computeBreachSeverity(
+    body.data.actualValue,
+    targetValue,
+    isMet,
+  );
 
   const created = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx

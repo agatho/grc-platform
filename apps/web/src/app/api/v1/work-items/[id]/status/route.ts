@@ -19,7 +19,11 @@ const VALID_TRANSITIONS: Record<WorkItemStatus, WorkItemStatus[]> = {
 };
 
 // Terminal states that set completedAt/completedBy
-const TERMINAL_STATES: WorkItemStatus[] = ["completed", "obsolete", "cancelled"];
+const TERMINAL_STATES: WorkItemStatus[] = [
+  "completed",
+  "obsolete",
+  "cancelled",
+];
 
 // PUT /api/v1/work-items/:id/status — Status transition
 export async function PUT(

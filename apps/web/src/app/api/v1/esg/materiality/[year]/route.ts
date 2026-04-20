@@ -1,8 +1,4 @@
-import {
-  db,
-  esgMaterialityAssessment,
-  esgMaterialityTopic,
-} from "@grc/db";
+import { db, esgMaterialityAssessment, esgMaterialityTopic } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -35,10 +31,7 @@ export async function GET(
     );
 
   if (!assessment) {
-    return Response.json(
-      { error: "Assessment not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Assessment not found" }, { status: 404 });
   }
 
   const topics = await db
@@ -67,9 +60,14 @@ export async function PUT(
   }
 
   const { z } = await import("zod");
-  const parsed = z.object({ status: z.enum(["draft", "in_progress", "completed"]) }).safeParse(await req.json());
+  const parsed = z
+    .object({ status: z.enum(["draft", "in_progress", "completed"]) })
+    .safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const { status } = parsed.data;
 

@@ -18,7 +18,10 @@ export async function POST(
   const { id } = await params;
   const body = dmnBatchTestSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [decision] = await db
@@ -33,7 +36,10 @@ export async function POST(
   // Evaluate each test case
   const results = body.data.testCases.map((tc, idx) => {
     try {
-      const evalResult = { matchedRules: [] as number[], outputs: [] as Record<string, unknown>[] };
+      const evalResult = {
+        matchedRules: [] as number[],
+        outputs: [] as Record<string, unknown>[],
+      };
       return {
         testCaseIndex: idx,
         inputs: tc.inputs,
@@ -50,10 +56,14 @@ export async function POST(
   });
 
   // Coverage: which rules were triggered
-  const allMatchedRules = new Set(results.flatMap((r) => ("matchedRules" in r ? r.matchedRules : [])));
+  const allMatchedRules = new Set(
+    results.flatMap((r) => ("matchedRules" in r ? r.matchedRules : [])),
+  );
   const totalRules = (decision.inputSchema as unknown[])?.length ?? 0;
-  const untriggeredRules = Array.from({ length: totalRules }, (_, i) => i)
-    .filter((i) => !allMatchedRules.has(i));
+  const untriggeredRules = Array.from(
+    { length: totalRules },
+    (_, i) => i,
+  ).filter((i) => !allMatchedRules.has(i));
 
   return Response.json({
     data: {
@@ -62,7 +72,8 @@ export async function POST(
         triggeredRules: allMatchedRules.size,
         totalRules,
         untriggeredRules,
-        coveragePct: totalRules > 0 ? (allMatchedRules.size / totalRules) * 100 : 100,
+        coveragePct:
+          totalRules > 0 ? (allMatchedRules.size / totalRules) * 100 : 100,
       },
     },
   });

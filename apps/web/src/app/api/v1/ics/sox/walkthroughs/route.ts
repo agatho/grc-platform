@@ -1,7 +1,12 @@
 import { db, soxWalkthrough } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { createSoxWalkthroughSchema } from "@grc/shared";
 
 // GET /api/v1/ics/sox/walkthroughs — List SOX walkthroughs
@@ -19,8 +24,13 @@ export async function GET(req: Request) {
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(soxWalkthrough).where(where)
-      .orderBy(desc(soxWalkthrough.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(soxWalkthrough)
+      .where(where)
+      .orderBy(desc(soxWalkthrough.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(soxWalkthrough).where(where),
   ]);
 
@@ -36,16 +46,22 @@ export async function POST(req: Request) {
 
   const body = createSoxWalkthroughSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const created = await withAuditContext(ctx, async (tx) => {
-    const [item] = await tx.insert(soxWalkthrough).values({
-      orgId: ctx.orgId,
-      performedBy: ctx.userId,
-      performedAt: new Date(),
-      ...body.data,
-    }).returning();
+    const [item] = await tx
+      .insert(soxWalkthrough)
+      .values({
+        orgId: ctx.orgId,
+        performedBy: ctx.userId,
+        performedAt: new Date(),
+        ...body.data,
+      })
+      .returning();
     return item;
   });
 

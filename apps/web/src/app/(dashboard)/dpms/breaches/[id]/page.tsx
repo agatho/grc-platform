@@ -37,7 +37,9 @@ function BreachDetailInner() {
   const [data, setData] = useState<BreachDetailData | null>(null);
   const [loading, setLoading] = useState(true);
   const [acting, setActing] = useState(false);
-  const [activeTab, setActiveTab] = useState<"overview" | "assessment" | "measures" | "notifications" | "lessons">("overview");
+  const [activeTab, setActiveTab] = useState<
+    "overview" | "assessment" | "measures" | "notifications" | "lessons"
+  >("overview");
 
   const fetchData = useCallback(async () => {
     setLoading(true);
@@ -75,7 +77,9 @@ function BreachDetailInner() {
   const handleClose = async () => {
     setActing(true);
     try {
-      const res = await fetch(`/api/v1/dpms/breaches/${id}/close`, { method: "POST" });
+      const res = await fetch(`/api/v1/dpms/breaches/${id}/close`, {
+        method: "POST",
+      });
       if (res.ok) {
         await fetchData();
       }
@@ -93,7 +97,9 @@ function BreachDetailInner() {
   }
 
   if (!data) {
-    return <p className="text-center text-gray-500 py-8">{t("breaches.notFound")}</p>;
+    return (
+      <p className="text-center text-gray-500 py-8">{t("breaches.notFound")}</p>
+    );
   }
 
   const detectedAt = new Date(data.detectedAt);
@@ -101,25 +107,45 @@ function BreachDetailInner() {
   const now = new Date();
   const msRemaining = Math.max(0, deadline72h.getTime() - now.getTime());
   const hoursRemaining = Math.floor(msRemaining / (1000 * 60 * 60));
-  const minutesRemaining = Math.floor((msRemaining % (1000 * 60 * 60)) / (1000 * 60));
-  const progress72h = Math.min(100, Math.round(((72 * 60 * 60 * 1000 - msRemaining) / (72 * 60 * 60 * 1000)) * 100));
+  const minutesRemaining = Math.floor(
+    (msRemaining % (1000 * 60 * 60)) / (1000 * 60),
+  );
+  const progress72h = Math.min(
+    100,
+    Math.round(
+      ((72 * 60 * 60 * 1000 - msRemaining) / (72 * 60 * 60 * 1000)) * 100,
+    ),
+  );
   const isOverdue = msRemaining === 0;
   const isClosed = data.status === "closed";
 
-  const tabs = ["overview", "assessment", "measures", "notifications", "lessons"] as const;
+  const tabs = [
+    "overview",
+    "assessment",
+    "measures",
+    "notifications",
+    "lessons",
+  ] as const;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="sm" onClick={() => router.push("/dpms/breaches")}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/dpms/breaches")}
+          >
             <ArrowLeft size={16} />
           </Button>
           <div>
             <h1 className="text-2xl font-bold text-gray-900">{data.title}</h1>
             <div className="flex items-center gap-2 mt-1">
-              <Badge variant="outline" className={SEVERITY_COLORS[data.severity] ?? ""}>
+              <Badge
+                variant="outline"
+                className={SEVERITY_COLORS[data.severity] ?? ""}
+              >
                 {data.severity}
               </Badge>
               <Badge variant="outline">{data.status.replace(/_/g, " ")}</Badge>
@@ -130,10 +156,16 @@ function BreachDetailInner() {
 
       {/* 72h Countdown */}
       {!isClosed && !data.dpaNotifiedAt && (
-        <div className={`rounded-lg border-2 p-6 ${isOverdue ? "border-red-300 bg-red-50" : "border-orange-300 bg-orange-50"}`}>
+        <div
+          className={`rounded-lg border-2 p-6 ${isOverdue ? "border-red-300 bg-red-50" : "border-orange-300 bg-orange-50"}`}
+        >
           <div className="flex items-center gap-2 mb-3">
-            <AlertTriangle className={`h-5 w-5 ${isOverdue ? "text-red-600" : "text-orange-600"}`} />
-            <span className={`font-semibold ${isOverdue ? "text-red-800" : "text-orange-800"}`}>
+            <AlertTriangle
+              className={`h-5 w-5 ${isOverdue ? "text-red-600" : "text-orange-600"}`}
+            />
+            <span
+              className={`font-semibold ${isOverdue ? "text-red-800" : "text-orange-800"}`}
+            >
               {t("breaches.countdown")} (Art. 33 GDPR)
             </span>
           </div>
@@ -147,7 +179,9 @@ function BreachDetailInner() {
             <span className="text-gray-600">
               {t("breaches.detected")}: {detectedAt.toLocaleString()}
             </span>
-            <span className={`font-bold ${isOverdue ? "text-red-700" : "text-orange-700"}`}>
+            <span
+              className={`font-bold ${isOverdue ? "text-red-700" : "text-orange-700"}`}
+            >
               {isOverdue
                 ? t("breaches.expired")
                 : `${hoursRemaining}h ${minutesRemaining}m ${t("breaches.remaining")}`}
@@ -165,7 +199,8 @@ function BreachDetailInner() {
       {data.dpaNotifiedAt && !isClosed && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
           <span className="text-sm text-green-700 font-medium">
-            {t("breaches.dpaNotified")} - {new Date(data.dpaNotifiedAt).toLocaleString()}
+            {t("breaches.dpaNotified")} -{" "}
+            {new Date(data.dpaNotifiedAt).toLocaleString()}
           </span>
         </div>
       )}
@@ -193,15 +228,38 @@ function BreachDetailInner() {
         {activeTab === "overview" && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="space-y-4">
-              <FieldRow label={t("breaches.description")} value={data.description ?? "-"} />
-              <FieldRow label={t("breaches.personalDataAffected")} value={data.isDpaNotificationRequired ? t("ropa.yes") : t("ropa.no")} />
-              <FieldRow label={t("breaches.dataCategoriesAffected")} value={data.dataCategoriesAffected?.join(", ") ?? "-"} />
-              <FieldRow label={t("breaches.estimatedRecords")} value={data.estimatedRecordsAffected?.toString() ?? "-"} />
+              <FieldRow
+                label={t("breaches.description")}
+                value={data.description ?? "-"}
+              />
+              <FieldRow
+                label={t("breaches.personalDataAffected")}
+                value={
+                  data.isDpaNotificationRequired ? t("ropa.yes") : t("ropa.no")
+                }
+              />
+              <FieldRow
+                label={t("breaches.dataCategoriesAffected")}
+                value={data.dataCategoriesAffected?.join(", ") ?? "-"}
+              />
+              <FieldRow
+                label={t("breaches.estimatedRecords")}
+                value={data.estimatedRecordsAffected?.toString() ?? "-"}
+              />
             </div>
             <div className="space-y-4">
-              <FieldRow label={t("breaches.affectedCountries")} value={data.affectedCountries?.join(", ") ?? "-"} />
-              <FieldRow label={t("breaches.assignee")} value={data.assigneeName ?? "-"} />
-              <FieldRow label={t("breaches.detected")} value={detectedAt.toLocaleString()} />
+              <FieldRow
+                label={t("breaches.affectedCountries")}
+                value={data.affectedCountries?.join(", ") ?? "-"}
+              />
+              <FieldRow
+                label={t("breaches.assignee")}
+                value={data.assigneeName ?? "-"}
+              />
+              <FieldRow
+                label={t("breaches.detected")}
+                value={detectedAt.toLocaleString()}
+              />
             </div>
           </div>
         )}
@@ -209,30 +267,61 @@ function BreachDetailInner() {
         {activeTab === "assessment" && (
           <div className="space-y-4">
             <FieldRow label={t("breaches.severity")} value={data.severity} />
-            <FieldRow label={t("breaches.dpaRequired")} value={data.isDpaNotificationRequired ? t("ropa.yes") : t("ropa.no")} />
-            <FieldRow label={t("breaches.individualsRequired")} value={data.isIndividualNotificationRequired ? t("ropa.yes") : t("ropa.no")} />
+            <FieldRow
+              label={t("breaches.dpaRequired")}
+              value={
+                data.isDpaNotificationRequired ? t("ropa.yes") : t("ropa.no")
+              }
+            />
+            <FieldRow
+              label={t("breaches.individualsRequired")}
+              value={
+                data.isIndividualNotificationRequired
+                  ? t("ropa.yes")
+                  : t("ropa.no")
+              }
+            />
           </div>
         )}
 
         {activeTab === "measures" && (
           <div className="space-y-4">
-            <FieldRow label={t("breaches.containment")} value={data.containmentMeasures ?? "-"} />
-            <FieldRow label={t("breaches.remediation")} value={data.remediationMeasures ?? "-"} />
+            <FieldRow
+              label={t("breaches.containment")}
+              value={data.containmentMeasures ?? "-"}
+            />
+            <FieldRow
+              label={t("breaches.remediation")}
+              value={data.remediationMeasures ?? "-"}
+            />
           </div>
         )}
 
         {activeTab === "notifications" && (
           <div className="space-y-3">
             {data.notifications.length === 0 ? (
-              <p className="text-sm text-gray-400">{t("breaches.noNotifications")}</p>
+              <p className="text-sm text-gray-400">
+                {t("breaches.noNotifications")}
+              </p>
             ) : (
               data.notifications.map((notif) => (
-                <div key={notif.id} className="flex items-center justify-between border-b border-gray-100 pb-2">
+                <div
+                  key={notif.id}
+                  className="flex items-center justify-between border-b border-gray-100 pb-2"
+                >
                   <div>
-                    <Badge variant="outline" className="text-xs mr-2">{notif.recipientType}</Badge>
-                    <span className="text-sm text-gray-700">{notif.recipientEmail ?? "-"}</span>
+                    <Badge variant="outline" className="text-xs mr-2">
+                      {notif.recipientType}
+                    </Badge>
+                    <span className="text-sm text-gray-700">
+                      {notif.recipientEmail ?? "-"}
+                    </span>
                   </div>
-                  <span className="text-xs text-gray-500">{notif.sentAt ? new Date(notif.sentAt).toLocaleString() : "-"}</span>
+                  <span className="text-xs text-gray-500">
+                    {notif.sentAt
+                      ? new Date(notif.sentAt).toLocaleString()
+                      : "-"}
+                  </span>
                 </div>
               ))
             )}
@@ -241,7 +330,10 @@ function BreachDetailInner() {
 
         {activeTab === "lessons" && (
           <div className="space-y-4">
-            <FieldRow label={t("breaches.lessonsLearned")} value={data.lessonsLearned ?? "-"} />
+            <FieldRow
+              label={t("breaches.lessonsLearned")}
+              value={data.lessonsLearned ?? "-"}
+            />
           </div>
         )}
       </div>
@@ -249,7 +341,12 @@ function BreachDetailInner() {
       {/* Close button */}
       {data.status === "remediation" && (
         <div className="flex justify-end">
-          <Button variant="outline" size="sm" onClick={handleClose} disabled={acting}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleClose}
+            disabled={acting}
+          >
             <XCircle size={14} className="mr-1" />
             {t("breaches.closeBreach")}
           </Button>

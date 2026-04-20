@@ -12,13 +12,7 @@ const riskCategoryValues = [
   "esg",
 ] as const;
 
-const riskSourceValues = [
-  "isms",
-  "erm",
-  "bcm",
-  "project",
-  "process",
-] as const;
+const riskSourceValues = ["isms", "erm", "bcm", "project", "process"] as const;
 
 const riskStatusValues = [
   "identified",
@@ -43,7 +37,12 @@ const treatmentStatusValues = [
 ] as const;
 
 const kriDirectionValues = ["asc", "desc"] as const;
-const kriMeasurementFrequencyValues = ["daily", "weekly", "monthly", "quarterly"] as const;
+const kriMeasurementFrequencyValues = [
+  "daily",
+  "weekly",
+  "monthly",
+  "quarterly",
+] as const;
 
 // ─── Risk CRUD ───────────────────────────────────────────────
 
@@ -70,7 +69,10 @@ export const createRiskSchema = z
       }
       return true;
     },
-    { message: "financialImpactMax must be >= financialImpactMin", path: ["financialImpactMax"] },
+    {
+      message: "financialImpactMax must be >= financialImpactMin",
+      path: ["financialImpactMax"],
+    },
   );
 
 export const updateRiskSchema = z
@@ -98,7 +100,10 @@ export const updateRiskSchema = z
       }
       return true;
     },
-    { message: "financialImpactMax must be >= financialImpactMin", path: ["financialImpactMax"] },
+    {
+      message: "financialImpactMax must be >= financialImpactMin",
+      path: ["financialImpactMax"],
+    },
   );
 
 // ─── Risk Assessment ─────────────────────────────────────────
@@ -119,7 +124,8 @@ export const assessRiskSchema = z
       return hasResL === hasResI;
     },
     {
-      message: "residualLikelihood and residualImpact must both be provided or both omitted",
+      message:
+        "residualLikelihood and residualImpact must both be provided or both omitted",
       path: ["residualLikelihood"],
     },
   );
@@ -160,7 +166,9 @@ export const createKriSchema = z
     thresholdGreen: z.number().optional(),
     thresholdYellow: z.number().optional(),
     thresholdRed: z.number().optional(),
-    measurementFrequency: z.enum(kriMeasurementFrequencyValues).default("monthly"),
+    measurementFrequency: z
+      .enum(kriMeasurementFrequencyValues)
+      .default("monthly"),
     alertEnabled: z.boolean().default(true),
   })
   .refine(
@@ -172,15 +180,22 @@ export const createKriSchema = z
       ) {
         if (data.direction === "asc") {
           // Higher is worse: green < yellow < red
-          return data.thresholdGreen <= data.thresholdYellow && data.thresholdYellow <= data.thresholdRed;
+          return (
+            data.thresholdGreen <= data.thresholdYellow &&
+            data.thresholdYellow <= data.thresholdRed
+          );
         }
         // Lower is worse (desc): green > yellow > red
-        return data.thresholdGreen >= data.thresholdYellow && data.thresholdYellow >= data.thresholdRed;
+        return (
+          data.thresholdGreen >= data.thresholdYellow &&
+          data.thresholdYellow >= data.thresholdRed
+        );
       }
       return true;
     },
     {
-      message: "Thresholds must be ordered according to direction (asc: green <= yellow <= red, desc: green >= yellow >= red)",
+      message:
+        "Thresholds must be ordered according to direction (asc: green <= yellow <= red, desc: green >= yellow >= red)",
       path: ["thresholdYellow"],
     },
   );

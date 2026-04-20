@@ -2,13 +2,52 @@ import { z } from "zod";
 
 // Sprint 7: Data Protection Management System (DPMS) schemas
 
-const ropaLegalBasisValues = ["consent", "contract", "legal_obligation", "vital_interest", "public_interest", "legitimate_interest"] as const;
-const ropaStatusValues = ["draft", "active", "under_review", "archived"] as const;
-const dpiaStatusValues = ["draft", "in_progress", "completed", "pending_dpo_review", "approved", "rejected"] as const;
-const dsrTypeValues = ["access", "erasure", "restriction", "portability", "objection"] as const;
-const dsrStatusValues = ["received", "verified", "processing", "response_sent", "closed", "rejected"] as const;
+const ropaLegalBasisValues = [
+  "consent",
+  "contract",
+  "legal_obligation",
+  "vital_interest",
+  "public_interest",
+  "legitimate_interest",
+] as const;
+const ropaStatusValues = [
+  "draft",
+  "active",
+  "under_review",
+  "archived",
+] as const;
+const dpiaStatusValues = [
+  "draft",
+  "in_progress",
+  "completed",
+  "pending_dpo_review",
+  "approved",
+  "rejected",
+] as const;
+const dsrTypeValues = [
+  "access",
+  "erasure",
+  "restriction",
+  "portability",
+  "objection",
+] as const;
+const dsrStatusValues = [
+  "received",
+  "verified",
+  "processing",
+  "response_sent",
+  "closed",
+  "rejected",
+] as const;
 const breachSeverityValues = ["low", "medium", "high", "critical"] as const;
-const breachStatusValues = ["detected", "assessing", "notifying_dpa", "notifying_individuals", "remediation", "closed"] as const;
+const breachStatusValues = [
+  "detected",
+  "assessing",
+  "notifying_dpa",
+  "notifying_individuals",
+  "remediation",
+  "closed",
+] as const;
 const tiaLegalBasisValues = ["adequacy", "sccs", "bcrs", "derogation"] as const;
 const tiaRiskRatingValues = ["low", "medium", "high"] as const;
 
@@ -189,7 +228,12 @@ export const updateDataBreachSchema = z.object({
   description: z.string().optional(),
   severity: z.enum(breachSeverityValues).optional(),
   dataCategoriesAffected: z.array(z.string()).optional(),
-  estimatedRecordsAffected: z.number().int().nonnegative().nullable().optional(),
+  estimatedRecordsAffected: z
+    .number()
+    .int()
+    .nonnegative()
+    .nullable()
+    .optional(),
   affectedCountries: z.array(z.string()).optional(),
   isDpaNotificationRequired: z.boolean().optional(),
   isIndividualNotificationRequired: z.boolean().optional(),
@@ -218,7 +262,13 @@ export function isValidBreachTransition(from: string, to: string): boolean {
 }
 
 export const createDataBreachNotificationSchema = z.object({
-  recipientType: z.enum(["dpa", "individual", "processor", "controller", "other"]),
+  recipientType: z.enum([
+    "dpa",
+    "individual",
+    "processor",
+    "controller",
+    "other",
+  ]),
   recipientEmail: z.string().email().optional(),
 });
 

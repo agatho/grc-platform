@@ -27,13 +27,21 @@ export default function ControlTestExecutionsPage() {
     try {
       const res = await fetch("/api/v1/control-testing/executions?limit=50");
       if (res.ok) setExecutions((await res.json()).data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -48,18 +56,30 @@ export default function ControlTestExecutionsPage() {
                   <div className="flex items-center gap-3">
                     <TestTube className="h-4 w-4 text-muted-foreground" />
                     <div>
-                      <p className="font-medium text-sm">{exec.id.substring(0, 8)}</p>
+                      <p className="font-medium text-sm">
+                        {exec.id.substring(0, 8)}
+                      </p>
                       <div className="text-xs text-muted-foreground mt-1">
-                        {exec.triggeredBy} {exec.durationMs ? `- ${exec.durationMs}ms` : ""} - {exec.findingsGenerated} {t("executions.findings")}
+                        {exec.triggeredBy}{" "}
+                        {exec.durationMs ? `- ${exec.durationMs}ms` : ""} -{" "}
+                        {exec.findingsGenerated} {t("executions.findings")}
                       </div>
                     </div>
                   </div>
                   <div className="flex items-center gap-2">
-                    {exec.result && <Badge variant="outline">{exec.result}</Badge>}
-                    <Badge className={STATUS_COLORS[exec.status] ?? ""}>{exec.status}</Badge>
+                    {exec.result && (
+                      <Badge variant="outline">{exec.result}</Badge>
+                    )}
+                    <Badge className={STATUS_COLORS[exec.status] ?? ""}>
+                      {exec.status}
+                    </Badge>
                   </div>
                 </div>
-                {exec.summary && <p className="text-sm text-muted-foreground mt-2 ml-7">{exec.summary}</p>}
+                {exec.summary && (
+                  <p className="text-sm text-muted-foreground mt-2 ml-7">
+                    {exec.summary}
+                  </p>
+                )}
               </div>
             ))}
           </div>

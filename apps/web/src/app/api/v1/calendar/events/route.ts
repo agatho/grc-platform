@@ -1,12 +1,24 @@
 import { db, complianceCalendarEvent } from "@grc/db";
 import { createCalendarEventSchema } from "@grc/shared";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { eq, and, count, desc, isNull } from "drizzle-orm";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/calendar/events — Create manual calendar event
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = createCalendarEventSchema.safeParse(await req.json());
@@ -30,7 +42,9 @@ export async function POST(req: Request) {
         eventType: body.data.eventType,
         module: body.data.module,
         recurrence: body.data.recurrence,
-        recurrenceEndAt: body.data.recurrenceEndAt ? new Date(body.data.recurrenceEndAt) : null,
+        recurrenceEndAt: body.data.recurrenceEndAt
+          ? new Date(body.data.recurrenceEndAt)
+          : null,
         createdBy: ctx.userId,
       })
       .returning();

@@ -89,7 +89,9 @@ export default function PolicyComplianceDashboardPage() {
         <div className="grid gap-4 md:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("compliance.activeDistributions")}</CardDescription>
+              <CardDescription>
+                {t("compliance.activeDistributions")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
@@ -102,7 +104,9 @@ export default function PolicyComplianceDashboardPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("compliance.avgComplianceRate")}</CardDescription>
+              <CardDescription>
+                {t("compliance.avgComplianceRate")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="space-y-2">
@@ -118,7 +122,9 @@ export default function PolicyComplianceDashboardPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("compliance.overdueAcknowledgments")}</CardDescription>
+              <CardDescription>
+                {t("compliance.overdueAcknowledgments")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
@@ -135,7 +141,9 @@ export default function PolicyComplianceDashboardPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardDescription>{t("compliance.quizFailureRate")}</CardDescription>
+              <CardDescription>
+                {t("compliance.quizFailureRate")}
+              </CardDescription>
             </CardHeader>
             <CardContent>
               <div className="flex items-center gap-2">
@@ -164,7 +172,9 @@ export default function PolicyComplianceDashboardPage() {
                 >
                   <div className="flex items-center gap-4 rounded-lg border p-3 hover:bg-muted/50 transition-colors">
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium text-sm truncate">{dist.title}</p>
+                      <p className="font-medium text-sm truncate">
+                        {dist.title}
+                      </p>
                       <p className="text-xs text-muted-foreground truncate">
                         {dist.documentTitle}
                       </p>
@@ -204,7 +214,9 @@ export default function PolicyComplianceDashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle>{t("compliance.perDepartment")}</CardTitle>
-            <CardDescription>{t("compliance.perDepartmentDesc")}</CardDescription>
+            <CardDescription>
+              {t("compliance.perDepartmentDesc")}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
@@ -225,12 +237,11 @@ export default function PolicyComplianceDashboardPage() {
                     <div className="flex-1 min-w-0">
                       <p className="font-medium text-sm">{dept.department}</p>
                       <p className="text-xs text-muted-foreground">
-                        {dept.acknowledged}/{dept.total} {t("compliance.acknowledged")}
+                        {dept.acknowledged}/{dept.total}{" "}
+                        {t("compliance.acknowledged")}
                       </p>
                     </div>
-                    <Badge className={color}>
-                      {dept.complianceRate}%
-                    </Badge>
+                    <Badge className={color}>{dept.complianceRate}%</Badge>
                   </div>
                 );
               })}

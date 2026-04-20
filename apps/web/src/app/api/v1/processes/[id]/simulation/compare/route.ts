@@ -19,36 +19,61 @@ export async function GET(
   const scenarioB = url.searchParams.get("scenarioB");
 
   if (!scenarioA || !scenarioB) {
-    return Response.json({ error: "scenarioA and scenarioB query params required" }, { status: 422 });
+    return Response.json(
+      { error: "scenarioA and scenarioB query params required" },
+      { status: 422 },
+    );
   }
 
   const [resultA] = await db
     .select()
     .from(processSimulationResult)
-    .where(and(eq(processSimulationResult.scenarioId, scenarioA), eq(processSimulationResult.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(processSimulationResult.scenarioId, scenarioA),
+        eq(processSimulationResult.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(processSimulationResult.executedAt)
     .limit(1);
 
   const [resultB] = await db
     .select()
     .from(processSimulationResult)
-    .where(and(eq(processSimulationResult.scenarioId, scenarioB), eq(processSimulationResult.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(processSimulationResult.scenarioId, scenarioB),
+        eq(processSimulationResult.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(processSimulationResult.executedAt)
     .limit(1);
 
   if (!resultA || !resultB) {
-    return Response.json({ error: "One or both scenarios have no results" }, { status: 404 });
+    return Response.json(
+      { error: "One or both scenarios have no results" },
+      { status: 404 },
+    );
   }
 
   const comparison = {
     scenarioA: resultA,
     scenarioB: resultB,
     delta: {
-      avgCycleTime: parseFloat(resultB.avgCycleTime as string) - parseFloat(resultA.avgCycleTime as string),
-      p95CycleTime: parseFloat(resultB.p95CycleTime as string) - parseFloat(resultA.p95CycleTime as string),
-      avgCost: parseFloat(resultB.avgCost as string) - parseFloat(resultA.avgCost as string),
+      avgCycleTime:
+        parseFloat(resultB.avgCycleTime as string) -
+        parseFloat(resultA.avgCycleTime as string),
+      p95CycleTime:
+        parseFloat(resultB.p95CycleTime as string) -
+        parseFloat(resultA.p95CycleTime as string),
+      avgCost:
+        parseFloat(resultB.avgCost as string) -
+        parseFloat(resultA.avgCost as string),
       avgCycleTimePct: resultA.avgCycleTime
-        ? ((parseFloat(resultB.avgCycleTime as string) - parseFloat(resultA.avgCycleTime as string)) / parseFloat(resultA.avgCycleTime as string)) * 100
+        ? ((parseFloat(resultB.avgCycleTime as string) -
+            parseFloat(resultA.avgCycleTime as string)) /
+            parseFloat(resultA.avgCycleTime as string)) *
+          100
         : 0,
     },
   };

@@ -83,7 +83,8 @@ export function encodeBoolean(value: boolean): Buffer {
 /** Encode an OID from its dotted-decimal string form. */
 export function encodeOid(oid: string): Buffer {
   const parts = oid.split(".").map((p) => parseInt(p, 10));
-  if (parts.length < 2) throw new Error("OID must have at least two components");
+  if (parts.length < 2)
+    throw new Error("OID must have at least two components");
 
   const first = parts[0] * 40 + parts[1];
   const rest = parts.slice(2);
@@ -116,7 +117,10 @@ export function encodeSequence(...children: Buffer[]): Buffer {
  * Convenience: AlgorithmIdentifier ::= SEQUENCE { algorithm OID, parameters ANY }.
  * For SHA-256 the parameters are NULL per RFC 5754.
  */
-export function encodeAlgorithmIdentifier(oid: string, parametersNull = true): Buffer {
+export function encodeAlgorithmIdentifier(
+  oid: string,
+  parametersNull = true,
+): Buffer {
   return encodeSequence(
     encodeOid(oid),
     ...(parametersNull ? [encodeNull()] : []),

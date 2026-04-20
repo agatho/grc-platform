@@ -1,13 +1,59 @@
 // Sprint 75: Regulatory Horizon Scanner Types
 
-export type HorizonSourceType = "eu_oj" | "bsi" | "bafin" | "enisa" | "eba" | "esma" | "cert" | "national_gazette" | "custom";
-export type HorizonParserType = "rss" | "html_scraper" | "api" | "email" | "manual";
-export type HorizonItemType = "regulation" | "directive" | "guideline" | "consultation" | "enforcement" | "standard" | "alert";
-export type HorizonClassification = "critical" | "high" | "medium" | "low" | "informational";
-export type HorizonItemStatus = "new" | "triaged" | "under_review" | "assessed" | "acknowledged" | "dismissed";
-export type HorizonImpactLevel = "critical" | "high" | "medium" | "low" | "none";
-export type HorizonAssessmentStatus = "draft" | "in_review" | "approved" | "rejected";
-export type HorizonCalendarEventType = "compliance_deadline" | "enforcement_date" | "consultation_end" | "reporting_deadline" | "transition_period";
+export type HorizonSourceType =
+  | "eu_oj"
+  | "bsi"
+  | "bafin"
+  | "enisa"
+  | "eba"
+  | "esma"
+  | "cert"
+  | "national_gazette"
+  | "custom";
+export type HorizonParserType =
+  | "rss"
+  | "html_scraper"
+  | "api"
+  | "email"
+  | "manual";
+export type HorizonItemType =
+  | "regulation"
+  | "directive"
+  | "guideline"
+  | "consultation"
+  | "enforcement"
+  | "standard"
+  | "alert";
+export type HorizonClassification =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "informational";
+export type HorizonItemStatus =
+  | "new"
+  | "triaged"
+  | "under_review"
+  | "assessed"
+  | "acknowledged"
+  | "dismissed";
+export type HorizonImpactLevel =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "none";
+export type HorizonAssessmentStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "rejected";
+export type HorizonCalendarEventType =
+  | "compliance_deadline"
+  | "enforcement_date"
+  | "consultation_end"
+  | "reporting_deadline"
+  | "transition_period";
 export type HorizonPriority = "critical" | "high" | "medium" | "low";
 
 export interface HorizonScanSource {

@@ -27,7 +27,12 @@ export async function POST(req: Request) {
 
   if (paths.length === 0) {
     return Response.json({
-      data: { batchId, pathCount: 0, message: "No attack paths found. Ensure entry points and crown jewels are defined." },
+      data: {
+        batchId,
+        pathCount: 0,
+        message:
+          "No attack paths found. Ensure entry points and crown jewels are defined.",
+      },
     });
   }
 
@@ -46,19 +51,35 @@ export async function POST(req: Request) {
     }
   });
 
-  return Response.json({ data: { batchId, pathCount: paths.length } }, { status: 201 });
+  return Response.json(
+    { data: { batchId, pathCount: paths.length } },
+    { status: 201 },
+  );
 }
 
 interface ComputedPath {
   entryAssetId: string;
   targetAssetId: string;
-  pathJson: Array<{ assetId: string; assetName: string; cveIds: string[]; controlGaps: string[]; hopProbability: number }>;
+  pathJson: Array<{
+    assetId: string;
+    assetName: string;
+    cveIds: string[];
+    controlGaps: string[];
+    hopProbability: number;
+  }>;
   hopCount: number;
   riskScore: number;
-  blockingControlsJson: Array<{ controlId: string; controlName: string; wouldEliminatePaths: number }>;
+  blockingControlsJson: Array<{
+    controlId: string;
+    controlName: string;
+    wouldEliminatePaths: number;
+  }>;
 }
 
-async function computeAttackPaths(orgId: string, maxDepth: number): Promise<ComputedPath[]> {
+async function computeAttackPaths(
+  orgId: string,
+  maxDepth: number,
+): Promise<ComputedPath[]> {
   // BFS from entry points to crown jewels using entity_reference
   // Simplified implementation — production would use full graph from entity_reference + CVE data
   // Returns top 100 paths sorted by risk score

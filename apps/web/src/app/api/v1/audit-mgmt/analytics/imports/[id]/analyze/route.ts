@@ -41,7 +41,11 @@ export async function POST(
   const { analysisType, config } = parsed.data;
 
   let resultJson: Record<string, unknown> = {};
-  let summaryJson: { flaggedCount: number; totalAnalyzed: number; significance: boolean } = {
+  let summaryJson: {
+    flaggedCount: number;
+    totalAnalyzed: number;
+    significance: boolean;
+  } = {
     flaggedCount: 0,
     totalAnalyzed: data.length,
     significance: false,
@@ -56,7 +60,9 @@ export async function POST(
 
       if (values.length < (config.minCount ?? 100)) {
         return Response.json(
-          { error: `Minimum ${config.minCount ?? 100} valid numeric values required for Benford analysis` },
+          {
+            error: `Minimum ${config.minCount ?? 100} valid numeric values required for Benford analysis`,
+          },
           { status: 400 },
         );
       }
@@ -85,7 +91,11 @@ export async function POST(
     case "outlier": {
       const field = config.field ?? "amount";
       const values = data.map((r) => Number(r[field])).filter((v) => !isNaN(v));
-      const result = detectOutliers(values, (config.method as "zscore" | "iqr") ?? "zscore", config.threshold ?? 3);
+      const result = detectOutliers(
+        values,
+        (config.method as "zscore" | "iqr") ?? "zscore",
+        config.threshold ?? 3,
+      );
       resultJson = result as unknown as Record<string, unknown>;
       summaryJson = {
         flaggedCount: result.outlierRows.length,
@@ -98,9 +108,10 @@ export async function POST(
       const method = (config.method as "random" | "mus") ?? "random";
       const sampleSize = config.sampleSize ?? 30;
       const amountField = config.amountField ?? "amount";
-      const result = method === "mus"
-        ? monetaryUnitSample(data, amountField, sampleSize)
-        : randomSample(data.length, sampleSize);
+      const result =
+        method === "mus"
+          ? monetaryUnitSample(data, amountField, sampleSize)
+          : randomSample(data.length, sampleSize);
       resultJson = { ...result, method } as unknown as Record<string, unknown>;
       summaryJson = {
         flaggedCount: 0,
@@ -145,8 +156,9 @@ function benfordAnalysis(values: number[]) {
     if (firstDigit >= 1) observed[firstDigit - 1]++;
   }
   const total = values.length;
-  const expected = Array.from({ length: 9 }, (_, i) =>
-    Math.log10(1 + 1 / (i + 1)) * total,
+  const expected = Array.from(
+    { length: 9 },
+    (_, i) => Math.log10(1 + 1 / (i + 1)) * total,
   );
 
   // Chi-squared test with 8 degrees of freedom
@@ -167,7 +179,10 @@ function benfordAnalysis(values: number[]) {
 
   const flaggedDigits = digitResults
     .filter((d) => Math.abs(d.observed - d.expected) > 0.05)
-    .map((d) => ({ digit: d.digit, deviation: Math.abs(d.observed - d.expected) }));
+    .map((d) => ({
+      digit: d.digit,
+      deviation: Math.abs(d.observed - d.expected),
+    }));
 
   return {
     observed: digitResults,
@@ -194,7 +209,11 @@ function normalCDF(x: number): number {
   const p =
     d *
     Math.exp((-x * x) / 2) *
-    (t * (0.31938153 + t * (-0.356563782 + t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))));
+    (t *
+      (0.31938153 +
+        t *
+          (-0.356563782 +
+            t * (1.781477937 + t * (-1.821255978 + t * 1.330274429)))));
   return x >= 0 ? 1 - p : p;
 }
 
@@ -202,8 +221,18 @@ function detectDuplicates(
   rows: Record<string, unknown>[],
   matchFields: string[],
   threshold: number,
-): Array<{ rowA: number; rowB: number; similarity: number; matchedFields: string[] }> {
-  const pairs: Array<{ rowA: number; rowB: number; similarity: number; matchedFields: string[] }> = [];
+): Array<{
+  rowA: number;
+  rowB: number;
+  similarity: number;
+  matchedFields: string[];
+}> {
+  const pairs: Array<{
+    rowA: number;
+    rowB: number;
+    similarity: number;
+    matchedFields: string[];
+  }> = [];
 
   // Cap at 5000 rows for O(n^2) comparison
   const maxRows = Math.min(rows.length, 5000);
@@ -218,9 +247,15 @@ function detectDuplicates(
           matchCount++;
         }
       }
-      const similarity = matchFields.length > 0 ? matchCount / matchFields.length : 0;
+      const similarity =
+        matchFields.length > 0 ? matchCount / matchFields.length : 0;
       if (similarity >= threshold) {
-        pairs.push({ rowA: i, rowB: j, similarity, matchedFields: matchFields });
+        pairs.push({
+          rowA: i,
+          rowB: j,
+          similarity,
+          matchedFields: matchFields,
+        });
       }
     }
   }
@@ -257,7 +292,13 @@ function detectOutliers(
   values: number[],
   method: "zscore" | "iqr",
   threshold: number,
-): { outlierRows: number[]; method: string; threshold: number; mean: number; stdDev: number } {
+): {
+  outlierRows: number[];
+  method: string;
+  threshold: number;
+  mean: number;
+  stdDev: number;
+} {
   const mean = values.reduce((s, v) => s + v, 0) / values.length;
   const stdDev = Math.sqrt(
     values.reduce((s, v) => s + Math.pow(v - mean, 2), 0) / values.length,
@@ -289,7 +330,12 @@ function monetaryUnitSample(
   rows: Record<string, unknown>[],
   amountField: string,
   sampleSize: number,
-): { selectedRows: number[]; interval: number; totalAmount: number; sampleSize: number } {
+): {
+  selectedRows: number[];
+  interval: number;
+  totalAmount: number;
+  sampleSize: number;
+} {
   const totalAmount = rows.reduce((s, r) => s + Number(r[amountField] ?? 0), 0);
   const interval = totalAmount / sampleSize;
   const startPoint = Math.random() * interval;
@@ -298,7 +344,10 @@ function monetaryUnitSample(
   let cumulative = 0;
   for (let i = 0; i < rows.length; i++) {
     cumulative += Number(rows[i][amountField] ?? 0);
-    while (selected.length < sampleSize && startPoint + selected.length * interval <= cumulative) {
+    while (
+      selected.length < sampleSize &&
+      startPoint + selected.length * interval <= cumulative
+    ) {
       selected.push(i);
     }
   }

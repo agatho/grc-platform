@@ -11,22 +11,26 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const capabilities = await db.select({
-    id: businessCapability.id,
-    elementId: businessCapability.elementId,
-    parentId: businessCapability.parentId,
-    level: businessCapability.level,
-    sortOrder: businessCapability.sortOrder,
-    maturityLevel: businessCapability.maturityLevel,
-    strategicImportance: businessCapability.strategicImportance,
-    functionalCoverage: businessCapability.functionalCoverage,
-    strategicAlignment: businessCapability.strategicAlignment,
-    lifecycleStatus: businessCapability.lifecycleStatus,
-    name: architectureElement.name,
-    description: architectureElement.description,
-  })
+  const capabilities = await db
+    .select({
+      id: businessCapability.id,
+      elementId: businessCapability.elementId,
+      parentId: businessCapability.parentId,
+      level: businessCapability.level,
+      sortOrder: businessCapability.sortOrder,
+      maturityLevel: businessCapability.maturityLevel,
+      strategicImportance: businessCapability.strategicImportance,
+      functionalCoverage: businessCapability.functionalCoverage,
+      strategicAlignment: businessCapability.strategicAlignment,
+      lifecycleStatus: businessCapability.lifecycleStatus,
+      name: architectureElement.name,
+      description: architectureElement.description,
+    })
     .from(businessCapability)
-    .innerJoin(architectureElement, eq(businessCapability.elementId, architectureElement.id))
+    .innerJoin(
+      architectureElement,
+      eq(businessCapability.elementId, architectureElement.id),
+    )
     .where(eq(businessCapability.orgId, ctx.orgId))
     .orderBy(businessCapability.level, businessCapability.sortOrder);
 

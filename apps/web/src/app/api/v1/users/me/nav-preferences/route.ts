@@ -12,10 +12,7 @@ const updateNavPreferencesSchema = z.object({
     .array(z.string().max(200))
     .max(8, "Maximum 8 pinned routes allowed")
     .default([]),
-  collapsedGroups: z
-    .array(z.string().max(100))
-    .max(20)
-    .default([]),
+  collapsedGroups: z.array(z.string().max(100)).max(20).default([]),
 });
 
 // ──────────────────────────────────────────────────────────────
@@ -85,7 +82,10 @@ export async function PUT(req: Request) {
   });
 
   if (!result) {
-    return Response.json({ error: "Failed to save preferences" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to save preferences" },
+      { status: 500 },
+    );
   }
 
   const row = result as Record<string, unknown>;

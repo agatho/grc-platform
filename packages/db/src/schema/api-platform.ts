@@ -77,9 +77,7 @@ export const apiScope = pgTable(
       .notNull()
       .defaultNow(),
   },
-  (table) => [
-    index("api_scope_module_idx").on(table.module),
-  ],
+  (table) => [index("api_scope_module_idx").on(table.module)],
 );
 
 // ──────────────────────────────────────────────────────────────

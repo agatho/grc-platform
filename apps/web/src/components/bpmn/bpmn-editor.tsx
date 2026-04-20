@@ -111,7 +111,9 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           const instance = new BpmnClass({
             container: containerRef.current,
             keyboard: { bindTo: document },
-          }) as unknown as BpmnInstance & { __keyHandler?: (e: KeyboardEvent) => void };
+          }) as unknown as BpmnInstance & {
+            __keyHandler?: (e: KeyboardEvent) => void;
+          };
 
           if (destroyed) {
             instance.destroy();
@@ -155,7 +157,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
 
           // Element click (both edit and view modes)
           const eventBus2 = instance.get("eventBus") as {
-            on: (event: string, callback: (e: { element: BpmnElement | null }) => void) => void;
+            on: (
+              event: string,
+              callback: (e: { element: BpmnElement | null }) => void,
+            ) => void;
           };
           eventBus2.on("element.click", (e) => {
             const element = e.element;
@@ -197,7 +202,6 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
         }
       };
       // Only mount once — readOnly and initialXml are treated as initial values
-      
     }, []);
 
     // Apply risk overlays when data changes
@@ -211,7 +215,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           add: (
             elementId: string,
             type: string,
-            opts: { position: { top: number; right: number }; html: HTMLElement },
+            opts: {
+              position: { top: number; right: number };
+              html: HTMLElement;
+            },
           ) => void;
         };
         const overlays = instance.get("overlays") as OverlayService;
@@ -243,75 +250,70 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
     }, [riskOverlayData, loading]);
 
     // Imperative handle for parent components
-    useImperativeHandle(
-      ref,
-      () => {
-        type CommandStack = {
-          undo: () => void;
-          redo: () => void;
-          canUndo: () => boolean;
-          canRedo: () => boolean;
-        };
+    useImperativeHandle(ref, () => {
+      type CommandStack = {
+        undo: () => void;
+        redo: () => void;
+        canUndo: () => boolean;
+        canRedo: () => boolean;
+      };
 
-        return {
-          saveXml: async () => {
-            const instance = modelerRef.current;
-            if (!instance) return "";
-            const { xml } = await instance.saveXML({ format: true });
-            return xml ?? "";
-          },
-          saveSvg: async () => {
-            const instance = modelerRef.current;
-            if (!instance) return "";
-            const { svg } = await instance.saveSVG();
-            return svg ?? "";
-          },
-          getModeler: () => modelerRef.current,
-          undo: () => {
-            const instance = modelerRef.current;
-            if (!instance) return;
-            try {
-              const cs = instance.get("commandStack") as CommandStack;
-              cs.undo();
-            } catch {
-              // Command stack may be empty
-            }
-          },
-          redo: () => {
-            const instance = modelerRef.current;
-            if (!instance) return;
-            try {
-              const cs = instance.get("commandStack") as CommandStack;
-              cs.redo();
-            } catch {
-              // Command stack may be empty
-            }
-          },
-          canUndo: () => {
-            const instance = modelerRef.current;
-            if (!instance) return false;
-            try {
-              const cs = instance.get("commandStack") as CommandStack;
-              return cs.canUndo();
-            } catch {
-              return false;
-            }
-          },
-          canRedo: () => {
-            const instance = modelerRef.current;
-            if (!instance) return false;
-            try {
-              const cs = instance.get("commandStack") as CommandStack;
-              return cs.canRedo();
-            } catch {
-              return false;
-            }
-          },
-        };
-      },
-      
-      [loading],
-    );
+      return {
+        saveXml: async () => {
+          const instance = modelerRef.current;
+          if (!instance) return "";
+          const { xml } = await instance.saveXML({ format: true });
+          return xml ?? "";
+        },
+        saveSvg: async () => {
+          const instance = modelerRef.current;
+          if (!instance) return "";
+          const { svg } = await instance.saveSVG();
+          return svg ?? "";
+        },
+        getModeler: () => modelerRef.current,
+        undo: () => {
+          const instance = modelerRef.current;
+          if (!instance) return;
+          try {
+            const cs = instance.get("commandStack") as CommandStack;
+            cs.undo();
+          } catch {
+            // Command stack may be empty
+          }
+        },
+        redo: () => {
+          const instance = modelerRef.current;
+          if (!instance) return;
+          try {
+            const cs = instance.get("commandStack") as CommandStack;
+            cs.redo();
+          } catch {
+            // Command stack may be empty
+          }
+        },
+        canUndo: () => {
+          const instance = modelerRef.current;
+          if (!instance) return false;
+          try {
+            const cs = instance.get("commandStack") as CommandStack;
+            return cs.canUndo();
+          } catch {
+            return false;
+          }
+        },
+        canRedo: () => {
+          const instance = modelerRef.current;
+          if (!instance) return false;
+          try {
+            const cs = instance.get("commandStack") as CommandStack;
+            return cs.canRedo();
+          } catch {
+            return false;
+          }
+        },
+      };
+    }, [loading]);
 
     if (error) {
       return (

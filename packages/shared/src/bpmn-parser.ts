@@ -113,8 +113,7 @@ export function parseBpmnXml(xml: string): ParsedProcessStep[] {
   const steps: ParsedProcessStep[] = [];
 
   // Navigate to the process element
-  const definitions =
-    parsed["bpmn:definitions"] || parsed["definitions"];
+  const definitions = parsed["bpmn:definitions"] || parsed["definitions"];
   if (!definitions) {
     throw new Error(
       "Invalid BPMN XML: missing <bpmn:definitions> root element",
@@ -124,17 +123,14 @@ export function parseBpmnXml(xml: string): ParsedProcessStep[] {
   // Support both single-process and multi-pool collaboration diagrams
   // Collaboration diagrams have <bpmn:collaboration> with <bpmn:participant> elements
   // that reference multiple <bpmn:process> elements
-  const processEl =
-    definitions["bpmn:process"] || definitions["process"];
+  const processEl = definitions["bpmn:process"] || definitions["process"];
 
   if (!processEl) {
     throw new Error("Invalid BPMN XML: missing <bpmn:process> element");
   }
 
   // Handle single process or array of processes (collaboration = multiple pools)
-  const processElements = Array.isArray(processEl)
-    ? processEl
-    : [processEl];
+  const processElements = Array.isArray(processEl) ? processEl : [processEl];
 
   for (const proc of processElements) {
     extractStepsFromProcess(proc, steps, 0);
@@ -211,8 +207,7 @@ export function validateBpmnXml(xml: string): {
     // Must have at least one end event
     const hasEnd = steps.some(
       (s) =>
-        s.bpmnElementId.toLowerCase().includes("end") ||
-        s.stepType === "event",
+        s.bpmnElementId.toLowerCase().includes("end") || s.stepType === "event",
     );
     if (!hasEnd) {
       errors.push("BPMN XML must contain at least one end event");
@@ -225,10 +220,7 @@ export function validateBpmnXml(xml: string): {
     }
 
     // Check for diagram layout (BPMNDiagram element)
-    if (
-      !xml.includes("BPMNDiagram") &&
-      !xml.includes("bpmndi:BPMNDiagram")
-    ) {
+    if (!xml.includes("BPMNDiagram") && !xml.includes("bpmndi:BPMNDiagram")) {
       errors.push(
         "BPMN XML must contain a BPMNDiagram element with layout coordinates",
       );

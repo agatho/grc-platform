@@ -12,7 +12,9 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("eam", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const units = await db.select().from(eamOrgUnit)
+  const units = await db
+    .select()
+    .from(eamOrgUnit)
     .where(eq(eamOrgUnit.orgId, ctx.orgId))
     .orderBy(eamOrgUnit.name);
 
@@ -29,12 +31,16 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const parsed = createOrgUnitSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const created = await db.insert(eamOrgUnit).values({
-    ...parsed.data,
-    orgId: ctx.orgId,
-  }).returning();
+  const created = await db
+    .insert(eamOrgUnit)
+    .values({
+      ...parsed.data,
+      orgId: ctx.orgId,
+    })
+    .returning();
 
   return Response.json({ data: created[0] }, { status: 201 });
 }
@@ -53,14 +59,17 @@ export async function PUT(req: Request) {
 
   const body = await req.json();
   const parsed = updateOrgUnitSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
-  const updated = await db.update(eamOrgUnit)
+  const updated = await db
+    .update(eamOrgUnit)
     .set({ ...parsed.data, updatedAt: new Date() })
     .where(and(eq(eamOrgUnit.id, unitId), eq(eamOrgUnit.orgId, ctx.orgId)))
     .returning();
 
-  if (!updated.length) return Response.json({ error: "Org unit not found" }, { status: 404 });
+  if (!updated.length)
+    return Response.json({ error: "Org unit not found" }, { status: 404 });
   return Response.json({ data: updated[0] });
 }
 
@@ -76,10 +85,12 @@ export async function DELETE(req: Request) {
   const unitId = url.searchParams.get("id");
   if (!unitId) return Response.json({ error: "id required" }, { status: 400 });
 
-  const deleted = await db.delete(eamOrgUnit)
+  const deleted = await db
+    .delete(eamOrgUnit)
     .where(and(eq(eamOrgUnit.id, unitId), eq(eamOrgUnit.orgId, ctx.orgId)))
     .returning();
 
-  if (!deleted.length) return Response.json({ error: "Org unit not found" }, { status: 404 });
+  if (!deleted.length)
+    return Response.json({ error: "Org unit not found" }, { status: 404 });
   return Response.json({ data: { deleted: true } });
 }

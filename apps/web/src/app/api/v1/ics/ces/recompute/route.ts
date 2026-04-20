@@ -128,7 +128,10 @@ export async function POST(req: Request) {
         previousScore,
       })
       .onConflictDoUpdate({
-        target: [controlEffectivenessScore.orgId, controlEffectivenessScore.controlId],
+        target: [
+          controlEffectivenessScore.orgId,
+          controlEffectivenessScore.controlId,
+        ],
         set: {
           score: cesResult.score,
           testScoreAvg: String(cesResult.testScoreAvg),

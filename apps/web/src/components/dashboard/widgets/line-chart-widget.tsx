@@ -23,7 +23,12 @@ function parseLineData(data: unknown): LineDataPoint[] {
   if (!data) return [];
   if (Array.isArray(data)) {
     return data.map((item, idx) => ({
-      name: item.name ?? item.label ?? item.date ?? item.period ?? `Point ${idx + 1}`,
+      name:
+        item.name ??
+        item.label ??
+        item.date ??
+        item.period ??
+        `Point ${idx + 1}`,
       value: Number(item.value ?? item.score ?? item.count ?? 0),
       ...item,
     }));
@@ -34,7 +39,12 @@ function parseLineData(data: unknown): LineDataPoint[] {
   return [];
 }
 
-export function LineChartWidget({ data, config, isLoading, error }: WidgetProps) {
+export function LineChartWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
@@ -64,13 +74,14 @@ export function LineChartWidget({ data, config, isLoading, error }: WidgetProps)
 
   return (
     <ResponsiveContainer width="100%" height="100%">
-      <LineChart data={chartData} margin={{ top: 5, right: 20, left: 0, bottom: 5 }}>
+      <LineChart
+        data={chartData}
+        margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+      >
         <CartesianGrid strokeDasharray="3 3" className="opacity-30" />
         <XAxis dataKey="name" tick={{ fontSize: 11 }} tickLine={false} />
         <YAxis tick={{ fontSize: 11 }} tickLine={false} />
-        <Tooltip
-          formatter={(value) => Number(value).toLocaleString("de-DE")}
-        />
+        <Tooltip formatter={(value) => Number(value).toLocaleString("de-DE")} />
         <Legend wrapperStyle={{ fontSize: "11px" }} />
         <Line
           type="monotone"

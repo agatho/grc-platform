@@ -78,10 +78,13 @@ export async function PUT(
   const updateData: Record<string, unknown> = { updatedAt: new Date() };
   if (body.data.name !== undefined) updateData.name = body.data.name;
   if (body.data.url !== undefined) updateData.url = body.data.url;
-  if (body.data.eventFilter !== undefined) updateData.eventFilter = body.data.eventFilter;
+  if (body.data.eventFilter !== undefined)
+    updateData.eventFilter = body.data.eventFilter;
   if (body.data.headers !== undefined) updateData.headers = body.data.headers;
-  if (body.data.isActive !== undefined) updateData.isActive = body.data.isActive;
-  if (body.data.templateType !== undefined) updateData.templateType = body.data.templateType;
+  if (body.data.isActive !== undefined)
+    updateData.isActive = body.data.isActive;
+  if (body.data.templateType !== undefined)
+    updateData.templateType = body.data.templateType;
 
   const [updated] = await db
     .update(webhookRegistration)

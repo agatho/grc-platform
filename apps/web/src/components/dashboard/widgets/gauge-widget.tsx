@@ -41,7 +41,8 @@ export function GaugeWidget({ data, config, isLoading, error }: WidgetProps) {
 
   const gaugeData = parseGaugeData(data);
   const maxVal = gaugeData.maxValue ?? 100;
-  const percentage = maxVal > 0 ? Math.min((gaugeData.value / maxVal) * 100, 100) : 0;
+  const percentage =
+    maxVal > 0 ? Math.min((gaugeData.value / maxVal) * 100, 100) : 0;
 
   const color =
     config?.displayOptions?.color ??

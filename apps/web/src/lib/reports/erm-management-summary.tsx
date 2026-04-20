@@ -143,7 +143,10 @@ interface ManagementSummaryProps {
 
 function t(key: string, lang: "de" | "en"): string {
   const translations: Record<string, Record<string, string>> = {
-    title: { de: "ERM Management-Zusammenfassung", en: "ERM Management Summary" },
+    title: {
+      de: "ERM Management-Zusammenfassung",
+      en: "ERM Management Summary",
+    },
     period: { de: "Berichtszeitraum", en: "Reporting Period" },
     generated: { de: "Erstellt am", en: "Generated on" },
     by: { de: "von", en: "by" },
@@ -158,8 +161,14 @@ function t(key: string, lang: "de" | "en"): string {
     residual: { de: "Netto", en: "Residual" },
     riskValue: { de: "Risikowert", en: "Risk Value" },
     measures: { de: "Massnahmen nach Status", en: "Measures by Status" },
-    distribution: { de: "Risikoverteilung nach Kategorie", en: "Risk Distribution by Category" },
-    valueDistribution: { de: "Risikobewertungsverteilung", en: "Risk Value Distribution" },
+    distribution: {
+      de: "Risikoverteilung nach Kategorie",
+      en: "Risk Distribution by Category",
+    },
+    valueDistribution: {
+      de: "Risikobewertungsverteilung",
+      en: "Risk Value Distribution",
+    },
     page: { de: "Seite", en: "Page" },
   };
   return translations[key]?.[lang] ?? key;
@@ -177,7 +186,9 @@ export function ERMManagementSummaryPDF({
     <Document>
       {/* Page 1: Cover */}
       <Page size="A4" style={styles.page}>
-        <View style={{ flex: 1, justifyContent: "center", alignItems: "center" }}>
+        <View
+          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+        >
           <Text style={{ fontSize: 28, fontWeight: "bold", color: "#0d9488" }}>
             {orgName}
           </Text>
@@ -188,7 +199,8 @@ export function ERMManagementSummaryPDF({
             {t("period", lang)}: {data.period.start} - {data.period.end}
           </Text>
           <Text style={{ fontSize: 10, marginTop: 20, color: "#9ca3af" }}>
-            {t("generated", lang)}: {data.generatedAt} {t("by", lang)} {data.generatedBy}
+            {t("generated", lang)}: {data.generatedAt} {t("by", lang)}{" "}
+            {data.generatedBy}
           </Text>
         </View>
         <View style={styles.footer}>
@@ -214,12 +226,17 @@ export function ERMManagementSummaryPDF({
           </View>
           <View style={styles.kpiCard}>
             <Text style={styles.kpiValue}>
-              {data.treatmentSummary.reduce((sum, s) => sum + Number(s.count), 0)}
+              {data.treatmentSummary.reduce(
+                (sum, s) => sum + Number(s.count),
+                0,
+              )}
             </Text>
             <Text style={styles.kpiLabel}>{t("measures", lang)}</Text>
           </View>
           <View style={styles.kpiCard}>
-            <Text style={styles.kpiValue}>{data.categoryDistribution.length}</Text>
+            <Text style={styles.kpiValue}>
+              {data.categoryDistribution.length}
+            </Text>
             <Text style={styles.kpiLabel}>{t("category", lang)}</Text>
           </View>
         </View>
@@ -239,7 +256,9 @@ export function ERMManagementSummaryPDF({
         <View style={styles.table}>
           <View style={styles.tableHeader}>
             <Text style={[styles.tableCellBold, { flex: 0.5 }]}>#</Text>
-            <Text style={[styles.tableCellBold, { flex: 3 }]}>{t("riskTitle", lang)}</Text>
+            <Text style={[styles.tableCellBold, { flex: 3 }]}>
+              {t("riskTitle", lang)}
+            </Text>
             <Text style={styles.tableCellBold}>{t("category", lang)}</Text>
             <Text style={styles.tableCellBold}>{t("inherent", lang)}</Text>
             <Text style={styles.tableCellBold}>{t("residual", lang)}</Text>
@@ -250,8 +269,12 @@ export function ERMManagementSummaryPDF({
               <Text style={[styles.tableCell, { flex: 0.5 }]}>{idx + 1}</Text>
               <Text style={[styles.tableCell, { flex: 3 }]}>{risk.title}</Text>
               <Text style={styles.tableCell}>{risk.riskCategory}</Text>
-              <Text style={styles.tableCell}>{risk.riskScoreInherent ?? "-"}</Text>
-              <Text style={styles.tableCell}>{risk.riskScoreResidual ?? "-"}</Text>
+              <Text style={styles.tableCell}>
+                {risk.riskScoreInherent ?? "-"}
+              </Text>
+              <Text style={styles.tableCell}>
+                {risk.riskScoreResidual ?? "-"}
+              </Text>
               <Text style={styles.tableCell}>{risk.riskValue ?? "-"}</Text>
             </View>
           ))}
@@ -296,12 +319,16 @@ export function ERMManagementSummaryPDF({
 
         <View style={styles.table}>
           <View style={styles.tableHeader}>
-            <Text style={[styles.tableCellBold, { flex: 2 }]}>{t("category", lang)}</Text>
+            <Text style={[styles.tableCellBold, { flex: 2 }]}>
+              {t("category", lang)}
+            </Text>
             <Text style={styles.tableCellBold}>Count</Text>
           </View>
           {data.categoryDistribution.map((item) => (
             <View key={item.category} style={styles.tableRow}>
-              <Text style={[styles.tableCell, { flex: 2 }]}>{item.category}</Text>
+              <Text style={[styles.tableCell, { flex: 2 }]}>
+                {item.category}
+              </Text>
               <Text style={styles.tableCell}>{item.count}</Text>
             </View>
           ))}

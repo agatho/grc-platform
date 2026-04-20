@@ -37,7 +37,9 @@ export async function processDsrSlaMonitor(): Promise<DsrSlaResult> {
     );
 
   if (approachingDeadline.length === 0) {
-    console.log("[cron:dsr-sla-monitor] No DSRs approaching deadline threshold");
+    console.log(
+      "[cron:dsr-sla-monitor] No DSRs approaching deadline threshold",
+    );
     return { processed: 0, notified: 0 };
   }
 

@@ -22,8 +22,14 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
-  const startIndex = Math.max(1, parseInt(url.searchParams.get("startIndex") ?? "1", 10));
-  const count = Math.min(100, Math.max(1, parseInt(url.searchParams.get("count") ?? "100", 10)));
+  const startIndex = Math.max(
+    1,
+    parseInt(url.searchParams.get("startIndex") ?? "1", 10),
+  );
+  const count = Math.min(
+    100,
+    Math.max(1, parseInt(url.searchParams.get("count") ?? "100", 10)),
+  );
 
   // If user_group table exists, query it; otherwise return empty
   // The user_group table is from Sprint 1.x which may or may not be implemented
@@ -83,17 +89,20 @@ export async function POST(req: Request) {
   const parsed = scimCreateGroupSchema.safeParse(body);
   if (!parsed.success) {
     return scimResponse(
-      buildScimError(`Invalid SCIM group payload: ${parsed.error.message}`, 400),
+      buildScimError(
+        `Invalid SCIM group payload: ${parsed.error.message}`,
+        400,
+      ),
       400,
     );
   }
 
   try {
-    const [created] = await db.execute(sql`
+    const [created] = (await db.execute(sql`
       INSERT INTO user_group (org_id, name, created_at, updated_at)
       VALUES (${authCtx.orgId}, ${parsed.data.displayName}, now(), now())
       RETURNING id, name, created_at, updated_at
-    `) as any[];
+    `)) as any[];
 
     // Add members if provided
     if (parsed.data.members?.length) {
@@ -130,7 +139,8 @@ export async function POST(req: Request) {
       201,
     );
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Group creation failed";
+    const message =
+      err instanceof Error ? err.message : "Group creation failed";
     return scimResponse(buildScimError(message, 500), 500);
   }
 }

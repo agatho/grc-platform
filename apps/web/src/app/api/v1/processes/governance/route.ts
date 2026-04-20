@@ -18,12 +18,7 @@ export async function GET(req: Request) {
     db
       .select({ value: count() })
       .from(process)
-      .where(
-        and(
-          eq(process.orgId, ctx.orgId),
-          isNull(process.deletedAt),
-        ),
-      ),
+      .where(and(eq(process.orgId, ctx.orgId), isNull(process.deletedAt))),
   ]);
 
   // Published processes
@@ -70,12 +65,7 @@ export async function GET(req: Request) {
       count: count(),
     })
     .from(process)
-    .where(
-      and(
-        eq(process.orgId, ctx.orgId),
-        isNull(process.deletedAt),
-      ),
-    )
+    .where(and(eq(process.orgId, ctx.orgId), isNull(process.deletedAt)))
     .groupBy(process.status);
 
   // Monthly activity (version count per month for last 12 months)

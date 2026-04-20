@@ -35,16 +35,28 @@ export const identityConnectorConfig = pgTable(
     tenantId: varchar("tenant_id", { length: 255 }),
     domain: varchar("domain", { length: 255 }),
     syncEnabled: boolean("sync_enabled").notNull().default(false),
-    syncInterval: varchar("sync_interval", { length: 20 }).notNull().default("daily"), // hourly | daily | weekly
+    syncInterval: varchar("sync_interval", { length: 20 })
+      .notNull()
+      .default("daily"), // hourly | daily | weekly
     mfaCheckEnabled: boolean("mfa_check_enabled").notNull().default(true),
     staleAccountDays: integer("stale_account_days").notNull().default(90),
-    passwordPolicyCheck: boolean("password_policy_check").notNull().default(true),
-    accessReviewEnabled: boolean("access_review_enabled").notNull().default(true),
-    privilegedAccountMonitoring: boolean("privileged_account_monitoring").notNull().default(true),
+    passwordPolicyCheck: boolean("password_policy_check")
+      .notNull()
+      .default(true),
+    accessReviewEnabled: boolean("access_review_enabled")
+      .notNull()
+      .default(true),
+    privilegedAccountMonitoring: boolean("privileged_account_monitoring")
+      .notNull()
+      .default(true),
     guestAccessCheck: boolean("guest_access_check").notNull().default(true),
-    conditionalAccessCheck: boolean("conditional_access_check").notNull().default(true),
+    conditionalAccessCheck: boolean("conditional_access_check")
+      .notNull()
+      .default(true),
     dlpEnabled: boolean("dlp_enabled").notNull().default(false),
-    retentionPolicyCheck: boolean("retention_policy_check").notNull().default(false),
+    retentionPolicyCheck: boolean("retention_policy_check")
+      .notNull()
+      .default(false),
     onboardingCheck: boolean("onboarding_check").notNull().default(false),
     offboardingCheck: boolean("offboarding_check").notNull().default(false),
     lastSyncAt: timestamp("last_sync_at", { withTimezone: true }),

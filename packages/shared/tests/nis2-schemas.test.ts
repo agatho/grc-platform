@@ -65,7 +65,12 @@ describe("createNis2IncidentReportSchema", () => {
   });
 
   it("accepts all valid report types", () => {
-    const types = ["early_warning", "full_notification", "intermediate_report", "final_report"];
+    const types = [
+      "early_warning",
+      "full_notification",
+      "intermediate_report",
+      "final_report",
+    ];
     for (const reportType of types) {
       const result = createNis2IncidentReportSchema.safeParse({
         incidentId: "a0b1c2d3-e4f5-6789-abcd-ef0123456789",
@@ -157,7 +162,9 @@ describe("nis2ReportStatus", () => {
 describe("nis2RequirementStatus", () => {
   it("validates all statuses", () => {
     expect(nis2RequirementStatus.safeParse("compliant").success).toBe(true);
-    expect(nis2RequirementStatus.safeParse("partially_compliant").success).toBe(true);
+    expect(nis2RequirementStatus.safeParse("partially_compliant").success).toBe(
+      true,
+    );
     expect(nis2RequirementStatus.safeParse("non_compliant").success).toBe(true);
   });
 });

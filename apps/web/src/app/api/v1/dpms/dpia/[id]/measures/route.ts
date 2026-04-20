@@ -45,9 +45,13 @@ export async function POST(
         measureDescription: body.data.measureDescription,
         riskId: body.data.riskId ?? null,
         implementationTimeline: body.data.implementationTimeline,
-        costOnetime: body.data.costOnetime ? String(body.data.costOnetime) : null,
+        costOnetime: body.data.costOnetime
+          ? String(body.data.costOnetime)
+          : null,
         costAnnual: body.data.costAnnual ? String(body.data.costAnnual) : null,
-        effortHours: body.data.effortHours ? String(body.data.effortHours) : null,
+        effortHours: body.data.effortHours
+          ? String(body.data.effortHours)
+          : null,
         costCurrency: body.data.costCurrency ?? "EUR",
         costNote: body.data.costNote ?? null,
       })

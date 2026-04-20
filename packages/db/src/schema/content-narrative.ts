@@ -24,7 +24,9 @@ import { organization, user } from "./platform";
 
 export const contentPlaceholder = pgTable("content_placeholder", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   // {{ENTITY_NAME}}, {{ORG_LEI_CODE}}, etc.
   token: varchar("token", { length: 100 }).notNull(),
   label: varchar("label", { length: 255 }).notNull(),
@@ -37,21 +39,29 @@ export const contentPlaceholder = pgTable("content_placeholder", {
   formatPattern: varchar("format_pattern", { length: 100 }),
   category: varchar("category", { length: 50 }),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
 export const contentRequest = pgTable("content_request", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   entityType: varchar("entity_type", { length: 50 }),
   entityId: uuid("entity_id"),
   title: varchar("title", { length: 500 }).notNull(),
   description: text("description"),
   // Array<{ field: string; label: string; required: boolean }>
   requestedFields: jsonb("requested_fields").default([]),
-  requestedFrom: uuid("requested_from").notNull().references(() => user.id),
-  requestedBy: uuid("requested_by").notNull().references(() => user.id),
+  requestedFrom: uuid("requested_from")
+    .notNull()
+    .references(() => user.id),
+  requestedBy: uuid("requested_by")
+    .notNull()
+    .references(() => user.id),
   dueDate: date("due_date"),
   // low | medium | high | urgent
   priority: varchar("priority", { length: 20 }).default("medium"),
@@ -60,12 +70,16 @@ export const contentRequest = pgTable("content_request", {
   responseData: jsonb("response_data").default({}),
   respondedAt: timestamp("responded_at", { withTimezone: true }),
   reminderCount: integer("reminder_count").default(0),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
 });
 
 export const narrativeTemplate = pgTable("narrative_template", {
   id: uuid("id").primaryKey().defaultRandom(),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   category: varchar("category", { length: 50 }),
@@ -76,15 +90,21 @@ export const narrativeTemplate = pgTable("narrative_template", {
   // draft | published | archived
   status: varchar("status", { length: 20 }).default("draft").notNull(),
   isActive: boolean("is_active").default(true).notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });
 
 export const narrativeInstance = pgTable("narrative_instance", {
   id: uuid("id").primaryKey().defaultRandom(),
   templateId: uuid("template_id").references(() => narrativeTemplate.id),
-  orgId: uuid("org_id").notNull().references(() => organization.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
   entityType: varchar("entity_type", { length: 50 }),
   entityId: uuid("entity_id"),
   reportId: uuid("report_id"),
@@ -94,7 +114,11 @@ export const narrativeInstance = pgTable("narrative_instance", {
   dataSnapshot: jsonb("data_snapshot").default({}),
   // draft | rendered | approved | published
   status: varchar("status", { length: 20 }).default("draft").notNull(),
-  createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
-  updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+  createdAt: timestamp("created_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp("updated_at", { withTimezone: true })
+    .defaultNow()
+    .notNull(),
   createdBy: uuid("created_by").references(() => user.id),
 });

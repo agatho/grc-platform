@@ -3,7 +3,11 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useTranslations } from "next-intl";
-import { findTabGroupForPath, isTabActive, MODULE_TAB_GROUPS } from "./module-tab-config";
+import {
+  findTabGroupForPath,
+  isTabActive,
+  MODULE_TAB_GROUPS,
+} from "./module-tab-config";
 import type { ModuleTabGroup } from "./module-tab-config";
 
 // ──────────────────────────────────────────────────────────────
@@ -36,10 +40,7 @@ export function ModuleTabNav({ groupKey, className }: ModuleTabNavProps) {
   if (!group || group.tabs.length <= 1) return null;
 
   return (
-    <nav
-      className={`mb-4 ${className ?? ""}`}
-      aria-label="Modul-Navigation"
-    >
+    <nav className={`mb-4 ${className ?? ""}`} aria-label="Modul-Navigation">
       <div className="flex items-center gap-1 rounded-xl bg-gray-100/80 p-1 overflow-x-auto scrollbar-none">
         {group.tabs.map((tab) => {
           const active = isTabActive(tab, pathname);

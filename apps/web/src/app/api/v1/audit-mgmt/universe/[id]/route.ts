@@ -27,7 +27,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     );
 
   if (!entry) {
-    return Response.json({ error: "Universe entry not found" }, { status: 404 });
+    return Response.json(
+      { error: "Universe entry not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: entry });
@@ -69,7 +72,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
   });
 
   if (!updated) {
-    return Response.json({ error: "Universe entry not found" }, { status: 404 });
+    return Response.json(
+      { error: "Universe entry not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: updated });
@@ -100,7 +106,10 @@ export async function DELETE(req: Request, { params }: RouteParams) {
   });
 
   if (!deleted) {
-    return Response.json({ error: "Universe entry not found" }, { status: 404 });
+    return Response.json(
+      { error: "Universe entry not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: { id } });

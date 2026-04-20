@@ -9,27 +9,40 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = anomalyQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = anomalyQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
-  const { page, limit, entityType, entityId, severity, status, anomalyType } = query.data;
+  const { page, limit, entityType, entityId, severity, status, anomalyType } =
+    query.data;
   const offset = (page - 1) * limit;
 
   const conditions = [eq(riskAnomalyDetection.orgId, ctx.orgId)];
-  if (entityType) conditions.push(eq(riskAnomalyDetection.entityType, entityType));
+  if (entityType)
+    conditions.push(eq(riskAnomalyDetection.entityType, entityType));
   if (entityId) conditions.push(eq(riskAnomalyDetection.entityId, entityId));
   if (severity) conditions.push(eq(riskAnomalyDetection.severity, severity));
   if (status) conditions.push(eq(riskAnomalyDetection.status, status));
-  if (anomalyType) conditions.push(eq(riskAnomalyDetection.anomalyType, anomalyType));
+  if (anomalyType)
+    conditions.push(eq(riskAnomalyDetection.anomalyType, anomalyType));
 
   const [anomalies, countResult] = await Promise.all([
-    db.select().from(riskAnomalyDetection)
+    db
+      .select()
+      .from(riskAnomalyDetection)
       .where(and(...conditions))
       .orderBy(desc(riskAnomalyDetection.detectedAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(riskAnomalyDetection)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(riskAnomalyDetection)
       .where(and(...conditions)),
   ]);
 

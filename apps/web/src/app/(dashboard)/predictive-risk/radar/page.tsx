@@ -31,13 +31,21 @@ export default function PredictiveRadarPage() {
     try {
       const res = await fetch("/api/v1/predictive-risk/radar?horizonDays=30");
       if (res.ok) setRadarData((await res.json()).data);
-    } finally { setLoading(false); }
+    } finally {
+      setLoading(false);
+    }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
@@ -57,23 +65,41 @@ export default function PredictiveRadarPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {radarData.map((point, idx) => {
-            const TrendIcon = point.trendDirection ? TREND_ICONS[point.trendDirection] ?? Minus : Minus;
+            const TrendIcon = point.trendDirection
+              ? (TREND_ICONS[point.trendDirection] ?? Minus)
+              : Minus;
             return (
-              <Card key={idx} className={`border-l-4 ${point.riskLevel ? RISK_COLORS[point.riskLevel] ?? "" : ""}`}>
+              <Card
+                key={idx}
+                className={`border-l-4 ${point.riskLevel ? (RISK_COLORS[point.riskLevel] ?? "") : ""}`}
+              >
                 <CardContent className="p-4">
                   <div className="flex items-center justify-between mb-2">
                     <Badge variant="outline">{point.entityType}</Badge>
-                    <TrendIcon className={`h-4 w-4 ${point.trendDirection === "increasing" ? "text-red-500" : point.trendDirection === "decreasing" ? "text-green-500" : "text-gray-500"}`} />
+                    <TrendIcon
+                      className={`h-4 w-4 ${point.trendDirection === "increasing" ? "text-red-500" : point.trendDirection === "decreasing" ? "text-green-500" : "text-gray-500"}`}
+                    />
                   </div>
-                  <p className="font-medium text-sm">{point.entityName ?? (point.entityId ? point.entityId.substring(0, 8) : "-")}</p>
+                  <p className="font-medium text-sm">
+                    {point.entityName ??
+                      (point.entityId ? point.entityId.substring(0, 8) : "-")}
+                  </p>
                   <div className="flex items-center justify-between mt-2 text-sm">
                     <div>
-                      <span className="text-muted-foreground">{t("radar.current")}: </span>
-                      <span className="font-medium">{Number(point.currentValue).toFixed(1)}</span>
+                      <span className="text-muted-foreground">
+                        {t("radar.current")}:{" "}
+                      </span>
+                      <span className="font-medium">
+                        {Number(point.currentValue).toFixed(1)}
+                      </span>
                     </div>
                     <div>
-                      <span className="text-muted-foreground">{t("radar.predicted")}: </span>
-                      <span className="font-bold">{Number(point.predictedValue).toFixed(1)}</span>
+                      <span className="text-muted-foreground">
+                        {t("radar.predicted")}:{" "}
+                      </span>
+                      <span className="font-bold">
+                        {Number(point.predictedValue).toFixed(1)}
+                      </span>
                     </div>
                   </div>
                 </CardContent>

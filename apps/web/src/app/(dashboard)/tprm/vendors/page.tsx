@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  Search,
-  RefreshCcw,
-  Building2,
-} from "lucide-react";
+import { Plus, Loader2, Search, RefreshCcw, Building2 } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -58,8 +52,25 @@ const STATUS_COLORS: Record<string, string> = {
 };
 
 const TIERS = ["critical", "important", "standard", "low_risk"] as const;
-const CATEGORIES = ["it_services", "cloud_provider", "consulting", "facility", "logistics", "raw_materials", "financial", "hr_services", "other"] as const;
-const STATUSES = ["prospect", "onboarding", "active", "under_review", "suspended", "terminated"] as const;
+const CATEGORIES = [
+  "it_services",
+  "cloud_provider",
+  "consulting",
+  "facility",
+  "logistics",
+  "raw_materials",
+  "financial",
+  "hr_services",
+  "other",
+] as const;
+const STATUSES = [
+  "prospect",
+  "onboarding",
+  "active",
+  "under_review",
+  "suspended",
+  "terminated",
+] as const;
 
 export default function VendorsPage() {
   return (
@@ -117,9 +128,12 @@ function VendorsPageInner() {
           v.country?.toLowerCase().includes(q),
       );
     }
-    if (tierFilter !== "__all__") result = result.filter((v) => v.tier === tierFilter);
-    if (categoryFilter !== "__all__") result = result.filter((v) => v.category === categoryFilter);
-    if (statusFilter !== "__all__") result = result.filter((v) => v.status === statusFilter);
+    if (tierFilter !== "__all__")
+      result = result.filter((v) => v.tier === tierFilter);
+    if (categoryFilter !== "__all__")
+      result = result.filter((v) => v.category === categoryFilter);
+    if (statusFilter !== "__all__")
+      result = result.filter((v) => v.status === statusFilter);
     return result;
   }, [vendors, debouncedSearch, tierFilter, categoryFilter, statusFilter]);
 
@@ -127,7 +141,9 @@ function VendorsPageInner() {
     () => [
       {
         accessorKey: "name",
-        header: ({ column }) => <SortableHeader column={column}>{t("vendor.name")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("vendor.name")}</SortableHeader>
+        ),
         cell: ({ row }) => (
           <Link
             href={`/tprm/vendors/${row.original.id}`}
@@ -139,16 +155,27 @@ function VendorsPageInner() {
       },
       {
         accessorKey: "category",
-        header: ({ column }) => <SortableHeader column={column}>{t("vendor.category")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>
+            {t("vendor.category")}
+          </SortableHeader>
+        ),
         cell: ({ row }) => (
-          <span className="text-sm text-gray-700">{t(`category.${row.original.category}`)}</span>
+          <span className="text-sm text-gray-700">
+            {t(`category.${row.original.category}`)}
+          </span>
         ),
       },
       {
         accessorKey: "tier",
-        header: ({ column }) => <SortableHeader column={column}>{t("vendor.tier")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("vendor.tier")}</SortableHeader>
+        ),
         cell: ({ row }) => (
-          <Badge variant="outline" className={TIER_COLORS[row.original.tier] ?? ""}>
+          <Badge
+            variant="outline"
+            className={TIER_COLORS[row.original.tier] ?? ""}
+          >
             {t(`tier.${row.original.tier}`)}
           </Badge>
         ),
@@ -158,16 +185,27 @@ function VendorsPageInner() {
         header: t("vendor.riskScore"),
         cell: ({ row }) => {
           const score = row.original.residualRiskScore;
-          if (score == null) return <span className="text-gray-400">{"\u2014"}</span>;
-          const color = score >= 15 ? "text-red-600" : score >= 8 ? "text-yellow-600" : "text-green-600";
+          if (score == null)
+            return <span className="text-gray-400">{"\u2014"}</span>;
+          const color =
+            score >= 15
+              ? "text-red-600"
+              : score >= 8
+                ? "text-yellow-600"
+                : "text-green-600";
           return <span className={`font-medium ${color}`}>{score}/25</span>;
         },
       },
       {
         accessorKey: "status",
-        header: ({ column }) => <SortableHeader column={column}>{t("vendor.status")}</SortableHeader>,
+        header: ({ column }) => (
+          <SortableHeader column={column}>{t("vendor.status")}</SortableHeader>
+        ),
         cell: ({ row }) => (
-          <Badge variant="outline" className={STATUS_COLORS[row.original.status] ?? ""}>
+          <Badge
+            variant="outline"
+            className={STATUS_COLORS[row.original.status] ?? ""}
+          >
             {t(`status.${row.original.status}`)}
           </Badge>
         ),
@@ -176,14 +214,18 @@ function VendorsPageInner() {
         accessorKey: "country",
         header: t("vendor.country"),
         cell: ({ row }) => (
-          <span className="text-sm text-gray-600">{row.original.country ?? "\u2014"}</span>
+          <span className="text-sm text-gray-600">
+            {row.original.country ?? "\u2014"}
+          </span>
         ),
       },
       {
         accessorKey: "ownerName",
         header: t("vendor.owner"),
         cell: ({ row }) => (
-          <span className="text-sm text-gray-600">{row.original.ownerName ?? "\u2014"}</span>
+          <span className="text-sm text-gray-600">
+            {row.original.ownerName ?? "\u2014"}
+          </span>
         ),
       },
     ],
@@ -202,16 +244,26 @@ function VendorsPageInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("vendorRegister")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("vendorRegister")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             {filtered.length} {t("vendors")}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchVendors} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchVendors}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
-          <Button size="sm" onClick={() => router.push("/tprm/vendors?new=true")}>
+          <Button
+            size="sm"
+            onClick={() => router.push("/tprm/vendors?new=true")}
+          >
             <Plus size={16} />
             {t("createVendor")}
           </Button>
@@ -221,7 +273,10 @@ function VendorsPageInner() {
       {/* Filters */}
       <div className="flex items-center gap-2 flex-wrap">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={searchQuery}
@@ -237,7 +292,9 @@ function VendorsPageInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("filter.allTiers")}</SelectItem>
             {TIERS.map((tier) => (
-              <SelectItem key={tier} value={tier}>{t(`tier.${tier}`)}</SelectItem>
+              <SelectItem key={tier} value={tier}>
+                {t(`tier.${tier}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -248,7 +305,9 @@ function VendorsPageInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("filter.allCategories")}</SelectItem>
             {CATEGORIES.map((cat) => (
-              <SelectItem key={cat} value={cat}>{t(`category.${cat}`)}</SelectItem>
+              <SelectItem key={cat} value={cat}>
+                {t(`category.${cat}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -259,7 +318,9 @@ function VendorsPageInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("filter.allStatuses")}</SelectItem>
             {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>{t(`status.${s}`)}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {t(`status.${s}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -269,10 +330,17 @@ function VendorsPageInner() {
       {filtered.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <Building2 size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("empty.noVendors")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("empty.noVendors")}
+          </p>
         </div>
       ) : (
-        <DataTable columns={columns} data={filtered} searchKey="name" pageSize={20} />
+        <DataTable
+          columns={columns}
+          data={filtered}
+          searchKey="name"
+          pageSize={20}
+        />
       )}
     </div>
   );

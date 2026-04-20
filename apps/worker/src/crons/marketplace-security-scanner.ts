@@ -22,23 +22,29 @@ export async function processMarketplaceSecurityScanner(): Promise<{
   for (const scan of pendingScans) {
     try {
       // Mark as scanning
-      await db.update(marketplaceSecurityScan).set({
-        scanStatus: "scanning",
-        startedAt: new Date(),
-      }).where(eq(marketplaceSecurityScan.id, scan.id));
+      await db
+        .update(marketplaceSecurityScan)
+        .set({
+          scanStatus: "scanning",
+          startedAt: new Date(),
+        })
+        .where(eq(marketplaceSecurityScan.id, scan.id));
 
       // In production: run static analysis, dependency scan, malware check
       // For now: auto-pass with no findings
       const passed = true;
 
-      await db.update(marketplaceSecurityScan).set({
-        scanStatus: passed ? "passed" : "failed",
-        completedAt: new Date(),
-        criticalCount: 0,
-        highCount: 0,
-        mediumCount: 0,
-        lowCount: 0,
-      }).where(eq(marketplaceSecurityScan.id, scan.id));
+      await db
+        .update(marketplaceSecurityScan)
+        .set({
+          scanStatus: passed ? "passed" : "failed",
+          completedAt: new Date(),
+          criticalCount: 0,
+          highCount: 0,
+          mediumCount: 0,
+          lowCount: 0,
+        })
+        .where(eq(marketplaceSecurityScan.id, scan.id));
 
       if (passed) {
         scansPassed++;
@@ -46,15 +52,23 @@ export async function processMarketplaceSecurityScanner(): Promise<{
         scansFailed++;
       }
     } catch (err) {
-      console.error(`[marketplace-security-scanner] Scan ${scan.id} failed:`, err);
-      await db.update(marketplaceSecurityScan).set({
-        scanStatus: "failed",
-        completedAt: new Date(),
-      }).where(eq(marketplaceSecurityScan.id, scan.id));
+      console.error(
+        `[marketplace-security-scanner] Scan ${scan.id} failed:`,
+        err,
+      );
+      await db
+        .update(marketplaceSecurityScan)
+        .set({
+          scanStatus: "failed",
+          completedAt: new Date(),
+        })
+        .where(eq(marketplaceSecurityScan.id, scan.id));
       scansFailed++;
     }
   }
 
-  console.log(`[marketplace-security-scanner] Processed ${pendingScans.length} scans: ${scansPassed} passed, ${scansFailed} failed`);
+  console.log(
+    `[marketplace-security-scanner] Processed ${pendingScans.length} scans: ${scansPassed} passed, ${scansFailed} failed`,
+  );
   return { scansProcessed: pendingScans.length, scansPassed, scansFailed };
 }

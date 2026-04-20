@@ -9,7 +9,8 @@ export async function processPortalSessionExpiry(): Promise<{
 }> {
   console.log("[portal-session-expiry] Running session expiry check");
 
-  const result = await db.update(portalSession)
+  const result = await db
+    .update(portalSession)
     .set({ status: "expired" })
     .where(
       and(

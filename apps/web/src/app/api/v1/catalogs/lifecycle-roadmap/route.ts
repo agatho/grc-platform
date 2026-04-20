@@ -8,7 +8,8 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const entityType = url.searchParams.get("entityType") || "general_catalog_entry";
+  const entityType =
+    url.searchParams.get("entityType") || "general_catalog_entry";
 
   // Fetch all lifecycle phases for this org
   const phases = await db

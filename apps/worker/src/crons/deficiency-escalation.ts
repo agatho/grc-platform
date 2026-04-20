@@ -45,13 +45,16 @@ export async function processDeficiencyEscalation(): Promise<EscalationResult> {
       entityId: def.id,
       templateData: {
         module: "ics",
-        priority: def.classification === "material_weakness" ? "urgent" : "high",
+        priority:
+          def.classification === "material_weakness" ? "urgent" : "high",
         subtype: "deficiency_overdue",
       },
     });
     escalated++;
   }
 
-  console.log(`[cron:deficiency-escalation] Completed: ${overdue.length} overdue, ${escalated} escalated`);
+  console.log(
+    `[cron:deficiency-escalation] Completed: ${overdue.length} overdue, ${escalated} escalated`,
+  );
   return { processed: overdue.length, escalated };
 }

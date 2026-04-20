@@ -11,7 +11,9 @@ test.describe("ERM ISO 31000 Workflow", () => {
   test("risk register loads with demo data", async ({ page }) => {
     await page.goto("/risks");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/risikoregister|risk register/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/risikoregister|risk register/i).first(),
+    ).toBeVisible();
     await expect(page.getByText(/RSK-/i).first()).toBeVisible();
   });
 
@@ -54,7 +56,9 @@ test.describe("ICS & Audit COSO/IIA Workflow", () => {
   test("control register loads", async ({ page }) => {
     await page.goto("/controls");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/kontrollregister|control register/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/kontrollregister|control register/i).first(),
+    ).toBeVisible();
   });
 
   test("control creation form has COSO fields", async ({ page }) => {
@@ -111,7 +115,9 @@ test.describe("DPMS DSGVO Workflow", () => {
   test("RoPA page loads", async ({ page }) => {
     await page.goto("/dpms/ropa");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/verarbeitungsverzeichnis|ropa/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/verarbeitungsverzeichnis|ropa/i).first(),
+    ).toBeVisible();
   });
 
   test("breach management with 72h tracking", async ({ page }) => {
@@ -174,14 +180,18 @@ test.describe("ESG CSRD Workflow", () => {
   test("materiality analysis page loads", async ({ page }) => {
     await page.goto("/esg/materiality");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/wesentlichkeit|materiality/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/wesentlichkeit|materiality/i).first(),
+    ).toBeVisible();
   });
 });
 
 test.describe("Navigation & Tab System", () => {
   test.use({ storageState: "e2e/.auth/admin.json" });
 
-  test("horizontal tab navigation renders on module pages", async ({ page }) => {
+  test("horizontal tab navigation renders on module pages", async ({
+    page,
+  }) => {
     await page.goto("/risks");
     await page.waitForLoadState("networkidle");
     const tabNav = page.locator('[aria-label="Modul-Navigation"]');
@@ -200,10 +210,19 @@ test.describe("Navigation & Tab System", () => {
   test("all new AI Act pages return 200", async ({ page }) => {
     test.setTimeout(180000); // 13 pages, each may need first-compile
     const aiActRoutes = [
-      "/ai-act", "/ai-act/systems", "/ai-act/gpai", "/ai-act/frias",
-      "/ai-act/incidents", "/ai-act/prohibited", "/ai-act/conformity-assessments",
-      "/ai-act/oversight-logs", "/ai-act/framework-mappings",
-      "/ai-act/qms", "/ai-act/corrective-actions", "/ai-act/authority", "/ai-act/penalties",
+      "/ai-act",
+      "/ai-act/systems",
+      "/ai-act/gpai",
+      "/ai-act/frias",
+      "/ai-act/incidents",
+      "/ai-act/prohibited",
+      "/ai-act/conformity-assessments",
+      "/ai-act/oversight-logs",
+      "/ai-act/framework-mappings",
+      "/ai-act/qms",
+      "/ai-act/corrective-actions",
+      "/ai-act/authority",
+      "/ai-act/penalties",
     ];
     for (const route of aiActRoutes) {
       const response = await page.goto(route);

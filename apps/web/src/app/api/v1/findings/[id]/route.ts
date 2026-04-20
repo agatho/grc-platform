@@ -1,10 +1,4 @@
-import {
-  db,
-  finding,
-  workItem,
-  user,
-  evidence,
-} from "@grc/db";
+import { db, finding, workItem, user, evidence } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -13,8 +7,18 @@ import { z } from "zod";
 const updateFindingSchema = z.object({
   title: z.string().min(1).max(500).optional(),
   description: z.string().optional(),
-  severity: z.enum(["observation", "recommendation", "improvement_requirement", "insignificant_nonconformity", "significant_nonconformity"]).optional(),
-  source: z.enum(["control_test", "audit", "incident", "self_assessment", "external"]).optional(),
+  severity: z
+    .enum([
+      "observation",
+      "recommendation",
+      "improvement_requirement",
+      "insignificant_nonconformity",
+      "significant_nonconformity",
+    ])
+    .optional(),
+  source: z
+    .enum(["control_test", "audit", "incident", "self_assessment", "external"])
+    .optional(),
   controlId: z.string().uuid().nullable().optional(),
   controlTestId: z.string().uuid().nullable().optional(),
   riskId: z.string().uuid().nullable().optional(),
@@ -101,7 +105,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor", "control_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "auditor",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
@@ -139,15 +148,22 @@ export async function PUT(
     };
 
     if (body.data.title !== undefined) updateValues.title = body.data.title;
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
-    if (body.data.severity !== undefined) updateValues.severity = body.data.severity;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
+    if (body.data.severity !== undefined)
+      updateValues.severity = body.data.severity;
     if (body.data.source !== undefined) updateValues.source = body.data.source;
-    if (body.data.controlId !== undefined) updateValues.controlId = body.data.controlId;
-    if (body.data.controlTestId !== undefined) updateValues.controlTestId = body.data.controlTestId;
+    if (body.data.controlId !== undefined)
+      updateValues.controlId = body.data.controlId;
+    if (body.data.controlTestId !== undefined)
+      updateValues.controlTestId = body.data.controlTestId;
     if (body.data.riskId !== undefined) updateValues.riskId = body.data.riskId;
-    if (body.data.ownerId !== undefined) updateValues.ownerId = body.data.ownerId;
-    if (body.data.remediationPlan !== undefined) updateValues.remediationPlan = body.data.remediationPlan;
-    if (body.data.remediationDueDate !== undefined) updateValues.remediationDueDate = body.data.remediationDueDate;
+    if (body.data.ownerId !== undefined)
+      updateValues.ownerId = body.data.ownerId;
+    if (body.data.remediationPlan !== undefined)
+      updateValues.remediationPlan = body.data.remediationPlan;
+    if (body.data.remediationDueDate !== undefined)
+      updateValues.remediationDueDate = body.data.remediationDueDate;
 
     const [row] = await tx
       .update(finding)

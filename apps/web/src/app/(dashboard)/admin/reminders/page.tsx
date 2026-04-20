@@ -112,10 +112,7 @@ export default function RemindersPage() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />

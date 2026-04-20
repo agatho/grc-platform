@@ -1,7 +1,13 @@
 // Sprint 36: EAM Rule Evaluator Worker
 // Runs daily — evaluates architecture rules and generates/resolves violations
 
-import { db, architectureRule, architectureRuleViolation, architectureElement, applicationPortfolio } from "@grc/db";
+import {
+  db,
+  architectureRule,
+  architectureRuleViolation,
+  architectureElement,
+  applicationPortfolio,
+} from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 
 export async function processEamRuleEvaluator(): Promise<{
@@ -37,7 +43,9 @@ export async function processEamRuleEvaluator(): Promise<{
             AND ap.lifecycle_status IN ('end_of_life', 'retired')
             AND ae.status = 'active'
         `);
-        violatingElementIds = (results as unknown as { id: string }[]).map((r) => r.id);
+        violatingElementIds = (results as unknown as { id: string }[]).map(
+          (r) => r.id,
+        );
       } else if (ruleType === "classification") {
         // Check for missing data classification
         const results = await db.execute(sql`
@@ -47,7 +55,9 @@ export async function processEamRuleEvaluator(): Promise<{
             AND ae.criticality = 'critical'
             AND ap.data_classification IS NULL
         `);
-        violatingElementIds = (results as unknown as { id: string }[]).map((r) => r.id);
+        violatingElementIds = (results as unknown as { id: string }[]).map(
+          (r) => r.id,
+        );
       }
 
       // Create new violations
@@ -80,7 +90,14 @@ export async function processEamRuleEvaluator(): Promise<{
         SET status = 'resolved', resolved_at = NOW()
         WHERE rule_id = ${rule.id}
           AND status = 'open'
-          AND element_id NOT IN (${violatingElementIds.length > 0 ? sql.join(violatingElementIds.map((id) => sql`${id}`), sql`,`) : sql`NULL`})
+          AND element_id NOT IN (${
+            violatingElementIds.length > 0
+              ? sql.join(
+                  violatingElementIds.map((id) => sql`${id}`),
+                  sql`,`,
+                )
+              : sql`NULL`
+          })
       `);
 
       // Update last evaluated
@@ -93,6 +110,8 @@ export async function processEamRuleEvaluator(): Promise<{
     }
   }
 
-  console.log(`[eam-rule-evaluator] Evaluated ${rules.length} rules: ${newViolations} new, ${resolvedViolations} resolved`);
+  console.log(
+    `[eam-rule-evaluator] Evaluated ${rules.length} rules: ${newViolations} new, ${resolvedViolations} resolved`,
+  );
   return { rulesEvaluated: rules.length, newViolations, resolvedViolations };
 }

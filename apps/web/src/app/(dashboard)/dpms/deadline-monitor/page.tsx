@@ -157,13 +157,19 @@ export default function DpmsDeadlineMonitorPage() {
       const aOrder = ESCALATION_META[a.escalationLevel].order;
       const bOrder = ESCALATION_META[b.escalationLevel].order;
       if (aOrder !== bOrder) return aOrder - bOrder;
-      return new Date(a.createdAtIso).getTime() - new Date(b.createdAtIso).getTime();
+      return (
+        new Date(a.createdAtIso).getTime() - new Date(b.createdAtIso).getTime()
+      );
     });
 
   const bucket = {
-    critical: filteredItems.filter((i) => i.escalationLevel === "critical_overdue"),
+    critical: filteredItems.filter(
+      (i) => i.escalationLevel === "critical_overdue",
+    ),
     overdue: filteredItems.filter((i) => i.escalationLevel === "overdue"),
-    approaching: filteredItems.filter((i) => i.escalationLevel === "approaching"),
+    approaching: filteredItems.filter(
+      (i) => i.escalationLevel === "approaching",
+    ),
     ok: filteredItems.filter((i) => i.escalationLevel === "none"),
   };
 
@@ -209,10 +215,13 @@ export default function DpmsDeadlineMonitorPage() {
                   <p className="font-medium truncate">{i.title}</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                  <span>Erfasst: {new Date(i.createdAtIso).toLocaleString("de-DE")}</span>
+                  <span>
+                    Erfasst: {new Date(i.createdAtIso).toLocaleString("de-DE")}
+                  </span>
                   {i.deadlineIso && (
                     <span>
-                      {deadlineLabel}: {new Date(i.deadlineIso).toLocaleString("de-DE")}
+                      {deadlineLabel}:{" "}
+                      {new Date(i.deadlineIso).toLocaleString("de-DE")}
                     </span>
                   )}
                   <Badge variant="outline" className="text-xs py-0">
@@ -244,7 +253,9 @@ export default function DpmsDeadlineMonitorPage() {
               {i.isClosed ? (
                 <span className="text-emerald-700">
                   ✓ Geschlossen{" "}
-                  {i.closedAtIso ? `am ${new Date(i.closedAtIso).toLocaleString("de-DE")}` : ""}
+                  {i.closedAtIso
+                    ? `am ${new Date(i.closedAtIso).toLocaleString("de-DE")}`
+                    : ""}
                 </span>
               ) : i.escalationLevel === "overdue" ||
                 i.escalationLevel === "critical_overdue" ? (
@@ -280,10 +291,13 @@ export default function DpmsDeadlineMonitorPage() {
             <ArrowLeft className="h-3 w-3" />
             Zurueck zu DPMS
           </Link>
-          <h1 className="text-3xl font-bold tracking-tight">DPMS Deadline Monitor</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            DPMS Deadline Monitor
+          </h1>
           <p className="text-muted-foreground mt-1">
-            Vereinheitlichte Art. 12(3) DSR-Response-Fristen und Art. 33 Breach-Notification
-            (72h). Escalation kritisch wenn &gt; 48h ueberfaellig.
+            Vereinheitlichte Art. 12(3) DSR-Response-Fristen und Art. 33
+            Breach-Notification (72h). Escalation kritisch wenn &gt; 48h
+            ueberfaellig.
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -316,8 +330,12 @@ export default function DpmsDeadlineMonitorPage() {
               <Siren className="h-3.5 w-3.5" />
               Critical Overdue
             </p>
-            <p className="text-3xl font-bold text-red-700">{data.summary.criticalOverdue}</p>
-            <p className="text-xs text-muted-foreground mt-1">&gt; 48h ueberfaellig</p>
+            <p className="text-3xl font-bold text-red-700">
+              {data.summary.criticalOverdue}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              &gt; 48h ueberfaellig
+            </p>
           </CardContent>
         </Card>
         <Card className={data.summary.overdue > 0 ? "border-red-300" : ""}>
@@ -326,18 +344,28 @@ export default function DpmsDeadlineMonitorPage() {
               <AlertTriangle className="h-3.5 w-3.5" />
               Overdue
             </p>
-            <p className="text-3xl font-bold text-red-600">{data.summary.overdue}</p>
-            <p className="text-xs text-muted-foreground mt-1">0-48h ueberfaellig</p>
+            <p className="text-3xl font-bold text-red-600">
+              {data.summary.overdue}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              0-48h ueberfaellig
+            </p>
           </CardContent>
         </Card>
-        <Card className={data.summary.approaching > 0 ? "border-amber-300" : ""}>
+        <Card
+          className={data.summary.approaching > 0 ? "border-amber-300" : ""}
+        >
           <CardContent className="p-4">
             <p className="text-xs text-muted-foreground flex items-center gap-1">
               <Clock className="h-3.5 w-3.5" />
               Approaching
             </p>
-            <p className="text-3xl font-bold text-amber-600">{data.summary.approaching}</p>
-            <p className="text-xs text-muted-foreground mt-1">&lt; 24h bis Frist</p>
+            <p className="text-3xl font-bold text-amber-600">
+              {data.summary.approaching}
+            </p>
+            <p className="text-xs text-muted-foreground mt-1">
+              &lt; 24h bis Frist
+            </p>
           </CardContent>
         </Card>
         <Card>
@@ -346,7 +374,9 @@ export default function DpmsDeadlineMonitorPage() {
               <CheckCircle2 className="h-3.5 w-3.5" />
               OK
             </p>
-            <p className="text-3xl font-bold text-emerald-600">{data.summary.ok}</p>
+            <p className="text-3xl font-bold text-emerald-600">
+              {data.summary.ok}
+            </p>
             <p className="text-xs text-muted-foreground mt-1">
               geschlossen oder &gt; 24h verbleibend
             </p>
@@ -357,7 +387,9 @@ export default function DpmsDeadlineMonitorPage() {
       {/* Kind filter */}
       <Card>
         <CardContent className="p-3 flex items-center gap-3 flex-wrap">
-          <span className="text-xs text-muted-foreground font-medium">Filter:</span>
+          <span className="text-xs text-muted-foreground font-medium">
+            Filter:
+          </span>
           <div className="flex gap-1">
             <Button
               size="sm"
@@ -402,14 +434,18 @@ export default function DpmsDeadlineMonitorPage() {
           <CardHeader className="pb-3">
             <div className="flex items-center gap-2">
               <Siren className="h-5 w-5 text-red-700" />
-              <CardTitle className="text-red-800">Critical Overdue -- Sofortmeldung!</CardTitle>
+              <CardTitle className="text-red-800">
+                Critical Overdue -- Sofortmeldung!
+              </CardTitle>
             </div>
             <CardDescription>
-              GDPR-Frist um mehr als 48h ueberschritten. DPO + Geschaeftsfuehrung unverzueglich
-              einbinden.
+              GDPR-Frist um mehr als 48h ueberschritten. DPO +
+              Geschaeftsfuehrung unverzueglich einbinden.
             </CardDescription>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.critical.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.critical.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -421,7 +457,9 @@ export default function DpmsDeadlineMonitorPage() {
               Overdue (&lt; 48h)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.overdue.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.overdue.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -433,7 +471,9 @@ export default function DpmsDeadlineMonitorPage() {
               Approaching (&lt; 24h)
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.approaching.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.approaching.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 
@@ -445,7 +485,9 @@ export default function DpmsDeadlineMonitorPage() {
               OK ({bucket.ok.length})
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-2">{bucket.ok.map(renderRow)}</CardContent>
+          <CardContent className="space-y-2">
+            {bucket.ok.map(renderRow)}
+          </CardContent>
         </Card>
       )}
 

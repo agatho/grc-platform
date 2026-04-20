@@ -13,7 +13,10 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const limit = Math.min(50, Math.max(1, Number(url.searchParams.get("limit")) || 20));
+  const limit = Math.min(
+    50,
+    Math.max(1, Number(url.searchParams.get("limit")) || 20),
+  );
 
   const today = new Date().toISOString().split("T")[0];
 
@@ -44,7 +47,9 @@ export async function GET(req: Request) {
     .orderBy(
       desc(auditUniverseEntry.riskScore),
       sql`CASE WHEN ${auditUniverseEntry.lastAuditDate} IS NULL THEN 0 ELSE 1 END ASC`,
-      desc(sql`EXTRACT(DAY FROM (CURRENT_DATE - COALESCE(${auditUniverseEntry.lastAuditDate}::date, '2000-01-01')))`),
+      desc(
+        sql`EXTRACT(DAY FROM (CURRENT_DATE - COALESCE(${auditUniverseEntry.lastAuditDate}::date, '2000-01-01')))`,
+      ),
     )
     .limit(limit);
 

@@ -44,16 +44,11 @@ export async function DELETE(
     );
 
   if (!link) {
-    return Response.json(
-      { error: "Control link not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Control link not found" }, { status: 404 });
   }
 
   await withAuditContext(ctx, async (tx) => {
-    await tx
-      .delete(processControl)
-      .where(eq(processControl.id, link.id));
+    await tx.delete(processControl).where(eq(processControl.id, link.id));
   });
 
   return Response.json({ success: true });

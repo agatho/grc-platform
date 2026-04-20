@@ -40,14 +40,21 @@ describe("assessDataGovernance", () => {
   });
 
   it("missing bias testing => critical gap + not ready", () => {
-    const r = assessDataGovernance({ ...full, hasBiasTestingDone: false, biasTestResults: null });
+    const r = assessDataGovernance({
+      ...full,
+      hasBiasTestingDone: false,
+      biasTestResults: null,
+    });
     expect(r.hasCriticalGaps).toBe(true);
     expect(r.readyForHighRisk).toBe(false);
     expect(r.missing).toContain("bias_testing");
   });
 
   it("missing legal basis => critical gap", () => {
-    const r = assessDataGovernance({ ...full, hasLegalBasisForTraining: false });
+    const r = assessDataGovernance({
+      ...full,
+      hasLegalBasisForTraining: false,
+    });
     expect(r.hasCriticalGaps).toBe(true);
     expect(r.readyForHighRisk).toBe(false);
   });
@@ -109,13 +116,19 @@ describe("assessAnnexIvCompleteness", () => {
   });
 
   it("null section counts as missing", () => {
-    const r = assessAnnexIvCompleteness({ ...full, section5_RiskManagement: null });
+    const r = assessAnnexIvCompleteness({
+      ...full,
+      section5_RiskManagement: null,
+    });
     expect(r.missingSections).toContain("section5_RiskManagement");
     expect(r.coveragePercent).toBe(89);
   });
 
   it("empty whitespace doesn't count", () => {
-    const r = assessAnnexIvCompleteness({ ...full, section1_GeneralDescription: "   " });
+    const r = assessAnnexIvCompleteness({
+      ...full,
+      section1_GeneralDescription: "   ",
+    });
     expect(r.missingSections).toContain("section1_GeneralDescription");
   });
 });
@@ -152,13 +165,19 @@ describe("validateDeclarationOfConformity", () => {
   });
 
   it("empty harmonisedStandards", () => {
-    const r = validateDeclarationOfConformity({ ...fullInput, harmonisedStandards: [] });
+    const r = validateDeclarationOfConformity({
+      ...fullInput,
+      harmonisedStandards: [],
+    });
     expect(r.valid).toBe(false);
     expect(r.missing).toContain("harmonisedStandards");
   });
 
   it("whitespace-only string counts as missing", () => {
-    const r = validateDeclarationOfConformity({ ...fullInput, signatoryName: "   " });
+    const r = validateDeclarationOfConformity({
+      ...fullInput,
+      signatoryName: "   ",
+    });
     expect(r.valid).toBe(false);
     expect(r.missing).toContain("signatoryName");
   });
@@ -209,7 +228,10 @@ describe("assessSubstantialChange", () => {
   });
 
   it("only architectureChange => substantial", () => {
-    const r = assessSubstantialChange({ ...noChange, architectureChange: true });
+    const r = assessSubstantialChange({
+      ...noChange,
+      architectureChange: true,
+    });
     expect(r.isSubstantial).toBe(true);
   });
 

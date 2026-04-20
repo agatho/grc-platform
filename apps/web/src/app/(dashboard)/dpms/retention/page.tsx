@@ -27,13 +27,17 @@ function RetentionDashboardInner() {
 
   useEffect(() => {
     fetch("/api/v1/dpms/retention-schedules?limit=100")
-      .then((r) => r.ok ? r.json() : { data: [] })
+      .then((r) => (r.ok ? r.json() : { data: [] }))
       .then((json) => setSchedules(json.data ?? []))
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) {
-    return <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+    return (
+      <div className="flex justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    );
   }
 
   return (
@@ -43,21 +47,40 @@ function RetentionDashboardInner() {
           <h1 className="text-2xl font-bold">{t("retentionManagement")}</h1>
           <p className="text-muted-foreground">{t("retentionDescription")}</p>
         </div>
-        <Button><Plus className="mr-2 h-4 w-4" />{t("addSchedule")}</Button>
+        <Button>
+          <Plus className="mr-2 h-4 w-4" />
+          {t("addSchedule")}
+        </Button>
       </div>
 
       <div className="grid gap-4 md:grid-cols-3">
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">{t("totalSchedules")}</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold">{schedules.length}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t("totalSchedules")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">{schedules.length}</div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">{t("activeSchedules")}</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold text-green-600">{schedules.filter((s) => s.isActive).length}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t("activeSchedules")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">
+              {schedules.filter((s) => s.isActive).length}
+            </div>
+          </CardContent>
         </Card>
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-sm">{t("categories")}</CardTitle></CardHeader>
-          <CardContent><div className="text-3xl font-bold">{new Set(schedules.map((s) => s.dataCategory)).size}</div></CardContent>
+          <CardHeader className="pb-2">
+            <CardTitle className="text-sm">{t("categories")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold">
+              {new Set(schedules.map((s) => s.dataCategory)).size}
+            </div>
+          </CardContent>
         </Card>
       </div>
 
@@ -69,14 +92,23 @@ function RetentionDashboardInner() {
               <div className="flex-1">
                 <p className="font-medium">{s.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  {s.legalBasisReference} - {s.retentionPeriodMonths} {t("months")}
+                  {s.legalBasisReference} - {s.retentionPeriodMonths}{" "}
+                  {t("months")}
                 </p>
               </div>
-              <Badge variant="outline">{s.dataCategory.replace(/_/g, " ")}</Badge>
-              <Badge variant={s.deletionMethod === "automated" ? "default" : "secondary"}>
+              <Badge variant="outline">
+                {s.dataCategory.replace(/_/g, " ")}
+              </Badge>
+              <Badge
+                variant={
+                  s.deletionMethod === "automated" ? "default" : "secondary"
+                }
+              >
                 {s.deletionMethod}
               </Badge>
-              {!s.isActive && <Badge variant="destructive">{t("inactive")}</Badge>}
+              {!s.isActive && (
+                <Badge variant="destructive">{t("inactive")}</Badge>
+              )}
             </CardContent>
           </Card>
         ))}

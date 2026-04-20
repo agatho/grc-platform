@@ -26,7 +26,10 @@ export async function GET(
   const template = await getTemplateWithPhasesAndTasks(id, ctx.orgId);
 
   if (!template) {
-    return Response.json({ error: "Playbook template not found" }, { status: 404 });
+    return Response.json(
+      { error: "Playbook template not found" },
+      { status: 404 },
+    );
   }
 
   return Response.json({ data: template });
@@ -56,21 +59,30 @@ export async function PUT(
   const existing = await db
     .select()
     .from(playbookTemplate)
-    .where(and(eq(playbookTemplate.id, id), eq(playbookTemplate.orgId, ctx.orgId)))
+    .where(
+      and(eq(playbookTemplate.id, id), eq(playbookTemplate.orgId, ctx.orgId)),
+    )
     .limit(1);
 
   if (existing.length === 0) {
-    return Response.json({ error: "Playbook template not found" }, { status: 404 });
+    return Response.json(
+      { error: "Playbook template not found" },
+      { status: 404 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Update template fields
     const updateFields: Record<string, unknown> = { updatedAt: new Date() };
     if (data.name !== undefined) updateFields.name = data.name;
-    if (data.description !== undefined) updateFields.description = data.description;
-    if (data.triggerCategory !== undefined) updateFields.triggerCategory = data.triggerCategory;
-    if (data.triggerMinSeverity !== undefined) updateFields.triggerMinSeverity = data.triggerMinSeverity;
-    if (data.estimatedDurationHours !== undefined) updateFields.estimatedDurationHours = data.estimatedDurationHours;
+    if (data.description !== undefined)
+      updateFields.description = data.description;
+    if (data.triggerCategory !== undefined)
+      updateFields.triggerCategory = data.triggerCategory;
+    if (data.triggerMinSeverity !== undefined)
+      updateFields.triggerMinSeverity = data.triggerMinSeverity;
+    if (data.estimatedDurationHours !== undefined)
+      updateFields.estimatedDurationHours = data.estimatedDurationHours;
     if (data.isActive !== undefined) updateFields.isActive = data.isActive;
 
     const [updated] = await tx
@@ -82,9 +94,7 @@ export async function PUT(
     // If phases are provided, replace all phases and tasks
     if (data.phases) {
       // Delete existing phases (cascades to task templates)
-      await tx
-        .delete(playbookPhase)
-        .where(eq(playbookPhase.templateId, id));
+      await tx.delete(playbookPhase).where(eq(playbookPhase.templateId, id));
 
       // Insert new phases and tasks
       for (let phaseIdx = 0; phaseIdx < data.phases.length; phaseIdx++) {
@@ -99,7 +109,8 @@ export async function PUT(
             sortOrder: phaseIdx + 1,
             deadlineHoursRelative: phaseData.deadlineHoursRelative,
             escalationRoleOnOverdue: phaseData.escalationRoleOnOverdue ?? null,
-            communicationTemplateKey: phaseData.communicationTemplateKey ?? null,
+            communicationTemplateKey:
+              phaseData.communicationTemplateKey ?? null,
           })
           .returning();
 
@@ -142,11 +153,16 @@ export async function DELETE(
   const existing = await db
     .select()
     .from(playbookTemplate)
-    .where(and(eq(playbookTemplate.id, id), eq(playbookTemplate.orgId, ctx.orgId)))
+    .where(
+      and(eq(playbookTemplate.id, id), eq(playbookTemplate.orgId, ctx.orgId)),
+    )
     .limit(1);
 
   if (existing.length === 0) {
-    return Response.json({ error: "Playbook template not found" }, { status: 404 });
+    return Response.json(
+      { error: "Playbook template not found" },
+      { status: 404 },
+    );
   }
 
   // Check for active activations

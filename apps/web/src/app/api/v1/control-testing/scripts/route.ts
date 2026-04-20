@@ -10,11 +10,15 @@ export async function POST(req: Request) {
 
   const body = createTestScriptSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(controlTestScript)
+    const [created] = await tx
+      .insert(controlTestScript)
       .values({
         ...body.data,
         orgId: ctx.orgId,
@@ -30,13 +34,23 @@ export async function POST(req: Request) {
 
 // GET /api/v1/control-testing/scripts — List scripts
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "control_owner", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "control_owner",
+    "auditor",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = testScriptQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = testScriptQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, controlId, testType, isActive } = query.data;
@@ -45,14 +59,20 @@ export async function GET(req: Request) {
   const conditions = [eq(controlTestScript.orgId, ctx.orgId)];
   if (controlId) conditions.push(eq(controlTestScript.controlId, controlId));
   if (testType) conditions.push(eq(controlTestScript.testType, testType));
-  if (isActive !== undefined) conditions.push(eq(controlTestScript.isActive, isActive));
+  if (isActive !== undefined)
+    conditions.push(eq(controlTestScript.isActive, isActive));
 
   const [scripts, countResult] = await Promise.all([
-    db.select().from(controlTestScript)
+    db
+      .select()
+      .from(controlTestScript)
       .where(and(...conditions))
       .orderBy(desc(controlTestScript.createdAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(controlTestScript)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(controlTestScript)
       .where(and(...conditions)),
   ]);
 

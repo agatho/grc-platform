@@ -2,12 +2,38 @@ import { z } from "zod";
 
 // ── Supported languages ────────────────────────────────────────
 
-const supportedLanguages = ["de", "en", "fr", "nl", "it", "es", "pl", "cs"] as const;
-const translationStatusValues = ["original", "draft_translation", "verified", "outdated"] as const;
-const translationMethodValues = ["manual", "ai_claude", "ai_ollama", "xliff_import", "csv_import"] as const;
+const supportedLanguages = [
+  "de",
+  "en",
+  "fr",
+  "nl",
+  "it",
+  "es",
+  "pl",
+  "cs",
+] as const;
+const translationStatusValues = [
+  "original",
+  "draft_translation",
+  "verified",
+  "outdated",
+] as const;
+const translationMethodValues = [
+  "manual",
+  "ai_claude",
+  "ai_ollama",
+  "xliff_import",
+  "csv_import",
+] as const;
 const translatableEntityTypes = [
-  "risk", "control", "process", "document", "finding", "incident",
-  "risk_catalog_entry", "control_catalog_entry",
+  "risk",
+  "control",
+  "process",
+  "document",
+  "finding",
+  "incident",
+  "risk_catalog_entry",
+  "control_catalog_entry",
 ] as const;
 
 // ── Translatable field schema ─────────────────────────────────
@@ -36,12 +62,14 @@ export const updateUserContentLanguageSchema = z.object({
 // ── Translation save ──────────────────────────────────────────
 
 export const saveTranslationSchema = z.object({
-  fields: z.record(
-    z.string().min(1).max(50),
-    z.string().max(50000),
-  ).refine((val) => Object.keys(val).length > 0 && Object.keys(val).length <= 20, {
-    message: "Must provide between 1 and 20 field translations",
-  }),
+  fields: z
+    .record(z.string().min(1).max(50), z.string().max(50000))
+    .refine(
+      (val) => Object.keys(val).length > 0 && Object.keys(val).length <= 20,
+      {
+        message: "Must provide between 1 and 20 field translations",
+      },
+    ),
 });
 
 // ── AI Translation ────────────────────────────────────────────
@@ -50,10 +78,7 @@ export const aiTranslateSchema = z.object({
   entityType: z.enum(translatableEntityTypes),
   entityId: z.string().uuid(),
   fields: z.array(z.string().min(1).max(50)).optional(),
-  targetLanguages: z
-    .array(z.enum(supportedLanguages))
-    .min(1)
-    .max(8),
+  targetLanguages: z.array(z.enum(supportedLanguages)).min(1).max(8),
   sourceLanguage: z.enum(supportedLanguages).optional(),
 });
 
@@ -69,10 +94,7 @@ export const aiBatchTranslateSchema = z.object({
     )
     .min(1)
     .max(100),
-  targetLanguages: z
-    .array(z.enum(supportedLanguages))
-    .min(1)
-    .max(8),
+  targetLanguages: z.array(z.enum(supportedLanguages)).min(1).max(8),
   sourceLanguage: z.enum(supportedLanguages).optional(),
 });
 
@@ -91,7 +113,9 @@ export const updateTranslationStatusSchema = z.object({
 export const translationQueueFilterSchema = z.object({
   entityType: z.enum(translatableEntityTypes).optional(),
   targetLocale: z.enum(supportedLanguages).optional(),
-  status: z.enum(["missing", "draft", "outdated", "verified", "complete"]).optional(),
+  status: z
+    .enum(["missing", "draft", "outdated", "verified", "complete"])
+    .optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
 });

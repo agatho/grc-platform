@@ -3,7 +3,9 @@ import { login } from "../fixtures/auth";
 
 // R-01: /audit/findings gave 404. Now redirects to /controls/findings?source=audit.
 
-test("R-01: /audit/findings redirects to /controls/findings?source=audit", async ({ page }) => {
+test("R-01: /audit/findings redirects to /controls/findings?source=audit", async ({
+  page,
+}) => {
   await login(page);
 
   // Don't auto-follow redirects so we can assert the exact chain.

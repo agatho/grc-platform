@@ -60,7 +60,9 @@ export async function POST(
   // Anti-gaming: minimum reading time
   if (body.data.readDurationSeconds < MIN_READ_DURATION_SECONDS) {
     return Response.json(
-      { error: `Minimum reading time of ${MIN_READ_DURATION_SECONDS} seconds required` },
+      {
+        error: `Minimum reading time of ${MIN_READ_DURATION_SECONDS} seconds required`,
+      },
       { status: 422 },
     );
   }
@@ -107,7 +109,9 @@ export async function POST(
 
     if (body.data.quizResponses.length !== questions.length) {
       return Response.json(
-        { error: `Expected ${questions.length} quiz responses, got ${body.data.quizResponses.length}` },
+        {
+          error: `Expected ${questions.length} quiz responses, got ${body.data.quizResponses.length}`,
+        },
         { status: 422 },
       );
     }
@@ -123,7 +127,9 @@ export async function POST(
       const question = questions[response.questionIndex];
       if (response.selectedOptionIndex >= question.options.length) {
         return Response.json(
-          { error: `Invalid selectedOptionIndex for question ${response.questionIndex}` },
+          {
+            error: `Invalid selectedOptionIndex for question ${response.questionIndex}`,
+          },
           { status: 422 },
         );
       }
@@ -152,14 +158,16 @@ export async function POST(
       AND dv.version_number = ${dist.documentVersion}
     WHERE d.id = ${dist.documentId}
   `);
-  const documentHash = (docHashResult[0] as { hash: string })?.hash ?? "no-content";
+  const documentHash =
+    (docHashResult[0] as { hash: string })?.hash ?? "no-content";
 
   const now = new Date();
 
   // Extract IP + User-Agent
-  const ipAddress = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim()
-    ?? req.headers.get("x-real-ip")
-    ?? "unknown";
+  const ipAddress =
+    req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() ??
+    req.headers.get("x-real-ip") ??
+    "unknown";
   const userAgent = req.headers.get("user-agent")?.slice(0, 500) ?? "unknown";
 
   // Generate signature hash: SHA-512(userId + distributionId + timestamp + documentHash)
@@ -168,7 +176,8 @@ export async function POST(
     .digest("hex");
 
   // Determine final status
-  const finalStatus = dist.requiresQuiz && !quizPassed ? "failed_quiz" : "acknowledged";
+  const finalStatus =
+    dist.requiresQuiz && !quizPassed ? "failed_quiz" : "acknowledged";
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Update acknowledgment

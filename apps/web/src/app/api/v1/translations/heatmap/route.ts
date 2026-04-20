@@ -2,7 +2,11 @@
 // GET /api/v1/translations/heatmap — returns completion % per entity type per language
 
 import { db, translationStatus, organization } from "@grc/db";
-import { TRANSLATABLE_FIELDS, ENTITY_TABLE_MAP, SUPPORTED_LANGUAGES } from "@grc/shared";
+import {
+  TRANSLATABLE_FIELDS,
+  ENTITY_TABLE_MAP,
+  SUPPORTED_LANGUAGES,
+} from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -25,7 +29,9 @@ export async function GET(req: Request) {
     const rawResult = await db.execute(
       sql`SELECT active_languages FROM organization WHERE id = ${ctx.orgId}`,
     );
-    const rawRows = rawResult as unknown as Array<{ active_languages: string[] }>;
+    const rawRows = rawResult as unknown as Array<{
+      active_languages: string[];
+    }>;
     activeLanguages = rawRows[0]?.active_languages ?? ["de"];
     if (typeof activeLanguages === "string") {
       activeLanguages = JSON.parse(activeLanguages);
@@ -52,10 +58,12 @@ export async function GET(req: Request) {
     if (!tableName || !fields) continue;
 
     // Count total entities
-    const countResult = await db.execute(sql.raw(`
+    const countResult = await db.execute(
+      sql.raw(`
       SELECT COUNT(*) as cnt FROM "${tableName}"
       WHERE org_id = '${ctx.orgId}' AND deleted_at IS NULL
-    `));
+    `),
+    );
     const totalEntities = Number(
       (countResult as unknown as Array<{ cnt: string }>)[0]?.cnt ?? 0,
     );
@@ -81,7 +89,8 @@ export async function GET(req: Request) {
         language: lang,
         total: totalSlots,
         translated,
-        percentage: totalSlots > 0 ? Math.round((translated / totalSlots) * 100) : 100,
+        percentage:
+          totalSlots > 0 ? Math.round((translated / totalSlots) * 100) : 100,
       });
     }
   }

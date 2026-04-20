@@ -1,4 +1,11 @@
-import { db, rcsaAssignment, rcsaCampaign, rcsaResponse, risk, control } from "@grc/db";
+import {
+  db,
+  rcsaAssignment,
+  rcsaCampaign,
+  rcsaResponse,
+  risk,
+  control,
+} from "@grc/db";
 import { eq, and, count, desc } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";

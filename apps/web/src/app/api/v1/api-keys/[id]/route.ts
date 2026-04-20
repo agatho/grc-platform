@@ -75,9 +75,9 @@ export async function PATCH(
   if (scopeIds) {
     await db.delete(apiKeyScope).where(eq(apiKeyScope.apiKeyId, id));
     if (scopeIds.length > 0) {
-      await db.insert(apiKeyScope).values(
-        scopeIds.map((scopeId) => ({ apiKeyId: id, scopeId })),
-      );
+      await db
+        .insert(apiKeyScope)
+        .values(scopeIds.map((scopeId) => ({ apiKeyId: id, scopeId })));
     }
   }
 

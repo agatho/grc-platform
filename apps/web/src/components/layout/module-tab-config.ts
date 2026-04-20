@@ -34,7 +34,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.register", href: "/risks", match: "exact" },
       { labelKey: "nav.tabs.kri", href: "/risks/kris" },
       { labelKey: "nav.tabs.riskGroups", href: "/risks/group" },
-      { labelKey: "nav.tabs.heatmap", href: "/controls/heatmap", match: "exact" },
+      {
+        labelKey: "nav.tabs.heatmap",
+        href: "/controls/heatmap",
+        match: "exact",
+      },
     ],
   },
   {
@@ -43,7 +47,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.appetite", href: "/erm/risk-appetite" },
       { labelKey: "nav.tabs.fair", href: "/erm/fair", match: "prefix" },
       { labelKey: "nav.tabs.rcsa", href: "/rcsa", match: "prefix" },
-      { labelKey: "nav.tabs.predictive", href: "/predictive-risk", match: "prefix" },
+      {
+        labelKey: "nav.tabs.predictive",
+        href: "/predictive-risk",
+        match: "prefix",
+      },
     ],
   },
   {
@@ -61,21 +69,45 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "isms-threats",
     tabs: [
       { labelKey: "nav.tabs.threats", href: "/isms/threats", match: "prefix" },
-      { labelKey: "nav.tabs.vulnerabilities", href: "/isms/vulnerabilities", match: "prefix" },
-      { labelKey: "nav.tabs.incidents", href: "/isms/incidents", match: "prefix" },
+      {
+        labelKey: "nav.tabs.vulnerabilities",
+        href: "/isms/vulnerabilities",
+        match: "prefix",
+      },
+      {
+        labelKey: "nav.tabs.incidents",
+        href: "/isms/incidents",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.cve", href: "/isms/cve" },
-      { labelKey: "nav.tabs.playbooks", href: "/isms/playbooks", match: "prefix" },
+      {
+        labelKey: "nav.tabs.playbooks",
+        href: "/isms/playbooks",
+        match: "prefix",
+      },
     ],
   },
   {
     key: "isms-assessments",
     tabs: [
-      { labelKey: "nav.tabs.assessments", href: "/isms/assessments", match: "prefix" },
-      { labelKey: "nav.tabs.maturity", href: "/isms/maturity", match: "prefix" },
+      {
+        labelKey: "nav.tabs.assessments",
+        href: "/isms/assessments",
+        match: "prefix",
+      },
+      {
+        labelKey: "nav.tabs.maturity",
+        href: "/isms/maturity",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.soa", href: "/isms/soa", match: "prefix" },
       { labelKey: "nav.tabs.reviews", href: "/isms/reviews", match: "prefix" },
       { labelKey: "nav.tabs.posture", href: "/isms/posture" },
-      { labelKey: "nav.tabs.certifications", href: "/isms/certifications", match: "prefix" },
+      {
+        labelKey: "nav.tabs.certifications",
+        href: "/isms/certifications",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.cap", href: "/isms/cap", match: "prefix" },
     ],
   },
@@ -95,7 +127,10 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.aiActFrias", href: "/ai-act/frias" },
       { labelKey: "nav.tabs.aiActIncidents", href: "/ai-act/incidents" },
       { labelKey: "nav.tabs.aiActProhibited", href: "/ai-act/prohibited" },
-      { labelKey: "nav.tabs.aiActConformity", href: "/ai-act/conformity-assessments" },
+      {
+        labelKey: "nav.tabs.aiActConformity",
+        href: "/ai-act/conformity-assessments",
+      },
     ],
   },
   {
@@ -113,8 +148,16 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "ics-controls",
     tabs: [
       { labelKey: "nav.tabs.controls", href: "/controls", match: "exact" },
-      { labelKey: "nav.tabs.campaigns", href: "/controls/campaigns", match: "prefix" },
-      { labelKey: "nav.tabs.findings", href: "/controls/findings", match: "prefix" },
+      {
+        labelKey: "nav.tabs.campaigns",
+        href: "/controls/campaigns",
+        match: "prefix",
+      },
+      {
+        labelKey: "nav.tabs.findings",
+        href: "/controls/findings",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.rcm", href: "/controls/rcm" },
       { labelKey: "nav.tabs.evidence", href: "/controls/evidence" },
     ],
@@ -125,8 +168,16 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.auditMgmt", href: "/audit", match: "exact" },
       { labelKey: "nav.tabs.universe", href: "/audit/universe" },
       { labelKey: "nav.tabs.plans", href: "/audit/plans", match: "prefix" },
-      { labelKey: "nav.tabs.executions", href: "/audit/executions", match: "prefix" },
-      { labelKey: "nav.tabs.analytics", href: "/audit/analytics", match: "prefix" },
+      {
+        labelKey: "nav.tabs.executions",
+        href: "/audit/executions",
+        match: "prefix",
+      },
+      {
+        labelKey: "nav.tabs.analytics",
+        href: "/audit/analytics",
+        match: "prefix",
+      },
     ],
   },
 
@@ -135,7 +186,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "bcms-resilience",
     tabs: [
       { labelKey: "nav.tabs.strategies", href: "/bcms/strategies" },
-      { labelKey: "nav.tabs.exercises", href: "/bcms/exercises", match: "prefix" },
+      {
+        labelKey: "nav.tabs.exercises",
+        href: "/bcms/exercises",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.resilience", href: "/bcms/resilience" },
     ],
   },
@@ -153,7 +208,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
   {
     key: "dpms-incidents",
     tabs: [
-      { labelKey: "nav.tabs.breaches", href: "/dpms/breaches", match: "prefix" },
+      {
+        labelKey: "nav.tabs.breaches",
+        href: "/dpms/breaches",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.tia", href: "/dpms/tia" },
       { labelKey: "nav.tabs.consent", href: "/dpms/consent" },
       { labelKey: "nav.tabs.retention", href: "/dpms/retention" },
@@ -184,7 +243,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
   {
     key: "tprm-contracts",
     tabs: [
-      { labelKey: "nav.tabs.contractOverview", href: "/contracts", match: "exact" },
+      {
+        labelKey: "nav.tabs.contractOverview",
+        href: "/contracts",
+        match: "exact",
+      },
       { labelKey: "nav.tabs.contractList", href: "/contracts/list" },
       { labelKey: "nav.tabs.obligations", href: "/contracts/obligations" },
       { labelKey: "nav.tabs.sla", href: "/contracts/sla" },
@@ -195,7 +258,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
   {
     key: "bpm-processes",
     tabs: [
-      { labelKey: "nav.tabs.processRegister", href: "/processes", match: "exact" },
+      {
+        labelKey: "nav.tabs.processRegister",
+        href: "/processes",
+        match: "exact",
+      },
       { labelKey: "nav.tabs.governance", href: "/processes/governance" },
       { labelKey: "nav.tabs.mining", href: "/bpm/mining" },
       { labelKey: "nav.tabs.kpis", href: "/bpm/kpis" },
@@ -225,7 +292,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
   {
     key: "esg-emissions",
     tabs: [
-      { labelKey: "nav.tabs.emissions", href: "/esg/emissions", match: "exact" },
+      {
+        labelKey: "nav.tabs.emissions",
+        href: "/esg/emissions",
+        match: "exact",
+      },
       { labelKey: "nav.tabs.scope3", href: "/esg/emissions/scope3" },
       { labelKey: "nav.tabs.supplyChain", href: "/esg/emissions/supply-chain" },
       { labelKey: "nav.tabs.climateScenarios", href: "/esg/climate-scenarios" },
@@ -237,7 +308,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "esg-core",
     tabs: [
       { labelKey: "nav.tabs.esgOverview", href: "/esg", match: "exact" },
-      { labelKey: "nav.tabs.materiality", href: "/esg/materiality", match: "prefix" },
+      {
+        labelKey: "nav.tabs.materiality",
+        href: "/esg/materiality",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.datapoints", href: "/esg/datapoints" },
       { labelKey: "nav.tabs.metrics", href: "/esg/metrics", match: "prefix" },
     ],
@@ -257,7 +332,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "platform-tools",
     tabs: [
       { labelKey: "nav.tabs.copilot", href: "/copilot", match: "prefix" },
-      { labelKey: "nav.tabs.marketplace", href: "/marketplace", match: "prefix" },
+      {
+        labelKey: "nav.tabs.marketplace",
+        href: "/marketplace",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.extensions", href: "/extensions", match: "prefix" },
       { labelKey: "nav.tabs.academy", href: "/academy", match: "prefix" },
     ],
@@ -274,7 +353,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
     key: "platform-admin",
     tabs: [
       { labelKey: "nav.tabs.settings", href: "/settings", match: "prefix" },
-      { labelKey: "nav.tabs.organizations", href: "/organizations", match: "prefix" },
+      {
+        labelKey: "nav.tabs.organizations",
+        href: "/organizations",
+        match: "prefix",
+      },
       { labelKey: "nav.tabs.users", href: "/users" },
       { labelKey: "nav.tabs.modules", href: "/admin/modules" },
       { labelKey: "nav.tabs.auditLog", href: "/audit-log" },

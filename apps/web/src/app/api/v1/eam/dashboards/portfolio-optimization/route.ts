@@ -12,11 +12,19 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const dimensions = [
-    "license_type", "functional_fit", "technical_fit",
-    "lifecycle_status", "business_criticality", "time_classification", "six_r_strategy",
+    "license_type",
+    "functional_fit",
+    "technical_fit",
+    "lifecycle_status",
+    "business_criticality",
+    "time_classification",
+    "six_r_strategy",
   ];
 
-  const distributions: Record<string, Array<{ value: string; count: number }>> = {};
+  const distributions: Record<
+    string,
+    Array<{ value: string; count: number }>
+  > = {};
 
   for (const dim of dimensions) {
     const result = await db.execute(sql`
@@ -27,7 +35,10 @@ export async function GET(req: Request) {
       GROUP BY ${sql.raw(dim)}
       ORDER BY count DESC
     `);
-    distributions[dim] = result as unknown as Array<{ value: string; count: number }>;
+    distributions[dim] = result as unknown as Array<{
+      value: string;
+      count: number;
+    }>;
   }
 
   return Response.json({ data: distributions });

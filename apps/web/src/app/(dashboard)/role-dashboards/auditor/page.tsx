@@ -5,7 +5,11 @@ import { useTranslations } from "next-intl";
 import { Loader2, FileSearch, FileCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 
 export default function AuditorDashboardPage() {
@@ -20,7 +24,12 @@ export default function AuditorDashboardPage() {
       .finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="flex items-center justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>;
+  if (loading)
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
   if (!data) return null;
 
   const evidence = data.evidenceQuality as Record<string, number> | undefined;
@@ -37,16 +46,22 @@ export default function AuditorDashboardPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t("totalEvidence")}</CardDescription>
-            <CardTitle className="text-2xl">{evidence?.total_evidence ?? 0}</CardTitle>
+            <CardTitle className="text-2xl">
+              {evidence?.total_evidence ?? 0}
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-xs text-muted-foreground">{t("withAttachment")}: {evidence?.with_attachment ?? 0}</p>
+            <p className="text-xs text-muted-foreground">
+              {t("withAttachment")}: {evidence?.with_attachment ?? 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="pb-2">
             <CardDescription>{t("recentEvidence")}</CardDescription>
-            <CardTitle className="text-2xl text-green-600">{evidence?.recent_evidence ?? 0}</CardTitle>
+            <CardTitle className="text-2xl text-green-600">
+              {evidence?.recent_evidence ?? 0}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <p className="text-xs text-muted-foreground">{t("last90Days")}</p>
@@ -58,7 +73,10 @@ export default function AuditorDashboardPage() {
           </CardHeader>
           <CardContent className="space-y-1">
             {findingsByAge?.map((bucket, idx) => (
-              <div key={idx} className="flex items-center justify-between text-sm">
+              <div
+                key={idx}
+                className="flex items-center justify-between text-sm"
+              >
                 <span>{String(bucket.age_bucket)}</span>
                 <Badge variant="outline">{String(bucket.count)}</Badge>
               </div>

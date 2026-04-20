@@ -99,7 +99,9 @@ export const controlTestExecution = pgTable(
     durationMs: integer("duration_ms"),
     tokensUsed: integer("tokens_used").notNull().default(0),
     executedBy: uuid("executed_by").references(() => user.id),
-    triggeredBy: varchar("triggered_by", { length: 20 }).notNull().default("manual"), // manual | scheduled | agent
+    triggeredBy: varchar("triggered_by", { length: 20 })
+      .notNull()
+      .default("manual"), // manual | scheduled | agent
     startedAt: timestamp("started_at", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })

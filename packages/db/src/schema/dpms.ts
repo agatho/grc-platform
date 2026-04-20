@@ -316,7 +316,9 @@ export const dpiaMeasure = pgTable(
       .notNull()
       .references(() => dpia.id, { onDelete: "cascade" }),
     measureDescription: text("measure_description").notNull(),
-    riskId: uuid("risk_id").references(() => dpiaRisk.id, { onDelete: "set null" }),
+    riskId: uuid("risk_id").references(() => dpiaRisk.id, {
+      onDelete: "set null",
+    }),
     implementationTimeline: varchar("implementation_timeline", {
       length: 255,
     }),

@@ -45,7 +45,18 @@ const DEFAULT_PREFS: NavPreferences = {
 // Groups are collapsed by default — only the active group is expanded.
 // collapsedGroups tracks explicitly OPENED groups (inverted logic).
 // When no user prefs exist, we auto-expand only the group matching the current path.
-const ALL_GROUP_KEYS = ["erm", "isms", "icsAudit", "bcms", "dpms", "tprmContracts", "bpmArchitecture", "esg", "whistleblowing", "platform"];
+const ALL_GROUP_KEYS = [
+  "erm",
+  "isms",
+  "icsAudit",
+  "bcms",
+  "dpms",
+  "tprmContracts",
+  "bpmArchitecture",
+  "esg",
+  "whistleblowing",
+  "platform",
+];
 
 const MAX_PINS = 8;
 
@@ -73,7 +84,9 @@ interface NavPreferencesProviderProps {
   children: ReactNode;
 }
 
-export function NavPreferencesProvider({ children }: NavPreferencesProviderProps) {
+export function NavPreferencesProvider({
+  children,
+}: NavPreferencesProviderProps) {
   const [prefs, setPrefs] = useState<NavPreferences>(DEFAULT_PREFS);
   const [loading, setLoading] = useState(true);
 
@@ -100,7 +113,9 @@ export function NavPreferencesProvider({ children }: NavPreferencesProviderProps
       }
     }
     void load();
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   // Persist to server (debounced via immediate call — no extra deps needed)
@@ -178,21 +193,19 @@ export function NavPreferencesProvider({ children }: NavPreferencesProviderProps
     [expandedGroups],
   );
 
-  const setActiveGroup = useCallback(
-    (groupKey: string) => {
-      setExpandedGroups((prev) => {
-        if (prev.has(groupKey)) return prev;
-        const next = new Set<string>();
-        next.add(groupKey);
-        return next;
-      });
-    },
-    [],
-  );
+  const setActiveGroup = useCallback((groupKey: string) => {
+    setExpandedGroups((prev) => {
+      if (prev.has(groupKey)) return prev;
+      const next = new Set<string>();
+      next.add(groupKey);
+      return next;
+    });
+  }, []);
 
   const toggleSidebarMode = useCallback(() => {
     setPrefs((prev) => {
-      const newMode: SidebarMode = prev.sidebarMode === "condensed" ? "full" : "condensed";
+      const newMode: SidebarMode =
+        prev.sidebarMode === "condensed" ? "full" : "condensed";
       const updated = { ...prev, sidebarMode: newMode };
       void persist(updated);
       return updated;
@@ -202,8 +215,13 @@ export function NavPreferencesProvider({ children }: NavPreferencesProviderProps
   return (
     <NavPreferencesContext.Provider
       value={{
-        prefs, loading, togglePin, isPinned, toggleGroupCollapse,
-        isGroupCollapsed, setActiveGroup,
+        prefs,
+        loading,
+        togglePin,
+        isPinned,
+        toggleGroupCollapse,
+        isGroupCollapsed,
+        setActiveGroup,
         sidebarMode: prefs.sidebarMode,
         toggleSidebarMode,
       }}

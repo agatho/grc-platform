@@ -84,7 +84,9 @@ export default function SsoConfigPage() {
   const [oidcClientSecret, setOidcClientSecret] = useState("");
   const [oidcScopes, setOidcScopes] = useState("openid profile email");
   // Group mapping
-  const [groupMappings, setGroupMappings] = useState<Array<{ group: string; role: string }>>([]);
+  const [groupMappings, setGroupMappings] = useState<
+    Array<{ group: string; role: string }>
+  >([]);
 
   const fetchConfig = useCallback(async () => {
     try {
@@ -274,7 +276,11 @@ export default function SsoConfigPage() {
           <div className="flex items-center gap-3">
             <Badge
               variant="outline"
-              className={config.isActive ? "border-green-200 bg-green-50 text-green-700" : "border-gray-200 bg-gray-50 text-gray-500"}
+              className={
+                config.isActive
+                  ? "border-green-200 bg-green-50 text-green-700"
+                  : "border-gray-200 bg-gray-50 text-gray-500"
+              }
             >
               {config.isActive ? t("active") : t("inactive")}
             </Badge>
@@ -288,10 +294,14 @@ export default function SsoConfigPage() {
 
       {/* Feedback messages */}
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
       )}
       {success && (
-        <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">{success}</div>
+        <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+          {success}
+        </div>
       )}
 
       {/* Tabs */}
@@ -553,7 +563,10 @@ export default function SsoConfigPage() {
               <p className="text-sm font-medium">{t("autoProvisionLabel")}</p>
               <p className="text-xs text-gray-500">{t("autoProvisionDesc")}</p>
             </div>
-            <Switch checked={autoProvision} onCheckedChange={setAutoProvision} />
+            <Switch
+              checked={autoProvision}
+              onCheckedChange={setAutoProvision}
+            />
           </div>
 
           <div className="flex items-center justify-between rounded-md border border-amber-200 bg-amber-50 p-3">

@@ -1,10 +1,8 @@
+import { db, document, workItem, notification } from "@grc/db";
 import {
-  db,
-  document,
-  workItem,
-  notification,
-} from "@grc/db";
-import { documentStatusTransitionSchema, VALID_DOCUMENT_TRANSITIONS } from "@grc/shared";
+  documentStatusTransitionSchema,
+  VALID_DOCUMENT_TRANSITIONS,
+} from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -131,7 +129,11 @@ export async function PUT(
     }
 
     // Notify reviewer when moving to in_review
-    if (targetStatus === "in_review" && existing.reviewerId && existing.reviewerId !== ctx.userId) {
+    if (
+      targetStatus === "in_review" &&
+      existing.reviewerId &&
+      existing.reviewerId !== ctx.userId
+    ) {
       await tx.insert(notification).values({
         userId: existing.reviewerId,
         orgId: ctx.orgId,
@@ -152,7 +154,11 @@ export async function PUT(
     }
 
     // Notify approver when moving to approved
-    if (targetStatus === "approved" && existing.approverId && existing.approverId !== ctx.userId) {
+    if (
+      targetStatus === "approved" &&
+      existing.approverId &&
+      existing.approverId !== ctx.userId
+    ) {
       await tx.insert(notification).values({
         userId: existing.approverId,
         orgId: ctx.orgId,

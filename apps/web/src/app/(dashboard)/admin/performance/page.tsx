@@ -37,7 +37,9 @@ import type { CacheStatsResponse, SlowQueriesResponse } from "@grc/shared";
 export default function PerformanceDashboardPage() {
   const t = useTranslations("performance");
   const [cacheStats, setCacheStats] = useState<CacheStatsResponse | null>(null);
-  const [slowQueries, setSlowQueries] = useState<SlowQueriesResponse | null>(null);
+  const [slowQueries, setSlowQueries] = useState<SlowQueriesResponse | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
   const [clearing, setClearing] = useState(false);
 
@@ -114,15 +116,22 @@ export default function PerformanceDashboardPage() {
             </AlertDialogTrigger>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>{t("clearCacheConfirmTitle")}</AlertDialogTitle>
+                <AlertDialogTitle>
+                  {t("clearCacheConfirmTitle")}
+                </AlertDialogTitle>
                 <AlertDialogDescription>
                   {t("clearCacheConfirmDescription")}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>{t("cancel")}</AlertDialogCancel>
-                <AlertDialogAction onClick={handleClearCache} disabled={clearing}>
-                  {clearing && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                <AlertDialogAction
+                  onClick={handleClearCache}
+                  disabled={clearing}
+                >
+                  {clearing && (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  )}
                   {t("confirm")}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -138,7 +147,9 @@ export default function PerformanceDashboardPage() {
             <div className="flex items-center gap-3">
               <Zap className="h-8 w-8 text-blue-500" />
               <div>
-                <p className="text-2xl font-bold">{cacheStats?.overallHitRate.toFixed(1) ?? 0}%</p>
+                <p className="text-2xl font-bold">
+                  {cacheStats?.overallHitRate.toFixed(1) ?? 0}%
+                </p>
                 <p className="text-xs text-gray-500">{t("hitRate")}</p>
               </div>
             </div>
@@ -149,7 +160,9 @@ export default function PerformanceDashboardPage() {
             <div className="flex items-center gap-3">
               <Database className="h-8 w-8 text-green-500" />
               <div>
-                <p className="text-2xl font-bold">{cacheStats?.totalKeys ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {cacheStats?.totalKeys ?? 0}
+                </p>
                 <p className="text-xs text-gray-500">{t("cachedKeys")}</p>
               </div>
             </div>
@@ -160,7 +173,9 @@ export default function PerformanceDashboardPage() {
             <div className="flex items-center gap-3">
               <HardDrive className="h-8 w-8 text-purple-500" />
               <div>
-                <p className="text-2xl font-bold">{cacheStats?.memoryUsedMb.toFixed(1) ?? 0} MB</p>
+                <p className="text-2xl font-bold">
+                  {cacheStats?.memoryUsedMb.toFixed(1) ?? 0} MB
+                </p>
                 <p className="text-xs text-gray-500">{t("memoryUsed")}</p>
               </div>
             </div>
@@ -171,7 +186,9 @@ export default function PerformanceDashboardPage() {
             <div className="flex items-center gap-3">
               <Clock className="h-8 w-8 text-orange-500" />
               <div>
-                <p className="text-2xl font-bold">{cacheStats?.totalHits ?? 0}</p>
+                <p className="text-2xl font-bold">
+                  {cacheStats?.totalHits ?? 0}
+                </p>
                 <p className="text-xs text-gray-500">{t("savedQueries")}</p>
               </div>
             </div>
@@ -184,7 +201,9 @@ export default function PerformanceDashboardPage() {
         <CardHeader>
           <CardTitle>{t("slowQueries")}</CardTitle>
           <CardDescription>
-            {t("slowQueriesDescription", { threshold: slowQueries?.threshold ?? 100 })}
+            {t("slowQueriesDescription", {
+              threshold: slowQueries?.threshold ?? 100,
+            })}
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -232,7 +251,9 @@ export default function PerformanceDashboardPage() {
                             {t("indexRecommended")}
                           </Badge>
                         ) : (
-                          <Badge className="bg-green-100 text-green-800">OK</Badge>
+                          <Badge className="bg-green-100 text-green-800">
+                            OK
+                          </Badge>
                         )}
                       </td>
                     </tr>

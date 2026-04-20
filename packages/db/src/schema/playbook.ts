@@ -40,11 +40,10 @@ export const playbookTriggerSeverityEnum = pgEnum("playbook_trigger_severity", [
   "catastrophe",
 ]);
 
-export const playbookActivationStatusEnum = pgEnum("playbook_activation_status", [
-  "active",
-  "completed",
-  "aborted",
-]);
+export const playbookActivationStatusEnum = pgEnum(
+  "playbook_activation_status",
+  ["active", "completed", "aborted"],
+);
 
 // ──────────────────────────────────────────────────────────────
 // 16.1 PlaybookTemplate — Reusable incident response template
@@ -79,18 +78,21 @@ export const playbookTemplate = pgTable(
   ],
 );
 
-export const playbookTemplateRelations = relations(playbookTemplate, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [playbookTemplate.orgId],
-    references: [organization.id],
+export const playbookTemplateRelations = relations(
+  playbookTemplate,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [playbookTemplate.orgId],
+      references: [organization.id],
+    }),
+    creator: one(user, {
+      fields: [playbookTemplate.createdBy],
+      references: [user.id],
+    }),
+    phases: many(playbookPhase),
+    activations: many(playbookActivation),
   }),
-  creator: one(user, {
-    fields: [playbookTemplate.createdBy],
-    references: [user.id],
-  }),
-  phases: many(playbookPhase),
-  activations: many(playbookActivation),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 16.2 PlaybookPhase — A phase within a playbook template
@@ -107,8 +109,12 @@ export const playbookPhase = pgTable(
     description: text("description"),
     sortOrder: integer("sort_order").notNull(),
     deadlineHoursRelative: integer("deadline_hours_relative").notNull(),
-    escalationRoleOnOverdue: varchar("escalation_role_on_overdue", { length: 50 }),
-    communicationTemplateKey: varchar("communication_template_key", { length: 100 }),
+    escalationRoleOnOverdue: varchar("escalation_role_on_overdue", {
+      length: 50,
+    }),
+    communicationTemplateKey: varchar("communication_template_key", {
+      length: 100,
+    }),
   },
   (t) => [
     index("pp_template_idx").on(t.templateId),
@@ -116,13 +122,16 @@ export const playbookPhase = pgTable(
   ],
 );
 
-export const playbookPhaseRelations = relations(playbookPhase, ({ one, many }) => ({
-  template: one(playbookTemplate, {
-    fields: [playbookPhase.templateId],
-    references: [playbookTemplate.id],
+export const playbookPhaseRelations = relations(
+  playbookPhase,
+  ({ one, many }) => ({
+    template: one(playbookTemplate, {
+      fields: [playbookPhase.templateId],
+      references: [playbookTemplate.id],
+    }),
+    tasks: many(playbookTaskTemplate),
   }),
-  tasks: many(playbookTaskTemplate),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 16.3 PlaybookTaskTemplate — A task template within a phase
@@ -149,12 +158,15 @@ export const playbookTaskTemplate = pgTable(
   ],
 );
 
-export const playbookTaskTemplateRelations = relations(playbookTaskTemplate, ({ one }) => ({
-  phase: one(playbookPhase, {
-    fields: [playbookTaskTemplate.phaseId],
-    references: [playbookPhase.id],
+export const playbookTaskTemplateRelations = relations(
+  playbookTaskTemplate,
+  ({ one }) => ({
+    phase: one(playbookPhase, {
+      fields: [playbookTaskTemplate.phaseId],
+      references: [playbookPhase.id],
+    }),
   }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 16.4 PlaybookActivation — An activated playbook for an incident
@@ -192,25 +204,28 @@ export const playbookActivation = pgTable(
   ],
 );
 
-export const playbookActivationRelations = relations(playbookActivation, ({ one }) => ({
-  organization: one(organization, {
-    fields: [playbookActivation.orgId],
-    references: [organization.id],
+export const playbookActivationRelations = relations(
+  playbookActivation,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [playbookActivation.orgId],
+      references: [organization.id],
+    }),
+    template: one(playbookTemplate, {
+      fields: [playbookActivation.templateId],
+      references: [playbookTemplate.id],
+    }),
+    incident: one(securityIncident, {
+      fields: [playbookActivation.incidentId],
+      references: [securityIncident.id],
+    }),
+    activator: one(user, {
+      fields: [playbookActivation.activatedBy],
+      references: [user.id],
+    }),
+    currentPhase: one(playbookPhase, {
+      fields: [playbookActivation.currentPhaseId],
+      references: [playbookPhase.id],
+    }),
   }),
-  template: one(playbookTemplate, {
-    fields: [playbookActivation.templateId],
-    references: [playbookTemplate.id],
-  }),
-  incident: one(securityIncident, {
-    fields: [playbookActivation.incidentId],
-    references: [securityIncident.id],
-  }),
-  activator: one(user, {
-    fields: [playbookActivation.activatedBy],
-    references: [user.id],
-  }),
-  currentPhase: one(playbookPhase, {
-    fields: [playbookActivation.currentPhaseId],
-    references: [playbookPhase.id],
-  }),
-}));
+);

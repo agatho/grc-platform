@@ -5,10 +5,27 @@ import { z } from "zod";
 const materialityStatusValues = ["draft", "in_progress", "completed"] as const;
 const dataQualityValues = ["measured", "estimated", "calculated"] as const;
 const targetTypeValues = ["absolute", "intensity", "relative"] as const;
-const targetStatusValues = ["on_track", "at_risk", "off_track", "achieved"] as const;
-const reportStatusValues = ["draft", "in_review", "approved", "published"] as const;
+const targetStatusValues = [
+  "on_track",
+  "at_risk",
+  "off_track",
+  "achieved",
+] as const;
+const reportStatusValues = [
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+] as const;
 const esgFrequencyValues = ["annual", "semi_annual", "quarterly"] as const;
-const voterTypeValues = ["internal", "customer", "supplier", "investor", "ngo", "regulator"] as const;
+const voterTypeValues = [
+  "internal",
+  "customer",
+  "supplier",
+  "investor",
+  "ngo",
+  "regulator",
+] as const;
 
 export const createMaterialityAssessmentSchema = z.object({
   reportingYear: z.number().int().min(2024).max(2030),
@@ -28,7 +45,9 @@ export const createEsrsMetricSchema = z.object({
   name: z.string().min(1).max(500),
   unit: z.string().min(1).max(50),
   frequency: z.enum(esgFrequencyValues).default("annual"),
-  collectionMethod: z.enum(["manual", "import", "calculated"]).default("manual"),
+  collectionMethod: z
+    .enum(["manual", "import", "calculated"])
+    .default("manual"),
   calculationFormula: z.string().max(2000).optional(),
   responsibleUserId: z.string().uuid().optional(),
 });

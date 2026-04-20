@@ -8,7 +8,7 @@ import {
   checkIncidentOverdue,
   classifyIncidentDeadline,
   type IncidentClassification,
-  type IncidentStatus,
+  type AiActIncidentSnapshot,
 } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -39,17 +39,24 @@ export async function GET(req: Request, { params }: RouteParams) {
     const seriousCriteria = (incident.seriousCriteria ?? []) as string[];
     const classification: IncidentClassification = {
       resultedInDeath: seriousCriteria.includes("death"),
-      resultedInSeriousHealthDamage: seriousCriteria.includes("serious_health_damage"),
+      resultedInSeriousHealthDamage: seriousCriteria.includes(
+        "serious_health_damage",
+      ),
       isWidespreadInfringement: seriousCriteria.includes("widespread"),
       violatesUnionLaw: seriousCriteria.includes("union_law_violation"),
-      affectsCriticalInfrastructure: seriousCriteria.includes("critical_infrastructure"),
+      affectsCriticalInfrastructure: seriousCriteria.includes(
+        "critical_infrastructure",
+      ),
       affectedPersonsCount: incident.affectedPersonsCount ?? 0,
     };
-    const classified = classifyIncidentDeadline(classification, new Date(incident.detectedAt));
+    const classified = classifyIncidentDeadline(
+      classification,
+      new Date(incident.detectedAt),
+    );
     deadlineAt = classified.deadlineAt;
   }
 
-  const status: IncidentStatus = {
+  const status: AiActIncidentSnapshot = {
     detectedAt: new Date(incident.detectedAt),
     authorityNotifiedAt: incident.authorityNotifiedAt
       ? new Date(incident.authorityNotifiedAt)

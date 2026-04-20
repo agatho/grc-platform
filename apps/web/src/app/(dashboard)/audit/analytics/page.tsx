@@ -30,11 +30,31 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import type { AuditAnalyticsImport, AnalysisType } from "@grc/shared";
 
-const ANALYSIS_TYPES: { value: AnalysisType; label: string; icon: React.ReactNode }[] = [
-  { value: "benford", label: "Benford Analysis", icon: <BarChart3 className="h-4 w-4" /> },
-  { value: "duplicate", label: "Duplicate Detection", icon: <Copy className="h-4 w-4" /> },
-  { value: "outlier", label: "Outlier Detection", icon: <TrendingUp className="h-4 w-4" /> },
-  { value: "sample", label: "Sampling (MUS)", icon: <Dice3 className="h-4 w-4" /> },
+const ANALYSIS_TYPES: {
+  value: AnalysisType;
+  label: string;
+  icon: React.ReactNode;
+}[] = [
+  {
+    value: "benford",
+    label: "Benford Analysis",
+    icon: <BarChart3 className="h-4 w-4" />,
+  },
+  {
+    value: "duplicate",
+    label: "Duplicate Detection",
+    icon: <Copy className="h-4 w-4" />,
+  },
+  {
+    value: "outlier",
+    label: "Outlier Detection",
+    icon: <TrendingUp className="h-4 w-4" />,
+  },
+  {
+    value: "sample",
+    label: "Sampling (MUS)",
+    icon: <Dice3 className="h-4 w-4" />,
+  },
 ];
 
 export default function AuditAnalyticsPage() {
@@ -59,7 +79,9 @@ function AnalyticsInner() {
   useEffect(() => {
     const fetchImports = async () => {
       try {
-        const res = await fetch("/api/v1/audit-mgmt/analytics/imports?limit=100");
+        const res = await fetch(
+          "/api/v1/audit-mgmt/analytics/imports?limit=100",
+        );
         if (res.ok) {
           const json = await res.json();
           setImports(json.data ?? []);
@@ -104,7 +126,10 @@ function AnalyticsInner() {
 
   const daysUntilExpiry = (expiresAt: string | null) => {
     if (!expiresAt) return null;
-    return Math.max(0, Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000));
+    return Math.max(
+      0,
+      Math.ceil((new Date(expiresAt).getTime() - Date.now()) / 86400000),
+    );
   };
 
   return (
@@ -140,13 +165,17 @@ function AnalyticsInner() {
                 </p>
                 {imp.expiresAt && (
                   <Badge variant="outline" className="mt-1 text-xs">
-                    {t("expiresIn", { days: daysUntilExpiry(imp.expiresAt) ?? 0 })}
+                    {t("expiresIn", {
+                      days: daysUntilExpiry(imp.expiresAt) ?? 0,
+                    })}
                   </Badge>
                 )}
               </div>
             ))}
             {imports.length === 0 && (
-              <p className="text-center text-sm text-muted-foreground">{t("noImports")}</p>
+              <p className="text-center text-sm text-muted-foreground">
+                {t("noImports")}
+              </p>
             )}
           </div>
         )}
@@ -173,7 +202,9 @@ function AnalyticsInner() {
                     <button
                       key={at.value}
                       className={`rounded border p-3 text-left text-sm hover:bg-muted/25 ${
-                        analysisType === at.value ? "border-primary bg-primary/10" : ""
+                        analysisType === at.value
+                          ? "border-primary bg-primary/10"
+                          : ""
                       }`}
                       onClick={() => setAnalysisType(at.value)}
                     >

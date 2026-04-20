@@ -20,12 +20,19 @@ export async function GET(req: Request) {
   if (provider) conditions.push(eq(cloudComplianceSnapshot.provider, provider));
 
   const connectorId = searchParams.get("connectorId");
-  if (connectorId) conditions.push(eq(cloudComplianceSnapshot.connectorId, connectorId));
+  if (connectorId)
+    conditions.push(eq(cloudComplianceSnapshot.connectorId, connectorId));
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(cloudComplianceSnapshot).where(where).orderBy(desc(cloudComplianceSnapshot.snapshotDate)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(cloudComplianceSnapshot)
+      .where(where)
+      .orderBy(desc(cloudComplianceSnapshot.snapshotDate))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(cloudComplianceSnapshot).where(where),
   ]);
 

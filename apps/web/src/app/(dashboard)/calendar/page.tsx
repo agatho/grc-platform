@@ -34,7 +34,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Switch } from "@/components/ui/switch";
-import type { AggregatedCalendarEvent, CapacityHeatmapEntry } from "@grc/shared";
+import type {
+  AggregatedCalendarEvent,
+  CapacityHeatmapEntry,
+} from "@grc/shared";
 import { MODULE_COLORS } from "@grc/shared";
 
 // ──────────────────────────────────────────────────────────────
@@ -97,7 +100,13 @@ function getMonthDays(year: number, month: number) {
   }
   // Padding for next month
   while (days.length % 7 !== 0) {
-    days.push(new Date(year, month + 1, days.length - startPadding - lastDay.getDate() + 1));
+    days.push(
+      new Date(
+        year,
+        month + 1,
+        days.length - startPadding - lastDay.getDate() + 1,
+      ),
+    );
   }
   return days;
 }
@@ -170,7 +179,10 @@ export default function CalendarPage() {
           to: new Date(year, month + 1, day),
         };
       default:
-        return { from: new Date(year, month, 1), to: new Date(year, month + 1, 0) };
+        return {
+          from: new Date(year, month, 1),
+          to: new Date(year, month + 1, 0),
+        };
     }
   }, [currentDate, view]);
 
@@ -271,7 +283,9 @@ export default function CalendarPage() {
           title: newEvent.title,
           description: newEvent.description || undefined,
           startAt: new Date(newEvent.startAt).toISOString(),
-          endAt: newEvent.endAt ? new Date(newEvent.endAt).toISOString() : undefined,
+          endAt: newEvent.endAt
+            ? new Date(newEvent.endAt).toISOString()
+            : undefined,
           isAllDay: newEvent.isAllDay,
           eventType: newEvent.eventType,
           module: newEvent.module || undefined,
@@ -349,7 +363,10 @@ export default function CalendarPage() {
       <div className="flex-1 overflow-auto">
         <div className="grid grid-cols-7 border-b">
           {weekDays.map((day) => (
-            <div key={day} className="px-2 py-1 text-center text-sm font-medium text-muted-foreground border-r last:border-r-0">
+            <div
+              key={day}
+              className="px-2 py-1 text-center text-sm font-medium text-muted-foreground border-r last:border-r-0"
+            >
               {day}
             </div>
           ))}
@@ -369,18 +386,29 @@ export default function CalendarPage() {
                   !isCurrentMonth ? "bg-muted/30" : ""
                 } ${isToday ? "ring-2 ring-primary ring-inset" : ""}`}
               >
-                <div className={`text-xs font-medium mb-1 ${!isCurrentMonth ? "text-muted-foreground" : ""}`}>
+                <div
+                  className={`text-xs font-medium mb-1 ${!isCurrentMonth ? "text-muted-foreground" : ""}`}
+                >
                   {day.getDate()}
                 </div>
                 <div className="space-y-0.5">
                   {dayEvents.slice(0, 3).map((event) => (
                     <button
                       key={`${event.entityType}-${event.id}`}
-                      onClick={() => router.push(getEntityRoute(event.entityType, event.entityId))}
+                      onClick={() =>
+                        router.push(
+                          getEntityRoute(event.entityType, event.entityId),
+                        )
+                      }
                       className={`w-full text-left text-xs px-1 py-0.5 rounded truncate ${
-                        event.isOverdue ? "border border-dashed border-red-500" : ""
+                        event.isOverdue
+                          ? "border border-dashed border-red-500"
+                          : ""
                       }`}
-                      style={{ backgroundColor: event.color + "20", color: event.color }}
+                      style={{
+                        backgroundColor: event.color + "20",
+                        color: event.color,
+                      }}
                       title={`${event.title} (${event.module})`}
                     >
                       {event.title}
@@ -417,7 +445,9 @@ export default function CalendarPage() {
         {events.map((event) => (
           <button
             key={`${event.entityType}-${event.id}`}
-            onClick={() => router.push(getEntityRoute(event.entityType, event.entityId))}
+            onClick={() =>
+              router.push(getEntityRoute(event.entityType, event.entityId))
+            }
             className={`w-full text-left p-3 rounded-lg border hover:bg-muted/50 transition-colors ${
               event.isOverdue ? "border-red-300 border-dashed" : ""
             }`}
@@ -438,7 +468,8 @@ export default function CalendarPage() {
               )}
             </div>
             <div className="text-xs text-muted-foreground mt-1 ml-5">
-              {new Date(event.startAt).toLocaleDateString()} &middot; {event.eventType}
+              {new Date(event.startAt).toLocaleDateString()} &middot;{" "}
+              {event.eventType}
             </div>
           </button>
         ))}
@@ -452,7 +483,11 @@ export default function CalendarPage() {
   function renderWeekView() {
     const dayOfWeek = currentDate.getDay();
     const mondayOffset = dayOfWeek === 0 ? -6 : 1 - dayOfWeek;
-    const monday = new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() + mondayOffset);
+    const monday = new Date(
+      currentDate.getFullYear(),
+      currentDate.getMonth(),
+      currentDate.getDate() + mondayOffset,
+    );
     const weekDays: Date[] = [];
     for (let i = 0; i < 7; i++) {
       weekDays.push(new Date(monday.getTime() + i * 24 * 60 * 60 * 1000));
@@ -468,22 +503,42 @@ export default function CalendarPage() {
             const dayEvents = eventsByDate[dateKey] ?? [];
 
             return (
-              <div key={dateKey} className={`min-h-[300px] border rounded-lg p-2 ${isToday ? "ring-2 ring-primary" : ""}`}>
+              <div
+                key={dateKey}
+                className={`min-h-[300px] border rounded-lg p-2 ${isToday ? "ring-2 ring-primary" : ""}`}
+              >
                 <div className="text-sm font-medium mb-2">
-                  {day.toLocaleDateString(undefined, { weekday: "short", day: "numeric" })}
+                  {day.toLocaleDateString(undefined, {
+                    weekday: "short",
+                    day: "numeric",
+                  })}
                 </div>
                 <div className="space-y-1">
                   {dayEvents.map((event) => (
                     <button
                       key={`${event.entityType}-${event.id}`}
-                      onClick={() => router.push(getEntityRoute(event.entityType, event.entityId))}
+                      onClick={() =>
+                        router.push(
+                          getEntityRoute(event.entityType, event.entityId),
+                        )
+                      }
                       className={`w-full text-left text-xs p-1.5 rounded ${
-                        event.isOverdue ? "border border-dashed border-red-500" : ""
+                        event.isOverdue
+                          ? "border border-dashed border-red-500"
+                          : ""
                       }`}
-                      style={{ backgroundColor: event.color + "20", color: event.color }}
+                      style={{
+                        backgroundColor: event.color + "20",
+                        color: event.color,
+                      }}
                     >
                       <div className="font-medium truncate">{event.title}</div>
-                      <div className="opacity-75">{new Date(event.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</div>
+                      <div className="opacity-75">
+                        {new Date(event.startAt).toLocaleTimeString([], {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
+                      </div>
                     </button>
                   ))}
                 </div>
@@ -505,7 +560,12 @@ export default function CalendarPage() {
     return (
       <div className="flex-1 overflow-auto p-4">
         <h3 className="text-lg font-semibold mb-4">
-          {currentDate.toLocaleDateString(undefined, { weekday: "long", year: "numeric", month: "long", day: "numeric" })}
+          {currentDate.toLocaleDateString(undefined, {
+            weekday: "long",
+            year: "numeric",
+            month: "long",
+            day: "numeric",
+          })}
         </h3>
         {dayEvents.length === 0 ? (
           <div className="text-muted-foreground">{t("noEvents")}</div>
@@ -514,24 +574,35 @@ export default function CalendarPage() {
             {dayEvents.map((event) => (
               <button
                 key={`${event.entityType}-${event.id}`}
-                onClick={() => router.push(getEntityRoute(event.entityType, event.entityId))}
+                onClick={() =>
+                  router.push(getEntityRoute(event.entityType, event.entityId))
+                }
                 className={`w-full text-left p-4 rounded-lg border hover:bg-muted/50 transition-colors ${
                   event.isOverdue ? "border-red-300 border-dashed" : ""
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full" style={{ backgroundColor: event.color }} />
+                  <div
+                    className="w-4 h-4 rounded-full"
+                    style={{ backgroundColor: event.color }}
+                  />
                   <div>
                     <div className="font-medium">{event.title}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(event.startAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
-                      {event.endAt && ` - ${new Date(event.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                      {new Date(event.startAt).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })}
+                      {event.endAt &&
+                        ` - ${new Date(event.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
                     </div>
                   </div>
                   <Badge variant="outline" className="ml-auto">
                     {MODULE_LABELS[event.module] ?? event.module}
                   </Badge>
-                  {event.isOverdue && <Badge variant="destructive">{t("overdue")}</Badge>}
+                  {event.isOverdue && (
+                    <Badge variant="destructive">{t("overdue")}</Badge>
+                  )}
                 </div>
               </button>
             ))}
@@ -566,7 +637,11 @@ export default function CalendarPage() {
           <h1 className="text-xl font-semibold">{t("title")}</h1>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => setShowFilters(!showFilters)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowFilters(!showFilters)}
+          >
             <Filter className="h-4 w-4 mr-1" />
             {t("filters")}
           </Button>
@@ -586,7 +661,9 @@ export default function CalendarPage() {
                   <Label>{t("eventTitle")}</Label>
                   <Input
                     value={newEvent.title}
-                    onChange={(e) => setNewEvent({ ...newEvent, title: e.target.value })}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, title: e.target.value })
+                    }
                     placeholder={t("eventTitlePlaceholder")}
                   />
                 </div>
@@ -594,7 +671,9 @@ export default function CalendarPage() {
                   <Label>{t("eventDescription")}</Label>
                   <Textarea
                     value={newEvent.description}
-                    onChange={(e) => setNewEvent({ ...newEvent, description: e.target.value })}
+                    onChange={(e) =>
+                      setNewEvent({ ...newEvent, description: e.target.value })
+                    }
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
@@ -603,7 +682,9 @@ export default function CalendarPage() {
                     <Input
                       type="datetime-local"
                       value={newEvent.startAt}
-                      onChange={(e) => setNewEvent({ ...newEvent, startAt: e.target.value })}
+                      onChange={(e) =>
+                        setNewEvent({ ...newEvent, startAt: e.target.value })
+                      }
                     />
                   </div>
                   <div>
@@ -611,14 +692,18 @@ export default function CalendarPage() {
                     <Input
                       type="datetime-local"
                       value={newEvent.endAt}
-                      onChange={(e) => setNewEvent({ ...newEvent, endAt: e.target.value })}
+                      onChange={(e) =>
+                        setNewEvent({ ...newEvent, endAt: e.target.value })
+                      }
                     />
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
                   <Switch
                     checked={newEvent.isAllDay}
-                    onCheckedChange={(checked) => setNewEvent({ ...newEvent, isAllDay: checked })}
+                    onCheckedChange={(checked) =>
+                      setNewEvent({ ...newEvent, isAllDay: checked })
+                    }
                   />
                   <Label>{t("allDay")}</Label>
                 </div>
@@ -626,17 +711,29 @@ export default function CalendarPage() {
                   <Label>{t("eventType")}</Label>
                   <Select
                     value={newEvent.eventType}
-                    onValueChange={(v) => setNewEvent({ ...newEvent, eventType: v })}
+                    onValueChange={(v) =>
+                      setNewEvent({ ...newEvent, eventType: v })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="meeting">{t("types.meeting")}</SelectItem>
-                      <SelectItem value="workshop">{t("types.workshop")}</SelectItem>
-                      <SelectItem value="review">{t("types.review")}</SelectItem>
-                      <SelectItem value="training">{t("types.training")}</SelectItem>
-                      <SelectItem value="deadline">{t("types.deadline")}</SelectItem>
+                      <SelectItem value="meeting">
+                        {t("types.meeting")}
+                      </SelectItem>
+                      <SelectItem value="workshop">
+                        {t("types.workshop")}
+                      </SelectItem>
+                      <SelectItem value="review">
+                        {t("types.review")}
+                      </SelectItem>
+                      <SelectItem value="training">
+                        {t("types.training")}
+                      </SelectItem>
+                      <SelectItem value="deadline">
+                        {t("types.deadline")}
+                      </SelectItem>
                       <SelectItem value="other">{t("types.other")}</SelectItem>
                     </SelectContent>
                   </Select>
@@ -645,17 +742,29 @@ export default function CalendarPage() {
                   <Label>{t("recurrence")}</Label>
                   <Select
                     value={newEvent.recurrence}
-                    onValueChange={(v) => setNewEvent({ ...newEvent, recurrence: v })}
+                    onValueChange={(v) =>
+                      setNewEvent({ ...newEvent, recurrence: v })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">{t("recurrences.none")}</SelectItem>
-                      <SelectItem value="weekly">{t("recurrences.weekly")}</SelectItem>
-                      <SelectItem value="monthly">{t("recurrences.monthly")}</SelectItem>
-                      <SelectItem value="quarterly">{t("recurrences.quarterly")}</SelectItem>
-                      <SelectItem value="annually">{t("recurrences.annually")}</SelectItem>
+                      <SelectItem value="none">
+                        {t("recurrences.none")}
+                      </SelectItem>
+                      <SelectItem value="weekly">
+                        {t("recurrences.weekly")}
+                      </SelectItem>
+                      <SelectItem value="monthly">
+                        {t("recurrences.monthly")}
+                      </SelectItem>
+                      <SelectItem value="quarterly">
+                        {t("recurrences.quarterly")}
+                      </SelectItem>
+                      <SelectItem value="annually">
+                        {t("recurrences.annually")}
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -711,7 +820,10 @@ export default function CalendarPage() {
                 {Object.entries(MODULE_LABELS).map(([key, label]) => (
                   <label key={key} className="flex items-center gap-2 text-sm">
                     <Checkbox
-                      checked={selectedModules.length === 0 || selectedModules.includes(key)}
+                      checked={
+                        selectedModules.length === 0 ||
+                        selectedModules.includes(key)
+                      }
                       onCheckedChange={() => toggleModule(key)}
                     />
                     <div
@@ -737,7 +849,9 @@ export default function CalendarPage() {
             {/* Heatmap Legend (month view) */}
             {view === "month" && (
               <div>
-                <h3 className="font-medium text-sm mb-2">{t("capacityLegend")}</h3>
+                <h3 className="font-medium text-sm mb-2">
+                  {t("capacityLegend")}
+                </h3>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-center gap-2">
                     <div className="w-4 h-4 rounded bg-white border" />

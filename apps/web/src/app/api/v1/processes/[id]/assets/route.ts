@@ -134,12 +134,7 @@ export async function GET(
     })
     .from(processAsset)
     .innerJoin(asset, eq(processAsset.assetId, asset.id))
-    .where(
-      and(
-        eq(processAsset.processId, id),
-        isNull(asset.deletedAt),
-      ),
-    );
+    .where(and(eq(processAsset.processId, id), isNull(asset.deletedAt)));
 
   return Response.json({ data: assets });
 }

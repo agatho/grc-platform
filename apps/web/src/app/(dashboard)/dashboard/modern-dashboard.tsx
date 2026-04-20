@@ -66,7 +66,11 @@ interface RiskDashboardSummary {
     ownerId: string | null;
   }[];
   kriSummary: { green: number; yellow: number; red: number };
-  heatMapCells: { likelihood: number | null; impact: number | null; count: number }[];
+  heatMapCells: {
+    likelihood: number | null;
+    impact: number | null;
+    count: number;
+  }[];
 }
 
 export interface ModernDashboardProps {
@@ -182,10 +186,13 @@ export function ModernDashboard({
   })();
 
   const openRisks = ermEnabled && riskSummary ? riskSummary.totalRisks : null;
-  const treatedCount = ermEnabled && riskSummary
-    ? (riskSummary.byStatus?.treated ?? 0) + (riskSummary.byStatus?.closed ?? 0)
-    : null;
-  const exceededCount = ermEnabled && riskSummary ? riskSummary.appetiteExceededCount : null;
+  const treatedCount =
+    ermEnabled && riskSummary
+      ? (riskSummary.byStatus?.treated ?? 0) +
+        (riskSummary.byStatus?.closed ?? 0)
+      : null;
+  const exceededCount =
+    ermEnabled && riskSummary ? riskSummary.appetiteExceededCount : null;
 
   const overdueTasks = myTasks.filter(
     (task) => task.dueDate && new Date(task.dueDate).getTime() < Date.now(),
@@ -246,7 +253,10 @@ export function ModernDashboard({
           {
             label: t("widgets.complianceScore"),
             value: complianceScore != null ? `${complianceScore}%` : null,
-            trend: complianceScore != null && complianceScore >= 70 ? "down" : "flat",
+            trend:
+              complianceScore != null && complianceScore >= 70
+                ? "down"
+                : "flat",
             accent: "text-blue-600",
           },
         ].map((stat, idx) => (
@@ -255,7 +265,9 @@ export function ModernDashboard({
               {stat.label}
             </p>
             <div className="flex items-baseline gap-2 mt-1">
-              <span className={`text-2xl font-bold tabular-nums ${stat.value != null ? stat.accent : "text-gray-200"}`}>
+              <span
+                className={`text-2xl font-bold tabular-nums ${stat.value != null ? stat.accent : "text-gray-200"}`}
+              >
                 {stat.value != null ? String(stat.value) : "\u2014"}
               </span>
               {stat.trend === "up" && stat.trendLabel && (
@@ -286,8 +298,14 @@ export function ModernDashboard({
                 {/* Ring */}
                 <div className="relative flex-shrink-0">
                   {riskSummaryLoading ? (
-                    <div className="flex items-center justify-center" style={{ width: 140, height: 140 }}>
-                      <Loader2 size={24} className="animate-spin text-gray-400 dark:text-gray-500" />
+                    <div
+                      className="flex items-center justify-center"
+                      style={{ width: 140, height: 140 }}
+                    >
+                      <Loader2
+                        size={24}
+                        className="animate-spin text-gray-400 dark:text-gray-500"
+                      />
                     </div>
                   ) : (
                     <>
@@ -303,24 +321,36 @@ export function ModernDashboard({
                 </div>
                 {/* Details */}
                 <div className="flex-1 min-w-0">
-                  <h2 className="text-lg font-semibold text-gray-900">{t("widgets.complianceScore")}</h2>
-                  <p className="text-sm text-gray-400 mt-0.5">{rt("sectionTitle")}</p>
+                  <h2 className="text-lg font-semibold text-gray-900">
+                    {t("widgets.complianceScore")}
+                  </h2>
+                  <p className="text-sm text-gray-400 mt-0.5">
+                    {rt("sectionTitle")}
+                  </p>
                   {riskSummary && (
                     <div className="flex items-center gap-4 mt-4">
                       {/* KRI dots */}
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-emerald-500" />
-                        <span className="text-sm font-semibold text-gray-700">{riskSummary.kriSummary.green}</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {riskSummary.kriSummary.green}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-amber-400" />
-                        <span className="text-sm font-semibold text-gray-700">{riskSummary.kriSummary.yellow}</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {riskSummary.kriSummary.yellow}
+                        </span>
                       </div>
                       <div className="flex items-center gap-1.5">
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500" />
-                        <span className="text-sm font-semibold text-gray-700">{riskSummary.kriSummary.red}</span>
+                        <span className="text-sm font-semibold text-gray-700">
+                          {riskSummary.kriSummary.red}
+                        </span>
                       </div>
-                      <span className="text-[11px] text-gray-400 ml-1">{rt("kriStatus")}</span>
+                      <span className="text-[11px] text-gray-400 ml-1">
+                        {rt("kriStatus")}
+                      </span>
                     </div>
                   )}
                   {riskSummary && riskSummary.appetiteExceededCount > 0 && (
@@ -333,21 +363,28 @@ export function ModernDashboard({
               </div>
             </div>
           )}
-
         </div>
 
         {/* ── Activity timeline — fills left half below hero ── */}
         <div>
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-sm font-semibold text-gray-900">{t("widgets.recentChanges")}</h2>
-              <Link href="/audit-log" className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-0.5">
+              <h2 className="text-sm font-semibold text-gray-900">
+                {t("widgets.recentChanges")}
+              </h2>
+              <Link
+                href="/audit-log"
+                className="text-[11px] text-blue-600 hover:text-blue-800 font-medium flex items-center gap-0.5"
+              >
                 {t("myTasks.viewAll")} <ArrowRight size={10} />
               </Link>
             </div>
             {auditLoading ? (
               <div className="flex items-center justify-center py-12">
-                <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
+                <Loader2
+                  size={18}
+                  className="animate-spin text-gray-400 dark:text-gray-500"
+                />
               </div>
             ) : auditError ? (
               <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -365,9 +402,14 @@ export function ModernDashboard({
                 <div className="absolute left-[9px] top-1 bottom-1 w-px bg-gray-200" />
                 <ul className="space-y-0">
                   {auditEntries.slice(0, 8).map((entry, idx) => (
-                    <li key={entry.id} className="relative flex items-start gap-3 py-2 group">
+                    <li
+                      key={entry.id}
+                      className="relative flex items-start gap-3 py-2 group"
+                    >
                       {/* Dot on the line */}
-                      <div className={`absolute -left-6 top-2.5 w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center ${actionDotColor[entry.action] ?? "bg-gray-400"}`}>
+                      <div
+                        className={`absolute -left-6 top-2.5 w-[18px] h-[18px] rounded-full border-2 border-white flex items-center justify-center ${actionDotColor[entry.action] ?? "bg-gray-400"}`}
+                      >
                         <div className="w-1.5 h-1.5 rounded-full bg-white" />
                       </div>
                       {/* Time label */}
@@ -380,18 +422,25 @@ export function ModernDashboard({
                           <span className="font-medium text-gray-800">
                             {entry.userName ?? entry.userEmail ?? "System"}
                           </span>{" "}
-                          <span className={`inline-block rounded px-1 py-0.5 text-[10px] font-medium ${
-                            entry.action === "create"
-                              ? "bg-emerald-50 text-emerald-600"
-                              : entry.action === "delete"
-                              ? "bg-red-50 text-red-500"
-                              : "bg-blue-50 text-blue-600"
-                          }`}>
+                          <span
+                            className={`inline-block rounded px-1 py-0.5 text-[10px] font-medium ${
+                              entry.action === "create"
+                                ? "bg-emerald-50 text-emerald-600"
+                                : entry.action === "delete"
+                                  ? "bg-red-50 text-red-500"
+                                  : "bg-blue-50 text-blue-600"
+                            }`}
+                          >
                             {entry.action}
                           </span>{" "}
-                          <span className="text-gray-500">{entry.entityType}</span>
+                          <span className="text-gray-500">
+                            {entry.entityType}
+                          </span>
                           {entry.entityTitle && (
-                            <span className="text-gray-700"> &middot; {entry.entityTitle}</span>
+                            <span className="text-gray-700">
+                              {" "}
+                              &middot; {entry.entityTitle}
+                            </span>
                           )}
                         </p>
                       </div>
@@ -410,7 +459,9 @@ export function ModernDashboard({
             <div className="flex items-center justify-between px-5 py-3.5 border-b border-gray-100">
               <div className="flex items-center gap-2">
                 <ListTodo size={15} className="text-indigo-500" />
-                <h2 className="text-sm font-semibold text-gray-900">{t("widgets.myTasks")}</h2>
+                <h2 className="text-sm font-semibold text-gray-900">
+                  {t("widgets.myTasks")}
+                </h2>
                 {overdueTasks.length > 0 && (
                   <span className="inline-flex items-center rounded-full bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-600">
                     {overdueTasks.length}
@@ -427,7 +478,10 @@ export function ModernDashboard({
             <div className="divide-y divide-gray-50">
               {tasksLoading ? (
                 <div className="flex items-center justify-center py-12">
-                  <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
+                  <Loader2
+                    size={18}
+                    className="animate-spin text-gray-400 dark:text-gray-500"
+                  />
                 </div>
               ) : tasksError ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
@@ -436,14 +490,23 @@ export function ModernDashboard({
                 </div>
               ) : myTasks.length === 0 ? (
                 <div className="flex flex-col items-center justify-center py-12 text-gray-400">
-                  <ListTodo size={24} className="mb-2 text-gray-400 dark:text-gray-500" />
+                  <ListTodo
+                    size={24}
+                    className="mb-2 text-gray-400 dark:text-gray-500"
+                  />
                   <p className="text-xs">{t("myTasks.empty")}</p>
                 </div>
               ) : (
                 myTasks.map((task) => {
-                  const isOverdue = task.dueDate && new Date(task.dueDate).getTime() < Date.now();
-                  const isDueSoon = task.dueDate && !isOverdue
-                    && (new Date(task.dueDate).getTime() - Date.now()) / (1000 * 60 * 60 * 24) <= 3;
+                  const isOverdue =
+                    task.dueDate &&
+                    new Date(task.dueDate).getTime() < Date.now();
+                  const isDueSoon =
+                    task.dueDate &&
+                    !isOverdue &&
+                    (new Date(task.dueDate).getTime() - Date.now()) /
+                      (1000 * 60 * 60 * 24) <=
+                      3;
                   return (
                     <Link
                       key={task.id}
@@ -453,42 +516,56 @@ export function ModernDashboard({
                       }`}
                     >
                       {/* Checkbox circle */}
-                      <div className={`flex-shrink-0 w-4 h-4 rounded-full border-2 ${
-                        task.status === "done"
-                          ? "border-emerald-500 bg-emerald-500"
-                          : isOverdue
-                          ? "border-red-400"
-                          : "border-gray-300"
-                      } flex items-center justify-center`}>
+                      <div
+                        className={`flex-shrink-0 w-4 h-4 rounded-full border-2 ${
+                          task.status === "done"
+                            ? "border-emerald-500 bg-emerald-500"
+                            : isOverdue
+                              ? "border-red-400"
+                              : "border-gray-300"
+                        } flex items-center justify-center`}
+                      >
                         {task.status === "done" && (
                           <CheckCircle2 size={10} className="text-white" />
                         )}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-xs font-medium truncate ${
-                          task.status === "done" ? "text-gray-400 line-through" : "text-gray-800"
-                        }`}>
+                        <p
+                          className={`text-xs font-medium truncate ${
+                            task.status === "done"
+                              ? "text-gray-400 line-through"
+                              : "text-gray-800"
+                          }`}
+                        >
                           {task.title}
                         </p>
                         {task.dueDate && (
-                          <p className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${
-                            isOverdue ? "text-red-500 font-medium" : isDueSoon ? "text-orange-500" : "text-gray-400"
-                          }`}>
+                          <p
+                            className={`text-[10px] mt-0.5 flex items-center gap-0.5 ${
+                              isOverdue
+                                ? "text-red-500 font-medium"
+                                : isDueSoon
+                                  ? "text-orange-500"
+                                  : "text-gray-400"
+                            }`}
+                          >
                             <Clock size={9} />
                             {new Date(task.dueDate).toLocaleDateString()}
                           </p>
                         )}
                       </div>
                       {/* Priority pill — minimal */}
-                      <span className={`flex-shrink-0 text-[9px] uppercase tracking-wider font-semibold ${
-                        task.priority === "critical"
-                          ? "text-red-500"
-                          : task.priority === "high"
-                          ? "text-orange-500"
-                          : task.priority === "medium"
-                          ? "text-blue-500"
-                          : "text-gray-400"
-                      }`}>
+                      <span
+                        className={`flex-shrink-0 text-[9px] uppercase tracking-wider font-semibold ${
+                          task.priority === "critical"
+                            ? "text-red-500"
+                            : task.priority === "high"
+                              ? "text-orange-500"
+                              : task.priority === "medium"
+                                ? "text-blue-500"
+                                : "text-gray-400"
+                        }`}
+                      >
                         {task.priority}
                       </span>
                     </Link>
@@ -502,7 +579,9 @@ export function ModernDashboard({
           <div className="rounded-2xl border border-gray-200 bg-white overflow-hidden">
             <div className="flex items-center gap-2 px-5 py-3.5 border-b border-gray-100">
               <Bell size={15} className="text-amber-500" />
-              <h2 className="text-sm font-semibold text-gray-900">{t("widgets.notifications")}</h2>
+              <h2 className="text-sm font-semibold text-gray-900">
+                {t("widgets.notifications")}
+              </h2>
               {notifications.filter((n) => !n.isRead).length > 0 && (
                 <span className="inline-flex items-center rounded-full bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
                   {notifications.filter((n) => !n.isRead).length}
@@ -512,7 +591,10 @@ export function ModernDashboard({
             <div className="divide-y divide-gray-50">
               {notifLoading ? (
                 <div className="flex items-center justify-center py-10">
-                  <Loader2 size={18} className="animate-spin text-gray-400 dark:text-gray-500" />
+                  <Loader2
+                    size={18}
+                    className="animate-spin text-gray-400 dark:text-gray-500"
+                  />
                 </div>
               ) : notifError ? (
                 <div className="flex flex-col items-center justify-center py-10 text-gray-400">
@@ -532,7 +614,8 @@ export function ModernDashboard({
                     tabIndex={0}
                     onClick={() => !notif.isRead && markAsRead(notif.id)}
                     onKeyDown={(e) => {
-                      if (e.key === "Enter" && !notif.isRead) markAsRead(notif.id);
+                      if (e.key === "Enter" && !notif.isRead)
+                        markAsRead(notif.id);
                     }}
                     className={`flex items-start gap-3 px-5 py-3 cursor-pointer transition-colors ${
                       notif.isRead
@@ -549,9 +632,13 @@ export function ModernDashboard({
                       )}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <p className="text-xs font-medium text-gray-800 truncate">{notif.title}</p>
+                      <p className="text-xs font-medium text-gray-800 truncate">
+                        {notif.title}
+                      </p>
                       {notif.message && (
-                        <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">{notif.message}</p>
+                        <p className="text-[10px] text-gray-400 mt-0.5 line-clamp-1">
+                          {notif.message}
+                        </p>
                       )}
                     </div>
                     <span className="flex-shrink-0 text-[10px] text-gray-400 tabular-nums whitespace-nowrap">
@@ -567,29 +654,38 @@ export function ModernDashboard({
           {ermEnabled && riskSummary && !riskSummaryLoading && (
             <div className="rounded-2xl border border-gray-200 bg-white p-5">
               <div className="flex items-center justify-between mb-3">
-                <h3 className="text-sm font-semibold text-gray-900">{rt("heatMap")}</h3>
-                <Link href="/risks" className="text-[10px] text-blue-600 hover:text-blue-800 font-medium">
+                <h3 className="text-sm font-semibold text-gray-900">
+                  {rt("heatMap")}
+                </h3>
+                <Link
+                  href="/risks"
+                  className="text-[10px] text-blue-600 hover:text-blue-800 font-medium"
+                >
                   {rt("viewFullHeatMap")}
                 </Link>
               </div>
               <div className="mx-auto w-fit">
                 {[5, 4, 3, 2, 1].map((l) => (
                   <div key={l} className="flex items-center gap-0.5 mb-0.5">
-                    <span className="text-[9px] text-gray-400 font-medium text-right w-4">{l}</span>
+                    <span className="text-[9px] text-gray-400 font-medium text-right w-4">
+                      {l}
+                    </span>
                     {[1, 2, 3, 4, 5].map((i) => {
                       const score = l * i;
-                      const count = riskSummary.heatMapCells.find(
-                        (c) => c.likelihood === l && c.impact === i,
-                      )?.count ?? 0;
-                      const bg = score >= 20
-                        ? "bg-red-500"
-                        : score >= 15
-                        ? "bg-orange-400"
-                        : score >= 10
-                        ? "bg-yellow-300"
-                        : score >= 5
-                        ? "bg-blue-200"
-                        : "bg-gray-100";
+                      const count =
+                        riskSummary.heatMapCells.find(
+                          (c) => c.likelihood === l && c.impact === i,
+                        )?.count ?? 0;
+                      const bg =
+                        score >= 20
+                          ? "bg-red-500"
+                          : score >= 15
+                            ? "bg-orange-400"
+                            : score >= 10
+                              ? "bg-yellow-300"
+                              : score >= 5
+                                ? "bg-blue-200"
+                                : "bg-gray-100";
                       return (
                         <div
                           key={i}
@@ -608,7 +704,11 @@ export function ModernDashboard({
                 <div className="flex items-center gap-0.5 mt-0.5">
                   <span className="w-4" />
                   {[1, 2, 3, 4, 5].map((i) => (
-                    <span key={i} className="text-[9px] text-gray-400 font-medium text-center" style={{ width: 36 }}>
+                    <span
+                      key={i}
+                      className="text-[9px] text-gray-400 font-medium text-center"
+                      style={{ width: 36 }}
+                    >
                       {i}
                     </span>
                   ))}

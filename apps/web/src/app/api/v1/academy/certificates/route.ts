@@ -15,12 +15,19 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const query = querySchema.parse(Object.fromEntries(url.searchParams));
-  const conditions: ReturnType<typeof eq>[] = [eq(academyCertificate.orgId, ctx.orgId)];
-  if (query.userId) conditions.push(eq(academyCertificate.userId, query.userId));
-  if (query.courseId) conditions.push(eq(academyCertificate.courseId, query.courseId));
+  const conditions: ReturnType<typeof eq>[] = [
+    eq(academyCertificate.orgId, ctx.orgId),
+  ];
+  if (query.userId)
+    conditions.push(eq(academyCertificate.userId, query.userId));
+  if (query.courseId)
+    conditions.push(eq(academyCertificate.courseId, query.courseId));
 
-  const rows = await db.select().from(academyCertificate)
-    .where(and(...conditions)).orderBy(desc(academyCertificate.issuedAt));
+  const rows = await db
+    .select()
+    .from(academyCertificate)
+    .where(and(...conditions))
+    .orderBy(desc(academyCertificate.issuedAt));
 
   return Response.json({ data: rows });
 }

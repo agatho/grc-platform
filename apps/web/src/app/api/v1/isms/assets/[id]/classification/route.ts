@@ -5,8 +5,13 @@ import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import type { ProtectionLevel } from "@grc/shared";
 
-function computeOverall(c: ProtectionLevel, i: ProtectionLevel, a: ProtectionLevel): ProtectionLevel {
-  if (c === "very_high" || i === "very_high" || a === "very_high") return "very_high";
+function computeOverall(
+  c: ProtectionLevel,
+  i: ProtectionLevel,
+  a: ProtectionLevel,
+): ProtectionLevel {
+  if (c === "very_high" || i === "very_high" || a === "very_high")
+    return "very_high";
   if (c === "high" || i === "high" || a === "high") return "high";
   return "normal";
 }

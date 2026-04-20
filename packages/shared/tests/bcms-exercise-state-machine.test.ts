@@ -71,7 +71,10 @@ describe("validateExerciseGate7Execute", () => {
     expect(blockers.some((b) => b.code === "missing_objectives")).toBe(true);
   });
   it("blocks if no lead", () => {
-    const blockers = validateExerciseGate7Execute({ ...validSnapshot, exerciseLeadId: null });
+    const blockers = validateExerciseGate7Execute({
+      ...validSnapshot,
+      exerciseLeadId: null,
+    });
     expect(blockers.some((b) => b.code === "missing_lead")).toBe(true);
   });
 });
@@ -82,15 +85,26 @@ describe("validateExerciseGate8Close", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks if no overallResult", () => {
-    const blockers = validateExerciseGate8Close({ ...evalSnapshot, overallResult: null });
-    expect(blockers.some((b) => b.code === "missing_overall_result")).toBe(true);
+    const blockers = validateExerciseGate8Close({
+      ...evalSnapshot,
+      overallResult: null,
+    });
+    expect(blockers.some((b) => b.code === "missing_overall_result")).toBe(
+      true,
+    );
   });
   it("blocks if no lessons learned", () => {
-    const blockers = validateExerciseGate8Close({ ...evalSnapshot, lessonsLearnedCount: 0 });
+    const blockers = validateExerciseGate8Close({
+      ...evalSnapshot,
+      lessonsLearnedCount: 0,
+    });
     expect(blockers.some((b) => b.code === "no_lessons_learned")).toBe(true);
   });
   it("warns if no findings", () => {
-    const blockers = validateExerciseGate8Close({ ...evalSnapshot, findingsCount: 0 });
+    const blockers = validateExerciseGate8Close({
+      ...evalSnapshot,
+      findingsCount: 0,
+    });
     const warn = blockers.find((b) => b.code === "no_findings");
     expect(warn?.severity).toBe("warning");
   });

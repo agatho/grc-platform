@@ -14,12 +14,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -129,8 +124,15 @@ export default function DataQualityPage() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            <RefreshCcw className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`} />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
+            <RefreshCcw
+              className={`h-4 w-4 mr-2 ${loading ? "animate-spin" : ""}`}
+            />
             Aktualisieren
           </Button>
           <Button>
@@ -174,7 +176,9 @@ export default function DataQualityPage() {
               <AlertTriangle className="h-8 w-8 text-orange-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {stats?.errorRate != null ? `${stats.errorRate.toFixed(1)}%` : "\u2014"}
+                  {stats?.errorRate != null
+                    ? `${stats.errorRate.toFixed(1)}%`
+                    : "\u2014"}
                 </p>
                 <p className="text-xs text-gray-500">Fehlerquote</p>
               </div>
@@ -186,8 +190,12 @@ export default function DataQualityPage() {
             <div className="flex items-center gap-3">
               <XCircle className="h-8 w-8 text-red-500" />
               <div>
-                <p className="text-2xl font-bold">{stats?.openViolations ?? 0}</p>
-                <p className="text-xs text-gray-500">Verst&ouml;&szlig;e offen</p>
+                <p className="text-2xl font-bold">
+                  {stats?.openViolations ?? 0}
+                </p>
+                <p className="text-xs text-gray-500">
+                  Verst&ouml;&szlig;e offen
+                </p>
               </div>
             </div>
           </CardContent>
@@ -205,9 +213,12 @@ export default function DataQualityPage() {
           {rules.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-10 text-sm text-gray-400">
               <CheckCircle2 className="mb-3 h-10 w-10" />
-              <p className="font-medium text-gray-500">Keine Regeln konfiguriert</p>
+              <p className="font-medium text-gray-500">
+                Keine Regeln konfiguriert
+              </p>
               <p className="mt-1 text-gray-400">
-                Definieren Sie Plausibilit&auml;tspr&uuml;fungen f&uuml;r Ihre Dateneingaben.
+                Definieren Sie Plausibilit&auml;tspr&uuml;fungen f&uuml;r Ihre
+                Dateneingaben.
               </p>
             </div>
           ) : (
@@ -258,19 +269,28 @@ export default function DataQualityPage() {
                         </Badge>
                       </td>
                       <td className="px-4 py-3">
-                        <Badge className={`text-xs ${severityColors[rule.severity] ?? ""}`}>
+                        <Badge
+                          className={`text-xs ${severityColors[rule.severity] ?? ""}`}
+                        >
                           {severityLabels[rule.severity] ?? rule.severity}
                         </Badge>
                       </td>
                       <td className="px-4 py-3 text-center text-sm">
                         {rule.violationCount > 0 ? (
-                          <span className="font-medium text-red-600">{rule.violationCount}</span>
+                          <span className="font-medium text-red-600">
+                            {rule.violationCount}
+                          </span>
                         ) : (
                           <span className="text-gray-400">0</span>
                         )}
                       </td>
                       <td className="px-4 py-3 text-center">
-                        <Badge className={statusColors[rule.status] ?? "bg-gray-100 text-gray-800"}>
+                        <Badge
+                          className={
+                            statusColors[rule.status] ??
+                            "bg-gray-100 text-gray-800"
+                          }
+                        >
                           {statusLabels[rule.status] ?? rule.status}
                         </Badge>
                       </td>

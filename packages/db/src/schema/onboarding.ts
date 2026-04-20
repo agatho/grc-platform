@@ -73,7 +73,10 @@ export const onboardingStep = pgTable(
       .defaultNow(),
   },
   (table) => [
-    uniqueIndex("onboarding_step_unique_idx").on(table.sessionId, table.stepNumber),
+    uniqueIndex("onboarding_step_unique_idx").on(
+      table.sessionId,
+      table.stepNumber,
+    ),
     index("onboarding_step_key_idx").on(table.stepKey),
   ],
 );
@@ -91,7 +94,9 @@ export const templatePack = pgTable(
     description: text("description"),
     frameworkKey: varchar("framework_key", { length: 50 }).notNull(),
     version: varchar("version", { length: 20 }).notNull().default("1.0.0"),
-    category: varchar("category", { length: 50 }).notNull().default("compliance"),
+    category: varchar("category", { length: 50 })
+      .notNull()
+      .default("compliance"),
     itemCount: integer("item_count").notNull().default(0),
     iconKey: varchar("icon_key", { length: 50 }),
     isDefault: boolean("is_default").notNull().default(false),

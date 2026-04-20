@@ -5,11 +5,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import { hash } from "bcryptjs";
-import {
-  organization,
-  user,
-  userOrganizationRole,
-} from "./schema/platform";
+import { organization, user, userOrganizationRole } from "./schema/platform";
 
 const client = postgres(process.env.DATABASE_URL!);
 const db = drizzle(client);
@@ -88,7 +84,9 @@ async function seed() {
     }
 
     // Set org context so audit trigger can resolve org_id for user inserts
-    await tx.execute(sql`SELECT set_config('app.current_org_id', ${holdingId}, true)`);
+    await tx.execute(
+      sql`SELECT set_config('app.current_org_id', ${holdingId}, true)`,
+    );
 
     // 2. Create subsidiary (idempotent)
     let subsidiaryId: string;
@@ -139,10 +137,25 @@ async function seed() {
       console.log(`  Admin user: ${adminId} (${admin.email})`);
 
       // 4. Assign admin role in both organizations
-      await tx.insert(userOrganizationRole).values([
-        { userId: adminId, orgId: holdingId, role: "admin", lineOfDefense: "first", department: "IT" },
-        { userId: adminId, orgId: subsidiaryId, role: "admin", lineOfDefense: "first", department: "IT" },
-      ]).onConflictDoNothing();
+      await tx
+        .insert(userOrganizationRole)
+        .values([
+          {
+            userId: adminId,
+            orgId: holdingId,
+            role: "admin",
+            lineOfDefense: "first",
+            department: "IT",
+          },
+          {
+            userId: adminId,
+            orgId: subsidiaryId,
+            role: "admin",
+            lineOfDefense: "first",
+            department: "IT",
+          },
+        ])
+        .onConflictDoNothing();
       console.log("  Role assignments: admin @ Meridian + NovaTec");
     } else {
       const existingAdmin = await tx.execute<{ id: string }>(sql`
@@ -202,7 +215,9 @@ async function seed() {
       `);
 
       if (existingSub[0]) {
-        console.log(`  ${sub.shortName} already exists (${sub.orgCode}), skipping`);
+        console.log(
+          `  ${sub.shortName} already exists (${sub.orgCode}), skipping`,
+        );
         continue;
       }
 
@@ -268,7 +283,9 @@ async function seed() {
           WHERE id = ${subOrg.id}
         `);
 
-        console.log(`  DPO user ${sub.orgCode}: ${dpoUser.id} (${dpoEmailLocal})`);
+        console.log(
+          `  DPO user ${sub.orgCode}: ${dpoUser.id} (${dpoEmailLocal})`,
+        );
 
         // Also assign admin role at the subsidiary for the platform admin
         await tx.insert(userOrganizationRole).values({
@@ -307,14 +324,40 @@ async function seed() {
     console.log(`  Module configs enabled: ${enableResult.count} rows`);
 
     // ── Seed demo users with different roles ──────────────────
-    console.log("  Seeding demo users (risk_manager, auditor, control_owner)...");
+    console.log(
+      "  Seeding demo users (risk_manager, auditor, control_owner)...",
+    );
     const demoPassword = await hash("arctos2026!", 12);
 
     const demoUsers = [
-      { name: "Lisa Schneider", email: "risk.manager@arctos.dev", role: "risk_manager" as const, lod: "second" as const, dept: "Risk Management" },
-      { name: "Dr. Michael Braun", email: "auditor@arctos.dev", role: "auditor" as const, lod: "third" as const, dept: "Internal Audit" },
-      { name: "Sarah Keller", email: "control.owner@arctos.dev", role: "control_owner" as const, lod: "first" as const, dept: "IT Operations" },
-      { name: "Thomas Fischer", email: "process.owner@arctos.dev", role: "process_owner" as const, lod: "first" as const, dept: "Operations" },
+      {
+        name: "Lisa Schneider",
+        email: "risk.manager@arctos.dev",
+        role: "risk_manager" as const,
+        lod: "second" as const,
+        dept: "Risk Management",
+      },
+      {
+        name: "Dr. Michael Braun",
+        email: "auditor@arctos.dev",
+        role: "auditor" as const,
+        lod: "third" as const,
+        dept: "Internal Audit",
+      },
+      {
+        name: "Sarah Keller",
+        email: "control.owner@arctos.dev",
+        role: "control_owner" as const,
+        lod: "first" as const,
+        dept: "IT Operations",
+      },
+      {
+        name: "Thomas Fischer",
+        email: "process.owner@arctos.dev",
+        role: "process_owner" as const,
+        lod: "first" as const,
+        dept: "Operations",
+      },
     ];
 
     for (const demo of demoUsers) {
@@ -331,13 +374,16 @@ async function seed() {
         .returning({ id: user.id });
 
       if (demoUser) {
-        await tx.insert(userOrganizationRole).values({
-          userId: demoUser.id,
-          orgId: holdingId,
-          role: demo.role,
-          lineOfDefense: demo.lod,
-          department: demo.dept,
-        }).onConflictDoNothing();
+        await tx
+          .insert(userOrganizationRole)
+          .values({
+            userId: demoUser.id,
+            orgId: holdingId,
+            role: demo.role,
+            lineOfDefense: demo.lod,
+            department: demo.dept,
+          })
+          .onConflictDoNothing();
         console.log(`    ${demo.role}: ${demoUser.id} (${demo.email})`);
       }
     }

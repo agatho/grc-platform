@@ -6,7 +6,12 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import { z } from "zod";
 
 // GET /api/v1/policies/distributions/:id/overdue — Overdue users list
@@ -67,7 +72,12 @@ export async function GET(
   `);
   const total = (countResult[0] as { total: number }).total;
 
-  return paginatedResponse(rows as unknown as Record<string, unknown>[], total, page, limit);
+  return paginatedResponse(
+    rows as unknown as Record<string, unknown>[],
+    total,
+    page,
+    limit,
+  );
 }
 
 // POST /api/v1/policies/distributions/:id/overdue — Send reminders to overdue users

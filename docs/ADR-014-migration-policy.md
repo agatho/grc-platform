@@ -1,10 +1,10 @@
 ## ADR-014: Database Migration Policy
 
-| **ADR-ID** | **014** |
-| --- | --- |
-| **Title** | **Drizzle-only Migrations — one directory, one runner, one source of truth** |
-| **Status** | **Accepted** |
-| **Date** | 2026-04-17 |
+| **ADR-ID**  | **014**                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| ----------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Title**   | **Drizzle-only Migrations — one directory, one runner, one source of truth**                                                                                                                                                                                                                                                                                                                                                                            |
+| **Status**  | **Accepted**                                                                                                                                                                                                                                                                                                                                                                                                                                            |
+| **Date**    | 2026-04-17                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | **Context** | F-17 Finding: 171 manuell geschriebene SQL-Migrationen in `packages/db/src/migrations/` wurden vom Docker-Entrypoint nie ausgeführt. Produktions-DB war monatelang aus dem Schema-Export (`@grc/db`) heraus driftet: Copilot-, Tax-CMS-, Horizon-Scanner-, Cert-Wizard- und BI-Reporting-Tabellen existierten im Drizzle-Schema, aber nicht in der DB. Ergebnis: stumme 500er (`relation does not exist`), keine Build-Warnung, kein Monitoring-Signal. |
 
 ### Decision
@@ -37,11 +37,13 @@
 ### Consequences
 
 **Positiv:**
+
 - Keine weiteren 500er durch nicht migrierte Tabellen.
 - Build, Runtime und DB bleiben kongruent.
 - Neue Features können drizzle-Schema definieren und sich darauf verlassen, dass das Schema auch deployed wird.
 
 **Negativ:**
+
 - Phase 1 lässt den Entrypoint 171 redundante Statements ausführen, die bei einem bereits migrierten Tenant silently no-op'en (akzeptabel, Laufzeit < 3s).
 - Phase 2 erfordert DB-Backup + kontrollierten Deploy.
 

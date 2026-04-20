@@ -1,14 +1,21 @@
 // Sprint 37: Technology Radar Migration Alerts Worker
 // Runs weekly — finds HOLD technologies with active applications, creates tasks
 
-import { db, technologyEntry, technologyApplicationLink, architectureElement } from "@grc/db";
+import {
+  db,
+  technologyEntry,
+  technologyApplicationLink,
+  architectureElement,
+} from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 
 export async function processTechRadarMigrationAlerts(): Promise<{
   holdTechnologies: number;
   alertsCreated: number;
 }> {
-  console.log("[tech-radar-migration] Checking HOLD technologies with active applications");
+  console.log(
+    "[tech-radar-migration] Checking HOLD technologies with active applications",
+  );
 
   const holdWithUsage = await db
     .select({
@@ -24,10 +31,14 @@ export async function processTechRadarMigrationAlerts(): Promise<{
   let alertsCreated = 0;
 
   for (const tech of withApps) {
-    console.log(`[tech-radar-migration] ${tech.techName}: ${tech.appCount} applications still using HOLD technology`);
+    console.log(
+      `[tech-radar-migration] ${tech.techName}: ${tech.appCount} applications still using HOLD technology`,
+    );
     alertsCreated++;
   }
 
-  console.log(`[tech-radar-migration] Found ${withApps.length} HOLD techs with usage, created ${alertsCreated} alerts`);
+  console.log(
+    `[tech-radar-migration] Found ${withApps.length} HOLD techs with usage, created ${alertsCreated} alerts`,
+  );
   return { holdTechnologies: withApps.length, alertsCreated };
 }

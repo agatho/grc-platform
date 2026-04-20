@@ -49,7 +49,14 @@ export const wpTransitionSchema = z.object({
 
 // ─── Review Notes ───────────────────────────────────────────
 export const createReviewNoteSchema = z.object({
-  section: z.enum(["objective", "scope", "procedure", "results", "conclusion", "general"]),
+  section: z.enum([
+    "objective",
+    "scope",
+    "procedure",
+    "results",
+    "conclusion",
+    "general",
+  ]),
   noteText: z.string().min(1).max(5000),
   severity: z.enum(["informational", "requires_action", "blocking"]),
 });
@@ -66,19 +73,26 @@ export const createReviewNoteReplySchema = z.object({
 export const createAuditorProfileSchema = z.object({
   userId: z.string().uuid(),
   seniority: z.enum(["staff", "senior", "manager", "director", "cae"]),
-  certifications: z.array(z.object({
-    name: z.string().min(1).max(100),
-    issuer: z.string().max(200).optional(),
-    issuedAt: z.string().date().optional(),
-    expiresAt: z.string().date().optional(),
-  })).max(20).optional(),
+  certifications: z
+    .array(
+      z.object({
+        name: z.string().min(1).max(100),
+        issuer: z.string().max(200).optional(),
+        issuedAt: z.string().date().optional(),
+        expiresAt: z.string().date().optional(),
+      }),
+    )
+    .max(20)
+    .optional(),
   skills: z.array(z.string().max(50)).max(20).optional(),
   availableHoursYear: z.number().int().min(0).max(2500).default(1600),
   hourlyRate: z.number().min(0).max(1000).optional(),
   team: z.string().max(100).optional(),
 });
 
-export const updateAuditorProfileSchema = createAuditorProfileSchema.omit({ userId: true }).partial();
+export const updateAuditorProfileSchema = createAuditorProfileSchema
+  .omit({ userId: true })
+  .partial();
 
 // ─── Resource Allocation ────────────────────────────────────
 export const createResourceAllocationSchema = z.object({
@@ -89,7 +103,8 @@ export const createResourceAllocationSchema = z.object({
   endDate: z.string().date().optional(),
 });
 
-export const updateResourceAllocationSchema = createResourceAllocationSchema.partial();
+export const updateResourceAllocationSchema =
+  createResourceAllocationSchema.partial();
 
 // ─── Time Entries ───────────────────────────────────────────
 export const createAuditTimeEntrySchema = z.object({
@@ -111,7 +126,8 @@ export const createContinuousAuditRuleSchema = z.object({
   riskArea: z.string().max(100).optional(),
 });
 
-export const updateContinuousAuditRuleSchema = createContinuousAuditRuleSchema.partial();
+export const updateContinuousAuditRuleSchema =
+  createContinuousAuditRuleSchema.partial();
 
 // ─── Exception Management ───────────────────────────────────
 export const acknowledgeExceptionSchema = z.object({
@@ -128,22 +144,41 @@ export const createQaReviewSchema = z.object({
 });
 
 export const updateQaChecklistSchema = z.object({
-  items: z.array(z.object({
-    id: z.string().uuid(),
-    compliance: z.enum(["compliant", "partially_compliant", "non_compliant", "not_applicable"]),
-    reviewerComment: z.string().max(2000).optional(),
-  })).min(1).max(25),
+  items: z
+    .array(
+      z.object({
+        id: z.string().uuid(),
+        compliance: z.enum([
+          "compliant",
+          "partially_compliant",
+          "non_compliant",
+          "not_applicable",
+        ]),
+        reviewerComment: z.string().max(2000).optional(),
+      }),
+    )
+    .min(1)
+    .max(25),
 });
 
 // ─── QA Score Computation ───────────────────────────────────
-export function computeQaScore(items: Array<{ compliance: string | null; weight: number }>): { score: number; rating: string } {
-  const applicable = items.filter((i) => i.compliance !== "not_applicable" && i.compliance !== null);
+export function computeQaScore(
+  items: Array<{ compliance: string | null; weight: number }>,
+): { score: number; rating: string } {
+  const applicable = items.filter(
+    (i) => i.compliance !== "not_applicable" && i.compliance !== null,
+  );
   if (applicable.length === 0) return { score: 0, rating: "red" };
 
   let weightedSum = 0;
   let totalWeight = 0;
   for (const item of applicable) {
-    const complianceScore = item.compliance === "compliant" ? 100 : item.compliance === "partially_compliant" ? 50 : 0;
+    const complianceScore =
+      item.compliance === "compliant"
+        ? 100
+        : item.compliance === "partially_compliant"
+          ? 50
+          : 0;
     weightedSum += complianceScore * item.weight;
     totalWeight += item.weight * 100;
   }

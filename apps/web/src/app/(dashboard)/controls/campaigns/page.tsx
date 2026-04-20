@@ -96,11 +96,20 @@ function CampaignsPageInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("campaigns.title")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{t("campaigns.subtitle")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("campaigns.title")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {t("campaigns.subtitle")}
+          </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={() => fetchCampaigns()} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => fetchCampaigns()}
+            disabled={loading}
+          >
             <RefreshCcw size={14} />
           </Button>
           <Button size="sm">
@@ -113,20 +122,30 @@ function CampaignsPageInner() {
       {campaigns.length === 0 ? (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <ClipboardList size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("campaigns.empty")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("campaigns.empty")}
+          </p>
         </div>
       ) : (
         <div className="space-y-3">
           {campaigns.map((c) => {
-            const pct = c.totalTests > 0 ? Math.round((c.completedTests / c.totalTests) * 100) : 0;
+            const pct =
+              c.totalTests > 0
+                ? Math.round((c.completedTests / c.totalTests) * 100)
+                : 0;
             return (
               <Link key={c.id} href={`/controls/campaigns/${c.id}`}>
                 <Card className="hover:border-blue-300 transition-colors cursor-pointer">
                   <CardContent className="py-4">
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">{c.name}</span>
-                        <Badge variant="outline" className={statusBadgeClass(c.status)}>
+                        <span className="text-sm font-medium text-blue-700 hover:text-blue-900">
+                          {c.name}
+                        </span>
+                        <Badge
+                          variant="outline"
+                          className={statusBadgeClass(c.status)}
+                        >
                           {t(`campaigns.status.${c.status}`)}
                         </Badge>
                       </div>
@@ -135,7 +154,9 @@ function CampaignsPageInner() {
                       </span>
                     </div>
                     {c.description && (
-                      <p className="text-xs text-gray-500 mb-2">{c.description}</p>
+                      <p className="text-xs text-gray-500 mb-2">
+                        {c.description}
+                      </p>
                     )}
                     <div className="flex items-center gap-3">
                       <div className="flex-1 h-2 rounded-full bg-gray-200 overflow-hidden">

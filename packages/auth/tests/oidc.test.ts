@@ -1,7 +1,11 @@
 // Sprint 20: OIDC Service Unit Tests
 import { describe, it, expect } from "vitest";
 import { generatePKCE, verifyPKCE } from "../src/oidc/pkce";
-import { validateIdToken, decodeJwt, extractOidcAttributes } from "../src/oidc/id-token-validator";
+import {
+  validateIdToken,
+  decodeJwt,
+  extractOidcAttributes,
+} from "../src/oidc/id-token-validator";
 
 // ── PKCE ────────────────────────────────────────────────────
 
@@ -36,7 +40,9 @@ describe("OIDCPkce", () => {
 describe("OIDCIdTokenValidator", () => {
   // Build a valid JWT for testing (no signature verification in claim validator)
   function buildTestJwt(payload: Record<string, unknown>): string {
-    const header = Buffer.from(JSON.stringify({ alg: "RS256", typ: "JWT" })).toString("base64url");
+    const header = Buffer.from(
+      JSON.stringify({ alg: "RS256", typ: "JWT" }),
+    ).toString("base64url");
     const body = Buffer.from(JSON.stringify(payload)).toString("base64url");
     return `${header}.${body}.fake-signature`;
   }

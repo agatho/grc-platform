@@ -1,9 +1,4 @@
-import {
-  db,
-  process,
-  processStep,
-  processStepControl,
-} from "@grc/db";
+import { db, process, processStep, processStepControl } from "@grc/db";
 import { linkProcessControlSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";

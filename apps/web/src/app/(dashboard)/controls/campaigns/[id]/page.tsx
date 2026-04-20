@@ -8,12 +8,7 @@ import { ArrowLeft, Loader2, ClipboardList } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CampaignStatus, TestResult, TestStatus } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
@@ -141,7 +136,11 @@ function CampaignDetailInner() {
   if (!campaign) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/controls/campaigns")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/controls/campaigns")}
+        >
           <ArrowLeft size={16} />
           {t("backToList")}
         </Button>
@@ -154,23 +153,32 @@ function CampaignDetailInner() {
   }
 
   const completed = tests.filter((t) => t.status === "completed").length;
-  const pct = tests.length > 0 ? Math.round((completed / tests.length) * 100) : 0;
+  const pct =
+    tests.length > 0 ? Math.round((completed / tests.length) * 100) : 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/controls/campaigns")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/controls/campaigns")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <div>
           <h1 className="text-2xl font-bold text-gray-900">{campaign.name}</h1>
           <div className="flex items-center gap-2 mt-1">
-            <Badge variant="outline" className={statusBadgeClass(campaign.status)}>
+            <Badge
+              variant="outline"
+              className={statusBadgeClass(campaign.status)}
+            >
               {t(`campaigns.status.${campaign.status}`)}
             </Badge>
             <span className="text-sm text-gray-500">
-              {formatDate(campaign.periodStart)} - {formatDate(campaign.periodEnd)}
+              {formatDate(campaign.periodStart)} -{" "}
+              {formatDate(campaign.periodEnd)}
             </span>
           </div>
         </div>
@@ -184,7 +192,9 @@ function CampaignDetailInner() {
       <Card>
         <CardContent className="py-4">
           <div className="flex items-center gap-3">
-            <span className="text-sm font-medium text-gray-700">{t("campaigns.progress")}</span>
+            <span className="text-sm font-medium text-gray-700">
+              {t("campaigns.progress")}
+            </span>
             <div className="flex-1 h-3 rounded-full bg-gray-200 overflow-hidden">
               <div
                 className="h-full rounded-full bg-blue-600 transition-all"
@@ -205,7 +215,9 @@ function CampaignDetailInner() {
         </CardHeader>
         <CardContent>
           {tests.length === 0 ? (
-            <p className="text-sm text-gray-400 text-center py-6">{t("tests.empty")}</p>
+            <p className="text-sm text-gray-400 text-center py-6">
+              {t("tests.empty")}
+            </p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
@@ -222,26 +234,48 @@ function CampaignDetailInner() {
                 </thead>
                 <tbody>
                   {tests.map((test) => (
-                    <tr key={test.id} className="border-b border-gray-100 last:border-0">
-                      <td className="py-2 pr-4 font-medium text-gray-900">{test.controlTitle}</td>
-                      <td className="py-2 pr-4 text-gray-600">{t(`tests.type.${test.testType}`)}</td>
+                    <tr
+                      key={test.id}
+                      className="border-b border-gray-100 last:border-0"
+                    >
+                      <td className="py-2 pr-4 font-medium text-gray-900">
+                        {test.controlTitle}
+                      </td>
+                      <td className="py-2 pr-4 text-gray-600">
+                        {t(`tests.type.${test.testType}`)}
+                      </td>
                       <td className="py-2 pr-4">
-                        <Badge variant="outline" className={testStatusClass(test.status)}>
+                        <Badge
+                          variant="outline"
+                          className={testStatusClass(test.status)}
+                        >
                           {t(`tests.status.${test.status}`)}
                         </Badge>
                       </td>
                       <td className="py-2 pr-4">
-                        <span className={`text-xs font-medium rounded px-1.5 py-0.5 ${resultClass(test.todResult)}`}>
-                          {test.todResult ? t(`tests.result.${test.todResult}`) : "\u2014"}
+                        <span
+                          className={`text-xs font-medium rounded px-1.5 py-0.5 ${resultClass(test.todResult)}`}
+                        >
+                          {test.todResult
+                            ? t(`tests.result.${test.todResult}`)
+                            : "\u2014"}
                         </span>
                       </td>
                       <td className="py-2 pr-4">
-                        <span className={`text-xs font-medium rounded px-1.5 py-0.5 ${resultClass(test.toeResult)}`}>
-                          {test.toeResult ? t(`tests.result.${test.toeResult}`) : "\u2014"}
+                        <span
+                          className={`text-xs font-medium rounded px-1.5 py-0.5 ${resultClass(test.toeResult)}`}
+                        >
+                          {test.toeResult
+                            ? t(`tests.result.${test.toeResult}`)
+                            : "\u2014"}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-gray-600">{test.testerName ?? "\u2014"}</td>
-                      <td className="py-2 text-gray-600">{formatDate(test.testDate)}</td>
+                      <td className="py-2 pr-4 text-gray-600">
+                        {test.testerName ?? "\u2014"}
+                      </td>
+                      <td className="py-2 text-gray-600">
+                        {formatDate(test.testDate)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>

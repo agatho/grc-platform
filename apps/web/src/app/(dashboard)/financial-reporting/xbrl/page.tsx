@@ -53,7 +53,7 @@ export default function XbrlTaggingPage() {
       const [taxRes, tagRes] = await Promise.all([
         fetch("/api/v1/xbrl/taxonomies"),
         fetch(
-          `/api/v1/xbrl/tags${selectedTaxonomy ? `?taxonomyId=${selectedTaxonomy}` : ""}`
+          `/api/v1/xbrl/tags${selectedTaxonomy ? `?taxonomyId=${selectedTaxonomy}` : ""}`,
         ),
       ]);
       if (taxRes.ok) {
@@ -77,9 +77,17 @@ export default function XbrlTaggingPage() {
   const statusBadge = (status: XbrlTag["status"]) => {
     switch (status) {
       case "validiert":
-        return <Badge className="bg-green-100 text-green-800 border-green-300">Validiert</Badge>;
+        return (
+          <Badge className="bg-green-100 text-green-800 border-green-300">
+            Validiert
+          </Badge>
+        );
       case "zugewiesen":
-        return <Badge className="bg-blue-100 text-blue-800 border-blue-300">Zugewiesen</Badge>;
+        return (
+          <Badge className="bg-blue-100 text-blue-800 border-blue-300">
+            Zugewiesen
+          </Badge>
+        );
       case "offen":
         return <Badge variant="outline">Offen</Badge>;
       case "fehlerhaft":
@@ -120,13 +128,21 @@ export default function XbrlTaggingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">XBRL/iXBRL-Tagging</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            XBRL/iXBRL-Tagging
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
-            Inline-XBRL-Markierung f&uuml;r regulatorische Einreichungen (ESEF, CSRD, SEC)
+            Inline-XBRL-Markierung f&uuml;r regulatorische Einreichungen (ESEF,
+            CSRD, SEC)
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
@@ -142,36 +158,52 @@ export default function XbrlTaggingPage() {
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <BookOpen className="h-5 w-5 text-blue-600" />
-              <span className="text-xs font-medium text-gray-600">Taxonomien geladen</span>
+              <span className="text-xs font-medium text-gray-600">
+                Taxonomien geladen
+              </span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{kpis?.taxonomiesLoaded ?? 0}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {kpis?.taxonomiesLoaded ?? 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <Tags className="h-5 w-5 text-green-600" />
-              <span className="text-xs font-medium text-gray-600">Tags zugewiesen</span>
+              <span className="text-xs font-medium text-gray-600">
+                Tags zugewiesen
+              </span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{kpis?.tagsAssigned ?? 0}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {kpis?.tagsAssigned ?? 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <AlertCircle className="h-5 w-5 text-orange-600" />
-              <span className="text-xs font-medium text-gray-600">Offene Tags</span>
+              <span className="text-xs font-medium text-gray-600">
+                Offene Tags
+              </span>
             </div>
-            <p className="text-2xl font-bold text-orange-600">{kpis?.openTags ?? 0}</p>
+            <p className="text-2xl font-bold text-orange-600">
+              {kpis?.openTags ?? 0}
+            </p>
           </CardContent>
         </Card>
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center gap-2 mb-2">
               <CheckCircle2 className="h-5 w-5 text-purple-600" />
-              <span className="text-xs font-medium text-gray-600">Validierungsstatus</span>
+              <span className="text-xs font-medium text-gray-600">
+                Validierungsstatus
+              </span>
             </div>
-            {kpis ? validationBadge(kpis.validationStatus) : (
+            {kpis ? (
+              validationBadge(kpis.validationStatus)
+            ) : (
               <p className="text-sm text-gray-400">-</p>
             )}
           </CardContent>
@@ -217,17 +249,29 @@ export default function XbrlTaggingPage() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Element-Name</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Label (DE)</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Datentyp</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Periodentyp</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">Status</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Element-Name
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Label (DE)
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Datentyp
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Periodentyp
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  Status
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {tags.map((tag) => (
                 <tr key={tag.id} className="hover:bg-gray-50">
-                  <td className="px-4 py-3 font-mono text-xs text-gray-900">{tag.elementName}</td>
+                  <td className="px-4 py-3 font-mono text-xs text-gray-900">
+                    {tag.elementName}
+                  </td>
                   <td className="px-4 py-3 text-gray-700">{tag.labelDe}</td>
                   <td className="px-4 py-3 text-gray-600">{tag.dataType}</td>
                   <td className="px-4 py-3 text-gray-600">{tag.periodType}</td>

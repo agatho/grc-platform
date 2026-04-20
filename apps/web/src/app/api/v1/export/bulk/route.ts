@@ -21,12 +21,7 @@ export async function POST(req: Request) {
       [];
 
     for (const entityType of body.data.entityTypes) {
-      const result = await exportEntities(
-        entityType,
-        "csv",
-        {},
-        ctx.orgId,
-      );
+      const result = await exportEntities(entityType, "csv", {}, ctx.orgId);
       results.push({
         entityType,
         data: result.data.toString("utf-8"),

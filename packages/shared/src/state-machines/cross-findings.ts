@@ -13,7 +13,12 @@ export type FindingModule =
   | "dpms_breach"
   | "bcms_exercise";
 
-export type NormalizedSeverity = "critical" | "high" | "medium" | "low" | "observation";
+export type NormalizedSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "observation";
 
 export type NormalizedStatus =
   | "open"
@@ -40,7 +45,12 @@ export interface CrossModuleFinding {
 // ─── Severity + Status Normalizers ────────────────────────────
 
 export function normalizeIcsFindingSeverity(
-  sev: "observation" | "recommendation" | "improvement_requirement" | "insignificant_nonconformity" | "significant_nonconformity",
+  sev:
+    | "observation"
+    | "recommendation"
+    | "improvement_requirement"
+    | "insignificant_nonconformity"
+    | "significant_nonconformity",
 ): NormalizedSeverity {
   switch (sev) {
     case "significant_nonconformity":
@@ -57,7 +67,13 @@ export function normalizeIcsFindingSeverity(
 }
 
 export function normalizeIcsFindingStatus(
-  s: "identified" | "in_remediation" | "remediated" | "verified" | "accepted" | "closed",
+  s:
+    | "identified"
+    | "in_remediation"
+    | "remediated"
+    | "verified"
+    | "accepted"
+    | "closed",
 ): NormalizedStatus {
   if (s === "identified") return "open";
   if (s === "in_remediation") return "in_progress";
@@ -90,7 +106,10 @@ export function normalizeIsmsNcStatus(s: string): NormalizedStatus {
   }
 }
 
-export function normalizeAiIncidentSeverity(isSerious: boolean, severity: string): NormalizedSeverity {
+export function normalizeAiIncidentSeverity(
+  isSerious: boolean,
+  severity: string,
+): NormalizedSeverity {
   if (isSerious) return "critical";
   if (severity === "high") return "high";
   if (severity === "low") return "low";
@@ -170,7 +189,9 @@ export function aggregateCrossFindings(
     if (isOpen) {
       openCount++;
       if (f.severity === "critical") criticalOpenCount++;
-      const ageDays = Math.floor((now.getTime() - f.identifiedAt.getTime()) / (1000 * 60 * 60 * 24));
+      const ageDays = Math.floor(
+        (now.getTime() - f.identifiedAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
       if (oldestOpenAgeDays === null || ageDays > oldestOpenAgeDays) {
         oldestOpenAgeDays = ageDays;
       }
@@ -179,7 +200,11 @@ export function aggregateCrossFindings(
       }
     }
 
-    if (f.status === "resolved" || f.status === "verified" || f.status === "closed") {
+    if (
+      f.status === "resolved" ||
+      f.status === "verified" ||
+      f.status === "closed"
+    ) {
       // Resolution-Duration approx by dueDate - identifiedAt (Proxy; echte
       // remediatedAt wird via DB-Query im Route aggregiert)
     }
@@ -196,7 +221,10 @@ export function aggregateCrossFindings(
     oldestOpenAgeDays,
     averageResolutionDays:
       resolutionDurations.length > 0
-        ? Math.round(resolutionDurations.reduce((a, b) => a + b, 0) / resolutionDurations.length)
+        ? Math.round(
+            resolutionDurations.reduce((a, b) => a + b, 0) /
+              resolutionDurations.length,
+          )
         : null,
   };
 }
@@ -219,11 +247,17 @@ export function prioritizeFindings(
 ): PrioritizedFinding[] {
   return findings
     .map((f) => {
-      const daysOpen = Math.floor((now.getTime() - f.identifiedAt.getTime()) / (1000 * 60 * 60 * 24));
-      const isOverdue = f.dueDate !== null && f.dueDate.getTime() < now.getTime();
-      const daysOverdue = isOverdue && f.dueDate
-        ? Math.floor((now.getTime() - f.dueDate.getTime()) / (1000 * 60 * 60 * 24))
-        : 0;
+      const daysOpen = Math.floor(
+        (now.getTime() - f.identifiedAt.getTime()) / (1000 * 60 * 60 * 24),
+      );
+      const isOverdue =
+        f.dueDate !== null && f.dueDate.getTime() < now.getTime();
+      const daysOverdue =
+        isOverdue && f.dueDate
+          ? Math.floor(
+              (now.getTime() - f.dueDate.getTime()) / (1000 * 60 * 60 * 24),
+            )
+          : 0;
 
       const ageBoost = Math.min((daysOpen / 7) * 0.05, 0.5);
       let overdueBoost = 0;
@@ -232,7 +266,9 @@ export function prioritizeFindings(
       }
 
       const base = SEVERITY_WEIGHT[f.severity];
-      const priorityScore = Math.round(base * (1 + ageBoost) * (1 + overdueBoost));
+      const priorityScore = Math.round(
+        base * (1 + ageBoost) * (1 + overdueBoost),
+      );
 
       return {
         ...f,

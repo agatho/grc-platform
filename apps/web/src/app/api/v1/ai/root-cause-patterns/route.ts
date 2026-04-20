@@ -18,7 +18,8 @@ export async function POST(req: Request) {
   }
 
   // Determine date range
-  const months = body.data.period === "3m" ? 3 : body.data.period === "6m" ? 6 : 12;
+  const months =
+    body.data.period === "3m" ? 3 : body.data.period === "6m" ? 6 : 12;
   const since = new Date();
   since.setMonth(since.getMonth() - months);
 
@@ -46,7 +47,8 @@ export async function POST(req: Request) {
     return Response.json({
       data: {
         patterns: [],
-        message: "Not enough findings for pattern analysis (minimum 3 required)",
+        message:
+          "Not enough findings for pattern analysis (minimum 3 required)",
         findingsAnalyzed: findings.length,
       },
     });
@@ -73,7 +75,11 @@ Identify top 5 patterns. Return JSON:
 
   const aiResponse = await aiComplete({
     messages: [
-      { role: "system", content: "You are a GRC expert specializing in root cause analysis. Respond with valid JSON only, no markdown." },
+      {
+        role: "system",
+        content:
+          "You are a GRC expert specializing in root cause analysis. Respond with valid JSON only, no markdown.",
+      },
       { role: "user", content: prompt },
     ],
     maxTokens: 3000,
@@ -91,8 +97,8 @@ Identify top 5 patterns. Return JSON:
     model: aiResponse.model,
     latencyMs,
     costUsd: String(
-      ((aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
-        (aiResponse.usage?.outputTokens ?? 0) * 0.000015),
+      (aiResponse.usage?.inputTokens ?? 0) * 0.000003 +
+        (aiResponse.usage?.outputTokens ?? 0) * 0.000015,
     ),
     cachedResult: false,
   });
@@ -109,7 +115,7 @@ Identify top 5 patterns. Return JSON:
     data: {
       period: body.data.period,
       findingsAnalyzed: findings.length,
-      ...result as object,
+      ...(result as object),
       model: aiResponse.model,
       provider: aiResponse.provider,
     },

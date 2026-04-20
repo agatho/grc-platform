@@ -1,9 +1,4 @@
-import {
-  db,
-  document,
-  acknowledgment,
-  userOrganizationRole,
-} from "@grc/db";
+import { db, document, acknowledgment, userOrganizationRole } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -27,12 +22,7 @@ export async function GET(req: Request) {
       requiresAcknowledgment: document.requiresAcknowledgment,
     })
     .from(document)
-    .where(
-      and(
-        eq(document.orgId, ctx.orgId),
-        isNull(document.deletedAt),
-      ),
-    );
+    .where(and(eq(document.orgId, ctx.orgId), isNull(document.deletedAt)));
 
   // Count org members
   const [{ value: totalMembers }] = await db
@@ -56,15 +46,19 @@ export async function GET(req: Request) {
     .where(eq(acknowledgment.orgId, ctx.orgId));
 
   // Build per-document compliance
-  const ackDocs = docs.filter((d) => d.requiresAcknowledgment && d.status === "published");
+  const ackDocs = docs.filter(
+    (d) => d.requiresAcknowledgment && d.status === "published",
+  );
   const docCompliance = ackDocs.map((doc) => {
     const docAcks = acks.filter(
-      (a) => a.documentId === doc.id && a.versionAcknowledged >= doc.currentVersion,
+      (a) =>
+        a.documentId === doc.id && a.versionAcknowledged >= doc.currentVersion,
     );
     const acknowledgedCount = docAcks.length;
-    const complianceRate = totalMembers > 0
-      ? Math.round((acknowledgedCount / totalMembers) * 100)
-      : 0;
+    const complianceRate =
+      totalMembers > 0
+        ? Math.round((acknowledgedCount / totalMembers) * 100)
+        : 0;
 
     return {
       documentId: doc.id,

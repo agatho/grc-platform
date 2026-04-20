@@ -78,12 +78,18 @@ export default function ConnectorDetailPage() {
     }
   }, [id]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const runTests = async () => {
     setRunning(true);
     try {
-      await fetch(`/api/v1/connectors/${id}/test-run`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({}) });
+      await fetch(`/api/v1/connectors/${id}/test-run`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({}),
+      });
       await fetchData();
     } finally {
       setRunning(false);
@@ -122,11 +128,17 @@ export default function ConnectorDetailPage() {
   };
 
   if (loading && !connector) {
-    return <div className="flex items-center justify-center h-64"><Loader2 size={24} className="animate-spin text-gray-400" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 size={24} className="animate-spin text-gray-400" />
+      </div>
+    );
   }
 
   if (!connector) {
-    return <p className="text-gray-400 text-center py-12">Connector not found</p>;
+    return (
+      <p className="text-gray-400 text-center py-12">Connector not found</p>
+    );
   }
 
   return (
@@ -135,48 +147,100 @@ export default function ConnectorDetailPage() {
         <div className="flex items-center gap-3">
           {healthIcon[connector.healthStatus] ?? healthIcon.unknown}
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{connector.name}</h1>
-            <p className="text-sm text-gray-500">{connector.connectorType} / {connector.providerKey} v{connector.version}</p>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {connector.name}
+            </h1>
+            <p className="text-sm text-gray-500">
+              {connector.connectorType} / {connector.providerKey} v
+              {connector.version}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={runHealthCheck} disabled={checking}>
-            {checking ? <Loader2 size={14} className="animate-spin" /> : <Heart size={14} />}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runHealthCheck}
+            disabled={checking}
+          >
+            {checking ? (
+              <Loader2 size={14} className="animate-spin" />
+            ) : (
+              <Heart size={14} />
+            )}
           </Button>
-          <Button variant="outline" size="sm" onClick={runTests} disabled={running}>
-            {running ? <Loader2 size={14} className="animate-spin mr-1" /> : <Play size={14} className="mr-1" />}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={runTests}
+            disabled={running}
+          >
+            {running ? (
+              <Loader2 size={14} className="animate-spin mr-1" />
+            ) : (
+              <Play size={14} className="mr-1" />
+            )}
             Run Tests
           </Button>
-          <Button variant="outline" size="sm" className="text-red-600" onClick={deleteConnector}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="text-red-600"
+            onClick={deleteConnector}
+          >
             <Trash2 size={14} />
           </Button>
         </div>
       </div>
 
-      {connector.description && <p className="text-sm text-gray-600">{connector.description}</p>}
-      {connector.errorMessage && <p className="text-sm text-red-600 bg-red-50 p-3 rounded">{connector.errorMessage}</p>}
+      {connector.description && (
+        <p className="text-sm text-gray-600">{connector.description}</p>
+      )}
+      {connector.errorMessage && (
+        <p className="text-sm text-red-600 bg-red-50 p-3 rounded">
+          {connector.errorMessage}
+        </p>
+      )}
 
       {/* Test Results */}
       <div className="rounded-lg border border-gray-200 bg-white">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Test Results</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            Test Results
+          </h2>
         </div>
         {testResults.length === 0 ? (
-          <p className="text-sm text-gray-400 py-12 text-center">No test results yet. Click "Run Tests" to execute.</p>
+          <p className="text-sm text-gray-400 py-12 text-center">
+            No test results yet. Click "Run Tests" to execute.
+          </p>
         ) : (
           <div className="divide-y divide-gray-100">
             {testResults.map((r) => (
-              <div key={r.id} className="flex items-center justify-between px-6 py-3">
+              <div
+                key={r.id}
+                className="flex items-center justify-between px-6 py-3"
+              >
                 <div>
-                  <p className="text-sm font-medium text-gray-900">{r.testName ?? r.testKey}</p>
-                  <p className="text-xs text-gray-500">{r.category} - {r.resourcesScanned} scanned</p>
+                  <p className="text-sm font-medium text-gray-900">
+                    {r.testName ?? r.testKey}
+                  </p>
+                  <p className="text-xs text-gray-500">
+                    {r.category} - {r.resourcesScanned} scanned
+                  </p>
                 </div>
                 <div className="flex items-center gap-3">
-                  <Badge variant="outline" className={`text-[10px] ${statusColor[r.status] ?? ""}`}>
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] ${statusColor[r.status] ?? ""}`}
+                  >
                     {r.status}
                   </Badge>
-                  <span className="text-xs text-gray-400">{r.durationMs}ms</span>
-                  <span className="text-xs text-gray-400">{new Date(r.executedAt).toLocaleString()}</span>
+                  <span className="text-xs text-gray-400">
+                    {r.durationMs}ms
+                  </span>
+                  <span className="text-xs text-gray-400">
+                    {new Date(r.executedAt).toLocaleString()}
+                  </span>
                 </div>
               </div>
             ))}

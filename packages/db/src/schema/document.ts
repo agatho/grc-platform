@@ -65,23 +65,21 @@ export const document = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
     title: varchar("title", { length: 500 }).notNull(),
     content: text("content"),
     category: documentCategoryEnum("category").notNull().default("other"),
     status: documentStatusEnum("status").notNull().default("draft"),
     currentVersion: integer("current_version").notNull().default(1),
-    requiresAcknowledgment: boolean("requires_acknowledgment").notNull().default(false),
+    requiresAcknowledgment: boolean("requires_acknowledgment")
+      .notNull()
+      .default(false),
     tags: text("tags")
       .array()
       .default(sql`'{}'::text[]`),
-    ownerId: uuid("owner_id")
-      .references(() => user.id),
-    reviewerId: uuid("reviewer_id")
-      .references(() => user.id),
-    approverId: uuid("approver_id")
-      .references(() => user.id),
+    ownerId: uuid("owner_id").references(() => user.id),
+    reviewerId: uuid("reviewer_id").references(() => user.id),
+    approverId: uuid("approver_id").references(() => user.id),
     publishedAt: timestamp("published_at", { withTimezone: true }),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
     reviewDate: timestamp("review_date", { withTimezone: true }),
@@ -91,8 +89,12 @@ export const document = pgTable(
     fileSize: bigint("file_size", { mode: "number" }),
     mimeType: varchar("mime_type", { length: 255 }),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -128,12 +130,17 @@ export const documentVersion = pgTable(
     mimeType: varchar("mime_type", { length: 255 }),
     isCurrent: boolean("is_current").notNull().default(false),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("dv_document_idx").on(table.documentId),
     index("dv_org_idx").on(table.orgId),
-    unique("dv_document_version_unique").on(table.documentId, table.versionNumber),
+    unique("dv_document_version_unique").on(
+      table.documentId,
+      table.versionNumber,
+    ),
   ],
 );
 
@@ -155,7 +162,9 @@ export const acknowledgment = pgTable(
       .notNull()
       .references(() => user.id),
     versionAcknowledged: integer("version_acknowledged").notNull(),
-    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true }).notNull().defaultNow(),
+    acknowledgedAt: timestamp("acknowledged_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("ack_org_idx").on(table.orgId),
@@ -182,7 +191,9 @@ export const documentEntityLink = pgTable(
     entityType: varchar("entity_type", { length: 100 }).notNull(),
     entityId: uuid("entity_id").notNull(),
     linkDescription: text("link_description"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [

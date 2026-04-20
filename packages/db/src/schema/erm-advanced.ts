@@ -278,23 +278,20 @@ export const bowtieTemplate = pgTable("bowtie_template", {
 // Relations
 // ──────────────────────────────────────────────────────────────
 
-export const bowtieElementRelations = relations(
-  bowtieElement,
-  ({ one }) => ({
-    organization: one(organization, {
-      fields: [bowtieElement.orgId],
-      references: [organization.id],
-    }),
-    risk: one(risk, {
-      fields: [bowtieElement.riskId],
-      references: [risk.id],
-    }),
-    control: one(control, {
-      fields: [bowtieElement.controlId],
-      references: [control.id],
-    }),
+export const bowtieElementRelations = relations(bowtieElement, ({ one }) => ({
+  organization: one(organization, {
+    fields: [bowtieElement.orgId],
+    references: [organization.id],
   }),
-);
+  risk: one(risk, {
+    fields: [bowtieElement.riskId],
+    references: [risk.id],
+  }),
+  control: one(control, {
+    fields: [bowtieElement.controlId],
+    references: [control.id],
+  }),
+}));
 
 export const treatmentMilestoneRelations = relations(
   treatmentMilestone,

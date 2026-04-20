@@ -85,13 +85,18 @@ function VulnerabilitiesInner() {
     return result;
   }, [vulns, search, severityFilter]);
 
-  const handleDelete = useCallback(async (id: string) => {
-    const res = await fetch(`/api/v1/isms/vulnerabilities/${id}`, { method: "DELETE" });
-    if (res.ok) {
-      toast.success(t("deleted"));
-      setVulns((prev) => prev.filter((v) => v.id !== id));
-    }
-  }, [t]);
+  const handleDelete = useCallback(
+    async (id: string) => {
+      const res = await fetch(`/api/v1/isms/vulnerabilities/${id}`, {
+        method: "DELETE",
+      });
+      if (res.ok) {
+        toast.success(t("deleted"));
+        setVulns((prev) => prev.filter((v) => v.id !== id));
+      }
+    },
+    [t],
+  );
 
   if (loading && vulns.length === 0) {
     return (
@@ -105,13 +110,20 @@ function VulnerabilitiesInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("vulnerabilities")}</h1>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("vulnerabilities")}
+          </h1>
           <p className="text-sm text-gray-500 mt-1">
             {vulns.length} {t("total")}
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchVulns} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchVulns}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Dialog open={showCreate} onOpenChange={setShowCreate}>
@@ -139,7 +151,10 @@ function VulnerabilitiesInner() {
       {/* Filters */}
       <div className="flex items-center gap-3">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -155,7 +170,9 @@ function VulnerabilitiesInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("allSeverities")}</SelectItem>
             {SEVERITIES.map((s) => (
-              <SelectItem key={s} value={s}>{t(`incidentSeverity.${s}`)}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {t(`incidentSeverity.${s}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -171,31 +188,41 @@ function VulnerabilitiesInner() {
         ) : (
           filtered.map((v) => (
             <Link key={v.id} href={`/isms/vulnerabilities/${v.id}`}>
-            <div
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors"
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <Bug size={16} className="text-orange-600 shrink-0" />
-                <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">{v.title}</span>
-                {v.cveReference && (
-                  <Badge variant="outline" className="font-mono text-[10px] shrink-0">
-                    {v.cveReference}
+              <div className="flex items-center justify-between rounded-lg border border-gray-200 bg-white px-4 py-3 hover:bg-gray-50 cursor-pointer transition-colors">
+                <div className="flex items-center gap-3 min-w-0">
+                  <Bug size={16} className="text-orange-600 shrink-0" />
+                  <span className="text-sm font-medium text-blue-700 hover:text-blue-900 truncate">
+                    {v.title}
+                  </span>
+                  {v.cveReference && (
+                    <Badge
+                      variant="outline"
+                      className="font-mono text-[10px] shrink-0"
+                    >
+                      {v.cveReference}
+                    </Badge>
+                  )}
+                  <Badge
+                    variant="outline"
+                    className={`text-[10px] shrink-0 ${severityStyles[v.severity] ?? ""}`}
+                  >
+                    {t(`incidentSeverity.${v.severity}`)}
                   </Badge>
-                )}
-                <Badge
-                  variant="outline"
-                  className={`text-[10px] shrink-0 ${severityStyles[v.severity] ?? ""}`}
+                  <Badge variant="outline" className="text-[10px] shrink-0">
+                    {v.status}
+                  </Badge>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={(e) => {
+                    e.preventDefault();
+                    handleDelete(v.id);
+                  }}
                 >
-                  {t(`incidentSeverity.${v.severity}`)}
-                </Badge>
-                <Badge variant="outline" className="text-[10px] shrink-0">
-                  {v.status}
-                </Badge>
+                  <Trash2 size={14} className="text-gray-400" />
+                </Button>
               </div>
-              <Button variant="ghost" size="sm" onClick={(e) => { e.preventDefault(); handleDelete(v.id); }}>
-                <Trash2 size={14} className="text-gray-400" />
-              </Button>
-            </div>
             </Link>
           ))
         )}
@@ -246,7 +273,9 @@ function CreateVulnForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("titleField")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("titleField")}
+        </label>
         <input
           type="text"
           value={title}
@@ -256,7 +285,9 @@ function CreateVulnForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("description")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("description")}
+        </label>
         <textarea
           value={description}
           onChange={(e) => setDescription(e.target.value)}
@@ -265,7 +296,9 @@ function CreateVulnForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">CVE Reference</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          CVE Reference
+        </label>
         <input
           type="text"
           value={cveReference}
@@ -275,14 +308,18 @@ function CreateVulnForm({
         />
       </div>
       <div>
-        <label className="block text-sm font-medium text-gray-700 mb-1">{t("severity")}</label>
+        <label className="block text-sm font-medium text-gray-700 mb-1">
+          {t("severity")}
+        </label>
         <select
           value={severity}
           onChange={(e) => setSeverity(e.target.value)}
           className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
         >
           {SEVERITIES.map((s) => (
-            <option key={s} value={s}>{t(`incidentSeverity.${s}`)}</option>
+            <option key={s} value={s}>
+              {t(`incidentSeverity.${s}`)}
+            </option>
           ))}
         </select>
       </div>

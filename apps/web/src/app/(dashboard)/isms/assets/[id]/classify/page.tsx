@@ -19,8 +19,13 @@ const LEVEL_COLORS: Record<ProtectionLevel, string> = {
   very_high: "border-red-400 bg-red-50 ring-red-400",
 };
 
-function computeOverall(c: ProtectionLevel, i: ProtectionLevel, a: ProtectionLevel): ProtectionLevel {
-  if (c === "very_high" || i === "very_high" || a === "very_high") return "very_high";
+function computeOverall(
+  c: ProtectionLevel,
+  i: ProtectionLevel,
+  a: ProtectionLevel,
+): ProtectionLevel {
+  if (c === "very_high" || i === "very_high" || a === "very_high")
+    return "very_high";
   if (c === "high" || i === "high" || a === "high") return "high";
   return "normal";
 }
@@ -82,7 +87,8 @@ function ClassifyInner() {
           const classJson = await classRes.json();
           if (classJson.data) {
             setForm({
-              confidentialityLevel: classJson.data.confidentialityLevel ?? "normal",
+              confidentialityLevel:
+                classJson.data.confidentialityLevel ?? "normal",
               confidentialityReason: classJson.data.confidentialityReason ?? "",
               integrityLevel: classJson.data.integrityLevel ?? "normal",
               integrityReason: classJson.data.integrityReason ?? "",
@@ -152,7 +158,12 @@ function ClassifyInner() {
     <div className="max-w-3xl mx-auto space-y-6">
       {/* Header */}
       <div>
-        <Button variant="ghost" size="sm" onClick={() => router.push("/isms/assets")} className="mb-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/isms/assets")}
+          className="mb-2"
+        >
           <ArrowLeft size={14} className="mr-1" /> {t("backToAssets")}
         </Button>
         <h1 className="text-2xl font-bold text-gray-900">
@@ -191,7 +202,9 @@ function ClassifyInner() {
             level={form.confidentialityLevel}
             reason={form.confidentialityReason}
             onLevelChange={(v) => setForm({ ...form, confidentialityLevel: v })}
-            onReasonChange={(v) => setForm({ ...form, confidentialityReason: v })}
+            onReasonChange={(v) =>
+              setForm({ ...form, confidentialityReason: v })
+            }
             t={t}
           />
         )}
@@ -221,31 +234,55 @@ function ClassifyInner() {
         )}
         {step === 3 && (
           <div className="space-y-6">
-            <h2 className="text-lg font-semibold text-gray-900">{t("summary")}</h2>
+            <h2 className="text-lg font-semibold text-gray-900">
+              {t("summary")}
+            </h2>
             <div className="grid grid-cols-3 gap-4">
               <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-xs text-gray-500 mb-2">{t("confidentiality")}</p>
-                <ProtectionLevelBadge level={form.confidentialityLevel} className="text-sm" />
+                <p className="text-xs text-gray-500 mb-2">
+                  {t("confidentiality")}
+                </p>
+                <ProtectionLevelBadge
+                  level={form.confidentialityLevel}
+                  className="text-sm"
+                />
               </div>
               <div className="rounded-lg border border-gray-200 p-4 text-center">
                 <p className="text-xs text-gray-500 mb-2">{t("integrity")}</p>
-                <ProtectionLevelBadge level={form.integrityLevel} className="text-sm" />
+                <ProtectionLevelBadge
+                  level={form.integrityLevel}
+                  className="text-sm"
+                />
               </div>
               <div className="rounded-lg border border-gray-200 p-4 text-center">
-                <p className="text-xs text-gray-500 mb-2">{t("availability")}</p>
-                <ProtectionLevelBadge level={form.availabilityLevel} className="text-sm" />
+                <p className="text-xs text-gray-500 mb-2">
+                  {t("availability")}
+                </p>
+                <ProtectionLevelBadge
+                  level={form.availabilityLevel}
+                  className="text-sm"
+                />
               </div>
             </div>
             <div className="rounded-lg border-2 border-gray-300 p-4 text-center">
-              <p className="text-xs text-gray-500 mb-2">{t("overallProtection")} ({t("maximumPrinciple")})</p>
-              <ProtectionLevelBadge level={overall} className="text-lg px-4 py-1" />
+              <p className="text-xs text-gray-500 mb-2">
+                {t("overallProtection")} ({t("maximumPrinciple")})
+              </p>
+              <ProtectionLevelBadge
+                level={overall}
+                className="text-lg px-4 py-1"
+              />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">{t("nextReview")}</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                {t("nextReview")}
+              </label>
               <input
                 type="date"
                 value={form.reviewDate}
-                onChange={(e) => setForm({ ...form, reviewDate: e.target.value })}
+                onChange={(e) =>
+                  setForm({ ...form, reviewDate: e.target.value })
+                }
                 className="h-9 w-full rounded-md border border-gray-300 px-3 text-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500"
               />
             </div>
@@ -318,7 +355,9 @@ function CiaStep({
                   level === l ? "border-blue-600" : "border-gray-300"
                 }`}
               >
-                {level === l && <div className="h-2 w-2 rounded-full bg-blue-600" />}
+                {level === l && (
+                  <div className="h-2 w-2 rounded-full bg-blue-600" />
+                )}
               </div>
               <ProtectionLevelBadge level={l} />
               <span className="text-sm text-gray-600">

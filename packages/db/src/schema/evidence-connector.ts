@@ -110,7 +110,9 @@ export const connectorSchedule = pgTable(
       .notNull()
       .references(() => evidenceConnector.id, { onDelete: "cascade" }),
     cronExpression: varchar("cron_expression", { length: 100 }).notNull(), // e.g. "0 2 * * *"
-    timezone: varchar("timezone", { length: 50 }).notNull().default("Europe/Berlin"),
+    timezone: varchar("timezone", { length: 50 })
+      .notNull()
+      .default("Europe/Berlin"),
     isEnabled: boolean("is_enabled").notNull().default(true),
     testIds: jsonb("test_ids").default("[]"), // specific tests to run, empty = all
     lastRunAt: timestamp("last_run_at", { withTimezone: true }),
@@ -301,7 +303,9 @@ export const evidenceFreshnessConfig = pgTable(
     warningDays: integer("warning_days").notNull().default(7), // days before maxAge to start warning
     autoCollect: boolean("auto_collect").notNull().default(true),
     notifyOnStale: boolean("notify_on_stale").notNull().default(true),
-    notifyRoles: jsonb("notify_roles").default('["control_owner", "risk_manager"]'),
+    notifyRoles: jsonb("notify_roles").default(
+      '["control_owner", "risk_manager"]',
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

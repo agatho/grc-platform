@@ -2,7 +2,11 @@
 // GET /api/v1/translations/queue?targetLocale=en&status=missing&entityType=risk
 
 import { db, translationStatus } from "@grc/db";
-import { translationQueueFilterSchema, TRANSLATABLE_FIELDS, ENTITY_TABLE_MAP } from "@grc/shared";
+import {
+  translationQueueFilterSchema,
+  TRANSLATABLE_FIELDS,
+  ENTITY_TABLE_MAP,
+} from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 
@@ -96,7 +100,9 @@ export async function GET(req: Request) {
       const translatedFields = statusRecords.filter(
         (s) => s.status === "verified" || s.status === "draft_translation",
       );
-      const outdatedFields = statusRecords.filter((s) => s.status === "outdated");
+      const outdatedFields = statusRecords.filter(
+        (s) => s.status === "outdated",
+      );
 
       const missingFields = fields.filter(
         (f) => !statusRecords.some((s) => s.field === f),
@@ -104,10 +110,20 @@ export async function GET(req: Request) {
 
       // Apply status filter
       if (status === "missing" && missingFields.length === 0) continue;
-      if (status === "draft" && !statusRecords.some((s) => s.status === "draft_translation")) continue;
+      if (
+        status === "draft" &&
+        !statusRecords.some((s) => s.status === "draft_translation")
+      )
+        continue;
       if (status === "outdated" && outdatedFields.length === 0) continue;
-      if (status === "verified" && translatedFields.filter((s) => s.status === "verified").length === fields.length) continue;
-      if (status === "complete" && translatedFields.length !== fields.length) continue;
+      if (
+        status === "verified" &&
+        translatedFields.filter((s) => s.status === "verified").length ===
+          fields.length
+      )
+        continue;
+      if (status === "complete" && translatedFields.length !== fields.length)
+        continue;
 
       // Resolve title for display
       const rawTitle = row.raw_title;
@@ -115,7 +131,7 @@ export async function GET(req: Request) {
         typeof rawTitle === "string"
           ? rawTitle
           : typeof rawTitle === "object" && rawTitle !== null
-            ? rawTitle["de"] ?? rawTitle[Object.keys(rawTitle)[0]] ?? ""
+            ? (rawTitle["de"] ?? rawTitle[Object.keys(rawTitle)[0]] ?? "")
             : "";
 
       // Check which languages are missing across all fields
@@ -137,7 +153,8 @@ export async function GET(req: Request) {
 
   // Sort by last modified descending
   queueItems.sort(
-    (a, b) => new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
+    (a, b) =>
+      new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime(),
   );
 
   // Paginate

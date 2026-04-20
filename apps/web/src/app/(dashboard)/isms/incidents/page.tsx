@@ -4,7 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, Search, Plus, RefreshCcw, AlertTriangle, Clock } from "lucide-react";
+import {
+  Loader2,
+  Search,
+  Plus,
+  RefreshCcw,
+  AlertTriangle,
+  Clock,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -18,7 +25,11 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { SecurityIncident, IncidentSeverity, IncidentStatus } from "@grc/shared";
+import type {
+  SecurityIncident,
+  IncidentSeverity,
+  IncidentStatus,
+} from "@grc/shared";
 
 const SEVERITIES: IncidentSeverity[] = ["low", "medium", "high", "critical"];
 const STATUSES: IncidentStatus[] = [
@@ -32,7 +43,10 @@ const STATUSES: IncidentStatus[] = [
 ];
 
 function hoursRemaining(deadline: string): number {
-  return Math.max(0, (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60));
+  return Math.max(
+    0,
+    (new Date(deadline).getTime() - Date.now()) / (1000 * 60 * 60),
+  );
 }
 
 export default function IncidentsPage() {
@@ -107,7 +121,12 @@ function IncidentsInner() {
           </p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchIncidents} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchIncidents}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => router.push("/isms/incidents/new")}>
@@ -119,7 +138,10 @@ function IncidentsInner() {
       {/* Filters */}
       <div className="flex items-center gap-3 flex-wrap">
         <div className="relative">
-          <Search size={14} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400" />
+          <Search
+            size={14}
+            className="absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400"
+          />
           <input
             type="text"
             value={search}
@@ -135,7 +157,9 @@ function IncidentsInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("allSeverities")}</SelectItem>
             {SEVERITIES.map((s) => (
-              <SelectItem key={s} value={s}>{t(`incidentSeverity.${s}`)}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {t(`incidentSeverity.${s}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -146,7 +170,9 @@ function IncidentsInner() {
           <SelectContent>
             <SelectItem value="__all__">{t("allStatuses")}</SelectItem>
             {STATUSES.map((s) => (
-              <SelectItem key={s} value={s}>{t(`incidentStatus.${s}`)}</SelectItem>
+              <SelectItem key={s} value={s}>
+                {t(`incidentStatus.${s}`)}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -161,7 +187,9 @@ function IncidentsInner() {
           </div>
         ) : (
           filtered.map((inc) => {
-            const hrs = inc.dataBreachDeadline ? hoursRemaining(inc.dataBreachDeadline) : null;
+            const hrs = inc.dataBreachDeadline
+              ? hoursRemaining(inc.dataBreachDeadline)
+              : null;
             return (
               <Link
                 key={inc.id}
@@ -185,7 +213,8 @@ function IncidentsInner() {
                       }`}
                     >
                       <Clock size={10} className="mr-0.5" />
-                      {hrs !== null ? `${Math.floor(hrs)}h` : ""} {t("breach72h")}
+                      {hrs !== null ? `${Math.floor(hrs)}h` : ""}{" "}
+                      {t("breach72h")}
                     </Badge>
                   )}
                 </div>

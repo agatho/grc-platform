@@ -91,7 +91,10 @@ function ContractsDashboardInner() {
   const formatCurrency = (val: string) => {
     const num = parseFloat(val);
     if (isNaN(num)) return "\u2014";
-    return new Intl.NumberFormat("de-DE", { style: "currency", currency: "EUR" }).format(num);
+    return new Intl.NumberFormat("de-DE", {
+      style: "currency",
+      currency: "EUR",
+    }).format(num);
   };
 
   return (
@@ -102,7 +105,12 @@ function ContractsDashboardInner() {
           <p className="text-sm text-gray-500 mt-1">{t("description")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchDashboard} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchDashboard}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => router.push("/contracts/list")}>
@@ -141,8 +149,11 @@ function ContractsDashboardInner() {
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Upcoming Expirations */}
         <div className="rounded-lg border border-yellow-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("expiringContracts")}</h2>
-          {(!data?.upcomingExpirations || data.upcomingExpirations.length === 0) ? (
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("expiringContracts")}
+          </h2>
+          {!data?.upcomingExpirations ||
+          data.upcomingExpirations.length === 0 ? (
             <p className="text-sm text-gray-400">{t("noExpiring")}</p>
           ) : (
             <div className="space-y-2">
@@ -152,11 +163,17 @@ function ContractsDashboardInner() {
                   href={`/contracts/${c.id}`}
                   className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-sm font-medium text-gray-900">{c.title}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {c.title}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <span className="text-xs text-yellow-700">{c.expirationDate}</span>
+                    <span className="text-xs text-yellow-700">
+                      {c.expirationDate}
+                    </span>
                     {c.autoRenewal && (
-                      <Badge variant="outline" className="text-xs">{t("autoRenewal")}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {t("autoRenewal")}
+                      </Badge>
                     )}
                     <ArrowRight size={14} className="text-gray-400" />
                   </div>
@@ -168,8 +185,10 @@ function ContractsDashboardInner() {
 
         {/* Overdue Obligations */}
         <div className="rounded-lg border border-red-200 bg-white p-6">
-          <h2 className="text-base font-semibold text-gray-900 mb-4">{t("overdueObligations")}</h2>
-          {(!data?.overdueObligations || data.overdueObligations.length === 0) ? (
+          <h2 className="text-base font-semibold text-gray-900 mb-4">
+            {t("overdueObligations")}
+          </h2>
+          {!data?.overdueObligations || data.overdueObligations.length === 0 ? (
             <p className="text-sm text-gray-400">{t("noOverdue")}</p>
           ) : (
             <div className="space-y-2">
@@ -179,7 +198,9 @@ function ContractsDashboardInner() {
                   href={`/contracts/${o.contractId}`}
                   className="flex items-center justify-between rounded border border-gray-200 px-3 py-2 hover:bg-gray-50 transition-colors"
                 >
-                  <span className="text-sm font-medium text-gray-900">{o.title}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {o.title}
+                  </span>
                   <span className="text-xs text-red-600">{o.dueDate}</span>
                 </Link>
               ))}
@@ -191,16 +212,22 @@ function ContractsDashboardInner() {
       {/* SLA Breaches */}
       {data?.recentBreaches && data.recentBreaches.length > 0 && (
         <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-          <h2 className="text-base font-semibold text-red-800 mb-3">{t("slaBreaches")}</h2>
+          <h2 className="text-base font-semibold text-red-800 mb-3">
+            {t("slaBreaches")}
+          </h2>
           <div className="space-y-2">
             {data.recentBreaches.map((b) => (
               <div
                 key={b.id}
                 className="flex items-center justify-between rounded border border-red-200 bg-white px-4 py-2"
               >
-                <span className="text-sm font-medium text-gray-900">{b.metricName}</span>
+                <span className="text-sm font-medium text-gray-900">
+                  {b.metricName}
+                </span>
                 <div className="flex items-center gap-3 text-xs">
-                  <span className="text-red-600">{t("sla.actual")}: {b.actualValue}</span>
+                  <span className="text-red-600">
+                    {t("sla.actual")}: {b.actualValue}
+                  </span>
                   <span className="text-gray-500">{b.periodEnd}</span>
                 </div>
               </div>

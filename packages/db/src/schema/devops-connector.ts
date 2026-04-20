@@ -32,14 +32,22 @@ export const devopsConnectorConfig = pgTable(
       .references(() => evidenceConnector.id, { onDelete: "cascade" }),
     platform: varchar("platform", { length: 50 }).notNull(), // github | gitlab | bitbucket | jira | confluence | servicenow | wiki_generic
     platformCategory: varchar("platform_category", { length: 30 }).notNull(), // git_platform | issue_tracker | wiki | endpoint_mgmt | network_firewall
-    branchProtectionCheck: boolean("branch_protection_check").notNull().default(true),
+    branchProtectionCheck: boolean("branch_protection_check")
+      .notNull()
+      .default(true),
     codeReviewCheck: boolean("code_review_check").notNull().default(true),
     sastEnabled: boolean("sast_enabled").notNull().default(true),
-    secretScanningCheck: boolean("secret_scanning_check").notNull().default(true),
+    secretScanningCheck: boolean("secret_scanning_check")
+      .notNull()
+      .default(true),
     slaComplianceCheck: boolean("sla_compliance_check").notNull().default(true),
     docsFreshnessCheck: boolean("docs_freshness_check").notNull().default(true),
-    docsFreshnessMaxDays: integer("docs_freshness_max_days").notNull().default(180),
-    endpointComplianceCheck: boolean("endpoint_compliance_check").notNull().default(false),
+    docsFreshnessMaxDays: integer("docs_freshness_max_days")
+      .notNull()
+      .default(180),
+    endpointComplianceCheck: boolean("endpoint_compliance_check")
+      .notNull()
+      .default(false),
     firewallRuleCheck: boolean("firewall_rule_check").notNull().default(false),
     repositories: jsonb("repositories").default("[]"), // repos to monitor
     projects: jsonb("projects").default("[]"), // issue tracker projects

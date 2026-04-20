@@ -16,7 +16,13 @@ function parseDeadlineData(data: unknown): DeadlineItem[] {
   if (Array.isArray(data)) {
     return data.map((item) => ({
       title: item.title ?? item.name ?? item.label ?? "-",
-      dueDate: item.dueDate ?? item.due_date ?? item.deadline ?? item.startAt ?? item.start_at ?? "",
+      dueDate:
+        item.dueDate ??
+        item.due_date ??
+        item.deadline ??
+        item.startAt ??
+        item.start_at ??
+        "",
       daysRemaining: item.daysRemaining ?? item.days_remaining,
       module: item.module,
     }));
@@ -34,7 +40,12 @@ function calculateDaysRemaining(dateStr: string): number {
   return Math.ceil((target.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function CountdownWidget({ data, config, isLoading, error }: WidgetProps) {
+export function CountdownWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full flex-col gap-2 p-2">

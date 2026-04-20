@@ -1,11 +1,22 @@
 import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { withAuth, withAuditContext, withReadContext, paginate } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  withReadContext,
+  paginate,
+} from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { createAiProviderQmsSchema } from "@grc/shared";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor", "viewer");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "dpo",
+    "auditor",
+    "viewer",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("isms", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -24,7 +35,10 @@ export async function GET(req: Request) {
   query = sql`${query} ORDER BY created_at DESC LIMIT ${limit} OFFSET ${offset}`;
 
   const result = await withReadContext(ctx, async (tx) => {
-    const [r, c] = await Promise.all([tx.execute(query), tx.execute(countQuery)]);
+    const [r, c] = await Promise.all([
+      tx.execute(query),
+      tx.execute(countQuery),
+    ]);
     // postgres-js tx.execute returns the row array directly; normalise either shape.
     const rows = Array.isArray(r) ? r : (r?.rows ?? []);
     const countArr = Array.isArray(c) ? c : (c?.rows ?? []);
@@ -33,7 +47,11 @@ export async function GET(req: Request) {
   });
   return Response.json({
     data: result.rows,
-    pagination: { page: Math.floor(offset / limit) + 1, limit, total: result.count },
+    pagination: {
+      page: Math.floor(offset / limit) + 1,
+      limit,
+      total: result.count,
+    },
   });
 }
 
@@ -45,9 +63,26 @@ export async function POST(req: Request) {
 
   const parsed = createAiProviderQmsSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
-  const { ai_system_id, risk_management_procedure, data_governance_procedure, technical_documentation_procedure, record_keeping_procedure, transparency_procedure, human_oversight_procedure, accuracy_procedure, cybersecurity_procedure, conformity_procedure, post_market_procedure, overall_maturity, next_audit_date } = parsed.data;
+  const {
+    ai_system_id,
+    risk_management_procedure,
+    data_governance_procedure,
+    technical_documentation_procedure,
+    record_keeping_procedure,
+    transparency_procedure,
+    human_oversight_procedure,
+    accuracy_procedure,
+    cybersecurity_procedure,
+    conformity_procedure,
+    post_market_procedure,
+    overall_maturity,
+    next_audit_date,
+  } = parsed.data;
 
   const result = await withAuditContext(ctx, async (tx) => {
     const res = await tx.execute(sql`

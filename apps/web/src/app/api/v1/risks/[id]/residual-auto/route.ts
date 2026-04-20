@@ -1,9 +1,4 @@
-import {
-  db,
-  risk,
-  riskControl,
-  controlEffectivenessScore,
-} from "@grc/db";
+import { db, risk, riskControl, controlEffectivenessScore } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { computeResidualScore } from "@grc/shared";
@@ -53,9 +48,7 @@ export async function GET(
         eq(controlEffectivenessScore.orgId, ctx.orgId),
       ),
     )
-    .where(
-      and(eq(riskControl.riskId, id), eq(riskControl.orgId, ctx.orgId)),
-    );
+    .where(and(eq(riskControl.riskId, id), eq(riskControl.orgId, ctx.orgId)));
 
   const cesScores = linkedControls
     .filter((lc) => lc.cesScore !== null)

@@ -168,17 +168,23 @@ export default function ScimDashboardPage() {
 
       {/* Feedback */}
       {error && (
-        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">{error}</div>
+        <div className="rounded-md bg-red-50 p-3 text-sm text-red-700">
+          {error}
+        </div>
       )}
       {success && (
-        <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">{success}</div>
+        <div className="rounded-md bg-green-50 p-3 text-sm text-green-700">
+          {success}
+        </div>
       )}
 
       {/* SCIM Endpoint URL */}
       <Card>
         <CardContent className="flex items-center justify-between py-4">
           <div>
-            <p className="text-sm font-medium text-gray-700">{t("scimEndpoint")}</p>
+            <p className="text-sm font-medium text-gray-700">
+              {t("scimEndpoint")}
+            </p>
             <code className="text-xs text-gray-500">
               {baseUrl}/api/v1/scim/v2/
             </code>
@@ -187,7 +193,11 @@ export default function ScimDashboardPage() {
             onClick={() => copyToClipboard(`${baseUrl}/api/v1/scim/v2/`)}
             className="rounded-md border px-3 py-1 text-sm hover:bg-gray-50"
           >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+            {copied ? (
+              <Check className="h-4 w-4" />
+            ) : (
+              <Copy className="h-4 w-4" />
+            )}
           </button>
         </CardContent>
       </Card>
@@ -198,7 +208,9 @@ export default function ScimDashboardPage() {
           <Card>
             <CardContent className="py-4 text-center">
               <Clock className="mx-auto h-5 w-5 text-gray-400" />
-              <p className="mt-1 text-lg font-semibold">{timeAgo(stats.lastSync)}</p>
+              <p className="mt-1 text-lg font-semibold">
+                {timeAgo(stats.lastSync)}
+              </p>
               <p className="text-xs text-gray-500">{t("lastSync")}</p>
             </CardContent>
           </Card>
@@ -211,8 +223,12 @@ export default function ScimDashboardPage() {
           </Card>
           <Card>
             <CardContent className="py-4 text-center">
-              <AlertCircle className={`mx-auto h-5 w-5 ${stats.errorCount > 0 ? "text-red-500" : "text-gray-400"}`} />
-              <p className={`mt-1 text-lg font-semibold ${stats.errorCount > 0 ? "text-red-600" : ""}`}>
+              <AlertCircle
+                className={`mx-auto h-5 w-5 ${stats.errorCount > 0 ? "text-red-500" : "text-gray-400"}`}
+              />
+              <p
+                className={`mt-1 text-lg font-semibold ${stats.errorCount > 0 ? "text-red-600" : ""}`}
+              >
                 {stats.errorCount}
               </p>
               <p className="text-xs text-gray-500">{t("errors24h")}</p>
@@ -247,7 +263,9 @@ export default function ScimDashboardPage() {
         </CardHeader>
         <CardContent>
           {tokens.length === 0 ? (
-            <p className="py-4 text-center text-sm text-gray-500">{t("noTokens")}</p>
+            <p className="py-4 text-center text-sm text-gray-500">
+              {t("noTokens")}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -267,11 +285,17 @@ export default function ScimDashboardPage() {
                     <td className="py-2">{formatDate(token.lastUsedAt)}</td>
                     <td className="py-2">
                       {token.isActive ? (
-                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        <Badge
+                          variant="outline"
+                          className="border-green-200 bg-green-50 text-green-700"
+                        >
                           {t("active")}
                         </Badge>
                       ) : (
-                        <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                        <Badge
+                          variant="outline"
+                          className="border-red-200 bg-red-50 text-red-700"
+                        >
                           {t("revoked")}
                         </Badge>
                       )}
@@ -310,7 +334,9 @@ export default function ScimDashboardPage() {
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (
-            <p className="py-4 text-center text-sm text-gray-500">{t("noLogs")}</p>
+            <p className="py-4 text-center text-sm text-gray-500">
+              {t("noLogs")}
+            </p>
           ) : (
             <table className="w-full text-sm">
               <thead>
@@ -331,11 +357,17 @@ export default function ScimDashboardPage() {
                     <td className="py-2">{log.userEmail || "---"}</td>
                     <td className="py-2">
                       {log.status === "success" ? (
-                        <Badge variant="outline" className="border-green-200 bg-green-50 text-green-700">
+                        <Badge
+                          variant="outline"
+                          className="border-green-200 bg-green-50 text-green-700"
+                        >
                           {t("success")}
                         </Badge>
                       ) : log.status === "error" ? (
-                        <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700">
+                        <Badge
+                          variant="outline"
+                          className="border-red-200 bg-red-50 text-red-700"
+                        >
                           {log.errorMessage ?? t("error")}
                         </Badge>
                       ) : (
@@ -360,7 +392,9 @@ export default function ScimDashboardPage() {
           {createdToken ? (
             <div className="space-y-3">
               <div className="rounded-md bg-amber-50 p-3">
-                <p className="text-sm font-medium text-amber-800">{t("tokenOnceWarning")}</p>
+                <p className="text-sm font-medium text-amber-800">
+                  {t("tokenOnceWarning")}
+                </p>
               </div>
               <div className="flex items-center gap-2 rounded-md bg-gray-100 p-3 font-mono text-xs">
                 <span className="flex-1 break-all">{createdToken}</span>
@@ -368,7 +402,11 @@ export default function ScimDashboardPage() {
                   onClick={() => copyToClipboard(createdToken)}
                   className="shrink-0 rounded border bg-white px-2 py-1 hover:bg-gray-50"
                 >
-                  {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
+                  {copied ? (
+                    <Check className="h-4 w-4" />
+                  ) : (
+                    <Copy className="h-4 w-4" />
+                  )}
                 </button>
               </div>
             </div>
@@ -415,7 +453,10 @@ export default function ScimDashboardPage() {
       </Dialog>
 
       {/* Revoke Token Dialog */}
-      <Dialog open={!!revokeTokenId} onOpenChange={() => setRevokeTokenId(null)}>
+      <Dialog
+        open={!!revokeTokenId}
+        onOpenChange={() => setRevokeTokenId(null)}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("revokeTokenTitle")}</DialogTitle>

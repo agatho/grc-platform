@@ -147,21 +147,16 @@ export default function TemplateGalleryPage() {
         </div>
       ) : templates.length === 0 ? (
         <div className="rounded-lg border border-gray-200 bg-white p-12 text-center">
-          <LayoutTemplate
-            size={32}
-            className="mx-auto text-gray-400 mb-3"
-          />
-          <p className="text-sm text-gray-400">
-            {t("templates.empty")}
-          </p>
+          <LayoutTemplate size={32} className="mx-auto text-gray-400 mb-3" />
+          <p className="text-sm text-gray-400">{t("templates.empty")}</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {templates.map((tpl) => {
-            const Icon =
-              CATEGORY_ICONS[tpl.category] ?? LayoutTemplate;
+            const Icon = CATEGORY_ICONS[tpl.category] ?? LayoutTemplate;
             const colorClass =
-              CATEGORY_COLORS[tpl.category] ?? "bg-gray-50 border-gray-200 text-gray-700";
+              CATEGORY_COLORS[tpl.category] ??
+              "bg-gray-50 border-gray-200 text-gray-700";
 
             return (
               <div
@@ -169,16 +164,11 @@ export default function TemplateGalleryPage() {
                 className="rounded-lg border border-gray-200 bg-white p-5 hover:shadow-sm transition-shadow"
               >
                 <div className="flex items-start justify-between mb-3">
-                  <div
-                    className={`rounded-lg p-2 border ${colorClass}`}
-                  >
+                  <div className={`rounded-lg p-2 border ${colorClass}`}>
                     <Icon size={18} />
                   </div>
                   {tpl.isBuiltIn && (
-                    <Badge
-                      variant="outline"
-                      className="text-[10px] bg-gray-50"
-                    >
+                    <Badge variant="outline" className="text-[10px] bg-gray-50">
                       {t("templates.builtIn")}
                     </Badge>
                   )}

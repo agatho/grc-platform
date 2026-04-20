@@ -1,9 +1,4 @@
-import {
-  db,
-  control,
-  risk,
-  riskControl,
-} from "@grc/db";
+import { db, control, risk, riskControl } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -28,12 +23,7 @@ export async function GET(req: Request) {
       riskScoreResidual: risk.riskScoreResidual,
     })
     .from(risk)
-    .where(
-      and(
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
-    );
+    .where(and(eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)));
 
   // Fetch all active controls
   const controls = await db
@@ -46,12 +36,7 @@ export async function GET(req: Request) {
       frequency: control.frequency,
     })
     .from(control)
-    .where(
-      and(
-        eq(control.orgId, ctx.orgId),
-        isNull(control.deletedAt),
-      ),
-    );
+    .where(and(eq(control.orgId, ctx.orgId), isNull(control.deletedAt)));
 
   // Fetch all risk-control links
   const links = await db

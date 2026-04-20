@@ -21,16 +21,31 @@ export async function GET(req: Request) {
     ORDER BY ap.annual_cost DESC
   `);
 
-  const rows = result as unknown as Array<{ id: string; name: string; category: string; annual_cost: string }>;
-  const categoryMap: Record<string, { name: string; value: number; children: { name: string; value: number; id: string }[] }> = {};
+  const rows = result as unknown as Array<{
+    id: string;
+    name: string;
+    category: string;
+    annual_cost: string;
+  }>;
+  const categoryMap: Record<
+    string,
+    {
+      name: string;
+      value: number;
+      children: { name: string; value: number; id: string }[];
+    }
+  > = {};
 
   for (const row of rows) {
     const cat = row.category || "uncategorized";
-    if (!categoryMap[cat]) categoryMap[cat] = { name: cat, value: 0, children: [] };
+    if (!categoryMap[cat])
+      categoryMap[cat] = { name: cat, value: 0, children: [] };
     const cost = Number(row.annual_cost);
     categoryMap[cat].value += cost;
     categoryMap[cat].children.push({ name: row.name, value: cost, id: row.id });
   }
 
-  return Response.json({ data: { name: "Applications", children: Object.values(categoryMap) } });
+  return Response.json({
+    data: { name: "Applications", children: Object.values(categoryMap) },
+  });
 }

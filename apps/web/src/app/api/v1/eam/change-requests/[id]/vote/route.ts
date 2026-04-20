@@ -17,21 +17,35 @@ export async function POST(
   const { id } = await params;
   const body = acrVoteSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Check ACR is under review
   const [acr] = await db
     .select()
     .from(architectureChangeRequest)
-    .where(and(eq(architectureChangeRequest.id, id), eq(architectureChangeRequest.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(architectureChangeRequest.id, id),
+        eq(architectureChangeRequest.orgId, ctx.orgId),
+      ),
+    );
 
   if (!acr) {
-    return Response.json({ error: "Change request not found" }, { status: 404 });
+    return Response.json(
+      { error: "Change request not found" },
+      { status: 404 },
+    );
   }
 
   if (acr.status === "approved" || acr.status === "rejected") {
-    return Response.json({ error: "Voting closed after decision" }, { status: 409 });
+    return Response.json(
+      { error: "Voting closed after decision" },
+      { status: 409 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -49,7 +63,11 @@ export async function POST(
     if (existing) {
       const [updated] = await tx
         .update(architectureChangeVote)
-        .set({ vote: body.data.vote, comment: body.data.comment, votedAt: new Date() })
+        .set({
+          vote: body.data.vote,
+          comment: body.data.comment,
+          votedAt: new Date(),
+        })
         .where(eq(architectureChangeVote.id, existing.id))
         .returning();
       return updated;

@@ -37,7 +37,10 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const topN = Math.min(parseInt(url.searchParams.get("top") ?? "20", 10) || 20, 100);
+  const topN = Math.min(
+    parseInt(url.searchParams.get("top") ?? "20", 10) || 20,
+    100,
+  );
 
   // Module-Gating: user muss min. 1 Modul haben sonst kommt nichts zurueck.
   // Wir pruefen hier die "GRC-broad" Module: isms, ics, dpms.
@@ -160,9 +163,18 @@ export async function GET(req: Request) {
     .where(eq(aiCorrectiveAction.orgId, ctx.orgId));
 
   for (const ca of aiCas) {
-    const sev = ca.priority === "high" ? "high" : ca.priority === "low" ? "low" : "medium";
+    const sev =
+      ca.priority === "high"
+        ? "high"
+        : ca.priority === "low"
+          ? "low"
+          : "medium";
     const normStatus: NormalizedStatus =
-      ca.status === "closed" ? "closed" : ca.status === "in_progress" ? "in_progress" : "open";
+      ca.status === "closed"
+        ? "closed"
+        : ca.status === "in_progress"
+          ? "in_progress"
+          : "open";
     unified.push({
       id: `aica-${ca.id}`,
       sourceId: ca.id,
@@ -193,8 +205,10 @@ export async function GET(req: Request) {
     .where(and(eq(dataBreach.orgId, ctx.orgId), isNull(dataBreach.deletedAt)));
 
   for (const b of breaches) {
+    // breach_status enum has no "resolved" — only "closed" maps to closed,
+    // everything else is treated as in-progress/open for cross-module display.
     const normStatus: NormalizedStatus =
-      b.status === "closed" ? "closed" : b.status === "resolved" ? "resolved" : "open";
+      b.status === "closed" ? "closed" : "open";
     // GDPR Art. 33 => 72h deadline nach Erkennen, wenn DPA-Notification erforderlich
     const dueDate =
       b.isDpaNotificationRequired && !b.dpaNotifiedAt

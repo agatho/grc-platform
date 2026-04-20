@@ -48,14 +48,21 @@ function DmnListInner() {
   }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("dmn.title")}</h1>
-        <Button><Plus className="h-4 w-4 mr-2" />{t("dmn.createDecision")}</Button>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          {t("dmn.createDecision")}
+        </Button>
       </div>
 
       <div className="grid gap-3">

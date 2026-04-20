@@ -50,7 +50,7 @@ describe("EmailService", () => {
 
     // Always mock delay to avoid real setTimeout waits in tests
     vi.spyOn(service as never, "delay" as never).mockResolvedValue(
-      undefined as never
+      undefined as never,
     );
   });
 
@@ -84,7 +84,7 @@ describe("EmailService", () => {
       expect(result).toBeNull();
       expect(mockResendSend).not.toHaveBeenCalled();
       expect(consoleSpy).toHaveBeenCalledWith(
-        expect.stringContaining("[EmailService] disabled")
+        expect.stringContaining("[EmailService] disabled"),
       );
       consoleSpy.mockRestore();
     });
@@ -125,7 +125,7 @@ describe("EmailService", () => {
           to: "user@example.com",
           subject: expect.stringContaining("Neue Aufgabe zugewiesen"),
           react: expect.anything(),
-        })
+        }),
       );
     });
 
@@ -141,7 +141,7 @@ describe("EmailService", () => {
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           subject: expect.stringContaining("New task assigned"),
-        })
+        }),
       );
     });
   });
@@ -191,7 +191,7 @@ describe("EmailService", () => {
         .mockRejectedValueOnce(finalError);
 
       await expect(service.send(baseParams)).rejects.toThrow(
-        "Resend permanent failure"
+        "Resend permanent failure",
       );
       expect(mockResendSend).toHaveBeenCalledTimes(3);
     });
@@ -381,16 +381,12 @@ describe("EmailService", () => {
         expect(result.component).toBeDefined();
         expect(result.component).toHaveProperty("type");
         expect(result.component).toHaveProperty("props");
-      }
+      },
     );
 
     it("should throw for unknown template key", () => {
       expect(() =>
-        service.renderTemplate(
-          "nonexistent" as EmailTemplateKey,
-          {},
-          "en"
-        )
+        service.renderTemplate("nonexistent" as EmailTemplateKey, {}, "en"),
       ).toThrow("Unknown email template key");
     });
   });
@@ -417,7 +413,7 @@ describe("EmailService", () => {
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: "Custom Sender <custom@example.com>",
-        })
+        }),
       );
     });
 
@@ -435,7 +431,7 @@ describe("EmailService", () => {
       expect(mockResendSend).toHaveBeenCalledWith(
         expect.objectContaining({
           from: "ARCTOS GRC Platform <noreply@arctos.cws.de>",
-        })
+        }),
       );
     });
   });

@@ -5,16 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
-import {
-  Search,
-  Star,
-  Settings,
-  X,
-} from "lucide-react";
-import {
-  NAV_GROUPS_CONDENSED,
-  getAllFlatNavItems,
-} from "./nav-config";
+import { Search, Star, Settings, X } from "lucide-react";
+import { NAV_GROUPS_CONDENSED, getAllFlatNavItems } from "./nav-config";
 import { useNavPreferences } from "@/hooks/use-nav-preferences";
 import type { UserRole } from "@grc/shared";
 
@@ -43,7 +35,10 @@ function useUserRoles(orgId: string | null): UserRole[] {
   );
 }
 
-function isItemVisible(roles: UserRole[], itemRoles: UserRole[] | "all"): boolean {
+function isItemVisible(
+  roles: UserRole[],
+  itemRoles: UserRole[] | "all",
+): boolean {
   if (itemRoles === "all") return true;
   return itemRoles.some((r) => roles.includes(r));
 }
@@ -118,7 +113,8 @@ function SearchOverlay({
           ) : (
             results.map((item) => {
               const Icon = item.icon;
-              const isActive = pathname === item.href || pathname.startsWith(item.href + "/");
+              const isActive =
+                pathname === item.href || pathname.startsWith(item.href + "/");
               return (
                 <li key={`${item.groupKey}-${item.labelKey}`}>
                   <Link
@@ -190,9 +186,7 @@ function ModernNavItem({
         >
           <Icon size={16} />
         </span>
-        {expanded && (
-          <span className="truncate flex-1">{label}</span>
-        )}
+        {expanded && <span className="truncate flex-1">{label}</span>}
       </Link>
       {/* Pin button on hover when expanded */}
       {expanded && (hovered || pinned) && onTogglePin && (
@@ -220,7 +214,11 @@ function ModernNavItem({
 // Main Modern Sidebar
 // ──────────────────────────────────────────────────────────────
 
-export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, currentOrgId }: SidebarProps) {
+export function ModernSidebar({
+  collapsed: _collapsed,
+  onToggle: _onToggle,
+  currentOrgId,
+}: SidebarProps) {
   const pathname = usePathname();
   const t = useTranslations();
   const { data: session } = useSession();
@@ -302,7 +300,9 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
               <Search size={16} />
             </span>
             {expanded && (
-              <span className="text-gray-400 text-[13px]">{t("nav.search")}</span>
+              <span className="text-gray-400 text-[13px]">
+                {t("nav.search")}
+              </span>
             )}
           </button>
         </div>
@@ -314,7 +314,10 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
             <div className="mb-1">
               {expanded ? (
                 <p className="px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-gray-500 dark:text-gray-400">
-                  <Star size={9} className="inline-block mr-1 text-amber-400 fill-amber-400 -mt-0.5" />
+                  <Star
+                    size={9}
+                    className="inline-block mr-1 text-amber-400 fill-amber-400 -mt-0.5"
+                  />
                   {t("nav.favorites")}
                 </p>
               ) : (
@@ -390,7 +393,9 @@ export function ModernSidebar({ collapsed: _collapsed, onToggle: _onToggle, curr
           >
             <span
               className={`flex items-center justify-center w-8 h-8 rounded-full shrink-0 ${
-                isActive("/settings") ? "bg-blue-100 text-blue-700" : "text-gray-400"
+                isActive("/settings")
+                  ? "bg-blue-100 text-blue-700"
+                  : "text-gray-400"
               }`}
             >
               <Settings size={16} />

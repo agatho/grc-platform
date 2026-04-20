@@ -83,7 +83,11 @@ export async function GET(
       maturity: {
         avgCurrent: maturityStats.avgCurrent ?? 0,
         avgTarget: maturityStats.avgTarget ?? 0,
-        avgGap: Number(((maturityStats.avgTarget ?? 0) - (maturityStats.avgCurrent ?? 0)).toFixed(1)),
+        avgGap: Number(
+          (
+            (maturityStats.avgTarget ?? 0) - (maturityStats.avgCurrent ?? 0)
+          ).toFixed(1),
+        ),
       },
     },
   });

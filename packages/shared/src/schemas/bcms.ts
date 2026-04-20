@@ -41,10 +41,9 @@ export const submitBiaProcessImpactSchema = z
     peakPeriods: z.string().optional(),
     isEssential: z.boolean().default(false),
   })
-  .refine(
-    (d) => !d.rtoHours || !d.mtpdHours || d.rtoHours <= d.mtpdHours,
-    { message: "RTO must be <= MTPD" },
-  );
+  .refine((d) => !d.rtoHours || !d.mtpdHours || d.rtoHours <= d.mtpdHours, {
+    message: "RTO must be <= MTPD",
+  });
 
 export const biaStatusTransitions: Record<string, string[]> = {
   draft: ["in_progress"],
@@ -239,7 +238,8 @@ export const updateBcpProcedureSchema = createBcpProcedureSchema.partial();
 
 export const updateCrisisScenarioSchema = createCrisisScenarioSchema.partial();
 
-export const updateContinuityStrategySchema = createContinuityStrategySchema.partial();
+export const updateContinuityStrategySchema =
+  createContinuityStrategySchema.partial();
 
 export const updateBcExerciseSchema = createBcExerciseSchema.partial();
 
@@ -247,7 +247,13 @@ export const updateBcExerciseSchema = createBcExerciseSchema.partial();
 
 export const addCrisisTeamMemberSchema = z.object({
   userId: z.string().uuid(),
-  role: z.enum(["crisis_lead", "communication", "technical", "logistics", "legal"]),
+  role: z.enum([
+    "crisis_lead",
+    "communication",
+    "technical",
+    "logistics",
+    "legal",
+  ]),
   isPrimary: z.boolean().default(true),
   deputyUserId: z.string().uuid().optional(),
   phoneNumber: z.string().max(50).optional(),
@@ -267,5 +273,12 @@ export const createBiaSupplierDependencySchema = z.object({
 // ──────────── BCP Status Transition ────────────
 
 export const bcpStatusTransitionSchema = z.object({
-  status: z.enum(["draft", "in_review", "approved", "published", "archived", "superseded"]),
+  status: z.enum([
+    "draft",
+    "in_review",
+    "approved",
+    "published",
+    "archived",
+    "superseded",
+  ]),
 });

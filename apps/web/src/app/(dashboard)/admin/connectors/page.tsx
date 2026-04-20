@@ -134,7 +134,9 @@ export default function ConnectorManagementPage() {
         fetch("/api/v1/connectors/instances"),
       ]);
       const typesJson = await typesRes.json().catch(() => ({ data: [] }));
-      const instancesJson = await instancesRes.json().catch(() => ({ data: [] }));
+      const instancesJson = await instancesRes
+        .json()
+        .catch(() => ({ data: [] }));
       setConnectorTypes(typesJson.data ?? []);
       setInstances(instancesJson.data ?? []);
     } catch {
@@ -228,9 +230,7 @@ export default function ConnectorManagementPage() {
             <p className="mt-1 text-lg font-semibold">
               {connectorTypes.length}
             </p>
-            <p className="text-xs text-muted-foreground">
-              Verfügbare Typen
-            </p>
+            <p className="text-xs text-muted-foreground">Verfügbare Typen</p>
           </CardContent>
         </Card>
         <Card>
@@ -267,9 +267,7 @@ export default function ConnectorManagementPage() {
         <Card>
           <CardContent className="py-12 text-center text-muted-foreground">
             <Cable className="mx-auto mb-3 h-10 w-10 opacity-50" />
-            <p className="font-medium">
-              Keine Konnektor-Typen verfügbar
-            </p>
+            <p className="font-medium">Keine Konnektor-Typen verfügbar</p>
             <p className="mt-1 text-sm">
               Konnektor-Typen werden über die API bereitgestellt.
             </p>
@@ -282,8 +280,7 @@ export default function ConnectorManagementPage() {
         const types = typesByCategory[category] ?? [];
         const catKey = category as CategoryKey;
         const CatIcon = CATEGORY_ICONS[catKey] ?? Cable;
-        const catColor =
-          CATEGORY_COLORS[catKey] ?? "bg-gray-100 text-gray-800";
+        const catColor = CATEGORY_COLORS[catKey] ?? "bg-gray-100 text-gray-800";
 
         return (
           <div key={category} className="space-y-3">
@@ -302,10 +299,7 @@ export default function ConnectorManagementPage() {
                 const isConfigured = ctInstances.length > 0;
 
                 return (
-                  <Card
-                    key={ct.id}
-                    className="relative overflow-hidden"
-                  >
+                  <Card key={ct.id} className="relative overflow-hidden">
                     <CardHeader className="pb-3">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center gap-3">
@@ -388,9 +382,7 @@ export default function ConnectorManagementPage() {
                         <div className="space-y-2 rounded-md border bg-muted/30 p-2">
                           <p className="text-xs font-medium">
                             {ctInstances.length} konfigurierte{" "}
-                            {ctInstances.length === 1
-                              ? "Instanz"
-                              : "Instanzen"}
+                            {ctInstances.length === 1 ? "Instanz" : "Instanzen"}
                           </p>
                           {ctInstances.map((inst) => (
                             <div

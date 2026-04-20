@@ -111,15 +111,18 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const res = await fetch(`/api/v1/processes/${processId}/review-schedule`, {
-        method: schedule?.id ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          isActive,
-          reviewIntervalMonths: intervalMonths,
-          assignedReviewerId: reviewerId || undefined,
-        }),
-      });
+      const res = await fetch(
+        `/api/v1/processes/${processId}/review-schedule`,
+        {
+          method: schedule?.id ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            isActive,
+            reviewIntervalMonths: intervalMonths,
+            assignedReviewerId: reviewerId || undefined,
+          }),
+        },
+      );
       if (!res.ok) throw new Error("Failed to save review schedule");
       toast.success(t("review.saved"));
       void fetchSchedule();
@@ -228,7 +231,12 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
         )}
 
         {/* Save button */}
-        <Button onClick={handleSave} disabled={saving} size="sm" className="w-full">
+        <Button
+          onClick={handleSave}
+          disabled={saving}
+          size="sm"
+          className="w-full"
+        >
           {saving ? (
             <Loader2 size={14} className="animate-spin" />
           ) : (

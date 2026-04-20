@@ -1,4 +1,9 @@
-import { db, technologyEntry, technologyApplicationLink, architectureElement } from "@grc/db";
+import {
+  db,
+  technologyEntry,
+  technologyApplicationLink,
+  architectureElement,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -20,7 +25,12 @@ export async function GET(req: Request) {
       appCount: sql<number>`(SELECT count(*) FROM technology_application_link tal WHERE tal.technology_id = ${technologyEntry.id})::int`,
     })
     .from(technologyEntry)
-    .where(and(eq(technologyEntry.orgId, ctx.orgId), eq(technologyEntry.ring, "hold")));
+    .where(
+      and(
+        eq(technologyEntry.orgId, ctx.orgId),
+        eq(technologyEntry.ring, "hold"),
+      ),
+    );
 
   const withUsage = holdTechs.filter((t) => t.appCount > 0);
 

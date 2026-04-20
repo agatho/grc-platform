@@ -35,10 +35,15 @@ export async function processAnomalyDetection(): Promise<{
       // Placeholder: log execution
       console.log(`[anomaly-detection-runner] Model ${model.name} completed`);
     } catch (err) {
-      console.error(`[anomaly-detection-runner] Model ${model.name} failed:`, err);
+      console.error(
+        `[anomaly-detection-runner] Model ${model.name} failed:`,
+        err,
+      );
     }
   }
 
-  console.log(`[anomaly-detection-runner] Processed ${models.length} models, detected ${anomaliesDetected} anomalies`);
+  console.log(
+    `[anomaly-detection-runner] Processed ${models.length} models, detected ${anomaliesDetected} anomalies`,
+  );
   return { modelsProcessed: models.length, anomaliesDetected };
 }

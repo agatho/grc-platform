@@ -4,7 +4,12 @@ import React from "react";
 
 interface MyBPMHomepageProps {
   recentlyViewed: { id: string; name: string; lastViewed: string }[];
-  ownedProcesses: { id: string; name: string; status: string; health: string }[];
+  ownedProcesses: {
+    id: string;
+    name: string;
+    status: string;
+    health: string;
+  }[];
   pendingGovernance: { id: string; name: string; action: string }[];
   onProcessClick?: (processId: string) => void;
   labels?: {
@@ -38,7 +43,9 @@ export function MyBPMHomepage({
             {labels?.recentlyViewed ?? "Recently Viewed"}
           </h3>
           {recentlyViewed.length === 0 ? (
-            <p className="text-sm text-gray-400">{labels?.noRecent ?? "No recent processes"}</p>
+            <p className="text-sm text-gray-400">
+              {labels?.noRecent ?? "No recent processes"}
+            </p>
           ) : (
             <div className="space-y-2">
               {recentlyViewed.map((proc) => (
@@ -61,7 +68,9 @@ export function MyBPMHomepage({
             {labels?.myProcesses ?? "My Processes"}
           </h3>
           {ownedProcesses.length === 0 ? (
-            <p className="text-sm text-gray-400">{labels?.noOwned ?? "No owned processes"}</p>
+            <p className="text-sm text-gray-400">
+              {labels?.noOwned ?? "No owned processes"}
+            </p>
           ) : (
             <div className="space-y-2">
               {ownedProcesses.map((proc) => (
@@ -85,7 +94,9 @@ export function MyBPMHomepage({
             {labels?.pendingActions ?? "Pending Actions"}
           </h3>
           {pendingGovernance.length === 0 ? (
-            <p className="text-sm text-gray-400">{labels?.noPending ?? "No pending actions"}</p>
+            <p className="text-sm text-gray-400">
+              {labels?.noPending ?? "No pending actions"}
+            </p>
           ) : (
             <div className="space-y-2">
               {pendingGovernance.map((proc) => (

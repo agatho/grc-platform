@@ -34,9 +34,7 @@ const ERM_DASHBOARD_SEEDS = [
     key: "erm_my_todos",
     module: "erm",
     layout: {
-      widgets: [
-        { type: "my_todos_erm", w: 12, h: 8, x: 0, y: 0 },
-      ],
+      widgets: [{ type: "my_todos_erm", w: 12, h: 8, x: 0, y: 0 }],
     },
   },
   {

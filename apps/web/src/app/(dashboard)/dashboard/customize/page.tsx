@@ -41,18 +41,90 @@ interface WidgetDef {
 }
 
 const WIDGET_REGISTRY: WidgetDef[] = [
-  { id: "risk-heatmap", nameKey: "widgetRiskHeatmap", icon: Grid3X3, defaultW: 2, defaultH: 2 },
-  { id: "task-list", nameKey: "widgetTaskList", icon: CheckSquare, defaultW: 2, defaultH: 1 },
-  { id: "audit-timeline", nameKey: "widgetAuditTimeline", icon: Calendar, defaultW: 2, defaultH: 1 },
-  { id: "compliance-status", nameKey: "widgetComplianceStatus", icon: Shield, defaultW: 1, defaultH: 1 },
-  { id: "incident-feed", nameKey: "widgetIncidentFeed", icon: AlertTriangle, defaultW: 2, defaultH: 1 },
-  { id: "control-health", nameKey: "widgetControlHealth", icon: Activity, defaultW: 1, defaultH: 1 },
-  { id: "kpi-summary", nameKey: "widgetKpiSummary", icon: BarChart3, defaultW: 2, defaultH: 1 },
-  { id: "notifications", nameKey: "widgetNotifications", icon: Bell, defaultW: 1, defaultH: 1 },
-  { id: "data-breach-status", nameKey: "widgetDataBreach", icon: Lock, defaultW: 1, defaultH: 1 },
-  { id: "document-recent", nameKey: "widgetDocumentRecent", icon: FileText, defaultW: 2, defaultH: 1 },
-  { id: "wb-statistics", nameKey: "widgetWbStatistics", icon: MessageSquare, defaultW: 1, defaultH: 1 },
-  { id: "asset-overview", nameKey: "widgetAssetOverview", icon: Server, defaultW: 1, defaultH: 1 },
+  {
+    id: "risk-heatmap",
+    nameKey: "widgetRiskHeatmap",
+    icon: Grid3X3,
+    defaultW: 2,
+    defaultH: 2,
+  },
+  {
+    id: "task-list",
+    nameKey: "widgetTaskList",
+    icon: CheckSquare,
+    defaultW: 2,
+    defaultH: 1,
+  },
+  {
+    id: "audit-timeline",
+    nameKey: "widgetAuditTimeline",
+    icon: Calendar,
+    defaultW: 2,
+    defaultH: 1,
+  },
+  {
+    id: "compliance-status",
+    nameKey: "widgetComplianceStatus",
+    icon: Shield,
+    defaultW: 1,
+    defaultH: 1,
+  },
+  {
+    id: "incident-feed",
+    nameKey: "widgetIncidentFeed",
+    icon: AlertTriangle,
+    defaultW: 2,
+    defaultH: 1,
+  },
+  {
+    id: "control-health",
+    nameKey: "widgetControlHealth",
+    icon: Activity,
+    defaultW: 1,
+    defaultH: 1,
+  },
+  {
+    id: "kpi-summary",
+    nameKey: "widgetKpiSummary",
+    icon: BarChart3,
+    defaultW: 2,
+    defaultH: 1,
+  },
+  {
+    id: "notifications",
+    nameKey: "widgetNotifications",
+    icon: Bell,
+    defaultW: 1,
+    defaultH: 1,
+  },
+  {
+    id: "data-breach-status",
+    nameKey: "widgetDataBreach",
+    icon: Lock,
+    defaultW: 1,
+    defaultH: 1,
+  },
+  {
+    id: "document-recent",
+    nameKey: "widgetDocumentRecent",
+    icon: FileText,
+    defaultW: 2,
+    defaultH: 1,
+  },
+  {
+    id: "wb-statistics",
+    nameKey: "widgetWbStatistics",
+    icon: MessageSquare,
+    defaultW: 1,
+    defaultH: 1,
+  },
+  {
+    id: "asset-overview",
+    nameKey: "widgetAssetOverview",
+    icon: Server,
+    defaultW: 1,
+    defaultH: 1,
+  },
 ];
 
 const SIZE_OPTIONS = [
@@ -77,7 +149,8 @@ export default function DashboardCustomizePage() {
   const [hasChanges, setHasChanges] = useState(false);
   const [sizeMenuOpen, setSizeMenuOpen] = useState<string | null>(null);
 
-  const orgId = session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
+  const orgId =
+    session?.user?.currentOrgId ?? session?.user?.roles?.[0]?.orgId ?? null;
 
   // Fetch layout on mount
   useEffect(() => {
@@ -129,37 +202,34 @@ export default function DashboardCustomizePage() {
     [layout],
   );
 
-  const addWidget = useCallback((widgetDef: WidgetDef) => {
-    const maxY = layout.reduce(
-      (max, w) => Math.max(max, w.y + w.h),
-      0,
-    );
-    setLayout((prev) => [
-      ...prev,
-      {
-        widgetId: widgetDef.id,
-        x: 0,
-        y: maxY,
-        w: widgetDef.defaultW,
-        h: widgetDef.defaultH,
-        visible: true,
-      },
-    ]);
-    setHasChanges(true);
-  }, [layout]);
-
-  const changeSize = useCallback(
-    (widgetId: string, w: number, h: number) => {
-      setLayout((prev) =>
-        prev.map((widget) =>
-          widget.widgetId === widgetId ? { ...widget, w, h } : widget,
-        ),
-      );
-      setSizeMenuOpen(null);
+  const addWidget = useCallback(
+    (widgetDef: WidgetDef) => {
+      const maxY = layout.reduce((max, w) => Math.max(max, w.y + w.h), 0);
+      setLayout((prev) => [
+        ...prev,
+        {
+          widgetId: widgetDef.id,
+          x: 0,
+          y: maxY,
+          w: widgetDef.defaultW,
+          h: widgetDef.defaultH,
+          visible: true,
+        },
+      ]);
       setHasChanges(true);
     },
-    [],
+    [layout],
   );
+
+  const changeSize = useCallback((widgetId: string, w: number, h: number) => {
+    setLayout((prev) =>
+      prev.map((widget) =>
+        widget.widgetId === widgetId ? { ...widget, w, h } : widget,
+      ),
+    );
+    setSizeMenuOpen(null);
+    setHasChanges(true);
+  }, []);
 
   const handleSave = useCallback(async () => {
     setIsSaving(true);
@@ -183,14 +253,11 @@ export default function DashboardCustomizePage() {
     if (!orgId) return;
     setIsSaving(true);
     try {
-      await fetch(
-        `/api/v1/organizations/${orgId}/dashboard-layout/default`,
-        {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ layoutJson: layout }),
-        },
-      );
+      await fetch(`/api/v1/organizations/${orgId}/dashboard-layout/default`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ layoutJson: layout }),
+      });
     } catch {
       // Save failed
     } finally {
@@ -384,9 +451,7 @@ export default function DashboardCustomizePage() {
             </div>
             <div className="space-y-2">
               {WIDGET_REGISTRY.map((wd) => {
-                const inLayout = layout.some(
-                  (l) => l.widgetId === wd.id,
-                );
+                const inLayout = layout.some((l) => l.widgetId === wd.id);
                 const isVisible = layout.some(
                   (l) => l.widgetId === wd.id && l.visible,
                 );

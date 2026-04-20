@@ -19,7 +19,12 @@ export async function GET(
   const [element] = await db
     .select()
     .from(architectureElement)
-    .where(and(eq(architectureElement.id, id), eq(architectureElement.orgId, ctx.orgId)));
+    .where(
+      and(
+        eq(architectureElement.id, id),
+        eq(architectureElement.orgId, ctx.orgId),
+      ),
+    );
 
   if (!element) {
     return Response.json({ error: "Element not found" }, { status: 404 });
@@ -55,14 +60,22 @@ export async function PUT(
   const { id } = await params;
   const body = updateArchitectureElementSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
       .update(architectureElement)
       .set({ ...body.data, updatedAt: new Date() })
-      .where(and(eq(architectureElement.id, id), eq(architectureElement.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(architectureElement.id, id),
+          eq(architectureElement.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return updated;
   });
@@ -90,7 +103,12 @@ export async function DELETE(
   const result = await withAuditContext(ctx, async (tx) => {
     const [deleted] = await tx
       .delete(architectureElement)
-      .where(and(eq(architectureElement.id, id), eq(architectureElement.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(architectureElement.id, id),
+          eq(architectureElement.orgId, ctx.orgId),
+        ),
+      )
       .returning({ id: architectureElement.id });
     return deleted;
   });

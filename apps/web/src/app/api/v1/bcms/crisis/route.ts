@@ -2,7 +2,12 @@ import { db, crisisScenario } from "@grc/db";
 import { createCrisisScenarioSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc, ilike, or, inArray } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/crisis — Create crisis scenario
@@ -56,20 +61,33 @@ export async function GET(req: Request) {
 
   const statusParam = searchParams.get("status");
   if (statusParam) {
-    const statuses = statusParam.split(",") as Array<"standby" | "activated" | "resolved" | "post_mortem">;
+    const statuses = statusParam.split(",") as Array<
+      "standby" | "activated" | "resolved" | "post_mortem"
+    >;
     conditions.push(inArray(crisisScenario.status, statuses));
   }
 
   const search = searchParams.get("search");
   if (search) {
     const pattern = `%${search}%`;
-    conditions.push(or(ilike(crisisScenario.name, pattern), ilike(crisisScenario.description, pattern))!);
+    conditions.push(
+      or(
+        ilike(crisisScenario.name, pattern),
+        ilike(crisisScenario.description, pattern),
+      )!,
+    );
   }
 
   const where = and(...conditions);
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(crisisScenario).where(where).orderBy(desc(crisisScenario.updatedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(crisisScenario)
+      .where(where)
+      .orderBy(desc(crisisScenario.updatedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(crisisScenario).where(where),
   ]);
 

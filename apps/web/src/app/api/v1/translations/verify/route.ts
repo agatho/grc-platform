@@ -7,7 +7,13 @@ import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "process_owner", "dpo");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "dpo",
+  );
   if (ctx instanceof Response) return ctx;
 
   const body = verifyTranslationSchema.safeParse(await req.json());
@@ -23,7 +29,10 @@ export async function POST(req: Request) {
   // Validate field is translatable
   const fields = TRANSLATABLE_FIELDS[entityType];
   if (!fields || !fields.includes(field)) {
-    return Response.json({ error: "Field is not translatable for this entity type" }, { status: 422 });
+    return Response.json(
+      { error: "Field is not translatable for this entity type" },
+      { status: 422 },
+    );
   }
 
   // Find the translation_status record
@@ -41,11 +50,16 @@ export async function POST(req: Request) {
     );
 
   if (!existing) {
-    return Response.json({ error: "Translation status record not found" }, { status: 404 });
+    return Response.json(
+      { error: "Translation status record not found" },
+      { status: 404 },
+    );
   }
 
   if (existing.status === "verified") {
-    return Response.json({ data: { message: "Already verified", status: existing } });
+    return Response.json({
+      data: { message: "Already verified", status: existing },
+    });
   }
 
   await withAuditContext(ctx, async (tx) => {

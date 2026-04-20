@@ -1,10 +1,4 @@
-import {
-  db,
-  dataBreach,
-  workItem,
-  notification,
-  user,
-} from "@grc/db";
+import { db, dataBreach, workItem, notification, user } from "@grc/db";
 import { createDataBreachSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import {
@@ -74,7 +68,8 @@ export async function POST(req: Request) {
         estimatedRecordsAffected: body.data.estimatedRecordsAffected,
         affectedCountries: body.data.affectedCountries,
         isDpaNotificationRequired: body.data.isDpaNotificationRequired,
-        isIndividualNotificationRequired: body.data.isIndividualNotificationRequired,
+        isIndividualNotificationRequired:
+          body.data.isIndividualNotificationRequired,
         containmentMeasures: body.data.containmentMeasures,
         dpoId: body.data.dpoId,
         assigneeId: body.data.assigneeId,
@@ -127,7 +122,12 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "detected" | "assessing" | "notifying_dpa" | "notifying_individuals" | "remediation" | "closed"
+      | "detected"
+      | "assessing"
+      | "notifying_dpa"
+      | "notifying_individuals"
+      | "remediation"
+      | "closed"
     >;
     conditions.push(inArray(dataBreach.status, statuses));
   }
@@ -177,7 +177,8 @@ export async function GET(req: Request) {
         detectedAt: dataBreach.detectedAt,
         dpaNotifiedAt: dataBreach.dpaNotifiedAt,
         isDpaNotificationRequired: dataBreach.isDpaNotificationRequired,
-        isIndividualNotificationRequired: dataBreach.isIndividualNotificationRequired,
+        isIndividualNotificationRequired:
+          dataBreach.isIndividualNotificationRequired,
         estimatedRecordsAffected: dataBreach.estimatedRecordsAffected,
         affectedCountries: dataBreach.affectedCountries,
         assigneeId: dataBreach.assigneeId,

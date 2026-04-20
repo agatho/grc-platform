@@ -3,7 +3,13 @@
 import React from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { GripVertical, Settings, Trash2, RefreshCcw, AlertCircle } from "lucide-react";
+import {
+  GripVertical,
+  Settings,
+  Trash2,
+  RefreshCcw,
+  AlertCircle,
+} from "lucide-react";
 import type { WidgetConfig } from "@grc/shared";
 import { getWidgetRenderer } from "./widget-registry";
 
@@ -90,7 +96,11 @@ export function DashboardWidgetFrame({
         {error && !isLoading ? (
           <div className="flex h-full flex-col items-center justify-center gap-2 text-sm text-muted-foreground">
             <AlertCircle className="h-5 w-5" />
-            <span>{error === "Module not activated" ? "Modul nicht verfuegbar" : "Daten nicht verfuegbar"}</span>
+            <span>
+              {error === "Module not activated"
+                ? "Modul nicht verfuegbar"
+                : "Daten nicht verfuegbar"}
+            </span>
           </div>
         ) : (
           <WidgetRenderer

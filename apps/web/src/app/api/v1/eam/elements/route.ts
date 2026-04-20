@@ -1,5 +1,8 @@
 import { db, architectureElement } from "@grc/db";
-import { createArchitectureElementSchema, VALID_LAYER_TYPES } from "@grc/shared";
+import {
+  createArchitectureElementSchema,
+  VALID_LAYER_TYPES,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -14,15 +17,21 @@ export async function POST(req: Request) {
 
   const body = createArchitectureElementSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Layer-type validation
   const validTypes = VALID_LAYER_TYPES[body.data.layer];
   if (!validTypes?.includes(body.data.type)) {
-    return Response.json({
-      error: `Type '${body.data.type}' is not valid for layer '${body.data.layer}'. Valid types: ${validTypes?.join(", ")}`,
-    }, { status: 400 });
+    return Response.json(
+      {
+        error: `Type '${body.data.type}' is not valid for layer '${body.data.layer}'. Valid types: ${validTypes?.join(", ")}`,
+      },
+      { status: 400 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -52,7 +61,13 @@ export async function GET(req: Request) {
   const offset = parseInt(url.searchParams.get("offset") ?? "0");
 
   const conditions = [eq(architectureElement.orgId, ctx.orgId)];
-  if (layer) conditions.push(eq(architectureElement.layer, layer as "business" | "application" | "technology"));
+  if (layer)
+    conditions.push(
+      eq(
+        architectureElement.layer,
+        layer as "business" | "application" | "technology",
+      ),
+    );
   if (type) conditions.push(eq(architectureElement.type, type as any));
   if (status) conditions.push(eq(architectureElement.status, status));
 

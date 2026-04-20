@@ -1,10 +1,4 @@
-import {
-  db,
-  process,
-  processStep,
-  processStepRisk,
-  risk,
-} from "@grc/db";
+import { db, process, processStep, processStepRisk, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -180,10 +174,7 @@ export async function GET(
     .from(processStepRisk)
     .innerJoin(risk, eq(processStepRisk.riskId, risk.id))
     .where(
-      and(
-        eq(processStepRisk.processStepId, stepId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(processStepRisk.processStepId, stepId), isNull(risk.deletedAt)),
     );
 
   return Response.json({ data: risks });

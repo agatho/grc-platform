@@ -102,7 +102,11 @@ export interface EventLogEntry {
 
 export type WebhookTemplateType = "generic" | "slack" | "teams";
 
-export type WebhookDeliveryStatus = "pending" | "delivered" | "failed" | "retrying";
+export type WebhookDeliveryStatus =
+  | "pending"
+  | "delivered"
+  | "failed"
+  | "retrying";
 
 export interface EventFilter {
   entityTypes?: string[];

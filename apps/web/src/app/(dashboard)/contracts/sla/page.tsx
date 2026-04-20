@@ -47,7 +47,9 @@ function SlaMonitoringInner() {
     setLoading(true);
     try {
       // Fetch active contracts
-      const cRes = await fetch("/api/v1/contracts?limit=200&status=active,renewal");
+      const cRes = await fetch(
+        "/api/v1/contracts?limit=200&status=active,renewal",
+      );
       if (!cRes.ok) return;
       const cJson = await cRes.json();
       const contracts = cJson.data ?? [];
@@ -64,7 +66,9 @@ function SlaMonitoringInner() {
             let latestBreach: boolean | undefined;
             let latestPeriodEnd: string | undefined;
             try {
-              const mRes = await fetch(`/api/v1/contracts/${c.id}/sla/${sla.id}/measurements?limit=1`);
+              const mRes = await fetch(
+                `/api/v1/contracts/${c.id}/sla/${sla.id}/measurements?limit=1`,
+              );
               if (mRes.ok) {
                 const mJson = await mRes.json();
                 const latest = mJson.data?.[0];
@@ -123,10 +127,19 @@ function SlaMonitoringInner() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">{t("slaMonitoring")}</h1>
-          <p className="text-sm text-gray-500 mt-1">{slaData.length} SLA {t("metrics")}</p>
+          <h1 className="text-2xl font-bold text-gray-900">
+            {t("slaMonitoring")}
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">
+            {slaData.length} SLA {t("metrics")}
+          </p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchSlaData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchSlaData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -168,29 +181,45 @@ function SlaMonitoringInner() {
               className={`flex items-center justify-between rounded-lg border px-4 py-3 bg-white hover:border-blue-300 transition-colors ${s.latestBreach ? "border-red-200" : "border-gray-200"}`}
             >
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900">{s.metricName}</p>
-                <p className="text-xs text-gray-500 truncate">{s.contractTitle}</p>
+                <p className="text-sm font-medium text-gray-900">
+                  {s.metricName}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {s.contractTitle}
+                </p>
               </div>
               <div className="flex items-center gap-4 shrink-0 ml-4">
                 <span className="text-xs text-gray-500">
-                  {t("sla.target")}: {s.targetValue}{s.unit}
+                  {t("sla.target")}: {s.targetValue}
+                  {s.unit}
                 </span>
                 {s.latestActual != null && (
-                  <span className={`text-xs font-medium ${s.latestBreach ? "text-red-600" : "text-green-600"}`}>
-                    {t("sla.actual")}: {s.latestActual}{s.unit}
+                  <span
+                    className={`text-xs font-medium ${s.latestBreach ? "text-red-600" : "text-green-600"}`}
+                  >
+                    {t("sla.actual")}: {s.latestActual}
+                    {s.unit}
                   </span>
                 )}
                 {s.latestBreach === true && (
-                  <Badge variant="outline" className="bg-red-100 text-red-900 border-red-200 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="bg-red-100 text-red-900 border-red-200 text-xs"
+                  >
                     {t("sla.breach")}
                   </Badge>
                 )}
                 {s.latestBreach === false && (
-                  <Badge variant="outline" className="bg-green-100 text-green-900 border-green-200 text-xs">
+                  <Badge
+                    variant="outline"
+                    className="bg-green-100 text-green-900 border-green-200 text-xs"
+                  >
                     {t("sla.ok")}
                   </Badge>
                 )}
-                <Badge variant="outline" className="text-xs">{s.measurementFrequency}</Badge>
+                <Badge variant="outline" className="text-xs">
+                  {s.measurementFrequency}
+                </Badge>
               </div>
             </Link>
           ))}

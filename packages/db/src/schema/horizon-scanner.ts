@@ -26,8 +26,7 @@ export const horizonScanSource = pgTable(
   "horizon_scan_source",
   {
     id: uuid("id").primaryKey().defaultRandom(),
-    orgId: uuid("org_id")
-      .references(() => organization.id), // NULL = platform-wide
+    orgId: uuid("org_id").references(() => organization.id), // NULL = platform-wide
     name: varchar("name", { length: 500 }).notNull(),
     sourceType: varchar("source_type", { length: 50 }).notNull(), // eu_oj | bsi | bafin | enisa | eba | esma | cert | national_gazette | custom
     url: varchar("url", { length: 2000 }),
@@ -57,13 +56,16 @@ export const horizonScanSource = pgTable(
   }),
 );
 
-export const horizonScanSourceRelations = relations(horizonScanSource, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [horizonScanSource.orgId],
-    references: [organization.id],
+export const horizonScanSourceRelations = relations(
+  horizonScanSource,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [horizonScanSource.orgId],
+      references: [organization.id],
+    }),
+    items: many(horizonScanItem),
   }),
-  items: many(horizonScanItem),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 75.2 Horizon Scan Item — Detected regulatory changes
@@ -76,8 +78,7 @@ export const horizonScanItem = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    sourceId: uuid("source_id")
-      .references(() => horizonScanSource.id),
+    sourceId: uuid("source_id").references(() => horizonScanSource.id),
     externalId: varchar("external_id", { length: 500 }),
     title: varchar("title", { length: 1000 }).notNull(),
     summary: text("summary").notNull(),
@@ -115,26 +116,33 @@ export const horizonScanItem = pgTable(
     classIdx: index("hs_item_class_idx").on(table.orgId, table.classification),
     statusIdx: index("hs_item_status_idx").on(table.orgId, table.status),
     dateIdx: index("hs_item_date_idx").on(table.orgId, table.publishedAt),
-    externalIdx: uniqueIndex("hs_item_external_idx").on(table.orgId, table.sourceId, table.externalId),
+    externalIdx: uniqueIndex("hs_item_external_idx").on(
+      table.orgId,
+      table.sourceId,
+      table.externalId,
+    ),
     typeIdx: index("hs_item_type_idx").on(table.orgId, table.itemType),
   }),
 );
 
-export const horizonScanItemRelations = relations(horizonScanItem, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [horizonScanItem.orgId],
-    references: [organization.id],
+export const horizonScanItemRelations = relations(
+  horizonScanItem,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [horizonScanItem.orgId],
+      references: [organization.id],
+    }),
+    source: one(horizonScanSource, {
+      fields: [horizonScanItem.sourceId],
+      references: [horizonScanSource.id],
+    }),
+    reviewer: one(user, {
+      fields: [horizonScanItem.reviewedBy],
+      references: [user.id],
+    }),
+    impactAssessments: many(horizonImpactAssessment),
   }),
-  source: one(horizonScanSource, {
-    fields: [horizonScanItem.sourceId],
-    references: [horizonScanSource.id],
-  }),
-  reviewer: one(user, {
-    fields: [horizonScanItem.reviewedBy],
-    references: [user.id],
-  }),
-  impactAssessments: many(horizonImpactAssessment),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 75.3 Horizon Impact Assessment
@@ -178,24 +186,27 @@ export const horizonImpactAssessment = pgTable(
   }),
 );
 
-export const horizonImpactAssessmentRelations = relations(horizonImpactAssessment, ({ one }) => ({
-  organization: one(organization, {
-    fields: [horizonImpactAssessment.orgId],
-    references: [organization.id],
+export const horizonImpactAssessmentRelations = relations(
+  horizonImpactAssessment,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [horizonImpactAssessment.orgId],
+      references: [organization.id],
+    }),
+    scanItem: one(horizonScanItem, {
+      fields: [horizonImpactAssessment.scanItemId],
+      references: [horizonScanItem.id],
+    }),
+    assessor: one(user, {
+      fields: [horizonImpactAssessment.assessedBy],
+      references: [user.id],
+    }),
+    approver: one(user, {
+      fields: [horizonImpactAssessment.approvedBy],
+      references: [user.id],
+    }),
   }),
-  scanItem: one(horizonScanItem, {
-    fields: [horizonImpactAssessment.scanItemId],
-    references: [horizonScanItem.id],
-  }),
-  assessor: one(user, {
-    fields: [horizonImpactAssessment.assessedBy],
-    references: [user.id],
-  }),
-  approver: one(user, {
-    fields: [horizonImpactAssessment.approvedBy],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 75.4 Horizon Calendar Event — Regulatory deadlines
@@ -208,8 +219,7 @@ export const horizonCalendarEvent = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    scanItemId: uuid("scan_item_id")
-      .references(() => horizonScanItem.id),
+    scanItemId: uuid("scan_item_id").references(() => horizonScanItem.id),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     eventType: varchar("event_type", { length: 50 }).notNull(), // compliance_deadline | enforcement_date | consultation_end | reporting_deadline | transition_period
@@ -235,17 +245,20 @@ export const horizonCalendarEvent = pgTable(
   }),
 );
 
-export const horizonCalendarEventRelations = relations(horizonCalendarEvent, ({ one }) => ({
-  organization: one(organization, {
-    fields: [horizonCalendarEvent.orgId],
-    references: [organization.id],
+export const horizonCalendarEventRelations = relations(
+  horizonCalendarEvent,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [horizonCalendarEvent.orgId],
+      references: [organization.id],
+    }),
+    scanItem: one(horizonScanItem, {
+      fields: [horizonCalendarEvent.scanItemId],
+      references: [horizonScanItem.id],
+    }),
+    assignee: one(user, {
+      fields: [horizonCalendarEvent.assigneeId],
+      references: [user.id],
+    }),
   }),
-  scanItem: one(horizonScanItem, {
-    fields: [horizonCalendarEvent.scanItemId],
-    references: [horizonScanItem.id],
-  }),
-  assignee: one(user, {
-    fields: [horizonCalendarEvent.assigneeId],
-    references: [user.id],
-  }),
-}));
+);

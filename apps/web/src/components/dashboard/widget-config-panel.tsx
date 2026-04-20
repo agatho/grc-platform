@@ -58,7 +58,9 @@ export function WidgetConfigPanel({
     existingConfig?.displayOptions?.title ?? "",
   );
   const [color, setColor] = useState(
-    existingConfig?.displayOptions?.color ?? defaultConf.displayOptions?.color ?? "#3B82F6",
+    existingConfig?.displayOptions?.color ??
+      defaultConf.displayOptions?.color ??
+      "#3B82F6",
   );
   const [timeRange, setTimeRange] = useState<string>(
     existingConfig?.displayOptions?.timeRange ?? "month",
@@ -95,9 +97,7 @@ export function WidgetConfigPanel({
     <Sheet open={open} onOpenChange={(v) => !v && onClose()}>
       <SheetContent side="right" className="w-80">
         <SheetHeader>
-          <SheetTitle className="text-base">
-            {t("configureWidget")}
-          </SheetTitle>
+          <SheetTitle className="text-base">{t("configureWidget")}</SheetTitle>
         </SheetHeader>
 
         <div className="mt-4 space-y-4">
@@ -164,10 +164,7 @@ export function WidgetConfigPanel({
           {/* Time Range */}
           <div>
             <Label className="text-xs">{t("timeRange")}</Label>
-            <Select
-              value={timeRange}
-              onValueChange={setTimeRange}
-            >
+            <Select value={timeRange} onValueChange={setTimeRange}>
               <SelectTrigger className="h-8 text-xs">
                 <SelectValue />
               </SelectTrigger>
@@ -202,10 +199,7 @@ export function WidgetConfigPanel({
           {definition.type === "kpi" && (
             <div className="flex items-center justify-between">
               <Label className="text-xs">{t("showTrend")}</Label>
-              <Switch
-                checked={showTrend}
-                onCheckedChange={setShowTrend}
-              />
+              <Switch checked={showTrend} onCheckedChange={setShowTrend} />
             </div>
           )}
 
@@ -213,10 +207,7 @@ export function WidgetConfigPanel({
           {definition.type === "chart" && (
             <div className="flex items-center justify-between">
               <Label className="text-xs">{t("showLegend")}</Label>
-              <Switch
-                checked={showLegend}
-                onCheckedChange={setShowLegend}
-              />
+              <Switch checked={showLegend} onCheckedChange={setShowLegend} />
             </div>
           )}
         </div>

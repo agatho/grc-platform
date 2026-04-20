@@ -20,7 +20,8 @@ export async function POST(req: Request) {
     const metadata = await fetchAndParseSAMLMetadata(parsed.data.metadataUrl);
     return Response.json({ data: metadata });
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to parse metadata";
+    const message =
+      err instanceof Error ? err.message : "Failed to parse metadata";
     return Response.json({ error: message }, { status: 422 });
   }
 }

@@ -1,4 +1,11 @@
-import { db, rcsaAssignment, rcsaResponse, rcsaCampaign, risk, control } from "@grc/db";
+import {
+  db,
+  rcsaAssignment,
+  rcsaResponse,
+  rcsaCampaign,
+  risk,
+  control,
+} from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
@@ -55,7 +62,10 @@ export async function GET(req: Request, { params }: RouteParams) {
       category = r?.category ?? "Unknown";
     } else {
       const [c] = await db
-        .select({ department: control.department, controlType: control.controlType })
+        .select({
+          department: control.department,
+          controlType: control.controlType,
+        })
         .from(control)
         .where(eq(control.id, assignment.entityId));
       department = c?.department ?? "Unknown";
@@ -72,11 +82,16 @@ export async function GET(req: Request, { params }: RouteParams) {
     if (!response) continue;
 
     let score = 0;
-    if (assignment.entityType === "risk" && response.likelihoodAssessment && response.impactAssessment) {
+    if (
+      assignment.entityType === "risk" &&
+      response.likelihoodAssessment &&
+      response.impactAssessment
+    ) {
       score = response.likelihoodAssessment * response.impactAssessment;
     } else if (assignment.entityType === "control") {
       if (response.controlEffectiveness === "effective") score = 1;
-      else if (response.controlEffectiveness === "partially_effective") score = 2;
+      else if (response.controlEffectiveness === "partially_effective")
+        score = 2;
       else if (response.controlEffectiveness === "ineffective") score = 3;
     }
 
@@ -92,7 +107,10 @@ export async function GET(req: Request, { params }: RouteParams) {
     heatmapData.push({
       department,
       category,
-      avgScore: value.count > 0 ? Math.round((value.totalScore / value.count) * 100) / 100 : 0,
+      avgScore:
+        value.count > 0
+          ? Math.round((value.totalScore / value.count) * 100) / 100
+          : 0,
       count: value.count,
     });
   }

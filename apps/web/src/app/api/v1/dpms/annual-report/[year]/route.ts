@@ -95,7 +95,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
     dsrByType[r.requestType] = (dsrByType[r.requestType] ?? 0) + 1;
     dsrByStatus[r.status] = (dsrByStatus[r.status] ?? 0) + 1;
     if (r.respondedAt && r.receivedAt) {
-      const days = (r.respondedAt.getTime() - r.receivedAt.getTime()) / (1000 * 60 * 60 * 24);
+      const days =
+        (r.respondedAt.getTime() - r.receivedAt.getTime()) /
+        (1000 * 60 * 60 * 24);
       if (days <= 30) dsrTimelyCount++;
       else dsrLateCount++;
     }
@@ -125,7 +127,8 @@ export async function GET(_req: Request, { params }: RouteParams) {
   for (const b of breachRows) {
     breachBySeverity[b.severity] = (breachBySeverity[b.severity] ?? 0) + 1;
     if (b.dpaNotifiedAt && b.detectedAt) {
-      const hours = (b.dpaNotifiedAt.getTime() - b.detectedAt.getTime()) / (1000 * 60 * 60);
+      const hours =
+        (b.dpaNotifiedAt.getTime() - b.detectedAt.getTime()) / (1000 * 60 * 60);
       if (hours <= 72) breachOnTimeCount++;
       else breachLateCount++;
     }
@@ -150,7 +153,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
     (c) => c.grantedAt >= startOfYear && c.grantedAt < endOfYear,
   ).length;
   const consentWithdrawnInYear = consentRows.filter(
-    (c) => c.withdrawnAt && c.withdrawnAt >= startOfYear && c.withdrawnAt < endOfYear,
+    (c) =>
+      c.withdrawnAt &&
+      c.withdrawnAt >= startOfYear &&
+      c.withdrawnAt < endOfYear,
   ).length;
 
   // Retention-Executions
@@ -202,7 +208,11 @@ export async function GET(_req: Request, { params }: RouteParams) {
   const avvScore = 100; // Platzhalter -- bei detaillierteren Zahlen berechnen
 
   const complianceScore = Math.round(
-    dsrScore * 0.25 + breachScore * 0.25 + ropaScore * 0.2 + dpiaScore * 0.15 + avvScore * 0.15,
+    dsrScore * 0.25 +
+      breachScore * 0.25 +
+      ropaScore * 0.2 +
+      dpiaScore * 0.15 +
+      avvScore * 0.15,
   );
 
   return Response.json({
@@ -213,9 +223,21 @@ export async function GET(_req: Request, { params }: RouteParams) {
       complianceScore,
       executive: {
         complianceScore,
-        ropaCoverage: { total: ropaTotal, active: ropaActive, percentage: Math.round(ropaScore) },
-        dsrTimeliness: { timely: dsrTimelyCount, late: dsrLateCount, percentage: Math.round(dsrScore) },
-        breachCompliance: { onTime: breachOnTimeCount, late: breachLateCount, percentage: Math.round(breachScore) },
+        ropaCoverage: {
+          total: ropaTotal,
+          active: ropaActive,
+          percentage: Math.round(ropaScore),
+        },
+        dsrTimeliness: {
+          timely: dsrTimelyCount,
+          late: dsrLateCount,
+          percentage: Math.round(dsrScore),
+        },
+        breachCompliance: {
+          onTime: breachOnTimeCount,
+          late: breachLateCount,
+          percentage: Math.round(breachScore),
+        },
       },
       ropa: { total: ropaTotal, active: ropaActive },
       dpia: { total: dpiaTotal, approved: dpiaApproved },

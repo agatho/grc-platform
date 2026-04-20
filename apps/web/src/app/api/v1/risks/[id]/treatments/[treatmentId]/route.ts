@@ -28,11 +28,7 @@ export async function PUT(
     .select({ id: risk.id })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existingRisk) {
@@ -96,20 +92,26 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
-    if (body.data.responsibleId !== undefined) updateValues.responsibleId = body.data.responsibleId;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
+    if (body.data.responsibleId !== undefined)
+      updateValues.responsibleId = body.data.responsibleId;
     if (body.data.expectedRiskReduction !== undefined)
-      updateValues.expectedRiskReduction = body.data.expectedRiskReduction?.toString();
+      updateValues.expectedRiskReduction =
+        body.data.expectedRiskReduction?.toString();
     if (body.data.costEstimate !== undefined)
       updateValues.costEstimate = body.data.costEstimate?.toString();
     if (body.data.costAnnual !== undefined)
       updateValues.costAnnual = body.data.costAnnual?.toString() ?? null;
     if (body.data.effortHours !== undefined)
       updateValues.effortHours = body.data.effortHours?.toString() ?? null;
-    if (body.data.budgetId !== undefined) updateValues.budgetId = body.data.budgetId;
-    if (body.data.costNote !== undefined) updateValues.costNote = body.data.costNote;
+    if (body.data.budgetId !== undefined)
+      updateValues.budgetId = body.data.budgetId;
+    if (body.data.costNote !== undefined)
+      updateValues.costNote = body.data.costNote;
     if (body.data.status !== undefined) updateValues.status = body.data.status;
-    if (body.data.dueDate !== undefined) updateValues.dueDate = body.data.dueDate;
+    if (body.data.dueDate !== undefined)
+      updateValues.dueDate = body.data.dueDate;
 
     const [row] = await tx
       .update(riskTreatment)
@@ -182,7 +184,10 @@ export async function DELETE(
           isNull(riskTreatment.deletedAt),
         ),
       )
-      .returning({ id: riskTreatment.id, workItemId: riskTreatment.workItemId });
+      .returning({
+        id: riskTreatment.id,
+        workItemId: riskTreatment.workItemId,
+      });
 
     // Soft delete associated work item
     if (row?.workItemId) {

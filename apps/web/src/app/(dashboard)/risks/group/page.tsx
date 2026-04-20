@@ -318,7 +318,9 @@ function GroupRiskContent() {
                       <td className="py-3 px-3 text-gray-500 font-mono text-xs">
                         {org.orgCode ?? "-"}
                       </td>
-                      <td className="py-3 px-3 text-center">{org.totalRisks}</td>
+                      <td className="py-3 px-3 text-center">
+                        {org.totalRisks}
+                      </td>
                       <td className="py-3 px-3 text-center">
                         {org.criticalCount > 0 ? (
                           <Badge variant="destructive">
@@ -365,10 +367,7 @@ function GroupRiskContent() {
                         </span>
                       </td>
                       <td className="py-3 px-3">
-                        <ExternalLink
-                          size={14}
-                          className="text-gray-400"
-                        />
+                        <ExternalLink size={14} className="text-gray-400" />
                       </td>
                     </tr>
                   ))}

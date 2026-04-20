@@ -77,9 +77,7 @@ export async function POST(
     G1: "Unternehmensfuehrung / Business Conduct",
   };
 
-  const uniqueStandards = [
-    ...new Set(datapoints.map((d) => d.esrsStandard)),
-  ];
+  const uniqueStandards = [...new Set(datapoints.map((d) => d.esrsStandard))];
 
   const topicValues = uniqueStandards.map((standard) => ({
     assessmentId: assessment.id,
@@ -133,10 +131,7 @@ export async function GET(
     );
 
   if (!assessment) {
-    return Response.json(
-      { error: "Assessment not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Assessment not found" }, { status: 404 });
   }
 
   const topics = await db

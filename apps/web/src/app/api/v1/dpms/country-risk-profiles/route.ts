@@ -15,15 +15,21 @@ export async function GET(req: Request) {
   const countryCode = searchParams.get("countryCode");
 
   const conditions = [];
-  if (riskLevel) conditions.push(eq(countryRiskProfile.overallRiskLevel, riskLevel));
-  if (countryCode) conditions.push(eq(countryRiskProfile.countryCode, countryCode));
+  if (riskLevel)
+    conditions.push(eq(countryRiskProfile.overallRiskLevel, riskLevel));
+  if (countryCode)
+    conditions.push(eq(countryRiskProfile.countryCode, countryCode));
 
   const where = conditions.length > 0 ? conditions[0] : undefined;
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(countryRiskProfile).where(where)
+    db
+      .select()
+      .from(countryRiskProfile)
+      .where(where)
       .orderBy(countryRiskProfile.countryName)
-      .limit(limit).offset(offset),
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(countryRiskProfile).where(where),
   ]);
 

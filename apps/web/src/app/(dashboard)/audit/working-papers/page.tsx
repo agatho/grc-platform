@@ -2,7 +2,13 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { Loader2, FileText, FolderTree, MessageSquare, CheckCircle2 } from "lucide-react";
+import {
+  Loader2,
+  FileText,
+  FolderTree,
+  MessageSquare,
+  CheckCircle2,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -39,7 +45,9 @@ function WorkingPapersInner() {
       const params = new URLSearchParams(window.location.search);
       const auditId = params.get("auditId");
       if (!auditId) return;
-      const res = await fetch(`/api/v1/audit-mgmt/working-papers?auditId=${auditId}`);
+      const res = await fetch(
+        `/api/v1/audit-mgmt/working-papers?auditId=${auditId}`,
+      );
       if (res.ok) {
         const json = await res.json();
         setPapers(json.data ?? []);
@@ -49,16 +57,24 @@ function WorkingPapersInner() {
     }
   }, []);
 
-  useEffect(() => { fetchPapers(); }, [fetchPapers]);
+  useEffect(() => {
+    fetchPapers();
+  }, [fetchPapers]);
 
   const statusColor = (status: string) => {
     switch (status) {
-      case "draft": return "secondary";
-      case "in_review": return "default";
-      case "needs_revision": return "destructive";
-      case "reviewed": return "default";
-      case "approved": return "default";
-      default: return "secondary";
+      case "draft":
+        return "secondary";
+      case "in_review":
+        return "default";
+      case "needs_revision":
+        return "destructive";
+      case "reviewed":
+        return "default";
+      case "approved":
+        return "default";
+      default:
+        return "secondary";
     }
   };
 
@@ -72,20 +88,34 @@ function WorkingPapersInner() {
       </div>
 
       {loading ? (
-        <div className="flex justify-center py-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+        <div className="flex justify-center py-12">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+        </div>
       ) : papers.length === 0 ? (
-        <Card><CardContent className="py-12 text-center text-muted-foreground"><FileText className="mx-auto mb-4 h-12 w-12" /><p>{t("workingPapers.title")}</p></CardContent></Card>
+        <Card>
+          <CardContent className="py-12 text-center text-muted-foreground">
+            <FileText className="mx-auto mb-4 h-12 w-12" />
+            <p>{t("workingPapers.title")}</p>
+          </CardContent>
+        </Card>
       ) : (
         <div className="space-y-3">
           {papers.map((wp) => (
-            <Card key={wp.id} className="cursor-pointer hover:shadow-md transition-shadow">
+            <Card
+              key={wp.id}
+              className="cursor-pointer hover:shadow-md transition-shadow"
+            >
               <CardContent className="flex items-center justify-between p-4">
                 <div className="flex items-center gap-4">
-                  <div className="font-mono text-sm font-bold text-muted-foreground">{wp.reference}</div>
+                  <div className="font-mono text-sm font-bold text-muted-foreground">
+                    {wp.reference}
+                  </div>
                   <div>
                     <div className="font-medium">{wp.title}</div>
                     <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
-                      {wp.preparedBy && <span>{t("resourcePlanning.role.lead")}</span>}
+                      {wp.preparedBy && (
+                        <span>{t("resourcePlanning.role.lead")}</span>
+                      )}
                     </div>
                   </div>
                 </div>

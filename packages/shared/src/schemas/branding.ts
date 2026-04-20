@@ -27,13 +27,21 @@ export type UpdateBrandingInput = z.infer<typeof updateBrandingSchema>;
 export const uploadLogoSchema = z.object({
   fileName: z.string().min(1).max(255),
   fileType: z.enum(["image/svg+xml", "image/png"]),
-  fileSize: z.number().int().min(1).max(2 * 1024 * 1024), // max 2 MB
+  fileSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(2 * 1024 * 1024), // max 2 MB
 });
 
 export const uploadFaviconSchema = z.object({
   fileName: z.string().min(1).max(255),
   fileType: z.enum(["image/x-icon", "image/png", "image/vnd.microsoft.icon"]),
-  fileSize: z.number().int().min(1).max(64 * 1024), // max 64 KB
+  fileSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(64 * 1024), // max 64 KB
 });
 
 // -- Dashboard layout --

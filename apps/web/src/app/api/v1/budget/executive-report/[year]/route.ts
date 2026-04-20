@@ -162,8 +162,7 @@ export async function GET(
               ) / 100
             : 0,
         forecast: Math.round(forecast * 100) / 100,
-        forecastVariance:
-          Math.round((totalPlanned - forecast) * 100) / 100,
+        forecastVariance: Math.round((totalPlanned - forecast) * 100) / 100,
       },
       costBreakdown: costsByArea.map((c) => ({
         costCategory: c.costCategory,

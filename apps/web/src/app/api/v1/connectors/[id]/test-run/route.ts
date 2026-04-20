@@ -1,11 +1,19 @@
-import { db, connectorTestResult, connectorTestDefinition, evidenceConnector } from "@grc/db";
+import {
+  db,
+  connectorTestResult,
+  connectorTestDefinition,
+  evidenceConnector,
+} from "@grc/db";
 import { triggerTestRunSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/connectors/:id/test-run — Trigger manual test run
-export async function POST(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth("admin", "risk_manager", "control_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -17,7 +25,13 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
   const [connector] = await db
     .select()
     .from(evidenceConnector)
-    .where(and(eq(evidenceConnector.id, id), eq(evidenceConnector.orgId, ctx.orgId), isNull(evidenceConnector.deletedAt)));
+    .where(
+      and(
+        eq(evidenceConnector.id, id),
+        eq(evidenceConnector.orgId, ctx.orgId),
+        isNull(evidenceConnector.deletedAt),
+      ),
+    );
 
   if (!connector) {
     return Response.json({ error: "Connector not found" }, { status: 404 });
@@ -25,11 +39,14 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
 
   const body = triggerTestRunSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Get applicable test definitions
-  let testDefs = await db
+  const testDefs = await db
     .select()
     .from(connectorTestDefinition)
     .where(
@@ -43,7 +60,10 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     );
 
   if (testDefs.length === 0) {
-    return Response.json({ error: "No test definitions found for this connector type" }, { status: 404 });
+    return Response.json(
+      { error: "No test definitions found for this connector type" },
+      { status: 404 },
+    );
   }
 
   // Execute tests (simulated — real implementation would call provider APIs)
@@ -69,5 +89,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ id: str
     return testResults;
   });
 
-  return Response.json({ data: { testsRun: results.length, results } }, { status: 201 });
+  return Response.json(
+    { data: { testsRun: results.length, results } },
+    { status: 201 },
+  );
 }

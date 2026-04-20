@@ -2,7 +2,12 @@ import { db, managementReview } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createManagementReviewSchema } from "@grc/shared";
 import { eq, and, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/isms/reviews
 export async function GET(req: Request) {
@@ -19,7 +24,12 @@ export async function GET(req: Request) {
     eq(managementReview.orgId, ctx.orgId),
   ];
   if (statusFilter) {
-    conditions.push(eq(managementReview.status, statusFilter as "planned" | "in_progress" | "completed" | "cancelled"));
+    conditions.push(
+      eq(
+        managementReview.status,
+        statusFilter as "planned" | "in_progress" | "completed" | "cancelled",
+      ),
+    );
   }
 
   const rows = await db

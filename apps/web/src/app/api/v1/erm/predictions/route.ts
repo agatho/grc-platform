@@ -26,7 +26,9 @@ export async function GET(req: Request) {
 
   // Filter by minimum probability client-side for simplicity
   const filtered = minProbability
-    ? rows.filter((r) => Number(r.escalationProbability) >= Number(minProbability))
+    ? rows.filter(
+        (r) => Number(r.escalationProbability) >= Number(minProbability),
+      )
     : rows;
 
   const allRows = await db

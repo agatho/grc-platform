@@ -1,9 +1,4 @@
-import {
-  db,
-  esrsMetric,
-  esrsDatapointDefinition,
-  user,
-} from "@grc/db";
+import { db, esrsMetric, esrsDatapointDefinition, user } from "@grc/db";
 import { createEsrsMetricSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc, ilike, or } from "drizzle-orm";
@@ -79,9 +74,7 @@ export async function GET(req: Request) {
   const search = searchParams.get("search");
   if (search) {
     const pattern = `%${search}%`;
-    conditions.push(
-      or(ilike(esrsMetric.name, pattern))!,
-    );
+    conditions.push(or(ilike(esrsMetric.name, pattern))!);
   }
 
   const isActive = searchParams.get("isActive");

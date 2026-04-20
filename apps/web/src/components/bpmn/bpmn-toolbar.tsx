@@ -84,17 +84,9 @@ export function BpmnToolbar({
     setPrevSaving(saving);
   }, [saving, prevSaving]);
 
-  const saveLabel = saving
-    ? "Saving..."
-    : showSaved
-      ? "Saved"
-      : "Save";
+  const saveLabel = saving ? "Saving..." : showSaved ? "Saved" : "Save";
 
-  const SaveIcon = saving
-    ? Loader2
-    : showSaved
-      ? Check
-      : Save;
+  const SaveIcon = saving ? Loader2 : showSaved ? Check : Save;
 
   return (
     <div className="flex items-center justify-between rounded-t-lg border border-gray-200 bg-gray-50/80 px-4 py-2 h-12">
@@ -106,14 +98,9 @@ export function BpmnToolbar({
               size="sm"
               onClick={onSave}
               disabled={!hasChanges || saving}
-              className={cn(
-                showSaved && "bg-green-600 hover:bg-green-700",
-              )}
+              className={cn(showSaved && "bg-green-600 hover:bg-green-700")}
             >
-              <SaveIcon
-                size={14}
-                className={cn(saving && "animate-spin")}
-              />
+              <SaveIcon size={14} className={cn(saving && "animate-spin")} />
               {saveLabel}
             </Button>
 
@@ -176,9 +163,7 @@ export function BpmnToolbar({
         <span className="text-gray-500">v{version}</span>
 
         {hasChanges && !readOnly && (
-          <span className="text-orange-600 font-medium">
-            Unsaved changes
-          </span>
+          <span className="text-orange-600 font-medium">Unsaved changes</span>
         )}
 
         {readOnly && (

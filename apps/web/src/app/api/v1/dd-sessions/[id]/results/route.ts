@@ -45,7 +45,9 @@ export async function GET(req: Request, { params }: RouteParams) {
     .where(
       eq(
         questionnaireQuestion.sectionId,
-        sections.length > 0 ? sections[0].id : "00000000-0000-0000-0000-000000000000",
+        sections.length > 0
+          ? sections[0].id
+          : "00000000-0000-0000-0000-000000000000",
       ),
     );
 

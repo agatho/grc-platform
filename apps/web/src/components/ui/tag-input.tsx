@@ -66,7 +66,7 @@ export function TagInput({
             color: t.color ?? "#6B7280",
             category: t.category,
             usageCount: t.usage_count ?? 0,
-          }))
+          })),
         );
       }
     } finally {
@@ -85,7 +85,10 @@ export function TagInput({
   // Close dropdown on outside click
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setShowSuggestions(false);
       }
     }
@@ -96,7 +99,8 @@ export function TagInput({
   const addTag = useCallback(
     (tag: string) => {
       const trimmed = tag.trim().toLowerCase();
-      if (!trimmed || value.includes(trimmed) || value.length >= maxTags) return;
+      if (!trimmed || value.includes(trimmed) || value.length >= maxTags)
+        return;
       onChange([...value, trimmed]);
       setInput("");
 
@@ -107,14 +111,14 @@ export function TagInput({
         body: JSON.stringify({ name: trimmed }),
       }).catch(() => {});
     },
-    [value, onChange, maxTags]
+    [value, onChange, maxTags],
   );
 
   const removeTag = useCallback(
     (tag: string) => {
       onChange(value.filter((t) => t !== tag));
     },
-    [value, onChange]
+    [value, onChange],
   );
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -129,7 +133,7 @@ export function TagInput({
   };
 
   const filteredSuggestions = suggestions.filter(
-    (s) => !value.includes(s.name.toLowerCase())
+    (s) => !value.includes(s.name.toLowerCase()),
   );
 
   return (
@@ -137,12 +141,16 @@ export function TagInput({
       {/* Tag display + input */}
       <div
         className={`flex flex-wrap items-center gap-1.5 rounded-md border border-gray-300 bg-white px-2 py-1.5 min-h-[38px] ${
-          disabled ? "opacity-50 cursor-not-allowed" : "cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
+          disabled
+            ? "opacity-50 cursor-not-allowed"
+            : "cursor-text focus-within:border-blue-500 focus-within:ring-1 focus-within:ring-blue-500"
         }`}
         onClick={() => !disabled && inputRef.current?.focus()}
       >
         {value.map((tag) => {
-          const suggestion = suggestions.find((s) => s.name.toLowerCase() === tag);
+          const suggestion = suggestions.find(
+            (s) => s.name.toLowerCase() === tag,
+          );
           return (
             <Badge
               key={tag}
@@ -154,7 +162,10 @@ export function TagInput({
               {!disabled && (
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); removeTag(tag); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    removeTag(tag);
+                  }}
                   className="ml-0.5 rounded-full hover:bg-black/10 p-0.5"
                 >
                   <X size={10} />
@@ -169,7 +180,10 @@ export function TagInput({
             ref={inputRef}
             type="text"
             value={input}
-            onChange={(e) => { setInput(e.target.value); setShowSuggestions(true); }}
+            onChange={(e) => {
+              setInput(e.target.value);
+              setShowSuggestions(true);
+            }}
             onFocus={() => setShowSuggestions(true)}
             onKeyDown={handleKeyDown}
             placeholder={value.length === 0 ? placeholder : ""}
@@ -196,7 +210,9 @@ export function TagInput({
                   &quot;{input.trim()}&quot; als neues Tag erstellen
                 </button>
               ) : (
-                <p className="text-xs text-gray-400">Tippen Sie um Tags zu suchen oder zu erstellen</p>
+                <p className="text-xs text-gray-400">
+                  Tippen Sie um Tags zu suchen oder zu erstellen
+                </p>
               )}
             </div>
           ) : (
@@ -214,21 +230,28 @@ export function TagInput({
                   />
                   <span className="flex-1 text-gray-900">{s.name}</span>
                   {s.category && (
-                    <span className="text-[10px] text-gray-400">{s.category}</span>
+                    <span className="text-[10px] text-gray-400">
+                      {s.category}
+                    </span>
                   )}
-                  <span className="text-[10px] text-gray-300">{s.usageCount}×</span>
+                  <span className="text-[10px] text-gray-300">
+                    {s.usageCount}×
+                  </span>
                 </button>
               ))}
-              {input.trim() && !filteredSuggestions.some((s) => s.name.toLowerCase() === input.trim().toLowerCase()) && (
-                <button
-                  type="button"
-                  onClick={() => addTag(input)}
-                  className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left border-t border-gray-100 text-blue-600 hover:bg-blue-50"
-                >
-                  <Plus size={14} />
-                  &quot;{input.trim()}&quot; erstellen
-                </button>
-              )}
+              {input.trim() &&
+                !filteredSuggestions.some(
+                  (s) => s.name.toLowerCase() === input.trim().toLowerCase(),
+                ) && (
+                  <button
+                    type="button"
+                    onClick={() => addTag(input)}
+                    className="flex items-center gap-2 w-full px-3 py-2 text-sm text-left border-t border-gray-100 text-blue-600 hover:bg-blue-50"
+                  >
+                    <Plus size={14} />
+                    &quot;{input.trim()}&quot; erstellen
+                  </button>
+                )}
             </>
           )}
         </div>

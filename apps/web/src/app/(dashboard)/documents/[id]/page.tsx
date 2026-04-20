@@ -25,12 +25,7 @@ import { toast } from "sonner";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import type {
   Document,
@@ -111,13 +106,16 @@ function DocumentDetailInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [docRes, versionsRes, linksRes, acksRes, logRes] = await Promise.all([
-        fetch(`/api/v1/documents/${docId}`),
-        fetch(`/api/v1/documents/${docId}/versions`),
-        fetch(`/api/v1/documents/${docId}/entity-links`),
-        fetch(`/api/v1/documents/${docId}/acknowledgments`),
-        fetch(`/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`),
-      ]);
+      const [docRes, versionsRes, linksRes, acksRes, logRes] =
+        await Promise.all([
+          fetch(`/api/v1/documents/${docId}`),
+          fetch(`/api/v1/documents/${docId}/versions`),
+          fetch(`/api/v1/documents/${docId}/entity-links`),
+          fetch(`/api/v1/documents/${docId}/acknowledgments`),
+          fetch(
+            `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
+          ),
+        ]);
       if (docRes.ok) {
         const json = await docRes.json();
         setDoc(json.data ?? null);
@@ -151,7 +149,9 @@ function DocumentDetailInner() {
 
   const handleSendReminder = async () => {
     try {
-      const res = await fetch(`/api/v1/documents/${docId}/send-reminder`, { method: "POST" });
+      const res = await fetch(`/api/v1/documents/${docId}/send-reminder`, {
+        method: "POST",
+      });
       if (!res.ok) throw new Error("Failed");
       toast.success(t("acknowledgments.reminderSent"));
     } catch {
@@ -170,7 +170,11 @@ function DocumentDetailInner() {
   if (!doc) {
     return (
       <div className="space-y-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/documents")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/documents")}
+        >
           <ArrowLeft size={16} />
           {t("backToList")}
         </Button>
@@ -182,15 +186,24 @@ function DocumentDetailInner() {
     );
   }
 
-  const ackPct = acknowledgments.length > 0
-    ? Math.round((acknowledgments.filter((a) => a.acknowledgedAt).length / acknowledgments.length) * 100)
-    : 0;
+  const ackPct =
+    acknowledgments.length > 0
+      ? Math.round(
+          (acknowledgments.filter((a) => a.acknowledgedAt).length /
+            acknowledgments.length) *
+            100,
+        )
+      : 0;
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-3">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/documents")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/documents")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <div>
@@ -199,12 +212,15 @@ function DocumentDetailInner() {
             <Badge variant="outline" className={statusBadgeClass(doc.status)}>
               {t(`status.${doc.status}`)}
             </Badge>
-            <span className="text-xs font-mono text-gray-500">v{doc.currentVersion}</span>
-            {doc.tags.length > 0 && doc.tags.map((tag) => (
-              <Badge key={tag} variant="secondary" className="text-[10px]">
-                {tag}
-              </Badge>
-            ))}
+            <span className="text-xs font-mono text-gray-500">
+              v{doc.currentVersion}
+            </span>
+            {doc.tags.length > 0 &&
+              doc.tags.map((tag) => (
+                <Badge key={tag} variant="secondary" className="text-[10px]">
+                  {tag}
+                </Badge>
+              ))}
           </div>
         </div>
       </div>
@@ -236,7 +252,9 @@ function DocumentDetailInner() {
                     {doc.content}
                   </div>
                 ) : (
-                  <p className="text-sm text-gray-400 text-center py-8">{t("content.empty")}</p>
+                  <p className="text-sm text-gray-400 text-center py-8">
+                    {t("content.empty")}
+                  </p>
                 )}
 
                 {/* File attachment section */}
@@ -246,9 +264,12 @@ function DocumentDetailInner() {
                       <div className="flex items-center gap-3">
                         <File size={20} className="text-blue-500" />
                         <div>
-                          <p className="text-sm font-medium">{(doc as any).fileName}</p>
+                          <p className="text-sm font-medium">
+                            {(doc as any).fileName}
+                          </p>
                           <p className="text-xs text-gray-500">
-                            {(doc as any).mimeType} &middot; {((doc as any).fileSize / 1024).toFixed(0)} KB
+                            {(doc as any).mimeType} &middot;{" "}
+                            {((doc as any).fileSize / 1024).toFixed(0)} KB
                           </p>
                         </div>
                       </div>
@@ -264,7 +285,9 @@ function DocumentDetailInner() {
                   <div className="mt-3">
                     <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 py-4 hover:border-primary/50 hover:bg-gray-50 transition-colors">
                       <Upload size={20} className="text-gray-400" />
-                      <span className="text-xs text-gray-500">{t("dragOrClick")}</span>
+                      <span className="text-xs text-gray-500">
+                        {t("dragOrClick")}
+                      </span>
                       <input
                         type="file"
                         className="hidden"
@@ -274,10 +297,13 @@ function DocumentDetailInner() {
                           if (!file) return;
                           const fd = new FormData();
                           fd.append("file", file);
-                          const res = await fetch(`/api/v1/documents/${docId}/upload`, {
-                            method: "POST",
-                            body: fd,
-                          });
+                          const res = await fetch(
+                            `/api/v1/documents/${docId}/upload`,
+                            {
+                              method: "POST",
+                              body: fd,
+                            },
+                          );
                           if (res.ok) {
                             toast.success(t("uploadSuccess"));
                             fetchData();
@@ -301,22 +327,32 @@ function DocumentDetailInner() {
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-gray-400" />
                   <span className="text-gray-500">{t("form.owner")}:</span>
-                  <span className="font-medium">{doc.ownerName ?? "\u2014"}</span>
+                  <span className="font-medium">
+                    {doc.ownerName ?? "\u2014"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <User size={14} className="text-gray-400" />
                   <span className="text-gray-500">{t("form.reviewer")}:</span>
-                  <span className="font-medium">{doc.reviewerName ?? "\u2014"}</span>
+                  <span className="font-medium">
+                    {doc.reviewerName ?? "\u2014"}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-gray-400" />
-                  <span className="text-gray-500">{t("form.publishedAt")}:</span>
-                  <span className="font-medium">{formatDate(doc.publishedAt)}</span>
+                  <span className="text-gray-500">
+                    {t("form.publishedAt")}:
+                  </span>
+                  <span className="font-medium">
+                    {formatDate(doc.publishedAt)}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <Calendar size={14} className="text-gray-400" />
                   <span className="text-gray-500">{t("form.expiresAt")}:</span>
-                  <span className="font-medium">{formatDate(doc.expiresAt)}</span>
+                  <span className="font-medium">
+                    {formatDate(doc.expiresAt)}
+                  </span>
                 </div>
               </CardContent>
             </Card>
@@ -356,10 +392,14 @@ function DocumentDetailInner() {
                               </Badge>
                             )}
                           </div>
-                          <span className="text-xs text-gray-500">{formatDate(v.createdAt)}</span>
+                          <span className="text-xs text-gray-500">
+                            {formatDate(v.createdAt)}
+                          </span>
                         </div>
                         {v.changeSummary && (
-                          <p className="text-xs text-gray-600 mt-1">{v.changeSummary}</p>
+                          <p className="text-xs text-gray-600 mt-1">
+                            {v.changeSummary}
+                          </p>
                         )}
                       </CardContent>
                     </Card>
@@ -387,13 +427,19 @@ function DocumentDetailInner() {
                   <div className="flex items-center gap-3">
                     <Link2 size={14} className="text-gray-400" />
                     <div>
-                      <p className="text-sm font-medium text-gray-900">{link.entityType}</p>
+                      <p className="text-sm font-medium text-gray-900">
+                        {link.entityType}
+                      </p>
                       {link.linkDescription && (
-                        <p className="text-xs text-gray-500">{link.linkDescription}</p>
+                        <p className="text-xs text-gray-500">
+                          {link.linkDescription}
+                        </p>
                       )}
                     </div>
                   </div>
-                  <span className="text-xs text-gray-400 font-mono">{link.entityId.slice(0, 8)}...</span>
+                  <span className="text-xs text-gray-400 font-mono">
+                    {link.entityId.slice(0, 8)}...
+                  </span>
                 </div>
               ))}
             </div>
@@ -411,7 +457,9 @@ function DocumentDetailInner() {
                     style={{ width: `${ackPct}%` }}
                   />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{ackPct}% {t("acknowledgments.complete")}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  {ackPct}% {t("acknowledgments.complete")}
+                </span>
               </div>
               <Button variant="outline" size="sm" onClick={handleSendReminder}>
                 <Send size={14} />
@@ -423,7 +471,9 @@ function DocumentDetailInner() {
           {acknowledgments.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
               <CheckCircle2 size={28} className="text-gray-400 mb-3" />
-              <p className="text-sm text-gray-500">{t("acknowledgments.empty")}</p>
+              <p className="text-sm text-gray-500">
+                {t("acknowledgments.empty")}
+              </p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -431,26 +481,43 @@ function DocumentDetailInner() {
                 <thead>
                   <tr className="border-b border-gray-200 text-left text-xs font-medium text-gray-500 uppercase">
                     <th className="pb-2 pr-4">{t("acknowledgments.user")}</th>
-                    <th className="pb-2 pr-4">{t("acknowledgments.version")}</th>
+                    <th className="pb-2 pr-4">
+                      {t("acknowledgments.version")}
+                    </th>
                     <th className="pb-2 pr-4">{t("acknowledgments.date")}</th>
                     <th className="pb-2">{t("acknowledgments.statusLabel")}</th>
                   </tr>
                 </thead>
                 <tbody>
                   {acknowledgments.map((ack) => (
-                    <tr key={ack.id} className="border-b border-gray-100 last:border-0">
+                    <tr
+                      key={ack.id}
+                      className="border-b border-gray-100 last:border-0"
+                    >
                       <td className="py-2 pr-4 text-gray-900">
-                        {ack.userName ?? ack.userEmail ?? ack.userId.slice(0, 8)}
+                        {ack.userName ??
+                          ack.userEmail ??
+                          ack.userId.slice(0, 8)}
                       </td>
-                      <td className="py-2 pr-4 font-mono text-gray-600">v{ack.versionAcknowledged}</td>
-                      <td className="py-2 pr-4 text-gray-600">{formatDate(ack.acknowledgedAt)}</td>
+                      <td className="py-2 pr-4 font-mono text-gray-600">
+                        v{ack.versionAcknowledged}
+                      </td>
+                      <td className="py-2 pr-4 text-gray-600">
+                        {formatDate(ack.acknowledgedAt)}
+                      </td>
                       <td className="py-2">
                         {ack.acknowledgedAt ? (
-                          <Badge variant="outline" className="bg-emerald-100 text-emerald-800 border-emerald-200">
+                          <Badge
+                            variant="outline"
+                            className="bg-emerald-100 text-emerald-800 border-emerald-200"
+                          >
                             {t("acknowledgments.acknowledged")}
                           </Badge>
                         ) : (
-                          <Badge variant="outline" className="bg-yellow-100 text-yellow-800 border-yellow-200">
+                          <Badge
+                            variant="outline"
+                            className="bg-yellow-100 text-yellow-800 border-yellow-200"
+                          >
                             {t("acknowledgments.pending")}
                           </Badge>
                         )}
@@ -477,11 +544,15 @@ function DocumentDetailInner() {
                   key={entry.id}
                   className="flex items-start gap-3 rounded-lg border border-gray-200 bg-white px-4 py-3"
                 >
-                  <Activity size={14} className="text-gray-400 mt-0.5 shrink-0" />
+                  <Activity
+                    size={14}
+                    className="text-gray-400 mt-0.5 shrink-0"
+                  />
                   <div className="min-w-0 flex-1">
                     <p className="text-sm text-gray-700">
-                      <span className="font-medium">{entry.userName ?? "System"}</span>
-                      {" "}
+                      <span className="font-medium">
+                        {entry.userName ?? "System"}
+                      </span>{" "}
                       <span className="text-gray-500">{entry.action}</span>
                     </p>
                     {entry.changes && (
@@ -489,14 +560,20 @@ function DocumentDetailInner() {
                         {Object.entries(entry.changes).map(([key, val]) => (
                           <p key={key}>
                             <span className="font-mono">{key}</span>:{" "}
-                            <span className="line-through text-red-400">{String(val.old ?? "\u2014")}</span>
+                            <span className="line-through text-red-400">
+                              {String(val.old ?? "\u2014")}
+                            </span>
                             {" -> "}
-                            <span className="text-emerald-600">{String(val.new ?? "\u2014")}</span>
+                            <span className="text-emerald-600">
+                              {String(val.new ?? "\u2014")}
+                            </span>
                           </p>
                         ))}
                       </div>
                     )}
-                    <p className="text-[10px] text-gray-400 mt-1">{formatDate(entry.createdAt)}</p>
+                    <p className="text-[10px] text-gray-400 mt-1">
+                      {formatDate(entry.createdAt)}
+                    </p>
                   </div>
                 </div>
               ))}

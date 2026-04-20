@@ -20,9 +20,7 @@ export async function GET(
   const rows = await db
     .select()
     .from(reportSchedule)
-    .where(
-      and(eq(reportSchedule.id, id), eq(reportSchedule.orgId, ctx.orgId)),
-    )
+    .where(and(eq(reportSchedule.id, id), eq(reportSchedule.orgId, ctx.orgId)))
     .limit(1);
 
   if (rows.length === 0) {

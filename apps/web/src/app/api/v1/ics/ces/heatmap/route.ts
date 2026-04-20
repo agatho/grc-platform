@@ -1,8 +1,4 @@
-import {
-  db,
-  controlEffectivenessScore,
-  control,
-} from "@grc/db";
+import { db, controlEffectivenessScore, control } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -16,10 +12,16 @@ export async function GET(req: Request) {
     .select({
       controlType: control.controlType,
       frequency: control.frequency,
-      avgScore: sql<number>`ROUND(AVG(${controlEffectivenessScore.score}))`.as("avg_score"),
+      avgScore: sql<number>`ROUND(AVG(${controlEffectivenessScore.score}))`.as(
+        "avg_score",
+      ),
       controlCount: sql<number>`COUNT(*)`.as("control_count"),
-      minScore: sql<number>`MIN(${controlEffectivenessScore.score})`.as("min_score"),
-      maxScore: sql<number>`MAX(${controlEffectivenessScore.score})`.as("max_score"),
+      minScore: sql<number>`MIN(${controlEffectivenessScore.score})`.as(
+        "min_score",
+      ),
+      maxScore: sql<number>`MAX(${controlEffectivenessScore.score})`.as(
+        "max_score",
+      ),
     })
     .from(controlEffectivenessScore)
     .innerJoin(control, eq(control.id, controlEffectivenessScore.controlId))

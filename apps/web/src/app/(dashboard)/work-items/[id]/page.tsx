@@ -4,14 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  ArrowLeft,
-  Loader2,
-  Link2,
-  Plus,
-  History,
-  Search,
-} from "lucide-react";
+import { ArrowLeft, Loader2, Link2, Plus, History, Search } from "lucide-react";
 import Link from "next/link";
 import { toast } from "sonner";
 
@@ -161,8 +154,16 @@ function DetailsTab({
     { label: t("description"), value: item.description ?? "-" },
     { label: t("responsible"), value: item.responsibleName ?? "-" },
     { label: t("reviewer"), value: item.reviewerName ?? "-" },
-    { label: t("dueDate"), value: item.dueDate ? new Date(item.dueDate).toLocaleDateString() : "-" },
-    { label: t("completedAt"), value: item.completedAt ? new Date(item.completedAt).toLocaleDateString() : "-" },
+    {
+      label: t("dueDate"),
+      value: item.dueDate ? new Date(item.dueDate).toLocaleDateString() : "-",
+    },
+    {
+      label: t("completedAt"),
+      value: item.completedAt
+        ? new Date(item.completedAt).toLocaleDateString()
+        : "-",
+    },
   ];
 
   return (
@@ -177,7 +178,9 @@ function DetailsTab({
               <dt className="text-xs font-medium text-gray-500 uppercase tracking-wider">
                 {field.label}
               </dt>
-              <dd className="text-sm text-gray-900 whitespace-pre-wrap">{field.value}</dd>
+              <dd className="text-sm text-gray-900 whitespace-pre-wrap">
+                {field.value}
+              </dd>
             </div>
           ))}
         </dl>
@@ -211,24 +214,29 @@ function AddLinkDialog({
   const [linkType, setLinkType] = useState<string>("");
   const [submitting, setSubmitting] = useState(false);
 
-  const doSearch = useCallback(async (query: string) => {
-    if (query.length < 2) {
-      setSearchResults([]);
-      return;
-    }
-    setSearching(true);
-    try {
-      const res = await fetch(`/api/v1/work-items?search=${encodeURIComponent(query)}&limit=10`);
-      if (!res.ok) throw new Error("Failed");
-      const json = (await res.json()) as { data: SearchResult[] };
-      // Exclude self
-      setSearchResults(json.data.filter((r) => r.id !== sourceId));
-    } catch {
-      setSearchResults([]);
-    } finally {
-      setSearching(false);
-    }
-  }, [sourceId]);
+  const doSearch = useCallback(
+    async (query: string) => {
+      if (query.length < 2) {
+        setSearchResults([]);
+        return;
+      }
+      setSearching(true);
+      try {
+        const res = await fetch(
+          `/api/v1/work-items?search=${encodeURIComponent(query)}&limit=10`,
+        );
+        if (!res.ok) throw new Error("Failed");
+        const json = (await res.json()) as { data: SearchResult[] };
+        // Exclude self
+        setSearchResults(json.data.filter((r) => r.id !== sourceId));
+      } catch {
+        setSearchResults([]);
+      } finally {
+        setSearching(false);
+      }
+    },
+    [sourceId],
+  );
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -276,7 +284,10 @@ function AddLinkDialog({
           <div className="space-y-2">
             <Label>{t("linkTarget")}</Label>
             <div className="relative">
-              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+              <Search
+                size={14}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
               <Input
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -340,7 +351,10 @@ function AddLinkDialog({
           <Button variant="outline" onClick={() => onOpenChange(false)}>
             {tActions("cancel")}
           </Button>
-          <Button onClick={handleSubmit} disabled={!selectedTarget || !linkType || submitting}>
+          <Button
+            onClick={handleSubmit}
+            disabled={!selectedTarget || !linkType || submitting}
+          >
             {submitting && <Loader2 size={16} className="animate-spin" />}
             {t("addLink")}
           </Button>
@@ -392,7 +406,9 @@ function LinksTab({
       header: t("linkType"),
       cell: ({ row }) => (
         <Badge variant="outline" className="text-xs">
-          {t(`linkTypes.${row.original.linkType as "caused_by" | "results_in" | "mitigated_by" | "evidence_for" | "related"}`)}
+          {t(
+            `linkTypes.${row.original.linkType as "caused_by" | "results_in" | "mitigated_by" | "evidence_for" | "related"}`,
+          )}
         </Badge>
       ),
     },
@@ -421,7 +437,9 @@ function LinksTab({
       accessorKey: "status",
       header: t("status"),
       cell: ({ row }) => (
-        <Badge className={`border-0 text-xs ${statusColor(row.original.status)}`}>
+        <Badge
+          className={`border-0 text-xs ${statusColor(row.original.status)}`}
+        >
           {t(`statuses.${row.original.status as "draft" | "active"}`)}
         </Badge>
       ),

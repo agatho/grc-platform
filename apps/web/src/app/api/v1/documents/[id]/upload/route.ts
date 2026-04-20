@@ -6,7 +6,8 @@ import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
 import { randomUUID } from "crypto";
 
-const UPLOAD_DIR = process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
+const UPLOAD_DIR =
+  process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const ALLOWED_MIMES = new Set([
@@ -33,7 +34,13 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "dpo", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "dpo",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("dms", ctx.orgId, req.method);
@@ -44,7 +51,13 @@ export async function POST(
   const [doc] = await db
     .select()
     .from(document)
-    .where(and(eq(document.id, id), eq(document.orgId, ctx.orgId), isNull(document.deletedAt)));
+    .where(
+      and(
+        eq(document.id, id),
+        eq(document.orgId, ctx.orgId),
+        isNull(document.deletedAt),
+      ),
+    );
 
   if (!doc) {
     return Response.json({ error: "Document not found" }, { status: 404 });
@@ -58,7 +71,10 @@ export async function POST(
   }
 
   if (file.size > MAX_FILE_SIZE) {
-    return Response.json({ error: "File too large (max 50MB)" }, { status: 413 });
+    return Response.json(
+      { error: "File too large (max 50MB)" },
+      { status: 413 },
+    );
   }
 
   if (!ALLOWED_MIMES.has(file.type)) {
@@ -95,11 +111,14 @@ export async function POST(
     .where(eq(document.id, id))
     .returning();
 
-  return Response.json({
-    data: {
-      fileName: updated.fileName,
-      fileSize: updated.fileSize,
-      mimeType: updated.mimeType,
+  return Response.json(
+    {
+      data: {
+        fileName: updated.fileName,
+        fileSize: updated.fileSize,
+        mimeType: updated.mimeType,
+      },
     },
-  }, { status: 201 });
+    { status: 201 },
+  );
 }

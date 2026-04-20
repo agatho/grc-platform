@@ -45,8 +45,18 @@ Requirements:
 const generateWithProviderSchema = z.object({
   name: z.string().min(3).max(200),
   description: z.string().min(50).max(2000),
-  industry: z.enum(["manufacturing", "it_services", "financial_services", "healthcare", "generic"]).optional(),
-  provider: z.enum(["claude_cli", "claude_api", "openai", "gemini", "ollama"]).optional(),
+  industry: z
+    .enum([
+      "manufacturing",
+      "it_services",
+      "financial_services",
+      "healthcare",
+      "generic",
+    ])
+    .optional(),
+  provider: z
+    .enum(["claude_cli", "claude_api", "openai", "gemini", "ollama"])
+    .optional(),
 });
 
 // POST /api/v1/processes/generate-bpmn — AI generate BPMN (multi-provider)
@@ -149,7 +159,9 @@ export async function GET(req: Request) {
     data: {
       availableProviders: getAvailableProviders(),
       defaultProvider:
-        process.env.AI_DEFAULT_PROVIDER ?? getAvailableProviders()[0] ?? "claude",
+        process.env.AI_DEFAULT_PROVIDER ??
+        getAvailableProviders()[0] ??
+        "claude",
     },
   });
 }

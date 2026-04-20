@@ -3,11 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
-import {
-  Check,
-  Loader2,
-  Zap,
-} from "lucide-react";
+import { Check, Loader2, Zap } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -41,7 +37,9 @@ export default function PlansPage() {
   const [plans, setPlans] = useState<Plan[]>([]);
   const [loading, setLoading] = useState(true);
   const [subscribing, setSubscribing] = useState<string | null>(null);
-  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">("monthly");
+  const [billingCycle, setBillingCycle] = useState<"monthly" | "yearly">(
+    "monthly",
+  );
 
   const fetchPlans = useCallback(async () => {
     setLoading(true);
@@ -99,7 +97,9 @@ export default function PlansPage() {
   return (
     <div className="space-y-6">
       <div className="text-center">
-        <h1 className="text-3xl font-bold tracking-tight">{t("plans.title")}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("plans.title")}
+        </h1>
         <p className="text-muted-foreground mt-2">{t("plans.subtitle")}</p>
       </div>
 
@@ -117,13 +117,16 @@ export default function PlansPage() {
           onClick={() => setBillingCycle("yearly")}
         >
           {t("plans.yearly")}
-          <Badge variant="secondary" className="ml-2">{t("plans.save20")}</Badge>
+          <Badge variant="secondary" className="ml-2">
+            {t("plans.save20")}
+          </Badge>
         </Button>
       </div>
 
       <div className="grid gap-6 md:grid-cols-4">
         {plans.map((plan) => {
-          const price = billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
+          const price =
+            billingCycle === "yearly" ? plan.priceYearly : plan.priceMonthly;
           const isPopular = plan.tier === "professional";
           return (
             <Card
@@ -144,13 +147,17 @@ export default function PlansPage() {
                 <div className="pt-2">
                   {price !== null ? (
                     <div>
-                      <span className="text-3xl font-bold">{formatCurrency(price)}</span>
+                      <span className="text-3xl font-bold">
+                        {formatCurrency(price)}
+                      </span>
                       <span className="text-muted-foreground">
                         /{billingCycle === "yearly" ? t("year") : t("month")}
                       </span>
                     </div>
                   ) : (
-                    <span className="text-2xl font-bold">{t("plans.custom")}</span>
+                    <span className="text-2xl font-bold">
+                      {t("plans.custom")}
+                    </span>
                   )}
                 </div>
               </CardHeader>
@@ -162,7 +169,8 @@ export default function PlansPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    {formatLimit(plan.maxOrganizations)} {t("plans.organizations")}
+                    {formatLimit(plan.maxOrganizations)}{" "}
+                    {t("plans.organizations")}
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
@@ -170,7 +178,8 @@ export default function PlansPage() {
                   </li>
                   <li className="flex items-center gap-2">
                     <Check className="h-4 w-4 text-green-500" />
-                    {formatLimit(plan.maxApiCallsPerMonth)} {t("plans.apiCalls")}
+                    {formatLimit(plan.maxApiCallsPerMonth)}{" "}
+                    {t("plans.apiCalls")}
                   </li>
                 </ul>
                 {plan.trialDays > 0 && (
@@ -187,7 +196,9 @@ export default function PlansPage() {
                   {subscribing === plan.id ? (
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                   ) : null}
-                  {price !== null ? t("plans.subscribe") : t("plans.contactSales")}
+                  {price !== null
+                    ? t("plans.subscribe")
+                    : t("plans.contactSales")}
                 </Button>
               </CardContent>
             </Card>

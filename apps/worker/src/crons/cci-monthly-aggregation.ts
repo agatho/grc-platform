@@ -24,7 +24,11 @@ import {
   calcPercentageScore,
   calcIncidentResponseScore,
 } from "@grc/shared";
-import type { CCIFactorWeights, CCIRawMetrics, CCIRawMetricDetail } from "@grc/shared";
+import type {
+  CCIFactorWeights,
+  CCIRawMetrics,
+  CCIRawMetricDetail,
+} from "@grc/shared";
 
 interface AggregationResult {
   orgsProcessed: number;
@@ -38,7 +42,9 @@ export async function processCCIMonthlyAggregation(): Promise<AggregationResult>
   const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
   const period = getPeriodString(prevMonth);
 
-  console.log(`[cron:cci-monthly] Starting CCI aggregation for period ${period}`);
+  console.log(
+    `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
+  );
 
   let orgsProcessed = 0;
   let snapshotsCreated = 0;
@@ -79,15 +85,21 @@ async function calculateAndStoreSnapshot(
   const { start, end } = getPeriodRange(period);
 
   // Collect all raw metrics
-  const [taskData, policyData, trainingData, incidentData, findingData, rcsaData] =
-    await Promise.all([
-      collectTaskCompliance(orgId, start, end),
-      collectPolicyAckRate(orgId, start, end),
-      collectTrainingCompletion(orgId, start, end),
-      collectIncidentResponse(orgId, start, end),
-      collectFindingClosure(orgId, start, end),
-      collectRCSAParticipation(orgId, start, end),
-    ]);
+  const [
+    taskData,
+    policyData,
+    trainingData,
+    incidentData,
+    findingData,
+    rcsaData,
+  ] = await Promise.all([
+    collectTaskCompliance(orgId, start, end),
+    collectPolicyAckRate(orgId, start, end),
+    collectTrainingCompletion(orgId, start, end),
+    collectIncidentResponse(orgId, start, end),
+    collectFindingClosure(orgId, start, end),
+    collectRCSAParticipation(orgId, start, end),
+  ]);
 
   const rawMetrics: CCIRawMetrics = {
     task_compliance: taskData,
@@ -98,7 +110,12 @@ async function calculateAndStoreSnapshot(
     self_assessment_participation: rcsaData,
   };
 
-  const result = buildCCIResult(rawMetrics, weights, incidentData.avgHours, previousScore);
+  const result = buildCCIResult(
+    rawMetrics,
+    weights,
+    incidentData.avgHours,
+    previousScore,
+  );
 
   // Store org-wide snapshot (orgEntityId = null)
   await db
@@ -179,7 +196,10 @@ async function collectPolicyAckRate(
       successful: sql<number>`COUNT(*) FILTER (WHERE ${policyAcknowledgment.status} = 'acknowledged')::integer`,
     })
     .from(policyAcknowledgment)
-    .innerJoin(policyDistribution, eq(policyAcknowledgment.distributionId, policyDistribution.id))
+    .innerJoin(
+      policyDistribution,
+      eq(policyAcknowledgment.distributionId, policyDistribution.id),
+    )
     .where(
       and(
         eq(policyAcknowledgment.orgId, orgId),
@@ -201,7 +221,10 @@ async function collectTrainingCompletion(
       successful: sql<number>`COUNT(*) FILTER (WHERE ${policyAcknowledgment.status} = 'acknowledged')::integer`,
     })
     .from(policyAcknowledgment)
-    .innerJoin(policyDistribution, eq(policyAcknowledgment.distributionId, policyDistribution.id))
+    .innerJoin(
+      policyDistribution,
+      eq(policyAcknowledgment.distributionId, policyDistribution.id),
+    )
     .where(
       and(
         eq(policyAcknowledgment.orgId, orgId),
@@ -234,7 +257,10 @@ async function collectIncidentResponse(
       ),
     );
   return {
-    rawMetric: { total: result?.total ?? 0, successful: result?.responded ?? 0 },
+    rawMetric: {
+      total: result?.total ?? 0,
+      successful: result?.responded ?? 0,
+    },
     avgHours: Number(result?.avgHours ?? 0),
   };
 }

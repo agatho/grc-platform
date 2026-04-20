@@ -31,7 +31,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   const body = await req.json();
   const parsed = bodySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const [crisis] = await db
@@ -39,7 +42,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     .from(crisisScenario)
     .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)));
   if (!crisis) {
-    return Response.json({ error: "Crisis scenario not found" }, { status: 404 });
+    return Response.json(
+      { error: "Crisis scenario not found" },
+      { status: 404 },
+    );
   }
 
   const [{ logCount }] = await db
@@ -100,7 +106,9 @@ export async function POST(req: Request, { params }: RouteParams) {
     const [updated] = await tx
       .update(crisisScenario)
       .set(updates)
-      .where(and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)))
+      .where(
+        and(eq(crisisScenario.id, id), eq(crisisScenario.orgId, ctx.orgId)),
+      )
       .returning();
     return updated;
   });

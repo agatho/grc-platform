@@ -58,7 +58,10 @@ export const doraIctRisk = pgTable(
   },
   (table) => ({
     orgIdx: index("dora_ict_risk_org_idx").on(table.orgId),
-    codeIdx: uniqueIndex("dora_ict_risk_code_idx").on(table.orgId, table.riskCode),
+    codeIdx: uniqueIndex("dora_ict_risk_code_idx").on(
+      table.orgId,
+      table.riskCode,
+    ),
     levelIdx: index("dora_ict_risk_level_idx").on(table.orgId, table.riskLevel),
     statusIdx: index("dora_ict_risk_status_idx").on(table.orgId, table.status),
     ownerIdx: index("dora_ict_risk_owner_idx").on(table.ownerId),
@@ -116,7 +119,10 @@ export const doraTlptPlan = pgTable(
     orgIdx: index("dora_tlpt_org_idx").on(table.orgId),
     codeIdx: uniqueIndex("dora_tlpt_code_idx").on(table.orgId, table.planCode),
     statusIdx: index("dora_tlpt_status_idx").on(table.orgId, table.status),
-    dateIdx: index("dora_tlpt_date_idx").on(table.orgId, table.plannedStartDate),
+    dateIdx: index("dora_tlpt_date_idx").on(
+      table.orgId,
+      table.plannedStartDate,
+    ),
   }),
 );
 
@@ -157,8 +163,12 @@ export const doraIctIncident = pgTable(
     // Reporting Deadlines (4h / 72h / 1M)
     initialReportDue: timestamp("initial_report_due", { withTimezone: true }), // +4h
     initialReportSent: timestamp("initial_report_sent", { withTimezone: true }),
-    intermediateReportDue: timestamp("intermediate_report_due", { withTimezone: true }), // +72h
-    intermediateReportSent: timestamp("intermediate_report_sent", { withTimezone: true }),
+    intermediateReportDue: timestamp("intermediate_report_due", {
+      withTimezone: true,
+    }), // +72h
+    intermediateReportSent: timestamp("intermediate_report_sent", {
+      withTimezone: true,
+    }),
     finalReportDue: timestamp("final_report_due", { withTimezone: true }), // +1 month
     finalReportSent: timestamp("final_report_sent", { withTimezone: true }),
     reportingAuthority: varchar("reporting_authority", { length: 200 }),
@@ -175,23 +185,35 @@ export const doraIctIncident = pgTable(
   },
   (table) => ({
     orgIdx: index("dora_ict_inc_org_idx").on(table.orgId),
-    codeIdx: uniqueIndex("dora_ict_inc_code_idx").on(table.orgId, table.incidentCode),
-    classIdx: index("dora_ict_inc_class_idx").on(table.orgId, table.classification),
+    codeIdx: uniqueIndex("dora_ict_inc_code_idx").on(
+      table.orgId,
+      table.incidentCode,
+    ),
+    classIdx: index("dora_ict_inc_class_idx").on(
+      table.orgId,
+      table.classification,
+    ),
     statusIdx: index("dora_ict_inc_status_idx").on(table.orgId, table.status),
-    detectedIdx: index("dora_ict_inc_detected_idx").on(table.orgId, table.detectedAt),
+    detectedIdx: index("dora_ict_inc_detected_idx").on(
+      table.orgId,
+      table.detectedAt,
+    ),
   }),
 );
 
-export const doraIctIncidentRelations = relations(doraIctIncident, ({ one }) => ({
-  organization: one(organization, {
-    fields: [doraIctIncident.orgId],
-    references: [organization.id],
+export const doraIctIncidentRelations = relations(
+  doraIctIncident,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [doraIctIncident.orgId],
+      references: [organization.id],
+    }),
+    handler: one(user, {
+      fields: [doraIctIncident.handlerId],
+      references: [user.id],
+    }),
   }),
-  handler: one(user, {
-    fields: [doraIctIncident.handlerId],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 72.4 DORA ICT Provider — Third-Party Provider Register (Art. 28)
@@ -220,7 +242,9 @@ export const doraIctProvider = pgTable(
     riskAssessment: jsonb("risk_assessment").default("{}"), // {riskLevel, concentrationRisk, substitutability}
     lastAuditDate: date("last_audit_date"),
     nextAuditDate: date("next_audit_date"),
-    complianceStatus: varchar("compliance_status", { length: 20 }).notNull().default("pending"), // compliant | partially_compliant | non_compliant | pending
+    complianceStatus: varchar("compliance_status", { length: 20 })
+      .notNull()
+      .default("pending"), // compliant | partially_compliant | non_compliant | pending
     ownerId: uuid("owner_id").references(() => user.id),
     status: varchar("status", { length: 20 }).notNull().default("active"), // active | under_review | terminated | pending
     createdAt: timestamp("created_at", { withTimezone: true })
@@ -232,23 +256,32 @@ export const doraIctProvider = pgTable(
   },
   (table) => ({
     orgIdx: index("dora_prov_org_idx").on(table.orgId),
-    codeIdx: uniqueIndex("dora_prov_code_idx").on(table.orgId, table.providerCode),
+    codeIdx: uniqueIndex("dora_prov_code_idx").on(
+      table.orgId,
+      table.providerCode,
+    ),
     critIdx: index("dora_prov_crit_idx").on(table.orgId, table.criticality),
     statusIdx: index("dora_prov_status_idx").on(table.orgId, table.status),
-    complianceIdx: index("dora_prov_compliance_idx").on(table.orgId, table.complianceStatus),
+    complianceIdx: index("dora_prov_compliance_idx").on(
+      table.orgId,
+      table.complianceStatus,
+    ),
   }),
 );
 
-export const doraIctProviderRelations = relations(doraIctProvider, ({ one }) => ({
-  organization: one(organization, {
-    fields: [doraIctProvider.orgId],
-    references: [organization.id],
+export const doraIctProviderRelations = relations(
+  doraIctProvider,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [doraIctProvider.orgId],
+      references: [organization.id],
+    }),
+    owner: one(user, {
+      fields: [doraIctProvider.ownerId],
+      references: [user.id],
+    }),
   }),
-  owner: one(user, {
-    fields: [doraIctProvider.ownerId],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 72.5 DORA Information Sharing — Art. 45
@@ -266,7 +299,9 @@ export const doraInformationSharing = pgTable(
     content: text("content").notNull(),
     classification: varchar("classification", { length: 20 }).notNull(), // tlp_white | tlp_green | tlp_amber | tlp_red
     recipientGroups: jsonb("recipient_groups").default("[]"), // [{groupName, contactEmails}]
-    sourceIncidentId: uuid("source_incident_id").references(() => doraIctIncident.id),
+    sourceIncidentId: uuid("source_incident_id").references(
+      () => doraIctIncident.id,
+    ),
     sharedAt: timestamp("shared_at", { withTimezone: true }),
     sharedBy: uuid("shared_by").references(() => user.id),
     anonymized: boolean("anonymized").notNull().default(true),
@@ -285,20 +320,23 @@ export const doraInformationSharing = pgTable(
   }),
 );
 
-export const doraInformationSharingRelations = relations(doraInformationSharing, ({ one }) => ({
-  organization: one(organization, {
-    fields: [doraInformationSharing.orgId],
-    references: [organization.id],
+export const doraInformationSharingRelations = relations(
+  doraInformationSharing,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [doraInformationSharing.orgId],
+      references: [organization.id],
+    }),
+    sourceIncident: one(doraIctIncident, {
+      fields: [doraInformationSharing.sourceIncidentId],
+      references: [doraIctIncident.id],
+    }),
+    sharer: one(user, {
+      fields: [doraInformationSharing.sharedBy],
+      references: [user.id],
+    }),
   }),
-  sourceIncident: one(doraIctIncident, {
-    fields: [doraInformationSharing.sourceIncidentId],
-    references: [doraIctIncident.id],
-  }),
-  sharer: one(user, {
-    fields: [doraInformationSharing.sharedBy],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 72.6 DORA NIS2 Cross-Reference
@@ -316,7 +354,9 @@ export const doraNis2CrossRef = pgTable(
     nis2Article: varchar("nis2_article", { length: 50 }),
     nis2Requirement: text("nis2_requirement"),
     overlapType: varchar("overlap_type", { length: 20 }).notNull(), // full_overlap | partial_overlap | dora_only | nis2_only
-    complianceStatus: varchar("compliance_status", { length: 20 }).notNull().default("not_assessed"), // compliant | partially_compliant | non_compliant | not_assessed
+    complianceStatus: varchar("compliance_status", { length: 20 })
+      .notNull()
+      .default("not_assessed"), // compliant | partially_compliant | non_compliant | not_assessed
     notes: text("notes"),
     assessedBy: uuid("assessed_by").references(() => user.id),
     assessedAt: timestamp("assessed_at", { withTimezone: true }),
@@ -330,18 +370,27 @@ export const doraNis2CrossRef = pgTable(
   (table) => ({
     orgIdx: index("dora_nis2_org_idx").on(table.orgId),
     doraIdx: index("dora_nis2_dora_idx").on(table.orgId, table.doraArticle),
-    overlapIdx: index("dora_nis2_overlap_idx").on(table.orgId, table.overlapType),
-    complianceIdx: index("dora_nis2_compliance_idx").on(table.orgId, table.complianceStatus),
+    overlapIdx: index("dora_nis2_overlap_idx").on(
+      table.orgId,
+      table.overlapType,
+    ),
+    complianceIdx: index("dora_nis2_compliance_idx").on(
+      table.orgId,
+      table.complianceStatus,
+    ),
   }),
 );
 
-export const doraNis2CrossRefRelations = relations(doraNis2CrossRef, ({ one }) => ({
-  organization: one(organization, {
-    fields: [doraNis2CrossRef.orgId],
-    references: [organization.id],
+export const doraNis2CrossRefRelations = relations(
+  doraNis2CrossRef,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [doraNis2CrossRef.orgId],
+      references: [organization.id],
+    }),
+    assessor: one(user, {
+      fields: [doraNis2CrossRef.assessedBy],
+      references: [user.id],
+    }),
   }),
-  assessor: one(user, {
-    fields: [doraNis2CrossRef.assessedBy],
-    references: [user.id],
-  }),
-}));
+);

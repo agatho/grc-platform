@@ -142,7 +142,7 @@ export class EmailService {
   async send(params: EmailParams): Promise<EmailResult | null> {
     if (process.env.EMAIL_ENABLED !== "true") {
       console.log(
-        `[EmailService] disabled, skipping: ${params.templateKey} -> ${params.to}`
+        `[EmailService] disabled, skipping: ${params.templateKey} -> ${params.to}`,
       );
       return null;
     }
@@ -150,12 +150,11 @@ export class EmailService {
     const template = this.renderTemplate(
       params.templateKey,
       params.data,
-      params.lang
+      params.lang,
     );
 
     const fromName = process.env.RESEND_FROM_NAME || "ARCTOS GRC Platform";
-    const fromEmail =
-      process.env.RESEND_FROM_EMAIL || "noreply@arctos.cws.de";
+    const fromEmail = process.env.RESEND_FROM_EMAIL || "noreply@arctos.cws.de";
     const from = `${fromName} <${fromEmail}>`;
 
     let lastError: unknown;
@@ -186,7 +185,7 @@ export class EmailService {
   renderTemplate(
     key: EmailTemplateKey,
     data: Record<string, unknown>,
-    lang: "de" | "en"
+    lang: "de" | "en",
   ): RenderedTemplate {
     switch (key) {
       case "task_assigned":
@@ -264,9 +263,7 @@ export class EmailService {
         // Reuses user_invited template structure with DPO-specific subject
         return {
           subject:
-            lang === "de"
-              ? "DPO-Zuweisung: ARCTOS"
-              : "DPO Assignment: ARCTOS",
+            lang === "de" ? "DPO-Zuweisung: ARCTOS" : "DPO Assignment: ARCTOS",
           component: React.createElement(UserInvited, {
             lang,
             orgName: (data.orgName as string) || "",

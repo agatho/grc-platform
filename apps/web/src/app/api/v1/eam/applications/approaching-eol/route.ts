@@ -27,11 +27,17 @@ export async function GET(req: Request) {
       userCount: applicationPortfolio.userCount,
     })
     .from(applicationPortfolio)
-    .innerJoin(architectureElement, eq(applicationPortfolio.elementId, architectureElement.id))
+    .innerJoin(
+      architectureElement,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
     .where(
       and(
         eq(applicationPortfolio.orgId, ctx.orgId),
-        lte(applicationPortfolio.plannedEol, cutoffDate.toISOString().split("T")[0]!),
+        lte(
+          applicationPortfolio.plannedEol,
+          cutoffDate.toISOString().split("T")[0]!,
+        ),
       ),
     );
 

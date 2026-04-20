@@ -1,10 +1,21 @@
-import { db, architectureElement, applicationPortfolio, architectureRelationship, businessCapability } from "@grc/db";
+import {
+  db,
+  architectureElement,
+  applicationPortfolio,
+  architectureRelationship,
+  businessCapability,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, lte, or, gt, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
-function computeLifecyclePhaseAtTime(app: Record<string, unknown>, timeRef: Date): string {
-  const intro = app.plannedIntroduction ? new Date(app.plannedIntroduction as string) : null;
+function computeLifecyclePhaseAtTime(
+  app: Record<string, unknown>,
+  timeRef: Date,
+): string {
+  const intro = app.plannedIntroduction
+    ? new Date(app.plannedIntroduction as string)
+    : null;
   const goLive = app.goLiveDate ? new Date(app.goLiveDate as string) : null;
   const eol = app.plannedEol ? new Date(app.plannedEol as string) : null;
 
@@ -31,33 +42,54 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const timeRef = url.searchParams.get("timeRef") ? new Date(url.searchParams.get("timeRef")!) : new Date();
+  const timeRef = url.searchParams.get("timeRef")
+    ? new Date(url.searchParams.get("timeRef")!)
+    : new Date();
   const coloringMode = url.searchParams.get("coloring") ?? "lifecycle";
 
   // Get capabilities as columns
-  const capabilities = await db.select()
+  const capabilities = await db
+    .select()
     .from(businessCapability)
-    .where(and(eq(businessCapability.orgId, ctx.orgId), eq(businessCapability.level, 1)));
+    .where(
+      and(
+        eq(businessCapability.orgId, ctx.orgId),
+        eq(businessCapability.level, 1),
+      ),
+    );
 
   // Get IT components as rows
-  const components = await db.select()
+  const components = await db
+    .select()
     .from(architectureElement)
-    .where(and(eq(architectureElement.orgId, ctx.orgId), eq(architectureElement.layer, "technology")));
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        eq(architectureElement.layer, "technology"),
+      ),
+    );
 
   // Get active applications at timeRef
-  const applications = await db.select({
-    element: architectureElement,
-    portfolio: applicationPortfolio,
-  })
+  const applications = await db
+    .select({
+      element: architectureElement,
+      portfolio: applicationPortfolio,
+    })
     .from(architectureElement)
-    .leftJoin(applicationPortfolio, eq(applicationPortfolio.elementId, architectureElement.id))
-    .where(and(
-      eq(architectureElement.orgId, ctx.orgId),
-      eq(architectureElement.type, "application"),
-    ));
+    .leftJoin(
+      applicationPortfolio,
+      eq(applicationPortfolio.elementId, architectureElement.id),
+    )
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        eq(architectureElement.type, "application"),
+      ),
+    );
 
   // Get relationships
-  const relationships = await db.select()
+  const relationships = await db
+    .select()
     .from(architectureRelationship)
     .where(eq(architectureRelationship.orgId, ctx.orgId));
 
@@ -79,7 +111,10 @@ export async function GET(req: Request) {
   }
 
   // Build matrix cells
-  const cells: Record<string, Record<string, Array<Record<string, unknown>>>> = {};
+  const cells: Record<
+    string,
+    Record<string, Array<Record<string, unknown>>>
+  > = {};
 
   for (const app of applications) {
     const phase = computeLifecyclePhaseAtTime(app.portfolio ?? {}, timeRef);
@@ -108,7 +143,11 @@ export async function GET(req: Request) {
 
   return Response.json({
     data: {
-      columns: capabilities.map((c) => ({ id: c.id, name: c.elementId, elementId: c.elementId })),
+      columns: capabilities.map((c) => ({
+        id: c.id,
+        name: c.elementId,
+        elementId: c.elementId,
+      })),
       rows: components.map((c) => ({ id: c.id, name: c.name, type: c.type })),
       cells,
       timeReference: timeRef.toISOString(),

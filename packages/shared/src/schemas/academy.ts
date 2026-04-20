@@ -3,17 +3,38 @@ import { z } from "zod";
 // Sprint 84: GRC Academy und Awareness — Zod schemas
 
 export const academyCourseTypeValues = [
-  "gdpr", "info_security", "anti_corruption", "nis2", "dora", "esg", "phishing",
-  "code_of_conduct", "aml", "data_classification", "incident_response", "bcm",
-  "whistleblowing", "it_security", "custom",
+  "gdpr",
+  "info_security",
+  "anti_corruption",
+  "nis2",
+  "dora",
+  "esg",
+  "phishing",
+  "code_of_conduct",
+  "aml",
+  "data_classification",
+  "incident_response",
+  "bcm",
+  "whistleblowing",
+  "it_security",
+  "custom",
 ] as const;
 
 export const academyEnrollmentStatusValues = [
-  "assigned", "in_progress", "completed", "overdue", "exempted",
+  "assigned",
+  "in_progress",
+  "completed",
+  "overdue",
+  "exempted",
 ] as const;
 
 export const academyLessonTypeValues = [
-  "video", "text", "interactive", "quiz", "simulation", "document",
+  "video",
+  "text",
+  "interactive",
+  "quiz",
+  "simulation",
+  "document",
 ] as const;
 
 // ──────────────────────────────────────────────────────────────
@@ -56,15 +77,22 @@ export const createAcademyLessonSchema = z.object({
   contentJson: z.record(z.unknown()).default({}),
   durationMinutes: z.number().int().min(1).max(120).default(10),
   sortOrder: z.number().int().min(0).default(0),
-  quizQuestionsJson: z.array(z.object({
-    question: z.string().max(2000),
-    options: z.array(z.string().max(500)).min(2).max(6),
-    correctIndex: z.number().int().min(0),
-    explanation: z.string().max(2000).optional(),
-  })).max(50).default([]),
+  quizQuestionsJson: z
+    .array(
+      z.object({
+        question: z.string().max(2000),
+        options: z.array(z.string().max(500)).min(2).max(6),
+        correctIndex: z.number().int().min(0),
+        explanation: z.string().max(2000).optional(),
+      }),
+    )
+    .max(50)
+    .default([]),
 });
 
-export const updateAcademyLessonSchema = createAcademyLessonSchema.partial().omit({ courseId: true });
+export const updateAcademyLessonSchema = createAcademyLessonSchema
+  .partial()
+  .omit({ courseId: true });
 
 // ──────────────────────────────────────────────────────────────
 // Enrollment CRUD
@@ -102,10 +130,14 @@ export const listEnrollmentsQuerySchema = z.object({
 export const submitQuizAttemptSchema = z.object({
   enrollmentId: z.string().uuid(),
   lessonId: z.string().uuid(),
-  answersJson: z.array(z.object({
-    questionIndex: z.number().int().min(0),
-    selectedIndex: z.number().int().min(0),
-  })).max(100),
+  answersJson: z
+    .array(
+      z.object({
+        questionIndex: z.number().int().min(0),
+        selectedIndex: z.number().int().min(0),
+      }),
+    )
+    .max(100),
   durationSeconds: z.number().int().min(0).optional(),
 });
 
@@ -121,8 +153,14 @@ export const academyDashboardQuerySchema = z.object({
 // Type exports
 // ──────────────────────────────────────────────────────────────
 
-export type CreateAcademyCourseInput = z.infer<typeof createAcademyCourseSchema>;
-export type CreateAcademyLessonInput = z.infer<typeof createAcademyLessonSchema>;
-export type CreateAcademyEnrollmentInput = z.infer<typeof createAcademyEnrollmentSchema>;
+export type CreateAcademyCourseInput = z.infer<
+  typeof createAcademyCourseSchema
+>;
+export type CreateAcademyLessonInput = z.infer<
+  typeof createAcademyLessonSchema
+>;
+export type CreateAcademyEnrollmentInput = z.infer<
+  typeof createAcademyEnrollmentSchema
+>;
 export type BulkEnrollInput = z.infer<typeof bulkEnrollSchema>;
 export type SubmitQuizAttemptInput = z.infer<typeof submitQuizAttemptSchema>;

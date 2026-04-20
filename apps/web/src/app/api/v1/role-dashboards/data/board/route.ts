@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = boardDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = boardDashboardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Top 5 risks in plain language
   const topRisks = await db.execute(sql`

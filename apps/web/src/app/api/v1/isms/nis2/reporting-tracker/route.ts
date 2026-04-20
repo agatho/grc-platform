@@ -1,8 +1,4 @@
-import {
-  db,
-  nis2IncidentReport,
-  securityIncident,
-} from "@grc/db";
+import { db, nis2IncidentReport, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc, isNull } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
@@ -36,7 +32,10 @@ export async function GET(req: Request) {
       incidentDetectedAt: securityIncident.detectedAt,
     })
     .from(nis2IncidentReport)
-    .innerJoin(securityIncident, eq(nis2IncidentReport.incidentId, securityIncident.id))
+    .innerJoin(
+      securityIncident,
+      eq(nis2IncidentReport.incidentId, securityIncident.id),
+    )
     .where(eq(nis2IncidentReport.orgId, ctx.orgId))
     .orderBy(desc(nis2IncidentReport.deadlineAt))
     .limit(limit)

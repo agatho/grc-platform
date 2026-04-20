@@ -15,12 +15,7 @@ export async function DELETE(
   const [existing] = await db
     .select({ id: scimToken.id })
     .from(scimToken)
-    .where(
-      and(
-        eq(scimToken.id, id),
-        eq(scimToken.orgId, ctx.orgId),
-      ),
-    );
+    .where(and(eq(scimToken.id, id), eq(scimToken.orgId, ctx.orgId)));
 
   if (!existing) {
     return Response.json({ error: "Token not found" }, { status: 404 });

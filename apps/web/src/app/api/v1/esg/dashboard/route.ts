@@ -80,9 +80,7 @@ export async function GET(req: Request) {
   const [metricsCount] = await db
     .select({ value: count() })
     .from(esrsMetric)
-    .where(
-      and(eq(esrsMetric.orgId, ctx.orgId), eq(esrsMetric.isActive, true)),
-    );
+    .where(and(eq(esrsMetric.orgId, ctx.orgId), eq(esrsMetric.isActive, true)));
 
   // 4. Measurements this year
   const [measurementsCount] = await db
@@ -128,10 +126,7 @@ export async function GET(req: Request) {
   for (const row of targetsByStatus) {
     targetSummary[row.status] = Number(row.value);
   }
-  const totalTargets = Object.values(targetSummary).reduce(
-    (a, b) => a + b,
-    0,
-  );
+  const totalTargets = Object.values(targetSummary).reduce((a, b) => a + b, 0);
 
   // 7. Annual report status
   const [report] = await db

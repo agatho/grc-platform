@@ -146,10 +146,7 @@ export async function GET(req: Request) {
 
   const { page, limit, offset, searchParams } = paginate(req);
 
-  const conditions: SQL[] = [
-    eq(risk.orgId, ctx.orgId),
-    isNull(risk.deletedAt),
-  ];
+  const conditions: SQL[] = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
   // Status filter (multi-value)
   const statusParam = searchParams.get("status");
@@ -164,7 +161,13 @@ export async function GET(req: Request) {
   const categoryParam = searchParams.get("category");
   if (categoryParam) {
     const categories = categoryParam.split(",") as Array<
-      "strategic" | "operational" | "financial" | "compliance" | "cyber" | "reputational" | "esg"
+      | "strategic"
+      | "operational"
+      | "financial"
+      | "compliance"
+      | "cyber"
+      | "reputational"
+      | "esg"
     >;
     conditions.push(inArray(risk.riskCategory, categories));
   }
@@ -205,10 +208,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(risk.title, pattern),
-        ilike(risk.description, pattern),
-      )!,
+      or(ilike(risk.title, pattern), ilike(risk.description, pattern))!,
     );
   }
 

@@ -9,10 +9,22 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, ArrowLeft, Save, AlertTriangle, ClipboardCheck } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  Save,
+  AlertTriangle,
+  ClipboardCheck,
+} from "lucide-react";
 import Link from "next/link";
 
 interface GpaiModel {
@@ -43,13 +55,32 @@ interface GpaiModel {
 
 // Art. 56 Code of Practice checklist items
 const ART56_CHECKLIST = [
-  { key: "transparency_obligations", label: "Transparenzpflichten gemaess Art. 53 eingehalten" },
-  { key: "copyright_policy", label: "Urheberrechtsrichtlinie und Zusammenfassung der Trainingsdaten dokumentiert" },
-  { key: "risk_identification", label: "Systemische Risiken identifiziert und bewertet" },
+  {
+    key: "transparency_obligations",
+    label: "Transparenzpflichten gemaess Art. 53 eingehalten",
+  },
+  {
+    key: "copyright_policy",
+    label:
+      "Urheberrechtsrichtlinie und Zusammenfassung der Trainingsdaten dokumentiert",
+  },
+  {
+    key: "risk_identification",
+    label: "Systemische Risiken identifiziert und bewertet",
+  },
   { key: "risk_mitigation", label: "Risikominderungsmassnahmen implementiert" },
-  { key: "incident_reporting", label: "Verfahren zur Meldung schwerwiegender Vorfaelle eingerichtet" },
-  { key: "cybersecurity_measures", label: "Angemessene Cybersicherheitsmassnahmen umgesetzt" },
-  { key: "energy_reporting", label: "Energieverbrauch und Rechenressourcen dokumentiert" },
+  {
+    key: "incident_reporting",
+    label: "Verfahren zur Meldung schwerwiegender Vorfaelle eingerichtet",
+  },
+  {
+    key: "cybersecurity_measures",
+    label: "Angemessene Cybersicherheitsmassnahmen umgesetzt",
+  },
+  {
+    key: "energy_reporting",
+    label: "Energieverbrauch und Rechenressourcen dokumentiert",
+  },
 ] as const;
 
 interface CodeOfPracticeData {
@@ -94,7 +125,9 @@ function GpaiDetailInner() {
     }
   }, [id]);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const handleSave = async () => {
     setSaving(true);
@@ -123,19 +156,31 @@ function GpaiDetailInner() {
   }
 
   if (!data) {
-    return <div className="text-center py-12 text-muted-foreground">GPAI-Modell nicht gefunden</div>;
+    return (
+      <div className="text-center py-12 text-muted-foreground">
+        GPAI-Modell nicht gefunden
+      </div>
+    );
   }
 
-  const set = (key: string, value: unknown) => setForm((prev) => ({ ...prev, [key]: value }));
+  const set = (key: string, value: unknown) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <Link href="/ai-act/gpai" className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground">
+        <Link
+          href="/ai-act/gpai"
+          className="flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
           <ArrowLeft className="h-4 w-4" /> Zurueck zur Liste
         </Link>
         <Button onClick={handleSave} disabled={saving}>
-          {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Save className="h-4 w-4 mr-2" />}
+          {saving ? (
+            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+          ) : (
+            <Save className="h-4 w-4 mr-2" />
+          )}
           Speichern
         </Button>
       </div>
@@ -152,20 +197,33 @@ function GpaiDetailInner() {
 
       {/* Stammdaten */}
       <Card>
-        <CardHeader><CardTitle>Stammdaten</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Stammdaten</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Name</Label>
-            <Input value={form.name ?? ""} onChange={(e) => set("name", e.target.value)} />
+            <Input
+              value={form.name ?? ""}
+              onChange={(e) => set("name", e.target.value)}
+            />
           </div>
           <div>
             <Label>Anbieter</Label>
-            <Input value={form.provider ?? ""} onChange={(e) => set("provider", e.target.value)} />
+            <Input
+              value={form.provider ?? ""}
+              onChange={(e) => set("provider", e.target.value)}
+            />
           </div>
           <div>
             <Label>Modelltyp</Label>
-            <Select value={form.model_type ?? "general_purpose"} onValueChange={(v) => set("model_type", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.model_type ?? "general_purpose"}
+              onValueChange={(v) => set("model_type", v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="general_purpose">General Purpose</SelectItem>
                 <SelectItem value="foundation">Foundation</SelectItem>
@@ -176,12 +234,20 @@ function GpaiDetailInner() {
           </div>
           <div>
             <Label>Version</Label>
-            <Input value={form.version ?? ""} onChange={(e) => set("version", e.target.value)} />
+            <Input
+              value={form.version ?? ""}
+              onChange={(e) => set("version", e.target.value)}
+            />
           </div>
           <div>
             <Label>Status</Label>
-            <Select value={form.status ?? "draft"} onValueChange={(v) => set("status", v)}>
-              <SelectTrigger><SelectValue /></SelectTrigger>
+            <Select
+              value={form.status ?? "draft"}
+              onValueChange={(v) => set("status", v)}
+            >
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="draft">Entwurf</SelectItem>
                 <SelectItem value="registered">Registriert</SelectItem>
@@ -193,72 +259,130 @@ function GpaiDetailInner() {
           </div>
           <div>
             <Label>Veroeffentlichungsdatum</Label>
-            <Input type="date" value={form.release_date ?? ""} onChange={(e) => set("release_date", e.target.value)} />
+            <Input
+              type="date"
+              value={form.release_date ?? ""}
+              onChange={(e) => set("release_date", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Systemisches Risiko (Art. 51) */}
       <Card>
-        <CardHeader><CardTitle>Systemisches Risiko (Art. 51)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Systemisches Risiko (Art. 51)</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex items-center gap-3">
-            <Switch checked={form.is_systemic_risk ?? false} onCheckedChange={(v) => set("is_systemic_risk", v)} />
+            <Switch
+              checked={form.is_systemic_risk ?? false}
+              onCheckedChange={(v) => set("is_systemic_risk", v)}
+            />
             <Label>Systemisches Risiko</Label>
           </div>
           <div>
             <Label>Begruendung systemisches Risiko</Label>
-            <Textarea value={form.systemic_risk_justification ?? ""} onChange={(e) => set("systemic_risk_justification", e.target.value)} rows={3} />
+            <Textarea
+              value={form.systemic_risk_justification ?? ""}
+              onChange={(e) =>
+                set("systemic_risk_justification", e.target.value)
+              }
+              rows={3}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* Technische Details (Art. 52-53) */}
       <Card>
-        <CardHeader><CardTitle>Technische Details (Art. 52-53)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Technische Details (Art. 52-53)</CardTitle>
+        </CardHeader>
         <CardContent className="space-y-4">
           <div>
             <Label>Trainingsdaten-Zusammenfassung</Label>
-            <Textarea value={form.training_data_summary ?? ""} onChange={(e) => set("training_data_summary", e.target.value)} rows={3} />
+            <Textarea
+              value={form.training_data_summary ?? ""}
+              onChange={(e) => set("training_data_summary", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Rechenressourcen</Label>
-            <Textarea value={form.computational_resources ?? ""} onChange={(e) => set("computational_resources", e.target.value)} rows={2} />
+            <Textarea
+              value={form.computational_resources ?? ""}
+              onChange={(e) => set("computational_resources", e.target.value)}
+              rows={2}
+            />
           </div>
           <div>
             <Label>Energieverbrauch (kWh)</Label>
-            <Input type="number" value={form.energy_consumption_kwh ?? ""} onChange={(e) => set("energy_consumption_kwh", e.target.value ? Number(e.target.value) : null)} />
+            <Input
+              type="number"
+              value={form.energy_consumption_kwh ?? ""}
+              onChange={(e) =>
+                set(
+                  "energy_consumption_kwh",
+                  e.target.value ? Number(e.target.value) : null,
+                )
+              }
+            />
           </div>
           <div>
             <Label>Faehigkeiten</Label>
-            <Textarea value={form.capabilities_summary ?? ""} onChange={(e) => set("capabilities_summary", e.target.value)} rows={3} />
+            <Textarea
+              value={form.capabilities_summary ?? ""}
+              onChange={(e) => set("capabilities_summary", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Einschraenkungen</Label>
-            <Textarea value={form.limitations_summary ?? ""} onChange={(e) => set("limitations_summary", e.target.value)} rows={3} />
+            <Textarea
+              value={form.limitations_summary ?? ""}
+              onChange={(e) => set("limitations_summary", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Vorgesehene Verwendung</Label>
-            <Textarea value={form.intended_use ?? ""} onChange={(e) => set("intended_use", e.target.value)} rows={3} />
+            <Textarea
+              value={form.intended_use ?? ""}
+              onChange={(e) => set("intended_use", e.target.value)}
+              rows={3}
+            />
           </div>
           <div>
             <Label>Cybersicherheitsmassnahmen</Label>
-            <Textarea value={form.cybersecurity_measures ?? ""} onChange={(e) => set("cybersecurity_measures", e.target.value)} rows={2} />
+            <Textarea
+              value={form.cybersecurity_measures ?? ""}
+              onChange={(e) => set("cybersecurity_measures", e.target.value)}
+              rows={2}
+            />
           </div>
         </CardContent>
       </Card>
 
       {/* EU-Vertreter (Art. 54) */}
       <Card>
-        <CardHeader><CardTitle>EU-Bevollmaechtigter (Art. 54)</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>EU-Bevollmaechtigter (Art. 54)</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label>Name des EU-Vertreters</Label>
-            <Input value={form.eu_representative_name ?? ""} onChange={(e) => set("eu_representative_name", e.target.value)} />
+            <Input
+              value={form.eu_representative_name ?? ""}
+              onChange={(e) => set("eu_representative_name", e.target.value)}
+            />
           </div>
           <div>
             <Label>Kontakt des EU-Vertreters</Label>
-            <Input value={form.eu_representative_contact ?? ""} onChange={(e) => set("eu_representative_contact", e.target.value)} />
+            <Input
+              value={form.eu_representative_contact ?? ""}
+              onChange={(e) => set("eu_representative_contact", e.target.value)}
+            />
           </div>
         </CardContent>
       </Card>
@@ -275,18 +399,34 @@ function GpaiDetailInner() {
           {/* Adherence toggle + date */}
           <div className="flex items-center gap-6">
             <div className="flex items-center gap-3">
-              <Switch checked={form.code_of_practice_adherence ?? false} onCheckedChange={(v) => set("code_of_practice_adherence", v)} />
+              <Switch
+                checked={form.code_of_practice_adherence ?? false}
+                onCheckedChange={(v) => set("code_of_practice_adherence", v)}
+              />
               <Label className="font-medium">Einhaltung Verhaltenskodex</Label>
             </div>
             <div className="flex items-center gap-2">
-              <Label className="text-sm text-muted-foreground">Datum der Zusage:</Label>
+              <Label className="text-sm text-muted-foreground">
+                Datum der Zusage:
+              </Label>
               <Input
                 type="date"
                 className="w-44"
-                value={parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null).adherenceDate ?? ""}
+                value={
+                  parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null)
+                    .adherenceDate ?? ""
+                }
                 onChange={(e) => {
-                  const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
-                  set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, adherenceDate: e.target.value }));
+                  const existing = parseCodeOfPracticeNotes(
+                    form.code_of_practice_notes ?? null,
+                  );
+                  set(
+                    "code_of_practice_notes",
+                    serializeCodeOfPracticeNotes({
+                      ...existing,
+                      adherenceDate: e.target.value,
+                    }),
+                  );
                 }}
               />
             </div>
@@ -294,10 +434,14 @@ function GpaiDetailInner() {
 
           {/* Art. 56 Requirements Checklist */}
           <div>
-            <Label className="font-medium mb-3 block">Anforderungen nach Art. 56 AI Act</Label>
+            <Label className="font-medium mb-3 block">
+              Anforderungen nach Art. 56 AI Act
+            </Label>
             <div className="space-y-3 rounded-md border p-4">
               {ART56_CHECKLIST.map((item) => {
-                const copData = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                const copData = parseCodeOfPracticeNotes(
+                  form.code_of_practice_notes ?? null,
+                );
                 const checked = copData.checklist?.[item.key] ?? false;
                 return (
                   <div key={item.key} className="flex items-start gap-3">
@@ -305,12 +449,26 @@ function GpaiDetailInner() {
                       id={`cop-${item.key}`}
                       checked={checked}
                       onCheckedChange={(v) => {
-                        const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
-                        const newChecklist = { ...(existing.checklist ?? {}), [item.key]: !!v };
-                        set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, checklist: newChecklist }));
+                        const existing = parseCodeOfPracticeNotes(
+                          form.code_of_practice_notes ?? null,
+                        );
+                        const newChecklist = {
+                          ...(existing.checklist ?? {}),
+                          [item.key]: !!v,
+                        };
+                        set(
+                          "code_of_practice_notes",
+                          serializeCodeOfPracticeNotes({
+                            ...existing,
+                            checklist: newChecklist,
+                          }),
+                        );
                       }}
                     />
-                    <label htmlFor={`cop-${item.key}`} className="text-sm leading-tight cursor-pointer">
+                    <label
+                      htmlFor={`cop-${item.key}`}
+                      className="text-sm leading-tight cursor-pointer"
+                    >
                       {item.label}
                     </label>
                   </div>
@@ -319,9 +477,13 @@ function GpaiDetailInner() {
             </div>
             <p className="text-xs text-muted-foreground mt-2">
               {(() => {
-                const copData = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
+                const copData = parseCodeOfPracticeNotes(
+                  form.code_of_practice_notes ?? null,
+                );
                 const total = ART56_CHECKLIST.length;
-                const done = ART56_CHECKLIST.filter((i) => copData.checklist?.[i.key]).length;
+                const done = ART56_CHECKLIST.filter(
+                  (i) => copData.checklist?.[i.key],
+                ).length;
                 return `${done} von ${total} Anforderungen erfuellt`;
               })()}
             </p>
@@ -331,10 +493,21 @@ function GpaiDetailInner() {
           <div>
             <Label>Anmerkungen zum Verhaltenskodex</Label>
             <Textarea
-              value={parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null).notes ?? ""}
+              value={
+                parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null)
+                  .notes ?? ""
+              }
               onChange={(e) => {
-                const existing = parseCodeOfPracticeNotes(form.code_of_practice_notes ?? null);
-                set("code_of_practice_notes", serializeCodeOfPracticeNotes({ ...existing, notes: e.target.value }));
+                const existing = parseCodeOfPracticeNotes(
+                  form.code_of_practice_notes ?? null,
+                );
+                set(
+                  "code_of_practice_notes",
+                  serializeCodeOfPracticeNotes({
+                    ...existing,
+                    notes: e.target.value,
+                  }),
+                );
               }}
               rows={3}
               placeholder="Weitere Anmerkungen zur Einhaltung des Verhaltenskodex..."
@@ -345,11 +518,23 @@ function GpaiDetailInner() {
 
       {/* Metadaten */}
       <Card>
-        <CardHeader><CardTitle>Metadaten</CardTitle></CardHeader>
+        <CardHeader>
+          <CardTitle>Metadaten</CardTitle>
+        </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
-          <div><span className="font-medium text-foreground">Erstellt am:</span> {new Date(data.created_at).toLocaleDateString("de-DE")}</div>
-          <div><span className="font-medium text-foreground">Aktualisiert am:</span> {new Date(data.updated_at).toLocaleDateString("de-DE")}</div>
-          <div><span className="font-medium text-foreground">ID:</span> {data.id}</div>
+          <div>
+            <span className="font-medium text-foreground">Erstellt am:</span>{" "}
+            {new Date(data.created_at).toLocaleDateString("de-DE")}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">
+              Aktualisiert am:
+            </span>{" "}
+            {new Date(data.updated_at).toLocaleDateString("de-DE")}
+          </div>
+          <div>
+            <span className="font-medium text-foreground">ID:</span> {data.id}
+          </div>
         </CardContent>
       </Card>
     </div>

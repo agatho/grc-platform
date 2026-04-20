@@ -53,15 +53,29 @@ const MODULE_META: Record<
   { label: string; icon: typeof Shield; hrefDashboard: string }
 > = {
   isms: { label: "Information Security", icon: Shield, hrefDashboard: "/isms" },
-  bcms: { label: "Business Continuity", icon: HeartPulse, hrefDashboard: "/bcms" },
-  dpms: { label: "Data Protection", icon: Scale, hrefDashboard: "/data-privacy" },
+  bcms: {
+    label: "Business Continuity",
+    icon: HeartPulse,
+    hrefDashboard: "/bcms",
+  },
+  dpms: {
+    label: "Data Protection",
+    icon: Scale,
+    hrefDashboard: "/data-privacy",
+  },
   ai_act: { label: "EU AI Act", icon: Brain, hrefDashboard: "/ai-act" },
 };
 
 function statusBadge(status: HealthStatus) {
   const variants: Record<HealthStatus, { label: string; className: string }> = {
-    green: { label: "GREEN", className: "bg-emerald-100 text-emerald-800 border-emerald-300" },
-    amber: { label: "AMBER", className: "bg-amber-100 text-amber-800 border-amber-300" },
+    green: {
+      label: "GREEN",
+      className: "bg-emerald-100 text-emerald-800 border-emerald-300",
+    },
+    amber: {
+      label: "AMBER",
+      className: "bg-amber-100 text-amber-800 border-amber-300",
+    },
     red: { label: "RED", className: "bg-red-100 text-red-800 border-red-300" },
   };
   const v = variants[status];
@@ -81,7 +95,10 @@ function scoreBar(score: number, status: HealthStatus) {
         : "bg-red-500";
   return (
     <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-      <div className={`${color} h-full transition-all`} style={{ width: `${score}%` }} />
+      <div
+        className={`${color} h-full transition-all`}
+        style={{ width: `${score}%` }}
+      />
     </div>
   );
 }
@@ -127,7 +144,9 @@ export default function GrcCompositeDashboardPage() {
           <CardContent className="p-6">
             <div className="flex items-center gap-2 text-red-800">
               <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">Dashboard konnte nicht geladen werden</p>
+              <p className="font-medium">
+                Dashboard konnte nicht geladen werden
+              </p>
             </div>
             <p className="text-sm text-red-700 mt-2">{error}</p>
             <Button onClick={fetchData} className="mt-4" variant="outline">
@@ -147,7 +166,9 @@ export default function GrcCompositeDashboardPage() {
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight">GRC Executive Dashboard</h1>
+          <h1 className="text-3xl font-bold tracking-tight">
+            GRC Executive Dashboard
+          </h1>
           <p className="text-muted-foreground mt-1">
             {data.organizationName} — Stand: {data.asOfDate}
           </p>
@@ -173,7 +194,8 @@ export default function GrcCompositeDashboardPage() {
             <div>
               <CardTitle className="text-2xl">Overall GRC Health</CardTitle>
               <CardDescription>
-                Durchschnitt ueber ISMS, BCMS, DPMS und AI-Act (gleichgewichtet).
+                Durchschnitt ueber ISMS, BCMS, DPMS und AI-Act
+                (gleichgewichtet).
               </CardDescription>
             </div>
             {statusBadge(data.overallStatus)}
@@ -228,7 +250,10 @@ export default function GrcCompositeDashboardPage() {
                   {Object.entries(m.driverMetrics)
                     .slice(0, 6)
                     .map(([key, value]) => (
-                      <div key={key} className="flex justify-between border-b py-1">
+                      <div
+                        key={key}
+                        className="flex justify-between border-b py-1"
+                      >
                         <span className="text-muted-foreground capitalize">
                           {key.replace(/([A-Z])/g, " $1")}
                         </span>

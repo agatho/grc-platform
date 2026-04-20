@@ -35,7 +35,13 @@ interface Organization {
   id: string;
   name: string;
   shortName: string | null;
-  type: "subsidiary" | "holding" | "joint_venture" | "branch" | "division" | "department";
+  type:
+    | "subsidiary"
+    | "holding"
+    | "joint_venture"
+    | "branch"
+    | "division"
+    | "department";
   country: string;
   isEu: boolean;
   parentOrgId: string | null;
@@ -49,12 +55,25 @@ interface Organization {
 interface OrgFormData {
   name: string;
   shortName: string;
-  type: "subsidiary" | "holding" | "joint_venture" | "branch" | "division" | "department";
+  type:
+    | "subsidiary"
+    | "holding"
+    | "joint_venture"
+    | "branch"
+    | "division"
+    | "department";
   country: string;
   parentOrgId: string;
 }
 
-const ORG_TYPES = ["subsidiary", "holding", "joint_venture", "branch", "division", "department"] as const;
+const ORG_TYPES = [
+  "subsidiary",
+  "holding",
+  "joint_venture",
+  "branch",
+  "division",
+  "department",
+] as const;
 
 const EMPTY_FORM: OrgFormData = {
   name: "",
@@ -117,13 +136,9 @@ function OrgFormDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-[500px]">
         <DialogHeader>
-          <DialogTitle>
-            {editingOrg ? t("edit") : t("create")}
-          </DialogTitle>
+          <DialogTitle>{editingOrg ? t("edit") : t("create")}</DialogTitle>
           <DialogDescription>
-            {editingOrg
-              ? t("edit")
-              : t("create")}
+            {editingOrg ? t("edit") : t("create")}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -313,7 +328,7 @@ export default function OrganizationsPage() {
     try {
       const res = await fetch("/api/v1/organizations?limit=100");
       if (!res.ok) throw new Error("Failed to fetch");
-      const json = await res.json() as { data: Organization[] };
+      const json = (await res.json()) as { data: Organization[] };
       setOrganizations(json.data);
     } catch {
       // Silently handle — table will show empty state
@@ -425,9 +440,7 @@ export default function OrganizationsPage() {
       ),
       cell: ({ row }) => (
         <div>
-          <span className="font-medium text-gray-900">
-            {row.original.name}
-          </span>
+          <span className="font-medium text-gray-900">{row.original.name}</span>
           {row.original.shortName && (
             <span className="ml-2 text-xs text-gray-400">
               ({row.original.shortName})
@@ -477,9 +490,7 @@ export default function OrganizationsPage() {
               : undefined
           }
         >
-          {row.original.deletedAt
-            ? tStatus("archived")
-            : tStatus("active")}
+          {row.original.deletedAt ? tStatus("archived") : tStatus("active")}
         </Badge>
       ),
     },

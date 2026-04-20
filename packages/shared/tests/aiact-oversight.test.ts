@@ -38,7 +38,9 @@ describe("assessLoggingCapability", () => {
   it("fails if automatic logging disabled", () => {
     const r = assessLoggingCapability({ ...full, hasAutomaticLogging: false });
     expect(r.meetsMinimumRequirement).toBe(false);
-    expect(r.issues.some((i) => i.includes("Automatic logging disabled"))).toBe(true);
+    expect(r.issues.some((i) => i.includes("Automatic logging disabled"))).toBe(
+      true,
+    );
   });
 
   it("flags retention < 180d", () => {
@@ -182,7 +184,10 @@ describe("assessDeployerCompliance", () => {
   });
 
   it("missing human oversight = critical", () => {
-    const r = assessDeployerCompliance({ ...full, implementsHumanOversight: false });
+    const r = assessDeployerCompliance({
+      ...full,
+      implementsHumanOversight: false,
+    });
     expect(r.isCompliant).toBe(false);
     expect(r.criticalGaps).toContain("human_oversight");
   });
@@ -206,7 +211,10 @@ describe("assessDeployerCompliance", () => {
   });
 
   it("missing affected-persons info = non-critical gap", () => {
-    const r = assessDeployerCompliance({ ...full, informsAffectedPersons: false });
+    const r = assessDeployerCompliance({
+      ...full,
+      informsAffectedPersons: false,
+    });
     expect(r.gaps).toContain("affected_persons_info");
     expect(r.criticalGaps).not.toContain("affected_persons_info");
   });

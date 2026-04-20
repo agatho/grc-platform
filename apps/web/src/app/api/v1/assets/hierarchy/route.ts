@@ -32,9 +32,7 @@ export async function GET(req: Request) {
 
   // Filter by visible_in_modules if module param provided
   if (module) {
-    conditions.push(
-      sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`,
-    );
+    conditions.push(sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`);
   }
 
   const rows = await db

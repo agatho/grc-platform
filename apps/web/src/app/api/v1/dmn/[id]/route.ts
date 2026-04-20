@@ -42,7 +42,10 @@ export async function PUT(
   const { id } = await params;
   const body = updateDmnDecisionSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -54,9 +57,10 @@ export async function PUT(
     if (!existing) return null;
 
     // On XML update, increment version
-    const newVersion = body.data.dmnXml && body.data.dmnXml !== existing.dmnXml
-      ? existing.version + 1
-      : existing.version;
+    const newVersion =
+      body.data.dmnXml && body.data.dmnXml !== existing.dmnXml
+        ? existing.version + 1
+        : existing.version;
 
     const [updated] = await tx
       .update(dmnDecision)

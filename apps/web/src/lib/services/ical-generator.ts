@@ -59,14 +59,25 @@ function buildVEvent(event: AggregatedCalendarEvent): string {
 }
 
 /** Generate a full iCal feed for a user/org combination */
-export async function generateICalFeed(
-  orgId: string,
-): Promise<string> {
+export async function generateICalFeed(orgId: string): Promise<string> {
   const now = new Date();
-  const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
-  const twelveMonthsAhead = new Date(now.getFullYear(), now.getMonth() + 12, now.getDate());
+  const oneMonthAgo = new Date(
+    now.getFullYear(),
+    now.getMonth() - 1,
+    now.getDate(),
+  );
+  const twelveMonthsAhead = new Date(
+    now.getFullYear(),
+    now.getMonth() + 12,
+    now.getDate(),
+  );
 
-  const events = await getCalendarEvents(orgId, oneMonthAgo, twelveMonthsAhead, {});
+  const events = await getCalendarEvents(
+    orgId,
+    oneMonthAgo,
+    twelveMonthsAhead,
+    {},
+  );
 
   const vevents = events.map(buildVEvent);
 

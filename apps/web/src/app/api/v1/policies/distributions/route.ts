@@ -1,16 +1,7 @@
-import {
-  db,
-  policyDistribution,
-  document,
-} from "@grc/db";
+import { db, policyDistribution, document } from "@grc/db";
 import { createDistributionSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  count,
-  sql,
-} from "drizzle-orm";
+import { eq, and, count, sql } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -43,10 +34,7 @@ export async function POST(req: Request) {
     })
     .from(document)
     .where(
-      and(
-        eq(document.id, body.data.documentId),
-        eq(document.orgId, ctx.orgId),
-      ),
+      and(eq(document.id, body.data.documentId), eq(document.orgId, ctx.orgId)),
     );
 
   if (!doc) {
@@ -68,7 +56,9 @@ export async function POST(req: Request) {
     for (const q of body.data.quizQuestions) {
       if (q.correctIndex >= q.options.length) {
         return Response.json(
-          { error: `correctIndex ${q.correctIndex} is out of bounds for question "${q.question}"` },
+          {
+            error: `correctIndex ${q.correctIndex} is out of bounds for question "${q.question}"`,
+          },
           { status: 422 },
         );
       }
@@ -169,5 +159,10 @@ export async function GET(req: Request) {
       ),
     );
 
-  return paginatedResponse(rows as unknown as Record<string, unknown>[], total, page, limit);
+  return paginatedResponse(
+    rows as unknown as Record<string, unknown>[],
+    total,
+    page,
+    limit,
+  );
 }

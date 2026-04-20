@@ -93,7 +93,9 @@ function CrisisListInner() {
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">{t("crisis.title")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("crisis.title")}
+        </h1>
         <Button onClick={() => setShowCreate(true)}>
           <Plus size={14} className="mr-1" /> {t("common.create")}
         </Button>
@@ -126,12 +128,26 @@ function CrisisListInner() {
               onChange={(e) => setNewCategory(e.target.value)}
               className="rounded-md border border-gray-300 px-3 py-2 text-sm"
             >
-              {["cyber_attack", "fire", "pandemic", "supply_chain", "natural_disaster", "it_outage", "other"].map((cat) => (
-                <option key={cat} value={cat}>{t(`crisis.categories.${cat}`)}</option>
+              {[
+                "cyber_attack",
+                "fire",
+                "pandemic",
+                "supply_chain",
+                "natural_disaster",
+                "it_outage",
+                "other",
+              ].map((cat) => (
+                <option key={cat} value={cat}>
+                  {t(`crisis.categories.${cat}`)}
+                </option>
               ))}
             </select>
             <Button onClick={handleCreate} disabled={creating}>
-              {creating ? <Loader2 size={14} className="animate-spin" /> : t("common.create")}
+              {creating ? (
+                <Loader2 size={14} className="animate-spin" />
+              ) : (
+                t("common.create")
+              )}
             </Button>
             <Button variant="outline" onClick={() => setShowCreate(false)}>
               {t("common.cancel")}
@@ -147,11 +163,21 @@ function CrisisListInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.name")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("crisis.category")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("crisis.severity")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.status")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("common.updated")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.name")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("crisis.category")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("crisis.severity")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.status")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("common.updated")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -162,8 +188,13 @@ function CrisisListInner() {
                   onClick={() => router.push(`/bcms/crisis/${item.id}`)}
                 >
                   <td className="px-4 py-3 font-medium">
-                    {item.status === "activated" && <AlertTriangle className="inline h-4 w-4 text-red-500 mr-1" />}
-                    <Link href={`/bcms/crisis/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                    {item.status === "activated" && (
+                      <AlertTriangle className="inline h-4 w-4 text-red-500 mr-1" />
+                    )}
+                    <Link
+                      href={`/bcms/crisis/${item.id}`}
+                      className="text-blue-700 hover:text-blue-900"
+                    >
                       {item.name}
                     </Link>
                   </td>
@@ -173,16 +204,24 @@ function CrisisListInner() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={SEVERITY_COLORS[item.severity]}>
+                    <Badge
+                      variant="outline"
+                      className={SEVERITY_COLORS[item.severity]}
+                    >
                       {item.severity.replace(/_/g, " ")}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">
-                    <Badge variant="outline" className={STATUS_COLORS[item.status]}>
+                    <Badge
+                      variant="outline"
+                      className={STATUS_COLORS[item.status]}
+                    >
                       {t(`crisis.status.${item.status}`)}
                     </Badge>
                   </td>
-                  <td className="px-4 py-3 text-xs text-gray-400">{new Date(item.updatedAt).toLocaleDateString()}</td>
+                  <td className="px-4 py-3 text-xs text-gray-400">
+                    {new Date(item.updatedAt).toLocaleDateString()}
+                  </td>
                 </tr>
               ))}
             </tbody>

@@ -1,10 +1,30 @@
 // Sprint 27: CCI Data Collector — Queries existing tables for CCI factor data
 // Each factor queries EXISTING tables (NO new data collection)
 
-import { db, workItem, policyAcknowledgment, policyDistribution, securityIncident, finding, rcsaCampaign, rcsaAssignment, cciConfiguration, complianceCultureSnapshot } from "@grc/db";
+import {
+  db,
+  workItem,
+  policyAcknowledgment,
+  policyDistribution,
+  securityIncident,
+  finding,
+  rcsaCampaign,
+  rcsaAssignment,
+  cciConfiguration,
+  complianceCultureSnapshot,
+} from "@grc/db";
 import { eq, and, sql, isNull, gte, lt, desc } from "drizzle-orm";
-import type { CCIFactorWeights, CCIRawMetrics, CCIRawMetricDetail } from "@grc/shared";
-import { DEFAULT_CCI_WEIGHTS, getPeriodRange, buildCCIResult, getPreviousPeriod } from "@grc/shared";
+import type {
+  CCIFactorWeights,
+  CCIRawMetrics,
+  CCIRawMetricDetail,
+} from "@grc/shared";
+import {
+  DEFAULT_CCI_WEIGHTS,
+  getPeriodRange,
+  buildCCIResult,
+  getPreviousPeriod,
+} from "@grc/shared";
 import type { CCICalculationResult } from "@grc/shared";
 
 /**
@@ -285,5 +305,10 @@ export async function calculateCCIForOrg(
     self_assessment_participation: rcsaParticipation,
   };
 
-  return buildCCIResult(rawMetrics, weights, incidentData.avgHours, previousScore);
+  return buildCCIResult(
+    rawMetrics,
+    weights,
+    incidentData.avgHours,
+    previousScore,
+  );
 }

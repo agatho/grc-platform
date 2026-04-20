@@ -38,11 +38,13 @@ export async function processOtsUpgrade(): Promise<UpgradeRunResult> {
       merkleRoot: auditAnchor.merkleRoot,
     })
     .from(auditAnchor)
-    .where(and(
-      eq(auditAnchor.provider, "opentimestamps"),
-      eq(auditAnchor.proofStatus, "pending"),
-      lt(auditAnchor.createdAt, ripeThreshold),
-    ));
+    .where(
+      and(
+        eq(auditAnchor.provider, "opentimestamps"),
+        eq(auditAnchor.proofStatus, "pending"),
+        lt(auditAnchor.createdAt, ripeThreshold),
+      ),
+    );
 
   console.log(`[cron:ots-upgrade] ${rows.length} pending rows ready to poll`);
 

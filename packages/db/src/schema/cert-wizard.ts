@@ -67,18 +67,21 @@ export const certReadinessAssessment = pgTable(
   }),
 );
 
-export const certReadinessAssessmentRelations = relations(certReadinessAssessment, ({ one, many }) => ({
-  organization: one(organization, {
-    fields: [certReadinessAssessment.orgId],
-    references: [organization.id],
+export const certReadinessAssessmentRelations = relations(
+  certReadinessAssessment,
+  ({ one, many }) => ({
+    organization: one(organization, {
+      fields: [certReadinessAssessment.orgId],
+      references: [organization.id],
+    }),
+    leadAssessor: one(user, {
+      fields: [certReadinessAssessment.leadAssessorId],
+      references: [user.id],
+    }),
+    evidencePackages: many(certEvidencePackage),
+    mockAudits: many(certMockAudit),
   }),
-  leadAssessor: one(user, {
-    fields: [certReadinessAssessment.leadAssessorId],
-    references: [user.id],
-  }),
-  evidencePackages: many(certEvidencePackage),
-  mockAudits: many(certMockAudit),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 76.2 Cert Evidence Package — Evidence Package Generator
@@ -91,8 +94,10 @@ export const certEvidencePackage = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    assessmentId: uuid("assessment_id")
-      .references(() => certReadinessAssessment.id, { onDelete: "cascade" }),
+    assessmentId: uuid("assessment_id").references(
+      () => certReadinessAssessment.id,
+      { onDelete: "cascade" },
+    ),
     packageCode: varchar("package_code", { length: 30 }).notNull(),
     title: varchar("title", { length: 500 }).notNull(),
     framework: varchar("framework", { length: 50 }).notNull(),
@@ -121,20 +126,23 @@ export const certEvidencePackage = pgTable(
   }),
 );
 
-export const certEvidencePackageRelations = relations(certEvidencePackage, ({ one }) => ({
-  organization: one(organization, {
-    fields: [certEvidencePackage.orgId],
-    references: [organization.id],
+export const certEvidencePackageRelations = relations(
+  certEvidencePackage,
+  ({ one }) => ({
+    organization: one(organization, {
+      fields: [certEvidencePackage.orgId],
+      references: [organization.id],
+    }),
+    assessment: one(certReadinessAssessment, {
+      fields: [certEvidencePackage.assessmentId],
+      references: [certReadinessAssessment.id],
+    }),
+    generator: one(user, {
+      fields: [certEvidencePackage.generatedBy],
+      references: [user.id],
+    }),
   }),
-  assessment: one(certReadinessAssessment, {
-    fields: [certEvidencePackage.assessmentId],
-    references: [certReadinessAssessment.id],
-  }),
-  generator: one(user, {
-    fields: [certEvidencePackage.generatedBy],
-    references: [user.id],
-  }),
-}));
+);
 
 // ──────────────────────────────────────────────────────────────
 // 76.3 Cert Mock Audit — Mock Audit with AI Questions
@@ -147,8 +155,10 @@ export const certMockAudit = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    assessmentId: uuid("assessment_id")
-      .references(() => certReadinessAssessment.id, { onDelete: "cascade" }),
+    assessmentId: uuid("assessment_id").references(
+      () => certReadinessAssessment.id,
+      { onDelete: "cascade" },
+    ),
     auditCode: varchar("audit_code", { length: 30 }).notNull(),
     title: varchar("title", { length: 500 }).notNull(),
     framework: varchar("framework", { length: 50 }).notNull(),

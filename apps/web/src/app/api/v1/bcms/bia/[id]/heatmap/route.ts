@@ -64,7 +64,10 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   // 2D-Matrix: Priority x MTPD-Bucket
   const matrix: Record<number, Record<string, number>> = {};
-  const processListByCell: Record<string, Array<{ id: string; name: string | null }>> = {};
+  const processListByCell: Record<
+    string,
+    Array<{ id: string; name: string | null }>
+  > = {};
 
   const buckets = ["<4h", "4-24h", "1-3d", "3-7d", ">7d", "unknown"];
   const priorities = [1, 2, 3, 4, 5, 0]; // 0 = unranked
@@ -84,18 +87,24 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
     const cellKey = `${p}-${b}`;
     if (!processListByCell[cellKey]) processListByCell[cellKey] = [];
-    processListByCell[cellKey].push({ id: imp.processId, name: imp.processName });
+    processListByCell[cellKey].push({
+      id: imp.processId,
+      name: imp.processName,
+    });
   }
 
   // Qualitative-Impact-Averages pro Prioritaet
-  const qualitativeByPriority: Record<number, {
-    count: number;
-    avgReputation: number;
-    avgLegal: number;
-    avgFinancial: number;
-    avgOperational: number;
-    avgSafety: number;
-  }> = {};
+  const qualitativeByPriority: Record<
+    number,
+    {
+      count: number;
+      avgReputation: number;
+      avgLegal: number;
+      avgFinancial: number;
+      avgOperational: number;
+      avgSafety: number;
+    }
+  > = {};
 
   for (const p of priorities) {
     const subset = impacts.filter((i) => (i.priorityRanking ?? 0) === p);
@@ -110,9 +119,13 @@ export async function GET(_req: Request, { params }: RouteParams) {
       };
       continue;
     }
-    const avg = (key: keyof typeof subset[0]) => {
-      const nums = subset.map((s) => s[key]).filter((n): n is number => typeof n === "number");
-      return nums.length > 0 ? nums.reduce((a, b) => a + b, 0) / nums.length : 0;
+    const avg = (key: keyof (typeof subset)[0]) => {
+      const nums = subset
+        .map((s) => s[key])
+        .filter((n): n is number => typeof n === "number");
+      return nums.length > 0
+        ? nums.reduce((a, b) => a + b, 0) / nums.length
+        : 0;
     };
     qualitativeByPriority[p] = {
       count: subset.length,

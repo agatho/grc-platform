@@ -1,11 +1,9 @@
+import { db, vendor, workItem, user, contract } from "@grc/db";
 import {
-  db,
-  vendor,
-  workItem,
-  user,
-  contract,
-} from "@grc/db";
-import { updateVendorSchema, VALID_VENDOR_TRANSITIONS, vendorStatusTransitionSchema } from "@grc/shared";
+  updateVendorSchema,
+  VALID_VENDOR_TRANSITIONS,
+  vendorStatusTransitionSchema,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -56,7 +54,11 @@ export async function GET(
     .leftJoin(workItem, eq(vendor.workItemId, workItem.id))
     .leftJoin(user, eq(vendor.ownerId, user.id))
     .where(
-      and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)),
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
     );
 
   if (!row) {
@@ -99,7 +101,13 @@ export async function PUT(
     const [current] = await db
       .select({ status: vendor.status })
       .from(vendor)
-      .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+      .where(
+        and(
+          eq(vendor.id, id),
+          eq(vendor.orgId, ctx.orgId),
+          isNull(vendor.deletedAt),
+        ),
+      );
 
     if (!current) {
       return Response.json({ error: "Not found" }, { status: 404 });
@@ -119,7 +127,11 @@ export async function PUT(
     const [updated] = await withAuditContext(ctx, async (tx) =>
       tx
         .update(vendor)
-        .set({ status: parsed.data.status, updatedBy: ctx.userId, updatedAt: new Date() })
+        .set({
+          status: parsed.data.status,
+          updatedBy: ctx.userId,
+          updatedAt: new Date(),
+        })
         .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId)))
         .returning(),
     );
@@ -144,7 +156,13 @@ export async function PUT(
         updatedBy: ctx.userId,
         updatedAt: new Date(),
       })
-      .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)))
+      .where(
+        and(
+          eq(vendor.id, id),
+          eq(vendor.orgId, ctx.orgId),
+          isNull(vendor.deletedAt),
+        ),
+      )
       .returning();
     return row;
   });
@@ -172,8 +190,18 @@ export async function DELETE(
   const deleted = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
       .update(vendor)
-      .set({ deletedAt: new Date(), deletedBy: ctx.userId, updatedBy: ctx.userId })
-      .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)))
+      .set({
+        deletedAt: new Date(),
+        deletedBy: ctx.userId,
+        updatedBy: ctx.userId,
+      })
+      .where(
+        and(
+          eq(vendor.id, id),
+          eq(vendor.orgId, ctx.orgId),
+          isNull(vendor.deletedAt),
+        ),
+      )
       .returning({ id: vendor.id });
     return row;
   });

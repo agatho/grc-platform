@@ -56,7 +56,9 @@ export default function MarketplacePage() {
     try {
       const params = new URLSearchParams();
       if (pricingFilter) params.set("pricingModel", pricingFilter);
-      const res = await fetch(`/api/v1/plugins/marketplace?${params.toString()}`);
+      const res = await fetch(
+        `/api/v1/plugins/marketplace?${params.toString()}`,
+      );
       if (res.ok) {
         const data = await res.json();
         setItems(data.data ?? []);
@@ -89,7 +91,9 @@ export default function MarketplacePage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">{t("marketplace")}</h1>
+        <h1 className="text-3xl font-bold tracking-tight">
+          {t("marketplace")}
+        </h1>
         <p className="text-muted-foreground">{t("marketplaceSubtitle")}</p>
       </div>
 
@@ -130,22 +134,32 @@ export default function MarketplacePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
-                      <CardTitle className="text-base">{listing.title}</CardTitle>
-                      {p.isVerified && <CheckCircle2 className="h-4 w-4 text-green-500" />}
+                      <CardTitle className="text-base">
+                        {listing.title}
+                      </CardTitle>
+                      {p.isVerified && (
+                        <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      )}
                     </div>
-                    <CardDescription>{p.author ?? t("featured.unknown")}</CardDescription>
+                    <CardDescription>
+                      {p.author ?? t("featured.unknown")}
+                    </CardDescription>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-3">
-                <p className="text-sm text-muted-foreground">{listing.shortDescription}</p>
+                <p className="text-sm text-muted-foreground">
+                  {listing.shortDescription}
+                </p>
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3 text-xs text-muted-foreground">
                     <span className="flex items-center gap-1">
                       <Download className="h-3 w-3" />
                       {listing.downloadCount}
                     </span>
-                    <Badge variant="outline" className="text-xs">{listing.pricingModel}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {listing.pricingModel}
+                    </Badge>
                   </div>
                   <Button size="sm" onClick={() => handleInstall(p.id)}>
                     {t("install")}

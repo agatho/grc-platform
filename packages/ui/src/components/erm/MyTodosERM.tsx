@@ -42,10 +42,30 @@ export function MyTodosERM({
   };
 
   const sections = [
-    { key: "evaluation", label: labels?.awaitingEvaluation ?? "Awaiting My Evaluation", items: grouped.evaluation, icon: "\u23F3" },
-    { key: "approval", label: labels?.awaitingApproval ?? "Awaiting My Approval", items: grouped.approval, icon: "\uD83D\uDC4D" },
-    { key: "overdue", label: labels?.overdueEvaluations ?? "Overdue Evaluations", items: grouped.overdue, icon: "\u26A0\uFE0F" },
-    { key: "treatment", label: labels?.treatmentActions ?? "My Treatment Actions", items: grouped.treatment, icon: "\uD83D\uDD27" },
+    {
+      key: "evaluation",
+      label: labels?.awaitingEvaluation ?? "Awaiting My Evaluation",
+      items: grouped.evaluation,
+      icon: "\u23F3",
+    },
+    {
+      key: "approval",
+      label: labels?.awaitingApproval ?? "Awaiting My Approval",
+      items: grouped.approval,
+      icon: "\uD83D\uDC4D",
+    },
+    {
+      key: "overdue",
+      label: labels?.overdueEvaluations ?? "Overdue Evaluations",
+      items: grouped.overdue,
+      icon: "\u26A0\uFE0F",
+    },
+    {
+      key: "treatment",
+      label: labels?.treatmentActions ?? "My Treatment Actions",
+      items: grouped.treatment,
+      icon: "\uD83D\uDD27",
+    },
   ];
 
   return (
@@ -54,10 +74,14 @@ export function MyTodosERM({
         <h3 className="text-sm font-semibold text-gray-900">
           {labels?.title ?? "My ToDos ERM"}
         </h3>
-        <span className={cn(
-          "text-xs font-bold px-2 py-0.5 rounded-full",
-          overdueCount > 0 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700",
-        )}>
+        <span
+          className={cn(
+            "text-xs font-bold px-2 py-0.5 rounded-full",
+            overdueCount > 0
+              ? "bg-red-100 text-red-700"
+              : "bg-blue-100 text-blue-700",
+          )}
+        >
           {totalCount}
         </span>
       </div>
@@ -83,10 +107,14 @@ export function MyTodosERM({
                   >
                     <span className="truncate">{item.title}</span>
                     {item.dueDate && (
-                      <span className={cn(
-                        "text-xs whitespace-nowrap ml-2",
-                        item.isOverdue ? "text-red-500 font-medium" : "text-gray-400",
-                      )}>
+                      <span
+                        className={cn(
+                          "text-xs whitespace-nowrap ml-2",
+                          item.isOverdue
+                            ? "text-red-500 font-medium"
+                            : "text-gray-400",
+                        )}
+                      >
                         {item.dueDate}
                       </span>
                     )}

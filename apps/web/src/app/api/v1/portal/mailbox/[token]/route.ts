@@ -46,7 +46,10 @@ export async function GET(req: Request, { params }: RouteParams) {
   const { token } = await params;
   const mailbox = await validateMailboxToken(token);
   if (!mailbox) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
 
   // Get report
@@ -122,7 +125,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   const { token } = await params;
   const mailbox = await validateMailboxToken(token);
   if (!mailbox) {
-    return Response.json({ error: "Invalid or expired token" }, { status: 401 });
+    return Response.json(
+      { error: "Invalid or expired token" },
+      { status: 401 },
+    );
   }
 
   const body = replyToMailboxSchema.safeParse(await req.json());

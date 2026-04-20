@@ -110,8 +110,12 @@ function DsrListInner() {
           <option value="">{t("dsr.allTypes")}</option>
           <option value="access">{t("dsr.requestType.access")}</option>
           <option value="erasure">{t("dsr.requestType.erasure")}</option>
-          <option value="restriction">{t("dsr.requestType.restriction")}</option>
-          <option value="portability">{t("dsr.requestType.portability")}</option>
+          <option value="restriction">
+            {t("dsr.requestType.restriction")}
+          </option>
+          <option value="portability">
+            {t("dsr.requestType.portability")}
+          </option>
           <option value="objection">{t("dsr.requestType.objection")}</option>
         </select>
       </div>
@@ -121,51 +125,82 @@ function DsrListInner() {
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
       ) : items.length === 0 ? (
-        <p className="text-sm text-gray-400 text-center py-8">{t("dsr.empty")}</p>
+        <p className="text-sm text-gray-400 text-center py-8">
+          {t("dsr.empty")}
+        </p>
       ) : (
         <div className="rounded-lg border border-gray-200 bg-white overflow-x-auto">
           <table className="min-w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("dsr.subject")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("dsr.type")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("dsr.statusLabel")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("dsr.sla")}</th>
-                <th className="px-4 py-3 text-left font-medium text-gray-600">{t("dsr.deadline")}</th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("dsr.subject")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("dsr.type")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("dsr.statusLabel")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("dsr.sla")}
+                </th>
+                <th className="px-4 py-3 text-left font-medium text-gray-600">
+                  {t("dsr.deadline")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {items.map((item) => {
                 const deadline = new Date(item.deadline);
                 const now = new Date();
-                const daysRemaining = Math.ceil((deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                const isClosed = item.status === "closed" || item.status === "rejected";
+                const daysRemaining = Math.ceil(
+                  (deadline.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+                );
+                const isClosed =
+                  item.status === "closed" || item.status === "rejected";
 
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50 cursor-pointer transition-colors" onClick={() => router.push(`/dpms/dsr/${item.id}`)}>
+                  <tr
+                    key={item.id}
+                    className="hover:bg-gray-50 cursor-pointer transition-colors"
+                    onClick={() => router.push(`/dpms/dsr/${item.id}`)}
+                  >
                     <td className="px-4 py-3 font-medium">
-                      <Link href={`/dpms/dsr/${item.id}`} className="text-blue-700 hover:text-blue-900">
+                      <Link
+                        href={`/dpms/dsr/${item.id}`}
+                        className="text-blue-700 hover:text-blue-900"
+                      >
                         {item.subjectName ?? "-"}
                       </Link>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className="text-xs">{item.requestType}</Badge>
+                      <Badge variant="outline" className="text-xs">
+                        {item.requestType}
+                      </Badge>
                     </td>
                     <td className="px-4 py-3">
-                      <Badge variant="outline" className={`text-xs ${STATUS_COLORS[item.status] ?? ""}`}>
+                      <Badge
+                        variant="outline"
+                        className={`text-xs ${STATUS_COLORS[item.status] ?? ""}`}
+                      >
                         {item.status.replace(/_/g, " ")}
                       </Badge>
                     </td>
                     <td className="px-4 py-3">
                       {!isClosed && (
-                        <span className={`text-xs font-medium px-2 py-1 rounded ${getSlaColor(daysRemaining)}`}>
+                        <span
+                          className={`text-xs font-medium px-2 py-1 rounded ${getSlaColor(daysRemaining)}`}
+                        >
                           {daysRemaining <= 0
                             ? t("dsr.overdue")
                             : `${daysRemaining}d`}
                         </span>
                       )}
                     </td>
-                    <td className="px-4 py-3 text-gray-500 text-xs">{deadline.toLocaleDateString()}</td>
+                    <td className="px-4 py-3 text-gray-500 text-xs">
+                      {deadline.toLocaleDateString()}
+                    </td>
                   </tr>
                 );
               })}

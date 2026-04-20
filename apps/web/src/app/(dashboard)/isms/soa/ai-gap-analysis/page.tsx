@@ -108,18 +108,21 @@ function AiGapAnalysisInner() {
       body: JSON.stringify({ status }),
     });
     if (res.ok) {
-      toast.success(status === "accepted" ? "Suggestion accepted" : "Suggestion rejected");
+      toast.success(
+        status === "accepted" ? "Suggestion accepted" : "Suggestion rejected",
+      );
       void fetchResults();
     }
   };
 
-  const filteredSuggestions = data?.suggestions?.filter((s) => {
-    if (filter === "all") return true;
-    if (filter === "gaps") return s.gapType !== "full";
-    if (filter === "highConfidence") return s.confidence > 80;
-    if (filter === "pending") return s.status === "pending";
-    return true;
-  }) ?? [];
+  const filteredSuggestions =
+    data?.suggestions?.filter((s) => {
+      if (filter === "all") return true;
+      if (filter === "gaps") return s.gapType !== "full";
+      if (filter === "highConfidence") return s.confidence > 80;
+      if (filter === "pending") return s.status === "pending";
+      return true;
+    }) ?? [];
 
   if (loading && !data) {
     return (
@@ -161,19 +164,27 @@ function AiGapAnalysisInner() {
       {data && data.totalSuggestions > 0 && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="rounded-lg border border-gray-200 bg-white p-4 text-center">
-            <p className="text-2xl font-bold text-gray-900">{data.totalSuggestions}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {data.totalSuggestions}
+            </p>
             <p className="text-xs text-gray-500">{t("summary.totalGaps")}</p>
           </div>
           <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-center">
-            <p className="text-2xl font-bold text-red-700">{data.gapsByType.not_covered}</p>
+            <p className="text-2xl font-bold text-red-700">
+              {data.gapsByType.not_covered}
+            </p>
             <p className="text-xs text-red-600">{t("summary.notCovered")}</p>
           </div>
           <div className="rounded-lg border border-yellow-200 bg-yellow-50 p-4 text-center">
-            <p className="text-2xl font-bold text-yellow-700">{data.gapsByType.partial}</p>
+            <p className="text-2xl font-bold text-yellow-700">
+              {data.gapsByType.partial}
+            </p>
             <p className="text-xs text-yellow-600">{t("summary.partial")}</p>
           </div>
           <div className="rounded-lg border border-green-200 bg-green-50 p-4 text-center">
-            <p className="text-2xl font-bold text-green-700">{data.gapsByType.full}</p>
+            <p className="text-2xl font-bold text-green-700">
+              {data.gapsByType.full}
+            </p>
             <p className="text-xs text-green-600">{t("summary.full")}</p>
           </div>
         </div>
@@ -207,13 +218,27 @@ function AiGapAnalysisInner() {
           <table className="w-full text-sm">
             <thead className="bg-gray-50 border-b border-gray-200">
               <tr>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("table.controlRef")}</th>
-                <th className="text-left px-4 py-3 font-medium text-gray-600">{t("table.controlTitle")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("table.gapType")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("table.confidence")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("table.priority")}</th>
-                <th className="text-center px-4 py-3 font-medium text-gray-600">{t("table.status")}</th>
-                <th className="text-right px-4 py-3 font-medium text-gray-600">{t("table.actions")}</th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("table.controlRef")}
+                </th>
+                <th className="text-left px-4 py-3 font-medium text-gray-600">
+                  {t("table.controlTitle")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("table.gapType")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("table.confidence")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("table.priority")}
+                </th>
+                <th className="text-center px-4 py-3 font-medium text-gray-600">
+                  {t("table.status")}
+                </th>
+                <th className="text-right px-4 py-3 font-medium text-gray-600">
+                  {t("table.actions")}
+                </th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -222,7 +247,9 @@ function AiGapAnalysisInner() {
                   <tr
                     key={s.id}
                     className="hover:bg-gray-50 cursor-pointer"
-                    onClick={() => setExpandedId(expandedId === s.id ? null : s.id)}
+                    onClick={() =>
+                      setExpandedId(expandedId === s.id ? null : s.id)
+                    }
                   >
                     <td className="px-4 py-3 font-mono text-xs text-gray-600">
                       {s.frameworkControlRef}
@@ -238,26 +265,39 @@ function AiGapAnalysisInner() {
                       </div>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className={gapTypeStyles[s.gapType] ?? ""}>
+                      <Badge
+                        variant="outline"
+                        className={gapTypeStyles[s.gapType] ?? ""}
+                      >
                         {t(`gapType.${s.gapType}`)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
                       <span
                         className={`text-xs font-bold ${
-                          s.confidence >= 80 ? "text-green-600" : s.confidence >= 50 ? "text-yellow-600" : "text-gray-400"
+                          s.confidence >= 80
+                            ? "text-green-600"
+                            : s.confidence >= 50
+                              ? "text-yellow-600"
+                              : "text-gray-400"
                         }`}
                       >
                         {s.confidence}%
                       </span>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className={priorityStyles[s.priority] ?? ""}>
+                      <Badge
+                        variant="outline"
+                        className={priorityStyles[s.priority] ?? ""}
+                      >
                         {t(`priority.${s.priority}`)}
                       </Badge>
                     </td>
                     <td className="px-4 py-3 text-center">
-                      <Badge variant="outline" className={statusStyles[s.status] ?? ""}>
+                      <Badge
+                        variant="outline"
+                        className={statusStyles[s.status] ?? ""}
+                      >
                         {t(`status.${s.status}`)}
                       </Badge>
                     </td>
@@ -294,7 +334,9 @@ function AiGapAnalysisInner() {
                     <tr key={`${s.id}-detail`}>
                       <td colSpan={7} className="px-4 py-3 bg-gray-50">
                         <div className="text-sm text-gray-700">
-                          <span className="font-medium text-gray-500">{t("table.reasoning")}: </span>
+                          <span className="font-medium text-gray-500">
+                            {t("table.reasoning")}:{" "}
+                          </span>
                           {s.reasoning ?? "-"}
                         </div>
                       </td>

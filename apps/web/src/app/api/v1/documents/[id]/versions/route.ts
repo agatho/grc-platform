@@ -1,9 +1,4 @@
-import {
-  db,
-  document,
-  documentVersion,
-  user,
-} from "@grc/db";
+import { db, document, documentVersion, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

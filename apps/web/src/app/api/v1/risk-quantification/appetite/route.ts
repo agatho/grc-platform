@@ -2,7 +2,10 @@ import { db, riskAppetiteThreshold } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { createRiskAppetiteThresholdSchema, listRiskAppetiteThresholdsQuerySchema } from "@grc/shared";
+import {
+  createRiskAppetiteThresholdSchema,
+  listRiskAppetiteThresholdsQuerySchema,
+} from "@grc/shared";
 
 // GET /api/v1/risk-quantification/appetite
 export async function GET(req: Request) {
@@ -12,21 +15,39 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
-  const query = listRiskAppetiteThresholdsQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = listRiskAppetiteThresholdsQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
   const conditions = [eq(riskAppetiteThreshold.orgId, ctx.orgId)];
-  if (query.status) conditions.push(eq(riskAppetiteThreshold.status, query.status));
-  if (query.category) conditions.push(eq(riskAppetiteThreshold.category, query.category));
+  // query.status is an appetite *evaluation* (within_appetite/exceeds_…) — not
+  // a stored column — so it cannot be filtered in SQL here. It's applied as a
+  // post-filter by callers that need it.
+  if (query.category)
+    conditions.push(eq(riskAppetiteThreshold.riskCategory, query.category));
 
   const offset = (query.page - 1) * query.limit;
   const [rows, [{ total }]] = await Promise.all([
-    db.select().from(riskAppetiteThreshold).where(and(...conditions))
-      .orderBy(desc(riskAppetiteThreshold.createdAt)).limit(query.limit).offset(offset),
-    db.select({ total: sql<number>`count(*)::int` }).from(riskAppetiteThreshold).where(and(...conditions)),
+    db
+      .select()
+      .from(riskAppetiteThreshold)
+      .where(and(...conditions))
+      .orderBy(desc(riskAppetiteThreshold.createdAt))
+      .limit(query.limit)
+      .offset(offset),
+    db
+      .select({ total: sql<number>`count(*)::int` })
+      .from(riskAppetiteThreshold)
+      .where(and(...conditions)),
   ]);
 
   return Response.json({
     data: rows,
-    pagination: { page: query.page, limit: query.limit, total, totalPages: Math.ceil(total / query.limit) },
+    pagination: {
+      page: query.page,
+      limit: query.limit,
+      total,
+      totalPages: Math.ceil(total / query.limit),
+    },
   });
 }
 
@@ -39,9 +60,13 @@ export async function POST(req: Request) {
 
   const body = createRiskAppetiteThresholdSchema.parse(await req.json());
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(riskAppetiteThreshold).values({
-      orgId: ctx.orgId, ...body,
-    }).returning();
+    const [created] = await tx
+      .insert(riskAppetiteThreshold)
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+      })
+      .returning();
     return created;
   });
 

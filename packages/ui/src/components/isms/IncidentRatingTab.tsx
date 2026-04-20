@@ -40,7 +40,9 @@ function StarRating({
           className={cn(
             "text-2xl transition-colors",
             (value ?? 0) >= star ? "text-yellow-400" : "text-gray-300",
-            disabled ? "cursor-default" : "cursor-pointer hover:text-yellow-300",
+            disabled
+              ? "cursor-default"
+              : "cursor-pointer hover:text-yellow-300",
           )}
         >
           \u2605
@@ -70,7 +72,8 @@ export function IncidentRatingTab({
 
       {!isEditable && (
         <div className="text-xs text-amber-600 bg-amber-50 rounded-md px-3 py-2">
-          {labels?.lockedMessage ?? "Rating is only available when incident is resolved or closed."}
+          {labels?.lockedMessage ??
+            "Rating is only available when incident is resolved or closed."}
         </div>
       )}
 

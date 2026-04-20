@@ -21,6 +21,7 @@ Zusaetzlich: ein **Global-Search-Feature** (Sprint 59) im Header fuer
 alle Module, heute nur client-side mit zusammengewuerfelten Fetchs.
 
 Optionen:
+
 - **A) PostgreSQL FTS** (GIN-Index, tsvector/tsquery) — kein neues Tool,
   gut fuer DE/EN-Dictionaries, schnell bei <1M Rows
 - **B) pgvector + Embeddings** (Ollama oder OpenAI) — semantisch, braucht
@@ -34,6 +35,7 @@ Optionen:
 **Gestufte Architektur**:
 
 ### Layer 1: Postgres FTS (jetzt)
+
 - Alle Entitaeten mit Title+Description: tsvector-Column + GIN-Index
 - Mit Sprach-Dict (DE+EN) je Column via generated-column
 - Ersetzt trivialer ILIKE in Standard-Listen und Faceted-Search-Forms
@@ -41,6 +43,7 @@ Optionen:
   `websearch_to_tsquery` gegen `tsvector @@ tsquery`
 
 ### Layer 2: pgvector fuer Policy/Document-Corpus (Phase 2)
+
 - Embeddings per Ollama `nomic-embed-text` oder Claude-Embeddings
 - Speichern in `document.embedding` oder `control.embedding`
 - Hybrid-Search: Postgres-FTS + pgvector-Cosine, Ergebnisse merged
@@ -48,6 +51,7 @@ Optionen:
 - Nur fuer Content-lastige Tabellen (~5-10k Rows, nicht 500k)
 
 ### Layer 3: Global-Search (Phase 3)
+
 - Kein separates Meilisearch, sondern Union-Query ueber FTS-fähige
   Tabellen + Type-Discriminator
 - Cached als Materialized-View (stuendlich refresht per Worker)
@@ -56,6 +60,7 @@ Optionen:
   sekundlich)
 
 ### Nicht-gewaehlt: Meilisearch / Elasticsearch
+
 - Meilisearch-Komfort ueberwiegt nicht die +1-Service-Komplexitaet
 - Elasticsearch waere Overkill bei aktueller Datenmenge
 - Datensouveraenitaet-Vorteil: alles in Postgres bleibt in Postgres
@@ -68,13 +73,14 @@ Optionen:
 - pgvector ist bereits Extension, Embeddings via lokales Ollama = keine
   US-Cloud-Abhaengigkeit (ADR-007 rev. 1 einhalten)
 - Meilisearch-Alternative wurde evaluiert, aber: synced-Indexing-Komplexitaet
-  + Zusatz-Service-Monitoring + eigene Auth = Ueberkill fuer <10 QPS
+  - Zusatz-Service-Monitoring + eigene Auth = Ueberkill fuer <10 QPS
 - Hybrid-Search (FTS + Vektor) gibt Best-of-Both: tippfehlertolerant
   (FTS) + semantisch (Vektor)
 
 ## Consequences
 
 ### Positiv
+
 - Keine neuen Services, keine Vendor-Lock-Ins
 - Datensouveraenitaet und RLS bleiben automatisch (Row-Level-Security
   wirkt auch auf Search-Results)
@@ -82,6 +88,7 @@ Optionen:
 - Pgvector-Extension bereits installiert, null Infrastruktur-Aufwand
 
 ### Negativ
+
 - Deutsche Sprach-Stems sind besser als die GIN-Defaults, aber
   Lemmatisation ist nicht so gut wie Meilisearch
 - Tippfehler-Toleranz: Postgres-FTS hat Similarity-Modul, aber
@@ -91,6 +98,7 @@ Optionen:
 - Materialisierte Global-Search-View braucht Storage + Refresh-Logic
 
 ### Neutral
+
 - Sprach-Dictionaries (DE/EN) werden per Trigger-Function pro Row gesetzt
 - Embedding-Model-Wechsel in Zukunft moeglich (kolumn ist just `vector(768)`)
 - Query-Performance mit EXPLAIN ANALYZE validieren vor Go-Live
@@ -98,6 +106,7 @@ Optionen:
 ## Implementation-Plan
 
 ### Phase 1 (klein, sofort umsetzbar)
+
 - [ ] Schema-Aenderung: `risk`, `control`, `incident`, `document`,
       `dpia_entry` bekommen `search_vector tsvector GENERATED ALWAYS AS ...`
 - [ ] GIN-Index je Tabelle auf `search_vector`
@@ -106,12 +115,14 @@ Optionen:
 - [ ] 1-2 Demo-Seiten umstellen (Risk-Register, Control-List)
 
 ### Phase 2 (~4 Wochen)
+
 - [ ] Embedding-Worker-Job (`apps/worker/src/jobs/embedding-indexer.ts`)
       der beim Insert/Update via Ollama-HTTP Embedding erzeugt + speichert
 - [ ] Hybrid-Query mit Rank-Fusion (Reciprocal-Rank-Fusion-Algo)
 - [ ] Semantic-Search-Endpoint `POST /api/v1/search/semantic`
 
 ### Phase 3 (~6 Wochen)
+
 - [ ] Materialized-View `global_search` mit Union ueber alle FTS-faehigen
       Tabellen + type-Discriminator
 - [ ] Cron-Job refresht stuendlich

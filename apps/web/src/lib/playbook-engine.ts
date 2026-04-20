@@ -64,7 +64,9 @@ export async function resolveRoleToUser(
     LIMIT 1
   `);
 
-  const row = result[0] as { id: string; firstName: string | null; lastName: string | null } | undefined;
+  const row = result[0] as
+    | { id: string; firstName: string | null; lastName: string | null }
+    | undefined;
   if (row) {
     return row;
   }
@@ -74,7 +76,10 @@ export async function resolveRoleToUser(
 
 // ─── Template Fetching ──────────────────────────────────────────
 
-export async function getTemplateWithPhasesAndTasks(templateId: string, orgId: string) {
+export async function getTemplateWithPhasesAndTasks(
+  templateId: string,
+  orgId: string,
+) {
   const template = await db
     .select()
     .from(playbookTemplate)
@@ -165,7 +170,10 @@ export async function activatePlaybook(
   // Generate REAL tasks for ALL phases
   for (const phase of tmpl.phases) {
     for (const taskTmpl of phase.tasks) {
-      const deadline = computeAbsoluteDeadline(activationTime, taskTmpl.deadlineHoursRelative);
+      const deadline = computeAbsoluteDeadline(
+        activationTime,
+        taskTmpl.deadlineHoursRelative,
+      );
       const assignee = await resolveRoleToUser(orgId, taskTmpl.assignedRole);
 
       if (!assignee) {
@@ -231,7 +239,11 @@ export async function checkAndAdvancePhase(
   activationId: string,
   orgId: string,
   userId: string,
-): Promise<{ advanced: boolean; newPhaseId: string | null; completed: boolean }> {
+): Promise<{
+  advanced: boolean;
+  newPhaseId: string | null;
+  completed: boolean;
+}> {
   const [activation] = await db
     .select()
     .from(playbookActivation)
@@ -263,7 +275,11 @@ export async function checkAndAdvancePhase(
     );
 
   if (!isPhaseComplete(phaseTasks)) {
-    return { advanced: false, newPhaseId: activation.currentPhaseId, completed: false };
+    return {
+      advanced: false,
+      newPhaseId: activation.currentPhaseId,
+      completed: false,
+    };
   }
 
   // Get all phases for this template
@@ -341,7 +357,9 @@ export async function checkAndAdvancePhase(
 export async function getPlaybookSuggestions(
   orgId: string,
   incidentId: string,
-): Promise<Array<typeof playbookTemplate.$inferSelect & { matchScore: number }>> {
+): Promise<
+  Array<typeof playbookTemplate.$inferSelect & { matchScore: number }>
+> {
   const [incident] = await db
     .select()
     .from(securityIncident)
@@ -375,12 +393,17 @@ export async function getPlaybookSuggestions(
       // Category match
       if (tmpl.triggerCategory === incidentCategory) {
         matchScore += 50;
-      } else if (incidentCategory.includes(tmpl.triggerCategory) || tmpl.triggerCategory.includes(incidentCategory)) {
+      } else if (
+        incidentCategory.includes(tmpl.triggerCategory) ||
+        tmpl.triggerCategory.includes(incidentCategory)
+      ) {
         matchScore += 25;
       }
 
       // Severity match
-      if (matchesSeverityThreshold(incident.severity, tmpl.triggerMinSeverity)) {
+      if (
+        matchesSeverityThreshold(incident.severity, tmpl.triggerMinSeverity)
+      ) {
         matchScore += 30;
       }
 

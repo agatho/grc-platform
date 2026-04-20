@@ -5,10 +5,7 @@
 
 import { db, aiSystem } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  assessDataGovernance,
-  type DataGovernanceQuality,
-} from "@grc/shared";
+import { assessDataGovernance, type DataGovernanceQuality } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
@@ -55,7 +52,10 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [system] = await db
-    .select({ id: aiSystem.id, riskClassification: aiSystem.riskClassification })
+    .select({
+      id: aiSystem.id,
+      riskClassification: aiSystem.riskClassification,
+    })
     .from(aiSystem)
     .where(and(eq(aiSystem.id, id), eq(aiSystem.orgId, ctx.orgId)));
   if (!system) {
@@ -75,7 +75,9 @@ export async function POST(req: Request, { params }: RouteParams) {
       hasCriticalGaps: result.hasCriticalGaps,
       readyForHighRisk: result.readyForHighRisk,
       warnings: result.hasCriticalGaps
-        ? ["Kritische Luecken: ohne bias-testing / legal-basis / provenance kein AI-Act-konformes Training."]
+        ? [
+            "Kritische Luecken: ohne bias-testing / legal-basis / provenance kein AI-Act-konformes Training.",
+          ]
         : [],
     },
   });

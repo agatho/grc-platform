@@ -25,11 +25,17 @@ export async function GET(req: Request) {
   try {
     const results = await searchEntities(ctx.orgId, q, limit);
 
-    return Response.json({ data: results }, {
-      headers: { "Cache-Control": "private, max-age=10" },
-    });
+    return Response.json(
+      { data: results },
+      {
+        headers: { "Cache-Control": "private, max-age=10" },
+      },
+    );
   } catch (err) {
     console.error("[graph/search] Error:", err);
-    return Response.json({ error: "Failed to search entities" }, { status: 500 });
+    return Response.json(
+      { error: "Failed to search entities" },
+      { status: 500 },
+    );
   }
 }

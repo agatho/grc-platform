@@ -27,7 +27,9 @@ function CompareInner() {
   const [loading, setLoading] = useState(false);
   const [beforeBatchId, setBeforeBatchId] = useState("");
   const [afterBatchId, setAfterBatchId] = useState("");
-  const [comparison, setComparison] = useState<AttackPathComparison | null>(null);
+  const [comparison, setComparison] = useState<AttackPathComparison | null>(
+    null,
+  );
 
   const runCompare = useCallback(async () => {
     if (!beforeBatchId || !afterBatchId) return;
@@ -50,7 +52,11 @@ function CompareInner() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/isms/attack-paths")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/isms/attack-paths")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">{t("compareTitle")}</h1>
@@ -79,8 +85,15 @@ function CompareInner() {
               />
             </div>
           </div>
-          <Button onClick={runCompare} disabled={loading || !beforeBatchId || !afterBatchId}>
-            {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GitCompare className="mr-2 h-4 w-4" />}
+          <Button
+            onClick={runCompare}
+            disabled={loading || !beforeBatchId || !afterBatchId}
+          >
+            {loading ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <GitCompare className="mr-2 h-4 w-4" />
+            )}
             {t("runComparison")}
           </Button>
         </CardContent>
@@ -90,20 +103,32 @@ function CompareInner() {
         <div className="grid grid-cols-3 gap-4">
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-green-600">{comparison.eliminated}</p>
-              <p className="text-sm text-muted-foreground">{t("pathsEliminated")}</p>
+              <p className="text-3xl font-bold text-green-600">
+                {comparison.eliminated}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("pathsEliminated")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-blue-600">{comparison.shortened}</p>
-              <p className="text-sm text-muted-foreground">{t("pathsShortened")}</p>
+              <p className="text-3xl font-bold text-blue-600">
+                {comparison.shortened}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("pathsShortened")}
+              </p>
             </CardContent>
           </Card>
           <Card>
             <CardContent className="pt-6 text-center">
-              <p className="text-3xl font-bold text-orange-600">{comparison.newPaths}</p>
-              <p className="text-sm text-muted-foreground">{t("newPathsDetected")}</p>
+              <p className="text-3xl font-bold text-orange-600">
+                {comparison.newPaths}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {t("newPathsDetected")}
+              </p>
             </CardContent>
           </Card>
         </div>

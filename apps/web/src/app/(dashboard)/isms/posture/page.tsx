@@ -106,8 +106,10 @@ function PostureInner() {
   }
 
   const getTrendIcon = () => {
-    if (trend === "improving") return <TrendingUp className="h-5 w-5 text-green-600" />;
-    if (trend === "declining") return <TrendingDown className="h-5 w-5 text-red-600" />;
+    if (trend === "improving")
+      return <TrendingUp className="h-5 w-5 text-green-600" />;
+    if (trend === "declining")
+      return <TrendingDown className="h-5 w-5 text-red-600" />;
     return <Minus className="h-5 w-5 text-gray-400" />;
   };
 
@@ -118,11 +120,17 @@ function PostureInner() {
     vulnExposure: { label: t("posture.factors.vulnExposure"), weight: "15%" },
     incidentTTR: { label: t("posture.factors.incidentTTR"), weight: "10%" },
     freshness: { label: t("posture.factors.freshness"), weight: "10%" },
-    soaCompleteness: { label: t("posture.factors.soaCompleteness"), weight: "10%" },
+    soaCompleteness: {
+      label: t("posture.factors.soaCompleteness"),
+      weight: "10%",
+    },
   };
 
   const domainConfig: Record<string, { icon: typeof Shield; label: string }> = {
-    organizational: { icon: Shield, label: t("posture.domains.organizational") },
+    organizational: {
+      icon: Shield,
+      label: t("posture.domains.organizational"),
+    },
     people: { icon: Users, label: t("posture.domains.people") },
     physical: { icon: Building2, label: t("posture.domains.physical") },
     technological: { icon: Cpu, label: t("posture.domains.technological") },
@@ -136,11 +144,14 @@ function PostureInner() {
           <h1 className="text-2xl font-bold text-gray-900">
             {t("posture.title")}
           </h1>
-          <p className="text-sm text-gray-500 mt-1">
-            {t("posture.subtitle")}
-          </p>
+          <p className="text-sm text-gray-500 mt-1">{t("posture.subtitle")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={fetchData}
+          disabled={loading}
+        >
           <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
         </Button>
       </div>
@@ -149,17 +160,35 @@ function PostureInner() {
       <div className="rounded-lg border border-gray-200 bg-white p-8 flex flex-col items-center">
         <div className="relative w-40 h-40">
           <svg className="w-full h-full -rotate-90" viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="52" fill="none" stroke="#e5e7eb" strokeWidth="12" />
             <circle
-              cx="60" cy="60" r="52" fill="none"
-              stroke={overallScore >= 75 ? "#22c55e" : overallScore >= 50 ? "#eab308" : "#ef4444"}
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              stroke="#e5e7eb"
+              strokeWidth="12"
+            />
+            <circle
+              cx="60"
+              cy="60"
+              r="52"
+              fill="none"
+              stroke={
+                overallScore >= 75
+                  ? "#22c55e"
+                  : overallScore >= 50
+                    ? "#eab308"
+                    : "#ef4444"
+              }
               strokeWidth="12"
               strokeDasharray={`${(overallScore / 100) * 327} 327`}
               strokeLinecap="round"
             />
           </svg>
           <div className="absolute inset-0 flex flex-col items-center justify-center">
-            <span className="text-4xl font-bold text-gray-900">{overallScore}</span>
+            <span className="text-4xl font-bold text-gray-900">
+              {overallScore}
+            </span>
             <span className="text-xs text-gray-400">/100</span>
           </div>
         </div>
@@ -237,31 +266,35 @@ function PostureInner() {
       {/* Domain View */}
       {domains && (
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          {(Object.entries(domains) as [string, number][]).map(([domain, score]) => {
-            const config = domainConfig[domain];
-            if (!config) return null;
-            const Icon = config.icon;
-            return (
-              <div
-                key={domain}
-                className="rounded-lg border border-gray-200 bg-white p-5 flex flex-col items-center"
-              >
-                <Icon
-                  className={`h-8 w-8 mb-2 ${
-                    score >= 80
-                      ? "text-green-600"
-                      : score >= 50
-                        ? "text-yellow-600"
-                        : "text-red-600"
-                  }`}
-                />
-                <span className="text-2xl font-bold text-gray-900">{score}%</span>
-                <span className="text-xs text-gray-500 mt-1 text-center">
-                  {config.label}
-                </span>
-              </div>
-            );
-          })}
+          {(Object.entries(domains) as [string, number][]).map(
+            ([domain, score]) => {
+              const config = domainConfig[domain];
+              if (!config) return null;
+              const Icon = config.icon;
+              return (
+                <div
+                  key={domain}
+                  className="rounded-lg border border-gray-200 bg-white p-5 flex flex-col items-center"
+                >
+                  <Icon
+                    className={`h-8 w-8 mb-2 ${
+                      score >= 80
+                        ? "text-green-600"
+                        : score >= 50
+                          ? "text-yellow-600"
+                          : "text-red-600"
+                    }`}
+                  />
+                  <span className="text-2xl font-bold text-gray-900">
+                    {score}%
+                  </span>
+                  <span className="text-xs text-gray-500 mt-1 text-center">
+                    {config.label}
+                  </span>
+                </div>
+              );
+            },
+          )}
         </div>
       )}
 

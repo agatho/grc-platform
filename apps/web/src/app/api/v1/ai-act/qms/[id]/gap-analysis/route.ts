@@ -51,12 +51,17 @@ export async function GET(req: Request, { params }: RouteParams) {
   // eigene Tabelle iso_42001_assessment.
   const url = new URL(req.url);
   const hasAiPolicy = url.searchParams.get("hasAiPolicy") === "true";
-  const hasManagementObjectives = url.searchParams.get("hasManagementObjectives") === "true";
-  const hasAiImpactAssessment = url.searchParams.get("hasAiImpactAssessment") === "true";
-  const hasResourceAllocation = url.searchParams.get("hasResourceAllocation") === "true";
-  const hasCompetenceManagement = url.searchParams.get("hasCompetenceManagement") === "true";
+  const hasManagementObjectives =
+    url.searchParams.get("hasManagementObjectives") === "true";
+  const hasAiImpactAssessment =
+    url.searchParams.get("hasAiImpactAssessment") === "true";
+  const hasResourceAllocation =
+    url.searchParams.get("hasResourceAllocation") === "true";
+  const hasCompetenceManagement =
+    url.searchParams.get("hasCompetenceManagement") === "true";
   const hasInternalAudit = url.searchParams.get("hasInternalAudit") === "true";
-  const hasManagementReview = url.searchParams.get("hasManagementReview") === "true";
+  const hasManagementReview =
+    url.searchParams.get("hasManagementReview") === "true";
 
   const iso42001Ctx: Iso42001Context = {
     qms: checklist,

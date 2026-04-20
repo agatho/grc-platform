@@ -48,12 +48,7 @@ export async function GET(req: Request) {
       ),
     )
     .leftJoin(user, eq(user.id, risk.ownerId))
-    .where(
-      and(
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
-    )
+    .where(and(eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)))
     .orderBy(desc(sql`CAST(${fairSimulationResult.aleP50} AS numeric)`))
     .limit(limit);
 

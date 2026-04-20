@@ -26,7 +26,10 @@ export async function POST(req: Request) {
     .where(eq(ssoConfig.orgId, ctx.orgId));
 
   if (!config) {
-    return Response.json({ error: "No SSO configuration found" }, { status: 404 });
+    return Response.json(
+      { error: "No SSO configuration found" },
+      { status: 404 },
+    );
   }
 
   const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
@@ -34,7 +37,9 @@ export async function POST(req: Request) {
   if (parsed.data.provider === "saml") {
     if (!config.samlSsoUrl || !config.samlEntityId) {
       return Response.json(
-        { error: "SAML configuration incomplete: missing SSO URL or Entity ID" },
+        {
+          error: "SAML configuration incomplete: missing SSO URL or Entity ID",
+        },
         { status: 400 },
       );
     }
@@ -60,7 +65,10 @@ export async function POST(req: Request) {
   if (parsed.data.provider === "oidc") {
     if (!config.oidcDiscoveryUrl || !config.oidcClientId) {
       return Response.json(
-        { error: "OIDC configuration incomplete: missing discovery URL or client ID" },
+        {
+          error:
+            "OIDC configuration incomplete: missing discovery URL or client ID",
+        },
         { status: 400 },
       );
     }

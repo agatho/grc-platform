@@ -10,20 +10,26 @@ export async function POST(req: Request) {
 
   const body = batchAcknowledgeGapsSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const updated = await tx.update(evidenceReviewGap)
+    const updated = await tx
+      .update(evidenceReviewGap)
       .set({
         status: body.data.status,
         acknowledgedBy: ctx.userId,
         acknowledgedAt: new Date(),
       })
-      .where(and(
-        inArray(evidenceReviewGap.id, body.data.gapIds),
-        eq(evidenceReviewGap.orgId, ctx.orgId),
-      ))
+      .where(
+        and(
+          inArray(evidenceReviewGap.id, body.data.gapIds),
+          eq(evidenceReviewGap.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return updated;
   });

@@ -1,4 +1,9 @@
-import { db, architectureRuleViolation, architectureRule, architectureElement } from "@grc/db";
+import {
+  db,
+  architectureRuleViolation,
+  architectureRule,
+  architectureElement,
+} from "@grc/db";
 import { updateViolationStatusSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
@@ -23,8 +28,14 @@ export async function GET(req: Request) {
       elementName: architectureElement.name,
     })
     .from(architectureRuleViolation)
-    .innerJoin(architectureRule, eq(architectureRuleViolation.ruleId, architectureRule.id))
-    .innerJoin(architectureElement, eq(architectureRuleViolation.elementId, architectureElement.id))
+    .innerJoin(
+      architectureRule,
+      eq(architectureRuleViolation.ruleId, architectureRule.id),
+    )
+    .innerJoin(
+      architectureElement,
+      eq(architectureRuleViolation.elementId, architectureElement.id),
+    )
     .where(eq(architectureRuleViolation.orgId, ctx.orgId))
     .orderBy(desc(architectureRuleViolation.detectedAt));
 

@@ -32,20 +32,23 @@ export const roleDashboardTypeEnum = pgEnum("role_dashboard_type", [
   "custom",
 ]);
 
-export const roleDashboardWidgetCategoryEnum = pgEnum("role_dashboard_widget_category", [
-  "risk_posture",
-  "threat_intel",
-  "top_risks",
-  "financial_exposure",
-  "audit_effort",
-  "grc_roi",
-  "maturity_radar",
-  "findings_overview",
-  "evidence_quality",
-  "department_summary",
-  "compliance_status",
-  "kpi_summary",
-]);
+export const roleDashboardWidgetCategoryEnum = pgEnum(
+  "role_dashboard_widget_category",
+  [
+    "risk_posture",
+    "threat_intel",
+    "top_risks",
+    "financial_exposure",
+    "audit_effort",
+    "grc_roi",
+    "maturity_radar",
+    "findings_overview",
+    "evidence_quality",
+    "department_summary",
+    "compliance_status",
+    "kpi_summary",
+  ],
+);
 
 // ──────────────────────────────────────────────────────────────
 // 81.1 RoleDashboardConfig — Per-role dashboard configuration
@@ -61,15 +64,27 @@ export const roleDashboardConfig = pgTable(
     dashboardType: roleDashboardTypeEnum("dashboard_type").notNull(),
     name: varchar("name", { length: 300 }).notNull(),
     description: text("description"),
-    layoutJson: jsonb("layout_json").notNull().default(sql`'[]'::jsonb`),
-    widgetsJson: jsonb("widgets_json").notNull().default(sql`'[]'::jsonb`),
-    filtersJson: jsonb("filters_json").notNull().default(sql`'{}'::jsonb`),
-    refreshIntervalSeconds: integer("refresh_interval_seconds").notNull().default(300),
+    layoutJson: jsonb("layout_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    widgetsJson: jsonb("widgets_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    filtersJson: jsonb("filters_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    refreshIntervalSeconds: integer("refresh_interval_seconds")
+      .notNull()
+      .default(300),
     isDefault: boolean("is_default").notNull().default(false),
     isActive: boolean("is_active").notNull().default(true),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("rdcfg_org_idx").on(t.orgId),
@@ -99,12 +114,20 @@ export const roleDashboardWidgetPreference = pgTable(
     isVisible: boolean("is_visible").notNull().default(true),
     positionOverride: jsonb("position_override"),
     configOverride: jsonb("config_override"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("rdwp_org_idx").on(t.orgId),
     index("rdwp_user_idx").on(t.userId),
-    unique("rdwp_user_widget_unique").on(t.userId, t.dashboardConfigId, t.widgetKey),
+    unique("rdwp_user_widget_unique").on(
+      t.userId,
+      t.dashboardConfigId,
+      t.widgetKey,
+    ),
   ],
 );

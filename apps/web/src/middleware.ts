@@ -16,7 +16,9 @@ function ensureRequestId(req: Request): string {
   if (existing && /^[A-Za-z0-9_-]{4,128}$/.test(existing)) return existing;
   const bytes = new Uint8Array(8);
   crypto.getRandomValues(bytes);
-  return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
+  return Array.from(bytes)
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
 function withRequestId(response: Response, requestId: string): Response {
@@ -55,7 +57,11 @@ export default auth((req) => {
     if (pathname.startsWith("/api/")) {
       return withRequestId(
         new Response(
-          JSON.stringify({ error: "Unauthorized", message: "Authentication required", requestId }),
+          JSON.stringify({
+            error: "Unauthorized",
+            message: "Authentication required",
+            requestId,
+          }),
           { status: 401, headers: { "Content-Type": "application/json" } },
         ),
         requestId,

@@ -151,7 +151,12 @@ export async function GET(req: Request) {
   const statusParam = searchParams.get("status");
   if (statusParam) {
     const statuses = statusParam.split(",") as Array<
-      "identified" | "in_remediation" | "remediated" | "verified" | "accepted" | "closed"
+      | "identified"
+      | "in_remediation"
+      | "remediated"
+      | "verified"
+      | "accepted"
+      | "closed"
     >;
     conditions.push(inArray(finding.status, statuses));
   }
@@ -160,7 +165,11 @@ export async function GET(req: Request) {
   const severityParam = searchParams.get("severity");
   if (severityParam) {
     const severities = severityParam.split(",") as Array<
-      "observation" | "recommendation" | "improvement_requirement" | "insignificant_nonconformity" | "significant_nonconformity"
+      | "observation"
+      | "recommendation"
+      | "improvement_requirement"
+      | "insignificant_nonconformity"
+      | "significant_nonconformity"
     >;
     conditions.push(inArray(finding.severity, severities));
   }
@@ -203,10 +212,7 @@ export async function GET(req: Request) {
   if (search) {
     const pattern = `%${search}%`;
     conditions.push(
-      or(
-        ilike(finding.title, pattern),
-        ilike(finding.description, pattern),
-      )!,
+      or(ilike(finding.title, pattern), ilike(finding.description, pattern))!,
     );
   }
 

@@ -56,10 +56,14 @@ export function MyTodosWidget({
         <h3 className="text-sm font-semibold text-gray-900">
           {title ?? `My ToDos \u2014 ${module.toUpperCase()}`}
         </h3>
-        <span className={cn(
-          "text-xs font-bold px-2 py-0.5 rounded-full",
-          overdueCount > 0 ? "bg-red-100 text-red-700" : "bg-blue-100 text-blue-700",
-        )}>
+        <span
+          className={cn(
+            "text-xs font-bold px-2 py-0.5 rounded-full",
+            overdueCount > 0
+              ? "bg-red-100 text-red-700"
+              : "bg-blue-100 text-blue-700",
+          )}
+        >
           {totalCount}
         </span>
       </div>
@@ -87,15 +91,21 @@ export function MyTodosWidget({
                   >
                     <div className="flex items-center gap-2 min-w-0">
                       {item.elementId && (
-                        <span className="text-xs text-gray-400 font-mono">{item.elementId}</span>
+                        <span className="text-xs text-gray-400 font-mono">
+                          {item.elementId}
+                        </span>
                       )}
                       <span className="truncate">{item.title}</span>
                     </div>
                     {item.dueDate && (
-                      <span className={cn(
-                        "text-xs whitespace-nowrap ml-2",
-                        item.isOverdue ? "text-red-500 font-medium" : "text-gray-400",
-                      )}>
+                      <span
+                        className={cn(
+                          "text-xs whitespace-nowrap ml-2",
+                          item.isOverdue
+                            ? "text-red-500 font-medium"
+                            : "text-gray-400",
+                        )}
+                      >
                         {item.dueDate}
                       </span>
                     )}

@@ -41,7 +41,11 @@ export async function POST(req: Request, { params }: RouteParams) {
   }
 
   const [model] = await db
-    .select({ id: aiGpaiModel.id, name: aiGpaiModel.name, modelType: aiGpaiModel.modelType })
+    .select({
+      id: aiGpaiModel.id,
+      name: aiGpaiModel.name,
+      modelType: aiGpaiModel.modelType,
+    })
     .from(aiGpaiModel)
     .where(and(eq(aiGpaiModel.id, id), eq(aiGpaiModel.orgId, ctx.orgId)));
   if (!model) {

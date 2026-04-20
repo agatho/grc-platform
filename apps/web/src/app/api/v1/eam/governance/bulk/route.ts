@@ -14,7 +14,8 @@ export async function POST(req: Request) {
 
   const body = await req.json();
   const parsed = bulkGovernanceSchema.safeParse(body);
-  if (!parsed.success) return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+  if (!parsed.success)
+    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
 
   const { elementIds, action, justification } = parsed.data;
 
@@ -27,14 +28,26 @@ export async function POST(req: Request) {
   };
   const targetStatus = actionToStatus[action];
 
-  const elements = await db.select().from(architectureElement)
-    .where(and(eq(architectureElement.orgId, ctx.orgId), inArray(architectureElement.id, elementIds)));
+  const elements = await db
+    .select()
+    .from(architectureElement)
+    .where(
+      and(
+        eq(architectureElement.orgId, ctx.orgId),
+        inArray(architectureElement.id, elementIds),
+      ),
+    );
 
-  const results: Array<{ elementId: string; success: boolean; error?: string }> = [];
+  const results: Array<{
+    elementId: string;
+    success: boolean;
+    error?: string;
+  }> = [];
 
   for (const el of elements) {
     // Update element
-    await db.update(architectureElement)
+    await db
+      .update(architectureElement)
       .set({ governanceStatus: targetStatus, updatedAt: new Date() })
       .where(eq(architectureElement.id, el.id));
 

@@ -30,14 +30,30 @@ export async function processInterfaceHealthCheck(): Promise<{
       try {
         const parsed = new URL(url);
         if (parsed.protocol !== "https:") {
-          return { id: iface.id, status: "down" as const, previousStatus: iface.healthStatus };
+          return {
+            id: iface.id,
+            status: "down" as const,
+            previousStatus: iface.healthStatus,
+          };
         }
         const hostname = parsed.hostname;
-        if (/^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|localhost|0\.)/.test(hostname)) {
-          return { id: iface.id, status: "down" as const, previousStatus: iface.healthStatus };
+        if (
+          /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|localhost|0\.)/.test(
+            hostname,
+          )
+        ) {
+          return {
+            id: iface.id,
+            status: "down" as const,
+            previousStatus: iface.healthStatus,
+          };
         }
       } catch {
-        return { id: iface.id, status: "down" as const, previousStatus: iface.healthStatus };
+        return {
+          id: iface.id,
+          status: "down" as const,
+          previousStatus: iface.healthStatus,
+        };
       }
 
       try {
@@ -52,13 +68,29 @@ export async function processInterfaceHealthCheck(): Promise<{
 
         const status = response.status;
         if (status >= 200 && status < 300) {
-          return { id: iface.id, status: "active" as const, previousStatus: iface.healthStatus };
+          return {
+            id: iface.id,
+            status: "active" as const,
+            previousStatus: iface.healthStatus,
+          };
         } else if (status >= 500) {
-          return { id: iface.id, status: "degraded" as const, previousStatus: iface.healthStatus };
+          return {
+            id: iface.id,
+            status: "degraded" as const,
+            previousStatus: iface.healthStatus,
+          };
         }
-        return { id: iface.id, status: "active" as const, previousStatus: iface.healthStatus };
+        return {
+          id: iface.id,
+          status: "active" as const,
+          previousStatus: iface.healthStatus,
+        };
       } catch {
-        return { id: iface.id, status: "down" as const, previousStatus: iface.healthStatus };
+        return {
+          id: iface.id,
+          status: "down" as const,
+          previousStatus: iface.healthStatus,
+        };
       }
     }),
   );
@@ -78,11 +110,15 @@ export async function processInterfaceHealthCheck(): Promise<{
 
       // Detect status change for notification
       if (previousStatus !== status && previousStatus !== "unknown") {
-        console.log(`[interface-health-check] Status changed: ${previousStatus} -> ${status} for interface ${id}`);
+        console.log(
+          `[interface-health-check] Status changed: ${previousStatus} -> ${status} for interface ${id}`,
+        );
       }
     }
   }
 
-  console.log(`[interface-health-check] Checked ${interfaces.length}: ${active} active, ${degraded} degraded, ${down} down`);
+  console.log(
+    `[interface-health-check] Checked ${interfaces.length}: ${active} active, ${degraded} degraded, ${down} down`,
+  );
   return { checked: interfaces.length, active, degraded, down };
 }

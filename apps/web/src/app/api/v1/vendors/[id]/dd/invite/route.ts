@@ -101,7 +101,10 @@ export async function POST(req: Request, { params }: RouteParams) {
     return { session, dueDiligenceId: dd.id };
   });
 
-  const portalBaseUrl = process.env.PORTAL_BASE_URL || process.env.NEXTAUTH_URL || "http://localhost:3000";
+  const portalBaseUrl =
+    process.env.PORTAL_BASE_URL ||
+    process.env.NEXTAUTH_URL ||
+    "http://localhost:3000";
   const portalUrl = `${portalBaseUrl}/dd/${accessToken}`;
 
   return Response.json(

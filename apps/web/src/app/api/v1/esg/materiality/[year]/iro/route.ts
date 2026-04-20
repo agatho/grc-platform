@@ -38,5 +38,5 @@ export async function GET(
         ORDER BY mi.esrs_topic, mi.iro_type`,
   );
 
-  return Response.json({ data: result.rows ?? [] });
+  return Response.json({ data: (result as unknown as unknown[]) ?? [] });
 }

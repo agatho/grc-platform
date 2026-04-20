@@ -57,19 +57,27 @@ export const communityEditionConfig = pgTable(
       .notNull()
       .references(() => organization.id),
     editionType: editionTypeEnum("edition_type").notNull().default("community"),
-    enabledModules: jsonb("enabled_modules").notNull().default(sql`'["erm","bpm","ics","dms"]'::jsonb`),
+    enabledModules: jsonb("enabled_modules")
+      .notNull()
+      .default(sql`'["erm","bpm","ics","dms"]'::jsonb`),
     maxUsers: integer("max_users").notNull().default(25),
     maxEntities: integer("max_entities").notNull().default(3),
     pluginSdkEnabled: boolean("plugin_sdk_enabled").notNull().default(true),
     apiAccessEnabled: boolean("api_access_enabled").notNull().default(true),
     communityForumUrl: varchar("community_forum_url", { length: 2000 }),
-    deploymentType: varchar("deployment_type", { length: 50 }).notNull().default("docker_compose"),
+    deploymentType: varchar("deployment_type", { length: 50 })
+      .notNull()
+      .default("docker_compose"),
     helmChartVersion: varchar("helm_chart_version", { length: 50 }),
     licenseKey: varchar("license_key", { length: 500 }),
     licenseExpiresAt: timestamp("license_expires_at", { withTimezone: true }),
     telemetryOptIn: boolean("telemetry_opt_in").notNull().default(false),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("cec_org_idx").on(t.orgId),
@@ -101,9 +109,15 @@ export const communityContribution = pgTable(
     reviewedBy: uuid("reviewed_by").references(() => user.id),
     reviewedAt: timestamp("reviewed_at", { withTimezone: true }),
     claSignedAt: timestamp("cla_signed_at", { withTimezone: true }),
-    metadataJson: jsonb("metadata_json").notNull().default(sql`'{}'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    metadataJson: jsonb("metadata_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("cc_org_idx").on(t.orgId),

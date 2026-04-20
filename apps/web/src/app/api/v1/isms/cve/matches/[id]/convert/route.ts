@@ -19,7 +19,10 @@ export async function POST(
   const body = await req.json();
   const parsed = convertCveToVulnerabilitySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 400 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   // Fetch the match and its CVE data
@@ -34,7 +37,10 @@ export async function POST(
   }
 
   if (match.linkedVulnerabilityId) {
-    return Response.json({ error: "Already converted to vulnerability" }, { status: 409 });
+    return Response.json(
+      { error: "Already converted to vulnerability" },
+      { status: 409 },
+    );
   }
 
   const [cve] = await db
@@ -66,7 +72,10 @@ export async function POST(
         description: cve.description ?? undefined,
         cveReference: cve.cveId,
         affectedAssetId: parsed.data.affectedAssetId ?? match.assetId,
-        severity: parsed.data.severity ?? severityMap[cve.cvssSeverity ?? "medium"] ?? "medium",
+        severity:
+          parsed.data.severity ??
+          severityMap[cve.cvssSeverity ?? "medium"] ??
+          "medium",
         status: "open",
         createdBy: ctx.userId,
       })

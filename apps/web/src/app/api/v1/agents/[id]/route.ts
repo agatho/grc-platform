@@ -15,7 +15,9 @@ export async function GET(
   const [agent] = await db
     .select()
     .from(agentRegistration)
-    .where(and(eq(agentRegistration.id, id), eq(agentRegistration.orgId, ctx.orgId)));
+    .where(
+      and(eq(agentRegistration.id, id), eq(agentRegistration.orgId, ctx.orgId)),
+    );
 
   if (!agent) {
     return Response.json({ error: "Agent not found" }, { status: 404 });
@@ -35,21 +37,34 @@ export async function PUT(
   const { id } = await params;
   const body = updateAgentSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const updateData: Record<string, unknown> = { ...body.data, updatedAt: new Date() };
+    const updateData: Record<string, unknown> = {
+      ...body.data,
+      updatedAt: new Date(),
+    };
 
     // Compute next run if activating
     if (body.data.isActive && body.data.config?.scanFrequencyMinutes) {
-      updateData.nextRunAt = new Date(Date.now() + body.data.config.scanFrequencyMinutes * 60000);
+      updateData.nextRunAt = new Date(
+        Date.now() + body.data.config.scanFrequencyMinutes * 60000,
+      );
     }
 
     const [updated] = await tx
       .update(agentRegistration)
       .set(updateData)
-      .where(and(eq(agentRegistration.id, id), eq(agentRegistration.orgId, ctx.orgId)))
+      .where(
+        and(
+          eq(agentRegistration.id, id),
+          eq(agentRegistration.orgId, ctx.orgId),
+        ),
+      )
       .returning();
     return updated;
   });

@@ -82,14 +82,15 @@ type ConditionGroupInput = z.infer<typeof baseConditionGroupSchema> & {
   rules: (z.infer<typeof conditionRuleSchema> | ConditionGroupInput)[];
 };
 
-export const conditionGroupSchema: z.ZodType<ConditionGroupInput> = baseConditionGroupSchema.extend({
-  rules: z.lazy(() =>
-    z
-      .array(z.union([conditionRuleSchema, conditionGroupSchema]))
-      .min(1)
-      .max(50),
-  ),
-});
+export const conditionGroupSchema: z.ZodType<ConditionGroupInput> =
+  baseConditionGroupSchema.extend({
+    rules: z.lazy(() =>
+      z
+        .array(z.union([conditionRuleSchema, conditionGroupSchema]))
+        .min(1)
+        .max(50),
+    ),
+  });
 
 // ─── Action Config Schemas ──────────────────────────────────
 

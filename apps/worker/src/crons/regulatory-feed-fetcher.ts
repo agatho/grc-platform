@@ -26,19 +26,25 @@ interface FeedEntry {
 const FEED_SOURCES = [
   {
     name: "BSI",
-    url: process.env.BSI_FEED_URL ?? "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml",
+    url:
+      process.env.BSI_FEED_URL ??
+      "https://www.bsi.bund.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml",
     jurisdictions: ["DE"],
     defaultFrameworks: ["BSI-Grundschutz", "ISO-27001"],
   },
   {
     name: "EUR-Lex",
-    url: process.env.EURLEX_FEED_URL ?? "https://eur-lex.europa.eu/rss/search-results.xml",
+    url:
+      process.env.EURLEX_FEED_URL ??
+      "https://eur-lex.europa.eu/rss/search-results.xml",
     jurisdictions: ["EU"],
     defaultFrameworks: ["GDPR", "NIS2", "DORA"],
   },
   {
     name: "BaFin",
-    url: process.env.BAFIN_FEED_URL ?? "https://www.bafin.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml",
+    url:
+      process.env.BAFIN_FEED_URL ??
+      "https://www.bafin.de/SiteGlobals/Functions/RSSFeed/RSSNewsfeed/RSSNewsfeed.xml",
     jurisdictions: ["DE"],
     defaultFrameworks: ["MaRisk", "BAIT", "DORA"],
   },
@@ -67,11 +73,22 @@ async function fetchRssFeed(
     const itemMatches = text.match(/<item>[\s\S]*?<\/item>/g) ?? [];
 
     for (const itemXml of itemMatches.slice(0, 50)) {
-      const title = itemXml.match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/)?.[1]?.trim() ?? "";
-      const description = itemXml.match(/<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/)?.[1]?.trim() ?? "";
+      const title =
+        itemXml
+          .match(/<title>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/title>/)?.[1]
+          ?.trim() ?? "";
+      const description =
+        itemXml
+          .match(
+            /<description>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/description>/,
+          )?.[1]
+          ?.trim() ?? "";
       const link = itemXml.match(/<link>(.*?)<\/link>/)?.[1]?.trim() ?? "";
       const pubDate = itemXml.match(/<pubDate>(.*?)<\/pubDate>/)?.[1]?.trim();
-      const category = itemXml.match(/<category>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/category>/)?.[1]?.trim() ?? "";
+      const category =
+        itemXml
+          .match(/<category>(?:<!\[CDATA\[)?(.*?)(?:\]\]>)?<\/category>/)?.[1]
+          ?.trim() ?? "";
 
       if (!title) continue;
 
@@ -79,7 +96,9 @@ async function fetchRssFeed(
         title,
         summary: description.substring(0, 2000),
         url: link,
-        publishedAt: pubDate ? new Date(pubDate).toISOString() : new Date().toISOString(),
+        publishedAt: pubDate
+          ? new Date(pubDate).toISOString()
+          : new Date().toISOString(),
         category,
         source: sourceConfig.name,
         jurisdictions: sourceConfig.jurisdictions,
@@ -99,7 +118,9 @@ async function fetchRssFeed(
 
 export async function processRegulatoryFeedFetcher(): Promise<FeedFetcherResult> {
   const now = new Date();
-  console.log(`[cron:regulatory-feed-fetcher] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:regulatory-feed-fetcher] Starting at ${now.toISOString()}`,
+  );
 
   let fetched = 0;
   let newItems = 0;

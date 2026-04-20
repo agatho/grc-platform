@@ -17,7 +17,9 @@ export async function GET(req: Request) {
   let query = db.select().from(cloudServiceCatalog);
 
   if (provider) {
-    query = query.where(eq(cloudServiceCatalog.provider, provider)) as typeof query;
+    query = query.where(
+      eq(cloudServiceCatalog.provider, provider),
+    ) as typeof query;
   }
 
   const services = await query;

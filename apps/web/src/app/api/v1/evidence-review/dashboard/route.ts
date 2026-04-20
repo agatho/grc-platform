@@ -1,10 +1,20 @@
-import { db, evidenceReviewJob, evidenceReviewGap, evidenceReviewResult } from "@grc/db";
+import {
+  db,
+  evidenceReviewJob,
+  evidenceReviewGap,
+  evidenceReviewResult,
+} from "@grc/db";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/evidence-review/dashboard — Dashboard stats
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "control_owner", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "control_owner",
+    "auditor",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const [summary] = await db
@@ -20,13 +30,22 @@ export async function GET(req: Request) {
     .from(evidenceReviewJob)
     .where(eq(evidenceReviewJob.orgId, ctx.orgId));
 
-  const recentJobs = await db.select().from(evidenceReviewJob)
+  const recentJobs = await db
+    .select()
+    .from(evidenceReviewJob)
     .where(eq(evidenceReviewJob.orgId, ctx.orgId))
     .orderBy(desc(evidenceReviewJob.createdAt))
     .limit(5);
 
-  const topGaps = await db.select().from(evidenceReviewGap)
-    .where(and(eq(evidenceReviewGap.orgId, ctx.orgId), eq(evidenceReviewGap.status, "open")))
+  const topGaps = await db
+    .select()
+    .from(evidenceReviewGap)
+    .where(
+      and(
+        eq(evidenceReviewGap.orgId, ctx.orgId),
+        eq(evidenceReviewGap.status, "open"),
+      ),
+    )
     .orderBy(desc(evidenceReviewGap.createdAt))
     .limit(10);
 

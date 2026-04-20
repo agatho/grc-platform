@@ -20,7 +20,10 @@ export async function POST(
     .limit(1);
 
   if (!inv) {
-    return Response.json({ error: "Invalid invitation token" }, { status: 404 });
+    return Response.json(
+      { error: "Invalid invitation token" },
+      { status: 404 },
+    );
   }
 
   // Check status
@@ -47,17 +50,16 @@ export async function POST(
         .set({ status: "expired", updatedAt: new Date() })
         .where(eq(invitation.id, inv.id));
     }
-    return Response.json(
-      { error: "Invitation has expired" },
-      { status: 410 },
-    );
+    return Response.json({ error: "Invitation has expired" }, { status: 410 });
   }
 
   // Parse optional body (name for new user)
   let body: { name?: string } = {};
   try {
     const { z } = await import("zod");
-    const parsed = z.object({ name: z.string().max(200).optional() }).safeParse(await req.json());
+    const parsed = z
+      .object({ name: z.string().max(200).optional() })
+      .safeParse(await req.json());
     if (parsed.success) body = parsed.data;
   } catch {
     // Body is optional for accept
@@ -125,7 +127,11 @@ export async function POST(
 
     return {
       invitation: updatedInvitation,
-      user: { id: existingUser.id, email: existingUser.email, name: existingUser.name },
+      user: {
+        id: existingUser.id,
+        email: existingUser.email,
+        name: existingUser.name,
+      },
     };
   });
 

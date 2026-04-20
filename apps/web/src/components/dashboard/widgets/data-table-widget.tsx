@@ -7,7 +7,10 @@ interface TableRow {
   [key: string]: unknown;
 }
 
-function parseTableData(data: unknown): { rows: TableRow[]; columns: string[] } {
+function parseTableData(data: unknown): {
+  rows: TableRow[];
+  columns: string[];
+} {
   if (!data) return { rows: [], columns: [] };
 
   let rows: TableRow[] = [];
@@ -26,8 +29,18 @@ function parseTableData(data: unknown): { rows: TableRow[]; columns: string[] } 
   if (rows.length === 0) return { rows: [], columns: [] };
 
   // Derive columns from first row, exclude internal fields
-  const excludeKeys = new Set(["id", "orgId", "org_id", "deletedAt", "deleted_at", "createdBy", "created_by"]);
-  const columns = Object.keys(rows[0]).filter((k) => !excludeKeys.has(k)).slice(0, 6); // max 6 cols
+  const excludeKeys = new Set([
+    "id",
+    "orgId",
+    "org_id",
+    "deletedAt",
+    "deleted_at",
+    "createdBy",
+    "created_by",
+  ]);
+  const columns = Object.keys(rows[0])
+    .filter((k) => !excludeKeys.has(k))
+    .slice(0, 6); // max 6 cols
 
   return { rows, columns };
 }
@@ -57,7 +70,12 @@ function formatColumnHeader(key: string): string {
     .replace(/\b\w/g, (c) => c.toUpperCase());
 }
 
-export function DataTableWidget({ data, config, isLoading, error }: WidgetProps) {
+export function DataTableWidget({
+  data,
+  config,
+  isLoading,
+  error,
+}: WidgetProps) {
   if (isLoading) {
     return (
       <div className="flex h-full flex-col gap-2 p-2">
@@ -77,7 +95,8 @@ export function DataTableWidget({ data, config, isLoading, error }: WidgetProps)
   }
 
   const { rows, columns } = parseTableData(data);
-  const maxRows = config?.displayOptions?.maxRows ?? config?.displayOptions?.limit ?? 10;
+  const maxRows =
+    config?.displayOptions?.maxRows ?? config?.displayOptions?.limit ?? 10;
   const displayRows = rows.slice(0, maxRows);
 
   if (displayRows.length === 0) {

@@ -56,19 +56,24 @@ const ROLES: UserRole[] = [
 
 const LOD_OPTIONS: LineOfDefense[] = ["first", "second", "third"];
 
-function StatusBadge({ status, t }: { status: InvitationStatus; t: (key: string) => string }) {
-  const variants: Record<InvitationStatus, "default" | "secondary" | "destructive" | "outline"> = {
+function StatusBadge({
+  status,
+  t,
+}: {
+  status: InvitationStatus;
+  t: (key: string) => string;
+}) {
+  const variants: Record<
+    InvitationStatus,
+    "default" | "secondary" | "destructive" | "outline"
+  > = {
     pending: "outline",
     accepted: "default",
     expired: "secondary",
     revoked: "destructive",
   };
 
-  return (
-    <Badge variant={variants[status]}>
-      {t(`invitations.${status}`)}
-    </Badge>
-  );
+  return <Badge variant={variants[status]}>{t(`invitations.${status}`)}</Badge>;
 }
 
 export function InvitationPanel() {
@@ -110,10 +115,11 @@ export function InvitationPanel() {
   const handleInvite = async () => {
     setSubmitting(true);
     try {
-      const payload: { email: string; role: UserRole; lineOfDefense?: string } = {
-        email,
-        role,
-      };
+      const payload: { email: string; role: UserRole; lineOfDefense?: string } =
+        {
+          email,
+          role,
+        };
       if (lineOfDefense) {
         payload.lineOfDefense = lineOfDefense;
       }
@@ -134,7 +140,8 @@ export function InvitationPanel() {
       resetForm();
       fetchInvitations();
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : t("invitations.sendError");
+      const message =
+        err instanceof Error ? err.message : t("invitations.sendError");
       toast.error(message);
     } finally {
       setSubmitting(false);
@@ -192,10 +199,18 @@ export function InvitationPanel() {
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">{t("common.total")}</SelectItem>
-              <SelectItem value="pending">{t("invitations.pending")}</SelectItem>
-              <SelectItem value="accepted">{t("invitations.accepted")}</SelectItem>
-              <SelectItem value="expired">{t("invitations.expired")}</SelectItem>
-              <SelectItem value="revoked">{t("invitations.revoked")}</SelectItem>
+              <SelectItem value="pending">
+                {t("invitations.pending")}
+              </SelectItem>
+              <SelectItem value="accepted">
+                {t("invitations.accepted")}
+              </SelectItem>
+              <SelectItem value="expired">
+                {t("invitations.expired")}
+              </SelectItem>
+              <SelectItem value="revoked">
+                {t("invitations.revoked")}
+              </SelectItem>
             </SelectContent>
           </Select>
           <Button onClick={() => setDialogOpen(true)} size="sm">
@@ -227,7 +242,10 @@ export function InvitationPanel() {
               </TableRow>
             ) : invitations.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                <TableCell
+                  colSpan={6}
+                  className="text-center py-8 text-muted-foreground"
+                >
                   {t("invitations.noInvitations")}
                 </TableCell>
               </TableRow>
@@ -284,9 +302,7 @@ export function InvitationPanel() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>{t("invitations.invite")}</DialogTitle>
-            <DialogDescription>
-              {t("invitations.title")}
-            </DialogDescription>
+            <DialogDescription>{t("invitations.title")}</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-2">
@@ -303,7 +319,10 @@ export function InvitationPanel() {
 
             <div className="space-y-2">
               <Label>{t("invitations.role")}</Label>
-              <Select value={role} onValueChange={(v) => setRole(v as UserRole)}>
+              <Select
+                value={role}
+                onValueChange={(v) => setRole(v as UserRole)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder={t("users.selectRole")} />
                 </SelectTrigger>
@@ -345,10 +364,7 @@ export function InvitationPanel() {
             >
               {t("actions.cancel")}
             </Button>
-            <Button
-              onClick={handleInvite}
-              disabled={submitting || !email}
-            >
+            <Button onClick={handleInvite} disabled={submitting || !email}>
               {submitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

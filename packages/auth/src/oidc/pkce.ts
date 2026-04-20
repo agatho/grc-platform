@@ -12,14 +12,10 @@ import type { PkceChallenge } from "@grc/shared";
  */
 export function generatePKCE(): PkceChallenge {
   // code_verifier: 43-128 character random string (RFC 7636 Section 4.1)
-  const verifier = randomBytes(32)
-    .toString("base64url")
-    .slice(0, 64);
+  const verifier = randomBytes(32).toString("base64url").slice(0, 64);
 
   // code_challenge: BASE64URL(SHA256(code_verifier)) (RFC 7636 Section 4.2)
-  const challenge = createHash("sha256")
-    .update(verifier)
-    .digest("base64url");
+  const challenge = createHash("sha256").update(verifier).digest("base64url");
 
   return { verifier, challenge };
 }
@@ -32,8 +28,6 @@ export function generatePKCE(): PkceChallenge {
  * @returns true if the verifier matches the challenge
  */
 export function verifyPKCE(verifier: string, challenge: string): boolean {
-  const computed = createHash("sha256")
-    .update(verifier)
-    .digest("base64url");
+  const computed = createHash("sha256").update(verifier).digest("base64url");
   return computed === challenge;
 }

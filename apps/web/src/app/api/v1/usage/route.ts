@@ -51,7 +51,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = usageQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = usageQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
     return Response.json(
       { error: "Validation failed", details: query.error.flatten() },
@@ -60,8 +62,12 @@ export async function GET(req: Request) {
   }
 
   const conditions = [eq(usageRecord.orgId, ctx.orgId)];
-  if (query.data.startDate) conditions.push(gte(usageRecord.periodStart, new Date(query.data.startDate)));
-  if (query.data.endDate) conditions.push(lte(usageRecord.periodEnd, new Date(query.data.endDate)));
+  if (query.data.startDate)
+    conditions.push(
+      gte(usageRecord.periodStart, new Date(query.data.startDate)),
+    );
+  if (query.data.endDate)
+    conditions.push(lte(usageRecord.periodEnd, new Date(query.data.endDate)));
 
   const { page, limit, offset } = paginate(req);
 

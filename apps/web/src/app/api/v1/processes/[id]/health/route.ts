@@ -42,5 +42,7 @@ export async function PATCH(
     );
   });
 
-  return Response.json({ data: { id: processId, processHealth: body.data.processHealth } });
+  return Response.json({
+    data: { id: processId, processHealth: body.data.processHealth },
+  });
 }

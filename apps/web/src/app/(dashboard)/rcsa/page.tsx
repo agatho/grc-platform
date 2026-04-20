@@ -63,7 +63,12 @@ export default function RcsaCampaignsPage() {
           <p className="text-sm text-gray-500 mt-1">{t("description")}</p>
         </div>
         <div className="flex items-center gap-2">
-          <Button variant="outline" size="sm" onClick={fetchCampaigns} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchCampaigns}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm" onClick={() => router.push("/rcsa/campaigns/new")}>
@@ -96,7 +101,10 @@ export default function RcsaCampaignsPage() {
         <div className="text-center py-16">
           <ClipboardCheck className="mx-auto h-12 w-12 text-gray-400" />
           <p className="mt-4 text-sm text-gray-500">{t("campaign.empty")}</p>
-          <Button className="mt-4" onClick={() => router.push("/rcsa/campaigns/new")}>
+          <Button
+            className="mt-4"
+            onClick={() => router.push("/rcsa/campaigns/new")}
+          >
             <Plus size={14} className="mr-1" />
             {t("campaign.create")}
           </Button>
@@ -113,7 +121,10 @@ export default function RcsaCampaignsPage() {
                 <h3 className="font-semibold text-gray-900 text-sm truncate pr-2">
                   {campaign.name}
                 </h3>
-                <Badge variant="outline" className={statusColors[campaign.status] ?? ""}>
+                <Badge
+                  variant="outline"
+                  className={statusColors[campaign.status] ?? ""}
+                >
                   {t(`campaign.status.${campaign.status}`)}
                 </Badge>
               </div>
@@ -135,7 +146,13 @@ export default function RcsaCampaignsPage() {
                     <path
                       d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831"
                       fill="none"
-                      stroke={campaign.completionRate >= 80 ? "#22c55e" : campaign.completionRate >= 50 ? "#eab308" : "#ef4444"}
+                      stroke={
+                        campaign.completionRate >= 80
+                          ? "#22c55e"
+                          : campaign.completionRate >= 50
+                            ? "#eab308"
+                            : "#ef4444"
+                      }
                       strokeWidth="3"
                       strokeDasharray={`${campaign.completionRate}, 100`}
                     />
@@ -154,7 +171,8 @@ export default function RcsaCampaignsPage() {
                   <div className="flex items-center gap-1 text-gray-600">
                     <ClipboardCheck size={12} />
                     <span>
-                      {campaign.completedCount}/{campaign.totalAssignments} {t("campaign.completed")}
+                      {campaign.completedCount}/{campaign.totalAssignments}{" "}
+                      {t("campaign.completed")}
                     </span>
                   </div>
                 </div>

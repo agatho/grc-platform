@@ -8,12 +8,13 @@
 import type { CrisisStatus } from "../types/bcms";
 export type { CrisisStatus };
 
-export const CRISIS_ALLOWED_TRANSITIONS: Record<CrisisStatus, CrisisStatus[]> = {
-  standby: ["activated"],
-  activated: ["resolved"],
-  resolved: ["post_mortem"],
-  post_mortem: ["standby"], // Zurueck auf Standby nach Post-Mortem
-};
+export const CRISIS_ALLOWED_TRANSITIONS: Record<CrisisStatus, CrisisStatus[]> =
+  {
+    standby: ["activated"],
+    activated: ["resolved"],
+    resolved: ["post_mortem"],
+    post_mortem: ["standby"], // Zurueck auf Standby nach Post-Mortem
+  };
 
 export interface Blocker {
   code: string;
@@ -73,7 +74,9 @@ export function validateCrisisGate9Activate(
 }
 
 /** B10: Activated -> Resolved -- Alle Logs erfasst, RCA-Start */
-export function validateCrisisGate10Resolve(snapshot: CrisisSnapshot): Blocker[] {
+export function validateCrisisGate10Resolve(
+  snapshot: CrisisSnapshot,
+): Blocker[] {
   const blockers: Blocker[] = [];
 
   if (!snapshot.activatedAt) {
@@ -88,7 +91,8 @@ export function validateCrisisGate10Resolve(snapshot: CrisisSnapshot): Blocker[]
   if (snapshot.logEntryCount === 0) {
     blockers.push({
       code: "no_crisis_log_entries",
-      message: "Mindestens 1 crisis_log-Eintrag erforderlich (Initial-Assessment, Decisions, Actions).",
+      message:
+        "Mindestens 1 crisis_log-Eintrag erforderlich (Initial-Assessment, Decisions, Actions).",
       gate: "B10",
       severity: "error",
     });
@@ -120,7 +124,9 @@ export interface CrisisTransitionResult {
   updates?: Partial<CrisisSnapshot>;
 }
 
-export function validateCrisisTransition(req: CrisisTransitionRequest): CrisisTransitionResult {
+export function validateCrisisTransition(
+  req: CrisisTransitionRequest,
+): CrisisTransitionResult {
   const { currentStatus, targetStatus, snapshot, activatingUserId } = req;
 
   const allowed = CRISIS_ALLOWED_TRANSITIONS[currentStatus] ?? [];
@@ -140,7 +146,10 @@ export function validateCrisisTransition(req: CrisisTransitionRequest): CrisisTr
 
   let gateBlockers: Blocker[] = [];
   if (currentStatus === "standby" && targetStatus === "activated") {
-    gateBlockers = validateCrisisGate9Activate(snapshot, activatingUserId ?? null);
+    gateBlockers = validateCrisisGate9Activate(
+      snapshot,
+      activatingUserId ?? null,
+    );
   }
   if (currentStatus === "activated" && targetStatus === "resolved") {
     gateBlockers = validateCrisisGate10Resolve(snapshot);
@@ -177,7 +186,10 @@ export interface DoraDeadlines {
   nextDeadlineLabel: "early_warning" | "intermediate" | "final" | "none";
 }
 
-export function computeDoraDeadlines(classifiedAt: Date, now: Date = new Date()): DoraDeadlines {
+export function computeDoraDeadlines(
+  classifiedAt: Date,
+  now: Date = new Date(),
+): DoraDeadlines {
   const HOUR_MS = 60 * 60 * 1000;
   const earlyWarning = new Date(classifiedAt.getTime() + 4 * HOUR_MS);
   const intermediate = new Date(classifiedAt.getTime() + 72 * HOUR_MS);
@@ -211,7 +223,9 @@ export function computeDoraDeadlines(classifiedAt: Date, now: Date = new Date())
     earlyWarningOverdue: earlyOverdue,
     intermediateOverdue,
     finalOverdue,
-    secondsToNextDeadline: next ? Math.floor((next.getTime() - nowMs) / 1000) : null,
+    secondsToNextDeadline: next
+      ? Math.floor((next.getTime() - nowMs) / 1000)
+      : null,
     nextDeadlineLabel: label,
   };
 }

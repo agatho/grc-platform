@@ -63,18 +63,30 @@ export const riskQuantificationConfig = pgTable(
       .references(() => organization.id),
     methodology: rqMethodologyEnum("methodology").notNull().default("hybrid"),
     defaultIterations: integer("default_iterations").notNull().default(10000),
-    confidenceLevel: numeric("confidence_level", { precision: 5, scale: 2 }).notNull().default("0.95"),
-    currencyCode: varchar("currency_code", { length: 3 }).notNull().default("EUR"),
-    aggregationMethod: varchar("aggregation_method", { length: 50 }).notNull().default("sum"),
-    includeCorrelations: boolean("include_correlations").notNull().default(false),
+    confidenceLevel: numeric("confidence_level", { precision: 5, scale: 2 })
+      .notNull()
+      .default("0.95"),
+    currencyCode: varchar("currency_code", { length: 3 })
+      .notNull()
+      .default("EUR"),
+    aggregationMethod: varchar("aggregation_method", { length: 50 })
+      .notNull()
+      .default("sum"),
+    includeCorrelations: boolean("include_correlations")
+      .notNull()
+      .default(false),
     correlationMatrix: jsonb("correlation_matrix"),
-    configJson: jsonb("config_json").notNull().default(sql`'{}'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    configJson: jsonb("config_json")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
-  (t) => [
-    unique("rqc_org_unique").on(t.orgId),
-  ],
+  (t) => [unique("rqc_org_unique").on(t.orgId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -99,14 +111,19 @@ export const riskVarCalculation = pgTable(
     varP95: numeric("var_p95", { precision: 15, scale: 2 }),
     varP99: numeric("var_p99", { precision: 15, scale: 2 }),
     expectedLoss: numeric("expected_loss", { precision: 15, scale: 2 }),
-    standardDeviation: numeric("standard_deviation", { precision: 15, scale: 2 }),
+    standardDeviation: numeric("standard_deviation", {
+      precision: 15,
+      scale: 2,
+    }),
     histogram: jsonb("histogram"),
     lossExceedance: jsonb("loss_exceedance"),
     riskContributions: jsonb("risk_contributions"),
     computedAt: timestamp("computed_at", { withTimezone: true }),
     computedBy: uuid("computed_by").references(() => user.id),
     error: text("error"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("rvc_org_idx").on(t.orgId),
@@ -128,15 +145,24 @@ export const rqRiskAppetiteThreshold = pgTable(
       .references(() => organization.id),
     name: varchar("name", { length: 300 }).notNull(),
     category: varchar("category", { length: 100 }),
-    appetiteAmount: numeric("appetite_amount", { precision: 15, scale: 2 }).notNull(),
+    appetiteAmount: numeric("appetite_amount", {
+      precision: 15,
+      scale: 2,
+    }).notNull(),
     toleranceAmount: numeric("tolerance_amount", { precision: 15, scale: 2 }),
     currentExposure: numeric("current_exposure", { precision: 15, scale: 2 }),
     status: rqAppetiteStatusEnum("status").notNull().default("within_appetite"),
     lastUpdatedAt: timestamp("last_updated_at", { withTimezone: true }),
     alertEnabled: boolean("alert_enabled").notNull().default(true),
-    trendData: jsonb("trend_data").notNull().default(sql`'[]'::jsonb`),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    trendData: jsonb("trend_data")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("rat_org_idx").on(t.orgId),
@@ -155,17 +181,23 @@ export const riskSensitivityAnalysis = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    varCalculationId: uuid("var_calculation_id")
-      .references(() => riskVarCalculation.id, { onDelete: "cascade" }),
+    varCalculationId: uuid("var_calculation_id").references(
+      () => riskVarCalculation.id,
+      { onDelete: "cascade" },
+    ),
     name: varchar("name", { length: 300 }).notNull(),
     description: text("description"),
     baselineVar: numeric("baseline_var", { precision: 15, scale: 2 }),
-    scenariosJson: jsonb("scenarios_json").notNull().default(sql`'[]'::jsonb`),
+    scenariosJson: jsonb("scenarios_json")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     tornadoData: jsonb("tornado_data"),
     waterfallData: jsonb("waterfall_data"),
     computedAt: timestamp("computed_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("rsa_org_idx").on(t.orgId),
@@ -188,17 +220,27 @@ export const riskExecutiveSummary = pgTable(
     periodLabel: varchar("period_label", { length: 100 }),
     status: rqSummaryStatusEnum("status").notNull().default("draft"),
     executiveSummary: text("executive_summary"),
-    topRisks: jsonb("top_risks").notNull().default(sql`'[]'::jsonb`),
-    keyMetrics: jsonb("key_metrics").notNull().default(sql`'{}'::jsonb`),
+    topRisks: jsonb("top_risks")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
+    keyMetrics: jsonb("key_metrics")
+      .notNull()
+      .default(sql`'{}'::jsonb`),
     trendComparison: jsonb("trend_comparison"),
-    recommendations: jsonb("recommendations").notNull().default(sql`'[]'::jsonb`),
+    recommendations: jsonb("recommendations")
+      .notNull()
+      .default(sql`'[]'::jsonb`),
     exportFormat: varchar("export_format", { length: 10 }),
     exportPath: varchar("export_path", { length: 1000 }),
     approvedBy: uuid("approved_by").references(() => user.id),
     approvedAt: timestamp("approved_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (t) => [
     index("res_org_idx").on(t.orgId),

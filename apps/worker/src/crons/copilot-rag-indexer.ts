@@ -41,12 +41,16 @@ export async function processCopilotRagIndexer(): Promise<{
         sourcesIndexed++;
       }
 
-      console.log(`[copilot-rag-indexer] Indexed org ${orgId}: ${risks.length} risks`);
+      console.log(
+        `[copilot-rag-indexer] Indexed org ${orgId}: ${risks.length} risks`,
+      );
     } catch (err) {
       console.error(`[copilot-rag-indexer] Failed for org ${orgId}:`, err);
     }
   }
 
-  console.log(`[copilot-rag-indexer] Completed: ${orgs.length} orgs, ${sourcesIndexed} sources`);
+  console.log(
+    `[copilot-rag-indexer] Completed: ${orgs.length} orgs, ${sourcesIndexed} sources`,
+  );
   return { orgsProcessed: orgs.length, sourcesIndexed };
 }

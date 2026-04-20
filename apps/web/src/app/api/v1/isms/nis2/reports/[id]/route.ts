@@ -1,8 +1,4 @@
-import {
-  db,
-  nis2IncidentReport,
-  securityIncident,
-} from "@grc/db";
+import { db, nis2IncidentReport, securityIncident } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -35,7 +31,8 @@ export async function GET(
       contactPerson: nis2IncidentReport.contactPerson,
       contactEmail: nis2IncidentReport.contactEmail,
       contactPhone: nis2IncidentReport.contactPhone,
-      affectedServicesDescription: nis2IncidentReport.affectedServicesDescription,
+      affectedServicesDescription:
+        nis2IncidentReport.affectedServicesDescription,
       crossBorderImpact: nis2IncidentReport.crossBorderImpact,
       estimatedImpactCount: nis2IncidentReport.estimatedImpactCount,
       createdAt: nis2IncidentReport.createdAt,
@@ -45,7 +42,10 @@ export async function GET(
       incidentSeverity: securityIncident.severity,
     })
     .from(nis2IncidentReport)
-    .innerJoin(securityIncident, eq(nis2IncidentReport.incidentId, securityIncident.id))
+    .innerJoin(
+      securityIncident,
+      eq(nis2IncidentReport.incidentId, securityIncident.id),
+    )
     .where(
       and(
         eq(nis2IncidentReport.id, id),

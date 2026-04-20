@@ -1,10 +1,34 @@
 // Sprint 49: EAM Visualizations types
 
-export type LifecyclePhase = "planning" | "implementing" | "phase_in" | "active" | "phase_out" | "inactive";
-export type GridColoringMode = "lifecycle" | "time" | "six_r" | "criticality" | "functional_fit";
+export type LifecyclePhase =
+  | "planning"
+  | "implementing"
+  | "phase_in"
+  | "active"
+  | "phase_out"
+  | "inactive";
+export type GridColoringMode =
+  | "lifecycle"
+  | "time"
+  | "six_r"
+  | "criticality"
+  | "functional_fit";
 export type OverlayMode = "none" | "risk" | "vulnerability";
-export type RoadmapGroupBy = "lifecycle" | "capability" | "department" | "category" | "time" | "six_r";
-export type ContextDiagramSector = "business" | "organization" | "integration" | "data" | "technology" | "risk" | "provider";
+export type RoadmapGroupBy =
+  | "lifecycle"
+  | "capability"
+  | "department"
+  | "category"
+  | "time"
+  | "six_r";
+export type ContextDiagramSector =
+  | "business"
+  | "organization"
+  | "integration"
+  | "data"
+  | "technology"
+  | "risk"
+  | "provider";
 
 export interface InsightGridData {
   columns: GridColumn[];

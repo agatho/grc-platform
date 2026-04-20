@@ -108,11 +108,12 @@ export default function AccessLogPage() {
     setLoading(true);
     try {
       const params = new URLSearchParams({ limit: "50" });
-      if (eventTypeFilter !== "__all__") params.set("event_type", eventTypeFilter);
+      if (eventTypeFilter !== "__all__")
+        params.set("event_type", eventTypeFilter);
 
       const res = await fetch(`/api/v1/access-log?${params.toString()}`);
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const json = await res.json() as { data: AccessLogEntry[] };
+      const json = (await res.json()) as { data: AccessLogEntry[] };
       setEntries(json.data);
     } catch {
       setEntries([]);
@@ -144,9 +145,7 @@ export default function AccessLogPage() {
         header: t("email"),
         cell: ({ getValue }) => {
           const email = getValue() as string | null;
-          return (
-            <span className="text-sm text-gray-700">{email ?? "-"}</span>
-          );
+          return <span className="text-sm text-gray-700">{email ?? "-"}</span>;
         },
       },
       {
@@ -155,7 +154,8 @@ export default function AccessLogPage() {
         cell: ({ getValue }) => {
           const eventType = getValue() as string;
           const colorClass =
-            EVENT_TYPE_COLORS[eventType] ?? "bg-gray-100 text-gray-800 border-gray-200";
+            EVENT_TYPE_COLORS[eventType] ??
+            "bg-gray-100 text-gray-800 border-gray-200";
           return (
             <Badge
               variant="outline"

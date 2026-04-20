@@ -58,14 +58,21 @@ function ChangeRequestsInner() {
   }, [fetchData]);
 
   if (loading) {
-    return <div className="flex items-center justify-center h-64"><div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" /></div>;
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin h-8 w-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
   }
 
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">{t("changeRequests.title")}</h1>
-        <Button><Plus className="h-4 w-4 mr-2" />{t("changeRequests.createRequest")}</Button>
+        <Button>
+          <Plus className="h-4 w-4 mr-2" />
+          {t("changeRequests.createRequest")}
+        </Button>
       </div>
 
       <div className="grid gap-3">
@@ -76,7 +83,8 @@ function ChangeRequestsInner() {
                 <div>
                   <p className="font-medium">{acr.title}</p>
                   <p className="text-sm text-muted-foreground">
-                    {acr.changeType} | {acr.affectedElementIds.length} affected elements
+                    {acr.changeType} | {acr.affectedElementIds.length} affected
+                    elements
                   </p>
                 </div>
                 <div className="flex items-center gap-2">

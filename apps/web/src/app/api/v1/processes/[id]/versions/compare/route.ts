@@ -1,6 +1,10 @@
 import { db, process, processVersion } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { versionCompareQuerySchema, computeBpmnDiff, computeElementDetails } from "@grc/shared";
+import {
+  versionCompareQuerySchema,
+  computeBpmnDiff,
+  computeElementDetails,
+} from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 

@@ -91,7 +91,10 @@ export function BpmnViewer({
 
         // Element click
         const eventBus = viewer.get("eventBus") as {
-          on: (event: string, callback: (e: { element: BpmnElement | null }) => void) => void;
+          on: (
+            event: string,
+            callback: (e: { element: BpmnElement | null }) => void,
+          ) => void;
         };
         eventBus.on("element.click", (e) => {
           const element = e.element;

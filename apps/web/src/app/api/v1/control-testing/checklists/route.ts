@@ -10,11 +10,15 @@ export async function POST(req: Request) {
 
   const body = createChecklistSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(controlTestChecklist)
+    const [created] = await tx
+      .insert(controlTestChecklist)
       .values({
         ...body.data,
         orgId: ctx.orgId,
@@ -31,13 +35,23 @@ export async function POST(req: Request) {
 
 // GET /api/v1/control-testing/checklists
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "control_owner", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "control_owner",
+    "auditor",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = checklistQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = checklistQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, controlId, status, assigneeId } = query.data;
@@ -46,14 +60,20 @@ export async function GET(req: Request) {
   const conditions = [eq(controlTestChecklist.orgId, ctx.orgId)];
   if (controlId) conditions.push(eq(controlTestChecklist.controlId, controlId));
   if (status) conditions.push(eq(controlTestChecklist.status, status));
-  if (assigneeId) conditions.push(eq(controlTestChecklist.assigneeId, assigneeId));
+  if (assigneeId)
+    conditions.push(eq(controlTestChecklist.assigneeId, assigneeId));
 
   const [checklists, countResult] = await Promise.all([
-    db.select().from(controlTestChecklist)
+    db
+      .select()
+      .from(controlTestChecklist)
       .where(and(...conditions))
       .orderBy(desc(controlTestChecklist.createdAt))
-      .limit(limit).offset(offset),
-    db.select({ count: sql<number>`count(*)` }).from(controlTestChecklist)
+      .limit(limit)
+      .offset(offset),
+    db
+      .select({ count: sql<number>`count(*)` })
+      .from(controlTestChecklist)
       .where(and(...conditions)),
   ]);
 

@@ -33,14 +33,16 @@ const dpaSnapshot: BreachSnapshot = {
   status: "assessing",
   dataCategoriesAffected: ["name", "email", "address"],
   estimatedRecordsAffected: 1500,
-  containmentMeasures: "Network-Segmentierung der betroffenen DB; Access-Revoke fuer 5 User.",
+  containmentMeasures:
+    "Network-Segmentierung der betroffenen DB; Access-Revoke fuer 5 User.",
 };
 
 const closeSnapshot: BreachSnapshot = {
   ...dpaSnapshot,
   status: "remediation",
   dpaNotifiedAt: new Date(),
-  remediationMeasures: "Patching der Schwachstelle; MFA-Enforcement; Forensic Report.",
+  remediationMeasures:
+    "Patching der Schwachstelle; MFA-Enforcement; Forensic Report.",
 };
 
 describe("BREACH_ALLOWED_TRANSITIONS", () => {
@@ -58,7 +60,10 @@ describe("validateBreachGate9Assess", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks missing detectedAt", () => {
-    const blockers = validateBreachGate9Assess({ ...assessSnapshot, detectedAt: null });
+    const blockers = validateBreachGate9Assess({
+      ...assessSnapshot,
+      detectedAt: null,
+    });
     expect(blockers.some((b) => b.code === "missing_detected_at")).toBe(true);
   });
 });
@@ -69,17 +74,28 @@ describe("validateBreachGate10NotifyDpa", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks missing data_categories", () => {
-    const blockers = validateBreachGate10NotifyDpa({ ...dpaSnapshot, dataCategoriesAffected: null });
-    expect(blockers.some((b) => b.code === "missing_data_categories")).toBe(true);
+    const blockers = validateBreachGate10NotifyDpa({
+      ...dpaSnapshot,
+      dataCategoriesAffected: null,
+    });
+    expect(blockers.some((b) => b.code === "missing_data_categories")).toBe(
+      true,
+    );
   });
   it("blocks missing containment", () => {
-    const blockers = validateBreachGate10NotifyDpa({ ...dpaSnapshot, containmentMeasures: null });
+    const blockers = validateBreachGate10NotifyDpa({
+      ...dpaSnapshot,
+      containmentMeasures: null,
+    });
     expect(blockers.some((b) => b.code === "missing_containment")).toBe(true);
   });
   it("warns about 72h overdue", () => {
     const old = new Date();
     old.setHours(old.getHours() - 80);
-    const blockers = validateBreachGate10NotifyDpa({ ...dpaSnapshot, detectedAt: old });
+    const blockers = validateBreachGate10NotifyDpa({
+      ...dpaSnapshot,
+      detectedAt: old,
+    });
     const warn = blockers.find((b) => b.code === "72h_deadline_exceeded");
     expect(warn?.severity).toBe("warning");
   });
@@ -92,7 +108,9 @@ describe("validateBreachGate11NotifyIndividuals", () => {
       severity: "high",
       isIndividualNotificationRequired: false,
     });
-    const warn = blockers.find((b) => b.code === "high_severity_requires_individual_notification");
+    const warn = blockers.find(
+      (b) => b.code === "high_severity_requires_individual_notification",
+    );
     expect(warn?.severity).toBe("warning");
   });
 });
@@ -107,7 +125,9 @@ describe("validateBreachGate12Close", () => {
       ...closeSnapshot,
       dpaNotifiedAt: null,
     });
-    expect(blockers.some((b) => b.code === "dpa_notification_required_but_missing")).toBe(true);
+    expect(
+      blockers.some((b) => b.code === "dpa_notification_required_but_missing"),
+    ).toBe(true);
   });
 });
 

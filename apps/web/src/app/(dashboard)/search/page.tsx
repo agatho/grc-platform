@@ -88,14 +88,24 @@ function SearchPageInner() {
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
   const [tagFilter, setTagFilter] = useState<string[]>([]);
-  const [availableTags, setAvailableTags] = useState<Array<{ name: string; color: string; category: string | null }>>([]);
+  const [availableTags, setAvailableTags] = useState<
+    Array<{ name: string; color: string; category: string | null }>
+  >([]);
   const [showTagPicker, setShowTagPicker] = useState(false);
 
   // Fetch available tags on mount
   useEffect(() => {
     fetch("/api/v1/tags?limit=50")
       .then((r) => r.json())
-      .then((json) => setAvailableTags((json.data ?? []).map((t: any) => ({ name: t.name, color: t.color, category: t.category }))))
+      .then((json) =>
+        setAvailableTags(
+          (json.data ?? []).map((t: any) => ({
+            name: t.name,
+            color: t.color,
+            category: t.category,
+          })),
+        ),
+      )
       .catch(() => {});
   }, []);
 
@@ -133,7 +143,9 @@ function SearchPageInner() {
   return (
     <div className="space-y-6 max-w-3xl mx-auto">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">{t("search.title")}</h1>
+        <h1 className="text-2xl font-bold text-gray-900">
+          {t("search.title")}
+        </h1>
         <p className="text-sm text-gray-500 mt-1">{t("search.subtitle")}</p>
       </div>
 
@@ -159,24 +171,41 @@ function SearchPageInner() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">{t("search.scopeAll")}</SelectItem>
-            <SelectItem value="document">{t("search.scopeDocuments")}</SelectItem>
+            <SelectItem value="document">
+              {t("search.scopeDocuments")}
+            </SelectItem>
             <SelectItem value="control">{t("search.scopeControls")}</SelectItem>
             <SelectItem value="finding">{t("search.scopeFindings")}</SelectItem>
           </SelectContent>
         </Select>
         <Button onClick={handleSearch} disabled={loading || !query.trim()}>
-          {loading ? <Loader2 size={14} className="animate-spin" /> : <Search size={14} />}
+          {loading ? (
+            <Loader2 size={14} className="animate-spin" />
+          ) : (
+            <Search size={14} />
+          )}
           {t("search.button")}
         </Button>
       </div>
 
       {/* Tag Filter */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-gray-500 flex items-center gap-1"><Tag size={12} /> Tags:</span>
+        <span className="text-xs text-gray-500 flex items-center gap-1">
+          <Tag size={12} /> Tags:
+        </span>
         {tagFilter.map((tag) => (
-          <Badge key={tag} variant="outline" className="text-xs bg-blue-100 text-blue-900 border-blue-300 gap-1 pr-1">
+          <Badge
+            key={tag}
+            variant="outline"
+            className="text-xs bg-blue-100 text-blue-900 border-blue-300 gap-1 pr-1"
+          >
             {tag}
-            <button onClick={() => setTagFilter((prev) => prev.filter((t) => t !== tag))} className="ml-0.5 rounded-full hover:bg-blue-200 p-0.5">
+            <button
+              onClick={() =>
+                setTagFilter((prev) => prev.filter((t) => t !== tag))
+              }
+              className="ml-0.5 rounded-full hover:bg-blue-200 p-0.5"
+            >
               <XIcon size={10} />
             </button>
           </Badge>
@@ -195,10 +224,16 @@ function SearchPageInner() {
                 .map((t) => (
                   <button
                     key={t.name}
-                    onClick={() => { setTagFilter((prev) => [...prev, t.name]); setShowTagPicker(false); }}
+                    onClick={() => {
+                      setTagFilter((prev) => [...prev, t.name]);
+                      setShowTagPicker(false);
+                    }}
                     className="flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left hover:bg-gray-50"
                   >
-                    <span className="h-2 w-2 rounded-full shrink-0" style={{ backgroundColor: t.color }} />
+                    <span
+                      className="h-2 w-2 rounded-full shrink-0"
+                      style={{ backgroundColor: t.color }}
+                    />
                     {t.name}
                   </button>
                 ))}
@@ -217,7 +252,9 @@ function SearchPageInner() {
       {!loading && searched && results.length === 0 && (
         <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
           <Search size={28} className="text-gray-400 mb-3" />
-          <p className="text-sm font-medium text-gray-500">{t("search.noResults")}</p>
+          <p className="text-sm font-medium text-gray-500">
+            {t("search.noResults")}
+          </p>
         </div>
       )}
 
@@ -242,13 +279,20 @@ function SearchPageInner() {
                     className="flex items-center justify-between rounded-lg px-3 py-2 hover:bg-blue-50 transition-colors"
                   >
                     <div className="min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">{item.title}</p>
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {item.title}
+                      </p>
                       {item.excerpt && (
-                        <p className="text-xs text-gray-500 truncate mt-0.5">{item.excerpt}</p>
+                        <p className="text-xs text-gray-500 truncate mt-0.5">
+                          {item.excerpt}
+                        </p>
                       )}
                     </div>
                     {item.status && (
-                      <Badge variant="outline" className="text-[10px] shrink-0 ml-2">
+                      <Badge
+                        variant="outline"
+                        className="text-[10px] shrink-0 ml-2"
+                      >
                         {item.status}
                       </Badge>
                     )}

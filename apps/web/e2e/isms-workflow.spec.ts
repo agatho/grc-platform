@@ -36,7 +36,11 @@ test.describe("ISMS ISO 27001 Workflow", () => {
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
     // Should show asset details
-    await expect(page.getByText(/klassifizierung|classification|asset|schutzbedarf/i).first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/klassifizierung|classification|asset|schutzbedarf/i)
+        .first(),
+    ).toBeVisible();
   });
 
   // ── Phase 3: Threats & Vulnerabilities ────────────────────
@@ -49,7 +53,9 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   test("S2.3: Vulnerabilities page loads", async ({ page }) => {
     await page.goto("/isms/vulnerabilities");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/schwachstell|vulnerabilit/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/schwachstell|vulnerabilit/i).first(),
+    ).toBeVisible();
   });
 
   // ── Phase 4: Risk Scenarios ───────────────────────────────
@@ -57,7 +63,9 @@ test.describe("ISMS ISO 27001 Workflow", () => {
     await page.goto("/isms/risks");
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
-    await expect(page.getByText(/risikoszenar|risk scenario|risiken|IS-Risik/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/risikoszenar|risk scenario|risiken|IS-Risik/i).first(),
+    ).toBeVisible();
   });
 
   test("S2.5: Risk scenario detail page loads", async ({ page }) => {
@@ -74,7 +82,9 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   test("S3.1: SoA page loads with Annex A controls", async ({ page }) => {
     await page.goto("/isms/soa");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/anwendbarkeit|applicability/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/anwendbarkeit|applicability/i).first(),
+    ).toBeVisible();
     // Should show at least 90 controls (93 Annex A)
     await expect(page.getByText(/kontrollen|controls/i).first()).toBeVisible();
   });
@@ -106,7 +116,11 @@ test.describe("ISMS ISO 27001 Workflow", () => {
     await page.goto("/isms/cap");
     await page.waitForLoadState("domcontentloaded");
     await page.waitForTimeout(5000);
-    await expect(page.getByText(/korrekturma|corrective|nichtkonform|nonconform|CAP/i).first()).toBeVisible();
+    await expect(
+      page
+        .getByText(/korrekturma|corrective|nichtkonform|nonconform|CAP/i)
+        .first(),
+    ).toBeVisible();
   });
 
   // ── Phase 9: Management Review ────────────────────────────
@@ -120,7 +134,9 @@ test.describe("ISMS ISO 27001 Workflow", () => {
   test("S5.3: Certifications page loads", async ({ page }) => {
     await page.goto("/isms/certifications");
     await page.waitForLoadState("networkidle");
-    await expect(page.getByText(/zertifizierung|certification/i).first()).toBeVisible();
+    await expect(
+      page.getByText(/zertifizierung|certification/i).first(),
+    ).toBeVisible();
   });
 
   // ── Tab Navigation ────────────────────────────────────────

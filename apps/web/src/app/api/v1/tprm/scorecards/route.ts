@@ -15,7 +15,7 @@ export async function GET(req: Request) {
   const { limit, offset } = paginate(url.searchParams);
   const tier = url.searchParams.get("tier");
 
-  let query = db
+  const query = db
     .select()
     .from(vendorScorecard)
     .where(eq(vendorScorecard.orgId, ctx.orgId))

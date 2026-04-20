@@ -7,17 +7,9 @@
 // - Markiert alle bia_process_impacts mit priorityRanking <= 3 automatisch
 //   als isEssential=true (wenn noch nicht gesetzt)
 
-import {
-  db,
-  biaAssessment,
-  biaProcessImpact,
-  essentialProcess,
-} from "@grc/db";
+import { db, biaAssessment, biaProcessImpact, essentialProcess } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  validateBcmsGate2Coverage,
-  type BiaCoverageStats,
-} from "@grc/shared";
+import { validateBcmsGate2Coverage, type BiaCoverageStats } from "@grc/shared";
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -40,7 +32,9 @@ export async function POST(_req: Request, { params }: RouteParams) {
   }
   if (bia.status !== "in_progress") {
     return Response.json(
-      { error: `BIA status '${bia.status}' -- finalize nur von 'in_progress' moeglich` },
+      {
+        error: `BIA status '${bia.status}' -- finalize nur von 'in_progress' moeglich`,
+      },
       { status: 422 },
     );
   }
@@ -140,7 +134,9 @@ export async function POST(_req: Request, { params }: RouteParams) {
     .select({ processId: essentialProcess.processId })
     .from(essentialProcess)
     .where(eq(essentialProcess.orgId, ctx.orgId));
-  const existingProcessSet = new Set(existingEssentials.map((e) => e.processId));
+  const existingProcessSet = new Set(
+    existingEssentials.map((e) => e.processId),
+  );
 
   const newEssentialProcesses = allEssentialImpacts.filter(
     (i) => !existingProcessSet.has(i.processId),

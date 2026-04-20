@@ -102,9 +102,10 @@ export async function GET(
       totalMembers,
       acknowledgedCount,
       pendingCount: totalMembers - acknowledgedCount,
-      complianceRate: totalMembers > 0
-        ? Math.round((acknowledgedCount / totalMembers) * 100)
-        : 0,
+      complianceRate:
+        totalMembers > 0
+          ? Math.round((acknowledgedCount / totalMembers) * 100)
+          : 0,
       members,
     },
   });

@@ -2,13 +2,32 @@
 
 export type AbacAccessLevel = "read" | "write" | "none";
 export type AbacDecision = "granted" | "denied";
-export type SimulationStatus = "draft" | "ready" | "running" | "completed" | "error";
+export type SimulationStatus =
+  | "draft"
+  | "ready"
+  | "running"
+  | "completed"
+  | "error";
 export type DmnStatus = "draft" | "active" | "deprecated";
-export type DmnHitPolicy = "UNIQUE" | "FIRST" | "COLLECT" | "RULE_ORDER" | "ANY";
+export type DmnHitPolicy =
+  | "UNIQUE"
+  | "FIRST"
+  | "COLLECT"
+  | "RULE_ORDER"
+  | "ANY";
 
 export interface AbacCondition {
   attribute: string;
-  operator: "=" | "!=" | "contains" | "not_contains" | "in" | "not_in" | "starts_with" | "gt" | "lt";
+  operator:
+    | "="
+    | "!="
+    | "contains"
+    | "not_contains"
+    | "in"
+    | "not_in"
+    | "starts_with"
+    | "gt"
+    | "lt";
   value: string | string[] | number;
 }
 

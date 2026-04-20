@@ -164,8 +164,9 @@ export const ddSession = pgTable(
       .references(() => questionnaireTemplate.id),
     templateVersion: integer("template_version").notNull(),
     accessToken: varchar("access_token", { length: 128 }).notNull().unique(),
-    tokenExpiresAt: timestamp("token_expires_at", { withTimezone: true })
-      .notNull(),
+    tokenExpiresAt: timestamp("token_expires_at", {
+      withTimezone: true,
+    }).notNull(),
     tokenUsedAt: timestamp("token_used_at", { withTimezone: true }),
     status: ddSessionStatusEnum("status").notNull().default("invited"),
     language: varchar("language", { length: 2 }).notNull().default("de"),
@@ -241,9 +242,7 @@ export const ddEvidence = pgTable(
     sessionId: uuid("session_id")
       .notNull()
       .references(() => ddSession.id, { onDelete: "cascade" }),
-    questionId: uuid("question_id").references(
-      () => questionnaireQuestion.id,
-    ),
+    questionId: uuid("question_id").references(() => questionnaireQuestion.id),
     fileName: varchar("file_name", { length: 500 }).notNull(),
     fileSize: integer("file_size").notNull(),
     fileType: varchar("file_type", { length: 100 }).notNull(),

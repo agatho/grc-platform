@@ -10,10 +10,18 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const sessionId = url.searchParams.get("sessionId");
-  if (!sessionId) return Response.json({ error: "sessionId is required" }, { status: 400 });
+  if (!sessionId)
+    return Response.json({ error: "sessionId is required" }, { status: 400 });
 
-  const rows = await db.select().from(portalEvidenceUpload)
-    .where(and(eq(portalEvidenceUpload.sessionId, sessionId), eq(portalEvidenceUpload.orgId, ctx.orgId)))
+  const rows = await db
+    .select()
+    .from(portalEvidenceUpload)
+    .where(
+      and(
+        eq(portalEvidenceUpload.sessionId, sessionId),
+        eq(portalEvidenceUpload.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(portalEvidenceUpload.uploadedAt));
 
   return Response.json({ data: rows });
@@ -26,9 +34,13 @@ export async function POST(req: Request) {
   const body = portalEvidenceUploadSchema.parse(await req.json());
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(portalEvidenceUpload).values({
-      orgId: ctx.orgId, ...body,
-    }).returning();
+    const [created] = await tx
+      .insert(portalEvidenceUpload)
+      .values({
+        orgId: ctx.orgId,
+        ...body,
+      })
+      .returning();
     return created;
   });
 

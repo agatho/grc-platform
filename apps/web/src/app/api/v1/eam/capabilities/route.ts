@@ -18,7 +18,10 @@ export async function GET(req: Request) {
       element: architectureElement,
     })
     .from(businessCapability)
-    .innerJoin(architectureElement, eq(businessCapability.elementId, architectureElement.id))
+    .innerJoin(
+      architectureElement,
+      eq(businessCapability.elementId, architectureElement.id),
+    )
     .where(eq(businessCapability.orgId, ctx.orgId))
     .orderBy(asc(businessCapability.level), asc(businessCapability.sortOrder));
 
@@ -38,7 +41,9 @@ export async function GET(req: Request) {
   for (const row of capabilities) {
     const node = map.get(row.capability.id)!;
     if (row.capability.parentId && map.has(row.capability.parentId)) {
-      (map.get(row.capability.parentId)!.children as Record<string, unknown>[]).push(node);
+      (
+        map.get(row.capability.parentId)!.children as Record<string, unknown>[]
+      ).push(node);
     } else {
       roots.push(node);
     }
@@ -57,7 +62,10 @@ export async function POST(req: Request) {
 
   const body = createBusinessCapabilitySchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   // Enforce max depth = 4
@@ -66,13 +74,24 @@ export async function POST(req: Request) {
     const [parent] = await db
       .select({ level: businessCapability.level })
       .from(businessCapability)
-      .where(and(eq(businessCapability.id, body.data.parentId), eq(businessCapability.orgId, ctx.orgId)));
+      .where(
+        and(
+          eq(businessCapability.id, body.data.parentId),
+          eq(businessCapability.orgId, ctx.orgId),
+        ),
+      );
     if (!parent) {
-      return Response.json({ error: "Parent capability not found" }, { status: 404 });
+      return Response.json(
+        { error: "Parent capability not found" },
+        { status: 404 },
+      );
     }
     level = parent.level + 1;
     if (level > 4) {
-      return Response.json({ error: "Maximum capability depth is 4 levels" }, { status: 400 });
+      return Response.json(
+        { error: "Maximum capability depth is 4 levels" },
+        { status: 400 },
+      );
     }
   }
 

@@ -3,7 +3,13 @@
 import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter, useParams } from "next/navigation";
-import { ArrowLeft, Loader2, FileWarning, CheckCircle, AlertTriangle } from "lucide-react";
+import {
+  ArrowLeft,
+  Loader2,
+  FileWarning,
+  CheckCircle,
+  AlertTriangle,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -75,18 +81,28 @@ function ResultsInner() {
   return (
     <div className="space-y-6 p-6">
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="icon" onClick={() => router.push("/audit/analytics")}>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push("/audit/analytics")}
+        >
           <ArrowLeft className="h-4 w-4" />
         </Button>
         <h1 className="text-2xl font-bold">{t("analysisResults")}</h1>
       </div>
 
       {results.length === 0 ? (
-        <p className="text-center text-muted-foreground p-8">{t("noResults")}</p>
+        <p className="text-center text-muted-foreground p-8">
+          {t("noResults")}
+        </p>
       ) : (
         <div className="space-y-6">
           {results.map((result) => {
-            const summary = result.summaryJson as { flaggedCount: number; totalAnalyzed: number; significance: boolean };
+            const summary = result.summaryJson as {
+              flaggedCount: number;
+              totalAnalyzed: number;
+              significance: boolean;
+            };
 
             return (
               <Card key={result.id}>
@@ -126,30 +142,52 @@ function ResultsInner() {
                 <CardContent>
                   <div className="grid grid-cols-3 gap-4 mb-4">
                     <div className="text-center">
-                      <p className="text-2xl font-bold">{summary.totalAnalyzed}</p>
-                      <p className="text-xs text-muted-foreground">{t("analyzed")}</p>
+                      <p className="text-2xl font-bold">
+                        {summary.totalAnalyzed}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("analyzed")}
+                      </p>
                     </div>
                     <div className="text-center">
-                      <p className="text-2xl font-bold text-destructive">{summary.flaggedCount}</p>
-                      <p className="text-xs text-muted-foreground">{t("flagged")}</p>
+                      <p className="text-2xl font-bold text-destructive">
+                        {summary.flaggedCount}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("flagged")}
+                      </p>
                     </div>
                     <div className="text-center">
                       <p className="text-2xl font-bold">
                         {summary.totalAnalyzed > 0
-                          ? ((summary.flaggedCount / summary.totalAnalyzed) * 100).toFixed(1)
-                          : 0}%
+                          ? (
+                              (summary.flaggedCount / summary.totalAnalyzed) *
+                              100
+                            ).toFixed(1)
+                          : 0}
+                        %
                       </p>
-                      <p className="text-xs text-muted-foreground">{t("flagRate")}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("flagRate")}
+                      </p>
                     </div>
                   </div>
 
                   {/* Benford specific visualization placeholder */}
                   {result.analysisType === "benford" && (
                     <div className="rounded border bg-muted/10 p-4">
-                      <p className="text-sm font-medium mb-2">{t("benfordDistribution")}</p>
+                      <p className="text-sm font-medium mb-2">
+                        {t("benfordDistribution")}
+                      </p>
                       <div className="flex items-end gap-1 h-32">
-                        {((result.resultJson as unknown as BenfordResult)?.observed ?? []).map((d, i) => (
-                          <div key={i} className="flex-1 flex flex-col items-center gap-1">
+                        {(
+                          (result.resultJson as unknown as BenfordResult)
+                            ?.observed ?? []
+                        ).map((d, i) => (
+                          <div
+                            key={i}
+                            className="flex-1 flex flex-col items-center gap-1"
+                          >
                             <div className="w-full flex gap-0.5">
                               <div
                                 className="flex-1 bg-blue-500 rounded-t"
@@ -178,7 +216,8 @@ function ResultsInner() {
                   )}
 
                   <p className="mt-4 text-xs text-muted-foreground">
-                    {t("analyzedAt")}: {new Date(result.createdAt).toLocaleString("de-DE")}
+                    {t("analyzedAt")}:{" "}
+                    {new Date(result.createdAt).toLocaleString("de-DE")}
                   </p>
                 </CardContent>
               </Card>

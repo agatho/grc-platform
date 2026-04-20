@@ -4,15 +4,16 @@ _Ziel: vom leeren Laptop zum ersten gemergten PR in < 2 Stunden._
 
 ## 1. Voraussetzungen
 
-| Tool | Version | Check |
-|---|---|---|
-| Node.js | 22.x | `node --version` |
-| npm | 10.x | `npm --version` |
-| Docker + Compose | v2 | `docker compose version` |
-| Git | 2.x | `git --version` |
-| psql (optional, für DB-Queries) | 16.x | `psql --version` |
+| Tool                            | Version | Check                    |
+| ------------------------------- | ------- | ------------------------ |
+| Node.js                         | 22.x    | `node --version`         |
+| npm                             | 10.x    | `npm --version`          |
+| Docker + Compose                | v2      | `docker compose version` |
+| Git                             | 2.x     | `git --version`          |
+| psql (optional, für DB-Queries) | 16.x    | `psql --version`         |
 
 Empfohlen:
+
 - **VS Code** mit ESLint + Prettier + Tailwind-IntelliSense-Plugins
 - **Drizzle Studio** (`npx drizzle-kit studio`) für DB-Introspection
 
@@ -88,7 +89,7 @@ Die Sidebar besteht aus **10 Management-System-Gruppen** (`erm`, `isms`, `icsAud
 
 ```typescript
 const moduleCheck = await requireModule("audit", ctx.orgId, req.method);
-if (moduleCheck) return moduleCheck;  // → 404 wenn Modul disabled
+if (moduleCheck) return moduleCheck; // → 404 wenn Modul disabled
 ```
 
 Jede Page MUSS:
@@ -106,6 +107,7 @@ export default function Page() {
 ## 6. RBAC + Three Lines of Defense
 
 Rollen (per Org):
+
 - `admin` (Cross-Cutting)
 - 1st Line: `process_owner`, `control_owner`
 - 2nd Line: `risk_manager`, `dpo`
@@ -114,12 +116,14 @@ Rollen (per Org):
 - Isoliert: `whistleblowing_officer`, `ombudsperson`, `esg_manager`, `esg_contributor`
 
 Middleware:
+
 ```typescript
-const ctx = await withAuth("admin", "auditor");  // nur admin ODER auditor
+const ctx = await withAuth("admin", "auditor"); // nur admin ODER auditor
 if (ctx instanceof Response) return ctx;
 ```
 
 Für LoD-basierte Filter:
+
 ```typescript
 await requireLineOfDefense(["second", "third"]);
 ```
@@ -133,12 +137,12 @@ await requireLineOfDefense(["second", "third"]);
 
 ## 8. Debugging-Basics
 
-| Symptom | Erste Prüfung |
-|---|---|
-| 401 auf API | Middleware / Session abgelaufen → Re-Login |
-| 404 auf API | Modul disabled? `module_config` prüfen |
-| 500 auf API | `relation does not exist` → ADR-014, Migration nachziehen |
-| Leere Liste trotz Daten | RLS-Context fehlt → `app.current_org_id` nicht gesetzt |
+| Symptom                    | Erste Prüfung                                               |
+| -------------------------- | ----------------------------------------------------------- |
+| 401 auf API                | Middleware / Session abgelaufen → Re-Login                  |
+| 404 auf API                | Modul disabled? `module_config` prüfen                      |
+| 500 auf API                | `relation does not exist` → ADR-014, Migration nachziehen   |
+| Leere Liste trotz Daten    | RLS-Context fehlt → `app.current_org_id` nicht gesetzt      |
 | Switcher zeigt falsche Org | Cookie `arctos-org-id` checken, F-05-Bug sollte gefixt sein |
 
 Jede Request hat eine `X-Request-ID` im Response-Header — für Log-Korrelation.

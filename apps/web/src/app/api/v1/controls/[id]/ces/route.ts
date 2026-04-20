@@ -1,8 +1,4 @@
-import {
-  db,
-  controlEffectivenessScore,
-  control,
-} from "@grc/db";
+import { db, controlEffectivenessScore, control } from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 

@@ -29,7 +29,9 @@ export async function processAgentScheduler(): Promise<{
   for (const agent of dueAgents) {
     try {
       // Trigger agent run via internal API
-      console.log(`[agent-scheduler] Triggering agent ${agent.name} (${agent.agentType})`);
+      console.log(
+        `[agent-scheduler] Triggering agent ${agent.name} (${agent.agentType})`,
+      );
 
       await db
         .update(agentRegistration)
@@ -65,6 +67,8 @@ export async function processAgentScheduler(): Promise<{
     }
   }
 
-  console.log(`[agent-scheduler] Checked ${dueAgents.length} agents, triggered ${triggered}`);
+  console.log(
+    `[agent-scheduler] Checked ${dueAgents.length} agents, triggered ${triggered}`,
+  );
   return { checked: dueAgents.length, triggered };
 }

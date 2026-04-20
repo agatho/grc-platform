@@ -1,9 +1,4 @@
-import {
-  db,
-  controlTestCampaign,
-  controlTest,
-  user,
-} from "@grc/db";
+import { db, controlTestCampaign, controlTest, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -133,10 +128,14 @@ export async function PUT(
     };
 
     if (body.data.name !== undefined) updateValues.name = body.data.name;
-    if (body.data.description !== undefined) updateValues.description = body.data.description;
-    if (body.data.periodStart !== undefined) updateValues.periodStart = body.data.periodStart;
-    if (body.data.periodEnd !== undefined) updateValues.periodEnd = body.data.periodEnd;
-    if (body.data.responsibleId !== undefined) updateValues.responsibleId = body.data.responsibleId;
+    if (body.data.description !== undefined)
+      updateValues.description = body.data.description;
+    if (body.data.periodStart !== undefined)
+      updateValues.periodStart = body.data.periodStart;
+    if (body.data.periodEnd !== undefined)
+      updateValues.periodEnd = body.data.periodEnd;
+    if (body.data.responsibleId !== undefined)
+      updateValues.responsibleId = body.data.responsibleId;
 
     const [row] = await tx
       .update(controlTestCampaign)

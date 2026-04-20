@@ -7,7 +7,11 @@ import { Plus, Target, Loader2, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Card, CardContent, CardDescription, CardHeader, CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 
 interface MaturityModelRecord {
@@ -44,7 +48,9 @@ export default function MaturityOverviewPage() {
     }
   }, []);
 
-  useEffect(() => { fetchModels(); }, [fetchModels]);
+  useEffect(() => {
+    fetchModels();
+  }, [fetchModels]);
 
   return (
     <div className="space-y-6">
@@ -54,7 +60,10 @@ export default function MaturityOverviewPage() {
           <p className="text-muted-foreground">{t("maturityDescription")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" onClick={() => router.push("/maturity/scorecard")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/maturity/scorecard")}
+          >
             <Target className="mr-2 h-4 w-4" />
             {t("viewScorecard")}
           </Button>
@@ -72,12 +81,29 @@ export default function MaturityOverviewPage() {
       ) : (
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {models.map((model) => (
-            <Card key={model.id} className="cursor-pointer hover:border-primary transition-colors"
-              onClick={() => router.push(`/maturity/assessments?moduleKey=${model.moduleKey}`)}>
+            <Card
+              key={model.id}
+              className="cursor-pointer hover:border-primary transition-colors"
+              onClick={() =>
+                router.push(
+                  `/maturity/assessments?moduleKey=${model.moduleKey}`,
+                )
+              }
+            >
               <CardHeader>
                 <div className="flex items-center justify-between">
-                  <CardTitle className="text-base">{model.moduleKey.toUpperCase()}</CardTitle>
-                  <Badge variant={levelColors[model.currentLevel] as "default" | "secondary" | "destructive" | "outline"}>
+                  <CardTitle className="text-base">
+                    {model.moduleKey.toUpperCase()}
+                  </CardTitle>
+                  <Badge
+                    variant={
+                      levelColors[model.currentLevel] as
+                        | "default"
+                        | "secondary"
+                        | "destructive"
+                        | "outline"
+                    }
+                  >
                     {model.currentLevel.replace(/_/g, " ")}
                   </Badge>
                 </div>
@@ -86,13 +112,18 @@ export default function MaturityOverviewPage() {
                 {model.targetLevel && (
                   <div className="flex items-center gap-2 text-sm">
                     <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                    <span className="text-muted-foreground">{t("target")}:</span>
-                    <Badge variant="outline">{model.targetLevel.replace(/_/g, " ")}</Badge>
+                    <span className="text-muted-foreground">
+                      {t("target")}:
+                    </span>
+                    <Badge variant="outline">
+                      {model.targetLevel.replace(/_/g, " ")}
+                    </Badge>
                   </div>
                 )}
                 {model.lastCalculatedAt && (
                   <p className="text-xs text-muted-foreground">
-                    {t("lastCalculated")}: {new Date(model.lastCalculatedAt).toLocaleDateString()}
+                    {t("lastCalculated")}:{" "}
+                    {new Date(model.lastCalculatedAt).toLocaleDateString()}
                   </p>
                 )}
               </CardContent>

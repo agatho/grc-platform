@@ -64,7 +64,11 @@ async function parseExcel(buffer: Buffer): Promise<ParsedFileResult> {
   // Dynamic import for exceljs to avoid bundling issues
   const ExcelJS = await import("exceljs");
   const wb = new ExcelJS.Workbook();
-  await wb.xlsx.load(buffer);
+
+  // exceljs d.ts expects legacy Buffer; modern @types/node narrows to
+  // Buffer<ArrayBufferLike>. Runtime identical; cast bridges the gap.
+
+  await wb.xlsx.load(buffer as any);
 
   const sheet = wb.worksheets[0];
   if (!sheet) {

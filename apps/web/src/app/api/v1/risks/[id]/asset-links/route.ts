@@ -1,9 +1,4 @@
-import {
-  db,
-  risk,
-  riskAsset,
-  asset,
-} from "@grc/db";
+import { db, risk, riskAsset, asset } from "@grc/db";
 import { eq, and, isNull, count } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { z } from "zod";
@@ -36,11 +31,7 @@ export async function POST(
     .select({ id: risk.id })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -128,11 +119,7 @@ export async function GET(
     .select({ id: risk.id })
     .from(risk)
     .where(
-      and(
-        eq(risk.id, id),
-        eq(risk.orgId, ctx.orgId),
-        isNull(risk.deletedAt),
-      ),
+      and(eq(risk.id, id), eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)),
     );
 
   if (!existing) {
@@ -163,10 +150,7 @@ export async function GET(
       .where(conditions)
       .limit(limit)
       .offset(offset),
-    db
-      .select({ value: count() })
-      .from(riskAsset)
-      .where(conditions),
+    db.select({ value: count() }).from(riskAsset).where(conditions),
   ]);
 
   return paginatedResponse(items, total, page, limit);

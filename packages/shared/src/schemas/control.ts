@@ -3,18 +3,93 @@ import { z } from "zod";
 // Sprint 4: Internal Control System (ICS) schemas
 
 const controlTypeValues = ["preventive", "detective", "corrective"] as const;
-const controlFreqValues = ["event_driven", "continuous", "daily", "weekly", "monthly", "quarterly", "annually", "ad_hoc"] as const;
-const automationLevelValues = ["manual", "semi_automated", "fully_automated"] as const;
-const controlStatusValues = ["designed", "implemented", "effective", "ineffective", "retired"] as const;
-const controlAssertionValues = ["completeness", "accuracy", "obligations_and_rights", "fraud_prevention", "existence", "valuation", "presentation", "safeguarding_of_assets"] as const;
-const testTypeValues = ["design_effectiveness", "operating_effectiveness"] as const;
-const testResultValues = ["effective", "ineffective", "partially_effective", "not_tested"] as const;
-const testStatusValues = ["planned", "in_progress", "completed", "cancelled"] as const;
-const campaignStatusValues = ["draft", "active", "completed", "cancelled"] as const;
-const findingSeverityValues = ["observation", "recommendation", "improvement_requirement", "insignificant_nonconformity", "significant_nonconformity"] as const;
-const findingStatusValues = ["identified", "in_remediation", "remediated", "verified", "accepted", "closed"] as const;
-const findingSourceValues = ["control_test", "audit", "incident", "self_assessment", "external"] as const;
-const evidenceCategoryValues = ["screenshot", "document", "log_export", "email", "certificate", "report", "photo", "config_export", "other"] as const;
+const controlFreqValues = [
+  "event_driven",
+  "continuous",
+  "daily",
+  "weekly",
+  "monthly",
+  "quarterly",
+  "annually",
+  "ad_hoc",
+] as const;
+const automationLevelValues = [
+  "manual",
+  "semi_automated",
+  "fully_automated",
+] as const;
+const controlStatusValues = [
+  "designed",
+  "implemented",
+  "effective",
+  "ineffective",
+  "retired",
+] as const;
+const controlAssertionValues = [
+  "completeness",
+  "accuracy",
+  "obligations_and_rights",
+  "fraud_prevention",
+  "existence",
+  "valuation",
+  "presentation",
+  "safeguarding_of_assets",
+] as const;
+const testTypeValues = [
+  "design_effectiveness",
+  "operating_effectiveness",
+] as const;
+const testResultValues = [
+  "effective",
+  "ineffective",
+  "partially_effective",
+  "not_tested",
+] as const;
+const testStatusValues = [
+  "planned",
+  "in_progress",
+  "completed",
+  "cancelled",
+] as const;
+const campaignStatusValues = [
+  "draft",
+  "active",
+  "completed",
+  "cancelled",
+] as const;
+const findingSeverityValues = [
+  "observation",
+  "recommendation",
+  "improvement_requirement",
+  "insignificant_nonconformity",
+  "significant_nonconformity",
+] as const;
+const findingStatusValues = [
+  "identified",
+  "in_remediation",
+  "remediated",
+  "verified",
+  "accepted",
+  "closed",
+] as const;
+const findingSourceValues = [
+  "control_test",
+  "audit",
+  "incident",
+  "self_assessment",
+  "external",
+] as const;
+const evidenceCategoryValues = [
+  "screenshot",
+  "document",
+  "log_export",
+  "email",
+  "certificate",
+  "report",
+  "photo",
+  "config_export",
+  "other",
+] as const;
 
 // ─── Status Transition Maps ──────────────────────────────────
 
@@ -100,10 +175,10 @@ export const createCampaignSchema = z
     periodEnd: z.string().min(1),
     responsibleId: z.string().uuid().optional(),
   })
-  .refine(
-    (data) => data.periodEnd >= data.periodStart,
-    { message: "periodEnd must be >= periodStart", path: ["periodEnd"] },
-  );
+  .refine((data) => data.periodEnd >= data.periodStart, {
+    message: "periodEnd must be >= periodStart",
+    path: ["periodEnd"],
+  });
 
 // ─── Control Test ────────────────────────────────────────────
 
@@ -154,8 +229,26 @@ export const createEvidenceSchema = z.object({
 
 // Sprint 4: Document Management System (DMS) schemas
 
-const documentCategoryValues = ["policy", "procedure", "guideline", "template", "record", "tom", "dpa", "bcp", "soa", "other"] as const;
-const documentStatusValues = ["draft", "in_review", "approved", "published", "archived", "expired"] as const;
+const documentCategoryValues = [
+  "policy",
+  "procedure",
+  "guideline",
+  "template",
+  "record",
+  "tom",
+  "dpa",
+  "bcp",
+  "soa",
+  "other",
+] as const;
+const documentStatusValues = [
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived",
+  "expired",
+] as const;
 
 // ─── Document CRUD ───────────────────────────────────────────
 

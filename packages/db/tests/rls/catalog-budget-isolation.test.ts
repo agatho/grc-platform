@@ -1,5 +1,11 @@
 import { describe, it, expect, beforeAll, afterAll } from "vitest";
-import { createTestDb, createAppDb, setRlsContext, clearRlsContext, schema } from "../helpers";
+import {
+  createTestDb,
+  createAppDb,
+  setRlsContext,
+  clearRlsContext,
+  schema,
+} from "../helpers";
 
 /**
  * RLS Cross-Tenant Isolation Tests — Catalog Activation, Budget & Cost Entry
@@ -111,13 +117,27 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
 
   afterAll(async () => {
     // Disable audit triggers for clean teardown
-    await adminDb.client.unsafe(`ALTER TABLE grc_cost_entry DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE grc_budget DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE org_active_catalog DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE user_organization_role DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE "user" DISABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`);
+    await adminDb.client.unsafe(
+      `ALTER TABLE grc_cost_entry DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE grc_budget DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE org_active_catalog DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE user_organization_role DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE organization DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE audit_log DISABLE RULE audit_log_no_delete`,
+    );
 
     // Delete in reverse FK order
     await adminDb.client.unsafe(`
@@ -132,13 +152,27 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     `);
 
     // Re-enable triggers and rules
-    await adminDb.client.unsafe(`ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`);
-    await adminDb.client.unsafe(`ALTER TABLE grc_cost_entry ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE grc_budget ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE org_active_catalog ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
-    await adminDb.client.unsafe(`ALTER TABLE "user" ENABLE TRIGGER audit_trigger`);
+    await adminDb.client.unsafe(
+      `ALTER TABLE audit_log ENABLE RULE audit_log_no_delete`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE grc_cost_entry ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE grc_budget ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE org_active_catalog ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
+    );
+    await adminDb.client.unsafe(
+      `ALTER TABLE "user" ENABLE TRIGGER audit_trigger`,
+    );
 
     await appDb.client.end();
     await adminDb.client.end();
@@ -273,9 +307,12 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     it("Org A sees all its data across catalog, budget, and cost tables", async () => {
       await setRlsContext(appDb.client, orgAId, userAId);
 
-      const catalogs = await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
-      const budgets = await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
-      const costs = await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
+      const catalogs =
+        await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
+      const budgets =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
+      const costs =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
       expect(catalogs[0].cnt).toBe(1);
       expect(budgets[0].cnt).toBe(1);
@@ -287,9 +324,12 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     it("Org B sees nothing across catalog, budget, and cost tables", async () => {
       await setRlsContext(appDb.client, orgBId, userBId);
 
-      const catalogs = await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
-      const budgets = await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
-      const costs = await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
+      const catalogs =
+        await appDb.client`SELECT count(*)::int AS cnt FROM org_active_catalog`;
+      const budgets =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_budget`;
+      const costs =
+        await appDb.client`SELECT count(*)::int AS cnt FROM grc_cost_entry`;
 
       expect(catalogs[0].cnt).toBe(0);
       expect(budgets[0].cnt).toBe(0);

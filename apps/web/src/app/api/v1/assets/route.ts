@@ -1,14 +1,6 @@
 import { db, asset } from "@grc/db";
 import { createAssetSchema } from "@grc/shared";
-import {
-  eq,
-  and,
-  isNull,
-  count,
-  desc,
-  inArray,
-  sql,
-} from "drizzle-orm";
+import { eq, and, isNull, count, desc, inArray, sql } from "drizzle-orm";
 import {
   withAuth,
   withAuditContext,
@@ -49,9 +41,7 @@ export async function POST(req: Request) {
         assetTier: asset.assetTier,
       })
       .from(asset)
-      .where(
-        and(eq(asset.id, parentAssetId), isNull(asset.deletedAt)),
-      );
+      .where(and(eq(asset.id, parentAssetId), isNull(asset.deletedAt)));
 
     if (!parent) {
       return Response.json(
@@ -157,9 +147,7 @@ export async function GET(req: Request) {
   // Filter by visible_in_modules (array overlap)
   const module = searchParams.get("module");
   if (module) {
-    conditions.push(
-      sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`,
-    );
+    conditions.push(sql`${asset.visibleInModules} @> ARRAY[${module}]::text[]`);
   }
 
   // Search by name

@@ -33,10 +33,7 @@ export async function DELETE(req: Request, { params }: RouteParams) {
   }
 
   if (session.status === "revoked") {
-    return Response.json(
-      { error: "Session already revoked" },
-      { status: 400 },
-    );
+    return Response.json({ error: "Session already revoked" }, { status: 400 });
   }
 
   await withAuditContext(ctx, async (tx) => {

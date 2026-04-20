@@ -3,7 +3,7 @@ name: Feature Request
 about: Neues Feature oder Enhancement vorschlagen
 title: "[FEAT] "
 labels: enhancement, triage
-assignees: ''
+assignees: ""
 ---
 
 ## Problem / Use-Case

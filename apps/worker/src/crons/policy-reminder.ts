@@ -2,7 +2,12 @@
 // DAILY at 08:00 — Send reminders for pending acknowledgments approaching deadline
 // Checks: configurable days before deadline (default 7d, 3d, 1d)
 
-import { db, policyDistribution, policyAcknowledgment, notification } from "@grc/db";
+import {
+  db,
+  policyDistribution,
+  policyAcknowledgment,
+  notification,
+} from "@grc/db";
 import { eq, and, sql, gt } from "drizzle-orm";
 
 interface PolicyReminderResult {
@@ -86,7 +91,9 @@ export async function processPolicyReminder(): Promise<PolicyReminderResult> {
           remindersSent++;
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);
-          errors.push(`Reminder for user ${ack.userId} in dist ${dist.id}: ${message}`);
+          errors.push(
+            `Reminder for user ${ack.userId} in dist ${dist.id}: ${message}`,
+          );
         }
       }
     } catch (err) {

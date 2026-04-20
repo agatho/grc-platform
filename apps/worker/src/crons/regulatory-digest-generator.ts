@@ -41,10 +41,15 @@ export async function processRegulatoryDigest(): Promise<{
       });
       digestsGenerated++;
     } catch (err) {
-      console.error(`[regulatory-digest-generator] Failed for org ${orgChange.orgId}:`, err);
+      console.error(
+        `[regulatory-digest-generator] Failed for org ${orgChange.orgId}:`,
+        err,
+      );
     }
   }
 
-  console.log(`[regulatory-digest-generator] Generated ${digestsGenerated} digests`);
+  console.log(
+    `[regulatory-digest-generator] Generated ${digestsGenerated} digests`,
+  );
   return { digestsGenerated };
 }

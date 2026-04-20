@@ -23,8 +23,10 @@ export async function GET(req: Request) {
   const activeAgents = agents.filter((a) => a.isActive).length;
   const lastScan = agents
     .filter((a) => a.lastRunAt)
-    .sort((a, b) => new Date(b.lastRunAt!).getTime() - new Date(a.lastRunAt!).getTime())[0]
-    ?.lastRunAt;
+    .sort(
+      (a, b) =>
+        new Date(b.lastRunAt!).getTime() - new Date(a.lastRunAt!).getTime(),
+    )[0]?.lastRunAt;
 
   return Response.json({
     data: {

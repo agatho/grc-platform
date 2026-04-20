@@ -19,7 +19,9 @@ export async function GET(req: Request) {
       successCount: sql<number>`count(*) FILTER (WHERE ${apiUsageLog.statusCode} < 400)`,
     })
     .from(apiUsageLog)
-    .where(and(eq(apiUsageLog.orgId, ctx.orgId), gte(apiUsageLog.createdAt, since)));
+    .where(
+      and(eq(apiUsageLog.orgId, ctx.orgId), gte(apiUsageLog.createdAt, since)),
+    );
 
   const topPaths = await db
     .select({
@@ -29,7 +31,9 @@ export async function GET(req: Request) {
       avgResponseTime: sql<number>`avg(${apiUsageLog.responseTimeMs})`,
     })
     .from(apiUsageLog)
-    .where(and(eq(apiUsageLog.orgId, ctx.orgId), gte(apiUsageLog.createdAt, since)))
+    .where(
+      and(eq(apiUsageLog.orgId, ctx.orgId), gte(apiUsageLog.createdAt, since)),
+    )
     .groupBy(apiUsageLog.path, apiUsageLog.method)
     .orderBy(sql`count(*) DESC`)
     .limit(10);
@@ -37,9 +41,13 @@ export async function GET(req: Request) {
   return Response.json({
     data: {
       ...stats,
-      successRate: stats.totalRequests > 0
-        ? ((Number(stats.successCount) / Number(stats.totalRequests)) * 100).toFixed(1)
-        : "0",
+      successRate:
+        stats.totalRequests > 0
+          ? (
+              (Number(stats.successCount) / Number(stats.totalRequests)) *
+              100
+            ).toFixed(1)
+          : "0",
       topPaths,
       period: { days, since: since.toISOString() },
     },

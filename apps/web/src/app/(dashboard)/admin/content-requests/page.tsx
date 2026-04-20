@@ -157,10 +157,7 @@ export default function ContentRequestsPage() {
             onClick={fetchData}
             disabled={loading}
           >
-            <RefreshCcw
-              size={14}
-              className={loading ? "animate-spin" : ""}
-            />
+            <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
           <Button size="sm">
             <Plus size={16} className="mr-1" />
@@ -216,7 +213,9 @@ export default function ContentRequestsPage() {
               <p className="mt-1 text-2xl font-bold">
                 {stats.avgResponseTimeDays.toFixed(1)}d
               </p>
-              <p className="text-xs text-gray-500">Durchschnittl. Antwortzeit</p>
+              <p className="text-xs text-gray-500">
+                Durchschnittl. Antwortzeit
+              </p>
             </CardContent>
           </Card>
         </div>

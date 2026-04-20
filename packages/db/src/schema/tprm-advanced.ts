@@ -53,22 +53,19 @@ export const vendorScorecard = pgTable(
 // 44.2 vendor_scorecard_history — IMMUTABLE quarterly snapshots
 // ──────────────────────────────────────────────────────────────
 
-export const vendorScorecardHistory = pgTable(
-  "vendor_scorecard_history",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    scorecardId: uuid("scorecard_id")
-      .notNull()
-      .references(() => vendorScorecard.id, { onDelete: "cascade" }),
-    orgId: uuid("org_id").notNull(),
-    overallScore: integer("overall_score").notNull(),
-    tier: varchar("tier", { length: 30 }).notNull(),
-    dimensionScores: jsonb("dimension_scores").notNull(),
-    snapshotAt: timestamp("snapshot_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const vendorScorecardHistory = pgTable("vendor_scorecard_history", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  scorecardId: uuid("scorecard_id")
+    .notNull()
+    .references(() => vendorScorecard.id, { onDelete: "cascade" }),
+  orgId: uuid("org_id").notNull(),
+  overallScore: integer("overall_score").notNull(),
+  tier: varchar("tier", { length: 30 }).notNull(),
+  dimensionScores: jsonb("dimension_scores").notNull(),
+  snapshotAt: timestamp("snapshot_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 // ──────────────────────────────────────────────────────────────
 // 44.3 vendor_concentration_analysis — Concentration results

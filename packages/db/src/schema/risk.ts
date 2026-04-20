@@ -77,10 +77,7 @@ export const kriTrendEnum = pgEnum("kri_trend", [
   "worsening",
 ]);
 
-export const kriDirectionEnum = pgEnum("kri_direction", [
-  "asc",
-  "desc",
-]);
+export const kriDirectionEnum = pgEnum("kri_direction", ["asc", "desc"]);
 
 export const kriMeasurementFrequencyEnum = pgEnum("kri_measurement_frequency", [
   "daily",
@@ -113,16 +110,18 @@ export const riskAppetite = pgTable(
     description: text("description"),
     effectiveDate: date("effective_date").notNull().defaultNow(),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
     deletedBy: uuid("deleted_by"),
   },
-  (table) => [
-    index("risk_appetite_org_idx").on(table.orgId),
-  ],
+  (table) => [index("risk_appetite_org_idx").on(table.orgId)],
 );
 
 // ──────────────────────────────────────────────────────────────
@@ -136,8 +135,7 @@ export const risk = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
     // Catalog & Framework Layer hook (ADR-013)
     // No FK constraint in Sprint 2 — FK to risk_catalog_entry added in Sprint 4b
     catalogEntryId: uuid("catalog_entry_id"),
@@ -147,8 +145,7 @@ export const risk = pgTable(
     riskCategory: riskCategoryEnum("risk_category").notNull(),
     riskSource: riskSourceEnum("risk_source").notNull(),
     status: riskStatusEnum("status").notNull().default("identified"),
-    ownerId: uuid("owner_id")
-      .references(() => user.id),
+    ownerId: uuid("owner_id").references(() => user.id),
     department: varchar("department", { length: 255 }),
     // Inherent risk scores (1-5 scale, CHECK constraints in migration)
     inherentLikelihood: integer("inherent_likelihood"),
@@ -163,16 +160,31 @@ export const risk = pgTable(
     treatmentStrategy: treatmentStrategyEnum("treatment_strategy"),
     treatmentRationale: text("treatment_rationale"),
     // Financial impact range
-    financialImpactMin: numeric("financial_impact_min", { precision: 15, scale: 2 }),
-    financialImpactMax: numeric("financial_impact_max", { precision: 15, scale: 2 }),
-    financialImpactExpected: numeric("financial_impact_expected", { precision: 15, scale: 2 }),
+    financialImpactMin: numeric("financial_impact_min", {
+      precision: 15,
+      scale: 2,
+    }),
+    financialImpactMax: numeric("financial_impact_max", {
+      precision: 15,
+      scale: 2,
+    }),
+    financialImpactExpected: numeric("financial_impact_expected", {
+      precision: 15,
+      scale: 2,
+    }),
     // Appetite comparison
-    riskAppetiteExceeded: boolean("risk_appetite_exceeded").notNull().default(false),
+    riskAppetiteExceeded: boolean("risk_appetite_exceeded")
+      .notNull()
+      .default(false),
     // Review
     reviewDate: date("review_date"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -182,7 +194,10 @@ export const risk = pgTable(
     index("risk_org_status_idx").on(table.orgId, table.status),
     index("risk_owner_idx").on(table.ownerId),
     index("risk_score_residual_idx").on(table.riskScoreResidual),
-    index("risk_org_appetite_exceeded_idx").on(table.orgId, table.riskAppetiteExceeded),
+    index("risk_org_appetite_exceeded_idx").on(
+      table.orgId,
+      table.riskAppetiteExceeded,
+    ),
   ],
 );
 
@@ -200,12 +215,13 @@ export const riskTreatment = pgTable(
     riskId: uuid("risk_id")
       .notNull()
       .references(() => risk.id, { onDelete: "cascade" }),
-    workItemId: uuid("work_item_id")
-      .references(() => workItem.id),
+    workItemId: uuid("work_item_id").references(() => workItem.id),
     description: text("description"),
-    responsibleId: uuid("responsible_id")
-      .references(() => user.id),
-    expectedRiskReduction: numeric("expected_risk_reduction", { precision: 5, scale: 2 }),
+    responsibleId: uuid("responsible_id").references(() => user.id),
+    expectedRiskReduction: numeric("expected_risk_reduction", {
+      precision: 5,
+      scale: 2,
+    }),
     costEstimate: numeric("cost_estimate", { precision: 15, scale: 2 }),
     costAnnual: numeric("cost_annual", { precision: 15, scale: 2 }),
     effortHours: numeric("effort_hours", { precision: 8, scale: 2 }),
@@ -215,8 +231,12 @@ export const riskTreatment = pgTable(
     status: treatmentStatusEnum("status").notNull().default("planned"),
     dueDate: date("due_date"),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -240,8 +260,7 @@ export const kri = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    riskId: uuid("risk_id")
-      .references(() => risk.id, { onDelete: "set null" }),
+    riskId: uuid("risk_id").references(() => risk.id, { onDelete: "set null" }),
     name: varchar("name", { length: 255 }).notNull(),
     description: text("description"),
     unit: varchar("unit", { length: 50 }),
@@ -250,14 +269,22 @@ export const kri = pgTable(
     thresholdYellow: numeric("threshold_yellow", { precision: 15, scale: 2 }),
     thresholdRed: numeric("threshold_red", { precision: 15, scale: 2 }),
     currentValue: numeric("current_value", { precision: 15, scale: 2 }),
-    currentAlertStatus: kriAlertStatusEnum("current_alert_status").notNull().default("green"),
+    currentAlertStatus: kriAlertStatusEnum("current_alert_status")
+      .notNull()
+      .default("green"),
     trend: kriTrendEnum("trend").notNull().default("stable"),
-    measurementFrequency: kriMeasurementFrequencyEnum("measurement_frequency").notNull().default("monthly"),
+    measurementFrequency: kriMeasurementFrequencyEnum("measurement_frequency")
+      .notNull()
+      .default("monthly"),
     lastMeasuredAt: timestamp("last_measured_at", { withTimezone: true }),
     alertEnabled: boolean("alert_enabled").notNull().default(true),
     // Cross-cutting mandatory fields
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     createdBy: uuid("created_by"),
     updatedBy: uuid("updated_by"),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),
@@ -287,9 +314,10 @@ export const kriMeasurement = pgTable(
     measuredAt: timestamp("measured_at", { withTimezone: true }).notNull(),
     source: kriMeasurementSourceEnum("source").notNull().default("manual"),
     notes: text("notes"),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
   },
   (table) => [
     index("kri_measurement_kri_at_idx").on(table.kriId, table.measuredAt),
@@ -312,7 +340,9 @@ export const simulationResult = pgTable(
       .notNull()
       .references(() => organization.id),
     simulationRunId: uuid("simulation_run_id").notNull().defaultRandom(),
-    simulatedAt: timestamp("simulated_at", { withTimezone: true }).notNull().defaultNow(),
+    simulatedAt: timestamp("simulated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
     p5: numeric("p5", { precision: 15, scale: 2 }),
     p25: numeric("p25", { precision: 15, scale: 2 }),
     p50: numeric("p50", { precision: 15, scale: 2 }),
@@ -343,12 +373,16 @@ export const riskFrameworkMapping = pgTable(
       .notNull()
       .references(() => risk.id, { onDelete: "cascade" }),
     requirementId: uuid("requirement_id").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
-    unique("risk_framework_mapping_unique").on(table.riskId, table.requirementId),
+    unique("risk_framework_mapping_unique").on(
+      table.riskId,
+      table.requirementId,
+    ),
     index("rfm_org_idx").on(table.orgId),
     index("rfm_risk_idx").on(table.riskId),
   ],
@@ -370,9 +404,10 @@ export const processRisk = pgTable(
       .references(() => risk.id, { onDelete: "cascade" }),
     processId: uuid("process_id").notNull(),
     riskContext: text("risk_context"),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
     index("process_risk_org_idx").on(table.orgId),
@@ -396,9 +431,10 @@ export const processStepRisk = pgTable(
       .notNull()
       .references(() => risk.id, { onDelete: "cascade" }),
     processStepId: uuid("process_step_id").notNull(),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
     index("process_step_risk_org_idx").on(table.orgId),
@@ -423,9 +459,10 @@ export const riskAsset = pgTable(
     assetId: uuid("asset_id")
       .notNull()
       .references(() => asset.id),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
     index("risk_asset_org_idx").on(table.orgId),
@@ -450,9 +487,10 @@ export const riskControl = pgTable(
       .references(() => risk.id, { onDelete: "cascade" }),
     controlId: uuid("control_id").notNull(),
     effectiveness: varchar("effectiveness", { length: 50 }),
-    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
-    createdBy: uuid("created_by")
-      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
   },
   (table) => [
     index("risk_control_org_idx").on(table.orgId),

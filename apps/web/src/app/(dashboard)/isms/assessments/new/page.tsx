@@ -5,7 +5,13 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ArrowRight, Check, Loader2, AlertCircle } from "lucide-react";
+import {
+  ArrowLeft,
+  ArrowRight,
+  Check,
+  Loader2,
+  AlertCircle,
+} from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -16,12 +22,32 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
 const FRAMEWORKS = [
-  { code: "iso27001", label: "ISO/IEC 27001:2022", desc: "ISMS + 93 Annex-A-Controls" },
-  { code: "iso27002", label: "ISO/IEC 27002:2022", desc: "Control-Implementation-Guidance" },
-  { code: "nist_csf", label: "NIST CSF 2.0", desc: "6 Funktionen, 131 Subcategories" },
-  { code: "bsi_grundschutz", label: "BSI IT-Grundschutz", desc: "Deutsche Bausteine-Methodik" },
+  {
+    code: "iso27001",
+    label: "ISO/IEC 27001:2022",
+    desc: "ISMS + 93 Annex-A-Controls",
+  },
+  {
+    code: "iso27002",
+    label: "ISO/IEC 27002:2022",
+    desc: "Control-Implementation-Guidance",
+  },
+  {
+    code: "nist_csf",
+    label: "NIST CSF 2.0",
+    desc: "6 Funktionen, 131 Subcategories",
+  },
+  {
+    code: "bsi_grundschutz",
+    label: "BSI IT-Grundschutz",
+    desc: "Deutsche Bausteine-Methodik",
+  },
   { code: "tisax", label: "TISAX 6.0", desc: "Automotive-ISMS (VDA ISA)" },
-  { code: "cis_igx", label: "CIS Controls v8", desc: "Prioritized Control List" },
+  {
+    code: "cis_igx",
+    label: "CIS Controls v8",
+    desc: "Prioritized Control List",
+  },
 ];
 
 type Step = 1 | 2 | 3;
@@ -86,7 +112,11 @@ function WizardInner() {
 
   function canAdvance(): boolean {
     if (step === 1) {
-      return state.name.trim().length > 0 && state.frameworks.length > 0 && state.description.trim().length > 0;
+      return (
+        state.name.trim().length > 0 &&
+        state.frameworks.length > 0 &&
+        state.description.trim().length > 0
+      );
     }
     if (step === 2) {
       return true;
@@ -96,7 +126,8 @@ function WizardInner() {
         !!state.leadAssessorId &&
         !!state.periodStart &&
         !!state.periodEnd &&
-        new Date(state.periodEnd).getTime() - new Date(state.periodStart).getTime() >=
+        new Date(state.periodEnd).getTime() -
+          new Date(state.periodStart).getTime() >=
           14 * 24 * 60 * 60 * 1000
       );
     }
@@ -148,9 +179,9 @@ function WizardInner() {
 
       <h1 className="text-2xl font-bold mb-2">Neuer ISMS-Assessment-Run</h1>
       <p className="text-sm text-gray-600 mb-6">
-        3-Step-Wizard gemaess ISO 27001 Clause 4.3 (Scope) + 6.1 (Risk + Opportunities).
-        Fuer Gate G1 (Finalize zum Production-Run) muss das Scope-Statement mindestens 200 Zeichen
-        umfassen.
+        3-Step-Wizard gemaess ISO 27001 Clause 4.3 (Scope) + 6.1 (Risk +
+        Opportunities). Fuer Gate G1 (Finalize zum Production-Run) muss das
+        Scope-Statement mindestens 200 Zeichen umfassen.
       </p>
 
       {/* Stepper */}
@@ -162,14 +193,20 @@ function WizardInner() {
                 s < step
                   ? "bg-green-600 text-white"
                   : s === step
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-200 text-gray-500"
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-500"
               }`}
             >
               {s < step ? <Check className="h-4 w-4" /> : s}
             </div>
-            <span className={`text-sm ${s === step ? "font-semibold" : "text-gray-500"}`}>
-              {s === 1 ? "Basics + Framework" : s === 2 ? "Scope" : "Team + Timeline"}
+            <span
+              className={`text-sm ${s === step ? "font-semibold" : "text-gray-500"}`}
+            >
+              {s === 1
+                ? "Basics + Framework"
+                : s === 2
+                  ? "Scope"
+                  : "Team + Timeline"}
             </span>
             {s < 3 && <div className="w-8 h-0.5 bg-gray-300" />}
           </div>
@@ -196,14 +233,18 @@ function WizardInner() {
               maxLength={500}
             />
             {fieldErrors.name && (
-              <p className="text-xs text-red-600 mt-1">{fieldErrors.name.join(", ")}</p>
+              <p className="text-xs text-red-600 mt-1">
+                {fieldErrors.name.join(", ")}
+              </p>
             )}
           </div>
 
           <div>
             <Label htmlFor="description">
               Scope-Statement *
-              <span className={`ml-2 text-xs ${descriptionOk ? "text-green-600" : "text-yellow-600"}`}>
+              <span
+                className={`ml-2 text-xs ${descriptionOk ? "text-green-600" : "text-yellow-600"}`}
+              >
                 ({descriptionChars} / min. 200 Zeichen fuer Finalize)
               </span>
             </Label>
@@ -223,7 +264,9 @@ function WizardInner() {
           </div>
 
           <div>
-            <Label>Frameworks * (mehrere moeglich via Cross-Framework-Mapping)</Label>
+            <Label>
+              Frameworks * (mehrere moeglich via Cross-Framework-Mapping)
+            </Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
               {FRAMEWORKS.map((f) => {
                 const selected = state.frameworks.includes(f.code);
@@ -243,7 +286,9 @@ function WizardInner() {
                         <p className="font-medium text-sm">{f.label}</p>
                         <p className="text-xs text-gray-500 mt-0.5">{f.desc}</p>
                       </div>
-                      {selected && <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />}
+                      {selected && (
+                        <Check className="h-4 w-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                      )}
                     </div>
                   </button>
                 );
@@ -251,8 +296,9 @@ function WizardInner() {
             </div>
             {state.frameworks.length > 1 && (
               <p className="text-xs text-green-700 mt-2">
-                ✓ Multi-Framework-Run -- Cross-Framework-Mappings werden automatisch genutzt
-                (z. B. ein ISO-27002-Control-Eval deckt NIST-CSF automatisch mit ab).
+                ✓ Multi-Framework-Run -- Cross-Framework-Mappings werden
+                automatisch genutzt (z. B. ein ISO-27002-Control-Eval deckt
+                NIST-CSF automatisch mit ab).
               </p>
             )}
           </div>
@@ -265,29 +311,33 @@ function WizardInner() {
           <div>
             <Label>Scope-Typ *</Label>
             <div className="grid grid-cols-2 gap-2 mt-2">
-              {(["full", "department", "asset_group", "custom"] as const).map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  onClick={() => update("scopeType", t)}
-                  className={`text-left p-3 rounded-md border-2 ${
-                    state.scopeType === t
-                      ? "border-blue-500 bg-blue-50"
-                      : "border-gray-200 bg-white hover:border-gray-300"
-                  }`}
-                >
-                  <p className="font-medium text-sm capitalize">{t.replace("_", " ")}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">
-                    {t === "full"
-                      ? "Gesamte Organisation"
-                      : t === "department"
-                      ? "Nur ausgewaehlte Abteilungen"
-                      : t === "asset_group"
-                      ? "Nur ausgewaehlte Asset-Gruppen"
-                      : "Custom-Filter"}
-                  </p>
-                </button>
-              ))}
+              {(["full", "department", "asset_group", "custom"] as const).map(
+                (t) => (
+                  <button
+                    key={t}
+                    type="button"
+                    onClick={() => update("scopeType", t)}
+                    className={`text-left p-3 rounded-md border-2 ${
+                      state.scopeType === t
+                        ? "border-blue-500 bg-blue-50"
+                        : "border-gray-200 bg-white hover:border-gray-300"
+                    }`}
+                  >
+                    <p className="font-medium text-sm capitalize">
+                      {t.replace("_", " ")}
+                    </p>
+                    <p className="text-xs text-gray-500 mt-0.5">
+                      {t === "full"
+                        ? "Gesamte Organisation"
+                        : t === "department"
+                          ? "Nur ausgewaehlte Abteilungen"
+                          : t === "asset_group"
+                            ? "Nur ausgewaehlte Asset-Gruppen"
+                            : "Custom-Filter"}
+                    </p>
+                  </button>
+                ),
+              )}
             </div>
           </div>
 
@@ -300,7 +350,10 @@ function WizardInner() {
               id="contextFactors"
               value={state.scopeFilter.contextFactors ?? ""}
               onChange={(e) =>
-                update("scopeFilter", { ...state.scopeFilter, contextFactors: e.target.value })
+                update("scopeFilter", {
+                  ...state.scopeFilter,
+                  contextFactors: e.target.value,
+                })
               }
               placeholder="Externe + interne Themen, die das ISMS beeinflussen (z. B. regulatorisch, technologisch, Lieferkette)."
               rows={4}
@@ -309,10 +362,17 @@ function WizardInner() {
           </div>
 
           <div className="p-3 bg-gray-50 rounded text-sm text-gray-600">
-            <p className="font-medium mb-1">Detail-Scope wird im naechsten Schritt befuellt:</p>
+            <p className="font-medium mb-1">
+              Detail-Scope wird im naechsten Schritt befuellt:
+            </p>
             <ul className="list-disc list-inside text-xs space-y-0.5">
-              <li>Assets, Prozesse, Standorte koennen nach Erstellung zugewiesen werden</li>
-              <li>SoA-Initialization fuehrt zum naechsten Workflow-Gate (G2)</li>
+              <li>
+                Assets, Prozesse, Standorte koennen nach Erstellung zugewiesen
+                werden
+              </li>
+              <li>
+                SoA-Initialization fuehrt zum naechsten Workflow-Gate (G2)
+              </li>
             </ul>
           </div>
         </div>
@@ -348,7 +408,9 @@ function WizardInner() {
             <div>
               <Label htmlFor="periodEnd">
                 Periode Ende *
-                <span className="text-xs text-gray-500 ml-2">min. 14 Tage nach Start</span>
+                <span className="text-xs text-gray-500 ml-2">
+                  min. 14 Tage nach Start
+                </span>
               </Label>
               <Input
                 id="periodEnd"
@@ -363,7 +425,12 @@ function WizardInner() {
             <div className="p-3 bg-gray-50 rounded text-sm">
               <p className="font-medium">Summary:</p>
               <div className="mt-2 space-y-1 text-xs text-gray-600">
-                <p>Name: {state.name || <span className="italic">(noch nicht gesetzt)</span>}</p>
+                <p>
+                  Name:{" "}
+                  {state.name || (
+                    <span className="italic">(noch nicht gesetzt)</span>
+                  )}
+                </p>
                 <p>
                   Frameworks:{" "}
                   {state.frameworks.map((f) => (
@@ -375,7 +442,8 @@ function WizardInner() {
                 <p>
                   Dauer:{" "}
                   {Math.floor(
-                    (new Date(state.periodEnd).getTime() - new Date(state.periodStart).getTime()) /
+                    (new Date(state.periodEnd).getTime() -
+                      new Date(state.periodStart).getTime()) /
                       (1000 * 60 * 60 * 24),
                   )}{" "}
                   Tage
@@ -385,7 +453,9 @@ function WizardInner() {
                   {descriptionOk ? (
                     <span className="text-green-700">✓ Gate G1-ready</span>
                   ) : (
-                    <span className="text-yellow-700">⚠ &lt; 200, spaeter nachtragen</span>
+                    <span className="text-yellow-700">
+                      ⚠ &lt; 200, spaeter nachtragen
+                    </span>
                   )}
                 </p>
               </div>
@@ -405,7 +475,10 @@ function WizardInner() {
         </Button>
 
         {step < 3 ? (
-          <Button onClick={() => setStep((step + 1) as Step)} disabled={!canAdvance()}>
+          <Button
+            onClick={() => setStep((step + 1) as Step)}
+            disabled={!canAdvance()}
+          >
             Weiter <ArrowRight className="h-4 w-4 ml-1" />
           </Button>
         ) : (

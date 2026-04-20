@@ -24,7 +24,9 @@ export const processRaciOverride = pgTable(
       .notNull()
       .references(() => organization.id),
     activityBpmnId: varchar("activity_bpmn_id", { length: 100 }).notNull(),
-    participantBpmnId: varchar("participant_bpmn_id", { length: 100 }).notNull(),
+    participantBpmnId: varchar("participant_bpmn_id", {
+      length: 100,
+    }).notNull(),
     raciRole: varchar("raci_role", { length: 1 }).notNull(),
     overriddenBy: uuid("overridden_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })

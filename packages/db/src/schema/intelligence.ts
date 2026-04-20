@@ -100,25 +100,22 @@ export const regulatoryFeedItem = pgTable("regulatory_feed_item", {
 // 11.4 RegulatoryRelevanceScore — Per-org relevance for feed items
 // ──────────────────────────────────────────────────────────────
 
-export const regulatoryRelevanceScore = pgTable(
-  "regulatory_relevance_score",
-  {
-    id: uuid("id").primaryKey().defaultRandom(),
-    feedItemId: uuid("feed_item_id")
-      .notNull()
-      .references(() => regulatoryFeedItem.id),
-    orgId: uuid("org_id")
-      .notNull()
-      .references(() => organization.id),
-    relevanceScore: integer("relevance_score").notNull(), // 0–100
-    reasoning: text("reasoning"),
-    affectedModules: text("affected_modules").array(),
-    isNotified: boolean("is_notified").default(false),
-    computedAt: timestamp("computed_at", { withTimezone: true })
-      .notNull()
-      .defaultNow(),
-  },
-);
+export const regulatoryRelevanceScore = pgTable("regulatory_relevance_score", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  feedItemId: uuid("feed_item_id")
+    .notNull()
+    .references(() => regulatoryFeedItem.id),
+  orgId: uuid("org_id")
+    .notNull()
+    .references(() => organization.id),
+  relevanceScore: integer("relevance_score").notNull(), // 0–100
+  reasoning: text("reasoning"),
+  affectedModules: text("affected_modules").array(),
+  isNotified: boolean("is_notified").default(false),
+  computedAt: timestamp("computed_at", { withTimezone: true })
+    .notNull()
+    .defaultNow(),
+});
 
 // ──────────────────────────────────────────────────────────────
 // 11.5 AiPromptLog — AI usage tracking per org

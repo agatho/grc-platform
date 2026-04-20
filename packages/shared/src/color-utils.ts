@@ -133,9 +133,6 @@ export function getContrastRatio(
 /**
  * Check if a color combination passes WCAG AA for normal text (4.5:1).
  */
-export function passesWcagAA(
-  foreground: string,
-  background: string,
-): boolean {
+export function passesWcagAA(foreground: string, background: string): boolean {
   return getContrastRatio(foreground, background) >= 4.5;
 }

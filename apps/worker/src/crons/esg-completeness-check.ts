@@ -2,7 +2,14 @@
 // Computes ESRS datapoint completeness % for current reporting year.
 // Notifies responsible users if completeness <80% and report deadline approaching.
 
-import { db, esgAnnualReport, esrsDatapointDefinition, esrsMetric, esgMeasurement, notification } from "@grc/db";
+import {
+  db,
+  esgAnnualReport,
+  esrsDatapointDefinition,
+  esrsMetric,
+  esgMeasurement,
+  notification,
+} from "@grc/db";
 import { and, eq, sql, isNull, count } from "drizzle-orm";
 
 interface EsgCompletenessResult {
@@ -17,7 +24,9 @@ export async function processEsgCompletenessCheck(): Promise<EsgCompletenessResu
   let notified = 0;
   let updated = 0;
 
-  console.log(`[cron:esg-completeness-check] Starting at ${now.toISOString()} for year ${currentYear}`);
+  console.log(
+    `[cron:esg-completeness-check] Starting at ${now.toISOString()} for year ${currentYear}`,
+  );
 
   // 1. Find all annual reports for the current year (all orgs)
   const reports = await db
@@ -51,15 +60,21 @@ export async function processEsgCompletenessCheck(): Promise<EsgCompletenessResu
       const [coveredRow] = await db
         .select({ covered: count(sql`DISTINCT ${esrsDatapointDefinition.id}`) })
         .from(esrsDatapointDefinition)
-        .innerJoin(esrsMetric, and(
-          eq(esrsMetric.datapointId, esrsDatapointDefinition.id),
-          eq(esrsMetric.orgId, report.orgId),
-          eq(esrsMetric.isActive, true),
-        ))
-        .innerJoin(esgMeasurement, and(
-          eq(esgMeasurement.metricId, esrsMetric.id),
-          sql`EXTRACT(YEAR FROM ${esgMeasurement.periodStart}::date) = ${currentYear}`,
-        ))
+        .innerJoin(
+          esrsMetric,
+          and(
+            eq(esrsMetric.datapointId, esrsDatapointDefinition.id),
+            eq(esrsMetric.orgId, report.orgId),
+            eq(esrsMetric.isActive, true),
+          ),
+        )
+        .innerJoin(
+          esgMeasurement,
+          and(
+            eq(esgMeasurement.metricId, esrsMetric.id),
+            sql`EXTRACT(YEAR FROM ${esgMeasurement.periodStart}::date) = ${currentYear}`,
+          ),
+        )
         .where(eq(esrsDatapointDefinition.isMandatory, true));
 
       const coveredCount = coveredRow?.covered ?? 0;
@@ -101,20 +116,30 @@ export async function processEsgCompletenessCheck(): Promise<EsgCompletenessResu
               message: `The ESRS report for ${currentYear} is currently at ${pct}% completeness. The reporting deadline is approaching. Please ensure all mandatory datapoints have measurements recorded.`,
               channel: "both" as const,
               templateKey: "esg_completeness_low",
-              templateData: { reportId: report.id, year: currentYear, completeness: pct },
+              templateData: {
+                reportId: report.id,
+                year: currentYear,
+                completeness: pct,
+              },
               createdAt: now,
               updatedAt: now,
             });
             notified++;
           } catch (err) {
             const message = err instanceof Error ? err.message : String(err);
-            console.error(`[cron:esg-completeness-check] Notification failed for user ${user.userId}:`, message);
+            console.error(
+              `[cron:esg-completeness-check] Notification failed for user ${user.userId}:`,
+              message,
+            );
           }
         }
       }
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:esg-completeness-check] Failed for report ${report.id}:`, message);
+      console.error(
+        `[cron:esg-completeness-check] Failed for report ${report.id}:`,
+        message,
+      );
     }
   }
 

@@ -65,7 +65,9 @@ describe("assignAssetCpeSchema", () => {
 
 describe("acknowledgeCveMatchSchema", () => {
   it("should accept acknowledged status", () => {
-    const result = acknowledgeCveMatchSchema.safeParse({ status: "acknowledged" });
+    const result = acknowledgeCveMatchSchema.safeParse({
+      status: "acknowledged",
+    });
     expect(result.success).toBe(true);
   });
 
@@ -109,7 +111,9 @@ describe("convertCveToVulnerabilitySchema", () => {
 
 describe("triggerSoaGapAnalysisSchema", () => {
   it("should accept framework parameter", () => {
-    const result = triggerSoaGapAnalysisSchema.safeParse({ framework: "iso27001" });
+    const result = triggerSoaGapAnalysisSchema.safeParse({
+      framework: "iso27001",
+    });
     expect(result.success).toBe(true);
   });
 
@@ -149,7 +153,9 @@ describe("reviewSoaSuggestionSchema", () => {
 
 describe("triggerMaturityRoadmapSchema", () => {
   it("should accept valid target maturity", () => {
-    const result = triggerMaturityRoadmapSchema.safeParse({ targetMaturity: 4 });
+    const result = triggerMaturityRoadmapSchema.safeParse({
+      targetMaturity: 4,
+    });
     expect(result.success).toBe(true);
   });
 
@@ -162,26 +168,37 @@ describe("triggerMaturityRoadmapSchema", () => {
   });
 
   it("should reject maturity level 0", () => {
-    const result = triggerMaturityRoadmapSchema.safeParse({ targetMaturity: 0 });
+    const result = triggerMaturityRoadmapSchema.safeParse({
+      targetMaturity: 0,
+    });
     expect(result.success).toBe(false);
   });
 
   it("should reject maturity level 6", () => {
-    const result = triggerMaturityRoadmapSchema.safeParse({ targetMaturity: 6 });
+    const result = triggerMaturityRoadmapSchema.safeParse({
+      targetMaturity: 6,
+    });
     expect(result.success).toBe(false);
   });
 });
 
 describe("updateRoadmapActionStatusSchema", () => {
   it("should accept all valid statuses", () => {
-    for (const status of ["proposed", "in_progress", "completed", "dismissed"]) {
+    for (const status of [
+      "proposed",
+      "in_progress",
+      "completed",
+      "dismissed",
+    ]) {
       const result = updateRoadmapActionStatusSchema.safeParse({ status });
       expect(result.success).toBe(true);
     }
   });
 
   it("should reject invalid status", () => {
-    const result = updateRoadmapActionStatusSchema.safeParse({ status: "invalid" });
+    const result = updateRoadmapActionStatusSchema.safeParse({
+      status: "invalid",
+    });
     expect(result.success).toBe(false);
   });
 });
@@ -204,8 +221,9 @@ describe("bulkCveMatchStatusSchema", () => {
   });
 
   it("should reject more than 100 matchIds", () => {
-    const ids = Array.from({ length: 101 }, (_, i) =>
-      `550e8400-e29b-41d4-a716-44665544${String(i).padStart(4, "0")}`
+    const ids = Array.from(
+      { length: 101 },
+      (_, i) => `550e8400-e29b-41d4-a716-44665544${String(i).padStart(4, "0")}`,
     );
     const result = bulkCveMatchStatusSchema.safeParse({
       matchIds: ids,

@@ -2,7 +2,12 @@ import { db, bcExerciseFinding, bcExercise } from "@grc/db";
 import { createExerciseFindingSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, count, desc } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // POST /api/v1/bcms/exercises/[id]/findings — Add finding
 export async function POST(
@@ -74,7 +79,13 @@ export async function GET(
   );
 
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(bcExerciseFinding).where(where).orderBy(desc(bcExerciseFinding.createdAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(bcExerciseFinding)
+      .where(where)
+      .orderBy(desc(bcExerciseFinding.createdAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(bcExerciseFinding).where(where),
   ]);
 

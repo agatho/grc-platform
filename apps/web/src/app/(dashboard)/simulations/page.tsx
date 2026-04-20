@@ -4,7 +4,15 @@ import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Loader2, RefreshCcw, Play, GitCompare, Layers, Activity, BarChart3 } from "lucide-react";
+import {
+  Loader2,
+  RefreshCcw,
+  Play,
+  GitCompare,
+  Layers,
+  Activity,
+  BarChart3,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
@@ -44,7 +52,9 @@ function SimulationsDashboard() {
     }
   }, []);
 
-  useEffect(() => { void fetchData(); }, [fetchData]);
+  useEffect(() => {
+    void fetchData();
+  }, [fetchData]);
 
   const typeIcons: Record<string, React.ReactNode> = {
     what_if: <Layers size={14} className="text-blue-500" />,
@@ -72,35 +82,65 @@ function SimulationsDashboard() {
         </div>
         <div className="flex gap-2">
           <Link href="/simulations/comparisons">
-            <Button variant="outline" size="sm"><GitCompare size={14} className="mr-1" />{t("comparisons")}</Button>
+            <Button variant="outline" size="sm">
+              <GitCompare size={14} className="mr-1" />
+              {t("comparisons")}
+            </Button>
           </Link>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={fetchData}
+            disabled={loading}
+          >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
         </div>
       </div>
 
       {loading && scenarios.length === 0 ? (
-        <div className="flex items-center justify-center h-64"><Loader2 size={24} className="animate-spin text-gray-400" /></div>
+        <div className="flex items-center justify-center h-64">
+          <Loader2 size={24} className="animate-spin text-gray-400" />
+        </div>
       ) : scenarios.length === 0 ? (
-        <div className="text-center py-12 text-gray-400">{t("noScenarios")}</div>
+        <div className="text-center py-12 text-gray-400">
+          {t("noScenarios")}
+        </div>
       ) : (
         <div className="space-y-3">
           {scenarios.map((s) => (
-            <Link key={s.id} href={`/simulations/scenarios/${s.id}`}
-              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow">
+            <Link
+              key={s.id}
+              href={`/simulations/scenarios/${s.id}`}
+              className="flex items-center justify-between rounded-lg border border-gray-200 bg-white p-4 hover:shadow-sm transition-shadow"
+            >
               <div className="flex items-center gap-3">
-                {typeIcons[s.simulationType] ?? <Layers size={14} className="text-gray-400" />}
+                {typeIcons[s.simulationType] ?? (
+                  <Layers size={14} className="text-gray-400" />
+                )}
                 <div>
-                  <span className="text-sm font-medium text-gray-900">{s.name}</span>
+                  <span className="text-sm font-medium text-gray-900">
+                    {s.name}
+                  </span>
                   <div className="flex items-center gap-2 mt-1">
-                    <Badge variant="outline" className={statusColors[s.status] ?? ""}>{s.status}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{s.tag.replace(/_/g, " ")}</Badge>
-                    <Badge variant="outline" className="text-[10px]">{s.simulationType.replace(/_/g, " ")}</Badge>
+                    <Badge
+                      variant="outline"
+                      className={statusColors[s.status] ?? ""}
+                    >
+                      {s.status}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {s.tag.replace(/_/g, " ")}
+                    </Badge>
+                    <Badge variant="outline" className="text-[10px]">
+                      {s.simulationType.replace(/_/g, " ")}
+                    </Badge>
                   </div>
                 </div>
               </div>
-              <span className="text-xs text-gray-400">{new Date(s.createdAt).toLocaleDateString()}</span>
+              <span className="text-xs text-gray-400">
+                {new Date(s.createdAt).toLocaleDateString()}
+              </span>
             </Link>
           ))}
         </div>

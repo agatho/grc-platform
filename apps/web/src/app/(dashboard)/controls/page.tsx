@@ -4,13 +4,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import { type ColumnDef } from "@tanstack/react-table";
-import {
-  Plus,
-  Loader2,
-  Search,
-  RefreshCcw,
-  ShieldCheck,
-} from "lucide-react";
+import { Plus, Loader2, Search, RefreshCcw, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -143,7 +137,9 @@ function ControlsPageInner() {
     setLoading(true);
     setError(false);
     try {
-      const res = await fetch("/api/v1/controls?limit=500&sortBy=title&sortDir=asc");
+      const res = await fetch(
+        "/api/v1/controls?limit=500&sortBy=title&sortDir=asc",
+      );
       if (!res.ok) throw new Error("Failed to fetch controls");
       const json = await res.json();
       setControls(json.data ?? []);
@@ -258,7 +254,9 @@ function ControlsPageInner() {
       {
         accessorKey: "lastTestedAt",
         header: ({ column }) => (
-          <SortableHeader column={column}>{t("form.lastTested")}</SortableHeader>
+          <SortableHeader column={column}>
+            {t("form.lastTested")}
+          </SortableHeader>
         ),
         cell: ({ row }) => (
           <span className="text-sm text-gray-600">
@@ -356,7 +354,9 @@ function ControlsPageInner() {
             <SelectValue placeholder={t("form.frequency")} />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="__all__">{t("filter.allFrequencies")}</SelectItem>
+            <SelectItem value="__all__">
+              {t("filter.allFrequencies")}
+            </SelectItem>
             {FREQUENCIES.map((f) => (
               <SelectItem key={f} value={f}>
                 {t(`frequency.${f}`)}
@@ -389,7 +389,9 @@ function ControlsPageInner() {
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
               <Search size={28} className="text-gray-400 mb-3" />
               <p className="text-sm font-medium text-gray-500">
-                {debouncedSearch || statusFilter !== "__all__" || typeFilter !== "__all__"
+                {debouncedSearch ||
+                statusFilter !== "__all__" ||
+                typeFilter !== "__all__"
                   ? t("empty.noResults")
                   : t("empty.noControls")}
               </p>

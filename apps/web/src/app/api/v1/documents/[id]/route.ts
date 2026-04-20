@@ -1,10 +1,4 @@
-import {
-  db,
-  document,
-  documentVersion,
-  workItem,
-  user,
-} from "@grc/db";
+import { db, document, documentVersion, workItem, user } from "@grc/db";
 import { updateDocumentSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
@@ -73,7 +67,13 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner", "dpo", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "dpo",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("dms", ctx.orgId, req.method);
@@ -117,14 +117,25 @@ export async function PUT(
       updateValues.content = body.data.content;
       contentChanged = body.data.content !== existing.content;
     }
-    if (body.data.category !== undefined) updateValues.category = body.data.category;
-    if (body.data.requiresAcknowledgment !== undefined) updateValues.requiresAcknowledgment = body.data.requiresAcknowledgment;
+    if (body.data.category !== undefined)
+      updateValues.category = body.data.category;
+    if (body.data.requiresAcknowledgment !== undefined)
+      updateValues.requiresAcknowledgment = body.data.requiresAcknowledgment;
     if (body.data.tags !== undefined) updateValues.tags = body.data.tags;
-    if (body.data.ownerId !== undefined) updateValues.ownerId = body.data.ownerId;
-    if (body.data.reviewerId !== undefined) updateValues.reviewerId = body.data.reviewerId;
-    if (body.data.approverId !== undefined) updateValues.approverId = body.data.approverId;
-    if (body.data.expiresAt !== undefined) updateValues.expiresAt = body.data.expiresAt ? new Date(body.data.expiresAt) : null;
-    if (body.data.reviewDate !== undefined) updateValues.reviewDate = body.data.reviewDate ? new Date(body.data.reviewDate) : null;
+    if (body.data.ownerId !== undefined)
+      updateValues.ownerId = body.data.ownerId;
+    if (body.data.reviewerId !== undefined)
+      updateValues.reviewerId = body.data.reviewerId;
+    if (body.data.approverId !== undefined)
+      updateValues.approverId = body.data.approverId;
+    if (body.data.expiresAt !== undefined)
+      updateValues.expiresAt = body.data.expiresAt
+        ? new Date(body.data.expiresAt)
+        : null;
+    if (body.data.reviewDate !== undefined)
+      updateValues.reviewDate = body.data.reviewDate
+        ? new Date(body.data.reviewDate)
+        : null;
 
     // Auto-version on content change
     if (contentChanged) {
@@ -143,17 +154,15 @@ export async function PUT(
         );
 
       // Create new version
-      await tx
-        .insert(documentVersion)
-        .values({
-          documentId: id,
-          orgId: ctx.orgId,
-          versionNumber: newVersion,
-          content: body.data.content,
-          changeSummary: `Updated content (version ${newVersion})`,
-          isCurrent: true,
-          createdBy: ctx.userId,
-        });
+      await tx.insert(documentVersion).values({
+        documentId: id,
+        orgId: ctx.orgId,
+        versionNumber: newVersion,
+        content: body.data.content,
+        changeSummary: `Updated content (version ${newVersion})`,
+        isCurrent: true,
+        createdBy: ctx.userId,
+      });
     }
 
     const [row] = await tx

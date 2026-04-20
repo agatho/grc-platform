@@ -1,4 +1,9 @@
-import { db, agentRegistration, agentExecutionLog, agentRecommendation } from "@grc/db";
+import {
+  db,
+  agentRegistration,
+  agentExecutionLog,
+  agentRecommendation,
+} from "@grc/db";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
@@ -15,14 +20,19 @@ export async function POST(
   const [agent] = await db
     .select()
     .from(agentRegistration)
-    .where(and(eq(agentRegistration.id, id), eq(agentRegistration.orgId, ctx.orgId)));
+    .where(
+      and(eq(agentRegistration.id, id), eq(agentRegistration.orgId, ctx.orgId)),
+    );
 
   if (!agent) {
     return Response.json({ error: "Agent not found" }, { status: 404 });
   }
 
   if (agent.status === "running") {
-    return Response.json({ error: "Agent is already running" }, { status: 409 });
+    return Response.json(
+      { error: "Agent is already running" },
+      { status: 409 },
+    );
   }
 
   const startTime = Date.now();
@@ -83,7 +93,8 @@ export async function POST(
           lastRunAt: new Date(),
           nextRunAt: new Date(Date.now() + freq * 60000),
           totalRunCount: agent.totalRunCount + 1,
-          totalRecommendations: agent.totalRecommendations + recommendations.length,
+          totalRecommendations:
+            agent.totalRecommendations + recommendations.length,
           updatedAt: new Date(),
         })
         .where(eq(agentRegistration.id, id));
@@ -112,13 +123,33 @@ async function observePhase(agent: typeof agentRegistration.$inferSelect) {
   const agentType = agent.agentType;
   switch (agentType) {
     case "evidence_review":
-      return { phase: "observe", itemCount: 0, staleEvidence: [], recentUploads: [] };
+      return {
+        phase: "observe",
+        itemCount: 0,
+        staleEvidence: [],
+        recentUploads: [],
+      };
     case "compliance_monitor":
-      return { phase: "observe", itemCount: 0, regulatoryChanges: [], driftIndicators: [] };
+      return {
+        phase: "observe",
+        itemCount: 0,
+        regulatoryChanges: [],
+        driftIndicators: [],
+      };
     case "vendor_signal":
-      return { phase: "observe", itemCount: 0, newsSignals: [], cveMatches: [] };
+      return {
+        phase: "observe",
+        itemCount: 0,
+        newsSignals: [],
+        cveMatches: [],
+      };
     case "sla_monitor":
-      return { phase: "observe", itemCount: 0, upcomingDeadlines: [], overdueItems: [] };
+      return {
+        phase: "observe",
+        itemCount: 0,
+        upcomingDeadlines: [],
+        overdueItems: [],
+      };
     default:
       return { phase: "observe", itemCount: 0 };
   }

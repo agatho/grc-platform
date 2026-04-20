@@ -40,7 +40,8 @@ export async function GET(req: Request) {
           {
             key: "arctos_dpia_criteria",
             label: "DPIA Criteria",
-            description: "Checklist items for Data Protection Impact Assessment",
+            description:
+              "Checklist items for Data Protection Impact Assessment",
           },
         ],
       },

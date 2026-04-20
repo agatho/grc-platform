@@ -14,7 +14,9 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
   const now = new Date();
   let snapshots = 0;
 
-  console.log(`[cron:resilience-score-snapshot] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:resilience-score-snapshot] Starting at ${now.toISOString()}`,
+  );
 
   // Get all orgs with BCMS module enabled
   const orgs = await db
@@ -43,7 +45,9 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
           ) as score
         FROM bc_process WHERE org_id = ${org.id}
       `);
-      factors.biaCompleteness = Number((biaResult as Record<string, unknown>)?.score ?? 0);
+      factors.biaCompleteness = Number(
+        (biaResult as Record<string, unknown>)?.score ?? 0,
+      );
 
       // Exercise completion — exercises completed in last 12 months
       const [exResult] = await db.execute(sql`
@@ -52,7 +56,10 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
         WHERE org_id = ${org.id} AND status = 'completed'
           AND scheduled_date > CURRENT_DATE - INTERVAL '12 months'
       `);
-      factors.exerciseCompletion = Math.min(Number((exResult as Record<string, unknown>)?.score ?? 0) * 20, 100);
+      factors.exerciseCompletion = Math.min(
+        Number((exResult as Record<string, unknown>)?.score ?? 0) * 20,
+        100,
+      );
 
       // Communication readiness — active contact trees
       const [commResult] = await db.execute(sql`
@@ -60,7 +67,10 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
         FROM crisis_contact_tree
         WHERE org_id = ${org.id} AND is_active = true
       `);
-      factors.communicationReadiness = Math.min(Number((commResult as Record<string, unknown>)?.score ?? 0) * 25, 100);
+      factors.communicationReadiness = Math.min(
+        Number((commResult as Record<string, unknown>)?.score ?? 0) * 25,
+        100,
+      );
 
       // Procedure completeness — approved recovery procedures
       const [procResult] = await db.execute(sql`
@@ -68,7 +78,10 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
         FROM recovery_procedure
         WHERE org_id = ${org.id} AND status = 'approved'
       `);
-      factors.procedureCompleteness = Math.min(Number((procResult as Record<string, unknown>)?.score ?? 0) * 20, 100);
+      factors.procedureCompleteness = Math.min(
+        Number((procResult as Record<string, unknown>)?.score ?? 0) * 20,
+        100,
+      );
 
       const overallScore = computeResilienceScore(factors);
 
@@ -80,10 +93,15 @@ export async function processResilienceScoreSnapshot(): Promise<SnapshotResult> 
 
       snapshots++;
     } catch (err) {
-      console.error(`[cron:resilience-score-snapshot] Error for org ${org.id}:`, err);
+      console.error(
+        `[cron:resilience-score-snapshot] Error for org ${org.id}:`,
+        err,
+      );
     }
   }
 
-  console.log(`[cron:resilience-score-snapshot] Completed: ${orgs.length} orgs, ${snapshots} snapshots created`);
+  console.log(
+    `[cron:resilience-score-snapshot] Completed: ${orgs.length} orgs, ${snapshots} snapshots created`,
+  );
   return { processed: orgs.length, snapshots };
 }

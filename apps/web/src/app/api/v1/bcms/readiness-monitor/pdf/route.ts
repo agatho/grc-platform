@@ -25,7 +25,10 @@ export async function GET(_req: Request) {
   const yearStart = new Date(Date.UTC(now.getUTCFullYear(), 0, 1));
   const yearStartIso = yearStart.toISOString().slice(0, 10);
 
-  const crises = await db.select().from(crisisScenario).where(eq(crisisScenario.orgId, ctx.orgId));
+  const crises = await db
+    .select()
+    .from(crisisScenario)
+    .where(eq(crisisScenario.orgId, ctx.orgId));
 
   const activeCrises = crises
     .filter((c) => c.status === "activated")
@@ -78,7 +81,8 @@ export async function GET(_req: Request) {
     );
 
   const exerciseIsoGap = exercisesYtd.length === 0;
-  const overallReady = activeCrises.length === 0 && bcpIssues.length === 0 && !exerciseIsoGap;
+  const overallReady =
+    activeCrises.length === 0 && bcpIssues.length === 0 && !exerciseIsoGap;
 
   const exportTs = now.toLocaleString("de-DE");
 
@@ -106,7 +110,8 @@ export async function GET(_req: Request) {
     ? bcpIssues
         .map((x) => {
           const flags: string[] = [];
-          if (x.reviewOverdue) flags.push(`Review ${x.reviewOverdueDays}d ueberfaellig`);
+          if (x.reviewOverdue)
+            flags.push(`Review ${x.reviewOverdueDays}d ueberfaellig`);
           if (x.untested) flags.push("nie getestet");
           if (x.testStale) flags.push(`Test ${x.testAgeDays}d alt`);
           return `<tr>
@@ -141,12 +146,14 @@ export async function GET(_req: Request) {
 </div>
 
 <h2>Aktive Krisen</h2>
-${crisesHtml
-  ? `<table>
+${
+  crisesHtml
+    ? `<table>
   <thead><tr><th>Szenario</th><th>Severity</th><th>Aktiviert</th><th>4h Early-Warning</th><th>72h Intermediate</th><th>1-Monat Final</th><th>Naechste Deadline</th></tr></thead>
   <tbody>${crisesHtml}</tbody>
 </table>`
-  : `<div class="empty">Keine aktiven Krisen.</div>`}
+    : `<div class="empty">Keine aktiven Krisen.</div>`
+}
 
 <h2>ISO 22301 Kap. 8.5 Exercise-Coverage</h2>
 <p>
@@ -155,12 +162,14 @@ ${crisesHtml
 </p>
 
 <h2>BCPs mit Freshness-Luecken</h2>
-${bcpHtml
-  ? `<table>
+${
+  bcpHtml
+    ? `<table>
   <thead><tr><th>BCP</th><th>Status</th><th>Naechste Review</th><th>Letzter Test</th><th>Befunde</th></tr></thead>
   <tbody>${bcpHtml}</tbody>
 </table>`
-  : `<div class="empty">Alle BCPs aktuell.</div>`}
+    : `<div class="empty">Alle BCPs aktuell.</div>`
+}
 
 <div class="footer">Vertraulich — Erstellt mit ARCTOS GRC Platform — ${exportTs}</div>
 </body></html>`;

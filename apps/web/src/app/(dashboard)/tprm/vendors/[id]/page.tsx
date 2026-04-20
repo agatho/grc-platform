@@ -52,23 +52,32 @@ function VendorDetailInner() {
 
   const [vendor, setVendor] = useState<Record<string, unknown> | null>(null);
   const [contacts, setContacts] = useState<Array<Record<string, unknown>>>([]);
-  const [ddRecords, setDdRecords] = useState<Array<Record<string, unknown>>>([]);
-  const [assessments, setAssessments] = useState<Array<Record<string, unknown>>>([]);
-  const [lksgRecords, setLksgRecords] = useState<Array<Record<string, unknown>>>([]);
-  const [contracts, setContracts] = useState<Array<Record<string, unknown>>>([]);
+  const [ddRecords, setDdRecords] = useState<Array<Record<string, unknown>>>(
+    [],
+  );
+  const [assessments, setAssessments] = useState<
+    Array<Record<string, unknown>>
+  >([]);
+  const [lksgRecords, setLksgRecords] = useState<
+    Array<Record<string, unknown>>
+  >([]);
+  const [contracts, setContracts] = useState<Array<Record<string, unknown>>>(
+    [],
+  );
   const [loading, setLoading] = useState(true);
   const [tab, setTab] = useState("overview");
 
   const fetchAll = useCallback(async () => {
     setLoading(true);
     try {
-      const [vendorRes, contactRes, ddRes, assessRes, contractRes] = await Promise.all([
-        fetch(`/api/v1/vendors/${id}`),
-        fetch(`/api/v1/vendors/${id}/contacts`),
-        fetch(`/api/v1/vendors/${id}/due-diligence`),
-        fetch(`/api/v1/vendors/${id}/risk-assessments`),
-        fetch(`/api/v1/contracts?vendorId=${id}&limit=50`),
-      ]);
+      const [vendorRes, contactRes, ddRes, assessRes, contractRes] =
+        await Promise.all([
+          fetch(`/api/v1/vendors/${id}`),
+          fetch(`/api/v1/vendors/${id}/contacts`),
+          fetch(`/api/v1/vendors/${id}/due-diligence`),
+          fetch(`/api/v1/vendors/${id}/risk-assessments`),
+          fetch(`/api/v1/contracts?vendorId=${id}&limit=50`),
+        ]);
 
       if (vendorRes.ok) {
         const json = await vendorRes.json();
@@ -138,7 +147,11 @@ function VendorDetailInner() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center gap-4">
-        <Button variant="ghost" size="sm" onClick={() => router.push("/tprm/vendors")}>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => router.push("/tprm/vendors")}
+        >
           <ArrowLeft size={16} />
         </Button>
         <div className="flex-1">
@@ -150,7 +163,10 @@ function VendorDetailInner() {
         <Badge variant="outline" className={TIER_COLORS[String(v.tier)] ?? ""}>
           {t(`tier.${String(v.tier)}`)}
         </Badge>
-        <Badge variant="outline" className={STATUS_COLORS[String(v.status)] ?? ""}>
+        <Badge
+          variant="outline"
+          className={STATUS_COLORS[String(v.status)] ?? ""}
+        >
           {t(`status.${String(v.status)}`)}
         </Badge>
         <Button variant="outline" size="sm" onClick={fetchAll}>
@@ -184,22 +200,61 @@ function VendorDetailInner() {
         <TabsContent value="overview" className="mt-4 space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">{t("vendor.details")}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                {t("vendor.details")}
+              </h3>
               <dl className="space-y-3">
-                <DetailRow label={t("vendor.category")} value={t(`category.${String(v.category)}`)} />
-                <DetailRow label={t("vendor.country")} value={String(v.country ?? "\u2014")} />
-                <DetailRow label={t("vendor.website")} value={String(v.website ?? "\u2014")} />
-                <DetailRow label={t("vendor.taxId")} value={String(v.taxId ?? "\u2014")} />
-                <DetailRow label={t("vendor.owner")} value={String(v.ownerName ?? "\u2014")} />
+                <DetailRow
+                  label={t("vendor.category")}
+                  value={t(`category.${String(v.category)}`)}
+                />
+                <DetailRow
+                  label={t("vendor.country")}
+                  value={String(v.country ?? "\u2014")}
+                />
+                <DetailRow
+                  label={t("vendor.website")}
+                  value={String(v.website ?? "\u2014")}
+                />
+                <DetailRow
+                  label={t("vendor.taxId")}
+                  value={String(v.taxId ?? "\u2014")}
+                />
+                <DetailRow
+                  label={t("vendor.owner")}
+                  value={String(v.ownerName ?? "\u2014")}
+                />
               </dl>
             </div>
             <div className="rounded-lg border border-gray-200 bg-white p-6">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4">{t("vendor.riskInfo")}</h3>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4">
+                {t("vendor.riskInfo")}
+              </h3>
               <dl className="space-y-3">
-                <DetailRow label={t("vendor.inherentScore")} value={v.inherentRiskScore != null ? `${v.inherentRiskScore}/25` : "\u2014"} />
-                <DetailRow label={t("vendor.residualScore")} value={v.residualRiskScore != null ? `${v.residualRiskScore}/25` : "\u2014"} />
-                <DetailRow label={t("vendor.lastAssessment")} value={String(v.lastAssessmentDate ?? "\u2014")} />
-                <DetailRow label={t("vendor.nextAssessment")} value={String(v.nextAssessmentDate ?? "\u2014")} />
+                <DetailRow
+                  label={t("vendor.inherentScore")}
+                  value={
+                    v.inherentRiskScore != null
+                      ? `${v.inherentRiskScore}/25`
+                      : "\u2014"
+                  }
+                />
+                <DetailRow
+                  label={t("vendor.residualScore")}
+                  value={
+                    v.residualRiskScore != null
+                      ? `${v.residualRiskScore}/25`
+                      : "\u2014"
+                  }
+                />
+                <DetailRow
+                  label={t("vendor.lastAssessment")}
+                  value={String(v.lastAssessmentDate ?? "\u2014")}
+                />
+                <DetailRow
+                  label={t("vendor.nextAssessment")}
+                  value={String(v.nextAssessmentDate ?? "\u2014")}
+                />
               </dl>
             </div>
           </div>
@@ -214,14 +269,27 @@ function VendorDetailInner() {
             ) : (
               <div className="space-y-2">
                 {contacts.map((c: Record<string, unknown>) => (
-                  <div key={String(c.id)} className="flex items-center justify-between rounded border border-gray-100 px-3 py-2">
+                  <div
+                    key={String(c.id)}
+                    className="flex items-center justify-between rounded border border-gray-100 px-3 py-2"
+                  >
                     <div>
-                      <span className="text-sm font-medium text-gray-900">{String(c.name)}</span>
-                      {Boolean(c.role) && <span className="ml-2 text-xs text-gray-500">({String(c.role)})</span>}
+                      <span className="text-sm font-medium text-gray-900">
+                        {String(c.name)}
+                      </span>
+                      {Boolean(c.role) && (
+                        <span className="ml-2 text-xs text-gray-500">
+                          ({String(c.role)})
+                        </span>
+                      )}
                     </div>
                     <div className="flex items-center gap-3 text-sm text-gray-500">
                       {Boolean(c.email) && <span>{String(c.email)}</span>}
-                      {Boolean(c.isPrimary) && <Badge variant="outline" className="text-xs">Primary</Badge>}
+                      {Boolean(c.isPrimary) && (
+                        <Badge variant="outline" className="text-xs">
+                          Primary
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -233,7 +301,9 @@ function VendorDetailInner() {
         {/* Due Diligence */}
         <TabsContent value="dd" className="mt-4 space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">{t("dd.history")}</h3>
+            <h3 className="text-sm font-semibold text-gray-900">
+              {t("dd.history")}
+            </h3>
             <Button size="sm" onClick={handleSendDD}>
               <Send size={14} /> {t("dd.send")}
             </Button>
@@ -243,17 +313,35 @@ function VendorDetailInner() {
           ) : (
             <div className="space-y-2">
               {ddRecords.map((dd: Record<string, unknown>) => (
-                <div key={String(dd.id)} className="rounded border border-gray-200 bg-white px-4 py-3">
+                <div
+                  key={String(dd.id)}
+                  className="rounded border border-gray-200 bg-white px-4 py-3"
+                >
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-medium text-gray-900">
-                      {t("dd.questionnaire")} {String(dd.questionnaireVersion ?? "v1")}
+                      {t("dd.questionnaire")}{" "}
+                      {String(dd.questionnaireVersion ?? "v1")}
                     </span>
                     <Badge variant="outline">{String(dd.status)}</Badge>
                   </div>
                   <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
-                    <span>{t("dd.sentAt")}: {dd.sentAt ? new Date(String(dd.sentAt)).toLocaleDateString() : "\u2014"}</span>
-                    {Boolean(dd.completedAt) && <span>{t("dd.completedAt")}: {new Date(String(dd.completedAt)).toLocaleDateString()}</span>}
-                    {dd.riskScore != null && dd.riskScore !== undefined && <span>{t("dd.riskScore")}: {String(dd.riskScore)}</span>}
+                    <span>
+                      {t("dd.sentAt")}:{" "}
+                      {dd.sentAt
+                        ? new Date(String(dd.sentAt)).toLocaleDateString()
+                        : "\u2014"}
+                    </span>
+                    {Boolean(dd.completedAt) && (
+                      <span>
+                        {t("dd.completedAt")}:{" "}
+                        {new Date(String(dd.completedAt)).toLocaleDateString()}
+                      </span>
+                    )}
+                    {dd.riskScore != null && dd.riskScore !== undefined && (
+                      <span>
+                        {t("dd.riskScore")}: {String(dd.riskScore)}
+                      </span>
+                    )}
                   </div>
                 </div>
               ))}
@@ -263,24 +351,41 @@ function VendorDetailInner() {
 
         {/* Risk Assessment */}
         <TabsContent value="risk" className="mt-4 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900">{t("risk.history")}</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("risk.history")}
+          </h3>
           {assessments.length === 0 ? (
             <p className="text-sm text-gray-400">{t("risk.noAssessments")}</p>
           ) : (
             <div className="space-y-2">
               {assessments.map((a: Record<string, unknown>) => (
-                <div key={String(a.id)} className="rounded border border-gray-200 bg-white px-4 py-3">
+                <div
+                  key={String(a.id)}
+                  className="rounded border border-gray-200 bg-white px-4 py-3"
+                >
                   <div className="flex items-center justify-between">
-                    <span className="text-sm font-medium text-gray-900">{String(a.assessmentDate)}</span>
+                    <span className="text-sm font-medium text-gray-900">
+                      {String(a.assessmentDate)}
+                    </span>
                     <div className="flex items-center gap-2 text-sm">
-                      <span className="text-gray-500">{t("risk.inherent")}: {String(a.inherentRiskScore)}/25</span>
-                      <span className="text-gray-500">{t("risk.residual")}: {String(a.residualRiskScore)}/25</span>
+                      <span className="text-gray-500">
+                        {t("risk.inherent")}: {String(a.inherentRiskScore)}/25
+                      </span>
+                      <span className="text-gray-500">
+                        {t("risk.residual")}: {String(a.residualRiskScore)}/25
+                      </span>
                       {Boolean(a.riskTrend) && (
-                        <Badge variant="outline" className="text-xs">{String(a.riskTrend)}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {String(a.riskTrend)}
+                        </Badge>
                       )}
                     </div>
                   </div>
-                  {Boolean(a.notes) && <p className="text-xs text-gray-500 mt-1">{String(a.notes)}</p>}
+                  {Boolean(a.notes) && (
+                    <p className="text-xs text-gray-500 mt-1">
+                      {String(a.notes)}
+                    </p>
+                  )}
                 </div>
               ))}
             </div>
@@ -289,7 +394,9 @@ function VendorDetailInner() {
 
         {/* Contracts */}
         <TabsContent value="contracts" className="mt-4 space-y-4">
-          <h3 className="text-sm font-semibold text-gray-900">{t("tab.contracts")}</h3>
+          <h3 className="text-sm font-semibold text-gray-900">
+            {t("tab.contracts")}
+          </h3>
           {contracts.length === 0 ? (
             <p className="text-sm text-gray-400">{t("vendor.noContracts")}</p>
           ) : (
@@ -300,10 +407,16 @@ function VendorDetailInner() {
                   href={`/contracts/${String(c.id)}`}
                   className="flex items-center justify-between rounded border border-gray-200 bg-white px-4 py-3 hover:border-blue-300 transition-colors"
                 >
-                  <span className="text-sm font-medium text-blue-600">{String(c.title)}</span>
+                  <span className="text-sm font-medium text-blue-600">
+                    {String(c.title)}
+                  </span>
                   <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="text-xs">{String(c.contractType)}</Badge>
-                    <Badge variant="outline" className="text-xs">{String(c.status)}</Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {String(c.contractType)}
+                    </Badge>
+                    <Badge variant="outline" className="text-xs">
+                      {String(c.status)}
+                    </Badge>
                   </div>
                 </Link>
               ))}
@@ -314,20 +427,33 @@ function VendorDetailInner() {
         {/* LkSG */}
         {v.isLksgRelevant && (
           <TabsContent value="lksg" className="mt-4 space-y-4">
-            <h3 className="text-sm font-semibold text-gray-900">{t("lksg.assessments")}</h3>
+            <h3 className="text-sm font-semibold text-gray-900">
+              {t("lksg.assessments")}
+            </h3>
             {lksgRecords.length === 0 ? (
               <p className="text-sm text-gray-400">{t("lksg.noAssessments")}</p>
             ) : (
               <div className="space-y-2">
                 {lksgRecords.map((a: Record<string, unknown>) => (
-                  <div key={String(a.id)} className="rounded border border-gray-200 bg-white px-4 py-3">
+                  <div
+                    key={String(a.id)}
+                    className="rounded border border-gray-200 bg-white px-4 py-3"
+                  >
                     <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium text-gray-900">{String(a.assessmentDate)}</span>
+                      <span className="text-sm font-medium text-gray-900">
+                        {String(a.assessmentDate)}
+                      </span>
                       <div className="flex items-center gap-2">
-                        <Badge variant="outline" className="text-xs">{String(a.lksgTier)}</Badge>
-                        <Badge variant="outline" className="text-xs">{String(a.status)}</Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {String(a.lksgTier)}
+                        </Badge>
+                        <Badge variant="outline" className="text-xs">
+                          {String(a.status)}
+                        </Badge>
                         {Boolean(a.overallRiskLevel) && (
-                          <Badge variant="outline" className="text-xs">{String(a.overallRiskLevel)}</Badge>
+                          <Badge variant="outline" className="text-xs">
+                            {String(a.overallRiskLevel)}
+                          </Badge>
                         )}
                       </div>
                     </div>

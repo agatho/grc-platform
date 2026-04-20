@@ -36,10 +36,7 @@ export async function GET(
     .select()
     .from(processVersion)
     .where(
-      and(
-        eq(processVersion.id, versionId),
-        eq(processVersion.processId, id),
-      ),
+      and(eq(processVersion.id, versionId), eq(processVersion.processId, id)),
     );
 
   if (!version) {

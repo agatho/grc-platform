@@ -108,7 +108,9 @@ function SoxComplianceInner() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold">{data?.inScopeControls ?? 0}</div>
+            <div className="text-3xl font-bold">
+              {data?.inScopeControls ?? 0}
+            </div>
           </CardContent>
         </Card>
         <Card>
@@ -120,7 +122,9 @@ function SoxComplianceInner() {
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold text-green-600">
-              {data?.coveragePercent != null ? `${data.coveragePercent}%` : "0%"}
+              {data?.coveragePercent != null
+                ? `${data.coveragePercent}%`
+                : "0%"}
             </div>
           </CardContent>
         </Card>
@@ -143,7 +147,9 @@ function SoxComplianceInner() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-xl font-bold">{data?.materialityThreshold ?? "--"}</div>
+            <div className="text-xl font-bold">
+              {data?.materialityThreshold ?? "--"}
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -193,7 +199,9 @@ function CollapsibleSection({
           <span className="flex items-center gap-2">
             {icon}
             {title}
-            <Badge variant="outline" className="ml-2">{items.length}</Badge>
+            <Badge variant="outline" className="ml-2">
+              {items.length}
+            </Badge>
           </span>
           {open ? (
             <ChevronDown className="h-4 w-4 text-muted-foreground" />
@@ -250,7 +258,10 @@ function ScopeBadge({ status }: { status: string }) {
   switch (status) {
     case "in_scope":
       return (
-        <Badge variant="default" className="bg-green-100 text-green-800 border-green-300">
+        <Badge
+          variant="default"
+          className="bg-green-100 text-green-800 border-green-300"
+        >
           In Scope
         </Badge>
       );

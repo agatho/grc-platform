@@ -60,10 +60,7 @@ export async function GET(req: Request) {
       })
       .from(vendor)
       .where(
-        and(
-          baseWhere,
-          sql`${vendor.nextAssessmentDate}::date < CURRENT_DATE`,
-        ),
+        and(baseWhere, sql`${vendor.nextAssessmentDate}::date < CURRENT_DATE`),
       )
       .limit(20),
 

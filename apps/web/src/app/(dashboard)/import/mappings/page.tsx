@@ -50,22 +50,19 @@ export default function ImportMappingsPage() {
     fetchMappings();
   }, [fetchMappings]);
 
-  const handleDelete = useCallback(
-    async (id: string, entityType: string) => {
-      try {
-        const res = await fetch(
-          `/api/v1/import/mappings/${entityType}?id=${id}`,
-          { method: "DELETE" },
-        );
-        if (!res.ok) throw new Error("Failed to delete");
-        setMappings((prev) => prev.filter((m) => m.id !== id));
-        toast.success("Mapping deleted");
-      } catch {
-        toast.error("Failed to delete mapping");
-      }
-    },
-    [],
-  );
+  const handleDelete = useCallback(async (id: string, entityType: string) => {
+    try {
+      const res = await fetch(
+        `/api/v1/import/mappings/${entityType}?id=${id}`,
+        { method: "DELETE" },
+      );
+      if (!res.ok) throw new Error("Failed to delete");
+      setMappings((prev) => prev.filter((m) => m.id !== id));
+      toast.success("Mapping deleted");
+    } catch {
+      toast.error("Failed to delete mapping");
+    }
+  }, []);
 
   const columns: ColumnDef<MappingRow>[] = [
     {
@@ -102,9 +99,7 @@ export default function ImportMappingsPage() {
         <Button
           variant="ghost"
           size="sm"
-          onClick={() =>
-            handleDelete(row.original.id, row.original.entityType)
-          }
+          onClick={() => handleDelete(row.original.id, row.original.entityType)}
         >
           <Trash2 className="h-3 w-3 text-destructive" />
         </Button>

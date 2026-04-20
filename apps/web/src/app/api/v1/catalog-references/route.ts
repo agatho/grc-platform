@@ -70,9 +70,7 @@ export async function GET(req: Request) {
       eq(catalogEntryReference.entityId, entityId!),
     ];
     if (entityType) {
-      conditions.push(
-        eq(catalogEntryReference.entityType, entityType),
-      );
+      conditions.push(eq(catalogEntryReference.entityType, entityType));
     }
     refs = await db
       .select()

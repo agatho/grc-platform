@@ -10,7 +10,9 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = departmentManagerDashboardQuerySchema.parse(Object.fromEntries(url.searchParams));
+  const query = departmentManagerDashboardQuerySchema.parse(
+    Object.fromEntries(url.searchParams),
+  );
 
   // Tasks assigned to current user or department
   const [taskSummary] = await db.execute(sql`

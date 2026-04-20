@@ -1,10 +1,4 @@
-import {
-  db,
-  dpia,
-  dpiaRisk,
-  dpiaMeasure,
-  user,
-} from "@grc/db";
+import { db, dpia, dpiaRisk, dpiaMeasure, user } from "@grc/db";
 import { updateDpiaSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
@@ -53,11 +47,7 @@ export async function GET(
     .from(dpia)
     .leftJoin(user, eq(dpia.residualRiskSignOffId, user.id))
     .where(
-      and(
-        eq(dpia.id, id),
-        eq(dpia.orgId, ctx.orgId),
-        isNull(dpia.deletedAt),
-      ),
+      and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)),
     );
 
   if (!row) {
@@ -96,7 +86,7 @@ export async function GET(
       .where(and(eq(dpiaMeasure.dpiaId, id), eq(dpiaMeasure.orgId, ctx.orgId))),
   ]);
 
-  const risks = risksResult.rows ?? [];
+  const risks = (risksResult as unknown as unknown[]) ?? [];
 
   return Response.json({ data: { ...row, risks, measures } });
 }
@@ -118,11 +108,7 @@ export async function PUT(
     .select()
     .from(dpia)
     .where(
-      and(
-        eq(dpia.id, id),
-        eq(dpia.orgId, ctx.orgId),
-        isNull(dpia.deletedAt),
-      ),
+      and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)),
     );
 
   if (!existing) {

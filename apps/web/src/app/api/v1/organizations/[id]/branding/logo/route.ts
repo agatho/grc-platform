@@ -100,7 +100,11 @@ export async function DELETE(
     if (branding?.logoPath) {
       // Try to delete file from disk
       try {
-        const filePath = join(UPLOAD_DIR, orgId, branding.logoPath.split("/").pop()!);
+        const filePath = join(
+          UPLOAD_DIR,
+          orgId,
+          branding.logoPath.split("/").pop()!,
+        );
         await unlink(filePath);
       } catch {
         // File may not exist, that is fine

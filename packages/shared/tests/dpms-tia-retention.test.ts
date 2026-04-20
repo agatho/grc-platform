@@ -33,11 +33,19 @@ describe("validateTiaQuality", () => {
     expect(blockers.filter((b) => b.severity === "error")).toHaveLength(0);
   });
   it("blocks schrems_ii_assessment too short", () => {
-    const blockers = validateTiaQuality({ ...validTiaSnapshot, schremsIiAssessment: "short" });
-    expect(blockers.some((b) => b.code === "schrems_ii_assessment_too_short")).toBe(true);
+    const blockers = validateTiaQuality({
+      ...validTiaSnapshot,
+      schremsIiAssessment: "short",
+    });
+    expect(
+      blockers.some((b) => b.code === "schrems_ii_assessment_too_short"),
+    ).toBe(true);
   });
   it("warns missing responsible", () => {
-    const blockers = validateTiaQuality({ ...validTiaSnapshot, responsibleId: null });
+    const blockers = validateTiaQuality({
+      ...validTiaSnapshot,
+      responsibleId: null,
+    });
     const warn = blockers.find((b) => b.code === "missing_responsible");
     expect(warn?.severity).toBe("warning");
   });
@@ -98,7 +106,9 @@ describe("decideRetention", () => {
       schedule,
       recordId: "r1",
       triggerEventAt,
-      activeExceptions: [{ id: "hold1", reason: "Rechtsstreit XYZ", validUntil: null }],
+      activeExceptions: [
+        { id: "hold1", reason: "Rechtsstreit XYZ", validUntil: null },
+      ],
     });
     expect(d.shouldDelete).toBe(false);
     expect(d.blockedByException?.id).toBe("hold1");
@@ -113,7 +123,9 @@ describe("decideRetention", () => {
       schedule,
       recordId: "r1",
       triggerEventAt,
-      activeExceptions: [{ id: "hold1", reason: "Abgelaufen", validUntil: past }],
+      activeExceptions: [
+        { id: "hold1", reason: "Abgelaufen", validUntil: past },
+      ],
     });
     expect(d.shouldDelete).toBe(true);
   });
@@ -170,21 +182,33 @@ describe("validateConsentType", () => {
 describe("isConsentStillValid", () => {
   it("valid when not withdrawn or expired", () => {
     expect(
-      isConsentStillValid({ grantedAt: new Date(), withdrawnAt: null, expiresAt: null }),
+      isConsentStillValid({
+        grantedAt: new Date(),
+        withdrawnAt: null,
+        expiresAt: null,
+      }),
     ).toBe(true);
   });
   it("invalid after withdrawal", () => {
     const past = new Date();
     past.setDate(past.getDate() - 1);
     expect(
-      isConsentStillValid({ grantedAt: new Date(), withdrawnAt: past, expiresAt: null }),
+      isConsentStillValid({
+        grantedAt: new Date(),
+        withdrawnAt: past,
+        expiresAt: null,
+      }),
     ).toBe(false);
   });
   it("invalid after expiration", () => {
     const past = new Date();
     past.setDate(past.getDate() - 1);
     expect(
-      isConsentStillValid({ grantedAt: new Date(), withdrawnAt: null, expiresAt: past }),
+      isConsentStillValid({
+        grantedAt: new Date(),
+        withdrawnAt: null,
+        expiresAt: past,
+      }),
     ).toBe(false);
   });
 });

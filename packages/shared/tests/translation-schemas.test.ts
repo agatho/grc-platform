@@ -144,8 +144,14 @@ describe("aiBatchTranslateSchema", () => {
   it("should accept valid batch request", () => {
     const result = aiBatchTranslateSchema.safeParse({
       entities: [
-        { entityType: "risk", entityId: "550e8400-e29b-41d4-a716-446655440000" },
-        { entityType: "control", entityId: "550e8400-e29b-41d4-a716-446655440001" },
+        {
+          entityType: "risk",
+          entityId: "550e8400-e29b-41d4-a716-446655440000",
+        },
+        {
+          entityType: "control",
+          entityId: "550e8400-e29b-41d4-a716-446655440001",
+        },
       ],
       targetLanguages: ["en"],
     });

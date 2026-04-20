@@ -24,10 +24,7 @@ export {
 } from "./renderers/pdf-renderer";
 export { renderExcel } from "./renderers/excel-renderer";
 export { DEFAULT_REPORT_TEMPLATES } from "./default-templates";
-export {
-  seedDefaultTemplates,
-  seedDefaultThreatFeeds,
-} from "./seed";
+export { seedDefaultTemplates, seedDefaultThreatFeeds } from "./seed";
 export {
   getThreatDashboardKPIs,
   getThreatHeatmap,

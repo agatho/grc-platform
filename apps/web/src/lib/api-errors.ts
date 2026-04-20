@@ -74,7 +74,9 @@ interface ShortOpts {
 }
 
 export const problem = {
-  validation(opts: ShortOpts & { errors: Array<{ path: string; message: string }> }): Response {
+  validation(
+    opts: ShortOpts & { errors: Array<{ path: string; message: string }> },
+  ): Response {
     return problemResponse({
       type: ErrorTypes.VALIDATION,
       title: "Validation failed",

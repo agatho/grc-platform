@@ -40,12 +40,26 @@ const EVENT_TYPE_STYLES: Record<string, string> = {
 };
 
 const ENTITY_TYPES = [
-  "", "risk", "control", "process", "asset", "vendor", "contract",
-  "document", "finding", "incident", "audit", "kri",
+  "",
+  "risk",
+  "control",
+  "process",
+  "asset",
+  "vendor",
+  "contract",
+  "document",
+  "finding",
+  "incident",
+  "audit",
+  "kri",
 ];
 
 const EVENT_TYPES = [
-  "", "entity.created", "entity.updated", "entity.deleted", "entity.status_changed",
+  "",
+  "entity.created",
+  "entity.updated",
+  "entity.deleted",
+  "entity.status_changed",
 ];
 
 export default function EventLogPage() {
@@ -54,7 +68,9 @@ export default function EventLogPage() {
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
-  const [selectedEvent, setSelectedEvent] = useState<EventLogEntry | null>(null);
+  const [selectedEvent, setSelectedEvent] = useState<EventLogEntry | null>(
+    null,
+  );
 
   // Filters
   const [filterEntityType, setFilterEntityType] = useState("");
@@ -170,7 +186,8 @@ export default function EventLogPage() {
               <ChevronRight className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
               <Badge
                 className={
-                  EVENT_TYPE_STYLES[evt.eventType] ?? "bg-gray-100 text-gray-600"
+                  EVENT_TYPE_STYLES[evt.eventType] ??
+                  "bg-gray-100 text-gray-600"
                 }
               >
                 {evt.eventType.replace("entity.", "")}
@@ -218,7 +235,10 @@ export default function EventLogPage() {
       )}
 
       {/* Event Detail Dialog */}
-      <Dialog open={!!selectedEvent} onOpenChange={() => setSelectedEvent(null)}>
+      <Dialog
+        open={!!selectedEvent}
+        onOpenChange={() => setSelectedEvent(null)}
+      >
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
@@ -230,7 +250,9 @@ export default function EventLogPage() {
             <div className="space-y-4">
               <div className="grid grid-cols-2 gap-3 text-sm">
                 <div>
-                  <span className="text-muted-foreground">{t("events.eventType")}:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("events.eventType")}:
+                  </span>{" "}
                   <Badge
                     className={
                       EVENT_TYPE_STYLES[selectedEvent.eventType] ??
@@ -241,20 +263,30 @@ export default function EventLogPage() {
                   </Badge>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">{t("events.entityType")}:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("events.entityType")}:
+                  </span>{" "}
                   <strong>{selectedEvent.entityType}</strong>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">{t("events.entityId")}:</span>{" "}
-                  <code className="font-mono text-xs">{selectedEvent.entityId}</code>
+                  <span className="text-muted-foreground">
+                    {t("events.entityId")}:
+                  </span>{" "}
+                  <code className="font-mono text-xs">
+                    {selectedEvent.entityId}
+                  </code>
                 </div>
                 <div>
-                  <span className="text-muted-foreground">{t("events.timestamp")}:</span>{" "}
+                  <span className="text-muted-foreground">
+                    {t("events.timestamp")}:
+                  </span>{" "}
                   {new Date(selectedEvent.emittedAt).toLocaleString("de-DE")}
                 </div>
               </div>
               <div>
-                <h4 className="text-sm font-medium mb-2">{t("events.payload")}</h4>
+                <h4 className="text-sm font-medium mb-2">
+                  {t("events.payload")}
+                </h4>
                 <pre className="rounded-lg bg-muted p-4 text-xs font-mono overflow-x-auto max-h-[400px] overflow-y-auto">
                   {JSON.stringify(selectedEvent.payload, null, 2)}
                 </pre>

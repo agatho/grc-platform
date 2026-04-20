@@ -24,7 +24,10 @@ export async function PATCH(
   const { id: processId } = await params;
   const parsed = metroLayoutSchema.safeParse(await req.json());
   if (!parsed.success) {
-    return Response.json({ error: "Validation failed", details: parsed.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
   }
   const body = parsed.data;
 
@@ -37,7 +40,11 @@ export async function PATCH(
     return Response.json({ error: "Process not found" }, { status: 404 });
   }
 
-  const layoutJson = JSON.stringify({ x: body.x, y: body.y, lineColor: body.lineColor ?? null });
+  const layoutJson = JSON.stringify({
+    x: body.x,
+    y: body.y,
+    lineColor: body.lineColor ?? null,
+  });
 
   await withAuditContext(ctx, async (tx) => {
     await tx.execute(

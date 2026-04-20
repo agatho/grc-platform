@@ -59,7 +59,9 @@ export async function GET(req: Request) {
       roniCiso: item.roniCiso ? Number(item.roniCiso) : null,
       inherentAle: item.inherentAle ? Number(item.inherentAle) : null,
       residualAle: item.residualAle ? Number(item.residualAle) : null,
-      riskReductionValue: item.riskReductionValue ? Number(item.riskReductionValue) : null,
+      riskReductionValue: item.riskReductionValue
+        ? Number(item.riskReductionValue)
+        : null,
       calculationMethod: item.calculationMethod,
       computedAt: item.computedAt,
     })),

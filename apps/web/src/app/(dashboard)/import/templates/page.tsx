@@ -84,64 +84,60 @@ export default function ImportTemplatesPage() {
 
   return (
     <TooltipProvider>
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">{t("templates.title")}</h1>
-        <p className="text-muted-foreground">{t("templates.subtitle")}</p>
-      </div>
+      <div className="space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">{t("templates.title")}</h1>
+          <p className="text-muted-foreground">{t("templates.subtitle")}</p>
+        </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-        {ENTITY_TYPES.map((entity) => {
-          const Icon = entity.icon;
-          return (
-            <Card key={entity.key} className="flex flex-col justify-between">
-              <CardHeader>
-                <div className="flex items-center gap-2">
-                  <Icon className="h-5 w-5 text-primary" />
-                  <CardTitle className="text-base">
-                    {t(`entityTypes.${entity.key}`)}
-                  </CardTitle>
-                </div>
-                <CardDescription>
-                  {t("templates.info")}
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="text-xs text-muted-foreground">
-                      <span className="font-medium">
-                        {t("templates.requiredFields")}:
-                      </span>{" "}
-                      {entity.requiredFields.join(", ")}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>
-                      These fields must be present in your CSV file
-                    </p>
-                  </TooltipContent>
-                </Tooltip>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {ENTITY_TYPES.map((entity) => {
+            const Icon = entity.icon;
+            return (
+              <Card key={entity.key} className="flex flex-col justify-between">
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Icon className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-base">
+                      {t(`entityTypes.${entity.key}`)}
+                    </CardTitle>
+                  </div>
+                  <CardDescription>{t("templates.info")}</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <div className="text-xs text-muted-foreground">
+                        <span className="font-medium">
+                          {t("templates.requiredFields")}:
+                        </span>{" "}
+                        {entity.requiredFields.join(", ")}
+                      </div>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>These fields must be present in your CSV file</p>
+                    </TooltipContent>
+                  </Tooltip>
 
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={() =>
-                    window.open(
-                      `/api/v1/import/templates/${entity.key}`,
-                      "_blank",
-                    )
-                  }
-                >
-                  <Download className="mr-2 h-4 w-4" />
-                  {t("templates.download")}
-                </Button>
-              </CardContent>
-            </Card>
-          );
-        })}
+                  <Button
+                    variant="outline"
+                    className="w-full"
+                    onClick={() =>
+                      window.open(
+                        `/api/v1/import/templates/${entity.key}`,
+                        "_blank",
+                      )
+                    }
+                  >
+                    <Download className="mr-2 h-4 w-4" />
+                    {t("templates.download")}
+                  </Button>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
       </div>
-    </div>
     </TooltipProvider>
   );
 }

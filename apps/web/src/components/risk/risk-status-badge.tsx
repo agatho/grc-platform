@@ -9,7 +9,10 @@ import type { RiskStatus } from "@grc/shared";
 // Status -> style mapping
 // ---------------------------------------------------------------------------
 
-const STATUS_STYLES: Record<RiskStatus, { bg: string; text: string; border: string }> = {
+const STATUS_STYLES: Record<
+  RiskStatus,
+  { bg: string; text: string; border: string }
+> = {
   identified: {
     bg: "bg-gray-100",
     text: "text-gray-700",

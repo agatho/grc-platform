@@ -29,7 +29,10 @@ export type AssessmentPhase =
   | "follow_up";
 
 // Phase-zu-Status-Mapping: welche Phase aktiv ist bei welchem Enum-Status
-export function phaseForStatus(status: AssessmentStatus, completionPercentage: number): AssessmentPhase {
+export function phaseForStatus(
+  status: AssessmentStatus,
+  completionPercentage: number,
+): AssessmentPhase {
   if (status === "cancelled") return "setup";
   if (status === "completed") return "follow_up";
   if (status === "review") return "reporting";
@@ -49,13 +52,14 @@ export function phaseForStatus(status: AssessmentStatus, completionPercentage: n
 // Erlaubte Status-Transitionen. Jede Transition braucht eine Gate-
 // Validation (siehe validateTransition). Zusaetzlich kann in denselben
 // Status "in_progress" zurueckgekehrt werden (Status-idempotent).
-export const ALLOWED_TRANSITIONS: Record<AssessmentStatus, AssessmentStatus[]> = {
-  planning: ["in_progress", "cancelled"],
-  in_progress: ["review", "cancelled"],
-  review: ["in_progress", "completed", "cancelled"],
-  completed: [],
-  cancelled: [],
-};
+export const ALLOWED_TRANSITIONS: Record<AssessmentStatus, AssessmentStatus[]> =
+  {
+    planning: ["in_progress", "cancelled"],
+    in_progress: ["review", "cancelled"],
+    review: ["in_progress", "completed", "cancelled"],
+    completed: [],
+    cancelled: [],
+  };
 
 export interface AssessmentSnapshot {
   status: AssessmentStatus;
@@ -97,7 +101,8 @@ export function validateGate1Setup(run: AssessmentSnapshot): Blocker[] {
   if (!run.description || run.description.trim().length < 200) {
     blockers.push({
       code: "scope_description_too_short",
-      message: "Scope-Statement (description) muss mindestens 200 Zeichen haben.",
+      message:
+        "Scope-Statement (description) muss mindestens 200 Zeichen haben.",
       gate: "G1",
       severity: "error",
     });
@@ -253,7 +258,8 @@ export function validateGate4Coverage(run: AssessmentSnapshot): Blocker[] {
   if (run.totalEvaluations === 0) {
     blockers.push({
       code: "no_evaluations",
-      message: "Keine Evaluations erzeugt. Fuehre initialize-soa + generate-evaluations zuerst aus.",
+      message:
+        "Keine Evaluations erzeugt. Fuehre initialize-soa + generate-evaluations zuerst aus.",
       gate: "G4",
       severity: "error",
     });
@@ -343,7 +349,9 @@ export interface PhaseChecklist {
   }>;
 }
 
-export function buildSetupChecklist(snapshot: AssessmentSnapshot): PhaseChecklist {
+export function buildSetupChecklist(
+  snapshot: AssessmentSnapshot,
+): PhaseChecklist {
   const steps = [
     {
       key: "name",
@@ -364,8 +372,12 @@ export function buildSetupChecklist(snapshot: AssessmentSnapshot): PhaseChecklis
       key: "period",
       label: "Assessment-Periode (min. 14 Tage) gesetzt",
       done:
-        !!snapshot.periodStart && !!snapshot.periodEnd &&
-        (new Date(snapshot.periodEnd).getTime() - new Date(snapshot.periodStart).getTime()) / (1000 * 60 * 60 * 24) >= 14,
+        !!snapshot.periodStart &&
+        !!snapshot.periodEnd &&
+        (new Date(snapshot.periodEnd).getTime() -
+          new Date(snapshot.periodStart).getTime()) /
+          (1000 * 60 * 60 * 24) >=
+          14,
     },
     {
       key: "lead_assessor",

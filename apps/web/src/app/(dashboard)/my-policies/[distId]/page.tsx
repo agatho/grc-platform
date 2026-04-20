@@ -119,7 +119,10 @@ export default function AcknowledgePolicyPage() {
     };
   }, [policy?.status]);
 
-  const setQuizAnswer = (questionIndex: number, selectedOptionIndex: number) => {
+  const setQuizAnswer = (
+    questionIndex: number,
+    selectedOptionIndex: number,
+  ) => {
     setQuizResponses((prev) => {
       const existing = prev.filter((r) => r.questionIndex !== questionIndex);
       return [...existing, { questionIndex, selectedOptionIndex }];
@@ -191,10 +194,7 @@ export default function AcknowledgePolicyPage() {
     return (
       <ModuleGate moduleKey="dms">
         <div className="mx-auto max-w-2xl space-y-6">
-          <Button
-            variant="ghost"
-            onClick={() => router.push("/my-policies")}
-          >
+          <Button variant="ghost" onClick={() => router.push("/my-policies")}>
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("myPolicies.backToList")}
           </Button>
@@ -204,7 +204,9 @@ export default function AcknowledgePolicyPage() {
               {result.status === "acknowledged" ? (
                 <>
                   <CheckCircle className="mx-auto h-16 w-16 text-green-600" />
-                  <h2 className="text-xl font-bold">{t("acknowledge.success")}</h2>
+                  <h2 className="text-xl font-bold">
+                    {t("acknowledge.success")}
+                  </h2>
                   <p className="text-muted-foreground">
                     {t("acknowledge.successDesc")}
                   </p>
@@ -212,7 +214,9 @@ export default function AcknowledgePolicyPage() {
               ) : (
                 <>
                   <ShieldCheck className="mx-auto h-16 w-16 text-orange-500" />
-                  <h2 className="text-xl font-bold">{t("acknowledge.quizFailed")}</h2>
+                  <h2 className="text-xl font-bold">
+                    {t("acknowledge.quizFailed")}
+                  </h2>
                   <p className="text-muted-foreground">
                     {t("acknowledge.quizFailedDesc", {
                       score: result.quizScore ?? 0,
@@ -231,7 +235,9 @@ export default function AcknowledgePolicyPage() {
 
               {result.signatureHash && (
                 <div className="rounded-md bg-muted p-3 text-xs font-mono break-all">
-                  <p className="font-medium text-sm mb-1">{t("acknowledge.signatureHash")}</p>
+                  <p className="font-medium text-sm mb-1">
+                    {t("acknowledge.signatureHash")}
+                  </p>
                   {result.signatureHash}
                 </div>
               )}
@@ -323,12 +329,17 @@ export default function AcknowledgePolicyPage() {
                 onCheckedChange={(v) => setHasRead(v === true)}
               />
               <div className="space-y-1">
-                <Label htmlFor="read-confirm" className="font-medium cursor-pointer">
+                <Label
+                  htmlFor="read-confirm"
+                  className="font-medium cursor-pointer"
+                >
                   {t("acknowledge.confirmRead")}
                 </Label>
                 {readDuration < 10 && (
                   <p className="text-xs text-muted-foreground">
-                    {t("acknowledge.minReadTime", { seconds: 10 - readDuration })}
+                    {t("acknowledge.minReadTime", {
+                      seconds: 10 - readDuration,
+                    })}
                   </p>
                 )}
               </div>
@@ -357,7 +368,9 @@ export default function AcknowledgePolicyPage() {
                         .find((r) => r.questionIndex === qIdx)
                         ?.selectedOptionIndex?.toString() ?? ""
                     }
-                    onValueChange={(v: string) => setQuizAnswer(qIdx, parseInt(v, 10))}
+                    onValueChange={(v: string) =>
+                      setQuizAnswer(qIdx, parseInt(v, 10))
+                    }
                   >
                     {q.options.map((opt, oIdx) => (
                       <div key={oIdx} className="flex items-center gap-2">

@@ -2,15 +2,39 @@
 
 export type AgentTestType = "automated" | "manual" | "hybrid";
 export type TestConnectorType = "api" | "database" | "file_system" | "cloud";
-export type TestFrequency = "daily" | "weekly" | "monthly" | "quarterly" | "on_demand";
-export type TestExecutionStatus = "pending" | "running" | "passed" | "failed" | "error" | "cancelled";
+export type TestFrequency =
+  | "daily"
+  | "weekly"
+  | "monthly"
+  | "quarterly"
+  | "on_demand";
+export type TestExecutionStatus =
+  | "pending"
+  | "running"
+  | "passed"
+  | "failed"
+  | "error"
+  | "cancelled";
 export type AgentTestResult = "pass" | "fail" | "inconclusive";
-export type AgentTestResultSeverity = "critical" | "high" | "medium" | "low" | "info";
+export type AgentTestResultSeverity =
+  | "critical"
+  | "high"
+  | "medium"
+  | "low"
+  | "info";
 export type TestTriggeredBy = "manual" | "scheduled" | "agent";
-export type ChecklistStatus = "draft" | "in_progress" | "completed" | "archived";
+export type ChecklistStatus =
+  | "draft"
+  | "in_progress"
+  | "completed"
+  | "archived";
 export type AgentChecklistResult = "pass" | "fail" | "partial";
 export type ChecklistItemResponse = "yes" | "no" | "na" | "partial";
-export type LearningPatternType = "common_failure" | "effective_test" | "false_positive" | "improvement";
+export type LearningPatternType =
+  | "common_failure"
+  | "effective_test"
+  | "false_positive"
+  | "improvement";
 
 export interface ControlTestScript {
   id: string;
@@ -139,5 +163,9 @@ export interface ControlTestingDashboard {
   overdueChecklists: number;
   learningPatterns: number;
   recentExecutions: ControlTestExecution[];
-  topFailures: Array<{ controlId: string; failCount: number; lastFailed: string }>;
+  topFailures: Array<{
+    controlId: string;
+    failCount: number;
+    lastFailed: string;
+  }>;
 }

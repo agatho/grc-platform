@@ -14,8 +14,19 @@ import type { Provider } from "next-auth/providers";
 export async function logAccessEvent(params: {
   userId?: string;
   emailAttempted: string;
-  eventType: "login_success" | "login_failed" | "logout" | "password_change" | "session_expired";
-  authMethod?: "password" | "sso_azure_ad" | "sso_oidc" | "api_key" | "mfa_totp" | "mfa_webauthn";
+  eventType:
+    | "login_success"
+    | "login_failed"
+    | "logout"
+    | "password_change"
+    | "session_expired";
+  authMethod?:
+    | "password"
+    | "sso_azure_ad"
+    | "sso_oidc"
+    | "api_key"
+    | "mfa_totp"
+    | "mfa_webauthn";
   failureReason?: string;
   ipAddress?: string;
   userAgent?: string;
@@ -102,94 +113,97 @@ export const credentialsProvider = Credentials({
     password: { label: "Password", type: "password" },
   },
   async authorize(credentials, request) {
-   try {
-    const email = credentials?.email as string | undefined;
-    const password = credentials?.password as string | undefined;
-    if (!email || !password) return null;
+    try {
+      const email = credentials?.email as string | undefined;
+      const password = credentials?.password as string | undefined;
+      if (!email || !password) return null;
 
-    // Extract IP and UA from the request (Auth.js v5 passes it as second arg)
-    const { ipAddress, userAgent } = extractRequestInfo(request);
+      // Extract IP and UA from the request (Auth.js v5 passes it as second arg)
+      const { ipAddress, userAgent } = extractRequestInfo(request);
 
-    const [found] = await db
-      .select()
-      .from(user)
-      .where(
-        and(
-          eq(user.email, email),
-          eq(user.isActive, true),
-          isNull(user.deletedAt),
-        ),
-      );
+      const [found] = await db
+        .select()
+        .from(user)
+        .where(
+          and(
+            eq(user.email, email),
+            eq(user.isActive, true),
+            isNull(user.deletedAt),
+          ),
+        );
 
-    if (!found?.passwordHash) {
-      await logAccessEvent({
-        emailAttempted: email,
-        eventType: "login_failed",
-        failureReason: "user_not_found",
-        ipAddress,
-        userAgent,
-      });
-      return null;
-    }
+      if (!found?.passwordHash) {
+        await logAccessEvent({
+          emailAttempted: email,
+          eventType: "login_failed",
+          failureReason: "user_not_found",
+          ipAddress,
+          userAgent,
+        });
+        return null;
+      }
 
-    // Sprint 20: Check SSO enforcement for user's orgs
-    // If any org enforces SSO, only admins can use local login
-    const roles = await loadRoles(found.id);
-    const orgIds = [...new Set(roles.map((r) => r.orgId))];
-    if (orgIds.length > 0) {
-      const ssoEnforced = await checkSsoEnforcement(orgIds);
-      if (ssoEnforced) {
-        const isAdmin = roles.some((r) => r.role === "admin");
-        if (!isAdmin) {
-          await logAccessEvent({
-            userId: found.id,
-            emailAttempted: email,
-            eventType: "login_failed",
-            failureReason: "sso_enforced",
-            ipAddress,
-            userAgent,
-          });
-          return null;
+      // Sprint 20: Check SSO enforcement for user's orgs
+      // If any org enforces SSO, only admins can use local login
+      const roles = await loadRoles(found.id);
+      const orgIds = [...new Set(roles.map((r) => r.orgId))];
+      if (orgIds.length > 0) {
+        const ssoEnforced = await checkSsoEnforcement(orgIds);
+        if (ssoEnforced) {
+          const isAdmin = roles.some((r) => r.role === "admin");
+          if (!isAdmin) {
+            await logAccessEvent({
+              userId: found.id,
+              emailAttempted: email,
+              eventType: "login_failed",
+              failureReason: "sso_enforced",
+              ipAddress,
+              userAgent,
+            });
+            return null;
+          }
         }
       }
-    }
 
-    const valid = await compare(password, found.passwordHash);
-    if (!valid) {
+      const valid = await compare(password, found.passwordHash);
+      if (!valid) {
+        await logAccessEvent({
+          userId: found.id,
+          emailAttempted: email,
+          eventType: "login_failed",
+          failureReason: "invalid_password",
+          ipAddress,
+          userAgent,
+        });
+        return null;
+      }
+
+      // Update last login timestamp + log success
+      await db.execute(
+        sql`UPDATE "user" SET last_login_at = now() WHERE id = ${found.id}`,
+      );
       await logAccessEvent({
         userId: found.id,
         emailAttempted: email,
-        eventType: "login_failed",
-        failureReason: "invalid_password",
+        eventType: "login_success",
         ipAddress,
         userAgent,
       });
+
+      return {
+        id: found.id,
+        email: found.email,
+        name: found.name,
+        language: found.language,
+        roles,
+      };
+    } catch (err) {
+      console.error(
+        "[auth] authorize error:",
+        err instanceof Error ? err.message : err,
+      );
       return null;
     }
-
-    // Update last login timestamp + log success
-    await db.execute(
-      sql`UPDATE "user" SET last_login_at = now() WHERE id = ${found.id}`,
-    );
-    await logAccessEvent({
-      userId: found.id,
-      emailAttempted: email,
-      eventType: "login_success",
-      ipAddress,
-      userAgent,
-    });
-
-    return {
-      id: found.id,
-      email: found.email,
-      name: found.name,
-      language: found.language,
-      roles,
-    };
-   } catch (err) {
-    console.error("[auth] authorize error:", err instanceof Error ? err.message : err);
-    return null;
-   }
   },
 });
 
@@ -231,12 +245,7 @@ export async function jitProvisionSsoUser(profile: {
   const [existing] = await db
     .select()
     .from(user)
-    .where(
-      and(
-        eq(user.email, email),
-        isNull(user.deletedAt),
-      ),
-    );
+    .where(and(eq(user.email, email), isNull(user.deletedAt)));
 
   if (existing) {
     // Update last login + SSO provider link if not yet set

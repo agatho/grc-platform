@@ -10,11 +10,15 @@ export async function POST(req: Request) {
 
   const body = generateDigestSchema.safeParse(await req.json());
   if (!body.success) {
-    return Response.json({ error: "Validation failed", details: body.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Validation failed", details: body.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const [created] = await tx.insert(regulatoryDigest)
+    const [created] = await tx
+      .insert(regulatoryDigest)
       .values({
         orgId: ctx.orgId,
         periodStart: body.data.periodStart,
@@ -37,9 +41,14 @@ export async function GET(req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const url = new URL(req.url);
-  const query = digestQuerySchema.safeParse(Object.fromEntries(url.searchParams));
+  const query = digestQuerySchema.safeParse(
+    Object.fromEntries(url.searchParams),
+  );
   if (!query.success) {
-    return Response.json({ error: "Invalid query", details: query.error.flatten() }, { status: 422 });
+    return Response.json(
+      { error: "Invalid query", details: query.error.flatten() },
+      { status: 422 },
+    );
   }
 
   const { page, limit, digestType } = query.data;
@@ -48,10 +57,13 @@ export async function GET(req: Request) {
   const conditions = [eq(regulatoryDigest.orgId, ctx.orgId)];
   if (digestType) conditions.push(eq(regulatoryDigest.digestType, digestType));
 
-  const digests = await db.select().from(regulatoryDigest)
+  const digests = await db
+    .select()
+    .from(regulatoryDigest)
     .where(and(...conditions))
     .orderBy(desc(regulatoryDigest.periodStart))
-    .limit(limit).offset(offset);
+    .limit(limit)
+    .offset(offset);
 
   return Response.json({ data: digests });
 }

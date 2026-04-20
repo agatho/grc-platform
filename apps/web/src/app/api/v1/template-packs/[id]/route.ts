@@ -11,7 +11,10 @@ export async function GET(
   if (ctx instanceof Response) return ctx;
   const { id } = await params;
 
-  const [pack] = await db.select().from(templatePack).where(eq(templatePack.id, id));
+  const [pack] = await db
+    .select()
+    .from(templatePack)
+    .where(eq(templatePack.id, id));
   if (!pack) {
     return Response.json({ error: "Template pack not found" }, { status: 404 });
   }

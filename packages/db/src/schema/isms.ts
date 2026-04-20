@@ -121,9 +121,7 @@ export const threat = pgTable(
     orgId: uuid("org_id")
       .notNull()
       .references(() => organization.id),
-    catalogEntryId: uuid("catalog_entry_id").references(
-      () => catalogEntry.id,
-    ),
+    catalogEntryId: uuid("catalog_entry_id").references(() => catalogEntry.id),
     code: varchar("code", { length: 50 }),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
@@ -363,9 +361,7 @@ export const assessmentRun = pgTable(
     name: varchar("name", { length: 500 }).notNull(),
     description: text("description"),
     status: assessmentStatusEnum("status").notNull().default("planning"),
-    scopeType: assessmentScopeTypeEnum("scope_type")
-      .notNull()
-      .default("full"),
+    scopeType: assessmentScopeTypeEnum("scope_type").notNull().default("full"),
     scopeFilter: jsonb("scope_filter"),
     framework: varchar("framework", { length: 100 })
       .notNull()
@@ -373,12 +369,8 @@ export const assessmentRun = pgTable(
     periodStart: date("period_start", { mode: "string" }),
     periodEnd: date("period_end", { mode: "string" }),
     leadAssessorId: uuid("lead_assessor_id").references(() => user.id),
-    completionPercentage: integer("completion_percentage")
-      .notNull()
-      .default(0),
-    completedEvaluations: integer("completed_evaluations")
-      .notNull()
-      .default(0),
+    completionPercentage: integer("completion_percentage").notNull().default(0),
+    completedEvaluations: integer("completed_evaluations").notNull().default(0),
     totalEvaluations: integer("total_evaluations").notNull().default(0),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })

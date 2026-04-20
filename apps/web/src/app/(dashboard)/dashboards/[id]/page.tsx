@@ -55,8 +55,12 @@ export default function DashboardViewPage() {
   const isEditFromUrl = searchParams.get("edit") === "true";
 
   const [dashboard, setDashboard] = useState<DashboardWithWidgets | null>(null);
-  const [widgetDefinitions, setWidgetDefinitions] = useState<WidgetDefinitionRecord[]>([]);
-  const [widgetData, setWidgetData] = useState<Record<string, { status: string; data?: unknown; error?: string }>>({});
+  const [widgetDefinitions, setWidgetDefinitions] = useState<
+    WidgetDefinitionRecord[]
+  >([]);
+  const [widgetData, setWidgetData] = useState<
+    Record<string, { status: string; data?: unknown; error?: string }>
+  >({});
   const [isLoading, setIsLoading] = useState(true);
   const [isDataLoading, setIsDataLoading] = useState(false);
   const [isEditMode, setIsEditMode] = useState(isEditFromUrl);
@@ -64,9 +68,13 @@ export default function DashboardViewPage() {
 
   // Edit mode state
   const [editLayout, setEditLayout] = useState<Layout[]>([]);
-  const [editWidgets, setEditWidgets] = useState<(CustomDashboardWidgetRecord & { definition: WidgetDefinitionRecord })[]>([]);
+  const [editWidgets, setEditWidgets] = useState<
+    (CustomDashboardWidgetRecord & { definition: WidgetDefinitionRecord })[]
+  >([]);
   const [configWidget, setConfigWidget] = useState<{
-    widget: CustomDashboardWidgetRecord & { definition: WidgetDefinitionRecord };
+    widget: CustomDashboardWidgetRecord & {
+      definition: WidgetDefinitionRecord;
+    };
     isNew: boolean;
   } | null>(null);
 
@@ -89,20 +97,26 @@ export default function DashboardViewPage() {
         const widgets = dashJson.data.widgets ?? [];
         setEditWidgets(widgets);
         setEditLayout(
-          widgets.map((w: CustomDashboardWidgetRecord & { definition: WidgetDefinitionRecord }) => {
-            const pos = w.positionJson as unknown as Record<string, number>;
-            return {
-              i: w.id,
-              x: pos.x ?? 0,
-              y: pos.y ?? 0,
-              w: pos.w ?? 4,
-              h: pos.h ?? 3,
-              minW: w.definition.minWidth ?? 2,
-              minH: w.definition.minHeight ?? 2,
-              maxW: w.definition.maxWidth ?? 12,
-              maxH: w.definition.maxHeight ?? 8,
-            };
-          }),
+          widgets.map(
+            (
+              w: CustomDashboardWidgetRecord & {
+                definition: WidgetDefinitionRecord;
+              },
+            ) => {
+              const pos = w.positionJson as unknown as Record<string, number>;
+              return {
+                i: w.id,
+                x: pos.x ?? 0,
+                y: pos.y ?? 0,
+                w: pos.w ?? 4,
+                h: pos.h ?? 3,
+                minW: w.definition.minWidth ?? 2,
+                minH: w.definition.minHeight ?? 2,
+                maxW: w.definition.maxWidth ?? 12,
+                maxH: w.definition.maxHeight ?? 8,
+              };
+            },
+          ),
         );
       }
 
@@ -290,7 +304,10 @@ export default function DashboardViewPage() {
     setConfigWidget(null);
   }
 
-  async function handleUpdateWidgetConfig(widgetId: string, config: WidgetConfig) {
+  async function handleUpdateWidgetConfig(
+    widgetId: string,
+    config: WidgetConfig,
+  ) {
     await fetch(`/api/v1/dashboards/${dashboardId}/widgets/${widgetId}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
@@ -322,7 +339,11 @@ export default function DashboardViewPage() {
     return (
       <div className="flex flex-col items-center justify-center py-24 text-muted-foreground">
         <p>{t("dashboardNotFound")}</p>
-        <Button variant="outline" className="mt-4" onClick={() => router.push("/dashboards")}>
+        <Button
+          variant="outline"
+          className="mt-4"
+          onClick={() => router.push("/dashboards")}
+        >
           {t("backToList")}
         </Button>
       </div>
@@ -351,24 +372,26 @@ export default function DashboardViewPage() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <Button variant="ghost" size="icon" onClick={() => router.push("/dashboards")}>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => router.push("/dashboards")}
+            >
               <ArrowLeft className="h-4 w-4" />
             </Button>
             <div>
               <h1 className="text-xl font-bold">{dashboard.name}</h1>
               {dashboard.description && (
-                <p className="text-xs text-muted-foreground">{dashboard.description}</p>
+                <p className="text-xs text-muted-foreground">
+                  {dashboard.description}
+                </p>
               )}
             </div>
           </div>
           <div className="flex items-center gap-2">
             {isEditMode ? (
               <>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleDiscard}
-                >
+                <Button variant="outline" size="sm" onClick={handleDiscard}>
                   <X className="mr-1.5 h-3.5 w-3.5" />
                   {t("discard")}
                 </Button>
@@ -467,7 +490,11 @@ export default function DashboardViewPage() {
                     config={wConfig}
                     data={wd?.data}
                     isLoading={isDataLoading && !wd}
-                    error={wd?.status === "rejected" ? (wd.error ?? "Fehler") : undefined}
+                    error={
+                      wd?.status === "rejected"
+                        ? (wd.error ?? "Fehler")
+                        : undefined
+                    }
                     isEditMode={isEditMode}
                     onConfigure={() =>
                       setConfigWidget({ widget, isNew: false })

@@ -36,7 +36,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
     .where(eq(bcExerciseFinding.exerciseId, id));
 
   const lessonsLearnedCount =
-    exercise.lessonsLearned && exercise.lessonsLearned.trim().length > 0 ? 1 : 0;
+    exercise.lessonsLearned && exercise.lessonsLearned.trim().length > 0
+      ? 1
+      : 0;
 
   const snapshot: ExerciseSnapshot = {
     status: exercise.status,

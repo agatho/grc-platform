@@ -2,14 +2,71 @@ import { z } from "zod";
 
 // Sprint 9: TPRM + Contract Management schemas
 
-const vendorStatusValues = ["prospect", "onboarding", "active", "under_review", "suspended", "terminated"] as const;
-const vendorTierValues = ["critical", "important", "standard", "low_risk"] as const;
-const vendorCategoryValues = ["it_services", "cloud_provider", "consulting", "facility", "logistics", "raw_materials", "financial", "hr_services", "other"] as const;
-const ddStatusValues = ["pending", "in_progress", "completed", "expired"] as const;
-const contractStatusValues = ["draft", "negotiation", "pending_approval", "active", "renewal", "expired", "terminated", "archived"] as const;
-const contractTypeValues = ["master_agreement", "service_agreement", "nda", "dpa", "sla", "license", "maintenance", "consulting", "other"] as const;
-const obligationStatusValues = ["pending", "in_progress", "completed", "overdue"] as const;
-const obligationTypeValues = ["deliverable", "payment", "reporting", "compliance", "audit_right"] as const;
+const vendorStatusValues = [
+  "prospect",
+  "onboarding",
+  "active",
+  "under_review",
+  "suspended",
+  "terminated",
+] as const;
+const vendorTierValues = [
+  "critical",
+  "important",
+  "standard",
+  "low_risk",
+] as const;
+const vendorCategoryValues = [
+  "it_services",
+  "cloud_provider",
+  "consulting",
+  "facility",
+  "logistics",
+  "raw_materials",
+  "financial",
+  "hr_services",
+  "other",
+] as const;
+const ddStatusValues = [
+  "pending",
+  "in_progress",
+  "completed",
+  "expired",
+] as const;
+const contractStatusValues = [
+  "draft",
+  "negotiation",
+  "pending_approval",
+  "active",
+  "renewal",
+  "expired",
+  "terminated",
+  "archived",
+] as const;
+const contractTypeValues = [
+  "master_agreement",
+  "service_agreement",
+  "nda",
+  "dpa",
+  "sla",
+  "license",
+  "maintenance",
+  "consulting",
+  "other",
+] as const;
+const obligationStatusValues = [
+  "pending",
+  "in_progress",
+  "completed",
+  "overdue",
+] as const;
+const obligationTypeValues = [
+  "deliverable",
+  "payment",
+  "reporting",
+  "compliance",
+  "audit_right",
+] as const;
 
 // ─── Vendor Status Transitions ───────────────────────────────
 
@@ -124,7 +181,9 @@ export const reviewDueDiligenceSchema = z.object({
 export const createDdQuestionSchema = z.object({
   category: z.string().min(1).max(100),
   questionText: z.string().min(1),
-  answerType: z.enum(["text", "yes_no", "scale", "multi_choice", "file_upload"]).default("text"),
+  answerType: z
+    .enum(["text", "yes_no", "scale", "multi_choice", "file_upload"])
+    .default("text"),
   riskWeighting: z.number().min(0).max(10).optional(),
   sortOrder: z.number().int().default(0),
 });
@@ -132,7 +191,9 @@ export const createDdQuestionSchema = z.object({
 export const updateDdQuestionSchema = z.object({
   category: z.string().min(1).max(100).optional(),
   questionText: z.string().min(1).optional(),
-  answerType: z.enum(["text", "yes_no", "scale", "multi_choice", "file_upload"]).optional(),
+  answerType: z
+    .enum(["text", "yes_no", "scale", "multi_choice", "file_upload"])
+    .optional(),
   riskWeighting: z.number().min(0).max(10).optional(),
   sortOrder: z.number().int().optional(),
   isActive: z.boolean().optional(),
@@ -240,10 +301,12 @@ export const updateSlaSchema = z.object({
 // ─── SLA Measurement ─────────────────────────────────────────
 
 export const createSlaMeasurementSchema = z.object({
+  slaDefinitionId: z.string().uuid(),
   periodStart: z.string().min(1),
   periodEnd: z.string().min(1),
-  actualValue: z.string().min(1),
+  actualValue: z.number(),
   isBreach: z.boolean().default(false),
+  evidence: z.string().max(5000).optional(),
   notes: z.string().optional(),
 });
 
@@ -258,7 +321,9 @@ export const createLksgAssessmentSchema = z.object({
 });
 
 export const updateLksgAssessmentSchema = z.object({
-  lksgTier: z.enum(["direct_supplier", "indirect_supplier", "own_operations"]).optional(),
+  lksgTier: z
+    .enum(["direct_supplier", "indirect_supplier", "own_operations"])
+    .optional(),
   riskAreas: z.array(z.record(z.unknown())).optional(),
   mitigationPlans: z.array(z.record(z.unknown())).optional(),
   status: z.enum(["draft", "in_progress", "completed", "reviewed"]).optional(),
@@ -273,9 +338,16 @@ export const vendorListQuerySchema = z.object({
   tier: z.enum(vendorTierValues).optional(),
   category: z.enum(vendorCategoryValues).optional(),
   search: z.string().max(200).optional(),
-  isLksgRelevant: z.enum(["true", "false"]).transform((v) => v === "true").optional(),
+  isLksgRelevant: z
+    .enum(["true", "false"])
+    .transform((v) => v === "true")
+    .optional(),
   page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
-  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default("25"),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .default("25"),
 });
 
 // ─── Contract List Query ─────────────────────────────────────
@@ -285,9 +357,17 @@ export const contractListQuerySchema = z.object({
   contractType: z.enum(contractTypeValues).optional(),
   vendorId: z.string().uuid().optional(),
   search: z.string().max(200).optional(),
-  expiringWithinDays: z.string().transform(Number).pipe(z.number().int().min(1).max(365)).optional(),
+  expiringWithinDays: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(365))
+    .optional(),
   page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
-  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(100)).default("25"),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(100))
+    .default("25"),
 });
 
 // Sprint 9b: Supplier Portal & Questionnaire Designer
@@ -312,7 +392,9 @@ export const conditionalSchema = z.object({
 export const createTemplateSchema = z.object({
   name: z.string().min(1).max(500),
   description: z.string().max(2000).optional(),
-  targetTier: z.enum(["critical", "important", "standard", "low_risk"]).optional(),
+  targetTier: z
+    .enum(["critical", "important", "standard", "low_risk"])
+    .optional(),
   targetTopics: z.array(z.string()).optional(),
   estimatedMinutes: z.number().int().min(5).max(480).default(30),
 });
@@ -338,28 +420,51 @@ export const updateSectionSchema = createSectionSchema.partial();
 
 // ─── Questionnaire Question ──────────────────────────────────
 
-export const createQuestionSchema = z.object({
-  questionType: z.enum(["single_choice", "multi_choice", "text", "yes_no", "number", "date", "file_upload"]),
-  questionDe: z.string().min(3).max(2000),
-  questionEn: z.string().min(3).max(2000),
-  helpTextDe: z.string().max(1000).optional(),
-  helpTextEn: z.string().max(1000).optional(),
-  options: z.array(questionOptionSchema).optional(),
-  isRequired: z.boolean().default(true),
-  isEvidenceRequired: z.boolean().default(false),
-  conditionalOn: conditionalSchema.optional(),
-  weight: z.number().min(0).max(100).default(1),
-  maxScore: z.number().int().min(0).default(0),
-  sortOrder: z.number().int().min(0),
-}).refine((data) => {
-  if (["single_choice", "multi_choice"].includes(data.questionType)) {
-    return data.options && data.options.length >= 2;
-  }
-  return true;
-}, { message: "Choice questions require at least 2 options" });
+export const createQuestionSchema = z
+  .object({
+    questionType: z.enum([
+      "single_choice",
+      "multi_choice",
+      "text",
+      "yes_no",
+      "number",
+      "date",
+      "file_upload",
+    ]),
+    questionDe: z.string().min(3).max(2000),
+    questionEn: z.string().min(3).max(2000),
+    helpTextDe: z.string().max(1000).optional(),
+    helpTextEn: z.string().max(1000).optional(),
+    options: z.array(questionOptionSchema).optional(),
+    isRequired: z.boolean().default(true),
+    isEvidenceRequired: z.boolean().default(false),
+    conditionalOn: conditionalSchema.optional(),
+    weight: z.number().min(0).max(100).default(1),
+    maxScore: z.number().int().min(0).default(0),
+    sortOrder: z.number().int().min(0),
+  })
+  .refine(
+    (data) => {
+      if (["single_choice", "multi_choice"].includes(data.questionType)) {
+        return data.options && data.options.length >= 2;
+      }
+      return true;
+    },
+    { message: "Choice questions require at least 2 options" },
+  );
 
 export const updateQuestionSchema = z.object({
-  questionType: z.enum(["single_choice", "multi_choice", "text", "yes_no", "number", "date", "file_upload"]).optional(),
+  questionType: z
+    .enum([
+      "single_choice",
+      "multi_choice",
+      "text",
+      "yes_no",
+      "number",
+      "date",
+      "file_upload",
+    ])
+    .optional(),
   questionDe: z.string().min(3).max(2000).optional(),
   questionEn: z.string().min(3).max(2000).optional(),
   helpTextDe: z.string().max(1000).optional(),
@@ -404,7 +509,9 @@ export const portalSaveResponsesSchema = z.object({
 });
 
 export const portalSubmitSchema = z.object({
-  confirmComplete: z.literal(true, { errorMap: () => ({ message: "Must confirm completion" }) }),
+  confirmComplete: z.literal(true, {
+    errorMap: () => ({ message: "Must confirm completion" }),
+  }),
 });
 
 export const portalEvidenceUploadSchema = z.object({
@@ -419,5 +526,9 @@ export const portalEvidenceUploadSchema = z.object({
     "image/png",
     "image/jpeg",
   ]),
-  fileSize: z.number().int().min(1).max(25 * 1024 * 1024),
+  fileSize: z
+    .number()
+    .int()
+    .min(1)
+    .max(25 * 1024 * 1024),
 });

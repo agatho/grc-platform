@@ -57,7 +57,10 @@ const WIDGET_RENDERERS: Record<string, React.ComponentType<WidgetProps>> = {
 };
 
 // Map widget type category to a default renderer
-const TYPE_FALLBACK_RENDERERS: Record<string, React.ComponentType<WidgetProps>> = {
+const TYPE_FALLBACK_RENDERERS: Record<
+  string,
+  React.ComponentType<WidgetProps>
+> = {
   kpi: KPICardWidget,
   chart: BarChartWidget,
   table: DataTableWidget,
@@ -79,7 +82,10 @@ export function getWidgetRenderer(
 // Widget Type Metadata (for catalog display)
 // ──────────────────────────────────────────────────────────────
 
-export const WIDGET_TYPE_GROUPS: Record<WidgetType, { labelDe: string; labelEn: string }> = {
+export const WIDGET_TYPE_GROUPS: Record<
+  WidgetType,
+  { labelDe: string; labelEn: string }
+> = {
   kpi: { labelDe: "KPI-Karten", labelEn: "KPI Cards" },
   chart: { labelDe: "Diagramme", labelEn: "Charts" },
   table: { labelDe: "Tabellen", labelEn: "Tables" },

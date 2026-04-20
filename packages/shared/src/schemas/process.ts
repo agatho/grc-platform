@@ -3,8 +3,20 @@ import { z } from "zod";
 // Sprint 3: BPMN Process Modeling schemas
 
 const processNotationValues = ["bpmn", "value_chain", "epc"] as const;
-const processStatusValues = ["draft", "in_review", "approved", "published", "archived"] as const;
-const stepTypeValues = ["task", "gateway", "event", "subprocess", "call_activity"] as const;
+const processStatusValues = [
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived",
+] as const;
+const stepTypeValues = [
+  "task",
+  "gateway",
+  "event",
+  "subprocess",
+  "call_activity",
+] as const;
 
 // ─── Process CRUD ────────────────────────────────────────────
 
@@ -65,7 +77,13 @@ export const generateBpmnSchema = z.object({
     .min(50, "Description must be at least 50 characters for good results")
     .max(2000),
   industry: z
-    .enum(["manufacturing", "it_services", "financial_services", "healthcare", "generic"])
+    .enum([
+      "manufacturing",
+      "it_services",
+      "financial_services",
+      "healthcare",
+      "generic",
+    ])
     .default("generic"),
 });
 
@@ -93,7 +111,9 @@ export const linkProcessControlSchema = z.object({
 
 export const linkProcessDocumentSchema = z.object({
   documentId: z.string().uuid(),
-  documentType: z.enum(["policy", "procedure", "guideline", "sop", "form"]).optional(),
+  documentType: z
+    .enum(["policy", "procedure", "guideline", "sop", "form"])
+    .optional(),
   linkContext: z.string().max(1000).optional(),
 });
 
@@ -123,11 +143,7 @@ export const commentListQuerySchema = z.object({
     .enum(["true", "false"])
     .transform((v) => v === "true")
     .optional(),
-  page: z
-    .string()
-    .transform(Number)
-    .pipe(z.number().int().min(1))
-    .default("1"),
+  page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
   limit: z
     .string()
     .transform(Number)
@@ -179,14 +195,8 @@ export const bulkActionSchema = z.discriminatedUnion("action", [
 
 export const versionCompareQuerySchema = z.object({
   processId: z.string().uuid(),
-  versionA: z
-    .string()
-    .transform(Number)
-    .pipe(z.number().int().min(1)),
-  versionB: z
-    .string()
-    .transform(Number)
-    .pipe(z.number().int().min(1)),
+  versionA: z.string().transform(Number).pipe(z.number().int().min(1)),
+  versionB: z.string().transform(Number).pipe(z.number().int().min(1)),
 });
 
 // ─── BPMN Validation Config ──────────────────────────────────

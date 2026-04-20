@@ -1,8 +1,17 @@
 // Sprint 20: SCIM Service Unit Tests
 import { describe, it, expect } from "vitest";
 import { hashScimToken, generateScimToken } from "../src/scim/token-auth";
-import { scimToArctosUser, arctosToScimUser, buildScimListResponse, buildScimError } from "../src/scim/user-mapper";
-import { parseScimFilter, mapScimAttributeToColumn, buildFilterClause } from "../src/scim/filter-parser";
+import {
+  scimToArctosUser,
+  arctosToScimUser,
+  buildScimListResponse,
+  buildScimError,
+} from "../src/scim/user-mapper";
+import {
+  parseScimFilter,
+  mapScimAttributeToColumn,
+  buildFilterClause,
+} from "../src/scim/filter-parser";
 
 // ── Token Auth ──────────────────────────────────────────────
 
@@ -81,19 +90,25 @@ describe("SCIMUserMapper", () => {
       updatedAt: new Date("2024-06-01"),
     };
     const scimUser = arctosToScimUser(user, "https://arctos.app/api/v1");
-    expect(scimUser.schemas).toContain("urn:ietf:params:scim:schemas:core:2.0:User");
+    expect(scimUser.schemas).toContain(
+      "urn:ietf:params:scim:schemas:core:2.0:User",
+    );
     expect(scimUser.id).toBe("uuid-123");
     expect(scimUser.userName).toBe("max@example.de");
     expect(scimUser.name.givenName).toBe("Max");
     expect(scimUser.name.familyName).toBe("Mustermann");
     expect(scimUser.active).toBe(true);
     expect(scimUser.meta?.resourceType).toBe("User");
-    expect(scimUser.meta?.location).toBe("https://arctos.app/api/v1/scim/v2/Users/uuid-123");
+    expect(scimUser.meta?.location).toBe(
+      "https://arctos.app/api/v1/scim/v2/Users/uuid-123",
+    );
   });
 
   it("should build SCIM list response", () => {
     const response = buildScimListResponse([], 0, 1, 10);
-    expect(response.schemas).toContain("urn:ietf:params:scim:api:messages:2.0:ListResponse");
+    expect(response.schemas).toContain(
+      "urn:ietf:params:scim:api:messages:2.0:ListResponse",
+    );
     expect(response.totalResults).toBe(0);
     expect(response.startIndex).toBe(1);
     expect(response.itemsPerPage).toBe(10);
@@ -102,7 +117,9 @@ describe("SCIMUserMapper", () => {
 
   it("should build SCIM error response", () => {
     const error = buildScimError("Not found", 404);
-    expect(error.schemas).toContain("urn:ietf:params:scim:api:messages:2.0:Error");
+    expect(error.schemas).toContain(
+      "urn:ietf:params:scim:api:messages:2.0:Error",
+    );
     expect(error.detail).toBe("Not found");
     expect(error.status).toBe("404");
   });

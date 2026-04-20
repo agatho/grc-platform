@@ -1,7 +1,12 @@
 // Whistleblowing encryption utilities — AES-256-GCM
 // Encryption is handled at the API layer; DB stores ciphertext.
 
-import { createCipheriv, createDecipheriv, randomBytes, createHash } from "crypto";
+import {
+  createCipheriv,
+  createDecipheriv,
+  randomBytes,
+  createHash,
+} from "crypto";
 
 const ALGO = "aes-256-gcm";
 
@@ -10,7 +15,7 @@ function getKey(): Buffer {
   if (!keyHex || keyHex.length !== 64) {
     throw new Error(
       "SECURITY: WB_ENCRYPTION_KEY must be set to a 64-character hex string (32 bytes). " +
-      "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
+        "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\"",
     );
   }
   return Buffer.from(keyHex, "hex");
@@ -58,7 +63,8 @@ export function hashIp(ip: string): string {
  * Generate a 128-character alphanumeric mailbox token.
  */
 export function generateMailboxToken(): string {
-  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  const chars =
+    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
   const bytes = randomBytes(128);
   let token = "";
   for (let i = 0; i < 128; i++) {

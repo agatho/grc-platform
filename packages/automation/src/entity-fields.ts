@@ -11,7 +11,11 @@ export const ENTITY_FIELD_MAP: EntityFieldMap = {
   risk: [
     { field: "residual_score", label: "Residual Score", type: "number" },
     { field: "inherent_score", label: "Inherent Score", type: "number" },
-    { field: "treatment_strategy", label: "Treatment Strategy", type: "string" },
+    {
+      field: "treatment_strategy",
+      label: "Treatment Strategy",
+      type: "string",
+    },
     { field: "status", label: "Status", type: "string" },
     { field: "title", label: "Title", type: "string" },
     { field: "category", label: "Category", type: "string" },
@@ -67,7 +71,11 @@ export const ENTITY_FIELD_MAP: EntityFieldMap = {
     { field: "status", label: "Status", type: "string" },
     { field: "title", label: "Title", type: "string" },
     { field: "severity", label: "Severity", type: "string" },
-    { field: "notification_deadline", label: "Notification Deadline", type: "date" },
+    {
+      field: "notification_deadline",
+      label: "Notification Deadline",
+      type: "date",
+    },
     { field: "updated_at", label: "Last Updated", type: "date" },
   ],
   audit: [

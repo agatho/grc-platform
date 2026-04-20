@@ -6,7 +6,14 @@ import { z } from "zod";
 // ─── Contact Trees ──────────────────────────────────────────
 export const createContactTreeSchema = z.object({
   name: z.string().min(1).max(500),
-  crisisType: z.enum(["it_crisis", "natural_disaster", "pandemic", "key_person", "supplier_failure", "generic"]),
+  crisisType: z.enum([
+    "it_crisis",
+    "natural_disaster",
+    "pandemic",
+    "key_person",
+    "supplier_failure",
+    "generic",
+  ]),
   reviewCycleMonths: z.number().int().min(1).max(24).default(6),
 });
 
@@ -44,10 +51,15 @@ export const createExerciseSchema = z.object({
   scopeBcpIds: z.array(z.string().uuid()).optional(),
   participantIds: z.array(z.string().uuid()).optional(),
   scheduledDate: z.string().date(),
-  objectives: z.array(z.object({
-    objective: z.string().min(1).max(500),
-    successCriteria: z.string().min(1).max(1000),
-  })).min(1).max(10),
+  objectives: z
+    .array(
+      z.object({
+        objective: z.string().min(1).max(500),
+        successCriteria: z.string().min(1).max(1000),
+      }),
+    )
+    .min(1)
+    .max(10),
   facilitatorId: z.string().uuid().optional(),
 });
 
@@ -55,17 +67,27 @@ export const logInjectResponseSchema = z.object({
   injectIndex: z.number().int().min(0),
   teamResponse: z.string().max(5000).optional(),
   observerNotes: z.string().max(5000).optional(),
-  scores: z.object({
-    timeliness: z.number().int().min(1).max(5),
-    completeness: z.number().int().min(1).max(5),
-    communication: z.number().int().min(1).max(5),
-    decision: z.number().int().min(1).max(5),
-  }).optional(),
+  scores: z
+    .object({
+      timeliness: z.number().int().min(1).max(5),
+      completeness: z.number().int().min(1).max(5),
+      communication: z.number().int().min(1).max(5),
+      decision: z.number().int().min(1).max(5),
+    })
+    .optional(),
 });
 
 export const createExerciseLessonSchema = z.object({
   lesson: z.string().min(1).max(5000),
-  category: z.enum(["communication", "decision_making", "procedures", "technology", "coordination"]).optional(),
+  category: z
+    .enum([
+      "communication",
+      "decision_making",
+      "procedures",
+      "technology",
+      "coordination",
+    ])
+    .optional(),
   severity: z.enum(["low", "medium", "high", "critical"]).optional(),
   improvementAction: z.string().max(5000).optional(),
   actionOwnerId: z.string().uuid().optional(),
@@ -79,14 +101,19 @@ export const createRecoveryProcedureSchema = z.object({
   entityType: z.enum(["process", "asset", "architecture_element"]),
   entityId: z.string().uuid(),
   reviewCycleMonths: z.number().int().min(1).max(24).default(6),
-  steps: z.array(z.object({
-    title: z.string().min(1).max(500),
-    description: z.string().max(10000).optional(),
-    responsibleRole: z.string().max(100).optional(),
-    estimatedDurationMinutes: z.number().int().min(1).optional(),
-    requiredResources: z.string().max(2000).optional(),
-    dependsOnStepIndex: z.number().int().optional(),
-  })).min(1).max(50),
+  steps: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(500),
+        description: z.string().max(10000).optional(),
+        responsibleRole: z.string().max(100).optional(),
+        estimatedDurationMinutes: z.number().int().min(1).optional(),
+        requiredResources: z.string().max(2000).optional(),
+        dependsOnStepIndex: z.number().int().optional(),
+      }),
+    )
+    .min(1)
+    .max(50),
 });
 
 export const completeStepSchema = z.object({
@@ -133,13 +160,21 @@ export function computeResilienceScore(
 
 // ─── Exercise Score ─────────────────────────────────────────
 export function computeExerciseScore(
-  scores: Array<{ timeliness: number; completeness: number; communication: number; decision: number }>,
+  scores: Array<{
+    timeliness: number;
+    completeness: number;
+    communication: number;
+    decision: number;
+  }>,
 ): number {
   if (scores.length === 0) return 0;
-  const avg = scores.reduce(
-    (acc, s) => acc + (s.timeliness + s.completeness + s.communication + s.decision) / 4,
-    0,
-  ) / scores.length;
+  const avg =
+    scores.reduce(
+      (acc, s) =>
+        acc +
+        (s.timeliness + s.completeness + s.communication + s.decision) / 4,
+      0,
+    ) / scores.length;
   return Math.round(avg * 20); // Scale 1-5 -> 0-100
 }
 

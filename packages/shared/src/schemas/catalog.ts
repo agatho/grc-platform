@@ -2,9 +2,28 @@ import { z } from "zod";
 
 // Sprint 4b: Catalog & Framework Layer schemas
 
-const catalogObjectTypeValues = ["it_system", "application", "role", "department", "location", "vendor", "standard", "regulation", "custom"] as const;
-const methodologyTypeValues = ["iso_31000", "coso_erm", "fair", "custom"] as const;
-const enforcementLevelValues = ["optional", "recommended", "mandatory"] as const;
+const catalogObjectTypeValues = [
+  "it_system",
+  "application",
+  "role",
+  "department",
+  "location",
+  "vendor",
+  "standard",
+  "regulation",
+  "custom",
+] as const;
+const methodologyTypeValues = [
+  "iso_31000",
+  "coso_erm",
+  "fair",
+  "custom",
+] as const;
+const enforcementLevelValues = [
+  "optional",
+  "recommended",
+  "mandatory",
+] as const;
 
 // ─── General Catalog Entry CRUD ──────────────────────────────
 
@@ -82,9 +101,17 @@ export const createCustomCatalogEntrySchema = z.object({
 export const catalogBrowserQuerySchema = z.object({
   catalogType: z.enum(["risk", "control"]).optional(),
   catalogId: z.string().uuid().optional(),
-  level: z.string().transform(Number).pipe(z.number().int().min(1).max(4)).optional(),
+  level: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(4))
+    .optional(),
   parentEntryId: z.string().uuid().optional(),
   search: z.string().max(200).optional(),
   page: z.string().transform(Number).pipe(z.number().int().min(1)).default("1"),
-  limit: z.string().transform(Number).pipe(z.number().int().min(1).max(200)).default("50"),
+  limit: z
+    .string()
+    .transform(Number)
+    .pipe(z.number().int().min(1).max(200))
+    .default("50"),
 });

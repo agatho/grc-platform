@@ -43,7 +43,7 @@ export async function GET(req: Request) {
       AND risk_score > 0
   `);
 
-  const row = result.rows?.[0] ?? {};
+  const row = (result as unknown as Record<string, unknown>[])[0] ?? {};
 
   return Response.json({
     data: {
@@ -74,10 +74,12 @@ export async function POST(req: Request) {
     LIMIT 1
   `);
 
-  const config = configResult.rows?.[0];
+  const config = (configResult as unknown as Record<string, unknown>[])[0];
   const threshold = Number(config?.score_threshold ?? 12);
   const riskCategory = String(config?.default_risk_category ?? "compliance");
-  const treatmentStrategy = String(config?.default_treatment_strategy ?? "mitigate");
+  const treatmentStrategy = String(
+    config?.default_treatment_strategy ?? "mitigate",
+  );
 
   if (config && config.sync_enabled === false) {
     return Response.json(
@@ -105,11 +107,14 @@ export async function POST(req: Request) {
     ORDER BY dr.risk_score DESC
   `);
 
-  const rows = unsyncedRows.rows ?? [];
+  const rows = (unsyncedRows as unknown as Record<string, unknown>[]) ?? [];
 
   if (rows.length === 0) {
     return Response.json({
-      data: { syncedCount: 0, message: "Keine unzugeordneten Hochrisiko-DSFA-Risiken gefunden" },
+      data: {
+        syncedCount: 0,
+        message: "Keine unzugeordneten Hochrisiko-DSFA-Risiken gefunden",
+      },
     });
   }
 

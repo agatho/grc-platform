@@ -14,7 +14,9 @@ export async function processTreatmentOverdueReminders(): Promise<TreatmentOverd
   const now = new Date();
   let notified = 0;
 
-  console.log(`[cron:treatment-overdue-reminders] Starting at ${now.toISOString()}`);
+  console.log(
+    `[cron:treatment-overdue-reminders] Starting at ${now.toISOString()}`,
+  );
 
   // Find risk_treatments where due_date < NOW(), status not in ('completed', 'cancelled'),
   // and not soft-deleted. Join risk table for the risk title in notifications.
@@ -41,7 +43,9 @@ export async function processTreatmentOverdueReminders(): Promise<TreatmentOverd
     );
 
   if (overdueTreatments.length === 0) {
-    console.log("[cron:treatment-overdue-reminders] No overdue treatments found");
+    console.log(
+      "[cron:treatment-overdue-reminders] No overdue treatments found",
+    );
     return { processed: 0, notified: 0 };
   }
 
@@ -49,12 +53,14 @@ export async function processTreatmentOverdueReminders(): Promise<TreatmentOverd
     try {
       const daysOverdue = treatment.dueDate
         ? Math.floor(
-            (now.getTime() - new Date(treatment.dueDate).getTime()) / (1000 * 60 * 60 * 24),
+            (now.getTime() - new Date(treatment.dueDate).getTime()) /
+              (1000 * 60 * 60 * 24),
           )
         : 0;
 
       const treatmentLabel = treatment.description
-        ? treatment.description.substring(0, 80) + (treatment.description.length > 80 ? "..." : "")
+        ? treatment.description.substring(0, 80) +
+          (treatment.description.length > 80 ? "..." : "")
         : "Unnamed treatment";
 
       await db.insert(notification).values({

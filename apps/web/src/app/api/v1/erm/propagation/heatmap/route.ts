@@ -20,7 +20,10 @@ export async function GET(req: Request) {
     .limit(50);
 
   // Aggregate by target org
-  const heatmap = new Map<string, { orgId: string; totalPropagatedScore: number; riskCount: number }>();
+  const heatmap = new Map<
+    string,
+    { orgId: string; totalPropagatedScore: number; riskCount: number }
+  >();
 
   for (const result of results) {
     const entries = (result.resultsJson ?? []) as Array<{

@@ -76,12 +76,14 @@ export function arctosToScimUser(
     active: user.isActive,
     meta: {
       resourceType: "User",
-      created: typeof user.createdAt === "string"
-        ? user.createdAt
-        : user.createdAt.toISOString(),
-      lastModified: typeof user.updatedAt === "string"
-        ? user.updatedAt
-        : user.updatedAt.toISOString(),
+      created:
+        typeof user.createdAt === "string"
+          ? user.createdAt
+          : user.createdAt.toISOString(),
+      lastModified:
+        typeof user.updatedAt === "string"
+          ? user.updatedAt
+          : user.updatedAt.toISOString(),
       location: `${baseUrl}/scim/v2/Users/${user.id}`,
     },
   };
