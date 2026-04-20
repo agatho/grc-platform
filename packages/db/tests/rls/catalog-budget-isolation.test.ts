@@ -94,8 +94,8 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
       catalogId = existing[0].id;
     } else {
       const [cat] = await adminDb.client<{ id: string }[]>`
-        INSERT INTO catalog (key, name, catalog_type, scope, version)
-        VALUES (${"rls-test-catalog-" + suffix}, 'RLS Test Catalog', 'control', 'public', '1.0.0')
+        INSERT INTO catalog (name, catalog_type, source, scope, version)
+        VALUES (${"RLS Test Catalog " + suffix}, 'control', 'rls-test', 'platform', '1.0.0')
         RETURNING id
       `;
       catalogId = cat.id;
