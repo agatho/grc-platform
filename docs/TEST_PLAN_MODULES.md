@@ -384,6 +384,34 @@ Trainings, Onboarding, Zertifikate, Awareness-Quizzes.
 
 ---
 
+## Autonomous-Run-Befunde (Overnight 2026-04-20)
+
+**Gefunden und gefixt**:
+- `academy_course`/`academy_lesson`/`academy_enrollment`/`academy_quiz_attempt`/`academy_certificate`:
+  Tabellen fehlten in DB (Migrationen waren nur in `packages/db/src/migrations/`, nicht
+  in `packages/db/drizzle/`). Lag an zwei parallelen Migrationsordnern — `src/migrations/`
+  wird vom `migrate-all.ts`-Runner nicht gelesen. Migrationen 1053-1057 wurden nach
+  `drizzle/0108-0112` kopiert, damit ein frisches Setup die Tabellen sofort hat.
+  API-Route `/api/v1/academy/courses` vorher 500, jetzt 200.
+- LM Studio Provider hinzugefügt (`packages/ai/src/providers/lmstudio.ts`) inkl. Router-Test.
+
+**Gefunden, Review empfohlen (nicht automatisch gefixt)**:
+- **Audit-Log Hash-Chain Integrität**: `/api/v1/audit-log/integrity` meldet `healthy: false`
+  mit 4756/5008 `chainMismatchCount`, aber `rowMismatchCount: 0`. Die Row-Hashes sind alle
+  valide — der Bruch ist in den `previous_hash`-Verknüpfungen. Ursache: wahrscheinlich
+  Race-Condition bei parallelen Inserts in Demo-Seed (audit_trigger() verwendet
+  `now()::text` als Seed, das bei gleichzeitigen Transaktionen kollidiert). **Das ist ein
+  Architektur-Thema nicht ein Overnight-Fix** — siehe ADR-011, braucht vermutlich einen
+  advisory_xact_lock() oder einen dedizierten Audit-Writer-Worker.
+- **Zwei parallele Migrationsordner**: `packages/db/drizzle/` (0001-0112) und
+  `packages/db/src/migrations/` (100-1057). Überlappend? Redundant? Der `migrate-all.ts`-
+  Runner liest nur `drizzle/`. Ein frisches Setup mit `npm run db:migrate-all` erzeugt
+  deshalb systematisch fehlende Tabellen. **Empfohlen**: einen der beiden Ordner als
+  source-of-truth deklarieren (vermutlich `drizzle/`), die 59 fehlenden Migrationen
+  nach `drizzle/` migrieren und `src/migrations/` archivieren.
+
+---
+
 ## Review-Checkliste für morgen
 
 - [ ] Jeder Modulplan hat mindestens 3 Happy-Path-Tests **automatisiert**.
