@@ -549,25 +549,34 @@ jobs:
 
       - name: Smoke test worker image
         # Catches the "@anthropic-ai/sdk not found" class of regressions
-        # that previously crash-looped on the server. Start the worker,
-        # wait 10 s, then inspect its exit status — if it died before
-        # the healthcheck, the test fails.
+        # that previously crash-looped on the server for 4 days.
+        #
+        # We run the REAL entrypoint (tsx + apps/worker/src/index.ts) so
+        # Node's module resolver walks up from the importing source file
+        # — that's how npm workspaces resolve non-hoisted deps like
+        # @anthropic-ai/sdk (in packages/ai/node_modules/). A plain
+        # `node -e 'require(...)'` from /app can't see those.
+        #
+        # The worker will fail to connect to DB (placeholder port) and
+        # exit; the point is that every module must FIRST load cleanly.
+        # A MODULE_NOT_FOUND anywhere means the image is broken.
         run: |
           docker run -d --name worker-smoke \
             -e NODE_ENV=production \
-            -e DATABASE_URL=postgresql://placeholder:placeholder@127.0.0.1:5432/placeholder \
-            -e AUTH_SECRET=smoke \
-            --entrypoint sh \
-            ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }} \
-            -c 'node -e "require(\"@anthropic-ai/sdk\"); require(\"openai\"); require(\"@google/generative-ai\"); require(\"drizzle-orm\"); require(\"hono\"); console.log(\"worker deps OK\");"'
-          sleep 5
-          docker logs worker-smoke
-          STATUS=$(docker inspect --format='{{.State.ExitCode}}' worker-smoke)
-          docker rm -f worker-smoke
-          if [ "$STATUS" != "0" ]; then
-            echo "::error::Worker image smoke test failed with exit $STATUS"
+            -e DATABASE_URL=postgresql://placeholder:placeholder@127.0.0.1:65535/placeholder \
+            -e AUTH_SECRET=smoke-secret-do-not-use \
+            ghcr.io/${{ github.repository }}/grc-worker:${{ github.sha }}
+          sleep 10
+          LOG=$(docker logs worker-smoke 2>&1 || true)
+          docker rm -f worker-smoke >/dev/null 2>&1 || true
+          echo "----- worker-smoke log -----"
+          echo "$LOG"
+          echo "----- end log -----"
+          if echo "$LOG" | grep -qE "MODULE_NOT_FOUND|Cannot find module"; then
+            echo "::error::Worker image is missing a node module — see log above"
             exit 1
           fi
+          echo "worker image boots cleanly (no MODULE_NOT_FOUND)"
 
       - name: Trivy image scan — web
         uses: aquasecurity/trivy-action@master
