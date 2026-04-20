@@ -48,9 +48,7 @@ describe("Audit Trigger & Hash Chain", () => {
     await testDb.client.unsafe(
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
-    await testDb.client.unsafe(
-      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
-    );
+    await testDb.client.unsafe(`SET session_replication_role = 'replica'`);
     if (testUserId) {
       await testDb.client.unsafe(
         `DELETE FROM audit_log WHERE user_id = '${testUserId}'`,
@@ -70,9 +68,7 @@ describe("Audit Trigger & Hash Chain", () => {
       );
     }
     // Re-enable everything
-    await testDb.client.unsafe(
-      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
-    );
+    await testDb.client.unsafe(`SET session_replication_role = 'origin'`);
     await testDb.client.unsafe(
       `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
     );
@@ -180,29 +176,29 @@ describe("Audit Trigger & Hash Chain", () => {
     }
   });
 
-  it("append-only rules prevent UPDATE on audit_log", async () => {
+  it("append-only guard prevents UPDATE of non-tombstone columns on audit_log", async () => {
     const logs = await testDb.db
       .select({ id: schema.auditLog.id })
       .from(schema.auditLog)
       .limit(1);
 
     if (logs.length > 0) {
-      // UPDATE should silently do nothing (DO INSTEAD NOTHING rule)
-      await testDb.client`
-        UPDATE audit_log SET user_email = 'tampered@evil.com' WHERE id = ${logs[0].id}
-      `;
-
-      // Verify it wasn't actually changed
-      const [after] = await testDb.client`
-        SELECT user_email FROM audit_log WHERE id = ${logs[0].id}
-      `;
-      expect(after.user_email).not.toBe("tampered@evil.com");
+      // ADR-011 rev.2: audit_log_tombstone_guard permits UPDATE only on a
+      // whitelisted set of PII columns; any other column change raises.
+      // `action` is not whitelisted → must throw.
+      await expect(
+        testDb.client`
+          UPDATE audit_log SET action = 'tampered' WHERE id = ${logs[0].id}
+        `,
+      ).rejects.toThrow(/append-only|cannot be updated/);
     }
   });
 
   it("append-only rules prevent DELETE on audit_log (non-superuser)", async () => {
-    // Note: superuser can bypass rules. In CI, the grc_app role is used.
-    // Here we verify the rule exists.
+    // ADR-011 rev.2 replaced audit_log_no_update with the
+    // audit_log_tombstone_guard trigger (so PII tombstoning can update
+    // whitelisted columns). audit_log therefore has exactly one _no_ rule
+    // (audit_log_no_delete); access_log and data_export_log retain two.
     const rules = await testDb.client`
       SELECT count(*)::int AS cnt
       FROM pg_rules
@@ -210,7 +206,16 @@ describe("Audit Trigger & Hash Chain", () => {
         AND tablename = 'audit_log'
         AND rulename LIKE '%_no_%'
     `;
-    expect(rules[0].cnt).toBeGreaterThanOrEqual(2); // no_update + no_delete
+    expect(rules[0].cnt).toBeGreaterThanOrEqual(1); // no_delete
+
+    // The tombstone guard trigger must be present — it's the replacement
+    // for the removed no_update rule.
+    const triggers = await testDb.client`
+      SELECT count(*)::int AS cnt
+      FROM pg_trigger
+      WHERE tgname = 'audit_log_tombstone_guard' AND NOT tgisinternal
+    `;
+    expect(triggers[0].cnt).toBeGreaterThanOrEqual(1);
   });
 
   it("append-only rules exist for all 3 log tables", async () => {

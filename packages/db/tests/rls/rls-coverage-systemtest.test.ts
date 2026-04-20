@@ -105,7 +105,7 @@ describe("RLS Coverage System Test (ADR-001)", () => {
     await adminDb.client.unsafe(`
       ALTER TABLE organization DISABLE TRIGGER audit_trigger;
       ALTER TABLE "user"       DISABLE TRIGGER audit_trigger;
-      DROP RULE IF EXISTS audit_log_no_delete ON audit_log;
+      SET session_replication_role = 'replica';
     `);
 
     await adminDb.client.unsafe(
@@ -126,7 +126,7 @@ describe("RLS Coverage System Test (ADR-001)", () => {
     await adminDb.client`DELETE FROM "user" WHERE id IN (${userAId}, ${userBId})`;
     await adminDb.client`DELETE FROM organization WHERE id IN (${orgAId}, ${orgBId})`;
     await adminDb.client.unsafe(`
-      CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING;
+      SET session_replication_role = 'origin';
       ALTER TABLE organization ENABLE TRIGGER audit_trigger;
       ALTER TABLE "user"       ENABLE TRIGGER audit_trigger;
     `);

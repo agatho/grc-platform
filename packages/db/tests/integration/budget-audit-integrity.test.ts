@@ -64,9 +64,7 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     await testDb.client.unsafe(
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
-    await testDb.client.unsafe(
-      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
-    );
+    await testDb.client.unsafe(`SET session_replication_role = 'replica'`);
 
     // Clean up test data
     if (testBudgetId) {
@@ -97,9 +95,7 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
     }
 
     // Re-enable everything
-    await testDb.client.unsafe(
-      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
-    );
+    await testDb.client.unsafe(`SET session_replication_role = 'origin'`);
     await testDb.client.unsafe(
       `ALTER TABLE grc_budget ENABLE TRIGGER audit_trigger`,
     );
