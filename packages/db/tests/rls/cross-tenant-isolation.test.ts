@@ -92,9 +92,7 @@ describe("RLS Cross-Tenant Isolation", () => {
     await adminDb.client.unsafe(
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
-    await adminDb.client.unsafe(
-      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
-    );
+    await adminDb.client.unsafe(`SET session_replication_role = 'replica'`);
 
     // Generic teardown: drop rows from every tenant-scoped table before
     // removing the organization. Avoids FK-cascade order churn as new
@@ -120,9 +118,7 @@ describe("RLS Cross-Tenant Isolation", () => {
       DELETE FROM organization WHERE id IN ('${orgAId}', '${orgBId}');
     `);
 
-    await adminDb.client.unsafe(
-      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
-    );
+    await adminDb.client.unsafe(`SET session_replication_role = 'origin'`);
     await adminDb.client.unsafe(
       `ALTER TABLE user_organization_role ENABLE TRIGGER audit_trigger`,
     );

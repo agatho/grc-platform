@@ -135,9 +135,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     await adminDb.client.unsafe(
       `ALTER TABLE "user" DISABLE TRIGGER audit_trigger`,
     );
-    await adminDb.client.unsafe(
-      `DROP RULE IF EXISTS audit_log_no_delete ON audit_log`,
-    );
+    await adminDb.client.unsafe(`SET session_replication_role = 'replica'`);
 
     // Generic teardown: drop rows from every tenant-scoped table before
     // removing the organization. Avoids FK-cascade order churn as new
@@ -165,9 +163,7 @@ describe("RLS Catalog, Budget & Cost Entry Isolation", () => {
     `);
 
     // Re-enable triggers and rules
-    await adminDb.client.unsafe(
-      `CREATE RULE audit_log_no_delete AS ON DELETE TO audit_log DO INSTEAD NOTHING`,
-    );
+    await adminDb.client.unsafe(`SET session_replication_role = 'origin'`);
     await adminDb.client.unsafe(
       `ALTER TABLE grc_cost_entry ENABLE TRIGGER audit_trigger`,
     );
