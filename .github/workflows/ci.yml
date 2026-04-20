@@ -430,7 +430,7 @@ jobs:
 
       - name: Check for .env files in repo
         run: |
-          ENV_FILES=$(git ls-files '*.env' '*.env.*' '.env*' 2>/dev/null | grep -v '.gitignore' | grep -v '.env.example' || true)
+          ENV_FILES=$(git ls-files '*.env' '*.env.*' '.env*' 2>/dev/null | grep -v '.gitignore' | grep -v '.env.example' | grep -v '.env.sample' || true)
           if [ -n "$ENV_FILES" ]; then
             echo "::error::Environment files found in repo: $ENV_FILES"
             exit 1
