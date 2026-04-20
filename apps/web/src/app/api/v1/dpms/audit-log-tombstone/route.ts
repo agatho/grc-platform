@@ -1,5 +1,4 @@
-import { db, auditLog } from "@grc/db";
-import { eq, and } from "drizzle-orm";
+import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -59,31 +58,34 @@ export async function POST(req: Request) {
   // not permitted from this endpoint — a DPO in org A cannot tombstone
   // an entry that belongs to org B. Returning 404 hides cross-tenant
   // existence.
-  const existing = await db
-    .select({
-      id: auditLog.id,
-      entryHash: auditLog.entryHash,
-      piiTombstonedAt: auditLog.piiTombstonedAt,
-    })
-    .from(auditLog)
-    .where(and(eq(auditLog.id, auditLogId), eq(auditLog.orgId, ctx.orgId)))
-    .limit(1);
+  const existing = await db.execute<{
+    id: string;
+    entry_hash: string;
+    pii_tombstoned_at: Date | null;
+  }>(sql`
+    SELECT id, entry_hash, pii_tombstoned_at
+    FROM audit_log
+    WHERE id = ${auditLogId}::uuid AND org_id = ${ctx.orgId}::uuid
+    LIMIT 1
+  `);
 
-  if (existing.length === 0) {
+  const existingRows = Array.isArray(existing) ? existing : [];
+
+  if (existingRows.length === 0) {
     return Response.json({ error: "Audit log entry not found" }, { status: 404 });
   }
 
-  if (existing[0].piiTombstonedAt) {
+  if (existingRows[0].pii_tombstoned_at) {
     return Response.json(
       {
         error: "Audit log entry is already tombstoned",
-        tombstonedAt: existing[0].piiTombstonedAt,
+        tombstonedAt: existingRows[0].pii_tombstoned_at,
       },
       { status: 409 },
     );
   }
 
-  const previousEntryHash = existing[0].entryHash;
+  const previousEntryHash = existingRows[0].entry_hash;
 
   try {
     await withAuditContext(ctx, async (tx) => {

@@ -298,12 +298,21 @@ export const auditLog = pgTable(
     sessionId: varchar("session_id", { length: 255 }),
     previousHash: varchar("previous_hash", { length: 64 }),
     entryHash: varchar("entry_hash", { length: 64 }),
+    // ADR-011 rev.2 — per-tenant chain scope ('org:<uuid>' or 'platform').
+    // NULL for pre-rev2 rows (legacy global chain).
+    previousHashScope: text("previous_hash_scope"),
+    // GDPR Art. 17 tombstone (set by tombstone_audit_entry() function).
+    // entry_hash is preserved when tombstoned so the chain stays verifiable.
+    piiTombstonedAt: timestamp("pii_tombstoned_at", { withTimezone: true }),
+    piiTombstoneReason: text("pii_tombstone_reason"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("al_entity_idx").on(table.entityType, table.entityId, table.createdAt),
     index("al_org_idx").on(table.orgId, table.createdAt),
     index("al_user_idx").on(table.userId),
+    // ADR-011 rev.2 — efficient per-tenant chain read
+    index("audit_log_org_created_idx").on(table.orgId, table.createdAt, table.id),
   ],
 );
 
