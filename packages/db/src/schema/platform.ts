@@ -317,6 +317,46 @@ export const auditLog = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
+// 1.4b AuditAnchor — external tamper-evidence (ADR-011 rev.3)
+//     Daily anchor of the per-tenant audit_log chain to FreeTSA
+//     (RFC 3161) and/or the Bitcoin blockchain (OpenTimestamps).
+// ──────────────────────────────────────────────────────────────
+
+export const auditAnchor = pgTable(
+  "audit_anchor",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id").references(() => organization.id),
+    anchorDate: date("anchor_date").notNull(),
+    provider: varchar("provider", { length: 32 }).notNull(),
+    merkleRoot: varchar("merkle_root", { length: 64 }).notNull(),
+    leafCount: integer("leaf_count").notNull(),
+    // bytea — the `postgres` driver returns this as a Buffer; we expose it
+    // as a base64 string at API boundaries for JSON compatibility.
+    proof: text("proof").notNull(),
+    proofStatus: varchar("proof_status", { length: 16 }).notNull().default("complete"),
+    bitcoinBlockHeight: bigint("bitcoin_block_height", { mode: "number" }),
+    lastError: text("last_error"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    upgradedAt: timestamp("upgraded_at", { withTimezone: true }),
+    verifiedAt: timestamp("verified_at", { withTimezone: true }),
+  },
+  (table) => [
+    index("audit_anchor_org_date_idx").on(table.orgId, table.anchorDate),
+    index("audit_anchor_pending_idx").on(
+      table.provider,
+      table.proofStatus,
+      table.createdAt,
+    ),
+    uniqueIndex("audit_anchor_uniq").on(
+      table.orgId,
+      table.anchorDate,
+      table.provider,
+    ),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // 1.5 AccessLog — Append-only auth events (G-04, G-07, A.9.4)
 //     NO cross-cutting fields (log table)
 // ──────────────────────────────────────────────────────────────

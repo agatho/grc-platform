@@ -699,7 +699,17 @@
       "legal_hold_expired": "Legal hold expired",
       "data_minimisation": "Data minimisation"
     },
-    "cancel": "Cancel"
+    "cancel": "Cancel",
+    "anchorNever": "Never anchored",
+    "anchorAnchored": "Anchored",
+    "anchorPending": "Bitcoin confirmation pending",
+    "anchorPendingHint": "The calendar server accepted the request. The full proof becomes available once the next Bitcoin block includes the aggregate transaction (~1-2 hours).",
+    "anchorFailed": "Failed",
+    "anchorJustNow": "just now",
+    "anchorHoursAgo": "{h}h ago",
+    "anchorDaysAgo": "{d}d ago",
+    "anchorNow": "Anchor now",
+    "anchorNowHint": "Produces an external tamper-evidence proof over today's audit trail. FreeTSA delivers a signed timestamp immediately; OpenTimestamps commits the Merkle root to the next Bitcoin aggregate transaction."
   },
   "invitations": {
     "title": "Invitations",

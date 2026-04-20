@@ -699,7 +699,17 @@
       "legal_hold_expired": "Legal Hold abgelaufen",
       "data_minimisation": "Datenminimierung"
     },
-    "cancel": "Abbrechen"
+    "cancel": "Abbrechen",
+    "anchorNever": "Nie verankert",
+    "anchorAnchored": "Verankert",
+    "anchorPending": "Bitcoin-Bestätigung ausstehend",
+    "anchorPendingHint": "Der Calendar-Server hat die Anfrage angenommen. Der vollständige Beweis wird verfügbar, sobald der nächste Bitcoin-Block die Aggregat-Transaktion enthält (~1-2 Stunden).",
+    "anchorFailed": "Fehlgeschlagen",
+    "anchorJustNow": "gerade eben",
+    "anchorHoursAgo": "vor {h} h",
+    "anchorDaysAgo": "vor {d} Tagen",
+    "anchorNow": "Jetzt verankern",
+    "anchorNowHint": "Erzeugt einen externen Tamper-Evidence-Beweis über den heutigen Audit-Trail. FreeTSA liefert sofort einen signierten Zeitstempel, OpenTimestamps schreibt den Merkle-Root in die nächste Bitcoin-Aggregat-Transaktion."
   },
   "invitations": {
     "title": "Einladungen",

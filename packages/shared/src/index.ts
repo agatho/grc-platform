@@ -302,6 +302,10 @@ export * from "./lib/bpmn-raci-engine";
 export * from "./lib/bpmn-walkthrough-engine";
 export * from "./lib/excel-to-bpmn";
 export * from "./lib/framework-test-plans";
+// ADR-011 rev.3 — external audit-chain anchors
+export * from "./lib/merkle-tree";
+export * as freetsa from "./lib/freetsa";
+export * as opentimestamps from "./lib/opentimestamps";
 export * from "./utils/distributions";
 export * from "./cpe-matcher";
 export * from "./cci";
