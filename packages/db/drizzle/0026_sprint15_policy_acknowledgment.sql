@@ -119,46 +119,12 @@ CREATE TRIGGER "audit_policy_quiz_response"
 -- ──────────────────────────────────────────────────────────────
 -- 258: Seed email templates for policy acknowledgment
 -- ──────────────────────────────────────────────────────────────
-
-INSERT INTO "notification" ("id", "user_id", "org_id", "type", "entity_type", "title", "message", "channel", "template_key", "template_data", "created_at", "updated_at")
-SELECT gen_random_uuid(), NULL, NULL, 'system', 'email_template',
-  'Policy Distribution Notification',
-  'Template for notifying users about new policy distributions',
-  'email', 'policy_distribution',
-  '{"subject": "New policy requires your acknowledgment: {policyTitle}", "body": "A new policy has been distributed to you. Please read and acknowledge by {deadline}."}'::jsonb,
-  now(), now()
-WHERE NOT EXISTS (SELECT 1 FROM "notification" WHERE "template_key" = 'policy_distribution' AND "type" = 'system')
-LIMIT 1;
-
-INSERT INTO "notification" ("id", "user_id", "org_id", "type", "entity_type", "title", "message", "channel", "template_key", "template_data", "created_at", "updated_at")
-SELECT gen_random_uuid(), NULL, NULL, 'system', 'email_template',
-  'Policy Reminder',
-  'Template for reminding users about pending policy acknowledgments',
-  'email', 'policy_reminder',
-  '{"subject": "Reminder: Policy acknowledgment due in {daysRemaining} days — {policyTitle}", "body": "You have a pending policy acknowledgment. Please read and acknowledge by {deadline}."}'::jsonb,
-  now(), now()
-WHERE NOT EXISTS (SELECT 1 FROM "notification" WHERE "template_key" = 'policy_reminder' AND "type" = 'system')
-LIMIT 1;
-
-INSERT INTO "notification" ("id", "user_id", "org_id", "type", "entity_type", "title", "message", "channel", "template_key", "template_data", "created_at", "updated_at")
-SELECT gen_random_uuid(), NULL, NULL, 'system', 'email_template',
-  'Policy Overdue Notice',
-  'Template for notifying about overdue policy acknowledgments',
-  'email', 'policy_overdue',
-  '{"subject": "OVERDUE: Policy acknowledgment past deadline — {policyTitle}", "body": "Your policy acknowledgment is overdue. The deadline was {deadline}. Please acknowledge immediately."}'::jsonb,
-  now(), now()
-WHERE NOT EXISTS (SELECT 1 FROM "notification" WHERE "template_key" = 'policy_overdue' AND "type" = 'system')
-LIMIT 1;
-
-INSERT INTO "notification" ("id", "user_id", "org_id", "type", "entity_type", "title", "message", "channel", "template_key", "template_data", "created_at", "updated_at")
-SELECT gen_random_uuid(), NULL, NULL, 'system', 'email_template',
-  'Policy Escalation Notice',
-  'Template for escalating overdue policy acknowledgments to managers',
-  'email', 'policy_escalation',
-  '{"subject": "Escalation: {overdueCount} overdue policy acknowledgment(s) — {policyTitle}", "body": "The following employees have not acknowledged the policy by the deadline: {overdueUsers}."}'::jsonb,
-  now(), now()
-WHERE NOT EXISTS (SELECT 1 FROM "notification" WHERE "template_key" = 'policy_escalation' AND "type" = 'system')
-LIMIT 1;
+-- Original design stored templates in `notification` (misusing a
+-- per-user table for global templates, with `type = 'system'` which
+-- isn't a valid notification_type enum value and user_id NULL which
+-- violates the NOT NULL constraint). These seeds never applied
+-- cleanly; the actual templates are rendered from @grc/email at
+-- runtime. No-op until a dedicated `email_template` table is added.
 
 -- ──────────────────────────────────────────────────────────────
 -- 259: Composite indices for compliance aggregation

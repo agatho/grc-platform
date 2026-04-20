@@ -1,8 +1,26 @@
 # Migrations — Bekannte Schema-Drift-Altlasten
 
-Stand: 2026-04-20 nach der Konsolidierung der beiden Migrationsordner. Dieser Report listet die Migrationen, die beim frischen `migrate-all`-Lauf nach drei Pässen noch fehlschlagen, kategorisiert nach Ursache. Jeder Eintrag ist ein **eigenes Ticket**, nicht ein Stub — der Fix erfordert pro-Datei-Archäologie.
+Stand: 2026-04-20 nach Konsolidierung und Release-0.1-Alpha-Triage. Dieser Report listet die Migrationen, die beim frischen `migrate-all`-Lauf nach drei Pässen noch fehlschlagen, kategorisiert nach Ursache.
 
-Das Gesamtbild: Von 79 fehlschlagenden Migrationen (Stand 2026-04-20 früh) sind nach Bereinigung von Duplikaten, Index-Namens-Kollisionen, enum/type-Konflikten und schema-drift-Fixes noch **37 übrig**. Die DB wächst von 416 auf **483 Tabellen** — die verbleibenden 37 Migrationen erstellen überwiegend Nebenprodukte (Seeds, bridges) oder alter-Operationen auf Schemata, die seither umstrukturiert wurden.
+## Alpha-Triage-Status (Release 0.1)
+
+Von ursprünglich 79 → 37 → jetzt **≈30** noch fehlschlagenden Migrationen. Fix-Scope für Alpha:
+
+| Kategorie                 | Alpha-Status             | Aktion                                                                                                                                          |
+| ------------------------- | ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------- |
+| A (Seed-FKs, 6)           | **Deferred**             | Demo-Seed-Daten; Produktions-Seed läuft über `db:seed`, nicht Migration.                                                                        |
+| B (Schema-Drift, 9)       | **1 fixed / 8 deferred** | 0025 (`polname` → `policyname`) ist gefixt. Rest: Ziel-Tabellen existieren via `create-missing-tables.ts` + RLS-Gap-Closure.                    |
+| C (Missing Relations, 11) | **deferred**             | Zieltabellen werden indirekt durch `create-missing-tables.ts` + `0288_rls_gap_closure_v3.sql` angelegt.                                         |
+| D (Enum, 2)               | **Both fixed**           | 0026 Template-Seeds entfernt (missbräuchliche `notification`-Inserts mit `type='system'` + `user_id=NULL`); 0096 nutzt bereits `IF NOT EXISTS`. |
+| E (Name-Kollision, 1)     | **Fixed**                | 0046 nutzt jetzt `bpm_simulation_result` statt `simulation_result` (von 0006 belegt).                                                           |
+| F (TimescaleDB, 2)        | **Both fixed**           | `create_hypertable()` in 0136 + 0153 in `DO $$`-Block gewickelt — ohne Extension Plain-Table-Fallback.                                          |
+| G (Subquery-Cast, 1)      | **Deferred**             | 0033 i18n-Content-Migration, nicht release-blockierend.                                                                                         |
+
+Die verbleibenden ~20 failing Migrationen werden als _Alpha-acceptable deferred_ dokumentiert (Ticket: `release/0.2-migration-cleanup`).
+
+## Ursprüngliches Gesamtbild
+
+Von 79 fehlschlagenden Migrationen (Stand 2026-04-20 früh) sind nach Bereinigung von Duplikaten, Index-Namens-Kollisionen, enum/type-Konflikten und schema-drift-Fixes noch **37 übrig**. Die DB wächst von 416 auf **483 Tabellen** — die verbleibenden 37 Migrationen erstellen überwiegend Nebenprodukte (Seeds, bridges) oder alter-Operationen auf Schemata, die seither umstrukturiert wurden.
 
 ## Kategorie A — Seed-Data-FK-Violations (6 Dateien)
 
