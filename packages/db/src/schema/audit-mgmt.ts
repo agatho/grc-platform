@@ -343,7 +343,10 @@ export const auditChecklistItem = pgTable(
     // Bewertung + ggf. Korrekturmaßnahme. Bisher gab es nur `notes`, deshalb
     // waren die Audits oberflächlich.
     criterionReference: varchar("criterion_reference", { length: 200 }),
-    auditMethod: varchar("audit_method", { length: 50 }),
+    // ISO 19011 § 6.4.7: Audit-Evidenz soll typischerweise durch eine
+    // Kombination mehrerer Methoden erhoben werden (Interview + Dokument +
+    // Beobachtung + Tech-Test). Deshalb als Array seit Migration 0291.
+    auditMethods: text("audit_methods").array(),
     interviewee: varchar("interviewee", { length: 200 }),
     intervieweeRole: varchar("interviewee_role", { length: 200 }),
     sampleSize: integer("sample_size"),

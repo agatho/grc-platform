@@ -164,7 +164,8 @@ export interface AuditChecklistItem {
   evidenceIds?: string[];
   // ISO 19011 § 6.4.5/6.4.7 — prüfungssicheres Arbeitspapier
   criterionReference?: string | null;
-  auditMethod?: AuditMethod | null;
+  /** ISO 19011 § 6.4.7: Kombination mehrerer Evidenzerhebungs-Methoden */
+  auditMethods?: AuditMethod[] | null;
   interviewee?: string | null;
   intervieweeRole?: string | null;
   sampleSize?: number | null;

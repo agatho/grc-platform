@@ -765,28 +765,30 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     void fetchEvidencePool();
   }, [fetchEvidencePool]);
 
-  // Selektierter Result-Wert + selektierte Methode aus dem Dialog-Form.
-  // Beides steuert Sichtbarkeit von Bedingungsblöcken: NC-spezifische
-  // Felder (Risiko, Korrekturmaßnahme, Frist) bei Abweichungen; Sampling-
-  // Felder bei method=sampling/technical_test.
+  // Selektierter Result-Wert + selektierte Methoden aus dem Dialog-Form.
+  // Methoden sind ein Array (ISO 19011 § 6.4.7 — Kombination mehrerer
+  // Methoden). Result + Methoden steuern bedingte Abschnitte:
+  //  • NC-Section (Risiko, Korrekturmaßnahme, Frist) bei Abweichung/OFI
+  //  • Interview-Section bei methods.includes("interview")
+  //  • Sampling-Section bei methods.includes("sampling"|"technical_test")
   const [selectedResult, setSelectedResult] = useState<string>("");
-  const [selectedMethod, setSelectedMethod] = useState<string>("");
+  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
 
   // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste + Form-State aus Item
   // ziehen, damit das Dialog den bisherigen Stand anzeigt.
   useEffect(() => {
     if (evaluateItem) {
       const item = evaluateItem as AuditChecklistItem & {
-        auditMethod?: string | null;
+        auditMethods?: string[] | null;
       };
       setEvaluateEvidenceIds(item.evidenceIds ?? []);
       setSelectedResult(item.result ?? "");
-      setSelectedMethod(item.auditMethod ?? "");
+      setSelectedMethods(item.auditMethods ?? []);
       setEvidencePickerOpen(false);
     } else {
       setEvaluateEvidenceIds([]);
       setSelectedResult("");
-      setSelectedMethod("");
+      setSelectedMethods([]);
     }
   }, [evaluateItem]);
 
@@ -872,6 +874,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     itemId: string,
     formData: FormData,
     evidenceIds: string[],
+    auditMethods: string[],
   ) => {
     if (!selectedChecklist) return;
 
@@ -895,7 +898,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       evidenceIds,
       criterionReference:
         (formData.get("criterionReference") as string) || undefined,
-      auditMethod: (formData.get("auditMethod") as string) || undefined,
+      auditMethods: auditMethods.length > 0 ? auditMethods : undefined,
       interviewee: (formData.get("interviewee") as string) || undefined,
       intervieweeRole: (formData.get("intervieweeRole") as string) || undefined,
       sampleSize: Number.isFinite(sampleSize) ? sampleSize : undefined,
@@ -1248,7 +1251,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   {items.map((item) => {
                     const extItem = item as AuditChecklistItem & {
                       criterionReference?: string | null;
-                      auditMethod?: string | null;
+                      auditMethods?: string[] | null;
                       interviewee?: string | null;
                       intervieweeRole?: string | null;
                       riskRating?: string | null;
@@ -1278,11 +1281,14 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                         )}
                         {/* Audit-Methoden-Metadaten kompakt */}
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {extItem.auditMethod && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                              {methodLabel(extItem.auditMethod)}
+                          {(extItem.auditMethods ?? []).map((m) => (
+                            <span
+                              key={m}
+                              className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
+                            >
+                              {methodLabel(m)}
                             </span>
-                          )}
+                          ))}
                           {extItem.interviewee && (
                             <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">
                               👤 {extItem.interviewee}
@@ -1389,9 +1395,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 selectedResult === "observation" ||
                 selectedResult === "opportunity_for_improvement";
               const isSampling =
-                selectedMethod === "sampling" ||
-                selectedMethod === "technical_test";
-              const isInterview = selectedMethod === "interview";
+                selectedMethods.includes("sampling") ||
+                selectedMethods.includes("technical_test");
+              const isInterview = selectedMethods.includes("interview");
               return (
             <form
               onSubmit={(e) => {
@@ -1400,6 +1406,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   evaluateItem.id,
                   new FormData(e.currentTarget),
                   evaluateEvidenceIds,
+                  selectedMethods,
                 );
               }}
               className="space-y-4"
@@ -1486,41 +1493,65 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 )}
               </div>
 
-              {/* Audit-Methode (ISO 19011 § 6.4.7) */}
+              {/* Audit-Methoden (ISO 19011 § 6.4.7) — Kombination erlaubt */}
               <div>
                 <label className="text-sm font-medium">
-                  Evidenzerhebungs-Methode{" "}
+                  Evidenzerhebungs-Methoden{" "}
                   <span className="text-xs font-normal text-gray-400">
-                    (ISO 19011 § 6.4.7)
+                    (ISO 19011 § 6.4.7 — Kombination typischerweise sinnvoll)
                   </span>
                 </label>
-                <select
-                  name="auditMethod"
-                  value={selectedMethod}
-                  onChange={(e) => setSelectedMethod(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">— Methode wählen —</option>
-                  <option value="interview">Interview / Befragung</option>
-                  <option value="document_review">
-                    Dokumentenprüfung (Richtlinien, Protokolle)
-                  </option>
-                  <option value="observation">
-                    Begehung / Beobachtung vor Ort
-                  </option>
-                  <option value="walkthrough">
-                    Walkthrough (Prozess-Durchlauf)
-                  </option>
-                  <option value="technical_test">
-                    Technischer Test (Log-Analyse, Config-Check)
-                  </option>
-                  <option value="sampling">
-                    Stichproben-Prüfung (aus Population)
-                  </option>
-                  <option value="reperformance">
-                    Nachvollzug (Reperformance)
-                  </option>
-                </select>
+                <div className="mt-1 grid grid-cols-2 gap-1.5 rounded-md border border-gray-200 p-2">
+                  {(
+                    [
+                      ["interview", "Interview / Befragung"],
+                      ["document_review", "Dokumentenprüfung"],
+                      ["observation", "Begehung / Beobachtung"],
+                      ["walkthrough", "Walkthrough (Prozess-Durchlauf)"],
+                      ["technical_test", "Technischer Test"],
+                      ["sampling", "Stichprobe aus Population"],
+                      ["reperformance", "Reperformance / Nachvollzug"],
+                    ] as const
+                  ).map(([value, label]) => {
+                    const checked = selectedMethods.includes(value);
+                    return (
+                      <label
+                        key={value}
+                        className={`flex items-center gap-2 text-sm rounded px-2 py-1 cursor-pointer border ${
+                          checked
+                            ? "bg-blue-50 border-blue-300 text-blue-900"
+                            : "border-transparent hover:bg-gray-50"
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={(e) =>
+                            setSelectedMethods((prev) =>
+                              e.target.checked
+                                ? [...prev, value]
+                                : prev.filter((v) => v !== value),
+                            )
+                          }
+                          className="h-4 w-4"
+                        />
+                        <span>{label}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {selectedMethods.length === 0 && (
+                  <p className="mt-1 text-[11px] text-gray-400">
+                    Keine Methode ausgewählt — optional, aber bei
+                    Zertifizierungs-Audits Pflicht-Nachweis pro Finding.
+                  </p>
+                )}
+                {selectedMethods.length >= 2 && (
+                  <p className="mt-1 text-[11px] text-emerald-600">
+                    ✓ {selectedMethods.length} Methoden kombiniert — stärkste
+                    Form der Evidenz (ISO 19011 § 6.4.7 Abs. 2).
+                  </p>
+                )}
               </div>
 
               {/* Interviewpartner — nur bei method=interview */}
