@@ -14,11 +14,29 @@ export type AuditStatus =
   | "completed"
   | "cancelled";
 export type AuditPlanStatus = "draft" | "approved" | "active" | "completed";
+// ISO 19011 § 3.4 / ISO/IEC 17021-1 § 9.4.8 — siehe Migration 0290.
+// "nonconforming" ist [DEPRECATED] und nach Minor NC gemappt — neue Inserts
+// sollen minor_nonconformity oder major_nonconformity nutzen.
 export type ChecklistResult =
+  | "positive"
   | "conforming"
-  | "nonconforming"
+  | "opportunity_for_improvement"
   | "observation"
+  | "minor_nonconformity"
+  | "major_nonconformity"
+  | "nonconforming"
   | "not_applicable";
+
+export type AuditMethod =
+  | "interview"
+  | "document_review"
+  | "observation"
+  | "technical_test"
+  | "sampling"
+  | "walkthrough"
+  | "reperformance";
+
+export type AuditRiskRating = "low" | "medium" | "high" | "critical";
 export type AuditConclusion =
   | "conforming"
   | "minor_nonconformity"
@@ -144,6 +162,17 @@ export interface AuditChecklistItem {
   result?: ChecklistResult;
   notes?: string;
   evidenceIds?: string[];
+  // ISO 19011 § 6.4.5/6.4.7 — prüfungssicheres Arbeitspapier
+  criterionReference?: string | null;
+  auditMethod?: AuditMethod | null;
+  interviewee?: string | null;
+  intervieweeRole?: string | null;
+  sampleSize?: number | null;
+  sampleIds?: string[] | null;
+  riskRating?: AuditRiskRating | null;
+  correctiveActionSuggestion?: string | null;
+  /** ISO-Datum YYYY-MM-DD */
+  remediationDeadline?: string | null;
   sortOrder?: number;
   completedAt?: string;
   completedBy?: string;

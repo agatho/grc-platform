@@ -49,6 +49,16 @@ export async function PUT(req: Request, { params }: RouteParams) {
         result: body.data.result,
         notes: body.data.notes,
         evidenceIds: body.data.evidenceIds,
+        // ISO 19011 / ISO 17021-1 Arbeitspapier-Felder
+        criterionReference: body.data.criterionReference,
+        auditMethod: body.data.auditMethod,
+        interviewee: body.data.interviewee,
+        intervieweeRole: body.data.intervieweeRole,
+        sampleSize: body.data.sampleSize,
+        sampleIds: body.data.sampleIds,
+        riskRating: body.data.riskRating,
+        correctiveActionSuggestion: body.data.correctiveActionSuggestion,
+        remediationDeadline: body.data.remediationDeadline,
         completedAt: new Date(),
         completedBy: ctx.userId,
       })

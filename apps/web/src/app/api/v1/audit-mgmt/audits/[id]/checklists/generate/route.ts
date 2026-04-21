@@ -76,6 +76,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     controlId: string | null;
     title: string;
     description: string | null;
+    criterionReference: string | null; // z.B. "CIS v8 · CIS-06.3", "ISO 27002 A.5.1"
     source: "control" | "catalog_entry";
   };
   const items: Item[] = [];
@@ -111,6 +112,20 @@ export async function POST(req: Request, { params }: RouteParams) {
         )
       : undefined;
 
+    // Catalog-Quelle holen für Kriterien-Präfix (z.B. "CIS v8")
+    const [targetCatalog] = await db
+      .select({ source: orgActiveCatalog.catalogId })
+      .from(orgActiveCatalog)
+      .where(
+        and(
+          eq(orgActiveCatalog.orgId, ctx.orgId),
+          eq(orgActiveCatalog.catalogId, targetCatalogId),
+        ),
+      )
+      .limit(1);
+    const catPrefix = targetCatalog ? "" : "";
+    void catPrefix; // kept for symmetry — criterion_reference nutzt e.code
+
     const entries = await db
       .select({
         id: catalogEntry.id,
@@ -136,6 +151,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         controlId: null,
         title,
         description: e.descriptionDe ?? e.description,
+        criterionReference: e.code,
         source: "catalog_entry",
       });
     }
@@ -156,6 +172,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         controlId: c.id,
         title: c.title,
         description: c.description,
+        criterionReference: null, // Kein externes Kriterium — eigenes Control
         source: "control",
       });
     }
@@ -197,6 +214,7 @@ export async function POST(req: Request, { params }: RouteParams) {
             controlId: null,
             title,
             description: e.descriptionDe ?? e.description,
+            criterionReference: e.code,
             source: "catalog_entry",
           });
         }
@@ -239,6 +257,7 @@ export async function POST(req: Request, { params }: RouteParams) {
       expectedEvidence: item.description
         ? item.description.substring(0, 200)
         : undefined,
+      criterionReference: item.criterionReference ?? undefined,
       sortOrder: idx + 1,
     }));
 

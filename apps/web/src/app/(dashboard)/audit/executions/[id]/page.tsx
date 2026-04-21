@@ -517,6 +517,52 @@ function InfoRow({ label, value }: { label: string; value: string }) {
   );
 }
 
+// ─── ISO-19011-konforme Labels (DE) ──────────────────────────
+// Zentral, damit Items-Tabelle + Dialog + Report identisch beschriften.
+function resultLabel(r: string | null | undefined): string {
+  switch (r) {
+    case "positive":
+      return "Positiv-Bewertung";
+    case "conforming":
+      return "Konform";
+    case "opportunity_for_improvement":
+      return "Hinweis (OFI)";
+    case "observation":
+      return "Feststellung";
+    case "minor_nonconformity":
+      return "Nebenabweichung";
+    case "major_nonconformity":
+      return "Hauptabweichung";
+    case "nonconforming":
+      return "Abweichung (Legacy)";
+    case "not_applicable":
+      return "Nicht anwendbar";
+    default:
+      return "Offen";
+  }
+}
+
+function methodLabel(m: string | null | undefined): string {
+  switch (m) {
+    case "interview":
+      return "Interview";
+    case "document_review":
+      return "Dokumentenprüfung";
+    case "observation":
+      return "Beobachtung";
+    case "walkthrough":
+      return "Walkthrough";
+    case "technical_test":
+      return "Tech-Test";
+    case "sampling":
+      return "Stichprobe";
+    case "reperformance":
+      return "Reperformance";
+    default:
+      return m ?? "";
+  }
+}
+
 // ─── Checklists Tab ──────────────────────────────────────────
 
 function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
@@ -719,13 +765,28 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     void fetchEvidencePool();
   }, [fetchEvidencePool]);
 
-  // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste aus dem Item ziehen.
+  // Selektierter Result-Wert + selektierte Methode aus dem Dialog-Form.
+  // Beides steuert Sichtbarkeit von Bedingungsblöcken: NC-spezifische
+  // Felder (Risiko, Korrekturmaßnahme, Frist) bei Abweichungen; Sampling-
+  // Felder bei method=sampling/technical_test.
+  const [selectedResult, setSelectedResult] = useState<string>("");
+  const [selectedMethod, setSelectedMethod] = useState<string>("");
+
+  // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste + Form-State aus Item
+  // ziehen, damit das Dialog den bisherigen Stand anzeigt.
   useEffect(() => {
     if (evaluateItem) {
-      setEvaluateEvidenceIds(evaluateItem.evidenceIds ?? []);
+      const item = evaluateItem as AuditChecklistItem & {
+        auditMethod?: string | null;
+      };
+      setEvaluateEvidenceIds(item.evidenceIds ?? []);
+      setSelectedResult(item.result ?? "");
+      setSelectedMethod(item.auditMethod ?? "");
       setEvidencePickerOpen(false);
     } else {
       setEvaluateEvidenceIds([]);
+      setSelectedResult("");
+      setSelectedMethod("");
     }
   }, [evaluateItem]);
 
@@ -814,10 +875,36 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   ) => {
     if (!selectedChecklist) return;
 
-    const body = {
+    const parseSampleIds = (v: string | null): string[] | undefined => {
+      if (!v) return undefined;
+      const arr = v
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return arr.length > 0 ? arr : undefined;
+    };
+
+    const sampleSizeRaw = formData.get("sampleSize") as string;
+    const sampleSize = sampleSizeRaw
+      ? Math.max(0, parseInt(sampleSizeRaw, 10))
+      : undefined;
+
+    const body: Record<string, unknown> = {
       result: formData.get("result") as string,
       notes: (formData.get("notes") as string) || undefined,
       evidenceIds,
+      criterionReference:
+        (formData.get("criterionReference") as string) || undefined,
+      auditMethod: (formData.get("auditMethod") as string) || undefined,
+      interviewee: (formData.get("interviewee") as string) || undefined,
+      intervieweeRole: (formData.get("intervieweeRole") as string) || undefined,
+      sampleSize: Number.isFinite(sampleSize) ? sampleSize : undefined,
+      sampleIds: parseSampleIds(formData.get("sampleIds") as string),
+      riskRating: (formData.get("riskRating") as string) || undefined,
+      correctiveActionSuggestion:
+        (formData.get("correctiveActionSuggestion") as string) || undefined,
+      remediationDeadline:
+        (formData.get("remediationDeadline") as string) || undefined,
     };
 
     const res = await fetch(
@@ -833,6 +920,11 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       setEvaluateItem(null);
       void fetchItems(selectedChecklist);
       void fetchChecklists();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(
+        `Speichern fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+      );
     }
   };
 
@@ -894,12 +986,22 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
   const resultIcon = (result: string | null | undefined) => {
     switch (result) {
+      case "positive":
+        return <CheckCircle2 className="h-4 w-4 text-emerald-700" />;
       case "conforming":
         return <CheckCircle2 className="h-4 w-4 text-green-600" />;
-      case "nonconforming":
-        return <XCircle className="h-4 w-4 text-red-600" />;
+      case "opportunity_for_improvement":
+        return <AlertTriangle className="h-4 w-4 text-blue-500" />;
       case "observation":
         return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      case "minor_nonconformity":
+        return <AlertTriangle className="h-4 w-4 text-orange-600" />;
+      case "major_nonconformity":
+        return <XCircle className="h-4 w-4 text-red-700" />;
+      case "nonconforming":
+        // Legacy: nach Migration auf minor_nonconformity gemappt, kann aber
+        // in Altdaten noch vorkommen.
+        return <XCircle className="h-4 w-4 text-red-600" />;
       case "not_applicable":
         return <MinusCircle className="h-4 w-4 text-gray-400" />;
       default:
@@ -1143,31 +1245,95 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => (
+                  {items.map((item) => {
+                    const extItem = item as AuditChecklistItem & {
+                      criterionReference?: string | null;
+                      auditMethod?: string | null;
+                      interviewee?: string | null;
+                      intervieweeRole?: string | null;
+                      riskRating?: string | null;
+                      remediationDeadline?: string | null;
+                      sampleSize?: number | null;
+                    };
+                    const isNC =
+                      item.result === "minor_nonconformity" ||
+                      item.result === "major_nonconformity" ||
+                      item.result === "nonconforming";
+                    return (
                     <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-500">
+                      <td className="px-4 py-3 text-gray-500 align-top">
                         {item.sortOrder}
                       </td>
                       <td className="px-4 py-3">
                         <p className="text-gray-900">{item.question}</p>
+                        {extItem.criterionReference && (
+                          <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
+                            {extItem.criterionReference}
+                          </p>
+                        )}
                         {item.notes && (
-                          <p className="text-xs text-gray-500 mt-1">
+                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
                             {item.notes}
                           </p>
                         )}
+                        {/* Audit-Methoden-Metadaten kompakt */}
+                        <div className="flex flex-wrap gap-1.5 mt-1.5">
+                          {extItem.auditMethod && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                              {methodLabel(extItem.auditMethod)}
+                            </span>
+                          )}
+                          {extItem.interviewee && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">
+                              👤 {extItem.interviewee}
+                              {extItem.intervieweeRole
+                                ? ` (${extItem.intervieweeRole})`
+                                : ""}
+                            </span>
+                          )}
+                          {extItem.sampleSize != null && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
+                              n={extItem.sampleSize}
+                            </span>
+                          )}
+                          {extItem.riskRating && (
+                            <span
+                              className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                extItem.riskRating === "critical"
+                                  ? "bg-red-100 text-red-800"
+                                  : extItem.riskRating === "high"
+                                    ? "bg-orange-100 text-orange-800"
+                                    : extItem.riskRating === "medium"
+                                      ? "bg-yellow-100 text-yellow-800"
+                                      : "bg-green-100 text-green-800"
+                              }`}
+                            >
+                              Risiko: {extItem.riskRating}
+                            </span>
+                          )}
+                          {extItem.remediationDeadline && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                              Frist: {extItem.remediationDeadline}
+                            </span>
+                          )}
+                          {item.evidenceIds && item.evidenceIds.length > 0 && (
+                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                              {item.evidenceIds.length} Evidenz
+                              {item.evidenceIds.length === 1 ? "" : "en"}
+                            </span>
+                          )}
+                        </div>
                       </td>
-                      <td className="px-4 py-3">
+                      <td className="px-4 py-3 align-top">
                         <div className="flex items-center gap-2">
                           {resultIcon(item.result)}
-                          <span className="text-xs text-gray-600">
-                            {item.result
-                              ? t(`results.${item.result}`)
-                              : t("results.open")}
+                          <span className="text-xs text-gray-700">
+                            {resultLabel(item.result)}
                           </span>
                         </div>
                       </td>
-                      <td className="px-4 py-3">
-                        <div className="flex gap-1">
+                      <td className="px-4 py-3 align-top">
+                        <div className="flex gap-1 flex-wrap">
                           <Button
                             variant="outline"
                             size="sm"
@@ -1175,7 +1341,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                           >
                             {t("evaluate")}
                           </Button>
-                          {item.result === "nonconforming" && (
+                          {isNC && (
                             <Button
                               variant="destructive"
                               size="sm"
@@ -1187,7 +1353,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -1195,13 +1362,37 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
         </>
       )}
 
-      {/* Evaluate Dialog */}
+      {/* Evaluate Dialog — ISO 19011 § 6.4.5/6.4.7 konformes Arbeitspapier */}
       <Dialog open={!!evaluateItem} onOpenChange={() => setEvaluateItem(null)}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-3xl max-h-[92vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{t("evaluateItem")}</DialogTitle>
+            <DialogTitle>Audit-Bewertung erfassen</DialogTitle>
           </DialogHeader>
-          {evaluateItem && (
+          {evaluateItem &&
+            (() => {
+              const item = evaluateItem as AuditChecklistItem & {
+                criterionReference?: string | null;
+                auditMethod?: string | null;
+                interviewee?: string | null;
+                intervieweeRole?: string | null;
+                sampleSize?: number | null;
+                sampleIds?: string[] | null;
+                riskRating?: string | null;
+                correctiveActionSuggestion?: string | null;
+                remediationDeadline?: string | null;
+              };
+              const isNC =
+                selectedResult === "minor_nonconformity" ||
+                selectedResult === "major_nonconformity" ||
+                selectedResult === "nonconforming";
+              const isObs =
+                selectedResult === "observation" ||
+                selectedResult === "opportunity_for_improvement";
+              const isSampling =
+                selectedMethod === "sampling" ||
+                selectedMethod === "technical_test";
+              const isInterview = selectedMethod === "interview";
+              return (
             <form
               onSubmit={(e) => {
                 e.preventDefault();
@@ -1213,46 +1404,262 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
               }}
               className="space-y-4"
             >
-              <div className="rounded-md bg-gray-50 p-3 text-sm">
-                <p className="text-gray-900">{evaluateItem.question}</p>
+              {/* Header: Frage + erwartete Evidenz + Kriterium */}
+              <div className="rounded-md bg-gray-50 p-3 text-sm space-y-2">
+                <p className="text-gray-900 font-medium">
+                  {evaluateItem.question}
+                </p>
                 {evaluateItem.expectedEvidence && (
-                  <p className="mt-2 text-xs text-gray-500">
+                  <p className="text-xs text-gray-600">
                     <span className="font-medium">Erwartete Evidenz:</span>{" "}
                     {evaluateItem.expectedEvidence}
                   </p>
                 )}
               </div>
+
+              {/* Kriterium-Referenz */}
               <div>
-                <label className="text-sm font-medium">{t("result")}</label>
+                <label className="text-sm font-medium">
+                  Audit-Kriterium{" "}
+                  <span className="text-xs font-normal text-gray-400">
+                    (Norm / Framework-Referenz)
+                  </span>
+                </label>
+                <Input
+                  name="criterionReference"
+                  defaultValue={item.criterionReference ?? ""}
+                  placeholder="z. B. ISO 27001 A.5.1 · CIS v8 06.3 · NIS2 Art. 21(2)(a)"
+                />
+              </div>
+
+              {/* Bewertung (ISO 19011 § 3.4) */}
+              <div>
+                <label className="text-sm font-medium">
+                  Bewertung{" "}
+                  <span className="text-xs font-normal text-gray-400">
+                    (ISO 19011 § 3.4 · ISO 17021-1 § 9.4.8)
+                  </span>
+                </label>
                 <select
                   name="result"
                   required
-                  defaultValue={evaluateItem.result ?? ""}
+                  value={selectedResult}
+                  onChange={(e) => setSelectedResult(e.target.value)}
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 >
-                  <option value="">{t("selectResult")}</option>
-                  <option value="conforming">{t("results.conforming")}</option>
-                  <option value="nonconforming">
-                    {t("results.nonconforming")}
+                  <option value="">— Bewertung wählen —</option>
+                  <option value="positive">
+                    ★ Positiv-Bewertung / Best-Practice
+                  </option>
+                  <option value="conforming">✓ Konform (keine Abweichung)</option>
+                  <option value="opportunity_for_improvement">
+                    💡 Hinweis / OFI (Verbesserungspotenzial, nicht bindend)
                   </option>
                   <option value="observation">
-                    {t("results.observation")}
+                    ⚠ Feststellung / Beobachtung (noch keine Abweichung)
                   </option>
-                  <option value="not_applicable">
-                    {t("results.not_applicable")}
+                  <option value="minor_nonconformity">
+                    ◆ Nebenabweichung (Minor NC — isolierter Einzelfall)
+                  </option>
+                  <option value="major_nonconformity">
+                    ✗ Hauptabweichung (Major NC — systemisches Versagen)
+                  </option>
+                  <option value="not_applicable">— Nicht anwendbar (N/A)</option>
+                </select>
+                {selectedResult && (
+                  <p className="mt-1 text-[11px] text-gray-500">
+                    {selectedResult === "positive" &&
+                      "Umsetzung übertrifft die Anforderung; keine Maßnahme erforderlich."}
+                    {selectedResult === "conforming" &&
+                      "Kriterium wird erfüllt; keine weitere Aktion."}
+                    {selectedResult === "opportunity_for_improvement" &&
+                      "Empfehlung des Auditors, nicht zertifizierungsrelevant."}
+                    {selectedResult === "observation" &&
+                      "Aufmerksamkeitspunkt — könnte ohne Gegensteuern zur Abweichung werden."}
+                    {selectedResult === "minor_nonconformity" &&
+                      "Einzelne Lücke in der Umsetzung. Korrekturmaßnahme in Standard-Frist (üblicherweise 90 Tage)."}
+                    {selectedResult === "major_nonconformity" &&
+                      "Systemische Lücke; Zertifikat blockiert bis Nachweis der Korrektur (ISO 17021-1 § 9.4.9)."}
+                    {selectedResult === "not_applicable" &&
+                      "Kriterium ist für diesen Scope nicht relevant; im Report begründen."}
+                  </p>
+                )}
+              </div>
+
+              {/* Audit-Methode (ISO 19011 § 6.4.7) */}
+              <div>
+                <label className="text-sm font-medium">
+                  Evidenzerhebungs-Methode{" "}
+                  <span className="text-xs font-normal text-gray-400">
+                    (ISO 19011 § 6.4.7)
+                  </span>
+                </label>
+                <select
+                  name="auditMethod"
+                  value={selectedMethod}
+                  onChange={(e) => setSelectedMethod(e.target.value)}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">— Methode wählen —</option>
+                  <option value="interview">Interview / Befragung</option>
+                  <option value="document_review">
+                    Dokumentenprüfung (Richtlinien, Protokolle)
+                  </option>
+                  <option value="observation">
+                    Begehung / Beobachtung vor Ort
+                  </option>
+                  <option value="walkthrough">
+                    Walkthrough (Prozess-Durchlauf)
+                  </option>
+                  <option value="technical_test">
+                    Technischer Test (Log-Analyse, Config-Check)
+                  </option>
+                  <option value="sampling">
+                    Stichproben-Prüfung (aus Population)
+                  </option>
+                  <option value="reperformance">
+                    Nachvollzug (Reperformance)
                   </option>
                 </select>
               </div>
+
+              {/* Interviewpartner — nur bei method=interview */}
+              {isInterview && (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="text-sm font-medium">
+                      Interviewpartner (Name)
+                    </label>
+                    <Input
+                      name="interviewee"
+                      defaultValue={item.interviewee ?? ""}
+                      placeholder="Max Mustermann"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Rolle / Funktion</label>
+                    <Input
+                      name="intervieweeRole"
+                      defaultValue={item.intervieweeRole ?? ""}
+                      placeholder="z. B. CISO, IT-Leitung, Prozess-Eigner"
+                    />
+                  </div>
+                </div>
+              )}
+
+              {/* Stichprobe — nur bei sampling/technical_test */}
+              {isSampling && (
+                <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
+                  <legend className="text-xs font-semibold text-gray-600 px-1">
+                    Stichproben-Erfassung (IIA 2320 · ISA 530)
+                  </legend>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div>
+                      <label className="text-sm font-medium">
+                        Stichproben-Größe
+                      </label>
+                      <Input
+                        name="sampleSize"
+                        type="number"
+                        min={0}
+                        defaultValue={item.sampleSize ?? ""}
+                        placeholder="z. B. 25"
+                      />
+                    </div>
+                    <div className="col-span-2">
+                      <label className="text-sm font-medium">
+                        Sample-IDs / Referenzen{" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (kommagetrennt)
+                        </span>
+                      </label>
+                      <Input
+                        name="sampleIds"
+                        defaultValue={(item.sampleIds ?? []).join(", ")}
+                        placeholder="TKT-1234, TKT-5678, CHG-9001"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+              )}
+
+              {/* Beobachtungen / Auditor-Notizen */}
               <div>
-                <label className="text-sm font-medium">{t("notes")}</label>
+                <label className="text-sm font-medium">
+                  Beobachtungen & Auditor-Notizen
+                </label>
                 <textarea
                   name="notes"
                   defaultValue={evaluateItem.notes ?? ""}
                   rows={4}
-                  placeholder="Auditor-Notizen, getestete Sample-IDs, Interview-Partner, Observationen, Begründung der Bewertung, …"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  placeholder="Konkrete Feststellungen, geprüfte Dokumente/Systeme, Zitate aus Interview, Screenshots, Begründung der Bewertung, …"
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
                 />
               </div>
+
+              {/* Risiko + Korrekturmaßnahme — nur bei NC/Observation/OFI */}
+              {(isNC || isObs) && (
+                <fieldset className="border border-orange-200 bg-orange-50/30 rounded-md p-3 space-y-3">
+                  <legend className="text-xs font-semibold text-orange-700 px-1">
+                    {isNC
+                      ? "Abweichungs-Behandlung (ISO 27001 § 10.1 · ISO 9001 § 10.2)"
+                      : "Aufmerksamkeits-/Verbesserungs-Hinweis"}
+                  </legend>
+
+                  <div>
+                    <label className="text-sm font-medium">
+                      Risikobewertung der Abweichung{" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (ISO 31000 § 6.4.3)
+                      </span>
+                    </label>
+                    <select
+                      name="riskRating"
+                      defaultValue={item.riskRating ?? ""}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    >
+                      <option value="">— Risiko einstufen —</option>
+                      <option value="low">Niedrig</option>
+                      <option value="medium">Mittel</option>
+                      <option value="high">Hoch</option>
+                      <option value="critical">Kritisch</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">
+                      Vorgeschlagene Korrekturmaßnahme
+                    </label>
+                    <textarea
+                      name="correctiveActionSuggestion"
+                      defaultValue={item.correctiveActionSuggestion ?? ""}
+                      rows={3}
+                      placeholder={
+                        isNC
+                          ? "Konkret: wer macht was bis wann? Welche Wirksamkeits-Prüfung folgt?"
+                          : "Empfehlung zur Verbesserung — der Org bleibt die Umsetzung freigestellt."
+                      }
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+
+                  {isNC && (
+                    <div>
+                      <label className="text-sm font-medium">
+                        Frist zur Umsetzung{" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (Minor: üblicherweise 90 Tage · Major: vor Rezertifizierung)
+                        </span>
+                      </label>
+                      <Input
+                        name="remediationDeadline"
+                        type="date"
+                        defaultValue={item.remediationDeadline ?? ""}
+                      />
+                    </div>
+                  )}
+                </fieldset>
+              )}
 
               {/* Evidenz-Verknüpfung */}
               <div>
@@ -1368,7 +1775,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 <Button type="submit">{t("save")}</Button>
               </div>
             </form>
-          )}
+              );
+            })()}
         </DialogContent>
       </Dialog>
 
