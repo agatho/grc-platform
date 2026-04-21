@@ -24,12 +24,45 @@ const auditPlanStatusValues = [
   "active",
   "completed",
 ] as const;
-const checklistResultValues = [
+// ISO 19011 § 3.4 / ISO/IEC 17021-1 § 9.4.8 — DAkkS-/TÜV-Praxisstandard.
+// positive                    — Positive Feststellung / Commendation
+// conforming                  — Konform (erfüllt Kriterium)
+// opportunity_for_improvement — Hinweis / OFI (nicht bindend)
+// observation                 — Feststellung / Beobachtung
+// minor_nonconformity         — Nebenabweichung (isolierter Einzelfall)
+// major_nonconformity         — Hauptabweichung (systemisches Versagen)
+// nonconforming               — [DEPRECATED] Legacy, wird auf Minor NC gemappt
+// not_applicable              — N/A (Kriterium nicht anwendbar)
+export const checklistResultValues = [
+  "positive",
   "conforming",
-  "nonconforming",
+  "opportunity_for_improvement",
   "observation",
+  "minor_nonconformity",
+  "major_nonconformity",
+  "nonconforming",
   "not_applicable",
 ] as const;
+export type ChecklistResultValue = (typeof checklistResultValues)[number];
+
+export const auditMethodValues = [
+  "interview",
+  "document_review",
+  "observation",
+  "technical_test",
+  "sampling",
+  "walkthrough",
+  "reperformance",
+] as const;
+export type AuditMethodValue = (typeof auditMethodValues)[number];
+
+export const auditRiskRatingValues = [
+  "low",
+  "medium",
+  "high",
+  "critical",
+] as const;
+export type AuditRiskRatingValue = (typeof auditRiskRatingValues)[number];
 const auditConclusionValues = [
   "conforming",
   "minor_nonconformity",
@@ -140,9 +173,29 @@ export const createAuditChecklistSchema = z.object({
 });
 
 // ─── Checklist Item Evaluation ───────────────────────────────
+// ISO 19011 § 6.4.5/6.4.7 + ISO/IEC 17021-1 § 9.4.7: prüfungssicheres
+// Audit-Arbeitspapier. Notes allein ist kein Arbeitspapier — daher pflegen
+// wir Kriterium, Methode, Interviewpartner, Stichprobe, Risiko-Rating,
+// Korrekturmaßnahmen-Vorschlag und Frist separat.
 
 export const evaluateChecklistItemSchema = z.object({
   result: z.enum(checklistResultValues),
   notes: z.string().optional(),
   evidenceIds: z.array(z.string().uuid()).optional(),
+
+  criterionReference: z.string().max(200).optional(),
+  auditMethod: z.enum(auditMethodValues).optional(),
+  interviewee: z.string().max(200).optional(),
+  intervieweeRole: z.string().max(200).optional(),
+
+  sampleSize: z.number().int().nonnegative().optional(),
+  sampleIds: z.array(z.string().max(200)).max(500).optional(),
+
+  riskRating: z.enum(auditRiskRatingValues).optional(),
+  correctiveActionSuggestion: z.string().max(4000).optional(),
+  // YYYY-MM-DD — DB-Spalte ist date, nicht timestamptz.
+  remediationDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
 });
+export type EvaluateChecklistItemInput = z.infer<
+  typeof evaluateChecklistItemSchema
+>;

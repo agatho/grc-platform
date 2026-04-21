@@ -47,12 +47,41 @@ export const auditPlanStatusEnum = pgEnum("audit_plan_status", [
   "completed",
 ]);
 
+// ISO 19011 § 3.4 / ISO/IEC 17021-1 § 9.4.8 — Audit-Finding-Klassifikation.
+// Reihenfolge: von „Positiv" (best case) bis „Hauptabweichung" (worst case).
+// `nonconforming` ist als Legacy-Wert beibehalten, neue Auswertungen sollen
+// `minor_nonconformity` oder `major_nonconformity` nutzen (Migration 0290
+// mappt bestehende nonconforming auf minor_nonconformity).
 export const checklistResultEnum = pgEnum("checklist_result", [
+  "positive",
   "conforming",
-  "nonconforming",
+  "opportunity_for_improvement",
   "observation",
+  "minor_nonconformity",
+  "major_nonconformity",
+  "nonconforming", // [DEPRECATED] Legacy — wird beim nächsten Eval überschrieben
   "not_applicable",
 ]);
+
+// Audit-Methoden (ISO 19011 § 6.4.7) — als VARCHAR + CHECK in DB (Migration 0290).
+export const auditMethodValues = [
+  "interview",
+  "document_review",
+  "observation",
+  "technical_test",
+  "sampling",
+  "walkthrough",
+  "reperformance",
+] as const;
+export type AuditMethodValue = (typeof auditMethodValues)[number];
+
+export const auditRiskRatingValues = [
+  "low",
+  "medium",
+  "high",
+  "critical",
+] as const;
+export type AuditRiskRatingValue = (typeof auditRiskRatingValues)[number];
 
 export const auditConclusionEnum = pgEnum("audit_conclusion", [
   "conforming",
@@ -309,6 +338,19 @@ export const auditChecklistItem = pgTable(
     result: checklistResultEnum("result"),
     notes: text("notes"),
     evidenceIds: uuid("evidence_ids").array(),
+    // ISO 19011 § 6.4.5/6.4.7 + ISO/IEC 17021-1 § 9.4.7:
+    // prüfungssicheres Arbeitspapier = Kriterium + Methode + Evidenz +
+    // Bewertung + ggf. Korrekturmaßnahme. Bisher gab es nur `notes`, deshalb
+    // waren die Audits oberflächlich.
+    criterionReference: varchar("criterion_reference", { length: 200 }),
+    auditMethod: varchar("audit_method", { length: 50 }),
+    interviewee: varchar("interviewee", { length: 200 }),
+    intervieweeRole: varchar("interviewee_role", { length: 200 }),
+    sampleSize: integer("sample_size"),
+    sampleIds: text("sample_ids").array(),
+    riskRating: varchar("risk_rating", { length: 20 }),
+    correctiveActionSuggestion: text("corrective_action_suggestion"),
+    remediationDeadline: date("remediation_deadline", { mode: "string" }),
     sortOrder: integer("sort_order").default(0),
     completedAt: timestamp("completed_at", { withTimezone: true }),
     completedBy: uuid("completed_by").references(() => user.id),
