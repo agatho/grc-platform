@@ -107,6 +107,12 @@ done
 echo "  Platform-Baseline (Module + Work-Item-Types)..."
 docker compose -f "$COMPOSE_FILE" exec -T postgres psql -U grc -d "$DB_NAME" -f "/dev/stdin" < /opt/arctos/packages/db/sql/seed_platform_baseline.sql 2>/dev/null || true
 
+# Katalog-Baseline (immer): 46 Compliance-Frameworks (ISO 27002, NIS2, DORA,
+# BSI, NIST CSF, GDPR, AI Act, ESRS, …) + Cross-Framework-Mappings.
+# Scope 'platform' → kein org_id, daher Baseline-Daten.
+echo "  Katalog-Baseline (46 Frameworks + Mappings)..."
+bash /opt/arctos/deploy/seed-catalogs.sh "$DB_NAME" | sed 's/^/    /' || true
+
 # Demo-Daten (nur bei --with-demo): Meridian + Arctis + 10 Demo-User.
 if [ "$WITH_DEMO" = "true" ]; then
   echo "  Demo-Daten (Meridian + Arctis + 10 User)..."
