@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
@@ -192,6 +192,12 @@ interface OrgData {
   isDataController?: boolean;
 }
 
+interface OrgOption {
+  id: string;
+  name: string;
+  type?: string;
+}
+
 export default function NewOrganizationPage() {
   const router = useRouter();
   const [step, setStep] = useState<StepKey>("basic");
@@ -203,6 +209,35 @@ export default function NewOrganizationPage() {
   const [contacts, setContacts] = useState<Contact[]>([]);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
+  const [availableOrgs, setAvailableOrgs] = useState<OrgOption[]>([]);
+
+  // Load existing orgs once so the "parent organization" dropdown in the
+  // basic step can offer them. Silently degrades to an empty list on
+  // error — the parent link is optional and a hard-failing org-create
+  // flow would be worse than no dropdown.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/organizations?limit=500");
+        if (!res.ok) return;
+        const json = await res.json();
+        const rows: OrgOption[] = (json.data ?? []).map(
+          (r: Record<string, unknown>) => ({
+            id: String(r.id),
+            name: String(r.name),
+            type: r.type ? String(r.type) : undefined,
+          }),
+        );
+        if (!cancelled) setAvailableOrgs(rows);
+      } catch {
+        /* keep dropdown empty */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const stepIndex = STEPS.findIndex((s) => s.key === step);
   const isLastStep = stepIndex === STEPS.length - 1;
@@ -330,7 +365,13 @@ export default function NewOrganizationPage() {
 
       {/* Step Content */}
       <div className="rounded-lg border bg-white p-6">
-        {step === "basic" && <BasicStep data={data} setData={setData} />}
+        {step === "basic" && (
+          <BasicStep
+            data={data}
+            setData={setData}
+            availableOrgs={availableOrgs}
+          />
+        )}
         {step === "address" && <AddressStep data={data} setData={setData} />}
         {step === "identifiers" && (
           <IdentifiersStep data={data} setData={setData} />
@@ -536,9 +577,11 @@ function TagPicker({
 function BasicStep({
   data,
   setData,
+  availableOrgs,
 }: {
   data: OrgData;
   setData: (d: OrgData) => void;
+  availableOrgs: OrgOption[];
 }) {
   return (
     <div className="space-y-4">
@@ -572,6 +615,26 @@ function BasicStep({
               { value: "department", label: "Abteilung" },
               { value: "joint_venture", label: "Joint Venture" },
             ]}
+          />
+        </Field>
+        <Field
+          label="Übergeordnete Organisation"
+          hint="Optional — stellt die Konzernhierarchie her und aktiviert Vererbung/Aggregation."
+        >
+          <Select
+            value={data.parentOrgId}
+            onChange={(v) =>
+              setData({ ...data, parentOrgId: v === "" ? undefined : v })
+            }
+            options={availableOrgs.map((o) => ({
+              value: o.id,
+              label: o.type ? `${o.name} (${o.type})` : o.name,
+            }))}
+            placeholder={
+              availableOrgs.length === 0
+                ? "Keine weiteren Organisationen vorhanden"
+                : "— Keine (eigenständig) —"
+            }
           />
         </Field>
         <Field label="Rechtsform">

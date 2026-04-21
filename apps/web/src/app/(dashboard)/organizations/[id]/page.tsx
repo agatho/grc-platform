@@ -139,10 +139,41 @@ export default function OrganizationDetailPage() {
     type: "subsidiary" as string,
     country: "",
     legalForm: "",
+    parentOrgId: "" as string,
   });
 
   // DPO users
   const [dpoUsers, setDpoUsers] = useState<OrgUser[]>([]);
+
+  // Candidate parent orgs (all orgs in scope minus self — to prevent
+  // trivial cycles; deeper cycle prevention lives server-side).
+  const [parentOptions, setParentOptions] = useState<
+    Array<{ id: string; name: string; type?: string }>
+  >([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/v1/organizations?limit=500");
+        if (!res.ok) return;
+        const json = await res.json();
+        const rows = (json.data ?? [])
+          .filter((r: Record<string, unknown>) => String(r.id) !== orgId)
+          .map((r: Record<string, unknown>) => ({
+            id: String(r.id),
+            name: String(r.name),
+            type: r.type ? String(r.type) : undefined,
+          }));
+        if (!cancelled) setParentOptions(rows);
+      } catch {
+        /* non-critical */
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [orgId]);
 
   // Fetch organization
   const fetchOrg = useCallback(async () => {
@@ -152,7 +183,42 @@ export default function OrganizationDetailPage() {
       const res = await fetch(`/api/v1/organizations/${orgId}`);
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
-      const data: OrgDetail = json.data ?? json;
+      const raw = (json.data ?? json) as Record<string, unknown>;
+
+      // The detail endpoint returns snake_case (direct SELECT * shape)
+      // while the list endpoint returns camelCase. Normalize here so the
+      // UI can keep using camelCase consistently. TODO(alpha-followup):
+      // converge both endpoints on a single casing convention.
+      const data: OrgDetail = {
+        id: String(raw.id ?? ""),
+        name: String(raw.name ?? ""),
+        shortName: (raw.shortName ?? raw.short_name ?? null) as string | null,
+        type: (raw.type ?? "subsidiary") as OrgDetail["type"],
+        country: String(raw.country ?? raw.country_code ?? ""),
+        isEu: Boolean(raw.isEu ?? raw.is_eu ?? false),
+        parentOrgId: (raw.parentOrgId ?? raw.parent_org_id ?? null) as
+          | string
+          | null,
+        parentOrgName: (raw.parentOrgName ?? raw.parent_org_name ?? null) as
+          | string
+          | null,
+        legalForm: (raw.legalForm ?? raw.legal_form ?? null) as string | null,
+        dpoName: (raw.dpoName ?? raw.dpo_name ?? null) as string | null,
+        dpoEmail: (raw.dpoEmail ?? raw.dpo_email ?? null) as string | null,
+        orgCode: (raw.orgCode ?? raw.org_code ?? null) as string | null,
+        isDataController: Boolean(
+          raw.isDataController ?? raw.is_data_controller ?? false,
+        ),
+        supervisoryAuthority: (raw.supervisoryAuthority ??
+          raw.supervisory_authority ??
+          null) as string | null,
+        dataResidency: (raw.dataResidency ?? raw.data_residency ?? null) as
+          | string
+          | null,
+        dpoUserId: (raw.dpoUserId ?? raw.dpo_user_id ?? null) as string | null,
+        createdAt: String(raw.createdAt ?? raw.created_at ?? ""),
+        deletedAt: (raw.deletedAt ?? raw.deleted_at ?? null) as string | null,
+      };
       setOrg(data);
 
       // Populate forms
@@ -162,6 +228,7 @@ export default function OrganizationDetailPage() {
         type: data.type,
         country: data.country,
         legalForm: data.legalForm ?? "",
+        parentOrgId: data.parentOrgId ?? "",
       });
 
       const hasOrgCode = Boolean(data.orgCode);
@@ -225,6 +292,8 @@ export default function OrganizationDetailPage() {
           type: overviewForm.type,
           country: overviewForm.country,
           legalForm: overviewForm.legalForm.trim() || null,
+          // Empty string = user chose "no parent"; send null to clear the FK.
+          parentOrgId: overviewForm.parentOrgId || null,
         }),
       });
       if (!res.ok) throw new Error("Failed");
@@ -420,14 +489,32 @@ export default function OrganizationDetailPage() {
                   />
                 </div>
 
-                {/* Parent org (read only) */}
+                {/* Parent org — editable */}
                 <div className="space-y-2">
-                  <Label>{t("parentOrg")}</Label>
-                  <Input
-                    value={org.parentOrgName ?? t("parentOrgPlaceholder")}
-                    disabled
-                    className="bg-gray-50"
-                  />
+                  <Label htmlFor="ov-parent">{t("parentOrg")}</Label>
+                  <Select
+                    value={overviewForm.parentOrgId || "__none__"}
+                    onValueChange={(v) =>
+                      setOverviewForm({
+                        ...overviewForm,
+                        parentOrgId: v === "__none__" ? "" : v,
+                      })
+                    }
+                  >
+                    <SelectTrigger id="ov-parent">
+                      <SelectValue placeholder={t("parentOrgPlaceholder")} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="__none__">
+                        {t("parentOrgPlaceholder")}
+                      </SelectItem>
+                      {parentOptions.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.type ? `${o.name} (${o.type})` : o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Legal Form */}
