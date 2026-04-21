@@ -1,16 +1,31 @@
 #!/usr/bin/env bash
-# Reproduziert die exakte Drizzle-Auth-Query im daimon-web-Container.
+# Reproduziert die exakte Drizzle-Auth-Query in BEIDEN Web-Containern.
 # Container rootfs ist read-only → wir piepen das Node-Script über stdin.
 
 set -uo pipefail
 
-EMAIL="${LOGIN_EMAIL:-agatho@charliehund.de}"
+# Default: admin von grc_platform (public), overridable
+CONTAINERS=(arctos-web-1 daimon-web-daimon-1)
+# email per container (gleiche sollte auf beiden funktionieren falls im DB)
+declare -A EMAILS=(
+  [arctos-web-1]="${ARCTOS_EMAIL:-admin@arctos.dev}"
+  [daimon-web-daimon-1]="${DAIMON_EMAIL:-agatho@charliehund.de}"
+)
 
-echo "── Run exact drizzle auth query inside daimon-web-daimon-1 ──"
-echo "email: $EMAIL"
-echo
+probe_container() {
+  local c="$1"
+  local email="$2"
+  echo
+  echo "════════════════════════════════════════════════"
+  echo " $c  →  email: $email"
+  echo "════════════════════════════════════════════════"
 
-docker exec -i -e LOGIN_EMAIL="$EMAIL" daimon-web-daimon-1 node --input-type=commonjs <<'NODE_SCRIPT'
+  if ! docker ps --format '{{.Names}}' | grep -qw "$c"; then
+    echo "  (container not running — skipping)"
+    return
+  fi
+
+  docker exec -i -e LOGIN_EMAIL="$email" "$c" node --input-type=commonjs <<'NODE_SCRIPT'
 const postgres = require("postgres");
 const url = process.env.DATABASE_URL;
 const sql = postgres(url, { max: 1 });
@@ -60,9 +75,14 @@ const EMAIL = process.env.LOGIN_EMAIL;
 })();
 NODE_SCRIPT
 
-echo
-echo "── Frische Auth-Error-Logs aus dem Container (letzte 15 s) ──"
-docker logs --since 15s daimon-web-daimon-1 2>&1 | tail -40
+  echo
+  echo "── Auth-Error-Logs (letzte 15 s) $c ──"
+  docker logs --since 15s "$c" 2>&1 | tail -20
+}
+
+for c in "${CONTAINERS[@]}"; do
+  probe_container "$c" "${EMAILS[$c]}"
+done
 
 echo
-echo "── DIAG AUTH-REPRODUCE COMPLETE ──"
+echo "════ DIAG AUTH-REPRODUCE COMPLETE (both containers) ════"
