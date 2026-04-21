@@ -178,19 +178,102 @@ export const createAuditChecklistSchema = z.object({
 // wir Kriterium, Methode, Interviewpartner, Stichprobe, Risiko-Rating,
 // Korrekturmaßnahmen-Vorschlag und Frist separat.
 
+// ── Method-Entries (ISO 19011 § 6.4.5/6.4.7) ────────────────
+// Jeder Entry = ein Nachweis. Entries werden als Array gespeichert, weil
+// dieselbe Bewertung oft mehrere Nachweise mit je eigenen Details verlangt
+// (Interview MIT Person A + Dokumentenprüfung VON Policy X + Stichprobe
+// AUS Ticket-System). Ein flaches Methoden-Array (0291) wurde vom User als
+// oberflächlich abgelehnt — ISO-konforme Arbeitspapiere brauchen die
+// methoden-spezifischen Detailfelder direkt am Nachweis.
+
+const baseMethodFields = {
+  id: z.string().min(1), // Client-side UUID, damit React-Keys stabil bleiben
+  // YYYY-MM-DD, optional — nicht jeder Nachweis hat ein Datum
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  notes: z.string().max(4000).optional(),
+};
+
+export const methodEntryInterviewSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("interview"),
+  interviewee: z.string().max(200).optional(),
+  intervieweeRole: z.string().max(200).optional(),
+});
+
+export const methodEntryDocumentReviewSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("document_review"),
+  documents: z
+    .array(
+      z.object({
+        title: z.string().min(1).max(500),
+        reference: z.string().max(200).optional(),
+        version: z.string().max(50).optional(),
+      }),
+    )
+    .max(50)
+    .optional(),
+});
+
+export const methodEntryObservationSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("observation"),
+  location: z.string().max(200).optional(),
+  observedProcess: z.string().max(500).optional(),
+});
+
+export const methodEntryWalkthroughSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("walkthrough"),
+  process: z.string().max(500).optional(),
+  participants: z.string().max(500).optional(),
+});
+
+export const methodEntryTechnicalTestSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("technical_test"),
+  system: z.string().max(200).optional(),
+  testDescription: z.string().max(2000).optional(),
+  testResult: z.string().max(2000).optional(),
+});
+
+export const methodEntrySamplingSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("sampling"),
+  populationSize: z.number().int().nonnegative().optional(),
+  sampleSize: z.number().int().nonnegative().optional(),
+  sampleIds: z.array(z.string().max(200)).max(500).optional(),
+  selectionMethod: z.string().max(200).optional(),
+});
+
+export const methodEntryReperformanceSchema = z.object({
+  ...baseMethodFields,
+  method: z.literal("reperformance"),
+  activity: z.string().max(500).optional(),
+  baseline: z.string().max(500).optional(),
+});
+
+export const methodEntrySchema = z.discriminatedUnion("method", [
+  methodEntryInterviewSchema,
+  methodEntryDocumentReviewSchema,
+  methodEntryObservationSchema,
+  methodEntryWalkthroughSchema,
+  methodEntryTechnicalTestSchema,
+  methodEntrySamplingSchema,
+  methodEntryReperformanceSchema,
+]);
+// `MethodEntry`-Typ lebt in `types/audit.ts` (Interface-Union) —
+// hier nicht re-exportieren um Barrel-Kollision zu vermeiden.
+export type MethodEntryFromSchema = z.infer<typeof methodEntrySchema>;
+
+// ── Checklist-Item-Bewertung ─────────────────────────────────
 export const evaluateChecklistItemSchema = z.object({
   result: z.enum(checklistResultValues),
   notes: z.string().optional(),
   evidenceIds: z.array(z.string().uuid()).optional(),
 
   criterionReference: z.string().max(200).optional(),
-  // ISO 19011 § 6.4.7: Kombination mehrerer Methoden pro Kriterium
-  auditMethods: z.array(z.enum(auditMethodValues)).max(7).optional(),
-  interviewee: z.string().max(200).optional(),
-  intervieweeRole: z.string().max(200).optional(),
-
-  sampleSize: z.number().int().nonnegative().optional(),
-  sampleIds: z.array(z.string().max(200)).max(500).optional(),
+  methodEntries: z.array(methodEntrySchema).max(20).optional(),
 
   riskRating: z.enum(auditRiskRatingValues).optional(),
   correctiveActionSuggestion: z.string().max(4000).optional(),

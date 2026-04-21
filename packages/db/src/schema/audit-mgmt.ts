@@ -12,6 +12,7 @@ import {
   integer,
   pgEnum,
   index,
+  jsonb,
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { workItem } from "./work-item";
@@ -343,14 +344,10 @@ export const auditChecklistItem = pgTable(
     // Bewertung + ggf. Korrekturmaßnahme. Bisher gab es nur `notes`, deshalb
     // waren die Audits oberflächlich.
     criterionReference: varchar("criterion_reference", { length: 200 }),
-    // ISO 19011 § 6.4.7: Audit-Evidenz soll typischerweise durch eine
-    // Kombination mehrerer Methoden erhoben werden (Interview + Dokument +
-    // Beobachtung + Tech-Test). Deshalb als Array seit Migration 0291.
-    auditMethods: text("audit_methods").array(),
-    interviewee: varchar("interviewee", { length: 200 }),
-    intervieweeRole: varchar("interviewee_role", { length: 200 }),
-    sampleSize: integer("sample_size"),
-    sampleIds: text("sample_ids").array(),
+    // ISO 19011 § 6.4.5/6.4.7: Array typisierter Method-Entries. Jeder
+    // Entry = { id, method, date?, notes?, …method-spezifische Felder }.
+    // Siehe Migration 0292 und Shared-Schema AuditMethodEntry.
+    methodEntries: jsonb("method_entries").notNull().default([]),
     riskRating: varchar("risk_rating", { length: 20 }),
     correctiveActionSuggestion: text("corrective_action_suggestion"),
     remediationDeadline: date("remediation_deadline", { mode: "string" }),

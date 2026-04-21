@@ -51,11 +51,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
         evidenceIds: body.data.evidenceIds,
         // ISO 19011 / ISO 17021-1 Arbeitspapier-Felder
         criterionReference: body.data.criterionReference,
-        auditMethods: body.data.auditMethods,
-        interviewee: body.data.interviewee,
-        intervieweeRole: body.data.intervieweeRole,
-        sampleSize: body.data.sampleSize,
-        sampleIds: body.data.sampleIds,
+        // jsonb — Drizzle erwartet das Array direkt. Undefined → leer lassen
+        // (nicht overwrite), empty array → explizit zurücksetzen.
+        methodEntries: body.data.methodEntries ?? [],
         riskRating: body.data.riskRating,
         correctiveActionSuggestion: body.data.correctiveActionSuggestion,
         remediationDeadline: body.data.remediationDeadline,

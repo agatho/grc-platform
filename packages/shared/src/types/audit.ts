@@ -37,6 +37,60 @@ export type AuditMethod =
   | "reperformance";
 
 export type AuditRiskRating = "low" | "medium" | "high" | "critical";
+
+// ISO 19011 § 6.4.5/6.4.7 — typisierter Audit-Nachweis. Pro Bewertung können
+// mehrere Entries angelegt werden, jeder mit method-spezifischen Details.
+export interface MethodEntryBase {
+  id: string;
+  /** YYYY-MM-DD */
+  date?: string;
+  notes?: string;
+}
+export interface MethodEntryInterview extends MethodEntryBase {
+  method: "interview";
+  interviewee?: string;
+  intervieweeRole?: string;
+}
+export interface MethodEntryDocumentReview extends MethodEntryBase {
+  method: "document_review";
+  documents?: Array<{ title: string; reference?: string; version?: string }>;
+}
+export interface MethodEntryObservation extends MethodEntryBase {
+  method: "observation";
+  location?: string;
+  observedProcess?: string;
+}
+export interface MethodEntryWalkthrough extends MethodEntryBase {
+  method: "walkthrough";
+  process?: string;
+  participants?: string;
+}
+export interface MethodEntryTechnicalTest extends MethodEntryBase {
+  method: "technical_test";
+  system?: string;
+  testDescription?: string;
+  testResult?: string;
+}
+export interface MethodEntrySampling extends MethodEntryBase {
+  method: "sampling";
+  populationSize?: number;
+  sampleSize?: number;
+  sampleIds?: string[];
+  selectionMethod?: string;
+}
+export interface MethodEntryReperformance extends MethodEntryBase {
+  method: "reperformance";
+  activity?: string;
+  baseline?: string;
+}
+export type MethodEntry =
+  | MethodEntryInterview
+  | MethodEntryDocumentReview
+  | MethodEntryObservation
+  | MethodEntryWalkthrough
+  | MethodEntryTechnicalTest
+  | MethodEntrySampling
+  | MethodEntryReperformance;
 export type AuditConclusion =
   | "conforming"
   | "minor_nonconformity"
@@ -164,12 +218,8 @@ export interface AuditChecklistItem {
   evidenceIds?: string[];
   // ISO 19011 § 6.4.5/6.4.7 — prüfungssicheres Arbeitspapier
   criterionReference?: string | null;
-  /** ISO 19011 § 6.4.7: Kombination mehrerer Evidenzerhebungs-Methoden */
-  auditMethods?: AuditMethod[] | null;
-  interviewee?: string | null;
-  intervieweeRole?: string | null;
-  sampleSize?: number | null;
-  sampleIds?: string[] | null;
+  /** ISO 19011 § 6.4.5/6.4.7: typisierte Nachweis-Einträge */
+  methodEntries?: MethodEntry[] | null;
   riskRating?: AuditRiskRating | null;
   correctiveActionSuggestion?: string | null;
   /** ISO-Datum YYYY-MM-DD */
