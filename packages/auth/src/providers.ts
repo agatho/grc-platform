@@ -198,10 +198,33 @@ export const credentialsProvider = Credentials({
         roles,
       };
     } catch (err) {
-      console.error(
-        "[auth] authorize error:",
-        err instanceof Error ? err.message : err,
-      );
+      // Auth.js swallows authorize() rejections into a generic
+      // CredentialsSignin — which means a DB driver / schema drift
+      // issue looks identical to a wrong password in the UI. Always
+      // log the full chain so post-mortems don't need a redeploy
+      // with extra `console.log`s.
+      if (err instanceof Error) {
+        console.error("[auth] authorize error:", err.message);
+        const cause = (err as Error & { cause?: unknown }).cause;
+        if (cause instanceof Error) {
+          console.error("  cause :", cause.message);
+          const pg = cause as Error & {
+            code?: string;
+            detail?: string;
+            hint?: string;
+            where?: string;
+          };
+          if (pg.code) console.error("  code  :", pg.code);
+          if (pg.detail) console.error("  detail:", pg.detail);
+          if (pg.hint) console.error("  hint  :", pg.hint);
+          if (pg.where) console.error("  where :", pg.where);
+        } else if (cause) {
+          console.error("  cause :", cause);
+        }
+        if (err.stack) console.error(err.stack);
+      } else {
+        console.error("[auth] authorize error:", err);
+      }
       return null;
     }
   },
