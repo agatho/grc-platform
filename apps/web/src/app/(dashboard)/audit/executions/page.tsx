@@ -65,12 +65,26 @@ function ExecutionsInner() {
   }, [fetchAudits]);
 
   const handleCreate = async (formData: FormData) => {
-    const body = {
+    const parseCsv = (v: string | null): string[] | undefined => {
+      if (!v) return undefined;
+      const arr = v
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return arr.length > 0 ? arr : undefined;
+    };
+
+    const body: Record<string, unknown> = {
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
       auditType: formData.get("auditType") as string,
       plannedStart: (formData.get("plannedStart") as string) || undefined,
       plannedEnd: (formData.get("plannedEnd") as string) || undefined,
+      scopeDescription:
+        (formData.get("scopeDescription") as string) || undefined,
+      scopeProcesses: parseCsv(formData.get("scopeProcesses") as string),
+      scopeDepartments: parseCsv(formData.get("scopeDepartments") as string),
+      scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
     };
 
     const res = await fetch("/api/v1/audit-mgmt/audits", {
@@ -82,6 +96,11 @@ function ExecutionsInner() {
     if (res.ok) {
       setDialogOpen(false);
       void fetchAudits();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(
+        `Anlegen fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+      );
     }
   };
 
@@ -159,7 +178,7 @@ function ExecutionsInner() {
                 {t("createAudit")}
               </Button>
             </DialogTrigger>
-            <DialogContent>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("createAudit")}</DialogTitle>
               </DialogHeader>
@@ -180,7 +199,12 @@ function ExecutionsInner() {
                   <label className="text-sm font-medium">
                     {t("description")}
                   </label>
-                  <Input name="description" />
+                  <textarea
+                    name="description"
+                    rows={2}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    placeholder="Audit-Zweck, Anlass, Auftraggeber, Berichtsempfänger …"
+                  />
                 </div>
                 <div>
                   <label className="text-sm font-medium">
@@ -204,6 +228,7 @@ function ExecutionsInner() {
                     </option>
                   </select>
                 </div>
+
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="text-sm font-medium">
@@ -218,9 +243,72 @@ function ExecutionsInner() {
                     <Input name="plannedEnd" type="date" />
                   </div>
                 </div>
-                <Button type="submit" className="w-full">
-                  {t("save")}
-                </Button>
+
+                <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
+                  <legend className="text-xs font-semibold text-gray-600 px-1">
+                    Audit-Umfang (ISO 19011 § 5.4)
+                  </legend>
+                  <div>
+                    <label className="text-sm font-medium">
+                      Scope-Beschreibung
+                    </label>
+                    <textarea
+                      name="scopeDescription"
+                      rows={2}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      placeholder="Welche Organisationsteile, Standorte, Systeme, Zeitraum werden geprüft?"
+                    />
+                  </div>
+                  <div className="grid grid-cols-1 gap-3">
+                    <div>
+                      <label className="text-sm font-medium">
+                        Prozesse{" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (kommagetrennt)
+                        </span>
+                      </label>
+                      <Input
+                        name="scopeProcesses"
+                        placeholder="z. B. Identitätsverwaltung, Patch-Management, Backup"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">
+                        Abteilungen / Standorte{" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (kommagetrennt)
+                        </span>
+                      </label>
+                      <Input
+                        name="scopeDepartments"
+                        placeholder="z. B. IT, HR, Standort Berlin, Standort Wien"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">
+                        Geprüfte Frameworks{" "}
+                        <span className="text-xs font-normal text-gray-400">
+                          (kommagetrennt)
+                        </span>
+                      </label>
+                      <Input
+                        name="scopeFrameworks"
+                        placeholder="z. B. ISO 27001, CIS Controls v8 IG2, NIS2"
+                      />
+                    </div>
+                  </div>
+                </fieldset>
+
+                <div className="flex justify-end gap-2 pt-2 border-t">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => setDialogOpen(false)}
+                  >
+                    Abbrechen
+                  </Button>
+                  <Button type="submit">{t("save")}</Button>
+                </div>
               </form>
             </DialogContent>
           </Dialog>

@@ -8,7 +8,7 @@ import {
   orgActiveCatalog,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, inArray, asc } from "drizzle-orm";
+import { eq, and, isNull, inArray, asc, sql as dsql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 type RouteParams = { params: Promise<{ id: string }> };
@@ -32,13 +32,24 @@ export async function POST(req: Request, { params }: RouteParams) {
   if (moduleCheck) return moduleCheck;
 
   // Optional body — tolerate empty body for backwards compatibility.
+  //   { catalogId?: string,
+  //     implementationGroup?: "ig1" | "ig2" | "ig3"  // nur sinnvoll bei CIS
+  //   }
   let targetCatalogId: string | undefined;
+  let implementationGroup: "ig1" | "ig2" | "ig3" | undefined;
   try {
     const raw = await req.text();
     if (raw && raw.trim().length > 0) {
       const body = JSON.parse(raw);
       if (typeof body?.catalogId === "string" && body.catalogId.length > 0) {
         targetCatalogId = body.catalogId;
+      }
+      if (
+        body?.implementationGroup === "ig1" ||
+        body?.implementationGroup === "ig2" ||
+        body?.implementationGroup === "ig3"
+      ) {
+        implementationGroup = body.implementationGroup;
       }
     }
   } catch {
@@ -89,6 +100,17 @@ export async function POST(req: Request, { params }: RouteParams) {
         { status: 422 },
       );
     }
+    // IG-Filter: nur Level-1-Safeguards, deren metadata.{ig}=true ist.
+    // Level-0-Controls sind per Definition IG-übergreifend (Headers) und
+    // werden bei IG-Auswahl nicht separat als Checklisten-Item ausgegeben —
+    // sonst hätten wir 18 zusätzliche schwammige „Umsetzt?"-Fragen.
+    const igPredicate = implementationGroup
+      ? and(
+          eq(catalogEntry.level, 1),
+          dsql`${catalogEntry.metadata} ->> ${implementationGroup} = 'true'`,
+        )
+      : undefined;
+
     const entries = await db
       .select({
         id: catalogEntry.id,
@@ -103,6 +125,7 @@ export async function POST(req: Request, { params }: RouteParams) {
         and(
           eq(catalogEntry.catalogId, targetCatalogId),
           eq(catalogEntry.status, "active"),
+          ...(igPredicate ? [igPredicate] : []),
         ),
       )
       .orderBy(asc(catalogEntry.sortOrder))
@@ -191,13 +214,16 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
 
+  const igSuffix = implementationGroup
+    ? ` · ${implementationGroup.toUpperCase()}`
+    : "";
   const created = await withAuditContext(ctx, async (tx) => {
     const [checklist] = await tx
       .insert(auditChecklist)
       .values({
         orgId: ctx.orgId,
         auditId: id,
-        name: `Auto-generated Checklist - ${existing.title}`,
+        name: `Auto-generated Checklist - ${existing.title}${igSuffix}`,
         sourceType: "auto_controls",
         totalItems: items.length,
         completedItems: 0,

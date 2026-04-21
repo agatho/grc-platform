@@ -16,6 +16,9 @@ import {
   MinusCircle,
   BookOpen,
   ChevronDown,
+  Trash2,
+  Paperclip,
+  X,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -64,6 +67,7 @@ function ExecutionDetailInner() {
   const [audit, setAudit] = useState<AuditDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
 
   const fetchAudit = useCallback(async () => {
     setLoading(true);
@@ -193,6 +197,13 @@ function ExecutionDetailInner() {
               : ""}
           </p>
         </div>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => setEditDialogOpen(true)}
+        >
+          Details bearbeiten
+        </Button>
         {nextStatus[audit.status] && (
           <Button
             size="sm"
@@ -202,6 +213,17 @@ function ExecutionDetailInner() {
           </Button>
         )}
       </div>
+
+      {/* Edit-Audit-Dialog (Vollfeld-Editor) */}
+      <AuditEditDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        audit={audit}
+        onSaved={() => {
+          setEditDialogOpen(false);
+          void fetchAudit();
+        }}
+      />
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
@@ -298,6 +320,192 @@ function OverviewTab({ audit }: { audit: AuditDetail }) {
   );
 }
 
+// ─── Vollfeld-Editor für Audit-Details ───────────────────────
+// Deckt die Felder ab, die ISO 19011 / IIA 2330 verlangen, aber die
+// bisher in Create-Form + Read-only-Overview versteckt waren:
+//   scope{Description, Processes, Departments, Frameworks}, actual dates,
+//   conclusion, auditorIds (kommagetrennt). Lead-/Auditee-IDs sind UUIDs
+//   und werden hier NICHT als Freitext gepflegt — dafür braucht es den
+//   User-Picker (separate Story).
+
+function AuditEditDialog({
+  open,
+  onClose,
+  audit,
+  onSaved,
+}: {
+  open: boolean;
+  onClose: () => void;
+  audit: AuditDetail;
+  onSaved: () => void;
+}) {
+  const t = useTranslations("auditMgmt");
+  const [saving, setSaving] = useState(false);
+
+  const handleSave = async (formData: FormData) => {
+    const parseCsv = (v: string | null): string[] | undefined => {
+      if (!v) return undefined;
+      const arr = v
+        .split(/[,;\n]/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+      return arr.length > 0 ? arr : undefined;
+    };
+
+    const body: Record<string, unknown> = {
+      title: formData.get("title") as string,
+      description: (formData.get("description") as string) || undefined,
+      scopeDescription:
+        (formData.get("scopeDescription") as string) || undefined,
+      scopeProcesses: parseCsv(formData.get("scopeProcesses") as string),
+      scopeDepartments: parseCsv(formData.get("scopeDepartments") as string),
+      scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
+      plannedStart: (formData.get("plannedStart") as string) || undefined,
+      plannedEnd: (formData.get("plannedEnd") as string) || undefined,
+      // actualStart/End + conclusion werden via Status-Transition-Endpoint
+      // gepflegt, NICHT via PUT /audits/[id] (dessen Schema updateAuditSchema
+      // enthält sie nicht). Wir fassen deshalb nur Planungs-/Scope-Felder an.
+    };
+
+    setSaving(true);
+    try {
+      const res = await fetch(`/api/v1/audit-mgmt/audits/${audit.id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(body),
+      });
+      if (res.ok) {
+        onSaved();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(
+          `Speichern fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+        );
+      }
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Audit-Details bearbeiten</DialogTitle>
+        </DialogHeader>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault();
+            void handleSave(new FormData(e.currentTarget));
+          }}
+          className="space-y-4"
+        >
+          <div>
+            <label className="text-sm font-medium">{t("auditTitle")}</label>
+            <Input name="title" required defaultValue={audit.title} />
+          </div>
+          <div>
+            <label className="text-sm font-medium">{t("description")}</label>
+            <textarea
+              name="description"
+              rows={2}
+              defaultValue={audit.description ?? ""}
+              className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            />
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="text-sm font-medium">{t("plannedStart")}</label>
+              <Input
+                name="plannedStart"
+                type="date"
+                defaultValue={audit.plannedStart ?? ""}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("plannedEnd")}</label>
+              <Input
+                name="plannedEnd"
+                type="date"
+                defaultValue={audit.plannedEnd ?? ""}
+              />
+            </div>
+          </div>
+
+          <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
+            <legend className="text-xs font-semibold text-gray-600 px-1">
+              Audit-Umfang (ISO 19011 § 5.4)
+            </legend>
+            <div>
+              <label className="text-sm font-medium">Scope-Beschreibung</label>
+              <textarea
+                name="scopeDescription"
+                rows={2}
+                defaultValue={audit.scopeDescription ?? ""}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                placeholder="Welche Organisationsteile, Standorte, Systeme, Zeitraum?"
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                Prozesse{" "}
+                <span className="text-xs font-normal text-gray-400">
+                  (kommagetrennt)
+                </span>
+              </label>
+              <Input
+                name="scopeProcesses"
+                defaultValue={(audit.scopeProcesses ?? []).join(", ")}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                Abteilungen / Standorte{" "}
+                <span className="text-xs font-normal text-gray-400">
+                  (kommagetrennt)
+                </span>
+              </label>
+              <Input
+                name="scopeDepartments"
+                defaultValue={(audit.scopeDepartments ?? []).join(", ")}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                Geprüfte Frameworks{" "}
+                <span className="text-xs font-normal text-gray-400">
+                  (kommagetrennt)
+                </span>
+              </label>
+              <Input
+                name="scopeFrameworks"
+                defaultValue={(audit.scopeFrameworks ?? []).join(", ")}
+                placeholder="z. B. ISO 27001, CIS Controls v8 IG2, NIS2"
+              />
+            </div>
+          </fieldset>
+
+          <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
+            <strong>Hinweis:</strong> Tatsächliche Start-/Endtermine und die
+            Audit-Konklusion werden beim Statuswechsel gesetzt (Buttons oben
+            rechts: „Weiter zu…"). Findings + Auditor-Zuweisungen pflegst du in
+            den jeweiligen Tabs.
+          </div>
+
+          <div className="flex justify-end gap-2 pt-2 border-t">
+            <Button type="button" variant="outline" onClick={onClose}>
+              Abbrechen
+            </Button>
+            <Button type="submit" disabled={saving}>
+              {saving ? "Speichern…" : "Speichern"}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function InfoRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex justify-between">
@@ -329,6 +537,20 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const [evaluateItem, setEvaluateItem] = useState<AuditChecklistItem | null>(
     null,
   );
+  // Evidenz-IDs, die in der Evaluate-Dialog gerade gepflegt werden —
+  // initial aus item.evidenceIds, werden über Add/Remove-Buttons verändert,
+  // erst beim Submit als evidenceIds an PUT .../items/[itemId] geschickt.
+  const [evaluateEvidenceIds, setEvaluateEvidenceIds] = useState<string[]>([]);
+  const [evidencePool, setEvidencePool] = useState<
+    Array<{
+      id: string;
+      fileName: string;
+      category: string | null;
+      description?: string | null;
+      createdAt?: string;
+    }>
+  >([]);
+  const [evidencePickerOpen, setEvidencePickerOpen] = useState(false);
   const [createFindingItem, setCreateFindingItem] =
     useState<AuditChecklistItem | null>(null);
   const [risks, setRisks] = useState<
@@ -478,20 +700,60 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   }, [checklists, selectedChecklist]);
 
-  const handleGenerate = async (catalogId?: string) => {
+  // Evidence-Pool laden (scope: org-weit, damit Auditor alles verknüpfen kann
+  // was im Audit-Kontext sinnvoll ist — Kontroll-Tests, bestehende Audit-
+  // Evidenzen, Policy-Dokumente usw.)
+  const fetchEvidencePool = useCallback(async () => {
+    try {
+      const res = await fetch("/api/v1/evidence?limit=500&sortDir=desc");
+      if (res.ok) {
+        const json = await res.json();
+        setEvidencePool(json.data ?? []);
+      }
+    } catch {
+      // still usable with empty pool
+    }
+  }, []);
+
+  useEffect(() => {
+    void fetchEvidencePool();
+  }, [fetchEvidencePool]);
+
+  // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste aus dem Item ziehen.
+  useEffect(() => {
+    if (evaluateItem) {
+      setEvaluateEvidenceIds(evaluateItem.evidenceIds ?? []);
+      setEvidencePickerOpen(false);
+    } else {
+      setEvaluateEvidenceIds([]);
+    }
+  }, [evaluateItem]);
+
+  const handleGenerate = async (
+    catalogId?: string,
+    implementationGroup?: "ig1" | "ig2" | "ig3",
+  ) => {
     setGenerating(true);
     setImportMenuOpen(false);
     try {
+      const payload: Record<string, unknown> = {};
+      if (catalogId) payload.catalogId = catalogId;
+      if (implementationGroup) payload.implementationGroup = implementationGroup;
       const res = await fetch(
         `/api/v1/audit-mgmt/audits/${auditId}/checklists/generate`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: catalogId ? JSON.stringify({ catalogId }) : "{}",
+          body: JSON.stringify(payload),
         },
       );
       if (res.ok) {
         void fetchChecklists();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(
+          `Generieren fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+        );
       }
     } finally {
       setGenerating(false);
@@ -545,12 +807,17 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   };
 
-  const handleEvaluate = async (itemId: string, formData: FormData) => {
+  const handleEvaluate = async (
+    itemId: string,
+    formData: FormData,
+    evidenceIds: string[],
+  ) => {
     if (!selectedChecklist) return;
 
     const body = {
       result: formData.get("result") as string,
       notes: (formData.get("notes") as string) || undefined,
+      evidenceIds,
     };
 
     const res = await fetch(
@@ -566,6 +833,31 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       setEvaluateItem(null);
       void fetchItems(selectedChecklist);
       void fetchChecklists();
+    }
+  };
+
+  const handleDeleteChecklist = async (checklistId: string, name: string) => {
+    if (
+      !confirm(
+        `Checkliste "${name}" unwiderruflich löschen?\n\nAlle Fragen und erfassten Bewertungen gehen verloren.\n\nNicht möglich, wenn das Audit bereits abgeschlossen/reported ist.`,
+      )
+    )
+      return;
+    const res = await fetch(
+      `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}`,
+      { method: "DELETE" },
+    );
+    if (res.ok) {
+      if (selectedChecklist === checklistId) {
+        setSelectedChecklist(null);
+        setItems([]);
+      }
+      void fetchChecklists();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(
+        `Löschen fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+      );
     }
   };
 
@@ -626,17 +918,48 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 flex-wrap">
           {checklists.map((cl) => (
-            <Button
+            <div
               key={cl.id}
-              variant={selectedChecklist === cl.id ? "default" : "outline"}
-              size="sm"
-              onClick={() => setSelectedChecklist(cl.id)}
+              className={`inline-flex items-stretch rounded-md border ${
+                selectedChecklist === cl.id
+                  ? "border-blue-600 bg-blue-600 text-white"
+                  : "border-gray-300 bg-white text-gray-700 hover:bg-gray-50"
+              }`}
             >
-              {cl.name}
-            </Button>
+              <button
+                type="button"
+                onClick={() => setSelectedChecklist(cl.id)}
+                className="px-3 py-1.5 text-sm font-medium"
+                title={cl.name}
+              >
+                {cl.name}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleDeleteChecklist(cl.id, cl.name);
+                }}
+                className={`border-l px-2 ${
+                  selectedChecklist === cl.id
+                    ? "border-blue-500 hover:bg-blue-700"
+                    : "border-gray-300 hover:bg-red-50 hover:text-red-600"
+                }`}
+                title="Checkliste löschen"
+                aria-label={`${cl.name} löschen`}
+              >
+                <Trash2 size={14} />
+              </button>
+            </div>
           ))}
+          {checklists.length === 0 && !loading && (
+            <span className="text-sm text-gray-400">
+              Noch keine Checklisten. Rechts auf „Generieren" oder
+              „Framework-Import" klicken.
+            </span>
+          )}
         </div>
         <div className="flex gap-2">
           {/* Import from Framework dropdown */}
@@ -680,26 +1003,59 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     <div className="px-3 py-1.5 text-[10px] font-semibold text-gray-400 uppercase tracking-wider border-t border-b border-gray-100">
                       Aktive Kontroll-Kataloge
                     </div>
-                    {activeCatalogs.map((cat) => (
-                      <button
-                        key={cat.catalogId}
-                        type="button"
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                        onClick={() => handleGenerate(cat.catalogId)}
-                        title={
-                          cat.source && cat.version
-                            ? `${cat.source} ${cat.version}`
-                            : undefined
-                        }
-                      >
-                        {cat.name}
-                        {cat.version && (
-                          <span className="text-xs text-gray-400 ml-1">
-                            · {cat.version}
-                          </span>
-                        )}
-                      </button>
-                    ))}
+                    {activeCatalogs.map((cat) => {
+                      const isCis = cat.source === "cis_controls_v8";
+                      return (
+                        <div key={cat.catalogId}>
+                          <button
+                            type="button"
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                            onClick={() => handleGenerate(cat.catalogId)}
+                            title={
+                              cat.source && cat.version
+                                ? `${cat.source} ${cat.version}`
+                                : undefined
+                            }
+                          >
+                            {cat.name}
+                            {cat.version && (
+                              <span className="text-xs text-gray-400 ml-1">
+                                · {cat.version}
+                              </span>
+                            )}
+                            {isCis && (
+                              <span className="text-[10px] text-gray-400 ml-1">
+                                · alle Safeguards
+                              </span>
+                            )}
+                          </button>
+                          {/* CIS: zusätzlich IG1/IG2/IG3-scoped Generieren */}
+                          {isCis && (
+                            <div className="pl-6 pb-1 flex gap-1">
+                              {(["ig1", "ig2", "ig3"] as const).map((ig) => (
+                                <button
+                                  key={ig}
+                                  type="button"
+                                  className="text-[11px] px-2 py-0.5 rounded border border-gray-300 hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700"
+                                  onClick={() =>
+                                    handleGenerate(cat.catalogId, ig)
+                                  }
+                                  title={
+                                    ig === "ig1"
+                                      ? "Essential Cyber Hygiene — Baseline für jede Org"
+                                      : ig === "ig2"
+                                        ? "Risk-Based — umfasst IG1 + zusätzliche Safeguards"
+                                        : "Mature Program — umfasst IG1 + IG2 + erweiterte Safeguards"
+                                  }
+                                >
+                                  {ig.toUpperCase()}
+                                </button>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })}
                   </>
                 )}
                 {activeCatalogs.length === 0 && (
@@ -841,7 +1197,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
       {/* Evaluate Dialog */}
       <Dialog open={!!evaluateItem} onOpenChange={() => setEvaluateItem(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>{t("evaluateItem")}</DialogTitle>
           </DialogHeader>
@@ -852,11 +1208,20 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 void handleEvaluate(
                   evaluateItem.id,
                   new FormData(e.currentTarget),
+                  evaluateEvidenceIds,
                 );
               }}
               className="space-y-4"
             >
-              <p className="text-sm text-gray-700">{evaluateItem.question}</p>
+              <div className="rounded-md bg-gray-50 p-3 text-sm">
+                <p className="text-gray-900">{evaluateItem.question}</p>
+                {evaluateItem.expectedEvidence && (
+                  <p className="mt-2 text-xs text-gray-500">
+                    <span className="font-medium">Erwartete Evidenz:</span>{" "}
+                    {evaluateItem.expectedEvidence}
+                  </p>
+                )}
+              </div>
               <div>
                 <label className="text-sm font-medium">{t("result")}</label>
                 <select
@@ -883,13 +1248,125 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 <textarea
                   name="notes"
                   defaultValue={evaluateItem.notes ?? ""}
-                  rows={3}
+                  rows={4}
+                  placeholder="Auditor-Notizen, getestete Sample-IDs, Interview-Partner, Observationen, Begründung der Bewertung, …"
                   className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                 />
               </div>
-              <Button type="submit" className="w-full">
-                {t("save")}
-              </Button>
+
+              {/* Evidenz-Verknüpfung */}
+              <div>
+                <div className="flex items-center justify-between">
+                  <label className="text-sm font-medium">
+                    Evidenzen{" "}
+                    <span className="text-xs font-normal text-gray-500">
+                      ({evaluateEvidenceIds.length})
+                    </span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={() => setEvidencePickerOpen((v) => !v)}
+                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                  >
+                    <Paperclip size={12} />
+                    {evidencePickerOpen ? "Schließen" : "Evidenz hinzufügen"}
+                  </button>
+                </div>
+
+                {/* Bereits verknüpfte Evidenzen als Chips mit X-Button */}
+                <div className="mt-2 flex flex-wrap gap-1.5 min-h-[32px] rounded-md border border-dashed border-gray-200 p-2">
+                  {evaluateEvidenceIds.length === 0 && (
+                    <span className="text-xs text-gray-400">
+                      Keine Evidenzen verknüpft. Klicke oben auf „Evidenz
+                      hinzufügen" um aus dem Evidenz-Pool zu wählen.
+                    </span>
+                  )}
+                  {evaluateEvidenceIds.map((id) => {
+                    const ev = evidencePool.find((e) => e.id === id);
+                    return (
+                      <span
+                        key={id}
+                        className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 border border-blue-200"
+                      >
+                        <Paperclip size={10} />
+                        <span className="max-w-[180px] truncate" title={ev?.fileName ?? id}>
+                          {ev?.fileName ?? id.slice(0, 8)}
+                        </span>
+                        {ev?.category && (
+                          <span className="text-[10px] text-blue-500">
+                            · {ev.category}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setEvaluateEvidenceIds((ids) =>
+                              ids.filter((x) => x !== id),
+                            )
+                          }
+                          className="ml-0.5 hover:text-red-600"
+                          aria-label="Entfernen"
+                        >
+                          <X size={11} />
+                        </button>
+                      </span>
+                    );
+                  })}
+                </div>
+
+                {/* Picker: scroll-baren Auszug aus dem Pool */}
+                {evidencePickerOpen && (
+                  <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-gray-200">
+                    {evidencePool.length === 0 && (
+                      <div className="p-3 text-xs text-gray-400">
+                        Noch keine Evidenzen in der Org angelegt. Erstelle erst
+                        Evidenzen unter <em>/ics/evidence</em> oder importiere
+                        sie aus einem Kontroll-Test.
+                      </div>
+                    )}
+                    {evidencePool
+                      .filter((e) => !evaluateEvidenceIds.includes(e.id))
+                      .slice(0, 100)
+                      .map((ev) => (
+                        <button
+                          key={ev.id}
+                          type="button"
+                          onClick={() => {
+                            setEvaluateEvidenceIds((ids) => [...ids, ev.id]);
+                          }}
+                          className="block w-full text-left px-3 py-2 text-xs border-b border-gray-100 last:border-0 hover:bg-blue-50"
+                        >
+                          <div className="flex items-center justify-between gap-2">
+                            <span className="font-medium text-gray-900 truncate">
+                              {ev.fileName}
+                            </span>
+                            {ev.category && (
+                              <span className="text-[10px] text-gray-500 shrink-0">
+                                {ev.category}
+                              </span>
+                            )}
+                          </div>
+                          {ev.description && (
+                            <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">
+                              {ev.description}
+                            </p>
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                )}
+              </div>
+
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setEvaluateItem(null)}
+                >
+                  Abbrechen
+                </Button>
+                <Button type="submit">{t("save")}</Button>
+              </div>
             </form>
           )}
         </DialogContent>
