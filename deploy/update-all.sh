@@ -70,17 +70,21 @@ fi
 # einspielen, bereits vorhandene Rows werden übersprungen.
 echo ""
 echo "[3b/5] Katalog-Baseline top-up (idempotent, alle DBs)..."
-if [ -x /opt/arctos/deploy/seed-catalogs.sh ]; then
-  bash /opt/arctos/deploy/seed-catalogs.sh grc_platform 2>&1 | tail -5 | sed 's/^/  /' || true
+SEEDER=/opt/arctos/deploy/seed-catalogs.sh
+if [ -f "$SEEDER" ]; then
+  chmod +x "$SEEDER" 2>/dev/null || true
+  echo "  → grc_platform"
+  bash "$SEEDER" grc_platform 2>&1 | sed 's/^/    /' || true
   if [ -d /opt/arctos/tenants ]; then
     for tdir in /opt/arctos/tenants/*/; do
       [ -d "$tdir" ] || continue
       TENANT=$(basename "$tdir")
-      bash /opt/arctos/deploy/seed-catalogs.sh "grc_${TENANT}" 2>&1 | tail -5 | sed "s/^/  [$TENANT] /" || true
+      echo "  → grc_${TENANT}"
+      bash "$SEEDER" "grc_${TENANT}" 2>&1 | sed "s/^/    /" || true
     done
   fi
 else
-  echo "  (seed-catalogs.sh fehlt — übersprungen)"
+  echo "  FEHLER: $SEEDER fehlt — Tenants bleiben ohne Frameworks!"
 fi
 
 # ── 4. Haupt-Container neu starten ────────────────────────
