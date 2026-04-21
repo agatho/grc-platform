@@ -51,7 +51,7 @@ export async function PUT(req: Request, { params }: RouteParams) {
         evidenceIds: body.data.evidenceIds,
         // ISO 19011 / ISO 17021-1 Arbeitspapier-Felder
         criterionReference: body.data.criterionReference,
-        auditMethod: body.data.auditMethod,
+        auditMethods: body.data.auditMethods,
         interviewee: body.data.interviewee,
         intervieweeRole: body.data.intervieweeRole,
         sampleSize: body.data.sampleSize,

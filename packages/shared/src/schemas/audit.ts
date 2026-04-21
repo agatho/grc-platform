@@ -184,7 +184,8 @@ export const evaluateChecklistItemSchema = z.object({
   evidenceIds: z.array(z.string().uuid()).optional(),
 
   criterionReference: z.string().max(200).optional(),
-  auditMethod: z.enum(auditMethodValues).optional(),
+  // ISO 19011 § 6.4.7: Kombination mehrerer Methoden pro Kriterium
+  auditMethods: z.array(z.enum(auditMethodValues)).max(7).optional(),
   interviewee: z.string().max(200).optional(),
   intervieweeRole: z.string().max(200).optional(),
 
