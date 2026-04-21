@@ -37,6 +37,7 @@ import type {
   AuditChecklist,
   AuditChecklistItem,
   AuditActivity,
+  MethodEntry,
 } from "@grc/shared";
 
 interface AuditDetail extends Audit {
@@ -563,6 +564,492 @@ function methodLabel(m: string | null | undefined): string {
   }
 }
 
+function methodIcon(m: string | null | undefined): string {
+  switch (m) {
+    case "interview":
+      return "👤";
+    case "document_review":
+      return "📄";
+    case "observation":
+      return "👁";
+    case "walkthrough":
+      return "🚶";
+    case "technical_test":
+      return "🔧";
+    case "sampling":
+      return "🎯";
+    case "reperformance":
+      return "🔁";
+    default:
+      return "•";
+  }
+}
+
+// ─── MethodEntriesEditor ─────────────────────────────────────
+// Liste typisierter Audit-Nachweise. Jeder Eintrag ist ein eigener Nachweis
+// mit method-spezifischen Feldern (Interview → Person, Stichprobe → Population+IDs,
+// etc.). Der:die Auditor:in kann beliebig viele Einträge anlegen — pro Bewertung
+// sind üblicherweise 2–4 Nachweise nötig (ISO 19011 § 6.4.7 Abs. 2).
+
+type MethodKind = MethodEntry["method"];
+
+// Lokaler Typ für teilweise ausgefüllte Entries (während Eingabe);
+// id bleibt immer gesetzt.
+type EditableMethodEntry = Partial<MethodEntry> & {
+  id: string;
+  method: MethodKind;
+};
+
+function newMethodEntry(method: MethodKind): EditableMethodEntry {
+  const id =
+    typeof crypto !== "undefined" && "randomUUID" in crypto
+      ? crypto.randomUUID()
+      : Math.random().toString(36).slice(2) + Date.now().toString(36);
+  return { id, method };
+}
+
+function MethodEntriesEditor({
+  value,
+  onChange,
+}: {
+  value: EditableMethodEntry[];
+  onChange: (next: EditableMethodEntry[]) => void;
+}) {
+  const [addMenuOpen, setAddMenuOpen] = useState(false);
+
+  const update = (id: string, patch: Partial<EditableMethodEntry>) => {
+    onChange(
+      value.map((e) => (e.id === id ? ({ ...e, ...patch } as EditableMethodEntry) : e)),
+    );
+  };
+  const remove = (id: string) => {
+    onChange(value.filter((e) => e.id !== id));
+  };
+  const add = (method: MethodKind) => {
+    onChange([...value, newMethodEntry(method)]);
+    setAddMenuOpen(false);
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* Entries */}
+      {value.length === 0 && (
+        <div className="text-xs text-gray-400 border border-dashed border-gray-200 rounded-md p-4 text-center">
+          Noch keine Nachweise erfasst. Unten „+ Nachweis hinzufügen" klicken —
+          pro Methode erscheint ein eigenes Mini-Formular mit den passenden
+          Feldern (z. B. Interview → Person, Stichprobe → Population + IDs).
+        </div>
+      )}
+      {value.map((entry, idx) => (
+        <MethodEntryCard
+          key={entry.id}
+          entry={entry}
+          index={idx}
+          onChange={(patch) => update(entry.id, patch)}
+          onRemove={() => remove(entry.id)}
+        />
+      ))}
+
+      {/* Add-Dropdown */}
+      <div className="relative">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          onClick={() => setAddMenuOpen((v) => !v)}
+        >
+          <Plus size={14} className="mr-1" />
+          Nachweis hinzufügen
+          <ChevronDown size={12} className="ml-1" />
+        </Button>
+        {addMenuOpen && (
+          <div className="absolute left-0 top-full mt-1 w-72 rounded-md border border-gray-200 bg-white shadow-lg z-20">
+            {(
+              [
+                ["interview", "Interview / Befragung"],
+                ["document_review", "Dokumentenprüfung"],
+                ["observation", "Begehung / Beobachtung"],
+                ["walkthrough", "Walkthrough"],
+                ["technical_test", "Technischer Test"],
+                ["sampling", "Stichprobe"],
+                ["reperformance", "Reperformance"],
+              ] as const
+            ).map(([m, label]) => (
+              <button
+                key={m}
+                type="button"
+                onClick={() => add(m)}
+                className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-2"
+              >
+                <span className="w-5 text-center">{methodIcon(m)}</span>
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {value.length >= 2 && (
+        <p className="text-[11px] text-emerald-600">
+          ✓ {value.length} Nachweise kombiniert — stärkste Form der Evidenz
+          (ISO 19011 § 6.4.7 Abs. 2).
+        </p>
+      )}
+    </div>
+  );
+}
+
+function MethodEntryCard({
+  entry,
+  index,
+  onChange,
+  onRemove,
+}: {
+  entry: EditableMethodEntry;
+  index: number;
+  onChange: (patch: Partial<EditableMethodEntry>) => void;
+  onRemove: () => void;
+}) {
+  return (
+    <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
+      <div className="flex items-start justify-between gap-2">
+        <div className="flex items-center gap-2">
+          <span className="text-lg" aria-hidden>
+            {methodIcon(entry.method)}
+          </span>
+          <div>
+            <p className="text-sm font-semibold text-gray-900">
+              #{index + 1} · {methodLabel(entry.method)}
+            </p>
+          </div>
+        </div>
+        <button
+          type="button"
+          onClick={onRemove}
+          className="text-gray-400 hover:text-red-600 p-1"
+          aria-label="Nachweis entfernen"
+          title="Nachweis entfernen"
+        >
+          <X size={14} />
+        </button>
+      </div>
+
+      {/* Gemeinsame Felder: Datum + Notizen */}
+      <div className="grid grid-cols-3 gap-2">
+        <div className="col-span-1">
+          <label className="text-xs font-medium text-gray-600">Datum</label>
+          <Input
+            type="date"
+            value={entry.date ?? ""}
+            onChange={(e) => onChange({ date: e.target.value || undefined })}
+            className="text-sm"
+          />
+        </div>
+        <div className="col-span-2">
+          <label className="text-xs font-medium text-gray-600">
+            Kurz-Notiz zum Nachweis
+          </label>
+          <Input
+            value={entry.notes ?? ""}
+            onChange={(e) => onChange({ notes: e.target.value || undefined })}
+            placeholder="optional — detaillierte Notizen kommen in das Haupt-Notizfeld unten"
+            className="text-sm"
+          />
+        </div>
+      </div>
+
+      {/* Methoden-spezifische Felder */}
+      {entry.method === "interview" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs font-medium text-gray-600">Person</label>
+            <Input
+              value={(entry as MethodEntry & { interviewee?: string }).interviewee ?? ""}
+              onChange={(e) => onChange({ interviewee: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="Max Mustermann"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Rolle / Funktion
+            </label>
+            <Input
+              value={(entry as MethodEntry & { intervieweeRole?: string }).intervieweeRole ?? ""}
+              onChange={(e) => onChange({ intervieweeRole: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. CISO, IT-Leitung"
+            />
+          </div>
+        </div>
+      )}
+
+      {entry.method === "document_review" && (
+        <DocumentReviewFields entry={entry} onChange={onChange} />
+      )}
+
+      {entry.method === "observation" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs font-medium text-gray-600">Ort / Standort</label>
+            <Input
+              value={(entry as MethodEntry & { location?: string }).location ?? ""}
+              onChange={(e) => onChange({ location: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. RZ Frankfurt, Büro Berlin"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Beobachteter Prozess
+            </label>
+            <Input
+              value={(entry as MethodEntry & { observedProcess?: string }).observedProcess ?? ""}
+              onChange={(e) => onChange({ observedProcess: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. Change-Approval-Meeting, Zutritt Serverraum"
+            />
+          </div>
+        </div>
+      )}
+
+      {entry.method === "walkthrough" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Prozess / Aktivität
+            </label>
+            <Input
+              value={(entry as MethodEntry & { process?: string }).process ?? ""}
+              onChange={(e) => onChange({ process: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. Incident-Response Walkthrough"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Teilnehmer
+            </label>
+            <Input
+              value={(entry as MethodEntry & { participants?: string }).participants ?? ""}
+              onChange={(e) => onChange({ participants: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="Namen / Rollen, kommagetrennt"
+            />
+          </div>
+        </div>
+      )}
+
+      {entry.method === "technical_test" && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-2 gap-2">
+            <div>
+              <label className="text-xs font-medium text-gray-600">System</label>
+              <Input
+                value={(entry as MethodEntry & { system?: string }).system ?? ""}
+                onChange={(e) => onChange({ system: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                placeholder="z. B. Firewall FW-01, AD-Server dc01"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">
+                Testbeschreibung
+              </label>
+              <Input
+                value={(entry as MethodEntry & { testDescription?: string }).testDescription ?? ""}
+                onChange={(e) => onChange({ testDescription: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                placeholder="z. B. Rule-Review, Config-Screenshot"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Test-Ergebnis
+            </label>
+            <textarea
+              value={(entry as MethodEntry & { testResult?: string }).testResult ?? ""}
+              onChange={(e) => onChange({ testResult: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              rows={2}
+              placeholder="z. B. 12 obsolete Firewall-Regeln gefunden · Audit-Log-Retention: 45 Tage (Soll: 90)"
+              className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm"
+            />
+          </div>
+        </div>
+      )}
+
+      {entry.method === "sampling" && (
+        <div className="space-y-2">
+          <div className="grid grid-cols-3 gap-2">
+            <div>
+              <label className="text-xs font-medium text-gray-600">
+                Population N
+              </label>
+              <Input
+                type="number"
+                min={0}
+                value={(entry as MethodEntry & { populationSize?: number }).populationSize ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    populationSize: e.target.value
+                      ? Math.max(0, parseInt(e.target.value, 10))
+                      : undefined,
+                  } as Partial<EditableMethodEntry>)
+                }
+                placeholder="z. B. 500"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">
+                Stichprobe n
+              </label>
+              <Input
+                type="number"
+                min={0}
+                value={(entry as MethodEntry & { sampleSize?: number }).sampleSize ?? ""}
+                onChange={(e) =>
+                  onChange({
+                    sampleSize: e.target.value
+                      ? Math.max(0, parseInt(e.target.value, 10))
+                      : undefined,
+                  } as Partial<EditableMethodEntry>)
+                }
+                placeholder="z. B. 25"
+              />
+            </div>
+            <div>
+              <label className="text-xs font-medium text-gray-600">
+                Auswahlverfahren
+              </label>
+              <Input
+                value={(entry as MethodEntry & { selectionMethod?: string }).selectionMethod ?? ""}
+                onChange={(e) => onChange({ selectionMethod: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                placeholder="zufällig · geschichtet · risiko-basiert"
+              />
+            </div>
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Sample-IDs / Referenzen (kommagetrennt)
+            </label>
+            <textarea
+              value={((entry as MethodEntry & { sampleIds?: string[] }).sampleIds ?? []).join(", ")}
+              onChange={(e) => {
+                const arr = e.target.value
+                  .split(/[,;\n]/)
+                  .map((s) => s.trim())
+                  .filter(Boolean);
+                onChange({ sampleIds: arr.length > 0 ? arr : undefined } as Partial<EditableMethodEntry>);
+              }}
+              rows={2}
+              placeholder="TKT-1234, CHG-9001, USR-42, …"
+              className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm font-mono"
+            />
+          </div>
+        </div>
+      )}
+
+      {entry.method === "reperformance" && (
+        <div className="grid grid-cols-2 gap-2">
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Nachvollzogene Aktivität
+            </label>
+            <Input
+              value={(entry as MethodEntry & { activity?: string }).activity ?? ""}
+              onChange={(e) => onChange({ activity: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. Berechtigungs-Review, Backup-Restore-Test"
+            />
+          </div>
+          <div>
+            <label className="text-xs font-medium text-gray-600">
+              Baseline / Vergleich
+            </label>
+            <Input
+              value={(entry as MethodEntry & { baseline?: string }).baseline ?? ""}
+              onChange={(e) => onChange({ baseline: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              placeholder="z. B. Soll-Prozess aus Policy v3.2"
+            />
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Dokumentenliste — eigene Unter-Liste innerhalb des Document-Review-Entry.
+function DocumentReviewFields({
+  entry,
+  onChange,
+}: {
+  entry: EditableMethodEntry;
+  onChange: (patch: Partial<EditableMethodEntry>) => void;
+}) {
+  const docs =
+    (entry as MethodEntry & {
+      documents?: Array<{ title: string; reference?: string; version?: string }>;
+    }).documents ?? [];
+
+  const update = (
+    idx: number,
+    patch: Partial<{ title: string; reference: string; version: string }>,
+  ) => {
+    const next = docs.map((d, i) => (i === idx ? { ...d, ...patch } : d));
+    onChange({ documents: next } as Partial<EditableMethodEntry>);
+  };
+  const removeAt = (idx: number) => {
+    const next = docs.filter((_, i) => i !== idx);
+    onChange({
+      documents: next.length > 0 ? next : undefined,
+    } as Partial<EditableMethodEntry>);
+  };
+  const addDoc = () => {
+    onChange({
+      documents: [...docs, { title: "" }],
+    } as Partial<EditableMethodEntry>);
+  };
+
+  return (
+    <div className="space-y-1.5">
+      <label className="text-xs font-medium text-gray-600">
+        Geprüfte Dokumente
+      </label>
+      {docs.length === 0 && (
+        <p className="text-[11px] text-gray-400">
+          Noch keine Dokumente — Klick unten hinzufügt eine Zeile.
+        </p>
+      )}
+      {docs.map((d, i) => (
+        <div key={i} className="grid grid-cols-[1fr_1fr_80px_24px] gap-1.5">
+          <Input
+            value={d.title}
+            onChange={(e) => update(i, { title: e.target.value })}
+            placeholder="Titel z. B. IT-Security-Richtlinie"
+          />
+          <Input
+            value={d.reference ?? ""}
+            onChange={(e) => update(i, { reference: e.target.value })}
+            placeholder="Dok-ID / Link"
+          />
+          <Input
+            value={d.version ?? ""}
+            onChange={(e) => update(i, { version: e.target.value })}
+            placeholder="v3.2"
+          />
+          <button
+            type="button"
+            onClick={() => removeAt(i)}
+            className="text-gray-400 hover:text-red-600"
+            aria-label="Dokument entfernen"
+          >
+            <X size={14} />
+          </button>
+        </div>
+      ))}
+      <button
+        type="button"
+        onClick={addDoc}
+        className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+      >
+        <Plus size={12} /> Dokument hinzufügen
+      </button>
+    </div>
+  );
+}
+
 // ─── Checklists Tab ──────────────────────────────────────────
 
 function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
@@ -765,30 +1252,31 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     void fetchEvidencePool();
   }, [fetchEvidencePool]);
 
-  // Selektierter Result-Wert + selektierte Methoden aus dem Dialog-Form.
-  // Methoden sind ein Array (ISO 19011 § 6.4.7 — Kombination mehrerer
-  // Methoden). Result + Methoden steuern bedingte Abschnitte:
-  //  • NC-Section (Risiko, Korrekturmaßnahme, Frist) bei Abweichung/OFI
-  //  • Interview-Section bei methods.includes("interview")
-  //  • Sampling-Section bei methods.includes("sampling"|"technical_test")
+  // Selektierter Result-Wert + Methoden-Entries-Liste im Dialog.
+  // methodEntries: jeder Eintrag ist ein typisierter Nachweis mit eigenen
+  // Detail-Feldern (ISO 19011 § 6.4.5/6.4.7).
   const [selectedResult, setSelectedResult] = useState<string>("");
-  const [selectedMethods, setSelectedMethods] = useState<string[]>([]);
+  const [methodEntries, setMethodEntries] = useState<EditableMethodEntry[]>([]);
 
   // Beim Öffnen der Evaluate-Dialog: Evidenz-Liste + Form-State aus Item
   // ziehen, damit das Dialog den bisherigen Stand anzeigt.
   useEffect(() => {
     if (evaluateItem) {
       const item = evaluateItem as AuditChecklistItem & {
-        auditMethods?: string[] | null;
+        methodEntries?: MethodEntry[] | null;
       };
       setEvaluateEvidenceIds(item.evidenceIds ?? []);
       setSelectedResult(item.result ?? "");
-      setSelectedMethods(item.auditMethods ?? []);
+      // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
+      // aber die Server-Antwort kann jsonb-Frozen/flat sein.
+      setMethodEntries(
+        (item.methodEntries ?? []).map((e) => ({ ...e })) as EditableMethodEntry[],
+      );
       setEvidencePickerOpen(false);
     } else {
       setEvaluateEvidenceIds([]);
       setSelectedResult("");
-      setSelectedMethods([]);
+      setMethodEntries([]);
     }
   }, [evaluateItem]);
 
@@ -874,23 +1362,30 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     itemId: string,
     formData: FormData,
     evidenceIds: string[],
-    auditMethods: string[],
+    entries: EditableMethodEntry[],
   ) => {
     if (!selectedChecklist) return;
 
-    const parseSampleIds = (v: string | null): string[] | undefined => {
-      if (!v) return undefined;
-      const arr = v
-        .split(/[,;\n]/)
-        .map((s) => s.trim())
-        .filter(Boolean);
-      return arr.length > 0 ? arr : undefined;
-    };
-
-    const sampleSizeRaw = formData.get("sampleSize") as string;
-    const sampleSize = sampleSizeRaw
-      ? Math.max(0, parseInt(sampleSizeRaw, 10))
-      : undefined;
+    // Nur komplett ausgefüllte Entries an den Server schicken — leere Shells
+    // (Entry mit nur method+id, kein einziges ausgefülltes Feld) filtern wir
+    // wegen der Zod-Validation defensiv raus. Der User kann sie beim nächsten
+    // Öffnen neu anlegen.
+    const cleanedEntries = entries
+      .map((e) => {
+        // Basis-Cleanup: leere Strings auf undefined
+        const cleaned: Record<string, unknown> = { id: e.id, method: e.method };
+        for (const [k, v] of Object.entries(e)) {
+          if (k === "id" || k === "method") continue;
+          if (v === "" || v === null || v === undefined) continue;
+          if (Array.isArray(v) && v.length === 0) continue;
+          cleaned[k] = v;
+        }
+        return cleaned;
+      })
+      .filter((e) => Object.keys(e).length > 2 || entries.length > 0);
+    // Wenn Einträge bestehen, alle weiterreichen (auch leere Shells sind
+    // gültig, weil alle Detail-Felder optional sind) — erst oben gefiltert
+    // um `""` → `undefined` zu normalisieren.
 
     const body: Record<string, unknown> = {
       result: formData.get("result") as string,
@@ -898,11 +1393,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       evidenceIds,
       criterionReference:
         (formData.get("criterionReference") as string) || undefined,
-      auditMethods: auditMethods.length > 0 ? auditMethods : undefined,
-      interviewee: (formData.get("interviewee") as string) || undefined,
-      intervieweeRole: (formData.get("intervieweeRole") as string) || undefined,
-      sampleSize: Number.isFinite(sampleSize) ? sampleSize : undefined,
-      sampleIds: parseSampleIds(formData.get("sampleIds") as string),
+      methodEntries: cleanedEntries.length > 0 ? cleanedEntries : undefined,
       riskRating: (formData.get("riskRating") as string) || undefined,
       correctiveActionSuggestion:
         (formData.get("correctiveActionSuggestion") as string) || undefined,
@@ -1251,13 +1742,11 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   {items.map((item) => {
                     const extItem = item as AuditChecklistItem & {
                       criterionReference?: string | null;
-                      auditMethods?: string[] | null;
-                      interviewee?: string | null;
-                      intervieweeRole?: string | null;
+                      methodEntries?: MethodEntry[] | null;
                       riskRating?: string | null;
                       remediationDeadline?: string | null;
-                      sampleSize?: number | null;
                     };
+                    const entries = extItem.methodEntries ?? [];
                     const isNC =
                       item.result === "minor_nonconformity" ||
                       item.result === "major_nonconformity" ||
@@ -1279,29 +1768,67 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                             {item.notes}
                           </p>
                         )}
-                        {/* Audit-Methoden-Metadaten kompakt */}
+                        {/* Audit-Nachweise kompakt — ein Badge pro Entry,
+                            tooltip mit den wichtigsten Detail-Feldern */}
                         <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {(extItem.auditMethods ?? []).map((m) => (
-                            <span
-                              key={m}
-                              className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600"
-                            >
-                              {methodLabel(m)}
-                            </span>
-                          ))}
-                          {extItem.interviewee && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-indigo-50 text-indigo-700">
-                              👤 {extItem.interviewee}
-                              {extItem.intervieweeRole
-                                ? ` (${extItem.intervieweeRole})`
-                                : ""}
-                            </span>
-                          )}
-                          {extItem.sampleSize != null && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-600">
-                              n={extItem.sampleSize}
-                            </span>
-                          )}
+                          {entries.map((e) => {
+                            const details: string[] = [];
+                            if (e.method === "interview") {
+                              const ie = e as MethodEntry & {
+                                interviewee?: string;
+                                intervieweeRole?: string;
+                              };
+                              if (ie.interviewee)
+                                details.push(
+                                  ie.intervieweeRole
+                                    ? `${ie.interviewee} (${ie.intervieweeRole})`
+                                    : ie.interviewee,
+                                );
+                            } else if (e.method === "document_review") {
+                              const de = e as MethodEntry & {
+                                documents?: Array<{ title: string }>;
+                              };
+                              if (de.documents && de.documents.length > 0)
+                                details.push(
+                                  `${de.documents.length} Dok.`,
+                                );
+                            } else if (e.method === "sampling") {
+                              const se = e as MethodEntry & {
+                                sampleSize?: number;
+                                populationSize?: number;
+                              };
+                              if (se.sampleSize != null)
+                                details.push(
+                                  se.populationSize != null
+                                    ? `n=${se.sampleSize}/N=${se.populationSize}`
+                                    : `n=${se.sampleSize}`,
+                                );
+                            } else if (e.method === "technical_test") {
+                              const te = e as MethodEntry & { system?: string };
+                              if (te.system) details.push(te.system);
+                            } else if (e.method === "observation") {
+                              const oe = e as MethodEntry & { location?: string };
+                              if (oe.location) details.push(oe.location);
+                            } else if (e.method === "walkthrough") {
+                              const we = e as MethodEntry & { process?: string };
+                              if (we.process) details.push(we.process);
+                            }
+                            return (
+                              <span
+                                key={e.id}
+                                className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 inline-flex items-center gap-1"
+                                title={`${methodLabel(e.method)}${details.length > 0 ? " — " + details.join(" · ") : ""}`}
+                              >
+                                <span>{methodIcon(e.method)}</span>
+                                <span>{methodLabel(e.method)}</span>
+                                {details.length > 0 && (
+                                  <span className="text-gray-500">
+                                    · {details[0]}
+                                  </span>
+                                )}
+                              </span>
+                            );
+                          })}
                           {extItem.riskRating && (
                             <span
                               className={`text-[10px] px-1.5 py-0.5 rounded ${
@@ -1378,11 +1905,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             (() => {
               const item = evaluateItem as AuditChecklistItem & {
                 criterionReference?: string | null;
-                auditMethod?: string | null;
-                interviewee?: string | null;
-                intervieweeRole?: string | null;
-                sampleSize?: number | null;
-                sampleIds?: string[] | null;
+                methodEntries?: MethodEntry[] | null;
                 riskRating?: string | null;
                 correctiveActionSuggestion?: string | null;
                 remediationDeadline?: string | null;
@@ -1394,10 +1917,6 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
               const isObs =
                 selectedResult === "observation" ||
                 selectedResult === "opportunity_for_improvement";
-              const isSampling =
-                selectedMethods.includes("sampling") ||
-                selectedMethods.includes("technical_test");
-              const isInterview = selectedMethods.includes("interview");
               return (
             <form
               onSubmit={(e) => {
@@ -1406,7 +1925,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   evaluateItem.id,
                   new FormData(e.currentTarget),
                   evaluateEvidenceIds,
-                  selectedMethods,
+                  methodEntries,
                 );
               }}
               className="space-y-4"
@@ -1493,126 +2012,22 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 )}
               </div>
 
-              {/* Audit-Methoden (ISO 19011 § 6.4.7) — Kombination erlaubt */}
+              {/* Audit-Nachweise (ISO 19011 § 6.4.5/6.4.7) — pro Methode
+                  eine typisierte Karte mit eigenen Detail-Feldern */}
               <div>
                 <label className="text-sm font-medium">
-                  Evidenzerhebungs-Methoden{" "}
+                  Audit-Nachweise{" "}
                   <span className="text-xs font-normal text-gray-400">
-                    (ISO 19011 § 6.4.7 — Kombination typischerweise sinnvoll)
+                    (ISO 19011 § 6.4.5/6.4.7 — typisiert, mehrere möglich)
                   </span>
                 </label>
-                <div className="mt-1 grid grid-cols-2 gap-1.5 rounded-md border border-gray-200 p-2">
-                  {(
-                    [
-                      ["interview", "Interview / Befragung"],
-                      ["document_review", "Dokumentenprüfung"],
-                      ["observation", "Begehung / Beobachtung"],
-                      ["walkthrough", "Walkthrough (Prozess-Durchlauf)"],
-                      ["technical_test", "Technischer Test"],
-                      ["sampling", "Stichprobe aus Population"],
-                      ["reperformance", "Reperformance / Nachvollzug"],
-                    ] as const
-                  ).map(([value, label]) => {
-                    const checked = selectedMethods.includes(value);
-                    return (
-                      <label
-                        key={value}
-                        className={`flex items-center gap-2 text-sm rounded px-2 py-1 cursor-pointer border ${
-                          checked
-                            ? "bg-blue-50 border-blue-300 text-blue-900"
-                            : "border-transparent hover:bg-gray-50"
-                        }`}
-                      >
-                        <input
-                          type="checkbox"
-                          checked={checked}
-                          onChange={(e) =>
-                            setSelectedMethods((prev) =>
-                              e.target.checked
-                                ? [...prev, value]
-                                : prev.filter((v) => v !== value),
-                            )
-                          }
-                          className="h-4 w-4"
-                        />
-                        <span>{label}</span>
-                      </label>
-                    );
-                  })}
+                <div className="mt-1">
+                  <MethodEntriesEditor
+                    value={methodEntries}
+                    onChange={setMethodEntries}
+                  />
                 </div>
-                {selectedMethods.length === 0 && (
-                  <p className="mt-1 text-[11px] text-gray-400">
-                    Keine Methode ausgewählt — optional, aber bei
-                    Zertifizierungs-Audits Pflicht-Nachweis pro Finding.
-                  </p>
-                )}
-                {selectedMethods.length >= 2 && (
-                  <p className="mt-1 text-[11px] text-emerald-600">
-                    ✓ {selectedMethods.length} Methoden kombiniert — stärkste
-                    Form der Evidenz (ISO 19011 § 6.4.7 Abs. 2).
-                  </p>
-                )}
               </div>
-
-              {/* Interviewpartner — nur bei method=interview */}
-              {isInterview && (
-                <div className="grid grid-cols-2 gap-3">
-                  <div>
-                    <label className="text-sm font-medium">
-                      Interviewpartner (Name)
-                    </label>
-                    <Input
-                      name="interviewee"
-                      defaultValue={item.interviewee ?? ""}
-                      placeholder="Max Mustermann"
-                    />
-                  </div>
-                  <div>
-                    <label className="text-sm font-medium">Rolle / Funktion</label>
-                    <Input
-                      name="intervieweeRole"
-                      defaultValue={item.intervieweeRole ?? ""}
-                      placeholder="z. B. CISO, IT-Leitung, Prozess-Eigner"
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Stichprobe — nur bei sampling/technical_test */}
-              {isSampling && (
-                <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
-                  <legend className="text-xs font-semibold text-gray-600 px-1">
-                    Stichproben-Erfassung (IIA 2320 · ISA 530)
-                  </legend>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div>
-                      <label className="text-sm font-medium">
-                        Stichproben-Größe
-                      </label>
-                      <Input
-                        name="sampleSize"
-                        type="number"
-                        min={0}
-                        defaultValue={item.sampleSize ?? ""}
-                        placeholder="z. B. 25"
-                      />
-                    </div>
-                    <div className="col-span-2">
-                      <label className="text-sm font-medium">
-                        Sample-IDs / Referenzen{" "}
-                        <span className="text-xs font-normal text-gray-400">
-                          (kommagetrennt)
-                        </span>
-                      </label>
-                      <Input
-                        name="sampleIds"
-                        defaultValue={(item.sampleIds ?? []).join(", ")}
-                        placeholder="TKT-1234, TKT-5678, CHG-9001"
-                      />
-                    </div>
-                  </div>
-                </fieldset>
-              )}
 
               {/* Beobachtungen / Auditor-Notizen */}
               <div>
