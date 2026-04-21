@@ -63,6 +63,26 @@ if [ -d /opt/arctos/tenants ]; then
   done
 fi
 
+# ── 3b. Katalog-Baseline-Top-up (idempotent) ──────────────
+# Alle Kataloge sind scope='platform'. Ältere Tenants (vor Einführung
+# des Katalog-Seeders in create-tenant.sh) haben keine Frameworks.
+# Die Seeds sind via ON CONFLICT DO NOTHING idempotent → einfach neu
+# einspielen, bereits vorhandene Rows werden übersprungen.
+echo ""
+echo "[3b/5] Katalog-Baseline top-up (idempotent, alle DBs)..."
+if [ -x /opt/arctos/deploy/seed-catalogs.sh ]; then
+  bash /opt/arctos/deploy/seed-catalogs.sh grc_platform 2>&1 | tail -5 | sed 's/^/  /' || true
+  if [ -d /opt/arctos/tenants ]; then
+    for tdir in /opt/arctos/tenants/*/; do
+      [ -d "$tdir" ] || continue
+      TENANT=$(basename "$tdir")
+      bash /opt/arctos/deploy/seed-catalogs.sh "grc_${TENANT}" 2>&1 | tail -5 | sed "s/^/  [$TENANT] /" || true
+    done
+  fi
+else
+  echo "  (seed-catalogs.sh fehlt — übersprungen)"
+fi
+
 # ── 4. Haupt-Container neu starten ────────────────────────
 echo ""
 echo "[4/5] Haupt-Container neu starten..."
