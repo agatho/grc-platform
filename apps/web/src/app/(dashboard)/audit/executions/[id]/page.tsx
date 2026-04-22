@@ -1299,7 +1299,16 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
         },
       );
       if (res.ok) {
-        void fetchChecklists();
+        // Neu generierte Checkliste direkt selektieren, damit die Items
+        // sofort sichtbar werden — sonst müsste der User erst manuell auf
+        // den Checklist-Button klicken.
+        const json = await res.json().catch(() => null);
+        const newId: string | undefined = json?.data?.checklist?.id;
+        await fetchChecklists();
+        if (newId) {
+          setSelectedChecklist(newId);
+          void fetchItems(newId);
+        }
       } else {
         const j = await res.json().catch(() => ({}));
         alert(
