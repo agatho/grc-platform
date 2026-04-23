@@ -12,6 +12,10 @@ test-results/
 coverage/
 .vercel/
 
+# Playwright artifacts — nicht in git tracken
+playwright-report/
+.playwright-cache/
+
 # Private docs — competitive analysis, vendor comparisons (not for public repos)
 docs-private/
 
