@@ -71,6 +71,9 @@ function ExecutionDetailInner() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<TabKey>("overview");
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  // Transition-Dialog: wenn Audit in "completed"/"review" wechselt, braucht
+  // es laut ISO 19011 § 6.5 eine formale Audit-Konklusion.
+  const [transitionTo, setTransitionTo] = useState<string | null>(null);
 
   const fetchAudit = useCallback(async () => {
     setLoading(true);
@@ -90,6 +93,15 @@ function ExecutionDetailInner() {
   }, [fetchAudit]);
 
   const handleStatusChange = async (newStatus: string, conclusion?: string) => {
+    // ISO 19011 § 6.5: Audit-Konklusion beim Übergang in "review"/"completed"
+    // zwingend erforderlich. UI öffnet Dialog statt still zu transitionieren.
+    const needsConclusion =
+      (newStatus === "review" || newStatus === "completed") && !conclusion;
+    if (needsConclusion) {
+      setTransitionTo(newStatus);
+      return;
+    }
+
     const body: Record<string, string> = { status: newStatus };
     if (conclusion) body.conclusion = conclusion;
 
@@ -99,7 +111,13 @@ function ExecutionDetailInner() {
       body: JSON.stringify(body),
     });
     if (res.ok) {
+      setTransitionTo(null);
       void fetchAudit();
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(
+        `Statuswechsel fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+      );
     }
   };
 
@@ -227,6 +245,74 @@ function ExecutionDetailInner() {
           void fetchAudit();
         }}
       />
+
+      {/* Transition-Dialog: Conclusion-Capture beim Übergang nach review/completed */}
+      <Dialog
+        open={transitionTo !== null}
+        onOpenChange={(o) => !o && setTransitionTo(null)}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              Übergang zu „{transitionTo ? t(`auditStatus.${transitionTo}`) : ""}" — Audit-Konklusion erforderlich
+            </DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
+              ISO 19011 § 6.5: Beim Abschluss eines Audits muss eine formale
+              Konklusion dokumentiert sein. Diese fließt in den Audit-Report
+              und die Management-Review-Aggregation ein.
+            </div>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                const fd = new FormData(e.currentTarget);
+                const conclusion = fd.get("conclusion") as string;
+                if (transitionTo && conclusion) {
+                  void handleStatusChange(transitionTo, conclusion);
+                }
+              }}
+              className="space-y-3"
+            >
+              <div>
+                <label className="text-sm font-medium">Audit-Konklusion</label>
+                <select
+                  name="conclusion"
+                  required
+                  defaultValue={audit.conclusion ?? ""}
+                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                >
+                  <option value="">— Konklusion wählen —</option>
+                  <option value="conforming">
+                    ✓ Konform — Management-System erfüllt die Kriterien
+                  </option>
+                  <option value="minor_nonconformity">
+                    ◆ Mit Nebenabweichung — isolierte Lücke(n), Korrektur
+                    dokumentiert
+                  </option>
+                  <option value="major_nonconformity">
+                    ✗ Mit Hauptabweichung — systemische Lücke, Zertifizierung
+                    blockiert
+                  </option>
+                  <option value="not_applicable">
+                    — Nicht anwendbar / Audit abgebrochen
+                  </option>
+                </select>
+              </div>
+              <div className="flex justify-end gap-2 pt-2 border-t">
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => setTransitionTo(null)}
+                >
+                  Abbrechen
+                </Button>
+                <Button type="submit">Status setzen</Button>
+              </div>
+            </form>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* Tabs */}
       <div className="border-b border-gray-200">
