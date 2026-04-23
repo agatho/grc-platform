@@ -35,6 +35,13 @@ export default function ExecutionsPage() {
   );
 }
 
+interface AuditorOption {
+  id: string;
+  name: string | null;
+  email: string;
+  role: string;
+}
+
 function ExecutionsInner() {
   const t = useTranslations("auditMgmt");
   const router = useRouter();
@@ -43,6 +50,27 @@ function ExecutionsInner() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [auditors, setAuditors] = useState<AuditorOption[]>([]);
+
+  // Org-Auditor:innen laden — wird im Create-Form für Lead-Auditor-Dropdown
+  // + Auditor-Team-Multi-Select genutzt.
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/audit-mgmt/auditors");
+        if (r.ok) {
+          const j = await r.json();
+          if (!cancelled) setAuditors(j.data ?? []);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const fetchAudits = useCallback(async () => {
     setLoading(true);
@@ -76,6 +104,9 @@ function ExecutionsInner() {
       return arr.length > 0 ? arr : undefined;
     };
 
+    // Multi-Select Auditor-Team: checkboxes → array aus FormData.getAll
+    const auditorIdsRaw = formData.getAll("auditorIds") as string[];
+
     const body: Record<string, unknown> = {
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
@@ -87,6 +118,12 @@ function ExecutionsInner() {
       scopeProcesses: parseCsv(formData.get("scopeProcesses") as string),
       scopeDepartments: parseCsv(formData.get("scopeDepartments") as string),
       scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
+      leadAuditorId:
+        (formData.get("leadAuditorId") as string) || undefined,
+      auditorIds:
+        auditorIdsRaw.filter(Boolean).length > 0
+          ? auditorIdsRaw.filter(Boolean)
+          : undefined,
     };
 
     const res = await fetch("/api/v1/audit-mgmt/audits", {
@@ -245,6 +282,63 @@ function ExecutionsInner() {
                     <Input name="plannedEnd" type="date" />
                   </div>
                 </div>
+
+                {/* Auditor-Zuweisung — Lead + Team (ISO 19011 § 5.4) */}
+                <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
+                  <legend className="text-xs font-semibold text-gray-600 px-1">
+                    Auditor-Team (ISO 19011 § 5.4.4)
+                  </legend>
+                  <div>
+                    <label className="text-sm font-medium">Lead-Auditor</label>
+                    <select
+                      name="leadAuditorId"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      defaultValue=""
+                    >
+                      <option value="">— niemand zugewiesen —</option>
+                      {auditors.map((u) => (
+                        <option key={u.id} value={u.id}>
+                          {u.name ?? u.email}
+                          {u.role === "admin" ? " (admin)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {auditors.length === 0 && (
+                      <p className="text-[11px] text-gray-400 mt-1">
+                        Keine Nutzer mit Rolle „auditor" oder „admin" in
+                        dieser Org — zuerst unter /settings/users zuweisen.
+                      </p>
+                    )}
+                  </div>
+                  {auditors.length > 0 && (
+                    <div>
+                      <label className="text-sm font-medium">
+                        Audit-Team (Mitglieder)
+                      </label>
+                      <div className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1">
+                        {auditors.map((u) => (
+                          <label
+                            key={u.id}
+                            className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded"
+                          >
+                            <input
+                              type="checkbox"
+                              name="auditorIds"
+                              value={u.id}
+                              className="h-4 w-4"
+                            />
+                            <span>{u.name ?? u.email}</span>
+                            {u.role === "admin" && (
+                              <span className="text-[10px] text-gray-400">
+                                · admin
+                              </span>
+                            )}
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </fieldset>
 
                 <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
                   <legend className="text-xs font-semibold text-gray-600 px-1">
