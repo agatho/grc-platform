@@ -1877,11 +1877,16 @@
       "title": "Schweregrad-Verteilung"
     },
     "severity": {
-      "observation": "Beobachtung",
+      "positive": "Positiv-Bewertung",
+      "conforming": "Konform",
+      "opportunity_for_improvement": "Hinweis / OFI",
+      "minor_nonconformity": "Nebenabweichung",
+      "major_nonconformity": "Hauptabweichung",
+      "observation": "Feststellung / Beobachtung",
       "recommendation": "Empfehlung",
-      "improvement_requirement": "Verbesserungsbedarf",
-      "insignificant_nonconformity": "Unwesentliche Abweichung",
-      "significant_nonconformity": "Wesentliche Abweichung"
+      "improvement_requirement": "Verbesserungsbedarf (Legacy)",
+      "insignificant_nonconformity": "Unwesentliche Abweichung (Legacy)",
+      "significant_nonconformity": "Wesentliche Abweichung (Legacy)"
     },
     "status": {
       "identified": "Identifiziert",

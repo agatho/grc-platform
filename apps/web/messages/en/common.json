@@ -1877,11 +1877,16 @@
       "title": "Severity Distribution"
     },
     "severity": {
+      "positive": "Commendation",
+      "conforming": "Conforming",
+      "opportunity_for_improvement": "OFI (Improvement Opportunity)",
+      "minor_nonconformity": "Minor Nonconformity",
+      "major_nonconformity": "Major Nonconformity",
       "observation": "Observation",
       "recommendation": "Recommendation",
-      "improvement_requirement": "Improvement Requirement",
-      "insignificant_nonconformity": "Insignificant Nonconformity",
-      "significant_nonconformity": "Significant Nonconformity"
+      "improvement_requirement": "Improvement Requirement (legacy)",
+      "insignificant_nonconformity": "Insignificant Nonconformity (legacy)",
+      "significant_nonconformity": "Significant Nonconformity (legacy)"
     },
     "status": {
       "identified": "Identified",
