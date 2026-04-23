@@ -3207,6 +3207,14 @@
       "sampling": "Stichprobe",
       "reperformance": "Reperformance"
     },
+    "tipNextStep": "Nächster Schritt",
+    "tips": {
+      "planned": "Audit ist in Planung — pflege Scope, Auditor-Team und geplante Daten über „Details bearbeiten\".",
+      "preparation": "Vorbereitung läuft — generiere Checklisten aus aktiven Katalogen (CIS IG1/2/3, ISO 27001 Annex A) und plane das Eröffnungsgespräch über „Activities\".",
+      "fieldwork": "Feldarbeit — bewerte Items im Checklisten-Tab, protokolliere Interviews und Tests als Activities, erfasse Evidenzen.",
+      "reporting": "Report-Phase — öffne Findings-Tab und nutze „Alle NC → Findings\" für Bulk-Konvertierung, dann im Report-Tab Maßnahmen-Pläne erfassen.",
+      "review": "Review — prüfe den Report-Tab, verifiziere alle Findings, dann übergib an Management-Review (ISO 27001 § 9.3)."
+    },
     "severity": {
       "major_nonconformity": "Hauptabweichung",
       "minor_nonconformity": "Nebenabweichung",
