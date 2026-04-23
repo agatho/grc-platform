@@ -385,6 +385,43 @@ function ExecutionDetailInner() {
         </DialogContent>
       </Dialog>
 
+      {/* Context-Tip — führt Auditor:innen zur nächsten sinnvollen Aktion
+          je nach Audit-Phase (ISO 19011 § 6). */}
+      {(() => {
+        const tip = ((): { text: string; action?: string } | null => {
+          switch (audit.status) {
+            case "planned":
+              return {
+                text: 'Audit ist in Planung — pflege Scope, Auditor-Team und geplante Daten über "Details bearbeiten".',
+              };
+            case "preparation":
+              return {
+                text: 'Vorbereitung läuft — generiere Checklisten aus aktiven Katalogen (CIS IG1/2/3, ISO 27001 Annex A) und plane das Eröffnungsgespräch über "Activities".',
+              };
+            case "fieldwork":
+              return {
+                text: "Feldarbeit — bewerte Items im Checklisten-Tab, protokolliere Interviews und Tests als Activities, erfasse Evidenzen.",
+              };
+            case "reporting":
+              return {
+                text: 'Report-Phase — öffne Findings-Tab und nutze "Alle NC → Findings" für Bulk-Konvertierung, dann im Report-Tab Maßnahmen-Pläne erfassen.',
+              };
+            case "review":
+              return {
+                text: "Review — prüfe den Report-Tab, verifiziere alle Findings, dann übergib an Management-Review (ISO 27001 § 9.3).",
+              };
+            default:
+              return null;
+          }
+        })();
+        if (!tip) return null;
+        return (
+          <div className="rounded-md bg-sky-50 border border-sky-200 px-3 py-2 text-xs text-sky-900 print:hidden">
+            💡 <span className="font-medium">Nächster Schritt:</span> {tip.text}
+          </div>
+        );
+      })()}
+
       {/* Tabs */}
       <div className="border-b border-gray-200">
         <nav className="flex gap-4 -mb-px">
