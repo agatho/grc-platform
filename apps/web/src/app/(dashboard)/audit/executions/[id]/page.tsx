@@ -1254,6 +1254,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     void fetchEvidencePool();
   }, [fetchEvidencePool]);
 
+  // Task-13-Filter über die Items-Tabelle.
+  const [resultFilter, setResultFilter] = useState<string>("");
+  const [methodFilter, setMethodFilter] = useState<string>("");
+
   // Selektierter Result-Wert + Methoden-Entries-Liste im Dialog.
   // methodEntries: jeder Eintrag ist ein typisierter Nachweis mit eigenen
   // Detail-Feldern (ISO 19011 § 6.4.5/6.4.7).
@@ -1522,6 +1526,39 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   const progressPct =
     totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
 
+  // ── Client-seitige Filter über die Items-Tabelle (Task 13) ──
+  // Auditor-Workflow: nur offene Items, nur NC-Items, oder nur Interview-Items
+  // anzeigen. Filter wirken additiv (UND-Verknüpfung).
+  const filterOnlyOpen = resultFilter === "__open__";
+  const filterOnlyNC = resultFilter === "__nc__";
+  const displayItems = items.filter((item) => {
+    if (filterOnlyOpen && item.result) return false;
+    if (
+      filterOnlyNC &&
+      !(
+        item.result === "major_nonconformity" ||
+        item.result === "minor_nonconformity" ||
+        item.result === "nonconforming"
+      )
+    )
+      return false;
+    if (
+      resultFilter &&
+      !filterOnlyOpen &&
+      !filterOnlyNC &&
+      item.result !== resultFilter
+    )
+      return false;
+    if (methodFilter) {
+      const methods = (
+        (item as AuditChecklistItem & { methodEntries?: MethodEntry[] | null })
+          .methodEntries ?? []
+      ).map((e) => e.method);
+      if (!methods.includes(methodFilter as MethodEntry["method"])) return false;
+    }
+    return true;
+  });
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -1742,10 +1779,80 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             </div>
           </div>
 
+          {/* Filter-Zeile (Task 13): Result + Methode + Shortcut „nur offene/NC" */}
+          {items.length > 0 && (
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <span className="text-xs font-semibold text-gray-600">
+                Filter:
+              </span>
+              <select
+                value={resultFilter}
+                onChange={(e) => setResultFilter(e.target.value)}
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs"
+              >
+                <option value="">Alle Bewertungen</option>
+                <option value="__open__">↻ Nur offene (unbewertet)</option>
+                <option value="__nc__">✗ Nur Abweichungen</option>
+                <option value="major_nonconformity">Hauptabweichung</option>
+                <option value="minor_nonconformity">Nebenabweichung</option>
+                <option value="opportunity_for_improvement">
+                  Hinweis / OFI
+                </option>
+                <option value="observation">Feststellung</option>
+                <option value="conforming">Konform</option>
+                <option value="positive">Positiv-Bewertung</option>
+                <option value="not_applicable">Nicht anwendbar</option>
+              </select>
+              <select
+                value={methodFilter}
+                onChange={(e) => setMethodFilter(e.target.value)}
+                className="rounded-md border border-gray-300 px-2 py-1 text-xs"
+              >
+                <option value="">Alle Methoden</option>
+                <option value="interview">👤 Interview</option>
+                <option value="document_review">📄 Dokumentenprüfung</option>
+                <option value="observation">👁 Beobachtung</option>
+                <option value="walkthrough">🚶 Walkthrough</option>
+                <option value="technical_test">🔧 Tech-Test</option>
+                <option value="sampling">🎯 Stichprobe</option>
+                <option value="reperformance">🔁 Reperformance</option>
+              </select>
+              {(resultFilter || methodFilter) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setResultFilter("");
+                    setMethodFilter("");
+                  }}
+                  className="text-xs text-blue-600 hover:text-blue-800 inline-flex items-center gap-1"
+                >
+                  <X size={12} /> Filter zurücksetzen
+                </button>
+              )}
+              <span className="text-xs text-gray-500 ml-auto">
+                {displayItems.length} / {items.length}
+              </span>
+            </div>
+          )}
+
           {/* Items Table */}
           {items.length === 0 ? (
             <div className="text-center py-8 text-gray-400">
               {t("emptyChecklist")}
+            </div>
+          ) : displayItems.length === 0 ? (
+            <div className="text-center py-8 text-gray-400 text-sm">
+              Keine Items passen zum Filter.{" "}
+              <button
+                type="button"
+                onClick={() => {
+                  setResultFilter("");
+                  setMethodFilter("");
+                }}
+                className="text-blue-600 hover:text-blue-800 underline"
+              >
+                Filter entfernen
+              </button>
             </div>
           ) : (
             <div className="overflow-x-auto rounded-lg border border-gray-200">
@@ -1767,7 +1874,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
-                  {items.map((item) => {
+                  {displayItems.map((item) => {
                     const extItem = item as AuditChecklistItem & {
                       criterionReference?: string | null;
                       methodEntries?: MethodEntry[] | null;
