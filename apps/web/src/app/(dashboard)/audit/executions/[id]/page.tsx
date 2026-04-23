@@ -19,6 +19,7 @@ import {
   Trash2,
   Paperclip,
   X,
+  Download,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -1686,6 +1687,23 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
             />
             {t("generateChecklist")}
           </Button>
+
+          {/* CSV-Export der aktuell selektierten Checkliste (ISO 17021-1 § 9.5
+              Arbeitspapier-Archivierung) */}
+          {selectedChecklist && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href =
+                  `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`;
+              }}
+              title="Als CSV exportieren (Excel-kompatibel)"
+            >
+              <Download size={14} className="mr-1" />
+              CSV
+            </Button>
+          )}
         </div>
       </div>
 
