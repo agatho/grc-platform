@@ -1,7 +1,7 @@
 # Overnight-Session 2026-04-23
 
 **Dauer:** 02:40–05:10 (2:30h autonomous)
-**Commits:** 22 auf `main` gepusht (02b31ad → dd21fe7)
+**Commits:** 23 auf `main` gepusht (02b31ad → 02c0688)
 **Fokus:** Audit-Modul von „oberflächlich" zu ISO-19011/17021-1-konform
 
 ## Was redeployen?
@@ -61,6 +61,7 @@ Seeds werden dann via `[3b/5]` idempotent nachgeschoben (CIS-Katalog enthält da
 20. **Playwright-Report ignorieren** (`5e88164`) — bereinigt Versehen aus c56c994, `.gitignore` erweitert.
 21. **Conclusion-Badge + QuickStats auf Universe/Plans** (`907102a`) — `✓ Konform`/`◆ Mit Nebenabweichung`/`✗ Mit Hauptabweichung`-Chip im Header.
 22. **Closure-Readiness-Check** (`dd21fe7`) — vor status=completed listet der Dialog offene Punkte (unbewertete Items, NCs ohne Finding, fehlende Konklusion, offene Findings). ISO 19011 § 6.5: Audit-Schluss muss auf allen Nachweisen basieren.
+23. **Overdue + Due-Soon Indicator im FindingRow** (`02c0688`) — rotes „⚠ Überfällig"-Pulsieren wenn Frist in der Vergangenheit, amber „⏰ Fällig ≤14 Tage" als Frühwarnung. Nur bei offenen Findings.
 
 ## Tests / Checks
 
