@@ -7,6 +7,7 @@ import { processNotificationDigest } from "./crons/notification-digest";
 import { processKriOverdueAlerts } from "./crons/kri-overdue-alert";
 import { processRiskReviewReminders } from "./crons/risk-review-reminder";
 import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-reminder";
+import { processAuditRemediationDeadlines } from "./crons/audit-remediation-deadline-monitor";
 import { processReviewReminders } from "./crons/process-review-reminder";
 import { processDsrSlaMonitor } from "./crons/dsr-sla-monitor";
 import { processBreach72hMonitor } from "./crons/breach-72h-monitor";
@@ -270,6 +271,22 @@ app.post("/crons/treatment-overdue-reminders", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] treatment-overdue-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// Audit remediation deadlines — checklist-items und findings mit NC
+// Fristen werden täglich auf overdue/soon-due geprüft.
+app.post("/crons/audit-remediation-deadlines", async (c) => {
+  try {
+    const result = await processAuditRemediationDeadlines();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[worker] audit-remediation-deadlines cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });
