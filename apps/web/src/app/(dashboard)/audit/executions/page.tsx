@@ -8,6 +8,7 @@ import { Loader2, Plus, RefreshCcw, Search } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -28,6 +29,7 @@ export default function ExecutionsPage() {
   return (
     <ModuleGate moduleKey="audit">
       <ModuleTabNav />
+      <AuditQuickStatsBar className="mb-4" />
       <ExecutionsInner />
     </ModuleGate>
   );
