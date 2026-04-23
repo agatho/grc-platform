@@ -3183,17 +3183,36 @@
     "emptyFindings": "Noch keine Feststellungen für dieses Audit",
     "results": {
       "conforming": "Konform",
-      "nonconforming": "Abweichung",
+      "nonconforming": "Abweichung (Legacy)",
+      "observation": "Feststellung",
+      "not_applicable": "Nicht anwendbar",
+      "open": "Offen",
+      "positive": "Positiv-Bewertung",
+      "opportunity_for_improvement": "Hinweis (OFI)",
+      "minor_nonconformity": "Nebenabweichung",
+      "major_nonconformity": "Hauptabweichung",
+      "conforming": "Konform"
+    },
+    "methods": {
+      "interview": "Interview",
+      "document_review": "Dokumentenprüfung",
       "observation": "Beobachtung",
-      "not_applicable": "N/A",
-      "open": "Offen"
+      "walkthrough": "Walkthrough",
+      "technical_test": "Tech-Test",
+      "sampling": "Stichprobe",
+      "reperformance": "Reperformance"
     },
     "severity": {
+      "major_nonconformity": "Hauptabweichung",
+      "minor_nonconformity": "Nebenabweichung",
+      "opportunity_for_improvement": "Hinweis / OFI",
+      "observation": "Feststellung",
+      "recommendation": "Empfehlung",
+      "positive": "Positiv-Bewertung",
+      "conforming": "Konform",
       "significantNonconformity": "Wesentliche Abweichung",
       "insignificantNonconformity": "Geringfügige Abweichung",
-      "improvementRequirement": "Verbesserungsanforderung",
-      "recommendation": "Empfehlung",
-      "observation": "Beobachtung"
+      "improvementRequirement": "Verbesserungsanforderung"
     },
     "activityLog": "Aktivitätenprotokoll",
     "addActivity": "Aktivität hinzufuegen",
