@@ -4184,6 +4184,27 @@ function FindingRow({
     }
   };
 
+  // Überfälligkeits-Marker: Finding hat eine Frist, die in der Vergangenheit
+  // liegt UND Status ist noch offen. Rot-Pill im Header.
+  const today = new Date().toISOString().slice(0, 10);
+  const isOverdue =
+    finding.remediationDueDate != null &&
+    finding.remediationDueDate < today &&
+    (finding.status === "identified" ||
+      finding.status === "in_remediation");
+  const isDueSoon =
+    !isOverdue &&
+    finding.remediationDueDate != null &&
+    (finding.status === "identified" ||
+      finding.status === "in_remediation") &&
+    (() => {
+      const delta =
+        (new Date(finding.remediationDueDate).getTime() -
+          new Date(today).getTime()) /
+        86400000;
+      return delta >= 0 && delta <= 14;
+    })();
+
   return (
     <li className="py-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
@@ -4200,6 +4221,22 @@ function FindingRow({
             <span className="text-xs text-gray-400">
               · Status: {finding.status}
             </span>
+            {isOverdue && (
+              <span
+                className="inline-block text-[10px] px-2 py-0.5 rounded-full border bg-red-100 border-red-300 text-red-900 animate-pulse"
+                title={`Frist ${finding.remediationDueDate} — bereits überschritten`}
+              >
+                ⚠ Überfällig
+              </span>
+            )}
+            {isDueSoon && (
+              <span
+                className="inline-block text-[10px] px-2 py-0.5 rounded-full border bg-amber-50 border-amber-300 text-amber-900"
+                title={`Frist ${finding.remediationDueDate} — in ≤14 Tagen`}
+              >
+                ⏰ Fällig ≤14 Tage
+              </span>
+            )}
           </div>
           <p className="text-sm font-medium text-gray-900 mt-1">
             {finding.title}
