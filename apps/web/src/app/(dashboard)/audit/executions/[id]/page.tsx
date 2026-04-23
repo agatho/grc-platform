@@ -2814,12 +2814,22 @@ interface ReportData {
   }>;
   breakdown: Array<{
     checklistId: string;
+    positive: number;
     conforming: number;
-    nonconforming: number;
+    opportunity_for_improvement: number;
     observation: number;
+    minor_nonconformity: number;
+    major_nonconformity: number;
+    nonconforming: number;
     not_applicable: number;
     unevaluated: number;
   }>;
+  remediationTimeline?: {
+    overdue: number;
+    dueSoon: number;
+    onTrack: number;
+    noDeadline: number;
+  };
   findings: Array<{
     id: string;
     title: string;
@@ -2836,7 +2846,13 @@ interface ReportData {
   nonconformingItems: Array<{
     id: string;
     question: string;
+    result?: string | null;
     notes: string | null;
+    criterionReference?: string | null;
+    riskRating?: string | null;
+    correctiveActionSuggestion?: string | null;
+    remediationDeadline?: string | null;
+    methodEntries?: MethodEntry[] | null;
     completedAt: string | null;
   }>;
   affectedRisks: Array<{
@@ -2906,43 +2922,67 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
     );
   }
 
+  // ISO 19011 § 3.4 Farbskala inkl. Legacy-Synonymen.
   const sevColors: Record<string, string> = {
+    major_nonconformity: "bg-red-100 text-red-900 border-red-200",
     significant_nonconformity: "bg-red-100 text-red-900 border-red-200",
+    minor_nonconformity: "bg-orange-100 text-orange-900 border-orange-200",
     insignificant_nonconformity:
       "bg-orange-100 text-orange-900 border-orange-200",
+    opportunity_for_improvement:
+      "bg-yellow-100 text-yellow-900 border-yellow-200",
     improvement_requirement: "bg-yellow-100 text-yellow-900 border-yellow-200",
     observation: "bg-blue-100 text-blue-900 border-blue-200",
     recommendation: "bg-gray-100 text-gray-800 border-gray-200",
+    positive: "bg-emerald-100 text-emerald-900 border-emerald-200",
+    conforming: "bg-green-100 text-green-900 border-green-200",
   };
   const sevLabels: Record<string, string> = {
-    significant_nonconformity: "Wesentliche Abweichung",
-    insignificant_nonconformity: "Geringfügige Abweichung",
-    improvement_requirement: "Verbesserungsanforderung",
-    observation: "Beobachtung",
+    major_nonconformity: "Hauptabweichung",
+    significant_nonconformity: "Wesentliche Abweichung (Legacy)",
+    minor_nonconformity: "Nebenabweichung",
+    insignificant_nonconformity: "Geringfügige Abweichung (Legacy)",
+    opportunity_for_improvement: "Hinweis / OFI",
+    improvement_requirement: "Verbesserungsanforderung (Legacy)",
+    observation: "Feststellung / Beobachtung",
     recommendation: "Empfehlung",
+    positive: "Positiv-Bewertung",
+    conforming: "Konform",
   };
 
-  const totalEvaluated = report.breakdown.reduce(
-    (sum, b) =>
-      sum + b.conforming + b.nonconforming + b.observation + b.not_applicable,
-    0,
-  );
-  const totalItems = report.breakdown.reduce(
-    (sum, b) =>
-      sum +
-      b.conforming +
-      b.nonconforming +
-      b.observation +
-      b.not_applicable +
-      b.unevaluated,
-    0,
-  );
+  const sumBreakdown = (
+    key: keyof ReportData["breakdown"][number],
+  ): number =>
+    report.breakdown.reduce(
+      (sum, b) => sum + (typeof b[key] === "number" ? (b[key] as number) : 0),
+      0,
+    );
+
+  const totalMajor = sumBreakdown("major_nonconformity");
+  const totalMinor = sumBreakdown("minor_nonconformity");
+  const totalOfi = sumBreakdown("opportunity_for_improvement");
+  const totalObservation = sumBreakdown("observation");
+  const totalPositive = sumBreakdown("positive");
+  const totalConforming = sumBreakdown("conforming");
+  const totalNA = sumBreakdown("not_applicable");
+  const totalUnevaluated = sumBreakdown("unevaluated");
+  // Legacy-nonconforming: im Report als "Abweichung" — zusätzlich zu major/minor.
+  const totalLegacyNonconforming = sumBreakdown("nonconforming");
+
+  const totalEvaluated =
+    totalPositive +
+    totalConforming +
+    totalOfi +
+    totalObservation +
+    totalMinor +
+    totalMajor +
+    totalLegacyNonconforming +
+    totalNA;
+  const totalItems = totalEvaluated + totalUnevaluated;
   const conformanceRate =
     totalEvaluated > 0
       ? Math.round(
-          (report.breakdown.reduce((s, b) => s + b.conforming, 0) /
-            totalEvaluated) *
-            100,
+          ((totalPositive + totalConforming) / totalEvaluated) * 100,
         )
       : 0;
 
@@ -3037,40 +3077,77 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
         </div>
       )}
 
-      {/* Checklist Conformance */}
+      {/* Checklist Conformance — 7-stufige ISO-19011-Aufschlüsselung */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 space-y-3">
         <h3 className="text-sm font-semibold text-gray-900">
-          Checklisten-Auswertung
+          Checklisten-Auswertung{" "}
+          <span className="text-xs font-normal text-gray-500">
+            (ISO 19011 § 3.4)
+          </span>
         </h3>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-2">
+          {totalMajor > 0 && (
+            <StatCard
+              label="Hauptabweichung"
+              value={totalMajor}
+              color="bg-red-50 text-red-900 border border-red-200"
+            />
+          )}
+          {totalMinor > 0 && (
+            <StatCard
+              label="Nebenabweichung"
+              value={totalMinor}
+              color="bg-orange-50 text-orange-900 border border-orange-200"
+            />
+          )}
+          {totalOfi > 0 && (
+            <StatCard
+              label="Hinweis (OFI)"
+              value={totalOfi}
+              color="bg-yellow-50 text-yellow-900 border border-yellow-200"
+            />
+          )}
+          {totalObservation > 0 && (
+            <StatCard
+              label="Feststellung"
+              value={totalObservation}
+              color="bg-blue-50 text-blue-900 border border-blue-200"
+            />
+          )}
+          {totalPositive > 0 && (
+            <StatCard
+              label="Positiv"
+              value={totalPositive}
+              color="bg-emerald-50 text-emerald-900 border border-emerald-200"
+            />
+          )}
           <StatCard
             label="Konform"
-            value={report.breakdown.reduce((s, b) => s + b.conforming, 0)}
+            value={totalConforming}
             color="bg-green-50 text-green-900"
           />
-          <StatCard
-            label="Nicht konform"
-            value={report.breakdown.reduce((s, b) => s + b.nonconforming, 0)}
-            color="bg-red-50 text-red-900"
-          />
-          <StatCard
-            label="Beobachtung"
-            value={report.breakdown.reduce((s, b) => s + b.observation, 0)}
-            color="bg-blue-50 text-blue-900"
-          />
+          {totalLegacyNonconforming > 0 && (
+            <StatCard
+              label="Abweichung (Legacy)"
+              value={totalLegacyNonconforming}
+              color="bg-red-50/60 text-red-800 border border-dashed border-red-200"
+            />
+          )}
           <StatCard
             label="Nicht anwendbar"
-            value={report.breakdown.reduce((s, b) => s + b.not_applicable, 0)}
+            value={totalNA}
             color="bg-gray-50 text-gray-800"
           />
-          <StatCard
-            label="Unbewertet"
-            value={report.breakdown.reduce((s, b) => s + b.unevaluated, 0)}
-            color="bg-yellow-50 text-yellow-900"
-          />
+          {totalUnevaluated > 0 && (
+            <StatCard
+              label="Unbewertet"
+              value={totalUnevaluated}
+              color="bg-yellow-50 text-yellow-900"
+            />
+          )}
         </div>
         <div className="pt-2 text-xs text-gray-500">
-          Konformitätsgrad (bewertete Items):{" "}
+          Konformitätsgrad (positiv + konform / bewertet):{" "}
           <span className="font-semibold text-gray-900">
             {conformanceRate}%
           </span>{" "}
@@ -3082,6 +3159,37 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
             {report.checklists
               .map((cl) => `${cl.name} (${cl.completedItems}/${cl.totalItems})`)
               .join(" · ")}
+          </div>
+        )}
+
+        {/* Remediation-Timeline — aus API seit 0293 */}
+        {report.remediationTimeline && (
+          <div className="mt-4 pt-4 border-t border-gray-100">
+            <h4 className="text-xs font-semibold text-gray-700 mb-2">
+              Korrektur-Timeline (Fristen aus NC-Bewertungen)
+            </h4>
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+              <StatCard
+                label="Überfällig"
+                value={report.remediationTimeline.overdue}
+                color="bg-red-100 text-red-900 border border-red-200"
+              />
+              <StatCard
+                label="Fällig ≤ 30 Tage"
+                value={report.remediationTimeline.dueSoon}
+                color="bg-orange-50 text-orange-900 border border-orange-200"
+              />
+              <StatCard
+                label="In Plan"
+                value={report.remediationTimeline.onTrack}
+                color="bg-green-50 text-green-900"
+              />
+              <StatCard
+                label="Keine Frist"
+                value={report.remediationTimeline.noDeadline}
+                color="bg-gray-50 text-gray-700"
+              />
+            </div>
           </div>
         )}
       </div>
