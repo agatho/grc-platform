@@ -1,4 +1,4 @@
-import { db, auditActivity, audit } from "@grc/db";
+import { db, auditActivity, audit, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc } from "drizzle-orm";
 import {
@@ -90,8 +90,22 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const [items, [{ value: total }]] = await Promise.all([
     db
-      .select()
+      .select({
+        id: auditActivity.id,
+        orgId: auditActivity.orgId,
+        auditId: auditActivity.auditId,
+        activityType: auditActivity.activityType,
+        title: auditActivity.title,
+        description: auditActivity.description,
+        performedBy: auditActivity.performedBy,
+        performedByName: user.name,
+        performedAt: auditActivity.performedAt,
+        duration: auditActivity.duration,
+        notes: auditActivity.notes,
+        createdAt: auditActivity.createdAt,
+      })
       .from(auditActivity)
+      .leftJoin(user, eq(auditActivity.performedBy, user.id))
       .where(where)
       .orderBy(desc(auditActivity.performedAt))
       .limit(limit)
