@@ -4016,6 +4016,31 @@ function StatCard({
 
 // ─── Finding Row (with inline Treatment Plan editor) ─────────
 
+// ISO-konforme Status-Transitions laut VALID_FINDING_TRANSITIONS aus
+// @grc/shared. Lokal spiegeln wir nur die "vorwärts" + "rückwärts" für die
+// UI-Buttons — der Server validiert die volle Transition-Matrix.
+const FINDING_NEXT_STATUS: Record<string, Array<{ status: string; label: string; variant: "primary" | "secondary" | "danger" }>> = {
+  identified: [
+    { status: "in_remediation", label: "In Behebung", variant: "primary" },
+    { status: "accepted", label: "Akzeptieren", variant: "secondary" },
+    { status: "closed", label: "Schließen", variant: "secondary" },
+  ],
+  in_remediation: [
+    { status: "remediated", label: "Behoben", variant: "primary" },
+  ],
+  remediated: [
+    { status: "verified", label: "Verifiziert", variant: "primary" },
+    { status: "in_remediation", label: "Zurück zu Behebung", variant: "secondary" },
+  ],
+  verified: [
+    { status: "closed", label: "Schließen", variant: "primary" },
+  ],
+  accepted: [
+    { status: "closed", label: "Schließen", variant: "primary" },
+  ],
+  closed: [],
+};
+
 function FindingRow({
   finding,
   sevColors,
@@ -4029,8 +4054,32 @@ function FindingRow({
 }) {
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [transitioning, setTransitioning] = useState(false);
   const [plan, setPlan] = useState(finding.remediationPlan ?? "");
   const [due, setDue] = useState(finding.remediationDueDate ?? "");
+
+  const nextStatuses = FINDING_NEXT_STATUS[finding.status] ?? [];
+
+  const transitionTo = async (newStatus: string) => {
+    setTransitioning(true);
+    try {
+      const res = await fetch(`/api/v1/findings/${finding.id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (res.ok) {
+        onUpdated();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(
+          `Statuswechsel fehlgeschlagen: ${j.error ?? res.statusText}`,
+        );
+      }
+    } finally {
+      setTransitioning(false);
+    }
+  };
   // Default to syncing when the finding is already linked to a risk —
   // skipping sync on a risk-linked finding is the exception, not the rule.
   const hasRiskLink = !!finding.riskId;
@@ -4092,16 +4141,30 @@ function FindingRow({
           )}
         </div>
         {!editing && (
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setEditing(true)}
-            className="print:hidden"
-          >
-            {finding.remediationPlan
-              ? "Maßnahme bearbeiten"
-              : "Maßnahme erfassen"}
-          </Button>
+          <div className="flex flex-wrap items-center gap-1.5 print:hidden">
+            {/* Status-Transition-Buttons nach ISO 19011 Follow-up */}
+            {nextStatuses.map((next) => (
+              <Button
+                key={next.status}
+                size="sm"
+                variant={next.variant === "primary" ? "default" : "outline"}
+                disabled={transitioning}
+                onClick={() => void transitionTo(next.status)}
+                title={`Status → ${next.label}`}
+              >
+                {next.label}
+              </Button>
+            ))}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => setEditing(true)}
+            >
+              {finding.remediationPlan
+                ? "Maßnahme bearbeiten"
+                : "Maßnahme erfassen"}
+            </Button>
+          </div>
         )}
       </div>
 
