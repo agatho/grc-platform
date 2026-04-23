@@ -3183,17 +3183,35 @@
     "emptyFindings": "No findings for this audit yet",
     "results": {
       "conforming": "Conforming",
-      "nonconforming": "Nonconforming",
+      "nonconforming": "Nonconformity (legacy)",
       "observation": "Observation",
-      "not_applicable": "N/A",
-      "open": "Open"
+      "not_applicable": "Not Applicable",
+      "open": "Open",
+      "positive": "Commendation",
+      "opportunity_for_improvement": "OFI (Improvement Opportunity)",
+      "minor_nonconformity": "Minor Nonconformity",
+      "major_nonconformity": "Major Nonconformity"
+    },
+    "methods": {
+      "interview": "Interview",
+      "document_review": "Document Review",
+      "observation": "Observation",
+      "walkthrough": "Walkthrough",
+      "technical_test": "Technical Test",
+      "sampling": "Sampling",
+      "reperformance": "Reperformance"
     },
     "severity": {
+      "major_nonconformity": "Major Nonconformity",
+      "minor_nonconformity": "Minor Nonconformity",
+      "opportunity_for_improvement": "OFI (Improvement Opportunity)",
+      "observation": "Observation",
+      "recommendation": "Recommendation",
+      "positive": "Commendation",
+      "conforming": "Conforming",
       "significantNonconformity": "Significant Nonconformity",
       "insignificantNonconformity": "Insignificant Nonconformity",
-      "improvementRequirement": "Improvement Requirement",
-      "recommendation": "Recommendation",
-      "observation": "Observation"
+      "improvementRequirement": "Improvement Requirement"
     },
     "activityLog": "Activity Log",
     "addActivity": "Add Activity",
