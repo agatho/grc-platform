@@ -75,6 +75,11 @@ function ExecutionDetailInner() {
   // Transition-Dialog: wenn Audit in "completed"/"review" wechselt, braucht
   // es laut ISO 19011 § 6.5 eine formale Audit-Konklusion.
   const [transitionTo, setTransitionTo] = useState<string | null>(null);
+  // Closure-Readiness-Blocker (aus dem Endpoint closure-readiness),
+  // angezeigt im Transition-Dialog damit der Auditor bewusst abschließt.
+  const [closureBlockers, setClosureBlockers] = useState<
+    Array<{ kind: string; message: string; severity: "warning" | "error" }>
+  >([]);
 
   const fetchAudit = useCallback(async () => {
     setLoading(true);
@@ -100,6 +105,18 @@ function ExecutionDetailInner() {
       (newStatus === "review" || newStatus === "completed") && !conclusion;
     if (needsConclusion) {
       setTransitionTo(newStatus);
+      // Closure-Readiness-Check aufrufen für Warnungen
+      try {
+        const r = await fetch(
+          `/api/v1/audit-mgmt/audits/${params.id}/closure-readiness`,
+        );
+        if (r.ok) {
+          const j = await r.json();
+          setClosureBlockers(j.data?.blockers ?? []);
+        }
+      } catch {
+        // ignore
+      }
       return;
     }
 
@@ -270,7 +287,12 @@ function ExecutionDetailInner() {
       {/* Transition-Dialog: Conclusion-Capture beim Übergang nach review/completed */}
       <Dialog
         open={transitionTo !== null}
-        onOpenChange={(o) => !o && setTransitionTo(null)}
+        onOpenChange={(o) => {
+          if (!o) {
+            setTransitionTo(null);
+            setClosureBlockers([]);
+          }
+        }}
       >
         <DialogContent>
           <DialogHeader>
@@ -284,6 +306,34 @@ function ExecutionDetailInner() {
               Konklusion dokumentiert sein. Diese fließt in den Audit-Report
               und die Management-Review-Aggregation ein.
             </div>
+
+            {/* Closure-Readiness-Hinweise */}
+            {closureBlockers.length > 0 && (
+              <div className="rounded-md bg-amber-50 border border-amber-300 p-3 text-xs">
+                <p className="font-semibold text-amber-900 mb-2">
+                  Review vor Abschluss — folgende Punkte sind offen:
+                </p>
+                <ul className="space-y-1">
+                  {closureBlockers.map((b) => (
+                    <li
+                      key={b.kind}
+                      className={`flex items-start gap-2 ${
+                        b.severity === "error"
+                          ? "text-red-900"
+                          : "text-amber-900"
+                      }`}
+                    >
+                      <span>{b.severity === "error" ? "✗" : "⚠"}</span>
+                      <span>{b.message}</span>
+                    </li>
+                  ))}
+                </ul>
+                <p className="mt-2 text-amber-700">
+                  Warnungen können ignoriert werden, Fehler müssen behoben sein
+                  (z. B. Konklusion-Feld unten ausfüllen).
+                </p>
+              </div>
+            )}
             <form
               onSubmit={(e) => {
                 e.preventDefault();
