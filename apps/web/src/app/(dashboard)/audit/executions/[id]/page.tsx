@@ -206,9 +206,29 @@ function ExecutionDetailInner() {
           <ArrowLeft size={20} />
         </Link>
         <div className="flex-1">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <h1 className="text-2xl font-bold text-gray-900">{audit.title}</h1>
             {statusBadge(audit.status)}
+            {audit.conclusion && (
+              <Badge
+                className={
+                  audit.conclusion === "conforming"
+                    ? "bg-green-100 text-green-900 border-green-200"
+                    : audit.conclusion === "minor_nonconformity"
+                      ? "bg-orange-100 text-orange-900 border-orange-200"
+                      : audit.conclusion === "major_nonconformity"
+                        ? "bg-red-100 text-red-900 border-red-200"
+                        : "bg-gray-100 text-gray-700 border-gray-200"
+                }
+              >
+                {audit.conclusion === "conforming" && "✓ Konform"}
+                {audit.conclusion === "minor_nonconformity" &&
+                  "◆ Mit Nebenabweichung"}
+                {audit.conclusion === "major_nonconformity" &&
+                  "✗ Mit Hauptabweichung"}
+                {audit.conclusion === "not_applicable" && "— N/A"}
+              </Badge>
+            )}
           </div>
           <p className="text-sm text-gray-500 mt-1">
             {audit.leadAuditorName
