@@ -18,6 +18,7 @@ import {
   Inbox,
   Activity,
 } from "lucide-react";
+import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 
 // ---------------------------------------------------------------------------
 // Types (shared with classic dashboard)
@@ -227,6 +228,9 @@ export function ModernDashboard({
           ))}
         </div>
       </div>
+
+      {/* ── Audit Quick-Stats — was brennt heute? (Task 11 Overnight) ── */}
+      <AuditQuickStatsBar />
 
       {/* ── Compact stat bar — single row, not 4 cards ── */}
       <div className="flex items-stretch rounded-xl border border-gray-200 bg-white divide-x divide-gray-100 overflow-hidden">
