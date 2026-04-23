@@ -39,6 +39,7 @@ import type {
   AuditActivity,
   MethodEntry,
 } from "@grc/shared";
+import { checklistResultToFindingSeverity } from "@grc/shared";
 
 interface AuditDetail extends Audit {
   leadAuditorName?: string | null;
@@ -2240,100 +2241,162 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
         open={!!createFindingItem}
         onOpenChange={() => setCreateFindingItem(null)}
       >
-        <DialogContent>
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{t("createFinding")}</DialogTitle>
           </DialogHeader>
-          {createFindingItem && (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleCreateFinding(
-                  createFindingItem.id,
-                  new FormData(e.currentTarget),
-                );
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm font-medium">
-                  {t("findingTitle")}
-                </label>
-                <Input name="title" required />
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("description")}
-                </label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("findingSeverity")}
-                </label>
-                <select
-                  name="severity"
-                  required
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+          {createFindingItem &&
+            (() => {
+              // Auto-Prefill aus dem Checklist-Item:
+              //  • Severity via Result-Mapping (ISO 19011)
+              //  • Title aus Kriterium + Frage-Kurzform
+              //  • Description aus Notes + Korrekturmaßnahmen-Vorschlag
+              //  • Remediation-Due aus remediationDeadline
+              const cfItem = createFindingItem as AuditChecklistItem & {
+                criterionReference?: string | null;
+                correctiveActionSuggestion?: string | null;
+                remediationDeadline?: string | null;
+              };
+              const prefillSeverity =
+                checklistResultToFindingSeverity(cfItem.result) ??
+                "minor_nonconformity";
+              const prefillTitle = cfItem.criterionReference
+                ? `${cfItem.criterionReference} — ${cfItem.question.slice(0, 120)}`
+                : cfItem.question.slice(0, 160);
+              const prefillDescription = [
+                cfItem.notes,
+                cfItem.correctiveActionSuggestion
+                  ? `\nVorschlag Korrekturmaßnahme:\n${cfItem.correctiveActionSuggestion}`
+                  : "",
+              ]
+                .filter(Boolean)
+                .join("");
+              return (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleCreateFinding(
+                      cfItem.id,
+                      new FormData(e.currentTarget),
+                    );
+                  }}
+                  className="space-y-4"
                 >
-                  <option value="significant_nonconformity">
-                    {t("severity.significantNonconformity")}
-                  </option>
-                  <option value="insignificant_nonconformity">
-                    {t("severity.insignificantNonconformity")}
-                  </option>
-                  <option value="improvement_requirement">
-                    {t("severity.improvementRequirement")}
-                  </option>
-                  <option value="recommendation">
-                    {t("severity.recommendation")}
-                  </option>
-                  <option value="observation">
-                    {t("severity.observation")}
-                  </option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  Risiko-Verknüpfung
-                  <span className="ml-1 text-xs text-gray-400">
-                    (optional, ISO 27001 9.2 · ISO 31000 6.6)
-                  </span>
-                </label>
-                <select
-                  name="riskId"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                  defaultValue=""
-                >
-                  <option value="">— kein Risiko verknüpfen —</option>
-                  {risks.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title}
-                      {r.riskCategory ? ` (${r.riskCategory})` : ""}
-                    </option>
-                  ))}
-                </select>
-                <p className="text-xs text-gray-500 mt-1">
-                  Bei Verknüpfung wird die Feststellung als Wirksamkeitsnachweis
-                  für das Risiko geführt — ein Maßnahmen-Plan kann per Sync als
-                  Risk-Treatment übernommen werden.
-                </p>
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("remediationDueDate")}
-                </label>
-                <Input name="remediationDueDate" type="date" />
-              </div>
-              <Button type="submit" className="w-full">
-                {t("save")}
-              </Button>
-            </form>
-          )}
+                  {/* Kontext-Box: zeigt Bewertung + Kriterium aus Checklist-Item */}
+                  <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
+                    <p className="font-semibold">
+                      Auto-Prefill aus Checklist-Bewertung
+                    </p>
+                    <p className="mt-1">
+                      Bewertung: <strong>{resultLabel(cfItem.result)}</strong>
+                      {cfItem.criterionReference && (
+                        <>
+                          {" · "}Kriterium:{" "}
+                          <code className="font-mono">
+                            {cfItem.criterionReference}
+                          </code>
+                        </>
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <label className="text-sm font-medium">
+                      {t("findingTitle")}
+                    </label>
+                    <Input
+                      name="title"
+                      required
+                      defaultValue={prefillTitle}
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">
+                      {t("description")}
+                    </label>
+                    <textarea
+                      name="description"
+                      rows={5}
+                      defaultValue={prefillDescription}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">
+                      {t("findingSeverity")}{" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (ISO 19011 § 3.4)
+                      </span>
+                    </label>
+                    <select
+                      name="severity"
+                      required
+                      defaultValue={prefillSeverity}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    >
+                      <option value="major_nonconformity">
+                        ✗ Hauptabweichung (Major NC)
+                      </option>
+                      <option value="minor_nonconformity">
+                        ◆ Nebenabweichung (Minor NC)
+                      </option>
+                      <option value="opportunity_for_improvement">
+                        💡 Hinweis / OFI
+                      </option>
+                      <option value="observation">⚠ Feststellung</option>
+                      <option value="recommendation">📌 Empfehlung</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">
+                      Risiko-Verknüpfung
+                      <span className="ml-1 text-xs text-gray-400">
+                        (optional, ISO 27001 9.2 · ISO 31000 6.6)
+                      </span>
+                    </label>
+                    <select
+                      name="riskId"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                      defaultValue=""
+                    >
+                      <option value="">— kein Risiko verknüpfen —</option>
+                      {risks.map((r) => (
+                        <option key={r.id} value={r.id}>
+                          {r.title}
+                          {r.riskCategory ? ` (${r.riskCategory})` : ""}
+                        </option>
+                      ))}
+                    </select>
+                    <p className="text-xs text-gray-500 mt-1">
+                      Bei Verknüpfung wird die Feststellung als
+                      Wirksamkeitsnachweis für das Risiko geführt — ein
+                      Maßnahmen-Plan kann per Sync als Risk-Treatment
+                      übernommen werden.
+                    </p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">
+                      {t("remediationDueDate")}
+                    </label>
+                    <Input
+                      name="remediationDueDate"
+                      type="date"
+                      defaultValue={cfItem.remediationDeadline ?? ""}
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setCreateFindingItem(null)}
+                    >
+                      Abbrechen
+                    </Button>
+                    <Button type="submit">{t("save")}</Button>
+                  </div>
+                </form>
+              );
+            })()}
         </DialogContent>
       </Dialog>
     </div>

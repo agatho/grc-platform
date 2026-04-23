@@ -57,13 +57,61 @@ const campaignStatusValues = [
   "completed",
   "cancelled",
 ] as const;
-const findingSeverityValues = [
+// ISO 19011 § 3.4 — ISO-konforme Werte plus Legacy-Synonyme (Arctos pre-0293).
+export const findingSeverityValues = [
+  "positive",
+  "conforming",
+  "opportunity_for_improvement",
+  "minor_nonconformity",
+  "major_nonconformity",
   "observation",
   "recommendation",
   "improvement_requirement",
   "insignificant_nonconformity",
   "significant_nonconformity",
 ] as const;
+export type FindingSeverityValue = (typeof findingSeverityValues)[number];
+
+// Map von Legacy → ISO — UI zeigt ISO-Label, Altdaten bleiben lesbar.
+export function normalizeFindingSeverity(
+  v: string | null | undefined,
+): FindingSeverityValue | null {
+  switch (v) {
+    case "significant_nonconformity":
+      return "major_nonconformity";
+    case "insignificant_nonconformity":
+      return "minor_nonconformity";
+    case "improvement_requirement":
+      return "opportunity_for_improvement";
+    case null:
+    case undefined:
+      return null;
+    default:
+      return v as FindingSeverityValue;
+  }
+}
+
+// Map Checklist-Item-Result → Finding-Severity (ISO-konform).
+// Ermöglicht das Auto-Prefill beim „Finding erstellen" aus einer NC-Bewertung.
+export function checklistResultToFindingSeverity(
+  r: string | null | undefined,
+): FindingSeverityValue | null {
+  switch (r) {
+    case "major_nonconformity":
+      return "major_nonconformity";
+    case "minor_nonconformity":
+      return "minor_nonconformity";
+    case "nonconforming":
+      // Legacy aus vor-0290 Items — auf Minor mappen (konservativ).
+      return "minor_nonconformity";
+    case "opportunity_for_improvement":
+      return "opportunity_for_improvement";
+    case "observation":
+      return "observation";
+    default:
+      return null;
+  }
+}
 const findingStatusValues = [
   "identified",
   "in_remediation",

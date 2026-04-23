@@ -44,8 +44,14 @@ export interface CrossModuleFinding {
 
 // ─── Severity + Status Normalizers ────────────────────────────
 
+// ISO-19011-konforme Werte + Legacy-Synonyme (pre-0293).
 export function normalizeIcsFindingSeverity(
   sev:
+    | "positive"
+    | "conforming"
+    | "opportunity_for_improvement"
+    | "minor_nonconformity"
+    | "major_nonconformity"
     | "observation"
     | "recommendation"
     | "improvement_requirement"
@@ -53,15 +59,23 @@ export function normalizeIcsFindingSeverity(
     | "significant_nonconformity",
 ): NormalizedSeverity {
   switch (sev) {
+    case "major_nonconformity":
     case "significant_nonconformity":
       return "high";
+    case "minor_nonconformity":
     case "insignificant_nonconformity":
       return "medium";
+    case "opportunity_for_improvement":
     case "improvement_requirement":
       return "medium";
     case "recommendation":
       return "low";
     case "observation":
+      return "observation";
+    case "positive":
+    case "conforming":
+      // Best-Case Findings: in der Normalized-Darstellung als observation
+      // (niedrigste nicht-problematische Stufe); CES-Score bleibt unberührt.
       return "observation";
   }
 }

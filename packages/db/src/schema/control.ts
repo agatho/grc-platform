@@ -94,7 +94,18 @@ export const campaignStatusEnum = pgEnum("campaign_status", [
   "cancelled",
 ]);
 
+// ISO 19011 § 3.4 — Finding-Klassifikation.
+// Die ersten drei („observation", „recommendation", „improvement_requirement")
+// sowie „insignificant_/significant_nonconformity" sind Legacy-Werte und
+// bleiben für Altdaten gültig. UI nutzt primär die ISO-Namen.
 export const findingSeverityEnum = pgEnum("finding_severity", [
+  // ISO 19011-konform (neu)
+  "positive",
+  "conforming",
+  "opportunity_for_improvement",
+  "minor_nonconformity",
+  "major_nonconformity",
+  // Legacy (bleiben als Synonym gültig)
   "observation",
   "recommendation",
   "improvement_requirement",
