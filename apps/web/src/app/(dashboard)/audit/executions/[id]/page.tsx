@@ -20,6 +20,7 @@ import {
   Paperclip,
   X,
   Download,
+  Copy,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -1523,6 +1524,37 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   };
 
+  const handleDuplicateChecklist = async (checklistId: string, name: string) => {
+    if (
+      !confirm(
+        `Checkliste "${name}" duplizieren?\n\nEs werden alle Fragen + Kriterien kopiert — OHNE die bereits erfassten Bewertungen und Evidenzen.`,
+      )
+    )
+      return;
+    const res = await fetch(
+      `/api/v1/audit-mgmt/audits/${auditId}/checklists/${checklistId}/duplicate`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: "{}",
+      },
+    );
+    if (res.ok) {
+      const json = await res.json().catch(() => null);
+      const newId: string | undefined = json?.data?.checklist?.id;
+      await fetchChecklists();
+      if (newId) {
+        setSelectedChecklist(newId);
+        void fetchItems(newId);
+      }
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(
+        `Duplizieren fehlgeschlagen: ${j.error ?? res.statusText} (HTTP ${res.status})`,
+      );
+    }
+  };
+
   const handleDeleteChecklist = async (checklistId: string, name: string) => {
     if (
       !confirm(
@@ -1665,6 +1697,22 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 title={cl.name}
               >
                 {cl.name}
+              </button>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  void handleDuplicateChecklist(cl.id, cl.name);
+                }}
+                className={`border-l px-2 ${
+                  selectedChecklist === cl.id
+                    ? "border-blue-500 hover:bg-blue-700"
+                    : "border-gray-300 hover:bg-blue-50 hover:text-blue-600"
+                }`}
+                title="Checkliste duplizieren (neue leere Kopie der Fragen)"
+                aria-label={`${cl.name} duplizieren`}
+              >
+                <Copy size={14} />
               </button>
               <button
                 type="button"
