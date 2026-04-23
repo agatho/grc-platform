@@ -3340,13 +3340,61 @@ function FindingsTab({ auditId }: { auditId: string }) {
     );
   };
 
+  const [bulkCreating, setBulkCreating] = useState(false);
+  const handleBulkCreate = async () => {
+    if (
+      !confirm(
+        "Für jede NC-Bewertung ohne Finding automatisch ein Finding anlegen?\n\n" +
+          "• Severity wird aus der Bewertung abgeleitet\n" +
+          "• Title aus Kriterium + Frage\n" +
+          "• Beschreibung aus Notes + Korrekturmaßnahmen-Vorschlag\n" +
+          "• Duplikate (gleicher Titel) werden übersprungen",
+      )
+    )
+      return;
+    setBulkCreating(true);
+    try {
+      const res = await fetch(
+        `/api/v1/audit-mgmt/audits/${auditId}/bulk-create-findings`,
+        { method: "POST" },
+      );
+      if (res.ok) {
+        const j = await res.json();
+        alert(
+          `Bulk-Erstellung abgeschlossen:\n${j.data.created} neu, ${j.data.skipped} übersprungen (Duplikat), ${j.data.total} total.`,
+        );
+        await fetchFindings();
+      } else {
+        const j = await res.json().catch(() => ({}));
+        alert(`Fehler: ${j.error ?? res.statusText}`);
+      }
+    } finally {
+      setBulkCreating(false);
+    }
+  };
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-base font-semibold text-gray-900">
           {t("findingsForAudit")}
         </h2>
-        <Dialog open={addOpen} onOpenChange={setAddOpen}>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleBulkCreate}
+            disabled={bulkCreating}
+            title="Für jede NC-Bewertung ohne Finding automatisch eins anlegen (ISO 19011 § 6.4.8)"
+          >
+            {bulkCreating ? (
+              <Loader2 size={14} className="mr-1 animate-spin" />
+            ) : (
+              <Sparkles size={14} className="mr-1" />
+            )}
+            Alle NC → Findings
+          </Button>
+          <Dialog open={addOpen} onOpenChange={setAddOpen}>
           <DialogTrigger asChild>
             <Button size="sm">
               <Plus size={14} className="mr-1" />
@@ -3430,6 +3478,7 @@ function FindingsTab({ auditId }: { auditId: string }) {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       {loading ? (

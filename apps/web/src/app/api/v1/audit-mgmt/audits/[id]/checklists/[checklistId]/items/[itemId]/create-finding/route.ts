@@ -15,10 +15,18 @@ type RouteParams = {
   params: Promise<{ id: string; checklistId: string; itemId: string }>;
 };
 
+// ISO 19011 § 3.4 — akzeptiert ISO-Werte UND Legacy-Synonyme (Migration 0293).
 const createFindingFromItemSchema = z.object({
   title: z.string().min(1).max(500),
   description: z.string().optional(),
   severity: z.enum([
+    // ISO-konform
+    "positive",
+    "conforming",
+    "opportunity_for_improvement",
+    "minor_nonconformity",
+    "major_nonconformity",
+    // Legacy
     "observation",
     "recommendation",
     "improvement_requirement",
