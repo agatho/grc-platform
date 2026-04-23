@@ -33,7 +33,15 @@ export type TestResult =
   | "not_tested";
 export type TestStatus = "planned" | "in_progress" | "completed" | "cancelled";
 export type CampaignStatus = "draft" | "active" | "completed" | "cancelled";
+// ISO 19011 § 3.4 — neue Werte plus Legacy-Synonyme (Migration 0293).
 export type FindingSeverity =
+  // ISO-konform
+  | "positive"
+  | "conforming"
+  | "opportunity_for_improvement"
+  | "minor_nonconformity"
+  | "major_nonconformity"
+  // Legacy
   | "observation"
   | "recommendation"
   | "improvement_requirement"

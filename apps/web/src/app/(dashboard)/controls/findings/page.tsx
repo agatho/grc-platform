@@ -53,12 +53,19 @@ interface FindingRow {
 // Constants
 // ---------------------------------------------------------------------------
 
+// ISO 19011 § 3.4 — neue Werte vorne, Legacy-Synonyme danach (Migration 0293).
 const SEVERITIES: FindingSeverity[] = [
+  "major_nonconformity",
+  "minor_nonconformity",
+  "opportunity_for_improvement",
   "observation",
   "recommendation",
-  "improvement_requirement",
-  "insignificant_nonconformity",
+  "positive",
+  "conforming",
+  // Legacy (bleiben im Filter wählbar, kommen aber bei neuen Inserts nicht mehr vor):
   "significant_nonconformity",
+  "insignificant_nonconformity",
+  "improvement_requirement",
 ];
 
 const STATUSES: FindingStatus[] = [
