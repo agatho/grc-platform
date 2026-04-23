@@ -431,6 +431,29 @@ function AuditEditDialog({
 }) {
   const t = useTranslations("auditMgmt");
   const [saving, setSaving] = useState(false);
+  const [auditors, setAuditors] = useState<
+    Array<{ id: string; name: string | null; email: string; role: string }>
+  >([]);
+
+  // Lade Auditor-Liste einmalig beim Öffnen des Dialogs
+  useEffect(() => {
+    if (!open) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch("/api/v1/audit-mgmt/auditors");
+        if (r.ok) {
+          const j = await r.json();
+          if (!cancelled) setAuditors(j.data ?? []);
+        }
+      } catch {
+        // ignore
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [open]);
 
   const handleSave = async (formData: FormData) => {
     const parseCsv = (v: string | null): string[] | undefined => {
@@ -442,6 +465,8 @@ function AuditEditDialog({
       return arr.length > 0 ? arr : undefined;
     };
 
+    const auditorIdsRaw = formData.getAll("auditorIds") as string[];
+
     const body: Record<string, unknown> = {
       title: formData.get("title") as string,
       description: (formData.get("description") as string) || undefined,
@@ -452,6 +477,12 @@ function AuditEditDialog({
       scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
       plannedStart: (formData.get("plannedStart") as string) || undefined,
       plannedEnd: (formData.get("plannedEnd") as string) || undefined,
+      leadAuditorId:
+        (formData.get("leadAuditorId") as string) || undefined,
+      auditorIds:
+        auditorIdsRaw.filter(Boolean).length > 0
+          ? auditorIdsRaw.filter(Boolean)
+          : [],
       // actualStart/End + conclusion werden via Status-Transition-Endpoint
       // gepflegt, NICHT via PUT /audits/[id] (dessen Schema updateAuditSchema
       // enthält sie nicht). Wir fassen deshalb nur Planungs-/Scope-Felder an.
@@ -521,6 +552,56 @@ function AuditEditDialog({
               />
             </div>
           </div>
+
+          {/* Auditor-Team */}
+          <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
+            <legend className="text-xs font-semibold text-gray-600 px-1">
+              Auditor-Team (ISO 19011 § 5.4.4)
+            </legend>
+            <div>
+              <label className="text-sm font-medium">Lead-Auditor</label>
+              <select
+                name="leadAuditorId"
+                defaultValue={audit.leadAuditorId ?? ""}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">— niemand zugewiesen —</option>
+                {auditors.map((u) => (
+                  <option key={u.id} value={u.id}>
+                    {u.name ?? u.email}
+                    {u.role === "admin" ? " (admin)" : ""}
+                  </option>
+                ))}
+              </select>
+            </div>
+            {auditors.length > 0 && (
+              <div>
+                <label className="text-sm font-medium">Audit-Team</label>
+                <div className="rounded-md border border-gray-200 p-2 max-h-40 overflow-y-auto space-y-1">
+                  {auditors.map((u) => (
+                    <label
+                      key={u.id}
+                      className="flex items-center gap-2 text-sm cursor-pointer hover:bg-gray-50 px-1 py-0.5 rounded"
+                    >
+                      <input
+                        type="checkbox"
+                        name="auditorIds"
+                        value={u.id}
+                        defaultChecked={
+                          audit.auditorIds?.includes(u.id) ?? false
+                        }
+                        className="h-4 w-4"
+                      />
+                      <span>{u.name ?? u.email}</span>
+                      {u.role === "admin" && (
+                        <span className="text-[10px] text-gray-400">· admin</span>
+                      )}
+                    </label>
+                  ))}
+                </div>
+              </div>
+            )}
+          </fieldset>
 
           <fieldset className="border border-gray-200 rounded-md p-3 space-y-3">
             <legend className="text-xs font-semibold text-gray-600 px-1">
