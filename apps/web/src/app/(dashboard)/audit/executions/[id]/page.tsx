@@ -2405,17 +2405,87 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
 
 // ─── Activities Tab ──────────────────────────────────────────
 
+// Typisierte Activity-Templates für typische Audit-Phasen nach IIA 2330 /
+// ISO 19011 § 6.4: Opening/Closing Meeting + Field-Work-Typen. Das Dialog
+// kann per Quick-Button vorbelegt werden — schneller als alles manuell.
+type ActivityTemplate = {
+  key: string;
+  activityType: string;
+  titleDe: string;
+  icon: string;
+  description?: string;
+  defaultDurationMinutes?: number;
+};
+const ACTIVITY_TEMPLATES: ActivityTemplate[] = [
+  {
+    key: "opening",
+    activityType: "meeting",
+    titleDe: "Eröffnungsgespräch",
+    icon: "🚪",
+    description:
+      "Audit-Start mit Auditee: Ziele, Scope, Kriterien, Kommunikationsplan (ISO 19011 § 6.4.2).",
+    defaultDurationMinutes: 60,
+  },
+  {
+    key: "closing",
+    activityType: "meeting",
+    titleDe: "Abschlussgespräch",
+    icon: "🏁",
+    description:
+      "Zusammenfassung der Feststellungen, Klärung offener Punkte (ISO 19011 § 6.4.10).",
+    defaultDurationMinutes: 60,
+  },
+  {
+    key: "interview",
+    activityType: "interview",
+    titleDe: "Field-Interview",
+    icon: "👤",
+    description: "Befragung mit Prozess-Eigner / Verantwortlichem.",
+    defaultDurationMinutes: 45,
+  },
+  {
+    key: "docreview",
+    activityType: "document_review",
+    titleDe: "Dokumentenprüfung",
+    icon: "📄",
+    description: "Review von Richtlinien, Protokollen, Berichten.",
+    defaultDurationMinutes: 30,
+  },
+  {
+    key: "walkthrough",
+    activityType: "walkthrough",
+    titleDe: "Walkthrough",
+    icon: "🚶",
+    description: "Prozess-Durchlauf mit Prozess-Eigner.",
+    defaultDurationMinutes: 45,
+  },
+  {
+    key: "testing",
+    activityType: "testing",
+    titleDe: "Technischer Test",
+    icon: "🔧",
+    description: "Config-Prüfung, Sample-Test, Log-Analyse.",
+    defaultDurationMinutes: 30,
+  },
+];
+
+type ActivityWithUser = AuditActivity & { performedByName?: string | null };
+
 function ActivitiesTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
-  const [activities, setActivities] = useState<AuditActivity[]>([]);
+  const [activities, setActivities] = useState<ActivityWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [filterType, setFilterType] = useState<string>("");
+  const [presetValues, setPresetValues] = useState<ActivityTemplate | null>(
+    null,
+  );
 
   const fetchActivities = useCallback(async () => {
     setLoading(true);
     try {
       const res = await fetch(
-        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=100`,
+        `/api/v1/audit-mgmt/audits/${auditId}/activities?limit=200`,
       );
       if (res.ok) {
         const json = await res.json();
@@ -2449,126 +2519,319 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
 
     if (res.ok) {
       setDialogOpen(false);
+      setPresetValues(null);
       void fetchActivities();
+    }
+  };
+
+  const openWithPreset = (tpl: ActivityTemplate) => {
+    setPresetValues(tpl);
+    setDialogOpen(true);
+  };
+
+  // Summary-Statistiken
+  const totalActivities = activities.length;
+  const totalDurationMin = activities.reduce(
+    (sum, a) => sum + (a.duration ?? 0),
+    0,
+  );
+  const byType: Record<string, number> = {};
+  for (const a of activities) {
+    byType[a.activityType] = (byType[a.activityType] ?? 0) + 1;
+  }
+
+  const filteredActivities = filterType
+    ? activities.filter((a) => a.activityType === filterType)
+    : activities;
+
+  // Nach Datum gruppieren (Key: YYYY-MM-DD)
+  const byDay = new Map<string, ActivityWithUser[]>();
+  for (const a of filteredActivities) {
+    const day = new Date(a.performedAt).toISOString().slice(0, 10);
+    if (!byDay.has(day)) byDay.set(day, []);
+    byDay.get(day)!.push(a);
+  }
+  const sortedDays = Array.from(byDay.keys()).sort().reverse();
+
+  const iconForType = (t: string): string => {
+    switch (t) {
+      case "meeting":
+        return "🗓";
+      case "interview":
+        return "👤";
+      case "document_review":
+        return "📄";
+      case "walkthrough":
+        return "🚶";
+      case "testing":
+        return "🔧";
+      default:
+        return "•";
     }
   };
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      {/* Header + Quick-Actions */}
+      <div className="flex items-center justify-between flex-wrap gap-2">
         <h2 className="text-base font-semibold text-gray-900">
           {t("activityLog")}
         </h2>
-        <Dialog open={dialogOpen} onOpenChange={setDialogOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus size={14} className="mr-1" />
-              {t("addActivity")}
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>{t("addActivity")}</DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleCreate(new FormData(e.currentTarget));
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm font-medium">
-                  {t("activityType")}
-                </label>
-                <select
-                  name="activityType"
-                  required
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="interview">
-                    {t("activityTypes.interview")}
-                  </option>
-                  <option value="document_review">
-                    {t("activityTypes.documentReview")}
-                  </option>
-                  <option value="walkthrough">
-                    {t("activityTypes.walkthrough")}
-                  </option>
-                  <option value="testing">{t("activityTypes.testing")}</option>
-                  <option value="meeting">{t("activityTypes.meeting")}</option>
-                  <option value="other">{t("activityTypes.other")}</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("activityTitle")}
-                </label>
-                <Input name="title" required />
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("description")}
-                </label>
-                <Input name="description" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  {t("durationMinutes")}
-                </label>
-                <Input name="duration" type="number" min="1" />
-              </div>
-              <div>
-                <label className="text-sm font-medium">{t("notes")}</label>
-                <textarea
-                  name="notes"
-                  rows={2}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <Button type="submit" className="w-full">
-                {t("save")}
-              </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            value={filterType}
+            onChange={(e) => setFilterType(e.target.value)}
+            className="text-sm rounded-md border border-gray-300 px-2 py-1"
+          >
+            <option value="">Alle Typen</option>
+            {Object.keys(byType).map((k) => (
+              <option key={k} value={k}>
+                {t(`activityTypes.${k === "document_review" ? "documentReview" : k}`, { defaultValue: k })}{" "}
+                ({byType[k]})
+              </option>
+            ))}
+          </select>
+          <Button
+            size="sm"
+            onClick={() => {
+              setPresetValues(null);
+              setDialogOpen(true);
+            }}
+          >
+            <Plus size={14} className="mr-1" />
+            {t("addActivity")}
+          </Button>
+        </div>
       </div>
 
+      {/* Summary-Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+        <StatCard label="Aktivitäten" value={totalActivities} />
+        <StatCard
+          label="Dauer gesamt"
+          value={
+            totalDurationMin > 0
+              ? `${Math.floor(totalDurationMin / 60)}h ${totalDurationMin % 60}min`
+              : "—"
+          }
+        />
+        <StatCard
+          label="Meetings"
+          value={byType.meeting ?? 0}
+          color="bg-purple-50 text-purple-900"
+        />
+        <StatCard
+          label="Interviews"
+          value={byType.interview ?? 0}
+          color="bg-indigo-50 text-indigo-900"
+        />
+      </div>
+
+      {/* Quick-Templates (IIA 2330 / ISO 19011 § 6.4) */}
+      <div className="rounded-lg border border-gray-200 bg-white p-3">
+        <p className="text-xs font-semibold text-gray-600 mb-2">
+          Schnell-Templates
+        </p>
+        <div className="flex flex-wrap gap-1.5">
+          {ACTIVITY_TEMPLATES.map((tpl) => (
+            <button
+              key={tpl.key}
+              type="button"
+              onClick={() => openWithPreset(tpl)}
+              className="inline-flex items-center gap-1 px-2 py-1 rounded border border-gray-200 text-xs hover:bg-blue-50 hover:border-blue-400 hover:text-blue-700"
+              title={tpl.description}
+            >
+              <span>{tpl.icon}</span>
+              <span>{tpl.titleDe}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Dialog — mit Preset-Unterstützung */}
+      <Dialog
+        open={dialogOpen}
+        onOpenChange={(o) => {
+          setDialogOpen(o);
+          if (!o) setPresetValues(null);
+        }}
+      >
+        <DialogContent className="max-w-xl">
+          <DialogHeader>
+            <DialogTitle>
+              {presetValues
+                ? `${presetValues.icon} ${presetValues.titleDe}`
+                : t("addActivity")}
+            </DialogTitle>
+          </DialogHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault();
+              void handleCreate(new FormData(e.currentTarget));
+            }}
+            className="space-y-4"
+          >
+            <div>
+              <label className="text-sm font-medium">{t("activityType")}</label>
+              <select
+                name="activityType"
+                required
+                defaultValue={presetValues?.activityType ?? "interview"}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="interview">
+                  {t("activityTypes.interview")}
+                </option>
+                <option value="document_review">
+                  {t("activityTypes.documentReview")}
+                </option>
+                <option value="walkthrough">
+                  {t("activityTypes.walkthrough")}
+                </option>
+                <option value="testing">{t("activityTypes.testing")}</option>
+                <option value="meeting">{t("activityTypes.meeting")}</option>
+                <option value="other">{t("activityTypes.other")}</option>
+              </select>
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                {t("activityTitle")}
+              </label>
+              <Input
+                name="title"
+                required
+                defaultValue={presetValues?.titleDe ?? ""}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("description")}</label>
+              <Input
+                name="description"
+                defaultValue={presetValues?.description ?? ""}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">
+                {t("durationMinutes")}
+              </label>
+              <Input
+                name="duration"
+                type="number"
+                min="1"
+                defaultValue={presetValues?.defaultDurationMinutes ?? ""}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">{t("notes")}</label>
+              <textarea
+                name="notes"
+                rows={3}
+                placeholder="Teilnehmer, Themen, Beobachtungen, offene Punkte, …"
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="flex justify-end gap-2 pt-2 border-t">
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setDialogOpen(false)}
+              >
+                Abbrechen
+              </Button>
+              <Button type="submit">{t("save")}</Button>
+            </div>
+          </form>
+        </DialogContent>
+      </Dialog>
+
+      {/* Timeline (gruppiert nach Tag) */}
       {loading ? (
         <div className="flex items-center justify-center h-32">
           <Loader2 size={24} className="animate-spin text-gray-400" />
         </div>
-      ) : activities.length === 0 ? (
+      ) : filteredActivities.length === 0 ? (
         <div className="text-center py-8 text-gray-400">
-          {t("emptyActivities")}
+          {filterType
+            ? `Keine Aktivitäten vom Typ "${filterType}" erfasst.`
+            : t("emptyActivities")}
         </div>
       ) : (
-        <div className="space-y-3">
-          {activities.map((activity) => (
-            <div
-              key={activity.id}
-              className="rounded-lg border border-gray-200 bg-white p-4"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline">{activity.activityType}</Badge>
-                  <span className="font-medium text-gray-900">
-                    {activity.title}
+        <div className="space-y-4">
+          {sortedDays.map((day) => {
+            const dayActivities = byDay.get(day)!;
+            const dayDuration = dayActivities.reduce(
+              (sum, a) => sum + (a.duration ?? 0),
+              0,
+            );
+            return (
+              <div key={day} className="space-y-2">
+                <div className="flex items-center gap-2 sticky top-0 bg-gray-50 -mx-1 px-2 py-1 rounded border-l-4 border-blue-500">
+                  <span className="text-xs font-semibold text-gray-700">
+                    {new Date(day).toLocaleDateString("de-DE", {
+                      weekday: "long",
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
+                    })}
+                  </span>
+                  <span className="text-[11px] text-gray-500">
+                    {dayActivities.length} Aktivität
+                    {dayActivities.length === 1 ? "" : "en"}
+                    {dayDuration > 0 && (
+                      <>
+                        {" · "}
+                        {Math.floor(dayDuration / 60)}h {dayDuration % 60}min
+                      </>
+                    )}
                   </span>
                 </div>
-                <span className="text-xs text-gray-500">
-                  {new Date(activity.performedAt).toLocaleString()}
-                  {activity.duration ? ` (${activity.duration}min)` : ""}
-                </span>
+                <div className="space-y-2 pl-2">
+                  {dayActivities.map((activity) => (
+                    <div
+                      key={activity.id}
+                      className="rounded-md border border-gray-200 bg-white p-3"
+                    >
+                      <div className="flex items-center justify-between flex-wrap gap-2">
+                        <div className="flex items-center gap-2">
+                          <span aria-hidden className="text-base">
+                            {iconForType(activity.activityType)}
+                          </span>
+                          <Badge variant="outline" className="text-[10px]">
+                            {activity.activityType}
+                          </Badge>
+                          <span className="font-medium text-gray-900 text-sm">
+                            {activity.title}
+                          </span>
+                        </div>
+                        <span className="text-[11px] text-gray-500">
+                          {new Date(activity.performedAt).toLocaleTimeString(
+                            "de-DE",
+                            { hour: "2-digit", minute: "2-digit" },
+                          )}
+                          {activity.duration
+                            ? ` · ${activity.duration} min`
+                            : ""}
+                          {activity.performedByName && (
+                            <> · {activity.performedByName}</>
+                          )}
+                        </span>
+                      </div>
+                      {activity.description && (
+                        <p className="text-xs text-gray-600 mt-1">
+                          {activity.description}
+                        </p>
+                      )}
+                      {activity.notes && (
+                        <p className="text-xs text-gray-400 mt-1 whitespace-pre-wrap">
+                          {activity.notes}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
-              {activity.description && (
-                <p className="text-sm text-gray-600">{activity.description}</p>
-              )}
-              {activity.notes && (
-                <p className="text-xs text-gray-400 mt-1">{activity.notes}</p>
-              )}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
@@ -3397,11 +3660,11 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
 function StatCard({
   label,
   value,
-  color,
+  color = "bg-gray-50 text-gray-800",
 }: {
   label: string;
-  value: number;
-  color: string;
+  value: number | string;
+  color?: string;
 }) {
   return (
     <div className={`rounded-md p-3 ${color}`}>
