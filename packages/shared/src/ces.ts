@@ -43,11 +43,29 @@ export function computeCES(params: {
     overduePenalty = 50;
   }
 
-  // findingPenalty: significant=-30, insignificant=-15, improvement=-5
+  // findingPenalty nach ISO 19011 § 3.4 — major=-30, minor=-15, OFI=-5.
+  // Legacy-Werte (significant_/insignificant_nonconformity, improvement_requirement)
+  // werden als Synonym behandelt damit Bestandsdaten den gleichen Score liefern.
   const findingPenalty = params.openFindings.reduce((sum, f) => {
-    if (f.severity === "significant_nonconformity") return sum + 30;
-    if (f.severity === "insignificant_nonconformity") return sum + 15;
-    if (f.severity === "improvement_requirement") return sum + 5;
+    if (
+      f.severity === "major_nonconformity" ||
+      f.severity === "significant_nonconformity"
+    ) {
+      return sum + 30;
+    }
+    if (
+      f.severity === "minor_nonconformity" ||
+      f.severity === "insignificant_nonconformity"
+    ) {
+      return sum + 15;
+    }
+    if (
+      f.severity === "opportunity_for_improvement" ||
+      f.severity === "improvement_requirement"
+    ) {
+      return sum + 5;
+    }
+    // observation / recommendation / positive / conforming: kein Penalty
     return sum;
   }, 0);
 
