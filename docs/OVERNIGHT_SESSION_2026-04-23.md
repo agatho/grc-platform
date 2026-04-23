@@ -1,7 +1,7 @@
 # Overnight-Session 2026-04-23
 
 **Dauer:** 02:40–05:10 (2:30h autonomous)
-**Commits:** 23 auf `main` gepusht (02b31ad → 02c0688)
+**Commits:** 24 auf `main` gepusht (02b31ad → ba26b55)
 **Fokus:** Audit-Modul von „oberflächlich" zu ISO-19011/17021-1-konform
 
 ## Was redeployen?
@@ -62,6 +62,7 @@ Seeds werden dann via `[3b/5]` idempotent nachgeschoben (CIS-Katalog enthält da
 21. **Conclusion-Badge + QuickStats auf Universe/Plans** (`907102a`) — `✓ Konform`/`◆ Mit Nebenabweichung`/`✗ Mit Hauptabweichung`-Chip im Header.
 22. **Closure-Readiness-Check** (`dd21fe7`) — vor status=completed listet der Dialog offene Punkte (unbewertete Items, NCs ohne Finding, fehlende Konklusion, offene Findings). ISO 19011 § 6.5: Audit-Schluss muss auf allen Nachweisen basieren.
 23. **Overdue + Due-Soon Indicator im FindingRow** (`02c0688`) — rotes „⚠ Überfällig"-Pulsieren wenn Frist in der Vergangenheit, amber „⏰ Fällig ≤14 Tage" als Frühwarnung. Nur bei offenen Findings.
+24. **Bulk-Create Findings aus NC-Items** (`ba26b55`) — neuer Endpoint + UI-Button „Alle NC → Findings" im Findings-Tab. Automatisches Mapping Bewertung→Severity, Titel aus Kriterium+Frage, Duplicate-Prevention via Title-Match. Spart Minuten pro Audit bei vielen NC-Items.
 
 ## Tests / Checks
 
