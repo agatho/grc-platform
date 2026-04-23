@@ -3206,6 +3206,14 @@
       "sampling": "Sampling",
       "reperformance": "Reperformance"
     },
+    "tipNextStep": "Next step",
+    "tips": {
+      "planned": "Audit is in planning — maintain scope, audit team and planned dates via \"Edit details\".",
+      "preparation": "Preparation phase — generate checklists from active catalogs (CIS IG1/2/3, ISO 27001 Annex A) and schedule the opening meeting via \"Activities\".",
+      "fieldwork": "Field work — evaluate items in the checklists tab, log interviews and tests as activities, capture evidence.",
+      "reporting": "Reporting phase — open Findings tab and use \"All NC → Findings\" for bulk conversion, then capture remediation plans in the Report tab.",
+      "review": "Review — check the Report tab, verify all findings, then hand over to management review (ISO 27001 § 9.3)."
+    },
     "severity": {
       "major_nonconformity": "Major Nonconformity",
       "minor_nonconformity": "Minor Nonconformity",
