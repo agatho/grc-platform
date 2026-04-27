@@ -54,18 +54,18 @@
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3.3.5",
-    "@playwright/test": "^1.58.2",
+    "@playwright/test": "^1.59.1",
     "@testing-library/react": "^16.3.2",
-    "@types/node": "^22.19.15",
+    "@types/node": "^22.19.17",
     "@types/papaparse": "^5.5.2",
     "@types/react": "^19.2.14",
     "@types/react-grid-layout": "^2.1.0",
-    "@vitest/coverage-v8": "^4.1.2",
+    "@vitest/coverage-v8": "^4.1.5",
     "eslint": "^9.39.4",
-    "eslint-config-next": "^16.2.1",
-    "tailwindcss": "^4.0",
+    "eslint-config-next": "^16.2.4",
+    "tailwindcss": "^4.2",
     "typescript": "^5.7",
-    "typescript-eslint": "^8.57.2",
-    "vitest": "^4.1.2"
+    "typescript-eslint": "^8.59.0",
+    "vitest": "^4.1.5"
   }
 }
