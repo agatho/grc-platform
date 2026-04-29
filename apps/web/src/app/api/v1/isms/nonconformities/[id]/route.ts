@@ -3,9 +3,17 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { sql } from "drizzle-orm";
 import { z } from "zod";
+import {
+  NC_STATUSES,
+  validateNcTransition,
+  assertCanCloseNc,
+  assertCanCloseMajorNc,
+  type NcStatus,
+  type CorrectiveActionSnapshot,
+} from "@grc/shared";
 
 const updateNonconformitySchema = z.object({
-  status: z.string().max(30).optional(),
+  status: z.enum(NC_STATUSES).optional(),
   rootCause: z.string().max(5000).optional(),
   rootCauseMethod: z.string().max(100).optional(),
   assignedTo: z.string().uuid().optional(),
@@ -83,6 +91,65 @@ export async function PUT(
   }
   const d = parsed.data;
 
+  // REQ-ISMS-031/032: validate state-machine transition + closure pre-conditions
+  if (d.status) {
+    const currentRows = (await db.execute(sql`
+      SELECT status, severity FROM isms_nonconformity
+      WHERE id = ${id} AND org_id = ${ctx.orgId} LIMIT 1
+    `)) as unknown as Array<{ status: string; severity: string }>;
+
+    if (currentRows.length === 0) {
+      return Response.json({ error: "Not found" }, { status: 404 });
+    }
+
+    const fromStatus = currentRows[0].status as NcStatus;
+    const toStatus = d.status;
+
+    const transitionResult = validateNcTransition({
+      from: fromStatus,
+      to: toStatus,
+    });
+    if (!transitionResult.ok) {
+      return Response.json(
+        {
+          error: "Invalid status transition",
+          reason: transitionResult.reason,
+          from: fromStatus,
+          to: toStatus,
+        },
+        { status: 422 },
+      );
+    }
+
+    if (toStatus === "closed") {
+      const caRows = (await db.execute(sql`
+        SELECT
+          status,
+          verification_result as "verificationResult",
+          verified_at as "verifiedAt",
+          effectiveness_review_date as "effectivenessReviewDate",
+          effectiveness_rating as "effectivenessRating"
+        FROM isms_corrective_action
+        WHERE nonconformity_id = ${id} AND org_id = ${ctx.orgId}
+      `)) as unknown as CorrectiveActionSnapshot[];
+
+      const isMajor = currentRows[0].severity === "major";
+      const closeAssertion = isMajor
+        ? assertCanCloseMajorNc(caRows)
+        : assertCanCloseNc(caRows);
+
+      if (!closeAssertion.ok) {
+        return Response.json(
+          {
+            error: "Cannot close nonconformity",
+            reason: closeAssertion.reason,
+          },
+          { status: 422 },
+        );
+      }
+    }
+  }
+
   const result = await withAuditContext(ctx, async () => {
     const rows = (await db.execute(sql`
       UPDATE isms_nonconformity
@@ -92,6 +159,10 @@ export async function PUT(
         root_cause_method = COALESCE(${d.rootCauseMethod ?? null}, root_cause_method),
         assigned_to = COALESCE(${d.assignedTo ?? null}, assigned_to),
         due_date = COALESCE(${d.dueDate ?? null}, due_date),
+        closed_at = CASE
+          WHEN ${d.status ?? null}::text = 'closed' THEN now()
+          ELSE closed_at
+        END,
         updated_at = now()
       WHERE id = ${id} AND org_id = ${ctx.orgId}
       RETURNING *
