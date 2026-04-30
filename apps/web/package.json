@@ -10,7 +10,8 @@
     "lint": "eslint . --no-error-on-unmatched-pattern",
     "test": "vitest",
     "test:e2e": "playwright test",
-    "test:e2e:ui": "playwright test --ui"
+    "test:e2e:ui": "playwright test --ui",
+    "test:coverage": "vitest run --coverage --passWithNoTests"
   },
   "dependencies": {
     "@grc/ai": "^0.1.0",

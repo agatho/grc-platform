@@ -1,0 +1,123 @@
+# ============================================================================
+# Test Coverage — runs vitest with coverage across all packages, aggregates
+# the per-package summaries, comments the report on PRs, and uploads the
+# HTML/LCOV artefacts.
+# ============================================================================
+
+name: Coverage
+
+on:
+  pull_request:
+    branches: [main, develop]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  NODE_VERSION: "22"
+  AUTH_SECRET: ci-build-placeholder
+  AUTH_TRUST_HOST: "true"
+  TURBO_TOKEN: ${{ secrets.TURBO_TOKEN }}
+  TURBO_TEAM: ${{ vars.TURBO_TEAM }}
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  coverage:
+    name: Aggregate test coverage
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v5
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run vitest with coverage in all packages
+        run: npm run test:coverage
+        continue-on-error: true # individual failures should not block aggregation
+
+      - name: Aggregate coverage report
+        run: npx tsx scripts/coverage-aggregate.ts
+
+      - name: Upload aggregated summary (JSON + Markdown)
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-summary
+          path: |
+            coverage/aggregated-summary.json
+            coverage/aggregated-summary.md
+          retention-days: 30
+
+      - name: Upload per-package HTML reports
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-html
+          path: |
+            packages/*/coverage/**
+            apps/*/coverage/**
+          retention-days: 14
+
+      - name: Upload LCOV files for downstream tools (Codecov etc.)
+        uses: actions/upload-artifact@v5
+        with:
+          name: coverage-lcov
+          path: |
+            packages/*/coverage/lcov.info
+            apps/*/coverage/lcov.info
+          retention-days: 14
+
+      - name: Comment coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v8
+        with:
+          script: |
+            const fs = require('fs');
+            const summaryPath = 'coverage/aggregated-summary.md';
+            if (!fs.existsSync(summaryPath)) {
+              core.warning('No aggregated summary produced; skipping comment.');
+              return;
+            }
+            const body = fs.readFileSync(summaryPath, 'utf-8');
+            const marker = '<!-- coverage-report-marker -->';
+            const fullBody = `${marker}\n${body}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+            });
+            const existing = comments.find(c => c.body && c.body.startsWith(marker));
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body: fullBody,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body: fullBody,
+              });
+            }
+
+      - name: Print summary in workflow log
+        if: always()
+        run: |
+          if [ -f coverage/aggregated-summary.md ]; then
+            cat coverage/aggregated-summary.md >> "$GITHUB_STEP_SUMMARY"
+          fi

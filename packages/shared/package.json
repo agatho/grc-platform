@@ -10,7 +10,8 @@
     "./lib/opentimestamps-upgrade": "./src/lib/opentimestamps-upgrade.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "fast-xml-parser": "^5.7.2",

@@ -11,7 +11,8 @@
     "./scim": "./src/scim/index.ts"
   },
   "scripts": {
-    "test": "vitest run"
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
   },
   "dependencies": {
     "@grc/db": "^0.1.0",
