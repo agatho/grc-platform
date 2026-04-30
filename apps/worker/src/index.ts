@@ -113,6 +113,10 @@ import { processAcademyOverdueCheck } from "./crons/academy-overdue-check";
 import { processSimulationRunner } from "./crons/simulation-runner";
 // Sprint 86: Community Edition und Open-Source Packaging
 import { processCommunityLicenseCheck } from "./crons/community-license-check";
+// Programme Cockpit
+import { processProgrammeDeadlineMonitor } from "./crons/programme-deadline-monitor";
+import { processProgrammeHealthRecompute } from "./crons/programme-health-recompute";
+import { processProgrammeProgressSnapshot } from "./crons/programme-progress-snapshot";
 
 const app = new Hono();
 
@@ -1403,6 +1407,52 @@ app.post("/crons/community-license-check", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] community-license-check cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// ──────────────────────────────────────────────────────────────
+// Programme Cockpit cron endpoints
+// ──────────────────────────────────────────────────────────────
+
+app.post("/crons/programme-deadline-monitor", async (c) => {
+  try {
+    const result = await processProgrammeDeadlineMonitor();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[worker] programme-deadline-monitor cron failed:",
+      message,
+    );
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/programme-health-recompute", async (c) => {
+  try {
+    const result = await processProgrammeHealthRecompute();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[worker] programme-health-recompute cron failed:",
+      message,
+    );
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/programme-progress-snapshot", async (c) => {
+  try {
+    const result = await processProgrammeProgressSnapshot();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[worker] programme-progress-snapshot cron failed:",
+      message,
+    );
     return c.json({ success: false, error: message }, 500);
   }
 });

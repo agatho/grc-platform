@@ -116,6 +116,7 @@ import * as ismsCapSchema from "./schema/isms-cap";
 import * as riskAcceptanceSchema from "./schema/risk-acceptance";
 import * as phase3ExtrasSchema from "./schema/phase3-extras";
 import * as stakeholderRegisterSchema from "./schema/stakeholder-register";
+import * as programmeSchema from "./schema/programme";
 
 const client = postgres(process.env.DATABASE_URL!);
 export const db = drizzle(client, {
@@ -225,6 +226,7 @@ export const db = drizzle(client, {
     ...riskAcceptanceSchema,
     ...phase3ExtrasSchema,
     ...stakeholderRegisterSchema,
+    ...programmeSchema,
   },
 });
 
@@ -347,6 +349,7 @@ export * from "./schema/isms-cap";
 export * from "./schema/risk-acceptance";
 export * from "./schema/phase3-extras";
 export * from "./schema/stakeholder-register";
+export * from "./schema/programme";
 
 // ADR-001 RLS audit helper — re-exported so API routes + CLI can import it
 export * from "./rls-audit";

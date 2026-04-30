@@ -97,3 +97,5 @@ export * from "./schemas/academy";
 export * from "./schemas/simulation";
 // Sprint 86: Community Edition und Open-Source Packaging
 export * from "./schemas/community";
+// Programme Cockpit — guided introduction journeys
+export * from "./schemas/programme";

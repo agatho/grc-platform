@@ -1,0 +1,126 @@
+{
+  "loading": "Loading …",
+  "list": {
+    "title": "Programme Cockpit",
+    "description": "Guided introduction journeys for management systems — pick a programme or start a new one from a standard template.",
+    "createButton": "New Programme",
+    "empty": "No programme started yet.",
+    "startedAt": "Started",
+    "targetDate": "Target date"
+  },
+  "new": {
+    "title": "Create new programme",
+    "description": "Pick a standard template and configure the basics. Phases and steps will be instantiated automatically.",
+    "step1Title": "1. Choose template",
+    "step2Title": "2. Define essentials",
+    "name": "Programme name",
+    "namePlaceholder": "e.g. ISO 27001 First-Time Certification 2026",
+    "description": "Description (optional)",
+    "startedAt": "Start date (optional)",
+    "estimatedDuration": "Estimated duration: {days} days",
+    "submit": "Start programme",
+    "cancel": "Cancel"
+  },
+  "dashboard": {
+    "health": "Health reason",
+    "openTimeline": "Open timeline",
+    "openEvents": "Activity log",
+    "progressTitle": "Progress",
+    "aggregate": {
+      "total": "Total steps",
+      "completed": "completed",
+      "inProgress": "in progress",
+      "blocked": "blocked",
+      "overdue": "overdue",
+      "healthScore": "Health score"
+    }
+  },
+  "kanban": {
+    "emptyPhase": "No steps in this phase."
+  },
+  "blockers": {
+    "title": "Blockers",
+    "summary": "{blocked} steps blocked, {overdue} steps overdue.",
+    "blockedHeading": "Blocked",
+    "overdueHeading": "Overdue"
+  },
+  "nextActions": {
+    "title": "Next actions",
+    "errorPrefix": "Error",
+    "empty": "No open actions.",
+    "overdueDays": "{days} day(s) overdue",
+    "dueInDays": "due in {days} day(s)",
+    "reason": {
+      "overdue": "Overdue",
+      "due_soon": "Due soon",
+      "in_progress": "In progress",
+      "unassigned": "No owner",
+      "next_in_sequence": "Next step",
+      "blocker_resolution": "Resolve blocker"
+    }
+  },
+  "step": {
+    "backToCockpit": "Back to cockpit",
+    "detailsTitle": "Step details",
+    "transitionTitle": "Change status",
+    "transitionTarget": "New status",
+    "selectTarget": "Please choose …",
+    "applyTransition": "Apply transition",
+    "reason": "Reason",
+    "reasonPlaceholder": "Reason required (≥ 5 characters)",
+    "dueDate": "Due",
+    "requiredEvidence": "Evidence",
+    "blockReason": "Block reason",
+    "skipReason": "Skip reason",
+    "prerequisites": "Prerequisites",
+    "targetModule": "Linked module"
+  },
+  "timeline": {
+    "title": "Timeline & milestones",
+    "phasesHeading": "Phase plan",
+    "milestonesHeading": "Milestones",
+    "noMilestones": "No milestones in this programme.",
+    "overallProgress": "Overall progress"
+  },
+  "events": {
+    "title": "Activity log",
+    "empty": "No events yet."
+  },
+  "msType": {
+    "isms": "ISMS",
+    "bcms": "BCMS",
+    "dpms": "DPMS",
+    "aims": "AIMS",
+    "esg": "ESG",
+    "tcms": "Tax CMS",
+    "iccs": "Internal Control System",
+    "other": "Other"
+  },
+  "pdcaPhase": {
+    "plan": "Plan",
+    "do": "Do",
+    "check": "Check",
+    "act": "Act",
+    "continuous": "Continuous"
+  },
+  "status": {
+    "journey": {
+      "planned": "Planned",
+      "active": "Active",
+      "on_track": "On track",
+      "at_risk": "At risk",
+      "blocked": "Blocked",
+      "completed": "Completed",
+      "archived": "Archived"
+    },
+    "step": {
+      "pending": "Pending",
+      "blocked": "Blocked",
+      "in_progress": "In progress",
+      "review": "Review",
+      "completed": "Completed",
+      "skipped": "Skipped",
+      "cancelled": "Cancelled"
+    }
+  }
+}
