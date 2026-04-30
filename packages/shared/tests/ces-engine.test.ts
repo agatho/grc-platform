@@ -130,9 +130,18 @@ describe("computeCES — overdue penalty", () => {
   });
 
   it("applies 10 penalty per month overdue", () => {
+    // Day-1 anchor verhindert month-end-rollover: an Tagen 29-31 würde
+    // setMonth(getMonth() - 2) sonst durch Feb (28 Tage) rollen — z.B. am
+    // 29.04. ergibt setMonth(1) ein Datum vom 01.03., monthsDiff=1 statt 2.
     const now = new Date();
-    const twoMonthsAgo = new Date(now);
-    twoMonthsAgo.setMonth(twoMonthsAgo.getMonth() - 2);
+    const twoMonthsAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 2,
+      1,
+      12,
+      0,
+      0,
+    );
     const result = computeCES({
       testResults: [
         { result: "effective", executedDate: twoMonthsAgo.toISOString() },
@@ -146,8 +155,14 @@ describe("computeCES — overdue penalty", () => {
 
   it("caps overdue penalty at 50", () => {
     const now = new Date();
-    const tenMonthsAgo = new Date(now);
-    tenMonthsAgo.setMonth(tenMonthsAgo.getMonth() - 10);
+    const tenMonthsAgo = new Date(
+      now.getFullYear(),
+      now.getMonth() - 10,
+      1,
+      12,
+      0,
+      0,
+    );
     const result = computeCES({
       testResults: [
         { result: "effective", executedDate: tenMonthsAgo.toISOString() },

@@ -783,48 +783,33 @@ function InfoRow({ label, value }: { label: string; value: string }) {
 
 // ─── ISO-19011-konforme Labels (DE) ──────────────────────────
 // Zentral, damit Items-Tabelle + Dialog + Report identisch beschriften.
-function resultLabel(r: string | null | undefined): string {
-  switch (r) {
-    case "positive":
-      return "Positiv-Bewertung";
-    case "conforming":
-      return "Konform";
-    case "opportunity_for_improvement":
-      return "Hinweis (OFI)";
-    case "observation":
-      return "Feststellung";
-    case "minor_nonconformity":
-      return "Nebenabweichung";
-    case "major_nonconformity":
-      return "Hauptabweichung";
-    case "nonconforming":
-      return "Abweichung (Legacy)";
-    case "not_applicable":
-      return "Nicht anwendbar";
-    default:
-      return "Offen";
-  }
+// i18n-fähige Helper: nehmen einen next-intl-Translator entgegen statt
+// hardcodierte Strings zurückzuliefern. Für DE bleiben die Labels identisch
+// zur vorherigen Hardcoded-Version (siehe auditMgmt.results / auditMgmt.methods
+// in apps/web/messages/{de,en}/common.json), in EN wird automatisch
+// "Major Nonconformity" / "Document Review" etc. ausgegeben.
+//
+// `t` ist hier breit getypt mit `(key: string) => string` damit jeder
+// next-intl-Translator zuweisbar ist. Im Helper rufen wir `t(key)` ohne
+// Variablen auf — das ist mit allen next-intl-Versionen kompatibel.
+type TFn = (key: string) => string;
+
+function resultLabel(r: string | null | undefined, t: TFn): string {
+  if (!r) return t("results.open");
+  // Defensive Fallback: wenn der Key nicht existiert (z. B. neuer Enum-Wert
+  // ohne i18n-Update), gibt next-intl den Key selbst zurück.
+  const key = `results.${r}`;
+  const translated = t(key);
+  if (translated === key || translated.startsWith("results.")) return r;
+  return translated;
 }
 
-function methodLabel(m: string | null | undefined): string {
-  switch (m) {
-    case "interview":
-      return "Interview";
-    case "document_review":
-      return "Dokumentenprüfung";
-    case "observation":
-      return "Beobachtung";
-    case "walkthrough":
-      return "Walkthrough";
-    case "technical_test":
-      return "Tech-Test";
-    case "sampling":
-      return "Stichprobe";
-    case "reperformance":
-      return "Reperformance";
-    default:
-      return m ?? "";
-  }
+function methodLabel(m: string | null | undefined, t: TFn): string {
+  if (!m) return "";
+  const key = `methods.${m}`;
+  const translated = t(key);
+  if (translated === key || translated.startsWith("methods.")) return m;
+  return translated;
 }
 
 function methodIcon(m: string | null | undefined): string {
@@ -878,6 +863,7 @@ function MethodEntriesEditor({
   value: EditableMethodEntry[];
   onChange: (next: EditableMethodEntry[]) => void;
 }) {
+  const t = useTranslations("auditMgmt");
   const [addMenuOpen, setAddMenuOpen] = useState(false);
 
   const update = (id: string, patch: Partial<EditableMethodEntry>) => {
@@ -929,15 +915,15 @@ function MethodEntriesEditor({
           <div className="absolute left-0 top-full mt-1 w-72 rounded-md border border-gray-200 bg-white shadow-lg z-20">
             {(
               [
-                ["interview", "Interview / Befragung"],
-                ["document_review", "Dokumentenprüfung"],
-                ["observation", "Begehung / Beobachtung"],
-                ["walkthrough", "Walkthrough"],
-                ["technical_test", "Technischer Test"],
-                ["sampling", "Stichprobe"],
-                ["reperformance", "Reperformance"],
+                "interview",
+                "document_review",
+                "observation",
+                "walkthrough",
+                "technical_test",
+                "sampling",
+                "reperformance",
               ] as const
-            ).map(([m, label]) => (
+            ).map((m) => (
               <button
                 key={m}
                 type="button"
@@ -945,7 +931,7 @@ function MethodEntriesEditor({
                 className="w-full text-left px-3 py-2 text-sm text-gray-700 hover:bg-blue-50 flex items-center gap-2"
               >
                 <span className="w-5 text-center">{methodIcon(m)}</span>
-                <span>{label}</span>
+                <span>{methodLabel(m, t)}</span>
               </button>
             ))}
           </div>
@@ -973,6 +959,7 @@ function MethodEntryCard({
   onChange: (patch: Partial<EditableMethodEntry>) => void;
   onRemove: () => void;
 }) {
+  const t = useTranslations("auditMgmt");
   return (
     <div className="rounded-md border border-gray-200 bg-white p-3 space-y-2">
       <div className="flex items-start justify-between gap-2">
@@ -982,7 +969,7 @@ function MethodEntryCard({
           </span>
           <div>
             <p className="text-sm font-semibold text-gray-900">
-              #{index + 1} · {methodLabel(entry.method)}
+              #{index + 1} · {methodLabel(entry.method, t)}
             </p>
           </div>
         </div>
@@ -2260,10 +2247,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                               <span
                                 key={e.id}
                                 className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 inline-flex items-center gap-1"
-                                title={`${methodLabel(e.method)}${details.length > 0 ? " — " + details.join(" · ") : ""}`}
+                                title={`${methodLabel(e.method, t)}${details.length > 0 ? " — " + details.join(" · ") : ""}`}
                               >
                                 <span>{methodIcon(e.method)}</span>
-                                <span>{methodLabel(e.method)}</span>
+                                <span>{methodLabel(e.method, t)}</span>
                                 {details.length > 0 && (
                                   <span className="text-gray-500">
                                     · {details[0]}
@@ -2304,7 +2291,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                         <div className="flex items-center gap-2">
                           {resultIcon(item.result)}
                           <span className="text-xs text-gray-700">
-                            {resultLabel(item.result)}
+                            {resultLabel(item.result, t)}
                           </span>
                         </div>
                       </td>
@@ -2721,7 +2708,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       Auto-Prefill aus Checklist-Bewertung
                     </p>
                     <p className="mt-1">
-                      Bewertung: <strong>{resultLabel(cfItem.result)}</strong>
+                      Bewertung: <strong>{resultLabel(cfItem.result, t)}</strong>
                       {cfItem.criterionReference && (
                         <>
                           {" · "}Kriterium:{" "}
