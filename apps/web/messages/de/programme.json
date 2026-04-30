@@ -1,0 +1,126 @@
+{
+  "loading": "Lade …",
+  "list": {
+    "title": "Programm-Cockpit",
+    "description": "Geführte Einführungsprozesse für Managementsysteme — wähle ein Programm oder erstelle ein neues aus einer Norm-Vorlage.",
+    "createButton": "Neues Programm",
+    "empty": "Noch kein Programm gestartet.",
+    "startedAt": "Gestartet",
+    "targetDate": "Zieldatum"
+  },
+  "new": {
+    "title": "Neues Programm anlegen",
+    "description": "Wähle eine Norm-Vorlage und passe Eckdaten an. Die Phasen + Schritte werden anschließend automatisch instanziiert.",
+    "step1Title": "1. Vorlage wählen",
+    "step2Title": "2. Eckdaten festlegen",
+    "name": "Programm-Name",
+    "namePlaceholder": "z. B. ISO 27001 Erst-Zertifizierung 2026",
+    "description": "Beschreibung (optional)",
+    "startedAt": "Startdatum (optional)",
+    "estimatedDuration": "Geschätzte Dauer: {days} Tage",
+    "submit": "Programm starten",
+    "cancel": "Abbrechen"
+  },
+  "dashboard": {
+    "health": "Status-Begründung",
+    "openTimeline": "Timeline öffnen",
+    "openEvents": "Aktivitäts-Log",
+    "progressTitle": "Fortschritt",
+    "aggregate": {
+      "total": "Schritte gesamt",
+      "completed": "abgeschlossen",
+      "inProgress": "in Arbeit",
+      "blocked": "blockiert",
+      "overdue": "überfällig",
+      "healthScore": "Health-Score"
+    }
+  },
+  "kanban": {
+    "emptyPhase": "Keine Schritte in dieser Phase."
+  },
+  "blockers": {
+    "title": "Blocker",
+    "summary": "{blocked} Schritte blockiert, {overdue} Schritte überfällig.",
+    "blockedHeading": "Blockiert",
+    "overdueHeading": "Überfällig"
+  },
+  "nextActions": {
+    "title": "Nächste Aktionen",
+    "errorPrefix": "Fehler",
+    "empty": "Keine offenen Aktionen.",
+    "overdueDays": "{days} Tag(e) überfällig",
+    "dueInDays": "fällig in {days} Tag(en)",
+    "reason": {
+      "overdue": "Überfällig",
+      "due_soon": "Fällig bald",
+      "in_progress": "In Arbeit",
+      "unassigned": "Ohne Owner",
+      "next_in_sequence": "Nächster Schritt",
+      "blocker_resolution": "Blocker auflösen"
+    }
+  },
+  "step": {
+    "backToCockpit": "Zurück zum Cockpit",
+    "detailsTitle": "Schritt-Details",
+    "transitionTitle": "Status ändern",
+    "transitionTarget": "Neuer Status",
+    "selectTarget": "Bitte wählen …",
+    "applyTransition": "Übergang anwenden",
+    "reason": "Begründung",
+    "reasonPlaceholder": "Begründung erforderlich (mind. 5 Zeichen)",
+    "dueDate": "Fällig",
+    "requiredEvidence": "Belege",
+    "blockReason": "Blockade-Grund",
+    "skipReason": "Skip-Begründung",
+    "prerequisites": "Voraussetzungen",
+    "targetModule": "Verlinktes Modul"
+  },
+  "timeline": {
+    "title": "Timeline & Meilensteine",
+    "phasesHeading": "Phasen-Plan",
+    "milestonesHeading": "Meilensteine",
+    "noMilestones": "Keine Meilensteine in diesem Programm.",
+    "overallProgress": "Gesamtfortschritt"
+  },
+  "events": {
+    "title": "Aktivitäts-Log",
+    "empty": "Noch keine Ereignisse erfasst."
+  },
+  "msType": {
+    "isms": "ISMS",
+    "bcms": "BCMS",
+    "dpms": "DPMS",
+    "aims": "AIMS",
+    "esg": "ESG",
+    "tcms": "Tax-CMS",
+    "iccs": "Internes Kontrollsystem",
+    "other": "Sonstiges"
+  },
+  "pdcaPhase": {
+    "plan": "Plan",
+    "do": "Do",
+    "check": "Check",
+    "act": "Act",
+    "continuous": "Kontinuierlich"
+  },
+  "status": {
+    "journey": {
+      "planned": "Geplant",
+      "active": "Aktiv",
+      "on_track": "On Track",
+      "at_risk": "Gefährdet",
+      "blocked": "Blockiert",
+      "completed": "Abgeschlossen",
+      "archived": "Archiviert"
+    },
+    "step": {
+      "pending": "Ausstehend",
+      "blocked": "Blockiert",
+      "in_progress": "In Arbeit",
+      "review": "Review",
+      "completed": "Abgeschlossen",
+      "skipped": "Übersprungen",
+      "cancelled": "Abgebrochen"
+    }
+  }
+}

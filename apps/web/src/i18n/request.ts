@@ -55,6 +55,7 @@ async function loadIndividualFiles(locale: string) {
     ["academy", "academy"],
     ["simulations", "simulations"],
     ["community", "community"],
+    ["programme", "programme"],
     ["risk-quantification", "riskQuantification"],
     ["data-sovereignty", "dataSovereignty"],
     ["role-dashboards", "roleDashboards"],

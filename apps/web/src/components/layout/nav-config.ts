@@ -39,6 +39,7 @@ import {
   Globe,
   Server,
   BookOpen,
+  Rocket,
   type LucideIcon,
 } from "lucide-react";
 import type { UserRole } from "@grc/shared";
@@ -1069,6 +1070,14 @@ export const NAV_GROUPS: NavGroup[] = [
         icon: LayoutDashboard,
         roles: "all",
         parentModule: "platform",
+      },
+      {
+        labelKey: "nav.grouped.programmes",
+        href: "/programmes",
+        icon: Rocket,
+        roles: ["admin", "risk_manager", "auditor"],
+        parentModule: "platform",
+        moduleKey: "programme",
       },
       {
         labelKey: "nav.grouped.calendar",
