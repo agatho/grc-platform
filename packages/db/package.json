@@ -11,6 +11,7 @@
     "db:seed-all": "tsx src/seed-all.ts",
     "db:sync": "dotenv -e ../../.env -e ../../apps/web/.env.local -- tsx src/create-missing-tables.ts",
     "db:studio": "drizzle-kit studio",
+    "test": "vitest run --passWithNoTests",
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "test:rls": "vitest run --config vitest.rls.config.ts"
   },
