@@ -176,6 +176,20 @@ async function main() {
     }
   }
 
+  // ── 3.5 Programme Cockpit Templates ────────────────────────────────────
+  console.log("\nPhase 2.5: Programme Cockpit templates");
+  try {
+    const { seedProgrammeTemplates } = await import(
+      "./seeds/programme-templates.js"
+    );
+    const r = await seedProgrammeTemplates();
+    console.log(
+      `  ✓ ${r.templatesSeeded} templates, ${r.phasesSeeded} phases, ${r.stepsSeeded} steps`,
+    );
+  } catch (err) {
+    console.error("  ✗ programme-templates seed:", (err as Error).message);
+  }
+
   // ── 4. Summary ─────────────────────────────────────────────────────────
   console.log("\n── Summary ──");
   const counts = await client.unsafe(`
