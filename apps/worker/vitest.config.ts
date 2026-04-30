@@ -10,6 +10,11 @@ export default defineConfig({
     globals: false,
     include: ["src/**/*.{test,spec}.ts", "tests/**/*.{test,spec}.ts"],
     passWithNoTests: true,
+    // Each test file mocks @grc/db with its own table set; ensure a fresh
+    // module graph per file so destructured imports pick up the right mock.
+    isolate: true,
+    pool: "forks",
+    testTimeout: 30000,
   },
   resolve: {
     alias: {
