@@ -92,9 +92,27 @@ echo ""
 echo "[4/5] Haupt-Container neu starten..."
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate web 2>&1 | tail -3
 
+# ── 4b. Tenant-Worker-Service sicherstellen (Backfill) ────
+# Ältere Tenants wurden vor Einführung der per-Tenant-Worker-Architektur
+# angelegt und haben in ihrer docker-compose.yml nur web-<name>. Das
+# bedeutet: keine Cron-Verarbeitung pro Tenant (Programme-Deadlines, SoA-
+# Sync, NIS2-Mahnungen etc. fallen aus). Der Helper ist idempotent —
+# regeneriert die docker-compose.yml mit web + worker, preserved den
+# bestehenden Host-Port. Backup wird einmalig als .pre-worker-backup
+# abgelegt.
+echo ""
+echo "[4b/5] Tenant-Worker-Service sicherstellen (idempotent)..."
+HELPER=/opt/arctos/deploy/ensure-tenant-worker.sh
+if [ -f "$HELPER" ]; then
+  chmod +x "$HELPER" 2>/dev/null || true
+  bash "$HELPER" 2>&1 | sed 's/^/  /' || true
+else
+  echo "  WARNUNG: $HELPER fehlt — bestehende Tenants bekommen keinen Worker"
+fi
+
 # ── 5. Alle Tenant-Container neu starten ─────────────────
 echo ""
-echo "[5/5] Tenant-Container neu starten..."
+echo "[5/5] Tenant-Container neu starten (web + worker)..."
 if [ -d /opt/arctos/tenants ]; then
   for tdir in /opt/arctos/tenants/*/; do
     [ -d "$tdir" ] || continue
@@ -102,6 +120,15 @@ if [ -d /opt/arctos/tenants ]; then
     echo "  Tenant: $TENANT"
     cd "$tdir"
     docker compose up -d --force-recreate --build 2>&1 | tail -3
+
+    # Worker-Health-Check pro Tenant: zeigt sofort ob die Cron-Engine für
+    # diesen Tenant läuft oder im Crash-Loop steckt.
+    sleep 3
+    WORKER_STATE=$(docker compose ps --format json "worker-$TENANT" 2>/dev/null | grep -oP '"State":"\K[^"]+' | head -1)
+    if [ -n "$WORKER_STATE" ] && [ "$WORKER_STATE" != "running" ]; then
+      echo "    WARNUNG: worker-$TENANT nicht 'running' (aktuell: $WORKER_STATE)"
+      docker compose logs --tail=15 "worker-$TENANT" 2>&1 | sed 's/^/      /'
+    fi
     cd /opt/arctos
   done
 fi
