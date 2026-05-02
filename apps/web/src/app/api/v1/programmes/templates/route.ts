@@ -1,10 +1,10 @@
 // GET /api/v1/programmes/templates
 // Liste aller veröffentlichten Templates (filterbar nach msType).
 
-import { db, programmeTemplate } from "@grc/db";
+import { db, programmeTemplate, seedProgrammeTemplates } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { and, eq, isNull, asc } from "drizzle-orm";
+import { and, eq, isNull, asc, sql } from "drizzle-orm";
 import { MS_TYPE_VALUES } from "@grc/shared";
 
 export async function GET(req: Request) {
@@ -21,6 +21,16 @@ export async function GET(req: Request) {
     (MS_TYPE_VALUES as readonly string[]).includes(msTypeParam)
       ? (msTypeParam as (typeof MS_TYPE_VALUES)[number])
       : null;
+
+  // First-run lazy-seed: norm templates are platform-wide reference
+  // data (no org_id), so seeding once on first read is safe and avoids
+  // requiring a separate manual seed step per install.
+  const [{ count }] = await db
+    .select({ count: sql<number>`count(*)::int` })
+    .from(programmeTemplate);
+  if (count === 0) {
+    await seedProgrammeTemplates();
+  }
 
   const where = msType
     ? and(

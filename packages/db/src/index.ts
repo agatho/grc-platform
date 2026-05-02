@@ -353,3 +353,11 @@ export * from "./schema/programme";
 
 // ADR-001 RLS audit helper — re-exported so API routes + CLI can import it
 export * from "./rls-audit";
+
+// Programme template seeder — exported so the new-programme wizard
+// can lazy-seed the 4 norm templates on first run, without requiring
+// a separate manual seed step on each install.
+export {
+  seedProgrammeTemplates,
+  type ProgrammeSeedResult,
+} from "./seeds/programme-templates";
