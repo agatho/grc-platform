@@ -69,11 +69,79 @@
     "reason": "Begründung",
     "reasonPlaceholder": "Begründung erforderlich (mind. 5 Zeichen)",
     "dueDate": "Fällig",
+    "owner": "Verantwortlich",
+    "unassigned": "(nicht zugewiesen)",
     "requiredEvidence": "Belege",
+    "subtaskProgress": "Aufgaben-Fortschritt",
     "blockReason": "Blockade-Grund",
     "skipReason": "Skip-Begründung",
     "prerequisites": "Voraussetzungen",
-    "targetModule": "Verlinktes Modul"
+    "targetModule": "Verlinktes Modul",
+    "milestone": "Meilenstein",
+    "edit": "Bearbeiten",
+    "save": "Speichern",
+    "cancel": "Abbrechen"
+  },
+  "subtask": {
+    "title": "Aufgaben",
+    "add": "Aufgabe hinzufügen",
+    "create": "Aufgabe anlegen",
+    "delete": "Aufgabe löschen",
+    "confirmDelete": "Aufgabe wirklich löschen?",
+    "empty": "Keine Aufgaben definiert. Lege Sub-Tasks an, um den Schritt zu strukturieren.",
+    "newTitlePlaceholder": "Was ist zu tun? (z. B. Workshop vorbereiten)",
+    "newDescriptionPlaceholder": "Wie wird die Aufgabe konkret durchgeführt?",
+    "unassigned": "— Verantwortlicher —",
+    "markComplete": "Als erledigt markieren",
+    "markIncomplete": "Als offen markieren",
+    "status": {
+      "pending": "Offen",
+      "in_progress": "In Arbeit",
+      "completed": "Erledigt",
+      "skipped": "Übersprungen"
+    },
+    "deliverable": {
+      "policy": "Richtlinie",
+      "register": "Register",
+      "evidence": "Beleg",
+      "control": "Kontrolle",
+      "methodology": "Methodik",
+      "presentation": "Präsentation",
+      "decision": "Entscheidung"
+    }
+  },
+  "link": {
+    "title": "Verknüpfungen",
+    "add": "Verknüpfen",
+    "create": "Verknüpfung anlegen",
+    "confirmDelete": "Verknüpfung wirklich entfernen?",
+    "empty": "Keine Verknüpfungen. Verbinde diesen Schritt mit Risiken, Kontrollen, Dokumenten oder anderen Modul-Einträgen.",
+    "kindLabel": "Art",
+    "typeLabel": "Beziehung",
+    "labelLabel": "Bezeichnung",
+    "labelPlaceholder": "Name oder Kurzbeschreibung",
+    "urlLabel": "URL",
+    "notesLabel": "Notiz",
+    "kind": {
+      "risk": "Risiko",
+      "control": "Kontrolle",
+      "document": "Dokument",
+      "asset": "Asset",
+      "incident": "Vorfall",
+      "treatment": "Maßnahme",
+      "finding": "Finding",
+      "process": "Prozess",
+      "work_item": "Work Item",
+      "catalog_entry": "Katalog-Eintrag",
+      "url": "Externe URL"
+    },
+    "type": {
+      "related": "verwandt",
+      "mitigates": "mitigiert",
+      "evidences": "belegt",
+      "deliverable": "Deliverable",
+      "reference": "Referenz"
+    }
   },
   "timeline": {
     "title": "Timeline & Meilensteine",
