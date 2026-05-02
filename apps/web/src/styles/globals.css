@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+/* The theme provider toggles between "arctic" (default light), "dark", and
+   "high-contrast" by setting a class on <html>. By default Tailwind v4 maps
+   the `dark:` variant to `@media (prefers-color-scheme: dark)`, which fires
+   based on the user's OS regardless of the in-app theme. This override binds
+   `dark:` exclusively to the `.dark` class so OS dark mode does not flip
+   `dark:bg-...` utilities while the in-app theme is still arctic. */
+@custom-variant dark (&:where(.dark, .dark *));
+
 /* ── ARCTOS Design System ── */
 
 @theme {
