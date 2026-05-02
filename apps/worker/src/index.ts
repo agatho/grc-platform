@@ -115,6 +115,7 @@ import { processSimulationRunner } from "./crons/simulation-runner";
 import { processCommunityLicenseCheck } from "./crons/community-license-check";
 // Programme Cockpit
 import { processProgrammeDeadlineMonitor } from "./crons/programme-deadline-monitor";
+import { processSoaProgrammeBackfill } from "./crons/soa-programme-backfill";
 import { processProgrammeHealthRecompute } from "./crons/programme-health-recompute";
 import { processProgrammeProgressSnapshot } from "./crons/programme-progress-snapshot";
 
@@ -1451,6 +1452,20 @@ app.post("/crons/programme-progress-snapshot", async (c) => {
     const message = err instanceof Error ? err.message : String(err);
     console.error(
       "[worker] programme-progress-snapshot cron failed:",
+      message,
+    );
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/soa-programme-backfill", async (c) => {
+  try {
+    const result = await processSoaProgrammeBackfill();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error(
+      "[worker] soa-programme-backfill cron failed:",
       message,
     );
     return c.json({ success: false, error: message }, 500);
