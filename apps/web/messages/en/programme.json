@@ -69,11 +69,79 @@
     "reason": "Reason",
     "reasonPlaceholder": "Reason required (≥ 5 characters)",
     "dueDate": "Due",
+    "owner": "Owner",
+    "unassigned": "(unassigned)",
     "requiredEvidence": "Evidence",
+    "subtaskProgress": "Task progress",
     "blockReason": "Block reason",
     "skipReason": "Skip reason",
     "prerequisites": "Prerequisites",
-    "targetModule": "Linked module"
+    "targetModule": "Linked module",
+    "milestone": "Milestone",
+    "edit": "Edit",
+    "save": "Save",
+    "cancel": "Cancel"
+  },
+  "subtask": {
+    "title": "Tasks",
+    "add": "Add task",
+    "create": "Create task",
+    "delete": "Delete task",
+    "confirmDelete": "Really delete this task?",
+    "empty": "No tasks defined yet. Add subtasks to break the step into actionable items.",
+    "newTitlePlaceholder": "What needs to be done? (e.g. Prepare workshop)",
+    "newDescriptionPlaceholder": "How will the task be carried out concretely?",
+    "unassigned": "— Owner —",
+    "markComplete": "Mark complete",
+    "markIncomplete": "Mark open",
+    "status": {
+      "pending": "Open",
+      "in_progress": "In progress",
+      "completed": "Completed",
+      "skipped": "Skipped"
+    },
+    "deliverable": {
+      "policy": "Policy",
+      "register": "Register",
+      "evidence": "Evidence",
+      "control": "Control",
+      "methodology": "Methodology",
+      "presentation": "Presentation",
+      "decision": "Decision"
+    }
+  },
+  "link": {
+    "title": "Links",
+    "add": "Add link",
+    "create": "Create link",
+    "confirmDelete": "Really remove this link?",
+    "empty": "No links yet. Connect this step to risks, controls, documents or other module entries.",
+    "kindLabel": "Kind",
+    "typeLabel": "Relation",
+    "labelLabel": "Label",
+    "labelPlaceholder": "Name or short description",
+    "urlLabel": "URL",
+    "notesLabel": "Note",
+    "kind": {
+      "risk": "Risk",
+      "control": "Control",
+      "document": "Document",
+      "asset": "Asset",
+      "incident": "Incident",
+      "treatment": "Treatment",
+      "finding": "Finding",
+      "process": "Process",
+      "work_item": "Work item",
+      "catalog_entry": "Catalog entry",
+      "url": "External URL"
+    },
+    "type": {
+      "related": "related",
+      "mitigates": "mitigates",
+      "evidences": "evidences",
+      "deliverable": "deliverable",
+      "reference": "reference"
+    }
   },
   "timeline": {
     "title": "Timeline & milestones",

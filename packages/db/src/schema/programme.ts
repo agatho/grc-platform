@@ -375,6 +375,146 @@ export const programmeJourneyEvent = pgTable(
 );
 
 // ──────────────────────────────────────────────────────────────
+// programme_subtask_status / programme_link_kind / programme_link_type
+// ──────────────────────────────────────────────────────────────
+
+export const programmeSubtaskStatusEnum = pgEnum("programme_subtask_status", [
+  "pending",
+  "in_progress",
+  "completed",
+  "skipped",
+]);
+
+export const programmeLinkKindEnum = pgEnum("programme_link_kind", [
+  "risk",
+  "control",
+  "document",
+  "asset",
+  "incident",
+  "treatment",
+  "finding",
+  "process",
+  "work_item",
+  "catalog_entry",
+  "url",
+]);
+
+export const programmeLinkTypeEnum = pgEnum("programme_link_type", [
+  "related",
+  "mitigates",
+  "evidences",
+  "deliverable",
+  "reference",
+]);
+
+// ──────────────────────────────────────────────────────────────
+// programme_template_subtask
+// ──────────────────────────────────────────────────────────────
+
+export const programmeTemplateSubtask = pgTable(
+  "programme_template_subtask",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    templateStepId: uuid("template_step_id")
+      .notNull()
+      .references(() => programmeTemplateStep.id, { onDelete: "cascade" }),
+    sequence: integer("sequence").notNull(),
+    title: varchar("title", { length: 300 }).notNull(),
+    description: text("description"),
+    defaultOwnerRole: varchar("default_owner_role", { length: 50 }),
+    defaultDurationDays: integer("default_duration_days").notNull().default(1),
+    deliverableType: varchar("deliverable_type", { length: 80 }),
+    isMandatory: boolean("is_mandatory").notNull().default(true),
+    metadata: jsonb("metadata").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("programme_template_subtask_step_idx").on(
+      t.templateStepId,
+      t.sequence,
+    ),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// programme_journey_subtask
+// ──────────────────────────────────────────────────────────────
+
+export const programmeJourneySubtask = pgTable(
+  "programme_journey_subtask",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    journeyStepId: uuid("journey_step_id")
+      .notNull()
+      .references(() => programmeJourneyStep.id, { onDelete: "cascade" }),
+    templateSubtaskId: uuid("template_subtask_id").references(
+      () => programmeTemplateSubtask.id,
+    ),
+    sequence: integer("sequence").notNull(),
+    title: varchar("title", { length: 300 }).notNull(),
+    description: text("description"),
+    status: programmeSubtaskStatusEnum("status").notNull().default("pending"),
+    ownerId: uuid("owner_id").references(() => user.id),
+    dueDate: date("due_date"),
+    startedAt: timestamp("started_at", { withTimezone: true }),
+    completedAt: timestamp("completed_at", { withTimezone: true }),
+    completionNotes: text("completion_notes"),
+    isMandatory: boolean("is_mandatory").notNull().default(true),
+    deliverableType: varchar("deliverable_type", { length: 80 }),
+    metadata: jsonb("metadata").default({}).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedBy: uuid("updated_by").references(() => user.id),
+  },
+  (t) => [
+    index("programme_journey_subtask_step_idx").on(t.journeyStepId, t.sequence),
+    index("programme_journey_subtask_owner_idx").on(t.ownerId, t.status),
+    index("programme_journey_subtask_org_idx").on(t.orgId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// programme_step_link
+// ──────────────────────────────────────────────────────────────
+
+export const programmeStepLink = pgTable(
+  "programme_step_link",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    journeyStepId: uuid("journey_step_id")
+      .notNull()
+      .references(() => programmeJourneyStep.id, { onDelete: "cascade" }),
+    targetKind: programmeLinkKindEnum("target_kind").notNull(),
+    targetId: uuid("target_id"),
+    targetLabel: varchar("target_label", { length: 300 }).notNull(),
+    targetUrl: varchar("target_url", { length: 1000 }),
+    linkType: programmeLinkTypeEnum("link_type").notNull().default("related"),
+    notes: text("notes"),
+    createdBy: uuid("created_by").references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("programme_step_link_step_idx").on(t.journeyStepId),
+    index("programme_step_link_org_idx").on(t.orgId),
+    index("programme_step_link_target_idx").on(t.targetKind, t.targetId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // Type Exports
 // ──────────────────────────────────────────────────────────────
 
@@ -397,6 +537,49 @@ export type ProgrammeJourneyStepInsert =
 export type ProgrammeJourneyEvent = typeof programmeJourneyEvent.$inferSelect;
 export type ProgrammeJourneyEventInsert =
   typeof programmeJourneyEvent.$inferInsert;
+export type ProgrammeTemplateSubtask =
+  typeof programmeTemplateSubtask.$inferSelect;
+export type ProgrammeTemplateSubtaskInsert =
+  typeof programmeTemplateSubtask.$inferInsert;
+export type ProgrammeJourneySubtask =
+  typeof programmeJourneySubtask.$inferSelect;
+export type ProgrammeJourneySubtaskInsert =
+  typeof programmeJourneySubtask.$inferInsert;
+export type ProgrammeStepLink = typeof programmeStepLink.$inferSelect;
+export type ProgrammeStepLinkInsert = typeof programmeStepLink.$inferInsert;
+
+export const PROGRAMME_SUBTASK_STATUS_VALUES = [
+  "pending",
+  "in_progress",
+  "completed",
+  "skipped",
+] as const;
+export type ProgrammeSubtaskStatus =
+  (typeof PROGRAMME_SUBTASK_STATUS_VALUES)[number];
+
+export const PROGRAMME_LINK_KIND_VALUES = [
+  "risk",
+  "control",
+  "document",
+  "asset",
+  "incident",
+  "treatment",
+  "finding",
+  "process",
+  "work_item",
+  "catalog_entry",
+  "url",
+] as const;
+export type ProgrammeLinkKind = (typeof PROGRAMME_LINK_KIND_VALUES)[number];
+
+export const PROGRAMME_LINK_TYPE_VALUES = [
+  "related",
+  "mitigates",
+  "evidences",
+  "deliverable",
+  "reference",
+] as const;
+export type ProgrammeLinkType = (typeof PROGRAMME_LINK_TYPE_VALUES)[number];
 
 // ──────────────────────────────────────────────────────────────
 // Hilfs-Tupel — als readonly Konstanten exportiert für Zod/UI

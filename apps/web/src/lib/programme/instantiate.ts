@@ -9,13 +9,15 @@ import {
   programmeJourneyEvent,
   programmeJourneyPhase,
   programmeJourneyStep,
+  programmeJourneySubtask,
   programmeTemplate,
   programmeTemplatePhase,
   programmeTemplateStep,
+  programmeTemplateSubtask,
   type ProgrammeJourneyInsert,
 } from "@grc/db";
 import type { db as Db } from "@grc/db";
-import { eq, asc } from "drizzle-orm";
+import { eq, asc, inArray } from "drizzle-orm";
 
 type DbClient = typeof Db;
 
@@ -36,6 +38,7 @@ export interface InstantiateResult {
   journey: typeof programmeJourney.$inferSelect;
   phaseCount: number;
   stepCount: number;
+  subtaskCount: number;
 }
 
 function addDays(iso: string, days: number): string {
@@ -146,6 +149,7 @@ export async function instantiateJourney(
 
   const phaseCursor: Record<string, string> = { ...phaseStartByPhaseId };
 
+  const journeyStepByTemplateStepId = new Map<string, { id: string; dueDate: string }>();
   for (const s of tplSteps) {
     const journeyPhaseId = phaseCodeToId.get(
       tplPhases.find((p) => p.id === s.phaseId)?.code ?? "",
@@ -157,25 +161,71 @@ export async function instantiateJourney(
     phaseCursor[journeyPhaseId] = due;
     stepDueByCode[s.code] = due;
 
-    await db.insert(programmeJourneyStep).values({
-      orgId: input.orgId,
-      journeyId: journey.id,
-      phaseId: journeyPhaseId,
-      templateStepId: s.id,
-      code: s.code,
-      sequence: s.sequence,
-      name: s.name,
-      description: s.description ?? null,
-      isoClause: s.isoClause ?? null,
-      status: "pending",
-      ownerId: input.ownerId ?? null,
-      dueDate: due,
-      evidenceLinks: [],
-      targetModuleLink: s.targetModuleLink ?? {},
-      requiredEvidenceCount: s.requiredEvidenceCount ?? 0,
-      isMilestone: s.isMilestone ?? false,
-      isMandatory: s.isMandatory ?? true,
-    });
+    const [stepRow] = await db
+      .insert(programmeJourneyStep)
+      .values({
+        orgId: input.orgId,
+        journeyId: journey.id,
+        phaseId: journeyPhaseId,
+        templateStepId: s.id,
+        code: s.code,
+        sequence: s.sequence,
+        name: s.name,
+        description: s.description ?? null,
+        isoClause: s.isoClause ?? null,
+        status: "pending",
+        ownerId: input.ownerId ?? null,
+        dueDate: due,
+        evidenceLinks: [],
+        targetModuleLink: s.targetModuleLink ?? {},
+        requiredEvidenceCount: s.requiredEvidenceCount ?? 0,
+        isMilestone: s.isMilestone ?? false,
+        isMandatory: s.isMandatory ?? true,
+      })
+      .returning();
+    journeyStepByTemplateStepId.set(s.id, { id: stepRow.id, dueDate: due });
+  }
+
+  // Subtasks aus Template kopieren — pro Schritt mit kumulativen Due-Dates.
+  let subtaskCount = 0;
+  if (tplSteps.length > 0) {
+    const tplSubtasks = await db
+      .select()
+      .from(programmeTemplateSubtask)
+      .where(
+        inArray(
+          programmeTemplateSubtask.templateStepId,
+          tplSteps.map((s) => s.id),
+        ),
+      )
+      .orderBy(asc(programmeTemplateSubtask.sequence));
+    if (tplSubtasks.length > 0) {
+      const subtaskRows = tplSubtasks
+        .map((sub) => {
+          const journeyStep = journeyStepByTemplateStepId.get(sub.templateStepId);
+          if (!journeyStep) return null;
+          return {
+            orgId: input.orgId,
+            journeyStepId: journeyStep.id,
+            templateSubtaskId: sub.id,
+            sequence: sub.sequence,
+            title: sub.title,
+            description: sub.description,
+            status: "pending" as const,
+            ownerId: null,
+            dueDate: journeyStep.dueDate,
+            isMandatory: sub.isMandatory,
+            deliverableType: sub.deliverableType,
+          };
+        })
+        .filter(
+          (r): r is NonNullable<typeof r> => r !== null,
+        );
+      if (subtaskRows.length > 0) {
+        await db.insert(programmeJourneySubtask).values(subtaskRows);
+        subtaskCount = subtaskRows.length;
+      }
+    }
   }
 
   await db.insert(programmeJourneyEvent).values({
@@ -188,6 +238,7 @@ export async function instantiateJourney(
       templateVersion: tpl.version,
       phaseCount: tplPhases.length,
       stepCount: tplSteps.length,
+      subtaskCount,
     },
   });
 
@@ -195,5 +246,6 @@ export async function instantiateJourney(
     journey,
     phaseCount: tplPhases.length,
     stepCount: tplSteps.length,
+    subtaskCount,
   };
 }

@@ -13,6 +13,7 @@ import {
   programmeTemplate,
   programmeTemplatePhase,
   programmeTemplateStep,
+  programmeTemplateSubtask,
   type MsType,
   type PdcaPhase,
 } from "../schema/programme";
@@ -31,6 +32,15 @@ interface SeedPhase {
   defaultDurationDays: number;
   isGate?: boolean;
   gateCriteria?: Array<{ check: string; description: string }>;
+}
+
+interface SeedSubtask {
+  title: string;
+  description?: string;
+  defaultOwnerRole?: string;
+  defaultDurationDays?: number;
+  deliverableType?: string;
+  isMandatory?: boolean;
 }
 
 interface SeedStep {
@@ -52,6 +62,7 @@ interface SeedStep {
   requiredEvidenceCount?: number;
   isMandatory?: boolean;
   isMilestone?: boolean;
+  subtasks?: SeedSubtask[];
 }
 
 interface SeedTemplate {
@@ -67,6 +78,1055 @@ interface SeedTemplate {
 }
 
 // ──────────────────────────────────────────────────────────────
+// ISO 27001:2022 — granulare Schritte mit Subtasks
+// ──────────────────────────────────────────────────────────────
+
+const ISO_27001_STEPS: SeedStep[] = [
+  // ── Setup ──
+  {
+    code: "S00-CHARTER",
+    phaseCode: "setup",
+    sequence: 0,
+    name: "GL-Commitment & Programm-Charter",
+    description:
+      "Bevor irgendeine ISMS-Arbeit beginnt, muss die Geschäftsleitung das Programm formal beauftragen, Budget freigeben und einen Lenkungsausschuss benennen. Output ist ein unterzeichnetes Charter-Dokument inkl. Sponsorenrolle, Eskalationspfad und Erstbudget. Ohne diese Schritte bleibt jede ISMS-Arbeit ohne Mandat und scheitert spätestens beim ersten Ressourcenkonflikt.",
+    isoClause: "5.1",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 14,
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    targetModuleLink: { module: "documents", route: "/documents" },
+    subtasks: [
+      {
+        title: "Initial-Briefing für GL vorbereiten",
+        description:
+          "Foliendeck mit Treibern (NIS2-Pflicht, Kunden-Anforderungen, Wettbewerbslage), Nutzen, Aufwand und Zeithorizont. ~12 Folien, 30-Minuten-Termin einplanen.",
+        defaultOwnerRole: "risk_manager",
+        defaultDurationDays: 3,
+        deliverableType: "presentation",
+      },
+      {
+        title: "Charter-Entwurf schreiben",
+        description:
+          "Inhalte: Ziel, Geltungsbereich (Hochlevel), Sponsoren, Steering-Committee-Mitglieder, Budget Y1, Reporting-Kadenz, Eskalationspfad. Vorlage in /policies hinterlegen.",
+        defaultOwnerRole: "admin",
+        defaultDurationDays: 5,
+        deliverableType: "policy",
+      },
+      {
+        title: "Lenkungsausschuss benennen + Termine setzen",
+        description:
+          "Mitglieder: CEO/Geschäftsführer, CFO, CIO/CISO, ggf. CISO-Vertreter Tochter. Quartalstermine über das Jahr im Kalender blocken.",
+        defaultOwnerRole: "admin",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Charter durch GL unterzeichnen lassen",
+        description:
+          "Originalunterschrift + signiertes PDF. Dokument als Evidence am Schritt verlinken.",
+        defaultOwnerRole: "admin",
+        defaultDurationDays: 4,
+        deliverableType: "evidence",
+      },
+    ],
+  },
+
+  // ── Plan ──
+  {
+    code: "Y1-M1-01",
+    phaseCode: "plan",
+    sequence: 1,
+    name: "Stakeholder-Analyse + Stakeholder-Register",
+    description:
+      "ISO 27001 §4.2 verlangt explizit, dass interessierte Parteien identifiziert und ihre relevanten Anforderungen festgehalten sind. Ergebnis: Stakeholder-Register mit Erwartungen, Power/Interest-Bewertung und Engagement-Strategie pro Gruppe. Dieses Register ist Grundlage für Scope-Bestimmung und Politikinhalte.",
+    isoClause: "4.2",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["S00-CHARTER"],
+    targetModuleLink: { module: "platform", route: "/programmes" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Stakeholder-Workshop (2 h) durchführen",
+        description:
+          "Teilnehmer: Sponsoren, Risk Manager, DPO, IT-Leitung. Brainstorming aller relevanten Parteien (intern, extern, regulatorisch, Kunden, Lieferanten).",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Erwartungen und Anforderungen je Stakeholder dokumentieren",
+        description:
+          "Pro Stakeholder: Was erwarten sie vom ISMS? Welche Compliance-Anforderungen treffen uns durch sie (z.B. Kundenverträge, Aufsichtsbehörden)?",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Power/Interest-Matrix erstellen",
+        description:
+          "Klassifikation in 4 Quadranten: Manage Closely / Keep Satisfied / Keep Informed / Monitor. Treiber für Engagement-Strategie.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Engagement-Strategie pro Schlüssel-Stakeholder festlegen",
+        description:
+          "Kommunikationskadenz, Format (Steering, Newsletter, Bilateral) und verantwortlicher Sprecher.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Stakeholder-Register im Modul Platform hinterlegen",
+        description:
+          "Register als versioniertes Dokument (CSV/XLSX) im Documents-Modul; Update-Kadenz quartalsweise.",
+        deliverableType: "register",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M1-02",
+    phaseCode: "plan",
+    sequence: 2,
+    name: "Externer + Interner Kontext",
+    description:
+      "ISO 27001 §4.1 fordert eine dokumentierte Kontextanalyse. Externe Faktoren: Markt, Regulatorik (NIS2, DORA, GDPR, BSI-Grundschutz), Lieferketten-Risiken, geopolitische Lage. Interne Faktoren: Strategie, Werte, Governance, Reife der IT, Personalverfügbarkeit, Architektur, Kultur.",
+    isoClause: "4.1",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["S00-CHARTER"],
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "PESTEL-Analyse für externen Kontext durchführen",
+        description:
+          "Politisch / Wirtschaftlich / Sozial / Technologisch / Environmental / Legal — pro Dimension Treiber + IS-Implikationen.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Regulatorischen Anwendbarkeits-Check abschließen",
+        description:
+          "Welche Regularien treffen uns? NIS2 (essential/important?), DORA (Finanzdienstleister?), AI Act (KI-Anwendungen?), GDPR-Spezifika, branchenspezifisch.",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Interne SWOT mit Fokus IS durchführen",
+        description:
+          "Stärken/Schwächen IT- und IS-Reife, Chancen/Risiken aus Strategie und Markt.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Kontext-Dokument verabschieden",
+        description:
+          "Konsolidiertes Dokument vom Sponsor abnehmen lassen, im Documents-Modul versionieren.",
+        deliverableType: "policy",
+        defaultDurationDays: 4,
+      },
+    ],
+  },
+  {
+    code: "Y1-M1-04",
+    phaseCode: "plan",
+    sequence: 3,
+    name: "Geltungsbereich-Workshop & Scope-Statement",
+    description:
+      "Der Scope ist die wichtigste strategische Entscheidung im Programm: Welche Standorte, Geschäftsprozesse, IT-Systeme, Mitarbeiter, Tochtergesellschaften und Cloud-Dienste sind eingeschlossen? Ein zu enger Scope frustriert Auditoren und Kunden, ein zu weiter Scope sprengt Budget. Gates §4.3.",
+    isoClause: "4.3",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 7,
+    prerequisiteStepCodes: ["Y1-M1-01", "Y1-M1-02"],
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Scope-Optionen ausarbeiten (3 Varianten)",
+        description:
+          "Variante A (Minimal-Scope), B (Realistic), C (Maximal). Pro Variante: einbezogene Entitäten, geschätzte Aufwände, Audit-Kosten.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Scope-Workshop mit GL durchführen (Entscheidung)",
+        description:
+          "GL wählt Variante. Begründung dokumentieren. Output: einseitiges Scope-Statement mit Aufzählung aller einbezogenen Entitäten/Standorte/Systeme.",
+        defaultDurationDays: 1,
+      },
+      {
+        title: "Scope-Statement im SoA-Vorlauf hinterlegen",
+        description:
+          "Verknüpfung zu späterem SoA herstellen. Excludes (was bewusst nicht im Scope ist) explizit benennen.",
+        deliverableType: "policy",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "GL-Freigabe Scope einholen",
+        description:
+          "Schriftliche Freigabe (Mail oder Steering-Protokoll) als Evidence anhängen.",
+        deliverableType: "evidence",
+        defaultDurationDays: 1,
+      },
+    ],
+  },
+  {
+    code: "Y1-M1-05",
+    phaseCode: "plan",
+    sequence: 4,
+    name: "NIS2 / DORA-Anwendbarkeitsprüfung",
+    description:
+      "Prüft formal, ob das Unternehmen unter die NIS2-Richtlinie (essential/important entity) und/oder DORA (finanzsektorspezifisch) fällt. Ergebnis prägt Pflichten beim Incident Reporting (24h/72h), bei Lieferketten-Audits, bei Sanktionsrisiken.",
+    defaultOwnerRole: "dpo",
+    defaultDurationDays: 7,
+    prerequisiteStepCodes: ["Y1-M1-04"],
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "NIS2-Sektor-Klassifikation prüfen (Anhang I/II)",
+        description:
+          "Anhang I = essential entities (höhere Schwellen), Anhang II = important. Anhand Branche + Mitarbeiterzahl + Umsatz einordnen.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "DORA-Anwendbarkeit bewerten",
+        description:
+          "Trifft DORA zu (Banken, Versicherer, Finanzdienstleister, ICT-Drittparteien)? Wenn ja: zusätzliche Pflichten bei TLPT, ICT-Risk-Framework, Drittparteien.",
+        defaultDurationDays: 1,
+      },
+      {
+        title: "Pflichten-Mapping erstellen",
+        description:
+          "Konsolidierte Liste der Compliance-Pflichten aus NIS2/DORA mit Fristen und Verantwortlichen.",
+        deliverableType: "register",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Eintragung bei zuständiger Behörde prüfen",
+        description:
+          "Wenn NIS2 anwendbar: BSI-Meldung als KRITIS oder NIS2 essential/important entity prüfen und ggf. einreichen.",
+        defaultDurationDays: 1,
+      },
+    ],
+  },
+  {
+    code: "Y1-M2-01",
+    phaseCode: "plan",
+    sequence: 5,
+    name: "IS-Politik (Klausel 5.2)",
+    description:
+      "Die IS-Politik ist das normgeprägte Top-Level-Dokument. Maximal 2-3 Seiten, vom CEO unterzeichnet, an alle Mitarbeiter kommuniziert. Inhalte: Ziele (Vertraulichkeit/Integrität/Verfügbarkeit), Verpflichtung zur kontinuierlichen Verbesserung, Verbindlichkeit, Sanktionen bei Verstoß.",
+    isoClause: "5.2",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M1-04"],
+    targetModuleLink: { module: "documents", route: "/policies" },
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Politik-Entwurf v0.9 schreiben",
+        description:
+          "Norm-Pflichtinhalte: Verpflichtung zur Erfüllung, kontinuierlicher Verbesserung, Festlegung übergeordneter Ziele. Klar verständlich, kein technischer Jargon.",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Review durch Sponsoren + Legal",
+        description:
+          "Konsistenz mit Charter und Compliance-Anforderungen prüfen.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Freigabe + Unterschrift CEO",
+        description:
+          "PDF mit Unterschrift erzeugen, Versionsdatum festlegen.",
+        deliverableType: "policy",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Kommunikation an alle Mitarbeiter",
+        description:
+          "Mail vom CEO + Intranet-Veröffentlichung + Onboarding-Prozess aktualisieren. Log nachweisen.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Bestätigungspflicht in HR-Prozess verankern",
+        description:
+          "Alle Mitarbeiter bestätigen Kenntnisnahme über Awareness-Tool. Fortschrittsbalken im Programme Cockpit pflegen.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M2-03",
+    phaseCode: "plan",
+    sequence: 6,
+    name: "RACI / Rollen-Modell",
+    description:
+      "ISO 27001 §5.3 verlangt klare Verantwortlichkeiten. Jeder Annex-A-Kontroll-Bereich braucht einen Owner (R/A) und definierte Mitwirkende (C/I). Gleichzeitig wichtigste Brücke zum Three-Lines-of-Defense-Modell.",
+    isoClause: "5.3",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M1-04"],
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Rollen-Inventar erstellen",
+        description:
+          "Alle ISMS-relevanten Rollen mit kurzer Aufgabenbeschreibung — CISO, ISMS-Manager, Risk Manager, Control Owner, DPO, Auditor, Asset Owner.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "RACI-Matrix für Annex-A-Bereiche füllen",
+        description:
+          "Pro Annex-A-Bereich (5 Org/Personen/Physisch/Technologisch) Verantwortliche zuordnen.",
+        deliverableType: "register",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Three-Lines-Mapping prüfen",
+        description:
+          "Jede Rolle einer LoD zuordnen (1st/2nd/3rd). Konflikt: Kontrolle und Audit in Personalunion ist nicht zulässig.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Rollen formal nominieren",
+        description:
+          "Schriftliche Nominierung pro Schlüsselrolle durch GL/Linienvorgesetzte. Stellvertreter benennen.",
+        deliverableType: "evidence",
+        defaultDurationDays: 4,
+      },
+    ],
+  },
+  {
+    code: "Y1-M2-04",
+    phaseCode: "plan",
+    sequence: 7,
+    name: "Risiko-Methodik nach ISO 27005",
+    description:
+      "Definition wie Risiken identifiziert, analysiert, bewertet und behandelt werden. Kernfragen: Welche Skala (qualitativ/quantitativ/FAIR)? Welche Schwellen für High/Medium/Low? Welche Akzeptanz-Authority hat welche Schwelle? Output ist die ISMS-Risiko-Methodik als verbindliches Dokument.",
+    isoClause: "6.1.2",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M2-01"],
+    targetModuleLink: { module: "erm", route: "/risks" },
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Skalen festlegen (Likelihood, Impact)",
+        description:
+          "Mindestens 4-stufige Skalen mit klar definierten Anker-Beispielen für jede Stufe (z.B. 'Impact 4 = Existenzbedrohend').",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Risiko-Matrix kalibrieren",
+        description:
+          "Heatmap definieren: welche L×I-Kombinationen sind High/Medium/Low. Mit Sponsor abstimmen — beeinflusst Ressourceneinsatz direkt.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Akzeptanz-Authority Matrix definieren",
+        description:
+          "Wer darf welches Risiko akzeptieren? Z.B. Low → Risk Manager, Medium → CISO, High → CEO + Board.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Methodik-Dokument verabschieden",
+        description:
+          "v1.0 vom Sponsor freigeben lassen. In Catalogs/Methodologies hinterlegen.",
+        deliverableType: "methodology",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Risk Manager + CISO trainieren",
+        description:
+          "Walkthrough der Methodik mit Anwendungsbeispielen. Erst danach starten Risk-Workshops.",
+        defaultDurationDays: 3,
+      },
+    ],
+  },
+  {
+    code: "Y1-M3-01",
+    phaseCode: "plan",
+    sequence: 8,
+    name: "Asset-Erfassung Phase 1 (kritische A-/B-Assets)",
+    description:
+      "Voraussetzung für Risiko-Identifikation. Erfasst werden zunächst nur die geschäftskritischen Assets (Tier A/B): Kernsysteme, Crown-Jewels, Kundendaten-Stores, Auth-Systeme. Lange-Tail kommt später. Pro Asset: Owner, Schutzbedarf (CIA), Standort, Vendor, Abhängigkeiten.",
+    isoClause: "A.5.9",
+    defaultOwnerRole: "control_owner",
+    defaultDurationDays: 21,
+    prerequisiteStepCodes: ["Y1-M1-04"],
+    targetModuleLink: { module: "isms", route: "/assets" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Tier-A/B-Kandidaten aus Geschäftsprozessen ableiten",
+        description:
+          "Geschäftsprozess-Inventar nutzen, kritische Prozesse priorisieren, dahinter liegende Assets identifizieren.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Asset-Erfassungs-Workshops je Bereich",
+        description:
+          "IT-Infrastruktur, Application Owner, HR, Finance, Operations — Workshop pro Bereich für Asset-Inventarisierung.",
+        defaultDurationDays: 8,
+      },
+      {
+        title: "Schutzbedarf je Asset bewerten (BSI-Methodik)",
+        description:
+          "C-I-A jeweils Stufen normal/hoch/sehr hoch. Begründung durch Schadensszenario.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Asset-Register im ISMS-Modul anlegen",
+        description:
+          "Tabellarisches Inventar mit allen Pflichtfeldern. Jährliches Review im Kalender setzen.",
+        deliverableType: "register",
+        defaultDurationDays: 3,
+      },
+    ],
+  },
+  {
+    code: "Y1-M3-02",
+    phaseCode: "plan",
+    sequence: 9,
+    name: "Risiko-Identifikation Workshops",
+    description:
+      "Pro Asset/Asset-Gruppe ein Workshop: Welche Bedrohungen sind relevant (BSI G0.x, ISO 27005 Threats, MITRE ATT&CK)? Welche Schwachstellen sind bekannt? Welche Kombination führt zu welchem Schaden? Output: roher Risikokatalog vor Bewertung.",
+    isoClause: "6.1.2",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 21,
+    prerequisiteStepCodes: ["Y1-M2-04", "Y1-M3-01"],
+    targetModuleLink: { module: "isms", route: "/isms/risks" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Bedrohungskatalog auswählen",
+        description:
+          "Empfehlung: ISO 27005:2022 (31 Bedrohungen) + BSI-Elementargefährdungen (47). Mappings sind im Catalogs-Modul vorhanden.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Schwachstellen-Quellen anbinden",
+        description:
+          "Vuln-Scans auswerten, CVE-Reports, Pen-Test-Befunde, Incident-Historie.",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Workshop-Reihe pro Asset-Gruppe (5–8 Termine)",
+        description:
+          "Je 2 h, mit Asset Owner + Risk Manager. Threat × Vulnerability × Asset → Risiko-Szenario.",
+        defaultDurationDays: 12,
+      },
+      {
+        title: "Roh-Risiko-Inventar im ISMS-Modul anlegen",
+        description:
+          "Mindestens 30–80 Risiken erwartet. Doppelzählungen entfernen, Granularität abstimmen.",
+        deliverableType: "register",
+        defaultDurationDays: 3,
+      },
+    ],
+  },
+  {
+    code: "Y1-M3-03",
+    phaseCode: "plan",
+    sequence: 10,
+    name: "Risiko-Analyse + Bewertung",
+    description:
+      "Jedes Risiko bekommt Likelihood- und Impact-Werte gemäß Methodik. Brutto- vs. Netto-Bewertung (vor/nach existierenden Maßnahmen). Top-Risiken werden priorisiert für Treatment-Plan. Output: priorisiertes Risiko-Register.",
+    isoClause: "6.1.2",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M3-02"],
+    targetModuleLink: { module: "isms", route: "/isms/risks" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Brutto-Bewertung je Risiko (Likelihood × Impact)",
+        description:
+          "Nach Methodik. Begründung im Risiko-Eintrag dokumentieren — Auditoren werden danach fragen.",
+        defaultDurationDays: 6,
+      },
+      {
+        title: "Existierende Kontrollen pro Risiko erfassen",
+        description:
+          "Welche Maßnahmen existieren bereits? Aus Asset-Inventar oder bestehender SoA ableiten.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Netto-Bewertung berechnen",
+        description:
+          "Brutto reduziert um Wirksamkeit existierender Kontrollen. Heatmap aktualisieren.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Top-10 priorisieren + Sponsor-Review",
+        description:
+          "Sortierung nach Netto-Risiko. Top-10 mit Sponsor besprechen — diese werden im RTP zuerst behandelt.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M3-05",
+    phaseCode: "plan",
+    sequence: 11,
+    name: "SoA-Entwurf (Annex A)",
+    description:
+      "Statement of Applicability: Pro Annex-A-Kontrolle (93 Stück) entscheiden — anwendbar/nicht anwendbar/teilweise + Begründung. Bezug zu Risiken herstellen. SoA ist eines der zentralsten Audit-Dokumente.",
+    isoClause: "6.1.3 d",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M3-03"],
+    targetModuleLink: { module: "isms", route: "/isms/soa" },
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Initial-Liste der 93 Annex-A-Kontrollen aktivieren",
+        description:
+          "ISO/IEC 27002:2022 Katalog im SoA-Modul aktivieren. Jede Kontrolle mit Default 'tba'.",
+        defaultDurationDays: 1,
+      },
+      {
+        title: "Pro Kontrolle Anwendbarkeit + Begründung dokumentieren",
+        description:
+          "Anwendbar = Maßnahmen geplant/umgesetzt; Nicht anwendbar = Begründung (kein Asset relevant). Halb-anwendbar zulässig wenn substantiiert.",
+        defaultDurationDays: 8,
+      },
+      {
+        title: "Risk → Control-Verknüpfung herstellen",
+        description:
+          "Pro anwendbarer Kontrolle: welche Risiken adressiert sie? Bidirektionales Mapping. Pflicht für Auditor-Nachweis.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "SoA v0.9 für Sponsor-Review",
+        description:
+          "Sponsor + CISO begutachten Vollständigkeit + Plausibilität. v1.0 bei DO-Phase.",
+        deliverableType: "policy",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+
+  // ── Do ──
+  {
+    code: "Y1-M4-01",
+    phaseCode: "do",
+    sequence: 12,
+    name: "Risk-Treatment-Plan",
+    description:
+      "Pro Top-Risiko Strategie wählen (Mitigate/Transfer/Avoid/Accept) und konkrete Maßnahmen mit Owner + Frist + Budget hinterlegen. RTP ist die Brücke zwischen Risiko und Umsetzungsarbeit.",
+    isoClause: "6.1.3",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M3-05"],
+    targetModuleLink: { module: "erm", route: "/risks" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Treatment-Strategie pro Top-Risiko festlegen",
+        description:
+          "Mitigate (häufigster Fall) / Transfer (Versicherung, Vertrag) / Avoid (Geschäft einstellen) / Accept (formal akzeptiert).",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Maßnahmen-Set je Risiko ausplanen",
+        description:
+          "Konkrete Maßnahmen mit Aufwand-Schätzung, Owner, Frist, Budgetposition.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "RTP-Dokument konsolidieren",
+        description:
+          "Tabellarische Form: Risiko-ID, Strategie, Maßnahmen, Owner, Frist, erwartete Restrisiko-Bewertung.",
+        deliverableType: "register",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Sponsor-Freigabe + Budgetierung",
+        description:
+          "RTP an Steering vorstellen. Budget für Maßnahmen freigeben lassen.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M4-03",
+    phaseCode: "do",
+    sequence: 13,
+    name: "Restrisiko-Akzeptanz Top-Risiken",
+    description:
+      "Pro Top-Risiko explizite Akzeptanz-Entscheidung dokumentieren — auch dann, wenn Mitigations laufen, ist das Restrisiko bis zur Wirksamkeit zu akzeptieren oder eskalieren.",
+    isoClause: "6.1.3 f",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 7,
+    prerequisiteStepCodes: ["Y1-M4-01"],
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Akzeptanz-Authority-Mapping anwenden",
+        description:
+          "Pro Risiko: Welche Authority muss akzeptieren? Methodik bestimmt Schwelle.",
+        defaultDurationDays: 1,
+      },
+      {
+        title: "Akzeptanzformulare ausfüllen + unterzeichnen",
+        description:
+          "Pro Risiko ein formales Dokument mit Begründung, Restrisiko-Bewertung, Akzeptanz-Datum, Wiedervorlage.",
+        deliverableType: "evidence",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Akzeptanzen im Risk-Register verlinken",
+        description:
+          "Modul Risk Acceptance befüllen — Auditor erwartet diese Verbindung.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M5-01",
+    phaseCode: "do",
+    sequence: 14,
+    name: "Maßnahmen Welle 1 (Patch / MFA / Backup / Hardening)",
+    description:
+      "Höchstpriorisierte technische Quick-Wins: vollständiger Patch-Stand, MFA für alle Privileged Accounts + remote, Backup-Strategie + Restore-Test, Server-Hardening. Diese Maßnahmen reduzieren Top-Risiken überproportional.",
+    isoClause: "A.8",
+    defaultOwnerRole: "control_owner",
+    defaultDurationDays: 60,
+    prerequisiteStepCodes: ["Y1-M4-01"],
+    targetModuleLink: { module: "ics", route: "/controls" },
+    requiredEvidenceCount: 2,
+    subtasks: [
+      {
+        title: "Patch-Management formalisieren",
+        description:
+          "SLA für kritische Patches (≤ 7 Tage), Standard-Patches (≤ 30 Tage). Reporting-Dashboard.",
+        defaultDurationDays: 14,
+        deliverableType: "control",
+      },
+      {
+        title: "MFA-Rollout für privileged accounts",
+        description:
+          "Admin-Accounts, externe Zugriffe, Cloud-Konsolen. Pflicht für 100% — temporär TOTP, langfristig FIDO2.",
+        defaultDurationDays: 21,
+        deliverableType: "control",
+      },
+      {
+        title: "Backup + Restore-Test produktiv",
+        description:
+          "Restore eines kritischen Systems aus Backup einmalig erfolgreich durchführen + Protokoll. 3-2-1-Strategie nachweisen.",
+        defaultDurationDays: 14,
+        deliverableType: "evidence",
+      },
+      {
+        title: "Hardening-Baselines für 3 Top-OS-Klassen anwenden",
+        description:
+          "CIS Benchmarks Level 1 für Windows, Linux, Cloud (AWS/Azure). Compliance-Reports erzeugen.",
+        defaultDurationDays: 21,
+        deliverableType: "control",
+      },
+      {
+        title: "Maßnahmen-Status in Controls-Modul pflegen",
+        description:
+          "Pro Maßnahme: Status, Test-Ergebnis, Evidenz. Wöchentliches Reporting an Steering.",
+        defaultDurationDays: 7,
+      },
+    ],
+  },
+  {
+    code: "Y1-M5-03",
+    phaseCode: "do",
+    sequence: 15,
+    name: "Awareness-Programm Start",
+    description:
+      "ISO 27001 §7.3 fordert dokumentierte Awareness-Aktivitäten. Mindestens: Onboarding-Modul + Jahres-Refresher + Phishing-Simulation. Output: Schulungsplattform aktiv, ≥ 80 % Quote in Welle 1.",
+    isoClause: "7.3",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 30,
+    prerequisiteStepCodes: ["Y1-M2-01"],
+    targetModuleLink: { module: "academy", route: "/academy" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Awareness-Curriculum festlegen",
+        description:
+          "Module: IS-Politik, Phishing, Passwort, Mobile, Reporting Suspicious. ~15-20 min pro Modul.",
+        defaultDurationDays: 7,
+      },
+      {
+        title: "Plattform aufsetzen + Inhalte hochladen",
+        description:
+          "Academy-Modul nutzen. SCO-Pakete oder Eigenproduktion. Quiz mit Min-Score.",
+        defaultDurationDays: 10,
+      },
+      {
+        title: "Pflichtkommunikation an alle Mitarbeiter",
+        description:
+          "CEO-Mail mit Frist (4 Wochen). Erinnerungen automatisiert. Reporting an Linienvorgesetzte bei Säumigen.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Phishing-Simulation Welle 1",
+        description:
+          "Externer Anbieter oder Bordmittel. Klick-Rate messen, Zielwert < 15 %.",
+        defaultDurationDays: 5,
+        deliverableType: "evidence",
+      },
+      {
+        title: "Erfüllungsquote ≥ 80 % erreichen",
+        description:
+          "Reporting an Steering. Säumige eskalieren.",
+        defaultDurationDays: 5,
+      },
+    ],
+  },
+  {
+    code: "Y1-M7-02",
+    phaseCode: "do",
+    sequence: 16,
+    name: "Continuous Control Monitoring aktivieren",
+    description:
+      "ISO 27001 §9.1 fordert kontinuierliche Wirksamkeitsprüfung. Mindestens für 10 Top-Kontrollen automatische / regelmäßige Tests einrichten. Output: Dashboard mit Effectiveness-Scores.",
+    isoClause: "9.1",
+    defaultOwnerRole: "control_owner",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M5-01"],
+    targetModuleLink: { module: "ics", route: "/control-testing" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Top-10-Kontrollen für CCM auswählen",
+        description:
+          "Hochfrequente, automatisierbare Kontrollen mit hohem Risikobezug.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Test-Skripte / -Verfahren definieren",
+        description:
+          "Pro Kontrolle: Test-Frequenz, Datenquellen, Schwellwerte für Pass/Fail.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Tests aktivieren + erste Welle laufen lassen",
+        description:
+          "Automatisiert (Skripte) oder manuell (Checklisten). Ergebnisse im Control-Testing-Modul.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Dashboard für CISO + Sponsor",
+        description:
+          "Effectiveness-Trend pro Kontrolle, Failed Tests mit Eskalation.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+
+  // ── Check ──
+  {
+    code: "Y1-M8-01",
+    phaseCode: "check",
+    sequence: 17,
+    name: "Pen-Test extern",
+    description:
+      "Externer Pen-Test mit Fokus auf Crown-Jewels. Findings fließen ins Vuln-Management. Voraussetzung für glaubwürdige interne Audits.",
+    isoClause: "A.8.8",
+    defaultOwnerRole: "risk_manager",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M5-01"],
+    targetModuleLink: { module: "isms", route: "/isms/vulnerabilities" },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Scope + Rules of Engagement festlegen",
+        description:
+          "Welche Systeme, welche Methoden (Black/Gray/White-Box), Notfallkontakt, Zeitfenster.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Vendor auswählen + beauftragen",
+        description:
+          "BSI-zertifizierter Pen-Tester bevorzugt. Vertrag inkl. NDA, Haftung.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Pen-Test-Durchführung",
+        description:
+          "Aktive Testphase. Tägliche Stand-ups bei kritischen Findings.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Findings ins Vuln-Modul importieren + Treatment",
+        description:
+          "Pro Critical/High Finding: Owner, Frist, Maßnahme. Verknüpfung mit Risiko-Register.",
+        deliverableType: "evidence",
+        defaultDurationDays: 1,
+      },
+    ],
+  },
+  {
+    code: "Y1-M9-03",
+    phaseCode: "check",
+    sequence: 18,
+    name: "Internes Audit Welle 1 (50 % Scope)",
+    description:
+      "ISO 27001 §9.2 fordert interne Audits. Welle 1 deckt ~50 % des Scopes ab — Hauptprozesse + Top-Annex-A-Kontrollen. Output: Audit-Bericht mit NCs, Observations, OFI.",
+    isoClause: "9.2",
+    defaultOwnerRole: "auditor",
+    defaultDurationDays: 21,
+    prerequisiteStepCodes: ["Y1-M5-01", "Y1-M5-03"],
+    targetModuleLink: { module: "audit", route: "/audit" },
+    requiredEvidenceCount: 2,
+    subtasks: [
+      {
+        title: "Audit-Plan Welle 1 erstellen",
+        description:
+          "Audit-Universum-Auswahl (50 % Scope), Auditor-Allokation, Termine, Checklisten.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Auditoren briefen + Unabhängigkeit prüfen",
+        description:
+          "3rd Line oder externe Hilfe. Keine Personalunion mit auditierten Bereichen.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Audit-Durchführung (Interviews + Stichproben)",
+        description:
+          "Pro Auditgegenstand: Interview, Dokumente, Beleg-Stichprobe. Audit-Logbuch führen.",
+        defaultDurationDays: 10,
+      },
+      {
+        title: "Audit-Bericht mit NCs/OFIs erstellen",
+        description:
+          "Kategorisierung Major/Minor NC + Observations + Opportunities. Versendung an Auditees.",
+        deliverableType: "evidence",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "NC-Treatment-Termine vereinbaren",
+        description:
+          "Pro NC einen Verantwortlichen + Frist. NC-Modul befüllen.",
+        defaultDurationDays: 1,
+      },
+    ],
+  },
+  {
+    code: "Y1-M10-01",
+    phaseCode: "check",
+    sequence: 19,
+    name: "Internes Audit Welle 2 (vollständiger Scope)",
+    description:
+      "Welle 2 deckt restliche 50 % ab. Damit ist der gesamte Scope vor Stage-1 einmal intern auditiert. Voraussetzung für Zertifizierungs-Reife.",
+    isoClause: "9.2",
+    defaultOwnerRole: "auditor",
+    defaultDurationDays: 21,
+    prerequisiteStepCodes: ["Y1-M9-03"],
+    targetModuleLink: { module: "audit", route: "/audit" },
+    requiredEvidenceCount: 2,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Audit-Plan Welle 2 erstellen",
+        description:
+          "Verbleibender Scope (50 %), Lessons Learned aus Welle 1 einarbeiten.",
+        defaultDurationDays: 3,
+      },
+      {
+        title: "Audit-Durchführung restlicher Scope",
+        description:
+          "Bei Findings aus Welle 1 prüfen ob systemisch.",
+        defaultDurationDays: 12,
+      },
+      {
+        title: "Konsolidierter Audit-Bericht Y1",
+        description:
+          "Welle 1 + 2 zusammenführen. Bewertung: ISMS reif für Stage-1?",
+        deliverableType: "evidence",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Bericht an Sponsor + Steering",
+        description:
+          "Steering-Termin: Beschluss zur Stage-1-Anmeldung oder Verschiebung.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M10-03",
+    phaseCode: "check",
+    sequence: 20,
+    name: "NC-Schließung Welle 1 (Major NCs Vorrang)",
+    description:
+      "Major NCs MÜSSEN vor Stage-1 geschlossen sein. Minor NCs können mit Plan offen bleiben. ISO 27001 §10.1 fordert formale Korrekturmaßnahmen mit Root-Cause-Analyse.",
+    isoClause: "10.1",
+    defaultOwnerRole: "auditor",
+    defaultDurationDays: 30,
+    prerequisiteStepCodes: ["Y1-M10-01"],
+    targetModuleLink: {
+      module: "isms",
+      route: "/isms/nonconformities",
+    },
+    requiredEvidenceCount: 1,
+    subtasks: [
+      {
+        title: "Major NCs root-cause analysieren",
+        description:
+          "5-Why oder Ishikawa. Symptom vs. Ursache trennen. NC-Modul nutzen.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Korrekturmaßnahmen pro Major NC umsetzen",
+        description:
+          "Pro NC: Maßnahme, Owner, Frist. Wirksamkeit nachweisen (kein Re-Auftreten).",
+        defaultDurationDays: 18,
+        deliverableType: "control",
+      },
+      {
+        title: "NC-Closure-Review",
+        description:
+          "Auditor (3rd Line) bestätigt: NC effektiv geschlossen, Wirksamkeit belegt.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "NC-Status im Cockpit aktualisieren",
+        description:
+          "Alle Major NCs geschlossen, Minor NCs mit Plan dokumentiert.",
+        deliverableType: "evidence",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+
+  // ── Act ──
+  {
+    code: "Y1-M11-02",
+    phaseCode: "act",
+    sequence: 21,
+    name: "Management-Review",
+    description:
+      "ISO 27001 §9.3: Verpflichtendes formales Treffen mit Top-Management. Pflichtinhalte: Status NCs, Audit-Ergebnisse, Wirksamkeit Kontrollen, Risiko-Lage, Ressourcen-Bedarf, Verbesserungen. Output ist Protokoll mit Beschlüssen.",
+    isoClause: "9.3",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M10-01"],
+    targetModuleLink: { module: "isms", route: "/isms/reviews" },
+    requiredEvidenceCount: 1,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Inputs vorbereiten (alle 9.3 b-Inputs)",
+        description:
+          "Audit-Reports, NC-Status, Wirksamkeit, Risiko-Lage, Stakeholder-Feedback, Verbesserungschancen.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Management-Review-Termin durchführen",
+        description:
+          "GL + CISO + ISMS-Manager. ~2 Stunden. Vorlage strukturiert nach 9.3 Inputs/Outputs.",
+        defaultDurationDays: 1,
+      },
+      {
+        title: "Beschlüsse + Outputs protokollieren",
+        description:
+          "9.3 c) Outputs: Verbesserungen, Änderungen, Ressourcen, Beschlüsse. Owner + Frist je Beschluss.",
+        deliverableType: "evidence",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Beschlüsse im Programme Cockpit als Steps anlegen",
+        description:
+          "Falls Verbesserungen folgen: neue Steps oder Y2-Roadmap aktualisieren.",
+        defaultDurationDays: 2,
+      },
+    ],
+  },
+  {
+    code: "Y1-M11-03",
+    phaseCode: "act",
+    sequence: 22,
+    name: "Stage-1-Audit (extern, Dokumenten-Prüfung)",
+    description:
+      "Stage 1 prüft Dokumentenlage und Audit-Bereitschaft. Auditor sieht: SoA, IS-Politik, Risiko-Methodik, Risiko-Register, RTP, interne Audits, Management-Review. Findings = Knowingness vor Stage 2.",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 14,
+    prerequisiteStepCodes: ["Y1-M11-02"],
+    targetModuleLink: { module: "audit", route: "/audit" },
+    requiredEvidenceCount: 3,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Akkreditierte Zertifizierungsstelle auswählen",
+        description:
+          "DAkkS-akkreditiert (z.B. TÜV, DEKRA, DQS, BSI). Angebot einholen, Stage-1-Termin fixieren.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Dokumenten-Paket bereitstellen",
+        description:
+          "Alle Pflichtdokumente in geordnetem Index. Vorab-Review durch Audit-Team.",
+        defaultDurationDays: 4,
+      },
+      {
+        title: "Stage-1-Audit durchführen lassen",
+        description:
+          "1-2 Tage onsite oder remote. Audit-Plan vom Auditor, Vor-Ort-Begehung, Interviews.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Stage-1-Findings adressieren",
+        description:
+          "Pro Finding Plan + Frist. Müssen vor Stage 2 abgearbeitet sein.",
+        deliverableType: "evidence",
+        defaultDurationDays: 3,
+      },
+    ],
+  },
+  {
+    code: "Y1-M12-01",
+    phaseCode: "act",
+    sequence: 23,
+    name: "Stage-2-Audit + Zertifikat-Ausstellung",
+    description:
+      "Stage 2 ist die Wirksamkeitsprüfung — Auditor verifiziert vor Ort, dass das ISMS wie dokumentiert gelebt wird. Erfolgreich → Zertifikat (3 Jahre Gültigkeit, jährliche Surveillance-Audits).",
+    defaultOwnerRole: "admin",
+    defaultDurationDays: 21,
+    prerequisiteStepCodes: ["Y1-M11-03"],
+    targetModuleLink: { module: "audit", route: "/audit" },
+    requiredEvidenceCount: 3,
+    isMilestone: true,
+    subtasks: [
+      {
+        title: "Stage-2-Termin fixieren",
+        description:
+          "Optimal 4-6 Wochen nach Stage 1. Auditor-Plan abstimmen.",
+        defaultDurationDays: 2,
+      },
+      {
+        title: "Auditees vorbereiten",
+        description:
+          "Alle interviewten Mitarbeiter wissen Rolle + erwartete Antworten. Probelauf optional.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Stage-2-Audit durchführen",
+        description:
+          "3-5 Tage onsite. Auditor sieht Belege, Logs, Interviews mit allen Levels.",
+        defaultDurationDays: 5,
+      },
+      {
+        title: "Findings adressieren (Major innerhalb 90 Tagen)",
+        description:
+          "Major NCs verhindern Zertifikat → unmittelbar schließen. Minor NCs binnen 90 Tagen.",
+        defaultDurationDays: 6,
+      },
+      {
+        title: "Zertifikat erhalten + öffentliche Kommunikation",
+        description:
+          "Zertifikat-PDF im Documents-Modul. Webseite + LinkedIn-Posting durch Marketing.",
+        deliverableType: "evidence",
+        defaultDurationDays: 3,
+      },
+    ],
+  },
+];
+
+// ──────────────────────────────────────────────────────────────
 // ISO 27001:2022 Template
 // ──────────────────────────────────────────────────────────────
 
@@ -76,7 +1136,7 @@ const ISO_27001_TEMPLATE: SeedTemplate = {
   name: "ISO/IEC 27001:2022 — ISMS-Einführung",
   description:
     "Geführter Einführungsprozess für ein Information Security Management System nach ISO/IEC 27001:2022 mit Risiko-Methodik nach ISO/IEC 27005:2022.",
-  version: "1.0",
+  version: "1.1",
   frameworkCodes: ["ISO27001:2022", "ISO27005:2022"],
   estimatedDurationDays: 365,
   phases: [
@@ -148,306 +1208,7 @@ const ISO_27001_TEMPLATE: SeedTemplate = {
       ],
     },
   ],
-  steps: [
-    // Setup
-    {
-      code: "S00-CHARTER",
-      phaseCode: "setup",
-      sequence: 0,
-      name: "GL-Commitment & Programm-Charter",
-      description:
-        "Geschäftsleitungs-Beschluss, Charter, Budget, Lenkungsausschuss.",
-      isoClause: "5.1",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 14,
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-      targetModuleLink: { module: "documents", route: "/documents" },
-    },
-    // Plan
-    {
-      code: "Y1-M1-01",
-      phaseCode: "plan",
-      sequence: 1,
-      name: "Stakeholder-Analyse + Stakeholder-Register",
-      isoClause: "4.2",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["S00-CHARTER"],
-      targetModuleLink: { module: "platform", route: "/programmes" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M1-02",
-      phaseCode: "plan",
-      sequence: 2,
-      name: "Externer + Interner Kontext",
-      isoClause: "4.1",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["S00-CHARTER"],
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M1-04",
-      phaseCode: "plan",
-      sequence: 3,
-      name: "Geltungsbereich-Workshop & Scope-Statement",
-      isoClause: "4.3",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 7,
-      prerequisiteStepCodes: ["Y1-M1-01", "Y1-M1-02"],
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M1-05",
-      phaseCode: "plan",
-      sequence: 4,
-      name: "NIS2 / DORA-Anwendbarkeitsprüfung",
-      defaultOwnerRole: "dpo",
-      defaultDurationDays: 7,
-      prerequisiteStepCodes: ["Y1-M1-04"],
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M2-01",
-      phaseCode: "plan",
-      sequence: 5,
-      name: "IS-Politik (Klausel 5.2)",
-      isoClause: "5.2",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M1-04"],
-      targetModuleLink: { module: "documents", route: "/policies" },
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M2-03",
-      phaseCode: "plan",
-      sequence: 6,
-      name: "RACI / Rollen-Modell",
-      isoClause: "5.3",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M1-04"],
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M2-04",
-      phaseCode: "plan",
-      sequence: 7,
-      name: "Risiko-Methodik nach ISO 27005",
-      isoClause: "6.1.2",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M2-01"],
-      targetModuleLink: { module: "erm", route: "/risks" },
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M3-01",
-      phaseCode: "plan",
-      sequence: 8,
-      name: "Asset-Erfassung Phase 1 (kritische A-/B-Assets)",
-      isoClause: "A.5.9",
-      defaultOwnerRole: "control_owner",
-      defaultDurationDays: 21,
-      prerequisiteStepCodes: ["Y1-M1-04"],
-      targetModuleLink: { module: "isms", route: "/assets" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M3-02",
-      phaseCode: "plan",
-      sequence: 9,
-      name: "Risiko-Identifikation Workshops",
-      isoClause: "6.1.2",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 21,
-      prerequisiteStepCodes: ["Y1-M2-04", "Y1-M3-01"],
-      targetModuleLink: { module: "isms", route: "/isms/risks" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M3-03",
-      phaseCode: "plan",
-      sequence: 10,
-      name: "Risiko-Analyse + Bewertung",
-      isoClause: "6.1.2",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M3-02"],
-      targetModuleLink: { module: "isms", route: "/isms/risks" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M3-05",
-      phaseCode: "plan",
-      sequence: 11,
-      name: "SoA-Entwurf (Annex A)",
-      isoClause: "6.1.3 d",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M3-03"],
-      targetModuleLink: { module: "isms", route: "/isms/soa" },
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-    },
-    // Do
-    {
-      code: "Y1-M4-01",
-      phaseCode: "do",
-      sequence: 12,
-      name: "Risk-Treatment-Plan",
-      isoClause: "6.1.3",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M3-05"],
-      targetModuleLink: { module: "erm", route: "/risks" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M4-03",
-      phaseCode: "do",
-      sequence: 13,
-      name: "Restrisiko-Akzeptanz Top-Risiken",
-      isoClause: "6.1.3 f",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 7,
-      prerequisiteStepCodes: ["Y1-M4-01"],
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M5-01",
-      phaseCode: "do",
-      sequence: 14,
-      name: "Maßnahmen Welle 1 (Patch / MFA / Backup / Hardening)",
-      isoClause: "A.8",
-      defaultOwnerRole: "control_owner",
-      defaultDurationDays: 60,
-      prerequisiteStepCodes: ["Y1-M4-01"],
-      targetModuleLink: { module: "ics", route: "/controls" },
-      requiredEvidenceCount: 2,
-    },
-    {
-      code: "Y1-M5-03",
-      phaseCode: "do",
-      sequence: 15,
-      name: "Awareness-Programm Start",
-      isoClause: "7.3",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 30,
-      prerequisiteStepCodes: ["Y1-M2-01"],
-      targetModuleLink: { module: "academy", route: "/academy" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M7-02",
-      phaseCode: "do",
-      sequence: 16,
-      name: "Continuous Control Monitoring aktivieren",
-      isoClause: "9.1",
-      defaultOwnerRole: "control_owner",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M5-01"],
-      targetModuleLink: { module: "ics", route: "/control-testing" },
-      requiredEvidenceCount: 1,
-    },
-    // Check
-    {
-      code: "Y1-M8-01",
-      phaseCode: "check",
-      sequence: 17,
-      name: "Pen-Test extern",
-      isoClause: "A.8.8",
-      defaultOwnerRole: "risk_manager",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M5-01"],
-      targetModuleLink: { module: "isms", route: "/isms/vulnerabilities" },
-      requiredEvidenceCount: 1,
-    },
-    {
-      code: "Y1-M9-03",
-      phaseCode: "check",
-      sequence: 18,
-      name: "Internes Audit Welle 1 (50 % Scope)",
-      isoClause: "9.2",
-      defaultOwnerRole: "auditor",
-      defaultDurationDays: 21,
-      prerequisiteStepCodes: ["Y1-M5-01", "Y1-M5-03"],
-      targetModuleLink: { module: "audit", route: "/audit" },
-      requiredEvidenceCount: 2,
-    },
-    {
-      code: "Y1-M10-01",
-      phaseCode: "check",
-      sequence: 19,
-      name: "Internes Audit Welle 2 (vollständiger Scope)",
-      isoClause: "9.2",
-      defaultOwnerRole: "auditor",
-      defaultDurationDays: 21,
-      prerequisiteStepCodes: ["Y1-M9-03"],
-      targetModuleLink: { module: "audit", route: "/audit" },
-      requiredEvidenceCount: 2,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M10-03",
-      phaseCode: "check",
-      sequence: 20,
-      name: "NC-Schließung Welle 1 (Major NCs Vorrang)",
-      isoClause: "10.1",
-      defaultOwnerRole: "auditor",
-      defaultDurationDays: 30,
-      prerequisiteStepCodes: ["Y1-M10-01"],
-      targetModuleLink: {
-        module: "isms",
-        route: "/isms/nonconformities",
-      },
-      requiredEvidenceCount: 1,
-    },
-    // Act
-    {
-      code: "Y1-M11-02",
-      phaseCode: "act",
-      sequence: 21,
-      name: "Management-Review",
-      isoClause: "9.3",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M10-01"],
-      targetModuleLink: { module: "isms", route: "/isms/reviews" },
-      requiredEvidenceCount: 1,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M11-03",
-      phaseCode: "act",
-      sequence: 22,
-      name: "Stage-1-Audit (extern, Dokumenten-Prüfung)",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 14,
-      prerequisiteStepCodes: ["Y1-M11-02"],
-      targetModuleLink: { module: "audit", route: "/audit" },
-      requiredEvidenceCount: 3,
-      isMilestone: true,
-    },
-    {
-      code: "Y1-M12-01",
-      phaseCode: "act",
-      sequence: 23,
-      name: "Stage-2-Audit + Zertifikat-Ausstellung",
-      defaultOwnerRole: "admin",
-      defaultDurationDays: 21,
-      prerequisiteStepCodes: ["Y1-M11-03"],
-      targetModuleLink: { module: "audit", route: "/audit" },
-      requiredEvidenceCount: 3,
-      isMilestone: true,
-    },
-  ],
+  steps: ISO_27001_STEPS,
 };
 
 // ──────────────────────────────────────────────────────────────
@@ -1204,12 +1965,14 @@ export interface ProgrammeSeedResult {
   templatesSeeded: number;
   phasesSeeded: number;
   stepsSeeded: number;
+  subtasksSeeded: number;
 }
 
 export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
   let templatesSeeded = 0;
   let phasesSeeded = 0;
   let stepsSeeded = 0;
+  let subtasksSeeded = 0;
 
   for (const seed of PROGRAMME_TEMPLATE_SEEDS) {
     const existing = await db
@@ -1267,25 +2030,43 @@ export async function seedProgrammeTemplates(): Promise<ProgrammeSeedResult> {
           `Seed-Konsistenzfehler: Phase ${step.phaseCode} nicht in Template ${seed.code}`,
         );
       }
-      await db.insert(programmeTemplateStep).values({
-        templateId: template.id,
-        phaseId,
-        code: step.code,
-        sequence: step.sequence,
-        name: step.name,
-        description: step.description ?? null,
-        isoClause: step.isoClause ?? null,
-        defaultOwnerRole: step.defaultOwnerRole ?? null,
-        defaultDurationDays: step.defaultDurationDays,
-        prerequisiteStepCodes: step.prerequisiteStepCodes ?? [],
-        targetModuleLink: step.targetModuleLink ?? {},
-        requiredEvidenceCount: step.requiredEvidenceCount ?? 0,
-        isMandatory: step.isMandatory ?? true,
-        isMilestone: step.isMilestone ?? false,
-      });
+      const [stepRow] = await db
+        .insert(programmeTemplateStep)
+        .values({
+          templateId: template.id,
+          phaseId,
+          code: step.code,
+          sequence: step.sequence,
+          name: step.name,
+          description: step.description ?? null,
+          isoClause: step.isoClause ?? null,
+          defaultOwnerRole: step.defaultOwnerRole ?? null,
+          defaultDurationDays: step.defaultDurationDays,
+          prerequisiteStepCodes: step.prerequisiteStepCodes ?? [],
+          targetModuleLink: step.targetModuleLink ?? {},
+          requiredEvidenceCount: step.requiredEvidenceCount ?? 0,
+          isMandatory: step.isMandatory ?? true,
+          isMilestone: step.isMilestone ?? false,
+        })
+        .returning();
       stepsSeeded++;
+
+      if (step.subtasks && step.subtasks.length > 0) {
+        const subtaskRows = step.subtasks.map((sub, index) => ({
+          templateStepId: stepRow.id,
+          sequence: index + 1,
+          title: sub.title,
+          description: sub.description ?? null,
+          defaultOwnerRole: sub.defaultOwnerRole ?? null,
+          defaultDurationDays: sub.defaultDurationDays ?? 1,
+          deliverableType: sub.deliverableType ?? null,
+          isMandatory: sub.isMandatory ?? true,
+        }));
+        await db.insert(programmeTemplateSubtask).values(subtaskRows);
+        subtasksSeeded += subtaskRows.length;
+      }
     }
   }
 
-  return { templatesSeeded, phasesSeeded, stepsSeeded };
+  return { templatesSeeded, phasesSeeded, stepsSeeded, subtasksSeeded };
 }
