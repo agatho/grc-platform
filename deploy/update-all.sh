@@ -35,10 +35,14 @@ else
   echo "  $OLD_COMMIT → $NEW_COMMIT"
 fi
 
-# ── 2. Docker Image neu bauen ─────────────────────────────
+# ── 2. Docker Images neu bauen (web + worker) ─────────────
+# Worker MUSS mit gebaut werden, sonst läuft die Cron-Engine noch mit
+# einem alten Image — typischer Crash-Loop wäre "Cannot find module ..."
+# nach Schema- oder Dep-Änderungen. Beide Images nutzen denselben
+# Layer-Cache; Worker-Build dauert ~30 s wenn nur Source geändert.
 echo ""
-echo "[2/5] Docker Image neu bauen..."
-docker compose -f "$COMPOSE_FILE" build web 2>&1 | tail -10
+echo "[2/5] Docker Images neu bauen (web + worker)..."
+docker compose -f "$COMPOSE_FILE" build web worker 2>&1 | tail -15
 
 # ── 3. Migrationen auf alle DBs ──────────────────────────
 echo ""
@@ -87,10 +91,20 @@ else
   echo "  FEHLER: $SEEDER fehlt — Tenants bleiben ohne Frameworks!"
 fi
 
-# ── 4. Haupt-Container neu starten ────────────────────────
+# ── 4. Haupt-Container neu starten (web + worker) ─────────
 echo ""
-echo "[4/5] Haupt-Container neu starten..."
-docker compose -f "$COMPOSE_FILE" up -d --force-recreate web 2>&1 | tail -3
+echo "[4/5] Haupt-Container neu starten (web + worker)..."
+docker compose -f "$COMPOSE_FILE" up -d --force-recreate web worker 2>&1 | tail -5
+
+# Worker-Health quick-check: zeigt sofort ob die Cron-Engine startet
+# oder im Crash-Loop steckt (Symptom für fehlende Module / Schema-Drift).
+sleep 5
+WORKER_STATE=$(docker compose -f "$COMPOSE_FILE" ps --format json worker 2>/dev/null | grep -oP '"State":"\K[^"]+' | head -1)
+if [ "$WORKER_STATE" != "running" ]; then
+  echo "  WARNUNG: Worker-Container nicht im Status 'running' (aktuell: ${WORKER_STATE:-unknown})."
+  echo "  Letzte Worker-Logs:"
+  docker compose -f "$COMPOSE_FILE" logs --tail=20 worker 2>&1 | sed 's/^/    /'
+fi
 
 # ── 5. Alle Tenant-Container neu starten ─────────────────
 echo ""
