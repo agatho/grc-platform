@@ -6,10 +6,11 @@ import {
   programmeJourney,
   programmeJourneyPhase,
   programmeJourneyStep,
+  programmeTemplateStep,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { eq, and, isNull, sql } from "drizzle-orm";
+import { eq, and, isNull, inArray } from "drizzle-orm";
 import { computeNextBestActions, type StepCandidate } from "@grc/shared";
 
 export async function GET(
@@ -21,6 +22,7 @@ export async function GET(
   const moduleCheck = await requireModule("programme", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
+  try {
   const { id } = await params;
   const url = new URL(req.url);
   const limitRaw = url.searchParams.get("limit");
@@ -72,24 +74,30 @@ export async function GET(
       ),
     );
 
-  // Prerequisite-Codes aus Template laden (raw SQL für Join-Optimierung)
+  // Prerequisite-Codes aus Template laden über typsicheren Drizzle-Join.
   const prereqByCode = new Map<string, string[]>();
   if (stepRows.length > 0) {
-    const stepIds = stepRows.map((s) => s.id);
-    const tplPrereqs = (await db.execute(sql`
-      SELECT pjs.code AS step_code, pts.prerequisite_step_codes
-      FROM programme_journey_step pjs
-      JOIN programme_template_step pts ON pts.id = pjs.template_step_id
-      WHERE pjs.id = ANY(${stepIds}::uuid[])
-    `)) as unknown as Array<{
-      step_code: string;
-      prerequisite_step_codes: unknown;
-    }>;
+    const tplPrereqs = await db
+      .select({
+        stepCode: programmeJourneyStep.code,
+        prerequisiteStepCodes: programmeTemplateStep.prerequisiteStepCodes,
+      })
+      .from(programmeJourneyStep)
+      .innerJoin(
+        programmeTemplateStep,
+        eq(programmeTemplateStep.id, programmeJourneyStep.templateStepId),
+      )
+      .where(
+        inArray(
+          programmeJourneyStep.id,
+          stepRows.map((s) => s.id),
+        ),
+      );
     for (const row of tplPrereqs) {
-      const arr = Array.isArray(row.prerequisite_step_codes)
-        ? (row.prerequisite_step_codes as string[])
+      const arr = Array.isArray(row.prerequisiteStepCodes)
+        ? (row.prerequisiteStepCodes as string[])
         : [];
-      prereqByCode.set(row.step_code, arr);
+      prereqByCode.set(row.stepCode, arr);
     }
   }
 
@@ -113,4 +121,12 @@ export async function GET(
   });
 
   return Response.json({ data: actions });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[programmes/next-actions/GET] failed:", message, err);
+    return Response.json(
+      { error: "Failed to compute next actions", reason: message },
+      { status: 500 },
+    );
+  }
 }
