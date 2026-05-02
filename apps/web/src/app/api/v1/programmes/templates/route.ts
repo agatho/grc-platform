@@ -4,7 +4,7 @@
 import { db, programmeTemplate, seedProgrammeTemplates } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { and, eq, isNull, asc, sql } from "drizzle-orm";
+import { and, eq, isNull, asc } from "drizzle-orm";
 import { MS_TYPE_VALUES } from "@grc/shared";
 
 export async function GET(req: Request) {
@@ -22,15 +22,11 @@ export async function GET(req: Request) {
       ? (msTypeParam as (typeof MS_TYPE_VALUES)[number])
       : null;
 
-  // First-run lazy-seed: norm templates are platform-wide reference
-  // data (no org_id), so seeding once on first read is safe and avoids
-  // requiring a separate manual seed step per install.
-  const [{ count }] = await db
-    .select({ count: sql<number>`count(*)::int` })
-    .from(programmeTemplate);
-  if (count === 0) {
-    await seedProgrammeTemplates();
-  }
+  // Idempotent lazy-seed: norm templates are platform-wide reference
+  // data (no org_id) and the seeder skips templates that already exist
+  // by (code, version). Running it on every list request is cheap and
+  // ensures new template versions land without a separate seed step.
+  await seedProgrammeTemplates();
 
   const where = msType
     ? and(
