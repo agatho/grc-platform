@@ -153,6 +153,22 @@ echo "  Config gespeichert: $TENANT_DIR/env"
 echo "[4/5] Container starten..."
 
 cat > "$TENANT_DIR/docker-compose.yml" << DCEOF
+# ============================================================================
+# Tenant: $TENANT
+#
+# Two services per tenant:
+#   - web-$TENANT     : Next.js app, exposed on host port $NEXT_PORT
+#   - worker-$TENANT  : Cron engine (Hono), tenant-isolated DATABASE_URL,
+#                       CRON_SECRET, WB_ENCRYPTION_KEY from ./env
+#
+# Tenant isolation guarantees:
+#   - Each tenant has its own Docker network membership but its OWN process,
+#     so a compromised cron handler in tenant A cannot reach tenant B's data.
+#   - Each tenant has its own CRON_SECRET → tenant A operators cannot
+#     trigger tenant B's crons even with shell access to the same host.
+#   - DATABASE_URL is per-tenant; the worker can ONLY see its own DB.
+# ============================================================================
+
 services:
   web-$TENANT:
     image: ghcr.io/arctos/grc-web:latest
@@ -171,6 +187,22 @@ services:
       - env
     networks:
       - arctos_arctos
+
+  worker-$TENANT:
+    build:
+      context: /opt/arctos
+      dockerfile: Dockerfile.worker
+    restart: unless-stopped
+    security_opt:
+      - no-new-privileges:true
+    env_file:
+      - env
+    environment:
+      PORT: "3001"
+    networks:
+      - arctos_arctos
+    # No host port published — worker is reachable only via internal
+    # Docker DNS (worker-$TENANT:3001), not from outside.
 
 networks:
   arctos_arctos:
