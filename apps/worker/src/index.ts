@@ -1,4 +1,5 @@
 import { Hono } from "hono";
+import { serve } from "@hono/node-server";
 import { processOverdueTasks } from "./crons/overdue-tasks";
 import { processDailyAuditAnchor } from "./crons/daily-audit-anchor";
 import { processOtsUpgrade } from "./crons/ots-upgrade";
@@ -1540,4 +1541,17 @@ for (const [name, handler] of Object.entries(batchCrons)) {
   });
 }
 
-export default { port: 3001, fetch: app.fetch };
+// Bind the Hono app to a Node.js HTTP server. The previous default-
+// export form (`{ port, fetch }`) is Bun-specific — under tsx/Node it
+// is silently ignored, the script reaches the end of execution, and
+// the container exits clean (then crash-loops via restart policy).
+const port = Number(process.env.PORT ?? 3001);
+serve({ fetch: app.fetch, port }, (info) => {
+  console.log(
+    `[worker] Hono server listening on http://0.0.0.0:${info.port}`,
+  );
+});
+
+// Keep the Bun-style default export for compatibility with Bun-based
+// runners (tests, local dev) — a no-op when imported under Node.
+export default { port, fetch: app.fetch };
