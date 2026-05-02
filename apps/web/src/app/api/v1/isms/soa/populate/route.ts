@@ -2,6 +2,7 @@ import { db, catalog, catalogEntry, soaEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { syncAllSoaEntriesToProgramme } from "@grc/db";
 
 // POST /api/v1/isms/soa/populate — Auto-populate SoA from ISO 27001 Annex A catalog
 export async function POST(req: Request) {
@@ -84,5 +85,22 @@ export async function POST(req: Request) {
     return Response.json({ error: result.error }, { status: 404 });
   }
 
-  return Response.json({ data: result }, { status: 201 });
+  // Project the populated SoA into the active ISO 27001 journey.
+  let syncSummary: Awaited<
+    ReturnType<typeof syncAllSoaEntriesToProgramme>
+  > | null = null;
+  try {
+    syncSummary = await syncAllSoaEntriesToProgramme(
+      db,
+      ctx.orgId,
+      ctx.userId,
+    );
+  } catch (err) {
+    console.error("[soa populate] sync failed", err);
+  }
+
+  return Response.json(
+    { data: { ...result, programmeSync: syncSummary } },
+    { status: 201 },
+  );
 }

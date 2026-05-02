@@ -3,6 +3,7 @@ import { requireModule } from "@grc/auth";
 import { bulkUpdateSoaSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { syncSoaEntryToProgramme } from "@grc/db";
 
 // POST /api/v1/isms/soa/bulk
 export async function POST(req: Request) {
@@ -76,12 +77,31 @@ export async function POST(req: Request) {
     return { updated, errors };
   });
 
+  // Project all updated entries into the active ISO 27001 journey.
+  let syncedSubtasks = 0;
+  for (const row of results.updated as Array<{ id: string }>) {
+    try {
+      const r = await syncSoaEntryToProgramme(
+        db,
+        ctx.orgId,
+        row.id,
+        ctx.userId,
+      );
+      if (r.subtaskAction === "created" || r.subtaskAction === "updated") {
+        syncedSubtasks++;
+      }
+    } catch (err) {
+      console.error("[soa bulk] sync failed for", row.id, err);
+    }
+  }
+
   return Response.json({
     data: {
       totalRequested: parsed.data.entries.length,
       succeeded: results.updated.length,
       failed: results.errors.length,
       errors: results.errors,
+      programmeSubtasksSynced: syncedSubtasks,
     },
   });
 }

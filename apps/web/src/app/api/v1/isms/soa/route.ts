@@ -7,6 +7,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { syncSoaEntryToProgramme } from "@grc/db";
 
 // GET /api/v1/isms/soa
 export async function GET(req: Request) {
@@ -137,6 +138,7 @@ export async function POST(req: Request) {
 
     let created = 0;
     let skipped = 0;
+    const insertedIds: string[] = [];
 
     for (const entry of catalogEntries) {
       // Check if SoA entry already exists for this org + catalog entry
@@ -156,17 +158,51 @@ export async function POST(req: Request) {
         continue;
       }
 
-      await tx.insert(soaEntry).values({
-        orgId: ctx.orgId,
-        catalogEntryId: entry.id,
-        applicability: "applicable",
-        implementation: "not_implemented",
-      });
+      const [row] = await tx
+        .insert(soaEntry)
+        .values({
+          orgId: ctx.orgId,
+          catalogEntryId: entry.id,
+          applicability: "applicable",
+          implementation: "not_implemented",
+        })
+        .returning({ id: soaEntry.id });
+      insertedIds.push(row.id);
       created++;
     }
 
-    return { created, skipped, total: catalogEntries.length };
+    return {
+      created,
+      skipped,
+      total: catalogEntries.length,
+      insertedIds,
+    };
   });
 
-  return Response.json({ data: result }, { status: 201 });
+  // Project newly-created SoA entries into the active ISO 27001 journey.
+  // Runs outside the audit-context tx so a missing journey or sync failure
+  // never aborts the SoA inserts themselves.
+  let synced = 0;
+  for (const id of result.insertedIds) {
+    try {
+      const r = await syncSoaEntryToProgramme(db, ctx.orgId, id, ctx.userId);
+      if (r.subtaskAction === "created" || r.subtaskAction === "updated") {
+        synced++;
+      }
+    } catch (err) {
+      console.error("[soa POST] sync failed for", id, err);
+    }
+  }
+
+  return Response.json(
+    {
+      data: {
+        created: result.created,
+        skipped: result.skipped,
+        total: result.total,
+        programmeSubtasksCreated: synced,
+      },
+    },
+    { status: 201 },
+  );
 }
