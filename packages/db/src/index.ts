@@ -361,3 +361,13 @@ export {
   seedProgrammeTemplates,
   type ProgrammeSeedResult,
 } from "./seeds/programme-templates";
+
+// SoA → Programme Cockpit sync engine — projects ISO 27001 Annex A
+// applicability decisions into the active journey as implementation
+// subtasks and audit-trace step-links.
+export {
+  syncSoaEntryToProgramme,
+  syncAllSoaEntriesToProgramme,
+  reverseSyncSubtaskCompletion,
+  type SoaSyncResult,
+} from "./programme-soa-sync";

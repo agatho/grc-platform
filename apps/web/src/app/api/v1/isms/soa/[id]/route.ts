@@ -3,6 +3,7 @@ import { requireModule } from "@grc/auth";
 import { updateSoaEntrySchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { syncSoaEntryToProgramme } from "@grc/db";
 
 // GET /api/v1/isms/soa/[id]
 export async function GET(
@@ -102,5 +103,19 @@ export async function PUT(
     return updated;
   });
 
-  return Response.json({ data: result });
+  // Project the SoA change into the active ISO 27001 journey (idempotent).
+  let syncResult: Awaited<ReturnType<typeof syncSoaEntryToProgramme>> | null =
+    null;
+  try {
+    syncResult = await syncSoaEntryToProgramme(
+      db,
+      ctx.orgId,
+      id,
+      ctx.userId,
+    );
+  } catch (err) {
+    console.error("[soa PUT] sync failed for", id, err);
+  }
+
+  return Response.json({ data: result, sync: syncResult });
 }

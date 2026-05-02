@@ -11,6 +11,7 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and } from "drizzle-orm";
 import { z } from "zod";
+import { reverseSyncSubtaskCompletion } from "@grc/db";
 
 const patchSubtaskSchema = z
   .object({
@@ -104,7 +105,20 @@ export async function PATCH(
     payload: { subtaskId, fields: Object.keys(parsed.data) },
   });
 
-  return Response.json({ data: updated });
+  // Reverse-sync: if the subtask was projected from a SoA entry and is now
+  // completed, bump the SoA entry's implementation status to "implemented".
+  let soaSync: Awaited<
+    ReturnType<typeof reverseSyncSubtaskCompletion>
+  > | null = null;
+  if (parsed.data.status === "completed") {
+    try {
+      soaSync = await reverseSyncSubtaskCompletion(db, subtaskId, ctx.orgId);
+    } catch (err) {
+      console.error("[subtask PATCH] reverse SoA sync failed", err);
+    }
+  }
+
+  return Response.json({ data: updated, soaSync });
 }
 
 export async function DELETE(
