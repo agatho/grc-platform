@@ -6,6 +6,9 @@ import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Loader2 } from "lucide-react";
 
 interface Template {
@@ -133,40 +136,40 @@ export default function NewProgrammePage() {
                 <CardTitle>{t("new.step2Title")}</CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div>
-                  <label className="text-sm font-medium">{t("new.name")}</label>
-                  <input
+                <div className="space-y-2">
+                  <Label htmlFor="programme-name">{t("new.name")}</Label>
+                  <Input
+                    id="programme-name"
                     type="text"
                     required
                     minLength={2}
                     maxLength={200}
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
                     placeholder={t("new.namePlaceholder")}
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">
+                <div className="space-y-2">
+                  <Label htmlFor="programme-description">
                     {t("new.description")}
-                  </label>
-                  <textarea
+                  </Label>
+                  <Textarea
+                    id="programme-description"
                     value={description}
                     onChange={(e) => setDescription(e.target.value)}
                     maxLength={5000}
                     rows={3}
-                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
                   />
                 </div>
-                <div>
-                  <label className="text-sm font-medium">
+                <div className="space-y-2">
+                  <Label htmlFor="programme-started-at">
                     {t("new.startedAt")}
-                  </label>
-                  <input
+                  </Label>
+                  <Input
+                    id="programme-started-at"
                     type="date"
                     value={startedAt}
                     onChange={(e) => setStartedAt(e.target.value)}
-                    className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 dark:border-slate-700 dark:bg-slate-800"
                   />
                 </div>
 
