@@ -73,6 +73,11 @@ export const programmeStepStatusEnum = pgEnum("programme_step_status", [
   "cancelled",
 ]);
 
+export const programmeApprovalStatusEnum = pgEnum(
+  "programme_approval_status",
+  ["not_required", "pending", "approved", "rejected"],
+);
+
 // ──────────────────────────────────────────────────────────────
 // programme_template — global, immutable nach publication
 // ──────────────────────────────────────────────────────────────
@@ -215,6 +220,13 @@ export const programmeJourney = pgTable(
     actualCompletionDate: date("actual_completion_date"),
     archivedAt: timestamp("archived_at", { withTimezone: true }),
     lastHealthEvalAt: timestamp("last_health_eval_at", { withTimezone: true }),
+    // Approval workflow für Journey-Level (z. B. Stage-2-Anmeldung, Cert-Decision)
+    approvalStatus: programmeApprovalStatusEnum("approval_status")
+      .notNull()
+      .default("not_required"),
+    approverId: uuid("approver_id").references(() => user.id),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvalNotes: text("approval_notes"),
     metadata: jsonb("metadata").default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -324,6 +336,24 @@ export const programmeJourneyStep = pgTable(
       .default(0),
     isMilestone: boolean("is_milestone").notNull().default(false),
     isMandatory: boolean("is_mandatory").notNull().default(true),
+    // Cost + effort tracking (Sprint 4)
+    costEstimate: numeric("cost_estimate", { precision: 14, scale: 2 }),
+    costActual: numeric("cost_actual", { precision: 14, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 })
+      .notNull()
+      .default("EUR"),
+    effortHours: integer("effort_hours"),
+    budgetId: uuid("budget_id"),
+    // Approval workflow (Sprint 4)
+    approvalStatus: programmeApprovalStatusEnum("approval_status")
+      .notNull()
+      .default("not_required"),
+    approvalRequiredForStatus: varchar("approval_required_for_status", {
+      length: 30,
+    }),
+    approverId: uuid("approver_id").references(() => user.id),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvalNotes: text("approval_notes"),
     metadata: jsonb("metadata").default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -408,6 +438,39 @@ export const programmeLinkTypeEnum = pgEnum("programme_link_type", [
 ]);
 
 // ──────────────────────────────────────────────────────────────
+// programme_approval_event — append-only Approval-Trail (Sprint 4)
+// ──────────────────────────────────────────────────────────────
+
+export const programmeApprovalEvent = pgTable(
+  "programme_approval_event",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    journeyId: uuid("journey_id")
+      .notNull()
+      .references(() => programmeJourney.id, { onDelete: "cascade" }),
+    stepId: uuid("step_id").references(() => programmeJourneyStep.id, {
+      onDelete: "cascade",
+    }),
+    action: varchar("action", { length: 50 }).notNull(),
+    fromStatus: varchar("from_status", { length: 50 }),
+    toStatus: varchar("to_status", { length: 50 }),
+    actorId: uuid("actor_id").references(() => user.id),
+    notes: text("notes"),
+    occurredAt: timestamp("occurred_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => [
+    index("programme_approval_event_journey_idx").on(t.journeyId, t.occurredAt),
+    index("programme_approval_event_step_idx").on(t.stepId),
+    index("programme_approval_event_org_idx").on(t.orgId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
 // programme_template_subtask
 // ──────────────────────────────────────────────────────────────
 
@@ -466,6 +529,13 @@ export const programmeJourneySubtask = pgTable(
     completionNotes: text("completion_notes"),
     isMandatory: boolean("is_mandatory").notNull().default(true),
     deliverableType: varchar("deliverable_type", { length: 80 }),
+    // Cost + effort tracking (Sprint 4)
+    costEstimate: numeric("cost_estimate", { precision: 14, scale: 2 }),
+    costActual: numeric("cost_actual", { precision: 14, scale: 2 }),
+    costCurrency: varchar("cost_currency", { length: 3 })
+      .notNull()
+      .default("EUR"),
+    effortHours: integer("effort_hours"),
     metadata: jsonb("metadata").default({}).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -547,6 +617,19 @@ export type ProgrammeJourneySubtaskInsert =
   typeof programmeJourneySubtask.$inferInsert;
 export type ProgrammeStepLink = typeof programmeStepLink.$inferSelect;
 export type ProgrammeStepLinkInsert = typeof programmeStepLink.$inferInsert;
+export type ProgrammeApprovalEvent =
+  typeof programmeApprovalEvent.$inferSelect;
+export type ProgrammeApprovalEventInsert =
+  typeof programmeApprovalEvent.$inferInsert;
+
+export const PROGRAMME_APPROVAL_STATUS_VALUES = [
+  "not_required",
+  "pending",
+  "approved",
+  "rejected",
+] as const;
+export type ProgrammeApprovalStatus =
+  (typeof PROGRAMME_APPROVAL_STATUS_VALUES)[number];
 
 export const PROGRAMME_SUBTASK_STATUS_VALUES = [
   "pending",
