@@ -67,6 +67,7 @@
   "dashboard": {
     "health": "Status-Begründung",
     "openTimeline": "Timeline öffnen",
+    "openGantt": "Gantt-Diagramm",
     "openEvents": "Aktivitäts-Log",
     "auditPack": "Audit-Pack (PDF)",
     "deleteJourney": "Programm löschen",
@@ -208,6 +209,10 @@
       "deliverable": "Deliverable",
       "reference": "Referenz"
     }
+  },
+  "gantt": {
+    "title": "Gantt-Diagramm",
+    "description": "Phasen + Schritte über die Zeit. Klick auf einen Balken öffnet den Schritt. Heute-Linie rot, Meilensteine mit ★ markiert."
   },
   "timeline": {
     "title": "Timeline & Meilensteine",
