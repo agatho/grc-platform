@@ -187,6 +187,15 @@ export default function ProgrammeCockpitPage({
                 {t("dashboard.openEvents")}
               </Link>
             </Button>
+            <Button asChild variant="outline">
+              <a
+                href={`/api/v1/programmes/journeys/${id}/audit-pack`}
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {t("dashboard.auditPack")}
+              </a>
+            </Button>
             <Button
               variant="outline"
               onClick={() => {

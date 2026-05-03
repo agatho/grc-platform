@@ -1711,6 +1711,13 @@ export const NAV_GROUPS_CONDENSED: NavGroup[] = [
         moduleKey: "programme",
       },
       {
+        labelKey: "nav.condensed.platformPortfolio",
+        href: "/programmes/portfolio",
+        icon: Layers,
+        roles: ["admin", "risk_manager", "auditor"],
+        moduleKey: "programme",
+      },
+      {
         labelKey: "nav.condensed.platformTools",
         href: "/copilot",
         icon: Bot,
