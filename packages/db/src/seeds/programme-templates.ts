@@ -18,6 +18,7 @@ import {
   type PdcaPhase,
 } from "../schema/programme";
 import { eq, and } from "drizzle-orm";
+import { CIS_TEMPLATES } from "./cis-controls-templates";
 
 // ──────────────────────────────────────────────────────────────
 // Type-defs für Seed-Daten
@@ -1955,6 +1956,8 @@ export const PROGRAMME_TEMPLATE_SEEDS: SeedTemplate[] = [
   ISO_22301_TEMPLATE,
   GDPR_TEMPLATE,
   ISO_42001_TEMPLATE,
+  // CIS Controls v8 — IG1, IG2, IG3 (additiv)
+  ...(CIS_TEMPLATES as unknown as SeedTemplate[]),
 ];
 
 // ──────────────────────────────────────────────────────────────
