@@ -67,6 +67,7 @@
   "dashboard": {
     "health": "Health reason",
     "openTimeline": "Open timeline",
+    "openGantt": "Gantt chart",
     "openEvents": "Activity log",
     "auditPack": "Audit pack (PDF)",
     "deleteJourney": "Delete programme",
@@ -208,6 +209,10 @@
       "deliverable": "deliverable",
       "reference": "reference"
     }
+  },
+  "gantt": {
+    "title": "Gantt chart",
+    "description": "Phases + steps over time. Click a bar to open the step. Today line in red, milestones marked with ★."
   },
   "timeline": {
     "title": "Timeline & milestones",

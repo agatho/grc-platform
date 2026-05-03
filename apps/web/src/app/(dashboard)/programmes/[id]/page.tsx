@@ -183,6 +183,11 @@ export default function ProgrammeCockpitPage({
               </Link>
             </Button>
             <Button asChild variant="outline">
+              <Link href={`/programmes/${id}/gantt`}>
+                {t("dashboard.openGantt")}
+              </Link>
+            </Button>
+            <Button asChild variant="outline">
               <Link href={`/programmes/${id}/events`}>
                 {t("dashboard.openEvents")}
               </Link>
