@@ -44,6 +44,7 @@
     "health": "Status-Begründung",
     "openTimeline": "Timeline öffnen",
     "openEvents": "Aktivitäts-Log",
+    "auditPack": "Audit-Pack (PDF)",
     "deleteJourney": "Programm löschen",
     "deleteDialogTitle": "Programm löschen",
     "deleteDialogBody": "Du löschst das Programm „{name}\". Es wird nicht aus dem Cockpit angezeigt, bleibt aber im Audit-Log und in der Datenbank erhalten (Soft-Delete). Wiederherstellung nur per SQL.",
