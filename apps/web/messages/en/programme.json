@@ -1,5 +1,29 @@
 {
   "loading": "Loading …",
+  "portfolio": {
+    "title": "Programme Portfolio",
+    "description": "Cross-programme overview of all active journeys in your organization. Aggregate KPIs, upcoming milestones, blockers at a glance — the steering view.",
+    "backToList": "Back to programme list",
+    "kpiJourneys": "Active programmes",
+    "kpiSteps": "Steps (done/total)",
+    "kpiOverdue": "Overdue steps",
+    "kpiBlocked": "Blocked steps",
+    "kpiMilestones30d": "Milestones in 30 d",
+    "filterMsType": "Filter management system",
+    "allMsTypes": "All types",
+    "cardSteps": "Steps",
+    "cardSubtasks": "Subtasks",
+    "cardOverdue": "Overdue",
+    "cardMilestones": "Milestones 30d",
+    "targetDate": "Target",
+    "empty": "No programmes match the current filter."
+  },
+  "notifications": {
+    "title": "Programme notifications",
+    "empty": "No open notifications.",
+    "markAllRead": "Mark all as read",
+    "viewAll": "Show all"
+  },
   "myWork": {
     "title": "My programme tasks",
     "description": "All steps and subtasks from the Programme Cockpit where you are the assigned owner. Sorted by due date, grouped by programme.",
