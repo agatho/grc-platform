@@ -6,7 +6,9 @@
     "createButton": "New Programme",
     "empty": "No programme started yet.",
     "startedAt": "Started",
-    "targetDate": "Target date"
+    "targetDate": "Target date",
+    "delete": "Delete",
+    "confirmDelete": "Really delete programme \"{name}\"?\n\nThe journey is soft-deleted (deletedAt set). Audit log and all steps/subtasks are preserved."
   },
   "new": {
     "title": "Create new programme",
@@ -25,6 +27,13 @@
     "health": "Health reason",
     "openTimeline": "Open timeline",
     "openEvents": "Activity log",
+    "deleteJourney": "Delete programme",
+    "deleteDialogTitle": "Delete programme",
+    "deleteDialogBody": "You are deleting the programme \"{name}\". It will not be shown in the cockpit anymore but is retained in the audit log and database (soft-delete). Recovery only via SQL.",
+    "deleteDialogSoftHint": "Note: For permanent removal contact the DBA. Soft-deletes are kept by design so ISO 27001 §10 audit requirements stay satisfied.",
+    "deleteConfirmLabel": "Type \"{name}\" to confirm:",
+    "deleteCancel": "Cancel",
+    "deleteConfirmButton": "Delete permanently",
     "progressTitle": "Progress",
     "aggregate": {
       "total": "Total steps",
