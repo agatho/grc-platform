@@ -1,5 +1,22 @@
 {
   "loading": "Loading …",
+  "myWork": {
+    "title": "My programme tasks",
+    "description": "All steps and subtasks from the Programme Cockpit where you are the assigned owner. Sorted by due date, grouped by programme.",
+    "backToList": "Back to programme list",
+    "kpiTotal": "Open tasks",
+    "kpiOverdue": "Overdue",
+    "kpiDueSoon": "Due in 7 days",
+    "filterIncludeCompleted": "Include completed",
+    "filterAllMsTypes": "All management systems",
+    "kindStep": "Step",
+    "kindSubtask": "Task",
+    "partOf": "part of",
+    "openStep": "Open",
+    "overdueDays": "{days, plural, one {1 day} other {# days}} overdue",
+    "emptyOpen": "No open tasks for you. Toggle \"Include completed\" above to see history.",
+    "emptyAll": "You are currently not assigned to any programme tasks."
+  },
   "list": {
     "title": "Programme Cockpit",
     "description": "Guided introduction journeys for management systems — pick a programme or start a new one from a standard template.",
