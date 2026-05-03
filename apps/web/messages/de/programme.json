@@ -1,12 +1,31 @@
 {
   "loading": "Lade …",
+  "myWork": {
+    "title": "Meine Programm-Aufgaben",
+    "description": "Alle Schritte und Sub-Aufgaben aus dem Programm-Cockpit, bei denen du als Verantwortlicher eingetragen bist. Sortiert nach Fälligkeit, gruppiert nach Programm.",
+    "backToList": "Zurück zur Programm-Liste",
+    "kpiTotal": "Offene Aufgaben",
+    "kpiOverdue": "Überfällig",
+    "kpiDueSoon": "Fällig in 7 Tagen",
+    "filterIncludeCompleted": "Auch abgeschlossene anzeigen",
+    "filterAllMsTypes": "Alle Managementsysteme",
+    "kindStep": "Schritt",
+    "kindSubtask": "Aufgabe",
+    "partOf": "Teil von",
+    "openStep": "Öffnen",
+    "overdueDays": "{days, plural, one {1 Tag} other {# Tage}} überfällig",
+    "emptyOpen": "Keine offenen Aufgaben für dich. Aktiviere oben „Auch abgeschlossene anzeigen\" um die Historie zu sehen.",
+    "emptyAll": "Du bist aktuell für keine Programm-Aufgaben verantwortlich."
+  },
   "list": {
     "title": "Programm-Cockpit",
     "description": "Geführte Einführungsprozesse für Managementsysteme — wähle ein Programm oder erstelle ein neues aus einer Norm-Vorlage.",
     "createButton": "Neues Programm",
     "empty": "Noch kein Programm gestartet.",
     "startedAt": "Gestartet",
-    "targetDate": "Zieldatum"
+    "targetDate": "Zieldatum",
+    "delete": "Löschen",
+    "confirmDelete": "Programm „{name}\" wirklich löschen?\n\nDie Journey wird soft-gelöscht (deletedAt gesetzt). Audit-Log und alle Schritte/Subtasks bleiben erhalten."
   },
   "new": {
     "title": "Neues Programm anlegen",
@@ -25,6 +44,13 @@
     "health": "Status-Begründung",
     "openTimeline": "Timeline öffnen",
     "openEvents": "Aktivitäts-Log",
+    "deleteJourney": "Programm löschen",
+    "deleteDialogTitle": "Programm löschen",
+    "deleteDialogBody": "Du löschst das Programm „{name}\". Es wird nicht aus dem Cockpit angezeigt, bleibt aber im Audit-Log und in der Datenbank erhalten (Soft-Delete). Wiederherstellung nur per SQL.",
+    "deleteDialogSoftHint": "Tipp: Wenn du es endgültig entfernen willst, kontaktiere den DBA — wir lassen Soft-Deletes bewusst stehen, damit Audit-Anforderungen nach ISO 27001 §10 weiter erfüllt sind.",
+    "deleteConfirmLabel": "Tippe „{name}\" zur Bestätigung:",
+    "deleteCancel": "Abbrechen",
+    "deleteConfirmButton": "Endgültig löschen",
     "progressTitle": "Fortschritt",
     "aggregate": {
       "total": "Schritte gesamt",

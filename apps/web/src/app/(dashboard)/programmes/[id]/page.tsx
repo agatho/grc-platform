@@ -1,12 +1,25 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Loader2, Trash2 } from "lucide-react";
 import { ProgrammeStatusBadge } from "@/components/programme/programme-status-badge";
 import { ProgrammeProgressBar } from "@/components/programme/programme-progress-bar";
 import { NextActionsWidget } from "@/components/programme/next-actions-widget";
@@ -63,9 +76,31 @@ export default function ProgrammeCockpitPage({
 }) {
   const { id } = use(params);
   const t = useTranslations("programme");
+  const router = useRouter();
   const [data, setData] = useState<DashboardData | null>(null);
   const [steps, setSteps] = useState<KanbanStep[]>([]);
   const [error, setError] = useState<string | null>(null);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
+
+  async function handleDelete() {
+    setDeleting(true);
+    setError(null);
+    try {
+      const r = await fetch(`/api/v1/programmes/journeys/${id}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? j.reason ?? `HTTP ${r.status}`);
+      }
+      router.push("/programmes");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+      setDeleting(false);
+    }
+  }
 
   useEffect(() => {
     let cancelled = false;
@@ -152,8 +187,70 @@ export default function ProgrammeCockpitPage({
                 {t("dashboard.openEvents")}
               </Link>
             </Button>
+            <Button
+              variant="outline"
+              onClick={() => {
+                setDeleteOpen(true);
+                setDeleteConfirm("");
+              }}
+              className="text-red-600 hover:bg-red-50 hover:text-red-700 dark:hover:bg-red-950"
+            >
+              <Trash2 className="mr-2 size-4" />
+              {t("dashboard.deleteJourney")}
+            </Button>
           </div>
         </header>
+
+        <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {t("dashboard.deleteDialogTitle")}
+              </AlertDialogTitle>
+              <AlertDialogDescription className="space-y-3">
+                <span className="block">
+                  {t("dashboard.deleteDialogBody", { name: j.name })}
+                </span>
+                <span className="block text-xs text-slate-500">
+                  {t("dashboard.deleteDialogSoftHint")}
+                </span>
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="space-y-2">
+              <Label htmlFor="delete-confirm-input">
+                {t("dashboard.deleteConfirmLabel", { name: j.name })}
+              </Label>
+              <Input
+                id="delete-confirm-input"
+                value={deleteConfirm}
+                onChange={(e) => setDeleteConfirm(e.target.value)}
+                autoComplete="off"
+                placeholder={j.name}
+              />
+            </div>
+            {error && (
+              <div className="rounded-md border border-red-200 bg-red-50 p-2 text-sm text-red-800">
+                {error}
+              </div>
+            )}
+            <AlertDialogFooter>
+              <AlertDialogCancel disabled={deleting}>
+                {t("dashboard.deleteCancel")}
+              </AlertDialogCancel>
+              <AlertDialogAction
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleDelete();
+                }}
+                disabled={deleting || deleteConfirm !== j.name}
+                className="bg-red-600 text-white hover:bg-red-700"
+              >
+                {deleting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                {t("dashboard.deleteConfirmButton")}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
 
         <BlockersAlert journeyId={id} />
 

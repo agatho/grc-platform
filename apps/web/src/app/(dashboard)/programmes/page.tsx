@@ -6,7 +6,7 @@ import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Loader2, Plus } from "lucide-react";
+import { Loader2, Plus, Trash2 } from "lucide-react";
 import { ProgrammeStatusBadge } from "@/components/programme/programme-status-badge";
 import { ProgrammeProgressBar } from "@/components/programme/programme-progress-bar";
 import type { ProgrammeJourneyStatus } from "@grc/shared";
@@ -28,24 +28,45 @@ export default function ProgrammesListPage() {
   const t = useTranslations("programme");
   const [journeys, setJourneys] = useState<JourneyRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  async function load() {
+    try {
+      const r = await fetch("/api/v1/programmes/journeys");
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
+      const json = await r.json();
+      setJourneys(json.data ?? []);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const r = await fetch("/api/v1/programmes/journeys");
-        if (!r.ok) throw new Error(`HTTP ${r.status}`);
-        const json = await r.json();
-        if (!cancelled) setJourneys(json.data ?? []);
-      } catch (err) {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+    load();
   }, []);
+
+  async function handleDelete(j: JourneyRow) {
+    const ok = window.confirm(t("list.confirmDelete", { name: j.name }));
+    if (!ok) return;
+    setDeletingId(j.id);
+    try {
+      const r = await fetch(`/api/v1/programmes/journeys/${j.id}`, {
+        method: "DELETE",
+      });
+      if (!r.ok) {
+        const json = await r.json().catch(() => ({}));
+        throw new Error(json.error ?? json.reason ?? `HTTP ${r.status}`);
+      }
+      // Optimistic UI: remove from local state immediately, then re-fetch.
+      setJourneys((prev) => (prev ?? []).filter((x) => x.id !== j.id));
+      await load();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setDeletingId(null);
+    }
+  }
 
   return (
     <ModuleGate moduleKey="programme">
@@ -100,7 +121,22 @@ export default function ProgrammesListPage() {
                       >
                         {j.name}
                       </Link>
-                      <ProgrammeStatusBadge status={j.status} />
+                      <div className="flex items-center gap-2">
+                        <ProgrammeStatusBadge status={j.status} />
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(j)}
+                          disabled={deletingId === j.id}
+                          title={t("list.delete")}
+                          className="rounded p-1 text-slate-400 transition hover:bg-red-50 hover:text-red-600 disabled:opacity-50 dark:hover:bg-red-950"
+                        >
+                          {deletingId === j.id ? (
+                            <Loader2 className="size-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="size-4" />
+                          )}
+                        </button>
+                      </div>
                     </CardTitle>
                     <p className="text-xs font-mono uppercase text-slate-500">
                       {t(`msType.${j.msType}`)} • {j.templateCode}@
