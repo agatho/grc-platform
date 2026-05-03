@@ -4,6 +4,7 @@ import { SessionProvider } from "next-auth/react";
 import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme-provider";
+import { LegalFooter } from "@/components/layout/legal-footer";
 import "@/styles/globals.css";
 
 // All pages require authentication — skip static generation at build time
@@ -45,7 +46,10 @@ export default async function RootLayout({
         <SessionProvider>
           <ThemeProvider>
             <NextIntlClientProvider messages={messages}>
-              {children}
+              <div className="flex min-h-screen flex-col">
+                <div className="flex-1">{children}</div>
+                <LegalFooter />
+              </div>
             </NextIntlClientProvider>
           </ThemeProvider>
         </SessionProvider>
