@@ -1,5 +1,29 @@
 {
   "loading": "Lade …",
+  "portfolio": {
+    "title": "Programm-Portfolio",
+    "description": "Übergreifender Überblick über alle aktiven Programme deiner Organisation. Aggregierte KPIs, kommende Meilensteine, Blocker auf einen Blick — die Steering-Sicht.",
+    "backToList": "Zurück zur Programm-Liste",
+    "kpiJourneys": "Aktive Programme",
+    "kpiSteps": "Schritte (erledigt/total)",
+    "kpiOverdue": "Überfällige Schritte",
+    "kpiBlocked": "Blockierte Schritte",
+    "kpiMilestones30d": "Meilensteine in 30 d",
+    "filterMsType": "Filter Managementsystem",
+    "allMsTypes": "Alle Typen",
+    "cardSteps": "Schritte",
+    "cardSubtasks": "Aufgaben",
+    "cardOverdue": "Überfällig",
+    "cardMilestones": "Meilensteine 30 d",
+    "targetDate": "Ziel",
+    "empty": "Keine Programme im aktuellen Filter."
+  },
+  "notifications": {
+    "title": "Programm-Benachrichtigungen",
+    "empty": "Keine offenen Benachrichtigungen.",
+    "markAllRead": "Alle als gelesen markieren",
+    "viewAll": "Alle anzeigen"
+  },
   "myWork": {
     "title": "Meine Programm-Aufgaben",
     "description": "Alle Schritte und Sub-Aufgaben aus dem Programm-Cockpit, bei denen du als Verantwortlicher eingetragen bist. Sortiert nach Fälligkeit, gruppiert nach Programm.",
