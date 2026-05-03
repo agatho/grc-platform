@@ -44,6 +44,7 @@
     "health": "Health reason",
     "openTimeline": "Open timeline",
     "openEvents": "Activity log",
+    "auditPack": "Audit pack (PDF)",
     "deleteJourney": "Delete programme",
     "deleteDialogTitle": "Delete programme",
     "deleteDialogBody": "You are deleting the programme \"{name}\". It will not be shown in the cockpit anymore but is retained in the audit log and database (soft-delete). Recovery only via SQL.",
