@@ -1,5 +1,22 @@
 {
   "loading": "Lade …",
+  "myWork": {
+    "title": "Meine Programm-Aufgaben",
+    "description": "Alle Schritte und Sub-Aufgaben aus dem Programm-Cockpit, bei denen du als Verantwortlicher eingetragen bist. Sortiert nach Fälligkeit, gruppiert nach Programm.",
+    "backToList": "Zurück zur Programm-Liste",
+    "kpiTotal": "Offene Aufgaben",
+    "kpiOverdue": "Überfällig",
+    "kpiDueSoon": "Fällig in 7 Tagen",
+    "filterIncludeCompleted": "Auch abgeschlossene anzeigen",
+    "filterAllMsTypes": "Alle Managementsysteme",
+    "kindStep": "Schritt",
+    "kindSubtask": "Aufgabe",
+    "partOf": "Teil von",
+    "openStep": "Öffnen",
+    "overdueDays": "{days, plural, one {1 Tag} other {# Tage}} überfällig",
+    "emptyOpen": "Keine offenen Aufgaben für dich. Aktiviere oben „Auch abgeschlossene anzeigen\" um die Historie zu sehen.",
+    "emptyAll": "Du bist aktuell für keine Programm-Aufgaben verantwortlich."
+  },
   "list": {
     "title": "Programm-Cockpit",
     "description": "Geführte Einführungsprozesse für Managementsysteme — wähle ein Programm oder erstelle ein neues aus einer Norm-Vorlage.",
