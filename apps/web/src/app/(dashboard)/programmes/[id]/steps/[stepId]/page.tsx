@@ -159,6 +159,10 @@ export default function StepDetailPage({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
   const [newSubtaskDescription, setNewSubtaskDescription] = useState("");
 
+  // Evidence upload state
+  const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+
   // New link state
   const [showNewLink, setShowNewLink] = useState(false);
   const [linkKind, setLinkKind] = useState<LinkKind>("risk");
@@ -402,6 +406,54 @@ export default function StepDetailPage({
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
     }
+  }
+
+  async function uploadEvidence(file: File) {
+    setUploading(true);
+    setUploadProgress(`${file.name} (${Math.round(file.size / 1024)} KB)`);
+    setError(null);
+    try {
+      const fd = new FormData();
+      fd.append("file", file);
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/evidence/upload`,
+        { method: "POST", body: fd },
+      );
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? `HTTP ${r.status}`);
+      }
+      const j = await r.json();
+      // Append the new link to local state
+      if (j.data?.link) {
+        setLinks((prev) => [j.data.link, ...prev]);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setUploading(false);
+      setUploadProgress(null);
+    }
+  }
+
+  function handleEvidenceFileInput(e: React.ChangeEvent<HTMLInputElement>) {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
+    uploadEvidence(files[0]);
+    // Reset so the same file can be picked again
+    e.target.value = "";
+  }
+
+  function handleEvidenceDrop(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
+    if (uploading) return;
+    const files = e.dataTransfer.files;
+    if (!files || files.length === 0) return;
+    uploadEvidence(files[0]);
+  }
+
+  function handleEvidenceDragOver(e: React.DragEvent<HTMLDivElement>) {
+    e.preventDefault();
   }
 
   async function deleteLink(linkId: string) {
@@ -959,6 +1011,55 @@ export default function StepDetailPage({
             </div>
           </CardHeader>
           <CardContent className="space-y-3">
+            {/* Evidence upload drop zone */}
+            <div
+              onDrop={handleEvidenceDrop}
+              onDragOver={handleEvidenceDragOver}
+              className={
+                "rounded-md border-2 border-dashed p-4 text-sm transition " +
+                (uploading
+                  ? "border-blue-400 bg-blue-50/40 dark:border-blue-700 dark:bg-blue-950/30"
+                  : "border-slate-200 bg-slate-50/40 hover:border-slate-300 dark:border-slate-800 dark:bg-slate-900/40")
+              }
+            >
+              <div className="flex items-center justify-between gap-3">
+                <div className="text-slate-600 dark:text-slate-400">
+                  {uploading ? (
+                    <span className="flex items-center gap-2">
+                      <Loader2 className="size-4 animate-spin" />
+                      {t("link.uploading", { name: uploadProgress ?? "" })}
+                    </span>
+                  ) : (
+                    <>
+                      <strong>{t("link.dropZoneTitle")}</strong>
+                      <br />
+                      <span className="text-xs text-slate-500">
+                        {t("link.dropZoneHint")}
+                      </span>
+                    </>
+                  )}
+                </div>
+                <label className="cursor-pointer">
+                  <input
+                    type="file"
+                    onChange={handleEvidenceFileInput}
+                    disabled={uploading}
+                    className="hidden"
+                    accept=".pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv,.md,.png,.jpg,.jpeg,.svg,.json,.xml"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    disabled={uploading}
+                    asChild
+                  >
+                    <span>{t("link.uploadButton")}</span>
+                  </Button>
+                </label>
+              </div>
+            </div>
+
             {links.length === 0 && !showNewLink && (
               <p className="text-sm text-slate-500">{t("link.empty")}</p>
             )}
