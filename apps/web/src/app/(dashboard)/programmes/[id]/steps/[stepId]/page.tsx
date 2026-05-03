@@ -142,6 +142,18 @@ export default function StepDetailPage({
   const [editOwnerId, setEditOwnerId] = useState<string>("");
   const [editDueDate, setEditDueDate] = useState("");
 
+  // Bulk-select state
+  const [selectMode, setSelectMode] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [bulkAction, setBulkAction] = useState<
+    "" | "status" | "owner" | "dueShift" | "dueSet"
+  >("");
+  const [bulkStatus, setBulkStatus] = useState<SubtaskStatus>("pending");
+  const [bulkOwnerId, setBulkOwnerId] = useState("");
+  const [bulkDueShift, setBulkDueShift] = useState<number>(7);
+  const [bulkDueDate, setBulkDueDate] = useState("");
+  const [bulkBusy, setBulkBusy] = useState(false);
+
   // New subtask state
   const [showNewSubtask, setShowNewSubtask] = useState(false);
   const [newSubtaskTitle, setNewSubtaskTitle] = useState("");
@@ -249,6 +261,66 @@ export default function StepDetailPage({
       setSubtasks((prev) => prev.map((s) => (s.id === subtaskId ? j.data : s)));
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  function toggleSelected(id: string) {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  }
+
+  function selectAllVisible() {
+    setSelectedIds(new Set(subtasks.map((s) => s.id)));
+  }
+
+  function clearSelection() {
+    setSelectedIds(new Set());
+  }
+
+  async function applyBulkAction() {
+    if (selectedIds.size === 0 || !bulkAction) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const update: Record<string, unknown> = {};
+      if (bulkAction === "status") update.status = bulkStatus;
+      if (bulkAction === "owner") update.ownerId = bulkOwnerId || null;
+      if (bulkAction === "dueShift") update.dueDateShiftDays = bulkDueShift;
+      if (bulkAction === "dueSet") update.dueDate = bulkDueDate || null;
+
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/subtasks/bulk`,
+        {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            subtaskIds: Array.from(selectedIds),
+            update,
+          }),
+        },
+      );
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? j.reason ?? `HTTP ${r.status}`);
+      }
+      // Reload all subtasks (server-side date shift needs re-fetch)
+      const sr = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/subtasks`,
+      );
+      if (sr.ok) {
+        const j = await sr.json();
+        setSubtasks(j.data ?? []);
+      }
+      clearSelection();
+      setBulkAction("");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setBulkBusy(false);
     }
   }
 
@@ -576,17 +648,140 @@ export default function StepDetailPage({
         {/* Subtasks */}
         <Card>
           <CardHeader>
-            <div className="flex items-center justify-between">
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle>{t("subtask.title")}</CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowNewSubtask(true)}
-              >
-                <Plus className="mr-1 size-4" />
-                {t("subtask.add")}
-              </Button>
+              <div className="flex items-center gap-2">
+                {subtasks.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant={selectMode ? "default" : "outline"}
+                    onClick={() => {
+                      if (selectMode) clearSelection();
+                      setSelectMode(!selectMode);
+                      setBulkAction("");
+                    }}
+                  >
+                    {selectMode
+                      ? t("subtask.bulkExit")
+                      : t("subtask.bulkEnter")}
+                  </Button>
+                )}
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowNewSubtask(true)}
+                >
+                  <Plus className="mr-1 size-4" />
+                  {t("subtask.add")}
+                </Button>
+              </div>
             </div>
+            {selectMode && (
+              <div className="mt-3 flex flex-wrap items-center gap-2 rounded-md border border-blue-200 bg-blue-50/40 p-2 text-xs dark:border-blue-900 dark:bg-blue-950/20">
+                <span className="font-medium">
+                  {t("subtask.bulkSelected", { count: selectedIds.size })}
+                </span>
+                <button
+                  type="button"
+                  onClick={selectAllVisible}
+                  className="text-blue-700 hover:underline"
+                >
+                  {t("subtask.bulkSelectAll")}
+                </button>
+                <button
+                  type="button"
+                  onClick={clearSelection}
+                  className="text-slate-700 hover:underline"
+                >
+                  {t("subtask.bulkClear")}
+                </button>
+                {selectedIds.size > 0 && (
+                  <>
+                    <span className="text-slate-400">|</span>
+                    <select
+                      value={bulkAction}
+                      onChange={(e) =>
+                        setBulkAction(e.target.value as typeof bulkAction)
+                      }
+                      className="h-7 rounded border border-slate-200 bg-transparent px-2 dark:border-slate-700"
+                    >
+                      <option value="">{t("subtask.bulkChooseAction")}</option>
+                      <option value="status">
+                        {t("subtask.bulkActionStatus")}
+                      </option>
+                      <option value="owner">
+                        {t("subtask.bulkActionOwner")}
+                      </option>
+                      <option value="dueShift">
+                        {t("subtask.bulkActionDueShift")}
+                      </option>
+                      <option value="dueSet">
+                        {t("subtask.bulkActionDueSet")}
+                      </option>
+                    </select>
+                    {bulkAction === "status" && (
+                      <select
+                        value={bulkStatus}
+                        onChange={(e) =>
+                          setBulkStatus(e.target.value as SubtaskStatus)
+                        }
+                        className="h-7 rounded border border-slate-200 bg-transparent px-2 dark:border-slate-700"
+                      >
+                        {SUBTASK_STATUSES.map((s) => (
+                          <option key={s} value={s}>
+                            {t(`subtask.status.${s}`)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {bulkAction === "owner" && (
+                      <select
+                        value={bulkOwnerId}
+                        onChange={(e) => setBulkOwnerId(e.target.value)}
+                        className="h-7 rounded border border-slate-200 bg-transparent px-2 dark:border-slate-700"
+                      >
+                        <option value="">{t("subtask.unassigned")}</option>
+                        {users.map((u) => (
+                          <option key={u.id} value={u.id}>
+                            {u.name || u.email}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                    {bulkAction === "dueShift" && (
+                      <input
+                        type="number"
+                        value={bulkDueShift}
+                        onChange={(e) =>
+                          setBulkDueShift(parseInt(e.target.value, 10) || 0)
+                        }
+                        min={-365}
+                        max={365}
+                        className="h-7 w-20 rounded border border-slate-200 bg-transparent px-2 dark:border-slate-700"
+                      />
+                    )}
+                    {bulkAction === "dueSet" && (
+                      <input
+                        type="date"
+                        value={bulkDueDate}
+                        onChange={(e) => setBulkDueDate(e.target.value)}
+                        className="h-7 rounded border border-slate-200 bg-transparent px-2 dark:border-slate-700"
+                      />
+                    )}
+                    <Button
+                      size="sm"
+                      onClick={applyBulkAction}
+                      disabled={bulkBusy || !bulkAction}
+                    >
+                      {bulkBusy && (
+                        <Loader2 className="mr-1 size-3 animate-spin" />
+                      )}
+                      {t("subtask.bulkApply")}
+                    </Button>
+                  </>
+                )}
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-3">
             {subtasks.length === 0 && !showNewSubtask && (
@@ -595,26 +790,42 @@ export default function StepDetailPage({
             {subtasks.map((sub) => (
               <div
                 key={sub.id}
-                className="rounded-md border border-slate-200 p-3 dark:border-slate-800"
+                className={
+                  "rounded-md border p-3 transition " +
+                  (selectMode && selectedIds.has(sub.id)
+                    ? "border-blue-400 bg-blue-50/30 dark:border-blue-700 dark:bg-blue-950/30"
+                    : "border-slate-200 dark:border-slate-800")
+                }
               >
                 <div className="flex items-start gap-3">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      patchSubtask(sub.id, {
-                        status:
-                          sub.status === "completed" ? "pending" : "completed",
-                      })
-                    }
-                    className="mt-0.5 shrink-0"
-                    title={
-                      sub.status === "completed"
-                        ? t("subtask.markIncomplete")
-                        : t("subtask.markComplete")
-                    }
-                  >
-                    <StatusIcon status={sub.status} />
-                  </button>
+                  {selectMode ? (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(sub.id)}
+                      onChange={() => toggleSelected(sub.id)}
+                      className="mt-1 size-4 shrink-0 rounded border-slate-300"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() =>
+                        patchSubtask(sub.id, {
+                          status:
+                            sub.status === "completed"
+                              ? "pending"
+                              : "completed",
+                        })
+                      }
+                      className="mt-0.5 shrink-0"
+                      title={
+                        sub.status === "completed"
+                          ? t("subtask.markIncomplete")
+                          : t("subtask.markComplete")
+                      }
+                    >
+                      <StatusIcon status={sub.status} />
+                    </button>
+                  )}
                   <div className="min-w-0 flex-1">
                     <div
                       className={
