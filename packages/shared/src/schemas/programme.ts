@@ -112,6 +112,12 @@ export const updateStepSchema = z.object({
     .nullable()
     .optional(),
   completionNotes: z.string().max(5000).optional(),
+  // Cost + effort tracking (Sprint 4)
+  costEstimate: z.number().min(0).max(99999999).nullable().optional(),
+  costActual: z.number().min(0).max(99999999).nullable().optional(),
+  costCurrency: z.string().length(3).optional(),
+  effortHours: z.number().int().min(0).max(99999).nullable().optional(),
+  budgetId: z.string().uuid().nullable().optional(),
 });
 export type UpdateStepInput = z.infer<typeof updateStepSchema>;
 

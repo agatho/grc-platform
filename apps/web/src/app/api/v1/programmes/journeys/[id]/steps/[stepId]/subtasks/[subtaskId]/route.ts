@@ -26,6 +26,11 @@ const patchSubtaskSchema = z
       .optional(),
     completionNotes: z.string().max(5000).nullable().optional(),
     deliverableType: z.string().max(80).nullable().optional(),
+    // Cost + effort tracking (Sprint 4)
+    costEstimate: z.number().min(0).max(99999999).nullable().optional(),
+    costActual: z.number().min(0).max(99999999).nullable().optional(),
+    costCurrency: z.string().length(3).optional(),
+    effortHours: z.number().int().min(0).max(99999).nullable().optional(),
   })
   .refine((d) => Object.keys(d).length > 0, { message: "Empty body" });
 
