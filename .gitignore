@@ -27,3 +27,6 @@ apps/web/messages/en.json
 .claude/
 CLAUDE.md
 uploads/
+
+# Serena MCP local project state (auto-generated)
+.serena/
