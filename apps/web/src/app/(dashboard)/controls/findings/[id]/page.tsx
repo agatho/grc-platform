@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CreateRemediationButton } from "@/components/programme/create-remediation-button";
 import type { Finding, Evidence, FindingStatus } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
@@ -161,25 +162,34 @@ function FindingDetailInner() {
   return (
     <div className="space-y-6">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => router.push("/controls/findings")}
-        >
-          <ArrowLeft size={16} />
-        </Button>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">{finding.title}</h1>
-          <div className="flex items-center gap-2 mt-1">
-            <FindingSeverityBadge severity={finding.severity} />
-            <Badge
-              variant="outline"
-              className={statusBadgeClass(finding.status)}
-            >
-              {t(`status.${finding.status}`)}
-            </Badge>
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => router.push("/controls/findings")}
+          >
+            <ArrowLeft size={16} />
+          </Button>
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">{finding.title}</h1>
+            <div className="flex items-center gap-2 mt-1">
+              <FindingSeverityBadge severity={finding.severity} />
+              <Badge
+                variant="outline"
+                className={statusBadgeClass(finding.status)}
+              >
+                {t(`status.${finding.status}`)}
+              </Badge>
+            </div>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <CreateRemediationButton
+            findingId={finding.id}
+            findingTitle={finding.title}
+            findingSeverity={finding.severity}
+          />
         </div>
       </div>
 
