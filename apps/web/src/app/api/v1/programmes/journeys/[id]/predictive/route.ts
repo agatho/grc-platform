@@ -12,15 +12,36 @@ import {
   programmeJourney,
   programmeJourneyStep,
   programmeJourneySubtask,
-  programmeJourneyEvent,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { eq, and, isNull, gte, sql } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 
 export async function GET(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
+) {
+  try {
+    return await handleGet(req, params);
+  } catch (err) {
+    console.error("[predictive] uncaught error", err);
+    return Response.json(
+      {
+        error: "Predictive failed",
+        message: err instanceof Error ? err.message : String(err),
+        stack:
+          process.env.NODE_ENV !== "production" && err instanceof Error
+            ? err.stack
+            : undefined,
+      },
+      { status: 500 },
+    );
+  }
+}
+
+async function handleGet(
+  req: Request,
+  params: Promise<{ id: string }>,
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
