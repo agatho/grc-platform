@@ -17,7 +17,7 @@
     "@grc/shared": "^0.1.0",
     "@hono/node-server": "^1.13.7",
     "hono": "^4.12.16",
-    "svix": "^1.89.0"
+    "svix": "^1.92.2"
   },
   "devDependencies": {
     "@vitest/coverage-v8": "^4.1.5",
