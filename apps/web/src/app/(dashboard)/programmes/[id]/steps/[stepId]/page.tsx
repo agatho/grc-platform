@@ -141,6 +141,8 @@ export default function StepDetailPage({
   const [editingHeader, setEditingHeader] = useState(false);
   const [editOwnerId, setEditOwnerId] = useState<string>("");
   const [editDueDate, setEditDueDate] = useState("");
+  const [editCostEstimate, setEditCostEstimate] = useState<string>("");
+  const [editEffortHours, setEditEffortHours] = useState<string>("");
 
   // Bulk-select state
   const [selectMode, setSelectMode] = useState(false);
@@ -162,6 +164,60 @@ export default function StepDetailPage({
   // Evidence upload state
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState<string | null>(null);
+
+  // Evidence suggestions
+  interface Suggestion {
+    kind: string;
+    id: string;
+    title: string;
+    score: number;
+    reason: string;
+  }
+  const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
+  const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+
+  async function loadSuggestions() {
+    setSuggestionsLoading(true);
+    try {
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/evidence/suggest`,
+      );
+      if (r.ok) {
+        const j = await r.json();
+        setSuggestions(j.data?.suggestions ?? []);
+      }
+    } finally {
+      setSuggestionsLoading(false);
+    }
+  }
+
+  async function acceptSuggestion(s: { kind: string; id: string; title: string }) {
+    setError(null);
+    try {
+      const r = await fetch(
+        `/api/v1/programmes/journeys/${id}/steps/${stepId}/links`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            targetKind: s.kind,
+            targetId: s.id,
+            targetLabel: s.title,
+            linkType: "related",
+          }),
+        },
+      );
+      if (!r.ok) {
+        const j = await r.json().catch(() => ({}));
+        throw new Error(j.error ?? `HTTP ${r.status}`);
+      }
+      const j = await r.json();
+      setLinks((prev) => [j.data, ...prev]);
+      setSuggestions((prev) => prev.filter((x) => x.id !== s.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
+  }
 
   // New link state
   const [showNewLink, setShowNewLink] = useState(false);
@@ -192,6 +248,8 @@ export default function StepDetailPage({
       setData(stepJson.data);
       setEditOwnerId(stepJson.data.step.ownerId ?? "");
       setEditDueDate(stepJson.data.step.dueDate ?? "");
+      setEditCostEstimate(stepJson.data.step.costEstimate?.toString() ?? "");
+      setEditEffortHours(stepJson.data.step.effortHours?.toString() ?? "");
       if (subR.ok) {
         const j = await subR.json();
         setSubtasks(j.data ?? []);
@@ -225,6 +283,8 @@ export default function StepDetailPage({
           body: JSON.stringify({
             ownerId: editOwnerId || null,
             dueDate: editDueDate || null,
+            costEstimate: editCostEstimate ? parseFloat(editCostEstimate) : null,
+            effortHours: editEffortHours ? parseInt(editEffortHours, 10) : null,
           }),
         },
       );
@@ -676,6 +736,30 @@ export default function StepDetailPage({
                     onChange={(e) => setEditDueDate(e.target.value)}
                   />
                 </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="step-cost">Kosten-Schätzung (EUR)</Label>
+                    <Input
+                      id="step-cost"
+                      type="number"
+                      min="0"
+                      step="100"
+                      value={editCostEstimate}
+                      onChange={(e) => setEditCostEstimate(e.target.value)}
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label htmlFor="step-effort">Aufwand (Stunden)</Label>
+                    <Input
+                      id="step-effort"
+                      type="number"
+                      min="0"
+                      step="1"
+                      value={editEffortHours}
+                      onChange={(e) => setEditEffortHours(e.target.value)}
+                    />
+                  </div>
+                </div>
                 <div className="flex justify-end gap-2">
                   <Button
                     variant="outline"
@@ -1000,15 +1084,60 @@ export default function StepDetailPage({
           <CardHeader>
             <div className="flex items-center justify-between">
               <CardTitle>{t("link.title")}</CardTitle>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => setShowNewLink(true)}
-              >
-                <Plus className="mr-1 size-4" />
-                {t("link.add")}
-              </Button>
+              <div className="flex items-center gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => loadSuggestions()}
+                  disabled={suggestionsLoading}
+                >
+                  {suggestionsLoading && (
+                    <Loader2 className="mr-1 size-3 animate-spin" />
+                  )}
+                  Vorschläge
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowNewLink(true)}
+                >
+                  <Plus className="mr-1 size-4" />
+                  {t("link.add")}
+                </Button>
+              </div>
             </div>
+            {suggestions.length > 0 && (
+              <div className="mt-3 rounded-md border border-purple-200 bg-purple-50/40 p-3 dark:border-purple-900 dark:bg-purple-950/20">
+                <div className="mb-2 text-xs font-semibold text-purple-900 dark:text-purple-200">
+                  {suggestions.length} Vorschläge basierend auf Step-Kontext
+                </div>
+                <ul className="space-y-1.5">
+                  {suggestions.map((s) => (
+                    <li
+                      key={`${s.kind}-${s.id}`}
+                      className="flex items-center justify-between gap-2 text-sm"
+                    >
+                      <span className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">
+                          {s.kind}
+                        </Badge>
+                        <span>{s.title}</span>
+                        <span className="text-xs text-slate-500">
+                          ({s.reason})
+                        </span>
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => acceptSuggestion(s)}
+                        className="rounded border border-purple-300 px-2 py-0.5 text-xs hover:bg-purple-100 dark:border-purple-700 dark:hover:bg-purple-900"
+                      >
+                        + verlinken
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
           </CardHeader>
           <CardContent className="space-y-3">
             {/* Evidence upload drop zone */}
@@ -1195,6 +1324,104 @@ export default function StepDetailPage({
                 </div>
               </div>
             )}
+          </CardContent>
+        </Card>
+
+        {/* Approval-Workflow */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Approval-Workflow</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <div className="text-sm text-slate-600 dark:text-slate-400">
+              Genehmigungs-Pflicht für Status-Übergang aktivieren oder als Reviewer zustimmen/ablehnen.
+            </div>
+            <div className="flex flex-wrap items-center gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const target = window.prompt(
+                    "Für welchen Ziel-Status soll Approval geholt werden? (z. B. completed)",
+                    "completed",
+                  );
+                  if (!target) return;
+                  const notes = window.prompt(
+                    "Optionale Notiz für Reviewer:",
+                    "",
+                  );
+                  await fetch(
+                    `/api/v1/programmes/journeys/${id}/approval`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "request",
+                        stepId,
+                        targetStatus: target,
+                        notes,
+                      }),
+                    },
+                  );
+                  await load();
+                }}
+              >
+                Approval anfragen
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const notes = window.prompt(
+                    "Approval-Notiz (Reviewer):",
+                    "",
+                  );
+                  await fetch(
+                    `/api/v1/programmes/journeys/${id}/approval`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "approve",
+                        stepId,
+                        notes,
+                      }),
+                    },
+                  );
+                  await load();
+                }}
+                className="text-emerald-700"
+              >
+                Approve (Admin)
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={async () => {
+                  const notes = window.prompt(
+                    "Begründung für Ablehnung:",
+                    "",
+                  );
+                  if (!notes) return;
+                  await fetch(
+                    `/api/v1/programmes/journeys/${id}/approval`,
+                    {
+                      method: "POST",
+                      headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({
+                        action: "reject",
+                        stepId,
+                        notes,
+                      }),
+                    },
+                  );
+                  await load();
+                }}
+                className="text-red-700"
+              >
+                Reject (Admin)
+              </Button>
+            </div>
           </CardContent>
         </Card>
 

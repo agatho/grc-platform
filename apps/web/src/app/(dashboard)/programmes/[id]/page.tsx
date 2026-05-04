@@ -24,6 +24,7 @@ import { ProgrammeStatusBadge } from "@/components/programme/programme-status-ba
 import { ProgrammeProgressBar } from "@/components/programme/programme-progress-bar";
 import { NextActionsWidget } from "@/components/programme/next-actions-widget";
 import { BlockersAlert } from "@/components/programme/blockers-alert";
+import { PredictiveWidget } from "@/components/programme/predictive-widget";
 import {
   PhaseKanban,
   type KanbanPhase,
@@ -201,6 +202,11 @@ export default function ProgrammeCockpitPage({
                 {t("dashboard.auditPack")}
               </a>
             </Button>
+            <Button asChild variant="outline">
+              <Link href={`/programmes/${id}/audit-simulation`}>
+                Synthetic-Auditor
+              </Link>
+            </Button>
             <Button
               variant="outline"
               onClick={() => {
@@ -332,6 +338,8 @@ export default function ProgrammeCockpitPage({
           </Card>
           <NextActionsWidget journeyId={id} limit={5} />
         </div>
+
+        <PredictiveWidget journeyId={id} />
 
         <PhaseKanban journeyId={id} phases={data.phases} steps={steps} />
       </div>
