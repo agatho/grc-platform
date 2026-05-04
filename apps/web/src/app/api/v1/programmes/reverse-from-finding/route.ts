@@ -20,6 +20,7 @@ import {
   programmeStepLink,
   programmeJourneyEvent,
   programmeTemplate,
+  finding,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -315,5 +316,35 @@ export async function POST(req: Request) {
     return { journey, stepIds: [step1.id, step2.id, step3.id] };
   });
 
-  return Response.json({ data: result }, { status: 201 });
+  // Auto-update Finding-Status to "in_remediation" if currently "identified".
+  // Damit ist die Verbindung zwischen Audit-Modul und Cockpit auch im Audit-
+  // Workflow sichtbar (Finding wird automatisch als "in Behebung" markiert).
+  let findingUpdated = false;
+  if (parsed.data.findingId) {
+    try {
+      const updated = await db
+        .update(finding)
+        .set({
+          status: "in_remediation",
+          updatedAt: new Date(),
+          updatedBy: ctx.userId,
+        })
+        .where(
+          and(
+            eq(finding.id, parsed.data.findingId),
+            eq(finding.orgId, ctx.orgId),
+            eq(finding.status, "identified"),
+          ),
+        )
+        .returning({ id: finding.id });
+      findingUpdated = updated.length > 0;
+    } catch (err) {
+      console.error("[reverse-from-finding] finding status update failed", err);
+    }
+  }
+
+  return Response.json(
+    { data: { ...result, findingUpdated } },
+    { status: 201 },
+  );
 }
