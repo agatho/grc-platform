@@ -52,7 +52,7 @@ jobs:
         run: npx tsx scripts/coverage-aggregate.ts
 
       - name: Upload aggregated summary (JSON + Markdown)
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-summary
           path: |
@@ -61,7 +61,7 @@ jobs:
           retention-days: 30
 
       - name: Upload per-package HTML reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-html
           path: |
@@ -70,7 +70,7 @@ jobs:
           retention-days: 14
 
       - name: Upload LCOV files for downstream tools (Codecov etc.)
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v7
         with:
           name: coverage-lcov
           path: |
