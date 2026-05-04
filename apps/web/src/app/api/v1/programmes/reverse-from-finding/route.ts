@@ -89,6 +89,25 @@ export async function POST(req: Request) {
 
   const journeyName = `Behebung: ${parsed.data.findingTitle}`.slice(0, 200);
 
+  // FK sentinels — phase + step both need NOT NULL FK to template tables.
+  // Reverse-Journeys have no real template context, so we reuse any existing
+  // template_phase_id / template_step_id from the org as a sentinel value.
+  const phaseSentinelRows = await db
+    .select({ id: programmeJourneyPhase.templatePhaseId })
+    .from(programmeJourneyPhase)
+    .where(eq(programmeJourneyPhase.orgId, ctx.orgId))
+    .limit(1);
+  const sentinelTplPhaseId = phaseSentinelRows[0]?.id;
+  if (!sentinelTplPhaseId) {
+    return Response.json(
+      {
+        error:
+          "Cannot create reverse journey: no existing journey phase in org (need any template_phase as FK sentinel — create at least one normal journey first)",
+      },
+      { status: 500 },
+    );
+  }
+
   const result = await withAuditContext(ctx, async () => {
     // Create journey
     const [journey] = await db
@@ -125,7 +144,7 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         journeyId: journey.id,
-        templatePhaseId: null as unknown as string, // sentinel — relax FK
+        templatePhaseId: sentinelTplPhaseId,
         code: "remediation",
         sequence: 0,
         name: "Behebung",

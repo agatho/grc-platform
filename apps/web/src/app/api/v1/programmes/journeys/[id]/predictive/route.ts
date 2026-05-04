@@ -67,11 +67,13 @@ export async function GET(
       completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgo})::int`,
     })
     .from(programmeJourneySubtask)
-    .where(eq(programmeJourneySubtask.orgId, ctx.orgId))
     .where(
-      sql`${programmeJourneySubtask.journeyStepId} in (
-        select id from programme_journey_step where journey_id = ${id}
-      )`,
+      and(
+        eq(programmeJourneySubtask.orgId, ctx.orgId),
+        sql`${programmeJourneySubtask.journeyStepId} in (
+          select id from programme_journey_step where journey_id = ${id}
+        )`,
+      ),
     );
 
   // Items per day velocity (over 60-day window)
