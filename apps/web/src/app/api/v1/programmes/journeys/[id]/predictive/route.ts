@@ -2,8 +2,12 @@
 //
 // Predictive Completion Date + What-if-Simulator.
 //
-// Aktuell statistisch (kein ML): berechnet Velocity aus den letzten 60 Tagen
-// (completed Steps + Subtasks pro Tag), extrapoliert auf restliches Backlog.
+// Aktuell statistisch (kein ML): berechnet Velocity über das Velocity-Fenster
+// (= min(60d, Projektalter)) als completed-Items / Tag und extrapoliert auf
+// das restliche Backlog. Bei Projekten <14d wird zusätzlich ein
+// Kalibrierungs-Hinweis (`isCalibrating`) gesetzt — der Forecast existiert
+// dann zwar, ist aber statistisch noch unzuverlässig (1 Datenpunkt × 60 ≠ Trend).
+//
 // Liefert auch What-if-Variante: "wenn die kritische Phase X um N Tage
 // verschoben wird, wann ist Cert?".
 
@@ -69,19 +73,36 @@ async function handleGet(
   const shiftDaysParam = url.searchParams.get("shiftDays");
   const shiftDays = shiftDaysParam ? parseInt(shiftDaysParam, 10) : 0;
 
-  // Velocity: count Step+Subtask completions in last 60 days.
+  // Determine velocity window: min(60d, project age in days).
+  // Projektalter zählt ab startedAt (falls gesetzt), sonst createdAt — Plan-
+  // Status hat oft kein startedAt, in dem Fall ist createdAt die natürliche
+  // Untergrenze. Mindestens 1 Tag, sonst Division-by-Zero.
+  const startSourceStr = journey.startedAt ?? journey.createdAt ?? null;
+  const startMs =
+    startSourceStr instanceof Date
+      ? startSourceStr.getTime()
+      : startSourceStr
+        ? new Date(startSourceStr).getTime()
+        : Date.now();
+  const ageDays = Math.max(
+    1,
+    Math.floor((Date.now() - startMs) / 86_400_000),
+  );
+  const velocityWindowDays = Math.min(60, ageDays);
+  const isCalibrating = ageDays < 14;
+
   // NB: Date object as raw sql binding sends JS toString() to Postgres
   // ("Fri Mar 06 2026 03:44:16 GMT+0000 (..)") — invalid timestamp format.
   // Convert to ISO 8601 explicitly so node-postgres binds it as `timestamp`.
-  const sixtyDaysAgoIso = new Date(
-    Date.now() - 60 * 86_400_000,
+  const windowStartIso = new Date(
+    Date.now() - velocityWindowDays * 86_400_000,
   ).toISOString();
 
   const [stepStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
       completed: sql<number>`count(*) filter (where status = 'completed')::int`,
-      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgoIso}::timestamptz)::int`,
+      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${windowStartIso}::timestamptz)::int`,
     })
     .from(programmeJourneyStep)
     .where(eq(programmeJourneyStep.journeyId, id));
@@ -90,7 +111,7 @@ async function handleGet(
     .select({
       total: sql<number>`count(*)::int`,
       completed: sql<number>`count(*) filter (where status = 'completed')::int`,
-      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgoIso}::timestamptz)::int`,
+      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${windowStartIso}::timestamptz)::int`,
     })
     .from(programmeJourneySubtask)
     .where(
@@ -102,10 +123,10 @@ async function handleGet(
       ),
     );
 
-  // Items per day velocity (over 60-day window)
+  // Items per day velocity over the dynamic velocity window
   const totalCompletedRecently =
     stepStats.completedRecently + subStats.completedRecently;
-  const velocityPerDay = totalCompletedRecently / 60;
+  const velocityPerDay = totalCompletedRecently / velocityWindowDays;
 
   const totalRemaining =
     stepStats.total -
@@ -158,6 +179,13 @@ async function handleGet(
         targetCompletionDate: journey.targetCompletionDate,
       },
       velocity: {
+        windowDays: velocityWindowDays,
+        ageDays,
+        isCalibrating,
+        completedItemsInWindow: totalCompletedRecently,
+        // Backwards-compat alias — frontends die noch completedItemsLast60d
+        // lesen, kriegen den gleichen Wert. Neue Code-Pfade nutzen
+        // completedItemsInWindow.
         completedItemsLast60d: totalCompletedRecently,
         itemsPerDay: Math.round(velocityPerDay * 100) / 100,
         health: velocityHealth,
