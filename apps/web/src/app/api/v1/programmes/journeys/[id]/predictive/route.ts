@@ -69,14 +69,19 @@ async function handleGet(
   const shiftDaysParam = url.searchParams.get("shiftDays");
   const shiftDays = shiftDaysParam ? parseInt(shiftDaysParam, 10) : 0;
 
-  // Velocity: count Step+Subtask completions in last 60 days
-  const sixtyDaysAgo = new Date(Date.now() - 60 * 86_400_000);
+  // Velocity: count Step+Subtask completions in last 60 days.
+  // NB: Date object as raw sql binding sends JS toString() to Postgres
+  // ("Fri Mar 06 2026 03:44:16 GMT+0000 (..)") — invalid timestamp format.
+  // Convert to ISO 8601 explicitly so node-postgres binds it as `timestamp`.
+  const sixtyDaysAgoIso = new Date(
+    Date.now() - 60 * 86_400_000,
+  ).toISOString();
 
   const [stepStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
       completed: sql<number>`count(*) filter (where status = 'completed')::int`,
-      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgo})::int`,
+      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgoIso}::timestamptz)::int`,
     })
     .from(programmeJourneyStep)
     .where(eq(programmeJourneyStep.journeyId, id));
@@ -85,7 +90,7 @@ async function handleGet(
     .select({
       total: sql<number>`count(*)::int`,
       completed: sql<number>`count(*) filter (where status = 'completed')::int`,
-      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgo})::int`,
+      completedRecently: sql<number>`count(*) filter (where status = 'completed' and completed_at >= ${sixtyDaysAgoIso}::timestamptz)::int`,
     })
     .from(programmeJourneySubtask)
     .where(
