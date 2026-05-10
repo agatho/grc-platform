@@ -20,6 +20,7 @@ import {
   programmeStepLink,
   programmeJourneyEvent,
   programmeTemplate,
+  finding,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -88,6 +89,25 @@ export async function POST(req: Request) {
 
   const journeyName = `Behebung: ${parsed.data.findingTitle}`.slice(0, 200);
 
+  // FK sentinels — phase + step both need NOT NULL FK to template tables.
+  // Reverse-Journeys have no real template context, so we reuse any existing
+  // template_phase_id / template_step_id from the org as a sentinel value.
+  const phaseSentinelRows = await db
+    .select({ id: programmeJourneyPhase.templatePhaseId })
+    .from(programmeJourneyPhase)
+    .where(eq(programmeJourneyPhase.orgId, ctx.orgId))
+    .limit(1);
+  const sentinelTplPhaseId = phaseSentinelRows[0]?.id;
+  if (!sentinelTplPhaseId) {
+    return Response.json(
+      {
+        error:
+          "Cannot create reverse journey: no existing journey phase in org (need any template_phase as FK sentinel — create at least one normal journey first)",
+      },
+      { status: 500 },
+    );
+  }
+
   const result = await withAuditContext(ctx, async () => {
     // Create journey
     const [journey] = await db
@@ -124,7 +144,7 @@ export async function POST(req: Request) {
       .values({
         orgId: ctx.orgId,
         journeyId: journey.id,
-        templatePhaseId: null as unknown as string, // sentinel — relax FK
+        templatePhaseId: sentinelTplPhaseId,
         code: "remediation",
         sequence: 0,
         name: "Behebung",
@@ -315,5 +335,35 @@ export async function POST(req: Request) {
     return { journey, stepIds: [step1.id, step2.id, step3.id] };
   });
 
-  return Response.json({ data: result }, { status: 201 });
+  // Auto-update Finding-Status to "in_remediation" if currently "identified".
+  // Damit ist die Verbindung zwischen Audit-Modul und Cockpit auch im Audit-
+  // Workflow sichtbar (Finding wird automatisch als "in Behebung" markiert).
+  let findingUpdated = false;
+  if (parsed.data.findingId) {
+    try {
+      const updated = await db
+        .update(finding)
+        .set({
+          status: "in_remediation",
+          updatedAt: new Date(),
+          updatedBy: ctx.userId,
+        })
+        .where(
+          and(
+            eq(finding.id, parsed.data.findingId),
+            eq(finding.orgId, ctx.orgId),
+            eq(finding.status, "identified"),
+          ),
+        )
+        .returning({ id: finding.id });
+      findingUpdated = updated.length > 0;
+    } catch (err) {
+      console.error("[reverse-from-finding] finding status update failed", err);
+    }
+  }
+
+  return Response.json(
+    { data: { ...result, findingUpdated } },
+    { status: 201 },
+  );
 }

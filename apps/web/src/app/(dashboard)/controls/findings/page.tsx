@@ -16,6 +16,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
+import { CreateRemediationButton } from "@/components/programme/create-remediation-button";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -239,6 +240,19 @@ function FindingsPageInner() {
             </span>
           );
         },
+      },
+      {
+        id: "remediation",
+        header: "",
+        cell: ({ row }) => (
+          <CreateRemediationButton
+            findingId={row.original.id}
+            findingTitle={row.original.title}
+            findingSeverity={row.original.severity}
+            variant="outline"
+            size="sm"
+          />
+        ),
       },
     ],
     [t],

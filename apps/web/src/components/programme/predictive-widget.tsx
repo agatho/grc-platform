@@ -6,6 +6,15 @@ import { Loader2, TrendingUp, AlertTriangle, CheckCircle2 } from "lucide-react";
 
 interface PredictiveData {
   velocity: {
+    /** Aktives Velocity-Fenster in Tagen — min(60, Projektalter) */
+    windowDays?: number;
+    /** Projektalter in Tagen seit startedAt/createdAt */
+    ageDays?: number;
+    /** True wenn Projekt jünger als 14 Tage — Forecast unzuverlässig */
+    isCalibrating?: boolean;
+    /** Items abgeschlossen im Velocity-Fenster (neuer Name) */
+    completedItemsInWindow?: number;
+    /** Backwards-compat alias auf completedItemsInWindow */
     completedItemsLast60d: number;
     itemsPerDay: number;
     health: "healthy" | "slow" | "very_slow" | "stalled";
@@ -88,18 +97,38 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
           ? "text-amber-700"
           : "text-red-700";
 
+  const windowDays = data.velocity.windowDays ?? 60;
+  const ageDays = data.velocity.ageDays;
+  const isCalibrating = data.velocity.isCalibrating ?? false;
+
   return (
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <TrendingUp className="size-4" />
           Predictive Completion
+          {isCalibrating && (
+            <span className="ml-2 inline-flex items-center gap-1 rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-xs font-medium text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+              <AlertTriangle className="size-3" />
+              Kalibrierung
+            </span>
+          )}
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4 text-sm">
+        {isCalibrating && (
+          <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
+            Projekt läuft erst {ageDays ?? "?"} Tag{ageDays === 1 ? "" : "e"} —
+            Velocity wird über dieses kurze Fenster hochgerechnet, der
+            Forecast ist statistisch noch unzuverlässig. Ab Tag 14 wird er
+            belastbarer.
+          </div>
+        )}
         <div className="grid grid-cols-3 gap-3">
           <div>
-            <div className="text-xs text-slate-500">Velocity (60 d)</div>
+            <div className="text-xs text-slate-500">
+              Velocity ({windowDays} d)
+            </div>
             <div className={`text-lg font-semibold ${HEALTH_COLORS[data.velocity.health]}`}>
               {data.velocity.itemsPerDay}/Tag
             </div>

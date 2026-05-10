@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useTranslations } from "next-intl";
@@ -30,6 +30,7 @@ import {
   type KanbanPhase,
   type KanbanStep,
 } from "@/components/programme/phase-kanban";
+import { CustomStepDialog } from "@/components/programme/custom-step-dialog";
 import type { ProgrammeJourneyStatus } from "@grc/shared";
 import { use } from "react";
 
@@ -103,31 +104,26 @@ export default function ProgrammeCockpitPage({
     }
   }
 
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const [dashRes, stepsRes] = await Promise.all([
-          fetch(`/api/v1/programmes/journeys/${id}/dashboard`),
-          fetch(`/api/v1/programmes/journeys/${id}/steps`),
-        ]);
-        if (!dashRes.ok) throw new Error(`Dashboard HTTP ${dashRes.status}`);
-        if (!stepsRes.ok) throw new Error(`Steps HTTP ${stepsRes.status}`);
-        const dashJson = await dashRes.json();
-        const stepsJson = await stepsRes.json();
-        if (!cancelled) {
-          setData(dashJson.data);
-          setSteps(stepsJson.data ?? []);
-        }
-      } catch (err) {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : String(err));
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
+  const loadData = useCallback(async () => {
+    try {
+      const [dashRes, stepsRes] = await Promise.all([
+        fetch(`/api/v1/programmes/journeys/${id}/dashboard`),
+        fetch(`/api/v1/programmes/journeys/${id}/steps`),
+      ]);
+      if (!dashRes.ok) throw new Error(`Dashboard HTTP ${dashRes.status}`);
+      if (!stepsRes.ok) throw new Error(`Steps HTTP ${stepsRes.status}`);
+      const dashJson = await dashRes.json();
+      const stepsJson = await stepsRes.json();
+      setData(dashJson.data);
+      setSteps(stepsJson.data ?? []);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    }
   }, [id]);
+
+  useEffect(() => {
+    void loadData();
+  }, [loadData]);
 
   if (error) {
     return (
@@ -178,6 +174,15 @@ export default function ProgrammeCockpitPage({
             )}
           </div>
           <div className="flex flex-col items-end gap-2">
+            <CustomStepDialog
+              journeyId={id}
+              phases={data.phases.map((p) => ({
+                id: p.id,
+                name: p.name,
+                pdcaPhase: p.pdcaPhase ?? undefined,
+              }))}
+              onCreated={() => void loadData()}
+            />
             <Button asChild variant="outline">
               <Link href={`/programmes/${id}/timeline`}>
                 {t("dashboard.openTimeline")}
