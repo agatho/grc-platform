@@ -21,14 +21,8 @@ export const sharedCoverageConfig: CoverageOptions = {
     "**/seeds/**",
     "**/seed*.ts",
   ],
-  // No global thresholds yet — start tracking, then ratchet up over sprints.
-  // To enforce, uncomment and tune:
-  // thresholds: {
-  //   statements: 60,
-  //   branches: 50,
-  //   functions: 60,
-  //   lines: 60,
-  // },
-  all: false,
-  cleanOnRerun: true,
-};
+  // Coverage thresholds (enabled 2026-05-10).
+  //
+  // Strategy: ratchet, don't block. Start at the conservative base
+  // (40 % lines / 30 % branches) so existing CI doesn't break, then raise
+  // by 5 percentage points per sprint until each package crosses 60/50.

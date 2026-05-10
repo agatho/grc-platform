@@ -2,11 +2,17 @@
   "name": "@grc/events",
   "version": "0.1.0",
   "main": "src/index.ts",
+  "scripts": {
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
   "dependencies": {
     "@grc/db": "*",
     "@grc/shared": "*"
   },
   "devDependencies": {
-    "typescript": "^5.7"
+    "typescript": "^5.7",
+    "vitest": "^4.0",
+    "@vitest/coverage-v8": "^4.0"
   }
 }

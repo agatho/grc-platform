@@ -1,8 +1,10 @@
 # ARCTOS — Audit, Risk, Compliance & Trust Operating System
 
+> **📊 Aktueller Reifegrad-Stand:** siehe [`docs/STATUS.md`](./docs/STATUS.md) — Single Source of Truth für Sprint-Stand, Test-Coverage, RLS-Lücken und Migration-Fortschritt. Diese Datei (`CLAUDE.md`) beschreibt **Architektur und Konventionen**; dort findest du, wo das Projekt heute steht.
+
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. 74 entities, 31 catalog frameworks (~2,100 entries), 15 modules, 94 migrations completed.
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **107 Drizzle schemas, 545 DB tables, 278 SQL migrations (latest: `0299`), 1.606 API routes, 453+ Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings.** Current release: **0.1.0-alpha** (2026-04-20).
 
 ## Tech Stack
 
@@ -382,7 +384,4 @@ Extensions: pgcrypto, uuid-ossp, vector, timescaledb
 9. **Status transitions enforced server-side** — check valid transitions before updating
 10. **Finding entity is shared** — Sprint 4 finding used by ICS, Audit, BCMS exercises
 11. **Bulk operations capped at 100** — Zod schema validates max array length
-12. **Worker jobs for scheduled tasks** — `apps/worker/src/jobs/` with cron registration
-13. **API routes return JSON 401** — never redirect API calls to login page
-14. **Catalog seed data uses generic `catalog` + `catalog_entry` tables** — not the typed risk_catalog/control_catalog
-15. **Cost fields on actionable entities** — control, risk_treatment, dpia_measure, continuity_strategy all carry cost_onetime, cost_annual, effort_hours, budget_id
+12. **Worker jobs 

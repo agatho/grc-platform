@@ -30,3 +30,7 @@ uploads/
 
 # Serena MCP local project state (auto-generated)
 .serena/
+
+# Helper verification scripts (Cowork sandbox couldn't delete; canonical tests in tests/)
+packages/*/run-*.ts
+packages/*/run-*.mjs
