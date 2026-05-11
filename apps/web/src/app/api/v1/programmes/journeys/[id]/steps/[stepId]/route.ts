@@ -102,19 +102,18 @@ export async function PATCH(
     );
   }
 
-  // Convert numeric fields from zod (number) to drizzle's expected string
-  // representation for the `numeric` columns. null stays null, undefined
-  // is omitted via spreading so the column doesn't get touched.
-  const { costEstimate, costActual, effortHours, ...rest } = parsed.data;
+  // costEstimate / costActual are `numeric` columns (string-typed in
+  // drizzle), but the zod schema produces numbers. effortHours is a plain
+  // integer column. Build the update payload explicitly so each field has
+  // the right type and undefined values are omitted entirely (so we don't
+  // accidentally null out a column the caller didn't touch).
+  const { costEstimate, costActual, ...rest } = parsed.data;
   const numericUpdate = {
     ...(costEstimate !== undefined && {
       costEstimate: costEstimate === null ? null : String(costEstimate),
     }),
     ...(costActual !== undefined && {
       costActual: costActual === null ? null : String(costActual),
-    }),
-    ...(effortHours !== undefined && {
-      effortHours: effortHours === null ? null : String(effortHours),
     }),
   };
 
