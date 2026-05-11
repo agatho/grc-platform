@@ -16,7 +16,8 @@ describe("processEamAssessmentReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/eam-assessment-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/eam-assessment-reminder");
     const fn = mod["processEamAssessmentReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

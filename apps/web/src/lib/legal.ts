@@ -96,14 +96,16 @@ export interface PrivacyData {
 export function getPrivacyData(): PrivacyData {
   const imprint = getImprintData();
   return {
-    controllerName:
-      env("PRIVACY_CONTROLLER_NAME") ?? imprint.companyName,
+    controllerName: env("PRIVACY_CONTROLLER_NAME") ?? imprint.companyName,
     controllerAddress:
       env("PRIVACY_CONTROLLER_ADDRESS") ??
       `${imprint.street}, ${imprint.city}, ${imprint.country}`,
     dpoName: env("PRIVACY_DPO_NAME"),
     dpoEmail: env("PRIVACY_DPO_EMAIL"),
-    hostingLocation: env("PRIVACY_HOSTING_LOCATION", "Hetzner Online GmbH, Deutschland")!,
+    hostingLocation: env(
+      "PRIVACY_HOSTING_LOCATION",
+      "Hetzner Online GmbH, Deutschland",
+    )!,
     supervisoryAuthority:
       env("PRIVACY_SUPERVISORY_AUTHORITY") ??
       "Bayerisches Landesamt für Datenschutzaufsicht (BayLDA), Promenade 18, 91522 Ansbach",

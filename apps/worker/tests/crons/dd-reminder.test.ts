@@ -16,7 +16,8 @@ describe("processDdReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/dd-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/dd-reminder");
     const fn = mod["processDdReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

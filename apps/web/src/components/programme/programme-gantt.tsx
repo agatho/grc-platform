@@ -158,8 +158,7 @@ export function ProgrammeGantt({
                 <span
                   className="mr-2 inline-block size-2 rounded-full"
                   style={{
-                    backgroundColor:
-                      PHASE_COLORS[phase.pdcaPhase] ?? "#64748b",
+                    backgroundColor: PHASE_COLORS[phase.pdcaPhase] ?? "#64748b",
                   }}
                 />
                 {phase.name}
@@ -202,10 +201,10 @@ export function ProgrammeGantt({
                     title={s.name}
                   >
                     {s.isMilestone && <span className="mr-1">★</span>}
-                    <span className="font-mono text-slate-500">{s.code}</span>{" "}
-                    {s.name.length > 32
-                      ? s.name.slice(0, 30) + "…"
-                      : s.name}
+                    <span className="font-mono text-slate-500">
+                      {s.code}
+                    </span>{" "}
+                    {s.name.length > 32 ? s.name.slice(0, 30) + "…" : s.name}
                   </Link>
                 </div>
                 <div className="relative h-7 flex-1 border-l border-slate-200 dark:border-slate-700">
@@ -222,8 +221,7 @@ export function ProgrammeGantt({
                       style={{
                         left: `${Math.max(0, xPct(s.dueDate) - 4)}%`,
                         width: s.isMilestone ? "1rem" : "4rem",
-                        backgroundColor:
-                          STATUS_COLORS[s.status] ?? "#94a3b8",
+                        backgroundColor: STATUS_COLORS[s.status] ?? "#94a3b8",
                       }}
                       title={`${s.code} fällig: ${s.dueDate}`}
                     >

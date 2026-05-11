@@ -28,9 +28,8 @@ describe("processVendorReassessmentMonitor", () => {
 
   it("returns zero when no vendors are due", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processVendorReassessmentMonitor } = await import(
-      "../../src/crons/vendor-reassessment-monitor"
-    );
+    const { processVendorReassessmentMonitor } =
+      await import("../../src/crons/vendor-reassessment-monitor");
     const r = await processVendorReassessmentMonitor();
     expect(r).toBeDefined();
   });
@@ -50,9 +49,8 @@ describe("processVendorReassessmentMonitor", () => {
         },
       ]),
     );
-    const { processVendorReassessmentMonitor } = await import(
-      "../../src/crons/vendor-reassessment-monitor"
-    );
+    const { processVendorReassessmentMonitor } =
+      await import("../../src/crons/vendor-reassessment-monitor");
     await expect(processVendorReassessmentMonitor()).resolves.toBeDefined();
   });
 });

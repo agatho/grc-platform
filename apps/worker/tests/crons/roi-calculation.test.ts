@@ -16,7 +16,8 @@ describe("processRoiCalculation", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/roi-calculation");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/roi-calculation");
     const fn = mod["processRoiCalculation"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -71,8 +71,8 @@ describe("encrypt / decrypt", () => {
     // Decode, flip last byte of the ciphertext part, re-encode
     const decoded = Buffer.from(ct, "base64").toString("utf8");
     const [iv, tag, ciphertext] = decoded.split(":");
-    const tamperedHex = ciphertext.slice(0, -1) +
-      (ciphertext.slice(-1) === "0" ? "1" : "0");
+    const tamperedHex =
+      ciphertext.slice(0, -1) + (ciphertext.slice(-1) === "0" ? "1" : "0");
     const tampered = Buffer.from(`${iv}:${tag}:${tamperedHex}`).toString(
       "base64",
     );
@@ -91,9 +91,9 @@ describe("getKey behaviour (via encrypt/decrypt)", () => {
     const old = process.env.WB_ENCRYPTION_KEY;
     delete process.env.WB_ENCRYPTION_KEY;
     // Re-import to bypass module cache: vitest evaluates per-test
-    const mod = await import("../src/wb-crypto?case-missing-key" as never).catch(
-      () => null,
-    );
+    const mod = await import(
+      "../src/wb-crypto?case-missing-key" as never
+    ).catch(() => null);
     if (mod) {
       expect(() => mod.encrypt("x")).toThrow(/WB_ENCRYPTION_KEY/);
     } else {

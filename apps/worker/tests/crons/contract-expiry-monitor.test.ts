@@ -31,9 +31,8 @@ describe("processContractExpiryMonitor", () => {
     mockDb.select
       .mockReturnValueOnce(chainable([])) // expired contracts
       .mockReturnValueOnce(chainable([])); // approaching notice
-    const { processContractExpiryMonitor } = await import(
-      "../../src/crons/contract-expiry-monitor"
-    );
+    const { processContractExpiryMonitor } =
+      await import("../../src/crons/contract-expiry-monitor");
     const r = await processContractExpiryMonitor();
     expect(r.processed).toBe(0);
     expect(r.notified).toBe(0);
@@ -56,9 +55,8 @@ describe("processContractExpiryMonitor", () => {
     mockDb.select
       .mockReturnValueOnce(chainable(expiredContracts))
       .mockReturnValueOnce(chainable([]));
-    const { processContractExpiryMonitor } = await import(
-      "../../src/crons/contract-expiry-monitor"
-    );
+    const { processContractExpiryMonitor } =
+      await import("../../src/crons/contract-expiry-monitor");
     const r = await processContractExpiryMonitor();
     expect(r.transitioned).toBe(1);
     expect(r.notified).toBe(1);
@@ -81,9 +79,8 @@ describe("processContractExpiryMonitor", () => {
     mockDb.select
       .mockReturnValueOnce(chainable(expiredContracts))
       .mockReturnValueOnce(chainable([]));
-    const { processContractExpiryMonitor } = await import(
-      "../../src/crons/contract-expiry-monitor"
-    );
+    const { processContractExpiryMonitor } =
+      await import("../../src/crons/contract-expiry-monitor");
     const r = await processContractExpiryMonitor();
     expect(r.transitioned).toBe(1);
     expect(r.notified).toBe(1);
@@ -111,9 +108,8 @@ describe("processContractExpiryMonitor", () => {
     mockDb.select
       .mockReturnValueOnce(chainable([]))
       .mockReturnValueOnce(chainable(approachingNotice));
-    const { processContractExpiryMonitor } = await import(
-      "../../src/crons/contract-expiry-monitor"
-    );
+    const { processContractExpiryMonitor } =
+      await import("../../src/crons/contract-expiry-monitor");
     const r = await processContractExpiryMonitor();
     expect(r.notified).toBe(1);
     const insertChain = mockDb.insert.mock.results[0]?.value as {

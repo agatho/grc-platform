@@ -112,9 +112,7 @@ export default function TimelinePage({
 
         <header>
           <h1 className="text-2xl font-semibold">{data.journey.name}</h1>
-          <p className="text-sm text-slate-500">
-            {t("timeline.title")}
-          </p>
+          <p className="text-sm text-slate-500">{t("timeline.title")}</p>
         </header>
 
         <Card>
@@ -128,8 +126,7 @@ export default function TimelinePage({
                 const end = dateToMs(phase.plannedEnd) ?? maxMs;
                 const offsetPct = ((start - minMs) / span) * 100;
                 const widthPct = Math.max(2, ((end - start) / span) * 100);
-                const pct =
-                  parseFloat(phase.progressPercent) || 0;
+                const pct = parseFloat(phase.progressPercent) || 0;
                 return (
                   <li key={phase.id}>
                     <div className="flex items-center justify-between text-sm">
@@ -192,7 +189,9 @@ export default function TimelinePage({
                       {m.name}
                     </span>
                     <span className="font-mono text-xs text-slate-500">
-                      {m.completedAt ? `✓ ${m.completedAt}` : (m.dueDate ?? "—")}
+                      {m.completedAt
+                        ? `✓ ${m.completedAt}`
+                        : (m.dueDate ?? "—")}
                     </span>
                   </li>
                 ))}

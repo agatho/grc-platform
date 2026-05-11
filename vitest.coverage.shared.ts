@@ -21,8 +21,17 @@ export const sharedCoverageConfig: CoverageOptions = {
     "**/seeds/**",
     "**/seed*.ts",
   ],
-  // Coverage thresholds (enabled 2026-05-10).
+  // Coverage thresholds are tracked separately per-package via overrides in
+  // each package's own vitest.config.ts (e.g. `coverage: { ...sharedCoverageConfig,
+  // thresholds: { lines: 80 } }`). The shared config deliberately does NOT
+  // enable a global threshold — measured baselines differ widely across
+  // packages and a global floor would block CI on the well-covered ones
+  // before the under-covered ones have caught up.
   //
-  // Strategy: ratchet, don't block. Start at the conservative base
-  // (40 % lines / 30 % branches) so existing CI doesn't break, then raise
-  // by 5 percentage points per sprint until each package crosses 60/50.
+  // Current observed baselines (coverage/aggregated-summary.md, 2026-04-30):
+  //   packages/auth:   51 % lines / 41 % branches
+  //   packages/shared: 81 % lines / 70 % branches
+  //   packages/events: 17 % lines / 5 % branches
+  // Ratchet up via per-package overrides once each package has a stable floor.
+  cleanOnRerun: true,
+};

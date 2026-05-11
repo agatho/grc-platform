@@ -155,8 +155,10 @@ describe("Exception list integrity", () => {
   it("each exception is a known append-only or platform table", () => {
     // Documentation check: every entry is justified.
     const justifications: Record<string, string> = {
-      audit_log: "Append-only hash-chain — needs platform-wide read for integrity check",
-      access_log: "Auth events — server-scoped, no per-org RLS context at write time",
+      audit_log:
+        "Append-only hash-chain — needs platform-wide read for integrity check",
+      access_log:
+        "Auth events — server-scoped, no per-org RLS context at write time",
       data_export_log: "Cross-org by definition for admin reporting",
       notification: "User-scoped not org-scoped",
       audit_anchor: "Worker-scoped, FreeTSA submission",

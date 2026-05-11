@@ -50,9 +50,9 @@ describe("validateStepTransition", () => {
   });
 
   it("rejects cancelled → anything (terminal)", () => {
-    expect(validateStepTransition({ from: "cancelled", to: "pending" }).ok).toBe(
-      false,
-    );
+    expect(
+      validateStepTransition({ from: "cancelled", to: "pending" }).ok,
+    ).toBe(false);
   });
 
   it("requires reason for skipped transition", () => {
@@ -102,9 +102,9 @@ describe("PROGRAMME_STEP_TRANSITIONS — graph integrity", () => {
   it("every transition target is a known status", () => {
     for (const targets of Object.values(PROGRAMME_STEP_TRANSITIONS)) {
       for (const t of targets) {
-        expect(
-          (PROGRAMME_STEP_STATUSES as readonly string[]).includes(t),
-        ).toBe(true);
+        expect((PROGRAMME_STEP_STATUSES as readonly string[]).includes(t)).toBe(
+          true,
+        );
       }
     }
   });

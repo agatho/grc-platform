@@ -16,7 +16,8 @@ describe("processPushNotifications", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/push-notification-sender");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/push-notification-sender");
     const fn = mod["processPushNotifications"];
     expect(typeof fn).toBe("function");
     let threw = false;

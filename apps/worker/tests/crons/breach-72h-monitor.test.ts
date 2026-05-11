@@ -24,7 +24,15 @@ vi.mock("@grc/db", () => ({
   notification: {},
 }));
 
-function breach(over: Partial<{ id: string; detectedAt: Date; dpoId: string | null; assigneeId: string | null; createdBy: string | null }> = {}) {
+function breach(
+  over: Partial<{
+    id: string;
+    detectedAt: Date;
+    dpoId: string | null;
+    assigneeId: string | null;
+    createdBy: string | null;
+  }> = {},
+) {
   return {
     id: "b1",
     orgId: "org",
@@ -45,9 +53,8 @@ describe("processBreach72hMonitor", () => {
 
   it("returns zero when no active breaches", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.processed).toBe(0);
     expect(r.notified).toBe(0);
@@ -57,9 +64,8 @@ describe("processBreach72hMonitor", () => {
     // ~23.5h ago → ~48.5h remaining → floor to 48 → in (>47 && <=48]
     const detectedAt = new Date(Date.now() - (23 * 3600 + 1800) * 1000);
     mockDb.select.mockReturnValueOnce(chainable([breach({ detectedAt })]));
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBeGreaterThanOrEqual(1);
   });
@@ -68,9 +74,8 @@ describe("processBreach72hMonitor", () => {
     // Detection ~47.5h ago → ~24.5h remaining → floor to 24 → in (>23 && <=24]
     const detectedAt = new Date(Date.now() - (47 * 3600 + 1800) * 1000);
     mockDb.select.mockReturnValueOnce(chainable([breach({ detectedAt })]));
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBe(1);
   });
@@ -78,9 +83,8 @@ describe("processBreach72hMonitor", () => {
   it("warns OVERDUE when 72h elapsed", async () => {
     const detectedAt = new Date(Date.now() - 80 * 3600 * 1000); // 80h ago = -8h remaining
     mockDb.select.mockReturnValueOnce(chainable([breach({ detectedAt })]));
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBe(1);
     const insertChain = mockDb.insert.mock.results[0]?.value as {
@@ -94,9 +98,8 @@ describe("processBreach72hMonitor", () => {
     // 36h ago = 36h remaining → not in any warning window
     const detectedAt = new Date(Date.now() - 36 * 3600 * 1000);
     mockDb.select.mockReturnValueOnce(chainable([breach({ detectedAt })]));
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBe(0);
   });
@@ -108,9 +111,8 @@ describe("processBreach72hMonitor", () => {
         breach({ detectedAt, dpoId: null, assigneeId: "assignee-1" }),
       ]),
     );
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBe(1);
     const payload = (
@@ -133,9 +135,8 @@ describe("processBreach72hMonitor", () => {
         }),
       ]),
     );
-    const { processBreach72hMonitor } = await import(
-      "../../src/crons/breach-72h-monitor"
-    );
+    const { processBreach72hMonitor } =
+      await import("../../src/crons/breach-72h-monitor");
     const r = await processBreach72hMonitor();
     expect(r.notified).toBe(0);
   });

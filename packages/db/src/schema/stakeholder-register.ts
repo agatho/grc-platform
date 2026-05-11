@@ -67,7 +67,9 @@ export const stakeholder = pgTable(
     contactName: varchar("contact_name", { length: 200 }),
     contactEmail: varchar("contact_email", { length: 320 }),
     contactPhone: varchar("contact_phone", { length: 50 }),
-    influence: stakeholderInfluenceEnum("influence").notNull().default("medium"),
+    influence: stakeholderInfluenceEnum("influence")
+      .notNull()
+      .default("medium"),
     interest: stakeholderInterestEnum("interest").notNull().default("medium"),
     // Power/Interest-Matrix Quadrant — abgeleitet, kann auch manuell überschrieben werden
     engagementStrategy: stakeholderEngagementStrategyEnum(

@@ -16,7 +16,8 @@ describe("processSovereigntyComplianceChecker", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/sovereignty-compliance-checker");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/sovereignty-compliance-checker");
     const fn = mod["processSovereigntyComplianceChecker"];
     expect(typeof fn).toBe("function");
     let threw = false;

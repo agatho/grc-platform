@@ -8,7 +8,7 @@
   },
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "react": "^19.2.6",
+    "react": "^19.2.5",
     "resend": "^6.12.3"
   },
   "devDependencies": {

@@ -172,7 +172,9 @@ function FindingDetailInner() {
             <ArrowLeft size={16} />
           </Button>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{finding.title}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">
+              {finding.title}
+            </h1>
             <div className="flex items-center gap-2 mt-1">
               <FindingSeverityBadge severity={finding.severity} />
               <Badge

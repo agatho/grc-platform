@@ -46,7 +46,9 @@ describe("resolveVariables", () => {
 
   it("leaves unknown-namespace variables literal (debugging visibility)", () => {
     expect(resolveVariables("{{xss.value}}", ctx)).toBe("{{xss.value}}");
-    expect(resolveVariables("{{secret.apiKey}}", ctx)).toBe("{{secret.apiKey}}");
+    expect(resolveVariables("{{secret.apiKey}}", ctx)).toBe(
+      "{{secret.apiKey}}",
+    );
   });
 
   it("returns empty string for known namespace with unknown property", () => {
@@ -111,8 +113,7 @@ describe("resolveVariables", () => {
 
 describe("extractVariables", () => {
   it("returns deduplicated list of all variable references", () => {
-    const text =
-      "{{org.name}} {{org.name}} {{period.label}} {{report.title}}";
+    const text = "{{org.name}} {{org.name}} {{period.label}} {{report.title}}";
     expect(extractVariables(text)).toEqual([
       "org.name",
       "period.label",

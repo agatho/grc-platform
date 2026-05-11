@@ -19,7 +19,8 @@ describe("processAssuranceSnapshot", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processAssuranceSnapshot } = await import("../../src/crons/assurance-snapshot");
+    const { processAssuranceSnapshot } =
+      await import("../../src/crons/assurance-snapshot");
     const r = await processAssuranceSnapshot();
     expect(r).toBeDefined();
   });

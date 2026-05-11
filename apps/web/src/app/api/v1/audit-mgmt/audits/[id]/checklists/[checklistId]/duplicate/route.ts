@@ -1,9 +1,4 @@
-import {
-  db,
-  auditChecklist,
-  auditChecklistItem,
-  audit,
-} from "@grc/db";
+import { db, auditChecklist, auditChecklistItem, audit } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -60,7 +55,10 @@ export async function POST(req: Request, { params }: RouteParams) {
       ),
     );
   if (!source) {
-    return Response.json({ error: "Source-Checkliste nicht gefunden" }, { status: 404 });
+    return Response.json(
+      { error: "Source-Checkliste nicht gefunden" },
+      { status: 404 },
+    );
   }
 
   // 2. Target-Audit verifizieren (Tenant + deleted)

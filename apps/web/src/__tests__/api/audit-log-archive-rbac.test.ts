@@ -73,7 +73,9 @@ describe("GET /api/v1/audit-log/archive", () => {
     );
     const { GET } = await import("../../app/api/v1/audit-log/archive/route");
     const res = await GET(
-      new Request("http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-03-31"),
+      new Request(
+        "http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-03-31",
+      ),
     );
     expect(res.status).toBe(401);
     expect(withAuthMock).toHaveBeenCalledWith("admin", "auditor");
@@ -85,16 +87,14 @@ describe("GET /api/v1/audit-log/archive", () => {
     );
     const { GET } = await import("../../app/api/v1/audit-log/archive/route");
     const res = await GET(
-      new Request("http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-03-31"),
+      new Request(
+        "http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-03-31",
+      ),
     );
     expect(res.status).toBe(403);
     // Critical: dpo gets audit-log LIST but NOT the offline archive
     // (the archive contains raw payloads which fall outside the dpo's scope)
-    expect(withAuthMock).not.toHaveBeenCalledWith(
-      "admin",
-      "auditor",
-      "dpo",
-    );
+    expect(withAuthMock).not.toHaveBeenCalledWith("admin", "auditor", "dpo");
   });
 });
 
@@ -146,9 +146,8 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity-check/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-log/integrity-check/route");
     const res = await GET();
     expect(res.status).toBe(401);
     expect(withAuthMock).toHaveBeenCalledWith("admin", "auditor");
@@ -158,9 +157,8 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity-check/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-log/integrity-check/route");
     const res = await GET();
     expect(res.status).toBe(403);
   });
@@ -174,18 +172,17 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     // Reset call history across imports
     withAuthMock.mockClear();
 
-    const { GET: archiveGet } = await import(
-      "../../app/api/v1/audit-log/archive/route"
-    );
-    const { POST: anchorPost } = await import(
-      "../../app/api/v1/audit-log/anchor/route"
-    );
-    const { GET: integrityGet } = await import(
-      "../../app/api/v1/audit-log/integrity-check/route"
-    );
+    const { GET: archiveGet } =
+      await import("../../app/api/v1/audit-log/archive/route");
+    const { POST: anchorPost } =
+      await import("../../app/api/v1/audit-log/anchor/route");
+    const { GET: integrityGet } =
+      await import("../../app/api/v1/audit-log/integrity-check/route");
 
     await archiveGet(
-      new Request("http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-01-02"),
+      new Request(
+        "http://localhost/api/v1/audit-log/archive?from=2026-01-01&to=2026-01-02",
+      ),
     );
     await anchorPost(
       new Request("http://localhost/api/v1/audit-log/anchor", {

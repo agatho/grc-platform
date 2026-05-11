@@ -17,18 +17,16 @@ describe("processWebhookRetryJob", () => {
   });
 
   it("delegates to processWebhookRetries", async () => {
-    const { processWebhookRetryJob } = await import(
-      "../../src/crons/webhook-retry"
-    );
+    const { processWebhookRetryJob } =
+      await import("../../src/crons/webhook-retry");
     await processWebhookRetryJob();
     expect(processWebhookRetriesMock).toHaveBeenCalledOnce();
   });
 
   it("returns the number of processed retries", async () => {
     processWebhookRetriesMock.mockResolvedValue({ processed: 7 });
-    const { processWebhookRetryJob } = await import(
-      "../../src/crons/webhook-retry"
-    );
+    const { processWebhookRetryJob } =
+      await import("../../src/crons/webhook-retry");
     const r = await processWebhookRetryJob();
     expect(r.processed).toBe(7);
   });

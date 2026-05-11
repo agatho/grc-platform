@@ -20,7 +20,8 @@ describe("processConsentMetrics", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processConsentMetrics } = await import("../../src/crons/consent-metrics-updater");
+    const { processConsentMetrics } =
+      await import("../../src/crons/consent-metrics-updater");
     const r = await processConsentMetrics();
     expect(r).toBeDefined();
   });

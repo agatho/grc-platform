@@ -17,8 +17,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const msTypeParam = url.searchParams.get("msType");
   const msType =
-    msTypeParam &&
-    (MS_TYPE_VALUES as readonly string[]).includes(msTypeParam)
+    msTypeParam && (MS_TYPE_VALUES as readonly string[]).includes(msTypeParam)
       ? (msTypeParam as (typeof MS_TYPE_VALUES)[number])
       : null;
 

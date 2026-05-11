@@ -7,7 +7,12 @@ vi.mock("@grc/db", () => ({
   get db() {
     return mockDb;
   },
-  evidenceConnector: { id: "x", orgId: "x", isEnabled: "x", lastHealthCheckAt: "x" },
+  evidenceConnector: {
+    id: "x",
+    orgId: "x",
+    isEnabled: "x",
+    lastHealthCheckAt: "x",
+  },
   connectorHealthCheck: {},
 }));
 
@@ -18,7 +23,8 @@ describe("connectorHealthMonitor", () => {
 
   it("runs without throwing", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { connectorHealthMonitor } = await import("../../src/crons/connector-health-monitor");
+    const { connectorHealthMonitor } =
+      await import("../../src/crons/connector-health-monitor");
     await expect(connectorHealthMonitor()).resolves.toBeUndefined();
   });
 });

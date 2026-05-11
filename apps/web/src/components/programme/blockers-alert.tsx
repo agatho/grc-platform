@@ -37,7 +37,9 @@ export function BlockersAlert({ journeyId }: Props) {
     let cancelled = false;
     (async () => {
       try {
-        const r = await fetch(`/api/v1/programmes/journeys/${journeyId}/blockers`);
+        const r = await fetch(
+          `/api/v1/programmes/journeys/${journeyId}/blockers`,
+        );
         if (!r.ok) return;
         const json = (await r.json()) as BlockersResponse;
         if (!cancelled) setData(json.data);

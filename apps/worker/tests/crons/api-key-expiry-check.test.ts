@@ -23,16 +23,14 @@ describe("checkApiKeyExpiry", () => {
   });
 
   it("runs without error when no expired keys exist", async () => {
-    const { checkApiKeyExpiry } = await import(
-      "../../src/crons/api-key-expiry-check"
-    );
+    const { checkApiKeyExpiry } =
+      await import("../../src/crons/api-key-expiry-check");
     await expect(checkApiKeyExpiry()).resolves.toBeUndefined();
   });
 
   it("calls update with expired status", async () => {
-    const { checkApiKeyExpiry } = await import(
-      "../../src/crons/api-key-expiry-check"
-    );
+    const { checkApiKeyExpiry } =
+      await import("../../src/crons/api-key-expiry-check");
     await checkApiKeyExpiry();
     expect(mockDb.update).toHaveBeenCalled();
   });

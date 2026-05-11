@@ -21,7 +21,8 @@ describe("processCesRecompute", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processCesRecompute } = await import("../../src/crons/ces-recompute");
+    const { processCesRecompute } =
+      await import("../../src/crons/ces-recompute");
     const r = await processCesRecompute();
     expect(r).toBeDefined();
   });

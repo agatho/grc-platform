@@ -16,7 +16,8 @@ describe("processRcsaReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/rcsa-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/rcsa-reminder");
     const fn = mod["processRcsaReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

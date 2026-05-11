@@ -17,31 +17,27 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, inArray } from "drizzle-orm";
 import { z } from "zod";
 
-const bulkUpdateSchema = z
-  .object({
-    subtaskIds: z
-      .array(z.string().uuid())
-      .min(1)
-      .max(100),
-    update: z
-      .object({
-        status: z.enum(PROGRAMME_SUBTASK_STATUS_VALUES).optional(),
-        ownerId: z.string().uuid().nullable().optional(),
-        dueDate: z
-          .string()
-          .regex(/^\d{4}-\d{2}-\d{2}$/)
-          .nullable()
-          .optional(),
-        /** Verschiebt dueDate um delta Tage (kombinierbar mit absolutem dueDate -> absoluter gewinnt) */
-        dueDateShiftDays: z.number().int().min(-365).max(365).optional(),
-      })
-      .refine(
-        (d) =>
-          Object.keys(d).filter((k) => d[k as keyof typeof d] !== undefined)
-            .length > 0,
-        { message: "At least one update field required" },
-      ),
-  });
+const bulkUpdateSchema = z.object({
+  subtaskIds: z.array(z.string().uuid()).min(1).max(100),
+  update: z
+    .object({
+      status: z.enum(PROGRAMME_SUBTASK_STATUS_VALUES).optional(),
+      ownerId: z.string().uuid().nullable().optional(),
+      dueDate: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .nullable()
+        .optional(),
+      /** Verschiebt dueDate um delta Tage (kombinierbar mit absolutem dueDate -> absoluter gewinnt) */
+      dueDateShiftDays: z.number().int().min(-365).max(365).optional(),
+    })
+    .refine(
+      (d) =>
+        Object.keys(d).filter((k) => d[k as keyof typeof d] !== undefined)
+          .length > 0,
+      { message: "At least one update field required" },
+    ),
+});
 
 export async function PATCH(
   req: Request,

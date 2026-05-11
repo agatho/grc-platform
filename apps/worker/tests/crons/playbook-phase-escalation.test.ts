@@ -16,7 +16,8 @@ describe("processPlaybookPhaseEscalation", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/playbook-phase-escalation");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/playbook-phase-escalation");
     const fn = mod["processPlaybookPhaseEscalation"];
     expect(typeof fn).toBe("function");
     let threw = false;

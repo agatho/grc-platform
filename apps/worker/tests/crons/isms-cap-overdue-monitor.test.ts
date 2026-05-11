@@ -29,18 +29,16 @@ describe("processIsmsCapOverdueMonitor", () => {
 
   it("returns zero counts when no overdue NCs", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processIsmsCapOverdueMonitor } = await import(
-      "../../src/crons/isms-cap-overdue-monitor"
-    );
+    const { processIsmsCapOverdueMonitor } =
+      await import("../../src/crons/isms-cap-overdue-monitor");
     const r = await processIsmsCapOverdueMonitor();
     expect(r.ncProcessed).toBe(0);
   });
 
   it("returns expected ISMS-CAP shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processIsmsCapOverdueMonitor } = await import(
-      "../../src/crons/isms-cap-overdue-monitor"
-    );
+    const { processIsmsCapOverdueMonitor } =
+      await import("../../src/crons/isms-cap-overdue-monitor");
     const r = await processIsmsCapOverdueMonitor();
     expect(r).toEqual(
       expect.objectContaining({
@@ -62,9 +60,8 @@ describe("processIsmsCapOverdueMonitor", () => {
       },
     ];
     mockDb.select.mockReturnValue(chainable(overdue));
-    const { processIsmsCapOverdueMonitor } = await import(
-      "../../src/crons/isms-cap-overdue-monitor"
-    );
+    const { processIsmsCapOverdueMonitor } =
+      await import("../../src/crons/isms-cap-overdue-monitor");
     await expect(processIsmsCapOverdueMonitor()).resolves.toBeDefined();
   });
 });

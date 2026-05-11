@@ -24,7 +24,9 @@ describe("getNestedValue — corner cases", () => {
   });
 
   it("returns undefined when an intermediate is null", () => {
-    expect(getNestedValue({ a: null as unknown as object }, "a.b")).toBeUndefined();
+    expect(
+      getNestedValue({ a: null as unknown as object }, "a.b"),
+    ).toBeUndefined();
   });
 
   it("returns undefined when an intermediate is a primitive (not walkable)", () => {
@@ -138,15 +140,11 @@ describe("evaluateConditions — nested groups", () => {
       rules: [
         {
           operator: "OR" as const,
-          rules: [
-            { field: "severity", op: "=" as const, value: "critical" },
-          ],
+          rules: [{ field: "severity", op: "=" as const, value: "critical" }],
         },
         {
           operator: "AND" as const,
-          rules: [
-            { field: "department", op: "=" as const, value: "finance" },
-          ],
+          rules: [{ field: "department", op: "=" as const, value: "finance" }],
         },
       ],
     };
@@ -163,9 +161,7 @@ describe("evaluateConditions — nested groups", () => {
             { field: "score", op: ">" as const, value: 100 }, // false
             {
               operator: "OR" as const,
-              rules: [
-                { field: "severity", op: "=" as const, value: "low" },
-              ],
+              rules: [{ field: "severity", op: "=" as const, value: "low" }],
             },
           ],
         },

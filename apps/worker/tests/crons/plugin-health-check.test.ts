@@ -16,7 +16,8 @@ describe("pluginHealthCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/plugin-health-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/plugin-health-check");
     const fn = mod["pluginHealthCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

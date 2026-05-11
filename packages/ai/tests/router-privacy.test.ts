@@ -59,11 +59,21 @@ const okResp = { text: "ok", provider: "ollama" as const };
 describe("aiComplete privacy routing", () => {
   beforeEach(() => {
     callOllamaMock.mockReset().mockResolvedValue(okResp);
-    callLmStudioMock.mockReset().mockResolvedValue({ ...okResp, provider: "lmstudio" });
-    callOpenAIMock.mockReset().mockResolvedValue({ ...okResp, provider: "openai" });
-    callClaudeCliMock.mockReset().mockResolvedValue({ ...okResp, provider: "claude_cli" });
-    callClaudeApiMock.mockReset().mockResolvedValue({ ...okResp, provider: "claude_api" });
-    callGeminiMock.mockReset().mockResolvedValue({ ...okResp, provider: "gemini" });
+    callLmStudioMock
+      .mockReset()
+      .mockResolvedValue({ ...okResp, provider: "lmstudio" });
+    callOpenAIMock
+      .mockReset()
+      .mockResolvedValue({ ...okResp, provider: "openai" });
+    callClaudeCliMock
+      .mockReset()
+      .mockResolvedValue({ ...okResp, provider: "claude_cli" });
+    callClaudeApiMock
+      .mockReset()
+      .mockResolvedValue({ ...okResp, provider: "claude_api" });
+    callGeminiMock
+      .mockReset()
+      .mockResolvedValue({ ...okResp, provider: "gemini" });
   });
 
   afterEach(() => {

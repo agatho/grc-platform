@@ -16,7 +16,8 @@ describe("evidenceFreshnessCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/evidence-freshness-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/evidence-freshness-check");
     const fn = mod["evidenceFreshnessCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

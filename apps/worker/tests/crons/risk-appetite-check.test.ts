@@ -16,7 +16,8 @@ describe("processRiskAppetiteCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/risk-appetite-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/risk-appetite-check");
     const fn = mod["processRiskAppetiteCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

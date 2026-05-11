@@ -84,7 +84,11 @@ export async function GET(
 
   const subsByStep = new Map<
     string,
-    Array<{ costEstimate: unknown; costActual: unknown; effortHours: number | null }>
+    Array<{
+      costEstimate: unknown;
+      costActual: unknown;
+      effortHours: number | null;
+    }>
   >();
   for (const s of subs) {
     const list = subsByStep.get(s.journeyStepId) ?? [];
@@ -94,15 +98,9 @@ export async function GET(
 
   const stepAggregates = steps.map((s) => {
     const stepSubs = subsByStep.get(s.id) ?? [];
-    const subEstimate = stepSubs.reduce(
-      (a, x) => a + num(x.costEstimate),
-      0,
-    );
+    const subEstimate = stepSubs.reduce((a, x) => a + num(x.costEstimate), 0);
     const subActual = stepSubs.reduce((a, x) => a + num(x.costActual), 0);
-    const subEffort = stepSubs.reduce(
-      (a, x) => a + (x.effortHours ?? 0),
-      0,
-    );
+    const subEffort = stepSubs.reduce((a, x) => a + (x.effortHours ?? 0), 0);
     return {
       id: s.id,
       phaseId: s.phaseId,

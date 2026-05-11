@@ -18,9 +18,8 @@ describe("processScimTokenAudit", () => {
 
   it("returns expected result structure", async () => {
     mockDb.execute.mockResolvedValue([{ count: 0 }]);
-    const { processScimTokenAudit } = await import(
-      "../../src/crons/scim-token-audit"
-    );
+    const { processScimTokenAudit } =
+      await import("../../src/crons/scim-token-audit");
     const r = await processScimTokenAudit();
     expect(r).toEqual(
       expect.objectContaining({
@@ -32,9 +31,8 @@ describe("processScimTokenAudit", () => {
 
   it("captures error when DB query fails", async () => {
     mockDb.execute.mockRejectedValue(new Error("connection lost"));
-    const { processScimTokenAudit } = await import(
-      "../../src/crons/scim-token-audit"
-    );
+    const { processScimTokenAudit } =
+      await import("../../src/crons/scim-token-audit");
     const r = await processScimTokenAudit();
     expect(r.error).toBe("connection lost");
   });

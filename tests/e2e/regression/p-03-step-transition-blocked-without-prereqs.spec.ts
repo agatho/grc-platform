@@ -51,7 +51,9 @@ test("E2E-P03: step pending → in_progress is blocked when prereqs unmet", asyn
   );
 
   expect(transit.status).toBe(422);
-  expect(transit.body?.error).toMatch(/Prerequisites not met|Invalid transition/);
+  expect(transit.body?.error).toMatch(
+    /Prerequisites not met|Invalid transition/,
+  );
 
   // Cleanup
   await page.evaluate(async (id) => {

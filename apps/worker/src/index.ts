@@ -289,10 +289,7 @@ app.post("/crons/audit-remediation-deadlines", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      "[worker] audit-remediation-deadlines cron failed:",
-      message,
-    );
+    console.error("[worker] audit-remediation-deadlines cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1423,10 +1420,7 @@ app.post("/crons/programme-deadline-monitor", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      "[worker] programme-deadline-monitor cron failed:",
-      message,
-    );
+    console.error("[worker] programme-deadline-monitor cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1437,10 +1431,7 @@ app.post("/crons/programme-health-recompute", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      "[worker] programme-health-recompute cron failed:",
-      message,
-    );
+    console.error("[worker] programme-health-recompute cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1451,10 +1442,7 @@ app.post("/crons/programme-progress-snapshot", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      "[worker] programme-progress-snapshot cron failed:",
-      message,
-    );
+    console.error("[worker] programme-progress-snapshot cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1465,10 +1453,7 @@ app.post("/crons/soa-programme-backfill", async (c) => {
     return c.json({ success: true, ...result });
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error(
-      "[worker] soa-programme-backfill cron failed:",
-      message,
-    );
+    console.error("[worker] soa-programme-backfill cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });
@@ -1547,9 +1532,7 @@ for (const [name, handler] of Object.entries(batchCrons)) {
 // the container exits clean (then crash-loops via restart policy).
 const port = Number(process.env.PORT ?? 3001);
 serve({ fetch: app.fetch, port }, (info) => {
-  console.log(
-    `[worker] Hono server listening on http://0.0.0.0:${info.port}`,
-  );
+  console.log(`[worker] Hono server listening on http://0.0.0.0:${info.port}`);
 });
 
 // Keep the Bun-style default export for compatibility with Bun-based

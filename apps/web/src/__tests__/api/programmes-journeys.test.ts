@@ -73,9 +73,7 @@ describe("POST /api/v1/programmes/journeys", () => {
   });
 
   it("returns 422 on invalid input", async () => {
-    const { POST } = await import(
-      "../../app/api/v1/programmes/journeys/route"
-    );
+    const { POST } = await import("../../app/api/v1/programmes/journeys/route");
     const res = await POST(
       new Request("http://localhost/api/v1/programmes/journeys", {
         method: "POST",
@@ -88,9 +86,7 @@ describe("POST /api/v1/programmes/journeys", () => {
 
   it("returns 404 when template not found", async () => {
     mockDb.select.mockReturnValueOnce(chainable([])); // template lookup
-    const { POST } = await import(
-      "../../app/api/v1/programmes/journeys/route"
-    );
+    const { POST } = await import("../../app/api/v1/programmes/journeys/route");
     const res = await POST(
       new Request("http://localhost/api/v1/programmes/journeys", {
         method: "POST",
@@ -113,9 +109,7 @@ describe("POST /api/v1/programmes/journeys", () => {
         },
       ]),
     );
-    const { POST } = await import(
-      "../../app/api/v1/programmes/journeys/route"
-    );
+    const { POST } = await import("../../app/api/v1/programmes/journeys/route");
     const res = await POST(
       new Request("http://localhost/api/v1/programmes/journeys", {
         method: "POST",
@@ -146,9 +140,7 @@ describe("POST /api/v1/programmes/journeys", () => {
       phaseCount: 5,
       stepCount: 24,
     });
-    const { POST } = await import(
-      "../../app/api/v1/programmes/journeys/route"
-    );
+    const { POST } = await import("../../app/api/v1/programmes/journeys/route");
     const res = await POST(
       new Request("http://localhost/api/v1/programmes/journeys", {
         method: "POST",
@@ -181,9 +173,7 @@ describe("POST /api/v1/programmes/journeys", () => {
     instantiateJourneyMock.mockRejectedValue(
       new Error("duplicate key value violates unique constraint"),
     );
-    const { POST } = await import(
-      "../../app/api/v1/programmes/journeys/route"
-    );
+    const { POST } = await import("../../app/api/v1/programmes/journeys/route");
     const res = await POST(
       new Request("http://localhost/api/v1/programmes/journeys", {
         method: "POST",

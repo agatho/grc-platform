@@ -60,11 +60,13 @@ export async function GET(req: Request) {
           completed: sql<number>`count(*) filter (where status = 'completed')::int`,
         })
         .from(programmeJourneySubtask)
-        .where(eq(programmeJourneySubtask.orgId, ctx.orgId))
         .where(
-          sql`${programmeJourneySubtask.journeyStepId} in (
-            select id from programme_journey_step where journey_id = ${j.id}
-          )`,
+          and(
+            eq(programmeJourneySubtask.orgId, ctx.orgId),
+            sql`${programmeJourneySubtask.journeyStepId} in (
+              select id from programme_journey_step where journey_id = ${j.id}
+            )`,
+          ),
         );
       return {
         id: j.id,

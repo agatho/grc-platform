@@ -92,7 +92,10 @@ export async function POST(
   const { id } = await params;
 
   const [journey] = await db
-    .select({ id: programmeJourney.id, templateId: programmeJourney.templateId })
+    .select({
+      id: programmeJourney.id,
+      templateId: programmeJourney.templateId,
+    })
     .from(programmeJourney)
     .where(
       and(
@@ -132,9 +135,12 @@ export async function POST(
     )
     .limit(1);
   if (!phase) {
-    return Response.json({ error: "Phase not in this journey" }, {
-      status: 422,
-    });
+    return Response.json(
+      { error: "Phase not in this journey" },
+      {
+        status: 422,
+      },
+    );
   }
 
   // Compute next sequence + unique custom code

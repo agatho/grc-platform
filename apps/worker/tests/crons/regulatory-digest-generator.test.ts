@@ -16,7 +16,8 @@ describe("processRegulatoryDigest", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/regulatory-digest-generator");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/regulatory-digest-generator");
     const fn = mod["processRegulatoryDigest"];
     expect(typeof fn).toBe("function");
     let threw = false;

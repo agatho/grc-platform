@@ -16,7 +16,8 @@ describe("processVarCalculationRunner", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/var-calculation-runner");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/var-calculation-runner");
     const fn = mod["processVarCalculationRunner"];
     expect(typeof fn).toBe("function");
     let threw = false;
