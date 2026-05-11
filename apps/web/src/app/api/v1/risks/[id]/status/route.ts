@@ -6,20 +6,14 @@ import {
   notification,
   userOrganizationRole,
 } from "@grc/db";
-import { riskStatusTransitionSchema } from "@grc/shared";
-import type { RiskStatus } from "@grc/shared";
+import {
+  riskStatusTransitionSchema,
+  validateRiskStatusTransition,
+  type RiskStatus,
+} from "@grc/shared";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
-
-// Valid status transitions
-const VALID_TRANSITIONS: Record<RiskStatus, RiskStatus[]> = {
-  identified: ["assessed", "accepted"],
-  assessed: ["treated", "accepted", "identified"],
-  treated: ["accepted", "closed", "assessed"],
-  accepted: ["closed", "identified"],
-  closed: ["identified"],
-};
 
 // Map risk status to work item status
 const RISK_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -65,12 +59,19 @@ export async function PUT(
   const targetStatus = body.data.status;
   const currentStatus = existing.status;
 
-  // Validate transition
-  const allowed = VALID_TRANSITIONS[currentStatus];
-  if (!allowed || !allowed.includes(targetStatus)) {
+  // Single source of truth: validation matrix lives in @grc/shared
+  // (packages/shared/src/state-machines/risk-status.ts).
+  const transition = validateRiskStatusTransition({
+    from: currentStatus as RiskStatus,
+    to: targetStatus,
+  });
+  if (!transition.ok) {
     return Response.json(
       {
-        error: `Invalid transition from '${currentStatus}' to '${targetStatus}'. Allowed: ${(allowed ?? []).join(", ")}`,
+        error: "Invalid status transition",
+        reason: transition.reason,
+        from: currentStatus,
+        to: targetStatus,
       },
       { status: 422 },
     );
@@ -211,3 +212,11 @@ export async function PUT(
 
   return Response.json({ data: updated });
 }
+
+// The risk-list bulk-status-change UI dispatches `PATCH /api/v1/risks/{id}/status`
+// (see apps/web/src/app/(dashboard)/risks/page.tsx). The dedicated route used
+// to expose only PUT, so those bulk calls were silently 405-ing. Re-export
+// the same handler under PATCH so the UI works without ceremony — semantics
+// are identical (idempotent state-machine transition).
+export const PATCH = PUT;
+

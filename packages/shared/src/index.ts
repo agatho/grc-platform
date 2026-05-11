@@ -80,6 +80,15 @@ export {
   type CloseAssertion,
 } from "./state-machines/isms-nc";
 export {
+  RISK_STATUSES,
+  RISK_ALLOWED_TRANSITIONS,
+  isRiskStatus,
+  validateRiskStatusTransition,
+  type RiskStatus,
+  type RiskStatusTransitionInput,
+  type RiskStatusTransitionResult,
+} from "./state-machines/risk-status";
+export {
   PROGRAMME_JOURNEY_STATUSES,
   PROGRAMME_JOURNEY_TRANSITIONS,
   isProgrammeJourneyStatus,
