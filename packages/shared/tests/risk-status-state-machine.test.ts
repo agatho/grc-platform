@@ -71,13 +71,10 @@ describe("validateRiskStatusTransition — happy paths", () => {
     ["accepted", "closed"],
     ["accepted", "identified"], // reopen
     ["closed", "identified"], // reopen
-  ] as Array<[RiskStatus, RiskStatus]>)(
-    "allows %s → %s",
-    (from, to) => {
-      const result = validateRiskStatusTransition({ from, to });
-      expect(result.ok).toBe(true);
-    },
-  );
+  ] as Array<[RiskStatus, RiskStatus]>)("allows %s → %s", (from, to) => {
+    const result = validateRiskStatusTransition({ from, to });
+    expect(result.ok).toBe(true);
+  });
 
   it("treats from === to as a no-op (idempotent PUT)", () => {
     const result = validateRiskStatusTransition({
@@ -101,14 +98,11 @@ describe("validateRiskStatusTransition — forbidden jumps", () => {
     ["closed", "assessed"],
     // assessed cannot jump straight to closed (must go via accepted/treated first)
     ["assessed", "closed"],
-  ] as Array<[RiskStatus, RiskStatus]>)(
-    "rejects %s → %s",
-    (from, to) => {
-      const result = validateRiskStatusTransition({ from, to });
-      expect(result.ok).toBe(false);
-      expect(result.reason).toContain(`${from} → ${to} not allowed`);
-    },
-  );
+  ] as Array<[RiskStatus, RiskStatus]>)("rejects %s → %s", (from, to) => {
+    const result = validateRiskStatusTransition({ from, to });
+    expect(result.ok).toBe(false);
+    expect(result.reason).toContain(`${from} → ${to} not allowed`);
+  });
 
   it("returns the list of allowed targets in the error reason", () => {
     const result = validateRiskStatusTransition({

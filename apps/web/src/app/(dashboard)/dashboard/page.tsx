@@ -28,8 +28,15 @@ import {
   AlertTriangle,
   User,
   Activity,
+  Info,
 } from "lucide-react";
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts";
+import {
+  Tooltip as UiTooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { useModuleConfig } from "@/hooks/use-module-config";
 
 // ---------------------------------------------------------------------------
@@ -488,25 +495,45 @@ export default function DashboardPage() {
             }
           }
 
-          // The compliance-score card explains its formula on hover so it's
-          // not mistaken for a system error when it reads 0 % (QA-010).
-          const cardTooltip =
-            key === "complianceScore"
-              ? t("widgets.complianceScoreFormula")
-              : undefined;
+          // The compliance-score card explains its formula on hover so a
+          // 0 % reading isn't read as a system error (QA-010). Native title=
+          // wasn't visible enough in headless QA tests, so the hint is now
+          // a discoverable Info icon next to the label that opens a real
+          // Radix tooltip on hover/focus.
+          const isComplianceScore = key === "complianceScore";
 
           return (
             <div
               key={key}
-              title={cardTooltip}
               className={`bg-white rounded-lg border border-gray-200 border-l-4 ${accent} p-5 flex items-start gap-4 shadow-sm`}
             >
               <div className={`p-2.5 rounded-lg ${color}`}>
                 <Icon size={20} />
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-500 truncate">
+                <p className="text-sm font-medium text-gray-500 truncate flex items-center gap-1.5">
                   {t(`widgets.${key}`)}
+                  {isComplianceScore && (
+                    <TooltipProvider delayDuration={150}>
+                      <UiTooltip>
+                        <TooltipTrigger asChild>
+                          <button
+                            type="button"
+                            aria-label={t("widgets.complianceScoreFormula")}
+                            className="text-gray-400 hover:text-gray-600 focus:outline-none focus:ring-2 focus:ring-blue-200 rounded-full"
+                          >
+                            <Info size={14} />
+                          </button>
+                        </TooltipTrigger>
+                        <TooltipContent
+                          side="bottom"
+                          className="max-w-xs text-xs"
+                        >
+                          {t("widgets.complianceScoreFormula")}
+                        </TooltipContent>
+                      </UiTooltip>
+                    </TooltipProvider>
+                  )}
                 </p>
                 {displayValue ? (
                   <>
@@ -516,7 +543,7 @@ export default function DashboardPage() {
                     {subtitle && (
                       <p
                         className={
-                          key === "complianceScore"
+                          isComplianceScore
                             ? "text-xs text-gray-500 mt-1"
                             : "text-xs text-red-500 mt-1"
                         }
