@@ -15,6 +15,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { log } from "@/lib/logger";
 
 // POST /api/v1/risks/:id/treatments — Create treatment
 export async function POST(
@@ -69,47 +70,90 @@ export async function POST(
     }
   }
 
-  const created = await withAuditContext(ctx, async (tx) => {
-    // Create work item for the treatment
-    const [wi] = await tx
-      .insert(workItem)
-      .values({
-        orgId: ctx.orgId,
-        typeKey: "risk_treatment",
-        name: `Treatment: ${body.data.description.substring(0, 100)}`,
-        status: "draft",
-        responsibleId: body.data.responsibleId,
-        grcPerspective: ["erm"],
-        createdBy: ctx.userId,
-        updatedBy: ctx.userId,
-      })
-      .returning();
-
-    const [row] = await tx
-      .insert(riskTreatment)
-      .values({
-        orgId: ctx.orgId,
-        riskId: id,
-        workItemId: wi.id,
-        description: body.data.description,
-        responsibleId: body.data.responsibleId,
-        expectedRiskReduction: body.data.expectedRiskReduction?.toString(),
-        costEstimate: body.data.costEstimate?.toString(),
-        costAnnual: body.data.costAnnual?.toString(),
-        effortHours: body.data.effortHours?.toString(),
-        budgetId: body.data.budgetId,
-        costNote: body.data.costNote,
-        status: body.data.status,
-        dueDate: body.data.dueDate,
-        createdBy: ctx.userId,
-        updatedBy: ctx.userId,
-      })
-      .returning();
-
-    return row;
+  const logger = log.withContext({
+    route: "POST /api/v1/risks/[id]/treatments",
+    userId: ctx.userId,
+    orgId: ctx.orgId,
+    riskId: id,
   });
 
-  return Response.json({ data: created }, { status: 201 });
+  try {
+    const created = await withAuditContext(ctx, async (tx) => {
+      // Create work item for the treatment. typeKey "risk_treatment" must
+      // exist in work_item_type — migration 0301 backfills it for tenants
+      // that pre-date the seed (QA-017, 2026-05-11).
+      const [wi] = await tx
+        .insert(workItem)
+        .values({
+          orgId: ctx.orgId,
+          typeKey: "risk_treatment",
+          name: `Treatment: ${body.data.description.substring(0, 100)}`,
+          status: "draft",
+          responsibleId: body.data.responsibleId,
+          grcPerspective: ["erm"],
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      const [row] = await tx
+        .insert(riskTreatment)
+        .values({
+          orgId: ctx.orgId,
+          riskId: id,
+          workItemId: wi.id,
+          description: body.data.description,
+          responsibleId: body.data.responsibleId,
+          expectedRiskReduction: body.data.expectedRiskReduction?.toString(),
+          costEstimate: body.data.costEstimate?.toString(),
+          costAnnual: body.data.costAnnual?.toString(),
+          effortHours: body.data.effortHours?.toString(),
+          budgetId: body.data.budgetId,
+          costNote: body.data.costNote,
+          status: body.data.status,
+          dueDate: body.data.dueDate,
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      return row;
+    });
+
+    return Response.json({ data: created }, { status: 201 });
+  } catch (err) {
+    // Map known Postgres constraint failures to 422 so the client gets a
+    // useful message; everything else surfaces as a structured 500 with the
+    // pgCode in the body so operators can pivot from a deploy alert to the
+    // exact constraint name.
+    const errObj = err as { code?: string; detail?: string; message?: string };
+    logger.error("treatment create failed", {
+      pgCode: errObj.code,
+      pgDetail: errObj.detail,
+      message: errObj.message,
+    });
+
+    // 23503 = foreign_key_violation, 23502 = not_null_violation, 23514 = check_violation
+    const constraintCodes = new Set(["23503", "23502", "23514", "23505"]);
+    if (errObj.code && constraintCodes.has(errObj.code)) {
+      return Response.json(
+        {
+          error: "Failed to create treatment — database constraint",
+          code: errObj.code,
+          detail: errObj.detail ?? errObj.message ?? null,
+        },
+        { status: 422 },
+      );
+    }
+
+    return Response.json(
+      {
+        error: "Failed to create treatment",
+        code: errObj.code ?? "internal",
+      },
+      { status: 500 },
+    );
+  }
 }
 
 // GET /api/v1/risks/:id/treatments — List treatments for risk

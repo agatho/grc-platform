@@ -12,6 +12,14 @@ INSERT INTO work_item_type (type_key, display_name_de, display_name_en, icon, co
 ('management_review', 'Management Review', 'Management Review', 'file-text', 'text-slate-700', 'isms', '{}', false, false, false, 97)
 ON CONFLICT (type_key) DO NOTHING;
 
+-- ERM: Risk Treatment. Added 2026-05-11 after QA-017 surfaced that the
+-- POST /risks/{id}/treatments route writes work_item rows with typeKey
+-- "risk_treatment" but the type was never seeded. Migration 0301
+-- backfills existing tenants; this seed entry handles fresh installs.
+INSERT INTO work_item_type (type_key, display_name_de, display_name_en, icon, color_class, primary_module, secondary_modules, has_linked_asset, has_cia_evaluation, is_cross_module, nav_order) VALUES
+('risk_treatment', 'Risikobehandlung', 'Risk Treatment', 'wrench', 'text-blue-700', 'erm', '{}', false, false, false, 98)
+ON CONFLICT (type_key) DO NOTHING;
+
 -- Sprint 6: BCMS
 INSERT INTO work_item_type (type_key, display_name_de, display_name_en, icon, color_class, primary_module, secondary_modules, has_linked_asset, has_cia_evaluation, is_cross_module, nav_order) VALUES
 ('bcp', 'Notfallplan', 'Business Continuity Plan', 'file-text', 'text-emerald-700', 'bcms', '{}', false, false, false, 100),
