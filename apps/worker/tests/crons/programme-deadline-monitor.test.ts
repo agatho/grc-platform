@@ -29,9 +29,8 @@ describe("processProgrammeDeadlineMonitor", () => {
 
   it("returns zero stats when no overdue steps", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { processProgrammeDeadlineMonitor } = await import(
-      "../../src/crons/programme-deadline-monitor"
-    );
+    const { processProgrammeDeadlineMonitor } =
+      await import("../../src/crons/programme-deadline-monitor");
     const r = await processProgrammeDeadlineMonitor();
     expect(r.stepsScanned).toBe(0);
     expect(r.notificationsCreated).toBe(0);
@@ -39,7 +38,9 @@ describe("processProgrammeDeadlineMonitor", () => {
   });
 
   it("notifies step owner when assigned, creates 1 event per step", async () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
     const overdue = [
       {
         id: "s1",
@@ -57,9 +58,8 @@ describe("processProgrammeDeadlineMonitor", () => {
         chainable([{ id: "j1", ownerId: "journey-owner", name: "ISMS Y1" }]),
       );
 
-    const { processProgrammeDeadlineMonitor } = await import(
-      "../../src/crons/programme-deadline-monitor"
-    );
+    const { processProgrammeDeadlineMonitor } =
+      await import("../../src/crons/programme-deadline-monitor");
     const r = await processProgrammeDeadlineMonitor();
     expect(r.stepsScanned).toBe(1);
     expect(r.notificationsCreated).toBe(1);
@@ -86,9 +86,8 @@ describe("processProgrammeDeadlineMonitor", () => {
       .mockReturnValueOnce(
         chainable([{ id: "j1", ownerId: "journey-owner", name: "BCMS Y1" }]),
       );
-    const { processProgrammeDeadlineMonitor } = await import(
-      "../../src/crons/programme-deadline-monitor"
-    );
+    const { processProgrammeDeadlineMonitor } =
+      await import("../../src/crons/programme-deadline-monitor");
     const r = await processProgrammeDeadlineMonitor();
     expect(r.notificationsCreated).toBe(1);
   });
@@ -108,16 +107,17 @@ describe("processProgrammeDeadlineMonitor", () => {
     mockDb.select
       .mockReturnValueOnce(chainable(overdue))
       .mockReturnValueOnce(chainable([{ id: "j1", ownerId: null, name: "X" }]));
-    const { processProgrammeDeadlineMonitor } = await import(
-      "../../src/crons/programme-deadline-monitor"
-    );
+    const { processProgrammeDeadlineMonitor } =
+      await import("../../src/crons/programme-deadline-monitor");
     const r = await processProgrammeDeadlineMonitor();
     expect(r.notificationsCreated).toBe(0);
     expect(r.eventsCreated).toBe(1);
   });
 
   it("processes multiple overdue steps and counts each", async () => {
-    const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+    const yesterday = new Date(Date.now() - 86400000)
+      .toISOString()
+      .slice(0, 10);
     const overdue = Array.from({ length: 4 }, (_, i) => ({
       id: `s${i}`,
       orgId: "org",
@@ -132,9 +132,8 @@ describe("processProgrammeDeadlineMonitor", () => {
       .mockReturnValueOnce(
         chainable([{ id: "j1", ownerId: "jo", name: "Multi" }]),
       );
-    const { processProgrammeDeadlineMonitor } = await import(
-      "../../src/crons/programme-deadline-monitor"
-    );
+    const { processProgrammeDeadlineMonitor } =
+      await import("../../src/crons/programme-deadline-monitor");
     const r = await processProgrammeDeadlineMonitor();
     expect(r.stepsScanned).toBe(4);
     expect(r.notificationsCreated).toBe(4);

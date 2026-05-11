@@ -44,10 +44,7 @@ export default function PrivacyPage() {
         </p>
         <p>
           Das Impressum mit weiteren Kontaktdaten finden Sie unter{" "}
-          <Link
-            href="/legal/imprint"
-            className="text-blue-600 hover:underline"
-          >
+          <Link href="/legal/imprint" className="text-blue-600 hover:underline">
             /legal/imprint
           </Link>
           .
@@ -87,28 +84,28 @@ export default function PrivacyPage() {
             Organisationszuordnung, Rollen, Aktivitäts-Logs (Login, Aktionen).
           </li>
           <li>
-            <strong>Inhaltliche Eingaben:</strong> Alle vom Nutzer bewusst in die
-            Plattform eingegebenen Daten (Risiken, Kontrollen, Dokumente, etc.).
-            Diese stehen unter Kontrolle des Auftragsverarbeiters bzw. des
-            Verantwortlichen der nutzenden Organisation.
+            <strong>Inhaltliche Eingaben:</strong> Alle vom Nutzer bewusst in
+            die Plattform eingegebenen Daten (Risiken, Kontrollen, Dokumente,
+            etc.). Diese stehen unter Kontrolle des Auftragsverarbeiters bzw.
+            des Verantwortlichen der nutzenden Organisation.
           </li>
           <li>
-            <strong>Technische Daten:</strong> IP-Adresse, User-Agent, Zeitstempel,
-            aufgerufene Seiten — gespeichert in Audit-Logs zur Sicherstellung der
-            Systemsicherheit (Art. 32 DSGVO).
+            <strong>Technische Daten:</strong> IP-Adresse, User-Agent,
+            Zeitstempel, aufgerufene Seiten — gespeichert in Audit-Logs zur
+            Sicherstellung der Systemsicherheit (Art. 32 DSGVO).
           </li>
           <li>
-            <strong>Audit-Trail:</strong> Datenänderungen werden mit
-            Zeitstempel + verantwortlichem Nutzer gespeichert (gesetzliche
-            Aufbewahrung nach HGB § 257, GoBD).
+            <strong>Audit-Trail:</strong> Datenänderungen werden mit Zeitstempel
+            + verantwortlichem Nutzer gespeichert (gesetzliche Aufbewahrung nach
+            HGB § 257, GoBD).
           </li>
         </ul>
         <p>
-          <strong>Rechtsgrundlagen:</strong> Vertragserfüllung (Art. 6 Abs. 1 lit.
-          b DSGVO) für Account- und Inhaltsdaten; berechtigtes Interesse (Art. 6
-          Abs. 1 lit. f DSGVO) für Sicherheits- und Audit-Logs; rechtliche
-          Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO) für aufbewahrungspflichtige
-          Daten.
+          <strong>Rechtsgrundlagen:</strong> Vertragserfüllung (Art. 6 Abs. 1
+          lit. b DSGVO) für Account- und Inhaltsdaten; berechtigtes Interesse
+          (Art. 6 Abs. 1 lit. f DSGVO) für Sicherheits- und Audit-Logs;
+          rechtliche Verpflichtung (Art. 6 Abs. 1 lit. c DSGVO) für
+          aufbewahrungspflichtige Daten.
         </p>
       </section>
 
@@ -134,7 +131,8 @@ export default function PrivacyPage() {
             keine gesetzliche Aufbewahrungspflicht entgegensteht.
           </li>
           <li>
-            <strong>Audit-Logs:</strong> 10 Jahre (HGB § 257 Abs. 4 GoBD-konform).
+            <strong>Audit-Logs:</strong> 10 Jahre (HGB § 257 Abs. 4
+            GoBD-konform).
           </li>
           <li>
             <strong>Inhaltliche Daten:</strong> Nach Vorgabe der nutzenden
@@ -185,7 +183,8 @@ export default function PrivacyPage() {
             <strong>Einschränkung</strong> der Verarbeitung (Art. 18)
           </li>
           <li>
-            <strong>Datenübertragbarkeit</strong> in strukturiertem Format (Art. 20)
+            <strong>Datenübertragbarkeit</strong> in strukturiertem Format (Art.
+            20)
           </li>
           <li>
             <strong>Widerspruch</strong> gegen die Verarbeitung (Art. 21)
@@ -214,16 +213,14 @@ export default function PrivacyPage() {
         <h2 className="text-lg font-semibold">9. Cookies und Tracking</h2>
         <p>
           ARCTOS verwendet ausschließlich technisch notwendige Cookies
-          (Session-Cookie für die Authentifizierung). Es findet kein
-          Tracking, keine Werbung, keine Analytics-Drittanbieter-Tools statt.
+          (Session-Cookie für die Authentifizierung). Es findet kein Tracking,
+          keine Werbung, keine Analytics-Drittanbieter-Tools statt.
         </p>
       </section>
 
       <section className="space-y-3 rounded-md border border-slate-200 p-6 text-sm dark:border-slate-800">
         <h2 className="text-lg font-semibold">10. Sicherheitsmaßnahmen</h2>
-        <p>
-          Technische und organisatorische Maßnahmen nach Art. 32 DSGVO:
-        </p>
+        <p>Technische und organisatorische Maßnahmen nach Art. 32 DSGVO:</p>
         <ul className="list-disc space-y-1 pl-5">
           <li>TLS 1.2+ für alle Datenübertragungen</li>
           <li>Passwörter werden mit bcrypt-Hash gespeichert (kein Klartext)</li>

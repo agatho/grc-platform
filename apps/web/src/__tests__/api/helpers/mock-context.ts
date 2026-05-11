@@ -6,7 +6,11 @@ import { vi } from "vitest";
 /** Create a mock Request — Web API style, accepted by Next.js route handlers. */
 export function makeRequest(
   url: string,
-  init: { method?: string; body?: unknown; headers?: Record<string, string> } = {},
+  init: {
+    method?: string;
+    body?: unknown;
+    headers?: Record<string, string>;
+  } = {},
 ): Request {
   const opts: RequestInit = {
     method: init.method ?? "GET",

@@ -6,10 +6,10 @@
 
 ## 1. Zusammenfassung
 
-| Closure-ID | REQ-Bezug | Kategorie | Status |
-|------------|-----------|-----------|--------|
-| CL-NC-001 | REQ-ISMS-031, REQ-ISMS-032 | ISMS-CAP / State-Machine | ✅ vollständig |
-| CL-STAKE-001 | REQ-ISMS-005 | ISMS-Kern / neue Domäne | ✅ vollständig (Schema + Migration + Pure-Logic + Tests) |
+| Closure-ID   | REQ-Bezug                  | Kategorie                | Status                                                   |
+| ------------ | -------------------------- | ------------------------ | -------------------------------------------------------- |
+| CL-NC-001    | REQ-ISMS-031, REQ-ISMS-032 | ISMS-CAP / State-Machine | ✅ vollständig                                           |
+| CL-STAKE-001 | REQ-ISMS-005               | ISMS-Kern / neue Domäne  | ✅ vollständig (Schema + Migration + Pure-Logic + Tests) |
 
 **Tests gewonnen:** 52 neue, alle grün.
 **Tests gesamt nach Session:** 1621 (vorher 1569).
@@ -20,10 +20,12 @@
 ## 2. CL-NC-001 — NC-Status-Maschine + Closure-Validation
 
 ### 2.1 Anforderungen
+
 - **REQ-ISMS-031:** NC-Status-Maschine (open → analysis → action_planned → in_progress → verification → closed → reopened) mit Validation
 - **REQ-ISMS-032:** Wirksamkeitsprüfung Pflicht vor Closure (ISO 27001 §10.1 g)
 
 ### 2.2 Befund vor Closure
+
 - DB-Schema (`isms_nonconformity.status`) ist `varchar(30)` ohne CHECK-Constraint und ohne Trigger.
 - Ein Kommentar im Schema dokumentiert die erlaubten Werte, aber die API (`PUT /api/v1/isms/nonconformities/[id]`) akzeptierte beliebige `z.string().max(30)`.
 - Folge: Beliebige Status-Sprünge möglich (z.B. `open` → `closed` direkt), keine Wirksamkeitsprüfung erzwungen.
@@ -71,23 +73,25 @@ Exports in `packages/shared/src/index.ts` ergänzt.
 
 ### 2.4 Akzeptanzkriterien
 
-| AC | Status |
-|----|--------|
-| Übergänge werden im Server validiert (CLAUDE.md Regel 9) | ✅ |
-| HTTP 422 mit lesbarer Begründung | ✅ |
-| Closure ohne effektive Wirksamkeitsprüfung blockiert | ✅ |
-| Major-NCs verlangen zusätzlich Effectiveness-Review-Datum + positive Bewertung | ✅ |
-| 100 % Branch-Coverage der State-Machine-Funktionen | ✅ (manuell verifiziert via Tests) |
-| Keine Regressionen in bestehenden 1294 Shared-Tests | ✅ |
+| AC                                                                             | Status                             |
+| ------------------------------------------------------------------------------ | ---------------------------------- |
+| Übergänge werden im Server validiert (CLAUDE.md Regel 9)                       | ✅                                 |
+| HTTP 422 mit lesbarer Begründung                                               | ✅                                 |
+| Closure ohne effektive Wirksamkeitsprüfung blockiert                           | ✅                                 |
+| Major-NCs verlangen zusätzlich Effectiveness-Review-Datum + positive Bewertung | ✅                                 |
+| 100 % Branch-Coverage der State-Machine-Funktionen                             | ✅ (manuell verifiziert via Tests) |
+| Keine Regressionen in bestehenden 1294 Shared-Tests                            | ✅                                 |
 
 ---
 
 ## 3. CL-STAKE-001 — Stakeholder-Register
 
 ### 3.1 Anforderung
+
 - **REQ-ISMS-005:** Stakeholder-Register je Org, mit dokumentierten Erwartungen, Priorität, Review-Datum (ISO 27001:2022 §4.2 + ISO 22301:2019 §4.2)
 
 ### 3.2 Befund vor Closure
+
 - Keine `stakeholder`-Tabelle im Schema. Begriff „Stakeholder" tauchte nur in ESG-Modulen für andere Zwecke auf.
 - Management-Review (§9.3.2 c) kann ohne formales Register nur freitextlich auf Stakeholder verweisen.
 
@@ -97,12 +101,13 @@ Exports in `packages/shared/src/index.ts` ergänzt.
 
 `packages/db/src/schema/stakeholder-register.ts`
 
-| Tabelle | Zweck |
-|---------|-------|
-| `stakeholder` | Eintrag pro interessierter Partei: Name, Type (regulator/customer/supplier/employee/investor/board/auditor/community/media/partner/other), Influence + Interest (Power/Interest-Matrix), Engagement-Strategy, Review-Lifecycle |
-| `stakeholder_expectation` | 1:N — dokumentierte Erwartungen mit Status (open/acknowledged/in_progress/met/unmet/obsolete), Priorität, optionaler Verknüpfung zu anderen Entitäten |
+| Tabelle                   | Zweck                                                                                                                                                                                                                          |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `stakeholder`             | Eintrag pro interessierter Partei: Name, Type (regulator/customer/supplier/employee/investor/board/auditor/community/media/partner/other), Influence + Interest (Power/Interest-Matrix), Engagement-Strategy, Review-Lifecycle |
+| `stakeholder_expectation` | 1:N — dokumentierte Erwartungen mit Status (open/acknowledged/in_progress/met/unmet/obsolete), Priorität, optionaler Verknüpfung zu anderen Entitäten                                                                          |
 
 Enums:
+
 - `stakeholder_type` (11 Werte)
 - `stakeholder_influence` / `stakeholder_interest` (4 Werte)
 - `stakeholder_engagement_strategy` (monitor / keep_informed / keep_satisfied / manage_closely)
@@ -138,14 +143,14 @@ In Schema-Datei (server-safe, kann im Browser-Build ausgeschlossen werden über 
 
 ### 3.4 Akzeptanzkriterien
 
-| AC | Status |
-|----|--------|
-| Schema in `packages/db/src/schema` (CLAUDE.md Konvention) | ✅ |
-| Migration mit RLS + Audit-Trigger (CLAUDE.md Regel 4 + 5) | ✅ |
-| Snake-Case Tabellennamen | ✅ |
-| Drizzle Re-Export aus `packages/db/src/index.ts` | ✅ |
-| Tests mit ≥ 80 % Branch-Coverage der Pure-Logic | ✅ |
-| Keine Regressionen | ✅ |
+| AC                                                        | Status |
+| --------------------------------------------------------- | ------ |
+| Schema in `packages/db/src/schema` (CLAUDE.md Konvention) | ✅     |
+| Migration mit RLS + Audit-Trigger (CLAUDE.md Regel 4 + 5) | ✅     |
+| Snake-Case Tabellennamen                                  | ✅     |
+| Drizzle Re-Export aus `packages/db/src/index.ts`          | ✅     |
+| Tests mit ≥ 80 % Branch-Coverage der Pure-Logic           | ✅     |
+| Keine Regressionen                                        | ✅     |
 
 ### 3.5 Bewusst nicht in dieser Session
 
@@ -189,15 +194,15 @@ In Schema-Datei (server-safe, kann im Browser-Build ausgeschlossen werden über 
 
 ## 5. Re-Test (nach Closure)
 
-| Suite | Tests | Status |
-|-------|-------|--------|
-| `packages/shared` (mit neuen 52) | 1346 | ✅ |
-| `packages/auth` | 118 | ✅ |
-| `packages/automation` | 44 | ✅ |
-| `packages/email` | 26 | ✅ |
-| `packages/graph` | 47 | ✅ |
-| `apps/web` | 40 | ✅ |
-| **Total** | **1621** | **100 %** |
+| Suite                            | Tests    | Status    |
+| -------------------------------- | -------- | --------- |
+| `packages/shared` (mit neuen 52) | 1346     | ✅        |
+| `packages/auth`                  | 118      | ✅        |
+| `packages/automation`            | 44       | ✅        |
+| `packages/email`                 | 26       | ✅        |
+| `packages/graph`                 | 47       | ✅        |
+| `apps/web`                       | 40       | ✅        |
+| **Total**                        | **1621** | **100 %** |
 
 Detaillierte Run-Outputs in der CI-Pipeline nach Push.
 

@@ -24,9 +24,8 @@ describe("processExternalShareExpiry", () => {
 
   it("returns zero counts when no active shares", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processExternalShareExpiry } = await import(
-      "../../src/crons/external-share-expiry"
-    );
+    const { processExternalShareExpiry } =
+      await import("../../src/crons/external-share-expiry");
     const r = await processExternalShareExpiry();
     expect(r).toEqual(
       expect.objectContaining({
@@ -45,9 +44,8 @@ describe("processExternalShareExpiry", () => {
       },
     ];
     mockDb.select.mockReturnValue(chainable(expired));
-    const { processExternalShareExpiry } = await import(
-      "../../src/crons/external-share-expiry"
-    );
+    const { processExternalShareExpiry } =
+      await import("../../src/crons/external-share-expiry");
     await expect(processExternalShareExpiry()).resolves.toBeDefined();
   });
 });

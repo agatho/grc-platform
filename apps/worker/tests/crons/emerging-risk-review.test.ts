@@ -16,7 +16,8 @@ describe("processEmergingRiskReviews", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/emerging-risk-review");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/emerging-risk-review");
     const fn = mod["processEmergingRiskReviews"];
     expect(typeof fn).toBe("function");
     let threw = false;

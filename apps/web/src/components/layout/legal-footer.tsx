@@ -11,10 +11,16 @@ export function LegalFooter() {
       <div className="mx-auto flex max-w-7xl flex-wrap items-center justify-between gap-2 px-4">
         <span>© {year} ARCTOS — Audit, Risk, Compliance & Trust OS</span>
         <nav className="flex items-center gap-4">
-          <Link href="/legal/imprint" className="hover:text-slate-700 hover:underline dark:hover:text-slate-200">
+          <Link
+            href="/legal/imprint"
+            className="hover:text-slate-700 hover:underline dark:hover:text-slate-200"
+          >
             Impressum
           </Link>
-          <Link href="/legal/privacy" className="hover:text-slate-700 hover:underline dark:hover:text-slate-200">
+          <Link
+            href="/legal/privacy"
+            className="hover:text-slate-700 hover:underline dark:hover:text-slate-200"
+          >
             Datenschutz
           </Link>
         </nav>

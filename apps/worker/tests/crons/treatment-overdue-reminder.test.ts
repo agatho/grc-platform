@@ -16,7 +16,8 @@ describe("processTreatmentOverdueReminders", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/treatment-overdue-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/treatment-overdue-reminder");
     const fn = mod["processTreatmentOverdueReminders"];
     expect(typeof fn).toBe("function");
     let threw = false;

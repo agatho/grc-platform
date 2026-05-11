@@ -65,9 +65,7 @@ describe("signPayload + verifySignature roundtrip", () => {
     const sig = signPayload(payload, secretHash);
     // Flip one char of the hex digest (after the "sha256=" prefix)
     const flipped =
-      sig.slice(0, 8) +
-      (sig[8] === "0" ? "1" : "0") +
-      sig.slice(9);
+      sig.slice(0, 8) + (sig[8] === "0" ? "1" : "0") + sig.slice(9);
     expect(verifySignature(payload, flipped, secretHash)).toBe(false);
   });
 

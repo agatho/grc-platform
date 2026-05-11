@@ -43,10 +43,7 @@ export async function GET(
   }
 }
 
-async function handleGet(
-  req: Request,
-  params: Promise<{ id: string }>,
-) {
+async function handleGet(req: Request, params: Promise<{ id: string }>) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("programme", ctx.orgId, req.method);
@@ -84,10 +81,7 @@ async function handleGet(
       : startSourceStr
         ? new Date(startSourceStr).getTime()
         : Date.now();
-  const ageDays = Math.max(
-    1,
-    Math.floor((Date.now() - startMs) / 86_400_000),
-  );
+  const ageDays = Math.max(1, Math.floor((Date.now() - startMs) / 86_400_000));
   const velocityWindowDays = Math.min(60, ageDays);
   const isCalibrating = ageDays < 14;
 
@@ -197,7 +191,8 @@ async function handleGet(
       },
       prediction: {
         predictedDaysRemaining,
-        predictedCompletionDate: predictedCompletion?.toISOString().slice(0, 10) ?? null,
+        predictedCompletionDate:
+          predictedCompletion?.toISOString().slice(0, 10) ?? null,
         probabilityOfHittingTarget,
       },
       whatIf: {

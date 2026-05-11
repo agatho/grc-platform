@@ -16,7 +16,8 @@ describe("processDeficiencyEscalation", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/deficiency-escalation");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/deficiency-escalation");
     const fn = mod["processDeficiencyEscalation"];
     expect(typeof fn).toBe("function");
     let threw = false;

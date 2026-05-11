@@ -20,9 +20,8 @@ describe("processCopilotRagIndexer", () => {
   });
 
   it("smoke: runs without throwing", async () => {
-    const { processCopilotRagIndexer } = await import(
-      "../../src/crons/copilot-rag-indexer"
-    );
+    const { processCopilotRagIndexer } =
+      await import("../../src/crons/copilot-rag-indexer");
     await expect(processCopilotRagIndexer()).resolves.toBeDefined();
   });
 });

@@ -16,7 +16,8 @@ describe("processWbOmbudspersonExpiry", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/wb-ombudsperson-expiry");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/wb-ombudsperson-expiry");
     const fn = mod["processWbOmbudspersonExpiry"];
     expect(typeof fn).toBe("function");
     let threw = false;

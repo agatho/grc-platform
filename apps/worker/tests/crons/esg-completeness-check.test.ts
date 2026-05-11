@@ -16,7 +16,8 @@ describe("processEsgCompletenessCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/esg-completeness-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/esg-completeness-check");
     const fn = mod["processEsgCompletenessCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

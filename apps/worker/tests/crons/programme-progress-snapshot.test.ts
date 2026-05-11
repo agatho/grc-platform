@@ -25,9 +25,8 @@ describe("processProgrammeProgressSnapshot", () => {
 
   it("returns zero when no journeys exist", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { processProgrammeProgressSnapshot } = await import(
-      "../../src/crons/programme-progress-snapshot"
-    );
+    const { processProgrammeProgressSnapshot } =
+      await import("../../src/crons/programme-progress-snapshot");
     const r = await processProgrammeProgressSnapshot();
     expect(r.journeysSnapshot).toBe(0);
     expect(mockDb.insert).not.toHaveBeenCalled();
@@ -47,9 +46,8 @@ describe("processProgrammeProgressSnapshot", () => {
     mockDb.select
       .mockReturnValueOnce(chainable(journeys))
       .mockReturnValueOnce(chainable(steps));
-    const { processProgrammeProgressSnapshot } = await import(
-      "../../src/crons/programme-progress-snapshot"
-    );
+    const { processProgrammeProgressSnapshot } =
+      await import("../../src/crons/programme-progress-snapshot");
     const r = await processProgrammeProgressSnapshot();
     expect(r.journeysSnapshot).toBe(1);
     expect(mockDb.insert).toHaveBeenCalledOnce();
@@ -74,9 +72,8 @@ describe("processProgrammeProgressSnapshot", () => {
       .mockReturnValueOnce(chainable(journeys))
       .mockReturnValueOnce(chainable([{ status: "completed" }]))
       .mockReturnValueOnce(chainable([{ status: "completed" }]));
-    const { processProgrammeProgressSnapshot } = await import(
-      "../../src/crons/programme-progress-snapshot"
-    );
+    const { processProgrammeProgressSnapshot } =
+      await import("../../src/crons/programme-progress-snapshot");
     const r = await processProgrammeProgressSnapshot();
     expect(r.journeysSnapshot).toBe(2);
     expect(mockDb.insert).toHaveBeenCalledTimes(2);

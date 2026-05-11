@@ -22,9 +22,8 @@ describe("processOverdueTasks", () => {
 
   it("returns processed=0 when no overdue tasks exist", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     const result = await processOverdueTasks();
     expect(result.processed).toBe(0);
     expect(result.errors).toEqual([]);
@@ -47,9 +46,8 @@ describe("processOverdueTasks", () => {
     ];
     mockDb.select.mockReturnValueOnce(chainable(tasks));
 
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     const result = await processOverdueTasks();
 
     expect(result.processed).toBe(1);
@@ -72,9 +70,8 @@ describe("processOverdueTasks", () => {
       },
     ];
     mockDb.select.mockReturnValueOnce(chainable(tasks));
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     await processOverdueTasks();
     expect(mockDb.insert).toHaveBeenCalledTimes(2);
   });
@@ -92,9 +89,8 @@ describe("processOverdueTasks", () => {
       },
     ];
     mockDb.select.mockReturnValueOnce(chainable(tasks));
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     await processOverdueTasks();
     // No assignee → only creator notification (1)
     expect(mockDb.insert).toHaveBeenCalledOnce();
@@ -119,9 +115,8 @@ describe("processOverdueTasks", () => {
       .mockRejectedValue(new Error("DB exploded"));
     mockDb.update.mockReturnValueOnce(failingChain);
 
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     const result = await processOverdueTasks();
     expect(result.processed).toBe(0);
     expect(result.errors.length).toBeGreaterThan(0);
@@ -140,9 +135,8 @@ describe("processOverdueTasks", () => {
       priority: "medium",
     }));
     mockDb.select.mockReturnValueOnce(chainable(tasks));
-    const { processOverdueTasks } = await import(
-      "../../src/crons/overdue-tasks"
-    );
+    const { processOverdueTasks } =
+      await import("../../src/crons/overdue-tasks");
     const result = await processOverdueTasks();
     expect(result.processed).toBe(5);
     // 5 tasks × 1 notification (creator==assignee) = 5

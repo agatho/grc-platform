@@ -28,9 +28,8 @@ describe("processAiActIncidentDeadlineMonitor", () => {
 
   it("returns zero counts when no AI incidents", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processAiActIncidentDeadlineMonitor } = await import(
-      "../../src/crons/ai-act-incident-deadline-monitor"
-    );
+    const { processAiActIncidentDeadlineMonitor } =
+      await import("../../src/crons/ai-act-incident-deadline-monitor");
     const r = await processAiActIncidentDeadlineMonitor();
     expect(r).toBeDefined();
   });
@@ -49,9 +48,8 @@ describe("processAiActIncidentDeadlineMonitor", () => {
         },
       ]),
     );
-    const { processAiActIncidentDeadlineMonitor } = await import(
-      "../../src/crons/ai-act-incident-deadline-monitor"
-    );
+    const { processAiActIncidentDeadlineMonitor } =
+      await import("../../src/crons/ai-act-incident-deadline-monitor");
     await expect(processAiActIncidentDeadlineMonitor()).resolves.toBeDefined();
   });
 });

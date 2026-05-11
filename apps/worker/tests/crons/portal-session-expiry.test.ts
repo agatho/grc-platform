@@ -16,7 +16,8 @@ describe("processPortalSessionExpiry", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/portal-session-expiry");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/portal-session-expiry");
     const fn = mod["processPortalSessionExpiry"];
     expect(typeof fn).toBe("function");
     let threw = false;

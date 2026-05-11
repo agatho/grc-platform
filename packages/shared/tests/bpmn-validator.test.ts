@@ -137,7 +137,8 @@ describe("validateBpmnAdvanced — disconnected elements", () => {
   it("flags orphan tasks as error", () => {
     const r = validateBpmnAdvanced(DISCONNECTED_TASK);
     const issue = r.issues.find(
-      (i) => i.rule === "disconnectedElements" && i.elementId === "Task_2_orphan",
+      (i) =>
+        i.rule === "disconnectedElements" && i.elementId === "Task_2_orphan",
     );
     expect(issue).toBeDefined();
     expect(issue?.category).toBe("error");

@@ -123,9 +123,9 @@ describe("validateCaTransition", () => {
   });
 
   it("rejects closed → anything (terminal state)", () => {
-    expect(
-      validateCaTransition({ from: "closed", to: "in_progress" }).ok,
-    ).toBe(false);
+    expect(validateCaTransition({ from: "closed", to: "in_progress" }).ok).toBe(
+      false,
+    );
   });
 
   it("rejects planned → completed (skipping in_progress)", () => {

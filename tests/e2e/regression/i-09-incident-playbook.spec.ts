@@ -16,9 +16,7 @@ test("E2E-109: incident playbook suggestion + advance-phase smoke", async ({
   test.skip(!id, "no incident available");
 
   const suggest = await page.evaluate(async (id) => {
-    const r = await fetch(
-      `/api/v1/isms/incidents/${id}/playbook-suggestions`,
-    );
+    const r = await fetch(`/api/v1/isms/incidents/${id}/playbook-suggestions`);
     return r.status;
   }, id);
   expect([200, 204]).toContain(suggest);

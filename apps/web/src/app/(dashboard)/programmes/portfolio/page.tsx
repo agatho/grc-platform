@@ -206,9 +206,11 @@ export default function PortfolioPage() {
                     {j.name}
                   </Link>
                   <ProgrammeStatusBadge
-                    status={j.status as Parameters<
-                      typeof ProgrammeStatusBadge
-                    >[0]["status"]}
+                    status={
+                      j.status as Parameters<
+                        typeof ProgrammeStatusBadge
+                      >[0]["status"]
+                    }
                   />
                 </CardTitle>
                 <p className="text-xs font-mono uppercase text-slate-500">

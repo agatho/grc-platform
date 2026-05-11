@@ -19,7 +19,11 @@ const createSubtaskSchema = z.object({
   title: z.string().min(2).max(300),
   description: z.string().max(5000).optional(),
   ownerId: z.string().uuid().nullable().optional(),
-  dueDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  dueDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .nullable()
+    .optional(),
   deliverableType: z.string().max(80).optional(),
   isMandatory: z.boolean().optional(),
 });
@@ -119,9 +123,7 @@ export async function POST(
     .where(eq(programmeJourneySubtask.journeyStepId, stepId))
     .orderBy(asc(programmeJourneySubtask.sequence));
   const nextSequence =
-    existing.length > 0
-      ? Math.max(...existing.map((e) => e.sequence)) + 1
-      : 1;
+    existing.length > 0 ? Math.max(...existing.map((e) => e.sequence)) + 1 : 1;
 
   const [created] = await withAuditContext(ctx, async () =>
     db

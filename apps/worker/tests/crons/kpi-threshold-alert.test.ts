@@ -16,7 +16,8 @@ describe("processKpiThresholdAlert", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/kpi-threshold-alert");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/kpi-threshold-alert");
     const fn = mod["processKpiThresholdAlert"];
     expect(typeof fn).toBe("function");
     let threw = false;

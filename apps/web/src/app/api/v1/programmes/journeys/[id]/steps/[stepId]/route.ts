@@ -15,11 +15,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, isNull } from "drizzle-orm";
 import { updateStepSchema } from "@grc/shared";
 
-async function loadStep(
-  journeyId: string,
-  stepId: string,
-  orgId: string,
-) {
+async function loadStep(journeyId: string, stepId: string, orgId: string) {
   const [journey] = await db
     .select({ id: programmeJourney.id })
     .from(programmeJourney)

@@ -6,17 +6,17 @@
 
 ## Dokument-Set
 
-| # | Dokument | Zweck |
-|---|----------|-------|
-| 01 | [PDCA — Einführungs- & Implementierungszyklus](./01-pdca-introduction-cycle.md) | Erst-Etablierung des ISMS (Plan/Do/Check/Act für die Implementierungsphase) |
-| 02 | [PDCA — Regulärer Betriebszyklus](./02-pdca-regular-cycle.md) | Jährlicher Betriebszyklus nach Inbetriebnahme |
-| 03 | [Roadmap Jahr 1 — ISMS + 27005 + 22301 + NIS2 + DORA](./03-roadmap-year-1.md) | Vollständiger Einführungs-Ablaufplan mit Meilensteinen, Owner, Artefakten |
-| 04 | [Roadmap Jahr 2 — Festigung & KVP](./04-roadmap-year-2.md) | Konsolidierung, interne Audit, Re-Zertifizierung |
-| 05 | [Anforderungskatalog ISMS + BCMS](./05-requirements-catalog.md) | Alle funktionalen + nicht-funktionalen Anforderungen für die Software |
-| 06 | [Detaillierter Testplan](./06-test-plan.md) | Test-Strategie, -Cases, -Daten, -Umgebung |
-| 07 | [Test-Execution-Report + Gap-Liste](./07-test-execution-report.md) | Ausführung, identifizierte Bugs/Lücken |
-| 08 | [Gap-Closure-Report](./08-gap-closure-report.md) | Geschlossene Punkte + verbleibendes Backlog |
-| 09 | [Final Summary & Acceptance](./09-final-summary.md) | Übergabe-Dokument |
+| #   | Dokument                                                                        | Zweck                                                                       |
+| --- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------- |
+| 01  | [PDCA — Einführungs- & Implementierungszyklus](./01-pdca-introduction-cycle.md) | Erst-Etablierung des ISMS (Plan/Do/Check/Act für die Implementierungsphase) |
+| 02  | [PDCA — Regulärer Betriebszyklus](./02-pdca-regular-cycle.md)                   | Jährlicher Betriebszyklus nach Inbetriebnahme                               |
+| 03  | [Roadmap Jahr 1 — ISMS + 27005 + 22301 + NIS2 + DORA](./03-roadmap-year-1.md)   | Vollständiger Einführungs-Ablaufplan mit Meilensteinen, Owner, Artefakten   |
+| 04  | [Roadmap Jahr 2 — Festigung & KVP](./04-roadmap-year-2.md)                      | Konsolidierung, interne Audit, Re-Zertifizierung                            |
+| 05  | [Anforderungskatalog ISMS + BCMS](./05-requirements-catalog.md)                 | Alle funktionalen + nicht-funktionalen Anforderungen für die Software       |
+| 06  | [Detaillierter Testplan](./06-test-plan.md)                                     | Test-Strategie, -Cases, -Daten, -Umgebung                                   |
+| 07  | [Test-Execution-Report + Gap-Liste](./07-test-execution-report.md)              | Ausführung, identifizierte Bugs/Lücken                                      |
+| 08  | [Gap-Closure-Report](./08-gap-closure-report.md)                                | Geschlossene Punkte + verbleibendes Backlog                                 |
+| 09  | [Final Summary & Acceptance](./09-final-summary.md)                             | Übergabe-Dokument                                                           |
 
 ## Lese-Reihenfolge
 

@@ -140,8 +140,8 @@ export async function GET(
         eq(document.orgId, ctx.orgId),
         isNull(document.deletedAt),
         or(
-          ...topTokens.map((t) =>
-            sql`lower(${document.title}) like ${"%" + t + "%"}`,
+          ...topTokens.map(
+            (t) => sql`lower(${document.title}) like ${"%" + t + "%"}`,
           ),
         ),
       ),
@@ -160,8 +160,8 @@ export async function GET(
       and(
         eq(control.orgId, ctx.orgId),
         or(
-          ...topTokens.map((t) =>
-            sql`lower(${control.name}) like ${"%" + t + "%"}`,
+          ...topTokens.map(
+            (t) => sql`lower(${control.name}) like ${"%" + t + "%"}`,
           ),
         ),
       ),
@@ -180,8 +180,8 @@ export async function GET(
       and(
         eq(risk.orgId, ctx.orgId),
         or(
-          ...topTokens.map((t) =>
-            sql`lower(${risk.name}) like ${"%" + t + "%"}`,
+          ...topTokens.map(
+            (t) => sql`lower(${risk.name}) like ${"%" + t + "%"}`,
           ),
         ),
       ),

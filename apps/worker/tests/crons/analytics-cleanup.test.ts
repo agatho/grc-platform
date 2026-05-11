@@ -17,7 +17,8 @@ describe("processAnalyticsCleanup", () => {
 
   it("returns shape with empty cleanup", async () => {
     mockDb.delete.mockReturnValue(chainable({ rowCount: 0 }));
-    const { processAnalyticsCleanup } = await import("../../src/crons/analytics-cleanup");
+    const { processAnalyticsCleanup } =
+      await import("../../src/crons/analytics-cleanup");
     const r = await processAnalyticsCleanup();
     expect(r).toBeDefined();
   });

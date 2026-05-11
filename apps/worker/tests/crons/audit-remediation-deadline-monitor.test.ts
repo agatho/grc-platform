@@ -16,7 +16,8 @@ describe("processAuditRemediationDeadlines", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/audit-remediation-deadline-monitor");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/audit-remediation-deadline-monitor");
     const fn = mod["processAuditRemediationDeadlines"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -16,7 +16,8 @@ describe("processEsgEmissionAggregate", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/esg-emission-aggregate");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/esg-emission-aggregate");
     const fn = mod["processEsgEmissionAggregate"];
     expect(typeof fn).toBe("function");
     let threw = false;

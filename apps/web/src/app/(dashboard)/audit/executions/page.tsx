@@ -118,8 +118,7 @@ function ExecutionsInner() {
       scopeProcesses: parseCsv(formData.get("scopeProcesses") as string),
       scopeDepartments: parseCsv(formData.get("scopeDepartments") as string),
       scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
-      leadAuditorId:
-        (formData.get("leadAuditorId") as string) || undefined,
+      leadAuditorId: (formData.get("leadAuditorId") as string) || undefined,
       auditorIds:
         auditorIdsRaw.filter(Boolean).length > 0
           ? auditorIdsRaw.filter(Boolean)
@@ -305,8 +304,8 @@ function ExecutionsInner() {
                     </select>
                     {auditors.length === 0 && (
                       <p className="text-[11px] text-gray-400 mt-1">
-                        Keine Nutzer mit Rolle „auditor" oder „admin" in
-                        dieser Org — zuerst unter /settings/users zuweisen.
+                        Keine Nutzer mit Rolle „auditor" oder „admin" in dieser
+                        Org — zuerst unter /settings/users zuweisen.
                       </p>
                     )}
                   </div>

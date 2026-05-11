@@ -16,7 +16,8 @@ describe("processQueryCacheWarmer", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/query-cache-warmer");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/query-cache-warmer");
     const fn = mod["processQueryCacheWarmer"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -210,7 +210,9 @@ describe("Email template auto-discovery (full sweep)", () => {
 
       it("getSubject returns non-empty strings for both languages and they differ", () => {
         return import(`../src/templates/${name}`).then(
-          (mod: { getSubject: (data: unknown, lang: "de" | "en") => string }) => {
+          (mod: {
+            getSubject: (data: unknown, lang: "de" | "en") => string;
+          }) => {
             const de = mod.getSubject(kitchenSink, "de");
             const en = mod.getSubject(kitchenSink, "en");
             expect(typeof de).toBe("string");

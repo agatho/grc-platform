@@ -175,7 +175,7 @@ export async function GET(
 
   // ── HTML rendern ──────────────────────────────────────────────
   const ownerName = (uid: string | null) =>
-    uid ? userById.get(uid)?.name ?? userById.get(uid)?.email ?? "—" : "—";
+    uid ? (userById.get(uid)?.name ?? userById.get(uid)?.email ?? "—") : "—";
 
   const generatedAt = new Date().toISOString();
   const generatorEmail = ctx.userId; // limited info; could join user table
@@ -186,9 +186,9 @@ export async function GET(
       const stepsHtml = phaseSteps
         .map((s) => {
           const sOwner = s.ownerId
-            ? ownerById.get(s.ownerId)?.name ??
+            ? (ownerById.get(s.ownerId)?.name ??
               ownerById.get(s.ownerId)?.email ??
-              "—"
+              "—")
             : "—";
           const stepSubtasks = subtasksByStepId.get(s.id) ?? [];
           const stepLinks = linksByStepId.get(s.id) ?? [];
@@ -197,7 +197,11 @@ export async function GET(
               (sub) => `
               <li class="subtask subtask-${sub.status}">
                 <span class="status-marker">${
-                  sub.status === "completed" ? "✓" : sub.status === "skipped" ? "—" : "•"
+                  sub.status === "completed"
+                    ? "✓"
+                    : sub.status === "skipped"
+                      ? "—"
+                      : "•"
                 }</span>
                 <span class="title">${escapeHtml(sub.title)}</span>
                 ${sub.dueDate ? `<span class="meta">fällig: ${sub.dueDate}</span>` : ""}
@@ -399,8 +403,6 @@ export async function GET(
   });
 }
 
-function completedCountOf(
-  subs: Array<{ status: string }>,
-): number {
+function completedCountOf(subs: Array<{ status: string }>): number {
   return subs.filter((s) => s.status === "completed").length;
 }

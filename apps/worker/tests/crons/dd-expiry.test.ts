@@ -16,7 +16,8 @@ describe("processDdExpiry", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/dd-expiry");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/dd-expiry");
     const fn = mod["processDdExpiry"];
     expect(typeof fn).toBe("function");
     let threw = false;

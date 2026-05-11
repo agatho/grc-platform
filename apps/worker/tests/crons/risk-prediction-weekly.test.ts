@@ -16,7 +16,8 @@ describe("processRiskPredictionWeekly", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/risk-prediction-weekly");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/risk-prediction-weekly");
     const fn = mod["processRiskPredictionWeekly"];
     expect(typeof fn).toBe("function");
     let threw = false;

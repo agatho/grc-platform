@@ -119,9 +119,8 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
         {isCalibrating && (
           <div className="rounded-md border border-amber-200 bg-amber-50 p-2 text-xs text-amber-800 dark:border-amber-800 dark:bg-amber-950 dark:text-amber-200">
             Projekt läuft erst {ageDays ?? "?"} Tag{ageDays === 1 ? "" : "e"} —
-            Velocity wird über dieses kurze Fenster hochgerechnet, der
-            Forecast ist statistisch noch unzuverlässig. Ab Tag 14 wird er
-            belastbarer.
+            Velocity wird über dieses kurze Fenster hochgerechnet, der Forecast
+            ist statistisch noch unzuverlässig. Ab Tag 14 wird er belastbarer.
           </div>
         )}
         <div className="grid grid-cols-3 gap-3">
@@ -129,7 +128,9 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
             <div className="text-xs text-slate-500">
               Velocity ({windowDays} d)
             </div>
-            <div className={`text-lg font-semibold ${HEALTH_COLORS[data.velocity.health]}`}>
+            <div
+              className={`text-lg font-semibold ${HEALTH_COLORS[data.velocity.health]}`}
+            >
               {data.velocity.itemsPerDay}/Tag
             </div>
             <div className="text-xs text-slate-500">
@@ -142,7 +143,8 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
               {data.backlog.totalRemaining}
             </div>
             <div className="text-xs text-slate-500">
-              {data.backlog.remainingSteps} Steps + {data.backlog.remainingSubtasks} Tasks
+              {data.backlog.remainingSteps} Steps +{" "}
+              {data.backlog.remainingSubtasks} Tasks
             </div>
           </div>
           <div>
@@ -161,7 +163,8 @@ export function PredictiveWidget({ journeyId }: { journeyId: string }) {
             <div className="flex items-center justify-between">
               <div>
                 <div className="text-xs text-slate-500">
-                  Wahrscheinlichkeit Ziel-Datum {data.journey.targetCompletionDate}
+                  Wahrscheinlichkeit Ziel-Datum{" "}
+                  {data.journey.targetCompletionDate}
                 </div>
                 <div className={`text-2xl font-semibold ${probColor}`}>
                   {prob ?? "—"}%

@@ -17,7 +17,8 @@ describe("processCommunityLicenseCheck", () => {
 
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processCommunityLicenseCheck } = await import("../../src/crons/community-license-check");
+    const { processCommunityLicenseCheck } =
+      await import("../../src/crons/community-license-check");
     const r = await processCommunityLicenseCheck();
     expect(r).toBeDefined();
   });

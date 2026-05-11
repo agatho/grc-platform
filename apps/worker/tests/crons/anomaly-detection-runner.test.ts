@@ -16,7 +16,8 @@ describe("processAnomalyDetection", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/anomaly-detection-runner");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/anomaly-detection-runner");
     const fn = mod["processAnomalyDetection"];
     expect(typeof fn).toBe("function");
     let threw = false;

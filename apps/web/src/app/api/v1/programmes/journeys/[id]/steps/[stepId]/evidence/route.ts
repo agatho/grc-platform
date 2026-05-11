@@ -130,10 +130,7 @@ export async function DELETE(
     ? (step.evidenceLinks as Array<Record<string, unknown>>)
     : [];
   if (parsed.data.index >= links.length) {
-    return Response.json(
-      { error: "Index out of range" },
-      { status: 422 },
-    );
+    return Response.json({ error: "Index out of range" }, { status: 422 });
   }
   const newLinks = links.filter((_, i) => i !== parsed.data.index);
 

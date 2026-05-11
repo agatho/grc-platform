@@ -16,7 +16,8 @@ describe("processContinuousAuditRunner", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/continuous-audit-runner");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/continuous-audit-runner");
     const fn = mod["processContinuousAuditRunner"];
     expect(typeof fn).toBe("function");
     let threw = false;

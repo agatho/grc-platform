@@ -90,11 +90,7 @@ export async function POST(req: Request) {
     ReturnType<typeof syncAllSoaEntriesToProgramme>
   > | null = null;
   try {
-    syncSummary = await syncAllSoaEntriesToProgramme(
-      db,
-      ctx.orgId,
-      ctx.userId,
-    );
+    syncSummary = await syncAllSoaEntriesToProgramme(db, ctx.orgId, ctx.userId);
   } catch (err) {
     console.error("[soa populate] sync failed", err);
   }

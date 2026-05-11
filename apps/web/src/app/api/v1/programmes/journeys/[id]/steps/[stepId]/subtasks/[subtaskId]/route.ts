@@ -112,9 +112,8 @@ export async function PATCH(
 
   // Reverse-sync: if the subtask was projected from a SoA entry and is now
   // completed, bump the SoA entry's implementation status to "implemented".
-  let soaSync: Awaited<
-    ReturnType<typeof reverseSyncSubtaskCompletion>
-  > | null = null;
+  let soaSync: Awaited<ReturnType<typeof reverseSyncSubtaskCompletion>> | null =
+    null;
   if (parsed.data.status === "completed") {
     try {
       soaSync = await reverseSyncSubtaskCompletion(db, subtaskId, ctx.orgId);

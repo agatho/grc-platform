@@ -149,7 +149,10 @@ export async function instantiateJourney(
 
   const phaseCursor: Record<string, string> = { ...phaseStartByPhaseId };
 
-  const journeyStepByTemplateStepId = new Map<string, { id: string; dueDate: string }>();
+  const journeyStepByTemplateStepId = new Map<
+    string,
+    { id: string; dueDate: string }
+  >();
   for (const s of tplSteps) {
     const journeyPhaseId = phaseCodeToId.get(
       tplPhases.find((p) => p.id === s.phaseId)?.code ?? "",
@@ -202,7 +205,9 @@ export async function instantiateJourney(
     if (tplSubtasks.length > 0) {
       const subtaskRows = tplSubtasks
         .map((sub) => {
-          const journeyStep = journeyStepByTemplateStepId.get(sub.templateStepId);
+          const journeyStep = journeyStepByTemplateStepId.get(
+            sub.templateStepId,
+          );
           if (!journeyStep) return null;
           return {
             orgId: input.orgId,
@@ -218,9 +223,7 @@ export async function instantiateJourney(
             deliverableType: sub.deliverableType,
           };
         })
-        .filter(
-          (r): r is NonNullable<typeof r> => r !== null,
-        );
+        .filter((r): r is NonNullable<typeof r> => r !== null);
       if (subtaskRows.length > 0) {
         await db.insert(programmeJourneySubtask).values(subtaskRows);
         subtaskCount = subtaskRows.length;

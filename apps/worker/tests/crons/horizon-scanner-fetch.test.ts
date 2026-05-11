@@ -16,7 +16,8 @@ describe("processHorizonScannerFetch", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/horizon-scanner-fetch");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/horizon-scanner-fetch");
     const fn = mod["processHorizonScannerFetch"];
     expect(typeof fn).toBe("function");
     let threw = false;

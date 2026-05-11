@@ -261,8 +261,13 @@ export function computeJourneyProgress(input: {
   inProgressSteps: number;
   reviewSteps: number;
 }): number {
-  const { totalSteps, completedSteps, skippedSteps, inProgressSteps, reviewSteps } =
-    input;
+  const {
+    totalSteps,
+    completedSteps,
+    skippedSteps,
+    inProgressSteps,
+    reviewSteps,
+  } = input;
   if (totalSteps === 0) return 0;
   const weighted =
     completedSteps + skippedSteps + reviewSteps * 0.85 + inProgressSteps * 0.5;

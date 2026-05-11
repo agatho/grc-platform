@@ -29,9 +29,8 @@ describe("processDsrSlaMonitor", () => {
 
   it("returns zero when no DSRs in pending state", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processDsrSlaMonitor } = await import(
-      "../../src/crons/dsr-sla-monitor"
-    );
+    const { processDsrSlaMonitor } =
+      await import("../../src/crons/dsr-sla-monitor");
     const r = await processDsrSlaMonitor();
     expect(r).toBeDefined();
   });
@@ -51,9 +50,8 @@ describe("processDsrSlaMonitor", () => {
         },
       ]),
     );
-    const { processDsrSlaMonitor } = await import(
-      "../../src/crons/dsr-sla-monitor"
-    );
+    const { processDsrSlaMonitor } =
+      await import("../../src/crons/dsr-sla-monitor");
     await expect(processDsrSlaMonitor()).resolves.toBeDefined();
   });
 });

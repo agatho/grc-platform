@@ -21,11 +21,7 @@ import * as fs from "fs";
 import * as path from "path";
 
 // Resolve docs/openapi.yaml relative to repo root from packages/shared/tests/
-const SPEC_PATH = path.resolve(
-  __dirname,
-  "../../..",
-  "docs/openapi.yaml",
-);
+const SPEC_PATH = path.resolve(__dirname, "../../..", "docs/openapi.yaml");
 
 function readSpec(): string {
   return fs.readFileSync(SPEC_PATH, "utf8");

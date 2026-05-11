@@ -10,9 +10,7 @@ export default defineConfig({
     environment: "node",
     include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
     exclude: ["src/__tests__/api/helpers/**"],
-    environmentMatchGlobs: [
-      ["src/__tests__/components/**", "jsdom"],
-    ],
+    environmentMatchGlobs: [["src/__tests__/components/**", "jsdom"]],
     coverage: {
       ...sharedCoverageConfig,
       include: ["src/**/*.{ts,tsx}"],

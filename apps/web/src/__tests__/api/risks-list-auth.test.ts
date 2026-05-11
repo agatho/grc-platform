@@ -125,8 +125,7 @@ describe("GET /api/v1/risks", () => {
     mockDb.select.mockImplementation(() => {
       selectCallCount += 1;
       // First select call = items, second = count
-      const value: unknown =
-        selectCallCount === 1 ? [] : [{ value: 0 }];
+      const value: unknown = selectCallCount === 1 ? [] : [{ value: 0 }];
       const chain: Record<string, unknown> = {};
       for (const m of [
         "from",
