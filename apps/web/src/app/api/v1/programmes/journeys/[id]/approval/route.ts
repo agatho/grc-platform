@@ -74,7 +74,7 @@ export async function POST(
   // For approve/reject: only admin/risk_manager
   if (
     (parsed.data.action === "approve" || parsed.data.action === "reject") &&
-    !ctx.roles.some((r) => r === "admin" || r === "risk_manager")
+    !ctx.roles?.some((r) => r === "admin" || r === "risk_manager")
   ) {
     return Response.json(
       {

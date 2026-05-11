@@ -149,10 +149,12 @@ export async function GET(
     .limit(50);
 
   // ── Suche Controls ──
+  // control.title and risk.title are the display fields; .name doesn't
+  // exist on these tables (kri uses .name, but control/risk use .title).
   const controls = await db
     .select({
       id: control.id,
-      name: control.name,
+      name: control.title,
       description: control.description,
     })
     .from(control)
@@ -161,7 +163,7 @@ export async function GET(
         eq(control.orgId, ctx.orgId),
         or(
           ...topTokens.map(
-            (t) => sql`lower(${control.name}) like ${"%" + t + "%"}`,
+            (t) => sql`lower(${control.title}) like ${"%" + t + "%"}`,
           ),
         ),
       ),
@@ -172,7 +174,7 @@ export async function GET(
   const risks = await db
     .select({
       id: risk.id,
-      name: risk.name,
+      name: risk.title,
       description: risk.description,
     })
     .from(risk)
@@ -181,7 +183,7 @@ export async function GET(
         eq(risk.orgId, ctx.orgId),
         or(
           ...topTokens.map(
-            (t) => sql`lower(${risk.name}) like ${"%" + t + "%"}`,
+            (t) => sql`lower(${risk.title}) like ${"%" + t + "%"}`,
           ),
         ),
       ),

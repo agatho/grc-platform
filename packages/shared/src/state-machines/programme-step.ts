@@ -233,7 +233,9 @@ export function computeNextBestActions(
           )
         : null;
 
-    if (dueInDays != null && dueInDays < 0 && step.status !== "completed") {
+    // The active-step type union already excludes "completed", so the
+    // not-completed check is implicit — only overdue check remains.
+    if (dueInDays != null && dueInDays < 0) {
       items.push({
         stepId: step.id,
         code: step.code,

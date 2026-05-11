@@ -102,11 +102,28 @@ export async function PATCH(
     );
   }
 
+  // Convert numeric fields from zod (number) to drizzle's expected string
+  // representation for the `numeric` columns. null stays null, undefined
+  // is omitted via spreading so the column doesn't get touched.
+  const { costEstimate, costActual, effortHours, ...rest } = parsed.data;
+  const numericUpdate = {
+    ...(costEstimate !== undefined && {
+      costEstimate: costEstimate === null ? null : String(costEstimate),
+    }),
+    ...(costActual !== undefined && {
+      costActual: costActual === null ? null : String(costActual),
+    }),
+    ...(effortHours !== undefined && {
+      effortHours: effortHours === null ? null : String(effortHours),
+    }),
+  };
+
   const [updated] = await withAuditContext(ctx, async () =>
     db
       .update(programmeJourneyStep)
       .set({
-        ...parsed.data,
+        ...rest,
+        ...numericUpdate,
         updatedAt: new Date(),
         updatedBy: ctx.userId,
       })
