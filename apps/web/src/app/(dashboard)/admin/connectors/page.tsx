@@ -95,7 +95,7 @@ const CATEGORY_ORDER: CategoryKey[] = [
 ];
 
 function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "---";
+  if (!dateStr) return "—";
   return new Date(dateStr).toLocaleString("de-DE", {
     day: "2-digit",
     month: "2-digit",

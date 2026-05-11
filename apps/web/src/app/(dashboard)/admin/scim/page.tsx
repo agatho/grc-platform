@@ -133,7 +133,7 @@ export default function ScimDashboardPage() {
   }
 
   function formatDate(dateStr: string | null) {
-    if (!dateStr) return "---";
+    if (!dateStr) return "—";
     return new Date(dateStr).toLocaleString();
   }
 
@@ -280,7 +280,7 @@ export default function ScimDashboardPage() {
               <tbody>
                 {tokens.map((token) => (
                   <tr key={token.id} className="border-b">
-                    <td className="py-2">{token.description || "---"}</td>
+                    <td className="py-2">{token.description || "—"}</td>
                     <td className="py-2">{formatDate(token.createdAt)}</td>
                     <td className="py-2">{formatDate(token.lastUsedAt)}</td>
                     <td className="py-2">
@@ -354,7 +354,7 @@ export default function ScimDashboardPage() {
                     <td className="py-2">
                       <Badge variant="outline">{log.action}</Badge>
                     </td>
-                    <td className="py-2">{log.userEmail || "---"}</td>
+                    <td className="py-2">{log.userEmail || "—"}</td>
                     <td className="py-2">
                       {log.status === "success" ? (
                         <Badge
