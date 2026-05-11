@@ -1,5 +1,12 @@
 import Link from "next/link";
 
+// Skip static prerender — the App Router not-found page gets executed
+// inside the auto-generated pages/_error.js during build, and at least
+// one provider (Session/NextIntl/Theme) trips a "useContext is null"
+// when it's invoked outside a real request. Marking this dynamic keeps
+// it as an SSR-only page and avoids the build-time crash.
+export const dynamic = "force-dynamic";
+
 export default function NotFound() {
   return (
     <div className="flex min-h-screen flex-col items-center justify-center bg-gray-50 px-4">
