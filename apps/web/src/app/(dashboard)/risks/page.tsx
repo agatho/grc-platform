@@ -538,7 +538,7 @@ function RisksPageInner() {
         header: t("form.owner"),
         cell: ({ row }) => {
           const name = row.original.ownerName ?? row.original.ownerEmail;
-          if (!name) return <span className="text-gray-400">\u2014</span>;
+          if (!name) return <span className="text-gray-400">{"\u2014"}</span>;
           return (
             <div className="flex items-center gap-2">
               <div className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-200 text-[10px] font-semibold text-slate-600 uppercase">
@@ -589,7 +589,9 @@ function RisksPageInner() {
         header: t("form.strategy"),
         cell: ({ row }) => {
           const s = row.original.treatmentStrategy;
-          if (!s) return <span className="text-gray-400">\u2014</span>;
+          // Em-dash for empty cell. The Unicode literal renders as 6 chars
+          // in JSX text \u2014 must escape via JS string expression (QA-013).
+          if (!s) return <span className="text-gray-400">{"\u2014"}</span>;
           return (
             <Badge variant="outline" className={strategyBadgeClass(s)}>
               {t(`treatment.${s}`)}
