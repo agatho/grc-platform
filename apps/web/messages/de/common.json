@@ -369,6 +369,8 @@
       "activeControls": "Aktive Kontrollen",
       "pendingFindings": "Offene Findings",
       "complianceScore": "Compliance-Score",
+      "complianceScoreFormula": "Anteil geschlossener und akzeptierter Risiken am Gesamtbestand. 0 % bedeutet: alle Risiken sind noch offen oder werden gerade behandelt.",
+      "complianceScoreEmpty": "Noch keine Risiken im Bestand.",
       "upcomingAudits": "Anstehende Audits",
       "recentChanges": "Letzte Änderungen",
       "myTasks": "Meine Aufgaben",
@@ -959,12 +961,26 @@
       "high": "Hoch",
       "veryHigh": "Sehr hoch"
     },
+    "likelihoodDesc": {
+      "veryLow": "< 5 % p.a. — Ereignis unwahrscheinlich, kein bekannter Vorfall.",
+      "low": "5–25 % p.a. — selten, einzelne Vorfälle in der Branche.",
+      "medium": "25–50 % p.a. — mehrfach pro Jahr in der Branche / vergleichbaren Organisationen.",
+      "high": "50–80 % p.a. — wiederholt im eigenen Unternehmen, Eintritt erwartbar.",
+      "veryHigh": "> 80 % p.a. — quasi sicher, bereits eingetreten oder in Vorbereitung."
+    },
     "impact": {
       "veryLow": "Sehr gering",
       "low": "Gering",
       "medium": "Mittel",
       "high": "Hoch",
       "veryHigh": "Sehr hoch"
+    },
+    "impactDesc": {
+      "veryLow": "< 10 k EUR Schaden, keine externe Wahrnehmung, < 4 h Ausfall.",
+      "low": "10–100 k EUR, lokale Beeinträchtigung, < 1 Tag Ausfall.",
+      "medium": "100 k – 1 Mio EUR, mehrtägiger Ausfall, regulatorische Anfragen möglich.",
+      "high": "1–10 Mio EUR, Wochenausfall, Medienberichterstattung, BaFin/Aufsicht informiert.",
+      "veryHigh": "> 10 Mio EUR / Mehrwochenausfall / Sanktionen / Existenzbedrohung."
     },
     "treatment": {
       "mitigate": "Mindern",
@@ -1065,7 +1081,8 @@
         "treatment": "Behandlung",
         "kris": "KRIs",
         "linkages": "Verknüpfungen",
-        "history": "Historie"
+        "history": "Historie",
+        "documents": "Dokumente"
       },
       "status": "Status",
       "owner": "Verantwortlicher",

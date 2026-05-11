@@ -472,17 +472,33 @@ export default function DashboardPage() {
                   ? t("risk.appetite.exceeded")
                   : null;
             } else if (key === "complianceScore") {
-              const total = riskSummary.totalRisks || 1;
+              const total = riskSummary.totalRisks;
               const closed = riskSummary.byStatus?.closed ?? 0;
               const accepted = riskSummary.byStatus?.accepted ?? 0;
-              const score = Math.round(((closed + accepted) / total) * 100);
-              displayValue = `${score}%`;
+              if (total === 0) {
+                displayValue = "—";
+                subtitle = t("widgets.complianceScoreEmpty");
+              } else {
+                const score = Math.round(((closed + accepted) / total) * 100);
+                displayValue = `${score}%`;
+                // Make the formula explicit in a non-error subtitle so a 0 %
+                // reading isn't read as "everything is broken" (QA-010).
+                subtitle = `${closed + accepted}/${total} ${t("risk.detail.statuses.closed").toLowerCase()}+${t("risk.detail.statuses.accepted").toLowerCase()}`;
+              }
             }
           }
+
+          // The compliance-score card explains its formula on hover so it's
+          // not mistaken for a system error when it reads 0 % (QA-010).
+          const cardTooltip =
+            key === "complianceScore"
+              ? t("widgets.complianceScoreFormula")
+              : undefined;
 
           return (
             <div
               key={key}
+              title={cardTooltip}
               className={`bg-white rounded-lg border border-gray-200 border-l-4 ${accent} p-5 flex items-start gap-4 shadow-sm`}
             >
               <div className={`p-2.5 rounded-lg ${color}`}>
@@ -498,7 +514,15 @@ export default function DashboardPage() {
                       {displayValue}
                     </p>
                     {subtitle && (
-                      <p className="text-xs text-red-500 mt-1">{subtitle}</p>
+                      <p
+                        className={
+                          key === "complianceScore"
+                            ? "text-xs text-gray-500 mt-1"
+                            : "text-xs text-red-500 mt-1"
+                        }
+                      >
+                        {subtitle}
+                      </p>
                     )}
                   </>
                 ) : (

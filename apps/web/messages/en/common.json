@@ -369,6 +369,8 @@
       "activeControls": "Active Controls",
       "pendingFindings": "Pending Findings",
       "complianceScore": "Compliance Score",
+      "complianceScoreFormula": "Share of closed and accepted risks across the register. 0 % means every risk is still open or under treatment.",
+      "complianceScoreEmpty": "No risks recorded yet.",
       "upcomingAudits": "Upcoming Audits",
       "recentChanges": "Recent Changes",
       "myTasks": "My Tasks",
@@ -959,12 +961,26 @@
       "high": "High",
       "veryHigh": "Very High"
     },
+    "likelihoodDesc": {
+      "veryLow": "< 5 % p.a. — event unlikely, no known incident.",
+      "low": "5–25 % p.a. — rare, isolated incidents in the industry.",
+      "medium": "25–50 % p.a. — multiple times per year across peer organizations.",
+      "high": "50–80 % p.a. — recurring within the company, occurrence expected.",
+      "veryHigh": "> 80 % p.a. — virtually certain, already realized or imminent."
+    },
     "impact": {
       "veryLow": "Very Low",
       "low": "Low",
       "medium": "Medium",
       "high": "High",
       "veryHigh": "Very High"
+    },
+    "impactDesc": {
+      "veryLow": "< €10 k loss, no external visibility, < 4 h downtime.",
+      "low": "€10–100 k, local disruption, < 1 day downtime.",
+      "medium": "€100 k – €1 m, multi-day downtime, possible regulatory inquiry.",
+      "high": "€1–10 m, week-long downtime, media coverage, regulator notified.",
+      "veryHigh": "> €10 m / weeks of downtime / sanctions / threat to going concern."
     },
     "treatment": {
       "mitigate": "Mitigate",
@@ -1065,7 +1081,8 @@
         "treatment": "Treatment",
         "kris": "KRIs",
         "linkages": "Linkages",
-        "history": "History"
+        "history": "History",
+        "documents": "Documents"
       },
       "status": "Status",
       "owner": "Owner",

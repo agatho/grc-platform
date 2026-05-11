@@ -4,7 +4,6 @@ import {
   workItem,
   user,
   userOrganizationRole,
-  riskAppetite,
   notification,
 } from "@grc/db";
 import { createRiskSchema } from "@grc/shared";
@@ -17,7 +16,6 @@ import {
   desc,
   asc,
   inArray,
-  sql,
   ilike,
   gte,
   lte,
@@ -29,6 +27,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { log } from "@/lib/logger";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/risks — Create risk
@@ -72,68 +71,118 @@ export async function POST(req: Request) {
     }
   }
 
-  const created = await withAuditContext(ctx, async (tx) => {
-    // Create work item for the risk
-    const [wi] = await tx
-      .insert(workItem)
-      .values({
-        orgId: ctx.orgId,
-        typeKey: "risk",
-        name: body.data.title,
-        status: "draft",
-        responsibleId: body.data.ownerId,
-        grcPerspective: ["erm"],
-        createdBy: ctx.userId,
-        updatedBy: ctx.userId,
-      })
-      .returning();
+  // Pre-compute scores from assessment input so the wizard's Step-2 values
+  // survive the create round-trip. Risk-status follows the lifecycle: a risk
+  // with both inherent dimensions filled is at least 'assessed' (ISO 31000).
+  const inhL = body.data.inherentLikelihood;
+  const inhI = body.data.inherentImpact;
+  const resL = body.data.residualLikelihood;
+  const resI = body.data.residualImpact;
+  const inherentScore = inhL != null && inhI != null ? inhL * inhI : null;
+  const residualScore = resL != null && resI != null ? resL * resI : null;
+  const initialStatus: "identified" | "assessed" | "treated" =
+    body.data.treatmentStrategy != null
+      ? "treated"
+      : inherentScore != null
+        ? "assessed"
+        : "identified";
 
-    // Create the risk
-    const [row] = await tx
-      .insert(risk)
-      .values({
-        orgId: ctx.orgId,
-        workItemId: wi.id,
-        title: body.data.title,
-        description: body.data.description,
-        riskCategory: body.data.riskCategory,
-        riskSource: body.data.riskSource,
-        ownerId: body.data.ownerId,
-        department: body.data.department,
-        reviewDate: body.data.reviewDate,
-        financialImpactMin: body.data.financialImpactMin?.toString(),
-        financialImpactMax: body.data.financialImpactMax?.toString(),
-        financialImpactExpected: body.data.financialImpactExpected?.toString(),
-        createdBy: ctx.userId,
-        updatedBy: ctx.userId,
-      })
-      .returning();
-
-    // Send notification to owner
-    if (body.data.ownerId && body.data.ownerId !== ctx.userId) {
-      await tx.insert(notification).values({
-        userId: body.data.ownerId,
-        orgId: ctx.orgId,
-        type: "task_assigned",
-        entityType: "risk",
-        entityId: row.id,
-        title: `Risk assigned to you: ${body.data.title}`,
-        message: body.data.description ?? null,
-        channel: "both",
-        templateKey: "risk_owner_assigned",
-        templateData: {
-          riskId: row.id,
-          riskTitle: body.data.title,
-          assignedBy: ctx.userId,
-        },
-        createdBy: ctx.userId,
-      });
-    }
-
-    return { ...row, elementId: wi.elementId };
+  const logger = log.withContext({
+    route: "POST /api/v1/risks",
+    userId: ctx.userId,
+    orgId: ctx.orgId,
   });
 
-  return Response.json({ data: created }, { status: 201 });
+  try {
+    const created = await withAuditContext(ctx, async (tx) => {
+      // Create work item for the risk
+      const [wi] = await tx
+        .insert(workItem)
+        .values({
+          orgId: ctx.orgId,
+          typeKey: "risk",
+          name: body.data.title,
+          status: "draft",
+          responsibleId: body.data.ownerId,
+          grcPerspective: ["erm"],
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      // Create the risk
+      const [row] = await tx
+        .insert(risk)
+        .values({
+          orgId: ctx.orgId,
+          workItemId: wi.id,
+          title: body.data.title,
+          description: body.data.description,
+          riskCategory: body.data.riskCategory,
+          riskSource: body.data.riskSource,
+          status: initialStatus,
+          ownerId: body.data.ownerId,
+          department: body.data.department,
+          reviewDate: body.data.reviewDate,
+          inherentLikelihood: inhL,
+          inherentImpact: inhI,
+          residualLikelihood: resL,
+          residualImpact: resI,
+          riskScoreInherent: inherentScore,
+          riskScoreResidual: residualScore,
+          treatmentStrategy: body.data.treatmentStrategy,
+          treatmentRationale: body.data.treatmentRationale,
+          financialImpactMin: body.data.financialImpactMin?.toString(),
+          financialImpactMax: body.data.financialImpactMax?.toString(),
+          financialImpactExpected:
+            body.data.financialImpactExpected?.toString(),
+          catalogEntryId: body.data.catalogEntryId,
+          catalogSource: body.data.catalogSource,
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      // Send notification to owner
+      if (body.data.ownerId && body.data.ownerId !== ctx.userId) {
+        await tx.insert(notification).values({
+          userId: body.data.ownerId,
+          orgId: ctx.orgId,
+          type: "task_assigned",
+          entityType: "risk",
+          entityId: row.id,
+          title: `Risk assigned to you: ${body.data.title}`,
+          message: body.data.description ?? null,
+          channel: "both",
+          templateKey: "risk_owner_assigned",
+          templateData: {
+            riskId: row.id,
+            riskTitle: body.data.title,
+            assignedBy: ctx.userId,
+          },
+          createdBy: ctx.userId,
+        });
+      }
+
+      return { ...row, elementId: wi.elementId };
+    });
+
+    return Response.json({ data: created }, { status: 201 });
+  } catch (err) {
+    // Surface the underlying DB error to logs (constraint name, column, etc.)
+    // so a 500 has a real footprint instead of vanishing into the abyss.
+    // The client still gets a generic message — never expose driver detail.
+    const errObj = err as { code?: string; detail?: string; message?: string };
+    logger.error("risk create failed", {
+      pgCode: errObj.code,
+      pgDetail: errObj.detail,
+      message: errObj.message,
+    });
+    return Response.json(
+      { error: "Failed to create risk", code: errObj.code ?? "internal" },
+      { status: 500 },
+    );
+  }
 }
 
 // GET /api/v1/risks — List risks with filters

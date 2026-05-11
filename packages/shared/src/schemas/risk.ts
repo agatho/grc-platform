@@ -44,6 +44,8 @@ const kriMeasurementFrequencyValues = [
   "quarterly",
 ] as const;
 
+const likelihoodImpactScale = z.number().int().min(1).max(5);
+
 // ─── Risk CRUD ───────────────────────────────────────────────
 
 export const createRiskSchema = z
@@ -58,6 +60,16 @@ export const createRiskSchema = z
     financialImpactMin: z.number().nonnegative().optional(),
     financialImpactMax: z.number().nonnegative().optional(),
     financialImpactExpected: z.number().nonnegative().optional(),
+    // Inline assessment from create-wizard (Sprint 2 lifecycle entry point).
+    // Without these the wizard's Step-2 input was silently dropped after the
+    // initial create — tracked as QA-001 in the 2026-05-10 lifecycle audit.
+    inherentLikelihood: likelihoodImpactScale.optional(),
+    inherentImpact: likelihoodImpactScale.optional(),
+    residualLikelihood: likelihoodImpactScale.optional(),
+    residualImpact: likelihoodImpactScale.optional(),
+    // Inline treatment from create-wizard (Sprint 2 lifecycle entry point).
+    treatmentStrategy: z.enum(treatmentStrategyValues).optional(),
+    treatmentRationale: z.string().optional(),
     // Catalog & Framework Layer hook (ADR-013)
     catalogEntryId: z.string().uuid().optional(),
     catalogSource: z.string().max(50).optional(),
@@ -72,6 +84,30 @@ export const createRiskSchema = z
     {
       message: "financialImpactMax must be >= financialImpactMin",
       path: ["financialImpactMax"],
+    },
+  )
+  .refine(
+    (data) => {
+      const hasInhL = data.inherentLikelihood != null;
+      const hasInhI = data.inherentImpact != null;
+      return hasInhL === hasInhI;
+    },
+    {
+      message:
+        "inherentLikelihood and inherentImpact must both be provided or both omitted",
+      path: ["inherentImpact"],
+    },
+  )
+  .refine(
+    (data) => {
+      const hasResL = data.residualLikelihood != null;
+      const hasResI = data.residualImpact != null;
+      return hasResL === hasResI;
+    },
+    {
+      message:
+        "residualLikelihood and residualImpact must both be provided or both omitted",
+      path: ["residualImpact"],
     },
   );
 
@@ -107,8 +143,6 @@ export const updateRiskSchema = z
   );
 
 // ─── Risk Assessment ─────────────────────────────────────────
-
-const likelihoodImpactScale = z.number().int().min(1).max(5);
 
 export const assessRiskSchema = z
   .object({
