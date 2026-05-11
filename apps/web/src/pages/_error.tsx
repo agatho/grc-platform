@@ -32,8 +32,7 @@ const ErrorPage: NextPage<ErrorProps> = ({ statusCode }) => {
         justifyContent: "center",
         backgroundColor: "#f9fafb",
         padding: "1rem",
-        fontFamily:
-          'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
+        fontFamily: 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif',
         color: "#111827",
       }}
     >
