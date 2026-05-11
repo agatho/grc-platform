@@ -80,6 +80,31 @@ export async function GET(req: Request) {
     searchParams.get("entityId") ?? searchParams.get("entity_id");
   if (entityId) conditions.push(eq(auditLog.entityId, entityId));
 
+  // QA-014 (2026-05-11): when no entity_type is requested, hide internal
+  // bookkeeping tables from the response so the dashboard "recent changes"
+  // widget shows actual user-visible activity instead of search-index
+  // refreshes and audit-anchor housekeeping. Callers that explicitly want
+  // these can opt back in with `?includeInternal=true`.
+  const includeInternal = searchParams.get("includeInternal") === "true";
+  if (!entityType && !includeInternal) {
+    const INTERNAL_ENTITY_TYPES = [
+      "search_index",
+      "audit_anchor",
+      "event_log",
+      "module_config",
+      "translation_status",
+      "module_definition",
+      "user_session",
+      "session",
+    ];
+    conditions.push(
+      sql`${auditLog.entityType} NOT IN (${sql.join(
+        INTERNAL_ENTITY_TYPES.map((t) => sql`${t}`),
+        sql`, `,
+      )})`,
+    );
+  }
+
   const action = searchParams.get("action");
   if (action)
     conditions.push(sql`${auditLog.action} = ${action}::audit_action`);

@@ -102,7 +102,25 @@ export async function PUT(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
-  const body = updateRiskSchema.safeParse(await req.json());
+  const rawBody = (await req.json()) as Record<string, unknown>;
+
+  // QA-012 (2026-05-11): the generic update endpoint used to silently
+  // strip `status` because updateRiskSchema doesn't list it. Callers
+  // (especially scripted ones) thought their status change had landed
+  // because the response was 200 with no error. Reject the field
+  // explicitly and point to the dedicated state-machine endpoint.
+  if (Object.prototype.hasOwnProperty.call(rawBody, "status")) {
+    return Response.json(
+      {
+        error:
+          "status changes must go through PUT /api/v1/risks/{id}/status (state-machine guarded). The generic update endpoint does not accept status.",
+        endpoint: `/api/v1/risks/${id}/status`,
+      },
+      { status: 422 },
+    );
+  }
+
+  const body = updateRiskSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
