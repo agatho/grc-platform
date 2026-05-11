@@ -16,7 +16,8 @@ describe("processPostureSnapshot", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/posture-snapshot");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/posture-snapshot");
     const fn = mod["processPostureSnapshot"];
     expect(typeof fn).toBe("function");
     let threw = false;

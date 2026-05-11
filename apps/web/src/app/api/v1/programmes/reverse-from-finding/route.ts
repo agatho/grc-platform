@@ -271,7 +271,8 @@ export async function POST(req: Request) {
         journeyStepId: step2.id,
         sequence: 3,
         title: "Erster Wirksamkeits-Test",
-        description: "Sicherstellen, dass die Maßnahme das adressierte Problem tatsächlich verhindert.",
+        description:
+          "Sicherstellen, dass die Maßnahme das adressierte Problem tatsächlich verhindert.",
         status: "pending",
         deliverableType: "evidence",
       },
@@ -301,7 +302,8 @@ export async function POST(req: Request) {
         journeyStepId: step3.id,
         sequence: 2,
         title: "NC im Audit-Modul formell schließen",
-        description: "Wenn Verifikation positiv: NC-Status auf 'closed', mit Cross-Link zu dieser Journey.",
+        description:
+          "Wenn Verifikation positiv: NC-Status auf 'closed', mit Cross-Link zu dieser Journey.",
         status: "pending",
       },
     ]);

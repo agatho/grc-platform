@@ -39,9 +39,8 @@ describe("processNotificationDigest", () => {
 
   it("returns expected stats with no users opted in", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processNotificationDigest } = await import(
-      "../../src/crons/notification-digest"
-    );
+    const { processNotificationDigest } =
+      await import("../../src/crons/notification-digest");
     const r = await processNotificationDigest();
     expect(r).toEqual(
       expect.objectContaining({

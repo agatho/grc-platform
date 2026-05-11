@@ -73,10 +73,12 @@ export const programmeStepStatusEnum = pgEnum("programme_step_status", [
   "cancelled",
 ]);
 
-export const programmeApprovalStatusEnum = pgEnum(
-  "programme_approval_status",
-  ["not_required", "pending", "approved", "rejected"],
-);
+export const programmeApprovalStatusEnum = pgEnum("programme_approval_status", [
+  "not_required",
+  "pending",
+  "approved",
+  "rejected",
+]);
 
 // ──────────────────────────────────────────────────────────────
 // programme_template — global, immutable nach publication
@@ -139,7 +141,10 @@ export const programmeTemplatePhase = pgTable(
       .defaultNow(),
   },
   (t) => [
-    uniqueIndex("programme_template_phase_seq_idx").on(t.templateId, t.sequence),
+    uniqueIndex("programme_template_phase_seq_idx").on(
+      t.templateId,
+      t.sequence,
+    ),
     uniqueIndex("programme_template_phase_code_idx").on(t.templateId, t.code),
   ],
 );
@@ -617,8 +622,7 @@ export type ProgrammeJourneySubtaskInsert =
   typeof programmeJourneySubtask.$inferInsert;
 export type ProgrammeStepLink = typeof programmeStepLink.$inferSelect;
 export type ProgrammeStepLinkInsert = typeof programmeStepLink.$inferInsert;
-export type ProgrammeApprovalEvent =
-  typeof programmeApprovalEvent.$inferSelect;
+export type ProgrammeApprovalEvent = typeof programmeApprovalEvent.$inferSelect;
 export type ProgrammeApprovalEventInsert =
   typeof programmeApprovalEvent.$inferInsert;
 

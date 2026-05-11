@@ -16,7 +16,8 @@ describe("processPlaybookSuggestion", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/playbook-suggestion");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/playbook-suggestion");
     const fn = mod["processPlaybookSuggestion"];
     expect(typeof fn).toBe("function");
     let threw = false;

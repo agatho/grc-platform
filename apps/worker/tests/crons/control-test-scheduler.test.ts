@@ -18,7 +18,8 @@ describe("processControlTestScheduler", () => {
 
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processControlTestScheduler } = await import("../../src/crons/control-test-scheduler");
+    const { processControlTestScheduler } =
+      await import("../../src/crons/control-test-scheduler");
     const r = await processControlTestScheduler();
     expect(r).toBeDefined();
   });

@@ -202,9 +202,7 @@ describe("Domain RBAC suite — parametric", () => {
           Response.json({ error: "Unauthorized" }, { status: 401 }),
         );
         const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (
-          req: Request,
-        ) => Promise<Response>;
+        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
         expect(typeof handler).toBe("function");
         const res = await handler(makeReq(spec.method, spec.urlPath));
         expect(res.status).toBe(401);
@@ -215,9 +213,7 @@ describe("Domain RBAC suite — parametric", () => {
           Response.json({ error: "Unauthorized" }, { status: 401 }),
         );
         const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (
-          req: Request,
-        ) => Promise<Response>;
+        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
         await handler(makeReq(spec.method, spec.urlPath));
         expect(withAuthMock).toHaveBeenCalledWith(...spec.expectedRoles);
       });
@@ -227,9 +223,7 @@ describe("Domain RBAC suite — parametric", () => {
           Response.json({ error: "Forbidden" }, { status: 403 }),
         );
         const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (
-          req: Request,
-        ) => Promise<Response>;
+        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
         const res = await handler(makeReq(spec.method, spec.urlPath));
         expect(res.status).toBe(403);
       });

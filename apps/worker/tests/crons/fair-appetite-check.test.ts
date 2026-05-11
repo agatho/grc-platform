@@ -16,7 +16,8 @@ describe("processFairAppetiteCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/fair-appetite-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/fair-appetite-check");
     const fn = mod["processFairAppetiteCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

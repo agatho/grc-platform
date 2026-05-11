@@ -16,7 +16,8 @@ describe("processTechRadarMigrationAlerts", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/tech-radar-migration-alerts");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/tech-radar-migration-alerts");
     const fn = mod["processTechRadarMigrationAlerts"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -22,10 +22,7 @@ import {
   CircleSlash,
 } from "lucide-react";
 import { ProgrammeStepStatusBadge } from "@/components/programme/programme-status-badge";
-import {
-  PROGRAMME_STEP_STATUSES,
-  type ProgrammeStepStatus,
-} from "@grc/shared";
+import { PROGRAMME_STEP_STATUSES, type ProgrammeStepStatus } from "@grc/shared";
 
 const SUBTASK_STATUSES = [
   "pending",
@@ -191,7 +188,11 @@ export default function StepDetailPage({
     }
   }
 
-  async function acceptSuggestion(s: { kind: string; id: string; title: string }) {
+  async function acceptSuggestion(s: {
+    kind: string;
+    id: string;
+    title: string;
+  }) {
     setError(null);
     try {
       const r = await fetch(
@@ -283,7 +284,9 @@ export default function StepDetailPage({
           body: JSON.stringify({
             ownerId: editOwnerId || null,
             dueDate: editDueDate || null,
-            costEstimate: editCostEstimate ? parseFloat(editCostEstimate) : null,
+            costEstimate: editCostEstimate
+              ? parseFloat(editCostEstimate)
+              : null,
             effortHours: editEffortHours ? parseInt(editEffortHours, 10) : null,
           }),
         },
@@ -589,7 +592,9 @@ export default function StepDetailPage({
 
   const step = data.step;
   const evidenceProvided = step.evidenceLinks?.length ?? 0;
-  const completedSubtasks = subtasks.filter((s) => s.status === "completed").length;
+  const completedSubtasks = subtasks.filter(
+    (s) => s.status === "completed",
+  ).length;
   const ownerName = (uid: string | null) => {
     if (!uid) return null;
     const u = users.find((x) => x.id === uid);
@@ -640,9 +645,7 @@ export default function StepDetailPage({
               <div className="grid grid-cols-2 gap-4 text-sm">
                 <div>
                   <Label className="text-slate-500">{t("step.owner")}</Label>
-                  <div className="mt-1">
-                    {ownerName(step.ownerId) ?? "—"}
-                  </div>
+                  <div className="mt-1">{ownerName(step.ownerId) ?? "—"}</div>
                 </div>
                 <div>
                   <Label className="text-slate-500">{t("step.dueDate")}</Label>
@@ -1334,7 +1337,8 @@ export default function StepDetailPage({
           </CardHeader>
           <CardContent className="space-y-3">
             <div className="text-sm text-slate-600 dark:text-slate-400">
-              Genehmigungs-Pflicht für Status-Übergang aktivieren oder als Reviewer zustimmen/ablehnen.
+              Genehmigungs-Pflicht für Status-Übergang aktivieren oder als
+              Reviewer zustimmen/ablehnen.
             </div>
             <div className="flex flex-wrap items-center gap-2">
               <Button
@@ -1350,19 +1354,16 @@ export default function StepDetailPage({
                     "Optionale Notiz für Reviewer:",
                     "",
                   );
-                  await fetch(
-                    `/api/v1/programmes/journeys/${id}/approval`,
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        action: "request",
-                        stepId,
-                        targetStatus: target,
-                        notes,
-                      }),
-                    },
-                  );
+                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "request",
+                      stepId,
+                      targetStatus: target,
+                      notes,
+                    }),
+                  });
                   await load();
                 }}
               >
@@ -1372,22 +1373,16 @@ export default function StepDetailPage({
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  const notes = window.prompt(
-                    "Approval-Notiz (Reviewer):",
-                    "",
-                  );
-                  await fetch(
-                    `/api/v1/programmes/journeys/${id}/approval`,
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        action: "approve",
-                        stepId,
-                        notes,
-                      }),
-                    },
-                  );
+                  const notes = window.prompt("Approval-Notiz (Reviewer):", "");
+                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "approve",
+                      stepId,
+                      notes,
+                    }),
+                  });
                   await load();
                 }}
                 className="text-emerald-700"
@@ -1398,23 +1393,17 @@ export default function StepDetailPage({
                 size="sm"
                 variant="outline"
                 onClick={async () => {
-                  const notes = window.prompt(
-                    "Begründung für Ablehnung:",
-                    "",
-                  );
+                  const notes = window.prompt("Begründung für Ablehnung:", "");
                   if (!notes) return;
-                  await fetch(
-                    `/api/v1/programmes/journeys/${id}/approval`,
-                    {
-                      method: "POST",
-                      headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({
-                        action: "reject",
-                        stepId,
-                        notes,
-                      }),
-                    },
-                  );
+                  await fetch(`/api/v1/programmes/journeys/${id}/approval`, {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      action: "reject",
+                      stepId,
+                      notes,
+                    }),
+                  });
                   await load();
                 }}
                 className="text-red-700"
@@ -1446,21 +1435,20 @@ export default function StepDetailPage({
                   required
                 >
                   <option value="">{t("step.selectTarget")}</option>
-                  {PROGRAMME_STEP_STATUSES.filter(
-                    (s) => s !== step.status,
-                  ).map((s) => (
-                    <option key={s} value={s}>
-                      {t(`status.step.${s}`)}
-                    </option>
-                  ))}
+                  {PROGRAMME_STEP_STATUSES.filter((s) => s !== step.status).map(
+                    (s) => (
+                      <option key={s} value={s}>
+                        {t(`status.step.${s}`)}
+                      </option>
+                    ),
+                  )}
                 </select>
               </div>
               {(transitionTarget === "skipped" ||
                 transitionTarget === "blocked") && (
                 <div className="space-y-1.5">
                   <Label htmlFor="transition-reason">
-                    {t("step.reason")}{" "}
-                    <span className="text-red-600">*</span>
+                    {t("step.reason")} <span className="text-red-600">*</span>
                   </Label>
                   <Textarea
                     id="transition-reason"

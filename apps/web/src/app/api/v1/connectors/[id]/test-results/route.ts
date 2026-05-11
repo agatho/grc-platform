@@ -5,7 +5,10 @@ import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
 // GET /api/v1/connectors/:id/test-results — List test results for a connector
-export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -44,7 +47,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ id: stri
         executedAt: connectorTestResult.executedAt,
       })
       .from(connectorTestResult)
-      .leftJoin(connectorTestDefinition, eq(connectorTestResult.testDefinitionId, connectorTestDefinition.id))
+      .leftJoin(
+        connectorTestDefinition,
+        eq(connectorTestResult.testDefinitionId, connectorTestDefinition.id),
+      )
       .where(where)
       .orderBy(desc(connectorTestResult.executedAt))
       .limit(limit)

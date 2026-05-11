@@ -107,12 +107,7 @@ export async function PUT(
   let syncResult: Awaited<ReturnType<typeof syncSoaEntryToProgramme>> | null =
     null;
   try {
-    syncResult = await syncSoaEntryToProgramme(
-      db,
-      ctx.orgId,
-      id,
-      ctx.userId,
-    );
+    syncResult = await syncSoaEntryToProgramme(db, ctx.orgId, id, ctx.userId);
   } catch (err) {
     console.error("[soa PUT] sync failed for", id, err);
   }

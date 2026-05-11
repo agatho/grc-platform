@@ -330,8 +330,7 @@ const ISO_27001_STEPS: SeedStep[] = [
       },
       {
         title: "Freigabe + Unterschrift CEO",
-        description:
-          "PDF mit Unterschrift erzeugen, Versionsdatum festlegen.",
+        description: "PDF mit Unterschrift erzeugen, Versionsdatum festlegen.",
         deliverableType: "policy",
         defaultDurationDays: 2,
       },
@@ -770,8 +769,7 @@ const ISO_27001_STEPS: SeedStep[] = [
       },
       {
         title: "Erfüllungsquote ≥ 80 % erreichen",
-        description:
-          "Reporting an Steering. Säumige eskalieren.",
+        description: "Reporting an Steering. Säumige eskalieren.",
         defaultDurationDays: 5,
       },
     ],
@@ -929,8 +927,7 @@ const ISO_27001_STEPS: SeedStep[] = [
       },
       {
         title: "Audit-Durchführung restlicher Scope",
-        description:
-          "Bei Findings aus Welle 1 prüfen ob systemisch.",
+        description: "Bei Findings aus Welle 1 prüfen ob systemisch.",
         defaultDurationDays: 12,
       },
       {
@@ -1094,8 +1091,7 @@ const ISO_27001_STEPS: SeedStep[] = [
     subtasks: [
       {
         title: "Stage-2-Termin fixieren",
-        description:
-          "Optimal 4-6 Wochen nach Stage 1. Auditor-Plan abstimmen.",
+        description: "Optimal 4-6 Wochen nach Stage 1. Auditor-Plan abstimmen.",
         defaultDurationDays: 2,
       },
       {
@@ -2097,7 +2093,8 @@ const GDPR_STEPS: SeedStep[] = [
         deliverableType: "policy",
       },
       {
-        title: "Spezielle Privacy-Notices (Art. 14) für indirekt erhobene Daten",
+        title:
+          "Spezielle Privacy-Notices (Art. 14) für indirekt erhobene Daten",
         description:
           "z.B. Bewerber-Daten von Personalvermittlern, Kunden-Daten von Distributor. Pro Quelle eigene Notice.",
         defaultDurationDays: 3,
@@ -2815,7 +2812,8 @@ const ISO_42001_STEPS: SeedStep[] = [
         defaultDurationDays: 7,
       },
       {
-        title: "Begrenztes-Risiko-Klassifikation (Transparenz-Pflichten Art. 50)",
+        title:
+          "Begrenztes-Risiko-Klassifikation (Transparenz-Pflichten Art. 50)",
         description:
           "Chatbots, Emotionserkennungs-Systeme, biometrische Kategorisierung. Pflicht: Nutzer informieren dass AI im Spiel ist.",
         defaultDurationDays: 4,

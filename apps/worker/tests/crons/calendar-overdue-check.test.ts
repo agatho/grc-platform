@@ -17,7 +17,8 @@ describe("processCalendarOverdueCheck", () => {
 
   it("returns expected shape", async () => {
     mockDb.execute.mockResolvedValue([]);
-    const { processCalendarOverdueCheck } = await import("../../src/crons/calendar-overdue-check");
+    const { processCalendarOverdueCheck } =
+      await import("../../src/crons/calendar-overdue-check");
     const r = await processCalendarOverdueCheck();
     expect(r).toBeDefined();
   });

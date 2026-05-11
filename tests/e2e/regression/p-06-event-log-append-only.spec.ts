@@ -52,7 +52,9 @@ test("E2E-P06: journey events log records journey.created and step.transition", 
     return await r.json();
   }, journeyId!);
 
-  const types = (events?.data ?? []).map((e: { eventType: string }) => e.eventType);
+  const types = (events?.data ?? []).map(
+    (e: { eventType: string }) => e.eventType,
+  );
   expect(types).toContain("journey.created");
   if (charter) {
     expect(types).toContain("step.transition");

@@ -189,7 +189,10 @@ export const createAuditChecklistSchema = z.object({
 const baseMethodFields = {
   id: z.string().min(1), // Client-side UUID, damit React-Keys stabil bleiben
   // YYYY-MM-DD, optional — nicht jeder Nachweis hat ein Datum
-  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  date: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
   notes: z.string().max(4000).optional(),
 };
 
@@ -278,7 +281,10 @@ export const evaluateChecklistItemSchema = z.object({
   riskRating: z.enum(auditRiskRatingValues).optional(),
   correctiveActionSuggestion: z.string().max(4000).optional(),
   // YYYY-MM-DD — DB-Spalte ist date, nicht timestamptz.
-  remediationDeadline: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).optional(),
+  remediationDeadline: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional(),
 });
 export type EvaluateChecklistItemInput = z.infer<
   typeof evaluateChecklistItemSchema

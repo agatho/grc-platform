@@ -16,7 +16,8 @@ describe("processEamLifecycleMonitor", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/eam-lifecycle-monitor");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/eam-lifecycle-monitor");
     const fn = mod["processEamLifecycleMonitor"];
     expect(typeof fn).toBe("function");
     let threw = false;

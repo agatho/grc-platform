@@ -246,9 +246,7 @@ async function recomputePhaseProgress(journeyId: string, orgId: string) {
     ).length;
     const blocked = steps.filter((s) => s.status === "blocked").length;
     const pct =
-      Math.round(
-        ((completed + inProg * 0.5) / steps.length) * 10000,
-      ) / 100;
+      Math.round(((completed + inProg * 0.5) / steps.length) * 10000) / 100;
 
     let phaseStatus = "pending";
     if (completed === steps.length) phaseStatus = "completed";

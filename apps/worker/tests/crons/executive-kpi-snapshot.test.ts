@@ -16,7 +16,8 @@ describe("processExecutiveKpiSnapshot", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/executive-kpi-snapshot");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/executive-kpi-snapshot");
     const fn = mod["processExecutiveKpiSnapshot"];
     expect(typeof fn).toBe("function");
     let threw = false;

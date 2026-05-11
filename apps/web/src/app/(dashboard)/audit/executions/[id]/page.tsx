@@ -297,14 +297,16 @@ function ExecutionDetailInner() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>
-              Übergang zu „{transitionTo ? t(`auditStatus.${transitionTo}`) : ""}" — Audit-Konklusion erforderlich
+              Übergang zu „
+              {transitionTo ? t(`auditStatus.${transitionTo}`) : ""}" —
+              Audit-Konklusion erforderlich
             </DialogTitle>
           </DialogHeader>
           <div className="space-y-4">
             <div className="rounded-md bg-blue-50 border border-blue-200 p-3 text-xs text-blue-900">
               ISO 19011 § 6.5: Beim Abschluss eines Audits muss eine formale
-              Konklusion dokumentiert sein. Diese fließt in den Audit-Report
-              und die Management-Review-Aggregation ein.
+              Konklusion dokumentiert sein. Diese fließt in den Audit-Report und
+              die Management-Review-Aggregation ein.
             </div>
 
             {/* Closure-Readiness-Hinweise */}
@@ -389,7 +391,9 @@ function ExecutionDetailInner() {
           je nach Audit-Phase (ISO 19011 § 6). i18n via auditMgmt.tips.*. */}
       {(() => {
         const key =
-          audit.status && audit.status !== "completed" && audit.status !== "cancelled"
+          audit.status &&
+          audit.status !== "completed" &&
+          audit.status !== "cancelled"
             ? `tips.${audit.status}`
             : null;
         if (!key) return null;
@@ -570,8 +574,7 @@ function AuditEditDialog({
       scopeFrameworks: parseCsv(formData.get("scopeFrameworks") as string),
       plannedStart: (formData.get("plannedStart") as string) || undefined,
       plannedEnd: (formData.get("plannedEnd") as string) || undefined,
-      leadAuditorId:
-        (formData.get("leadAuditorId") as string) || undefined,
+      leadAuditorId: (formData.get("leadAuditorId") as string) || undefined,
       auditorIds:
         auditorIdsRaw.filter(Boolean).length > 0
           ? auditorIdsRaw.filter(Boolean)
@@ -687,7 +690,9 @@ function AuditEditDialog({
                       />
                       <span>{u.name ?? u.email}</span>
                       {u.role === "admin" && (
-                        <span className="text-[10px] text-gray-400">· admin</span>
+                        <span className="text-[10px] text-gray-400">
+                          · admin
+                        </span>
                       )}
                     </label>
                   ))}
@@ -868,7 +873,9 @@ function MethodEntriesEditor({
 
   const update = (id: string, patch: Partial<EditableMethodEntry>) => {
     onChange(
-      value.map((e) => (e.id === id ? ({ ...e, ...patch } as EditableMethodEntry) : e)),
+      value.map((e) =>
+        e.id === id ? ({ ...e, ...patch } as EditableMethodEntry) : e,
+      ),
     );
   };
   const remove = (id: string) => {
@@ -940,8 +947,8 @@ function MethodEntriesEditor({
 
       {value.length >= 2 && (
         <p className="text-[11px] text-emerald-600">
-          ✓ {value.length} Nachweise kombiniert — stärkste Form der Evidenz
-          (ISO 19011 § 6.4.7 Abs. 2).
+          ✓ {value.length} Nachweise kombiniert — stärkste Form der Evidenz (ISO
+          19011 § 6.4.7 Abs. 2).
         </p>
       )}
     </div>
@@ -1014,8 +1021,15 @@ function MethodEntryCard({
           <div>
             <label className="text-xs font-medium text-gray-600">Person</label>
             <Input
-              value={(entry as MethodEntry & { interviewee?: string }).interviewee ?? ""}
-              onChange={(e) => onChange({ interviewee: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { interviewee?: string }).interviewee ??
+                ""
+              }
+              onChange={(e) =>
+                onChange({
+                  interviewee: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="Max Mustermann"
             />
           </div>
@@ -1024,8 +1038,15 @@ function MethodEntryCard({
               Rolle / Funktion
             </label>
             <Input
-              value={(entry as MethodEntry & { intervieweeRole?: string }).intervieweeRole ?? ""}
-              onChange={(e) => onChange({ intervieweeRole: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { intervieweeRole?: string })
+                  .intervieweeRole ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  intervieweeRole: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. CISO, IT-Leitung"
             />
           </div>
@@ -1039,10 +1060,18 @@ function MethodEntryCard({
       {entry.method === "observation" && (
         <div className="grid grid-cols-2 gap-2">
           <div>
-            <label className="text-xs font-medium text-gray-600">Ort / Standort</label>
+            <label className="text-xs font-medium text-gray-600">
+              Ort / Standort
+            </label>
             <Input
-              value={(entry as MethodEntry & { location?: string }).location ?? ""}
-              onChange={(e) => onChange({ location: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { location?: string }).location ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  location: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. RZ Frankfurt, Büro Berlin"
             />
           </div>
@@ -1051,8 +1080,15 @@ function MethodEntryCard({
               Beobachteter Prozess
             </label>
             <Input
-              value={(entry as MethodEntry & { observedProcess?: string }).observedProcess ?? ""}
-              onChange={(e) => onChange({ observedProcess: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { observedProcess?: string })
+                  .observedProcess ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  observedProcess: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. Change-Approval-Meeting, Zutritt Serverraum"
             />
           </div>
@@ -1066,8 +1102,14 @@ function MethodEntryCard({
               Prozess / Aktivität
             </label>
             <Input
-              value={(entry as MethodEntry & { process?: string }).process ?? ""}
-              onChange={(e) => onChange({ process: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { process?: string }).process ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  process: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. Incident-Response Walkthrough"
             />
           </div>
@@ -1076,8 +1118,15 @@ function MethodEntryCard({
               Teilnehmer
             </label>
             <Input
-              value={(entry as MethodEntry & { participants?: string }).participants ?? ""}
-              onChange={(e) => onChange({ participants: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { participants?: string })
+                  .participants ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  participants: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="Namen / Rollen, kommagetrennt"
             />
           </div>
@@ -1088,10 +1137,18 @@ function MethodEntryCard({
         <div className="space-y-2">
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="text-xs font-medium text-gray-600">System</label>
+              <label className="text-xs font-medium text-gray-600">
+                System
+              </label>
               <Input
-                value={(entry as MethodEntry & { system?: string }).system ?? ""}
-                onChange={(e) => onChange({ system: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                value={
+                  (entry as MethodEntry & { system?: string }).system ?? ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    system: e.target.value || undefined,
+                  } as Partial<EditableMethodEntry>)
+                }
                 placeholder="z. B. Firewall FW-01, AD-Server dc01"
               />
             </div>
@@ -1100,8 +1157,15 @@ function MethodEntryCard({
                 Testbeschreibung
               </label>
               <Input
-                value={(entry as MethodEntry & { testDescription?: string }).testDescription ?? ""}
-                onChange={(e) => onChange({ testDescription: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                value={
+                  (entry as MethodEntry & { testDescription?: string })
+                    .testDescription ?? ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    testDescription: e.target.value || undefined,
+                  } as Partial<EditableMethodEntry>)
+                }
                 placeholder="z. B. Rule-Review, Config-Screenshot"
               />
             </div>
@@ -1111,8 +1175,15 @@ function MethodEntryCard({
               Test-Ergebnis
             </label>
             <textarea
-              value={(entry as MethodEntry & { testResult?: string }).testResult ?? ""}
-              onChange={(e) => onChange({ testResult: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { testResult?: string }).testResult ??
+                ""
+              }
+              onChange={(e) =>
+                onChange({
+                  testResult: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               rows={2}
               placeholder="z. B. 12 obsolete Firewall-Regeln gefunden · Audit-Log-Retention: 45 Tage (Soll: 90)"
               className="w-full rounded-md border border-gray-300 px-2 py-1 text-sm"
@@ -1131,7 +1202,10 @@ function MethodEntryCard({
               <Input
                 type="number"
                 min={0}
-                value={(entry as MethodEntry & { populationSize?: number }).populationSize ?? ""}
+                value={
+                  (entry as MethodEntry & { populationSize?: number })
+                    .populationSize ?? ""
+                }
                 onChange={(e) =>
                   onChange({
                     populationSize: e.target.value
@@ -1149,7 +1223,10 @@ function MethodEntryCard({
               <Input
                 type="number"
                 min={0}
-                value={(entry as MethodEntry & { sampleSize?: number }).sampleSize ?? ""}
+                value={
+                  (entry as MethodEntry & { sampleSize?: number }).sampleSize ??
+                  ""
+                }
                 onChange={(e) =>
                   onChange({
                     sampleSize: e.target.value
@@ -1165,8 +1242,15 @@ function MethodEntryCard({
                 Auswahlverfahren
               </label>
               <Input
-                value={(entry as MethodEntry & { selectionMethod?: string }).selectionMethod ?? ""}
-                onChange={(e) => onChange({ selectionMethod: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+                value={
+                  (entry as MethodEntry & { selectionMethod?: string })
+                    .selectionMethod ?? ""
+                }
+                onChange={(e) =>
+                  onChange({
+                    selectionMethod: e.target.value || undefined,
+                  } as Partial<EditableMethodEntry>)
+                }
                 placeholder="zufällig · geschichtet · risiko-basiert"
               />
             </div>
@@ -1176,13 +1260,18 @@ function MethodEntryCard({
               Sample-IDs / Referenzen (kommagetrennt)
             </label>
             <textarea
-              value={((entry as MethodEntry & { sampleIds?: string[] }).sampleIds ?? []).join(", ")}
+              value={(
+                (entry as MethodEntry & { sampleIds?: string[] }).sampleIds ??
+                []
+              ).join(", ")}
               onChange={(e) => {
                 const arr = e.target.value
                   .split(/[,;\n]/)
                   .map((s) => s.trim())
                   .filter(Boolean);
-                onChange({ sampleIds: arr.length > 0 ? arr : undefined } as Partial<EditableMethodEntry>);
+                onChange({
+                  sampleIds: arr.length > 0 ? arr : undefined,
+                } as Partial<EditableMethodEntry>);
               }}
               rows={2}
               placeholder="TKT-1234, CHG-9001, USR-42, …"
@@ -1199,8 +1288,14 @@ function MethodEntryCard({
               Nachvollzogene Aktivität
             </label>
             <Input
-              value={(entry as MethodEntry & { activity?: string }).activity ?? ""}
-              onChange={(e) => onChange({ activity: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { activity?: string }).activity ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  activity: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. Berechtigungs-Review, Backup-Restore-Test"
             />
           </div>
@@ -1209,8 +1304,14 @@ function MethodEntryCard({
               Baseline / Vergleich
             </label>
             <Input
-              value={(entry as MethodEntry & { baseline?: string }).baseline ?? ""}
-              onChange={(e) => onChange({ baseline: e.target.value || undefined } as Partial<EditableMethodEntry>)}
+              value={
+                (entry as MethodEntry & { baseline?: string }).baseline ?? ""
+              }
+              onChange={(e) =>
+                onChange({
+                  baseline: e.target.value || undefined,
+                } as Partial<EditableMethodEntry>)
+              }
               placeholder="z. B. Soll-Prozess aus Policy v3.2"
             />
           </div>
@@ -1229,9 +1330,15 @@ function DocumentReviewFields({
   onChange: (patch: Partial<EditableMethodEntry>) => void;
 }) {
   const docs =
-    (entry as MethodEntry & {
-      documents?: Array<{ title: string; reference?: string; version?: string }>;
-    }).documents ?? [];
+    (
+      entry as MethodEntry & {
+        documents?: Array<{
+          title: string;
+          reference?: string;
+          version?: string;
+        }>;
+      }
+    ).documents ?? [];
 
   const update = (
     idx: number,
@@ -1524,7 +1631,9 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
       // Defensiv kopieren — wir mutieren die Entries-Liste nicht in place,
       // aber die Server-Antwort kann jsonb-Frozen/flat sein.
       setMethodEntries(
-        (item.methodEntries ?? []).map((e) => ({ ...e })) as EditableMethodEntry[],
+        (item.methodEntries ?? []).map((e) => ({
+          ...e,
+        })) as EditableMethodEntry[],
       );
       setEvidencePickerOpen(false);
     } else {
@@ -1543,7 +1652,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     try {
       const payload: Record<string, unknown> = {};
       if (catalogId) payload.catalogId = catalogId;
-      if (implementationGroup) payload.implementationGroup = implementationGroup;
+      if (implementationGroup)
+        payload.implementationGroup = implementationGroup;
       const res = await fetch(
         `/api/v1/audit-mgmt/audits/${auditId}/checklists/generate`,
         {
@@ -1685,7 +1795,10 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
     }
   };
 
-  const handleDuplicateChecklist = async (checklistId: string, name: string) => {
+  const handleDuplicateChecklist = async (
+    checklistId: string,
+    name: string,
+  ) => {
     if (
       !confirm(
         `Checkliste "${name}" duplizieren?\n\nEs werden alle Fragen + Kriterien kopiert — OHNE die bereits erfassten Bewertungen und Evidenzen.`,
@@ -1833,7 +1946,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
         (item as AuditChecklistItem & { methodEntries?: MethodEntry[] | null })
           .methodEntries ?? []
       ).map((e) => e.method);
-      if (!methods.includes(methodFilter as MethodEntry["method"])) return false;
+      if (!methods.includes(methodFilter as MethodEntry["method"]))
+        return false;
     }
     return true;
   });
@@ -2027,8 +2141,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
               variant="outline"
               size="sm"
               onClick={() => {
-                window.location.href =
-                  `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`;
+                window.location.href = `/api/v1/audit-mgmt/audits/${auditId}/checklists/${selectedChecklist}/export?format=csv`;
               }}
               title="Als CSV exportieren (Excel-kompatibel)"
             >
@@ -2182,140 +2295,145 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       item.result === "major_nonconformity" ||
                       item.result === "nonconforming";
                     return (
-                    <tr key={item.id} className="hover:bg-gray-50">
-                      <td className="px-4 py-3 text-gray-500 align-top">
-                        {item.sortOrder}
-                      </td>
-                      <td className="px-4 py-3">
-                        <p className="text-gray-900">{item.question}</p>
-                        {extItem.criterionReference && (
-                          <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
-                            {extItem.criterionReference}
-                          </p>
-                        )}
-                        {item.notes && (
-                          <p className="text-xs text-gray-500 mt-1 line-clamp-2">
-                            {item.notes}
-                          </p>
-                        )}
-                        {/* Audit-Nachweise kompakt — ein Badge pro Entry,
+                      <tr key={item.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-3 text-gray-500 align-top">
+                          {item.sortOrder}
+                        </td>
+                        <td className="px-4 py-3">
+                          <p className="text-gray-900">{item.question}</p>
+                          {extItem.criterionReference && (
+                            <p className="text-[11px] text-gray-400 mt-0.5 font-mono">
+                              {extItem.criterionReference}
+                            </p>
+                          )}
+                          {item.notes && (
+                            <p className="text-xs text-gray-500 mt-1 line-clamp-2">
+                              {item.notes}
+                            </p>
+                          )}
+                          {/* Audit-Nachweise kompakt — ein Badge pro Entry,
                             tooltip mit den wichtigsten Detail-Feldern */}
-                        <div className="flex flex-wrap gap-1.5 mt-1.5">
-                          {entries.map((e) => {
-                            const details: string[] = [];
-                            if (e.method === "interview") {
-                              const ie = e as MethodEntry & {
-                                interviewee?: string;
-                                intervieweeRole?: string;
-                              };
-                              if (ie.interviewee)
-                                details.push(
-                                  ie.intervieweeRole
-                                    ? `${ie.interviewee} (${ie.intervieweeRole})`
-                                    : ie.interviewee,
-                                );
-                            } else if (e.method === "document_review") {
-                              const de = e as MethodEntry & {
-                                documents?: Array<{ title: string }>;
-                              };
-                              if (de.documents && de.documents.length > 0)
-                                details.push(
-                                  `${de.documents.length} Dok.`,
-                                );
-                            } else if (e.method === "sampling") {
-                              const se = e as MethodEntry & {
-                                sampleSize?: number;
-                                populationSize?: number;
-                              };
-                              if (se.sampleSize != null)
-                                details.push(
-                                  se.populationSize != null
-                                    ? `n=${se.sampleSize}/N=${se.populationSize}`
-                                    : `n=${se.sampleSize}`,
-                                );
-                            } else if (e.method === "technical_test") {
-                              const te = e as MethodEntry & { system?: string };
-                              if (te.system) details.push(te.system);
-                            } else if (e.method === "observation") {
-                              const oe = e as MethodEntry & { location?: string };
-                              if (oe.location) details.push(oe.location);
-                            } else if (e.method === "walkthrough") {
-                              const we = e as MethodEntry & { process?: string };
-                              if (we.process) details.push(we.process);
-                            }
-                            return (
+                          <div className="flex flex-wrap gap-1.5 mt-1.5">
+                            {entries.map((e) => {
+                              const details: string[] = [];
+                              if (e.method === "interview") {
+                                const ie = e as MethodEntry & {
+                                  interviewee?: string;
+                                  intervieweeRole?: string;
+                                };
+                                if (ie.interviewee)
+                                  details.push(
+                                    ie.intervieweeRole
+                                      ? `${ie.interviewee} (${ie.intervieweeRole})`
+                                      : ie.interviewee,
+                                  );
+                              } else if (e.method === "document_review") {
+                                const de = e as MethodEntry & {
+                                  documents?: Array<{ title: string }>;
+                                };
+                                if (de.documents && de.documents.length > 0)
+                                  details.push(`${de.documents.length} Dok.`);
+                              } else if (e.method === "sampling") {
+                                const se = e as MethodEntry & {
+                                  sampleSize?: number;
+                                  populationSize?: number;
+                                };
+                                if (se.sampleSize != null)
+                                  details.push(
+                                    se.populationSize != null
+                                      ? `n=${se.sampleSize}/N=${se.populationSize}`
+                                      : `n=${se.sampleSize}`,
+                                  );
+                              } else if (e.method === "technical_test") {
+                                const te = e as MethodEntry & {
+                                  system?: string;
+                                };
+                                if (te.system) details.push(te.system);
+                              } else if (e.method === "observation") {
+                                const oe = e as MethodEntry & {
+                                  location?: string;
+                                };
+                                if (oe.location) details.push(oe.location);
+                              } else if (e.method === "walkthrough") {
+                                const we = e as MethodEntry & {
+                                  process?: string;
+                                };
+                                if (we.process) details.push(we.process);
+                              }
+                              return (
+                                <span
+                                  key={e.id}
+                                  className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 inline-flex items-center gap-1"
+                                  title={`${methodLabel(e.method, t)}${details.length > 0 ? " — " + details.join(" · ") : ""}`}
+                                >
+                                  <span>{methodIcon(e.method)}</span>
+                                  <span>{methodLabel(e.method, t)}</span>
+                                  {details.length > 0 && (
+                                    <span className="text-gray-500">
+                                      · {details[0]}
+                                    </span>
+                                  )}
+                                </span>
+                              );
+                            })}
+                            {extItem.riskRating && (
                               <span
-                                key={e.id}
-                                className="text-[10px] px-1.5 py-0.5 rounded bg-gray-100 text-gray-700 inline-flex items-center gap-1"
-                                title={`${methodLabel(e.method, t)}${details.length > 0 ? " — " + details.join(" · ") : ""}`}
+                                className={`text-[10px] px-1.5 py-0.5 rounded ${
+                                  extItem.riskRating === "critical"
+                                    ? "bg-red-100 text-red-800"
+                                    : extItem.riskRating === "high"
+                                      ? "bg-orange-100 text-orange-800"
+                                      : extItem.riskRating === "medium"
+                                        ? "bg-yellow-100 text-yellow-800"
+                                        : "bg-green-100 text-green-800"
+                                }`}
                               >
-                                <span>{methodIcon(e.method)}</span>
-                                <span>{methodLabel(e.method, t)}</span>
-                                {details.length > 0 && (
-                                  <span className="text-gray-500">
-                                    · {details[0]}
-                                  </span>
-                                )}
+                                Risiko: {extItem.riskRating}
                               </span>
-                            );
-                          })}
-                          {extItem.riskRating && (
-                            <span
-                              className={`text-[10px] px-1.5 py-0.5 rounded ${
-                                extItem.riskRating === "critical"
-                                  ? "bg-red-100 text-red-800"
-                                  : extItem.riskRating === "high"
-                                    ? "bg-orange-100 text-orange-800"
-                                    : extItem.riskRating === "medium"
-                                      ? "bg-yellow-100 text-yellow-800"
-                                      : "bg-green-100 text-green-800"
-                              }`}
-                            >
-                              Risiko: {extItem.riskRating}
+                            )}
+                            {extItem.remediationDeadline && (
+                              <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
+                                Frist: {extItem.remediationDeadline}
+                              </span>
+                            )}
+                            {item.evidenceIds &&
+                              item.evidenceIds.length > 0 && (
+                                <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
+                                  {item.evidenceIds.length} Evidenz
+                                  {item.evidenceIds.length === 1 ? "" : "en"}
+                                </span>
+                              )}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex items-center gap-2">
+                            {resultIcon(item.result)}
+                            <span className="text-xs text-gray-700">
+                              {resultLabel(item.result, t)}
                             </span>
-                          )}
-                          {extItem.remediationDeadline && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-blue-50 text-blue-700">
-                              Frist: {extItem.remediationDeadline}
-                            </span>
-                          )}
-                          {item.evidenceIds && item.evidenceIds.length > 0 && (
-                            <span className="text-[10px] px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-700">
-                              {item.evidenceIds.length} Evidenz
-                              {item.evidenceIds.length === 1 ? "" : "en"}
-                            </span>
-                          )}
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        <div className="flex items-center gap-2">
-                          {resultIcon(item.result)}
-                          <span className="text-xs text-gray-700">
-                            {resultLabel(item.result, t)}
-                          </span>
-                        </div>
-                      </td>
-                      <td className="px-4 py-3 align-top">
-                        <div className="flex gap-1 flex-wrap">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setEvaluateItem(item)}
-                          >
-                            {t("evaluate")}
-                          </Button>
-                          {isNC && (
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 align-top">
+                          <div className="flex gap-1 flex-wrap">
                             <Button
-                              variant="destructive"
+                              variant="outline"
                               size="sm"
-                              onClick={() => setCreateFindingItem(item)}
+                              onClick={() => setEvaluateItem(item)}
                             >
-                              {t("createFinding")}
+                              {t("evaluate")}
                             </Button>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
+                            {isNC && (
+                              <Button
+                                variant="destructive"
+                                size="sm"
+                                onClick={() => setCreateFindingItem(item)}
+                              >
+                                {t("createFinding")}
+                              </Button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
                     );
                   })}
                 </tbody>
@@ -2348,309 +2466,322 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                 selectedResult === "observation" ||
                 selectedResult === "opportunity_for_improvement";
               return (
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleEvaluate(
-                  evaluateItem.id,
-                  new FormData(e.currentTarget),
-                  evaluateEvidenceIds,
-                  methodEntries,
-                );
-              }}
-              className="space-y-4"
-            >
-              {/* Header: Frage + erwartete Evidenz + Kriterium */}
-              <div className="rounded-md bg-gray-50 p-3 text-sm space-y-2">
-                <p className="text-gray-900 font-medium">
-                  {evaluateItem.question}
-                </p>
-                {evaluateItem.expectedEvidence && (
-                  <p className="text-xs text-gray-600">
-                    <span className="font-medium">Erwartete Evidenz:</span>{" "}
-                    {evaluateItem.expectedEvidence}
-                  </p>
-                )}
-              </div>
-
-              {/* Kriterium-Referenz */}
-              <div>
-                <label className="text-sm font-medium">
-                  Audit-Kriterium{" "}
-                  <span className="text-xs font-normal text-gray-400">
-                    (Norm / Framework-Referenz)
-                  </span>
-                </label>
-                <Input
-                  name="criterionReference"
-                  defaultValue={item.criterionReference ?? ""}
-                  placeholder="z. B. ISO 27001 A.5.1 · CIS v8 06.3 · NIS2 Art. 21(2)(a)"
-                />
-              </div>
-
-              {/* Bewertung (ISO 19011 § 3.4) */}
-              <div>
-                <label className="text-sm font-medium">
-                  Bewertung{" "}
-                  <span className="text-xs font-normal text-gray-400">
-                    (ISO 19011 § 3.4 · ISO 17021-1 § 9.4.8)
-                  </span>
-                </label>
-                <select
-                  name="result"
-                  required
-                  value={selectedResult}
-                  onChange={(e) => setSelectedResult(e.target.value)}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleEvaluate(
+                      evaluateItem.id,
+                      new FormData(e.currentTarget),
+                      evaluateEvidenceIds,
+                      methodEntries,
+                    );
+                  }}
+                  className="space-y-4"
                 >
-                  <option value="">— Bewertung wählen —</option>
-                  <option value="positive">
-                    ★ Positiv-Bewertung / Best-Practice
-                  </option>
-                  <option value="conforming">✓ Konform (keine Abweichung)</option>
-                  <option value="opportunity_for_improvement">
-                    💡 Hinweis / OFI (Verbesserungspotenzial, nicht bindend)
-                  </option>
-                  <option value="observation">
-                    ⚠ Feststellung / Beobachtung (noch keine Abweichung)
-                  </option>
-                  <option value="minor_nonconformity">
-                    ◆ Nebenabweichung (Minor NC — isolierter Einzelfall)
-                  </option>
-                  <option value="major_nonconformity">
-                    ✗ Hauptabweichung (Major NC — systemisches Versagen)
-                  </option>
-                  <option value="not_applicable">— Nicht anwendbar (N/A)</option>
-                </select>
-                {selectedResult && (
-                  <p className="mt-1 text-[11px] text-gray-500">
-                    {selectedResult === "positive" &&
-                      "Umsetzung übertrifft die Anforderung; keine Maßnahme erforderlich."}
-                    {selectedResult === "conforming" &&
-                      "Kriterium wird erfüllt; keine weitere Aktion."}
-                    {selectedResult === "opportunity_for_improvement" &&
-                      "Empfehlung des Auditors, nicht zertifizierungsrelevant."}
-                    {selectedResult === "observation" &&
-                      "Aufmerksamkeitspunkt — könnte ohne Gegensteuern zur Abweichung werden."}
-                    {selectedResult === "minor_nonconformity" &&
-                      "Einzelne Lücke in der Umsetzung. Korrekturmaßnahme in Standard-Frist (üblicherweise 90 Tage)."}
-                    {selectedResult === "major_nonconformity" &&
-                      "Systemische Lücke; Zertifikat blockiert bis Nachweis der Korrektur (ISO 17021-1 § 9.4.9)."}
-                    {selectedResult === "not_applicable" &&
-                      "Kriterium ist für diesen Scope nicht relevant; im Report begründen."}
-                  </p>
-                )}
-              </div>
-
-              {/* Audit-Nachweise (ISO 19011 § 6.4.5/6.4.7) — pro Methode
-                  eine typisierte Karte mit eigenen Detail-Feldern */}
-              <div>
-                <label className="text-sm font-medium">
-                  Audit-Nachweise{" "}
-                  <span className="text-xs font-normal text-gray-400">
-                    (ISO 19011 § 6.4.5/6.4.7 — typisiert, mehrere möglich)
-                  </span>
-                </label>
-                <div className="mt-1">
-                  <MethodEntriesEditor
-                    value={methodEntries}
-                    onChange={setMethodEntries}
-                  />
-                </div>
-              </div>
-
-              {/* Beobachtungen / Auditor-Notizen */}
-              <div>
-                <label className="text-sm font-medium">
-                  Beobachtungen & Auditor-Notizen
-                </label>
-                <textarea
-                  name="notes"
-                  defaultValue={evaluateItem.notes ?? ""}
-                  rows={4}
-                  placeholder="Konkrete Feststellungen, geprüfte Dokumente/Systeme, Zitate aus Interview, Screenshots, Begründung der Bewertung, …"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
-                />
-              </div>
-
-              {/* Risiko + Korrekturmaßnahme — nur bei NC/Observation/OFI */}
-              {(isNC || isObs) && (
-                <fieldset className="border border-orange-200 bg-orange-50/30 rounded-md p-3 space-y-3">
-                  <legend className="text-xs font-semibold text-orange-700 px-1">
-                    {isNC
-                      ? "Abweichungs-Behandlung (ISO 27001 § 10.1 · ISO 9001 § 10.2)"
-                      : "Aufmerksamkeits-/Verbesserungs-Hinweis"}
-                  </legend>
-
-                  <div>
-                    <label className="text-sm font-medium">
-                      Risikobewertung der Abweichung{" "}
-                      <span className="text-xs font-normal text-gray-400">
-                        (ISO 31000 § 6.4.3)
-                      </span>
-                    </label>
-                    <select
-                      name="riskRating"
-                      defaultValue={item.riskRating ?? ""}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                    >
-                      <option value="">— Risiko einstufen —</option>
-                      <option value="low">Niedrig</option>
-                      <option value="medium">Mittel</option>
-                      <option value="high">Hoch</option>
-                      <option value="critical">Kritisch</option>
-                    </select>
+                  {/* Header: Frage + erwartete Evidenz + Kriterium */}
+                  <div className="rounded-md bg-gray-50 p-3 text-sm space-y-2">
+                    <p className="text-gray-900 font-medium">
+                      {evaluateItem.question}
+                    </p>
+                    {evaluateItem.expectedEvidence && (
+                      <p className="text-xs text-gray-600">
+                        <span className="font-medium">Erwartete Evidenz:</span>{" "}
+                        {evaluateItem.expectedEvidence}
+                      </p>
+                    )}
                   </div>
 
+                  {/* Kriterium-Referenz */}
                   <div>
                     <label className="text-sm font-medium">
-                      Vorgeschlagene Korrekturmaßnahme
+                      Audit-Kriterium{" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (Norm / Framework-Referenz)
+                      </span>
                     </label>
-                    <textarea
-                      name="correctiveActionSuggestion"
-                      defaultValue={item.correctiveActionSuggestion ?? ""}
-                      rows={3}
-                      placeholder={
-                        isNC
-                          ? "Konkret: wer macht was bis wann? Welche Wirksamkeits-Prüfung folgt?"
-                          : "Empfehlung zur Verbesserung — der Org bleibt die Umsetzung freigestellt."
-                      }
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    <Input
+                      name="criterionReference"
+                      defaultValue={item.criterionReference ?? ""}
+                      placeholder="z. B. ISO 27001 A.5.1 · CIS v8 06.3 · NIS2 Art. 21(2)(a)"
                     />
                   </div>
 
-                  {isNC && (
-                    <div>
-                      <label className="text-sm font-medium">
-                        Frist zur Umsetzung{" "}
-                        <span className="text-xs font-normal text-gray-400">
-                          (Minor: üblicherweise 90 Tage · Major: vor Rezertifizierung)
-                        </span>
-                      </label>
-                      <Input
-                        name="remediationDeadline"
-                        type="date"
-                        defaultValue={item.remediationDeadline ?? ""}
+                  {/* Bewertung (ISO 19011 § 3.4) */}
+                  <div>
+                    <label className="text-sm font-medium">
+                      Bewertung{" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (ISO 19011 § 3.4 · ISO 17021-1 § 9.4.8)
+                      </span>
+                    </label>
+                    <select
+                      name="result"
+                      required
+                      value={selectedResult}
+                      onChange={(e) => setSelectedResult(e.target.value)}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                    >
+                      <option value="">— Bewertung wählen —</option>
+                      <option value="positive">
+                        ★ Positiv-Bewertung / Best-Practice
+                      </option>
+                      <option value="conforming">
+                        ✓ Konform (keine Abweichung)
+                      </option>
+                      <option value="opportunity_for_improvement">
+                        💡 Hinweis / OFI (Verbesserungspotenzial, nicht bindend)
+                      </option>
+                      <option value="observation">
+                        ⚠ Feststellung / Beobachtung (noch keine Abweichung)
+                      </option>
+                      <option value="minor_nonconformity">
+                        ◆ Nebenabweichung (Minor NC — isolierter Einzelfall)
+                      </option>
+                      <option value="major_nonconformity">
+                        ✗ Hauptabweichung (Major NC — systemisches Versagen)
+                      </option>
+                      <option value="not_applicable">
+                        — Nicht anwendbar (N/A)
+                      </option>
+                    </select>
+                    {selectedResult && (
+                      <p className="mt-1 text-[11px] text-gray-500">
+                        {selectedResult === "positive" &&
+                          "Umsetzung übertrifft die Anforderung; keine Maßnahme erforderlich."}
+                        {selectedResult === "conforming" &&
+                          "Kriterium wird erfüllt; keine weitere Aktion."}
+                        {selectedResult === "opportunity_for_improvement" &&
+                          "Empfehlung des Auditors, nicht zertifizierungsrelevant."}
+                        {selectedResult === "observation" &&
+                          "Aufmerksamkeitspunkt — könnte ohne Gegensteuern zur Abweichung werden."}
+                        {selectedResult === "minor_nonconformity" &&
+                          "Einzelne Lücke in der Umsetzung. Korrekturmaßnahme in Standard-Frist (üblicherweise 90 Tage)."}
+                        {selectedResult === "major_nonconformity" &&
+                          "Systemische Lücke; Zertifikat blockiert bis Nachweis der Korrektur (ISO 17021-1 § 9.4.9)."}
+                        {selectedResult === "not_applicable" &&
+                          "Kriterium ist für diesen Scope nicht relevant; im Report begründen."}
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Audit-Nachweise (ISO 19011 § 6.4.5/6.4.7) — pro Methode
+                  eine typisierte Karte mit eigenen Detail-Feldern */}
+                  <div>
+                    <label className="text-sm font-medium">
+                      Audit-Nachweise{" "}
+                      <span className="text-xs font-normal text-gray-400">
+                        (ISO 19011 § 6.4.5/6.4.7 — typisiert, mehrere möglich)
+                      </span>
+                    </label>
+                    <div className="mt-1">
+                      <MethodEntriesEditor
+                        value={methodEntries}
+                        onChange={setMethodEntries}
                       />
                     </div>
-                  )}
-                </fieldset>
-              )}
+                  </div>
 
-              {/* Evidenz-Verknüpfung */}
-              <div>
-                <div className="flex items-center justify-between">
-                  <label className="text-sm font-medium">
-                    Evidenzen{" "}
-                    <span className="text-xs font-normal text-gray-500">
-                      ({evaluateEvidenceIds.length})
-                    </span>
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => setEvidencePickerOpen((v) => !v)}
-                    className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
-                  >
-                    <Paperclip size={12} />
-                    {evidencePickerOpen ? "Schließen" : "Evidenz hinzufügen"}
-                  </button>
-                </div>
+                  {/* Beobachtungen / Auditor-Notizen */}
+                  <div>
+                    <label className="text-sm font-medium">
+                      Beobachtungen & Auditor-Notizen
+                    </label>
+                    <textarea
+                      name="notes"
+                      defaultValue={evaluateItem.notes ?? ""}
+                      rows={4}
+                      placeholder="Konkrete Feststellungen, geprüfte Dokumente/Systeme, Zitate aus Interview, Screenshots, Begründung der Bewertung, …"
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm font-mono"
+                    />
+                  </div>
 
-                {/* Bereits verknüpfte Evidenzen als Chips mit X-Button */}
-                <div className="mt-2 flex flex-wrap gap-1.5 min-h-[32px] rounded-md border border-dashed border-gray-200 p-2">
-                  {evaluateEvidenceIds.length === 0 && (
-                    <span className="text-xs text-gray-400">
-                      Keine Evidenzen verknüpft. Klicke oben auf „Evidenz
-                      hinzufügen" um aus dem Evidenz-Pool zu wählen.
-                    </span>
-                  )}
-                  {evaluateEvidenceIds.map((id) => {
-                    const ev = evidencePool.find((e) => e.id === id);
-                    return (
-                      <span
-                        key={id}
-                        className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 border border-blue-200"
-                      >
-                        <Paperclip size={10} />
-                        <span className="max-w-[180px] truncate" title={ev?.fileName ?? id}>
-                          {ev?.fileName ?? id.slice(0, 8)}
-                        </span>
-                        {ev?.category && (
-                          <span className="text-[10px] text-blue-500">
-                            · {ev.category}
+                  {/* Risiko + Korrekturmaßnahme — nur bei NC/Observation/OFI */}
+                  {(isNC || isObs) && (
+                    <fieldset className="border border-orange-200 bg-orange-50/30 rounded-md p-3 space-y-3">
+                      <legend className="text-xs font-semibold text-orange-700 px-1">
+                        {isNC
+                          ? "Abweichungs-Behandlung (ISO 27001 § 10.1 · ISO 9001 § 10.2)"
+                          : "Aufmerksamkeits-/Verbesserungs-Hinweis"}
+                      </legend>
+
+                      <div>
+                        <label className="text-sm font-medium">
+                          Risikobewertung der Abweichung{" "}
+                          <span className="text-xs font-normal text-gray-400">
+                            (ISO 31000 § 6.4.3)
                           </span>
-                        )}
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setEvaluateEvidenceIds((ids) =>
-                              ids.filter((x) => x !== id),
-                            )
-                          }
-                          className="ml-0.5 hover:text-red-600"
-                          aria-label="Entfernen"
+                        </label>
+                        <select
+                          name="riskRating"
+                          defaultValue={item.riskRating ?? ""}
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
                         >
-                          <X size={11} />
-                        </button>
-                      </span>
-                    );
-                  })}
-                </div>
-
-                {/* Picker: scroll-baren Auszug aus dem Pool */}
-                {evidencePickerOpen && (
-                  <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-gray-200">
-                    {evidencePool.length === 0 && (
-                      <div className="p-3 text-xs text-gray-400">
-                        Noch keine Evidenzen in der Org angelegt. Erstelle erst
-                        Evidenzen unter <em>/ics/evidence</em> oder importiere
-                        sie aus einem Kontroll-Test.
+                          <option value="">— Risiko einstufen —</option>
+                          <option value="low">Niedrig</option>
+                          <option value="medium">Mittel</option>
+                          <option value="high">Hoch</option>
+                          <option value="critical">Kritisch</option>
+                        </select>
                       </div>
-                    )}
-                    {evidencePool
-                      .filter((e) => !evaluateEvidenceIds.includes(e.id))
-                      .slice(0, 100)
-                      .map((ev) => (
-                        <button
-                          key={ev.id}
-                          type="button"
-                          onClick={() => {
-                            setEvaluateEvidenceIds((ids) => [...ids, ev.id]);
-                          }}
-                          className="block w-full text-left px-3 py-2 text-xs border-b border-gray-100 last:border-0 hover:bg-blue-50"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <span className="font-medium text-gray-900 truncate">
-                              {ev.fileName}
+
+                      <div>
+                        <label className="text-sm font-medium">
+                          Vorgeschlagene Korrekturmaßnahme
+                        </label>
+                        <textarea
+                          name="correctiveActionSuggestion"
+                          defaultValue={item.correctiveActionSuggestion ?? ""}
+                          rows={3}
+                          placeholder={
+                            isNC
+                              ? "Konkret: wer macht was bis wann? Welche Wirksamkeits-Prüfung folgt?"
+                              : "Empfehlung zur Verbesserung — der Org bleibt die Umsetzung freigestellt."
+                          }
+                          className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                        />
+                      </div>
+
+                      {isNC && (
+                        <div>
+                          <label className="text-sm font-medium">
+                            Frist zur Umsetzung{" "}
+                            <span className="text-xs font-normal text-gray-400">
+                              (Minor: üblicherweise 90 Tage · Major: vor
+                              Rezertifizierung)
                             </span>
-                            {ev.category && (
-                              <span className="text-[10px] text-gray-500 shrink-0">
-                                {ev.category}
+                          </label>
+                          <Input
+                            name="remediationDeadline"
+                            type="date"
+                            defaultValue={item.remediationDeadline ?? ""}
+                          />
+                        </div>
+                      )}
+                    </fieldset>
+                  )}
+
+                  {/* Evidenz-Verknüpfung */}
+                  <div>
+                    <div className="flex items-center justify-between">
+                      <label className="text-sm font-medium">
+                        Evidenzen{" "}
+                        <span className="text-xs font-normal text-gray-500">
+                          ({evaluateEvidenceIds.length})
+                        </span>
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setEvidencePickerOpen((v) => !v)}
+                        className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800"
+                      >
+                        <Paperclip size={12} />
+                        {evidencePickerOpen
+                          ? "Schließen"
+                          : "Evidenz hinzufügen"}
+                      </button>
+                    </div>
+
+                    {/* Bereits verknüpfte Evidenzen als Chips mit X-Button */}
+                    <div className="mt-2 flex flex-wrap gap-1.5 min-h-[32px] rounded-md border border-dashed border-gray-200 p-2">
+                      {evaluateEvidenceIds.length === 0 && (
+                        <span className="text-xs text-gray-400">
+                          Keine Evidenzen verknüpft. Klicke oben auf „Evidenz
+                          hinzufügen" um aus dem Evidenz-Pool zu wählen.
+                        </span>
+                      )}
+                      {evaluateEvidenceIds.map((id) => {
+                        const ev = evidencePool.find((e) => e.id === id);
+                        return (
+                          <span
+                            key={id}
+                            className="inline-flex items-center gap-1 rounded-full bg-blue-50 px-2 py-0.5 text-xs text-blue-700 border border-blue-200"
+                          >
+                            <Paperclip size={10} />
+                            <span
+                              className="max-w-[180px] truncate"
+                              title={ev?.fileName ?? id}
+                            >
+                              {ev?.fileName ?? id.slice(0, 8)}
+                            </span>
+                            {ev?.category && (
+                              <span className="text-[10px] text-blue-500">
+                                · {ev.category}
                               </span>
                             )}
-                          </div>
-                          {ev.description && (
-                            <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">
-                              {ev.description}
-                            </p>
-                          )}
-                        </button>
-                      ))}
-                  </div>
-                )}
-              </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setEvaluateEvidenceIds((ids) =>
+                                  ids.filter((x) => x !== id),
+                                )
+                              }
+                              className="ml-0.5 hover:text-red-600"
+                              aria-label="Entfernen"
+                            >
+                              <X size={11} />
+                            </button>
+                          </span>
+                        );
+                      })}
+                    </div>
 
-              <div className="flex justify-end gap-2 pt-2 border-t">
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={() => setEvaluateItem(null)}
-                >
-                  Abbrechen
-                </Button>
-                <Button type="submit">{t("save")}</Button>
-              </div>
-            </form>
+                    {/* Picker: scroll-baren Auszug aus dem Pool */}
+                    {evidencePickerOpen && (
+                      <div className="mt-2 max-h-56 overflow-y-auto rounded-md border border-gray-200">
+                        {evidencePool.length === 0 && (
+                          <div className="p-3 text-xs text-gray-400">
+                            Noch keine Evidenzen in der Org angelegt. Erstelle
+                            erst Evidenzen unter <em>/ics/evidence</em> oder
+                            importiere sie aus einem Kontroll-Test.
+                          </div>
+                        )}
+                        {evidencePool
+                          .filter((e) => !evaluateEvidenceIds.includes(e.id))
+                          .slice(0, 100)
+                          .map((ev) => (
+                            <button
+                              key={ev.id}
+                              type="button"
+                              onClick={() => {
+                                setEvaluateEvidenceIds((ids) => [
+                                  ...ids,
+                                  ev.id,
+                                ]);
+                              }}
+                              className="block w-full text-left px-3 py-2 text-xs border-b border-gray-100 last:border-0 hover:bg-blue-50"
+                            >
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="font-medium text-gray-900 truncate">
+                                  {ev.fileName}
+                                </span>
+                                {ev.category && (
+                                  <span className="text-[10px] text-gray-500 shrink-0">
+                                    {ev.category}
+                                  </span>
+                                )}
+                              </div>
+                              {ev.description && (
+                                <p className="text-[11px] text-gray-500 mt-0.5 line-clamp-1">
+                                  {ev.description}
+                                </p>
+                              )}
+                            </button>
+                          ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="flex justify-end gap-2 pt-2 border-t">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setEvaluateItem(null)}
+                    >
+                      Abbrechen
+                    </Button>
+                    <Button type="submit">{t("save")}</Button>
+                  </div>
+                </form>
               );
             })()}
         </DialogContent>
@@ -2708,7 +2839,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                       Auto-Prefill aus Checklist-Bewertung
                     </p>
                     <p className="mt-1">
-                      Bewertung: <strong>{resultLabel(cfItem.result, t)}</strong>
+                      Bewertung:{" "}
+                      <strong>{resultLabel(cfItem.result, t)}</strong>
                       {cfItem.criterionReference && (
                         <>
                           {" · "}Kriterium:{" "}
@@ -2724,11 +2856,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     <label className="text-sm font-medium">
                       {t("findingTitle")}
                     </label>
-                    <Input
-                      name="title"
-                      required
-                      defaultValue={prefillTitle}
-                    />
+                    <Input name="title" required defaultValue={prefillTitle} />
                   </div>
                   <div>
                     <label className="text-sm font-medium">
@@ -2790,8 +2918,8 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
                     <p className="text-xs text-gray-500 mt-1">
                       Bei Verknüpfung wird die Feststellung als
                       Wirksamkeitsnachweis für das Risiko geführt — ein
-                      Maßnahmen-Plan kann per Sync als Risk-Treatment
-                      übernommen werden.
+                      Maßnahmen-Plan kann per Sync als Risk-Treatment übernommen
+                      werden.
                     </p>
                   </div>
                   <div>
@@ -3006,7 +3134,10 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
             <option value="">Alle Typen</option>
             {Object.keys(byType).map((k) => (
               <option key={k} value={k}>
-                {t(`activityTypes.${k === "document_review" ? "documentReview" : k}`, { defaultValue: k })}{" "}
+                {t(
+                  `activityTypes.${k === "document_review" ? "documentReview" : k}`,
+                  { defaultValue: k },
+                )}{" "}
                 ({byType[k]})
               </option>
             ))}
@@ -3405,89 +3536,89 @@ function FindingsTab({ auditId }: { auditId: string }) {
             Alle NC → Findings
           </Button>
           <Dialog open={addOpen} onOpenChange={setAddOpen}>
-          <DialogTrigger asChild>
-            <Button size="sm">
-              <Plus size={14} className="mr-1" />
-              Feststellung hinzufügen
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Feststellung hinzufügen</DialogTitle>
-            </DialogHeader>
-            <form
-              onSubmit={(e) => {
-                e.preventDefault();
-                void handleAdd(new FormData(e.currentTarget));
-              }}
-              className="space-y-4"
-            >
-              <div>
-                <label className="text-sm font-medium">Titel</label>
-                <Input name="title" required />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Beschreibung</label>
-                <textarea
-                  name="description"
-                  rows={3}
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Schweregrad</label>
-                <select
-                  name="severity"
-                  required
-                  defaultValue="observation"
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="significant_nonconformity">
-                    Wesentliche Abweichung
-                  </option>
-                  <option value="insignificant_nonconformity">
-                    Geringfügige Abweichung
-                  </option>
-                  <option value="improvement_requirement">
-                    Verbesserungsanforderung
-                  </option>
-                  <option value="recommendation">Empfehlung</option>
-                  <option value="observation">Beobachtung</option>
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">
-                  Risiko-Verknüpfung
-                  <span className="ml-1 text-xs text-gray-400">
-                    (optional, ISO 31000 6.6)
-                  </span>
-                </label>
-                <select
-                  name="riskId"
-                  defaultValue=""
-                  className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
-                >
-                  <option value="">— kein Risiko verknüpfen —</option>
-                  {risks.map((r) => (
-                    <option key={r.id} value={r.id}>
-                      {r.title}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-sm font-medium">Fälligkeit</label>
-                <Input name="remediationDueDate" type="date" />
-              </div>
-              <Button type="submit" className="w-full" disabled={saving}>
-                {saving ? (
-                  <Loader2 size={12} className="animate-spin mr-1" />
-                ) : null}
-                Speichern
+            <DialogTrigger asChild>
+              <Button size="sm">
+                <Plus size={14} className="mr-1" />
+                Feststellung hinzufügen
               </Button>
-            </form>
-          </DialogContent>
-        </Dialog>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Feststellung hinzufügen</DialogTitle>
+              </DialogHeader>
+              <form
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  void handleAdd(new FormData(e.currentTarget));
+                }}
+                className="space-y-4"
+              >
+                <div>
+                  <label className="text-sm font-medium">Titel</label>
+                  <Input name="title" required />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Beschreibung</label>
+                  <textarea
+                    name="description"
+                    rows={3}
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Schweregrad</label>
+                  <select
+                    name="severity"
+                    required
+                    defaultValue="observation"
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="significant_nonconformity">
+                      Wesentliche Abweichung
+                    </option>
+                    <option value="insignificant_nonconformity">
+                      Geringfügige Abweichung
+                    </option>
+                    <option value="improvement_requirement">
+                      Verbesserungsanforderung
+                    </option>
+                    <option value="recommendation">Empfehlung</option>
+                    <option value="observation">Beobachtung</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">
+                    Risiko-Verknüpfung
+                    <span className="ml-1 text-xs text-gray-400">
+                      (optional, ISO 31000 6.6)
+                    </span>
+                  </label>
+                  <select
+                    name="riskId"
+                    defaultValue=""
+                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+                  >
+                    <option value="">— kein Risiko verknüpfen —</option>
+                    {risks.map((r) => (
+                      <option key={r.id} value={r.id}>
+                        {r.title}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="text-sm font-medium">Fälligkeit</label>
+                  <Input name="remediationDueDate" type="date" />
+                </div>
+                <Button type="submit" className="w-full" disabled={saving}>
+                  {saving ? (
+                    <Loader2 size={12} className="animate-spin mr-1" />
+                  ) : null}
+                  Speichern
+                </Button>
+              </form>
+            </DialogContent>
+          </Dialog>
         </div>
       </div>
 
@@ -3682,9 +3813,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
     conforming: "Konform",
   };
 
-  const sumBreakdown = (
-    key: keyof ReportData["breakdown"][number],
-  ): number =>
+  const sumBreakdown = (key: keyof ReportData["breakdown"][number]): number =>
     report.breakdown.reduce(
       (sum, b) => sum + (typeof b[key] === "number" ? (b[key] as number) : 0),
       0,
@@ -3713,9 +3842,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
   const totalItems = totalEvaluated + totalUnevaluated;
   const conformanceRate =
     totalEvaluated > 0
-      ? Math.round(
-          ((totalPositive + totalConforming) / totalEvaluated) * 100,
-        )
+      ? Math.round(((totalPositive + totalConforming) / totalEvaluated) * 100)
       : 0;
 
   return (
@@ -4148,7 +4275,14 @@ function StatCard({
 // ISO-konforme Status-Transitions laut VALID_FINDING_TRANSITIONS aus
 // @grc/shared. Lokal spiegeln wir nur die "vorwärts" + "rückwärts" für die
 // UI-Buttons — der Server validiert die volle Transition-Matrix.
-const FINDING_NEXT_STATUS: Record<string, Array<{ status: string; label: string; variant: "primary" | "secondary" | "danger" }>> = {
+const FINDING_NEXT_STATUS: Record<
+  string,
+  Array<{
+    status: string;
+    label: string;
+    variant: "primary" | "secondary" | "danger";
+  }>
+> = {
   identified: [
     { status: "in_remediation", label: "In Behebung", variant: "primary" },
     { status: "accepted", label: "Akzeptieren", variant: "secondary" },
@@ -4159,14 +4293,14 @@ const FINDING_NEXT_STATUS: Record<string, Array<{ status: string; label: string;
   ],
   remediated: [
     { status: "verified", label: "Verifiziert", variant: "primary" },
-    { status: "in_remediation", label: "Zurück zu Behebung", variant: "secondary" },
+    {
+      status: "in_remediation",
+      label: "Zurück zu Behebung",
+      variant: "secondary",
+    },
   ],
-  verified: [
-    { status: "closed", label: "Schließen", variant: "primary" },
-  ],
-  accepted: [
-    { status: "closed", label: "Schließen", variant: "primary" },
-  ],
+  verified: [{ status: "closed", label: "Schließen", variant: "primary" }],
+  accepted: [{ status: "closed", label: "Schließen", variant: "primary" }],
   closed: [],
 };
 
@@ -4201,9 +4335,7 @@ function FindingRow({
         onUpdated();
       } else {
         const j = await res.json().catch(() => ({}));
-        alert(
-          `Statuswechsel fehlgeschlagen: ${j.error ?? res.statusText}`,
-        );
+        alert(`Statuswechsel fehlgeschlagen: ${j.error ?? res.statusText}`);
       }
     } finally {
       setTransitioning(false);
@@ -4249,13 +4381,11 @@ function FindingRow({
   const isOverdue =
     finding.remediationDueDate != null &&
     finding.remediationDueDate < today &&
-    (finding.status === "identified" ||
-      finding.status === "in_remediation");
+    (finding.status === "identified" || finding.status === "in_remediation");
   const isDueSoon =
     !isOverdue &&
     finding.remediationDueDate != null &&
-    (finding.status === "identified" ||
-      finding.status === "in_remediation") &&
+    (finding.status === "identified" || finding.status === "in_remediation") &&
     (() => {
       const delta =
         (new Date(finding.remediationDueDate).getTime() -

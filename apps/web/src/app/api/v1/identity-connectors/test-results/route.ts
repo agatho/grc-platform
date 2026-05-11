@@ -14,7 +14,8 @@ export async function GET(req: Request) {
 
   const conditions: SQL[] = [eq(identityTestResult.orgId, ctx.orgId)];
   const connectorId = searchParams.get("connectorId");
-  if (connectorId) conditions.push(eq(identityTestResult.connectorId, connectorId));
+  if (connectorId)
+    conditions.push(eq(identityTestResult.connectorId, connectorId));
   const category = searchParams.get("testCategory");
   if (category) conditions.push(eq(identityTestResult.testCategory, category));
   const status = searchParams.get("status");
@@ -22,7 +23,13 @@ export async function GET(req: Request) {
 
   const where = and(...conditions);
   const [items, [{ value: total }]] = await Promise.all([
-    db.select().from(identityTestResult).where(where).orderBy(desc(identityTestResult.executedAt)).limit(limit).offset(offset),
+    db
+      .select()
+      .from(identityTestResult)
+      .where(where)
+      .orderBy(desc(identityTestResult.executedAt))
+      .limit(limit)
+      .offset(offset),
     db.select({ value: count() }).from(identityTestResult).where(where),
   ]);
   return paginatedResponse(items, total, page, limit);

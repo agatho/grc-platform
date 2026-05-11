@@ -30,9 +30,11 @@ vi.mock("@/auth", () => ({
 }));
 
 vi.mock("@/lib/api", () => ({
-  withAuth: vi.fn().mockResolvedValue(
-    Response.json({ error: "Unauthorized" }, { status: 401 }),
-  ),
+  withAuth: vi
+    .fn()
+    .mockResolvedValue(
+      Response.json({ error: "Unauthorized" }, { status: 401 }),
+    ),
   withAuditContext: vi.fn(async (_ctx: unknown, fn: () => Promise<unknown>) =>
     fn(),
   ),

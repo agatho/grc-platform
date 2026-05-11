@@ -16,7 +16,8 @@ describe("processSimulationRunner", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/simulation-runner");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/simulation-runner");
     const fn = mod["processSimulationRunner"];
     expect(typeof fn).toBe("function");
     let threw = false;

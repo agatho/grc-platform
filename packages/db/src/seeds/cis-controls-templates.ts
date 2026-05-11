@@ -187,8 +187,7 @@ const CIS_PHASES: SeedPhase[] = [
     name: "Review & Continuous Improvement",
     pdcaPhase: "act",
     defaultDurationDays: 30,
-    description:
-      "Programm-Review, Maturity-Assessment, Y2-Roadmap.",
+    description: "Programm-Review, Maturity-Assessment, Y2-Roadmap.",
   },
 ];
 
@@ -233,7 +232,8 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
     isMilestone: true,
     safeguardsIg1: [
       {
-        title: "1.1 Detailliertes Enterprise-Asset-Inventar etablieren + pflegen",
+        title:
+          "1.1 Detailliertes Enterprise-Asset-Inventar etablieren + pflegen",
         description:
           "Inventar enthält pro Asset: Eindeutige ID, Hardware-Adresse, Netzwerk-Adresse, Maschinenname, Eigentümer, Department, ggf. Approval-Status. Mindestens halbjährliche Reviews.",
         defaultDurationDays: 14,
@@ -585,7 +585,8 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
         deliverableType: "control",
       },
       {
-        title: "5.4 Admin-Privilegien auf dedizierte Admin-Accounts beschränken",
+        title:
+          "5.4 Admin-Privilegien auf dedizierte Admin-Accounts beschränken",
         description:
           "Niemals tägliche Arbeit mit Admin-Account. Separate, nur für Admin-Tätigkeit genutzte Accounts. Persönliche User-Accounts ohne lokale Admin-Rechte.",
         defaultDurationDays: 21,
@@ -646,8 +647,7 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
       },
       {
         title: "6.4 MFA für Remote-Network-Access",
-        description:
-          "VPN, RDP-Gateway, Bastion-Hosts MFA-pflichtig.",
+        description: "VPN, RDP-Gateway, Bastion-Hosts MFA-pflichtig.",
         defaultDurationDays: 14,
         deliverableType: "control",
       },
@@ -950,7 +950,8 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
     ],
     safeguardsIg2Additional: [
       {
-        title: "10.4 Automatisches Anti-Malware-Scanning für Wechseldatenträger",
+        title:
+          "10.4 Automatisches Anti-Malware-Scanning für Wechseldatenträger",
         description:
           "Beim Anschluss eines USB-Sticks automatischer Scan vor Ausführung jeglicher Inhalte.",
         defaultDurationDays: 7,
@@ -1235,7 +1236,8 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
         defaultDurationDays: 14,
       },
       {
-        title: "14.5 Workforce in Ursachen unbeabsichtigter Daten-Exposure trainieren",
+        title:
+          "14.5 Workforce in Ursachen unbeabsichtigter Daten-Exposure trainieren",
         description:
           "Falsche E-Mail-Empfänger, vergessene Anhänge, ungesicherte Drucke, USB-Verlust. Praxis-Beispiele.",
         defaultDurationDays: 14,
@@ -1493,7 +1495,8 @@ const CIS_CONTROL_SPECS: ControlSpec[] = [
         defaultDurationDays: 14,
       },
       {
-        title: "17.6 Kommunikations-Mechanismen für Incident-Response definieren",
+        title:
+          "17.6 Kommunikations-Mechanismen für Incident-Response definieren",
         description:
           "Out-of-Band-Kanäle (Signal, Telefon) falls Mail/Slack kompromittiert. Templates für interne + externe Kommunikation.",
         defaultDurationDays: 14,

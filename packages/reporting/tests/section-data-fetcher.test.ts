@@ -12,7 +12,15 @@ import { describe, it, expect, vi } from "vitest";
 
 // Mock db with chainable that resolves to []
 const chain: Record<string, unknown> = {};
-for (const m of ["from", "where", "leftJoin", "groupBy", "orderBy", "limit", "offset"]) {
+for (const m of [
+  "from",
+  "where",
+  "leftJoin",
+  "groupBy",
+  "orderBy",
+  "limit",
+  "offset",
+]) {
   chain[m] = vi.fn(() => chain);
 }
 (chain as { then: unknown }).then = (resolve: (v: unknown[]) => void) =>

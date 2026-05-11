@@ -16,7 +16,8 @@ describe("processSlaMeasurementReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/sla-measurement-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/sla-measurement-reminder");
     const fn = mod["processSlaMeasurementReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

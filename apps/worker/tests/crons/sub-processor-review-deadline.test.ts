@@ -16,7 +16,8 @@ describe("processSubProcessorReviewDeadline", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/sub-processor-review-deadline");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/sub-processor-review-deadline");
     const fn = mod["processSubProcessorReviewDeadline"];
     expect(typeof fn).toBe("function");
     let threw = false;

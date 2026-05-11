@@ -16,7 +16,8 @@ describe("processEamTranslationReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/eam-translation-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/eam-translation-reminder");
     const fn = mod["processEamTranslationReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -29,10 +29,7 @@ export default function ImprintPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-6">
-      <Link
-        href="/"
-        className="text-sm text-slate-500 hover:underline"
-      >
+      <Link href="/" className="text-sm text-slate-500 hover:underline">
         ← Startseite
       </Link>
 
@@ -60,9 +57,7 @@ export default function ImprintPage() {
           <Row
             label="Firma"
             value={
-              i.legalForm
-                ? `${i.companyName} ${i.legalForm}`
-                : i.companyName
+              i.legalForm ? `${i.companyName} ${i.legalForm}` : i.companyName
             }
           />
           <Row label="Anschrift" value={i.street} />
@@ -86,23 +81,14 @@ export default function ImprintPage() {
         </dl>
       </section>
 
-      {(i.registerCourt ||
-        i.registerNumber ||
-        i.vatId ||
-        i.businessId) && (
+      {(i.registerCourt || i.registerNumber || i.vatId || i.businessId) && (
         <section className="space-y-4 rounded-md border border-slate-200 p-6 dark:border-slate-800">
           <h2 className="text-lg font-semibold">Registereintrag & Steuern</h2>
           <dl className="space-y-2">
             <Row label="Handelsregister" value={i.registerCourt} />
             <Row label="HRB-Nummer" value={i.registerNumber} />
-            <Row
-              label="USt-IdNr. (§ 27a UStG)"
-              value={i.vatId}
-            />
-            <Row
-              label="Wirtschafts-IdNr. (§ 139c AO)"
-              value={i.businessId}
-            />
+            <Row label="USt-IdNr. (§ 27a UStG)" value={i.vatId} />
+            <Row label="Wirtschafts-IdNr. (§ 139c AO)" value={i.businessId} />
           </dl>
         </section>
       )}
@@ -111,23 +97,15 @@ export default function ImprintPage() {
         <section className="space-y-4 rounded-md border border-slate-200 p-6 dark:border-slate-800">
           <h2 className="text-lg font-semibold">Reglementierter Beruf</h2>
           <dl className="space-y-2">
-            <Row
-              label="Aufsichtsbehörde"
-              value={i.supervisoryAuthority}
-            />
-            <Row
-              label="Berufsbezeichnung"
-              value={i.professionalTitle}
-            />
+            <Row label="Aufsichtsbehörde" value={i.supervisoryAuthority} />
+            <Row label="Berufsbezeichnung" value={i.professionalTitle} />
           </dl>
         </section>
       )}
 
       {i.responsibleForContent && (
         <section className="space-y-4 rounded-md border border-slate-200 p-6 dark:border-slate-800">
-          <h2 className="text-lg font-semibold">
-            Inhaltlich Verantwortlich
-          </h2>
+          <h2 className="text-lg font-semibold">Inhaltlich Verantwortlich</h2>
           <p className="text-sm text-slate-500">
             Verantwortlich i.S.v. § 18 Abs. 2 MStV
           </p>
@@ -169,33 +147,32 @@ export default function ImprintPage() {
         <h2 className="text-lg font-semibold">Haftungsausschluss</h2>
         <h3 className="text-sm font-semibold">Inhalt des Onlineangebots</h3>
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          Die Inhalte unseres Online-Dienstes wurden mit größtmöglicher
-          Sorgfalt erstellt. Für die Richtigkeit, Vollständigkeit und
-          Aktualität übernehmen wir jedoch keine Gewähr. Als Diensteanbieter
-          sind wir gemäß § 7 Abs. 1 DDG für eigene Inhalte verantwortlich.
-          Nach §§ 8-10 DDG sind wir jedoch nicht verpflichtet, übermittelte
-          oder gespeicherte fremde Informationen zu überwachen oder nach
-          Umständen zu forschen, die auf eine rechtswidrige Tätigkeit
-          hinweisen.
+          Die Inhalte unseres Online-Dienstes wurden mit größtmöglicher Sorgfalt
+          erstellt. Für die Richtigkeit, Vollständigkeit und Aktualität
+          übernehmen wir jedoch keine Gewähr. Als Diensteanbieter sind wir gemäß
+          § 7 Abs. 1 DDG für eigene Inhalte verantwortlich. Nach §§ 8-10 DDG
+          sind wir jedoch nicht verpflichtet, übermittelte oder gespeicherte
+          fremde Informationen zu überwachen oder nach Umständen zu forschen,
+          die auf eine rechtswidrige Tätigkeit hinweisen.
         </p>
 
         <h3 className="text-sm font-semibold">Verweise und Links</h3>
         <p className="text-sm text-slate-700 dark:text-slate-300">
           Bei direkten oder indirekten Verweisen auf fremde Webseiten
-          („Hyperlinks"), die außerhalb unseres Verantwortungsbereiches
-          liegen, würde eine Haftungsverpflichtung ausschließlich in dem Fall
-          in Kraft treten, in dem wir von den Inhalten Kenntnis haben und es
-          uns technisch möglich und zumutbar wäre, die Nutzung im Falle
+          („Hyperlinks"), die außerhalb unseres Verantwortungsbereiches liegen,
+          würde eine Haftungsverpflichtung ausschließlich in dem Fall in Kraft
+          treten, in dem wir von den Inhalten Kenntnis haben und es uns
+          technisch möglich und zumutbar wäre, die Nutzung im Falle
           rechtswidriger Inhalte zu verhindern.
         </p>
 
         <h3 className="text-sm font-semibold">Urheberrecht</h3>
         <p className="text-sm text-slate-700 dark:text-slate-300">
-          Die durch die Seitenbetreiber erstellten Inhalte und Werke
-          unterliegen dem deutschen Urheberrecht. Die Vervielfältigung,
-          Bearbeitung, Verbreitung und jede Art der Verwertung außerhalb der
-          Grenzen des Urheberrechtes bedürfen der schriftlichen Zustimmung
-          des jeweiligen Autors bzw. Erstellers.
+          Die durch die Seitenbetreiber erstellten Inhalte und Werke unterliegen
+          dem deutschen Urheberrecht. Die Vervielfältigung, Bearbeitung,
+          Verbreitung und jede Art der Verwertung außerhalb der Grenzen des
+          Urheberrechtes bedürfen der schriftlichen Zustimmung des jeweiligen
+          Autors bzw. Erstellers.
         </p>
       </section>
 

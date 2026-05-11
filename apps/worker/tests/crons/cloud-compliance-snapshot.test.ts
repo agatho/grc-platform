@@ -19,7 +19,8 @@ describe("cloudComplianceSnapshotJob", () => {
 
   it("runs without error", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { cloudComplianceSnapshotJob } = await import("../../src/crons/cloud-compliance-snapshot");
+    const { cloudComplianceSnapshotJob } =
+      await import("../../src/crons/cloud-compliance-snapshot");
     await expect(cloudComplianceSnapshotJob()).resolves.toBeUndefined();
   });
 });

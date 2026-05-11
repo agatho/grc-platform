@@ -16,7 +16,8 @@ describe("processRcsaOverdueCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/rcsa-overdue-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/rcsa-overdue-check");
     const fn = mod["processRcsaOverdueCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

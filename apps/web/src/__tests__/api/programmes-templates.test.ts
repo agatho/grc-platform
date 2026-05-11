@@ -32,7 +32,16 @@ vi.mock("@/lib/api", () => ({
 }));
 
 vi.mock("@grc/shared", () => ({
-  MS_TYPE_VALUES: ["isms", "bcms", "dpms", "aims", "esg", "tcms", "iccs", "other"],
+  MS_TYPE_VALUES: [
+    "isms",
+    "bcms",
+    "dpms",
+    "aims",
+    "esg",
+    "tcms",
+    "iccs",
+    "other",
+  ],
 }));
 
 describe("GET /api/v1/programmes/templates", () => {
@@ -48,9 +57,7 @@ describe("GET /api/v1/programmes/templates", () => {
 
   it("returns 200 with empty list when no templates exist", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     const res = await GET(
       new Request("http://localhost/api/v1/programmes/templates"),
     );
@@ -74,9 +81,7 @@ describe("GET /api/v1/programmes/templates", () => {
       },
     ];
     mockDb.select.mockReturnValueOnce(chainable(templates));
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     const res = await GET(
       new Request("http://localhost/api/v1/programmes/templates"),
     );
@@ -90,9 +95,7 @@ describe("GET /api/v1/programmes/templates", () => {
     withAuthMock.mockResolvedValueOnce(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     const res = await GET(
       new Request("http://localhost/api/v1/programmes/templates"),
     );
@@ -103,9 +106,7 @@ describe("GET /api/v1/programmes/templates", () => {
     requireModuleMock.mockResolvedValueOnce(
       Response.json({ error: "Module disabled" }, { status: 404 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     const res = await GET(
       new Request("http://localhost/api/v1/programmes/templates"),
     );
@@ -114,9 +115,7 @@ describe("GET /api/v1/programmes/templates", () => {
 
   it("filters by msType when query param given", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     await GET(
       new Request("http://localhost/api/v1/programmes/templates?msType=isms"),
     );
@@ -126,9 +125,7 @@ describe("GET /api/v1/programmes/templates", () => {
 
   it("ignores invalid msType values", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/programmes/templates/route"
-    );
+    const { GET } = await import("../../app/api/v1/programmes/templates/route");
     const res = await GET(
       new Request("http://localhost/api/v1/programmes/templates?msType=foo"),
     );

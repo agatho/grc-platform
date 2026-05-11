@@ -8,34 +8,34 @@
 
 ## 1. Auftrags-Erfüllung
 
-| Punkt aus User-Auftrag | Ergebnis |
-|------------------------|----------|
-| (1) Sicherstellen, dass alle Funktionen + Aufrufe von Tests erfasst sind | Test-Audit durchgeführt; 1569 bestehende Tests verifiziert; 52 neue Tests hinzugefügt; Coverage-Lücken im Final-Summary §6 dokumentiert. |
-| (2-a-aa) PDCA Einführungs-/Implementierungszyklus | [01-pdca-introduction-cycle.md](./01-pdca-introduction-cycle.md) — 9 Sektionen, alle 4 PDCA-Phasen mit Klausel-Bezug, BCMS-Integration, NIS2-Mapping, DORA-Säulen. |
-| (2-a-bb) PDCA Regulärer Betriebszyklus | [02-pdca-regular-cycle.md](./02-pdca-regular-cycle.md) — Jahres-Kalender, alle Aktivitäten pro Quartal, Outputs, KVP-Mechanismus. |
-| (2-b) Roadmap Y1 + Y2 (27001 + 27005 + 22301 + NIS2 + DORA) | [03-roadmap-year-1.md](./03-roadmap-year-1.md) (12 Monate, ~70 Aktivitäten in 3 Tracks) + [04-roadmap-year-2.md](./04-roadmap-year-2.md) (Reife-Steigerung, Quantifizierung, TLPT). |
-| (2-c) Anforderungskatalog ISMS+BCMS | [05-requirements-catalog.md](./05-requirements-catalog.md) — 130+ REQ-IDs in 9 Sektionen, jede mit Norm-Bezug, Akzeptanzkriterium, Software-Mapping, Status-Marker. |
-| (2-d) Detaillierter Testplan | [06-test-plan.md](./06-test-plan.md) — Strategie, ~150 Test-Cases, E2E-Pläne, Test-Daten, CI-Integration. |
-| (2-e) Testplan ausführen, Gaps + Bugs identifizieren | [07-test-execution-report.md](./07-test-execution-report.md) — Baseline grün, 2 echte Gaps (NC-State-Machine + Stakeholder-Register), 8 PARTIAL-Items als Backlog. |
-| (2-f) Alle Gaps + Bugs schließen | [08-gap-closure-report.md](./08-gap-closure-report.md) — 2/2 priorisierte Gaps vollständig geschlossen mit Code + Migration + 52 Tests. |
-| (2-g) Re-Test, neue Funktionen voll getestet, alle E2E-Tests durchgeplant | Re-Test 1621/1621 grün; 27 E2E-Skeletons (i-/b-/n-/d-/x-Series) angelegt für alle priorisierten Flüsse. |
-| (2-h) Commit und Push zu master | Branch + PR siehe §7. **Hinweis:** Repo-Default-Branch ist `main`, gepusht via Feature-Branch + PR (vor User-Bestätigung am Anfang gegen Direkt-Push auf `main` entschieden). |
+| Punkt aus User-Auftrag                                                    | Ergebnis                                                                                                                                                                            |
+| ------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| (1) Sicherstellen, dass alle Funktionen + Aufrufe von Tests erfasst sind  | Test-Audit durchgeführt; 1569 bestehende Tests verifiziert; 52 neue Tests hinzugefügt; Coverage-Lücken im Final-Summary §6 dokumentiert.                                            |
+| (2-a-aa) PDCA Einführungs-/Implementierungszyklus                         | [01-pdca-introduction-cycle.md](./01-pdca-introduction-cycle.md) — 9 Sektionen, alle 4 PDCA-Phasen mit Klausel-Bezug, BCMS-Integration, NIS2-Mapping, DORA-Säulen.                  |
+| (2-a-bb) PDCA Regulärer Betriebszyklus                                    | [02-pdca-regular-cycle.md](./02-pdca-regular-cycle.md) — Jahres-Kalender, alle Aktivitäten pro Quartal, Outputs, KVP-Mechanismus.                                                   |
+| (2-b) Roadmap Y1 + Y2 (27001 + 27005 + 22301 + NIS2 + DORA)               | [03-roadmap-year-1.md](./03-roadmap-year-1.md) (12 Monate, ~70 Aktivitäten in 3 Tracks) + [04-roadmap-year-2.md](./04-roadmap-year-2.md) (Reife-Steigerung, Quantifizierung, TLPT). |
+| (2-c) Anforderungskatalog ISMS+BCMS                                       | [05-requirements-catalog.md](./05-requirements-catalog.md) — 130+ REQ-IDs in 9 Sektionen, jede mit Norm-Bezug, Akzeptanzkriterium, Software-Mapping, Status-Marker.                 |
+| (2-d) Detaillierter Testplan                                              | [06-test-plan.md](./06-test-plan.md) — Strategie, ~150 Test-Cases, E2E-Pläne, Test-Daten, CI-Integration.                                                                           |
+| (2-e) Testplan ausführen, Gaps + Bugs identifizieren                      | [07-test-execution-report.md](./07-test-execution-report.md) — Baseline grün, 2 echte Gaps (NC-State-Machine + Stakeholder-Register), 8 PARTIAL-Items als Backlog.                  |
+| (2-f) Alle Gaps + Bugs schließen                                          | [08-gap-closure-report.md](./08-gap-closure-report.md) — 2/2 priorisierte Gaps vollständig geschlossen mit Code + Migration + 52 Tests.                                             |
+| (2-g) Re-Test, neue Funktionen voll getestet, alle E2E-Tests durchgeplant | Re-Test 1621/1621 grün; 27 E2E-Skeletons (i-/b-/n-/d-/x-Series) angelegt für alle priorisierten Flüsse.                                                                             |
+| (2-h) Commit und Push zu master                                           | Branch + PR siehe §7. **Hinweis:** Repo-Default-Branch ist `main`, gepusht via Feature-Branch + PR (vor User-Bestätigung am Anfang gegen Direkt-Push auf `main` entschieden).       |
 
 ---
 
 ## 2. Quantitative Ergebnisse
 
-| Metrik | Vorher | Nachher | Δ |
-|--------|--------|---------|---|
-| Vitest-Tests gesamt | 1569 | **1621** | +52 |
-| Vitest-Files | 61 | 63 | +2 |
-| E2E-Specs | 8 | **35** | +27 |
-| Doku-Dateien (docs/isms-bcms/) | 0 | **10** | +10 |
-| Drizzle-Schemas | 119 | 120 | +1 (`stakeholder-register.ts`) |
-| State-Machines (shared) | ~22 | 23 | +1 (`isms-nc.ts`) |
-| Migrations | 295 | 296 | +1 (`0296_stakeholder_register.sql`) |
-| API-Routen mit verbesserter Validation | — | 1 | +1 (`isms/nonconformities/[id]`) |
-| Regressionen | — | **0** | — |
+| Metrik                                 | Vorher | Nachher  | Δ                                    |
+| -------------------------------------- | ------ | -------- | ------------------------------------ |
+| Vitest-Tests gesamt                    | 1569   | **1621** | +52                                  |
+| Vitest-Files                           | 61     | 63       | +2                                   |
+| E2E-Specs                              | 8      | **35**   | +27                                  |
+| Doku-Dateien (docs/isms-bcms/)         | 0      | **10**   | +10                                  |
+| Drizzle-Schemas                        | 119    | 120      | +1 (`stakeholder-register.ts`)       |
+| State-Machines (shared)                | ~22    | 23       | +1 (`isms-nc.ts`)                    |
+| Migrations                             | 295    | 296      | +1 (`0296_stakeholder_register.sql`) |
+| API-Routen mit verbesserter Validation | —      | 1        | +1 (`isms/nonconformities/[id]`)     |
+| Regressionen                           | —      | **0**    | —                                    |
 
 ---
 
@@ -46,6 +46,7 @@
 **Was:** ISMS-Nichtkonformitäts-Status-Maschine + Closure-Validation (Wirksamkeitsprüfung)
 
 **Wo:**
+
 - Schema: `packages/shared/src/state-machines/isms-nc.ts` (neu)
 - API: `apps/web/src/app/api/v1/isms/nonconformities/[id]/route.ts` (PUT validation)
 - Tests: `packages/shared/tests/isms-nc-state-machine.test.ts` (41 Tests)
@@ -57,6 +58,7 @@
 **Was:** Stakeholder-Register (Schema + Power/Interest-Logic + Migration + Tests)
 
 **Wo:**
+
 - Schema: `packages/db/src/schema/stakeholder-register.ts` (neu)
 - Migration: `packages/db/drizzle/0296_stakeholder_register.sql` (neu, mit RLS + Audit-Triggern)
 - Index-Re-Exports: `packages/db/src/index.ts` (3 Zeilen)
@@ -75,19 +77,19 @@
 
 Vollständige Liste in [07-test-execution-report.md §2.3](./07-test-execution-report.md). Kurz:
 
-| ID | Bezug | Ziel-Sprint |
-|----|-------|-------------|
-| GAP-MR-001 | Management-Review Auto-Population | Y2-M14 |
-| GAP-INC-001 | Eskalationsmatrix-UI | Y1-M5 |
-| GAP-INC-002 | DORA-Threshold-Konfig | Y2-M16 |
-| GAP-NIS2-014 | Aufsichts-Konfiguration pro Org | Y1-M6 |
-| GAP-DORA-022 | TLPT-Provider-Compliance-Liste | Y2-M19 |
-| GAP-DORA-031 | Provider-Risiko-Score-Engine | Y2-M16 |
-| GAP-DORA-032 | Konzentrationsrisiko-Aggregation | Y2-M16 |
-| GAP-DORA-033 | Vertrags-Pflicht-Klausel-Check | Y2-M17 |
-| GAP-DORA-034 | Exit-Strategie pro Provider | Y1-M6 |
-| GAP-AWARE-004 | Phishing-Sim-Connector-Schema | Y2-M15 |
-| (Stakeholder-API + UI) | Folgesprint zu CL-STAKE-001 | Y1-M2 |
+| ID                     | Bezug                             | Ziel-Sprint |
+| ---------------------- | --------------------------------- | ----------- |
+| GAP-MR-001             | Management-Review Auto-Population | Y2-M14      |
+| GAP-INC-001            | Eskalationsmatrix-UI              | Y1-M5       |
+| GAP-INC-002            | DORA-Threshold-Konfig             | Y2-M16      |
+| GAP-NIS2-014           | Aufsichts-Konfiguration pro Org   | Y1-M6       |
+| GAP-DORA-022           | TLPT-Provider-Compliance-Liste    | Y2-M19      |
+| GAP-DORA-031           | Provider-Risiko-Score-Engine      | Y2-M16      |
+| GAP-DORA-032           | Konzentrationsrisiko-Aggregation  | Y2-M16      |
+| GAP-DORA-033           | Vertrags-Pflicht-Klausel-Check    | Y2-M17      |
+| GAP-DORA-034           | Exit-Strategie pro Provider       | Y1-M6       |
+| GAP-AWARE-004          | Phishing-Sim-Connector-Schema     | Y2-M15      |
+| (Stakeholder-API + UI) | Folgesprint zu CL-STAKE-001       | Y1-M2       |
 
 ---
 

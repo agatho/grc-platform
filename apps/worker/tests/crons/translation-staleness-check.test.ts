@@ -16,7 +16,8 @@ describe("processTranslationStalenessCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/translation-staleness-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/translation-staleness-check");
     const fn = mod["processTranslationStalenessCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

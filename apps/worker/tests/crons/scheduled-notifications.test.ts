@@ -37,9 +37,8 @@ describe("processScheduledNotifications", () => {
 
   it("returns expected stats with empty queue", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processScheduledNotifications } = await import(
-      "../../src/crons/scheduled-notifications"
-    );
+    const { processScheduledNotifications } =
+      await import("../../src/crons/scheduled-notifications");
     const r = await processScheduledNotifications();
     expect(r).toBeDefined();
   });

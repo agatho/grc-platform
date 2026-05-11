@@ -33,9 +33,8 @@ describe("processPolicyOverdueEscalation", () => {
 
   it("returns expected shape with no overdue policies", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processPolicyOverdueEscalation } = await import(
-      "../../src/crons/policy-overdue-escalation"
-    );
+    const { processPolicyOverdueEscalation } =
+      await import("../../src/crons/policy-overdue-escalation");
     const r = await processPolicyOverdueEscalation();
     expect(r).toBeDefined();
     expect(r).toEqual(

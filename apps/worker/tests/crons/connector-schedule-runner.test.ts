@@ -18,7 +18,8 @@ describe("connectorScheduleRunner", () => {
 
   it("runs without throwing", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { connectorScheduleRunner } = await import("../../src/crons/connector-schedule-runner");
+    const { connectorScheduleRunner } =
+      await import("../../src/crons/connector-schedule-runner");
     await expect(connectorScheduleRunner()).resolves.toBeUndefined();
   });
 });

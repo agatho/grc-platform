@@ -188,7 +188,9 @@ export default function NewProgrammePage() {
                     {t("new.cancel")}
                   </Button>
                   <Button type="submit" disabled={submitting || !name}>
-                    {submitting && <Loader2 className="mr-2 size-4 animate-spin" />}
+                    {submitting && (
+                      <Loader2 className="mr-2 size-4 animate-spin" />
+                    )}
                     {t("new.submit")}
                   </Button>
                 </div>

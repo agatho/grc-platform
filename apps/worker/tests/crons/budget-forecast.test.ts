@@ -22,7 +22,8 @@ describe("processBudgetForecast", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processBudgetForecast } = await import("../../src/crons/budget-forecast");
+    const { processBudgetForecast } =
+      await import("../../src/crons/budget-forecast");
     const r = await processBudgetForecast();
     expect(r).toBeDefined();
   });

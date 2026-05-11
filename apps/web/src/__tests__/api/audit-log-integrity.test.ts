@@ -40,9 +40,7 @@ describe("GET /api/v1/audit-log/integrity", () => {
     withAuthMock.mockResolvedValueOnce(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity/route"
-    );
+    const { GET } = await import("../../app/api/v1/audit-log/integrity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity"),
     );
@@ -55,9 +53,7 @@ describe("GET /api/v1/audit-log/integrity", () => {
       .mockResolvedValueOnce([]) // row-by-row check
       .mockResolvedValueOnce([{ legacy_count: 0 }]) // legacy count
       .mockResolvedValueOnce([{ total: 0, broken: 0 }]); // summary if any
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity/route"
-    );
+    const { GET } = await import("../../app/api/v1/audit-log/integrity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity"),
     );

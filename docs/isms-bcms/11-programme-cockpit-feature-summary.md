@@ -20,15 +20,15 @@ Pro Schritt sind hinterlegt: ISO-Klausel-Bezug, Default-Owner-Rolle, Dauer, Vora
 
 ## 2. Datenmodell (7 Tabellen)
 
-| Tabelle | Zweck |
-|---------|-------|
-| `programme_template` | Norm-Template (immutable nach Publication, versioniert) |
-| `programme_template_phase` | Phasen-Definitionen je Template |
-| `programme_template_step` | Schritt-Definitionen je Template + Phase |
-| `programme_journey` | Instanz pro Org (per RLS isoliert) |
-| `programme_journey_phase` | Phase-Status pro Journey, kumulativ berechnet |
-| `programme_journey_step` | Schritt-Status pro Journey mit Owner, Due-Date, Evidence |
-| `programme_journey_event` | Append-only Event-Log (per Trigger erzwungen) |
+| Tabelle                    | Zweck                                                    |
+| -------------------------- | -------------------------------------------------------- |
+| `programme_template`       | Norm-Template (immutable nach Publication, versioniert)  |
+| `programme_template_phase` | Phasen-Definitionen je Template                          |
+| `programme_template_step`  | Schritt-Definitionen je Template + Phase                 |
+| `programme_journey`        | Instanz pro Org (per RLS isoliert)                       |
+| `programme_journey_phase`  | Phase-Status pro Journey, kumulativ berechnet            |
+| `programme_journey_step`   | Schritt-Status pro Journey mit Owner, Due-Date, Evidence |
+| `programme_journey_event`  | Append-only Event-Log (per Trigger erzwungen)            |
 
 Migration: [`packages/db/drizzle/0297_programme_cockpit.sql`](../../packages/db/drizzle/0297_programme_cockpit.sql) — inkl. RLS-Policies, Audit-Triggern, append-only-Schutz und `module_definition`-Eintrag.
 
@@ -37,11 +37,13 @@ Migration: [`packages/db/drizzle/0297_programme_cockpit.sql`](../../packages/db/
 ## 3. State-Machines + Health-Engine
 
 `packages/shared/src/state-machines/programme-journey.ts`:
+
 - 7-Status-Maschine: `planned → active → on_track | at_risk | blocked → completed → archived`
 - `evaluateJourneyHealth()` — leitet `derivedStatus` aus Step-Aggregaten ab (Blocked-Count, Overdue-Ratio ≥ 20 %, unzugewiesene Pflicht-Schritte) + Health-Score 0–100 + strukturierte Signale
 - `computeJourneyProgress()` — gewichteter Fortschritts-Prozent (review = 0.85, in_progress = 0.5)
 
 `packages/shared/src/state-machines/programme-step.ts`:
+
 - 7-Status-Maschine inkl. Skip/Block (Pflicht-Reason ≥ 5 Zeichen)
 - `assertCanStartStep()` — DAG-Prerequisite-Check
 - `assertCanReviewStep()` — Evidence-Count-Gate
@@ -80,6 +82,7 @@ DELETE /api/v1/programmes/journeys/[id]/steps/[stepId]/evidence?index=N
 ```
 
 Jeder Endpoint:
+
 - `withAuth()` für Authentifizierung
 - `requireModule("programme")` für Modul-Gating (404 wenn deaktiviert)
 - RLS auf DB-Ebene
@@ -91,16 +94,17 @@ Jeder Endpoint:
 
 ## 5. UI-Pages
 
-| Pfad | Inhalt |
-|------|--------|
-| `/(dashboard)/programmes` | Liste aller Journeys mit Status, Progress, Quick-Links |
-| `/(dashboard)/programmes/new` | Setup-Wizard: Template wählen → Eckdaten → Start |
-| `/(dashboard)/programmes/[id]` | Cockpit mit Health-Badge, Progress, Aggregaten, Phase-Kanban, Next-Actions, Blockers |
-| `/(dashboard)/programmes/[id]/timeline` | Gantt-Phasenbänder + Milestone-Liste |
-| `/(dashboard)/programmes/[id]/steps/[stepId]` | Schritt-Detail mit Status-Wizard und Pflicht-Reason |
-| `/(dashboard)/programmes/[id]/events` | Append-only Aktivitäts-Log |
+| Pfad                                          | Inhalt                                                                               |
+| --------------------------------------------- | ------------------------------------------------------------------------------------ |
+| `/(dashboard)/programmes`                     | Liste aller Journeys mit Status, Progress, Quick-Links                               |
+| `/(dashboard)/programmes/new`                 | Setup-Wizard: Template wählen → Eckdaten → Start                                     |
+| `/(dashboard)/programmes/[id]`                | Cockpit mit Health-Badge, Progress, Aggregaten, Phase-Kanban, Next-Actions, Blockers |
+| `/(dashboard)/programmes/[id]/timeline`       | Gantt-Phasenbänder + Milestone-Liste                                                 |
+| `/(dashboard)/programmes/[id]/steps/[stepId]` | Schritt-Detail mit Status-Wizard und Pflicht-Reason                                  |
+| `/(dashboard)/programmes/[id]/events`         | Append-only Aktivitäts-Log                                                           |
 
 Komponenten:
+
 - `ProgrammeStatusBadge`, `ProgrammeStepStatusBadge`
 - `ProgrammeProgressBar`
 - `NextActionsWidget`
@@ -113,11 +117,11 @@ Alle Pages sind in `<ModuleGate moduleKey="programme">` gekapselt.
 
 ## 6. Cron-Jobs (Worker)
 
-| Job | Frequenz | Zweck |
-|-----|----------|-------|
-| `programme-deadline-monitor` | täglich 06:00 | Notifications für überfällige Steps an Owner / Journey-Owner |
-| `programme-health-recompute` | stündlich | Aktualisiert `programme_journey.status / progress_percent / phase progress` für alle aktiven Journeys |
-| `programme-progress-snapshot` | wöchentlich Mo 07:00 | Schreibt Snapshot-Event für Trend-Analyse |
+| Job                           | Frequenz             | Zweck                                                                                                 |
+| ----------------------------- | -------------------- | ----------------------------------------------------------------------------------------------------- |
+| `programme-deadline-monitor`  | täglich 06:00        | Notifications für überfällige Steps an Owner / Journey-Owner                                          |
+| `programme-health-recompute`  | stündlich            | Aktualisiert `programme_journey.status / progress_percent / phase progress` für alle aktiven Journeys |
+| `programme-progress-snapshot` | wöchentlich Mo 07:00 | Schreibt Snapshot-Event für Trend-Analyse                                                             |
 
 Endpoints registriert unter `apps/worker/src/index.ts` mit `CRON_SECRET`-Schutz.
 
@@ -153,14 +157,15 @@ Hook in `seed-all.ts` als „Phase 2.5: Programme Cockpit templates".
 
 ## 10. Test-Coverage
 
-| Schicht | Tests | Status |
-|---------|-------|--------|
-| `programme-journey-state-machine.test.ts` | 31 | ✅ |
-| `programme-step-state-machine.test.ts` | 33 | ✅ |
-| **Neue Vitest-Tests** | **64** | **100 % grün** |
-| **Total Vitest** (alle Packages) | **1685** (vorher 1621) | **100 % grün, 0 Regressionen** |
+| Schicht                                   | Tests                  | Status                         |
+| ----------------------------------------- | ---------------------- | ------------------------------ |
+| `programme-journey-state-machine.test.ts` | 31                     | ✅                             |
+| `programme-step-state-machine.test.ts`    | 33                     | ✅                             |
+| **Neue Vitest-Tests**                     | **64**                 | **100 % grün**                 |
+| **Total Vitest** (alle Packages)          | **1685** (vorher 1621) | **100 % grün, 0 Regressionen** |
 
 E2E-Specs (Playwright):
+
 - `p-01-programme-templates.spec.ts` — Templates-Liste verifiziert 4 Norm-Codes
 - `p-02-programme-create-flow.spec.ts` — Vollständiger Setup-Flow + Phasen/Steps
 - `p-03-step-transition-blocked-without-prereqs.spec.ts` — Prereq-DAG-Validation
@@ -172,26 +177,27 @@ E2E-Specs (Playwright):
 
 ## 11. Akzeptanzkriterien — Erfüllung
 
-| Kriterium | Status |
-|-----------|--------|
-| Vitest grün — alle bestehenden Tests | ✅ 1621 → 1685 (0 Regressionen) |
-| Vitest grün — alle neuen Tests | ✅ 64/64 |
-| TypeScript strict | ✅ keine Errors im neuen Code |
-| RLS aktiv auf allen Org-bezogenen Tabellen | ✅ 4/4 Journey-Tabellen |
-| Audit-Trigger registriert | ✅ 6/7 Tabellen (Event-Log absichtlich nur Append-Only) |
-| Migration `up` läuft idempotent | ✅ DO $$ EXCEPTION-Wrapping + IF NOT EXISTS |
-| API-Routen mit `requireModule('programme')` | ✅ 12/12 |
-| Pages mit `<ModuleGate>` | ✅ 6/6 |
-| i18n DE + EN vollständig | ✅ 80 Keys × 2 Locales |
-| ISO-Klausel-Bezug pro Schritt | ✅ wo anwendbar (Setup ohne Klausel) |
-| Mind. 4 Templates seeded | ✅ ISMS, BCMS, DPMS, AIMS |
-| E2E-Specs angelegt | ✅ 6/6 |
+| Kriterium                                   | Status                                                  |
+| ------------------------------------------- | ------------------------------------------------------- |
+| Vitest grün — alle bestehenden Tests        | ✅ 1621 → 1685 (0 Regressionen)                         |
+| Vitest grün — alle neuen Tests              | ✅ 64/64                                                |
+| TypeScript strict                           | ✅ keine Errors im neuen Code                           |
+| RLS aktiv auf allen Org-bezogenen Tabellen  | ✅ 4/4 Journey-Tabellen                                 |
+| Audit-Trigger registriert                   | ✅ 6/7 Tabellen (Event-Log absichtlich nur Append-Only) |
+| Migration `up` läuft idempotent             | ✅ DO $$ EXCEPTION-Wrapping + IF NOT EXISTS             |
+| API-Routen mit `requireModule('programme')` | ✅ 12/12                                                |
+| Pages mit `<ModuleGate>`                    | ✅ 6/6                                                  |
+| i18n DE + EN vollständig                    | ✅ 80 Keys × 2 Locales                                  |
+| ISO-Klausel-Bezug pro Schritt               | ✅ wo anwendbar (Setup ohne Klausel)                    |
+| Mind. 4 Templates seeded                    | ✅ ISMS, BCMS, DPMS, AIMS                               |
+| E2E-Specs angelegt                          | ✅ 6/6                                                  |
 
 ---
 
 ## 12. Verbleibendes Backlog (Out-of-Scope dieser Session)
 
 Dokumentiert in [10-programme-cockpit-implementation-plan.md §14](./10-programme-cockpit-implementation-plan.md):
+
 - AI-gestützte Schritt-Vorschläge („Coach-Modus")
 - Multi-Org-Templates (Konzern-weite Synchronisation)
 - Template-Marketplace (Community / Partner)

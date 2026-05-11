@@ -16,7 +16,8 @@ describe("processKriOverdueAlerts", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/kri-overdue-alert");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/kri-overdue-alert");
     const fn = mod["processKriOverdueAlerts"];
     expect(typeof fn).toBe("function");
     let threw = false;

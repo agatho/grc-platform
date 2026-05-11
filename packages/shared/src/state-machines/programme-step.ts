@@ -218,16 +218,24 @@ export function computeNextBestActions(
   const items: NextActionItem[] = [];
 
   for (const step of input.steps) {
-    if (step.status === "completed" || step.status === "skipped" || step.status === "cancelled") {
+    if (
+      step.status === "completed" ||
+      step.status === "skipped" ||
+      step.status === "cancelled"
+    ) {
       continue;
     }
 
     const dueInDays =
       step.dueDate != null
-        ? Math.floor((Date.parse(step.dueDate + "T00:00:00Z") - todayMs) / 86_400_000)
+        ? Math.floor(
+            (Date.parse(step.dueDate + "T00:00:00Z") - todayMs) / 86_400_000,
+          )
         : null;
 
-    if (dueInDays != null && dueInDays < 0 && step.status !== "completed") {
+    // The active-step type union already excludes "completed", so the
+    // not-completed check is implicit — only overdue check remains.
+    if (dueInDays != null && dueInDays < 0) {
       items.push({
         stepId: step.id,
         code: step.code,

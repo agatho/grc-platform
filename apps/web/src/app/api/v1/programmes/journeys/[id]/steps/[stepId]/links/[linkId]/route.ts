@@ -1,10 +1,6 @@
 // DELETE /api/v1/programmes/journeys/[id]/steps/[stepId]/links/[linkId]
 
-import {
-  db,
-  programmeStepLink,
-  programmeJourneyEvent,
-} from "@grc/db";
+import { db, programmeStepLink, programmeJourneyEvent } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and } from "drizzle-orm";

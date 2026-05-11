@@ -16,7 +16,8 @@ describe("processRegulatorySources", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/regulatory-source-fetcher");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/regulatory-source-fetcher");
     const fn = mod["processRegulatorySources"];
     expect(typeof fn).toBe("function");
     let threw = false;

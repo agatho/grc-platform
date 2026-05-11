@@ -16,7 +16,8 @@ describe("processResilienceScoreSnapshot", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/resilience-score-snapshot");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/resilience-score-snapshot");
     const fn = mod["processResilienceScoreSnapshot"];
     expect(typeof fn).toBe("function");
     let threw = false;

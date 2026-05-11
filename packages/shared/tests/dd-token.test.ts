@@ -107,7 +107,10 @@ describe("computeScore", () => {
 
   it("handles negative scores gracefully (no clipping)", () => {
     // Implementation does not clamp; documents current behaviour.
-    const r = computeScore([{ score: -2 }, { score: 5 }], [{ maxScore: 5 }, { maxScore: 5 }]);
+    const r = computeScore(
+      [{ score: -2 }, { score: 5 }],
+      [{ maxScore: 5 }, { maxScore: 5 }],
+    );
     expect(r.total).toBe(3);
   });
 });

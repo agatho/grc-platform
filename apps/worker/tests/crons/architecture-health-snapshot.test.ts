@@ -21,7 +21,8 @@ describe("processArchitectureHealthSnapshot", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processArchitectureHealthSnapshot } = await import("../../src/crons/architecture-health-snapshot");
+    const { processArchitectureHealthSnapshot } =
+      await import("../../src/crons/architecture-health-snapshot");
     const r = await processArchitectureHealthSnapshot();
     expect(r).toBeDefined();
   });
