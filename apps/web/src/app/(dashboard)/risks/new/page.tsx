@@ -253,7 +253,9 @@ function NewRiskForm() {
               .join(" — ")
           : null;
         const reason =
-          fieldMsg || errJson.error || `${t("form.saveError")} (HTTP ${res.status})`;
+          fieldMsg ||
+          errJson.error ||
+          `${t("form.saveError")} (HTTP ${res.status})`;
         throw new Error(reason);
       }
 
@@ -930,9 +932,13 @@ function MiniHeatMap({
           {LEVELS.map((i) => {
             const score = l * i;
             const isInherent =
-              inherent != null && l === inherent.likelihood && i === inherent.impact;
+              inherent != null &&
+              l === inherent.likelihood &&
+              i === inherent.impact;
             const isResidual =
-              residual != null && l === residual.likelihood && i === residual.impact;
+              residual != null &&
+              l === residual.likelihood &&
+              i === residual.impact;
             const isHighlight = isInherent || isResidual;
             return (
               <div
