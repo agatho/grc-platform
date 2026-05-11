@@ -31,9 +31,7 @@ describe("POST /api/v1/auth/switch-org", () => {
 
   it("returns 401 when no session", async () => {
     authMock.mockResolvedValue(null);
-    const { POST } = await import(
-      "../../app/api/v1/auth/switch-org/route"
-    );
+    const { POST } = await import("../../app/api/v1/auth/switch-org/route");
     const res = await POST(
       new Request("http://localhost/api/v1/auth/switch-org", {
         method: "POST",
@@ -46,9 +44,7 @@ describe("POST /api/v1/auth/switch-org", () => {
 
   it("returns 422 for invalid orgId format", async () => {
     authMock.mockResolvedValue({ user: { id: "u1" } });
-    const { POST } = await import(
-      "../../app/api/v1/auth/switch-org/route"
-    );
+    const { POST } = await import("../../app/api/v1/auth/switch-org/route");
     const res = await POST(
       new Request("http://localhost/api/v1/auth/switch-org", {
         method: "POST",
@@ -65,9 +61,7 @@ describe("POST /api/v1/auth/switch-org", () => {
     getAccessibleOrgIdsMock.mockReturnValue([
       "f9e8d7c6-b5a4-4321-8987-654321fedcba",
     ]);
-    const { POST } = await import(
-      "../../app/api/v1/auth/switch-org/route"
-    );
+    const { POST } = await import("../../app/api/v1/auth/switch-org/route");
     const res = await POST(
       new Request("http://localhost/api/v1/auth/switch-org", {
         method: "POST",
@@ -84,9 +78,7 @@ describe("POST /api/v1/auth/switch-org", () => {
     getAccessibleOrgIdsMock.mockReturnValue([targetId]);
     setCurrentOrgIdMock.mockResolvedValue(undefined);
 
-    const { POST } = await import(
-      "../../app/api/v1/auth/switch-org/route"
-    );
+    const { POST } = await import("../../app/api/v1/auth/switch-org/route");
     const res = await POST(
       new Request("http://localhost/api/v1/auth/switch-org", {
         method: "POST",

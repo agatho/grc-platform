@@ -46,15 +46,15 @@
 
 ### 2.1 Tabellen
 
-| Tabelle | Zweck | Schlüssel-Felder |
-|---------|-------|------------------|
-| `programme_template` | Norm-Template (immutable nach Veröffentlichung) | `ms_type`, `name`, `version`, `framework_codes[]` |
-| `programme_template_phase` | Phasen-Definitionen | `template_id`, `sequence`, `name`, `pdca_phase`, `default_duration_days` |
-| `programme_template_step` | Schritt-Definitionen | `template_id`, `phase_id`, `sequence`, `name`, `default_owner_role`, `prerequisite_step_codes[]`, `target_module_link`, `iso_clause` |
-| `programme_journey` | Instanz pro Org | `org_id`, `template_id`, `name`, `status`, `started_at`, `target_completion_date`, `owner_id`, `progress_percent` |
-| `programme_journey_phase` | Phase-Status pro Journey | `journey_id`, `template_phase_id`, `status`, `started_at`, `completed_at` |
-| `programme_journey_step` | Schritt-Status pro Journey | `journey_id`, `template_step_id`, `phase_id`, `status`, `owner_id`, `due_date`, `completed_at`, `evidence_links` (jsonb) |
-| `programme_journey_event` | Append-only Event-Log (Audit) | `journey_id`, `event_type`, `actor_id`, `payload` (jsonb), `occurred_at` |
+| Tabelle                    | Zweck                                           | Schlüssel-Felder                                                                                                                     |
+| -------------------------- | ----------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
+| `programme_template`       | Norm-Template (immutable nach Veröffentlichung) | `ms_type`, `name`, `version`, `framework_codes[]`                                                                                    |
+| `programme_template_phase` | Phasen-Definitionen                             | `template_id`, `sequence`, `name`, `pdca_phase`, `default_duration_days`                                                             |
+| `programme_template_step`  | Schritt-Definitionen                            | `template_id`, `phase_id`, `sequence`, `name`, `default_owner_role`, `prerequisite_step_codes[]`, `target_module_link`, `iso_clause` |
+| `programme_journey`        | Instanz pro Org                                 | `org_id`, `template_id`, `name`, `status`, `started_at`, `target_completion_date`, `owner_id`, `progress_percent`                    |
+| `programme_journey_phase`  | Phase-Status pro Journey                        | `journey_id`, `template_phase_id`, `status`, `started_at`, `completed_at`                                                            |
+| `programme_journey_step`   | Schritt-Status pro Journey                      | `journey_id`, `template_step_id`, `phase_id`, `status`, `owner_id`, `due_date`, `completed_at`, `evidence_links` (jsonb)             |
+| `programme_journey_event`  | Append-only Event-Log (Audit)                   | `journey_id`, `event_type`, `actor_id`, `payload` (jsonb), `occurred_at`                                                             |
 
 ### 2.2 Enums
 
@@ -68,12 +68,13 @@
 - Unique: `(org_id, template_id, name)` auf `programme_journey`
 - Unique: `(template_id, sequence)` auf phases + steps
 - Indices: `(org_id, status)`, `(journey_id, status)`, `(journey_id, due_date)`, `(template_id, ms_type)`
-- RLS auf alle journey-/journey_*-Tabellen via `app.current_org_id`
+- RLS auf alle journey-/journey\_\*-Tabellen via `app.current_org_id`
 - Templates sind global lesbar (org-unabhängig), modifikation nur durch admin
 
 ### 2.4 Polymorphe Verlinkungen
 
 Schritte können auf existierende Module verweisen via `target_module_link` (jsonb):
+
 ```json
 {
   "module": "isms",
@@ -84,6 +85,7 @@ Schritte können auf existierende Module verweisen via `target_module_link` (jso
 ```
 
 Artefakte werden via `evidence_links` (jsonb-Array) verknüpft:
+
 ```json
 [
   { "type": "document", "id": "uuid", "label": "ISMS-Politik v1.0" },
@@ -125,6 +127,7 @@ Artefakte werden via `evidence_links` (jsonb-Array) verknüpft:
 ```
 
 `on_track`/`at_risk`/`blocked` sind **abgeleitete Status**, automatisch berechnet vom `JourneyHealthEvaluator` aus:
+
 - Anteil überfälliger Steps
 - Gate-Check-Blocker
 - Owner-Zuweisung-Lücken
@@ -157,6 +160,7 @@ Artefakte werden via `evidence_links` (jsonb-Array) verknüpft:
 ```
 
 Validierung:
+
 - `pending → in_progress` nur, wenn alle `prerequisite_step_codes` bereits `completed | skipped`
 - `in_progress → review` nur, wenn `evidence_links.length >= required_evidence_count` (aus Template)
 - `review → completed` setzt `completed_at = now()` und triggert Re-Eval der Journey-Health
@@ -170,34 +174,35 @@ Validierung:
 
 Aus Y1-Roadmap-Aktivitäten direkt abgeleitet, Phasen entsprechen den 4 Quartalen + Setup:
 
-| # | Phase | Schritt | iso_clause | default_owner | duration_days |
-|---|-------|---------|------------|---------------|---------------|
-| 0 | setup | GL-Commitment & Charter | 5.1 | admin | 14 |
-| 1 | plan | Stakeholder-Analyse | 4.2 | risk_manager | 14 |
-| 2 | plan | Externer + Interner Kontext | 4.1 | risk_manager | 14 |
-| 3 | plan | Geltungsbereich-Workshop | 4.3 | admin | 7 |
-| 4 | plan | NIS2/DORA-Anwendbarkeitsprüfung | n/a | dpo | 7 |
-| 5 | plan | IS-Politik (5.2) | 5.2 | admin | 14 |
-| 6 | plan | RACI / Rollen-Modell | 5.3 | admin | 14 |
-| 7 | plan | Risiko-Methodik (27005) | 6.1.2 | risk_manager | 14 |
-| 8 | plan | Asset-Erfassung Phase 1 | A.5.9 | control_owner | 21 |
-| 9 | plan | Risiko-Identifikation Workshops | 6.1.2 | risk_manager | 21 |
-| 10 | plan | Risiko-Analyse + Bewertung | 6.1.2 | risk_manager | 14 |
-| 11 | plan | SoA-Entwurf (Annex A) | 6.1.3 d | risk_manager | 14 |
-| 12 | do | Risk-Treatment-Plan | 6.1.3 | risk_manager | 14 |
-| 13 | do | Restrisiko-Akzeptanz Top-Risiken | 6.1.3 f | admin | 7 |
-| 14 | do | Maßnahmen Welle 1 (Patch/MFA/Backup) | A.8 | control_owner | 60 |
-| 15 | do | Awareness-Programm Start | 7.3 | admin | 30 |
-| 16 | do | Continuous Control Monitoring | 9.1 | control_owner | 14 |
-| 17 | check | Pen-Test extern | A.8.8 | risk_manager | 14 |
-| 18 | check | Internes Audit (50 % Scope) | 9.2 | auditor | 21 |
-| 19 | check | Internes Audit (Rest Scope) | 9.2 | auditor | 21 |
-| 20 | check | NC-Schließung Welle 1 | 10.1 | auditor | 30 |
-| 21 | act | Management-Review | 9.3 | admin | 14 |
-| 22 | act | Stage-1-Audit (extern) | n/a | admin | 14 |
-| 23 | act | Stage-2-Audit + Zertifikat | n/a | admin | 21 |
+| #   | Phase | Schritt                              | iso_clause | default_owner | duration_days |
+| --- | ----- | ------------------------------------ | ---------- | ------------- | ------------- |
+| 0   | setup | GL-Commitment & Charter              | 5.1        | admin         | 14            |
+| 1   | plan  | Stakeholder-Analyse                  | 4.2        | risk_manager  | 14            |
+| 2   | plan  | Externer + Interner Kontext          | 4.1        | risk_manager  | 14            |
+| 3   | plan  | Geltungsbereich-Workshop             | 4.3        | admin         | 7             |
+| 4   | plan  | NIS2/DORA-Anwendbarkeitsprüfung      | n/a        | dpo           | 7             |
+| 5   | plan  | IS-Politik (5.2)                     | 5.2        | admin         | 14            |
+| 6   | plan  | RACI / Rollen-Modell                 | 5.3        | admin         | 14            |
+| 7   | plan  | Risiko-Methodik (27005)              | 6.1.2      | risk_manager  | 14            |
+| 8   | plan  | Asset-Erfassung Phase 1              | A.5.9      | control_owner | 21            |
+| 9   | plan  | Risiko-Identifikation Workshops      | 6.1.2      | risk_manager  | 21            |
+| 10  | plan  | Risiko-Analyse + Bewertung           | 6.1.2      | risk_manager  | 14            |
+| 11  | plan  | SoA-Entwurf (Annex A)                | 6.1.3 d    | risk_manager  | 14            |
+| 12  | do    | Risk-Treatment-Plan                  | 6.1.3      | risk_manager  | 14            |
+| 13  | do    | Restrisiko-Akzeptanz Top-Risiken     | 6.1.3 f    | admin         | 7             |
+| 14  | do    | Maßnahmen Welle 1 (Patch/MFA/Backup) | A.8        | control_owner | 60            |
+| 15  | do    | Awareness-Programm Start             | 7.3        | admin         | 30            |
+| 16  | do    | Continuous Control Monitoring        | 9.1        | control_owner | 14            |
+| 17  | check | Pen-Test extern                      | A.8.8      | risk_manager  | 14            |
+| 18  | check | Internes Audit (50 % Scope)          | 9.2        | auditor       | 21            |
+| 19  | check | Internes Audit (Rest Scope)          | 9.2        | auditor       | 21            |
+| 20  | check | NC-Schließung Welle 1                | 10.1       | auditor       | 30            |
+| 21  | act   | Management-Review                    | 9.3        | admin         | 14            |
+| 22  | act   | Stage-1-Audit (extern)               | n/a        | admin         | 14            |
+| 23  | act   | Stage-2-Audit + Zertifikat           | n/a        | admin         | 21            |
 
 Jeder Schritt mit:
+
 - `target_module_link` zum bestehenden Modul (z. B. Schritt 8 → `/assets`, Schritt 11 → `/isms/soa`)
 - `prerequisite_step_codes` (DAG)
 - `required_evidence_count` (Default 1, Stage-Audits = 3)
@@ -220,50 +225,50 @@ Aus EU-AI-Act-Roadmap.
 
 ### 5.1 Templates (öffentlich lesbar, admin-änderbar)
 
-| Methode | Pfad | Zweck |
-|---------|------|-------|
-| GET | `/api/v1/programmes/templates` | Liste aller Templates (filterbar nach `ms_type`) |
-| GET | `/api/v1/programmes/templates/[id]` | Detail inkl. Phasen + Schritte |
-| GET | `/api/v1/programmes/templates/[id]/preview` | Render-Vorschau (welche Schritte in welcher Phase) |
+| Methode | Pfad                                        | Zweck                                              |
+| ------- | ------------------------------------------- | -------------------------------------------------- |
+| GET     | `/api/v1/programmes/templates`              | Liste aller Templates (filterbar nach `ms_type`)   |
+| GET     | `/api/v1/programmes/templates/[id]`         | Detail inkl. Phasen + Schritte                     |
+| GET     | `/api/v1/programmes/templates/[id]/preview` | Render-Vorschau (welche Schritte in welcher Phase) |
 
 ### 5.2 Journeys (org-spezifisch)
 
-| Methode | Pfad | Zweck |
-|---------|------|-------|
-| GET | `/api/v1/programmes/journeys` | Liste der Journeys der Org |
-| POST | `/api/v1/programmes/journeys` | Neue Journey aus Template instanziieren |
-| GET | `/api/v1/programmes/journeys/[id]` | Detail |
-| PATCH | `/api/v1/programmes/journeys/[id]` | Update Name/Owner/Target-Date |
-| DELETE | `/api/v1/programmes/journeys/[id]` | Soft-Delete (admin only) |
-| GET | `/api/v1/programmes/journeys/[id]/dashboard` | Aggregierte Dashboard-Daten |
-| GET | `/api/v1/programmes/journeys/[id]/timeline` | Gantt-Daten |
-| GET | `/api/v1/programmes/journeys/[id]/next-actions` | Top 3–10 nächste Aktionen |
-| GET | `/api/v1/programmes/journeys/[id]/blockers` | Aktuelle Blocker |
-| GET | `/api/v1/programmes/journeys/[id]/health` | Health-Score (on_track / at_risk / blocked + Gründe) |
-| POST | `/api/v1/programmes/journeys/[id]/transition` | Journey-Status-Übergang |
+| Methode | Pfad                                            | Zweck                                                |
+| ------- | ----------------------------------------------- | ---------------------------------------------------- |
+| GET     | `/api/v1/programmes/journeys`                   | Liste der Journeys der Org                           |
+| POST    | `/api/v1/programmes/journeys`                   | Neue Journey aus Template instanziieren              |
+| GET     | `/api/v1/programmes/journeys/[id]`              | Detail                                               |
+| PATCH   | `/api/v1/programmes/journeys/[id]`              | Update Name/Owner/Target-Date                        |
+| DELETE  | `/api/v1/programmes/journeys/[id]`              | Soft-Delete (admin only)                             |
+| GET     | `/api/v1/programmes/journeys/[id]/dashboard`    | Aggregierte Dashboard-Daten                          |
+| GET     | `/api/v1/programmes/journeys/[id]/timeline`     | Gantt-Daten                                          |
+| GET     | `/api/v1/programmes/journeys/[id]/next-actions` | Top 3–10 nächste Aktionen                            |
+| GET     | `/api/v1/programmes/journeys/[id]/blockers`     | Aktuelle Blocker                                     |
+| GET     | `/api/v1/programmes/journeys/[id]/health`       | Health-Score (on_track / at_risk / blocked + Gründe) |
+| POST    | `/api/v1/programmes/journeys/[id]/transition`   | Journey-Status-Übergang                              |
 
 ### 5.3 Steps
 
-| Methode | Pfad | Zweck |
-|---------|------|-------|
-| GET | `/api/v1/programmes/journeys/[id]/steps` | Alle Schritte (filterbar nach Phase, Status) |
-| GET | `/api/v1/programmes/journeys/[id]/steps/[stepId]` | Detail |
-| PATCH | `/api/v1/programmes/journeys/[id]/steps/[stepId]` | Owner, Due-Date, Notes setzen |
-| POST | `/api/v1/programmes/journeys/[id]/steps/[stepId]/transition` | Status-Übergang (validiert) |
-| POST | `/api/v1/programmes/journeys/[id]/steps/[stepId]/evidence` | Evidence-Link hinzufügen |
-| DELETE | `/api/v1/programmes/journeys/[id]/steps/[stepId]/evidence/[linkId]` | Evidence-Link entfernen |
+| Methode | Pfad                                                                | Zweck                                        |
+| ------- | ------------------------------------------------------------------- | -------------------------------------------- |
+| GET     | `/api/v1/programmes/journeys/[id]/steps`                            | Alle Schritte (filterbar nach Phase, Status) |
+| GET     | `/api/v1/programmes/journeys/[id]/steps/[stepId]`                   | Detail                                       |
+| PATCH   | `/api/v1/programmes/journeys/[id]/steps/[stepId]`                   | Owner, Due-Date, Notes setzen                |
+| POST    | `/api/v1/programmes/journeys/[id]/steps/[stepId]/transition`        | Status-Übergang (validiert)                  |
+| POST    | `/api/v1/programmes/journeys/[id]/steps/[stepId]/evidence`          | Evidence-Link hinzufügen                     |
+| DELETE  | `/api/v1/programmes/journeys/[id]/steps/[stepId]/evidence/[linkId]` | Evidence-Link entfernen                      |
 
 ### 5.4 Phases
 
-| Methode | Pfad | Zweck |
-|---------|------|-------|
-| GET | `/api/v1/programmes/journeys/[id]/phases` | Phasen-Liste mit Aggregat-Status |
+| Methode | Pfad                                      | Zweck                            |
+| ------- | ----------------------------------------- | -------------------------------- |
+| GET     | `/api/v1/programmes/journeys/[id]/phases` | Phasen-Liste mit Aggregat-Status |
 
 ### 5.5 Events
 
-| Methode | Pfad | Zweck |
-|---------|------|-------|
-| GET | `/api/v1/programmes/journeys/[id]/events` | Event-Log (paginiert, append-only) |
+| Methode | Pfad                                      | Zweck                              |
+| ------- | ----------------------------------------- | ---------------------------------- |
+| GET     | `/api/v1/programmes/journeys/[id]/events` | Event-Log (paginiert, append-only) |
 
 ---
 
@@ -271,12 +276,12 @@ Aus EU-AI-Act-Roadmap.
 
 ### 6.1 Pages
 
-| Pfad | Inhalt |
-|------|--------|
-| `/(dashboard)/programmes` | Liste aktiver Journeys + „neues Programm starten"-Button |
-| `/(dashboard)/programmes/new` | Setup-Wizard: Norm wählen → Template-Vorschau → Owner + Target-Date → Start |
-| `/(dashboard)/programmes/[id]` | Cockpit (Tabs: Overview / Phases / Timeline / Events) |
-| `/(dashboard)/programmes/[id]/steps/[stepId]` | Schritt-Detail + Action-Wizard |
+| Pfad                                          | Inhalt                                                                      |
+| --------------------------------------------- | --------------------------------------------------------------------------- |
+| `/(dashboard)/programmes`                     | Liste aktiver Journeys + „neues Programm starten"-Button                    |
+| `/(dashboard)/programmes/new`                 | Setup-Wizard: Norm wählen → Template-Vorschau → Owner + Target-Date → Start |
+| `/(dashboard)/programmes/[id]`                | Cockpit (Tabs: Overview / Phases / Timeline / Events)                       |
+| `/(dashboard)/programmes/[id]/steps/[stepId]` | Schritt-Detail + Action-Wizard                                              |
 
 ### 6.2 Komponenten
 
@@ -297,11 +302,11 @@ Aus EU-AI-Act-Roadmap.
 
 ## 7. Cron-Jobs (Worker)
 
-| Job | Frequenz | Inhalt |
-|-----|----------|--------|
-| `programme-journey-deadline-monitor` | täglich 06:00 | Schritte mit überschrittenem `due_date` markieren als `at_risk`, Owner benachrichtigen |
-| `programme-journey-progress-snapshot` | wöchentlich Mo 07:00 | Snapshot in `programme_journey_event` + KPI-Aggregat |
-| `programme-journey-health-recompute` | stündlich | Re-Eval `journey.status` (on_track/at_risk/blocked) |
+| Job                                   | Frequenz             | Inhalt                                                                                 |
+| ------------------------------------- | -------------------- | -------------------------------------------------------------------------------------- |
+| `programme-journey-deadline-monitor`  | täglich 06:00        | Schritte mit überschrittenem `due_date` markieren als `at_risk`, Owner benachrichtigen |
+| `programme-journey-progress-snapshot` | wöchentlich Mo 07:00 | Snapshot in `programme_journey_event` + KPI-Aggregat                                   |
+| `programme-journey-health-recompute`  | stündlich            | Re-Eval `journey.status` (on_track/at_risk/blocked)                                    |
 
 ---
 
@@ -322,13 +327,13 @@ Aus EU-AI-Act-Roadmap.
 
 ## 10. Test-Strategie
 
-| Schicht | Tool | Tests |
-|---------|------|-------|
-| Pure Logic + State-Machines | vitest | ~60 Tests in `packages/shared/tests/programme-*` |
-| Schema-Validation (Zod) | vitest | ~25 Tests |
-| API-Routen | vitest (mock-fetch) | ~20 Tests pro Endpoint |
-| Cron-Logic | vitest | ~15 Tests |
-| E2E | Playwright | 6 Specs für Setup-Wizard, Cockpit, Step-Transition, Health-Recompute |
+| Schicht                     | Tool                | Tests                                                                |
+| --------------------------- | ------------------- | -------------------------------------------------------------------- |
+| Pure Logic + State-Machines | vitest              | ~60 Tests in `packages/shared/tests/programme-*`                     |
+| Schema-Validation (Zod)     | vitest              | ~25 Tests                                                            |
+| API-Routen                  | vitest (mock-fetch) | ~20 Tests pro Endpoint                                               |
+| Cron-Logic                  | vitest              | ~15 Tests                                                            |
+| E2E                         | Playwright          | 6 Specs für Setup-Wizard, Cockpit, Step-Transition, Health-Recompute |
 
 ---
 
@@ -350,31 +355,31 @@ In dieser Session **alles in einem Working-Tree**, dann **ein Squash-Commit pro 
 
 ## 12. Akzeptanzkriterien (Definition of Done)
 
-| Kriterium | Schwelle |
-|-----------|----------|
-| Vitest grün — alle bestehenden Tests | ✓ |
-| Vitest grün — alle neuen Tests | ≥ 95 % der definierten Test-Cases |
-| TypeScript strict | 0 Errors in geändertem Code |
-| RLS aktiv auf allen Org-bezogenen Tabellen | ✓ |
-| Audit-Trigger registriert | ✓ |
-| Migration `up` läuft idempotent | ✓ |
-| API-Routen `requireModule('programme')` | ✓ |
-| Pages mit `<ModuleGate>` | ✓ |
-| i18n DE + EN vollständig | 0 hartcodierte Strings im UI |
-| ISO-Klausel-Bezug bei jedem Schritt | ✓ |
-| Mind. 4 Templates seeded | ISMS, BCMS, DPMS, AIMS |
-| E2E-Specs angelegt | 6 Specs |
+| Kriterium                                  | Schwelle                          |
+| ------------------------------------------ | --------------------------------- |
+| Vitest grün — alle bestehenden Tests       | ✓                                 |
+| Vitest grün — alle neuen Tests             | ≥ 95 % der definierten Test-Cases |
+| TypeScript strict                          | 0 Errors in geändertem Code       |
+| RLS aktiv auf allen Org-bezogenen Tabellen | ✓                                 |
+| Audit-Trigger registriert                  | ✓                                 |
+| Migration `up` läuft idempotent            | ✓                                 |
+| API-Routen `requireModule('programme')`    | ✓                                 |
+| Pages mit `<ModuleGate>`                   | ✓                                 |
+| i18n DE + EN vollständig                   | 0 hartcodierte Strings im UI      |
+| ISO-Klausel-Bezug bei jedem Schritt        | ✓                                 |
+| Mind. 4 Templates seeded                   | ISMS, BCMS, DPMS, AIMS            |
+| E2E-Specs angelegt                         | 6 Specs                           |
 
 ---
 
 ## 13. Risiken + Mitigationen
 
-| Risiko | Mitigation |
-|--------|------------|
-| Templates veralten bei Norm-Updates | Versionierung pro Template; alte Journeys behalten ihren Template-Snapshot |
-| Schritt-Wizards explodieren in Anzahl | Generischer Step-Detail-Page mit Action-Hooks pro `target_module_link` |
-| Health-Recompute lastig bei vielen Journeys | Cron-Job inkrementell, nur Journeys mit Änderungen seit letztem Run |
-| Lock-In auf eigenes Format | Templates als JSON exportierbar, Re-Import möglich (in dieser Session: Schema vorbereitet, Endpunkt im Backlog) |
+| Risiko                                      | Mitigation                                                                                                      |
+| ------------------------------------------- | --------------------------------------------------------------------------------------------------------------- |
+| Templates veralten bei Norm-Updates         | Versionierung pro Template; alte Journeys behalten ihren Template-Snapshot                                      |
+| Schritt-Wizards explodieren in Anzahl       | Generischer Step-Detail-Page mit Action-Hooks pro `target_module_link`                                          |
+| Health-Recompute lastig bei vielen Journeys | Cron-Job inkrementell, nur Journeys mit Änderungen seit letztem Run                                             |
+| Lock-In auf eigenes Format                  | Templates als JSON exportierbar, Re-Import möglich (in dieser Session: Schema vorbereitet, Endpunkt im Backlog) |
 
 ---
 
@@ -388,6 +393,7 @@ In dieser Session **alles in einem Working-Tree**, dann **ein Squash-Commit pro 
 ---
 
 Verweise:
+
 - [01-pdca-introduction-cycle.md](./01-pdca-introduction-cycle.md) — fachliche Grundlage
 - [03-roadmap-year-1.md](./03-roadmap-year-1.md) — Quelle für ISO-27001-Template
 - [05-requirements-catalog.md](./05-requirements-catalog.md) — Anforderungs-Bezug

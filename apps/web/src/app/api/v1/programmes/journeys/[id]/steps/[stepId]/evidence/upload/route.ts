@@ -115,8 +115,7 @@ export async function POST(
 
   // 1) Create document record
   const docTitle =
-    customTitle?.trim() ||
-    `Evidence: ${step.code} — ${file.name}`;
+    customTitle?.trim() || `Evidence: ${step.code} — ${file.name}`;
 
   const [doc] = await withAuditContext(ctx, async () =>
     db
@@ -129,7 +128,11 @@ export async function POST(
         ownerId: ctx.userId,
         currentVersion: 1,
         requiresAcknowledgment: false,
-        tags: ["programme-evidence", `journey:${journeyId}`, `step:${step.code}`],
+        tags: [
+          "programme-evidence",
+          `journey:${journeyId}`,
+          `step:${step.code}`,
+        ],
         createdBy: ctx.userId,
         updatedBy: ctx.userId,
       })

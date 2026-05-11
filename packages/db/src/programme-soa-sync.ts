@@ -49,7 +49,9 @@ const STEP_CODE_IMPLEMENTATION = "Y1-M5-01";
 const STEP_CODE_SOA_DRAFT = "Y1-M3-05";
 
 /** Derive Annex-A category prefix (A.5/A.6/A.7/A.8). Returns null for non-A.x codes. */
-function annexCategory(code: string | null): "A.5" | "A.6" | "A.7" | "A.8" | null {
+function annexCategory(
+  code: string | null,
+): "A.5" | "A.6" | "A.7" | "A.8" | null {
   if (!code) return null;
   if (code.startsWith("A.5")) return "A.5";
   if (code.startsWith("A.6")) return "A.6";
@@ -215,7 +217,7 @@ export async function syncSoaEntryToProgramme(
     const baseTitle =
       entry.catalogCode && entry.catalogTitleDe
         ? `${entry.catalogCode} ${entry.catalogTitleDe}`
-        : entry.catalogCode ?? "Annex-A-Kontrolle";
+        : (entry.catalogCode ?? "Annex-A-Kontrolle");
     const title = `Implementierung: ${baseTitle}`;
     const description = [
       entry.catalogDescriptionDe,
@@ -376,10 +378,7 @@ export async function syncSoaEntryToProgramme(
   }
 
   // ── Audit event ──────────────────────────────────────────────────
-  if (
-    result.subtaskAction !== "noop" ||
-    result.linkAction !== "noop"
-  ) {
+  if (result.subtaskAction !== "noop" || result.linkAction !== "noop") {
     await db.insert(programmeJourneyEvent).values({
       orgId,
       journeyId: ctx.journeyId,

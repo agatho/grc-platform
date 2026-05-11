@@ -11,6 +11,7 @@ sudo bash /opt/arctos/deploy/update-all.sh
 ```
 
 Läuft 4 neue Migrationen:
+
 - `0289_cis_ig_metadata.sql` (Backfill)
 - `0290_audit_finding_classification.sql`
 - `0291_audit_methods_array.sql`

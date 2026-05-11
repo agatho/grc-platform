@@ -134,7 +134,11 @@ export async function DELETE(
   await withAuditContext(ctx, async () =>
     db
       .update(programmeJourney)
-      .set({ deletedAt: new Date(), updatedAt: new Date(), updatedBy: ctx.userId })
+      .set({
+        deletedAt: new Date(),
+        updatedAt: new Date(),
+        updatedBy: ctx.userId,
+      })
       .where(eq(programmeJourney.id, id)),
   );
 

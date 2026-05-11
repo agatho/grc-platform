@@ -135,7 +135,9 @@ export default function ProgrammeGanttPage({
           <h1 className="text-2xl font-semibold">
             {t("gantt.title")}: {data.journey.name}
           </h1>
-          <p className="mt-1 text-sm text-slate-500">{t("gantt.description")}</p>
+          <p className="mt-1 text-sm text-slate-500">
+            {t("gantt.description")}
+          </p>
         </header>
 
         <ProgrammeGantt

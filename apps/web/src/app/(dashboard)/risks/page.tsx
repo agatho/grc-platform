@@ -731,10 +731,10 @@ function RisksPageInner() {
               </SelectContent>
             </Select>
 
-            {/* Owner */}
+            {/* Owner — wider trigger so "Alle Verantwortlichen" doesn't truncate (QA-007) */}
             {owners.length > 0 && (
               <Select value={ownerFilter} onValueChange={setOwnerFilter}>
-                <SelectTrigger className="w-[140px] h-8 text-xs">
+                <SelectTrigger className="w-[200px] h-8 text-xs">
                   <SelectValue placeholder={t("form.owner")} />
                 </SelectTrigger>
                 <SelectContent>

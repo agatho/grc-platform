@@ -23,7 +23,7 @@
   "devDependencies": {
     "dotenv-cli": "^11.0.0",
     "prettier": "^3.8.3",
-    "turbo": "^2.9.6",
+    "turbo": "^2.9.12",
     "typescript": "^6.0.2"
   },
   "overrides": {
@@ -38,6 +38,6 @@
   "packageManager": "npm@11.12.0",
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "resend": "^6.12.2"
+    "resend": "^6.12.3"
   }
 }

@@ -12,10 +12,8 @@ import { describe, it, expect, vi } from "vitest";
 
 // Stub heavy/incompatible runtime modules that components may import.
 vi.mock("next-intl", () => ({
-  useTranslations:
-    () =>
-    (key: string, params?: Record<string, unknown>) =>
-      params ? `${key}(${JSON.stringify(params)})` : key,
+  useTranslations: () => (key: string, params?: Record<string, unknown>) =>
+    params ? `${key}(${JSON.stringify(params)})` : key,
   useLocale: () => "de",
   useFormatter: () => ({
     dateTime: (d: Date) => d.toString(),
@@ -38,13 +36,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => `<a href="${href}">${String(children)}</a>`,
+  default: ({ children, href }: { children: React.ReactNode; href: string }) =>
+    `<a href="${href}">${String(children)}</a>`,
 }));
 
 vi.mock("next-themes", () => ({

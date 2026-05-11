@@ -10,7 +10,20 @@
   @trace method TRACE TRACK
   respond @trace 405
 
-  reverse_proxy localhost:3000
+  reverse_proxy localhost:3000 {
+    # Stream RSC payloads to the browser unbuffered. Without this Caddy
+    # holds Next.js's React-Server-Component chunks until the response
+    # finishes, which can trip the gateway timeout on large RSC trees and
+    # surface as HTTP 503 on `?_rsc=…` requests (QA-003, 2026-05-10).
+    flush_interval -1
+    transport http {
+      # 90 s upstream timeouts cover slow RSC trees and long-running API
+      # routes (catalog import, framework rebuild). Bump if needed.
+      response_header_timeout 90s
+      read_timeout 90s
+      write_timeout 90s
+    }
+  }
 
   # Security Headers
   header {

@@ -18,9 +18,8 @@ describe("processRiskReviewReminders", () => {
 
   it("returns zero counts when no upcoming reviews", async () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { processRiskReviewReminders } = await import(
-      "../../src/crons/risk-review-reminder"
-    );
+    const { processRiskReviewReminders } =
+      await import("../../src/crons/risk-review-reminder");
     const r = await processRiskReviewReminders();
     expect(r.processed).toBe(0);
     expect(r.notified).toBe(0);
@@ -28,7 +27,9 @@ describe("processRiskReviewReminders", () => {
   });
 
   it("creates one notification per upcoming risk review", async () => {
-    const reviewDate = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
+    const reviewDate = new Date(Date.now() + 7 * 86400000)
+      .toISOString()
+      .slice(0, 10);
     mockDb.select.mockReturnValueOnce(
       chainable([
         {
@@ -47,9 +48,8 @@ describe("processRiskReviewReminders", () => {
         },
       ]),
     );
-    const { processRiskReviewReminders } = await import(
-      "../../src/crons/risk-review-reminder"
-    );
+    const { processRiskReviewReminders } =
+      await import("../../src/crons/risk-review-reminder");
     const r = await processRiskReviewReminders();
     expect(r.processed).toBe(2);
     expect(r.notified).toBe(2);
@@ -57,7 +57,9 @@ describe("processRiskReviewReminders", () => {
   });
 
   it("continues processing when one notification insert fails", async () => {
-    const reviewDate = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
+    const reviewDate = new Date(Date.now() + 3 * 86400000)
+      .toISOString()
+      .slice(0, 10);
     mockDb.select.mockReturnValueOnce(
       chainable([
         { id: "r1", orgId: "o", title: "A", ownerId: "u", reviewDate },
@@ -73,9 +75,8 @@ describe("processRiskReviewReminders", () => {
     mockDb.insert.mockImplementationOnce(() => failingChain);
     mockDb.insert.mockImplementationOnce(() => chainable(undefined));
 
-    const { processRiskReviewReminders } = await import(
-      "../../src/crons/risk-review-reminder"
-    );
+    const { processRiskReviewReminders } =
+      await import("../../src/crons/risk-review-reminder");
     const r = await processRiskReviewReminders();
     expect(r.processed).toBe(3);
     expect(r.notified).toBe(2); // one failed
@@ -90,14 +91,14 @@ describe("processRiskReviewReminders", () => {
         { id: "r1", orgId: "o", title: "Tomorrow", ownerId: "u", reviewDate },
       ]),
     );
-    const { processRiskReviewReminders } = await import(
-      "../../src/crons/risk-review-reminder"
-    );
+    const { processRiskReviewReminders } =
+      await import("../../src/crons/risk-review-reminder");
     const r = await processRiskReviewReminders();
     expect(r.notified).toBe(1);
     // Verify the values() call captured the templateData
-    const insertCall = mockDb.insert.mock.results[0]
-      ?.value as { values: ReturnType<typeof vi.fn> };
+    const insertCall = mockDb.insert.mock.results[0]?.value as {
+      values: ReturnType<typeof vi.fn>;
+    };
     expect(insertCall).toBeTruthy();
     expect(insertCall.values).toHaveBeenCalled();
     const args = insertCall.values.mock.calls[0]![0];

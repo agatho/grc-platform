@@ -241,10 +241,22 @@ function NewRiskForm() {
       });
 
       if (!res.ok) {
-        const errJson = await res.json().catch(() => ({}));
-        throw new Error(
-          (errJson as Record<string, string>).error ?? "Create failed",
-        );
+        const errJson = (await res.json().catch(() => ({}))) as {
+          error?: string;
+          details?: { fieldErrors?: Record<string, string[]> };
+        };
+        // Surface field-level Zod errors when available, otherwise the API's
+        // top-level message, otherwise a generic line with the HTTP status.
+        const fieldMsg = errJson.details?.fieldErrors
+          ? Object.entries(errJson.details.fieldErrors)
+              .map(([k, v]) => `${k}: ${(v ?? []).join(", ")}`)
+              .join(" — ")
+          : null;
+        const reason =
+          fieldMsg ||
+          errJson.error ||
+          `${t("form.saveError")} (HTTP ${res.status})`;
+        throw new Error(reason);
       }
 
       const json = await res.json();
@@ -291,13 +303,20 @@ function NewRiskForm() {
         body: JSON.stringify(payload),
       });
 
-      if (!res.ok) throw new Error("Draft save failed");
+      if (!res.ok) {
+        const errJson = (await res.json().catch(() => ({}))) as {
+          error?: string;
+        };
+        throw new Error(
+          errJson.error ?? `${t("form.saveError")} (HTTP ${res.status})`,
+        );
+      }
 
       const json = await res.json();
       toast.success(t("form.draftSaved"));
       router.push(json.data?.id ? `/risks/${json.data.id}` : "/risks");
-    } catch {
-      toast.error(t("form.saveError"));
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : t("form.saveError"));
     } finally {
       setSaving(false);
     }
@@ -420,7 +439,7 @@ function NewRiskForm() {
               <div className="space-y-2">
                 <Label htmlFor="risk-category">{t("form.category")} *</Label>
                 <Select
-                  value={form.riskCategory || undefined}
+                  value={form.riskCategory || ""}
                   onValueChange={(v) =>
                     update("riskCategory", v as RiskCategory)
                   }
@@ -441,7 +460,7 @@ function NewRiskForm() {
               <div className="space-y-2">
                 <Label htmlFor="risk-source">{t("form.source")} *</Label>
                 <Select
-                  value={form.riskSource || undefined}
+                  value={form.riskSource || ""}
                   onValueChange={(v) => update("riskSource", v as RiskSource)}
                 >
                   <SelectTrigger id="risk-source">
@@ -527,6 +546,7 @@ function NewRiskForm() {
                       key={level}
                       type="button"
                       onClick={() => update("inherentLikelihood", level)}
+                      title={t(`likelihoodDesc.${LEVEL_KEYS[idx]}`)}
                       className={cn(
                         "flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-2.5 transition-all text-center min-w-[64px]",
                         form.inherentLikelihood === level
@@ -553,6 +573,7 @@ function NewRiskForm() {
                       key={level}
                       type="button"
                       onClick={() => update("inherentImpact", level)}
+                      title={t(`impactDesc.${LEVEL_KEYS[idx]}`)}
                       className={cn(
                         "flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-2.5 transition-all text-center min-w-[64px]",
                         form.inherentImpact === level
@@ -571,12 +592,34 @@ function NewRiskForm() {
                 </div>
               </div>
 
-              {/* Mini heat map + score badge */}
+              {/* Combined inherent + residual heat-map preview. Both markers
+                  appear on the same grid so the mitigation movement is
+                  visible at a glance (QA-011). */}
               {inherentScore !== null && (
                 <div className="flex items-center gap-4 pt-2">
                   <MiniHeatMap
-                    likelihood={form.inherentLikelihood!}
-                    impact={form.inherentImpact!}
+                    inherent={
+                      form.inherentLikelihood != null &&
+                      form.inherentImpact != null
+                        ? {
+                            likelihood: form.inherentLikelihood,
+                            impact: form.inherentImpact,
+                          }
+                        : null
+                    }
+                    residual={
+                      form.residualLikelihood != null &&
+                      form.residualImpact != null
+                        ? {
+                            likelihood: form.residualLikelihood,
+                            impact: form.residualImpact,
+                          }
+                        : null
+                    }
+                  />
+                  <HeatMapLegend
+                    showInherent={inherentScore !== null}
+                    showResidual={residualScore !== null}
                     t={t}
                   />
                   <div className="space-y-1">
@@ -611,6 +654,7 @@ function NewRiskForm() {
                           form.residualLikelihood === level ? null : level,
                         )
                       }
+                      title={t(`likelihoodDesc.${LEVEL_KEYS[idx]}`)}
                       className={cn(
                         "flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-2.5 transition-all text-center min-w-[64px]",
                         form.residualLikelihood === level
@@ -642,6 +686,7 @@ function NewRiskForm() {
                           form.residualImpact === level ? null : level,
                         )
                       }
+                      title={t(`impactDesc.${LEVEL_KEYS[idx]}`)}
                       className={cn(
                         "flex flex-col items-center gap-1 rounded-lg border-2 px-3 py-2.5 transition-all text-center min-w-[64px]",
                         form.residualImpact === level
@@ -663,8 +708,23 @@ function NewRiskForm() {
               {residualScore !== null && (
                 <div className="flex items-center gap-4 pt-2">
                   <MiniHeatMap
-                    likelihood={form.residualLikelihood!}
-                    impact={form.residualImpact!}
+                    inherent={
+                      form.inherentLikelihood != null &&
+                      form.inherentImpact != null
+                        ? {
+                            likelihood: form.inherentLikelihood,
+                            impact: form.inherentImpact,
+                          }
+                        : null
+                    }
+                    residual={{
+                      likelihood: form.residualLikelihood!,
+                      impact: form.residualImpact!,
+                    }}
+                  />
+                  <HeatMapLegend
+                    showInherent={inherentScore !== null}
+                    showResidual={true}
                     t={t}
                   />
                   <div className="space-y-1">
@@ -846,16 +906,24 @@ function NewRiskForm() {
 
 // ---------------------------------------------------------------------------
 // Mini 5x5 Heat Map Preview
+//
+// Mirrors the detail-view heatmap: shows BOTH inherent (filled marker) and
+// residual (hollow marker) on the same 5x5 grid so the mitigation movement
+// is visible at a glance (QA-011, 2026-05-10). Falls back to a single marker
+// when only one of the two is provided.
 // ---------------------------------------------------------------------------
 
-function MiniHeatMap({
-  likelihood,
-  impact,
-  t,
-}: {
+interface HeatPoint {
   likelihood: number;
   impact: number;
-  t: ReturnType<typeof useTranslations>;
+}
+
+function MiniHeatMap({
+  inherent,
+  residual,
+}: {
+  inherent: HeatPoint | null;
+  residual: HeatPoint | null;
 }) {
   return (
     <div className="flex flex-col-reverse gap-px">
@@ -863,24 +931,73 @@ function MiniHeatMap({
         <div key={l} className="flex gap-px">
           {LEVELS.map((i) => {
             const score = l * i;
-            const isSelected = l === likelihood && i === impact;
+            const isInherent =
+              inherent != null &&
+              l === inherent.likelihood &&
+              i === inherent.impact;
+            const isResidual =
+              residual != null &&
+              l === residual.likelihood &&
+              i === residual.impact;
+            const isHighlight = isInherent || isResidual;
             return (
               <div
                 key={`${l}-${i}`}
                 className={cn(
-                  "h-5 w-5 rounded-[2px] transition-all",
-                  isSelected && "ring-2 ring-slate-800 ring-offset-1 z-10",
+                  "relative h-5 w-5 rounded-[2px] transition-all",
+                  isHighlight && "ring-2 ring-slate-800 ring-offset-1 z-10",
                 )}
                 style={{
                   backgroundColor: getScoreColor(score),
-                  opacity: isSelected ? 1 : 0.35,
+                  opacity: isHighlight ? 1 : 0.35,
                 }}
                 title={`L${l} x I${i} = ${score}`}
-              />
+              >
+                {isInherent && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 m-auto h-2 w-2 rounded-full bg-slate-900 ring-1 ring-white"
+                  />
+                )}
+                {isResidual && (
+                  <span
+                    aria-hidden="true"
+                    className="absolute inset-0 m-auto h-2 w-2 rounded-full border-2 border-slate-900 bg-white"
+                  />
+                )}
+              </div>
             );
           })}
         </div>
       ))}
+    </div>
+  );
+}
+
+function HeatMapLegend({
+  showInherent,
+  showResidual,
+  t,
+}: {
+  showInherent: boolean;
+  showResidual: boolean;
+  t: ReturnType<typeof useTranslations>;
+}) {
+  if (!showInherent && !showResidual) return null;
+  return (
+    <div className="flex flex-col gap-1 text-[10px] text-gray-600">
+      {showInherent && (
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full bg-slate-900 ring-1 ring-white" />
+          {t("heatmap.inherent")}
+        </span>
+      )}
+      {showResidual && (
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block h-2 w-2 rounded-full border-2 border-slate-900 bg-white" />
+          {t("heatmap.residual")}
+        </span>
+      )}
     </div>
   );
 }

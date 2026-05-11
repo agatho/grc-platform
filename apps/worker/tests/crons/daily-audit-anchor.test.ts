@@ -16,7 +16,8 @@ describe("processDailyAuditAnchor", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/daily-audit-anchor");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/daily-audit-anchor");
     const fn = mod["processDailyAuditAnchor"];
     expect(typeof fn).toBe("function");
     let threw = false;

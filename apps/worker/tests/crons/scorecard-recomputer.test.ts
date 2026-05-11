@@ -16,7 +16,8 @@ describe("processScorecardRecomputer", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/scorecard-recomputer");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/scorecard-recomputer");
     const fn = mod["processScorecardRecomputer"];
     expect(typeof fn).toBe("function");
     let threw = false;

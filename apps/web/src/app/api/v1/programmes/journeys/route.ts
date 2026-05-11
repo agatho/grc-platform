@@ -68,11 +68,7 @@ export async function POST(req: Request) {
         eq(programmeTemplate.version, parsed.data.templateVersion),
       )
     : eq(programmeTemplate.code, parsed.data.templateCode);
-  const [tpl] = await db
-    .select()
-    .from(programmeTemplate)
-    .where(where)
-    .limit(1);
+  const [tpl] = await db.select().from(programmeTemplate).where(where).limit(1);
   if (!tpl) {
     return Response.json(
       { error: `Template not found: ${parsed.data.templateCode}` },
@@ -116,7 +112,9 @@ export async function POST(req: Request) {
     const message = err instanceof Error ? err.message : String(err);
     if (message.includes("unique") || message.includes("duplicate")) {
       return Response.json(
-        { error: "A journey with this name already exists in your organization" },
+        {
+          error: "A journey with this name already exists in your organization",
+        },
         { status: 409 },
       );
     }

@@ -69,9 +69,19 @@ VALUES
   ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'auditor', 'third'),
   ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'dpo', 'second'),
   ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'c2446a5c-64f1-40a7-862a-8ab084f66f41', 'risk_manager', 'second'),
-  -- Demo data org (ccc4cc1c) — same users need access here for seeds
+  -- Demo data org (ccc4cc1c) — full role roster mirrors the primary org so
+  -- owner/assignee pickers in the demo data org actually have candidates
+  -- (QA-008, 2026-05-10: dropdown previously showed only 2 users)
   ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'admin', 'first'),
   ('8c148f0a-f558-4a9f-8886-a3d7096da6cf', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
+  ('d4e5f6a7-b8c9-0123-def0-456789abcdef', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
+  ('e5f6a7b8-c9d0-1234-ef01-56789abcdef0', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
+  ('f6a7b8c9-d0e1-2345-f012-6789abcdef01', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'process_owner', 'first'),
+  ('a7b8c9d0-e1f2-3456-0123-789abcdef012', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'control_owner', 'first'),
+  ('b8c9d0e1-f2a3-4567-1234-89abcdef0123', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'first'),
+  ('c9d0e1f2-a3b4-5678-2345-9abcdef01234', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'auditor', 'third'),
+  ('d0e1f2a3-b4c5-6789-3456-abcdef012345', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'dpo', 'second'),
+  ('e1f2a3b4-c5d6-7890-4567-bcdef0123456', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'risk_manager', 'second'),
   -- NovaTec
   ('f22a4bc0-0147-4c0d-a02f-98cf65f1e768', '6cf1eb6d-2727-4679-a767-2ac333395047', 'admin', 'first')
 ON CONFLICT DO NOTHING;

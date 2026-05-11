@@ -16,7 +16,8 @@ describe("processEamPortfolioHealthCheck", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/eam-portfolio-health-check");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/eam-portfolio-health-check");
     const fn = mod["processEamPortfolioHealthCheck"];
     expect(typeof fn).toBe("function");
     let threw = false;

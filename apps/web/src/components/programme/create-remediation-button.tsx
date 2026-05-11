@@ -151,8 +151,8 @@ export function CreateRemediationButton({
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
               <span className="block">
-                Generiert eine Mini-Journey im Programme-Cockpit mit 3 Schritten:{" "}
-                <strong>Root-Cause-Analyse</strong>,{" "}
+                Generiert eine Mini-Journey im Programme-Cockpit mit 3
+                Schritten: <strong>Root-Cause-Analyse</strong>,{" "}
                 <strong>Korrekturmaßnahme</strong>,{" "}
                 <strong>Wirksamkeits-Verifikation</strong>. Pro Schritt 2-3
                 vorgenerierte Subtasks. Cross-Link zum Original-Finding wird
@@ -177,16 +177,15 @@ export function CreateRemediationButton({
                 }
                 className="flex h-9 w-full rounded-lg border border-slate-200 bg-transparent px-3 py-1 text-sm dark:border-slate-800"
               >
-                <option value="major">
-                  Major (Default 30 Tage Frist)
-                </option>
+                <option value="major">Major (Default 30 Tage Frist)</option>
                 <option value="minor">Minor (Default 90 Tage Frist)</option>
                 <option value="observation">
                   Observation (Default 180 Tage Frist)
                 </option>
               </select>
               <p className="text-xs text-slate-500">
-                Auto-gemappt von Finding-Severity „{findingSeverity}". Anpassbar.
+                Auto-gemappt von Finding-Severity „{findingSeverity}".
+                Anpassbar.
               </p>
             </div>
 

@@ -23,7 +23,12 @@ interface WorkItem {
   id: string;
   title: string;
   code: string | null;
-  status: ProgrammeStepStatus | "in_progress" | "pending" | "completed" | "skipped";
+  status:
+    | ProgrammeStepStatus
+    | "in_progress"
+    | "pending"
+    | "completed"
+    | "skipped";
   dueDate: string | null;
   isMandatory?: boolean;
   isMilestone?: boolean;
@@ -203,9 +208,7 @@ export default function MyWorkPage() {
         {data.journeys.length === 0 && (
           <Card>
             <CardContent className="py-12 text-center text-slate-500">
-              {includeCompleted
-                ? t("myWork.emptyAll")
-                : t("myWork.emptyOpen")}
+              {includeCompleted ? t("myWork.emptyAll") : t("myWork.emptyOpen")}
             </CardContent>
           </Card>
         )}

@@ -19,7 +19,8 @@ describe("processControlTestLearning", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processControlTestLearning } = await import("../../src/crons/control-test-learning-updater");
+    const { processControlTestLearning } =
+      await import("../../src/crons/control-test-learning-updater");
     const r = await processControlTestLearning();
     expect(r).toBeDefined();
   });

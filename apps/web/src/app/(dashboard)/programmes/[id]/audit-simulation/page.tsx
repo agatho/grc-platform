@@ -113,7 +113,10 @@ export default function AuditSimulationPage({
           <div>
             <h1 className="text-2xl font-semibold">Synthetic-Auditor</h1>
             <p className="mt-1 text-sm text-slate-500 max-w-3xl">
-              Simuliert einen Stage-1-Audit-Pass und identifiziert wahrscheinliche Findings basierend auf der aktuellen Journey-Struktur. Prüft Belege, Ownership, Meilensteine, Konsistenz, Pacing.
+              Simuliert einen Stage-1-Audit-Pass und identifiziert
+              wahrscheinliche Findings basierend auf der aktuellen
+              Journey-Struktur. Prüft Belege, Ownership, Meilensteine,
+              Konsistenz, Pacing.
             </p>
           </div>
           <Button onClick={runAudit} disabled={loading}>
@@ -185,7 +188,8 @@ export default function AuditSimulationPage({
                       Keine Findings identifiziert
                     </div>
                     <div className="text-sm text-slate-500">
-                      Journey ist nach aktuellen Heuristiken bereit für Stage-1-Audit.
+                      Journey ist nach aktuellen Heuristiken bereit für
+                      Stage-1-Audit.
                     </div>
                   </div>
                 </CardContent>

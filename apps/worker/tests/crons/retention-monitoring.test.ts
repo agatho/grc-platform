@@ -16,7 +16,8 @@ describe("processRetentionMonitoring", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/retention-monitoring");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/retention-monitoring");
     const fn = mod["processRetentionMonitoring"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -16,7 +16,8 @@ describe("processEamSuggestionCompute", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/eam-suggestion-compute");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/eam-suggestion-compute");
     const fn = mod["processEamSuggestionCompute"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -14,13 +14,13 @@ npm run test:coverage:aggregate
 
 Outputs:
 
-| File | Purpose |
-|------|---------|
-| `<package>/coverage/index.html` | Per-package interactive HTML report |
-| `<package>/coverage/lcov.info` | LCOV format for downstream tools |
-| `<package>/coverage/coverage-summary.json` | Machine-readable per-package totals |
-| `coverage/aggregated-summary.json` | Aggregated totals + per-package breakdown |
-| `coverage/aggregated-summary.md` | Markdown report (used by CI for PR comments) |
+| File                                       | Purpose                                      |
+| ------------------------------------------ | -------------------------------------------- |
+| `<package>/coverage/index.html`            | Per-package interactive HTML report          |
+| `<package>/coverage/lcov.info`             | LCOV format for downstream tools             |
+| `<package>/coverage/coverage-summary.json` | Machine-readable per-package totals          |
+| `coverage/aggregated-summary.json`         | Aggregated totals + per-package breakdown    |
+| `coverage/aggregated-summary.md`           | Markdown report (used by CI for PR comments) |
 
 ## CI Workflow
 

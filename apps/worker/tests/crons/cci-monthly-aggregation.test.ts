@@ -20,7 +20,8 @@ describe("processCCIMonthlyAggregation", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processCCIMonthlyAggregation } = await import("../../src/crons/cci-monthly-aggregation");
+    const { processCCIMonthlyAggregation } =
+      await import("../../src/crons/cci-monthly-aggregation");
     const r = await processCCIMonthlyAggregation();
     expect(r).toBeDefined();
   });

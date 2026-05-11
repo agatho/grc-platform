@@ -74,7 +74,9 @@ export default function ProgrammesListPage() {
         <header className="flex items-start justify-between">
           <div>
             <h1 className="text-2xl font-semibold">{t("list.title")}</h1>
-            <p className="mt-1 text-sm text-slate-500">{t("list.description")}</p>
+            <p className="mt-1 text-sm text-slate-500">
+              {t("list.description")}
+            </p>
           </div>
           <Button asChild>
             <Link href="/programmes/new">

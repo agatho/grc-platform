@@ -64,16 +64,13 @@ test.describe("Audit — CIS IG1 Flow (ISO 19011 Arbeitspapier)", () => {
     }
 
     // Aktivieren wenn noch nicht aktiv (idempotent, API antwortet ok).
-    await request.post(
-      `/api/v1/organizations/${orgId}/active-catalogs`,
-      {
-        data: {
-          catalogId: cis.id,
-          catalogType: "control",
-          enforcementLevel: "recommended",
-        },
+    await request.post(`/api/v1/organizations/${orgId}/active-catalogs`, {
+      data: {
+        catalogId: cis.id,
+        catalogType: "control",
+        enforcementLevel: "recommended",
       },
-    );
+    });
 
     // ── 3. Checkliste aus CIS IG1 generieren ─────────────────
     const genRes = await request.post(

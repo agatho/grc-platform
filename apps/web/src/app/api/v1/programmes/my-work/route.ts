@@ -90,9 +90,7 @@ export async function GET(req: Request) {
     .where(and(...subWhere));
 
   // Stepkontext für Subtasks ergänzen (pro Subtask das Step + Journey)
-  const stepIds = Array.from(
-    new Set(mySubsRaw.map((s) => s.journeyStepId)),
-  );
+  const stepIds = Array.from(new Set(mySubsRaw.map((s) => s.journeyStepId)));
   const stepCtxRows = stepIds.length
     ? await db
         .select({
@@ -177,8 +175,7 @@ export async function GET(req: Request) {
     const overdueDays =
       sub.dueDate != null
         ? Math.floor(
-            (today.getTime() -
-              new Date(sub.dueDate + "T00:00:00Z").getTime()) /
+            (today.getTime() - new Date(sub.dueDate + "T00:00:00Z").getTime()) /
               86_400_000,
           )
         : null;

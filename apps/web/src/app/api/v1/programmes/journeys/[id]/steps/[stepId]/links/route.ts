@@ -26,10 +26,9 @@ const createLinkSchema = z
     linkType: z.enum(PROGRAMME_LINK_TYPE_VALUES).default("related"),
     notes: z.string().max(5000).optional(),
   })
-  .refine(
-    (d) => (d.targetKind === "url" ? !!d.targetUrl : true),
-    { message: "targetUrl required when targetKind is 'url'" },
-  );
+  .refine((d) => (d.targetKind === "url" ? !!d.targetUrl : true), {
+    message: "targetUrl required when targetKind is 'url'",
+  });
 
 async function assertJourneyAndStep(
   journeyId: string,

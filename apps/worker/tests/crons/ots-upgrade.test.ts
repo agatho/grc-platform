@@ -16,7 +16,8 @@ describe("processOtsUpgrade", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/ots-upgrade");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/ots-upgrade");
     const fn = mod["processOtsUpgrade"];
     expect(typeof fn).toBe("function");
     let threw = false;

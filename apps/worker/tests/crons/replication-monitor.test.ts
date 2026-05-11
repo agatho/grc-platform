@@ -16,7 +16,8 @@ describe("processReplicationMonitor", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/replication-monitor");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/replication-monitor");
     const fn = mod["processReplicationMonitor"];
     expect(typeof fn).toBe("function");
     let threw = false;

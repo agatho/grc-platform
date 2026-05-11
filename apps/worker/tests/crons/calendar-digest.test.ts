@@ -17,7 +17,8 @@ describe("processCalendarDigest", () => {
 
   it("runs without error with empty calendar", async () => {
     mockDb.execute.mockResolvedValue([]);
-    const { processCalendarDigest } = await import("../../src/crons/calendar-digest");
+    const { processCalendarDigest } =
+      await import("../../src/crons/calendar-digest");
     const r = await processCalendarDigest();
     expect(r).toBeDefined();
   });

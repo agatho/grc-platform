@@ -16,7 +16,8 @@ describe("processDoraIncidentDeadlineMonitor", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/dora-incident-deadline-monitor");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/dora-incident-deadline-monitor");
     const fn = mod["processDoraIncidentDeadlineMonitor"];
     expect(typeof fn).toBe("function");
     let threw = false;

@@ -16,7 +16,8 @@ describe("processEsgTargetStatus", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/esg-target-status");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/esg-target-status");
     const fn = mod["processEsgTargetStatus"];
     expect(typeof fn).toBe("function");
     let threw = false;

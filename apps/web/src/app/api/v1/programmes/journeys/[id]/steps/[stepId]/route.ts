@@ -15,11 +15,7 @@ import { withAuth, withAuditContext } from "@/lib/api";
 import { eq, and, isNull } from "drizzle-orm";
 import { updateStepSchema } from "@grc/shared";
 
-async function loadStep(
-  journeyId: string,
-  stepId: string,
-  orgId: string,
-) {
+async function loadStep(journeyId: string, stepId: string, orgId: string) {
   const [journey] = await db
     .select({ id: programmeJourney.id })
     .from(programmeJourney)
@@ -106,11 +102,27 @@ export async function PATCH(
     );
   }
 
+  // costEstimate / costActual are `numeric` columns (string-typed in
+  // drizzle), but the zod schema produces numbers. effortHours is a plain
+  // integer column. Build the update payload explicitly so each field has
+  // the right type and undefined values are omitted entirely (so we don't
+  // accidentally null out a column the caller didn't touch).
+  const { costEstimate, costActual, ...rest } = parsed.data;
+  const numericUpdate = {
+    ...(costEstimate !== undefined && {
+      costEstimate: costEstimate === null ? null : String(costEstimate),
+    }),
+    ...(costActual !== undefined && {
+      costActual: costActual === null ? null : String(costActual),
+    }),
+  };
+
   const [updated] = await withAuditContext(ctx, async () =>
     db
       .update(programmeJourneyStep)
       .set({
-        ...parsed.data,
+        ...rest,
+        ...numericUpdate,
         updatedAt: new Date(),
         updatedBy: ctx.userId,
       })

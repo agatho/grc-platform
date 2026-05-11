@@ -23,9 +23,8 @@ describe("processNis2DeadlineMonitor", () => {
   it("returns zero stats when no orgs have NIS2 reports", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processNis2DeadlineMonitor } = await import(
-      "../../src/crons/nis2-deadline-monitor"
-    );
+    const { processNis2DeadlineMonitor } =
+      await import("../../src/crons/nis2-deadline-monitor");
     const r = await processNis2DeadlineMonitor();
     expect(r.errors).toBe(0);
     expect(r.orgsProcessed).toBeGreaterThanOrEqual(0);
@@ -34,17 +33,15 @@ describe("processNis2DeadlineMonitor", () => {
   it("does not throw when DB returns unexpected shape", async () => {
     mockDb.select.mockReturnValue(chainable([{ id: "x" }]));
     mockDb.execute.mockResolvedValue([]);
-    const { processNis2DeadlineMonitor } = await import(
-      "../../src/crons/nis2-deadline-monitor"
-    );
+    const { processNis2DeadlineMonitor } =
+      await import("../../src/crons/nis2-deadline-monitor");
     await expect(processNis2DeadlineMonitor()).resolves.toBeDefined();
   });
 
   it("returns NIS2-specific result keys", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processNis2DeadlineMonitor } = await import(
-      "../../src/crons/nis2-deadline-monitor"
-    );
+    const { processNis2DeadlineMonitor } =
+      await import("../../src/crons/nis2-deadline-monitor");
     const r = await processNis2DeadlineMonitor();
     expect(r).toEqual(
       expect.objectContaining({

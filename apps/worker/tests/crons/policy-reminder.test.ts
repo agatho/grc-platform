@@ -16,7 +16,8 @@ describe("processPolicyReminder", () => {
   });
 
   it("smoke: import and run without throwing", async () => {
-    const mod: Record<string, unknown> = await import("../../src/crons/policy-reminder");
+    const mod: Record<string, unknown> =
+      await import("../../src/crons/policy-reminder");
     const fn = mod["processPolicyReminder"];
     expect(typeof fn).toBe("function");
     let threw = false;

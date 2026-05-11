@@ -63,7 +63,8 @@ export interface NcTransitionResult {
 
 export function isNcStatus(value: unknown): value is NcStatus {
   return (
-    typeof value === "string" && (NC_STATUSES as readonly string[]).includes(value)
+    typeof value === "string" &&
+    (NC_STATUSES as readonly string[]).includes(value)
   );
 }
 
@@ -123,7 +124,8 @@ export const CA_ALLOWED_TRANSITIONS: Record<CaStatus, CaStatus[]> = {
 
 export function isCaStatus(value: unknown): value is CaStatus {
   return (
-    typeof value === "string" && (CA_STATUSES as readonly string[]).includes(value)
+    typeof value === "string" &&
+    (CA_STATUSES as readonly string[]).includes(value)
   );
 }
 

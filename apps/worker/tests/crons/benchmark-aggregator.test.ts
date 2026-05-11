@@ -18,7 +18,8 @@ describe("processBenchmarkAggregator", () => {
 
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processBenchmarkAggregator } = await import("../../src/crons/benchmark-aggregator");
+    const { processBenchmarkAggregator } =
+      await import("../../src/crons/benchmark-aggregator");
     const r = await processBenchmarkAggregator();
     expect(r).toBeDefined();
   });

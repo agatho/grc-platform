@@ -27,7 +27,9 @@ describe("recommendEngagementStrategy — Power/Interest Matrix", () => {
     expect(recommendEngagementStrategy("critical", "medium")).toBe(
       "keep_satisfied",
     );
-    expect(recommendEngagementStrategy("high", "medium")).toBe("keep_satisfied");
+    expect(recommendEngagementStrategy("high", "medium")).toBe(
+      "keep_satisfied",
+    );
   });
 
   it("keep_informed for low influence + high interest", () => {

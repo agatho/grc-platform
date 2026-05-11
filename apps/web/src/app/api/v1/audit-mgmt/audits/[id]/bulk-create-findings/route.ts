@@ -122,14 +122,15 @@ export async function POST(req: Request, { params }: RouteParams) {
       }
       existingTitles.add(title.toLowerCase());
 
-      const description = [
-        item.notes ?? "",
-        item.correctiveActionSuggestion
-          ? `\nVorschlag Korrekturmaßnahme:\n${item.correctiveActionSuggestion}`
-          : "",
-      ]
-        .join("")
-        .trim() || undefined;
+      const description =
+        [
+          item.notes ?? "",
+          item.correctiveActionSuggestion
+            ? `\nVorschlag Korrekturmaßnahme:\n${item.correctiveActionSuggestion}`
+            : "",
+        ]
+          .join("")
+          .trim() || undefined;
 
       // Work-Item anlegen (Pattern wie im create-finding-Endpoint)
       const [wi] = await tx

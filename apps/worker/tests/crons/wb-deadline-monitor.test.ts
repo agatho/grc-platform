@@ -29,9 +29,8 @@ describe("processWbDeadlineMonitor", () => {
 
   it("returns expected result shape with no cases", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { processWbDeadlineMonitor } = await import(
-      "../../src/crons/wb-deadline-monitor"
-    );
+    const { processWbDeadlineMonitor } =
+      await import("../../src/crons/wb-deadline-monitor");
     const r = await processWbDeadlineMonitor();
     expect(r).toBeDefined();
   });

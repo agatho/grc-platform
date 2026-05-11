@@ -20,7 +20,8 @@ describe("processCertReadinessSnapshot", () => {
   it("returns expected result shape", async () => {
     mockDb.select.mockReturnValue(chainable([]));
     mockDb.execute.mockResolvedValue([]);
-    const { processCertReadinessSnapshot } = await import("../../src/crons/cert-readiness-snapshot");
+    const { processCertReadinessSnapshot } =
+      await import("../../src/crons/cert-readiness-snapshot");
     const r = await processCertReadinessSnapshot();
     expect(r).toBeDefined();
   });

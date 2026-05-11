@@ -19,18 +19,19 @@ Sprint 2 had 72 SP for 21 stories. Sprint 3 is comparable in complexity; the add
 
 ## Epic Table
 
-| Epic | Title | SP | Priority |
-|------|-------|----|----------|
-| Epic 11 | Process Landscape & Navigation | 16 | P1 MUST |
-| Epic 12 | BPMN 2.0 Editor | 18 | P1 MUST |
-| Epic 13 | Risk Overlays in BPMN Editor | 14 | P1 MUST |
-| Epic 14 | Approval Workflow | 12 | P1 MUST |
-| Epic 15 | Version Management | 8 | P1 MUST |
-| Epic 16 | AI Process Generation | 6 | P2 SHOULD |
+| Epic    | Title                          | SP  | Priority  |
+| ------- | ------------------------------ | --- | --------- |
+| Epic 11 | Process Landscape & Navigation | 16  | P1 MUST   |
+| Epic 12 | BPMN 2.0 Editor                | 18  | P1 MUST   |
+| Epic 13 | Risk Overlays in BPMN Editor   | 14  | P1 MUST   |
+| Epic 14 | Approval Workflow              | 12  | P1 MUST   |
+| Epic 15 | Version Management             | 8   | P1 MUST   |
+| Epic 16 | AI Process Generation          | 6   | P2 SHOULD |
 
 ## Dependencies
 
 **Requires from previous sprints:**
+
 - Sprint 1: Auth.js session, `requireAuth()`, `requireRole()`, Audit trail `audit_trigger()`, UI Shell, Tab Navigation
 - Sprint 1.2: `EmailService` for approval workflow notifications (`template_key` pattern)
 - Sprint 1.3: `requireModule('bpm')` middleware (returns 404 when disabled, NOT 403), `<ModuleGate moduleKey="bpm">`, `module_definition` row for bpm already seeded
@@ -38,6 +39,7 @@ Sprint 2 had 72 SP for 21 stories. Sprint 3 is comparable in complexity; the add
 - Sprint 2: `process_risk` table (Migration 041), `process_step_risk` table (Migration 042), `GET /api/v1/risks` endpoint for risk search in editor panel
 
 **What Sprint 3 blocks:**
+
 - Sprint 4 ICS/Controls: `process_control`, `process_step_control` tables (created as placeholders in Sprint 3)
 - Sprint 4: `process_step.bpmn_element_id` needed for control overlays on BPMN shapes
 - Sprint 5 Audit: Published/approved processes used as evidence artifacts
@@ -59,7 +61,6 @@ Sprint 2 had 72 SP for 21 stories. Sprint 3 is comparable in complexity; the add
 - [ ] Approval flow end-to-end: draft → in_review (email to reviewer) → approved (email to owner) → published (email to all process_owners in org)
 - [ ] Backend test coverage > 80%, frontend > 60%
 - [ ] TypeScript strict mode: zero type errors, ESLint passes
-
 
 ---
 
@@ -307,10 +308,10 @@ SELECT audit.audit_table('process_step_control');
 `packages/db/src/seed/processes.ts`
 
 ```typescript
-import { db } from '../client';
-import { processes, processVersions } from '../schema/bpm';
-import { eq } from 'drizzle-orm';
-import { organizations } from '../schema/organization';
+import { db } from "../client";
+import { processes, processVersions } from "../schema/bpm";
+import { eq } from "drizzle-orm";
+import { organizations } from "../schema/organization";
 
 const DEMO_BPMN_SALES = `<?xml version="1.0" encoding="UTF-8"?>
 <bpmn:definitions xmlns:bpmn="http://www.omg.org/spec/BPMN/20100524/MODEL"
@@ -408,57 +409,68 @@ export async function seedProcesses() {
   const demoOrgs = await db.select().from(organizations).limit(5);
 
   for (const org of demoOrgs) {
-    const [groupProcess] = await db.insert(processes).values({
-      orgId: org.id,
-      name: 'Konzernprozesslandschaft',
-      description: 'Übergeordnete Prozesslandschaft des Konzerns',
-      level: 1,
-      notation: 'bpmn',
-      status: 'published',
-    }).returning();
+    const [groupProcess] = await db
+      .insert(processes)
+      .values({
+        orgId: org.id,
+        name: "Konzernprozesslandschaft",
+        description: "Übergeordnete Prozesslandschaft des Konzerns",
+        level: 1,
+        notation: "bpmn",
+        status: "published",
+      })
+      .returning();
 
-    const [salesProcess] = await db.insert(processes).values({
-      orgId: org.id,
-      parentProcessId: groupProcess.id,
-      name: 'Vertriebsprozess',
-      description: 'Vollständiger Prozess von der Anfrage bis zur Auftragserteilung',
-      level: 3,
-      notation: 'bpmn',
-      status: 'approved',
-      department: 'Vertrieb',
-    }).returning();
+    const [salesProcess] = await db
+      .insert(processes)
+      .values({
+        orgId: org.id,
+        parentProcessId: groupProcess.id,
+        name: "Vertriebsprozess",
+        description:
+          "Vollständiger Prozess von der Anfrage bis zur Auftragserteilung",
+        level: 3,
+        notation: "bpmn",
+        status: "approved",
+        department: "Vertrieb",
+      })
+      .returning();
 
     await db.insert(processVersions).values({
       processId: salesProcess.id,
       orgId: org.id,
       versionNumber: 1,
       bpmnXml: DEMO_BPMN_SALES,
-      changeSummary: 'Initiale Version',
+      changeSummary: "Initiale Version",
       isCurrent: true,
     });
 
-    const [procurementProcess] = await db.insert(processes).values({
-      orgId: org.id,
-      parentProcessId: groupProcess.id,
-      name: 'Einkaufsprozess',
-      description: 'Purchase-to-Pay Prozess von Bedarfsermittlung bis Bestellung',
-      level: 3,
-      notation: 'bpmn',
-      status: 'published',
-      department: 'Einkauf',
-    }).returning();
+    const [procurementProcess] = await db
+      .insert(processes)
+      .values({
+        orgId: org.id,
+        parentProcessId: groupProcess.id,
+        name: "Einkaufsprozess",
+        description:
+          "Purchase-to-Pay Prozess von Bedarfsermittlung bis Bestellung",
+        level: 3,
+        notation: "bpmn",
+        status: "published",
+        department: "Einkauf",
+      })
+      .returning();
 
     await db.insert(processVersions).values({
       processId: procurementProcess.id,
       orgId: org.id,
       versionNumber: 1,
       bpmnXml: DEMO_BPMN_PROCUREMENT,
-      changeSummary: 'Initiale Version',
+      changeSummary: "Initiale Version",
       isCurrent: true,
     });
   }
 
-  console.log('Demo processes seeded successfully');
+  console.log("Demo processes seeded successfully");
 }
 ```
 
@@ -466,158 +478,268 @@ export async function seedProcesses() {
 
 ```typescript
 import {
-  pgTable, pgEnum, uuid, varchar, text, integer, boolean,
-  timestamp, index, uniqueIndex
-} from 'drizzle-orm/pg-core';
-import { relations, type InferSelectModel, type InferInsertModel } from 'drizzle-orm';
-import { organizations } from './organization';
-import { users } from './user';
+  pgTable,
+  pgEnum,
+  uuid,
+  varchar,
+  text,
+  integer,
+  boolean,
+  timestamp,
+  index,
+  uniqueIndex,
+} from "drizzle-orm/pg-core";
+import {
+  relations,
+  type InferSelectModel,
+  type InferInsertModel,
+} from "drizzle-orm";
+import { organizations } from "./organization";
+import { users } from "./user";
 
 // ─── Enums ───────────────────────────────────────────────────────────────────
 
-export const processStatusEnum = pgEnum('process_status', [
-  'draft', 'in_review', 'approved', 'published', 'archived'
+export const processStatusEnum = pgEnum("process_status", [
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived",
 ]);
 
-export const processNotationEnum = pgEnum('process_notation', [
-  'bpmn', 'value_chain', 'epc'
+export const processNotationEnum = pgEnum("process_notation", [
+  "bpmn",
+  "value_chain",
+  "epc",
 ]);
 
-export const processStepTypeEnum = pgEnum('process_step_type', [
-  'task', 'gateway', 'event', 'subprocess', 'call_activity'
+export const processStepTypeEnum = pgEnum("process_step_type", [
+  "task",
+  "gateway",
+  "event",
+  "subprocess",
+  "call_activity",
 ]);
 
 // ─── Cross-cutting fields ──────────────────────────────────────────────────
 
 const crossCutting = {
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
-  updatedAt: timestamp('updated_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
-  createdBy: uuid('created_by').references(() => users.id),
-  updatedBy: uuid('updated_by').references(() => users.id),
-  deletedAt: timestamp('deleted_at', { withTimezone: true, mode: 'string' }),
-  deletedBy: uuid('deleted_by').references(() => users.id),
+  createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+    .notNull()
+    .defaultNow(),
+  updatedAt: timestamp("updated_at", { withTimezone: true, mode: "string" })
+    .notNull()
+    .defaultNow(),
+  createdBy: uuid("created_by").references(() => users.id),
+  updatedBy: uuid("updated_by").references(() => users.id),
+  deletedAt: timestamp("deleted_at", { withTimezone: true, mode: "string" }),
+  deletedBy: uuid("deleted_by").references(() => users.id),
 };
 
 // ─── process ──────────────────────────────────────────────────────────────────
 
-export const processes = pgTable('process', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  parentProcessId: uuid('parent_process_id'),  // Self-reference — defined in relations below
-  name: varchar('name', { length: 500 }).notNull(),
-  description: text('description'),
-  level: integer('level').notNull().default(1),
-  notation: processNotationEnum('notation').notNull().default('bpmn'),
-  status: processStatusEnum('status').notNull().default('draft'),
-  processOwnerId: uuid('process_owner_id').references(() => users.id, { onDelete: 'set null' }),
-  reviewerId: uuid('reviewer_id').references(() => users.id, { onDelete: 'set null' }),
-  department: varchar('department', { length: 255 }),
-  currentVersion: integer('current_version').notNull().default(1),
-  isEssential: boolean('is_essential').notNull().default(false),
-  ...crossCutting,
-}, (t) => ({
-  orgStatusIdx: index('process_org_status_idx').on(t.orgId, t.status),
-  orgParentIdx: index('process_org_parent_idx').on(t.orgId, t.parentProcessId),
-  orgOwnerIdx: index('process_org_owner_idx').on(t.orgId, t.processOwnerId),
-}));
+export const processes = pgTable(
+  "process",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    parentProcessId: uuid("parent_process_id"), // Self-reference — defined in relations below
+    name: varchar("name", { length: 500 }).notNull(),
+    description: text("description"),
+    level: integer("level").notNull().default(1),
+    notation: processNotationEnum("notation").notNull().default("bpmn"),
+    status: processStatusEnum("status").notNull().default("draft"),
+    processOwnerId: uuid("process_owner_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    reviewerId: uuid("reviewer_id").references(() => users.id, {
+      onDelete: "set null",
+    }),
+    department: varchar("department", { length: 255 }),
+    currentVersion: integer("current_version").notNull().default(1),
+    isEssential: boolean("is_essential").notNull().default(false),
+    ...crossCutting,
+  },
+  (t) => ({
+    orgStatusIdx: index("process_org_status_idx").on(t.orgId, t.status),
+    orgParentIdx: index("process_org_parent_idx").on(
+      t.orgId,
+      t.parentProcessId,
+    ),
+    orgOwnerIdx: index("process_org_owner_idx").on(t.orgId, t.processOwnerId),
+  }),
+);
 
 // ─── process_version ──────────────────────────────────────────────────────────
 
-export const processVersions = pgTable('process_version', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  processId: uuid('process_id').notNull().references(() => processes.id, { onDelete: 'cascade' }),
-  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  versionNumber: integer('version_number').notNull(),
-  bpmnXml: text('bpmn_xml'),
-  changeSummary: text('change_summary'),
-  isCurrent: boolean('is_current').notNull().default(false),
-  createdBy: uuid('created_by').references(() => users.id),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
-}, (t) => ({
-  processVersionUnique: uniqueIndex('process_version_unique').on(t.processId, t.versionNumber),
-  processCurrentIdx: index('process_version_current_idx').on(t.processId, t.isCurrent),
-}));
+export const processVersions = pgTable(
+  "process_version",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => processes.id, { onDelete: "cascade" }),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    versionNumber: integer("version_number").notNull(),
+    bpmnXml: text("bpmn_xml"),
+    changeSummary: text("change_summary"),
+    isCurrent: boolean("is_current").notNull().default(false),
+    createdBy: uuid("created_by").references(() => users.id),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+  },
+  (t) => ({
+    processVersionUnique: uniqueIndex("process_version_unique").on(
+      t.processId,
+      t.versionNumber,
+    ),
+    processCurrentIdx: index("process_version_current_idx").on(
+      t.processId,
+      t.isCurrent,
+    ),
+  }),
+);
 
 // ─── process_step ─────────────────────────────────────────────────────────────
 
-export const processSteps = pgTable('process_step', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  processId: uuid('process_id').notNull().references(() => processes.id, { onDelete: 'cascade' }),
-  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  bpmnElementId: varchar('bpmn_element_id', { length: 255 }).notNull(),
-  name: varchar('name', { length: 500 }),
-  description: text('description'),
-  stepType: processStepTypeEnum('step_type'),
-  responsibleRole: varchar('responsible_role', { length: 255 }),
-  sequenceOrder: integer('sequence_order'),
-  ...crossCutting,
-}, (t) => ({
-  stepElementUnique: uniqueIndex('process_step_element_unique').on(t.processId, t.bpmnElementId),
-  processIdx: index('process_step_process_idx').on(t.processId),
-}));
+export const processSteps = pgTable(
+  "process_step",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => processes.id, { onDelete: "cascade" }),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    bpmnElementId: varchar("bpmn_element_id", { length: 255 }).notNull(),
+    name: varchar("name", { length: 500 }),
+    description: text("description"),
+    stepType: processStepTypeEnum("step_type"),
+    responsibleRole: varchar("responsible_role", { length: 255 }),
+    sequenceOrder: integer("sequence_order"),
+    ...crossCutting,
+  },
+  (t) => ({
+    stepElementUnique: uniqueIndex("process_step_element_unique").on(
+      t.processId,
+      t.bpmnElementId,
+    ),
+    processIdx: index("process_step_process_idx").on(t.processId),
+  }),
+);
 
 // ─── process_control (Sprint 4 placeholder) ───────────────────────────────────
 
-export const processControls = pgTable('process_control', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  processId: uuid('process_id').notNull().references(() => processes.id, { onDelete: 'cascade' }),
-  controlId: uuid('control_id').notNull(),  // FK to control table — added in Sprint 4
-  controlContext: text('control_context'),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
-  createdBy: uuid('created_by').references(() => users.id),
-}, (t) => ({
-  processControlUnique: uniqueIndex('process_control_unique').on(t.processId, t.controlId),
-}));
+export const processControls = pgTable(
+  "process_control",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    processId: uuid("process_id")
+      .notNull()
+      .references(() => processes.id, { onDelete: "cascade" }),
+    controlId: uuid("control_id").notNull(), // FK to control table — added in Sprint 4
+    controlContext: text("control_context"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => users.id),
+  },
+  (t) => ({
+    processControlUnique: uniqueIndex("process_control_unique").on(
+      t.processId,
+      t.controlId,
+    ),
+  }),
+);
 
 // ─── process_step_control (Sprint 4 placeholder) ──────────────────────────────
 
-export const processStepControls = pgTable('process_step_control', {
-  id: uuid('id').primaryKey().defaultRandom(),
-  orgId: uuid('org_id').notNull().references(() => organizations.id, { onDelete: 'cascade' }),
-  processStepId: uuid('process_step_id').notNull().references(() => processSteps.id, { onDelete: 'cascade' }),
-  controlId: uuid('control_id').notNull(),  // FK to control table — added in Sprint 4
-  controlContext: text('control_context'),
-  createdAt: timestamp('created_at', { withTimezone: true, mode: 'string' }).notNull().defaultNow(),
-  createdBy: uuid('created_by').references(() => users.id),
-}, (t) => ({
-  stepControlUnique: uniqueIndex('process_step_control_unique').on(t.processStepId, t.controlId),
-}));
+export const processStepControls = pgTable(
+  "process_step_control",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organizations.id, { onDelete: "cascade" }),
+    processStepId: uuid("process_step_id")
+      .notNull()
+      .references(() => processSteps.id, { onDelete: "cascade" }),
+    controlId: uuid("control_id").notNull(), // FK to control table — added in Sprint 4
+    controlContext: text("control_context"),
+    createdAt: timestamp("created_at", { withTimezone: true, mode: "string" })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => users.id),
+  },
+  (t) => ({
+    stepControlUnique: uniqueIndex("process_step_control_unique").on(
+      t.processStepId,
+      t.controlId,
+    ),
+  }),
+);
 
 // ─── Relations ────────────────────────────────────────────────────────────────
 
 export const processesRelations = relations(processes, ({ one, many }) => ({
-  org: one(organizations, { fields: [processes.orgId], references: [organizations.id] }),
+  org: one(organizations, {
+    fields: [processes.orgId],
+    references: [organizations.id],
+  }),
   parentProcess: one(processes, {
     fields: [processes.parentProcessId],
     references: [processes.id],
-    relationName: 'processHierarchy',
+    relationName: "processHierarchy",
   }),
-  childProcesses: many(processes, { relationName: 'processHierarchy' }),
+  childProcesses: many(processes, { relationName: "processHierarchy" }),
   owner: one(users, {
     fields: [processes.processOwnerId],
     references: [users.id],
-    relationName: 'processOwner',
+    relationName: "processOwner",
   }),
   reviewer: one(users, {
     fields: [processes.reviewerId],
     references: [users.id],
-    relationName: 'processReviewer',
+    relationName: "processReviewer",
   }),
   versions: many(processVersions),
   steps: many(processSteps),
   controls: many(processControls),
 }));
 
-export const processVersionsRelations = relations(processVersions, ({ one }) => ({
-  process: one(processes, { fields: [processVersions.processId], references: [processes.id] }),
-  creator: one(users, { fields: [processVersions.createdBy], references: [users.id] }),
-}));
+export const processVersionsRelations = relations(
+  processVersions,
+  ({ one }) => ({
+    process: one(processes, {
+      fields: [processVersions.processId],
+      references: [processes.id],
+    }),
+    creator: one(users, {
+      fields: [processVersions.createdBy],
+      references: [users.id],
+    }),
+  }),
+);
 
-export const processStepsRelations = relations(processSteps, ({ one, many }) => ({
-  process: one(processes, { fields: [processSteps.processId], references: [processes.id] }),
-  stepControls: many(processStepControls),
-}));
+export const processStepsRelations = relations(
+  processSteps,
+  ({ one, many }) => ({
+    process: one(processes, {
+      fields: [processSteps.processId],
+      references: [processes.id],
+    }),
+    stepControls: many(processStepControls),
+  }),
+);
 
 // ─── Type Exports ─────────────────────────────────────────────────────────────
 
@@ -632,18 +754,20 @@ export type ProcessStepControl = InferSelectModel<typeof processStepControls>;
 
 // Status transition rules
 export const VALID_PROCESS_STATUS_TRANSITIONS: Record<string, string[]> = {
-  draft:     ['in_review'],
-  in_review: ['approved', 'draft'],        // reviewer can send back to draft
-  approved:  ['published', 'in_review'],   // can go back to in_review
-  published: ['archived'],
-  archived:  [],
+  draft: ["in_review"],
+  in_review: ["approved", "draft"], // reviewer can send back to draft
+  approved: ["published", "in_review"], // can go back to in_review
+  published: ["archived"],
+  archived: [],
 };
 
-export function isValidProcessStatusTransition(from: string, to: string): boolean {
+export function isValidProcessStatusTransition(
+  from: string,
+  to: string,
+): boolean {
   return VALID_PROCESS_STATUS_TRANSITIONS[from]?.includes(to) ?? false;
 }
 ```
-
 
 ---
 
@@ -658,6 +782,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner, risk_manager, control_owner, auditor, viewer (alle Rollen)
 
 **Acceptance Criteria:**
+
 - GIVEN I am logged in and the BPM module is enabled for my org
   WHEN I navigate to `/bpm/processes`
   THEN I see a left sidebar with a collapsible tree of all processes (not deleted)
@@ -678,6 +803,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner (create)
 
 **Acceptance Criteria:**
+
 - GIVEN I am an admin or process_owner
   WHEN I click "+ Neuer Prozess"
   THEN a modal opens with fields: Name, Beschreibung, Ebene (1-4), Übergeordneter Prozess (search dropdown), Notation (default: BPMN), Abteilung, Prozessverantwortlicher, Prüfer
@@ -696,6 +822,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen (read only)
 
 **Acceptance Criteria:**
+
 - GIVEN I type in the search field above the tree
   WHEN I type at least 2 characters
   THEN the tree is filtered to show only processes matching the name (case-insensitive)
@@ -713,6 +840,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin (alle), process_owner (eigene Prozesse)
 
 **Acceptance Criteria:**
+
 - GIVEN I am the process_owner of a process
   WHEN I open the process detail and click "Bearbeiten"
   THEN a form opens with all current metadata pre-filled
@@ -731,6 +859,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin only
 
 **Acceptance Criteria:**
+
 - GIVEN I am admin
   WHEN I click "Löschen" on a process
   THEN a confirmation dialog appears: "Prozess '[Name]' und alle Unterelemente löschen?"
@@ -752,6 +881,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner (edit); risk_manager, control_owner, auditor, viewer (read-only viewer)
 
 **Acceptance Criteria:**
+
 - GIVEN I open the "BPMN Editor" tab on a process detail page
   WHEN the editor loads
   THEN the bpmn.js Modeler is mounted with the current BPMN XML from the latest `is_current` version
@@ -771,6 +901,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner
 
 **Acceptance Criteria:**
+
 - GIVEN I click "Speichern"
   WHEN the save completes
   THEN the BPMN XML is exported via `modeler.saveXML()` and sent to `PUT /api/v1/processes/:id/versions`
@@ -792,6 +923,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** System (triggered by S3-07 save)
 
 **Acceptance Criteria:**
+
 - GIVEN a BPMN is saved with Tasks, Gateways, Start/End Events
   WHEN the XML is parsed server-side
   THEN `process_step` records are upserted for each: `<bpmn:task>`, `<bpmn:userTask>`, `<bpmn:serviceTask>`, `<bpmn:exclusiveGateway>`, `<bpmn:parallelGateway>`, `<bpmn:startEvent>`, `<bpmn:endEvent>`
@@ -809,6 +941,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner, risk_manager, auditor (all can export)
 
 **Acceptance Criteria:**
+
 - GIVEN I click "BPMN XML exportieren"
   THEN the current BPMN XML is downloaded as `[process-name].bpmn`
 - GIVEN I click "SVG exportieren"
@@ -825,6 +958,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner
 
 **Acceptance Criteria:**
+
 - GIVEN the BPMN editor is focused
   WHEN I press Ctrl+Z
   THEN the last action is undone
@@ -846,6 +980,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen (read)
 
 **Acceptance Criteria:**
+
 - GIVEN a BPMN shape has linked risks in `process_step_risk`
   WHEN the BPMN editor or viewer loads
   THEN a colored badge appears on the shape showing: `[risk count] | [highest score]`
@@ -865,12 +1000,13 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen
 
 **Acceptance Criteria:**
+
 - GIVEN I click on any BPMN shape in the editor
   THEN a right side panel (30% width) opens with:
-    - Shape name and type icon (Task, Gateway, Event, etc.)
-    - Section "Verknüpfte Risiken" with list of linked risks (RSK element ID, title, score badge, status)
-    - Section "Verantwortliche Rolle" with an editable text field (for process_owner and admin)
-    - Placeholder section "Controls (Sprint 4)" shown as grayed-out
+  - Shape name and type icon (Task, Gateway, Event, etc.)
+  - Section "Verknüpfte Risiken" with list of linked risks (RSK element ID, title, score badge, status)
+  - Section "Verantwortliche Rolle" with an editable text field (for process_owner and admin)
+  - Placeholder section "Controls (Sprint 4)" shown as grayed-out
 - GIVEN I click elsewhere on the canvas (not a shape)
   THEN the side panel closes
 
@@ -881,6 +1017,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner, risk_manager
 
 **Acceptance Criteria:**
+
 - GIVEN the side panel is open for a shape
   WHEN I type in the "Risiko verknüpfen" search field
   THEN risks matching the query are shown in a dropdown (calls `GET /api/v1/risks?search=...`)
@@ -899,6 +1036,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner, risk_manager
 
 **Acceptance Criteria:**
+
 - GIVEN the side panel shows a linked risk
   WHEN I click the "×" button next to the risk
   THEN `DELETE /api/v1/processes/:id/steps/:stepId/risks/:riskId` is called
@@ -912,6 +1050,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, risk_manager
 
 **Acceptance Criteria:**
+
 - GIVEN I am on the "Risiken" tab of a process detail page
   WHEN I click "Prozessrisiko hinzufügen"
   THEN a search modal opens to select a risk
@@ -931,6 +1070,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** process_owner, admin
 
 **Acceptance Criteria:**
+
 - GIVEN a process has status "draft"
   WHEN I click "Zur Prüfung einreichen"
   THEN a modal appears asking for optional "Kommentar zur Prüfung" and shows the assigned reviewer
@@ -950,6 +1090,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** risk_manager, auditor, admin (approve/reject)
 
 **Acceptance Criteria:**
+
 - GIVEN a process has status "in_review"
   WHEN a reviewer opens the process detail
   THEN they see "Freigeben" and "Zurückweisen" buttons
@@ -968,6 +1109,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin only
 
 **Acceptance Criteria:**
+
 - GIVEN a process has status "approved"
   WHEN admin clicks "Veröffentlichen"
   THEN status → "published"
@@ -981,6 +1123,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin only
 
 **Acceptance Criteria:**
+
 - GIVEN a process has status "published"
   WHEN admin clicks "Archivieren"
   THEN status → "archived"
@@ -993,6 +1136,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen (read)
 
 **Acceptance Criteria:**
+
 - GIVEN I open the "Verlauf" tab of a process
   THEN I see a chronological list of all status changes from `audit_log`
   WITH: timestamp, actor name, old status, new status, change comment
@@ -1010,6 +1154,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen
 
 **Acceptance Criteria:**
+
 - GIVEN I open the "Versionen" tab
   THEN I see a vertical timeline with one card per version showing: Versionsnummer, Erstellungsdatum, Ersteller, Änderungskommentar
 - GIVEN there is only one version
@@ -1022,6 +1167,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** alle Rollen
 
 **Acceptance Criteria:**
+
 - GIVEN I click "Ansehen" on a version card
   THEN a fullscreen overlay opens with the BpmnViewer component showing the XML of that version
   AND the header shows "Version [N] — [date] — [creator]"
@@ -1034,6 +1180,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin only
 
 **Acceptance Criteria:**
+
 - GIVEN I am admin and click "Wiederherstellen" on a version card
   THEN a confirmation dialog shows: "Version [N] als neue Version [M] wiederherstellen?"
 - GIVEN I confirm
@@ -1047,6 +1194,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner
 
 **Acceptance Criteria:**
+
 - GIVEN I click "Speichern" in the BPMN editor
   THEN a modal appears with optional field "Änderungskommentar"
 - GIVEN I enter a comment and save
@@ -1063,6 +1211,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** admin, process_owner
 
 **Acceptance Criteria:**
+
 - GIVEN I click "Mit KI generieren" in the BPMN editor toolbar
   THEN a panel opens with fields: "Prozessname" (pre-filled) and "Prozessbeschreibung" (textarea)
 - GIVEN I submit the form
@@ -1085,6 +1234,7 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 **RBAC:** System
 
 **Acceptance Criteria:**
+
 - GIVEN the Claude API response is received
   WHEN we attempt `modeler.importXML(generatedXml)`
   IF the import throws an error
@@ -1092,7 +1242,6 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
   AND the error message explains the validation failure
 - GIVEN the XML is valid BPMN
   THEN the user can load it into the editor
-
 
 ---
 
@@ -1103,40 +1252,49 @@ export function isValidProcessStatusTransition(from: string, to: string): boolea
 All Sprint 3 endpoints use the middleware chain:
 `requireAuth() → requireModule('bpm') → orgContextMiddleware → requireRole([...]) → validateBody(zodSchema) → handler → auditLogger`
 
-| Method | Path | Roles | Description |
-|--------|------|-------|-------------|
-| GET | `/api/v1/processes` | all | List processes (hierarchical, with filters) |
-| POST | `/api/v1/processes` | admin, process_owner | Create process |
-| GET | `/api/v1/processes/:id` | all | Get process with current version |
-| PATCH | `/api/v1/processes/:id` | admin, process_owner | Update process metadata |
-| DELETE | `/api/v1/processes/:id` | admin | Soft-delete process |
-| GET | `/api/v1/processes/:id/versions` | all | List all versions |
-| POST | `/api/v1/processes/:id/versions` | admin, process_owner | Save BPMN (creates new version) |
-| GET | `/api/v1/processes/:id/versions/:versionId` | all | Get specific version |
-| PUT | `/api/v1/processes/:id/status` | see RBAC | Transition process status |
-| GET | `/api/v1/processes/:id/steps` | all | List process steps |
-| GET | `/api/v1/processes/:id/risks` | all | List risks linked to process and steps |
-| POST | `/api/v1/processes/:id/risks` | admin, risk_manager | Link risk to process |
-| DELETE | `/api/v1/processes/:id/risks/:riskId` | admin, risk_manager | Remove process-level risk link |
-| POST | `/api/v1/processes/:id/steps/:stepId/risks` | admin, process_owner, risk_manager | Link risk to step |
-| DELETE | `/api/v1/processes/:id/steps/:stepId/risks/:riskId` | admin, process_owner, risk_manager | Remove step-level risk link |
-| POST | `/api/v1/processes/:id/generate-bpmn` | admin, process_owner | AI BPMN generation |
-| GET | `/api/v1/processes/:id/export` | admin, process_owner, risk_manager, auditor | Export BPMN XML |
+| Method | Path                                                | Roles                                       | Description                                 |
+| ------ | --------------------------------------------------- | ------------------------------------------- | ------------------------------------------- |
+| GET    | `/api/v1/processes`                                 | all                                         | List processes (hierarchical, with filters) |
+| POST   | `/api/v1/processes`                                 | admin, process_owner                        | Create process                              |
+| GET    | `/api/v1/processes/:id`                             | all                                         | Get process with current version            |
+| PATCH  | `/api/v1/processes/:id`                             | admin, process_owner                        | Update process metadata                     |
+| DELETE | `/api/v1/processes/:id`                             | admin                                       | Soft-delete process                         |
+| GET    | `/api/v1/processes/:id/versions`                    | all                                         | List all versions                           |
+| POST   | `/api/v1/processes/:id/versions`                    | admin, process_owner                        | Save BPMN (creates new version)             |
+| GET    | `/api/v1/processes/:id/versions/:versionId`         | all                                         | Get specific version                        |
+| PUT    | `/api/v1/processes/:id/status`                      | see RBAC                                    | Transition process status                   |
+| GET    | `/api/v1/processes/:id/steps`                       | all                                         | List process steps                          |
+| GET    | `/api/v1/processes/:id/risks`                       | all                                         | List risks linked to process and steps      |
+| POST   | `/api/v1/processes/:id/risks`                       | admin, risk_manager                         | Link risk to process                        |
+| DELETE | `/api/v1/processes/:id/risks/:riskId`               | admin, risk_manager                         | Remove process-level risk link              |
+| POST   | `/api/v1/processes/:id/steps/:stepId/risks`         | admin, process_owner, risk_manager          | Link risk to step                           |
+| DELETE | `/api/v1/processes/:id/steps/:stepId/risks/:riskId` | admin, process_owner, risk_manager          | Remove step-level risk link                 |
+| POST   | `/api/v1/processes/:id/generate-bpmn`               | admin, process_owner                        | AI BPMN generation                          |
+| GET    | `/api/v1/processes/:id/export`                      | admin, process_owner, risk_manager, auditor | Export BPMN XML                             |
 
 ## 4.2 Zod Validation Schemas — `packages/shared/src/schemas/process.ts`
 
 ```typescript
-import { z } from 'zod';
+import { z } from "zod";
 
-export const ProcessStatusEnum = z.enum(['draft', 'in_review', 'approved', 'published', 'archived']);
-export const ProcessNotationEnum = z.enum(['bpmn', 'value_chain', 'epc']);
+export const ProcessStatusEnum = z.enum([
+  "draft",
+  "in_review",
+  "approved",
+  "published",
+  "archived",
+]);
+export const ProcessNotationEnum = z.enum(["bpmn", "value_chain", "epc"]);
 
 export const createProcessSchema = z.object({
-  name: z.string().min(1, 'Name ist erforderlich').max(500, 'Name darf maximal 500 Zeichen haben'),
+  name: z
+    .string()
+    .min(1, "Name ist erforderlich")
+    .max(500, "Name darf maximal 500 Zeichen haben"),
   description: z.string().max(5000).optional(),
   parentProcessId: z.string().uuid().nullable().optional(),
   level: z.number().int().min(1).max(10).default(1),
-  notation: ProcessNotationEnum.default('bpmn'),
+  notation: ProcessNotationEnum.default("bpmn"),
   processOwnerId: z.string().uuid().nullable().optional(),
   reviewerId: z.string().uuid().nullable().optional(),
   department: z.string().max(255).optional(),
@@ -1146,18 +1304,20 @@ export const createProcessSchema = z.object({
 export const updateProcessSchema = createProcessSchema.partial();
 
 export const saveBpmnSchema = z.object({
-  bpmnXml: z.string().min(10, 'BPMN XML ist erforderlich'),
+  bpmnXml: z.string().min(10, "BPMN XML ist erforderlich"),
   changeSummary: z.string().max(1000).optional(),
 });
 
-export const processStatusTransitionSchema = z.object({
-  status: ProcessStatusEnum,
-  changeComment: z.string().max(2000).optional(),
-}).superRefine((data, ctx) => {
-  if (data.status === 'draft' || data.status === 'in_review') {
-    // No additional validation needed
-  }
-});
+export const processStatusTransitionSchema = z
+  .object({
+    status: ProcessStatusEnum,
+    changeComment: z.string().max(2000).optional(),
+  })
+  .superRefine((data, ctx) => {
+    if (data.status === "draft" || data.status === "in_review") {
+      // No additional validation needed
+    }
+  });
 
 export const linkRiskSchema = z.object({
   riskId: z.string().uuid(),
@@ -1166,15 +1326,18 @@ export const linkRiskSchema = z.object({
 
 export const generateBpmnSchema = z.object({
   processName: z.string().min(1).max(500),
-  description: z.string().min(10, 'Beschreibung muss mindestens 10 Zeichen haben').max(5000),
+  description: z
+    .string()
+    .min(10, "Beschreibung muss mindestens 10 Zeichen haben")
+    .max(5000),
 });
 
 export const VALID_STATUS_TRANSITIONS: Record<string, string[]> = {
-  draft:     ['in_review'],
-  in_review: ['approved', 'draft'],
-  approved:  ['published', 'in_review'],
-  published: ['archived'],
-  archived:  [],
+  draft: ["in_review"],
+  in_review: ["approved", "draft"],
+  approved: ["published", "in_review"],
+  published: ["archived"],
+  archived: [],
 };
 
 export function isValidStatusTransition(from: string, to: string): boolean {
@@ -1182,11 +1345,11 @@ export function isValidStatusTransition(from: string, to: string): boolean {
 }
 
 export const STATUS_ROLE_REQUIREMENTS: Record<string, string[]> = {
-  in_review: ['admin', 'process_owner'],
-  approved:  ['admin', 'risk_manager', 'auditor'],
-  published: ['admin'],
-  archived:  ['admin'],
-  draft:     ['admin', 'risk_manager', 'auditor'],  // reject back to draft
+  in_review: ["admin", "process_owner"],
+  approved: ["admin", "risk_manager", "auditor"],
+  published: ["admin"],
+  archived: ["admin"],
+  draft: ["admin", "risk_manager", "auditor"], // reject back to draft
 };
 ```
 
@@ -1195,24 +1358,24 @@ export const STATUS_ROLE_REQUIREMENTS: Record<string, string[]> = {
 `apps/web/src/app/api/v1/processes/route.ts`
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@arctos/db';
-import { processes, processVersions } from '@arctos/db/schema/bpm';
-import { createProcessSchema } from '@arctos/shared/schemas/process';
-import { requireAuth } from '@/lib/middleware/require-auth';
-import { requireModule } from '@/lib/middleware/require-module';
-import { requireRole } from '@/lib/middleware/require-role';
-import { orgContextMiddleware } from '@/lib/middleware/org-context';
-import { auditLogger } from '@/lib/middleware/audit-logger';
-import { getSession } from '@arctos/auth';
-import { eq, and, isNull, ilike, sql } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@arctos/db";
+import { processes, processVersions } from "@arctos/db/schema/bpm";
+import { createProcessSchema } from "@arctos/shared/schemas/process";
+import { requireAuth } from "@/lib/middleware/require-auth";
+import { requireModule } from "@/lib/middleware/require-module";
+import { requireRole } from "@/lib/middleware/require-role";
+import { orgContextMiddleware } from "@/lib/middleware/org-context";
+import { auditLogger } from "@/lib/middleware/audit-logger";
+import { getSession } from "@arctos/auth";
+import { eq, and, isNull, ilike, sql } from "drizzle-orm";
 
 // GET /api/v1/processes — List processes (hierarchical)
 export async function GET(req: NextRequest) {
   const authResult = await requireAuth(req);
   if (authResult instanceof NextResponse) return authResult;
 
-  const moduleResult = await requireModule('bpm', req);
+  const moduleResult = await requireModule("bpm", req);
   if (moduleResult instanceof NextResponse) return moduleResult;
 
   const orgCtx = await orgContextMiddleware(req);
@@ -1220,15 +1383,12 @@ export async function GET(req: NextRequest) {
 
   const { orgId } = orgCtx;
   const { searchParams } = new URL(req.url);
-  const search = searchParams.get('search');
-  const status = searchParams.get('status');
-  const parentId = searchParams.get('parentId');
-  const includeArchived = searchParams.get('includeArchived') === 'true';
+  const search = searchParams.get("search");
+  const status = searchParams.get("status");
+  const parentId = searchParams.get("parentId");
+  const includeArchived = searchParams.get("includeArchived") === "true";
 
-  const conditions = [
-    eq(processes.orgId, orgId),
-    isNull(processes.deletedAt),
-  ];
+  const conditions = [eq(processes.orgId, orgId), isNull(processes.deletedAt)];
 
   if (!includeArchived) {
     conditions.push(sql`${processes.status} != 'archived'`);
@@ -1239,7 +1399,7 @@ export async function GET(req: NextRequest) {
   if (status) {
     conditions.push(eq(processes.status, status as any));
   }
-  if (parentId === 'null') {
+  if (parentId === "null") {
     conditions.push(isNull(processes.parentProcessId));
   } else if (parentId) {
     conditions.push(eq(processes.parentProcessId, parentId));
@@ -1262,10 +1422,10 @@ export async function POST(req: NextRequest) {
   const authResult = await requireAuth(req);
   if (authResult instanceof NextResponse) return authResult;
 
-  const moduleResult = await requireModule('bpm', req);
+  const moduleResult = await requireModule("bpm", req);
   if (moduleResult instanceof NextResponse) return moduleResult;
 
-  const roleResult = await requireRole(['admin', 'process_owner'], req);
+  const roleResult = await requireRole(["admin", "process_owner"], req);
   if (roleResult instanceof NextResponse) return roleResult;
 
   const orgCtx = await orgContextMiddleware(req);
@@ -1276,25 +1436,31 @@ export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}));
   const parsed = createProcessSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation error', details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: "Validation error", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const data = parsed.data;
 
-  const [newProcess] = await db.insert(processes).values({
-    orgId,
-    name: data.name,
-    description: data.description,
-    parentProcessId: data.parentProcessId ?? null,
-    level: data.level,
-    notation: data.notation,
-    processOwnerId: data.processOwnerId ?? null,
-    reviewerId: data.reviewerId ?? null,
-    department: data.department,
-    isEssential: data.isEssential,
-    createdBy: userId,
-    updatedBy: userId,
-  }).returning();
+  const [newProcess] = await db
+    .insert(processes)
+    .values({
+      orgId,
+      name: data.name,
+      description: data.description,
+      parentProcessId: data.parentProcessId ?? null,
+      level: data.level,
+      notation: data.notation,
+      processOwnerId: data.processOwnerId ?? null,
+      reviewerId: data.reviewerId ?? null,
+      department: data.department,
+      isEssential: data.isEssential,
+      createdBy: userId,
+      updatedBy: userId,
+    })
+    .returning();
 
   // Create the initial empty version
   await db.insert(processVersions).values({
@@ -1302,7 +1468,7 @@ export async function POST(req: NextRequest) {
     orgId,
     versionNumber: 1,
     bpmnXml: null,
-    changeSummary: 'Initiale Version',
+    changeSummary: "Initiale Version",
     isCurrent: true,
     createdBy: userId,
   });
@@ -1310,8 +1476,8 @@ export async function POST(req: NextRequest) {
   await auditLogger({
     orgId,
     userId,
-    action: 'CREATE',
-    entityType: 'process',
+    action: "CREATE",
+    entityType: "process",
     entityId: newProcess.id,
     newValue: newProcess,
   });
@@ -1325,29 +1491,33 @@ export async function POST(req: NextRequest) {
 `apps/web/src/app/api/v1/processes/[id]/versions/route.ts`
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@arctos/db';
-import { processes, processVersions, processSteps } from '@arctos/db/schema/bpm';
-import { saveBpmnSchema } from '@arctos/shared/schemas/process';
-import { requireAuth } from '@/lib/middleware/require-auth';
-import { requireModule } from '@/lib/middleware/require-module';
-import { requireRole } from '@/lib/middleware/require-role';
-import { orgContextMiddleware } from '@/lib/middleware/org-context';
-import { auditLogger } from '@/lib/middleware/audit-logger';
-import { eq, and, isNull, inArray } from 'drizzle-orm';
-import { parseBpmnSteps } from '@/lib/bpm/bpmn-parser';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@arctos/db";
+import {
+  processes,
+  processVersions,
+  processSteps,
+} from "@arctos/db/schema/bpm";
+import { saveBpmnSchema } from "@arctos/shared/schemas/process";
+import { requireAuth } from "@/lib/middleware/require-auth";
+import { requireModule } from "@/lib/middleware/require-module";
+import { requireRole } from "@/lib/middleware/require-role";
+import { orgContextMiddleware } from "@/lib/middleware/org-context";
+import { auditLogger } from "@/lib/middleware/audit-logger";
+import { eq, and, isNull, inArray } from "drizzle-orm";
+import { parseBpmnSteps } from "@/lib/bpm/bpmn-parser";
 
 export async function POST(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const authResult = await requireAuth(req);
   if (authResult instanceof NextResponse) return authResult;
 
-  const moduleResult = await requireModule('bpm', req);
+  const moduleResult = await requireModule("bpm", req);
   if (moduleResult instanceof NextResponse) return moduleResult;
 
-  const roleResult = await requireRole(['admin', 'process_owner'], req);
+  const roleResult = await requireRole(["admin", "process_owner"], req);
   if (roleResult instanceof NextResponse) return roleResult;
 
   const orgCtx = await orgContextMiddleware(req);
@@ -1357,24 +1527,39 @@ export async function POST(
   const processId = params.id;
 
   const process = await db.query.processes.findFirst({
-    where: and(eq(processes.id, processId), eq(processes.orgId, orgId), isNull(processes.deletedAt)),
+    where: and(
+      eq(processes.id, processId),
+      eq(processes.orgId, orgId),
+      isNull(processes.deletedAt),
+    ),
   });
 
   if (!process) {
-    return NextResponse.json({ error: 'Prozess nicht gefunden' }, { status: 404 });
+    return NextResponse.json(
+      { error: "Prozess nicht gefunden" },
+      { status: 404 },
+    );
   }
 
   // Only owner or admin can save BPMN
   const session = await getSession(req);
   const userRole = session?.user?.role;
-  if (userRole === 'process_owner' && process.processOwnerId !== userId) {
-    return NextResponse.json({ error: 'Nur der Prozessverantwortliche kann diesen Prozess bearbeiten' }, { status: 403 });
+  if (userRole === "process_owner" && process.processOwnerId !== userId) {
+    return NextResponse.json(
+      {
+        error: "Nur der Prozessverantwortliche kann diesen Prozess bearbeiten",
+      },
+      { status: 403 },
+    );
   }
 
   const body = await req.json().catch(() => ({}));
   const parsed = saveBpmnSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation error', details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: "Validation error", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const { bpmnXml, changeSummary } = parsed.data;
@@ -1385,7 +1570,12 @@ export async function POST(
     await tx
       .update(processVersions)
       .set({ isCurrent: false })
-      .where(and(eq(processVersions.processId, processId), eq(processVersions.isCurrent, true)));
+      .where(
+        and(
+          eq(processVersions.processId, processId),
+          eq(processVersions.isCurrent, true),
+        ),
+      );
 
     // 2. Create new version
     await tx.insert(processVersions).values({
@@ -1410,7 +1600,10 @@ export async function POST(
 
     // Get existing (non-deleted) steps
     const existingSteps = await tx.query.processSteps.findMany({
-      where: and(eq(processSteps.processId, processId), isNull(processSteps.deletedAt)),
+      where: and(
+        eq(processSteps.processId, processId),
+        isNull(processSteps.deletedAt),
+      ),
     });
 
     const existingIds = existingSteps.map((s) => s.bpmnElementId);
@@ -1418,11 +1611,18 @@ export async function POST(
     // Soft-delete steps removed from BPMN
     const toDelete = existingIds.filter((id) => !extractedIds.includes(id));
     if (toDelete.length > 0) {
-      const stepsToDelete = existingSteps.filter((s) => toDelete.includes(s.bpmnElementId));
+      const stepsToDelete = existingSteps.filter((s) =>
+        toDelete.includes(s.bpmnElementId),
+      );
       await tx
         .update(processSteps)
         .set({ deletedAt: new Date().toISOString(), deletedBy: userId })
-        .where(inArray(processSteps.id, stepsToDelete.map((s) => s.id)));
+        .where(
+          inArray(
+            processSteps.id,
+            stepsToDelete.map((s) => s.id),
+          ),
+        );
     }
 
     // Upsert steps present in BPMN
@@ -1448,7 +1648,7 @@ export async function POST(
             sequenceOrder: i,
             updatedBy: userId,
             updatedAt: new Date().toISOString(),
-            deletedAt: null,  // Restore if previously soft-deleted
+            deletedAt: null, // Restore if previously soft-deleted
             deletedBy: null,
           },
         });
@@ -1458,8 +1658,8 @@ export async function POST(
   await auditLogger({
     orgId,
     userId,
-    action: 'UPDATE',
-    entityType: 'process_version',
+    action: "UPDATE",
+    entityType: "process_version",
     entityId: processId,
     newValue: { versionNumber: nextVersionNumber, changeSummary },
   });
@@ -1477,27 +1677,31 @@ export async function POST(
 `apps/web/src/app/api/v1/processes/[id]/status/route.ts`
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { db } from '@arctos/db';
-import { processes } from '@arctos/db/schema/bpm';
-import { users } from '@arctos/db/schema/user';
-import { processStatusTransitionSchema, isValidStatusTransition, STATUS_ROLE_REQUIREMENTS } from '@arctos/shared/schemas/process';
-import { requireAuth } from '@/lib/middleware/require-auth';
-import { requireModule } from '@/lib/middleware/require-module';
-import { orgContextMiddleware } from '@/lib/middleware/org-context';
-import { auditLogger } from '@/lib/middleware/audit-logger';
-import { EmailService } from '@arctos/email';
-import { getSession } from '@arctos/auth';
-import { eq, and, isNull } from 'drizzle-orm';
+import { NextRequest, NextResponse } from "next/server";
+import { db } from "@arctos/db";
+import { processes } from "@arctos/db/schema/bpm";
+import { users } from "@arctos/db/schema/user";
+import {
+  processStatusTransitionSchema,
+  isValidStatusTransition,
+  STATUS_ROLE_REQUIREMENTS,
+} from "@arctos/shared/schemas/process";
+import { requireAuth } from "@/lib/middleware/require-auth";
+import { requireModule } from "@/lib/middleware/require-module";
+import { orgContextMiddleware } from "@/lib/middleware/org-context";
+import { auditLogger } from "@/lib/middleware/audit-logger";
+import { EmailService } from "@arctos/email";
+import { getSession } from "@arctos/auth";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function PUT(
   req: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: { id: string } },
 ) {
   const authResult = await requireAuth(req);
   if (authResult instanceof NextResponse) return authResult;
 
-  const moduleResult = await requireModule('bpm', req);
+  const moduleResult = await requireModule("bpm", req);
   if (moduleResult instanceof NextResponse) return moduleResult;
 
   const orgCtx = await orgContextMiddleware(req);
@@ -1509,13 +1713,20 @@ export async function PUT(
   const body = await req.json().catch(() => ({}));
   const parsed = processStatusTransitionSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation error', details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: "Validation error", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const { status: newStatus, changeComment } = parsed.data;
 
   const process = await db.query.processes.findFirst({
-    where: and(eq(processes.id, processId), eq(processes.orgId, orgId), isNull(processes.deletedAt)),
+    where: and(
+      eq(processes.id, processId),
+      eq(processes.orgId, orgId),
+      isNull(processes.deletedAt),
+    ),
     with: {
       owner: true,
       reviewer: true,
@@ -1523,31 +1734,44 @@ export async function PUT(
   });
 
   if (!process) {
-    return NextResponse.json({ error: 'Prozess nicht gefunden' }, { status: 404 });
+    return NextResponse.json(
+      { error: "Prozess nicht gefunden" },
+      { status: 404 },
+    );
   }
 
   // Validate status transition
   if (!isValidStatusTransition(process.status, newStatus)) {
-    return NextResponse.json({
-      error: `Statusübergang von '${process.status}' nach '${newStatus}' ist nicht erlaubt`,
-    }, { status: 422 });
+    return NextResponse.json(
+      {
+        error: `Statusübergang von '${process.status}' nach '${newStatus}' ist nicht erlaubt`,
+      },
+      { status: 422 },
+    );
   }
 
   // Check role requirements for this specific transition
   const session = await getSession(req);
-  const userRole = session?.user?.role ?? '';
+  const userRole = session?.user?.role ?? "";
   const allowedRoles = STATUS_ROLE_REQUIREMENTS[newStatus] ?? [];
   if (!allowedRoles.includes(userRole)) {
-    return NextResponse.json({
-      error: `Ihre Rolle '${userRole}' darf diesen Statusübergang nicht durchführen`,
-    }, { status: 403 });
+    return NextResponse.json(
+      {
+        error: `Ihre Rolle '${userRole}' darf diesen Statusübergang nicht durchführen`,
+      },
+      { status: 403 },
+    );
   }
 
   // Validation: in_review requires reviewer to be set
-  if (newStatus === 'in_review' && !process.reviewerId) {
-    return NextResponse.json({
-      error: 'Ein Prüfer muss zugewiesen sein, bevor der Prozess zur Prüfung eingereicht werden kann',
-    }, { status: 422 });
+  if (newStatus === "in_review" && !process.reviewerId) {
+    return NextResponse.json(
+      {
+        error:
+          "Ein Prüfer muss zugewiesen sein, bevor der Prozess zur Prüfung eingereicht werden kann",
+      },
+      { status: 422 },
+    );
   }
 
   const previousStatus = process.status;
@@ -1562,8 +1786,8 @@ export async function PUT(
   await auditLogger({
     orgId,
     userId,
-    action: 'STATUS_CHANGE',
-    entityType: 'process',
+    action: "STATUS_CHANGE",
+    entityType: "process",
     entityId: processId,
     oldValue: { status: previousStatus },
     newValue: { status: newStatus, changeComment },
@@ -1572,34 +1796,34 @@ export async function PUT(
   // Send email notifications based on transition
   const emailService = new EmailService();
 
-  if (newStatus === 'in_review' && process.reviewer?.email) {
+  if (newStatus === "in_review" && process.reviewer?.email) {
     await emailService.send({
       to: process.reviewer.email,
-      templateKey: 'process_review_requested',
+      templateKey: "process_review_requested",
       data: {
         processName: process.name,
         processId,
-        submittedBy: session?.user?.name ?? 'Unbekannt',
-        changeComment: changeComment ?? '',
+        submittedBy: session?.user?.name ?? "Unbekannt",
+        changeComment: changeComment ?? "",
         reviewUrl: `${process.env.APP_URL}/bpm/processes/${processId}`,
       },
     });
   }
 
-  if (newStatus === 'approved' && process.owner?.email) {
+  if (newStatus === "approved" && process.owner?.email) {
     await emailService.send({
       to: process.owner.email,
-      templateKey: 'process_approved',
+      templateKey: "process_approved",
       data: {
         processName: process.name,
         processId,
-        approvedBy: session?.user?.name ?? 'Unbekannt',
+        approvedBy: session?.user?.name ?? "Unbekannt",
         processUrl: `${process.env.APP_URL}/bpm/processes/${processId}`,
       },
     });
   }
 
-  if (newStatus === 'published') {
+  if (newStatus === "published") {
     // Notify all process owners in the org
     const processOwners = await db.query.users.findMany({
       where: eq(users.id, orgId), // Simplified — actual impl uses user_organization_role table
@@ -1608,11 +1832,11 @@ export async function PUT(
       if (owner.email) {
         await emailService.send({
           to: owner.email,
-          templateKey: 'process_published',
+          templateKey: "process_published",
           data: {
             processName: process.name,
             processId,
-            publishedBy: session?.user?.name ?? 'Unbekannt',
+            publishedBy: session?.user?.name ?? "Unbekannt",
             processUrl: `${process.env.APP_URL}/bpm/processes/${processId}`,
           },
         });
@@ -1623,7 +1847,6 @@ export async function PUT(
   return NextResponse.json(updated);
 }
 ```
-
 
 ---
 
@@ -1639,12 +1862,13 @@ npm install --save-dev @types/bpmn-js
 ```
 
 Add to `apps/web/next.config.ts`:
+
 ```typescript
 const nextConfig = {
   // bpmn-js requires transpilation
-  transpilePackages: ['bpmn-js', 'diagram-js', 'bpmn-moddle'],
+  transpilePackages: ["bpmn-js", "diagram-js", "bpmn-moddle"],
   webpack: (config) => {
-    config.externals = [...(config.externals ?? []), { canvas: 'canvas' }];
+    config.externals = [...(config.externals ?? []), { canvas: "canvas" }];
     return config;
   },
 };
@@ -1657,14 +1881,14 @@ const nextConfig = {
 ```tsx
 "use client";
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
-import type BpmnModelerType from 'bpmn-js/lib/Modeler';
-import type { ImportXMLResult } from 'bpmn-js/lib/BaseModeler';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Save, Download, Wand2, AlertCircle } from 'lucide-react';
-import { RiskSidePanel } from './RiskSidePanel';
-import { cn } from '@/lib/utils';
+import React, { useEffect, useRef, useState, useCallback } from "react";
+import type BpmnModelerType from "bpmn-js/lib/Modeler";
+import type { ImportXMLResult } from "bpmn-js/lib/BaseModeler";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Save, Download, Wand2, AlertCircle } from "lucide-react";
+import { RiskSidePanel } from "./RiskSidePanel";
+import { cn } from "@/lib/utils";
 
 interface BpmnEditorProps {
   initialXml: string | null;
@@ -1700,35 +1924,47 @@ export function BpmnEditor({
 }: BpmnEditorProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const modelerRef = useRef<BpmnModelerType | null>(null);
-  const overlayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const overlayIntervalRef = useRef<ReturnType<typeof setInterval> | null>(
+    null,
+  );
 
-  const [selectedElement, setSelectedElement] = useState<{ id: string; name: string; type: string } | null>(null);
+  const [selectedElement, setSelectedElement] = useState<{
+    id: string;
+    name: string;
+    type: string;
+  } | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // Load risk overlays and re-register them after every importXML
   // Critical: overlays are NOT preserved across importXML calls
-  const loadRiskOverlays = useCallback(async (modeler: BpmnModelerType) => {
-    try {
-      const overlays = modeler.get('overlays') as any;
-      const elementRegistry = modeler.get('elementRegistry') as any;
+  const loadRiskOverlays = useCallback(
+    async (modeler: BpmnModelerType) => {
+      try {
+        const overlays = modeler.get("overlays") as any;
+        const elementRegistry = modeler.get("elementRegistry") as any;
 
-      // Remove all existing risk overlays before re-adding
-      overlays.remove({ type: 'risk-badge' });
+        // Remove all existing risk overlays before re-adding
+        overlays.remove({ type: "risk-badge" });
 
-      const res = await fetch(`/api/v1/processes/${processId}/risks`);
-      if (!res.ok) return;
-      const data = await res.json() as {
-        stepRisks: Array<{ stepElementId: string; count: number; maxScore: number }>;
-      };
+        const res = await fetch(`/api/v1/processes/${processId}/risks`);
+        if (!res.ok) return;
+        const data = (await res.json()) as {
+          stepRisks: Array<{
+            stepElementId: string;
+            count: number;
+            maxScore: number;
+          }>;
+        };
 
-      data.stepRisks.forEach(({ stepElementId, count, maxScore }) => {
-        if (!elementRegistry.get(stepElementId)) return;
+        data.stepRisks.forEach(({ stepElementId, count, maxScore }) => {
+          if (!elementRegistry.get(stepElementId)) return;
 
-        const color = maxScore >= 15 ? '#ef4444' : maxScore >= 8 ? '#f59e0b' : '#22c55e';
-        const div = document.createElement('div');
-        div.style.cssText = `
+          const color =
+            maxScore >= 15 ? "#ef4444" : maxScore >= 8 ? "#f59e0b" : "#22c55e";
+          const div = document.createElement("div");
+          div.style.cssText = `
           background: ${color};
           color: white;
           border-radius: 9999px;
@@ -1739,19 +1975,22 @@ export function BpmnEditor({
           box-shadow: 0 1px 3px rgba(0,0,0,0.3);
           white-space: nowrap;
         `;
-        div.textContent = count === 1 ? `${count} Risiko` : `${count} Risiken | ${maxScore}`;
-        div.title = `${count} verknüpfte Risiken, höchster Score: ${maxScore}`;
+          div.textContent =
+            count === 1 ? `${count} Risiko` : `${count} Risiken | ${maxScore}`;
+          div.title = `${count} verknüpfte Risiken, höchster Score: ${maxScore}`;
 
-        overlays.add(stepElementId, {
-          type: 'risk-badge',
-          position: { bottom: 0, right: 0 },
-          html: div,
+          overlays.add(stepElementId, {
+            type: "risk-badge",
+            position: { bottom: 0, right: 0 },
+            html: div,
+          });
         });
-      });
-    } catch (e) {
-      console.error('[BpmnEditor] Failed to load risk overlays:', e);
-    }
-  }, [processId]);
+      } catch (e) {
+        console.error("[BpmnEditor] Failed to load risk overlays:", e);
+      }
+    },
+    [processId],
+  );
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -1760,7 +1999,7 @@ export function BpmnEditor({
     let destroyed = false;
 
     const mountModeler = async () => {
-      const BpmnModeler = (await import('bpmn-js/lib/Modeler')).default;
+      const BpmnModeler = (await import("bpmn-js/lib/Modeler")).default;
 
       if (destroyed || !containerRef.current) return;
 
@@ -1773,24 +2012,26 @@ export function BpmnEditor({
 
       // Import BPMN XML
       try {
-        const result: ImportXMLResult = await modeler.importXML(initialXml ?? EMPTY_BPMN);
+        const result: ImportXMLResult = await modeler.importXML(
+          initialXml ?? EMPTY_BPMN,
+        );
         if (result.warnings.length > 0) {
-          console.warn('[BpmnEditor] Import warnings:', result.warnings);
+          console.warn("[BpmnEditor] Import warnings:", result.warnings);
         }
-        const canvas = modeler.get('canvas') as any;
-        canvas.zoom('fit-viewport');
+        const canvas = modeler.get("canvas") as any;
+        canvas.zoom("fit-viewport");
       } catch (err) {
-        console.error('[BpmnEditor] Failed to import XML:', err);
+        console.error("[BpmnEditor] Failed to import XML:", err);
       }
 
       // Load risk overlays AFTER importXML (overlays require elements to exist)
       await loadRiskOverlays(modeler);
 
       // Register click handler: open side panel on element click
-      const eventBus = modeler.get('eventBus') as any;
-      eventBus.on('element.click', (event: any) => {
+      const eventBus = modeler.get("eventBus") as any;
+      eventBus.on("element.click", (event: any) => {
         const { element } = event;
-        if (element.type === 'bpmn:Process') {
+        if (element.type === "bpmn:Process") {
           setSelectedElement(null);
           return;
         }
@@ -1802,7 +2043,7 @@ export function BpmnEditor({
       });
 
       // Track changes for "unsaved changes" indicator
-      eventBus.on('commandStack.changed', () => {
+      eventBus.on("commandStack.changed", () => {
         setHasUnsavedChanges(true);
       });
 
@@ -1834,13 +2075,16 @@ export function BpmnEditor({
   // Re-import XML when initialXml prop changes (e.g., version restored)
   // Note: this triggers cleanup + remount via key prop on parent if needed
   // For in-place update, use importXML directly:
-  const reloadXml = useCallback(async (xml: string) => {
-    if (!modelerRef.current) return;
-    await modelerRef.current.importXML(xml);
-    // After importXML, overlays are cleared — must re-add them
-    await loadRiskOverlays(modelerRef.current);
-    setHasUnsavedChanges(false);
-  }, [loadRiskOverlays]);
+  const reloadXml = useCallback(
+    async (xml: string) => {
+      if (!modelerRef.current) return;
+      await modelerRef.current.importXML(xml);
+      // After importXML, overlays are cleared — must re-add them
+      await loadRiskOverlays(modelerRef.current);
+      setHasUnsavedChanges(false);
+    },
+    [loadRiskOverlays],
+  );
 
   const handleSave = async () => {
     if (!modelerRef.current || isSaving) return;
@@ -1850,12 +2094,13 @@ export function BpmnEditor({
     try {
       // saveXML returns a Promise — must be awaited
       const { xml } = await modelerRef.current.saveXML({ format: true });
-      if (!xml) throw new Error('XML export returned empty string');
+      if (!xml) throw new Error("XML export returned empty string");
 
       await onSave(xml);
       setHasUnsavedChanges(false);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Speichern fehlgeschlagen';
+      const message =
+        err instanceof Error ? err.message : "Speichern fehlgeschlagen";
       setSaveError(message);
     } finally {
       setIsSaving(false);
@@ -1866,15 +2111,15 @@ export function BpmnEditor({
     if (!modelerRef.current) return;
     try {
       const { svg } = await (modelerRef.current as any).saveSVG();
-      const blob = new Blob([svg], { type: 'image/svg+xml' });
+      const blob = new Blob([svg], { type: "image/svg+xml" });
       const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
+      const a = document.createElement("a");
       a.href = url;
       a.download = `${processName}.svg`;
       a.click();
       URL.revokeObjectURL(url);
     } catch (err) {
-      console.error('[BpmnEditor] SVG export failed:', err);
+      console.error("[BpmnEditor] SVG export failed:", err);
     }
   };
 
@@ -1882,10 +2127,10 @@ export function BpmnEditor({
     if (!modelerRef.current) return;
     try {
       const { svg } = await (modelerRef.current as any).saveSVG();
-      const canvas = document.createElement('canvas');
-      const ctx = canvas.getContext('2d');
+      const canvas = document.createElement("canvas");
+      const ctx = canvas.getContext("2d");
       const img = new Image();
-      const svgBlob = new Blob([svg], { type: 'image/svg+xml;charset=utf-8' });
+      const svgBlob = new Blob([svg], { type: "image/svg+xml;charset=utf-8" });
       const url = URL.createObjectURL(svgBlob);
       img.onload = () => {
         canvas.width = img.width;
@@ -1894,17 +2139,17 @@ export function BpmnEditor({
         canvas.toBlob((pngBlob) => {
           if (!pngBlob) return;
           const pngUrl = URL.createObjectURL(pngBlob);
-          const a = document.createElement('a');
+          const a = document.createElement("a");
           a.href = pngUrl;
           a.download = `${processName}.png`;
           a.click();
           URL.revokeObjectURL(pngUrl);
           URL.revokeObjectURL(url);
-        }, 'image/png');
+        }, "image/png");
       };
       img.src = url;
     } catch (err) {
-      console.error('[BpmnEditor] PNG export failed:', err);
+      console.error("[BpmnEditor] PNG export failed:", err);
     }
   };
 
@@ -1914,7 +2159,10 @@ export function BpmnEditor({
       <div className="flex items-center justify-between px-4 py-2 border-b bg-slate-50">
         <div className="flex items-center gap-2">
           {hasUnsavedChanges && (
-            <Badge variant="outline" className="text-amber-600 border-amber-300 bg-amber-50">
+            <Badge
+              variant="outline"
+              className="text-amber-600 border-amber-300 bg-amber-50"
+            >
               Nicht gespeicherte Änderungen
             </Badge>
           )}
@@ -1935,9 +2183,13 @@ export function BpmnEditor({
             PNG
           </Button>
           {!readOnly && (
-            <Button size="sm" onClick={handleSave} disabled={isSaving || !hasUnsavedChanges}>
+            <Button
+              size="sm"
+              onClick={handleSave}
+              disabled={isSaving || !hasUnsavedChanges}
+            >
               <Save className="h-4 w-4 mr-1" />
-              {isSaving ? 'Speichern...' : 'Speichern'}
+              {isSaving ? "Speichern..." : "Speichern"}
             </Button>
           )}
         </div>
@@ -1949,8 +2201,8 @@ export function BpmnEditor({
         <div
           ref={containerRef}
           className={cn(
-            'flex-1 bg-white',
-            selectedElement ? 'w-[70%]' : 'w-full'
+            "flex-1 bg-white",
+            selectedElement ? "w-[70%]" : "w-full",
           )}
         />
 
@@ -1979,7 +2231,7 @@ export function BpmnEditor({
 ```tsx
 "use client";
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef } from "react";
 
 interface BpmnViewerProps {
   xml: string;
@@ -1996,7 +2248,8 @@ export function BpmnViewer({ xml, processId, className }: BpmnViewerProps) {
     let destroyed = false;
 
     const mountViewer = async () => {
-      const NavigatedViewer = (await import('bpmn-js/lib/NavigatedViewer')).default;
+      const NavigatedViewer = (await import("bpmn-js/lib/NavigatedViewer"))
+        .default;
 
       if (destroyed || !containerRef.current) return;
 
@@ -2005,24 +2258,28 @@ export function BpmnViewer({ xml, processId, className }: BpmnViewerProps) {
 
       try {
         await viewer.importXML(xml);
-        const canvas = viewer.get('canvas') as any;
-        canvas.zoom('fit-viewport');
+        const canvas = viewer.get("canvas") as any;
+        canvas.zoom("fit-viewport");
         // Overlays for read-only viewer (no refresh polling needed)
         const res = await fetch(`/api/v1/processes/${processId}/risks`);
         if (res.ok) {
           const data = await res.json();
-          const overlays = viewer.get('overlays') as any;
-          const registry = viewer.get('elementRegistry') as any;
+          const overlays = viewer.get("overlays") as any;
+          const registry = viewer.get("elementRegistry") as any;
           data.stepRisks?.forEach(({ stepElementId, count, maxScore }: any) => {
             if (!registry.get(stepElementId)) return;
-            const div = document.createElement('div');
-            div.style.cssText = `background:${maxScore >= 15 ? '#ef4444' : maxScore >= 8 ? '#f59e0b' : '#22c55e'};color:white;border-radius:9999px;padding:2px 6px;font-size:11px;font-weight:700;`;
+            const div = document.createElement("div");
+            div.style.cssText = `background:${maxScore >= 15 ? "#ef4444" : maxScore >= 8 ? "#f59e0b" : "#22c55e"};color:white;border-radius:9999px;padding:2px 6px;font-size:11px;font-weight:700;`;
             div.textContent = `${count}`;
-            overlays.add(stepElementId, { type: 'risk-badge', position: { bottom: 0, right: 0 }, html: div });
+            overlays.add(stepElementId, {
+              type: "risk-badge",
+              position: { bottom: 0, right: 0 },
+              html: div,
+            });
           });
         }
       } catch (err) {
-        console.error('[BpmnViewer] Failed to load:', err);
+        console.error("[BpmnViewer] Failed to load:", err);
       }
     };
 
@@ -2040,7 +2297,7 @@ export function BpmnViewer({ xml, processId, className }: BpmnViewerProps) {
   return (
     <div
       ref={containerRef}
-      className={className ?? 'w-full h-[500px] bg-white border rounded-md'}
+      className={className ?? "w-full h-[500px] bg-white border rounded-md"}
     />
   );
 }
@@ -2051,33 +2308,57 @@ export function BpmnViewer({ xml, processId, className }: BpmnViewerProps) {
 `apps/web/src/lib/bpm/bpmn-parser.ts`
 
 ```typescript
-import { XMLParser } from 'fast-xml-parser';  // npm install fast-xml-parser
+import { XMLParser } from "fast-xml-parser"; // npm install fast-xml-parser
 
 export interface ExtractedStep {
   bpmnElementId: string;
   name: string | null;
-  stepType: 'task' | 'gateway' | 'event' | 'subprocess' | 'call_activity';
+  stepType: "task" | "gateway" | "event" | "subprocess" | "call_activity";
 }
 
-const TASK_ELEMENTS = ['bpmn:task', 'bpmn:userTask', 'bpmn:serviceTask', 'bpmn:scriptTask', 'bpmn:sendTask', 'bpmn:receiveTask', 'bpmn:manualTask', 'bpmn:businessRuleTask'];
-const GATEWAY_ELEMENTS = ['bpmn:exclusiveGateway', 'bpmn:parallelGateway', 'bpmn:inclusiveGateway', 'bpmn:eventBasedGateway'];
-const EVENT_ELEMENTS = ['bpmn:startEvent', 'bpmn:endEvent', 'bpmn:intermediateCatchEvent', 'bpmn:intermediateThrowEvent', 'bpmn:boundaryEvent'];
+const TASK_ELEMENTS = [
+  "bpmn:task",
+  "bpmn:userTask",
+  "bpmn:serviceTask",
+  "bpmn:scriptTask",
+  "bpmn:sendTask",
+  "bpmn:receiveTask",
+  "bpmn:manualTask",
+  "bpmn:businessRuleTask",
+];
+const GATEWAY_ELEMENTS = [
+  "bpmn:exclusiveGateway",
+  "bpmn:parallelGateway",
+  "bpmn:inclusiveGateway",
+  "bpmn:eventBasedGateway",
+];
+const EVENT_ELEMENTS = [
+  "bpmn:startEvent",
+  "bpmn:endEvent",
+  "bpmn:intermediateCatchEvent",
+  "bpmn:intermediateThrowEvent",
+  "bpmn:boundaryEvent",
+];
 
 function toArray<T>(val: T | T[] | undefined): T[] {
   if (!val) return [];
   return Array.isArray(val) ? val : [val];
 }
 
-function extractElements(processNode: any, tagNames: string[], stepType: ExtractedStep['stepType']): ExtractedStep[] {
+function extractElements(
+  processNode: any,
+  tagNames: string[],
+  stepType: ExtractedStep["stepType"],
+): ExtractedStep[] {
   const results: ExtractedStep[] = [];
   for (const tag of tagNames) {
     const elements = toArray(processNode[tag]);
     for (const el of elements) {
-      const id = el?.['@_id'];
+      const id = el?.["@_id"];
       if (!id) continue;
       results.push({
         bpmnElementId: id,
-        name: el['@_name'] ?? null,
+        name: el["@_name"] ?? null,
         stepType,
       });
     }
@@ -2088,7 +2369,7 @@ function extractElements(processNode: any, tagNames: string[], stepType: Extract
 export function parseBpmnSteps(bpmnXml: string): ExtractedStep[] {
   const parser = new XMLParser({
     ignoreAttributes: false,
-    attributeNamePrefix: '@_',
+    attributeNamePrefix: "@_",
     allowBooleanAttributes: true,
     parseAttributeValue: false,
   });
@@ -2097,25 +2378,27 @@ export function parseBpmnSteps(bpmnXml: string): ExtractedStep[] {
   try {
     parsed = parser.parse(bpmnXml);
   } catch (err) {
-    throw new Error(`BPMN XML parsing failed: ${err instanceof Error ? err.message : 'Unknown error'}`);
+    throw new Error(
+      `BPMN XML parsing failed: ${err instanceof Error ? err.message : "Unknown error"}`,
+    );
   }
 
   // Navigate to the process element (handle both with and without namespace prefix)
-  const definitions = parsed?.['bpmn:definitions'] ?? parsed?.definitions;
+  const definitions = parsed?.["bpmn:definitions"] ?? parsed?.definitions;
   if (!definitions) return [];
 
-  const processNode = Array.isArray(definitions['bpmn:process'])
-    ? definitions['bpmn:process'][0]  // Use first process if multiple
-    : definitions['bpmn:process'];
+  const processNode = Array.isArray(definitions["bpmn:process"])
+    ? definitions["bpmn:process"][0] // Use first process if multiple
+    : definitions["bpmn:process"];
 
   if (!processNode) return [];
 
   const steps: ExtractedStep[] = [
-    ...extractElements(processNode, TASK_ELEMENTS, 'task'),
-    ...extractElements(processNode, GATEWAY_ELEMENTS, 'gateway'),
-    ...extractElements(processNode, EVENT_ELEMENTS, 'event'),
-    ...extractElements(processNode, ['bpmn:subProcess'], 'subprocess'),
-    ...extractElements(processNode, ['bpmn:callActivity'], 'call_activity'),
+    ...extractElements(processNode, TASK_ELEMENTS, "task"),
+    ...extractElements(processNode, GATEWAY_ELEMENTS, "gateway"),
+    ...extractElements(processNode, EVENT_ELEMENTS, "event"),
+    ...extractElements(processNode, ["bpmn:subProcess"], "subprocess"),
+    ...extractElements(processNode, ["bpmn:callActivity"], "call_activity"),
   ];
 
   // De-duplicate by bpmnElementId
@@ -2132,7 +2415,7 @@ export function parseBpmnSteps(bpmnXml: string): ExtractedStep[] {
 
 `packages/ai/src/bpm-generator.ts`
 
-```typescript
+````typescript
 import Anthropic from '@anthropic-ai/sdk';
 import { parseBpmnSteps } from '@arctos/web/src/lib/bpm/bpmn-parser';  // For validation
 
@@ -2209,29 +2492,32 @@ Generate the BPMN 2.0 XML for this process. Include 4-8 steps with realistic seq
     };
   }
 }
-```
+````
 
 API route for AI generation:
 
 `apps/web/src/app/api/v1/processes/[id]/generate-bpmn/route.ts`
 
 ```typescript
-import { NextRequest, NextResponse } from 'next/server';
-import { generateBpmnSchema } from '@arctos/shared/schemas/process';
-import { generateBpmn } from '@arctos/ai/bpm-generator';
-import { requireAuth } from '@/lib/middleware/require-auth';
-import { requireModule } from '@/lib/middleware/require-module';
-import { requireRole } from '@/lib/middleware/require-role';
-import { orgContextMiddleware } from '@/lib/middleware/org-context';
+import { NextRequest, NextResponse } from "next/server";
+import { generateBpmnSchema } from "@arctos/shared/schemas/process";
+import { generateBpmn } from "@arctos/ai/bpm-generator";
+import { requireAuth } from "@/lib/middleware/require-auth";
+import { requireModule } from "@/lib/middleware/require-module";
+import { requireRole } from "@/lib/middleware/require-role";
+import { orgContextMiddleware } from "@/lib/middleware/org-context";
 
-export async function POST(req: NextRequest, { params }: { params: { id: string } }) {
+export async function POST(
+  req: NextRequest,
+  { params }: { params: { id: string } },
+) {
   const authResult = await requireAuth(req);
   if (authResult instanceof NextResponse) return authResult;
 
-  const moduleResult = await requireModule('bpm', req);
+  const moduleResult = await requireModule("bpm", req);
   if (moduleResult instanceof NextResponse) return moduleResult;
 
-  const roleResult = await requireRole(['admin', 'process_owner'], req);
+  const roleResult = await requireRole(["admin", "process_owner"], req);
   if (roleResult instanceof NextResponse) return roleResult;
 
   const orgCtx = await orgContextMiddleware(req);
@@ -2240,23 +2526,28 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const body = await req.json().catch(() => ({}));
   const parsed = generateBpmnSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: 'Validation error', details: parsed.error.flatten() }, { status: 400 });
+    return NextResponse.json(
+      { error: "Validation error", details: parsed.error.flatten() },
+      { status: 400 },
+    );
   }
 
   const result = await generateBpmn(parsed.data);
 
   if (!result.valid) {
-    return NextResponse.json({
-      error: 'KI konnte kein gültiges BPMN generieren',
-      details: result.validationError,
-      rawXml: result.xml,
-    }, { status: 422 });
+    return NextResponse.json(
+      {
+        error: "KI konnte kein gültiges BPMN generieren",
+        details: result.validationError,
+        rawXml: result.xml,
+      },
+      { status: 422 },
+    );
   }
 
   return NextResponse.json({ xml: result.xml, stepCount: result.stepCount });
 }
 ```
-
 
 ---
 
@@ -2267,6 +2558,7 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
 Layout: Two-panel layout. Left panel 280px wide, right content area fills remaining space.
 
 ### Left Panel — Prozessbaum
+
 - Fixed height, scrollable
 - Header: "Prozesslandschaft" (h2) + "+ Neuer Prozess" button (admin/process_owner only)
 - Search input: placeholder "Prozess suchen..." with magnifier icon, min 2 chars to trigger filter
@@ -2282,10 +2574,12 @@ Layout: Two-panel layout. Left panel 280px wide, right content area fills remain
 - Empty state: "Keine Prozesse vorhanden. Legen Sie den ersten Prozess an." + action button
 
 ### Right Panel — Default State
+
 - Centered illustration + text: "Wählen Sie einen Prozess aus der Liste aus"
 - If no processes exist: "Noch keine Prozesse vorhanden. Klicken Sie auf '+ Neuer Prozess'."
 
 ### Mobile Behavior
+
 - Left panel is shown as full-screen
 - Right panel not accessible on mobile
 - No BPMN editor on mobile — bpmn.js is not mobile-optimized
@@ -2294,6 +2588,7 @@ Layout: Two-panel layout. Left panel 280px wide, right content area fills remain
 ## 6.2 Page: Prozessdetail (`/bpm/processes/[id]`)
 
 ### Header
+
 ```
 [Status Badge] Prozessname                               [Action Buttons]
 Ebene X • Abteilung • Verantwortlich: Max Mustermann     [Speichern] [Status-Aktionen ▼]
@@ -2307,15 +2602,18 @@ Ebene X • Abteilung • Verantwortlich: Max Mustermann     [Speichern] [Status
   - Veröffentlicht: "Archivieren" (admin) / "Neue Version erstellen" (process_owner, admin)
 
 ### Tab Navigation
+
 - Tabs: Übersicht | BPMN Editor | Versionen | Risiken | Verlauf
 
 #### Tab: Übersicht
+
 - Process metadata: Name, Beschreibung, Ebene, Notation, Abteilung, Ist-essenziell
 - Verantwortliche: Prozessverantwortlicher + Prüfer (with avatar)
 - Statistiken: Anzahl Versionen, Anzahl Schritte, Anzahl verknüpfte Risiken
 - Letzte Änderung: "Geändert am [date] von [user]"
 
 #### Tab: BPMN Editor
+
 ```
 [Toolbar: Version X | Nicht gespeicherte Änderungen | SVG | PNG | Speichern | Mit KI generieren]
 
@@ -2339,11 +2637,13 @@ Ebene X • Abteilung • Verantwortlich: Max Mustermann     [Speichern] [Status
                                        │ [Grayed out]        │
                                        └─────────────────────┘
 ```
+
 - Side panel appears only when a BPMN shape is clicked
 - Side panel disappears on canvas click (outside shapes)
 - "Mit KI generieren" button opens AI generation panel below toolbar
 
 #### Tab: Versionen
+
 ```
 ● Version 3 (aktuelle Version)
 │   Gespeichert am 25.03.2026 von Max Mustermann
@@ -2362,6 +2662,7 @@ Ebene X • Abteilung • Verantwortlich: Max Mustermann     [Speichern] [Status
 ```
 
 #### Tab: Risiken
+
 ```
 Prozessrisiken (2)
 ─────────────────
@@ -2380,6 +2681,7 @@ Schrittrisiken (3)
 ```
 
 #### Tab: Verlauf (from audit_log)
+
 ```
 25.03.2026 14:32 — Max Mustermann
   Status: Entwurf → In Prüfung
@@ -2396,20 +2698,19 @@ Schrittrisiken (3)
 
 ## 6.3 Components to Build
 
-| Component | Path | Description |
-|-----------|------|-------------|
-| `ProcessTree` | `components/bpm/ProcessTree.tsx` | Hierarchical tree with search/filter |
-| `ProcessNode` | `components/bpm/ProcessNode.tsx` | Single tree node with status dot |
-| `ProcessStatusBadge` | `components/bpm/ProcessStatusBadge.tsx` | Colored status pill |
-| `BpmnEditor` | `components/bpm/BpmnEditor.tsx` | Full editor (see Section 5.2) |
-| `BpmnViewer` | `components/bpm/BpmnViewer.tsx` | Read-only viewer (see Section 5.3) |
-| `RiskSidePanel` | `components/bpm/RiskSidePanel.tsx` | Shape click side panel |
-| `RiskSearchModal` | `components/bpm/RiskSearchModal.tsx` | Risk search and link modal |
-| `ProcessVersionCard` | `components/bpm/ProcessVersionCard.tsx` | Version timeline card |
-| `ProcessStatusActions` | `components/bpm/ProcessStatusActions.tsx` | Status transition buttons |
-| `AiGeneratePanel` | `components/bpm/AiGeneratePanel.tsx` | AI generation form + preview |
-| `CreateProcessModal` | `components/bpm/CreateProcessModal.tsx` | New process form modal |
-
+| Component              | Path                                      | Description                          |
+| ---------------------- | ----------------------------------------- | ------------------------------------ |
+| `ProcessTree`          | `components/bpm/ProcessTree.tsx`          | Hierarchical tree with search/filter |
+| `ProcessNode`          | `components/bpm/ProcessNode.tsx`          | Single tree node with status dot     |
+| `ProcessStatusBadge`   | `components/bpm/ProcessStatusBadge.tsx`   | Colored status pill                  |
+| `BpmnEditor`           | `components/bpm/BpmnEditor.tsx`           | Full editor (see Section 5.2)        |
+| `BpmnViewer`           | `components/bpm/BpmnViewer.tsx`           | Read-only viewer (see Section 5.3)   |
+| `RiskSidePanel`        | `components/bpm/RiskSidePanel.tsx`        | Shape click side panel               |
+| `RiskSearchModal`      | `components/bpm/RiskSearchModal.tsx`      | Risk search and link modal           |
+| `ProcessVersionCard`   | `components/bpm/ProcessVersionCard.tsx`   | Version timeline card                |
+| `ProcessStatusActions` | `components/bpm/ProcessStatusActions.tsx` | Status transition buttons            |
+| `AiGeneratePanel`      | `components/bpm/AiGeneratePanel.tsx`      | AI generation form + preview         |
+| `CreateProcessModal`   | `components/bpm/CreateProcessModal.tsx`   | New process form modal               |
 
 ---
 
@@ -2750,4 +3051,3 @@ Schrittrisiken (3)
   }
 }
 ```
-

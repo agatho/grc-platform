@@ -1,10 +1,4 @@
-import {
-  db,
-  auditChecklist,
-  auditChecklistItem,
-  audit,
-  user,
-} from "@grc/db";
+import { db, auditChecklist, auditChecklistItem, audit, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, asc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -110,8 +104,16 @@ export async function GET(req: Request, { params }: RouteParams) {
 
   const lines: string[] = [];
   // Metadaten-Header
-  lines.push(csvEscape(`Audit: ${row.auditTitle ?? "?"}`) + ";" + csvEscape(`Typ: ${row.auditType ?? ""}`));
-  lines.push(csvEscape(`Checkliste: ${row.checklistName}`) + ";" + csvEscape(`Lead-Auditor: ${row.leadAuditor ?? ""}`));
+  lines.push(
+    csvEscape(`Audit: ${row.auditTitle ?? "?"}`) +
+      ";" +
+      csvEscape(`Typ: ${row.auditType ?? ""}`),
+  );
+  lines.push(
+    csvEscape(`Checkliste: ${row.checklistName}`) +
+      ";" +
+      csvEscape(`Lead-Auditor: ${row.leadAuditor ?? ""}`),
+  );
   lines.push(
     csvEscape(`Geplant: ${row.plannedStart ?? ""} – ${row.plannedEnd ?? ""}`) +
       ";" +
