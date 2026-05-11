@@ -68,10 +68,16 @@ export async function GET(req: Request) {
       ? [eq(auditLog.orgId, orgIdScope[0])]
       : [inArray(auditLog.orgId, orgIdScope)];
 
-  const entityType = searchParams.get("entity_type");
+  // Accept both snake_case (legacy) and camelCase (current API convention).
+  // Without the camelCase fallback the risk-detail history tab silently shows
+  // every audit row in the org instead of just the risk's history (QA-005,
+  // 2026-05-10).
+  const entityType =
+    searchParams.get("entityType") ?? searchParams.get("entity_type");
   if (entityType) conditions.push(eq(auditLog.entityType, entityType));
 
-  const entityId = searchParams.get("entity_id");
+  const entityId =
+    searchParams.get("entityId") ?? searchParams.get("entity_id");
   if (entityId) conditions.push(eq(auditLog.entityId, entityId));
 
   const action = searchParams.get("action");

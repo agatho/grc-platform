@@ -83,6 +83,7 @@ function makeBody(overrides: Record<string, unknown> = {}) {
   return {
     title: "Test Risk",
     riskCategory: "operational",
+    riskSource: "erm",
     ...overrides,
   };
 }

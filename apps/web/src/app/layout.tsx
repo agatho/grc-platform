@@ -5,6 +5,7 @@ import { NextIntlClientProvider } from "next-intl";
 import { getLocale, getMessages } from "next-intl/server";
 import { ThemeProvider } from "@/components/theme-provider";
 import { LegalFooter } from "@/components/layout/legal-footer";
+import { Toaster } from "@/components/ui/sonner";
 import "@/styles/globals.css";
 
 // All pages require authentication — skip static generation at build time
@@ -50,6 +51,12 @@ export default async function RootLayout({
                 <div className="flex-1">{children}</div>
                 <LegalFooter />
               </div>
+              <Toaster
+                position="top-right"
+                richColors
+                closeButton
+                duration={6000}
+              />
             </NextIntlClientProvider>
           </ThemeProvider>
         </SessionProvider>
