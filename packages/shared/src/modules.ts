@@ -20,6 +20,7 @@ export const MODULE_KEYS = [
   "marketplace",
   "simulations",
   "portals",
+  "programme",
 ] as const;
 
 export type ModuleKey = (typeof MODULE_KEYS)[number];

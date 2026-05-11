@@ -33,6 +33,5 @@ export const sharedCoverageConfig: CoverageOptions = {
   //   packages/shared: 81 % lines / 70 % branches
   //   packages/events: 17 % lines / 5 % branches
   // Ratchet up via per-package overrides once each package has a stable floor.
-  all: false,
   cleanOnRerun: true,
 };

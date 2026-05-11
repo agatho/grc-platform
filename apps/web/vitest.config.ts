@@ -10,7 +10,9 @@ export default defineConfig({
     environment: "node",
     include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
     exclude: ["src/__tests__/api/helpers/**"],
-    environmentMatchGlobs: [["src/__tests__/components/**", "jsdom"]],
+    // `environmentMatchGlobs` was removed in vitest 4; component tests now
+    // pick up jsdom via the `@vitest-environment jsdom` pragma at the top of
+    // each .test.tsx file. Re-add a `projects`-based mapping later if needed.
     coverage: {
       ...sharedCoverageConfig,
       include: ["src/**/*.{ts,tsx}"],
