@@ -13,10 +13,26 @@ export function GET(req: Request) {
       module: "isms.nis2",
       description: "EU NIS2 Directive (2022/2555) implementation tracker",
       endpoints: [
-        { method: "GET", path: "/api/v1/isms/nis2/status", description: "Org-level NIS2 implementation status" },
-        { method: "GET", path: "/api/v1/isms/nis2/readiness-score", description: "Aggregate readiness score" },
-        { method: "GET", path: "/api/v1/isms/nis2/reports", description: "Submitted regulatory reports" },
-        { method: "GET", path: "/api/v1/isms/nis2/reporting-tracker", description: "Report deadline tracker" },
+        {
+          method: "GET",
+          path: "/api/v1/isms/nis2/status",
+          description: "Org-level NIS2 implementation status",
+        },
+        {
+          method: "GET",
+          path: "/api/v1/isms/nis2/readiness-score",
+          description: "Aggregate readiness score",
+        },
+        {
+          method: "GET",
+          path: "/api/v1/isms/nis2/reports",
+          description: "Submitted regulatory reports",
+        },
+        {
+          method: "GET",
+          path: "/api/v1/isms/nis2/reporting-tracker",
+          description: "Report deadline tracker",
+        },
       ],
     },
     meta: { requestId: getRequestId(req) },
