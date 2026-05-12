@@ -3,11 +3,14 @@ import { updateRiskSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
+
+type IdCtx = { params: Promise<{ id: string }> };
 
 // GET /api/v1/risks/:id — Full risk detail with treatments, work_item, owner
-export async function GET(
+export const GET = withErrorHandler<IdCtx>(async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: IdCtx,
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -76,12 +79,12 @@ export async function GET(
     );
 
   return Response.json({ data: { ...row, treatments } });
-}
+});
 
 // PUT /api/v1/risks/:id — Update risk fields
-export async function PUT(
+export const PUT = withErrorHandler<IdCtx>(async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: IdCtx,
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -189,12 +192,12 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
+});
 
 // DELETE /api/v1/risks/:id — Soft delete (admin only)
-export async function DELETE(
+export const DELETE = withErrorHandler<IdCtx>(async function DELETE(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: IdCtx,
 ) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
@@ -239,4 +242,4 @@ export async function DELETE(
   }
 
   return Response.json({ data: { id, deleted: true } });
-}
+});

@@ -1,9 +1,10 @@
 import { db, catalog } from "@grc/db";
 import { eq, count, desc, ilike, or, and, arrayContains } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/catalogs — List ALL catalogs (not filtered by type)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -48,4 +49,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

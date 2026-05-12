@@ -1,13 +1,14 @@
 import { db, marketplaceListing } from "@grc/db";
 import { eq, and, sql, desc, asc, ilike } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import {
   createMarketplaceListingSchema,
   listMarketplaceListingsQuerySchema,
 } from "@grc/shared";
 
 // GET /api/v1/marketplace/listings
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -65,10 +66,10 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(total / query.limit),
     },
   });
-}
+});
 
 // POST /api/v1/marketplace/listings
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
   const body = createMarketplaceListingSchema.parse(await req.json());
@@ -86,4 +87,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});
