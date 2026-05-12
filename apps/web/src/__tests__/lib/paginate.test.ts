@@ -7,7 +7,17 @@
 //   - limit > MAX_PAGE_SIZE → throw (#NIGHT-059, was: silently capped)
 //   - allowedParams option enables unknown-param rejection
 
-import { describe, it, expect } from "vitest";
+import { describe, it, expect, vi } from "vitest";
+
+// Stub the auth side of `@/lib/api`. Importing it pulls in next-auth,
+// which in turn imports `next/server` without the .js extension. Vitest's
+// ESM resolver chokes on that under Node 22 strict ESM, even though
+// Next.js itself resolves it via the package's `exports` map. We don't
+// touch any auth helpers in this file — only paginate / PaginationError /
+// MAX_PAGE_SIZE — so stubbing the subgraph is safe.
+vi.mock("next-auth", () => ({ default: () => ({}) }));
+vi.mock("@grc/auth", () => ({ authConfig: {} }));
+
 import { paginate, PaginationError, MAX_PAGE_SIZE } from "@/lib/api";
 
 function params(qs: string): URLSearchParams {

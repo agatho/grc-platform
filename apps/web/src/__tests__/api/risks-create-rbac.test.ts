@@ -110,7 +110,12 @@ describe("POST /api/v1/risks", () => {
     withAuditContextMock.mockReset();
   });
 
-  it("returns 401 when not authenticated", async () => {
+  // 8s timeout: cold-loading risks/route.ts on CI consumes ~3-4s, plus
+  // the chained `await import` on each it() block (vitest's ESM cache
+  // is per-suite, not shared across files). The default 5s timeout
+  // produced flaky timeouts on the 401/403 paths even though the route
+  // returns immediately once withAuth resolves.
+  it("returns 401 when not authenticated", { timeout: 8000 }, async () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
@@ -131,7 +136,7 @@ describe("POST /api/v1/risks", () => {
     );
   });
 
-  it("returns 403 when withAuth rejects role (e.g. viewer)", async () => {
+  it("returns 403 when withAuth rejects role (e.g. viewer)", { timeout: 8000 }, async () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
@@ -182,8 +187,14 @@ describe("POST /api/v1/risks", () => {
     const res = await POST(req, undefined);
     expect(res.status).toBe(422);
     const body = await res.json();
-    expect(body.error).toBe("Validation failed");
-    expect(body.details).toBeDefined();
+    // RFC 7807 problem+json shape (#WAVE6-VAL-01): the wrapper now
+    // returns { type, title, status, detail, errors, fieldErrors, ... }
+    // instead of { error, details }. Tests assert the new shape; the
+    // legacy `fieldErrors` extension field is also present so older
+    // clients can keep parsing.
+    expect(body.title).toBe("Validation failed");
+    expect(body.errors).toBeDefined();
+    expect(Array.isArray(body.errors)).toBe(true);
   });
 
   it("returns 422 when ownerId is not a member of the org", async () => {

@@ -210,7 +210,11 @@ describe("Domain RBAC suite — parametric", () => {
         expect(res.status).toBe(401);
       });
 
-      it("calls withAuth with the documented role list", async () => {
+      // 8s timeout: the dynamic `await import(spec.routePath)` cold-loads
+      // a heavy route module on each describe block (8 routes × 3 tests
+      // each), and CI's first import can take 3-4s. Default 5s timeout
+      // produced flaky timeouts on this exact assertion in CI.
+      it("calls withAuth with the documented role list", { timeout: 8000 }, async () => {
         withAuthMock.mockResolvedValue(
           Response.json({ error: "Unauthorized" }, { status: 401 }),
         );

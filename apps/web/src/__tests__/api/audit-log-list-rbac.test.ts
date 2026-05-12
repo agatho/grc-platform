@@ -37,11 +37,23 @@ vi.mock("@/lib/api", () => ({
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
+  // Drizzle's `sql` is a tag *and* carries helper methods (sql.join,
+  // sql.raw, sql.empty). The route's includeDescendants branch uses
+  // sql.join to build a NOT IN list — without it the mock crashed
+  // before the RBAC assertion could run.
+  const sqlTag = (strings: TemplateStringsArray) => ({ sql: strings.raw });
+  (sqlTag as unknown as Record<string, unknown>).join = (
+    parts: unknown[],
+    _sep?: unknown,
+  ) => ({ sql: ["join"], parts });
+  (sqlTag as unknown as Record<string, unknown>).raw = (s: string) => ({
+    sql: [s],
+  });
   return {
     eq: noop,
     and: noop,
     desc: noop,
-    sql: (strings: TemplateStringsArray) => ({ sql: strings.raw }),
+    sql: sqlTag,
     count: noop,
     inArray: noop,
     or: noop,

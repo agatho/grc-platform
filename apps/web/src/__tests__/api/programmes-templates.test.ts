@@ -17,6 +17,10 @@ vi.mock("@grc/db", () => ({
     deprecatedAt: "x",
     name: "x",
   },
+  // Route imports seedProgrammeTemplates() at module load to lazily
+  // ensure the framework templates exist. The unit test doesn't need
+  // the real seeding logic — a no-op stub keeps the import resolvable.
+  seedProgrammeTemplates: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@grc/auth", () => ({
