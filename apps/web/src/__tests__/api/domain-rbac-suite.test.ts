@@ -68,6 +68,8 @@ vi.mock("@/lib/api", () => ({
   paginatedResponse: vi.fn((data: unknown, total: number) =>
     Response.json({ data, total, page: 1, limit: 10 }),
   ),
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("drizzle-orm", () => {

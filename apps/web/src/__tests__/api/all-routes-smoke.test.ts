@@ -46,6 +46,8 @@ vi.mock("@/lib/api", () => ({
   paginatedResponse: vi.fn((data: unknown) =>
     Response.json({ data, total: 0, page: 1, limit: 10 }),
   ),
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("@grc/auth", () => ({

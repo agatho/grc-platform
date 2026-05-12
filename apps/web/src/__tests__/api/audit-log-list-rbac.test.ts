@@ -31,6 +31,8 @@ vi.mock("@/lib/api", () => ({
   get paginate() {
     return paginateMock;
   },
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("drizzle-orm", () => {

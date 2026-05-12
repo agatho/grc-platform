@@ -56,6 +56,20 @@ vi.mock("@/lib/api", () => ({
   paginatedResponse: vi.fn((data: unknown, total: number) =>
     Response.json({ data, total, page: 1, limit: 10 }),
   ),
+  // PaginationError is imported by api-wrapper.ts (the wrapper uses
+  // `instanceof PaginationError` to map paginate() failures to 422).
+  // Without it on the mock, vitest fails the import with "No
+  // 'PaginationError' export is defined on the '@/lib/api' mock".
+  PaginationError: class PaginationError extends Error {
+    constructor(
+      public readonly field: string,
+      public readonly value: string,
+      public readonly reason: string,
+    ) {
+      super(`Invalid pagination: ${field}=${value} (${reason})`);
+      this.name = "PaginationError";
+    }
+  },
 }));
 
 // Drizzle helpers — no-op stubs to keep imports resolvable.

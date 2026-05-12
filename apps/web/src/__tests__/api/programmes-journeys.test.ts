@@ -36,6 +36,8 @@ vi.mock("@/lib/api", () => ({
   get withAuditContext() {
     return withAuditCtxMock;
   },
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("@/lib/programme/instantiate", () => ({
