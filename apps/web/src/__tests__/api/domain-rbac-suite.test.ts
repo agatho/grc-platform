@@ -214,15 +214,21 @@ describe("Domain RBAC suite — parametric", () => {
       // a heavy route module on each describe block (8 routes × 3 tests
       // each), and CI's first import can take 3-4s. Default 5s timeout
       // produced flaky timeouts on this exact assertion in CI.
-      it("calls withAuth with the documented role list", { timeout: 8000 }, async () => {
-        withAuthMock.mockResolvedValue(
-          Response.json({ error: "Unauthorized" }, { status: 401 }),
-        );
-        const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
-        await handler(makeReq(spec.method, spec.urlPath));
-        expect(withAuthMock).toHaveBeenCalledWith(...spec.expectedRoles);
-      });
+      it(
+        "calls withAuth with the documented role list",
+        { timeout: 8000 },
+        async () => {
+          withAuthMock.mockResolvedValue(
+            Response.json({ error: "Unauthorized" }, { status: 401 }),
+          );
+          const mod = (await import(spec.routePath)) as Record<string, unknown>;
+          const handler = mod[spec.method] as (
+            req: Request,
+          ) => Promise<Response>;
+          await handler(makeReq(spec.method, spec.urlPath));
+          expect(withAuthMock).toHaveBeenCalledWith(...spec.expectedRoles);
+        },
+      );
 
       it("returns 403 when role is rejected (e.g. viewer)", async () => {
         withAuthMock.mockResolvedValue(

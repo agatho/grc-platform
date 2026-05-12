@@ -136,19 +136,23 @@ describe("POST /api/v1/risks", () => {
     );
   });
 
-  it("returns 403 when withAuth rejects role (e.g. viewer)", { timeout: 8000 }, async () => {
-    withAuthMock.mockResolvedValue(
-      Response.json({ error: "Forbidden" }, { status: 403 }),
-    );
-    const { POST } = await import("../../app/api/v1/risks/route");
-    const req = new Request("http://localhost/api/v1/risks", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify(makeBody()),
-    });
-    const res = await POST(req, undefined);
-    expect(res.status).toBe(403);
-  });
+  it(
+    "returns 403 when withAuth rejects role (e.g. viewer)",
+    { timeout: 8000 },
+    async () => {
+      withAuthMock.mockResolvedValue(
+        Response.json({ error: "Forbidden" }, { status: 403 }),
+      );
+      const { POST } = await import("../../app/api/v1/risks/route");
+      const req = new Request("http://localhost/api/v1/risks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify(makeBody()),
+      });
+      const res = await POST(req, undefined);
+      expect(res.status).toBe(403);
+    },
+  );
 
   it("returns 404 when ERM module is disabled for the org", async () => {
     withAuthMock.mockResolvedValue({
