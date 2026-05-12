@@ -25,15 +25,12 @@ const UUID_SCHEMA = z.string().uuid({
 export function requireUuidParam(value: string, paramName = "id"): string {
   const result = UUID_SCHEMA.safeParse(value);
   if (!result.success) {
-    // Throw the ZodError directly — the wrapper has a generic handler
-    // that converts it to a 422 with the right field path.
-    const augmented = result.error;
-    // Rewrite the issue path so the 422 reports the path param name
-    // (default would just be []).
-    for (const issue of augmented.issues) {
-      issue.path = [paramName];
-    }
-    throw augmented;
+    // Rebuild the ZodError with the param name on each issue's path so
+    // the 422 response says e.g. "id: must be a valid UUID" instead of
+    // the bare message. Issue.path is readonly so we reconstruct.
+    throw new z.ZodError(
+      result.error.issues.map((i) => ({ ...i, path: [paramName] })),
+    );
   }
   return result.data;
 }
