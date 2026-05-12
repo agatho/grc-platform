@@ -91,4 +91,4 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});
