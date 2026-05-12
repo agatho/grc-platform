@@ -45,7 +45,23 @@ export async function PUT(
 
   const { id } = await params;
 
-  const body = updateBiaAssessmentSchema.safeParse(await req.json());
+  // #WAVE6-BIA-01: status changes used to be silently dropped — Zod
+  // stripped the field, the UPDATE only touched updated_at, and the
+  // audit log made it look like the transition succeeded. Reject
+  // explicitly with the canonical state-machine endpoint as a hint.
+  const rawBody = (await req.json()) as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(rawBody, "status")) {
+    return Response.json(
+      {
+        error:
+          "BIA status changes must go through the state-machine endpoint, not this generic update path.",
+        hint: `Use POST /api/v1/bcms/bia/${id}/finalize for in_progress→review, or GET /api/v1/bcms/bia/${id}/transitions for the full discovery payload.`,
+      },
+      { status: 422 },
+    );
+  }
+
+  const body = updateBiaAssessmentSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
