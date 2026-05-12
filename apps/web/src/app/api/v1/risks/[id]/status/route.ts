@@ -148,45 +148,57 @@ export async function PUT(
   //   Phase 2 — best-effort: notifications, each in its own tx.
   //             A bad notify warns and continues; the transition still
   //             succeeds for the user.
+  // #WAVE6-AUDIT-01/02: pass the transition annotation so the audit_log
+  // row carries a human-readable summary AND the caller's reason text
+  // (if provided in the request body).
+  const auditAnnotation = {
+    actionDetail: `Status changed from '${currentStatus}' to '${targetStatus}'`,
+    reason: body.data.reason,
+  };
+
   let updated;
   try {
-    updated = await withAuditContext(ctx, async (tx) => {
-      const [row] = await tx
-        .update(risk)
-        .set({
-          status: targetStatus,
-          updatedBy: ctx.userId,
-          updatedAt: new Date(),
-        })
-        .where(
-          and(
-            eq(risk.id, id),
-            eq(risk.orgId, ctx.orgId),
-            isNull(risk.deletedAt),
-          ),
-        )
-        .returning();
+    updated = await withAuditContext(
+      ctx,
+      async (tx) => {
+        const [row] = await tx
+          .update(risk)
+          .set({
+            status: targetStatus,
+            updatedBy: ctx.userId,
+            updatedAt: new Date(),
+          })
+          .where(
+            and(
+              eq(risk.id, id),
+              eq(risk.orgId, ctx.orgId),
+              isNull(risk.deletedAt),
+            ),
+          )
+          .returning();
 
-      // Sync work item status
-      if (existing.workItemId) {
-        const wiStatus = RISK_TO_WORK_ITEM_STATUS[targetStatus];
-        if (wiStatus) {
-          await tx
-            .update(workItem)
-            .set({
-              status: wiStatus as typeof workItem.$inferSelect.status,
-              updatedBy: ctx.userId,
-              updatedAt: new Date(),
-              ...(targetStatus === "closed"
-                ? { completedAt: new Date(), completedBy: ctx.userId }
-                : {}),
-            })
-            .where(eq(workItem.id, existing.workItemId));
+        // Sync work item status
+        if (existing.workItemId) {
+          const wiStatus = RISK_TO_WORK_ITEM_STATUS[targetStatus];
+          if (wiStatus) {
+            await tx
+              .update(workItem)
+              .set({
+                status: wiStatus as typeof workItem.$inferSelect.status,
+                updatedBy: ctx.userId,
+                updatedAt: new Date(),
+                ...(targetStatus === "closed"
+                  ? { completedAt: new Date(), completedBy: ctx.userId }
+                  : {}),
+              })
+              .where(eq(workItem.id, existing.workItemId));
+          }
         }
-      }
 
-      return row;
-    });
+        return row;
+      },
+      auditAnnotation,
+    );
   } catch (err) {
     // The status-update path failed. Surface the real error so operators
     // can identify the failing constraint without a deploy log dive.
