@@ -135,6 +135,19 @@ export async function PUT(
     to: targetStatus,
   });
 
+  // #WAVE3-01 (2026-05-12): the transition was crashing with `code:internal`
+  // on assessed→identified. Root cause: the bulk notification fan-out
+  // (one row per risk_manager) was happening INSIDE the same transaction
+  // as the status UPDATE. If any single notification insert hit a stale
+  // FK (user soft-deleted but role roster not pruned) or the audit-log
+  // trigger choked on a missing session var, the entire transition rolled
+  // back — leaving the risk stuck in its old state.
+  //
+  // Fix: split the work into two phases.
+  //   Phase 1 — required: status UPDATE + work-item sync, in one tx.
+  //   Phase 2 — best-effort: notifications, each in its own tx.
+  //             A bad notify warns and continues; the transition still
+  //             succeeds for the user.
   let updated;
   try {
     updated = await withAuditContext(ctx, async (tx) => {
@@ -172,76 +185,22 @@ export async function PUT(
         }
       }
 
-      // Notify owner
-      if (existing.ownerId && existing.ownerId !== ctx.userId) {
-        await tx.insert(notification).values({
-          userId: existing.ownerId,
-          orgId: ctx.orgId,
-          type: "status_change",
-          entityType: "risk",
-          entityId: id,
-          title: `Risk status changed: ${existing.title}`,
-          message: `Status changed from '${currentStatus}' to '${targetStatus}'.`,
-          channel: "both",
-          templateKey: "risk_status_changed",
-          templateData: {
-            riskId: id,
-            riskTitle: existing.title,
-            fromStatus: currentStatus,
-            toStatus: targetStatus,
-          },
-          createdBy: ctx.userId,
-        });
-      }
-
-      // Notify all risk_managers in org
-      const riskManagers = await tx
-        .select({ userId: userOrganizationRole.userId })
-        .from(userOrganizationRole)
-        .where(
-          and(
-            eq(userOrganizationRole.orgId, ctx.orgId),
-            eq(userOrganizationRole.role, "risk_manager"),
-            isNull(userOrganizationRole.deletedAt),
-          ),
-        );
-
-      for (const rm of riskManagers) {
-        if (rm.userId === existing.ownerId || rm.userId === ctx.userId)
-          continue;
-        await tx.insert(notification).values({
-          userId: rm.userId,
-          orgId: ctx.orgId,
-          type: "status_change",
-          entityType: "risk",
-          entityId: id,
-          title: `Risk status changed: ${existing.title}`,
-          message: `Status changed from '${currentStatus}' to '${targetStatus}'.`,
-          channel: "both",
-          templateKey: "risk_status_changed",
-          templateData: {
-            riskId: id,
-            riskTitle: existing.title,
-            fromStatus: currentStatus,
-            toStatus: targetStatus,
-          },
-          createdBy: ctx.userId,
-        });
-      }
-
       return row;
     });
   } catch (err) {
-    // QA-016 (2026-05-11): legitimate transitions used to crash with an
-    // empty 500 because nothing in the transaction was wrapped. Map known
-    // Postgres constraint failures to 422 with the pgCode, everything else
-    // to a structured 500 with the code in the body so operators can
-    // identify the failing constraint without a deploy log dive.
-    const errObj = err as { code?: string; detail?: string; message?: string };
-    logger.error("status transition failed", {
+    // The status-update path failed. Surface the real error so operators
+    // can identify the failing constraint without a deploy log dive.
+    const errObj = err as {
+      code?: string;
+      detail?: string;
+      message?: string;
+      stack?: string;
+    };
+    logger.error("status transition (phase 1) failed", {
       pgCode: errObj.code,
       pgDetail: errObj.detail,
       message: errObj.message,
+      stack: errObj.stack?.split("\n").slice(0, 5).join(" | "),
     });
 
     const constraintCodes = new Set(["23503", "23502", "23514", "23505"]);
@@ -262,11 +221,75 @@ export async function PUT(
       {
         error: "Failed to apply status transition",
         code: errObj.code ?? "internal",
+        message: errObj.message ?? null,
         from: currentStatus,
         to: targetStatus,
       },
       { status: 500 },
     );
+  }
+
+  // Phase 2 — fan out notifications best-effort. Each insert is wrapped
+  // independently so one stale FK / missing user does not roll back the
+  // entire batch (and absolutely does not roll back the status change
+  // already committed in phase 1).
+  const notifyOne = async (userId: string) => {
+    try {
+      await withAuditContext(ctx, async (tx) => {
+        await tx.insert(notification).values({
+          userId,
+          orgId: ctx.orgId,
+          type: "status_change",
+          entityType: "risk",
+          entityId: id,
+          title: `Risk status changed: ${existing.title}`,
+          message: `Status changed from '${currentStatus}' to '${targetStatus}'.`,
+          channel: "both",
+          templateKey: "risk_status_changed",
+          templateData: {
+            riskId: id,
+            riskTitle: existing.title,
+            fromStatus: currentStatus,
+            toStatus: targetStatus,
+          },
+          createdBy: ctx.userId,
+        });
+      });
+    } catch (err) {
+      const e = err as { code?: string; message?: string };
+      logger.warn("notification dispatch failed (continuing)", {
+        recipientId: userId,
+        pgCode: e.code,
+        message: e.message,
+      });
+    }
+  };
+
+  if (existing.ownerId && existing.ownerId !== ctx.userId) {
+    await notifyOne(existing.ownerId);
+  }
+
+  try {
+    const riskManagers = await db
+      .select({ userId: userOrganizationRole.userId })
+      .from(userOrganizationRole)
+      .where(
+        and(
+          eq(userOrganizationRole.orgId, ctx.orgId),
+          eq(userOrganizationRole.role, "risk_manager"),
+          isNull(userOrganizationRole.deletedAt),
+        ),
+      );
+
+    for (const rm of riskManagers) {
+      if (rm.userId === existing.ownerId || rm.userId === ctx.userId) continue;
+      await notifyOne(rm.userId);
+    }
+  } catch (err) {
+    const e = err as { message?: string };
+    logger.warn("risk_manager roster lookup failed (continuing)", {
+      message: e.message,
+    });
   }
 
   if (!updated) {
