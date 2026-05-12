@@ -118,8 +118,12 @@ const routeModules = import.meta.glob<Record<string, unknown>>(
 );
 
 const ACCEPTABLE_STATUS_CODES = [
-  200, 201, 202, 204, 301, 302, 304, 400, 401, 403, 404, 405, 409, 410, 422,
-  429, 500, 502, 503,
+  // 308 added for the alias308() helper from Wave 7 — POST/PUT method-
+  // preserving redirects from legacy paths to the canonical ones (e.g.
+  // /api/v1/admin/* → /api/v1/identity/*). 307 included for symmetry
+  // (its GET-equivalent friend) even though we use 308 in practice.
+  200, 201, 202, 204, 301, 302, 304, 307, 308, 400, 401, 403, 404, 405, 409,
+  410, 422, 429, 500, 502, 503,
 ];
 
 const SAMPLE_UUID = "a1b2c3d4-e5f6-4789-9abc-def012345678";
