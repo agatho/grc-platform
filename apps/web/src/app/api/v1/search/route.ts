@@ -2,9 +2,10 @@ import { db, document, control, risk } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, ilike, or, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/search — Full-text search across documents, controls, risks
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -154,4 +155,4 @@ export async function GET(req: Request) {
       results: results.slice(0, limitParam),
     },
   });
-}
+});

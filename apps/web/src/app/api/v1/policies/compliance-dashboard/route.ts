@@ -2,9 +2,10 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/policies/compliance-dashboard — Org-wide compliance rates
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -105,4 +106,4 @@ export async function GET(req: Request) {
       trend,
     },
   });
-}
+});

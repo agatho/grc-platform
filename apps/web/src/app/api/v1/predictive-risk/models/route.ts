@@ -5,9 +5,10 @@ import {
 } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // POST /api/v1/predictive-risk/models — Create prediction model
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -28,10 +29,10 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});
 
 // GET /api/v1/predictive-risk/models — List models
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -73,4 +74,4 @@ export async function GET(req: Request) {
     data: models,
     pagination: { page, limit, total: Number(countResult[0]?.count ?? 0) },
   });
-}
+});

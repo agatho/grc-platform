@@ -2,10 +2,11 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { MyBPMHomepageData } from "@grc/shared";
 
 // GET /api/v1/bpm/my-homepage — Personalized BPM start screen
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -63,4 +64,4 @@ export async function GET(req: Request) {
   };
 
   return Response.json({ data });
-}
+});

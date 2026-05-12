@@ -1,9 +1,10 @@
 import { withAuth, paginate } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import { getCalendarEvents } from "@/lib/services/calendar-aggregation";
 import type { CalendarFilters } from "@grc/shared";
 
 // GET /api/v1/calendar — Aggregated calendar events
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -53,4 +54,4 @@ export async function GET(req: Request) {
   const events = await getCalendarEvents(ctx.orgId, fromDate, toDate, filters);
 
   return Response.json({ data: events, total: events.length });
-}
+});

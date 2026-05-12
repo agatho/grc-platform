@@ -1,12 +1,13 @@
 import { db, academyCourse } from "@grc/db";
 import { eq, and, sql, desc, ilike } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import {
   createAcademyCourseSchema,
   listAcademyCoursesQuerySchema,
 } from "@grc/shared";
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -50,9 +51,9 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(total / query.limit),
     },
   });
-}
+});
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
   const body = createAcademyCourseSchema.parse(await req.json());
@@ -70,4 +71,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});

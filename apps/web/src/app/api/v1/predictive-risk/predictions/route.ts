@@ -2,9 +2,10 @@ import { db, riskPrediction } from "@grc/db";
 import { predictionQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/predictive-risk/predictions — List predictions
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
@@ -62,4 +63,4 @@ export async function GET(req: Request) {
     data: predictions,
     pagination: { page, limit, total: Number(countResult[0]?.count ?? 0) },
   });
-}
+});

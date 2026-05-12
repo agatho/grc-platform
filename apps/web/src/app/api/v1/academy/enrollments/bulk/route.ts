@@ -1,9 +1,10 @@
 import { db, academyEnrollment } from "@grc/db";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import { bulkEnrollSchema } from "@grc/shared";
 
 // POST /api/v1/academy/enrollments/bulk
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
   const body = bulkEnrollSchema.parse(await req.json());
@@ -26,4 +27,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result, count: result.length }, { status: 201 });
-}
+});

@@ -3,11 +3,14 @@ import { updateBcExerciseSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
+
+type IdCtx = { params: Promise<{ id: string }> };
 
 // GET /api/v1/bcms/exercises/[id]
-export async function GET(
+export const GET = withErrorHandler<IdCtx>(async function GET(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: IdCtx,
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
@@ -27,12 +30,12 @@ export async function GET(
   }
 
   return Response.json({ data: row });
-}
+});
 
 // PUT /api/v1/bcms/exercises/[id]
-export async function PUT(
+export const PUT = withErrorHandler<IdCtx>(async function PUT(
   req: Request,
-  { params }: { params: Promise<{ id: string }> },
+  { params }: IdCtx,
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -64,4 +67,4 @@ export async function PUT(
   }
 
   return Response.json({ data: updated });
-}
+});

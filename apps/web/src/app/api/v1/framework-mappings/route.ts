@@ -8,9 +8,10 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
@@ -36,9 +37,9 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
@@ -77,4 +78,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});
