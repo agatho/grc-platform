@@ -194,7 +194,24 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const { page, limit, offset, searchParams } = paginate(req);
+  // #NIGHT-060: strict allow-list — anything outside this set throws
+  // PaginationError → 422. Catches both common typos AND completely
+  // unknown params (?xyz=abc, ?unknown=true) that previously silently
+  // returned page 1 with no filter applied.
+  const { page, limit, offset, searchParams } = paginate(req, {
+    allowedParams: [
+      "status",
+      "category",
+      "ownerId",
+      "department",
+      "appetiteExceeded",
+      "scoreMin",
+      "scoreMax",
+      "search",
+      "sort",
+      "sortDir",
+    ],
+  });
 
   const conditions: SQL[] = [eq(risk.orgId, ctx.orgId), isNull(risk.deletedAt)];
 
