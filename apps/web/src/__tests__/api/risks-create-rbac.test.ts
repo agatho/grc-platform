@@ -106,7 +106,7 @@ describe("POST /api/v1/risks", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(makeBody()),
     });
-    const res = await POST(req);
+    const res = await POST(req, undefined);
     expect(res.status).toBe(401);
     // withAuth was called with the four roles allowed to create risks
     expect(withAuthMock).toHaveBeenCalledWith(
@@ -127,7 +127,7 @@ describe("POST /api/v1/risks", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(makeBody()),
     });
-    const res = await POST(req);
+    const res = await POST(req, undefined);
     expect(res.status).toBe(403);
   });
 
@@ -146,7 +146,7 @@ describe("POST /api/v1/risks", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(makeBody()),
     });
-    const res = await POST(req);
+    const res = await POST(req, undefined);
     expect(res.status).toBe(404);
     expect(requireModuleMock).toHaveBeenCalledWith("erm", "org-1", "POST");
   });
@@ -165,7 +165,7 @@ describe("POST /api/v1/risks", () => {
       // Missing required `title` and invalid riskCategory
       body: JSON.stringify({ riskCategory: "not-a-real-category" }),
     });
-    const res = await POST(req);
+    const res = await POST(req, undefined);
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.error).toBe("Validation failed");
@@ -189,7 +189,7 @@ describe("POST /api/v1/risks", () => {
       headers: { "content-type": "application/json" },
       body: JSON.stringify(makeBody({ ownerId: VALID_OWNER })),
     });
-    const res = await POST(req);
+    const res = await POST(req, undefined);
     expect(res.status).toBe(422);
     const body = await res.json();
     expect(body.error).toMatch(/owner/i);

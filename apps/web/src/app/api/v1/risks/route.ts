@@ -27,11 +27,12 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import { log } from "@/lib/logger";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/risks — Create risk
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -183,10 +184,10 @@ export async function POST(req: Request) {
       { status: 500 },
     );
   }
-}
+});
 
 // GET /api/v1/risks — List risks with filters
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -326,4 +327,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

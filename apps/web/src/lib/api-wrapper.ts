@@ -36,6 +36,9 @@ import { problem, getRequestId } from "@/lib/api-errors";
 import { log } from "@/lib/logger";
 import { PaginationError } from "@/lib/api";
 
+// Two-argument shape matches Next.js's invocation: (req, { params })
+// for dynamic routes, (req, undefined) for flat routes. Dynamic-route
+// handlers destructure params so the second arg must be present.
 type RouteHandler<TCtx = unknown> = (
   req: Request,
   ctx: TCtx,
