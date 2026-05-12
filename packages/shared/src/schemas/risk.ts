@@ -168,6 +168,8 @@ export const assessRiskSchema = z
 
 export const riskStatusTransitionSchema = z.object({
   status: z.enum(riskStatusValues),
+  // #WAVE6-AUDIT-02: optional human reason that lands in audit_log.metadata.
+  reason: z.string().max(2000).optional(),
 });
 
 // ─── Risk Treatment ──────────────────────────────────────────
