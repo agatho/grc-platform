@@ -11,9 +11,9 @@
 Pick **one of two shapes** per module. Document which one in the route file's
 header comment so reviewers don't re-litigate it later.
 
-| Shape                                   | Use when                                                                                                                  |
-| --------------------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
-| **A. Status on `PUT /entity/[id]`**     | Status changes are operational and don't need rich audit context (no reason, no side-effects beyond `status` itself).     |
+| Shape                                           | Use when                                                                                                                                                                         |
+| ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **A. Status on `PUT /entity/[id]`**             | Status changes are operational and don't need rich audit context (no reason, no side-effects beyond `status` itself).                                                            |
 | **B. Dedicated `POST /entity/[id]/transition`** | Transitions need a `reason`, trigger downstream side-effects (notifications, work-item state, audit annotation), or have to reject illegal transitions with a structured matrix. |
 
 In both cases, `GET /entity/[id]/transitions` is **mandatory** for UI discovery.
@@ -75,7 +75,13 @@ if (!allowed) {
   });
 }
 
-await withAuditContext(ctx, async (tx) => { /* update */ }, { reason });
+await withAuditContext(
+  ctx,
+  async (tx) => {
+    /* update */
+  },
+  { reason },
+);
 ```
 
 The matching `GET /transitions` returns the **allowed-from-current** subset, not
@@ -104,7 +110,7 @@ return Response.json({
 ## When in doubt
 
 Default to **Shape A**. The transition matrix in Shape B is a specialised tool
-for entities where the *order* of state changes is itself a compliance control
+for entities where the _order_ of state changes is itself a compliance control
 (risk lifecycle = ISO 31000; programme journeys = audit trail; BIA finalise =
 single one-way commitment). For everything else, the audit-log row already
 captures who/what/when — re-encoding that as a matrix is busywork.

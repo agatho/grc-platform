@@ -25,7 +25,8 @@ import { z } from "zod";
 // Plain RFC-4122 *shape* — 8-4-4-4-12 hex digits — without the
 // version/variant constraints. This matches what PostgreSQL's `uuid`
 // type actually accepts.
-const UUID_REGEX = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 const UUID_SCHEMA = z
   .string()
