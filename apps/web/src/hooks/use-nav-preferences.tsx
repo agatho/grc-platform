@@ -8,6 +8,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -84,52 +85,60 @@ interface NavPreferencesProviderProps {
   children: ReactNode;
 }
 
+// #NIGHT-042: shared react-query cache key so any re-mount of this
+// Provider (e.g. nested layouts) hits the same cached payload instead
+// of firing another /nav-preferences fetch.
+const NAV_PREFS_QUERY_KEY = ["user", "me", "nav-preferences"] as const;
+
 export function NavPreferencesProvider({
   children,
 }: NavPreferencesProviderProps) {
-  const [prefs, setPrefs] = useState<NavPreferences>(DEFAULT_PREFS);
-  const [loading, setLoading] = useState(true);
+  const queryClient = useQueryClient();
+  const [localPrefs, setLocalPrefs] = useState<NavPreferences>(DEFAULT_PREFS);
 
-  // Fetch preferences on mount
+  const { data: serverData, isLoading } = useQuery<NavPreferences>({
+    queryKey: NAV_PREFS_QUERY_KEY,
+    queryFn: async () => {
+      const res = await fetch("/api/v1/users/me/nav-preferences");
+      if (!res.ok) return DEFAULT_PREFS;
+      const json = await res.json();
+      return {
+        pinnedRoutes: json.data?.pinnedRoutes ?? [],
+        collapsedGroups: json.data?.collapsedGroups ?? [],
+        sidebarMode: json.data?.sidebarMode ?? "condensed",
+      };
+    },
+  });
+
+  // Sync server data → local state once (toggle/setActiveGroup mutate
+  // localPrefs directly without round-tripping through react-query).
   useEffect(() => {
-    let cancelled = false;
-    async function load() {
-      try {
-        const res = await fetch("/api/v1/users/me/nav-preferences");
-        if (res.ok) {
-          const json = await res.json();
-          if (!cancelled && json.data) {
-            setPrefs({
-              pinnedRoutes: json.data.pinnedRoutes ?? [],
-              collapsedGroups: json.data.collapsedGroups ?? [],
-              sidebarMode: json.data.sidebarMode ?? "condensed",
-            });
-          }
-        }
-      } catch {
-        // Use defaults on error
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-    void load();
-    return () => {
-      cancelled = true;
-    };
-  }, []);
+    if (serverData) setLocalPrefs(serverData);
+  }, [serverData]);
 
-  // Persist to server (debounced via immediate call — no extra deps needed)
-  const persist = useCallback(async (updated: NavPreferences) => {
-    try {
-      await fetch("/api/v1/users/me/nav-preferences", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updated),
-      });
-    } catch {
-      // Silently fail — preferences are non-critical
-    }
-  }, []);
+  const prefs = localPrefs;
+  const loading = isLoading && !serverData;
+
+  // Persist to server + update the shared cache so other consumers
+  // see the new value without a re-fetch.
+  const persist = useCallback(
+    async (updated: NavPreferences) => {
+      try {
+        await fetch("/api/v1/users/me/nav-preferences", {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(updated),
+        });
+        queryClient.setQueryData(NAV_PREFS_QUERY_KEY, updated);
+      } catch {
+        // Silently fail — preferences are non-critical
+      }
+    },
+    [queryClient],
+  );
+
+  // Wrap setLocalPrefs so old call sites that used setPrefs still work.
+  const setPrefs = setLocalPrefs;
 
   const togglePin = useCallback(
     (route: string) => {

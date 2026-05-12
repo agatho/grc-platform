@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useSession } from "next-auth/react";
 import { useTranslations } from "next-intl";
 import { Building2, ChevronDown, Check } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 
 interface OrgInfo {
   id: string;
@@ -26,19 +27,31 @@ export function OrgSwitcher({ currentOrgId }: OrgSwitcherProps) {
     ...new Set(session?.user?.roles?.map((r) => r.orgId) ?? []),
   ];
 
-  // Fetch org names
+  // #NIGHT-042: shared react-query cache so the header's org-switcher
+  // doesn't re-fire /organizations?limit=100 on every navigation or
+  // when another component (e.g. /organizations/page.tsx) also mounts.
+  const { data: orgList } = useQuery<OrgInfo[]>({
+    queryKey: ["organizations", "switcher"],
+    queryFn: async () => {
+      const r = await fetch(
+        "/api/v1/organizations?" + new URLSearchParams({ limit: "100" }),
+      );
+      if (!r.ok) return [];
+      const res = await r.json();
+      return (res.data ?? []) as OrgInfo[];
+    },
+    enabled: accessibleOrgIds.length > 0,
+  });
+
   useEffect(() => {
-    if (accessibleOrgIds.length === 0) return;
-    fetch("/api/v1/organizations?" + new URLSearchParams({ limit: "100" }))
-      .then((r) => r.json())
-      .then((res) => {
-        const list = (res.data ?? [])
-          .filter((o: OrgInfo) => accessibleOrgIds.includes(o.id))
-          .map((o: OrgInfo) => ({ id: o.id, name: o.name }));
-        setOrgs(list);
-      })
-      .catch(() => {});
-  }, [session]);
+    if (!orgList) return;
+    const list = orgList
+      .filter((o) => accessibleOrgIds.includes(o.id))
+      .map((o) => ({ id: o.id, name: o.name }));
+    setOrgs(list);
+    // accessibleOrgIds is derived from `session` so listing `session` is enough.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgList, session]);
 
   // Close on outside click
   useEffect(() => {
