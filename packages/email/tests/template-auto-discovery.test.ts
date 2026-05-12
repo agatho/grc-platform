@@ -242,17 +242,27 @@ describe("Email template auto-discovery (full sweep)", () => {
 
   for (const name of TEMPLATES) {
     describe(name, () => {
-      it("module exports a default-or-named React component + getSubject", async () => {
-        const mod = (await import(`../src/templates/${name}`)) as Record<
-          string,
-          unknown
-        >;
-        const Component =
-          (mod[name] as React.FC<unknown>) ??
-          (mod.default as React.FC<unknown>);
-        expect(typeof Component).toBe("function");
-        expect(typeof mod.getSubject).toBe("function");
-      });
+      // 10s timeout: the first template imported in the suite has to
+      // cold-load the @react-email/* runtime + every shared style util.
+      // On CI that can hit 5-6s for the very first dynamic import of
+      // the file (subsequent ones are cached and resolve in <100ms).
+      // Default 5s timeout flaked on whichever template happened to be
+      // first in the alphabetical iteration (currently AuditFindingAssigned).
+      it(
+        "module exports a default-or-named React component + getSubject",
+        { timeout: 10_000 },
+        async () => {
+          const mod = (await import(`../src/templates/${name}`)) as Record<
+            string,
+            unknown
+          >;
+          const Component =
+            (mod[name] as React.FC<unknown>) ??
+            (mod.default as React.FC<unknown>);
+          expect(typeof Component).toBe("function");
+          expect(typeof mod.getSubject).toBe("function");
+        },
+      );
 
       it("renders to non-empty HTML in EN", async () => {
         const mod = (await import(`../src/templates/${name}`)) as Record<
