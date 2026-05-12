@@ -107,7 +107,11 @@ export function withErrorHandler<TCtx = unknown>(
         "issues" in err &&
         Array.isArray((err as { issues: unknown }).issues)
       ) {
-        const issues = (err as { issues: Array<{ path: (string | number)[]; message: string }> }).issues;
+        const issues = (
+          err as {
+            issues: Array<{ path: (string | number)[]; message: string }>;
+          }
+        ).issues;
         logger.warn("zod validation failed", { issueCount: issues.length });
         return problem.validation({
           requestId,
@@ -164,7 +168,8 @@ export function withErrorHandler<TCtx = unknown>(
 
       logger.error("unhandled handler error", {
         message: e.message ?? String(err),
-        stack: err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
+        stack:
+          err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
       });
       return problem.internal({
         requestId,
