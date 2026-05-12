@@ -471,7 +471,7 @@ export default function AiActAnnualReportPage() {
                 <span>{data.rawInput.incidents.seriousIncidents}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Ueberfaellig (Art. 73)</span>
+                <span>Überfällig (Art. 73)</span>
                 <span>{data.rawInput.incidents.overdueNotifications}</span>
               </div>
               <div className="flex justify-between">
@@ -541,7 +541,7 @@ export default function AiActAnnualReportPage() {
                 <span>{data.rawInput.correctiveActions.closed}</span>
               </div>
               <div className="flex justify-between text-red-700">
-                <span>Ueberfaellig</span>
+                <span>Überfällig</span>
                 <span>{data.rawInput.correctiveActions.overdue}</span>
               </div>
             </div>

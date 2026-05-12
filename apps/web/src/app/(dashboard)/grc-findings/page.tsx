@@ -248,7 +248,7 @@ export default function GrcFindingsPage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground flex items-center gap-1">
               <AlertTriangle className="h-3.5 w-3.5" />
-              Ueberfaellig
+              Überfällig
             </p>
             <p className="text-2xl font-bold text-red-600">
               {agg.overdueCount}
@@ -394,7 +394,7 @@ export default function GrcFindingsPage() {
         <CardHeader>
           <CardTitle>Priorisierte Findings</CardTitle>
           <CardDescription>
-            Sortiert nach Score: Schwere x Alter x Ueberfaelligkeit. Max 300.
+            Sortiert nach Score: Schwere × Alter × Überfälligkeit. Max 300.
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

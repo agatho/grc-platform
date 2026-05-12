@@ -457,11 +457,11 @@ export default function BcmsReadinessMonitorPage() {
             <div className="flex items-center gap-2">
               <FileText className="h-5 w-5 text-amber-600" />
               <CardTitle>
-                BCPs mit Freshness-Luecken ({data.bcpIssues.length})
+                BCPs mit Freshness-Lücken ({data.bcpIssues.length})
               </CardTitle>
             </div>
             <CardDescription>
-              Review-Date ueberfaellig, nicht getestet, oder letzter Test &gt; 1
+              Review-Date überfällig, nicht getestet, oder letzter Test &gt; 1
               Jahr.
             </CardDescription>
           </CardHeader>
@@ -480,7 +480,7 @@ export default function BcmsReadinessMonitorPage() {
                         {b.status}
                       </Badge>
                       {b.nextReviewDate && (
-                        <span>Naechste Review: {b.nextReviewDate}</span>
+                        <span>Nächste Review: {b.nextReviewDate}</span>
                       )}
                       {b.lastTestedDate && (
                         <span>Letzter Test: {b.lastTestedDate}</span>
@@ -493,7 +493,7 @@ export default function BcmsReadinessMonitorPage() {
                         variant="outline"
                         className="bg-red-100 text-red-800 border-red-300 text-xs"
                       >
-                        Review {b.reviewOverdueDays}d ueberfaellig
+                        Review {b.reviewOverdueDays}d überfällig
                       </Badge>
                     )}
                     {b.untested && (
@@ -526,7 +526,7 @@ export default function BcmsReadinessMonitorPage() {
               Alle BCPs aktuell ({s.bcpTotal})
             </CardTitle>
             <CardDescription>
-              Keine Reviews ueberfaellig, alle published/approved BCPs getestet
+              Keine Reviews überfällig, alle published/approved BCPs getestet
               innerhalb der letzten 12 Monate.
             </CardDescription>
           </CardHeader>

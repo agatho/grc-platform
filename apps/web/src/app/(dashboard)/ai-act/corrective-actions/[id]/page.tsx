@@ -175,7 +175,7 @@ function CorrectiveActionDetailInner() {
           </Badge>
         )}
         {isOverdue && (
-          <Badge className="bg-red-600 text-white">Ueberfaellig</Badge>
+          <Badge className="bg-red-600 text-white">Überfällig</Badge>
         )}
       </div>
 
