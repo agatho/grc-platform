@@ -281,29 +281,35 @@ export const GET = withErrorHandler(async function GET(req: Request) {
 
   const where = and(...conditions);
 
-  // Sort
+  // #WAVE6-PAG-01: every sort key MUST be paired with `id ASC` as a
+  // tiebreaker — otherwise rows that share the primary sort value
+  // (e.g. two risks with the same residual score, two controls
+  // updated within the same millisecond) shuffle between page boundaries
+  // and the same id appears on adjacent pages while another is silently
+  // dropped. id ASC is deterministic and the column already has an index.
   const sortParam = searchParams.get("sort");
   const sortDir = searchParams.get("sortDir") === "asc" ? asc : desc;
-  let orderBy;
+  let primaryOrderBy;
   switch (sortParam) {
     case "title":
-      orderBy = sortDir(risk.title);
+      primaryOrderBy = sortDir(risk.title);
       break;
     case "status":
-      orderBy = sortDir(risk.status);
+      primaryOrderBy = sortDir(risk.status);
       break;
     case "category":
-      orderBy = sortDir(risk.riskCategory);
+      primaryOrderBy = sortDir(risk.riskCategory);
       break;
     case "riskScoreInherent":
-      orderBy = sortDir(risk.riskScoreInherent);
+      primaryOrderBy = sortDir(risk.riskScoreInherent);
       break;
     case "createdAt":
-      orderBy = sortDir(risk.createdAt);
+      primaryOrderBy = sortDir(risk.createdAt);
       break;
     default:
-      orderBy = desc(risk.riskScoreResidual);
+      primaryOrderBy = desc(risk.riskScoreResidual);
   }
+  const orderBy = [primaryOrderBy, asc(risk.id)];
 
   const [items, [{ value: total }]] = await Promise.all([
     db
@@ -337,7 +343,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       .leftJoin(workItem, eq(risk.workItemId, workItem.id))
       .leftJoin(user, eq(risk.ownerId, user.id))
       .where(where)
-      .orderBy(orderBy)
+      .orderBy(...orderBy)
       .limit(limit)
       .offset(offset),
     db.select({ value: count() }).from(risk).where(where),
