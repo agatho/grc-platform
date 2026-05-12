@@ -118,7 +118,37 @@ import * as phase3ExtrasSchema from "./schema/phase3-extras";
 import * as stakeholderRegisterSchema from "./schema/stakeholder-register";
 import * as programmeSchema from "./schema/programme";
 
-const client = postgres(process.env.DATABASE_URL!);
+// Connection pool settings tuned for the over-night QA finding (#NIGHT-011/012/020):
+// the bare default `postgres(url)` left idle connections to be reaped by the
+// server side without the driver knowing, so the first request after ~30 min
+// of idleness paid a 5-25 s reconnect penalty (manifesting as catalogs/
+// framework-mappings cold-start timeouts). We now own the lifecycle:
+//
+//   max               — pool ceiling (10 is plenty for a single web pod)
+//   idle_timeout      — recycle idle conns after 20 s, before pgbouncer / pg
+//                       defaults can drop them out from under us
+//   max_lifetime      — recycle every 30 min so long-lived bad sockets get
+//                       cleared (e.g. pgbouncer rolling restarts)
+//   connect_timeout   — fail fast on truly unreachable DB so api-wrapper can
+//                       map to 503 instead of hanging the request
+//
+// Pre-warm: trigger one trivial query at module load so the first user-facing
+// request doesn't pay TCP+TLS+startup. Postgres-js has no `min` option, so
+// this is the closest equivalent.
+const client = postgres(process.env.DATABASE_URL!, {
+  max: 10,
+  idle_timeout: 20,
+  max_lifetime: 60 * 30,
+  connect_timeout: 10,
+});
+
+if (process.env.NODE_ENV === "production" && process.env.DATABASE_URL) {
+  void client`SELECT 1`.catch((err) => {
+    // Cold-start prewarm failed — log but don't block module import. The next
+    // real request will retry and surface the error through api-wrapper.
+    console.error("[db] connection prewarm failed:", err?.message ?? err);
+  });
+}
 export const db = drizzle(client, {
   schema: {
     ...platform,
