@@ -21,9 +21,9 @@ export const GET = withErrorHandler<{ params: Promise<{ id: string }> }>(
       .select({
         id: document.id,
         title: document.title,
-        documentType: document.documentType,
+        category: document.category,
         status: document.status,
-        version: document.version,
+        version: document.currentVersion,
         updatedAt: document.updatedAt,
         linkDescription: documentEntityLink.linkDescription,
       })
