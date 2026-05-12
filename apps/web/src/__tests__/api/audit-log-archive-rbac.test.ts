@@ -1,7 +1,7 @@
 // Audit-Log endpoints — RBAC contract for the three security-critical surfaces:
 //   - GET  /api/v1/audit-log/archive          (admin, auditor) — produces ZIP
 //   - POST /api/v1/audit-log/anchor           (admin, auditor) — manual anchor
-//   - GET  /api/v1/audit-log/integrity-check  (admin, auditor) — hash-chain
+//   - GET  /api/v1/audit-log/integrity        (admin, auditor) — hash-chain (per-tenant, ADR-011 rev.2)
 //
 // All three are auditor-grade endpoints. They MUST refuse non-privileged
 // roles even before they touch the database, and they MUST share the same
@@ -136,7 +136,7 @@ describe("POST /api/v1/audit-log/anchor", () => {
   });
 });
 
-describe("GET /api/v1/audit-log/integrity-check", () => {
+describe("GET /api/v1/audit-log/integrity", () => {
   beforeEach(() => {
     mockDb = makeMockDb();
     withAuthMock.mockReset();
@@ -146,9 +146,10 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } =
-      await import("../../app/api/v1/audit-log/integrity-check/route");
-    const res = await GET();
+    const { GET } = await import("../../app/api/v1/audit-log/integrity/route");
+    const res = await GET(
+      new Request("http://localhost/api/v1/audit-log/integrity"),
+    );
     expect(res.status).toBe(401);
     expect(withAuthMock).toHaveBeenCalledWith("admin", "auditor");
   });
@@ -157,13 +158,14 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { GET } =
-      await import("../../app/api/v1/audit-log/integrity-check/route");
-    const res = await GET();
+    const { GET } = await import("../../app/api/v1/audit-log/integrity/route");
+    const res = await GET(
+      new Request("http://localhost/api/v1/audit-log/integrity"),
+    );
     expect(res.status).toBe(403);
   });
 
-  it("RBAC consistency: archive, anchor, integrity-check all use same role list", async () => {
+  it("RBAC consistency: archive, anchor, integrity all use same role list", async () => {
     // Defensive test against silent RBAC drift across the three audit-log endpoints.
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
@@ -177,7 +179,7 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
     const { POST: anchorPost } =
       await import("../../app/api/v1/audit-log/anchor/route");
     const { GET: integrityGet } =
-      await import("../../app/api/v1/audit-log/integrity-check/route");
+      await import("../../app/api/v1/audit-log/integrity/route");
 
     await archiveGet(
       new Request(
@@ -191,7 +193,9 @@ describe("GET /api/v1/audit-log/integrity-check", () => {
         body: "{}",
       }),
     );
-    await integrityGet();
+    await integrityGet(
+      new Request("http://localhost/api/v1/audit-log/integrity"),
+    );
 
     // All three calls should pass identical role list
     const calls = withAuthMock.mock.calls;
