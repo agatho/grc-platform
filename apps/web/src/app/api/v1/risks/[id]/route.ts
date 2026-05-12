@@ -4,6 +4,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { requireUuidParam } from "@/lib/param-validation";
 
 type IdCtx = { params: Promise<{ id: string }> };
 
@@ -19,6 +20,7 @@ export const GET = withErrorHandler<IdCtx>(async function GET(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
+  requireUuidParam(id);
 
   // Fetch risk with work item and owner
   const [row] = await db
@@ -93,6 +95,7 @@ export const PUT = withErrorHandler<IdCtx>(async function PUT(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
+  requireUuidParam(id);
 
   const [existing] = await db
     .select()
@@ -206,6 +209,7 @@ export const DELETE = withErrorHandler<IdCtx>(async function DELETE(
   if (moduleCheck) return moduleCheck;
 
   const { id } = await params;
+  requireUuidParam(id);
 
   const deleted = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
