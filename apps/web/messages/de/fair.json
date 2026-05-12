@@ -65,7 +65,7 @@
   "percentile": "Perzentil",
   "aleValue": "ALE-Wert (EUR)",
   "interpretation": "Interpretation",
-  "p5Desc": "5% der Faelle liegen unter diesem Wert",
+  "p5Desc": "5% der Fälle liegen unter diesem Wert",
   "p25Desc": "Unteres Quartil — 25% der Szenarien darunter",
   "p50Desc": "Median — der erwartete Jahresverlust",
   "p75Desc": "Oberes Quartil — 75% der Szenarien darunter",

@@ -209,7 +209,7 @@ function VulnerabilitiesInner() {
                     {t(`incidentSeverity.${v.severity}`)}
                   </Badge>
                   <Badge variant="outline" className="text-[10px] shrink-0">
-                    {v.status}
+                    {t(`vulnerabilityStatus.${v.status}`)}
                   </Badge>
                 </div>
                 <Button

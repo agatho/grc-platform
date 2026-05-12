@@ -31,7 +31,7 @@
     "title": "Prozesssimulation",
     "scenarios": "Szenarien",
     "createScenario": "Szenario erstellen",
-    "caseCount": "Anzahl Faelle",
+    "caseCount": "Anzahl Fälle",
     "timePeriod": "Zeitraum (Tage)",
     "resources": "Ressourcen",
     "activityParams": "Aktivitätsparameter",

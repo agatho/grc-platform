@@ -74,7 +74,7 @@
 
   "actionConfig": {
     "title": "Aktionen (DANN)",
-    "addAction": "Aktion hinzufuegen:",
+    "addAction": "Aktion hinzufügen:",
     "taskTitle": "Aufgabentitel (z.B. Risiko prüfen: {entity.title})",
     "selectRole": "Rolle wählen...",
     "deadlineDays": "Tage",
