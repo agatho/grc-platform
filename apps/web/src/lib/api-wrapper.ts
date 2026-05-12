@@ -34,6 +34,7 @@
 
 import { problem, getRequestId } from "@/lib/api-errors";
 import { log } from "@/lib/logger";
+import { PaginationError } from "@/lib/api";
 
 type RouteHandler<TCtx = unknown> = (
   req: Request,
@@ -96,6 +97,24 @@ export function withErrorHandler<TCtx = unknown>(
         pgCode: e.code,
         pgDetail: e.detail,
       });
+
+      // PaginationError from paginate() — strict pagination contract
+      // enforces integer limits and rejects unknown query params (the
+      // over-night QA found `limit=0`, `limit=abc`, `offset=N`, and
+      // typo'd params being silently ignored).
+      if (err instanceof PaginationError) {
+        logger.warn("pagination validation failed", {
+          field: err.field,
+          value: err.value,
+          reason: err.reason,
+        });
+        return problem.validation({
+          requestId,
+          instance: req.url,
+          detail: `Invalid pagination parameter '${err.field}': ${err.reason}`,
+          errors: [{ path: err.field, message: err.reason }],
+        });
+      }
 
       // ZodError from a `.parse()` call — extremely common on routes that
       // didn't bother with safeParse. Convert to a structured 422 with
