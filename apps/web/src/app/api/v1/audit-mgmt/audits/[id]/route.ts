@@ -70,7 +70,25 @@ export async function PUT(req: Request, { params }: RouteParams) {
   const moduleCheck = await requireModule("audit", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = updateAuditSchema.safeParse(await req.json());
+  // #WAVE6-AUDIT-03: status changes used to be silently ignored —
+  // updateAuditSchema didn't list `status` so Zod stripped it, the
+  // UPDATE went through with only updated_at touched, and the audit-
+  // log read like "something happened" while in fact the requested
+  // transition was discarded. Reject explicitly with a pointer at the
+  // (forthcoming) state-machine endpoint.
+  const rawBody = (await req.json()) as Record<string, unknown>;
+  if (Object.prototype.hasOwnProperty.call(rawBody, "status")) {
+    return Response.json(
+      {
+        error:
+          "status changes must go through the audit state-machine — they are not accepted on this generic update endpoint.",
+        hint: `Use GET /api/v1/audit-mgmt/audits/${id}/transitions to discover the valid path (forthcoming) or call the per-action endpoints (e.g. /audit-mgmt/audits/${id}/start, /complete).`,
+      },
+      { status: 422 },
+    );
+  }
+
+  const body = updateAuditSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
