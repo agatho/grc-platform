@@ -147,7 +147,24 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const { page, limit, offset, searchParams } = paginate(req);
+  // #WAVE6-CROSS-01: strict allow-list — anything outside throws
+  // PaginationError → 422. The QA observed that GET /controls?riskId=X
+  // silently ignored the unknown filter and returned all 18 rows;
+  // strict mode catches that as well as common typos.
+  const { page, limit, offset, searchParams } = paginate(req, {
+    allowedParams: [
+      "status",
+      "type",
+      "frequency",
+      "automationLevel",
+      "ownerId",
+      "department",
+      "assertion",
+      "search",
+      "sort",
+      "sortDir",
+    ],
+  });
 
   const conditions: SQL[] = [
     eq(control.orgId, ctx.orgId),
