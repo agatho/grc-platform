@@ -138,11 +138,7 @@ async function fetchRiskRegisterTable(ctx: FetchContext): Promise<TableData> {
 // resolve [] (so we don't need a live DB). Rather than tighten the
 // mock, treat a missing row as zero — production code is then also
 // defensive against any future query shape that *can* return zero rows.
-function readNumeric(
-  result: unknown,
-  field: string,
-  fallback = 0,
-): number {
+function readNumeric(result: unknown, field: string, fallback = 0): number {
   if (!result || typeof result !== "object") return fallback;
   const v = (result as Record<string, unknown>)[field];
   if (v == null) return fallback;
