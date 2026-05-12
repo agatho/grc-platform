@@ -144,17 +144,109 @@ export async function withReadContext<T>(
   });
 }
 
+// Pagination contract — surfaces structured errors instead of silent
+// coercion (over-night QA #NIGHT-057..060):
+//   - limit=0 / -1 / "abc" → throw PaginationError (was: silently → 1)
+//   - limit > MAX_PAGE_SIZE → silently capped (well-behaved clients
+//     should respect the limit, but we don't refuse the request)
+//   - page=0 / -1 / "abc"  → throw PaginationError (was: silently → 1)
+//   - offset=N (no page)   → derive page = floor(N/limit)+1; throw if
+//                            offset isn't a clean page boundary so the
+//                            caller doesn't get a surprising slice
+//   - offset and page both → page wins (explicit beats derived)
+//
+// withErrorHandler maps PaginationError to a 422 problem+json body
+// with field-level details. Routes that opt into `allowedParams`
+// additionally get unknown-param rejection.
+
+export const MAX_PAGE_SIZE = 100;
+export const DEFAULT_PAGE_SIZE = 20;
+
+export class PaginationError extends Error {
+  readonly field: string;
+  readonly value: string;
+  readonly reason: string;
+  constructor(field: string, value: string, reason: string) {
+    super(`Invalid pagination: ${field}=${value} (${reason})`);
+    this.name = "PaginationError";
+    this.field = field;
+    this.value = value;
+    this.reason = reason;
+  }
+}
+
+function parsePositiveInt(
+  field: string,
+  raw: string,
+  { allowZero }: { allowZero: boolean },
+): number {
+  if (!/^-?\d+$/.test(raw)) {
+    throw new PaginationError(field, raw, "must be an integer");
+  }
+  const n = Number(raw);
+  const min = allowZero ? 0 : 1;
+  if (n < min) {
+    throw new PaginationError(
+      field,
+      raw,
+      allowZero ? "must be >= 0" : "must be >= 1",
+    );
+  }
+  return n;
+}
+
 /** Parse pagination params from request or search params. */
-export function paginate(reqOrParams: Request | URLSearchParams) {
+export function paginate(
+  reqOrParams: Request | URLSearchParams,
+  opts?: { allowedParams?: readonly string[] },
+) {
   const searchParams =
     reqOrParams instanceof Request
       ? new URL(reqOrParams.url).searchParams
       : reqOrParams;
-  const page = Math.max(1, Number(searchParams.get("page")) || 1);
-  const limit = Math.min(
-    100,
-    Math.max(1, Number(searchParams.get("limit")) || 20),
-  );
+
+  const rawLimit = searchParams.get("limit");
+  let limit = DEFAULT_PAGE_SIZE;
+  if (rawLimit !== null) {
+    const n = parsePositiveInt("limit", rawLimit, { allowZero: false });
+    limit = Math.min(MAX_PAGE_SIZE, n);
+  }
+
+  const rawPage = searchParams.get("page");
+  const rawOffset = searchParams.get("offset");
+  let page = 1;
+  if (rawPage !== null) {
+    page = parsePositiveInt("page", rawPage, { allowZero: false });
+  } else if (rawOffset !== null) {
+    const n = parsePositiveInt("offset", rawOffset, { allowZero: true });
+    if (n % limit !== 0) {
+      throw new PaginationError(
+        "offset",
+        rawOffset,
+        `must be a multiple of limit (${limit})`,
+      );
+    }
+    page = Math.floor(n / limit) + 1;
+  }
+
+  if (opts?.allowedParams) {
+    const known = new Set<string>([
+      "page",
+      "limit",
+      "offset",
+      ...opts.allowedParams,
+    ]);
+    for (const key of searchParams.keys()) {
+      if (!known.has(key)) {
+        throw new PaginationError(
+          key,
+          searchParams.get(key) ?? "",
+          "is not a recognized query parameter",
+        );
+      }
+    }
+  }
+
   return { page, limit, offset: (page - 1) * limit, searchParams };
 }
 
