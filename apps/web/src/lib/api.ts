@@ -102,10 +102,23 @@ export async function checkCustomRoleModuleAccess(
   return userLevel >= requiredLevel;
 }
 
+// #WAVE6-AUDIT-02: optional audit annotation passed by callers that
+// do meaningful state transitions. Both fields land in the audit_log
+// row written by the trigger:
+//   actionDetail → audit_log.action_detail (varchar 500, summary)
+//   reason       → audit_log.metadata.reason (full text, no length cap)
+// Callers omit them for trivial CRUD; state-machine transitions
+// should set both for compliance traceability.
+export interface AuditAnnotation {
+  actionDetail?: string;
+  reason?: string;
+}
+
 /** Wrap a mutation in a transaction with audit session variables. */
 export async function withAuditContext<T>(
   ctx: ApiContext,
   fn: (tx: any) => Promise<T>,
+  annotation?: AuditAnnotation,
 ): Promise<T> {
   return db.transaction(async (tx) => {
     await tx.execute(
@@ -119,6 +132,16 @@ export async function withAuditContext<T>(
     );
     await tx.execute(
       sql`SELECT set_config('app.current_user_name', ${ctx.session.user.name}, true)`,
+    );
+    // Optional state-transition annotation. Always set to something
+    // (empty string) so a leftover value from a previous transaction
+    // on the same connection can't bleed across — the audit_trigger
+    // treats empty as NULL.
+    await tx.execute(
+      sql`SELECT set_config('app.audit_action_detail', ${annotation?.actionDetail ?? ""}, true)`,
+    );
+    await tx.execute(
+      sql`SELECT set_config('app.audit_reason', ${annotation?.reason ?? ""}, true)`,
     );
     return fn(tx);
   });
