@@ -44,13 +44,13 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = createRiskSchema.safeParse(await req.json());
-  if (!body.success) {
-    return Response.json(
-      { error: "Validation failed", details: body.error.flatten() },
-      { status: 422 },
-    );
-  }
+  // #WAVE6-VAL-01: ZodError now bubbles to the wrapper which produces
+  // RFC-7807 problem+json with field-level errors. Old shape
+  // ({error, details: fieldErrors}) is gone; new shape has both
+  // `errors` (RFC 7807 §3.2) AND `fieldErrors` (legacy extension)
+  // so clients can pick whichever they parse.
+  const parsed = createRiskSchema.parse(await req.json());
+  const body = { data: parsed };
 
   // Validate owner is in same org
   if (body.data.ownerId) {
