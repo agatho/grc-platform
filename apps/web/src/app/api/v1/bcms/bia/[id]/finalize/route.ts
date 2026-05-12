@@ -31,9 +31,11 @@ export async function POST(_req: Request, { params }: RouteParams) {
     return Response.json({ error: "BIA not found" }, { status: 404 });
   }
   if (bia.status !== "in_progress") {
+    const msg = `BIA status '${bia.status}' — finalize nur von 'in_progress' möglich`;
     return Response.json(
       {
-        error: `BIA status '${bia.status}' — finalize nur von 'in_progress' möglich`,
+        error: msg,
+        fieldErrors: { status: [msg] },
       },
       { status: 422 },
     );
