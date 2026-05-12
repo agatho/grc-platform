@@ -197,15 +197,31 @@ export function withErrorHandler<TCtx = unknown>(
       // "operators have been notified" — operators DON'T see the requestId
       // in their inbox.
       const realMessage = e.message ?? String(err);
-      return problem.internal({
-        requestId,
-        instance: req.url,
-        detail: realMessage
-          ? `Unexpected error: ${realMessage}`
-          : "An unexpected error occurred.",
-        errorMessage: realMessage,
-        errorCode: e.code,
-      });
+      // Build the response inline so we can include errorMessage/errorCode
+      // as RFC 7807 extension fields. problem.internal() doesn't expose
+      // them in its strict signature, but the wire format allows arbitrary
+      // extension fields (RFC 7807 §3.2).
+      return new Response(
+        JSON.stringify({
+          type: "https://arctos.charliehund.de/errors/internal",
+          title: "Internal server error",
+          status: 500,
+          requestId,
+          instance: req.url,
+          detail: realMessage
+            ? `Unexpected error: ${realMessage}`
+            : "An unexpected error occurred.",
+          errorMessage: realMessage,
+          errorCode: e.code,
+        }),
+        {
+          status: 500,
+          headers: {
+            "content-type": "application/problem+json; charset=utf-8",
+            "x-request-id": requestId,
+          },
+        },
+      );
     }
   };
 }
