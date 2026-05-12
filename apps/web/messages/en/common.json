@@ -2136,6 +2136,13 @@
       "lessons_learned": "Lessons Learned",
       "closed": "Closed"
     },
+    "vulnerabilityStatus": {
+      "open": "Open",
+      "in_progress": "In Progress",
+      "mitigated": "Mitigated",
+      "accepted_risk": "Risk Accepted",
+      "false_positive": "False Positive"
+    },
     "classify": "Classify",
     "justification": "Justification",
     "justificationPlaceholder": "Provide justification for this protection level...",
@@ -2678,6 +2685,12 @@
       "category": "Category",
       "addLogEntry": "Add Log Entry",
       "addTeamMember": "Add Team Member",
+      "severities": {
+        "level_1_incident": "Incident (Level 1)",
+        "level_2_emergency": "Emergency (Level 2)",
+        "level_3_crisis": "Crisis (Level 3)",
+        "level_4_catastrophe": "Catastrophe (Level 4)"
+      },
       "level1": "Level 1 - Incident",
       "level2": "Level 2 - Emergency",
       "level3": "Level 3 - Crisis",
@@ -2753,12 +2766,14 @@
       "exerciseLead": "Exercise Lead",
       "addFinding": "Add Finding",
       "type": {
+        "label": "Type",
         "tabletop": "Tabletop",
         "walkthrough": "Walkthrough",
         "functional": "Functional Test",
         "full_simulation": "Full Simulation"
       },
       "result": {
+        "label": "Result",
         "successful": "Successful",
         "partially_successful": "Partially Successful",
         "failed": "Failed"

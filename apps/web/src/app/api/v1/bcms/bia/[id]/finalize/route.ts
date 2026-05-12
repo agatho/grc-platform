@@ -33,7 +33,7 @@ export async function POST(_req: Request, { params }: RouteParams) {
   if (bia.status !== "in_progress") {
     return Response.json(
       {
-        error: `BIA status '${bia.status}' -- finalize nur von 'in_progress' moeglich`,
+        error: `BIA status '${bia.status}' — finalize nur von 'in_progress' möglich`,
       },
       { status: 422 },
     );

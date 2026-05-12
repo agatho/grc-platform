@@ -193,7 +193,7 @@ function ExerciseListInner() {
                   {t("common.name")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Type
+                  {t("exercise.type.label")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   {t("exercise.plannedDate")}
@@ -202,7 +202,7 @@ function ExerciseListInner() {
                   {t("common.status")}
                 </th>
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
-                  Result
+                  {t("exercise.result.label")}
                 </th>
               </tr>
             </thead>

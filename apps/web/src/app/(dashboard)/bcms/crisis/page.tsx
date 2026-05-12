@@ -208,7 +208,7 @@ function CrisisListInner() {
                       variant="outline"
                       className={SEVERITY_COLORS[item.severity]}
                     >
-                      {item.severity.replace(/_/g, " ")}
+                      {t(`crisis.severities.${item.severity}`)}
                     </Badge>
                   </td>
                   <td className="px-4 py-3">

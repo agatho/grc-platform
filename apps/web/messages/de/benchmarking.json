@@ -23,7 +23,7 @@
   "roadmap": {
     "title": "Reifegrad-Roadmap",
     "description": "Verbesserungsmaßnahmen zur Erreichung des Ziel-Reifegrads planen",
-    "addItem": "Roadmap-Element hinzufuegen",
+    "addItem": "Roadmap-Element hinzufügen",
     "fromLevel": "Von Stufe",
     "toLevel": "Zu Stufe"
   },
