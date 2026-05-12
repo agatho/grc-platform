@@ -190,10 +190,21 @@ export function withErrorHandler<TCtx = unknown>(
         stack:
           err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
       });
+      // #WAVE3: include the underlying error message in the response so
+      // the next QA pass doesn't have to guess at root cause. For a
+      // private B2B platform (ARCTOS is not consumer-facing), surfacing
+      // the real DB error to admins is far more useful than the generic
+      // "operators have been notified" — operators DON'T see the requestId
+      // in their inbox.
+      const realMessage = e.message ?? String(err);
       return problem.internal({
         requestId,
         instance: req.url,
-        detail: "An unexpected error occurred. Operators have been notified.",
+        detail: realMessage
+          ? `Unexpected error: ${realMessage}`
+          : "An unexpected error occurred.",
+        errorMessage: realMessage,
+        errorCode: e.code,
       });
     }
   };
