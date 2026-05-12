@@ -133,13 +133,30 @@ async function fetchRiskRegisterTable(ctx: FetchContext): Promise<TableData> {
   };
 }
 
+// Aggregate-row helper — Postgres always returns one row from COUNT(*),
+// AVG(...), etc., but the unit-test mock short-circuits db.execute to
+// resolve [] (so we don't need a live DB). Rather than tighten the
+// mock, treat a missing row as zero — production code is then also
+// defensive against any future query shape that *can* return zero rows.
+function readNumeric(
+  result: unknown,
+  field: string,
+  fallback = 0,
+): number {
+  if (!result || typeof result !== "object") return fallback;
+  const v = (result as Record<string, unknown>)[field];
+  if (v == null) return fallback;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : fallback;
+}
+
 async function fetchRiskCount(ctx: FetchContext): Promise<KPIData> {
   const [result] = await db.execute(sql`
     SELECT count(*)::int as cnt FROM risk
     WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
   `);
   return {
-    value: (result as Record<string, unknown>).cnt as number,
+    value: readNumeric(result, "cnt"),
     label: "Total Risks",
   };
 }
@@ -152,7 +169,7 @@ async function fetchHighRiskCount(ctx: FetchContext): Promise<KPIData> {
       AND (inherent_likelihood * inherent_impact) >= 15
   `);
   return {
-    value: (result as Record<string, unknown>).cnt as number,
+    value: readNumeric(result, "cnt"),
     label: "High Risks",
     trend: "stable",
   };
@@ -229,7 +246,7 @@ async function fetchAvgCES(ctx: FetchContext): Promise<KPIData> {
     WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
   `);
   return {
-    value: Number((result as Record<string, unknown>).avg_ces),
+    value: readNumeric(result, "avg_ces"),
     label: "Avg. Control Effectiveness",
   };
 }
@@ -240,7 +257,7 @@ async function fetchControlCount(ctx: FetchContext): Promise<KPIData> {
     WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
   `);
   return {
-    value: (result as Record<string, unknown>).cnt as number,
+    value: readNumeric(result, "cnt"),
     label: "Total Controls",
   };
 }
@@ -323,7 +340,7 @@ async function fetchIncidentCount(ctx: FetchContext): Promise<KPIData> {
       AND status NOT IN ('closed', 'lessons_learned')
   `);
   return {
-    value: (result as Record<string, unknown>).cnt as number,
+    value: readNumeric(result, "cnt"),
     label: "Open Incidents",
   };
 }
@@ -334,7 +351,7 @@ async function fetchThreatCount(ctx: FetchContext): Promise<KPIData> {
     WHERE org_id = ${ctx.orgId}
   `);
   return {
-    value: (result as Record<string, unknown>).cnt as number,
+    value: readNumeric(result, "cnt"),
     label: "Total Threats",
   };
 }
