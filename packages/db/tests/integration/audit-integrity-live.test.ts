@@ -37,6 +37,11 @@ describe("Audit integrity endpoint logic (live DB)", () => {
   });
 
   it("reports healthy=true for a freshly written per-tenant chain", async () => {
+    // Mirror the dispatch in apps/web/src/app/api/v1/audit-log/integrity/
+    // route.ts: v1 rows use the rev.2 9-field formula, v2 rows (post
+    // migration 0309) use the rev.3 11-field formula. A test that
+    // hard-codes either formula in isolation will fail on rows tagged
+    // with the other version.
     const scope = `org:${orgId}`;
     const rows = await client<{ row_ok: boolean; chain_ok: boolean }[]>`
       WITH ordered AS (
@@ -44,18 +49,36 @@ describe("Audit integrity endpoint logic (live DB)", () => {
           entry_hash AS stored_entry_hash,
           previous_hash AS stored_previous_hash,
           LAG(entry_hash) OVER (ORDER BY created_at, id) AS prev_row_entry_hash,
-          encode(digest(
-            COALESCE(previous_hash, '0') || '|' ||
-            COALESCE(org_id::text, '') || '|' ||
-            COALESCE(user_id::text, '') || '|' ||
-            entity_type || '|' ||
-            COALESCE(entity_id::text, '') || '|' ||
-            action::text || '|' ||
-            COALESCE(changes::text, '') || '|' ||
-            created_at::text || '|' ||
-            previous_hash_scope,
-            'sha256'
-          ), 'hex') AS recomputed_entry_hash
+          CASE
+            WHEN hash_version = 2 THEN
+              encode(digest(
+                COALESCE(previous_hash, '0')      || '|' ||
+                COALESCE(org_id::text, '')        || '|' ||
+                COALESCE(user_id::text, '')       || '|' ||
+                entity_type                       || '|' ||
+                COALESCE(entity_id::text, '')     || '|' ||
+                action::text                      || '|' ||
+                COALESCE(changes::text, '')       || '|' ||
+                COALESCE(action_detail, '')       || '|' ||
+                COALESCE(metadata::text, '')      || '|' ||
+                created_at::text                  || '|' ||
+                previous_hash_scope,
+                'sha256'
+              ), 'hex')
+            ELSE
+              encode(digest(
+                COALESCE(previous_hash, '0') || '|' ||
+                COALESCE(org_id::text, '')   || '|' ||
+                COALESCE(user_id::text, '')  || '|' ||
+                entity_type                  || '|' ||
+                COALESCE(entity_id::text, '')|| '|' ||
+                action::text                 || '|' ||
+                COALESCE(changes::text, '')  || '|' ||
+                created_at::text             || '|' ||
+                previous_hash_scope,
+                'sha256'
+              ), 'hex')
+          END AS recomputed_entry_hash
         FROM audit_log
         WHERE previous_hash_scope = ${scope}
       )
