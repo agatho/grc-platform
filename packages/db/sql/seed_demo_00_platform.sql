@@ -19,7 +19,9 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 INSERT INTO organization (id, name, short_name, type, country)
 VALUES
   ('c2446a5c-64f1-40a7-862a-8ab084f66f41', 'Meridian Holdings GmbH', 'Meridian', 'holding', 'DE'),
-  ('ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'Meridian Holdings GmbH', 'Meridian-Demo', 'holding', 'DE'),
+  -- #NIGHT-022: second Meridian was a demo-tenant duplicate; renamed
+  -- so admins can tell the two apart in the org switcher.
+  ('ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'Meridian Holdings GmbH (Demo Tenant)', 'Meridian-Demo', 'holding', 'DE'),
   ('6cf1eb6d-2727-4679-a767-2ac333395047', 'NovaTec Services GmbH', 'NovaTec', 'subsidiary', 'DE'),
   ('97ca2910-e9a6-45d3-8ba7-150e9a1ed0d0', 'Arctis Group GmbH', 'Arctis', 'subsidiary', 'DE'),
   ('7cf7aa82-af08-48f5-80d0-eb46b6e37319', 'Arctis Textilservice GmbH', 'Arctis Textil', 'subsidiary', 'DE'),
