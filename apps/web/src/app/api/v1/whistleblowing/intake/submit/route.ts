@@ -31,14 +31,14 @@ const intakeSchema = z.object({
   // AES-256-GCM but in practice stores plaintext until the
   // application-level encryption layer is wired).
   description: z.string().min(20).max(20_000),
+  // Match wb_category pgEnum exactly (see packages/db/src/schema/whistleblowing.ts).
   category: z.enum([
     "fraud",
     "corruption",
     "discrimination",
-    "harassment",
-    "safety_violation",
-    "data_protection",
-    "environment",
+    "privacy",
+    "environmental",
+    "health_safety",
     "other",
   ]),
   // Optional contact channel; tipsters may stay fully anonymous.
