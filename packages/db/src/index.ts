@@ -117,6 +117,7 @@ import * as riskAcceptanceSchema from "./schema/risk-acceptance";
 import * as phase3ExtrasSchema from "./schema/phase3-extras";
 import * as stakeholderRegisterSchema from "./schema/stakeholder-register";
 import * as programmeSchema from "./schema/programme";
+import * as entityCommentSchema from "./schema/entity-comment";
 
 // Connection pool settings tuned for the over-night QA finding (#NIGHT-011/012/020):
 // the bare default `postgres(url)` left idle connections to be reaped by the
@@ -257,6 +258,7 @@ export const db = drizzle(client, {
     ...phase3ExtrasSchema,
     ...stakeholderRegisterSchema,
     ...programmeSchema,
+    ...entityCommentSchema,
   },
 });
 
@@ -380,6 +382,7 @@ export * from "./schema/risk-acceptance";
 export * from "./schema/phase3-extras";
 export * from "./schema/stakeholder-register";
 export * from "./schema/programme";
+export * from "./schema/entity-comment";
 
 // ADR-001 RLS audit helper — re-exported so API routes + CLI can import it
 export * from "./rls-audit";
