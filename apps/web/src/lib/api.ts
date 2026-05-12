@@ -159,6 +159,20 @@ export async function withReadContext<T>(
 // with field-level details. Routes that opt into `allowedParams`
 // additionally get unknown-param rejection.
 
+// #NIGHT-039: UI sometimes sends empty-string params (e.g. `&search=`)
+// when the user hasn't filled the input. The downstream Zod schema then
+// rejects "" as an invalid enum value or short string. Treat empty
+// strings as missing — the caller didn't actually express a constraint.
+export function searchParamsToObject(
+  searchParams: URLSearchParams,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [key, value] of searchParams) {
+    if (value !== "") out[key] = value;
+  }
+  return out;
+}
+
 export const MAX_PAGE_SIZE = 100;
 export const DEFAULT_PAGE_SIZE = 20;
 

@@ -1,14 +1,15 @@
 import { db, reportTemplate } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, ilike, sql, desc } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth, withAuditContext, searchParamsToObject } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import {
   createReportTemplateSchema,
   listReportTemplatesQuerySchema,
 } from "@grc/shared";
 
 // GET /api/v1/reports/templates — List templates
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -16,8 +17,10 @@ export async function GET(req: Request) {
   if (moduleCheck) return moduleCheck;
 
   const url = new URL(req.url);
+  // #NIGHT-039: searchParamsToObject drops empty-string params so the
+  // schema doesn't reject `?moduleScope=&search=` with a 503.
   const query = listReportTemplatesQuerySchema.parse(
-    Object.fromEntries(url.searchParams),
+    searchParamsToObject(url.searchParams),
   );
 
   const conditions = [eq(reportTemplate.orgId, ctx.orgId)];
@@ -57,10 +60,10 @@ export async function GET(req: Request) {
       totalPages: Math.ceil(total / query.limit),
     },
   });
-}
+});
 
 // POST /api/v1/reports/templates — Create template
-export async function POST(req: Request) {
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
 
@@ -88,4 +91,4 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: result }, { status: 201 });
-}
+});
