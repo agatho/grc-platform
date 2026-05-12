@@ -86,6 +86,7 @@ describe("POST /api/v1/controls", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       }),
+      undefined,
     );
     expect(res.status).toBe(401);
     // Allowed roles for control creation
@@ -108,6 +109,7 @@ describe("POST /api/v1/controls", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       }),
+      undefined,
     );
     expect(res.status).toBe(403);
   });
@@ -128,6 +130,7 @@ describe("POST /api/v1/controls", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ name: "Test Control" }),
       }),
+      undefined,
     );
     expect(res.status).toBe(404);
     expect(requireModuleMock).toHaveBeenCalledWith("ics", "org-1", "POST");
@@ -147,6 +150,7 @@ describe("POST /api/v1/controls", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}), // missing required fields
       }),
+      undefined,
     );
     expect(res.status).toBe(422);
     const body = await res.json();

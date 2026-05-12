@@ -460,6 +460,7 @@ export async function GET(_req: Request, { params }: RouteParams) {
     const puppeteer = await import("puppeteer");
     const browser = await puppeteer.launch({
       headless: true,
+      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",

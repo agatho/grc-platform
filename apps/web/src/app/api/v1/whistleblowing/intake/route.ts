@@ -20,7 +20,7 @@ export function GET(req: Request) {
             orgCode: "string (short org code from intake poster)",
             description: "string (tip body, min 20 chars)",
             category:
-              "fraud|corruption|discrimination|harassment|safety_violation|data_protection|environment|other",
+              "fraud|corruption|discrimination|privacy|environmental|health_safety|other",
             contactEmail: "string (optional)",
             language: "de|en (default de)",
           },
