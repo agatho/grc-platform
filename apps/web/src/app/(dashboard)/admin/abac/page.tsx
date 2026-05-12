@@ -8,6 +8,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AbacEmptyState } from "./components/empty-state";
 import type { AbacPolicy } from "@grc/shared";
 
 const ACCESS_COLORS: Record<string, string> = {
@@ -83,13 +84,7 @@ export default function AbacPoliciesPage() {
             </CardContent>
           </Card>
         ))}
-        {policies.length === 0 && (
-          <Card>
-            <CardContent className="p-8 text-center text-muted-foreground">
-              {t("policies")} - {t("createPolicy")}
-            </CardContent>
-          </Card>
-        )}
+        {policies.length === 0 && <AbacEmptyState />}
       </div>
     </div>
   );

@@ -223,7 +223,18 @@ export function paginate(
   let limit = DEFAULT_PAGE_SIZE;
   if (rawLimit !== null) {
     const n = parsePositiveInt("limit", rawLimit, { allowZero: false });
-    limit = Math.min(MAX_PAGE_SIZE, n);
+    // #NIGHT-059: caller asked for more rows than the page-size cap.
+    // Reject explicitly instead of silently capping — silent caps mean
+    // the caller never learns the API has a ceiling and keeps assuming
+    // they got the full result set.
+    if (n > MAX_PAGE_SIZE) {
+      throw new PaginationError(
+        "limit",
+        rawLimit,
+        `must be <= ${MAX_PAGE_SIZE} (use page+limit to traverse larger result sets)`,
+      );
+    }
+    limit = n;
   }
 
   const rawPage = searchParams.get("page");
@@ -241,6 +252,32 @@ export function paginate(
       );
     }
     page = Math.floor(n / limit) + 1;
+  }
+
+  // #NIGHT-060: surface common pagination-param typos even when the
+  // route hasn't opted into a strict allow-list. These are the names
+  // a developer might assume work (because they do in other APIs)
+  // and silently get nothing back. Throwing is the only way to make
+  // the mistake visible.
+  const COMMON_PAGINATION_TYPOS = new Set([
+    "skip",
+    "cursor",
+    "page_size",
+    "pageSize",
+    "perPage",
+    "per_page",
+    "count",
+    "top",
+    "start",
+  ]);
+  for (const key of searchParams.keys()) {
+    if (COMMON_PAGINATION_TYPOS.has(key)) {
+      throw new PaginationError(
+        key,
+        searchParams.get(key) ?? "",
+        `'${key}' is not a recognised pagination parameter — use page, limit, or offset`,
+      );
+    }
   }
 
   if (opts?.allowedParams) {

@@ -4,7 +4,7 @@
 //
 //   - bad limit/page/offset → throw PaginationError (caller wraps to 422)
 //   - offset → page derivation only when offset is a clean page boundary
-//   - limit > MAX_PAGE_SIZE silently capped (well-behaved clients)
+//   - limit > MAX_PAGE_SIZE → throw (#NIGHT-059, was: silently capped)
 //   - allowedParams option enables unknown-param rejection
 
 import { describe, it, expect } from "vitest";
@@ -26,8 +26,14 @@ describe("paginate — limit", () => {
     expect(paginate(params("limit=50")).limit).toBe(50);
   });
 
-  it("caps at MAX_PAGE_SIZE silently", () => {
-    expect(paginate(params("limit=10000")).limit).toBe(MAX_PAGE_SIZE);
+  it("rejects limit > MAX_PAGE_SIZE (#NIGHT-059)", () => {
+    expect(() => paginate(params("limit=10000"))).toThrow(PaginationError);
+  });
+
+  it("accepts limit exactly at MAX_PAGE_SIZE", () => {
+    expect(paginate(params(`limit=${MAX_PAGE_SIZE}`)).limit).toBe(
+      MAX_PAGE_SIZE,
+    );
   });
 
   it("rejects limit=0", () => {
@@ -102,8 +108,14 @@ describe("paginate — offset alias", () => {
 });
 
 describe("paginate — unknown params", () => {
-  it("ignores unknown params by default (back-compat)", () => {
+  it("ignores genuinely unknown route-specific params by default", () => {
     expect(() => paginate(params("xyz=abc&page=1"))).not.toThrow();
+  });
+
+  it("rejects common pagination typos even without allowedParams (#NIGHT-060)", () => {
+    for (const typo of ["skip", "cursor", "perPage", "per_page", "pageSize"]) {
+      expect(() => paginate(params(`${typo}=5`))).toThrow(PaginationError);
+    }
   });
 
   it("rejects unknown params when allowedParams is set", () => {
@@ -111,7 +123,7 @@ describe("paginate — unknown params", () => {
       paginate(params("status=active&page=1"), { allowedParams: ["status"] }),
     ).not.toThrow();
     expect(() =>
-      paginate(params("xyz=abc&page=1"), { allowedParams: ["status"] }),
+      paginate(params("foo=bar&page=1"), { allowedParams: ["status"] }),
     ).toThrow(PaginationError);
   });
 });
