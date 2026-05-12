@@ -228,26 +228,29 @@ export async function GET(req: Request) {
 
   const where = and(...conditions);
 
-  // Sort
+  // #WAVE6-PAG-01: see /risks/route.ts — every primary sort key needs
+  // an `id ASC` tiebreaker so rows that share a sort value don't shuffle
+  // between page boundaries (causing duplicates and skipped ids).
   const sortParam = searchParams.get("sort");
   const sortDir = searchParams.get("sortDir") === "asc" ? asc : desc;
-  let orderBy;
+  let primaryOrderBy;
   switch (sortParam) {
     case "title":
-      orderBy = sortDir(control.title);
+      primaryOrderBy = sortDir(control.title);
       break;
     case "status":
-      orderBy = sortDir(control.status);
+      primaryOrderBy = sortDir(control.status);
       break;
     case "type":
-      orderBy = sortDir(control.controlType);
+      primaryOrderBy = sortDir(control.controlType);
       break;
     case "createdAt":
-      orderBy = sortDir(control.createdAt);
+      primaryOrderBy = sortDir(control.createdAt);
       break;
     default:
-      orderBy = desc(control.updatedAt);
+      primaryOrderBy = desc(control.updatedAt);
   }
+  const orderBy = [primaryOrderBy, asc(control.id)];
 
   const [items, [{ value: total }]] = await Promise.all([
     db
@@ -276,7 +279,7 @@ export async function GET(req: Request) {
       .leftJoin(workItem, eq(control.workItemId, workItem.id))
       .leftJoin(user, eq(control.ownerId, user.id))
       .where(where)
-      .orderBy(orderBy)
+      .orderBy(...orderBy)
       .limit(limit)
       .offset(offset),
     db.select({ value: count() }).from(control).where(where),
