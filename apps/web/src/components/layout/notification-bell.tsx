@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Bell } from "lucide-react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 
 interface Notification {
   id: string;
@@ -13,22 +14,34 @@ interface Notification {
   createdAt: string;
 }
 
+interface NotificationResponse {
+  data: Notification[];
+  pagination?: { total: number };
+}
+
+// #NIGHT-042: Multiple bells / sidebars / module navs that all
+// previously fired their own /api/v1/notifications fetch now share
+// the same react-query cache (60s staleTime from the provider). The
+// queryKey is what enables dedup — same key, same cache entry.
+const NOTIFICATIONS_QUERY_KEY = ["notifications", "unread"] as const;
+
 export function NotificationBell() {
   const t = useTranslations("notifications");
   const [open, setOpen] = useState(false);
-  const [notifications, setNotifications] = useState<Notification[]>([]);
-  const [unreadCount, setUnreadCount] = useState(0);
   const ref = useRef<HTMLDivElement>(null);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    fetch("/api/v1/notifications?unread=true&limit=10")
-      .then((r) => r.json())
-      .then((res) => {
-        setNotifications(res.data ?? []);
-        setUnreadCount(res.pagination?.total ?? 0);
-      })
-      .catch(() => {});
-  }, []);
+  const { data } = useQuery<NotificationResponse>({
+    queryKey: NOTIFICATIONS_QUERY_KEY,
+    queryFn: async () => {
+      const r = await fetch("/api/v1/notifications?unread=true&limit=10");
+      if (!r.ok) return { data: [], pagination: { total: 0 } };
+      return r.json();
+    },
+  });
+
+  const notifications = data?.data ?? [];
+  const unreadCount = data?.pagination?.total ?? 0;
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
@@ -42,8 +55,20 @@ export function NotificationBell() {
 
   async function markRead(id: string) {
     await fetch(`/api/v1/notifications/${id}/read`, { method: "PUT" });
-    setNotifications((prev) => prev.filter((n) => n.id !== id));
-    setUnreadCount((c) => Math.max(0, c - 1));
+    // Optimistically update the shared cache so every bell instance
+    // re-renders with the new state.
+    queryClient.setQueryData<NotificationResponse>(
+      NOTIFICATIONS_QUERY_KEY,
+      (prev) =>
+        prev
+          ? {
+              data: prev.data.filter((n) => n.id !== id),
+              pagination: {
+                total: Math.max(0, (prev.pagination?.total ?? 0) - 1),
+              },
+            }
+          : prev,
+    );
   }
 
   return (
