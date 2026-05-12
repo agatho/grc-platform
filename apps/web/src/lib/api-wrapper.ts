@@ -36,12 +36,12 @@ import { problem, getRequestId } from "@/lib/api-errors";
 import { log } from "@/lib/logger";
 import { PaginationError } from "@/lib/api";
 
-// ctx is optional so that handlers for non-dynamic routes (which Next.js
-// invokes with a single request arg) type-check without callers having
-// to pass undefined explicitly. Tests can call GET(req) directly.
+// Two-argument shape matches Next.js's invocation: (req, { params })
+// for dynamic routes, (req, undefined) for flat routes. Dynamic-route
+// handlers destructure params so the second arg must be present.
 type RouteHandler<TCtx = unknown> = (
   req: Request,
-  ctx?: TCtx,
+  ctx: TCtx,
 ) => Promise<Response> | Response;
 
 interface PgError {

@@ -103,7 +103,7 @@ describe("GET /api/v1/risks", () => {
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
     const { GET } = await import("../../app/api/v1/risks/route");
-    const res = await GET(new Request("http://localhost/api/v1/risks"));
+    const res = await GET(new Request("http://localhost/api/v1/risks"), undefined);
     expect(res.status).toBe(401);
     // GET is open to all authenticated roles → withAuth called with no args
     expect(withAuthMock).toHaveBeenCalledWith();
@@ -143,7 +143,7 @@ describe("GET /api/v1/risks", () => {
     });
 
     const { GET } = await import("../../app/api/v1/risks/route");
-    const res = await GET(new Request("http://localhost/api/v1/risks"));
+    const res = await GET(new Request("http://localhost/api/v1/risks"), undefined);
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body).toMatchObject({
