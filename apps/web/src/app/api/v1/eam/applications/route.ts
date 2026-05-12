@@ -2,6 +2,7 @@ import { db, architectureElement, applicationPortfolio } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { problem, getRequestId } from "@/lib/api-errors";
 
 // GET /api/v1/eam/applications — Application list with portfolio data
 export async function GET(req: Request) {
@@ -49,3 +50,18 @@ export async function GET(req: Request) {
 
   return Response.json({ data: filtered });
 }
+
+// #NIGHT-009/017: explicit 405 with Allow header so callers learn the
+// route is read-only here. Application creation lives elsewhere
+// (admin-side import; sub-routes for portfolio/lifecycle).
+export function POST(req: Request) {
+  return problem.methodNotAllowed({
+    requestId: getRequestId(req),
+    instance: req.url,
+    method: "POST",
+    allow: ["GET"],
+  });
+}
+export const PUT = POST;
+export const PATCH = POST;
+export const DELETE = POST;

@@ -5,6 +5,7 @@ import { requireModule } from "@grc/auth";
 import { wbCaseListQuerySchema } from "@grc/shared";
 import { eq, and, desc, count, isNull } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { problem, getRequestId } from "@/lib/api-errors";
 import type { SQL } from "drizzle-orm";
 
 export async function GET(req: Request) {
@@ -78,3 +79,20 @@ export async function GET(req: Request) {
 
   return paginatedResponse(data, total, page, limit);
 }
+
+// #NIGHT-037: case creation runs through the anonymized intake pipeline
+// (POST /whistleblowing/intake/submit) — never the authenticated cases
+// list. Make the 405 explicit and point callers at the right endpoint.
+export function POST(req: Request) {
+  return problem.methodNotAllowed({
+    requestId: getRequestId(req),
+    instance: req.url,
+    method: "POST",
+    allow: ["GET"],
+    detail:
+      "Case creation goes through POST /api/v1/whistleblowing/intake/submit (anonymized intake). This endpoint is read-only for the ombudsperson role.",
+  });
+}
+export const PUT = POST;
+export const PATCH = POST;
+export const DELETE = POST;
