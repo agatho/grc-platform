@@ -154,6 +154,28 @@ export const problem = {
       ...rest,
     });
   },
+
+  // 405 with the Allow header populated. The over-night QA (#NIGHT-009,
+  // -017, -018, -037) flagged Next.js's default 405 as missing Allow,
+  // which leaves clients guessing which methods the route accepts.
+  methodNotAllowed(
+    opts: ShortOpts & { allow: string[]; method?: string },
+  ): Response {
+    const allowHeader = opts.allow.join(", ");
+    const r = problemResponse({
+      type: `${ERROR_BASE}/method-not-allowed`,
+      title: "Method Not Allowed",
+      status: 405,
+      detail:
+        opts.detail ??
+        `${opts.method ? `${opts.method} not supported. ` : ""}This endpoint accepts: ${allowHeader}`,
+      requestId: opts.requestId,
+      instance: opts.instance,
+      allow: opts.allow,
+    });
+    r.headers.set("allow", allowHeader);
+    return r;
+  },
 };
 
 /**

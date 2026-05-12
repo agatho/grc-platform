@@ -2,6 +2,7 @@ import { db } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { problem, getRequestId } from "@/lib/api-errors";
 
 /**
  * POST /api/v1/esg/erm-sync
@@ -94,5 +95,16 @@ export async function POST(req: Request) {
       syncedCount: synced.length,
       items: synced,
     },
+  });
+}
+
+// #NIGHT-018: this is a sync trigger — POST-only. Make the Allow header
+// explicit so callers don't have to read source.
+export function GET(req: Request) {
+  return problem.methodNotAllowed({
+    requestId: getRequestId(req),
+    instance: req.url,
+    method: "GET",
+    allow: ["POST"],
   });
 }
