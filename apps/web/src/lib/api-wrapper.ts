@@ -190,11 +190,38 @@ export function withErrorHandler<TCtx = unknown>(
         stack:
           err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
       });
-      return problem.internal({
-        requestId,
-        instance: req.url,
-        detail: "An unexpected error occurred. Operators have been notified.",
-      });
+      // #WAVE3: include the underlying error message in the response so
+      // the next QA pass doesn't have to guess at root cause. For a
+      // private B2B platform (ARCTOS is not consumer-facing), surfacing
+      // the real DB error to admins is far more useful than the generic
+      // "operators have been notified" — operators DON'T see the requestId
+      // in their inbox.
+      const realMessage = e.message ?? String(err);
+      // Build the response inline so we can include errorMessage/errorCode
+      // as RFC 7807 extension fields. problem.internal() doesn't expose
+      // them in its strict signature, but the wire format allows arbitrary
+      // extension fields (RFC 7807 §3.2).
+      return new Response(
+        JSON.stringify({
+          type: "https://arctos.charliehund.de/errors/internal",
+          title: "Internal server error",
+          status: 500,
+          requestId,
+          instance: req.url,
+          detail: realMessage
+            ? `Unexpected error: ${realMessage}`
+            : "An unexpected error occurred.",
+          errorMessage: realMessage,
+          errorCode: e.code,
+        }),
+        {
+          status: 500,
+          headers: {
+            "content-type": "application/problem+json; charset=utf-8",
+            "x-request-id": requestId,
+          },
+        },
+      );
     }
   };
 }

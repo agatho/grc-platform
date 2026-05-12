@@ -20,25 +20,28 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
+  // #WAVE3: process table columns are `name` (not title), `process_owner_id`
+  // (not owner_id), and there is no `process_health` column. Earlier query
+  // crashed on every call because of these schema drifts.
   // Processes I own
   const ownedResult = await db.execute(
-    sql`SELECT id, title, status, COALESCE(process_health, 'healthy') as health
+    sql`SELECT id, name, status
         FROM process
-        WHERE org_id = ${ctx.orgId} AND owner_id = ${ctx.userId} AND deleted_at IS NULL
+        WHERE org_id = ${ctx.orgId} AND process_owner_id = ${ctx.userId} AND deleted_at IS NULL
         ORDER BY updated_at DESC LIMIT 20`,
   );
 
   // Recently updated (proxy for recently viewed)
   const recentResult = await db.execute(
-    sql`SELECT id, title, updated_at as last_viewed
+    sql`SELECT id, name, updated_at as last_viewed
         FROM process
         WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
         ORDER BY updated_at DESC LIMIT 5`,
   );
 
-  // Pending governance
+  // Pending governance — process_status enum has 'in_review'
   const pendingResult = await db.execute(
-    sql`SELECT id, title
+    sql`SELECT id, name
         FROM process
         WHERE org_id = ${ctx.orgId} AND status = 'in_review' AND deleted_at IS NULL
         LIMIT 10`,
@@ -47,18 +50,18 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const data: MyBPMHomepageData = {
     recentlyViewed: recentResult.map((p) => ({
       id: String(p.id),
-      name: String(p.title ?? ""),
+      name: String(p.name ?? ""),
       lastViewed: String(p.last_viewed ?? ""),
     })),
     ownedProcesses: ownedResult.map((p) => ({
       id: String(p.id),
-      name: String(p.title ?? ""),
+      name: String(p.name ?? ""),
       status: String(p.status ?? ""),
-      health: String(p.health ?? "healthy"),
+      health: "healthy",
     })),
     pendingGovernance: pendingResult.map((p) => ({
       id: String(p.id),
-      name: String(p.title ?? ""),
+      name: String(p.name ?? ""),
       action: "review",
     })),
   };

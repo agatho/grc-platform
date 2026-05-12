@@ -226,21 +226,34 @@ export async function getCalendarEvents(
     return [];
   }
 
-  // Build UNION ALL
-  let unionQuery = queries[0];
-  for (let i = 1; i < queries.length; i++) {
-    unionQuery = sql`${unionQuery} UNION ALL ${queries[i]}`;
-  }
+  // #NIGHT-034: previously a single UNION ALL across all 11 sources.
+  // If ANY one source query failed (missing table, schema drift, bad
+  // FK) the whole calendar 500'd. Run each source in its own query
+  // with try/catch — a broken source returns no events for that
+  // source instead of killing the whole aggregation.
+  const allRows: Array<Record<string, unknown>> = [];
+  await Promise.all(
+    queries.map(async (q) => {
+      try {
+        const rows = (await db.execute(q)) as unknown as Array<
+          Record<string, unknown>
+        >;
+        allRows.push(...rows);
+      } catch (err) {
+        const e = err as { code?: string; message?: string };
+        // Log but keep going; the missing rows just won't appear in
+        // the user's calendar this run.
+        console.warn("[calendar] source query failed:", e.code, e.message);
+      }
+    }),
+  );
 
-  // Add responsible filter if specified
-  let finalQuery;
+  let result = allRows;
   if (filters.responsible) {
-    finalQuery = sql`SELECT * FROM (${unionQuery}) AS events WHERE responsible_id = ${filters.responsible} ORDER BY start_at ASC`;
-  } else {
-    finalQuery = sql`SELECT * FROM (${unionQuery}) AS events ORDER BY start_at ASC`;
+    result = allRows.filter((r) => r.responsible_id === filters.responsible);
   }
+  result.sort((a, b) => String(a.start_at).localeCompare(String(b.start_at)));
 
-  const result = await db.execute(finalQuery);
   const now = new Date();
 
   return (result as unknown as Array<Record<string, unknown>>).map((row) => {
