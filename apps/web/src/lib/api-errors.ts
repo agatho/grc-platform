@@ -73,14 +73,33 @@ interface ShortOpts {
   detail?: string;
 }
 
+// Group errors into the legacy `fieldErrors: {field: [msg]}` shape
+// that several existing clients still parse. RFC 7807 lets us include
+// arbitrary extension fields, so we keep `errors` (canonical) AND add
+// `fieldErrors` (legacy ergonomic).
+function groupFieldErrors(
+  errors: Array<{ path: string; message: string }>,
+): Record<string, string[]> {
+  const out: Record<string, string[]> = {};
+  for (const e of errors) {
+    const key = e.path || "_";
+    (out[key] ??= []).push(e.message);
+  }
+  return out;
+}
+
 export const problem = {
   validation(
     opts: ShortOpts & { errors: Array<{ path: string; message: string }> },
   ): Response {
+    // #NIGHT-038/-044: every 422 now carries BOTH the RFC 7807 `errors`
+    // array and the legacy `fieldErrors` object. UI code can pick
+    // whichever is more convenient without us breaking either.
     return problemResponse({
       type: ErrorTypes.VALIDATION,
       title: "Validation failed",
       status: 422,
+      fieldErrors: groupFieldErrors(opts.errors),
       ...opts,
     });
   },
