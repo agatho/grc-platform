@@ -1,5 +1,5 @@
 import { db, auditLog, auditAnchor } from "@grc/db";
-import { and, eq, isNotNull, gte, lt, asc, desc } from "drizzle-orm";
+import { and, eq, isNotNull, gte, lt, asc, desc, sql } from "drizzle-orm";
 import { merkleRoot } from "@grc/shared/lib/merkle-tree";
 import * as freetsa from "@grc/shared/lib/freetsa";
 import * as opentimestamps from "@grc/shared/lib/opentimestamps";
@@ -55,6 +55,63 @@ export async function POST(req: Request) {
   const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
   if (isNaN(dayStart.getTime())) {
     return Response.json({ error: "Invalid date" }, { status: 422 });
+  }
+
+  // #WAVE7-CRITICAL-01: refuse to anchor a chain that's currently
+  // failing self-verification. Anchoring a broken chain would propagate
+  // the broken state into the FreeTSA/OpenTimestamps trust anchor and
+  // make the corruption permanent.
+  //
+  // Cheap check: count rows where the recomputed hash doesn't match
+  // the stored hash, scoped to this org's chain. The full integrity
+  // endpoint runs the same computation; this is the same gate.
+  const scope = `org:${ctx.orgId}`;
+  const [{ broken }] = await db.execute<{ broken: number }>(sql`
+    SELECT count(*)::int AS broken
+    FROM audit_log
+    WHERE previous_hash_scope = ${scope}
+      AND entry_hash <> CASE
+        WHEN hash_version = 2 THEN
+          encode(digest(
+            COALESCE(previous_hash, '0')      || '|' ||
+            COALESCE(org_id::text, '')        || '|' ||
+            COALESCE(user_id::text, '')       || '|' ||
+            entity_type                       || '|' ||
+            COALESCE(entity_id::text, '')     || '|' ||
+            action::text                      || '|' ||
+            COALESCE(changes::text, '')       || '|' ||
+            COALESCE(action_detail, '')       || '|' ||
+            COALESCE(metadata::text, '')      || '|' ||
+            created_at::text                  || '|' ||
+            previous_hash_scope,
+            'sha256'
+          ), 'hex')
+        ELSE
+          encode(digest(
+            COALESCE(previous_hash, '0') || '|' ||
+            COALESCE(org_id::text, '')   || '|' ||
+            COALESCE(user_id::text, '')  || '|' ||
+            entity_type                  || '|' ||
+            COALESCE(entity_id::text, '')|| '|' ||
+            action::text                 || '|' ||
+            COALESCE(changes::text, '')  || '|' ||
+            created_at::text             || '|' ||
+            previous_hash_scope,
+            'sha256'
+          ), 'hex')
+      END
+  `);
+
+  if ((broken ?? 0) > 0) {
+    return Response.json(
+      {
+        error: "Audit chain integrity broken — refusing to anchor.",
+        detail: `Found ${broken} row(s) where stored entry_hash does not match the recomputed hash. Anchoring now would propagate the broken state into the timestamp authority and make the corruption permanent. Run GET /api/v1/audit-log/integrity for the full diff and resolve before anchoring.`,
+        brokenRowCount: broken,
+        integrityCheck: "/api/v1/audit-log/integrity",
+      },
+      { status: 503 },
+    );
   }
 
   // Collect leaves for this tenant on this day

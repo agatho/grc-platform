@@ -50,6 +50,10 @@ export async function GET(_req: Request) {
   // Per-tenant chain verification. LAG window is scoped to this org's
   // rows in chronological order, so the "prev_row_entry_hash" refers
   // strictly to the previous row in THIS tenant's chain.
+  // #WAVE7-CRITICAL-01: hash_version dispatch. Rows written before
+  // migration 0309 are v1 (9-field formula); rows written after are
+  // v2 (11-field formula including action_detail and metadata).
+  // Mixing the two breaks the chain — see migration 0309 for context.
   const result = await db.execute<RowCheck>(sql`
     WITH ordered AS (
       SELECT
@@ -58,21 +62,40 @@ export async function GET(_req: Request) {
         entity_id,
         action,
         created_at,
+        hash_version,
         entry_hash    AS stored_entry_hash,
         previous_hash AS stored_previous_hash,
         LAG(entry_hash) OVER (ORDER BY created_at, id) AS prev_row_entry_hash,
-        encode(digest(
-          COALESCE(previous_hash, '0') || '|' ||
-          COALESCE(org_id::text, '')   || '|' ||
-          COALESCE(user_id::text, '')  || '|' ||
-          entity_type                  || '|' ||
-          COALESCE(entity_id::text, '')|| '|' ||
-          action::text                 || '|' ||
-          COALESCE(changes::text, '')  || '|' ||
-          created_at::text             || '|' ||
-          previous_hash_scope,
-          'sha256'
-        ), 'hex') AS recomputed_entry_hash
+        CASE
+          WHEN hash_version = 2 THEN
+            encode(digest(
+              COALESCE(previous_hash, '0')      || '|' ||
+              COALESCE(org_id::text, '')        || '|' ||
+              COALESCE(user_id::text, '')       || '|' ||
+              entity_type                       || '|' ||
+              COALESCE(entity_id::text, '')     || '|' ||
+              action::text                      || '|' ||
+              COALESCE(changes::text, '')       || '|' ||
+              COALESCE(action_detail, '')       || '|' ||
+              COALESCE(metadata::text, '')      || '|' ||
+              created_at::text                  || '|' ||
+              previous_hash_scope,
+              'sha256'
+            ), 'hex')
+          ELSE
+            encode(digest(
+              COALESCE(previous_hash, '0') || '|' ||
+              COALESCE(org_id::text, '')   || '|' ||
+              COALESCE(user_id::text, '')  || '|' ||
+              entity_type                  || '|' ||
+              COALESCE(entity_id::text, '')|| '|' ||
+              action::text                 || '|' ||
+              COALESCE(changes::text, '')  || '|' ||
+              created_at::text             || '|' ||
+              previous_hash_scope,
+              'sha256'
+            ), 'hex')
+        END AS recomputed_entry_hash
       FROM audit_log
       WHERE previous_hash_scope = ${scope}
     )
