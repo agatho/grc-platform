@@ -15,14 +15,21 @@ interface EnabledModulesMap {
   [moduleKey: string]: boolean;
 }
 
-/** Get enabled modules for an org from module_config */
+/** Get enabled modules for an org from module_config.
+ *
+ * #WAVE4-01: this query used to crash with "Failed query: SELECT md.key
+ * FROM module_co[nfig]…" because it referenced columns that don't
+ * exist: module_config.module_id (real: module_key, no join needed),
+ * module_config.is_enabled (real: ui_status enum), module_definition.key
+ * (real: module_key). The join wasn't even needed — module_config
+ * already has module_key as the human-readable identifier. */
 async function getEnabledModules(orgId: string): Promise<EnabledModulesMap> {
   const result = await db.execute(
-    sql`SELECT md.key FROM module_config mc JOIN module_definition md ON mc.module_id = md.id WHERE mc.org_id = ${orgId} AND mc.is_enabled = true`,
+    sql`SELECT module_key FROM module_config WHERE org_id = ${orgId} AND ui_status = 'enabled'`,
   );
   const map: EnabledModulesMap = {};
-  for (const row of result as unknown as Array<{ key: string }>) {
-    map[row.key] = true;
+  for (const row of result as unknown as Array<{ module_key: string }>) {
+    map[row.module_key] = true;
   }
   return map;
 }
