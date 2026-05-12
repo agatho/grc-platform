@@ -1,6 +1,15 @@
 // Shared helper: render an HTML string into a PDF buffer via Puppeteer,
 // with a plain-HTML fallback when Puppeteer isn't available. Used by the
 // monitor export endpoints so the puppeteer wiring lives in exactly one place.
+//
+// #WAVE7-EXPORT: previous deploys returned text/html because the Alpine
+// runtime image had no Chromium installed and puppeteer.launch() threw
+// — caught by the bare `catch` below. The image now ships system
+// chromium under PUPPETEER_EXECUTABLE_PATH (Dockerfile :91-103). When
+// that env var is set we pass it through so puppeteer doesn't search
+// for the (skipped) bundled binary.
+
+import { log } from "@/lib/logger";
 
 export interface PdfResponse {
   body: Buffer | string;
@@ -15,8 +24,10 @@ export async function renderHtmlToPdfResponse(
   const safeBase = baseFilename.replace(/[^a-zA-Z0-9\-_]/g, "_");
   try {
     const puppeteer = await import("puppeteer");
+    const executablePath = process.env.PUPPETEER_EXECUTABLE_PATH;
     const browser = await puppeteer.launch({
       headless: true,
+      executablePath: executablePath || undefined,
       args: [
         "--no-sandbox",
         "--disable-setuid-sandbox",
@@ -38,11 +49,20 @@ export async function renderHtmlToPdfResponse(
         "Content-Disposition": `attachment; filename="${safeBase}.pdf"`,
       },
     });
-  } catch {
+  } catch (err) {
+    // Surface why we fell back so operators can see it in the logs
+    // instead of silently shipping HTML to clients expecting a PDF.
+    log
+      .withContext({ component: "pdf", baseFilename: safeBase })
+      .warn("puppeteer render failed, falling back to html", {
+        message: err instanceof Error ? err.message : String(err),
+        executablePath: process.env.PUPPETEER_EXECUTABLE_PATH,
+      });
     return new Response(html, {
       headers: {
         "Content-Type": "text/html; charset=utf-8",
         "Content-Disposition": `attachment; filename="${safeBase}.html"`,
+        "X-PDF-Fallback": "html",
       },
     });
   }

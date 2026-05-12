@@ -41,10 +41,19 @@ export default auth((req) => {
   // /api/v1/health is the liveness/readiness probe for Docker healthchecks
   // and external monitors -- must respond without a session cookie.
   // Returns only { status, checkedAt, dbLatencyMs, service } -- no data.
+  //
+  // /api/v1/whistleblowing/intake/* is the HinSchG-conform anonymous tip
+  // channel — tipsters MUST be able to submit without an account, and
+  // German whistleblower protection (HinSchG §16) forbids identifying
+  // the reporter, so requiring a session would be a legal-compliance
+  // bug, not just a UX nuisance. The submit endpoint does its own
+  // org-resolution via orgCode and never trusts the caller's identity.
+  // The discovery (GET) endpoint returns only a public schema map.
   if (
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth") ||
-    pathname === "/api/v1/health"
+    pathname === "/api/v1/health" ||
+    pathname.startsWith("/api/v1/whistleblowing/intake")
   ) {
     const res = NextResponse.next();
     res.headers.set("x-request-id", requestId);
