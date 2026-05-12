@@ -141,7 +141,7 @@ export default function AiActDashboardPage() {
             </p>
             {data.documentationDue > 0 && (
               <p className="text-xs text-orange-600 mt-1">
-                Pruefung ueberfaellig oder Ablauf in 90 Tagen
+                Prüfung überfällig oder Ablauf in 90 Tagen
               </p>
             )}
           </CardContent>

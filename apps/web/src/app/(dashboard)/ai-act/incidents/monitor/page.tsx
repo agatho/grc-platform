@@ -244,7 +244,7 @@ export default function IncidentsMonitorPage() {
                 </span>
               ) : ov.isOverdue ? (
                 <span className="text-red-700 font-medium">
-                  {formatHours(ov.hoursOverdue)} ueberfaellig
+                  {formatHours(ov.hoursOverdue)} überfällig
                 </span>
               ) : (
                 <span>{formatHours(ov.hoursUntilDeadline)} bis zur Frist</span>
@@ -266,14 +266,14 @@ export default function IncidentsMonitorPage() {
             className="inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-primary mb-2"
           >
             <ArrowLeft className="h-3 w-3" />
-            Zurueck zur Incidents-Liste
+            Zurück zur Incidents-Liste
           </Link>
           <h1 className="text-3xl font-bold tracking-tight">
             Incidents Monitor
           </h1>
           <p className="text-muted-foreground mt-1">
-            Art. 73 Frist-Ueberwachung fuer alle AI-Incidents. Escalation-Level
-            basiert auf time-to-deadline (kritisch wenn &gt; 48h ueberfaellig).
+            Art. 73 Frist-Überwachung für alle AI-Incidents. Escalation-Level
+            basiert auf time-to-deadline (kritisch wenn &gt; 48h überfällig).
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -310,7 +310,7 @@ export default function IncidentsMonitorPage() {
               {bucket.critical.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              &gt; 48h ueberfaellig
+              &gt; 48h überfällig
             </p>
           </CardContent>
         </Card>
@@ -324,7 +324,7 @@ export default function IncidentsMonitorPage() {
               {bucket.overdue.length}
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              0-48h ueberfaellig
+              0-48h überfällig
             </p>
           </CardContent>
         </Card>
