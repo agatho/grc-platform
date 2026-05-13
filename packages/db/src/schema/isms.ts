@@ -235,6 +235,13 @@ export const securityIncident = pgTable(
     dataBreachDeadline: timestamp("data_breach_72h_deadline", {
       withTimezone: true,
     }),
+    // DSGVO Art. 33 — supervisory-authority notification record.
+    // Populated by POST /api/v1/isms/incidents/[id]/notify-authority.
+    authorityNotifiedAt: timestamp("authority_notified_at", {
+      withTimezone: true,
+    }),
+    notifiedAuthority: varchar("notified_authority", { length: 255 }),
+    notificationReason: text("notification_reason"),
     rootCause: text("root_cause"),
     remediationActions: text("remediation_actions"),
     lessonsLearned: text("lessons_learned"),
