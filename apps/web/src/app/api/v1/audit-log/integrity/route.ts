@@ -264,8 +264,7 @@ export async function GET(req: Request) {
         type: "https://arctos.charliehund.de/errors/integrity-check-failed",
         title: "Integrity check failed",
         status: 503,
-        detail:
-          e.message ?? "Unknown error during hash-chain verification.",
+        detail: e.message ?? "Unknown error during hash-chain verification.",
         cause: e.code ?? "unknown",
         requestId,
         instance: req.url,
