@@ -68,6 +68,8 @@ vi.mock("@/lib/api", () => ({
   paginatedResponse: vi.fn((data: unknown, total: number) =>
     Response.json({ data, total, page: 1, limit: 10 }),
   ),
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("drizzle-orm", () => {
@@ -197,7 +199,14 @@ describe("Domain RBAC suite — parametric", () => {
         withAuditContextMock.mockReset();
       });
 
-      it("returns 401 when not authenticated", async () => {
+      // 15s timeout on every it() in this suite: each describe block
+      // does the FIRST `await import(spec.routePath)` for that route
+      // and ESM cold-loads of route modules can hit 6-9s on the slower
+      // CI runners (the heavy ones pull in next, drizzle, and a couple
+      // of @grc packages). Default 5s flaked on whichever spec started
+      // execution; subsequent tests for the same spec hit the cache and
+      // resolve in <100ms, but uniform 15s is the simplest hedge.
+      it("returns 401 when not authenticated", { timeout: 15000 }, async () => {
         withAuthMock.mockResolvedValue(
           Response.json({ error: "Unauthorized" }, { status: 401 }),
         );
@@ -208,46 +217,65 @@ describe("Domain RBAC suite — parametric", () => {
         expect(res.status).toBe(401);
       });
 
-      it("calls withAuth with the documented role list", async () => {
-        withAuthMock.mockResolvedValue(
-          Response.json({ error: "Unauthorized" }, { status: 401 }),
-        );
-        const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
-        await handler(makeReq(spec.method, spec.urlPath));
-        expect(withAuthMock).toHaveBeenCalledWith(...spec.expectedRoles);
-      });
+      it(
+        "calls withAuth with the documented role list",
+        { timeout: 15000 },
+        async () => {
+          withAuthMock.mockResolvedValue(
+            Response.json({ error: "Unauthorized" }, { status: 401 }),
+          );
+          const mod = (await import(spec.routePath)) as Record<string, unknown>;
+          const handler = mod[spec.method] as (
+            req: Request,
+          ) => Promise<Response>;
+          await handler(makeReq(spec.method, spec.urlPath));
+          expect(withAuthMock).toHaveBeenCalledWith(...spec.expectedRoles);
+        },
+      );
 
-      it("returns 403 when role is rejected (e.g. viewer)", async () => {
-        withAuthMock.mockResolvedValue(
-          Response.json({ error: "Forbidden" }, { status: 403 }),
-        );
-        const mod = (await import(spec.routePath)) as Record<string, unknown>;
-        const handler = mod[spec.method] as (req: Request) => Promise<Response>;
-        const res = await handler(makeReq(spec.method, spec.urlPath));
-        expect(res.status).toBe(403);
-      });
-
-      if (spec.expectedModule) {
-        it(`enforces requireModule("${spec.expectedModule}") gate`, async () => {
-          withAuthMock.mockResolvedValue({
-            session: { user: { id: "user-1" } },
-            orgId: "org-1",
-            userId: "user-1",
-          });
-          requireModuleMock.mockResolvedValue(
-            Response.json({ error: "Module disabled" }, { status: 404 }),
+      it(
+        "returns 403 when role is rejected (e.g. viewer)",
+        { timeout: 15000 },
+        async () => {
+          withAuthMock.mockResolvedValue(
+            Response.json({ error: "Forbidden" }, { status: 403 }),
           );
           const mod = (await import(spec.routePath)) as Record<string, unknown>;
           const handler = mod[spec.method] as (
             req: Request,
           ) => Promise<Response>;
           const res = await handler(makeReq(spec.method, spec.urlPath));
-          expect(res.status).toBe(404);
-          // Module key check is the second argument
-          const moduleCall = requireModuleMock.mock.calls[0];
-          expect(moduleCall?.[0]).toBe(spec.expectedModule);
-        });
+          expect(res.status).toBe(403);
+        },
+      );
+
+      if (spec.expectedModule) {
+        it(
+          `enforces requireModule("${spec.expectedModule}") gate`,
+          { timeout: 15000 },
+          async () => {
+            withAuthMock.mockResolvedValue({
+              session: { user: { id: "user-1" } },
+              orgId: "org-1",
+              userId: "user-1",
+            });
+            requireModuleMock.mockResolvedValue(
+              Response.json({ error: "Module disabled" }, { status: 404 }),
+            );
+            const mod = (await import(spec.routePath)) as Record<
+              string,
+              unknown
+            >;
+            const handler = mod[spec.method] as (
+              req: Request,
+            ) => Promise<Response>;
+            const res = await handler(makeReq(spec.method, spec.urlPath));
+            expect(res.status).toBe(404);
+            // Module key check is the second argument
+            const moduleCall = requireModuleMock.mock.calls[0];
+            expect(moduleCall?.[0]).toBe(spec.expectedModule);
+          },
+        );
       }
     });
   }

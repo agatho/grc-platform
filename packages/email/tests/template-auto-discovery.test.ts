@@ -126,6 +126,82 @@ const kitchenSink = {
   ],
   digestPeriod: "weekly",
   count: 2,
+
+  // Per-template URL variants — every <Name>Url that any template reads.
+  // React-Email's Button needs an `href`; templates that hard-code a
+  // typed url prop crash if it is undefined.
+  auditUrl: "https://arctos.example.com/audit-mgmt/audits/AUD-2026-001",
+  bcpUrl: "https://arctos.example.com/bcms/bcp/BCP-2026-001",
+  biaUrl: "https://arctos.example.com/bcms/bia/BIA-2026-001",
+  breachUrl: "https://arctos.example.com/dpms/breaches/BR-2026-001",
+  contractUrl: "https://arctos.example.com/contracts/CT-2026-007",
+  crisisUrl: "https://arctos.example.com/bcms/crisis/CRI-2026-001",
+  dpiaUrl: "https://arctos.example.com/dpms/dpia/DPIA-2026-001",
+  dsrUrl: "https://arctos.example.com/dpms/dsr/DSR-2026-042",
+  exerciseUrl: "https://arctos.example.com/bcms/exercises/EX-2026-002",
+  findingUrl: "https://arctos.example.com/audit-mgmt/findings/FND-2026-007",
+  planUrl: "https://arctos.example.com/audit-mgmt/plans/PLAN-2026-01",
+  ropaUrl: "https://arctos.example.com/dpms/ropa/RPA-2026-007",
+  vendorUrl: "https://arctos.example.com/vendors/VND-2026-003",
+
+  // Per-template name variants. Same story as the URLs — templates that
+  // declare a typed name prop don't fall back to the generic `title`.
+  auditName: "ISMS Audit Q1 2026",
+  biaName: "Production line BIA",
+  crisisName: "Ransomware Outbreak",
+  planName: "Audit Plan 2026",
+  processName: "Customer Onboarding",
+  processingName: "Customer Newsletter Personalization",
+
+  // Arrays that templates iterate. DpiaRequired (.map on triggerCriteria)
+  // crashed without this because Array.prototype.map on undefined throws.
+  triggerCriteria: [
+    "Profiling at scale (Art. 35(3)(a) GDPR)",
+    "Special-category data (Art. 9 GDPR)",
+    "Systematic monitoring of public area (Art. 35(3)(c))",
+  ],
+
+  // Misc. typed scalars referenced by individual templates.
+  activatedBy: "Lisa Schneider",
+  approvedBy: "Dr. Michael Braun",
+  auditCount: 4,
+  auditType: "internal",
+  completedAt: "2026-05-10T18:00:00Z",
+  contactEmail: "dpo@arctos.example.com",
+  contactInfo: "DPO: dpo@arctos.example.com / +49 30 123456",
+  dataAffected: "name, email, phone",
+  dataSubjectEmail: "max.mustermann@example.com",
+  dataSubjectName: "Max Mustermann",
+  daysOverdue: 7,
+  deadline: "2026-06-08",
+  deadlineAt: "2026-06-08T17:00:00Z",
+  dsrType: "access",
+  duration: "4h",
+  exerciseType: "tabletop",
+  expirationDate: "2026-12-31",
+  handlerName: "Lisa Schneider",
+  hoursOverdue: 3,
+  lastAssessment: "2025-11-20",
+  lastReviewed: "2025-11-20",
+  leadAuditor: "Dr. Michael Braun",
+  measurementPeriod: "Q1 2026",
+  measuresTaken: "Password reset enforced; affected sessions invalidated.",
+  metricName: "DSR Timeliness",
+  nextAssessment: "2026-11-20",
+  nextReviewDate: "2026-11-20",
+  noticePeriodDays: 90,
+  plannedDate: "2026-06-15",
+  plannedEnd: "2026-06-15T16:00:00Z",
+  plannedStart: "2026-06-15T09:00:00Z",
+  requestingOrgName: "Authority X",
+  targetValue: "95%",
+  teamRole: "first responder",
+  tier: "tier-1",
+  totalValue: "150,000 EUR",
+  unit: "%",
+  whatHappened: "Suspected unauthorized access via leaked API key.",
+  year: "2026",
+  affectedRecords: 1240,
 };
 
 // Templates we know about — keeps the discovery list deterministic per test
@@ -166,17 +242,27 @@ describe("Email template auto-discovery (full sweep)", () => {
 
   for (const name of TEMPLATES) {
     describe(name, () => {
-      it("module exports a default-or-named React component + getSubject", async () => {
-        const mod = (await import(`../src/templates/${name}`)) as Record<
-          string,
-          unknown
-        >;
-        const Component =
-          (mod[name] as React.FC<unknown>) ??
-          (mod.default as React.FC<unknown>);
-        expect(typeof Component).toBe("function");
-        expect(typeof mod.getSubject).toBe("function");
-      });
+      // 10s timeout: the first template imported in the suite has to
+      // cold-load the @react-email/* runtime + every shared style util.
+      // On CI that can hit 5-6s for the very first dynamic import of
+      // the file (subsequent ones are cached and resolve in <100ms).
+      // Default 5s timeout flaked on whichever template happened to be
+      // first in the alphabetical iteration (currently AuditFindingAssigned).
+      it(
+        "module exports a default-or-named React component + getSubject",
+        { timeout: 10_000 },
+        async () => {
+          const mod = (await import(`../src/templates/${name}`)) as Record<
+            string,
+            unknown
+          >;
+          const Component =
+            (mod[name] as React.FC<unknown>) ??
+            (mod.default as React.FC<unknown>);
+          expect(typeof Component).toBe("function");
+          expect(typeof mod.getSubject).toBe("function");
+        },
+      );
 
       it("renders to non-empty HTML in EN", async () => {
         const mod = (await import(`../src/templates/${name}`)) as Record<

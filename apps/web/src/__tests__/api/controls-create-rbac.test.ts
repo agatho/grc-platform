@@ -49,6 +49,19 @@ vi.mock("@/lib/api", () => ({
   paginatedResponse: vi.fn((data: unknown, total: number) =>
     Response.json({ data, total, page: 1, limit: 10 }),
   ),
+  // Required by api-wrapper.ts (withErrorHandler does
+  // `instanceof PaginationError`). Replaces nothing — controls/POST
+  // path doesn't actually paginate — but the import must resolve.
+  PaginationError: class PaginationError extends Error {
+    constructor(
+      public readonly field: string,
+      public readonly value: string,
+      public readonly reason: string,
+    ) {
+      super(`Invalid pagination: ${field}=${value} (${reason})`);
+      this.name = "PaginationError";
+    }
+  },
 }));
 
 vi.mock("drizzle-orm", () => {

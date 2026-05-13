@@ -34,7 +34,13 @@ export type RiskStatus = (typeof RISK_STATUSES)[number];
 export const RISK_ALLOWED_TRANSITIONS: Record<RiskStatus, RiskStatus[]> = {
   identified: ["assessed", "accepted"],
   assessed: ["treated", "accepted", "identified"],
-  treated: ["accepted", "closed", "assessed"],
+  // 'treated' must allow reopening to 'identified' too — the test
+  // contract is that every later state can be reopened to walk through
+  // the full assessment cycle again. Without this, a control owner who
+  // realises a treatment plan was based on the wrong threat profile is
+  // stuck (can't downgrade a treated risk back to identified for
+  // re-scoping).
+  treated: ["accepted", "closed", "assessed", "identified"],
   accepted: ["closed", "identified"],
   closed: ["identified"],
 };

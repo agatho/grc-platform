@@ -31,15 +31,29 @@ vi.mock("@/lib/api", () => ({
   get paginate() {
     return paginateMock;
   },
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("drizzle-orm", () => {
   const noop = () => ({}) as unknown;
+  // Drizzle's `sql` is a tag *and* carries helper methods (sql.join,
+  // sql.raw, sql.empty). The route's includeDescendants branch uses
+  // sql.join to build a NOT IN list — without it the mock crashed
+  // before the RBAC assertion could run.
+  const sqlTag = (strings: TemplateStringsArray) => ({ sql: strings.raw });
+  (sqlTag as unknown as Record<string, unknown>).join = (
+    parts: unknown[],
+    _sep?: unknown,
+  ) => ({ sql: ["join"], parts });
+  (sqlTag as unknown as Record<string, unknown>).raw = (s: string) => ({
+    sql: [s],
+  });
   return {
     eq: noop,
     and: noop,
     desc: noop,
-    sql: (strings: TemplateStringsArray) => ({ sql: strings.raw }),
+    sql: sqlTag,
     count: noop,
     inArray: noop,
     or: noop,
@@ -90,6 +104,18 @@ describe("GET /api/v1/audit-log", () => {
       },
       orgId: "org-1",
       userId: "user-1",
+    });
+    // The shared beforeEach sets paginate's mock to return an EMPTY
+    // URLSearchParams. That makes the route's `searchParams.get(
+    // "includeDescendants")` return null, the 403 branch never fires,
+    // and the route crashes on the count-row destructuring downstream.
+    // Override for this case so the request's actual ?includeDescendants
+    // parameter reaches the route.
+    paginateMock.mockReturnValueOnce({
+      page: 1,
+      limit: 20,
+      offset: 0,
+      searchParams: new URLSearchParams("includeDescendants=true"),
     });
     const { GET } = await import("../../app/api/v1/audit-log/route");
     const res = await GET(

@@ -144,7 +144,7 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
   });
 
   it("Org A sees its own audit_checklist_item with method_entries", async () => {
-    await setRlsContext(appDb.client, orgAId);
+    await setRlsContext(appDb.client, orgAId, userAId);
     const rows = await appDb.client<{ id: string }[]>`
       SELECT id FROM audit_checklist_item WHERE id = ${itemAId}
     `;
@@ -153,7 +153,7 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
   });
 
   it("Org B does NOT see Org A's audit_checklist_item", async () => {
-    await setRlsContext(appDb.client, orgBId);
+    await setRlsContext(appDb.client, orgBId, userBId);
     const rows = await appDb.client<{ id: string }[]>`
       SELECT id FROM audit_checklist_item WHERE id = ${itemAId}
     `;
@@ -162,7 +162,7 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
   });
 
   it("Org B does NOT see Org A's audit_checklist via audit_id", async () => {
-    await setRlsContext(appDb.client, orgBId);
+    await setRlsContext(appDb.client, orgBId, userBId);
     const rows = await appDb.client<{ id: string }[]>`
       SELECT id FROM audit_checklist WHERE id = ${checklistAId}
     `;
@@ -173,7 +173,7 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
   it("method_entries jsonb GIN-Query respektiert RLS", async () => {
     // Org B darf nichts finden, auch wenn sie nach dem jsonb-Predikat
     // sucht, das die Org-A-Daten eigentlich treffen würde.
-    await setRlsContext(appDb.client, orgBId);
+    await setRlsContext(appDb.client, orgBId, userBId);
     const rows = await appDb.client<{ id: string }[]>`
       SELECT id
       FROM audit_checklist_item
@@ -187,7 +187,7 @@ describe("RLS Audit-Checklist-Item Isolation (method_entries jsonb)", () => {
   });
 
   it("Sensible Detail-Werte aus method_entries leaken nicht an Org B", async () => {
-    await setRlsContext(appDb.client, orgBId);
+    await setRlsContext(appDb.client, orgBId, userBId);
     const rows = await appDb.client<{ entries: unknown }[]>`
       SELECT method_entries AS entries
       FROM audit_checklist_item

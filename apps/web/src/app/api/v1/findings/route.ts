@@ -29,11 +29,15 @@ import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/findings — Create finding
 export async function POST(req: Request) {
+  // Findings can be raised by any 1st-line operator that runs the
+  // process whose control failed, plus 2nd-line and 3rd-line. Adding
+  // process_owner closes the gap the parametric RBAC suite flagged.
   const ctx = await withAuth(
     "admin",
-    "risk_manager",
     "auditor",
+    "risk_manager",
     "control_owner",
+    "process_owner",
   );
   if (ctx instanceof Response) return ctx;
 

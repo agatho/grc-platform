@@ -17,6 +17,10 @@ vi.mock("@grc/db", () => ({
     deprecatedAt: "x",
     name: "x",
   },
+  // Route imports seedProgrammeTemplates() at module load to lazily
+  // ensure the framework templates exist. The unit test doesn't need
+  // the real seeding logic — a no-op stub keeps the import resolvable.
+  seedProgrammeTemplates: vi.fn().mockResolvedValue(undefined),
 }));
 
 vi.mock("@grc/auth", () => ({
@@ -29,6 +33,8 @@ vi.mock("@/lib/api", () => ({
   get withAuth() {
     return withAuthMock;
   },
+  // api-wrapper imports PaginationError; mock must export it for instanceof check.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("@grc/shared", () => ({
