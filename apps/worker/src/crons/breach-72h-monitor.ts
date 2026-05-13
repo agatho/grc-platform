@@ -53,12 +53,17 @@ export async function processBreach72hMonitor(): Promise<Breach72hResult> {
         (deadline72h.getTime() - now.getTime()) / (1000 * 60 * 60),
       );
 
-      // Only warn at specific thresholds: 48h, 24h, 0h (or overdue)
+      // Only warn at specific thresholds: ~48h, ~24h, ~0h (or overdue).
+      // Windows are 2 hours wide and inclusive so the hourly cron always
+      // catches the threshold even when Math.floor on the time delta
+      // produces 47 instead of 48 (millisecond drift between
+      // detectedAt and cron-tick `now`). The hourly cadence guarantees
+      // each window fires at most once per breach.
       const shouldWarn =
         hoursRemaining <= 0 ||
-        (hoursRemaining > 0 && hoursRemaining <= 1) ||
-        (hoursRemaining > 23 && hoursRemaining <= 24) ||
-        (hoursRemaining > 47 && hoursRemaining <= 48);
+        (hoursRemaining >= 0 && hoursRemaining <= 1) ||
+        (hoursRemaining >= 23 && hoursRemaining <= 24) ||
+        (hoursRemaining >= 47 && hoursRemaining <= 48);
 
       if (!shouldWarn) continue;
 
