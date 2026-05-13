@@ -13,7 +13,9 @@
 //   * audit_universe_entry        — next_audit_due (universe schedule)
 //   * dsr                         — deadline (Art. 12 GDPR clock)
 //   * finding                     — remediation_due_date
-//   * audit_plan                  — planned_start
+//
+// Note: audit_plan itself is annual / no per-day date column, so it
+// doesn't appear here — the individual `audit` rows under each plan do.
 //
 // Each row is normalized to {date, type, title, sourceModule, sourceId}.
 // The window defaults to "today → +90d" when caller omits both from/to;
@@ -24,7 +26,6 @@ import {
   db,
   complianceCalendarEvent,
   audit,
-  auditPlan,
   auditUniverseEntry,
   dsr,
   finding,
@@ -114,28 +115,13 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       ),
     );
 
-  // ── Audit plans ─────────────────────────────────────────────────
-  const plans = await db
-    .select({
-      id: auditPlan.id,
-      title: auditPlan.title,
-      plannedStart: auditPlan.plannedStart,
-    })
-    .from(auditPlan)
-    .where(
-      and(
-        eq(auditPlan.orgId, ctx.orgId),
-        isNotNull(auditPlan.plannedStart),
-        gte(auditPlan.plannedStart, fromIso),
-        lte(auditPlan.plannedStart, upperIso),
-      ),
-    );
-
   // ── Universe entries (next audit due) ───────────────────────────
+  // (audit_plan itself is annual / no per-day date — we surface the
+  // individual `audit` rows + the universe `next_audit_due` instead.)
   const universe = await db
     .select({
       id: auditUniverseEntry.id,
-      title: auditUniverseEntry.title,
+      name: auditUniverseEntry.name,
       nextAuditDue: auditUniverseEntry.nextAuditDue,
     })
     .from(auditUniverseEntry)
@@ -149,6 +135,8 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     );
 
   // ── DSR Art. 12 deadlines ───────────────────────────────────────
+  // dsr has no `deleted_at` column (hard-delete table by design — the
+  // hash-chained audit log carries the historical record).
   const dsrs = await db
     .select({
       id: dsr.id,
@@ -159,7 +147,6 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     .where(
       and(
         eq(dsr.orgId, ctx.orgId),
-        isNull(dsr.deletedAt),
         gte(dsr.deadline, from),
         lte(dsr.deadline, upper),
       ),
@@ -170,16 +157,16 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     .select({
       id: finding.id,
       title: finding.title,
-      remediationDeadline: finding.remediationDeadline,
+      remediationDueDate: finding.remediationDueDate,
     })
     .from(finding)
     .where(
       and(
         eq(finding.orgId, ctx.orgId),
         isNull(finding.deletedAt),
-        isNotNull(finding.remediationDeadline),
-        gte(finding.remediationDeadline, fromIso),
-        lte(finding.remediationDeadline, upperIso),
+        isNotNull(finding.remediationDueDate),
+        gte(finding.remediationDueDate, fromIso),
+        lte(finding.remediationDueDate, upperIso),
       ),
     );
 
@@ -198,17 +185,10 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       sourceModule: "audit",
       sourceId: a.id,
     })),
-    ...plans.map((p) => ({
-      date: p.plannedStart!,
-      type: "audit_plan",
-      title: p.title,
-      sourceModule: "audit",
-      sourceId: p.id,
-    })),
     ...universe.map((u) => ({
       date: u.nextAuditDue!,
       type: "audit_due",
-      title: u.title,
+      title: u.name,
       sourceModule: "audit",
       sourceId: u.id,
     })),
@@ -220,7 +200,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       sourceId: d.id,
     })),
     ...findings.map((f) => ({
-      date: f.remediationDeadline!,
+      date: f.remediationDueDate!,
       type: "finding_remediation",
       title: f.title,
       sourceModule: "ics",

@@ -929,7 +929,8 @@
       "assessed": "Bewertet",
       "treated": "Behandelt",
       "accepted": "Akzeptiert",
-      "closed": "Geschlossen"
+      "closed": "Geschlossen",
+      "reopened": "Wiedereröffnet"
     },
     "category": {
       "strategic": "Strategisch",
@@ -1142,7 +1143,8 @@
         "assessed": "Bewertet",
         "treated": "Behandelt",
         "accepted": "Akzeptiert",
-        "closed": "Geschlossen"
+        "closed": "Geschlossen",
+        "reopened": "Wiedereröffnet"
       },
       "categories": {
         "strategic": "Strategisch",

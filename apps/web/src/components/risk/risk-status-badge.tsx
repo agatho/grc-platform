@@ -38,6 +38,14 @@ const STATUS_STYLES: Record<
     text: "text-slate-600",
     border: "border-slate-300",
   },
+  // #WAVE14-STATE-02: explicit reopen state. Visually we use orange so
+  // it stands out from `assessed` (blue) and `identified` (gray) — a
+  // reopened risk is unusual enough to deserve a distinct cue.
+  reopened: {
+    bg: "bg-orange-100",
+    text: "text-orange-800",
+    border: "border-orange-200",
+  },
 };
 
 // ---------------------------------------------------------------------------
@@ -50,6 +58,7 @@ const STATUS_DOTS: Record<RiskStatus, string> = {
   treated: "#10B981",
   accepted: "#F59E0B",
   closed: "#64748B",
+  reopened: "#F97316", // tailwind orange-500
 };
 
 // ---------------------------------------------------------------------------

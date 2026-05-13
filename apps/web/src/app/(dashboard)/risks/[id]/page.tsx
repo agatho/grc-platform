@@ -121,6 +121,8 @@ const statusColors: Record<RiskStatus, string> = {
   treated: "bg-green-100 text-green-900",
   accepted: "bg-amber-100 text-amber-900",
   closed: "bg-gray-100 text-gray-600",
+  // #WAVE14-STATE-02: explicit reopen state — orange to match the badge.
+  reopened: "bg-orange-100 text-orange-900",
 };
 
 const categoryColors: Record<RiskCategory, string> = {
