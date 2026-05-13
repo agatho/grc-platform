@@ -57,51 +57,66 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid date" }, { status: 422 });
   }
 
-  // #WAVE9-CRITICAL-01: refuse to anchor a chain that's currently
-  // failing self-verification. Anchoring a broken chain would propagate
-  // the broken state into the FreeTSA/OpenTimestamps trust anchor and
-  // make the corruption permanent.
+  // #WAVE10-CRITICAL-01: refuse to anchor a chain that's failing
+  // self-verification — either rowMismatches (stored entry_hash diverges
+  // from the recompute) OR chainMismatches (stored previous_hash
+  // diverges from the prior row's entry_hash in chain_seq order).
   //
-  // Cheap check: count rows whose stored hash doesn't match the
-  // recompute (per hash_version) AND aren't tagged as known-broken
-  // (v0). v0 rows are repaired by migration 0312, not by anchoring;
-  // they're surfaced as warnings in /audit-log/integrity but don't
-  // block the anchor of the verifiable portion.
+  // Wave 9's gate only checked rowMismatches and let the anchor through
+  // when the chain was structurally broken but every individual row's
+  // hash was internally consistent. FreeTSA then signed a Merkle root
+  // that included rows whose chain pointers were wrong — exactly the
+  // permanent-trust corruption the gate was meant to prevent.
   //
-  // Status 409 (was 503 in Wave 7-8): semantically the chain CAN be
-  // anchored once the operator runs the repair migration — the resource
-  // state conflicts with the operation, but the upstream service is
-  // available. 503 implied an outage; 409 implies "fix your state and
-  // retry."
+  // Single SQL query computes both counts via a CTE so we get one
+  // round-trip. ORDER BY chain_seq matches integrity/route.ts.
   const scope = `org:${ctx.orgId}`;
-  const [{ broken }] = await db.execute<{ broken: number }>(sql`
-    SELECT count(*)::int AS broken
-    FROM audit_log
-    WHERE previous_hash_scope = ${scope}
-      AND hash_version <> 0
-      AND entry_hash <> CASE
-        WHEN hash_version = 2 THEN
-          compute_audit_hash_v2(
+  const [{ row_broken, chain_broken }] = await db.execute<{
+    row_broken: number;
+    chain_broken: number;
+  }>(sql`
+    WITH walked AS (
+      SELECT
+        hash_version,
+        previous_hash AS stored_prev,
+        entry_hash    AS stored_eh,
+        LAG(entry_hash) OVER (ORDER BY chain_seq) AS expected_prev,
+        CASE
+          WHEN hash_version = 2 THEN compute_audit_hash_v2(
             previous_hash, org_id, user_id, entity_type, entity_id,
             action::text, changes, action_detail, metadata, created_at,
             previous_hash_scope
           )
-        ELSE
-          compute_audit_hash_v1(
+          WHEN hash_version = 1 THEN compute_audit_hash_v1(
             previous_hash, org_id, user_id, entity_type, entity_id,
             action::text, changes, created_at, previous_hash_scope
           )
-      END
+          ELSE entry_hash
+        END AS expected_eh
+      FROM audit_log
+      WHERE previous_hash_scope = ${scope}
+    )
+    SELECT
+      COUNT(*) FILTER (
+        WHERE hash_version <> 0 AND stored_eh <> expected_eh
+      )::int AS row_broken,
+      COUNT(*) FILTER (
+        WHERE hash_version <> 0
+          AND COALESCE(stored_prev, '') <> COALESCE(expected_prev, '')
+      )::int AS chain_broken
+    FROM walked
   `);
 
-  if ((broken ?? 0) > 0) {
+  const totalBroken = (row_broken ?? 0) + (chain_broken ?? 0);
+  if (totalBroken > 0) {
     return Response.json(
       {
         type: "https://arctos.charliehund.de/errors/chain-not-anchorable",
         title: "Audit chain integrity broken — refusing to anchor",
         status: 409,
-        detail: `Found ${broken} row(s) where stored entry_hash does not match the recomputed hash. Anchoring now would propagate the broken state into the timestamp authority and make the corruption permanent. GET /api/v1/audit-log/integrity for the full diff. If the report shows broken_hash_window warnings, run migration 0312_rehash_v0_audit_entries.sql first.`,
-        brokenRowCount: broken,
+        detail: `Found ${row_broken ?? 0} row mismatch(es) and ${chain_broken ?? 0} chain mismatch(es). Anchoring now would propagate the broken state into the timestamp authority and make the corruption permanent. GET /api/v1/audit-log/integrity for the full diff. If broken_hash_window warnings appear, run 0312_rehash_v0_audit_entries.sql; if chain mismatches appear, run 0313_audit_chain_seq.sql.`,
+        brokenRowCount: row_broken ?? 0,
+        brokenChainCount: chain_broken ?? 0,
         integrityCheck: "/api/v1/audit-log/integrity",
       },
       { status: 409 },

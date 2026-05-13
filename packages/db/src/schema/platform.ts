@@ -315,6 +315,13 @@ export const auditLog = pgTable(
     // ADR-011 rev.2 — per-tenant chain scope ('org:<uuid>' or 'platform').
     // NULL for pre-rev2 rows (legacy global chain).
     previousHashScope: text("previous_hash_scope"),
+    // ADR-011 rev.4 (Wave 10) — strictly-monotonic ordering for the
+    // chain walk. Backfilled by migration 0313 in chronological order;
+    // assigned by BIGSERIAL on every new INSERT thereafter. Ordering by
+    // chain_seq is non-ambiguous even within a single transaction
+    // (multiple audit rows from one PUT).
+    hashVersion: integer("hash_version").notNull().default(1),
+    chainSeq: bigint("chain_seq", { mode: "number" }).notNull(),
     // GDPR Art. 17 tombstone (set by tombstone_audit_entry() function).
     // entry_hash is preserved when tombstoned so the chain stays verifiable.
     piiTombstonedAt: timestamp("pii_tombstoned_at", { withTimezone: true }),

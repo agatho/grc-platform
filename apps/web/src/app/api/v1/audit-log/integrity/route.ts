@@ -88,9 +88,18 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
   const scope = `org:${orgId}`;
 
   // Per-tenant chain verification. LAG window is scoped to this org's
-  // rows in chronological order. The CASE on hash_version dispatches
-  // v1 (9-field) vs v2 (11-field) recompute. v0 rows are recognised
-  // here so chain_ok skips them rather than reporting a mismatch.
+  // rows in **chain_seq order** (NOT created_at). Wave-9 verification
+  // surfaced a race where one PUT writes multiple audit_log rows
+  // (work_item + risk + search_index) inside a single transaction —
+  // now() returns the same value for all of them, so ordering by
+  // created_at,id is non-deterministic and the chain looked broken
+  // even though it was correctly written. chain_seq is a BIGSERIAL
+  // assigned at INSERT time, strictly monotonic even within a
+  // transaction. Migration 0313 backfills it for existing rows.
+  //
+  // The CASE on hash_version dispatches v1 (9-field) vs v2 (11-field)
+  // recompute. v0 rows are recognised here so row_ok / chain_ok skip
+  // them rather than reporting a mismatch.
   const result = await db.execute<RowCheck>(sql`
     WITH ordered AS (
       SELECT
@@ -100,9 +109,10 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
         action,
         created_at,
         hash_version,
+        chain_seq,
         entry_hash    AS stored_entry_hash,
         previous_hash AS stored_previous_hash,
-        LAG(entry_hash) OVER (ORDER BY created_at, id) AS prev_row_entry_hash,
+        LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
         CASE
           WHEN hash_version = 0 THEN
             -- broken-window marker; skipped in row_ok / chain_ok below
@@ -155,7 +165,7 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
       (hash_version = 0 OR stored_entry_hash = recomputed_entry_hash) AS row_ok,
       (hash_version = 0 OR COALESCE(stored_previous_hash, '') = COALESCE(prev_row_entry_hash, '')) AS chain_ok
     FROM ordered
-    ORDER BY created_at, id
+    ORDER BY chain_seq
   `);
 
   const rows: RowCheck[] = Array.isArray(result) ? (result as RowCheck[]) : [];
