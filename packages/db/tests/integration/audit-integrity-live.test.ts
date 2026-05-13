@@ -150,7 +150,11 @@ describe("Audit integrity endpoint logic (live DB)", () => {
 
     // Run the rehash by invoking 0312's body (a DO block) directly via
     // psql. Done as a single client.unsafe() so PG processes the whole
-    // PL/pgSQL block atomically.
+    // PL/pgSQL block atomically. Also disables the append-only guard
+    // around the call — same shape as 0312 in production.
+    await client.unsafe(
+      `ALTER TABLE audit_log DISABLE TRIGGER audit_log_tombstone_guard`,
+    );
     await client.unsafe(`
       DO $$
       DECLARE
@@ -221,6 +225,9 @@ describe("Audit integrity endpoint logic (live DB)", () => {
         END LOOP;
       END $$;
     `);
+    await client.unsafe(
+      `ALTER TABLE audit_log ENABLE TRIGGER audit_log_tombstone_guard`,
+    );
 
     // After repair: no v0 rows, and the formerly-broken row has a new
     // entry_hash matching the v2 formula.

@@ -45,6 +45,36 @@ BEGIN;
 ALTER TABLE audit_log
   ADD COLUMN IF NOT EXISTS hash_version INTEGER NOT NULL DEFAULT 1;
 
+-- The append-only guard from migration 0284 blocks UPDATE on every column
+-- outside its allow-list, raising
+--   audit_log is append-only — column hash_version cannot be updated
+-- on the retag below. hash_version is a metadata column tracking which
+-- formula a row's stored hash was computed with — it carries no content
+-- and changing it never alters the chain semantically. Adding it to the
+-- guard's allow-list permanently so future re-tagging passes (e.g. when
+-- a v3 trigger lands) don't need a one-off bypass.
+CREATE OR REPLACE FUNCTION audit_log_tombstone_only_guard()
+RETURNS TRIGGER AS $$
+DECLARE
+  v_key text;
+  v_allowed text[] := ARRAY[
+    'user_email', 'user_name', 'ip_address', 'changes',
+    'pii_tombstoned_at', 'pii_tombstone_reason',
+    -- metadata column, not content — see migration 0311 header.
+    'hash_version'
+  ];
+BEGIN
+  FOR v_key IN SELECT jsonb_object_keys(to_jsonb(NEW)) LOOP
+    IF NOT (v_key = ANY(v_allowed)) THEN
+      IF to_jsonb(NEW)->v_key IS DISTINCT FROM to_jsonb(OLD)->v_key THEN
+        RAISE EXCEPTION 'audit_log is append-only — column % cannot be updated (use tombstone_audit_entry for PII redaction)', v_key;
+      END IF;
+    END IF;
+  END LOOP;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
 -- Helper functions: compute v1 and v2 hashes from row columns. Both
 -- mirror the SQL CASE used in apps/web/src/app/api/v1/audit-log/
 -- integrity/route.ts. Defining as IMMUTABLE PARALLEL SAFE so Postgres

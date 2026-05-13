@@ -27,6 +27,14 @@
 
 BEGIN;
 
+-- The append-only guard (audit_log_tombstone_only_guard, migration 0284)
+-- blocks UPDATE on entry_hash and previous_hash. Rehashing v0 rows is
+-- the one-time exception ADR-011 rev.3 carves out for this exact
+-- failure mode, so we DISABLE the guard for the duration of this
+-- transaction and re-ENABLE it before COMMIT. The guard remains
+-- enforced for all normal access paths and for future operators.
+ALTER TABLE audit_log DISABLE TRIGGER audit_log_tombstone_guard;
+
 -- The chain entry that records the repair itself. We INSERT this FIRST
 -- so the repaired rows can chain off of it cleanly. The trigger that
 -- normally writes audit_log entries is bypassed (we INSERT directly)
@@ -170,5 +178,8 @@ BEGIN
   RAISE NOTICE '[migration 0312] Rehashed % rows across % tenant(s). Each affected tenant got a hash_repair audit_log entry.',
     v_count, array_length(v_orgs, 1);
 END $$;
+
+-- Re-enable the append-only guard before COMMIT.
+ALTER TABLE audit_log ENABLE TRIGGER audit_log_tombstone_guard;
 
 COMMIT;
