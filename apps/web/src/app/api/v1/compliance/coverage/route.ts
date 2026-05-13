@@ -49,8 +49,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     coveragePct: Number(a.coveragePercentage),
     coveredControls: a.coveredControls ?? 0,
     notCoveredControls: a.notCoveredControls ?? 0,
-    totalControls:
-      (a.coveredControls ?? 0) + (a.notCoveredControls ?? 0),
+    totalControls: (a.coveredControls ?? 0) + (a.notCoveredControls ?? 0),
     analysisDate: String(a.analysisDate),
   }));
 
