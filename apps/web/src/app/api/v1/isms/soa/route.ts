@@ -1,12 +1,7 @@
 import { db, soaEntry, catalogEntry, controlCatalogEntry } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, sql, desc } from "drizzle-orm";
-import {
-  withAuth,
-  withAuditContext,
-  paginate,
-  paginatedResponse,
-} from "@/lib/api";
+import { withAuth, withAuditContext, paginate } from "@/lib/api";
 import { syncSoaEntryToProgramme } from "@grc/db";
 
 // GET /api/v1/isms/soa

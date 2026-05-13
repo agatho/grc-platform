@@ -1,4 +1,4 @@
-import { db, securityIncident } from "@grc/db";
+import { securityIncident } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { z } from "zod";
 import { requireModule } from "@grc/auth";

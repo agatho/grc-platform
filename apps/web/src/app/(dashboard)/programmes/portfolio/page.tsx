@@ -5,15 +5,8 @@ import Link from "next/link";
 import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import {
-  Loader2,
-  ArrowLeft,
-  AlertTriangle,
-  CheckCircle2,
-  Star,
-  Layers,
-} from "lucide-react";
+import {} from "@/components/ui/badge";
+import { Loader2, ArrowLeft, AlertTriangle, Star, Layers } from "lucide-react";
 import { ProgrammeStatusBadge } from "@/components/programme/programme-status-badge";
 import { ProgrammeProgressBar } from "@/components/programme/programme-progress-bar";
 

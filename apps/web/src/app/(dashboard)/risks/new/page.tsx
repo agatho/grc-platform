@@ -171,15 +171,19 @@ function NewRiskForm() {
       .catch(() => {});
   }, []);
 
-  // Computed scores
-  const inherentScore = useMemo(() => {
+  // Computed scores.
+  // Explicit return type so CodeQL js/comparison-between-incompatible-types
+  // doesn't mis-narrow this to `number` — the truthy branch returns a
+  // number, the else branch returns null, and downstream consumers
+  // (MiniHeatMap, HeatMapLegend) check `inherentScore !== null`.
+  const inherentScore = useMemo<number | null>(() => {
     if (form.inherentLikelihood && form.inherentImpact) {
       return form.inherentLikelihood * form.inherentImpact;
     }
     return null;
   }, [form.inherentLikelihood, form.inherentImpact]);
 
-  const residualScore = useMemo(() => {
+  const residualScore = useMemo<number | null>(() => {
     if (form.residualLikelihood && form.residualImpact) {
       return form.residualLikelihood * form.residualImpact;
     }

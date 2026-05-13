@@ -7,7 +7,7 @@ import { Plus, Shield, TestTube, FileText } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { AbacEmptyState } from "./components/empty-state";
 import type { AbacPolicy } from "@grc/shared";
 

@@ -1,5 +1,5 @@
 import { db, dsr } from "@grc/db";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
@@ -91,9 +91,7 @@ export const GET = withErrorHandler<IdCtx>(async function GET(req, { params }) {
   const [row] = await db
     .select({ status: dsr.status })
     .from(dsr)
-    .where(
-      and(eq(dsr.id, id), eq(dsr.orgId, ctx.orgId), isNull(dsr.deletedAt)),
-    );
+    .where(and(eq(dsr.id, id), eq(dsr.orgId, ctx.orgId)));
 
   if (!row) {
     return Response.json({ error: "DSR not found" }, { status: 404 });

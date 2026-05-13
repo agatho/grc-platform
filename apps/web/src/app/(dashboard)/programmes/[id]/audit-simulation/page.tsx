@@ -2,7 +2,6 @@
 
 import { use, useEffect, useState } from "react";
 import Link from "next/link";
-import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -72,7 +71,6 @@ export default function AuditSimulationPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = use(params);
-  const t = useTranslations("programme");
   const [data, setData] = useState<AuditData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

@@ -254,6 +254,11 @@ export async function GET(req: Request) {
     // the chain was broken or the verifier itself had crashed. Always
     // return a structured response so the UI banner has something to
     // render and operators have something to grep.
+    //
+    // #WAVE11: full message/pgCode logged server-side; the response
+    // body only carries a generic message + requestId. CodeQL
+    // js/stack-trace-exposure flagged the earlier shape that surfaced
+    // e.message + e.code to clients.
     const e = err as { code?: string; message?: string; detail?: string };
     log
       .withContext({
@@ -274,8 +279,9 @@ export async function GET(req: Request) {
         type: "https://arctos.charliehund.de/errors/integrity-check-failed",
         title: "Integrity check failed",
         status: 503,
-        detail: e.message ?? "Unknown error during hash-chain verification.",
-        cause: e.code ?? "unknown",
+        detail:
+          "Hash-chain verification could not complete. The full error " +
+          "has been logged server-side; include the requestId when reporting.",
         requestId,
         instance: req.url,
       },

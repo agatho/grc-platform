@@ -16,7 +16,7 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { and, eq, isNull, asc, sql, inArray } from "drizzle-orm";
+import { and, eq, isNull, sql, inArray } from "drizzle-orm";
 
 export async function GET(req: Request) {
   const ctx = await withAuth();

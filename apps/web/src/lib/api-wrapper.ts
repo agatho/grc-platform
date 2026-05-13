@@ -188,34 +188,31 @@ export function withErrorHandler<TCtx = unknown>(
         );
       }
 
+      // #WAVE11: full message + stack are logged for operators (with
+      // requestId as the correlation key) but NEVER returned in the
+      // response body. CodeQL js/stack-trace-exposure flagged the
+      // earlier Wave-3 version that surfaced e.message + errorCode to
+      // the client. Even on a private B2B platform, error messages can
+      // leak schema names, table names, query fragments, and library
+      // versions — all of which are unnecessary risk. The requestId in
+      // the response is enough for an operator to grep the logs and
+      // recover the full picture.
       logger.error("unhandled handler error", {
         message: e.message ?? String(err),
+        pgCode: e.code,
         stack:
           err instanceof Error ? err.stack?.split("\n").slice(0, 5) : undefined,
       });
-      // #WAVE3: include the underlying error message in the response so
-      // the next QA pass doesn't have to guess at root cause. For a
-      // private B2B platform (ARCTOS is not consumer-facing), surfacing
-      // the real DB error to admins is far more useful than the generic
-      // "operators have been notified" — operators DON'T see the requestId
-      // in their inbox.
-      const realMessage = e.message ?? String(err);
-      // Build the response inline so we can include errorMessage/errorCode
-      // as RFC 7807 extension fields. problem.internal() doesn't expose
-      // them in its strict signature, but the wire format allows arbitrary
-      // extension fields (RFC 7807 §3.2).
       return new Response(
         JSON.stringify({
           type: "https://arctos.charliehund.de/errors/internal",
           title: "Internal server error",
           status: 500,
+          detail:
+            "An unexpected error occurred. The full error has been logged " +
+            "server-side; include the requestId when reporting.",
           requestId,
           instance: req.url,
-          detail: realMessage
-            ? `Unexpected error: ${realMessage}`
-            : "An unexpected error occurred.",
-          errorMessage: realMessage,
-          errorCode: e.code,
         }),
         {
           status: 500,

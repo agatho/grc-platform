@@ -1,4 +1,4 @@
-import { withAuth, paginate } from "@/lib/api";
+import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { getCalendarEvents } from "@/lib/services/calendar-aggregation";
 import type { CalendarFilters } from "@grc/shared";

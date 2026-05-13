@@ -399,21 +399,34 @@ export async function renderHtmlToPdfResponse(
   );
 }
 
+// CodeQL js/double-escaping note: replacing `&amp;` before the other
+// named entities would cause an input like `&amp;lt;` to become `&lt;`
+// and then `<` — double-unescaping that doesn't match the source. We
+// decode every named entity in a single pass via one regex + a lookup
+// map. `&amp;` is the last fallback so `&amp;amp;` correctly becomes
+// `&amp;` (one round of unescaping).
+const HTML_ENTITY_MAP: Record<string, string> = {
+  "&nbsp;": " ",
+  "&lt;": "<",
+  "&gt;": ">",
+  "&quot;": '"',
+  "&auml;": "ä",
+  "&ouml;": "ö",
+  "&uuml;": "ü",
+  "&Auml;": "Ä",
+  "&Ouml;": "Ö",
+  "&Uuml;": "Ü",
+  "&szlig;": "ß",
+  "&amp;": "&",
+};
+
 function stripTags(s: string): string {
   return s
     .replace(/<[^>]+>/g, " ")
-    .replace(/&nbsp;/g, " ")
-    .replace(/&amp;/g, "&")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, '"')
-    .replace(/&auml;/g, "ä")
-    .replace(/&ouml;/g, "ö")
-    .replace(/&uuml;/g, "ü")
-    .replace(/&Auml;/g, "Ä")
-    .replace(/&Ouml;/g, "Ö")
-    .replace(/&Uuml;/g, "Ü")
-    .replace(/&szlig;/g, "ß")
+    .replace(
+      /&(?:nbsp|lt|gt|quot|auml|ouml|uuml|Auml|Ouml|Uuml|szlig|amp);/g,
+      (m) => HTML_ENTITY_MAP[m] ?? m,
+    )
     .replace(/\s+/g, " ")
     .trim();
 }
