@@ -90,22 +90,41 @@ describe("requireRole", () => {
     expect(check!.status).toBe(403);
   });
 
-  it("returns correct JSON error body for 403", async () => {
+  it("returns RFC-7807 problem+json body for 403", async () => {
     const session = makeSession();
     const check = requireRole("admin")(session, "org-2");
     const body = await check!.json();
-    expect(body).toEqual({ error: "Forbidden" });
+    expect(body).toMatchObject({
+      type: expect.stringContaining("/forbidden"),
+      title: "Forbidden",
+      status: 403,
+    });
+    expect(body.detail).toContain("admin");
+    expect(body).toHaveProperty("requestId");
   });
 
-  it("returns correct JSON error body for 401", async () => {
+  it("returns RFC-7807 problem+json body for 401", async () => {
     const check = requireRole("admin")(nullSession, "org-1");
     const body = await check!.json();
-    expect(body).toEqual({ error: "Unauthorized" });
+    expect(body).toMatchObject({
+      type: expect.stringContaining("/unauthorized"),
+      title: "Unauthorized",
+      status: 401,
+    });
+    expect(body).toHaveProperty("requestId");
   });
 
-  it("returns correct Content-Type header", () => {
+  it("returns RFC-7807 Content-Type header", () => {
     const check = requireRole("admin")(nullSession, "org-1");
-    expect(check!.headers.get("Content-Type")).toBe("application/json");
+    expect(check!.headers.get("Content-Type")).toBe(
+      "application/problem+json; charset=utf-8",
+    );
+  });
+
+  it("threads requestId into problem body when supplied", async () => {
+    const check = requireRole("admin")(nullSession, "org-1", "rq-abc123");
+    const body = await check!.json();
+    expect(body.requestId).toBe("rq-abc123");
   });
 
   it("handles multiple roles where only one matches", () => {
@@ -199,11 +218,16 @@ describe("requireLineOfDefense", () => {
     expect(check!.status).toBe(403);
   });
 
-  it("returns correct JSON body for 403", async () => {
+  it("returns RFC-7807 problem+json body for 403", async () => {
     const session = makeSession();
     const check = requireLineOfDefense("first")(session, "org-2");
     const body = await check!.json();
-    expect(body).toEqual({ error: "Forbidden" });
+    expect(body).toMatchObject({
+      type: expect.stringContaining("/forbidden"),
+      title: "Forbidden",
+      status: 403,
+    });
+    expect(body.detail).toContain("first");
   });
 
   it("handles all three lines of defense", () => {

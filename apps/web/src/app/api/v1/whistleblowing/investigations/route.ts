@@ -13,9 +13,19 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 
+// #WAVE13-RBAC-03: risk_manager removed from all three handlers — HinSchG
+// case files contain protected reporter identities (§§16, 32 HinSchG) and
+// don't belong in regular risk-management workflows. Replaced with the
+// whistleblowing officer set + auditor (LoD3 oversight).
+
 // GET /api/v1/whistleblowing/investigations
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule(
     "whistleblowing",
@@ -43,7 +53,12 @@ export async function GET(req: Request) {
 
 // POST /api/v1/whistleblowing/investigations — Start investigation from case
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule(
     "whistleblowing",
@@ -85,7 +100,12 @@ export async function POST(req: Request) {
 
 // PATCH /api/v1/whistleblowing/investigations — Advance phase
 export async function PATCH(req: Request) {
-  const ctx = await withAuth("admin", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule(
     "whistleblowing",

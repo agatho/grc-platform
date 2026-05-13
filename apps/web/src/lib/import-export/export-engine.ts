@@ -53,6 +53,30 @@ export async function exportEntities(
   }
 }
 
+// #WAVE13-EXPORT-BIA: the previous `deleted_at IS NULL OR NOT EXISTS (... pg_columns ...)`
+// pattern looked defensive but actually crashes Postgres at parse time on
+// tables without a `deleted_at` column — the planner resolves the reference
+// before the boolean short-circuit runs. `bia_assessment` is one of those
+// tables, which is why ROPA + Findings exports worked but BIA returned 500
+// (Wave-12 QA requestId f8ed728792d2dc85). Fix: probe information_schema
+// once per table and cache it in-process. Result is identical to the
+// original intent — soft-delete filter applied only when the column exists.
+const tableHasSoftDeleteCache = new Map<string, boolean>();
+
+async function tableHasSoftDelete(tableName: string): Promise<boolean> {
+  const cached = tableHasSoftDeleteCache.get(tableName);
+  if (cached !== undefined) return cached;
+  const probe = await db.execute(
+    sql`SELECT 1 FROM information_schema.columns
+        WHERE table_name = ${tableName}
+          AND column_name = 'deleted_at'
+        LIMIT 1`,
+  );
+  const has = (probe as unknown as unknown[]).length > 0;
+  tableHasSoftDeleteCache.set(tableName, has);
+  return has;
+}
+
 /**
  * Fetch entity data from database with org scoping and optional filters.
  */
@@ -64,10 +88,10 @@ async function fetchEntityData(
   // Build WHERE conditions
   const conditions: string[] = [`org_id = '${orgId}'`];
 
-  // Add soft-delete filter if table supports it
-  conditions.push(
-    `(deleted_at IS NULL OR NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = '${def.tableName}' AND column_name = 'deleted_at'))`,
-  );
+  // Add soft-delete filter only if the column exists on the target table.
+  if (await tableHasSoftDelete(def.tableName)) {
+    conditions.push("deleted_at IS NULL");
+  }
 
   // Apply filters from query params
   for (const [key, value] of Object.entries(filters)) {

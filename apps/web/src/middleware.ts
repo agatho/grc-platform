@@ -33,6 +33,30 @@ function withRequestId(response: Response, requestId: string): Response {
   });
 }
 
+// #WAVE13-RBAC-03: HinSchG vertraulichkeit. Users whose ONLY roles in the
+// session are `whistleblowing_officer` and/or `ombudsperson` are confined to
+// the whistleblowing module + their own session basics. This prevents the
+// role-conflict the QA report flagged: a Wb-officer browsing risks/audits
+// either learns reporter identity by inference or contaminates other
+// compliance domains with case knowledge. Users with additional roles
+// (e.g. an admin who is also wb-officer for one org) are unaffected.
+const HINSCHG_ISOLATED_ROLES = new Set(["whistleblowing_officer", "ombudsperson"]);
+
+// Paths a HinSchG-isolated user is allowed to reach. Anything else → 403.
+function isHinSchgAllowedPath(pathname: string): boolean {
+  return (
+    pathname.startsWith("/api/v1/whistleblowing") ||
+    pathname.startsWith("/whistleblowing") ||
+    pathname === "/api/v1/users/me" ||
+    pathname.startsWith("/api/v1/notifications") ||
+    pathname.startsWith("/api/auth") ||
+    pathname === "/login" ||
+    pathname === "/logout" ||
+    pathname === "/" || // root-redirect, lands in whistleblowing module
+    pathname.startsWith("/api/v1/health")
+  );
+}
+
 export default auth((req) => {
   const { pathname } = req.nextUrl;
   const requestId = ensureRequestId(req);
@@ -67,11 +91,17 @@ export default auth((req) => {
       return withRequestId(
         new Response(
           JSON.stringify({
-            error: "Unauthorized",
-            message: "Authentication required",
+            type: "https://arctos.charliehund.de/errors/unauthorized",
+            title: "Unauthorized",
+            status: 401,
+            detail: "Authentication required",
+            instance: pathname,
             requestId,
           }),
-          { status: 401, headers: { "Content-Type": "application/json" } },
+          {
+            status: 401,
+            headers: { "Content-Type": "application/problem+json; charset=utf-8" },
+          },
         ),
         requestId,
       );
@@ -80,6 +110,41 @@ export default auth((req) => {
     const loginUrl = new URL("/login", req.nextUrl.origin);
     loginUrl.searchParams.set("callbackUrl", pathname);
     const res = NextResponse.redirect(loginUrl);
+    res.headers.set("x-request-id", requestId);
+    return res;
+  }
+
+  // HinSchG-isolation gate. Checked here (edge) instead of per-route to
+  // catch every path including UI pages and module-discovery probes.
+  const roles =
+    ((req.auth.user as unknown as { roles?: Array<{ role: string }> }).roles) ??
+    [];
+  const isHinSchgIsolated =
+    roles.length > 0 && roles.every((r) => HINSCHG_ISOLATED_ROLES.has(r.role));
+  if (isHinSchgIsolated && !isHinSchgAllowedPath(pathname)) {
+    if (pathname.startsWith("/api/")) {
+      return withRequestId(
+        new Response(
+          JSON.stringify({
+            type: "https://arctos.charliehund.de/errors/forbidden",
+            title: "Forbidden",
+            status: 403,
+            detail:
+              "HinSchG officers (whistleblowing_officer, ombudsperson) are confined to the whistleblowing module to preserve reporter confidentiality (§§16, 32 HinSchG).",
+            instance: pathname,
+            requestId,
+          }),
+          {
+            status: 403,
+            headers: { "Content-Type": "application/problem+json; charset=utf-8" },
+          },
+        ),
+        requestId,
+      );
+    }
+    // UI request → bounce to the case list rather than confuse the user
+    const wbHome = new URL("/whistleblowing/cases", req.nextUrl.origin);
+    const res = NextResponse.redirect(wbHome);
     res.headers.set("x-request-id", requestId);
     return res;
   }

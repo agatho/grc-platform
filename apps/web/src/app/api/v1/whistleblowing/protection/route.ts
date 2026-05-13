@@ -12,9 +12,17 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 
+// #WAVE13-RBAC-03: see /whistleblowing/investigations/route.ts — same HinSchG
+// confidentiality rationale; risk_manager swapped for the officer set.
+
 // GET /api/v1/whistleblowing/protection
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "auditor", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule(
     "whistleblowing",
@@ -36,7 +44,12 @@ export async function GET(req: Request) {
 
 // POST /api/v1/whistleblowing/protection
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "auditor");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+    "auditor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule(
     "whistleblowing",

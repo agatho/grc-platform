@@ -1,4 +1,9 @@
-// GET /api/v1/whistleblowing/cases — List cases (ombudsperson only, paginated)
+// GET /api/v1/whistleblowing/cases — List cases (HinSchG officers, paginated)
+//
+// #WAVE13-RBAC-02: `whistleblowing_officer` was missing from every cases
+// route's role gate, so the role couldn't read its own caseload (a P1 since
+// HinSchG processing is the role's sole purpose). All six /cases routes
+// accept the same officer set: admin, whistleblowing_officer, ombudsperson.
 
 import { db, wbCase, wbReport, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
@@ -9,7 +14,11 @@ import { problem, getRequestId } from "@/lib/api-errors";
 import type { SQL } from "drizzle-orm";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "ombudsperson");
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule(

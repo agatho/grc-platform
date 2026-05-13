@@ -11,7 +11,12 @@ interface RouteParams {
 }
 
 export async function PUT(req: Request, { params }: RouteParams) {
-  const ctx = await withAuth("admin", "ombudsperson");
+  // #WAVE13-RBAC-02: see /whistleblowing/cases/route.ts.
+  const ctx = await withAuth(
+    "admin",
+    "whistleblowing_officer",
+    "ombudsperson",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule(
