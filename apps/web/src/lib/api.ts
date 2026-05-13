@@ -4,6 +4,7 @@ import { getCurrentOrgId } from "@grc/auth/context";
 import { requireRole } from "@grc/auth";
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { headers } from "next/headers";
 import type { Session } from "next-auth";
 import type { UserRole } from "@grc/shared";
 
@@ -14,25 +15,71 @@ export interface ApiContext {
   roles?: string[];
 }
 
+// #WAVE13-RBAC-Forbidden-Format: all auth-failure responses out of withAuth
+// are now RFC 7807 problem+json. The middleware stamps x-request-id on every
+// incoming request, so reading it here just propagates the same id into the
+// error body for log correlation.
+const PROBLEM_BASE = "https://arctos.charliehund.de/errors";
+
+async function readRequestId(): Promise<string> {
+  try {
+    const h = await headers();
+    return h.get("x-request-id") ?? "";
+  } catch {
+    // headers() can throw in non-request contexts (e.g. some test fixtures);
+    // fall back to empty string — the response is still RFC-7807 valid.
+    return "";
+  }
+}
+
+function authProblem(
+  status: number,
+  type: string,
+  title: string,
+  detail: string,
+  requestId: string,
+): Response {
+  return new Response(
+    JSON.stringify({ type, title, status, detail, requestId }),
+    {
+      status,
+      headers: {
+        "Content-Type": "application/problem+json; charset=utf-8",
+      },
+    },
+  );
+}
+
 /** Authenticate, resolve org, check roles. Returns context or error Response. */
 export async function withAuth(
   ...roles: UserRole[]
 ): Promise<ApiContext | Response> {
   const session = await auth();
+  const requestId = await readRequestId();
+
   if (!session?.user?.id) {
-    return Response.json({ error: "Unauthorized" }, { status: 401 });
+    return authProblem(
+      401,
+      `${PROBLEM_BASE}/unauthorized`,
+      "Unauthorized",
+      "Authentication required",
+      requestId,
+    );
   }
 
   const orgId = await getCurrentOrgId(session);
   if (!orgId) {
-    return Response.json(
-      { error: "No organization selected" },
-      { status: 400 },
+    return authProblem(
+      400,
+      `${PROBLEM_BASE}/no-org-selected`,
+      "No organization selected",
+      "An active organization context is required for this endpoint.",
+      requestId,
     );
   }
 
   if (roles.length) {
-    const check = requireRole(...roles)(session, orgId);
+    const check = requireRole(...roles)(session, orgId, requestId);
     if (check) {
       // Standard role denied — check custom roles as fallback
       const hasCustomAccess = await checkCustomRoleAccess(

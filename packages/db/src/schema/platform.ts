@@ -20,6 +20,7 @@ import {
   uniqueIndex,
   primaryKey,
 } from "drizzle-orm/pg-core";
+import { sql } from "drizzle-orm";
 
 // ──────────────────────────────────────────────────────────────
 // Enums
@@ -284,6 +285,13 @@ export const userOrganizationRole = pgTable(
     index("uor_user_idx").on(table.userId),
     index("uor_org_idx").on(table.orgId),
     index("uor_org_role_idx").on(table.orgId, table.role),
+    // #WAVE13-RBAC-Seed-Dups: partial unique index created by migration
+    // 0320. Declared here for schema completeness; Drizzle does not push
+    // partial indexes itself, so this entry is informational only — the
+    // live DB constraint comes from the SQL migration.
+    uniqueIndex("uor_user_org_role_active_uniq")
+      .on(table.userId, table.orgId, table.role)
+      .where(sql`deleted_at IS NULL`),
   ],
 );
 

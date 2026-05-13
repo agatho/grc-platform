@@ -46,6 +46,17 @@ vi.mock("drizzle-orm", () => ({
   }),
 }));
 
+// #WAVE13-RBAC-Forbidden-Format: withAuth now reads x-request-id from
+// next/headers to thread into RFC-7807 problem bodies. Mock it so the
+// test environment doesn't blow up trying to access the real request
+// async-context.
+vi.mock("next/headers", () => ({
+  headers: async () => ({
+    get: (name: string) =>
+      name.toLowerCase() === "x-request-id" ? "test-request-id" : null,
+  }),
+}));
+
 describe("withAuth()", () => {
   beforeEach(() => {
     authMock.mockReset();
@@ -54,14 +65,21 @@ describe("withAuth()", () => {
     dbExecuteMock.mockReset();
   });
 
-  it("returns 401 Response when there is no session", async () => {
+  it("returns 401 RFC-7807 Response when there is no session", async () => {
     authMock.mockResolvedValue(null);
     const { withAuth } = await import("../../lib/api");
     const result = await withAuth();
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(401);
+    expect((result as Response).headers.get("Content-Type")).toBe(
+      "application/problem+json; charset=utf-8",
+    );
     const body = await (result as Response).json();
-    expect(body).toEqual({ error: "Unauthorized" });
+    expect(body).toMatchObject({
+      title: "Unauthorized",
+      status: 401,
+      requestId: "test-request-id",
+    });
   });
 
   it("returns 401 when session has no user.id", async () => {
@@ -72,7 +90,7 @@ describe("withAuth()", () => {
     expect((result as Response).status).toBe(401);
   });
 
-  it("returns 400 when no orgId is selected", async () => {
+  it("returns 400 RFC-7807 Response when no orgId is selected", async () => {
     authMock.mockResolvedValue({ user: { id: "user-1" } });
     getCurrentOrgIdMock.mockResolvedValue(null);
     const { withAuth } = await import("../../lib/api");
@@ -80,7 +98,11 @@ describe("withAuth()", () => {
     expect(result).toBeInstanceOf(Response);
     expect((result as Response).status).toBe(400);
     const body = await (result as Response).json();
-    expect(body).toEqual({ error: "No organization selected" });
+    expect(body).toMatchObject({
+      title: "No organization selected",
+      status: 400,
+      requestId: "test-request-id",
+    });
   });
 
   it("returns ApiContext on success without role check", async () => {

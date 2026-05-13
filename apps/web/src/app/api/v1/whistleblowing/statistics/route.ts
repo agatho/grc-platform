@@ -1,4 +1,9 @@
-// GET /api/v1/whistleblowing/statistics — Anonymized KPIs (admin/risk_manager)
+// GET /api/v1/whistleblowing/statistics — Anonymized KPIs (HinSchG officers)
+//
+// #WAVE13-RBAC-03: was `[admin, risk_manager]` — risk_manager has no role in
+// HinSchG handling and shouldn't see even anonymized whistleblowing KPIs
+// (cross-domain conflict-of-interest). Moved to the same officer set as the
+// cases routes; admins retain access for platform-level oversight.
 
 import { db, wbCase, wbReport } from "@grc/db";
 import { requireModule } from "@grc/auth";
@@ -6,7 +11,7 @@ import { eq, and, sql, gte, lt, isNotNull, count } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth("admin", "whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule(
