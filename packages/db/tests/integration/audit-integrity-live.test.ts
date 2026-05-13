@@ -37,17 +37,16 @@ describe("Audit integrity endpoint logic (live DB)", () => {
   });
 
   it("reports healthy=true for a freshly written per-tenant chain", async () => {
-    // #WAVE9-CRITICAL-01: use the SQL helper functions introduced by
-    // migration 0311 instead of inlining the formula. This both proves
-    // the helpers work AND keeps the test in sync with the route's
-    // recompute logic when the formula changes (one place to update).
+    // #WAVE10-CRITICAL-01: walk in chain_seq order (was: created_at, id).
+    // chain_seq is strictly monotonic even within a single transaction,
+    // so multiple audit_log rows from the same PUT chain correctly.
     const scope = `org:${orgId}`;
     const rows = await client<{ row_ok: boolean; chain_ok: boolean }[]>`
       WITH ordered AS (
         SELECT
           entry_hash AS stored_entry_hash,
           previous_hash AS stored_previous_hash,
-          LAG(entry_hash) OVER (ORDER BY created_at, id) AS prev_row_entry_hash,
+          LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
           CASE
             WHEN hash_version = 0 THEN entry_hash  -- v0 rows pass-through
             WHEN hash_version = 2 THEN compute_audit_hash_v2(
@@ -73,6 +72,79 @@ describe("Audit integrity endpoint logic (live DB)", () => {
     expect(rows.length).toBeGreaterThan(0);
     expect(rows.every((r) => r.row_ok)).toBe(true);
     expect(rows.every((r) => r.chain_ok)).toBe(true);
+  });
+
+  it("keeps the chain healthy across 5 mutations that share a created_at", async () => {
+    // #WAVE10 regression for the race condition Cowork QA Wave-9 found:
+    // a PUT writes work_item + risk + search_index in one transaction,
+    // they all get the same now()-derived created_at, and verify ordered
+    // by (created_at, id) saw the chain as broken even though it was
+    // written correctly. With chain_seq the verify walk matches the
+    // INSERT order regardless of timestamp ties.
+    //
+    // We simulate the race by doing 5 same-transaction UPDATEs to a
+    // single row — each fires the audit_trigger() so we get 5 audit_log
+    // rows with identical now() values. After commit, the chain must
+    // still verify clean.
+    const scope = `org:${orgId}`;
+    const auditCountBefore = await client<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM audit_log
+      WHERE previous_hash_scope = ${scope}
+    `;
+
+    await client.begin(async (tx) => {
+      // 5 rapid UPDATEs in one transaction — every UPDATE fires the
+      // audit_trigger which writes one audit_log row. All 5 rows share
+      // the transaction's now() value.
+      for (let i = 0; i < 5; i++) {
+        await tx`UPDATE organization SET name = ${"race-" + i} WHERE id = ${orgId}`;
+      }
+    });
+
+    // After: there are 5 new audit_log rows with the same created_at.
+    const auditCountAfter = await client<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM audit_log
+      WHERE previous_hash_scope = ${scope}
+    `;
+    expect(auditCountAfter[0].count - auditCountBefore[0].count).toBe(5);
+
+    // Walk in chain_seq order — no chain mismatches expected.
+    const mismatches = await client<
+      {
+        row_ok: boolean;
+        chain_ok: boolean;
+      }[]
+    >`
+      WITH ordered AS (
+        SELECT
+          hash_version,
+          entry_hash AS stored_entry_hash,
+          previous_hash AS stored_previous_hash,
+          LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
+          CASE
+            WHEN hash_version = 2 THEN compute_audit_hash_v2(
+              previous_hash, org_id, user_id, entity_type, entity_id,
+              action::text, changes, action_detail, metadata, created_at,
+              previous_hash_scope
+            )
+            ELSE compute_audit_hash_v1(
+              previous_hash, org_id, user_id, entity_type, entity_id,
+              action::text, changes, created_at, previous_hash_scope
+            )
+          END AS recomputed_entry_hash
+        FROM audit_log
+        WHERE previous_hash_scope = ${scope}
+      )
+      SELECT
+        (hash_version = 0 OR stored_entry_hash = recomputed_entry_hash) AS row_ok,
+        (hash_version = 0 OR COALESCE(stored_previous_hash, '') = COALESCE(prev_row_entry_hash, '')) AS chain_ok
+      FROM ordered
+    `;
+
+    const rowBroken = mismatches.filter((r) => !r.row_ok).length;
+    const chainBroken = mismatches.filter((r) => !r.chain_ok).length;
+    expect(rowBroken).toBe(0);
+    expect(chainBroken).toBe(0);
   });
 
   it("rehashes a v0-tagged row and clears the broken-window warning", async () => {
