@@ -57,60 +57,54 @@ export async function POST(req: Request) {
     return Response.json({ error: "Invalid date" }, { status: 422 });
   }
 
-  // #WAVE7-CRITICAL-01: refuse to anchor a chain that's currently
+  // #WAVE9-CRITICAL-01: refuse to anchor a chain that's currently
   // failing self-verification. Anchoring a broken chain would propagate
   // the broken state into the FreeTSA/OpenTimestamps trust anchor and
   // make the corruption permanent.
   //
-  // Cheap check: count rows where the recomputed hash doesn't match
-  // the stored hash, scoped to this org's chain. The full integrity
-  // endpoint runs the same computation; this is the same gate.
+  // Cheap check: count rows whose stored hash doesn't match the
+  // recompute (per hash_version) AND aren't tagged as known-broken
+  // (v0). v0 rows are repaired by migration 0312, not by anchoring;
+  // they're surfaced as warnings in /audit-log/integrity but don't
+  // block the anchor of the verifiable portion.
+  //
+  // Status 409 (was 503 in Wave 7-8): semantically the chain CAN be
+  // anchored once the operator runs the repair migration — the resource
+  // state conflicts with the operation, but the upstream service is
+  // available. 503 implied an outage; 409 implies "fix your state and
+  // retry."
   const scope = `org:${ctx.orgId}`;
   const [{ broken }] = await db.execute<{ broken: number }>(sql`
     SELECT count(*)::int AS broken
     FROM audit_log
     WHERE previous_hash_scope = ${scope}
+      AND hash_version <> 0
       AND entry_hash <> CASE
         WHEN hash_version = 2 THEN
-          encode(digest(
-            COALESCE(previous_hash, '0')      || '|' ||
-            COALESCE(org_id::text, '')        || '|' ||
-            COALESCE(user_id::text, '')       || '|' ||
-            entity_type                       || '|' ||
-            COALESCE(entity_id::text, '')     || '|' ||
-            action::text                      || '|' ||
-            COALESCE(changes::text, '')       || '|' ||
-            COALESCE(action_detail, '')       || '|' ||
-            COALESCE(metadata::text, '')      || '|' ||
-            created_at::text                  || '|' ||
-            previous_hash_scope,
-            'sha256'
-          ), 'hex')
+          compute_audit_hash_v2(
+            previous_hash, org_id, user_id, entity_type, entity_id,
+            action::text, changes, action_detail, metadata, created_at,
+            previous_hash_scope
+          )
         ELSE
-          encode(digest(
-            COALESCE(previous_hash, '0') || '|' ||
-            COALESCE(org_id::text, '')   || '|' ||
-            COALESCE(user_id::text, '')  || '|' ||
-            entity_type                  || '|' ||
-            COALESCE(entity_id::text, '')|| '|' ||
-            action::text                 || '|' ||
-            COALESCE(changes::text, '')  || '|' ||
-            created_at::text             || '|' ||
-            previous_hash_scope,
-            'sha256'
-          ), 'hex')
+          compute_audit_hash_v1(
+            previous_hash, org_id, user_id, entity_type, entity_id,
+            action::text, changes, created_at, previous_hash_scope
+          )
       END
   `);
 
   if ((broken ?? 0) > 0) {
     return Response.json(
       {
-        error: "Audit chain integrity broken — refusing to anchor.",
-        detail: `Found ${broken} row(s) where stored entry_hash does not match the recomputed hash. Anchoring now would propagate the broken state into the timestamp authority and make the corruption permanent. Run GET /api/v1/audit-log/integrity for the full diff and resolve before anchoring.`,
+        type: "https://arctos.charliehund.de/errors/chain-not-anchorable",
+        title: "Audit chain integrity broken — refusing to anchor",
+        status: 409,
+        detail: `Found ${broken} row(s) where stored entry_hash does not match the recomputed hash. Anchoring now would propagate the broken state into the timestamp authority and make the corruption permanent. GET /api/v1/audit-log/integrity for the full diff. If the report shows broken_hash_window warnings, run migration 0312_rehash_v0_audit_entries.sql first.`,
         brokenRowCount: broken,
         integrityCheck: "/api/v1/audit-log/integrity",
       },
-      { status: 503 },
+      { status: 409 },
     );
   }
 
