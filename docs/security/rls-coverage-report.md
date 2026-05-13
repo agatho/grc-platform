@@ -1,16 +1,15 @@
 # RLS + Audit-Trail Coverage Report
 
-_Generated: 2026-04-18T06:56:13.197Z_
+_Generated: 2026-05-13T07:24:44.140Z_
 
 ## Summary
 
 | Status          | Count   |
 | --------------- | ------- |
-| OK              | 347     |
-| RLS_MISSING     | 131     |
-| AUDIT_MISSING   | 52      |
+| OK              | 365     |
+| AUDIT_MISSING   | 180     |
 | PLATFORM_EXEMPT | 15      |
-| **Total**       | **545** |
+| **Total**       | **560** |
 
 ## Semantics
 
@@ -22,198 +21,190 @@ _Generated: 2026-04-18T06:56:13.197Z_
 
 ## Findings by status
 
-### RLS_MISSING (131)
+### AUDIT_MISSING (180)
 
-| Table                            | Schema file          | RLS | Policy | Audit |
-| -------------------------------- | -------------------- | --- | ------ | ----- |
-| `account`                        | platform.ts          | ❌  | ❌     | ❌    |
-| `api_key_scope`                  | api-platform.ts      | ❌  | ❌     | ❌    |
-| `api_scope`                      | api-platform.ts      | ❌  | ❌     | ❌    |
-| `architecture_change_vote`       | eam-advanced.ts      | ❌  | ❌     | ✅    |
-| `assessment_control_eval`        | isms.ts              | ❌  | ❌     | ❌    |
-| `assessment_risk_eval`           | isms.ts              | ❌  | ❌     | ❌    |
-| `assessment_run`                 | isms.ts              | ❌  | ❌     | ❌    |
-| `asset_classification`           | isms.ts              | ❌  | ❌     | ❌    |
-| `asset_type_risk_recommendation` | incident-timeline.ts | ❌  | ❌     | ❌    |
-| `audit_risk_prediction`          | audit-analytics.ts   | ❌  | ❌     | ❌    |
-| `audit_risk_prediction_model`    | audit-analytics.ts   | ❌  | ❌     | ❌    |
-| `bc_exercise_finding`            | bcms.ts              | ❌  | ❌     | ❌    |
-| `bc_exercise_inject_log`         | bcms-advanced.ts     | ❌  | ❌     | ✅    |
-| `bc_exercise_scenario`           | bcms-advanced.ts     | ❌  | ❌     | ❌    |
-| `bcp`                            | bcms.ts              | ❌  | ❌     | ❌    |
-| `bcp_procedure`                  | bcms.ts              | ❌  | ❌     | ❌    |
-| `bcp_resource`                   | bcms.ts              | ❌  | ❌     | ❌    |
-| `benchmark_pool`                 | benchmarking.ts      | ❌  | ❌     | ❌    |
-| `bia_assessment`                 | bcms.ts              | ❌  | ❌     | ❌    |
-| `bia_process_impact`             | bcms.ts              | ❌  | ❌     | ❌    |
-| `bia_supplier_dependency`        | bcms.ts              | ❌  | ❌     | ❌    |
-| `bowtie_path`                    | erm-advanced.ts      | ❌  | ❌     | ❌    |
-| `bowtie_template`                | erm-advanced.ts      | ❌  | ❌     | ❌    |
-| `catalog_lifecycle_phase`        | catalog.ts           | ❌  | ❌     | ❌    |
-| `cloud_service_catalog`          | eam-advanced.ts      | ❌  | ❌     | ❌    |
-| `continuity_strategy`            | bcms.ts              | ❌  | ❌     | ❌    |
-| `contract`                       | tprm.ts              | ❌  | ❌     | ❌    |
-| `contract_amendment`             | tprm.ts              | ❌  | ❌     | ❌    |
-| `contract_obligation`            | tprm.ts              | ❌  | ❌     | ❌    |
-| `contract_sla`                   | tprm.ts              | ❌  | ❌     | ❌    |
-| `contract_sla_measurement`       | tprm.ts              | ❌  | ❌     | ❌    |
-| `control_catalog`                | catalog.ts           | ❌  | ❌     | ❌    |
-| `control_catalog_entry`          | catalog.ts           | ❌  | ❌     | ❌    |
-| `control_library_entry`          | ics-advanced.ts      | ❌  | ❌     | ❌    |
-| `control_maturity`               | isms.ts              | ❌  | ❌     | ❌    |
-| `country_risk_profile`           | dpms-advanced.ts     | ❌  | ❌     | ❌    |
-| `crisis_contact_node`            | bcms-advanced.ts     | ❌  | ❌     | ✅    |
-| `crisis_log`                     | bcms.ts              | ❌  | ❌     | ❌    |
-| `crisis_scenario`                | bcms.ts              | ❌  | ❌     | ❌    |
-| `crisis_team_member`             | bcms.ts              | ❌  | ❌     | ❌    |
-| `custom_dashboard_widget`        | dashboard.ts         | ❌  | ❌     | ✅    |
-| `cve_feed_item`                  | isms-intelligence.ts | ❌  | ❌     | ❌    |
-| `data_breach`                    | dpms.ts              | ❌  | ❌     | ❌    |
-| `data_breach_notification`       | dpms.ts              | ❌  | ❌     | ❌    |
-| `data_region`                    | data-sovereignty.ts  | ❌  | ❌     | ❌    |
-| `dd_evidence`                    | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `dd_response`                    | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `dd_session`                     | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `dpia`                           | dpms.ts              | ❌  | ❌     | ❌    |
-| `dpia_measure`                   | dpms.ts              | ❌  | ❌     | ❌    |
-| `dpia_risk`                      | dpms.ts              | ❌  | ❌     | ❌    |
-| `dsr`                            | dpms.ts              | ❌  | ❌     | ❌    |
-| `dsr_activity`                   | dpms.ts              | ❌  | ❌     | ❌    |
-| `esg_annual_report`              | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_control_link`               | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_materiality_assessment`     | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_materiality_topic`          | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_materiality_vote`           | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_measurement`                | esg.ts               | ❌  | ❌     | ❌    |
-| `esg_target`                     | esg.ts               | ❌  | ❌     | ❌    |
-| `esrs_datapoint_definition`      | esg.ts               | ❌  | ❌     | ❌    |
-| `esrs_metric`                    | esg.ts               | ❌  | ❌     | ❌    |
-| `essential_process`              | bcms.ts              | ❌  | ❌     | ❌    |
-| `extension_marketplace`          | extension.ts         | ❌  | ❌     | ❌    |
-| `feature_gate`                   | saas-metering.ts     | ❌  | ❌     | ✅    |
-| `framework_mapping`              | framework-mapping.ts | ❌  | ❌     | ✅    |
-| `general_catalog_entry`          | catalog.ts           | ❌  | ❌     | ❌    |
-| `invitation`                     | platform.ts          | ❌  | ❌     | ❌    |
-| `lksg_assessment`                | tprm.ts              | ❌  | ❌     | ❌    |
-| `management_review`              | isms.ts              | ❌  | ❌     | ❌    |
-| `marketplace_category`           | marketplace.ts       | ❌  | ❌     | ✅    |
-| `module_config`                  | module.ts            | ❌  | ❌     | ❌    |
-| `onboarding_step`                | onboarding.ts        | ❌  | ❌     | ❌    |
-| `org_active_catalog`             | catalog.ts           | ❌  | ❌     | ✅    |
-| `org_branding`                   | branding.ts          | ❌  | ❌     | ❌    |
-| `org_catalog_exclusion`          | catalog.ts           | ❌  | ❌     | ❌    |
-| `org_risk_methodology`           | catalog.ts           | ❌  | ❌     | ❌    |
-| `playbook_phase`                 | playbook.ts          | ❌  | ❌     | ✅    |
-| `playbook_task_template`         | playbook.ts          | ❌  | ❌     | ✅    |
-| `plugin`                         | extension.ts         | ❌  | ❌     | ✅    |
-| `plugin_hook`                    | extension.ts         | ❌  | ❌     | ❌    |
-| `process`                        | process.ts           | ❌  | ❌     | ❌    |
-| `process_asset`                  | process.ts           | ❌  | ❌     | ❌    |
-| `process_control`                | process.ts           | ❌  | ❌     | ❌    |
-| `process_document`               | process.ts           | ❌  | ❌     | ❌    |
-| `process_maturity_questionnaire` | bpm-advanced.ts      | ❌  | ❌     | ❌    |
-| `process_simulation_result`      | abac.ts              | ❌  | ❌     | ❌    |
-| `process_step`                   | process.ts           | ❌  | ❌     | ❌    |
-| `process_step_asset`             | process.ts           | ❌  | ❌     | ❌    |
-| `process_step_control`           | process.ts           | ❌  | ❌     | ❌    |
-| `process_template`               | bpm-advanced.ts      | ❌  | ❌     | ❌    |
-| `process_version`                | process.ts           | ❌  | ❌     | ❌    |
-| `questionnaire_question`         | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `questionnaire_section`          | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `questionnaire_template`         | supplier-portal.ts   | ❌  | ❌     | ❌    |
-| `recovery_procedure_step`        | bcms-advanced.ts     | ❌  | ❌     | ✅    |
-| `regulatory_feed_item`           | intelligence.ts      | ❌  | ❌     | ❌    |
-| `risk_catalog`                   | catalog.ts           | ❌  | ❌     | ❌    |
-| `risk_catalog_entry`             | catalog.ts           | ❌  | ❌     | ❌    |
-| `role_permission`                | platform.ts          | ❌  | ❌     | ❌    |
-| `ropa_data_category`             | dpms.ts              | ❌  | ❌     | ❌    |
-| `ropa_data_subject`              | dpms.ts              | ❌  | ❌     | ❌    |
-| `ropa_entry`                     | dpms.ts              | ❌  | ❌     | ❌    |
-| `ropa_recipient`                 | dpms.ts              | ❌  | ❌     | ❌    |
-| `scenario_engine_scenario`       | simulation.ts        | ❌  | ❌     | ❌    |
-| `security_incident`              | isms.ts              | ❌  | ❌     | ❌    |
-| `session`                        | platform.ts          | ❌  | ❌     | ❌    |
-| `simulation_run_result`          | simulation.ts        | ❌  | ❌     | ❌    |
-| `soa_entry`                      | isms.ts              | ❌  | ❌     | ❌    |
-| `subscription_plan`              | saas-metering.ts     | ❌  | ❌     | ✅    |
-| `task`                           | task.ts              | ❌  | ❌     | ❌    |
-| `task_comment`                   | task.ts              | ❌  | ❌     | ❌    |
-| `template_pack`                  | onboarding.ts        | ❌  | ❌     | ❌    |
-| `template_pack_item`             | onboarding.ts        | ❌  | ❌     | ❌    |
-| `threat`                         | isms.ts              | ❌  | ❌     | ❌    |
-| `tia`                            | dpms.ts              | ❌  | ❌     | ❌    |
-| `usage_meter`                    | saas-metering.ts     | ❌  | ❌     | ❌    |
-| `user_dashboard_layout`          | branding.ts          | ❌  | ❌     | ❌    |
-| `vendor`                         | tprm.ts              | ❌  | ❌     | ❌    |
-| `vendor_contact`                 | tprm.ts              | ❌  | ❌     | ❌    |
-| `vendor_due_diligence`           | tprm.ts              | ❌  | ❌     | ❌    |
-| `vendor_due_diligence_question`  | tprm.ts              | ❌  | ❌     | ❌    |
-| `vendor_risk_assessment`         | tprm.ts              | ❌  | ❌     | ❌    |
-| `verification_token`             | platform.ts          | ❌  | ❌     | ❌    |
-| `vulnerability`                  | isms.ts              | ❌  | ❌     | ❌    |
-| `wb_anonymous_mailbox`           | whistleblowing.ts    | ❌  | ❌     | ❌    |
-| `wb_case`                        | whistleblowing.ts    | ❌  | ❌     | ❌    |
-| `wb_case_evidence`               | whistleblowing.ts    | ❌  | ❌     | ❌    |
-| `wb_case_message`                | whistleblowing.ts    | ❌  | ❌     | ❌    |
-| `wb_report`                      | whistleblowing.ts    | ❌  | ❌     | ❌    |
-| `widget_definition`              | dashboard.ts         | ❌  | ❌     | ❌    |
-
-### AUDIT_MISSING (52)
-
-| Table                          | Schema file                | RLS | Policy | Audit |
-| ------------------------------ | -------------------------- | --- | ------ | ----- |
-| `abac_access_log`              | abac.ts                    | ✅  | ✅     | ❌    |
-| `acknowledgment`               | document.ts                | ✅  | ✅     | ❌    |
-| `agent_execution_log`          | agents.ts                  | ✅  | ✅     | ❌    |
-| `ai_prompt_log`                | intelligence.ts            | ✅  | ✅     | ❌    |
-| `api_usage_log`                | api-platform.ts            | ✅  | ✅     | ❌    |
-| `architecture_health_snapshot` | eam-advanced.ts            | ✅  | ✅     | ❌    |
-| `asset_cia_profile`            | asset.ts                   | ✅  | ✅     | ❌    |
-| `audit_activity`               | audit-mgmt.ts              | ✅  | ✅     | ❌    |
-| `audit_checklist_item`         | audit-mgmt.ts              | ✅  | ✅     | ❌    |
-| `audit_evidence`               | audit-mgmt.ts              | ✅  | ✅     | ❌    |
-| `audit_plan_item`              | audit-mgmt.ts              | ✅  | ✅     | ❌    |
-| `audit_universe_entry`         | audit-mgmt.ts              | ✅  | ✅     | ❌    |
-| `audit_wp_review_note_reply`   | audit-advanced.ts          | ✅  | ✅     | ❌    |
-| `cloud_compliance_snapshot`    | cloud-connector.ts         | ✅  | ✅     | ❌    |
-| `connector_health_check`       | evidence-connector.ts      | ✅  | ✅     | ❌    |
-| `continuous_audit_result`      | audit-advanced.ts          | ✅  | ✅     | ❌    |
-| `control_effectiveness_score`  | intelligence.ts            | ✅  | ✅     | ❌    |
-| `document_entity_link`         | document.ts                | ✅  | ✅     | ❌    |
-| `document_version`             | document.ts                | ✅  | ✅     | ❌    |
-| `emission_factor`              | esg-advanced.ts            | ✅  | ✅     | ❌    |
-| `event_log`                    | event-bus.ts               | ✅  | ✅     | ❌    |
-| `evidence`                     | control.ts                 | ✅  | ✅     | ❌    |
-| `executive_kpi_snapshot`       | intelligence.ts            | ✅  | ✅     | ❌    |
-| `external_auditor_activity`    | audit-advanced.ts          | ✅  | ✅     | ❌    |
-| `finding_sla_config`           | intelligence.ts            | ✅  | ✅     | ❌    |
-| `framework_coverage_snapshot`  | framework-mapping.ts       | ✅  | ✅     | ❌    |
-| `incident_timeline_entry`      | isms.ts                    | ✅  | ✅     | ❌    |
-| `kri_measurement`              | risk.ts                    | ✅  | ✅     | ❌    |
-| `mobile_session`               | mobile.ts                  | ✅  | ✅     | ❌    |
-| `offline_sync_state`           | mobile.ts                  | ✅  | ✅     | ❌    |
-| `plugin_execution_log`         | extension.ts               | ✅  | ✅     | ❌    |
-| `plugin_setting`               | extension.ts               | ✅  | ✅     | ❌    |
-| `portal_audit_trail`           | stakeholder-portal.ts      | ✅  | ✅     | ❌    |
-| `process_event`                | bpm-advanced.ts            | ✅  | ✅     | ❌    |
-| `process_risk`                 | risk.ts                    | ✅  | ✅     | ❌    |
-| `process_step_risk`            | risk.ts                    | ✅  | ✅     | ❌    |
-| `push_notification`            | mobile.ts                  | ✅  | ✅     | ❌    |
-| `regulatory_relevance_score`   | intelligence.ts            | ✅  | ✅     | ❌    |
-| `resilience_score_snapshot`    | bcms-advanced.ts           | ✅  | ✅     | ❌    |
-| `risk_asset`                   | risk.ts                    | ✅  | ✅     | ❌    |
-| `risk_control`                 | risk.ts                    | ✅  | ✅     | ❌    |
-| `risk_framework_mapping`       | risk.ts                    | ✅  | ✅     | ❌    |
-| `risk_scenario`                | isms.ts                    | ✅  | ✅     | ❌    |
-| `scim_sync_log`                | identity.ts                | ✅  | ✅     | ❌    |
-| `search_index`                 | platform-advanced.ts       | ✅  | ✅     | ❌    |
-| `simulation_activity_param`    | abac.ts                    | ✅  | ✅     | ❌    |
-| `technology_application_link`  | eam-advanced.ts            | ✅  | ✅     | ❌    |
-| `usage_record`                 | saas-metering.ts           | ✅  | ✅     | ❌    |
-| `vendor_scorecard_history`     | tprm-advanced.ts           | ✅  | ✅     | ❌    |
-| `wb_investigation_log`         | whistleblowing-advanced.ts | ✅  | ✅     | ❌    |
-| `wb_ombudsperson_activity`     | whistleblowing-advanced.ts | ✅  | ✅     | ❌    |
-| `webhook_delivery_log`         | event-bus.ts               | ✅  | ✅     | ❌    |
+| Table                            | Schema file                | RLS | Policy | Audit |
+| -------------------------------- | -------------------------- | --- | ------ | ----- |
+| `abac_access_log`                | abac.ts                    | ✅  | ✅     | ❌    |
+| `account`                        | platform.ts                | ✅  | ✅     | ❌    |
+| `acknowledgment`                 | document.ts                | ✅  | ✅     | ❌    |
+| `agent_execution_log`            | agents.ts                  | ✅  | ✅     | ❌    |
+| `ai_conformity_assessment`       | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `ai_framework_mapping`           | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `ai_fria`                        | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `ai_human_oversight_log`         | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `ai_prompt_log`                  | intelligence.ts            | ✅  | ✅     | ❌    |
+| `ai_system`                      | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `ai_transparency_entry`          | ai-act.ts                  | ✅  | ✅     | ❌    |
+| `api_key_scope`                  | api-platform.ts            | ✅  | ✅     | ❌    |
+| `api_scope`                      | api-platform.ts            | ✅  | ✅     | ❌    |
+| `api_usage_log`                  | api-platform.ts            | ✅  | ✅     | ❌    |
+| `architecture_health_snapshot`   | eam-advanced.ts            | ✅  | ✅     | ❌    |
+| `assessment_control_eval`        | isms.ts                    | ✅  | ✅     | ❌    |
+| `assessment_risk_eval`           | isms.ts                    | ✅  | ✅     | ❌    |
+| `assessment_run`                 | isms.ts                    | ✅  | ✅     | ❌    |
+| `asset_cia_profile`              | asset.ts                   | ✅  | ✅     | ❌    |
+| `asset_classification`           | isms.ts                    | ✅  | ✅     | ❌    |
+| `asset_type_risk_recommendation` | incident-timeline.ts       | ✅  | ✅     | ❌    |
+| `audit_activity`                 | audit-mgmt.ts              | ✅  | ✅     | ❌    |
+| `audit_checklist_item`           | audit-mgmt.ts              | ✅  | ✅     | ❌    |
+| `audit_evidence`                 | audit-mgmt.ts              | ✅  | ✅     | ❌    |
+| `audit_plan_item`                | audit-mgmt.ts              | ✅  | ✅     | ❌    |
+| `audit_risk_prediction`          | audit-analytics.ts         | ✅  | ✅     | ❌    |
+| `audit_risk_prediction_model`    | audit-analytics.ts         | ✅  | ✅     | ❌    |
+| `audit_universe_entry`           | audit-mgmt.ts              | ✅  | ✅     | ❌    |
+| `audit_wp_review_note_reply`     | audit-advanced.ts          | ✅  | ✅     | ❌    |
+| `bc_exercise_finding`            | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bc_exercise_scenario`           | bcms-advanced.ts           | ✅  | ✅     | ❌    |
+| `bcp`                            | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bcp_procedure`                  | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bcp_resource`                   | bcms.ts                    | ✅  | ✅     | ❌    |
+| `benchmark_pool`                 | benchmarking.ts            | ✅  | ✅     | ❌    |
+| `bia_assessment`                 | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bia_process_impact`             | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bia_supplier_dependency`        | bcms.ts                    | ✅  | ✅     | ❌    |
+| `bowtie_path`                    | erm-advanced.ts            | ✅  | ✅     | ❌    |
+| `bowtie_template`                | erm-advanced.ts            | ✅  | ✅     | ❌    |
+| `catalog_lifecycle_phase`        | catalog.ts                 | ✅  | ✅     | ❌    |
+| `cloud_compliance_snapshot`      | cloud-connector.ts         | ✅  | ✅     | ❌    |
+| `cloud_service_catalog`          | eam-advanced.ts            | ✅  | ✅     | ❌    |
+| `connector_health_check`         | evidence-connector.ts      | ✅  | ✅     | ❌    |
+| `continuity_strategy`            | bcms.ts                    | ✅  | ✅     | ❌    |
+| `continuous_audit_result`        | audit-advanced.ts          | ✅  | ✅     | ❌    |
+| `contract`                       | tprm.ts                    | ✅  | ✅     | ❌    |
+| `contract_amendment`             | tprm.ts                    | ✅  | ✅     | ❌    |
+| `contract_obligation`            | tprm.ts                    | ✅  | ✅     | ❌    |
+| `contract_sla`                   | tprm.ts                    | ✅  | ✅     | ❌    |
+| `contract_sla_measurement`       | tprm.ts                    | ✅  | ✅     | ❌    |
+| `control_catalog`                | catalog.ts                 | ✅  | ✅     | ❌    |
+| `control_catalog_entry`          | catalog.ts                 | ✅  | ✅     | ❌    |
+| `control_effectiveness_score`    | intelligence.ts            | ✅  | ✅     | ❌    |
+| `control_framework_coverage`     | framework-mapping.ts       | ✅  | ✅     | ❌    |
+| `control_library_entry`          | ics-advanced.ts            | ✅  | ✅     | ❌    |
+| `control_maturity`               | isms.ts                    | ✅  | ✅     | ❌    |
+| `country_risk_profile`           | dpms-advanced.ts           | ✅  | ✅     | ❌    |
+| `crisis_log`                     | bcms.ts                    | ✅  | ✅     | ❌    |
+| `crisis_scenario`                | bcms.ts                    | ✅  | ✅     | ❌    |
+| `crisis_team_member`             | bcms.ts                    | ✅  | ✅     | ❌    |
+| `cve_feed_item`                  | isms-intelligence.ts       | ✅  | ✅     | ❌    |
+| `data_breach`                    | dpms.ts                    | ✅  | ✅     | ❌    |
+| `data_breach_notification`       | dpms.ts                    | ✅  | ✅     | ❌    |
+| `data_region`                    | data-sovereignty.ts        | ✅  | ✅     | ❌    |
+| `dd_evidence`                    | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `dd_response`                    | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `dd_session`                     | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `document_entity_link`           | document.ts                | ✅  | ✅     | ❌    |
+| `document_version`               | document.ts                | ✅  | ✅     | ❌    |
+| `dpia`                           | dpms.ts                    | ✅  | ✅     | ❌    |
+| `dpia_measure`                   | dpms.ts                    | ✅  | ✅     | ❌    |
+| `dpia_risk`                      | dpms.ts                    | ✅  | ✅     | ❌    |
+| `dsr`                            | dpms.ts                    | ✅  | ✅     | ❌    |
+| `dsr_activity`                   | dpms.ts                    | ✅  | ✅     | ❌    |
+| `emission_factor`                | esg-advanced.ts            | ✅  | ✅     | ❌    |
+| `entity_comment`                 | entity-comment.ts          | ✅  | ✅     | ❌    |
+| `esg_annual_report`              | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_control_link`               | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_materiality_assessment`     | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_materiality_topic`          | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_materiality_vote`           | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_measurement`                | esg.ts                     | ✅  | ✅     | ❌    |
+| `esg_target`                     | esg.ts                     | ✅  | ✅     | ❌    |
+| `esrs_datapoint_definition`      | esg.ts                     | ✅  | ✅     | ❌    |
+| `esrs_metric`                    | esg.ts                     | ✅  | ✅     | ❌    |
+| `essential_process`              | bcms.ts                    | ✅  | ✅     | ❌    |
+| `event_log`                      | event-bus.ts               | ✅  | ✅     | ❌    |
+| `evidence`                       | control.ts                 | ✅  | ✅     | ❌    |
+| `executive_kpi_snapshot`         | intelligence.ts            | ✅  | ✅     | ❌    |
+| `extension_marketplace`          | extension.ts               | ✅  | ✅     | ❌    |
+| `external_auditor_activity`      | audit-advanced.ts          | ✅  | ✅     | ❌    |
+| `finding_sla_config`             | intelligence.ts            | ✅  | ✅     | ❌    |
+| `framework_coverage_snapshot`    | framework-mapping.ts       | ✅  | ✅     | ❌    |
+| `framework_gap_analysis`         | framework-mapping.ts       | ✅  | ✅     | ❌    |
+| `framework_mapping`              | framework-mapping.ts       | ✅  | ✅     | ❌    |
+| `framework_mapping_rule`         | framework-mapping.ts       | ✅  | ✅     | ❌    |
+| `general_catalog_entry`          | catalog.ts                 | ✅  | ✅     | ❌    |
+| `incident_timeline_entry`        | isms.ts                    | ✅  | ✅     | ❌    |
+| `invitation`                     | platform.ts                | ✅  | ✅     | ❌    |
+| `kri_measurement`                | risk.ts                    | ✅  | ✅     | ❌    |
+| `lksg_assessment`                | tprm.ts                    | ✅  | ✅     | ❌    |
+| `management_review`              | isms.ts                    | ✅  | ✅     | ❌    |
+| `mobile_session`                 | mobile.ts                  | ✅  | ✅     | ❌    |
+| `module_config`                  | module.ts                  | ✅  | ✅     | ❌    |
+| `offline_sync_state`             | mobile.ts                  | ✅  | ✅     | ❌    |
+| `onboarding_step`                | onboarding.ts              | ✅  | ✅     | ❌    |
+| `org_branding`                   | branding.ts                | ✅  | ✅     | ❌    |
+| `org_catalog_exclusion`          | catalog.ts                 | ✅  | ✅     | ❌    |
+| `org_risk_methodology`           | catalog.ts                 | ✅  | ✅     | ❌    |
+| `plugin_execution_log`           | extension.ts               | ✅  | ✅     | ❌    |
+| `plugin_hook`                    | extension.ts               | ✅  | ✅     | ❌    |
+| `plugin_setting`                 | extension.ts               | ✅  | ✅     | ❌    |
+| `portal_audit_trail`             | stakeholder-portal.ts      | ✅  | ✅     | ❌    |
+| `process`                        | process.ts                 | ✅  | ✅     | ❌    |
+| `process_asset`                  | process.ts                 | ✅  | ✅     | ❌    |
+| `process_control`                | process.ts                 | ✅  | ✅     | ❌    |
+| `process_document`               | process.ts                 | ✅  | ✅     | ❌    |
+| `process_event`                  | bpm-advanced.ts            | ✅  | ✅     | ❌    |
+| `process_maturity_questionnaire` | bpm-advanced.ts            | ✅  | ✅     | ❌    |
+| `process_risk`                   | risk.ts                    | ✅  | ✅     | ❌    |
+| `process_simulation_result`      | abac.ts                    | ✅  | ✅     | ❌    |
+| `process_step`                   | process.ts                 | ✅  | ✅     | ❌    |
+| `process_step_asset`             | process.ts                 | ✅  | ✅     | ❌    |
+| `process_step_control`           | process.ts                 | ✅  | ✅     | ❌    |
+| `process_step_risk`              | risk.ts                    | ✅  | ✅     | ❌    |
+| `process_template`               | bpm-advanced.ts            | ✅  | ✅     | ❌    |
+| `process_version`                | process.ts                 | ✅  | ✅     | ❌    |
+| `programme_journey_event`        | programme.ts               | ✅  | ✅     | ❌    |
+| `programme_template_subtask`     | programme.ts               | ✅  | ✅     | ❌    |
+| `push_notification`              | mobile.ts                  | ✅  | ✅     | ❌    |
+| `questionnaire_question`         | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `questionnaire_section`          | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `questionnaire_template`         | supplier-portal.ts         | ✅  | ✅     | ❌    |
+| `regulatory_feed_item`           | intelligence.ts            | ✅  | ✅     | ❌    |
+| `regulatory_relevance_score`     | intelligence.ts            | ✅  | ✅     | ❌    |
+| `resilience_score_snapshot`      | bcms-advanced.ts           | ✅  | ✅     | ❌    |
+| `risk_asset`                     | risk.ts                    | ✅  | ✅     | ❌    |
+| `risk_catalog`                   | catalog.ts                 | ✅  | ✅     | ❌    |
+| `risk_catalog_entry`             | catalog.ts                 | ✅  | ✅     | ❌    |
+| `risk_control`                   | risk.ts                    | ✅  | ✅     | ❌    |
+| `risk_framework_mapping`         | risk.ts                    | ✅  | ✅     | ❌    |
+| `risk_scenario`                  | isms.ts                    | ✅  | ✅     | ❌    |
+| `role_permission`                | platform.ts                | ✅  | ✅     | ❌    |
+| `ropa_data_category`             | dpms.ts                    | ✅  | ✅     | ❌    |
+| `ropa_data_subject`              | dpms.ts                    | ✅  | ✅     | ❌    |
+| `ropa_entry`                     | dpms.ts                    | ✅  | ✅     | ❌    |
+| `ropa_recipient`                 | dpms.ts                    | ✅  | ✅     | ❌    |
+| `scenario_engine_scenario`       | simulation.ts              | ✅  | ✅     | ❌    |
+| `scim_sync_log`                  | identity.ts                | ✅  | ✅     | ❌    |
+| `search_index`                   | platform-advanced.ts       | ✅  | ✅     | ❌    |
+| `security_incident`              | isms.ts                    | ✅  | ✅     | ❌    |
+| `session`                        | platform.ts                | ✅  | ✅     | ❌    |
+| `simulation_activity_param`      | abac.ts                    | ✅  | ✅     | ❌    |
+| `simulation_run_result`          | simulation.ts              | ✅  | ✅     | ❌    |
+| `soa_entry`                      | isms.ts                    | ✅  | ✅     | ❌    |
+| `task`                           | task.ts                    | ✅  | ✅     | ❌    |
+| `task_comment`                   | task.ts                    | ✅  | ✅     | ❌    |
+| `technology_application_link`    | eam-advanced.ts            | ✅  | ✅     | ❌    |
+| `template_pack`                  | onboarding.ts              | ✅  | ✅     | ❌    |
+| `template_pack_item`             | onboarding.ts              | ✅  | ✅     | ❌    |
+| `threat`                         | isms.ts                    | ✅  | ✅     | ❌    |
+| `tia`                            | dpms.ts                    | ✅  | ✅     | ❌    |
+| `usage_meter`                    | saas-metering.ts           | ✅  | ✅     | ❌    |
+| `usage_record`                   | saas-metering.ts           | ✅  | ✅     | ❌    |
+| `user_dashboard_layout`          | branding.ts                | ✅  | ✅     | ❌    |
+| `vendor`                         | tprm.ts                    | ✅  | ✅     | ❌    |
+| `vendor_contact`                 | tprm.ts                    | ✅  | ✅     | ❌    |
+| `vendor_due_diligence`           | tprm.ts                    | ✅  | ✅     | ❌    |
+| `vendor_due_diligence_question`  | tprm.ts                    | ✅  | ✅     | ❌    |
+| `vendor_risk_assessment`         | tprm.ts                    | ✅  | ✅     | ❌    |
+| `vendor_scorecard_history`       | tprm-advanced.ts           | ✅  | ✅     | ❌    |
+| `verification_token`             | platform.ts                | ✅  | ✅     | ❌    |
+| `vulnerability`                  | isms.ts                    | ✅  | ✅     | ❌    |
+| `wb_anonymous_mailbox`           | whistleblowing.ts          | ✅  | ✅     | ❌    |
+| `wb_investigation_log`           | whistleblowing-advanced.ts | ✅  | ✅     | ❌    |
+| `wb_ombudsperson_activity`       | whistleblowing-advanced.ts | ✅  | ✅     | ❌    |
+| `wb_report`                      | whistleblowing.ts          | ✅  | ✅     | ❌    |
+| `webhook_delivery_log`           | event-bus.ts               | ✅  | ✅     | ❌    |
+| `widget_definition`              | dashboard.ts               | ✅  | ✅     | ❌    |
 
 ### PLATFORM_EXEMPT (15)
 
@@ -235,7 +226,7 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `xbrl_tag`                  | esef-xbrl.ts          | ❌  | ❌     | ❌    |
 | `xbrl_taxonomy`             | esef-xbrl.ts          | ❌  | ❌     | ❌    |
 
-### OK (347)
+### OK (365)
 
 | Table                                | Schema file                | RLS | Policy | Audit |
 | ------------------------------------ | -------------------------- | --- | ------ | ----- |
@@ -248,18 +239,12 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `agent_recommendation`               | agents.ts                  | ✅  | ✅     | ✅    |
 | `agent_registration`                 | agents.ts                  | ✅  | ✅     | ✅    |
 | `ai_authority_communication`         | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_conformity_assessment`           | ai-act.ts                  | ✅  | ✅     | ✅    |
 | `ai_corrective_action`               | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_framework_mapping`               | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_fria`                            | ai-act.ts                  | ✅  | ✅     | ✅    |
 | `ai_gpai_model`                      | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_human_oversight_log`             | ai-act.ts                  | ✅  | ✅     | ✅    |
 | `ai_incident`                        | ai-act-extended.ts         | ✅  | ✅     | ✅    |
 | `ai_penalty`                         | ai-act-extended.ts         | ✅  | ✅     | ✅    |
 | `ai_prohibited_screening`            | ai-act-extended.ts         | ✅  | ✅     | ✅    |
 | `ai_provider_qms`                    | ai-act-extended.ts         | ✅  | ✅     | ✅    |
-| `ai_system`                          | ai-act.ts                  | ✅  | ✅     | ✅    |
-| `ai_transparency_entry`              | ai-act.ts                  | ✅  | ✅     | ✅    |
 | `api_key`                            | api-platform.ts            | ✅  | ✅     | ✅    |
 | `api_playground_snippet`             | api-platform.ts            | ✅  | ✅     | ✅    |
 | `application_assessment_history`     | eam-dashboards.ts          | ✅  | ✅     | ✅    |
@@ -269,6 +254,7 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `approval_request`                   | approval-workflow.ts       | ✅  | ✅     | ✅    |
 | `approval_workflow`                  | approval-workflow.ts       | ✅  | ✅     | ✅    |
 | `architecture_change_request`        | eam-advanced.ts            | ✅  | ✅     | ✅    |
+| `architecture_change_vote`           | eam-advanced.ts            | ✅  | ✅     | ✅    |
 | `architecture_element`               | eam.ts                     | ✅  | ✅     | ✅    |
 | `architecture_relationship`          | eam.ts                     | ✅  | ✅     | ✅    |
 | `architecture_rule`                  | eam.ts                     | ✅  | ✅     | ✅    |
@@ -283,6 +269,7 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `audit_analytics_import`             | audit-analytics.ts         | ✅  | ✅     | ✅    |
 | `audit_analytics_result`             | audit-analytics.ts         | ✅  | ✅     | ✅    |
 | `audit_analytics_template`           | audit-analytics.ts         | ✅  | ✅     | ✅    |
+| `audit_anchor`                       | platform.ts                | ✅  | ✅     | ✅    |
 | `audit_checklist`                    | audit-mgmt.ts              | ✅  | ✅     | ✅    |
 | `audit_plan`                         | audit-mgmt.ts              | ✅  | ✅     | ✅    |
 | `audit_qa_checklist_item`            | audit-advanced.ts          | ✅  | ✅     | ✅    |
@@ -298,6 +285,7 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `automation_rule_execution`          | automation.ts              | ✅  | ✅     | ✅    |
 | `automation_rule_template`           | automation.ts              | ✅  | ✅     | ✅    |
 | `bc_exercise`                        | bcms.ts                    | ✅  | ✅     | ✅    |
+| `bc_exercise_inject_log`             | bcms-advanced.ts           | ✅  | ✅     | ✅    |
 | `bc_exercise_lesson`                 | bcms-advanced.ts           | ✅  | ✅     | ✅    |
 | `benchmark_submission`               | benchmarking.ts            | ✅  | ✅     | ✅    |
 | `bi_brand_config`                    | bi-reporting.ts            | ✅  | ✅     | ✅    |
@@ -344,7 +332,6 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `continuous_audit_rule`              | audit-advanced.ts          | ✅  | ✅     | ✅    |
 | `control`                            | control.ts                 | ✅  | ✅     | ✅    |
 | `control_deficiency`                 | ics-advanced.ts            | ✅  | ✅     | ✅    |
-| `control_framework_coverage`         | framework-mapping.ts       | ✅  | ✅     | ✅    |
 | `control_monitoring_result`          | control-monitoring.ts      | ✅  | ✅     | ✅    |
 | `control_monitoring_rule`            | control-monitoring.ts      | ✅  | ✅     | ✅    |
 | `control_test`                       | control.ts                 | ✅  | ✅     | ✅    |
@@ -360,9 +347,11 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `copilot_rag_source`                 | copilot-chat.ts            | ✅  | ✅     | ✅    |
 | `copilot_suggested_action`           | copilot-chat.ts            | ✅  | ✅     | ✅    |
 | `crisis_communication_log`           | bcms-advanced.ts           | ✅  | ✅     | ✅    |
+| `crisis_contact_node`                | bcms-advanced.ts           | ✅  | ✅     | ✅    |
 | `crisis_contact_tree`                | bcms-advanced.ts           | ✅  | ✅     | ✅    |
 | `cross_region_replication`           | data-sovereignty.ts        | ✅  | ✅     | ✅    |
 | `custom_dashboard`                   | dashboard.ts               | ✅  | ✅     | ✅    |
+| `custom_dashboard_widget`            | dashboard.ts               | ✅  | ✅     | ✅    |
 | `custom_field_definition`            | platform-advanced.ts       | ✅  | ✅     | ✅    |
 | `custom_role`                        | platform.ts                | ✅  | ✅     | ✅    |
 | `cve_asset_match`                    | isms-intelligence.ts       | ✅  | ✅     | ✅    |
@@ -424,9 +413,8 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `external_auditor_share`             | audit-advanced.ts          | ✅  | ✅     | ✅    |
 | `fair_parameters`                    | fair.ts                    | ✅  | ✅     | ✅    |
 | `fair_simulation_result`             | fair.ts                    | ✅  | ✅     | ✅    |
+| `feature_gate`                       | saas-metering.ts           | ✅  | ✅     | ✅    |
 | `finding`                            | control.ts                 | ✅  | ✅     | ✅    |
-| `framework_gap_analysis`             | framework-mapping.ts       | ✅  | ✅     | ✅    |
-| `framework_mapping_rule`             | framework-mapping.ts       | ✅  | ✅     | ✅    |
 | `grc_budget`                         | budget.ts                  | ✅  | ✅     | ✅    |
 | `grc_budget_line`                    | budget.ts                  | ✅  | ✅     | ✅    |
 | `grc_cost_entry`                     | budget.ts                  | ✅  | ✅     | ✅    |
@@ -447,6 +435,7 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `it_infrastructure_check`            | devops-connector.ts        | ✅  | ✅     | ✅    |
 | `kri`                                | risk.ts                    | ✅  | ✅     | ✅    |
 | `lksg_due_diligence`                 | esg-advanced.ts            | ✅  | ✅     | ✅    |
+| `marketplace_category`               | marketplace.ts             | ✅  | ✅     | ✅    |
 | `marketplace_installation`           | marketplace.ts             | ✅  | ✅     | ✅    |
 | `marketplace_listing`                | marketplace.ts             | ✅  | ✅     | ✅    |
 | `marketplace_publisher`              | marketplace.ts             | ✅  | ✅     | ✅    |
@@ -467,13 +456,17 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `notification`                       | platform.ts                | ✅  | ✅     | ✅    |
 | `notification_preference`            | platform-advanced.ts       | ✅  | ✅     | ✅    |
 | `onboarding_session`                 | onboarding.ts              | ✅  | ✅     | ✅    |
+| `org_active_catalog`                 | catalog.ts                 | ✅  | ✅     | ✅    |
 | `org_entity_relationship`            | risk-propagation.ts        | ✅  | ✅     | ✅    |
 | `org_subscription`                   | saas-metering.ts           | ✅  | ✅     | ✅    |
 | `organization`                       | platform.ts                | ✅  | ✅     | ✅    |
 | `organization_contact`               | platform.ts                | ✅  | ✅     | ✅    |
 | `pbd_assessment`                     | dpms-advanced.ts           | ✅  | ✅     | ✅    |
 | `playbook_activation`                | playbook.ts                | ✅  | ✅     | ✅    |
+| `playbook_phase`                     | playbook.ts                | ✅  | ✅     | ✅    |
+| `playbook_task_template`             | playbook.ts                | ✅  | ✅     | ✅    |
 | `playbook_template`                  | playbook.ts                | ✅  | ✅     | ✅    |
+| `plugin`                             | extension.ts               | ✅  | ✅     | ✅    |
 | `plugin_installation`                | extension.ts               | ✅  | ✅     | ✅    |
 | `policy_acknowledgment`              | policy-acknowledgment.ts   | ✅  | ✅     | ✅    |
 | `policy_distribution`                | policy-acknowledgment.ts   | ✅  | ✅     | ✅    |
@@ -493,11 +486,21 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `process_raci_override`              | process-raci.ts            | ✅  | ✅     | ✅    |
 | `process_review_schedule`            | process.ts                 | ✅  | ✅     | ✅    |
 | `processor_agreement`                | dpms-advanced.ts           | ✅  | ✅     | ✅    |
+| `programme_approval_event`           | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_journey`                  | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_journey_phase`            | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_journey_step`             | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_journey_subtask`          | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_step_link`                | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_template`                 | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_template_phase`           | programme.ts               | ✅  | ✅     | ✅    |
+| `programme_template_step`            | programme.ts               | ✅  | ✅     | ✅    |
 | `rcsa_assignment`                    | rcsa.ts                    | ✅  | ✅     | ✅    |
 | `rcsa_campaign`                      | rcsa.ts                    | ✅  | ✅     | ✅    |
 | `rcsa_response`                      | rcsa.ts                    | ✅  | ✅     | ✅    |
 | `rcsa_result`                        | rcsa.ts                    | ✅  | ✅     | ✅    |
 | `recovery_procedure`                 | bcms-advanced.ts           | ✅  | ✅     | ✅    |
+| `recovery_procedure_step`            | bcms-advanced.ts           | ✅  | ✅     | ✅    |
 | `region_tenant_config`               | data-sovereignty.ts        | ✅  | ✅     | ✅    |
 | `regulation_simulation`              | regulatory-simulator.ts    | ✅  | ✅     | ✅    |
 | `regulatory_calendar_event`          | regulatory-change.ts       | ✅  | ✅     | ✅    |
@@ -550,7 +553,10 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `sox_scoping`                        | phase3-extras.ts           | ✅  | ✅     | ✅    |
 | `sox_walkthrough`                    | ics-advanced.ts            | ✅  | ✅     | ✅    |
 | `sso_config`                         | identity.ts                | ✅  | ✅     | ✅    |
+| `stakeholder`                        | stakeholder-register.ts    | ✅  | ✅     | ✅    |
+| `stakeholder_expectation`            | stakeholder-register.ts    | ✅  | ✅     | ✅    |
 | `sub_processor_notification`         | dpms-advanced.ts           | ✅  | ✅     | ✅    |
+| `subscription_plan`                  | saas-metering.ts           | ✅  | ✅     | ✅    |
 | `supplier_esg_assessment`            | esg-advanced.ts            | ✅  | ✅     | ✅    |
 | `supplier_esg_corrective_action`     | esg-advanced.ts            | ✅  | ✅     | ✅    |
 | `tag_definition`                     | phase3-extras.ts           | ✅  | ✅     | ✅    |
@@ -576,6 +582,9 @@ _Generated: 2026-04-18T06:56:13.197Z_
 | `vendor_sla_measurement`             | tprm-advanced.ts           | ✅  | ✅     | ✅    |
 | `vendor_sub_processor`               | tprm-advanced.ts           | ✅  | ✅     | ✅    |
 | `vendor_sub_processor_notification`  | tprm-advanced.ts           | ✅  | ✅     | ✅    |
+| `wb_case`                            | whistleblowing.ts          | ✅  | ✅     | ✅    |
+| `wb_case_evidence`                   | whistleblowing.ts          | ✅  | ✅     | ✅    |
+| `wb_case_message`                    | whistleblowing.ts          | ✅  | ✅     | ✅    |
 | `wb_evidence`                        | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
 | `wb_interview`                       | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |
 | `wb_investigation`                   | whistleblowing-advanced.ts | ✅  | ✅     | ✅    |

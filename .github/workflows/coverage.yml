@@ -34,9 +34,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v6
-
-      - uses: actions/setup-node@v6
+      # #WAVE11-SCORECARD: pin all GitHub Actions by commit SHA (scorecard
+      # alerts 1407-1415). Comment carries the tag for readability — keep
+      # both in sync when bumping.
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+      - uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6
         with:
           node-version: ${{ env.NODE_VERSION }}
           cache: npm
@@ -52,7 +54,7 @@ jobs:
         run: npx tsx scripts/coverage-aggregate.ts
 
       - name: Upload aggregated summary (JSON + Markdown)
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-summary
           path: |
@@ -61,7 +63,7 @@ jobs:
           retention-days: 30
 
       - name: Upload per-package HTML reports
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-html
           path: |
@@ -70,7 +72,7 @@ jobs:
           retention-days: 14
 
       - name: Upload LCOV files for downstream tools (Codecov etc.)
-        uses: actions/upload-artifact@v7
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: coverage-lcov
           path: |
@@ -80,7 +82,7 @@ jobs:
 
       - name: Comment coverage on PR
         if: github.event_name == 'pull_request'
-        uses: actions/github-script@v9
+        uses: actions/github-script@3a2844b7e9c422d3c10d287c895573f7108da1b3 # v9
         with:
           script: |
             const fs = require('fs');
