@@ -50,10 +50,17 @@ return Response.json({
 
 - `bcms/bia/[id]` (status field on bia_assessment)
 - `audit-mgmt/audits/[id]`
-- `vendors/[id]`
+- `vendors/[id]` (Wave 11: now ships `/transitions` discovery)
+- `contracts/[id]` (Wave 11: now ships `/transitions` discovery)
+- `processes/[id]` (Wave 11: now ships `/transitions` discovery)
 - `work-items/[id]/status`
 - `tasks/[id]/status`
 - `isms/assessments/[id]`
+- `isms/incidents/[id]/status` (Wave 11: now ships `/transitions` discovery + `/notify-authority` side-channel)
+- `dpms/dsr/[id]` via named workflow routes (Wave 11: now ships `/transitions` discovery)
+- `findings/[id]` (Wave 8)
+- `vulnerabilities/[id]` (Wave 8)
+- `controls/[id]` (Wave 8)
 
 ## Shape B: dedicated transition endpoint
 
@@ -129,3 +136,48 @@ matrix onto a Shape-A route — the result is the inconsistency Wave 6 flagged.
 
 Shape B routes additionally return `allowedNext` (subset of `knownStatuses`
 reachable from `current`). The UI uses this to grey out impossible buttons.
+
+**Side-channels.** When an entity has dedicated workflow routes that aren't
+plain status changes (e.g. DSR's `/verify`, `/respond`, `/close`; Incident's
+`/notify-authority`), the discovery response carries a `sideChannels` map
+keyed by route name. Each entry has the same `method` / `endpoint` /
+`bodyShape` shape so the UI can render the side-channels alongside the
+status buttons without special-casing each module.
+
+## Stateless entities
+
+Some entities have **no status field** because their lifecycle is captured
+elsewhere or doesn't exist:
+
+| Entity   | Why no status                                                                                                                                                                         |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `asset`  | Lifecycle (acquired → in_use → disposed) is implied by `deletedAt` and the BIA / classification records that reference the asset. Nothing actionable to gate on a status field today. |
+| `threat` | A catalog entry, not an instance. Threats are referenced by `risk_scenario` rows; the scenario carries the lifecycle, not the threat.                                                 |
+
+Don't add a status to an entity just to give it a `/transitions` route. If
+the entity genuinely needs a lifecycle, model it on the asset side (one row
+per state change) rather than mutating the entity.
+
+## Closed-state semantics
+
+Several Shape-B matrices include a transition from `closed` back to an
+earlier state. This is **intentional, not a bug** — re-opening a previously
+closed entity for a new audit cycle is a documented compliance requirement.
+Examples:
+
+- **Risk** (`closed → identified`): a control owner who realises a treatment
+  plan was based on the wrong threat profile must be able to re-open the
+  risk and walk it through the full assessment again. ISO 31000 §6.6
+  explicitly contemplates iterative re-evaluation.
+- **Incident** (`closed → detected`): a related incident may surface that
+  invalidates a "lessons learned" closure. Re-opening preserves the
+  forensic trail without forcing operators to create a new incident with
+  no link to the original.
+- **Process** (`archived → draft`): unarchiving a BPMN process forks a new
+  draft. The published version is unchanged — the unarchive is the start
+  of a new revision cycle.
+
+The audit-log captures both transitions (`closed → X` AND the original
+`X → closed`), so the compliance trail remains intact. Documenting these
+re-open paths here removes ambiguity about whether they're a state-machine
+mistake or a deliberate cycle.

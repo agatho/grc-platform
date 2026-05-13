@@ -24,7 +24,7 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
-import { eq, and, isNull, asc, desc, gte, sql, inArray } from "drizzle-orm";
+import { eq, and, isNull, asc, desc, gte, inArray } from "drizzle-orm";
 import { createHash } from "crypto";
 
 function escapeHtml(s: string | null | undefined): string {
@@ -165,7 +165,6 @@ export async function GET(
   // ── Aggregat-Stats ─────────────────────────────────────────────
   const totalSteps = steps.length;
   const completedSteps = steps.filter((s) => s.status === "completed").length;
-  const blockedSteps = steps.filter((s) => s.status === "blocked").length;
   const totalSubtasks = subtasks.length;
   const completedSubtasks = subtasks.filter(
     (s) => s.status === "completed",

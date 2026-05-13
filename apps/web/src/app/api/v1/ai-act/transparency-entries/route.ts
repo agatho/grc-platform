@@ -1,6 +1,6 @@
 import { db, aiTransparencyEntry } from "@grc/db";
 import { createAiTransparencyEntrySchema } from "@grc/shared";
-import { eq, and, desc, sql } from "drizzle-orm";
+import { eq, desc, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
