@@ -20,9 +20,11 @@
 ## 9 User Stories pro Rolle
 
 ### US-01: CISO (`ciso@meridian.test`) — 2nd Line of Defense
-> *"Als CISO will ich Cyber-Risiken im Risk-Register überwachen, Controls auf Wirksamkeit prüfen und BIA/ISMS-Status für die Geschäftsleitung berichten — ohne selbst operative Risiken anzulegen (das machen Risk-Manager / Process-Owner)."*
+
+> _"Als CISO will ich Cyber-Risiken im Risk-Register überwachen, Controls auf Wirksamkeit prüfen und BIA/ISMS-Status für die Geschäftsleitung berichten — ohne selbst operative Risiken anzulegen (das machen Risk-Manager / Process-Owner)."_
 
 **Erwartet:**
+
 - ✅ Read aller ERM/ISMS/BCMS-Module
 - ✅ Audit/Status-Change auf Risks (transition zwischen Workflow-States)
 - ❌ Risk-Create (nur 1st-Line, siehe Wave 13)
@@ -30,70 +32,86 @@
 - ❌ ESG/DPMS-Write
 
 ### US-02: DPO (`dpo@meridian.test`) — 2nd Line, Datenschutz
-> *"Als DPO will ich Verarbeitungstätigkeiten (ROPA), DSFAs und DSR-Anträge verwalten, Datenpannen klassifizieren und DSGVO-Compliance-Reports erstellen."*
+
+> _"Als DPO will ich Verarbeitungstätigkeiten (ROPA), DSFAs und DSR-Anträge verwalten, Datenpannen klassifizieren und DSGVO-Compliance-Reports erstellen."_
 
 **Erwartet:**
+
 - ✅ DPIA/ROPA/DSR-Vollzugriff
 - ✅ DSGVO-Annual-Report-PDF generieren
 - ✅ Read auf ERM/ISMS für Cross-Module-Sicht
 - ❌ Risk-Write, BCMS-Write
 
 ### US-03: Compliance Officer (`compliance@meridian.test`)
-> *"Als CO will ich Framework-Mappings pflegen, Compliance-Score über alle Module aggregieren und Audit-Berichte für Externe vorbereiten."*
+
+> _"Als CO will ich Framework-Mappings pflegen, Compliance-Score über alle Module aggregieren und Audit-Berichte für Externe vorbereiten."_
 
 **Erwartet:**
+
 - ✅ Read überall
 - ✅ Write auf Audit-Findings, Controls
 - ✅ Reports generieren cross-module
 - ❌ HinSchG-Cases
 
 ### US-04: Auditor (`auditor@meridian.test`) — 3rd Line, intern
-> *"Als interner Auditor will ich Audits planen, Findings dokumentieren, Closure-Readiness prüfen und unabhängig von 1st/2nd-Line berichten."*
+
+> _"Als interner Auditor will ich Audits planen, Findings dokumentieren, Closure-Readiness prüfen und unabhängig von 1st/2nd-Line berichten."_
 
 **Erwartet:**
+
 - ✅ Audit-Mgmt-Vollzugriff
 - ✅ Findings-Write
 - ✅ Read aller anderen Module für Audit-Scope
 - ❌ Risk-Write (Konflikt mit Unabhängigkeit)
 
 ### US-05: Process Owner (`process-owner@meridian.test`) — 1st Line
-> *"Als Process-Owner will ich meine Geschäftsprozesse dokumentieren, BIA-Bewertungen liefern, KRIs überwachen und operationelle Risiken für meinen Bereich erfassen."*
+
+> _"Als Process-Owner will ich meine Geschäftsprozesse dokumentieren, BIA-Bewertungen liefern, KRIs überwachen und operationelle Risiken für meinen Bereich erfassen."_
 
 **Erwartet:**
+
 - ✅ Process-Create/Update
 - ✅ Risk-Create (1st-Line)
 - ✅ BIA-Input
 - ❌ Cross-Org-Read
 
 ### US-06: Vendor Manager (`vendor-mgr@meridian.test`) — 1st Line
-> *"Als Vendor-Manager will ich Lieferanten erfassen, Due Diligence durchführen, Verträge verknüpfen und LkSG-/DORA-Anforderungen tracken."*
+
+> _"Als Vendor-Manager will ich Lieferanten erfassen, Due Diligence durchführen, Verträge verknüpfen und LkSG-/DORA-Anforderungen tracken."_
 
 **Erwartet:**
+
 - ✅ Vendor-CRUD
 - ✅ Contract-Verknüpfung
 - ✅ TPRM-Reports
 - ❌ Audit-Write
 
 ### US-07: ESG Manager (`esg@meridian.test`)
-> *"Als ESG-Manager will ich Materiality-Analysen führen, ESRS-Datenpunkte erfassen und CSRD-Annual-Report generieren."*
+
+> _"Als ESG-Manager will ich Materiality-Analysen führen, ESRS-Datenpunkte erfassen und CSRD-Annual-Report generieren."_
 
 **Erwartet:**
+
 - ✅ ESG-Vollzugriff
 - ✅ ESG-Report-Export
 - ✅ Read auf TPRM (Lieferketten-ESG)
 - ❌ Risk-Write außerhalb ESG-Bereich
 
 ### US-08: Whistleblowing Officer (`whistleblowing@meridian.test`)
-> *"Als Ombudsperson will ich HinSchG-Fälle vertraulich entgegennehmen, triagieren, untersuchen und schließen — ohne Einsicht in andere Compliance-Module."*
+
+> _"Als Ombudsperson will ich HinSchG-Fälle vertraulich entgegennehmen, triagieren, untersuchen und schließen — ohne Einsicht in andere Compliance-Module."_
 
 **Erwartet:**
+
 - ✅ Whistleblowing-Cases-Vollzugriff
 - ❌ Alles andere blockiert (HinSchG §§16, 32)
 
 ### US-09: Viewer (`viewer@meridian.test`)
-> *"Als Viewer will ich Reports und Dashboards einsehen ohne irgendwelche Mutationen ausführen zu können — typisch für Geschäftsführung oder Board-Mitglied."*
+
+> _"Als Viewer will ich Reports und Dashboards einsehen ohne irgendwelche Mutationen ausführen zu können — typisch für Geschäftsführung oder Board-Mitglied."_
 
 **Erwartet:**
+
 - ✅ Read überall (außer Whistleblowing)
 - ❌ Write überall
 
@@ -207,38 +225,38 @@
 
 ## Cross-Module-Verkettungs-Matrix
 
-| Source | → | Target | Erwartete Wirkung |
-|---|---|---|---|
-| BIA-Process-Impact (high) | → | ISMS-Schutzbedarf | Asset-Schutzbedarf steigt |
-| Audit-Finding (critical) | → | Risk-Register | Auto-Risk-Create oder Score-Update |
-| Risk + Asset-Verknüpfung | → | Asset-Risk-Score | Aggregation auf Asset-Level |
-| Vendor (critical) | → | DORA-Critical-Vendor-List | Sync |
-| Vendor (LkSG-relevant) | → | TPRM-LkSG-Dashboard | Sync |
-| DSR (Special Category) | → | DPIA-Trigger-Check | Empfehlung DPIA |
-| Incident (personenbezogen) | → | DSGVO-Art-33-Meldung | 72h-Timer + Behörden-Notify |
-| Treatment-Costs | → | Budget-Aggregation pro Org | Sum |
-| Control-Test-Result | → | Control-Effectiveness % | Aggregation |
-| Control-Effectiveness | → | Compliance-Score | Aggregation |
-| Programme-Gate-Passed | → | Programme-Progress % | Sum/Total |
+| Source                     | →   | Target                     | Erwartete Wirkung                  |
+| -------------------------- | --- | -------------------------- | ---------------------------------- |
+| BIA-Process-Impact (high)  | →   | ISMS-Schutzbedarf          | Asset-Schutzbedarf steigt          |
+| Audit-Finding (critical)   | →   | Risk-Register              | Auto-Risk-Create oder Score-Update |
+| Risk + Asset-Verknüpfung   | →   | Asset-Risk-Score           | Aggregation auf Asset-Level        |
+| Vendor (critical)          | →   | DORA-Critical-Vendor-List  | Sync                               |
+| Vendor (LkSG-relevant)     | →   | TPRM-LkSG-Dashboard        | Sync                               |
+| DSR (Special Category)     | →   | DPIA-Trigger-Check         | Empfehlung DPIA                    |
+| Incident (personenbezogen) | →   | DSGVO-Art-33-Meldung       | 72h-Timer + Behörden-Notify        |
+| Treatment-Costs            | →   | Budget-Aggregation pro Org | Sum                                |
+| Control-Test-Result        | →   | Control-Effectiveness %    | Aggregation                        |
+| Control-Effectiveness      | →   | Compliance-Score           | Aggregation                        |
+| Programme-Gate-Passed      | →   | Programme-Progress %       | Sum/Total                          |
 
 ---
 
 ## Aggregation-Endpoints zu verifizieren
 
-| Endpoint | Erwartete Aggregation |
-|---|---|
-| `/controls/effectiveness` | controlsTotal, testsRun, effective/partial/ineffective, % |
-| `/audit-mgmt/universe/coverage` | total, withLastAudit, neverAudited, overdue, dueSoon, % |
-| `/risks/heatmap` | Risk-Score-Matrix |
-| `/risks/aggregate` | Summen pro Kategorie/Owner |
-| `/dpms/dashboard` | RoPA-Count, DSR-Open, DPIA-In-Progress |
-| `/bcms/dashboard` | BIA-Vollständigkeit, BCP-Coverage, Crisis-Count, RTO |
-| `/tprm/concentration` | Vendor-Tier-Verteilung, LkSG-relevant |
-| `/dora/dashboard` | IKT-Risiken, Vorfälle, Critical-Vendors |
-| `/ai-act/dashboard` | KI-Systeme, Hochrisiko, FRIA |
-| `/esg/dashboard` | Metriken, Targets, Datenqualität |
-| `/tax-cms/dashboard` | CMS-Elemente, Reifegrad, Steuerrisiken |
-| `/programmes/journeys` | Progress %, allowed-transitions |
+| Endpoint                        | Erwartete Aggregation                                     |
+| ------------------------------- | --------------------------------------------------------- |
+| `/controls/effectiveness`       | controlsTotal, testsRun, effective/partial/ineffective, % |
+| `/audit-mgmt/universe/coverage` | total, withLastAudit, neverAudited, overdue, dueSoon, %   |
+| `/risks/heatmap`                | Risk-Score-Matrix                                         |
+| `/risks/aggregate`              | Summen pro Kategorie/Owner                                |
+| `/dpms/dashboard`               | RoPA-Count, DSR-Open, DPIA-In-Progress                    |
+| `/bcms/dashboard`               | BIA-Vollständigkeit, BCP-Coverage, Crisis-Count, RTO      |
+| `/tprm/concentration`           | Vendor-Tier-Verteilung, LkSG-relevant                     |
+| `/dora/dashboard`               | IKT-Risiken, Vorfälle, Critical-Vendors                   |
+| `/ai-act/dashboard`             | KI-Systeme, Hochrisiko, FRIA                              |
+| `/esg/dashboard`                | Metriken, Targets, Datenqualität                          |
+| `/tax-cms/dashboard`            | CMS-Elemente, Reifegrad, Steuerrisiken                    |
+| `/programmes/journeys`          | Progress %, allowed-transitions                           |
 
 ---
 
@@ -251,6 +269,7 @@ Für jeden Workflow generiere ich konkrete Testdaten mit erkennbarem Marker `Wav
 ## Erwartetes Ergebnis
 
 Vollständiger Funktional-Report mit:
+
 - 9 User-Stories durchgespielt
 - 10 Workflows end-to-end
 - 11 Cross-Module-Verkettungen geprüft
@@ -260,4 +279,4 @@ Vollständiger Funktional-Report mit:
 
 ---
 
-*Test-Plan finalisiert. Ausführung beginnt.*
+_Test-Plan finalisiert. Ausführung beginnt._

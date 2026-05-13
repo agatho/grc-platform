@@ -9,14 +9,14 @@
 
 **Funktional gemischt:**
 
-| Kategorie | Status |
-|---|---|
+| Kategorie                   | Status                                                                         |
+| --------------------------- | ------------------------------------------------------------------------------ |
 | **Workflow-State-Machines** | ✅ Risk + DPIA + Incident excellent; ⚠️ Audit/BIA mit Discovery-Inkonsistenzen |
-| **Aggregation-Korrektheit** | ✅ Vendors / ROPA / Findings stimmen mit Listen-Total überein |
-| **Cross-Module-Verkettung** | 🔴 Audit→Finding-Link schlägt fehl (auditId verloren) |
-| **UI-Pages** | 🔴 **`/risks` + `/controls` UI komplett broken** — Front/Back-Param-Mismatch |
-| **Reports/Exports** | ✅ PDF + CSV alle funktional, Wave14-Testdaten in Exports auffindbar |
-| **Hash-Chain** | ✅ healthy=true, 1229 v1 + 345 v2, 0 mismatches |
+| **Aggregation-Korrektheit** | ✅ Vendors / ROPA / Findings stimmen mit Listen-Total überein                  |
+| **Cross-Module-Verkettung** | 🔴 Audit→Finding-Link schlägt fehl (auditId verloren)                          |
+| **UI-Pages**                | 🔴 **`/risks` + `/controls` UI komplett broken** — Front/Back-Param-Mismatch   |
+| **Reports/Exports**         | ✅ PDF + CSV alle funktional, Wave14-Testdaten in Exports auffindbar           |
+| **Hash-Chain**              | ✅ healthy=true, 1229 v1 + 345 v2, 0 mismatches                                |
 
 ---
 
@@ -27,11 +27,13 @@
 **Symptom:** Risk-Register-Page zeigt "Risiken konnten nicht geladen werden / Erneut versuchen". Die Liste der 23 Risiken wird nicht angezeigt.
 
 **Root-Cause (aus Network-Mitschnitt):**
+
 ```
 GET /api/v1/risks?limit=500&sortBy=riskScoreResidual&sortDir=desc → 422
 ```
 
 Zwei Probleme:
+
 1. `limit=500` — server erzwingt seit Wave 8 `limit ≤ 100`. Response: `"must be <= 100 (use page+limit to traverse larger result sets)"`
 2. `sortBy=riskScoreResidual` — Zod-strict-Filter (Wave 13) lehnt mit `"sortBy: is not a recognized query parameter"` ab
 
@@ -61,6 +63,7 @@ Vermutlich gleicher Root-Cause (limit=500 oder sortBy).
 Kompletter Durchlauf: `identified → assessed → treated → closed`
 
 **Pre-Conditions enforced (vorbildlich):**
+
 - identified → assessed: **requires `PUT /risks/{id}/assessment` with inherentLikelihood + inherentImpact first**. Error: `"Cannot transition to 'assessed': inherentLikelihood and inherentImpact must be set. Use the assessment endpoint first."`
 - assessed → treated: **requires ≥1 active treatment** (planned or in_progress). Error: `"Cannot transition to 'treated': at least 1 active treatment (planned or in_progress) is required."`
 - treated → closed: ✅ erlaubt
@@ -81,6 +84,7 @@ Field-Schema verlangt `riskDescription` + `measureDescription` als Required, im 
 ### W5 — Incident-Lifecycle (NIST 7-State) ✅✅
 
 **Kompletter Durchlauf in 6 Transitionen:**
+
 ```
 detected → triaged → contained → eradicated → recovered → lessons_learned → closed
 ```
@@ -117,6 +121,7 @@ Auch nach Setzen von `startDate`, `endDate`, `leadAuditorId` (PUT auf Resource =
 Discovery sagt `endpoint: PUT /api/v1/bcms/bia/{id}, method: PUT` für draft→in_progress.
 
 Aber:
+
 - `PUT /bcms/bia/{id} {status:'in_progress'}` → 422 mit Hint "Use POST /api/v1/bcms/bia/{id}/finalize" — aber `/finalize` ist in_progress→approved, nicht draft→in_progress
 - `POST /bcms/bia/{id}/start` → 404
 - `POST /bcms/bia/{id}/transition` → 404
@@ -137,6 +142,7 @@ Aber:
 ### `#WAVE14-CROSS-01 (P1)` — Audit→Finding-Link silent verloren
 
 Ich habe ein Finding erstellt mit `auditId: <Wave14-W2-Audit-ID>`:
+
 ```json
 POST /api/v1/findings {
   "title": "Wave14-QA-W2-Finding",
@@ -170,14 +176,14 @@ Endpoint returns `null` statt strukturierter Daten. Aggregations-Computation feh
 
 ## ✅ Aggregations-Korrektheit verifiziert
 
-| Aggregation | Listen-Total | Dashboard-Wert | Match |
-|---|---:|---:|:-:|
-| Vendors | 7 | totalVendors:7 | ✅ |
-| Vendor-Tiers (2+2+3) | 7 | byTier sum:7 | ✅ |
-| ROPA | 5 | ropaEntryCount:5 | ✅ |
-| Findings | 11 (10 baseline + W2) | UI-grc-findings:14 | 🟡 (14 = 11 + 3 auto-derived?) |
-| Risks | 23 | (no clear aggregation) | — |
-| Audits | 5 | "5 offene Audits" | ✅ |
+| Aggregation          |          Listen-Total |         Dashboard-Wert |             Match              |
+| -------------------- | --------------------: | ---------------------: | :----------------------------: |
+| Vendors              |                     7 |         totalVendors:7 |               ✅               |
+| Vendor-Tiers (2+2+3) |                     7 |           byTier sum:7 |               ✅               |
+| ROPA                 |                     5 |       ropaEntryCount:5 |               ✅               |
+| Findings             | 11 (10 baseline + W2) |     UI-grc-findings:14 | 🟡 (14 = 11 + 3 auto-derived?) |
+| Risks                |                    23 | (no clear aggregation) |               —                |
+| Audits               |                     5 |      "5 offene Audits" |               ✅               |
 
 Wo die Aggregations definiert sind, stimmen sie. Heatmap und Concentration funktionieren nicht.
 
@@ -185,12 +191,12 @@ Wo die Aggregations definiert sind, stimmen sie. Heatmap und Concentration funkt
 
 ## ✅ Reports/Exports — Wave14-Testdaten propagieren
 
-| Export | Status | Wave14-Testdaten enthalten? |
-|---|:-:|:-:|
-| /risks/export?format=csv | ✅ 200, 24 lines | ✅ "Wave14-QA-W1-Risk" vorhanden |
-| /findings/export?format=csv | ✅ 200, 12 lines | ✅ "Wave14-QA-W2-Finding" vorhanden |
-| /bcms/bia/export | ✅ 200 | (nicht inhalts-verifiziert) |
-| /ai-act/annual-report/2026/pdf | ✅ 200 PDF 3642B magic-Y | (inhalt nicht verifiziert) |
+| Export                         |          Status          |     Wave14-Testdaten enthalten?     |
+| ------------------------------ | :----------------------: | :---------------------------------: |
+| /risks/export?format=csv       |     ✅ 200, 24 lines     |  ✅ "Wave14-QA-W1-Risk" vorhanden   |
+| /findings/export?format=csv    |     ✅ 200, 12 lines     | ✅ "Wave14-QA-W2-Finding" vorhanden |
+| /bcms/bia/export               |          ✅ 200          |     (nicht inhalts-verifiziert)     |
+| /ai-act/annual-report/2026/pdf | ✅ 200 PDF 3642B magic-Y |     (inhalt nicht verifiziert)      |
 
 **Daten-Integrität der Exports ist bestätigt** — meine Test-Daten landen korrekt in den Reports.
 
@@ -211,10 +217,10 @@ Hash-Chain bleibt durchgehend production-stabil.
 
 ### P0 (Beta-Blocker)
 
-| # | Finding | Impact |
-|---|---|---|
+| #                 | Finding                                                      | Impact                             |
+| ----------------- | ------------------------------------------------------------ | ---------------------------------- |
 | **#WAVE14-UI-01** | `/risks` UI broken: `limit=500&sortBy=riskScoreResidual` 422 | Risk-Register komplett unbedienbar |
-| **#WAVE14-UI-02** | `/controls` UI broken: gleiches Pattern | ICS-Modul komplett unbedienbar |
+| **#WAVE14-UI-02** | `/controls` UI broken: gleiches Pattern                      | ICS-Modul komplett unbedienbar     |
 
 **Root-Cause:** UI-Code wurde nicht an Wave-8-Max-Limit + Wave-13-Zod-Strict-Filter angepasst. Wave-8 hat den Server geschützt, Wave-13 hat unknown-params reject, **Wave 14 hat die UI nicht migriert**.
 
@@ -222,23 +228,23 @@ Hash-Chain bleibt durchgehend production-stabil.
 
 ### P1 (Compliance-Risiko)
 
-| # | Finding |
-|---|---|
+| #                    | Finding                                                            |
+| -------------------- | ------------------------------------------------------------------ |
 | **#WAVE14-CROSS-01** | `POST /findings {auditId}` akzeptiert auditId, ignoriert sie still |
-| **#WAVE14-DSR-01** | `POST /dpms/dsr` 500 empty body |
-| **#WAVE14-BIA-02** | BIA-Discovery-API zeigt falschen Transition-Endpoint |
-| **#WAVE14-CROSS-02** | `/dora/critical-vendors` 404 |
+| **#WAVE14-DSR-01**   | `POST /dpms/dsr` 500 empty body                                    |
+| **#WAVE14-BIA-02**   | BIA-Discovery-API zeigt falschen Transition-Endpoint               |
+| **#WAVE14-CROSS-02** | `/dora/critical-vendors` 404                                       |
 
 ### P2
 
-| # | Finding |
-|---|---|
-| **#WAVE14-AUDIT-01** | Audit-State-Machine Pre-Condition-Discovery fehlt |
-| **#WAVE14-AUDIT-02** | Activity-Create: `activityType` statt `type` (Naming-Konsistenz) |
-| **#WAVE14-WB-01** | OrgCode für Whistleblowing-Intake nicht discoverable |
-| **#WAVE14-CROSS-03** | `/risks/heatmap` 422 ohne Doku der Required-Params |
-| **#WAVE14-CROSS-04** | `/tprm/concentration` returns null |
-| **W1-Discovery** | Risk `/transitions` zeigt keine Pre-Conditions wie inherentLikelihood-required |
+| #                    | Finding                                                                        |
+| -------------------- | ------------------------------------------------------------------------------ |
+| **#WAVE14-AUDIT-01** | Audit-State-Machine Pre-Condition-Discovery fehlt                              |
+| **#WAVE14-AUDIT-02** | Activity-Create: `activityType` statt `type` (Naming-Konsistenz)               |
+| **#WAVE14-WB-01**    | OrgCode für Whistleblowing-Intake nicht discoverable                           |
+| **#WAVE14-CROSS-03** | `/risks/heatmap` 422 ohne Doku der Required-Params                             |
+| **#WAVE14-CROSS-04** | `/tprm/concentration` returns null                                             |
+| **W1-Discovery**     | Risk `/transitions` zeigt keine Pre-Conditions wie inherentLikelihood-required |
 
 ### P3
 
@@ -264,6 +270,7 @@ Hash-Chain bleibt durchgehend production-stabil.
 **Plattform ist NICHT Beta-Ready** — die zwei UI-Page-Blocker (`/risks` und `/controls`) machen die zentralen GRC-Module unbenutzbar für jeden Endnutzer, der nicht direkt API-Calls macht.
 
 **Wave 15 Prio:**
+
 1. P0 UI-Sync auf Server-Constraints (`/risks`, `/controls` und vermutlich weitere) — schnell zu fixen, weil Server-side ist alles richtig
 2. P1 Audit→Finding-Link Silent-Failure — zentrale GRC-Funktion
 3. P1 DSR-Create 500 — DSGVO-relevant
@@ -271,4 +278,4 @@ Hash-Chain bleibt durchgehend production-stabil.
 
 ---
 
-*Wave 14 funktionaler Tiefen-Test abgeschlossen. Hash-Chain healthy. 12+ Findings identifiziert, davon 2 P0 + 4 P1.*
+_Wave 14 funktionaler Tiefen-Test abgeschlossen. Hash-Chain healthy. 12+ Findings identifiziert, davon 2 P0 + 4 P1._

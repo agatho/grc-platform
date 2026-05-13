@@ -11,12 +11,12 @@
 
 **Plattform ist nicht beta-ready.** Über die ohnehin bekannten UI-Blocker hinaus zeigen sich:
 
-| Severity | Anzahl |
-|---|---:|
-| **P0 / Production-Blocker** | 4 |
-| **P1 / Compliance-Risiko / Data-Loss** | 7 |
-| **P2 / Funktionale Lücken** | 9 |
-| **P3 / Polish** | 4 |
+| Severity                               | Anzahl |
+| -------------------------------------- | -----: |
+| **P0 / Production-Blocker**            |      4 |
+| **P1 / Compliance-Risiko / Data-Loss** |      7 |
+| **P2 / Funktionale Lücken**            |      9 |
+| **P3 / Polish**                        |      4 |
 
 Der gravierendste neue Befund: **Bad client requests können den ganzen Server killen.**
 
@@ -34,11 +34,11 @@ Im Normalbetrieb passiert das, weil das **UI alle Listen-Pages mit `?limit=500` 
 
 ### `#WAVE14D-P0-02` — `limit=500` führt zu 500 empty body auf 19/21 List-Endpoints
 
-| Endpoint | `?limit=500` Response |
-|---|---|
-| `/risks` | ✅ 422 RFC-7807 "must be <= 100" |
-| `/controls` | ✅ 422 RFC-7807 |
-| **alle anderen 19** | 🔴 **500 empty body** |
+| Endpoint            | `?limit=500` Response            |
+| ------------------- | -------------------------------- |
+| `/risks`            | ✅ 422 RFC-7807 "must be <= 100" |
+| `/controls`         | ✅ 422 RFC-7807                  |
+| **alle anderen 19** | 🔴 **500 empty body**            |
 
 Nur `/risks` und `/controls` haben die Pagination-Max-Validation aus Wave 8 (#NIGHT-059) erhalten. Die übrigen 19 Listen-Endpoints (`/findings`, `/audits`, `/bcms/bia`, `/dpms/dpia`, `/isms/threats`, `/isms/vulnerabilities`, `/isms/incidents`, `/processes`, `/assets`, `/contracts`, `/vendors`, `/kris`, `/users`, `/organizations`, `/control-tests`, `/audit-log`, `/dpms/dsr`, `/dpms/ropa`, `/tasks`) **crashen ohne RFC-7807-Wrapper**.
 
@@ -46,19 +46,20 @@ Nur `/risks` und `/controls` haben die Pagination-Max-Validation aus Wave 8 (#NI
 
 Konsequenz aus P0-01/02. Folgende UI-Pages zeigen leere Daten **obwohl die API-Direktabfrage Daten liefert**:
 
-| UI-Page | API-Realität | UI-Anzeige |
-|---|---:|---:|
-| `/risks` | 23 Risks | "konnten nicht geladen werden" |
-| `/controls` | 18 Controls | "0 Kontrollregister / konnten nicht geladen werden" |
-| `/isms/threats` | 5 Threats | "0 gesamt / Keine Bedrohungen gefunden" |
-| `/isms/vulnerabilities` | 4 Vulns | "0 gesamt / Keine Schwachstellen gefunden" |
-| `/isms/incidents` | 2 Incidents | "0 gesamt / Keine Vorfälle gefunden" |
+| UI-Page                 | API-Realität |                                          UI-Anzeige |
+| ----------------------- | -----------: | --------------------------------------------------: |
+| `/risks`                |     23 Risks |                      "konnten nicht geladen werden" |
+| `/controls`             |  18 Controls | "0 Kontrollregister / konnten nicht geladen werden" |
+| `/isms/threats`         |    5 Threats |             "0 gesamt / Keine Bedrohungen gefunden" |
+| `/isms/vulnerabilities` |      4 Vulns |          "0 gesamt / Keine Schwachstellen gefunden" |
+| `/isms/incidents`       |  2 Incidents |                "0 gesamt / Keine Vorfälle gefunden" |
 
 Endnutzer ohne API-Zugang sieht **leere Plattform**, obwohl Daten da sind. Catastrophic UX-Bug.
 
 ### `#WAVE14D-P0-04` — `POST /api/v1/dpms/dsr` → 500 empty body
 
 DSR-Create (DSGVO Art. 15-21) crasht systematisch:
+
 - Mit `{requestType:'access'}` → 422 (validation)
 - Mit `{requestType, subjectName}` → **500 empty body**
 - Mit allen sinnvollen Feldern (`requestType, subjectName, subjectEmail, receivedAt, description`) → **500 empty body**
@@ -186,71 +187,71 @@ Search returnt `totalResults` aber kein Pagination-Set. Bei vielen Ergebnissen u
 
 ### Workflow-State-Machines
 
-| Modul | Erstellt | Workflow durch | Cross-Module-Effekt |
-|---|:-:|---|:-:|
-| **Risk** | ✅ | identified → assessed → treated → closed | ✅ Treatment + Heatmap-Aggregation |
-| **Audit** | ✅ | Create only (fieldwork-transition blockiert) | partial |
-| **DPIA** | ✅ | draft → in_progress ✅ | ✅ /dpms/dashboard reagiert |
-| **DSR** | 🔴 | Create-500 | — |
-| **Incident** | ✅ | NIST 7-State komplett | ✅ DSGVO Art. 33-Foundation steht |
-| **BIA** | ✅ | Create only (in_progress blockiert) | partial |
-| **Whistleblowing** | 🔴 | Intake-Code unbekannt | — |
-| **Vendor** | ✅ | Create + transitions | ✅ /tprm/vendors-dashboard +1 |
-| **Contract** | ✅ | Create | ✅ /contracts-Portfolio aggregiert |
+| Modul              | Erstellt | Workflow durch                               |        Cross-Module-Effekt         |
+| ------------------ | :------: | -------------------------------------------- | :--------------------------------: |
+| **Risk**           |    ✅    | identified → assessed → treated → closed     | ✅ Treatment + Heatmap-Aggregation |
+| **Audit**          |    ✅    | Create only (fieldwork-transition blockiert) |              partial               |
+| **DPIA**           |    ✅    | draft → in_progress ✅                       |    ✅ /dpms/dashboard reagiert     |
+| **DSR**            |    🔴    | Create-500                                   |                 —                  |
+| **Incident**       |    ✅    | NIST 7-State komplett                        | ✅ DSGVO Art. 33-Foundation steht  |
+| **BIA**            |    ✅    | Create only (in_progress blockiert)          |              partial               |
+| **Whistleblowing** |    🔴    | Intake-Code unbekannt                        |                 —                  |
+| **Vendor**         |    ✅    | Create + transitions                         |   ✅ /tprm/vendors-dashboard +1    |
+| **Contract**       |    ✅    | Create                                       | ✅ /contracts-Portfolio aggregiert |
 
 ### Aggregations-Korrektheit (geprüft)
 
-| Aggregation | Erwartet | Gemessen | Match |
-|---|---|---|---|
-| Vendors total | API:7 | Dashboard:7 | ✅ |
-| Vendor-Tiers (2+2+3) | API:7 | Dashboard sum:7 | ✅ |
-| ROPA | API:5 | Dashboard:5 | ✅ |
-| Findings | API:11 (10 baseline + W2) | grc-findings-UI:14 (incl. derived) | 🟡 partial |
-| Risks Status-Verteilung | identified:8, assessed:12, treated:2, closed:1 | dashboard-summary korrekt | ✅ |
-| Audit-Universe-Coverage | 5 items, 4 with last-audit | 80% | ✅ |
-| BCMS BIA-Vollständigkeit | 3 essentialProcesses, 57% | dashboard match | ✅ |
-| Controls Effectiveness | 18 controls, 6 tests, 83% | dashboard match | ✅ |
+| Aggregation              | Erwartet                                       | Gemessen                           | Match      |
+| ------------------------ | ---------------------------------------------- | ---------------------------------- | ---------- |
+| Vendors total            | API:7                                          | Dashboard:7                        | ✅         |
+| Vendor-Tiers (2+2+3)     | API:7                                          | Dashboard sum:7                    | ✅         |
+| ROPA                     | API:5                                          | Dashboard:5                        | ✅         |
+| Findings                 | API:11 (10 baseline + W2)                      | grc-findings-UI:14 (incl. derived) | 🟡 partial |
+| Risks Status-Verteilung  | identified:8, assessed:12, treated:2, closed:1 | dashboard-summary korrekt          | ✅         |
+| Audit-Universe-Coverage  | 5 items, 4 with last-audit                     | 80%                                | ✅         |
+| BCMS BIA-Vollständigkeit | 3 essentialProcesses, 57%                      | dashboard match                    | ✅         |
+| Controls Effectiveness   | 18 controls, 6 tests, 83%                      | dashboard match                    | ✅         |
 
 ### Cross-Module-Verkettung
 
-| Source | Target | Status |
-|---|---|:-:|
-| Risk → Treatment | Verkettung via /risks/{id}/treatments | ✅ |
-| Risk → audit-impact-summary | aggregiert offene Findings auf Risk | ✅ |
-| Vendor (created) | /vendors/dashboard, /tprm-UI | ✅ |
-| Contract (created) | /contracts-Portfolio (372k EUR) | ✅ |
-| Control → Findings (1 Linked) | /controls/{id}/findings | ✅ |
-| Audit → Findings (via Body-auditId) | 🔴 silent-verloren | ❌ |
-| Vendor critical → DORA | /dora/critical-vendors fehlt | ❌ |
-| BIA Process-Impact → ISMS-Schutzbedarf | nicht prüfbar (DSR blocked) | — |
+| Source                                 | Target                                | Status |
+| -------------------------------------- | ------------------------------------- | :----: |
+| Risk → Treatment                       | Verkettung via /risks/{id}/treatments |   ✅   |
+| Risk → audit-impact-summary            | aggregiert offene Findings auf Risk   |   ✅   |
+| Vendor (created)                       | /vendors/dashboard, /tprm-UI          |   ✅   |
+| Contract (created)                     | /contracts-Portfolio (372k EUR)       |   ✅   |
+| Control → Findings (1 Linked)          | /controls/{id}/findings               |   ✅   |
+| Audit → Findings (via Body-auditId)    | 🔴 silent-verloren                    |   ❌   |
+| Vendor critical → DORA                 | /dora/critical-vendors fehlt          |   ❌   |
+| BIA Process-Impact → ISMS-Schutzbedarf | nicht prüfbar (DSR blocked)           |   —    |
 
 ### UI-Pages — funktional getestet
 
-| Page | Daten korrekt | Wave14-Testdaten sichtbar |
-|---|:-:|:-:|
-| `/dashboard` | ✅ | n/a |
-| `/risks` | 🔴 **BROKEN** | nicht sichtbar |
-| `/controls` | 🔴 **BROKEN** | n/a |
-| `/grc-findings` | ✅ | Wave14-W2-Finding ✓ |
-| `/audit` | ✅ | mein W2-Audit gezählt |
-| `/bcms/bia` | ✅ | Wave14-W6-BIA ✓ |
-| `/bcms/crisis` | ✅ | (no Wave14 add) |
-| `/bcms/exercises` | ✅ | (no Wave14 add) |
-| `/dpms/dpia` | ✅ | Wave14-W3-DPIA in "in progress" ✓ |
-| `/dpms/dsr` | ✅ | (DSR-Create blocked) |
-| `/dpms/ropa` | ✅ | n/a |
-| `/isms/threats` | 🔴 **BROKEN** | API hat 5, UI zeigt 0 |
-| `/isms/vulnerabilities` | 🔴 **BROKEN** | API hat 4, UI zeigt 0 |
-| `/isms/incidents` | 🔴 **BROKEN** | API hat 2, UI zeigt 0 (W5-Closed dabei!) |
-| `/isms/playbooks` | ✅ | (empty as expected) |
-| `/processes` | ✅ | 3 listed |
-| `/contracts` | ✅ | 372k EUR aggregiert |
-| `/tprm` | ✅ | 7 vendors |
-| `/whistleblowing/cases` | ✅ | 0 cases |
-| `/audit-log` | ✅ | 1574 entries |
-| `/grc-findings` | ✅ | 14 findings cross-module |
-| `/programmes` | ✅ | 3 journeys, 11 templates |
-| `/users` | ✅ | 24 users |
+| Page                    | Daten korrekt |        Wave14-Testdaten sichtbar         |
+| ----------------------- | :-----------: | :--------------------------------------: |
+| `/dashboard`            |      ✅       |                   n/a                    |
+| `/risks`                | 🔴 **BROKEN** |              nicht sichtbar              |
+| `/controls`             | 🔴 **BROKEN** |                   n/a                    |
+| `/grc-findings`         |      ✅       |           Wave14-W2-Finding ✓            |
+| `/audit`                |      ✅       |          mein W2-Audit gezählt           |
+| `/bcms/bia`             |      ✅       |             Wave14-W6-BIA ✓              |
+| `/bcms/crisis`          |      ✅       |             (no Wave14 add)              |
+| `/bcms/exercises`       |      ✅       |             (no Wave14 add)              |
+| `/dpms/dpia`            |      ✅       |    Wave14-W3-DPIA in "in progress" ✓     |
+| `/dpms/dsr`             |      ✅       |           (DSR-Create blocked)           |
+| `/dpms/ropa`            |      ✅       |                   n/a                    |
+| `/isms/threats`         | 🔴 **BROKEN** |          API hat 5, UI zeigt 0           |
+| `/isms/vulnerabilities` | 🔴 **BROKEN** |          API hat 4, UI zeigt 0           |
+| `/isms/incidents`       | 🔴 **BROKEN** | API hat 2, UI zeigt 0 (W5-Closed dabei!) |
+| `/isms/playbooks`       |      ✅       |           (empty as expected)            |
+| `/processes`            |      ✅       |                 3 listed                 |
+| `/contracts`            |      ✅       |           372k EUR aggregiert            |
+| `/tprm`                 |      ✅       |                7 vendors                 |
+| `/whistleblowing/cases` |      ✅       |                 0 cases                  |
+| `/audit-log`            |      ✅       |               1574 entries               |
+| `/grc-findings`         |      ✅       |         14 findings cross-module         |
+| `/programmes`           |      ✅       |         3 journeys, 11 templates         |
+| `/users`                |      ✅       |                 24 users                 |
 
 ### Form-Validation Strict
 
@@ -331,6 +332,7 @@ Hash-Chain ist die einzige Säule die seit Wave 10 production-stabil ist.
 **Plattform-Stand: Alpha, mit signifikanten Lücken in der Cross-Module-Integration und UI-API-Kohärenz.**
 
 Die größten Probleme:
+
 1. **UI-API-Mismatch** auf den Hauptseiten (`/risks`, `/controls`, alle `/isms`-Subs)
 2. **Server-side Pagination-Validation nur halb implementiert** (2/21 Endpoints)
 3. **Cross-Module-Links silent verloren** (Audit→Finding)
@@ -343,17 +345,19 @@ Für Beta-Readiness: **mindestens 2 weitere Sprints** mit Fokus auf UI-API-Sync 
 
 ---
 
-*Wave 14 DEEP abgeschlossen. 24 Findings über alle Severities. Hash-Chain healthy. Detailaufnahme der echten User-Experience zeigt: Plattform funktional alpha, nicht beta.*
+_Wave 14 DEEP abgeschlossen. 24 Findings über alle Severities. Hash-Chain healthy. Detailaufnahme der echten User-Experience zeigt: Plattform funktional alpha, nicht beta._
 
 ---
 
 ## Anhang — Zusätzliche Tests (Phase 14/15)
 
 ### Soft-Delete + Audit-Trail
+
 - ✅ POST Risk → DELETE → GET 404 → Audit-Log enthält delete-Eintrag mit `changes: {deleted_at, deleted_by, updated_at}`
 - 🟡 Kein `/restore`-Endpoint (404) — Recovery vor Tombstoning nicht implementiert
 
 ### Reports / Archives
+
 - ✅ Audit-Log-Archive ZIP: 531 KB, valid ZIP magic (PK)
 - ✅ Anchor: 200, leafCount=1349, neuer Merkle-Root
 - ✅ Calendar: 200 mit data (war Wave-8 noch 500 — gefixt!)
@@ -361,12 +365,14 @@ Für Beta-Readiness: **mindestens 2 weitere Sprints** mit Fokus auf UI-API-Sync 
 - ✅ Catalogs: 845 catalog-Frameworks (entspricht dem CLAUDE.md-Stand "130+ Frameworks")
 
 ### Settings + Admin
+
 - ✅ `/settings`: vollständig strukturierte Hub-Page (Plattform & Organisation, Nutzer/Rollen/Zugriff, ...)
 - ✅ `/admin/connectors`: Enterprise-Konnektoren (0 verfügbar — by-design)
 - ✅ `/admin/abac`: ABAC-Empty-State mit Konzept-Erklärung
 - 🟡 `/marketplace`: nur Stub "marketplace / Modul aktivieren" — Module-Gate
 
 ### UI-Sub-Pages (zusätzliche)
+
 - ✅ `/audit/universe`, `/audit/plans`, `/audit/executions`: alle funktional
 - 🔴 `/controls/rcm`: mainLen=0, **komplett leer** (kein Render)
 - ⚠️ `/controls/findings`: zeigt "0 Feststellungen gesamt" — vermutlich falscher Filter (es gibt 11 Findings im System)
@@ -382,9 +388,11 @@ Für Beta-Readiness: **mindestens 2 weitere Sprints** mit Fokus auf UI-API-Sync 
 - **`#WAVE14D-P1-09`** — `/processes/governance` zeigt "GESAMTPROZESSE 0" — Aggregation-Bug
 
 ### Process-Versioning
+
 - ✅ Process-versioning aktiv: v1 für seeded process
 
 ### KRI-Inventur
+
 - ✅ 6 KRIs gefunden: "Mean Time to Patch Critical Vulns" (65 hours), "Single-Source Supplier Count" (3), "Open GDPR Findings" (2), "Key Position Vacancy Rate" (8%), "Cloud SLA Breach Count" (1)
 - ✅ KRI-measurements-Endpoint funktional
 - ❌ `/kris/{id}/history` 404 (nur measurements vorhanden)
@@ -393,6 +401,7 @@ Für Beta-Readiness: **mindestens 2 weitere Sprints** mit Fokus auf UI-API-Sync 
 
 Vor Wave 14 DEEP-Tests: v2=345
 Nach allen Tests: v2=360 (+15 weitere Mutationen)
+
 - Total: 1589
 - healthy: true
 - 0 mismatches
@@ -424,4 +433,4 @@ Nach allen Tests: v2=360 (+15 weitere Mutationen)
 
 ---
 
-*Cowork QA Über-Nacht-Marathon abgeschlossen. Detail-Findings nach 1.5h aktiver Test-Zeit. Plattform-Stand: Alpha mit beachtlichen UI-API-Sync-Lücken.*
+_Cowork QA Über-Nacht-Marathon abgeschlossen. Detail-Findings nach 1.5h aktiver Test-Zeit. Plattform-Stand: Alpha mit beachtlichen UI-API-Sync-Lücken._

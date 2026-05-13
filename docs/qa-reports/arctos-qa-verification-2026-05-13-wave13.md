@@ -9,14 +9,14 @@
 
 🎉 **Sehr starkes Sprint-Ergebnis.** Beide P1-RBAC-Bugs gefixt, Forbidden-Format vereinheitlicht, BIA-Export funktioniert, Hash-Chain unverändert healthy.
 
-| Finding | Wave 12 | Wave 13 |
-|---|---|---|
-| #RBAC-02 Whistleblowing-Officer Cases-Read | 🔴 403 (invertiert) | ✅ **200** |
-| #RBAC-03 Whistleblowing-Officer Cross-Read | 🔴 sah alles 200 | ✅ **alles 403** mit HinSchG-Hinweis |
-| #RBAC-01 CISO Risk-Create | 🔴 403 ohne Erklärung | ✅ **403 mit präziser Role-List** + RFC-7807 |
-| Forbidden RFC-7807 Format | 🔴 `{"error":"Forbidden"}` | ✅ **vollständig RFC-7807** |
-| BIA-Export | 🔴 500 | ✅ **200** |
-| Hash-Chain | ✅ | ✅ **v1=1229, v2=296, healthy=true, 0 mismatches** |
+| Finding                                    | Wave 12                    | Wave 13                                            |
+| ------------------------------------------ | -------------------------- | -------------------------------------------------- |
+| #RBAC-02 Whistleblowing-Officer Cases-Read | 🔴 403 (invertiert)        | ✅ **200**                                         |
+| #RBAC-03 Whistleblowing-Officer Cross-Read | 🔴 sah alles 200           | ✅ **alles 403** mit HinSchG-Hinweis               |
+| #RBAC-01 CISO Risk-Create                  | 🔴 403 ohne Erklärung      | ✅ **403 mit präziser Role-List** + RFC-7807       |
+| Forbidden RFC-7807 Format                  | 🔴 `{"error":"Forbidden"}` | ✅ **vollständig RFC-7807**                        |
+| BIA-Export                                 | 🔴 500                     | ✅ **200**                                         |
+| Hash-Chain                                 | ✅                         | ✅ **v1=1229, v2=296, healthy=true, 0 mismatches** |
 
 ---
 
@@ -24,15 +24,15 @@
 
 Login als `whistleblowing@meridian.test`:
 
-| Endpoint | Wave 12 | Wave 13 |
-|---|:-:|:-:|
-| `GET /whistleblowing/cases` | 🔴 403 (invertiert!) | ✅ **200** |
-| `POST /whistleblowing/cases` (direct) | 405 | 405 RFC-7807 (geht via `/intake/submit`) |
-| `GET /risks` | 🔴 200 (sollte 403) | ✅ **403 RFC-7807** |
-| `GET /dpms/dpia` | 🔴 200 | ✅ **403** |
-| `GET /isms/threats` | 🔴 200 | ✅ **403** |
-| `GET /audit-mgmt/audits` | 🔴 200 | ✅ **403** |
-| `GET /esg/dashboard` | 🔴 200 | ✅ **403** |
+| Endpoint                              |       Wave 12        |                 Wave 13                  |
+| ------------------------------------- | :------------------: | :--------------------------------------: |
+| `GET /whistleblowing/cases`           | 🔴 403 (invertiert!) |                ✅ **200**                |
+| `POST /whistleblowing/cases` (direct) |         405          | 405 RFC-7807 (geht via `/intake/submit`) |
+| `GET /risks`                          | 🔴 200 (sollte 403)  |           ✅ **403 RFC-7807**            |
+| `GET /dpms/dpia`                      |        🔴 200        |                ✅ **403**                |
+| `GET /isms/threats`                   |        🔴 200        |                ✅ **403**                |
+| `GET /audit-mgmt/audits`              |        🔴 200        |                ✅ **403**                |
+| `GET /esg/dashboard`                  |        🔴 200        |                ✅ **403**                |
 
 **Beide P1-Bugs gefixt.** Whistleblowing-Officer ist jetzt HinSchG-konform isoliert: primärer Domain-Zugriff funktioniert, Cross-Module-Reads alle 403.
 
@@ -69,6 +69,7 @@ detail: "HinSchG officers (whistleblowing_officer, ombudsperson) are confined to
 ## ✅ Forbidden-Format vereinheitlicht (RFC-7807)
 
 Alle getesteten 403-Responses haben jetzt:
+
 ```json
 {
   "type": "https://arctos.charliehund.de/errors/forbidden",
@@ -91,6 +92,7 @@ Letzter crashing Export-Endpoint gelöst. Compliance-Reports vollständig.
 ## ✅ Hash-Chain Regression-Stabil
 
 Nach allen Wave-13-Tests:
+
 - **v1: 1229** (unverändert seit Wave 7)
 - **v2: 296** (von 154 nach Wave 12 → +142 neue Entries durch alle Cross-Role-Tests)
 - **chainMismatches: 0, rowMismatches: 0, healthy: true** ✅
@@ -116,10 +118,10 @@ Beim Auslesen größerer JSON-Responses (`application/json` mit > einigen 100 By
 ## Detail-Bilanz Wave 12 → Wave 13
 
 | Severity | Wave 12 OPEN | Wave 13 OPEN |
-|---|---:|---:|
-| P1 | 2 | 0 ✅ |
-| P2 | 3 | 1 |
-| P3 | 3 | 3 |
+| -------- | -----------: | -----------: |
+| P1       |            2 |         0 ✅ |
+| P2       |            3 |            1 |
+| P3       |            3 |            3 |
 
 **Quote FIXED in einer Welle:** 5 von 8 Items (62 %), davon beide P1.
 
@@ -148,18 +150,18 @@ Beim Auslesen größerer JSON-Responses (`application/json` mit > einigen 100 By
 
 **ARCTOS ist jetzt definitiv beta-ready.** Alle harten Compliance-Säulen erfüllt:
 
-| Säule | Status |
-|---|:-:|
-| Audit-Hash-Chain (ISO 27001 A.18.1.3, GoBD §147, DSGVO Art. 5(2), ADR-011) | ✅ healthy v1=1229, v2=296 |
-| State-Machine-Coverage | 12/14 funktional + 2 by-design stateless |
-| PDF/A-Archive (GoBD §147) | ✅ echte PDFs |
-| Incident-Workflow (DSGVO Art. 33) | ✅ NIST-7-State |
-| RBAC + 3LoD | ✅ vorbildlich enforced + transparent |
-| HinSchG-Vertraulichkeit | ✅ Ombudsperson isoliert mit §§-Referenz im Error |
-| Multi-Tenant-Isolation | ✅ Org-Switch + Header-Spoofing-Resistance |
-| Exports (CSV, PDF, JSON, ZIP) | ✅ 4/4 |
-| Validation-Layer (Zod-strict, RFC-7807) | ✅ konsistent |
-| i18n | ✅ Umlaute + Status-Enums humanisiert |
+| Säule                                                                      |                      Status                       |
+| -------------------------------------------------------------------------- | :-----------------------------------------------: |
+| Audit-Hash-Chain (ISO 27001 A.18.1.3, GoBD §147, DSGVO Art. 5(2), ADR-011) |            ✅ healthy v1=1229, v2=296             |
+| State-Machine-Coverage                                                     |     12/14 funktional + 2 by-design stateless      |
+| PDF/A-Archive (GoBD §147)                                                  |                   ✅ echte PDFs                   |
+| Incident-Workflow (DSGVO Art. 33)                                          |                  ✅ NIST-7-State                  |
+| RBAC + 3LoD                                                                |       ✅ vorbildlich enforced + transparent       |
+| HinSchG-Vertraulichkeit                                                    | ✅ Ombudsperson isoliert mit §§-Referenz im Error |
+| Multi-Tenant-Isolation                                                     |    ✅ Org-Switch + Header-Spoofing-Resistance     |
+| Exports (CSV, PDF, JSON, ZIP)                                              |                      ✅ 4/4                       |
+| Validation-Layer (Zod-strict, RFC-7807)                                    |                   ✅ konsistent                   |
+| i18n                                                                       |       ✅ Umlaute + Status-Enums humanisiert       |
 
 **Compliance-Reifegrad: Beta.** Plattform kann mit Pilot-Kunden eingeführt werden.
 
@@ -181,4 +183,4 @@ Beim Auslesen größerer JSON-Responses (`application/json` mit > einigen 100 By
 
 ---
 
-*Wave 13 abgeschlossen. Beta-Reifegrad erreicht. Verbleibende 4 Items sind P2/P3-Polish, kein Beta-Blocker.*
+_Wave 13 abgeschlossen. Beta-Reifegrad erreicht. Verbleibende 4 Items sind P2/P3-Polish, kein Beta-Blocker._
