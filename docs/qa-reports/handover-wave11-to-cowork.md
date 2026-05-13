@@ -10,6 +10,7 @@
 ### Hash-Chain (P0 abgeschlossen, Wave 9 + 10 hatten den Hauptteil)
 
 Keine neuen Änderungen in Wave 11 — Status sollte aus Wave 10 erhalten bleiben:
+
 - `GET /api/v1/audit-log/integrity` → `200 healthy: true`
 - `chainMismatches: []`, `rowMismatches: []`
 - `POST /api/v1/audit-log/anchor` → 200 (oder 409 mit Counts wenn broken)
@@ -27,6 +28,7 @@ GET /api/v1/ai-act/annual-report/2026/pdf
 ```
 
 **Akzeptanz pro Endpoint:**
+
 - `Content-Type: application/pdf`
 - Erste 4 Bytes = `%PDF`
 - Datei in Acrobat / Preview öffnet
@@ -48,6 +50,7 @@ POST /api/v1/isms/incidents/{id}/notify-authority
 **`/notify-authority`** Body: `{ authority, notifiedAt?, reason }` — `reason` ist Pflicht. Response enthält `compliance: { status: "within_72h" | "overdue", hoursBeforeDeadline | hoursLate }` automatisch berechnet aus `incident.detectedAt + 72h`.
 
 **Test-Flow:**
+
 1. POST `/intake/submit` (oder Incident manuell anlegen)
 2. GET `/transitions` → confirm shape
 3. PUT `/status { status: "triaged" }` (oder andere allowed-next)
@@ -65,19 +68,20 @@ GET /api/v1/dpms/dsr/{id}/transitions    ← mit sideChannels für /verify, /res
 ```
 
 **Stateless** (keine `/transitions`, by design, dokumentiert in `docs/state-machine-pattern.md`):
+
 - Asset
 - Threat
 
 ### Export-Endpoints (#WAVE6-EXPORT-02)
 
-| Endpoint | Wave 10 | Wave 11 |
-|---|---|---|
-| `GET /api/v1/export/incident?format=csv` | 500 (`relation "incident" does not exist`) | 200 mit CSV |
-| `GET /api/v1/export/bia?format=csv` | 400 unknown entity | 200 mit CSV |
-| `GET /api/v1/export/finding?format=csv` | 400 unknown entity | 200 mit CSV |
-| `GET /api/v1/esg/report/2026/export` | 405 | 200 mit `meta.kind: "preview"` |
-| `POST /api/v1/esg/report/2026/export` | 200 | 200 mit `meta.kind: "recorded_export"` (stempelt `exportedAt`) |
-| Generische Export-Crashes | `500 { error, details: e.message }` (info leak) | RFC 7807 problem+json mit `requestId` |
+| Endpoint                                 | Wave 10                                         | Wave 11                                                        |
+| ---------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------- |
+| `GET /api/v1/export/incident?format=csv` | 500 (`relation "incident" does not exist`)      | 200 mit CSV                                                    |
+| `GET /api/v1/export/bia?format=csv`      | 400 unknown entity                              | 200 mit CSV                                                    |
+| `GET /api/v1/export/finding?format=csv`  | 400 unknown entity                              | 200 mit CSV                                                    |
+| `GET /api/v1/esg/report/2026/export`     | 405                                             | 200 mit `meta.kind: "preview"`                                 |
+| `POST /api/v1/esg/report/2026/export`    | 200                                             | 200 mit `meta.kind: "recorded_export"` (stempelt `exportedAt`) |
+| Generische Export-Crashes                | `500 { error, details: e.message }` (info leak) | RFC 7807 problem+json mit `requestId`                          |
 
 **Test:** Jeder Export-Endpoint mit `format=csv` und `format=xlsx` durchprobieren. Bei csv: erste Zeile sind die deutschen Spalten-Header (Titel/Beschreibung/Status/...). Bei xlsx: validate dass die Datei in Excel öffnet.
 
@@ -85,34 +89,37 @@ GET /api/v1/dpms/dsr/{id}/transitions    ← mit sideChannels für /verify, /res
 
 Migration 0316 hat **13 Test-User** in der Demo-Org `ccc4cc1c-…` angelegt — einer pro Rolle, die noch nicht durch 0300 abgedeckt war:
 
-| Email | Rolle | Line of Defense |
-|---|---|---|
-| `rbac-viewer@arctos.test` | viewer | — |
-| `rbac-esg-manager@arctos.test` | esg_manager | second |
-| `rbac-esg-contributor@arctos.test` | esg_contributor | first |
-| `rbac-whistleblowing-officer@arctos.test` | whistleblowing_officer | — |
-| `rbac-ombudsperson@arctos.test` | ombudsperson | — |
-| `rbac-compliance-officer@arctos.test` | compliance_officer | second |
-| `rbac-ciso@arctos.test` | ciso | second |
-| `rbac-bcm-manager@arctos.test` | bcm_manager | second |
-| `rbac-contract-manager@arctos.test` | contract_manager | first |
-| `rbac-quality-manager@arctos.test` | quality_manager | second |
-| `rbac-security-analyst@arctos.test` | security_analyst | first |
-| `rbac-department-head@arctos.test` | department_head | first |
-| `rbac-external-auditor@arctos.test` | external_auditor | third |
+| Email                                     | Rolle                  | Line of Defense |
+| ----------------------------------------- | ---------------------- | --------------- |
+| `rbac-viewer@arctos.test`                 | viewer                 | —               |
+| `rbac-esg-manager@arctos.test`            | esg_manager            | second          |
+| `rbac-esg-contributor@arctos.test`        | esg_contributor        | first           |
+| `rbac-whistleblowing-officer@arctos.test` | whistleblowing_officer | —               |
+| `rbac-ombudsperson@arctos.test`           | ombudsperson           | —               |
+| `rbac-compliance-officer@arctos.test`     | compliance_officer     | second          |
+| `rbac-ciso@arctos.test`                   | ciso                   | second          |
+| `rbac-bcm-manager@arctos.test`            | bcm_manager            | second          |
+| `rbac-contract-manager@arctos.test`       | contract_manager       | first           |
+| `rbac-quality-manager@arctos.test`        | quality_manager        | second          |
+| `rbac-security-analyst@arctos.test`       | security_analyst       | first           |
+| `rbac-department-head@arctos.test`        | department_head        | first           |
+| `rbac-external-auditor@arctos.test`       | external_auditor       | third           |
 
 **Wichtig:** Diese User haben `password_hash = 'rbac_test_seed_no_login'` — kein interaktiver Login. Sie sind für **Permission-Matrix-Tests** gedacht (z.B. via JWT-Mock oder direkter `withAuth(<role>)`-Aufruf in Tests). Die ERM-Rollen (admin, risk_manager, control_owner, auditor, dpo, process_owner) sind weiterhin in 0300 vorhanden.
 
 **Neue Discovery-Route:**
+
 ```
 GET /api/v1/users/{id}/roles
 ```
+
 Liefert `[{ orgId, orgName, role, lineOfDefense, department, createdAt }]`.
 Berechtigung: Self-Read ODER admin im aktuellen Org. Sonst 403.
 
 ### CodeQL & Security
 
 In Wave 11 closed:
+
 - `js/stack-trace-exposure` (high) — 500 / 503 Responses leaken keine `e.message` mehr; nur `requestId` + generische detail-Strings. Bei 503 für unhandled errors steht der echte Fehler im **Server-Log** mit dem `requestId` als Korrelations-Key.
 - `js/double-escaping` (high) — pdf.ts entity decoder.
 - 10 unused-import notes.
@@ -123,6 +130,7 @@ In Wave 11 closed:
 ## Bekannte offene Punkte
 
 **Nicht in Wave 11 gemacht** (separate Sprints, nicht beta-blocking):
+
 - Audit-Trigger-Coverage: 180 Tabellen haben jetzt RLS aber keinen `audit_trigger()` registriert. Datenmutationen auf diesen Tabellen werden also weiterhin nicht in `audit_log` gespiegelt. Separate Migration nötig.
 - Echte Login-Credentials für die 13 RBAC-Test-User (aktuell nur Permission-Matrix, kein Login).
 - BIA / Finding **import** (CSV → DB) — aktuell nur Export. Import-Pipeline für diese beiden ist noch nicht fertig.
@@ -147,6 +155,7 @@ In Wave 11 closed:
 ## Wenn etwas crashed
 
 Alle catch-Blöcke logen jetzt `requestId` + vollen Stack server-side, geben aber **nur** `requestId` + generischen detail-String zurück. Bei jedem 500/503 Response:
+
 1. Notiere `requestId` aus der Response
 2. Operator kann via `grep <requestId> <log-stream>` den vollen Fehler finden
 3. Bei `application/problem+json`: `cause` field enthält pgCode wenn DB-Fehler
@@ -155,4 +164,4 @@ Nicht mehr (wie früher) der Versuch die `details: e.message` aus der Response s
 
 ---
 
-*Wave 11 zur QA freigegeben. Bei Findings: neuer Bericht in `docs/qa-reports/arctos-qa-verification-2026-05-XX-waveYY.md`.*
+_Wave 11 zur QA freigegeben. Bei Findings: neuer Bericht in `docs/qa-reports/arctos-qa-verification-2026-05-XX-waveYY.md`._
