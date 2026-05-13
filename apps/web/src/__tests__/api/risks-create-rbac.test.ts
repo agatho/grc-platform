@@ -115,7 +115,7 @@ describe("POST /api/v1/risks", () => {
   // is per-suite, not shared across files). The default 5s timeout
   // produced flaky timeouts on the 401/403 paths even though the route
   // returns immediately once withAuth resolves.
-  it("returns 401 when not authenticated", { timeout: 8000 }, async () => {
+  it("returns 401 when not authenticated", { timeout: 15000 }, async () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
@@ -138,7 +138,7 @@ describe("POST /api/v1/risks", () => {
 
   it(
     "returns 403 when withAuth rejects role (e.g. viewer)",
-    { timeout: 8000 },
+    { timeout: 15000 },
     async () => {
       withAuthMock.mockResolvedValue(
         Response.json({ error: "Forbidden" }, { status: 403 }),

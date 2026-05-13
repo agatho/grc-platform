@@ -105,6 +105,18 @@ describe("GET /api/v1/audit-log", () => {
       orgId: "org-1",
       userId: "user-1",
     });
+    // The shared beforeEach sets paginate's mock to return an EMPTY
+    // URLSearchParams. That makes the route's `searchParams.get(
+    // "includeDescendants")` return null, the 403 branch never fires,
+    // and the route crashes on the count-row destructuring downstream.
+    // Override for this case so the request's actual ?includeDescendants
+    // parameter reaches the route.
+    paginateMock.mockReturnValueOnce({
+      page: 1,
+      limit: 20,
+      offset: 0,
+      searchParams: new URLSearchParams("includeDescendants=true"),
+    });
     const { GET } = await import("../../app/api/v1/audit-log/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log?includeDescendants=true"),
