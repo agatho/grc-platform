@@ -244,14 +244,15 @@ describe("Audit integrity endpoint logic (live DB)", () => {
     `;
     expect(repairEntries[0].count).toBe(1);
 
-    // Idempotence: rerun the rehash; nothing should change.
-    await client.unsafe(`
-      DO $$
-      DECLARE v_count int;
-      BEGIN
-        SELECT count(*) INTO v_count FROM audit_log WHERE hash_version = 0;
-        IF v_count > 0 THEN RAISE EXCEPTION 'rerun should be a no-op'; END IF;
-      END $$;
-    `);
+    // Idempotence: rerun the same rehash predicate scoped to this
+    // test's tenant. Global v_count would be polluted by parallel
+    // integration tests (audit-trigger, audit-chain-per-tenant) that
+    // share the same DB process under singleFork — we only assert
+    // the no-op for our own scope.
+    const idempotenceCheck = await client<{ count: number }[]>`
+      SELECT count(*)::int AS count FROM audit_log
+      WHERE previous_hash_scope = ${scope} AND hash_version = 0
+    `;
+    expect(idempotenceCheck[0].count).toBe(0);
   });
 });
