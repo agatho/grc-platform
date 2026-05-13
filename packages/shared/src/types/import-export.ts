@@ -17,7 +17,13 @@ export type ImportEntityType =
   | "contract"
   | "incident"
   | "process"
-  | "ropa_entry";
+  | "ropa_entry"
+  // #WAVE11-EXPORT: added so the generic /export/:entityType route
+  // accepts these without returning 400 "Unknown entity type". Import
+  // support for bia/finding is a follow-up — the registry currently
+  // maps them for export only.
+  | "bia"
+  | "finding";
 
 export type ExportFormat = "csv" | "xlsx" | "pdf";
 

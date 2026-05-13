@@ -603,7 +603,10 @@ const contractDefinition: EntityDefinition = {
 
 const incidentDefinition: EntityDefinition = {
   key: "incident",
-  tableName: "incident",
+  // #WAVE11-EXPORT: actual table is `security_incident`. Wave-9 QA
+  // reported the export crashing with 500 — root cause was this
+  // mismatch: SELECT * FROM "incident" → relation does not exist.
+  tableName: "security_incident",
   requiredFields: [
     {
       name: "title",
@@ -917,6 +920,89 @@ const ropaEntryDefinition: EntityDefinition = {
 };
 
 // ──────────────────────────────────────────────────────────────
+// BIA (Business Impact Analysis)
+// ──────────────────────────────────────────────────────────────
+//
+// #WAVE11-EXPORT: was missing from the registry, so /export/bia
+// returned 400 "Unknown entity type". Minimal field set keyed off
+// the bia_assessment columns the BCMS module exposes today; richer
+// shaping (process impacts, MTPD/RTO/RPO numbers) can be added later
+// without breaking the contract.
+
+const biaDefinition: EntityDefinition = {
+  key: "bia",
+  tableName: "bia_assessment",
+  requiredFields: [
+    {
+      name: "name",
+      type: "string",
+      aliases: ["Name", "Bezeichnung", "BIA Name"],
+      required: true,
+    },
+  ],
+  optionalFields: [
+    {
+      name: "description",
+      type: "string",
+      aliases: ["Beschreibung", "Description"],
+    },
+  ],
+  fkResolutionRules: [],
+  templateHeaders: ["Name", "Beschreibung"],
+  templateExampleRows: [["Production Site DE", "Production line A+B"]],
+  uniqueKey: ["name"],
+  exportColumns: [
+    { key: "name", header: "Name" },
+    { key: "description", header: "Beschreibung" },
+    { key: "status", header: "Status" },
+    { key: "createdAt", header: "Erstellt am" },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────
+// Finding (ICS / Audit)
+// ──────────────────────────────────────────────────────────────
+
+const findingDefinition: EntityDefinition = {
+  key: "finding",
+  tableName: "finding",
+  requiredFields: [
+    {
+      name: "title",
+      type: "string",
+      aliases: ["Titel", "Title", "Finding Title"],
+      required: true,
+    },
+  ],
+  optionalFields: [
+    {
+      name: "description",
+      type: "string",
+      aliases: ["Beschreibung", "Description"],
+    },
+    {
+      name: "severity",
+      type: "enum",
+      aliases: ["Schweregrad", "Severity"],
+      enumValues: ["minor", "moderate", "major", "critical"],
+    },
+  ],
+  fkResolutionRules: [],
+  templateHeaders: ["Titel", "Beschreibung", "Schweregrad"],
+  templateExampleRows: [
+    ["Patch missing on prod-db-1", "Found during ISMS audit Q1", "major"],
+  ],
+  uniqueKey: ["title"],
+  exportColumns: [
+    { key: "title", header: "Titel" },
+    { key: "severity", header: "Schweregrad" },
+    { key: "status", header: "Status" },
+    { key: "description", header: "Beschreibung" },
+    { key: "createdAt", header: "Erstellt am" },
+  ],
+};
+
+// ──────────────────────────────────────────────────────────────
 // Registry
 // ──────────────────────────────────────────────────────────────
 
@@ -929,6 +1015,8 @@ export const ENTITY_REGISTRY: Record<string, EntityDefinition> = {
   incident: incidentDefinition,
   process: processDefinition,
   ropa_entry: ropaEntryDefinition,
+  bia: biaDefinition,
+  finding: findingDefinition,
 };
 
 export function getEntityDefinition(

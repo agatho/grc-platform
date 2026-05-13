@@ -9,13 +9,37 @@ import {
   esrsDatapointDefinition,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, gte, lte, desc } from "drizzle-orm";
+import { eq, and, gte, lte } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
-// POST /api/v1/esg/report/[year]/export — Generate JSON export
-export async function POST(
+// /api/v1/esg/report/[year]/export — JSON export for the annual
+// report.
+//
+// POST  — generate AND record the export (stamps `exportedAt` on the
+//         annual_report row so the compliance log shows when the
+//         data left the system).
+// GET   — read-only preview (no exportedAt write).
+//
+// #WAVE11-EXPORT: GET added to close the 405 regression Cowork QA
+// flagged. The body is identical; the only difference is whether the
+// export-log gets a timestamp.
+
+interface RouteCtx {
+  params: Promise<{ year: string }>;
+}
+
+export async function POST(req: Request, routeCtx: RouteCtx) {
+  return handleExport(req, routeCtx, /* recordExport */ true);
+}
+
+export async function GET(req: Request, routeCtx: RouteCtx) {
+  return handleExport(req, routeCtx, /* recordExport */ false);
+}
+
+async function handleExport(
   req: Request,
-  { params }: { params: Promise<{ year: string }> },
+  { params }: RouteCtx,
+  recordExport: boolean,
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -32,8 +56,6 @@ export async function POST(
   const yearStart = `${reportingYear}-01-01`;
   const yearEnd = `${reportingYear}-12-31`;
 
-  // Gather all ESG data for the year
-
   // 1. Materiality assessment + topics
   const [assessment] = await db
     .select()
@@ -45,7 +67,7 @@ export async function POST(
       ),
     );
 
-  let topics: any[] = [];
+  let topics: Record<string, unknown>[] = [];
   if (assessment) {
     topics = await db
       .select()
@@ -89,7 +111,8 @@ export async function POST(
     .from(esgTarget)
     .where(eq(esgTarget.orgId, ctx.orgId));
 
-  // Update report record
+  // Annual-report row. Always need it for the meta.reportId; only POST
+  // stamps exportedAt (the GET preview is non-mutating).
   const report = await withAuditContext(ctx, async (tx) => {
     const [existing] = await tx
       .select()
@@ -102,32 +125,36 @@ export async function POST(
       );
 
     if (existing) {
+      if (!recordExport) return existing;
       const [updated] = await tx
         .update(esgAnnualReport)
         .set({ exportedAt: new Date() })
         .where(eq(esgAnnualReport.id, existing.id))
         .returning();
       return updated;
-    } else {
-      const [created] = await tx
-        .insert(esgAnnualReport)
-        .values({
-          orgId: ctx.orgId,
-          reportingYear,
-          status: "draft",
-          exportedAt: new Date(),
-        })
-        .returning();
-      return created;
     }
+    const [created] = await tx
+      .insert(esgAnnualReport)
+      .values({
+        orgId: ctx.orgId,
+        reportingYear,
+        status: "draft",
+        exportedAt: recordExport ? new Date() : null,
+      })
+      .returning();
+    return created;
   });
 
   const exportData = {
     meta: {
       reportingYear,
-      exportedAt: new Date().toISOString(),
+      generatedAt: new Date().toISOString(),
       orgId: ctx.orgId,
       reportId: report.id,
+      // Distinguishes a recorded export from a read-only preview so
+      // downstream consumers (e.g. EUSPA / CSRD tooling) can tell
+      // whether the file is the legally-binding artefact.
+      kind: recordExport ? "recorded_export" : "preview",
     },
     materiality: {
       assessment: assessment ?? null,
