@@ -2,7 +2,7 @@ import { db, dpia, dpiaMeasure, organization, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import { renderPDF } from "@grc/reporting";
+import { renderHtmlToPdfResponse } from "@/lib/pdf";
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
@@ -390,41 +390,10 @@ export async function GET(
     org?.name ?? "Organisation",
   );
 
-  // Render PDF via Puppeteer
-  try {
-    const puppeteer = await import("puppeteer");
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-    });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "load" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "2cm", bottom: "2.5cm", left: "2cm", right: "2cm" },
-    });
-    await browser.close();
-
-    const filename = `DSFA-${(row.title ?? "Export").replace(/[^a-zA-Z0-9\-_]/g, "_")}.pdf`;
-    return new Response(new Uint8Array(pdfBuffer), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
-  } catch {
-    // Puppeteer not available — return HTML as fallback
-    return new Response(html, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Content-Disposition": `attachment; filename="DSFA-${(row.title ?? "Export").replace(/[^a-zA-Z0-9\-_]/g, "_")}.html"`,
-      },
-    });
-  }
+  // #WAVE11-P1-EXPORT: was Puppeteer + text/html fallback. Switched
+  // to renderHtmlToPdfResponse which now uses pdfkit and ALWAYS
+  // produces a valid application/pdf (no fallback to HTML masquerading
+  // as a PDF).
+  const filename = `DSFA-${(row.title ?? "Export").replace(/[^a-zA-Z0-9\-_]/g, "_")}`;
+  return renderHtmlToPdfResponse(html, filename);
 }

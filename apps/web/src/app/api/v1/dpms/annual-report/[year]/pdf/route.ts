@@ -21,6 +21,7 @@ import {
 import { requireModule } from "@grc/auth";
 import { and, eq, gte, lte, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { renderHtmlToPdfResponse } from "@/lib/pdf";
 
 function esc(s: string | null | undefined): string {
   if (!s) return "";
@@ -429,41 +430,9 @@ export async function GET(_req: Request, { params }: RouteParams) {
 
   const html = buildHtml(reportData);
 
-  // Render PDF via Puppeteer with HTML fallback (matches AI-Act report).
-  try {
-    const puppeteer = await import("puppeteer");
-    const browser = await puppeteer.launch({
-      headless: true,
-      executablePath: process.env.PUPPETEER_EXECUTABLE_PATH || undefined,
-      args: [
-        "--no-sandbox",
-        "--disable-setuid-sandbox",
-        "--disable-dev-shm-usage",
-      ],
-    });
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "load" });
-    const pdfBuffer = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "2cm", bottom: "2.5cm", left: "2cm", right: "2cm" },
-    });
-    await browser.close();
-
-    const filename = `DPMS-Annual-Report-${year}-${org.name.replace(/[^a-zA-Z0-9\-_]/g, "_")}.pdf`;
-    return new Response(new Uint8Array(pdfBuffer), {
-      headers: {
-        "Content-Type": "application/pdf",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
-  } catch {
-    const filename = `DPMS-Annual-Report-${year}-${org.name.replace(/[^a-zA-Z0-9\-_]/g, "_")}.html`;
-    return new Response(html, {
-      headers: {
-        "Content-Type": "text/html; charset=utf-8",
-        "Content-Disposition": `attachment; filename="${filename}"`,
-      },
-    });
-  }
+  // #WAVE11-P1-EXPORT: was Puppeteer + text/html fallback. Switched
+  // to renderHtmlToPdfResponse (pdfkit-backed) which always produces
+  // a valid application/pdf.
+  const filename = `DPMS-Annual-Report-${year}-${org.name.replace(/[^a-zA-Z0-9\-_]/g, "_")}`;
+  return renderHtmlToPdfResponse(html, filename);
 }
