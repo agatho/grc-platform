@@ -11,11 +11,7 @@ import { eq, and, sql, gte, lt, isNotNull, count } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth(
-    "admin",
-    "whistleblowing_officer",
-    "ombudsperson",
-  );
+  const ctx = await withAuth("admin", "whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule(

@@ -40,7 +40,10 @@ function withRequestId(response: Response, requestId: string): Response {
 // either learns reporter identity by inference or contaminates other
 // compliance domains with case knowledge. Users with additional roles
 // (e.g. an admin who is also wb-officer for one org) are unaffected.
-const HINSCHG_ISOLATED_ROLES = new Set(["whistleblowing_officer", "ombudsperson"]);
+const HINSCHG_ISOLATED_ROLES = new Set([
+  "whistleblowing_officer",
+  "ombudsperson",
+]);
 
 // Paths a HinSchG-isolated user is allowed to reach. Anything else → 403.
 function isHinSchgAllowedPath(pathname: string): boolean {
@@ -100,7 +103,9 @@ export default auth((req) => {
           }),
           {
             status: 401,
-            headers: { "Content-Type": "application/problem+json; charset=utf-8" },
+            headers: {
+              "Content-Type": "application/problem+json; charset=utf-8",
+            },
           },
         ),
         requestId,
@@ -117,7 +122,7 @@ export default auth((req) => {
   // HinSchG-isolation gate. Checked here (edge) instead of per-route to
   // catch every path including UI pages and module-discovery probes.
   const roles =
-    ((req.auth.user as unknown as { roles?: Array<{ role: string }> }).roles) ??
+    (req.auth.user as unknown as { roles?: Array<{ role: string }> }).roles ??
     [];
   const isHinSchgIsolated =
     roles.length > 0 && roles.every((r) => HINSCHG_ISOLATED_ROLES.has(r.role));
@@ -136,7 +141,9 @@ export default auth((req) => {
           }),
           {
             status: 403,
-            headers: { "Content-Type": "application/problem+json; charset=utf-8" },
+            headers: {
+              "Content-Type": "application/problem+json; charset=utf-8",
+            },
           },
         ),
         requestId,
