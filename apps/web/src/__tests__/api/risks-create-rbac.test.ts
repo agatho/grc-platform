@@ -8,7 +8,7 @@
 //
 // Pattern follows audit-log-integrity.test.ts and auth-switch-org.test.ts.
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, beforeEach, vi } from "vitest";
 import { makeMockDb, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
@@ -103,6 +103,14 @@ function makeBody(overrides: Record<string, unknown> = {}) {
 }
 
 describe("POST /api/v1/risks", () => {
+  // Pre-warm the route module once so the cold-load cost (next +
+  // drizzle + @grc/* — measured 15s+ on slow CI runners) doesn't
+  // count against any individual test's timeout. Wave-11 saw
+  // 15080ms on the FIRST it(), 80ms past the 15s budget.
+  beforeAll(async () => {
+    await import("../../app/api/v1/risks/route");
+  }, 90_000);
+
   beforeEach(() => {
     mockDb = makeMockDb();
     withAuthMock.mockReset();

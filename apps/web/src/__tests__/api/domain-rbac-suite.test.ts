@@ -11,7 +11,7 @@
 // itself — the role list drifts and we don't notice. A central spec table
 // makes drift LOUD.
 
-import { describe, it, expect, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeEach, beforeAll, vi } from "vitest";
 import { makeMockDb, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
@@ -190,6 +190,15 @@ function makeReq(method: string, url: string): Request {
 }
 
 describe("Domain RBAC suite — parametric", () => {
+  // Pre-warm every route module once at suite start. Without this, the
+  // FIRST it() in each describe-spec block carried the ESM cold-load
+  // cost of its route — measured at 15080ms on a slow CI runner, just
+  // past the it()-level 15s timeout. Pre-loading once amortises the
+  // cost over a single 90s beforeAll budget instead.
+  beforeAll(async () => {
+    await Promise.all(SPECS.map((spec) => import(spec.routePath)));
+  }, 90_000);
+
   for (const spec of SPECS) {
     describe(spec.name, () => {
       beforeEach(() => {
