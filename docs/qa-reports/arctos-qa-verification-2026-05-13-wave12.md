@@ -9,17 +9,17 @@
 
 **Großer Wave-12-Erfolg.** PDF-Pipeline und 2 von 3 Export-Endpoints funktionieren jetzt. RBAC-Test-User noch nicht sichtbar — möglich dass Definition anders ist als ich annahm.
 
-| Item | Status |
-|---|:-:|
-| PDF-Pipeline (alle 3 Endpoints) | ✅ |
-| ROPA Export CSV | ✅ |
-| Findings Export CSV | ✅ |
-| BIA Export | 🔴 500 (jetzt mit RFC-7807 + requestId) |
-| ESG Export | ✅ |
-| RBAC Roles-Discovery | ✅ |
-| RBAC Test-User-Seed | 🟡 nicht sichtbar |
-| Asset/Threat State-Machines | 📋 by-design stateless (akzeptiert) |
-| Hash-Chain Regression | ✅ healthy unter Wave-12-Last |
+| Item                            |                 Status                  |
+| ------------------------------- | :-------------------------------------: |
+| PDF-Pipeline (alle 3 Endpoints) |                   ✅                    |
+| ROPA Export CSV                 |                   ✅                    |
+| Findings Export CSV             |                   ✅                    |
+| BIA Export                      | 🔴 500 (jetzt mit RFC-7807 + requestId) |
+| ESG Export                      |                   ✅                    |
+| RBAC Roles-Discovery            |                   ✅                    |
+| RBAC Test-User-Seed             |            🟡 nicht sichtbar            |
+| Asset/Threat State-Machines     |   📋 by-design stateless (akzeptiert)   |
+| Hash-Chain Regression           |      ✅ healthy unter Wave-12-Last      |
 
 **Compliance-Reifegrad:** GoBD §147 (PDF/A-Archive) jetzt erfüllt. Plattform-Stand nähert sich **echtem Beta**.
 
@@ -29,11 +29,11 @@
 
 Alle 3 PDF-Endpoints liefern jetzt **echtes PDF**:
 
-| Endpoint | Status | Content-Type | Size | PDF-Magic |
-|---|:-:|---|---:|:-:|
-| `/dpms/deadline-monitor/pdf` | 200 | application/pdf | 2994B | ✅ `%PDF` |
-| `/ai-act/annual-report/2026/pdf` | 200 | application/pdf | 3640B | ✅ `%PDF` |
-| `/dpms/annual-report/2026/pdf` | 200 | application/pdf | 3438B | ✅ `%PDF` |
+| Endpoint                         | Status | Content-Type    |  Size | PDF-Magic |
+| -------------------------------- | :----: | --------------- | ----: | :-------: |
+| `/dpms/deadline-monitor/pdf`     |  200   | application/pdf | 2994B | ✅ `%PDF` |
+| `/ai-act/annual-report/2026/pdf` |  200   | application/pdf | 3640B | ✅ `%PDF` |
+| `/dpms/annual-report/2026/pdf`   |  200   | application/pdf | 3438B | ✅ `%PDF` |
 
 Bundling-Bug (`ENOENT Helvetica.afm`) gelöst. GoBD §147-konformer Archive-Format jetzt verfügbar.
 
@@ -41,12 +41,12 @@ Bundling-Bug (`ENOENT Helvetica.afm`) gelöst. GoBD §147-konformer Archive-Form
 
 ## ✅ Export-Endpoints — größtenteils gefixt
 
-| Endpoint | Status | Inhalt-Check |
-|---|:-:|---|
-| `/dpms/ropa/export?format=csv` | ✅ 200 | 1463B, 6 Zeilen (1 Header + 5 RoPA = match Total) |
-| `/findings/export?format=csv` | ✅ 200 | 3057B, 11 Zeilen (1 Header + 10 Findings = match Total) |
-| `/esg/report/2026/export` | ✅ 200 | JSON |
-| `/bcms/bia/export` | 🔴 500 | RFC-7807 mit `requestId: f8ed728792d2dc85` |
+| Endpoint                       | Status | Inhalt-Check                                            |
+| ------------------------------ | :----: | ------------------------------------------------------- |
+| `/dpms/ropa/export?format=csv` | ✅ 200 | 1463B, 6 Zeilen (1 Header + 5 RoPA = match Total)       |
+| `/findings/export?format=csv`  | ✅ 200 | 3057B, 11 Zeilen (1 Header + 10 Findings = match Total) |
+| `/esg/report/2026/export`      | ✅ 200 | JSON                                                    |
+| `/bcms/bia/export`             | 🔴 500 | RFC-7807 mit `requestId: f8ed728792d2dc85`              |
 
 Row-Counts auf ROPA + Findings stimmen exakt mit den DB-Totals überein — Daten-Integrität bestätigt.
 
@@ -57,6 +57,7 @@ Row-Counts auf ROPA + Findings stimmen exakt mit den DB-Totals überein — Date
 ## 🟡 RBAC-Test-User-Seed
 
 `GET /api/v1/users` in Meridian Holdings (`ccc4cc1c-4b09-499c-8420-ebd8da655cd7`) returnt weiter nur 2 User:
+
 - `admin@arctos.dev`
 - `ciso@arctos.dev`
 
@@ -91,6 +92,7 @@ Endpoint pro User × Org × Rolle funktioniert wie in Wave 11 beschrieben. 3LoD-
 Claude Code's Note: "Asset/Threat `/transitions` deferred — adding a `status` field would reverse the 'stateless by design' classification I documented in PR #142."
 
 **Akzeptiert.** Das ist eine legitime Architektur-Entscheidung:
+
 - Assets sind eher Inventar-Entities (existieren / sind dekommissioniert)
 - Threats sind Bedrohungs-Bibliotheks-Einträge (Katalog)
 
@@ -116,15 +118,15 @@ Nach allen Wave-12-Tests: `v1=1229, v2=75`
 
 ## Compliance-Reifegrad-Update
 
-| Säule | Wave 11 | Wave 12 |
-|---|---|---|
-| Audit-Hash-Chain | ✅ | ✅ |
-| State-Machine-Coverage | 12/14 | 12/14 (+2 by-design stateless) |
-| Incident-Workflow (DSGVO Art. 33) | ✅ | ✅ |
-| **PDF/A (GoBD §147)** | 🔴 503 | ✅ **echtes PDF** |
-| RBAC-Discovery | ✅ | ✅ |
-| RBAC-Test-Coverage | 🟡 2 User | 🟡 2 User (unverändert) |
-| Exports | 🟡 1 ok | ✅ **3 von 4 ok**, 1 strukturierter 500 |
+| Säule                             | Wave 11   | Wave 12                                 |
+| --------------------------------- | --------- | --------------------------------------- |
+| Audit-Hash-Chain                  | ✅        | ✅                                      |
+| State-Machine-Coverage            | 12/14     | 12/14 (+2 by-design stateless)          |
+| Incident-Workflow (DSGVO Art. 33) | ✅        | ✅                                      |
+| **PDF/A (GoBD §147)**             | 🔴 503    | ✅ **echtes PDF**                       |
+| RBAC-Discovery                    | ✅        | ✅                                      |
+| RBAC-Test-Coverage                | 🟡 2 User | 🟡 2 User (unverändert)                 |
+| Exports                           | 🟡 1 ok   | ✅ **3 von 4 ok**, 1 strukturierter 500 |
 
 **Stand:** Plattform ist **realistisch beta-ready**. Alle harten Compliance-Säulen (Hash-Chain, PDF-Archive, State-Machines, RBAC-Discovery, Incident-Workflow) sind erfüllt.
 
@@ -132,13 +134,13 @@ Nach allen Wave-12-Tests: `v1=1229, v2=75`
 
 ## Offen / Wave 13
 
-| # | Item | Severity |
-|---|---|:-:|
-| BIA-Export 500 | Letzter crashing Export-Endpoint | P2 |
-| RBAC-Test-User-Seed | Cross-Role-Tests blockiert | P2 |
-| Closed→Identified Re-Open (#WAVE6-STATE-02) | Polish | P3 |
-| BPM-Sub-Pages Stubs (#NIGHT-047) | Polish | P3 |
-| Cross-cutting Compliance-Endpoints (#WAVE6-CROSS-05) | `/compliance/coverage`, `/score`, `/calendar` etc. | P3 |
+| #                                                    | Item                                               | Severity |
+| ---------------------------------------------------- | -------------------------------------------------- | :------: |
+| BIA-Export 500                                       | Letzter crashing Export-Endpoint                   |    P2    |
+| RBAC-Test-User-Seed                                  | Cross-Role-Tests blockiert                         |    P2    |
+| Closed→Identified Re-Open (#WAVE6-STATE-02)          | Polish                                             |    P3    |
+| BPM-Sub-Pages Stubs (#NIGHT-047)                     | Polish                                             |    P3    |
+| Cross-cutting Compliance-Endpoints (#WAVE6-CROSS-05) | `/compliance/coverage`, `/score`, `/calendar` etc. |    P3    |
 
 ---
 
@@ -156,4 +158,4 @@ Nach allen Wave-12-Tests: `v1=1229, v2=75`
 
 ---
 
-*Wave 12 abgeschlossen. PDF + Exports geliefert. Plattform realistisch beta-ready. Wave 13 als Cleanup-Sprint mit 5 P2/P3-Items.*
+_Wave 12 abgeschlossen. PDF + Exports geliefert. Plattform realistisch beta-ready. Wave 13 als Cleanup-Sprint mit 5 P2/P3-Items._

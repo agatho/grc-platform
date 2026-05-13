@@ -10,12 +10,12 @@
 
 **Großer Schritt vorwärts — aber das P0 ist noch nicht endgültig gefixt.**
 
-| Was funktioniert | Was noch nicht |
-|---|---|
-| ✅ Integrity-Endpoint structured response | ❌ Chain-Mismatches noch da (4 alt + neue) |
-| ✅ Hash-Versionierung (v1=1229, v2=6, v0_broken=0) | ❌ Anchor-Trust-Gate fehlt |
-| ✅ Repair der V2-Entry-Hashes (rowMismatches=0) | ❌ Chain bricht bei jeder neuen Mutation |
-| ✅ Defensive Error-Handling (503 statt 500 empty) | |
+| Was funktioniert                                   | Was noch nicht                             |
+| -------------------------------------------------- | ------------------------------------------ |
+| ✅ Integrity-Endpoint structured response          | ❌ Chain-Mismatches noch da (4 alt + neue) |
+| ✅ Hash-Versionierung (v1=1229, v2=6, v0_broken=0) | ❌ Anchor-Trust-Gate fehlt                 |
+| ✅ Repair der V2-Entry-Hashes (rowMismatches=0)    | ❌ Chain bricht bei jeder neuen Mutation   |
+| ✅ Defensive Error-Handling (503 statt 500 empty)  |                                            |
 
 **Status: 503 healthy=false** — aber jetzt mit **diagnostischen Daten** statt Empty-Body.
 
@@ -35,7 +35,9 @@
     "verified": { "v1": 1229, "v2": 6 },
     "skipped": { "v0_broken": 0 },
     "rowMismatches": [],
-    "chainMismatches": [/* 6 entries */],
+    "chainMismatches": [
+      /* 6 entries */
+    ],
     "healthy": false
   }
 }
@@ -123,8 +125,8 @@ POST /api/v1/audit-log/anchor (mit broken chain) → 200 ✅
 
 3 sukzessive Risk-Status-Transitions (`identified → treated → closed → identified`):
 
-| Vor 3 Mutationen | Nach 3 Mutationen |
-|---|---|
+| Vor 3 Mutationen                     | Nach 3 Mutationen                    |
+| ------------------------------------ | ------------------------------------ |
 | `verified.v2: 4, chainMismatches: 4` | `verified.v2: 6, chainMismatches: 6` |
 
 → Jede neue Mutation, die mehrere Audit-Entries gleichzeitig schreibt, fügt einen Chain-Mismatch hinzu. **Die Chain bleibt nicht stabil unter Last.** Production-Use würde stündlich neue Mismatches anhäufen.
@@ -168,13 +170,16 @@ Forward-cascade muss bis ans Chain-Ende laufen. Großes Migration-Window — ent
 ```ts
 const integrity = await computeIntegrity(orgId);
 if (!integrity.healthy) {
-  return Response.json({
-    type: 'https://arctos.charliehund.de/errors/anchor-blocked',
-    title: 'Cannot anchor unhealthy chain',
-    status: 409,
-    detail: `Chain has ${integrity.chainMismatches.length} mismatches. Repair first.`,
-    requestId: req.requestId,
-  }, { status: 409 });
+  return Response.json(
+    {
+      type: "https://arctos.charliehund.de/errors/anchor-blocked",
+      title: "Cannot anchor unhealthy chain",
+      status: 409,
+      detail: `Chain has ${integrity.chainMismatches.length} mismatches. Repair first.`,
+      requestId: req.requestId,
+    },
+    { status: 409 },
+  );
 }
 ```
 
@@ -183,6 +188,7 @@ Aktuell verschmutzt jeder Anchor-Run den FreeTSA + OpenTimestamps-Trust weiter.
 ### Schritt 4: Regression-Test
 
 Nach Schritt 1-3:
+
 - Cowork QA schreibt 10 Mutationen über 1 min (Risk-Transitions, BIA-Updates, DPIA-Transitions, Finding-Status-Changes, Asset-Updates)
 - `chainMismatches: []` muss konstant bleiben
 - `rowMismatches: []` muss konstant bleiben
@@ -205,6 +211,7 @@ Nach Schritt 1-3:
 ## Status-Verdict
 
 **P0 zu 70% gefixt:**
+
 - Diagnose: ✅ (war 30% — jetzt 100%)
 - Entry-Hash-Stabilität: ✅ (war 0% — jetzt 100%)
 - Chain-Forward-Repair: ❌ (immer noch 0%)
@@ -217,4 +224,4 @@ Eine weitere Iteration **nur auf Hash-Chain** ist erforderlich. Wave 10 muss die
 
 ---
 
-*Wave 9 abgeschlossen. P0 zu 70% gefixt, restliche 30% bei Chain-Forward-Cascade + Anchor-Gate. Cowork QA wartet auf Wave 10.*
+_Wave 9 abgeschlossen. P0 zu 70% gefixt, restliche 30% bei Chain-Forward-Cascade + Anchor-Gate. Cowork QA wartet auf Wave 10._

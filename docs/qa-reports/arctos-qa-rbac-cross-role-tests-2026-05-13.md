@@ -9,13 +9,13 @@
 
 **Permission-Boundary-Enforcement funktional, aber 2 P1-Bugs bei Whistleblowing-Officer.**
 
-| Rolle | Tested | Korrekt | Auffällig |
-|---|---|---|---|
-| CISO | ✅ | 10/11 | Risk-Write 403 trotz Role-Matrix `write` |
-| Viewer | ✅ | 6/6 | ✓ |
-| DPO | ✅ | 10/10 | DPIA-Write 201 ✓ |
-| Whistleblowing Officer | ✅ | **3/6** | 🔴 Kann **nicht** auf eigene Cases zugreifen |
-| Auditor | ✅ | 9/9 | Audit-Create 201, Status-Change 422 (validation) ✓ |
+| Rolle                  | Tested | Korrekt | Auffällig                                          |
+| ---------------------- | ------ | ------- | -------------------------------------------------- |
+| CISO                   | ✅     | 10/11   | Risk-Write 403 trotz Role-Matrix `write`           |
+| Viewer                 | ✅     | 6/6     | ✓                                                  |
+| DPO                    | ✅     | 10/10   | DPIA-Write 201 ✓                                   |
+| Whistleblowing Officer | ✅     | **3/6** | 🔴 Kann **nicht** auf eigene Cases zugreifen       |
+| Auditor                | ✅     | 9/9     | Audit-Create 201, Status-Change 422 (validation) ✓ |
 
 **Audit-Hash-Chain:** ✅ `healthy: true, v1=1229, v2=154, chainMismatches=0, rowMismatches=0` nach allen Cross-Role-Tests inkl. mehrerer Logins + DPIA-Create + Audit-Create.
 
@@ -27,21 +27,22 @@
 
 Role-Matrix sagt: `[admin, write, read]` auf `[isms, erm, bcms, tprm, audit, ics, reporting]`.
 
-| Action | Status | Erwartet | Match |
-|---|:-:|---|:-:|
-| ERM Risk read | 200 | 200 | ✅ |
-| ERM Risk write (POST) | **403** | **201** | ❌ |
-| ISMS Threats read | 200 | 200 | ✅ |
-| BCMS BIA read | 200 | 200 | ✅ |
-| DPMS DPIA read | 200 | (kein dpms in matrix, aber read üblich) | 🟡 |
-| ESG Dashboard read | 200 | (kein esg in matrix, aber read üblich) | 🟡 |
-| ESG Target write | 403 | 403 | ✅ |
-| Whistleblowing cases read | 403 | 403 | ✅ |
-| Admin roles read | 403 | 403 | ✅ |
-| Users management | 403 | 403 | ✅ |
-| Org switch | 403 | 403 (nicht Member) | ✅ |
+| Action                    | Status  | Erwartet                                | Match |
+| ------------------------- | :-----: | --------------------------------------- | :---: |
+| ERM Risk read             |   200   | 200                                     |  ✅   |
+| ERM Risk write (POST)     | **403** | **201**                                 |  ❌   |
+| ISMS Threats read         |   200   | 200                                     |  ✅   |
+| BCMS BIA read             |   200   | 200                                     |  ✅   |
+| DPMS DPIA read            |   200   | (kein dpms in matrix, aber read üblich) |  🟡   |
+| ESG Dashboard read        |   200   | (kein esg in matrix, aber read üblich)  |  🟡   |
+| ESG Target write          |   403   | 403                                     |  ✅   |
+| Whistleblowing cases read |   403   | 403                                     |  ✅   |
+| Admin roles read          |   403   | 403                                     |  ✅   |
+| Users management          |   403   | 403                                     |  ✅   |
+| Org switch                |   403   | 403 (nicht Member)                      |  ✅   |
 
 **Finding #RBAC-01 (P1):** **CISO kann keine Risiken erstellen** (`POST /api/v1/risks` → 403 `{"error":"Forbidden"}`). Role-Matrix sagt CISO hat `write` auf `erm`, aber `risks` lehnt ab. Entweder
+
 - Risk-Create ist auf eigene Rolle (risk_manager) eingeschränkt
 - Oder Matrix vs. Endpoint-Check inkonsistent
 
@@ -51,14 +52,14 @@ Die Response ist auch im **alten Format** `{"error":"Forbidden"}` statt RFC-7807
 
 Role-Matrix: `[read]` überall.
 
-| Action | Status | ✓ |
-|---|:-:|:-:|
-| Risk read | 200 | ✅ |
-| Risk write | 403 | ✅ |
-| DPIA read | 200 | ✅ |
-| ESG read | 200 | ✅ |
-| Whistleblowing read | 403 | ✅ (Whistleblowing-Isolation) |
-| Admin | 403 | ✅ |
+| Action              | Status |               ✓               |
+| ------------------- | :----: | :---------------------------: |
+| Risk read           |  200   |              ✅               |
+| Risk write          |  403   |              ✅               |
+| DPIA read           |  200   |              ✅               |
+| ESG read            |  200   |              ✅               |
+| Whistleblowing read |  403   | ✅ (Whistleblowing-Isolation) |
+| Admin               |  403   |              ✅               |
 
 **Viewer ist textbook.**
 
@@ -66,18 +67,18 @@ Role-Matrix: `[read]` überall.
 
 Role-Matrix: `[admin, read]` auf `[dpms, isms, tprm, erm, audit]`.
 
-| Action | Status | ✓ |
-|---|:-:|:-:|
-| Risk read | 200 | ✅ |
-| Risk write | 403 | ✅ (read only on erm) |
-| DPIA read | 200 | ✅ |
-| **DPIA create (POST)** | **201** | ✅ ✅ ✅ |
-| ROPA create | 422 | ✅ (validation, allowed) |
-| DSR read | 200 | ✅ |
-| ISMS read | 200 | ✅ |
-| BCMS write | 403 | ✅ |
-| ESG write | 403 | ✅ |
-| Whistleblowing read | 403 | ✅ |
+| Action                 | Status  |            ✓             |
+| ---------------------- | :-----: | :----------------------: |
+| Risk read              |   200   |            ✅            |
+| Risk write             |   403   |  ✅ (read only on erm)   |
+| DPIA read              |   200   |            ✅            |
+| **DPIA create (POST)** | **201** |         ✅ ✅ ✅         |
+| ROPA create            |   422   | ✅ (validation, allowed) |
+| DSR read               |   200   |            ✅            |
+| ISMS read              |   200   |            ✅            |
+| BCMS write             |   403   |            ✅            |
+| ESG write              |   403   |            ✅            |
+| Whistleblowing read    |   403   |            ✅            |
 
 **DPO ist textbook.** Admin-Befugnis auf DPMS bestätigt, andere Module read-only.
 
@@ -85,14 +86,14 @@ Role-Matrix: `[admin, read]` auf `[dpms, isms, tprm, erm, audit]`.
 
 Role-Matrix: dedicated `whistleblowing_officer` mit Admin auf `whistleblowing`.
 
-| Action | Status | Erwartet | Match |
-|---|:-:|---|:-:|
-| Risk read | 200 | 403 (Ombudsperson isoliert) | ❌ |
-| **Whistleblowing cases read** | **403** | **200** | ❌❌❌ |
-| Whistleblowing case create direct | 405 | 405 (geht über /intake/submit) | ✅ |
-| DPIA read | 200 | 403 | ❌ |
-| ISMS read | 200 | 403 | ❌ |
-| Audit read | 200 | 403 | ❌ |
+| Action                            | Status  | Erwartet                       | Match  |
+| --------------------------------- | :-----: | ------------------------------ | :----: |
+| Risk read                         |   200   | 403 (Ombudsperson isoliert)    |   ❌   |
+| **Whistleblowing cases read**     | **403** | **200**                        | ❌❌❌ |
+| Whistleblowing case create direct |   405   | 405 (geht über /intake/submit) |   ✅   |
+| DPIA read                         |   200   | 403                            |   ❌   |
+| ISMS read                         |   200   | 403                            |   ❌   |
+| Audit read                        |   200   | 403                            |   ❌   |
 
 **🔴 Finding #RBAC-02 (P1):** **Whistleblowing Officer kann seine eigenen Cases NICHT lesen!**
 `GET /api/v1/whistleblowing/cases?limit=5 → 403`. Das ist die **primäre Aufgabe** der Rolle. Invertierte Permission.
@@ -103,17 +104,17 @@ Role-Matrix: dedicated `whistleblowing_officer` mit Admin auf `whistleblowing`.
 
 Role-Matrix: `[admin, read]` mit Admin auf `audit`, Read auf erm/ics/isms/bcms/dpms/tprm/esg/bpm.
 
-| Action | Status | ✓ |
-|---|:-:|:-:|
-| Risk read | 200 | ✅ |
-| Risk write | 403 | ✅ |
-| Audit read | 200 | ✅ |
-| **Audit create (POST)** | **201** | ✅ |
-| Audit status change (PUT /status) | 422 | ✅ (Pre-Conditions, validation) |
-| Findings read | 200 | ✅ |
-| Controls read | 200 | ✅ |
-| ESG read | 200 | ✅ |
-| Whistleblowing read | 403 | ✅ |
+| Action                            | Status  |                ✓                |
+| --------------------------------- | :-----: | :-----------------------------: |
+| Risk read                         |   200   |               ✅                |
+| Risk write                        |   403   |               ✅                |
+| Audit read                        |   200   |               ✅                |
+| **Audit create (POST)**           | **201** |               ✅                |
+| Audit status change (PUT /status) |   422   | ✅ (Pre-Conditions, validation) |
+| Findings read                     |   200   |               ✅                |
+| Controls read                     |   200   |               ✅                |
+| ESG read                          |   200   |               ✅                |
+| Whistleblowing read               |   403   |               ✅                |
 
 **Auditor ist textbook.** Volle Audit-Admin-Rechte, sonst Read-only.
 
@@ -169,4 +170,4 @@ Role-Matrix: `[admin, read]` mit Admin auf `audit`, Read auf erm/ics/isms/bcms/d
 
 ---
 
-*Cross-Role-Verifikation abgeschlossen. 5 Test-User durchprobiert (CISO, Viewer, DPO, Whistleblowing-Officer, Auditor). 4 weitere User (compliance@, process-owner@, vendor-mgr@, esg@) noch zu testen — Pattern wahrscheinlich konsistent zu DPO/Auditor.*
+_Cross-Role-Verifikation abgeschlossen. 5 Test-User durchprobiert (CISO, Viewer, DPO, Whistleblowing-Officer, Auditor). 4 weitere User (compliance@, process-owner@, vendor-mgr@, esg@) noch zu testen — Pattern wahrscheinlich konsistent zu DPO/Auditor._

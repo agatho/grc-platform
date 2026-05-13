@@ -9,14 +9,14 @@
 
 🎉 **P0 GELÖST.** Hash-Chain ist dauerhaft healthy unter Stress + Concurrent-Load.
 
-| Acceptance Criterion | Status |
-|---|:-:|
-| `chainMismatches: []` nach 10 sequenziellen Mutationen | ✅ |
-| Chain bleibt healthy unter 5 parallelen Concurrent-Writes | ✅ |
-| Anchor lehnt broken-chain ab, accepted healthy | ✅ (implicit) |
-| Forensische Spur der Repair-Migration im Log | ✅ |
-| Idempotenz (mehrfache Migration-Runs OK) | ✅ |
-| Versioning erhalten (v1 untouched, v2 stabil) | ✅ |
+| Acceptance Criterion                                      |    Status     |
+| --------------------------------------------------------- | :-----------: |
+| `chainMismatches: []` nach 10 sequenziellen Mutationen    |      ✅       |
+| Chain bleibt healthy unter 5 parallelen Concurrent-Writes |      ✅       |
+| Anchor lehnt broken-chain ab, accepted healthy            | ✅ (implicit) |
+| Forensische Spur der Repair-Migration im Log              |      ✅       |
+| Idempotenz (mehrfache Migration-Runs OK)                  |      ✅       |
+| Versioning erhalten (v1 untouched, v2 stabil)             |      ✅       |
 
 ---
 
@@ -54,11 +54,11 @@ Race-Condition-Test — die exakte Klasse Bug, die Wave 9 entdeckte:
 
 ```javascript
 await Promise.all([
-  fetch(`/risks/${id}`, { PUT, body: 'concurrent A' }),
-  fetch(`/risks/${id}`, { PUT, body: 'concurrent B' }),
-  fetch(`/risks/${id}`, { PUT, body: 'concurrent C' }),
-  fetch(`/risks/${id}`, { PUT, body: 'concurrent D' }),
-  fetch(`/risks/${id}`, { PUT, body: 'concurrent E' }),
+  fetch(`/risks/${id}`, { PUT, body: "concurrent A" }),
+  fetch(`/risks/${id}`, { PUT, body: "concurrent B" }),
+  fetch(`/risks/${id}`, { PUT, body: "concurrent C" }),
+  fetch(`/risks/${id}`, { PUT, body: "concurrent D" }),
+  fetch(`/risks/${id}`, { PUT, body: "concurrent E" }),
 ]);
 ```
 
@@ -101,13 +101,13 @@ Drei Migration-Runs alle protokolliert. **Idempotenz beweist sich:** Migration k
 
 ## Status nach Wave 10
 
-| Aspekt | Status |
-|---|:-:|
-| Compliance-Säule "Audit-Hash-Chain" | ✅ wieder funktional |
-| ISO 27001 A.18.1.3 — Tamper-Evidence | ✅ |
-| GoBD §147 — verfälschungssicher | ✅ |
-| DSGVO Art. 5(2) — Rechenschaftspflicht | ✅ |
-| ADR-011 — FreeTSA Anchor-Trust | ✅ |
+| Aspekt                                 |        Status        |
+| -------------------------------------- | :------------------: |
+| Compliance-Säule "Audit-Hash-Chain"    | ✅ wieder funktional |
+| ISO 27001 A.18.1.3 — Tamper-Evidence   |          ✅          |
+| GoBD §147 — verfälschungssicher        |          ✅          |
+| DSGVO Art. 5(2) — Rechenschaftspflicht |          ✅          |
+| ADR-011 — FreeTSA Anchor-Trust         |          ✅          |
 
 **Plattform-Stand:** Alpha-stabil + funktionale Audit-Trail. Die zentrale Compliance-Anforderung ist erfüllt. Andere Backlog-Items (PDF-Generation, Incident-State-Machine, 5 restliche State-Machines) können jetzt wieder priorisiert werden.
 
@@ -118,10 +118,12 @@ Drei Migration-Runs alle protokolliert. **Idempotenz beweist sich:** Migration k
 Mit P0 gefixt kann der Wave-6/7/8-Backlog zurück auf den Tisch:
 
 **P1:**
+
 - **#WAVE6-EXPORT-01** PDF-Generation-Pipeline (HTML → PDF/A für `/pdf`-Endpoints)
 - **#WAVE6-STATE-01 Incident** — DSGVO Art. 33 72h-Frist relevant, fehlt komplett
 
 **P2:**
+
 - 4 weitere State-Machines: Vendor, Contract, Process, Asset, Threat
 - DSR-`/transitions`-Discovery
 - ROPA/BIA/Findings-Export-Endpoints
@@ -148,4 +150,4 @@ Mit P0 gefixt kann der Wave-6/7/8-Backlog zurück auf den Tisch:
 
 ---
 
-*Wave 10 abgeschlossen. P0 endgültig gelöst. Cowork QA bereit für Wave 11 — Backlog-Abarbeitung statt Hot-Fix-Modus.*
+_Wave 10 abgeschlossen. P0 endgültig gelöst. Cowork QA bereit für Wave 11 — Backlog-Abarbeitung statt Hot-Fix-Modus._

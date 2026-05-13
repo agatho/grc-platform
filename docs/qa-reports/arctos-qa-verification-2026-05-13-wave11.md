@@ -9,18 +9,18 @@
 
 **Solides Sprint-Ergebnis bei den State-Machines + Audit-Log. Drei Issues bleiben offen:**
 
-| PR | Inhalt | Status |
-|---|---|---|
-| #140 | Incident State-Machine | ✅ Excellent |
-| #140 | PDF-Pipeline | 🔴 503 ENOENT Helvetica.afm |
-| #142 | 4 zusätzliche State-Machines | ✅ Vendor/Contract/Process/DSR ✓ |
-| #142 | Closed-State-Docs | (nicht direkt geprüft) |
-| #143 | RLS Gap-Closure | (nicht prüfbar via QA-API) |
-| #144 | Export-Fixes | 🔴 ROPA/BIA/Findings noch 500 |
-| #144 | ESG GET | 🟡 `/esg/report/2026` 404, `/esg/report/2026/export` 200 |
-| #144 | RBAC-Roles-Discovery | ✅ Excellent |
-| #144 | RBAC-Test-User-Seed | 🟡 Nur 2 User (admin + ciso), keine neuen Test-User |
-| #145, #146 | Doku + Test-Prewarm | (nicht direkt geprüft) |
+| PR         | Inhalt                       | Status                                                   |
+| ---------- | ---------------------------- | -------------------------------------------------------- |
+| #140       | Incident State-Machine       | ✅ Excellent                                             |
+| #140       | PDF-Pipeline                 | 🔴 503 ENOENT Helvetica.afm                              |
+| #142       | 4 zusätzliche State-Machines | ✅ Vendor/Contract/Process/DSR ✓                         |
+| #142       | Closed-State-Docs            | (nicht direkt geprüft)                                   |
+| #143       | RLS Gap-Closure              | (nicht prüfbar via QA-API)                               |
+| #144       | Export-Fixes                 | 🔴 ROPA/BIA/Findings noch 500                            |
+| #144       | ESG GET                      | 🟡 `/esg/report/2026` 404, `/esg/report/2026/export` 200 |
+| #144       | RBAC-Roles-Discovery         | ✅ Excellent                                             |
+| #144       | RBAC-Test-User-Seed          | 🟡 Nur 2 User (admin + ciso), keine neuen Test-User      |
+| #145, #146 | Doku + Test-Prewarm          | (nicht direkt geprüft)                                   |
 
 **Hash-Chain Status:** ✅ `healthy: true, chainMismatches: 0, v1=1229 (unverändert), v2=69+`. Wave 10's Hot-Fix hält unter Wave-11-Last.
 
@@ -31,20 +31,30 @@
 ### PR #140 — Incident State-Machine
 
 **Discovery-API perfekt:**
+
 ```json
 {
   "current": "contained",
-  "knownStatuses": ["detected","triaged","contained","eradicated","recovered","lessons_learned","closed"],
+  "knownStatuses": [
+    "detected",
+    "triaged",
+    "contained",
+    "eradicated",
+    "recovered",
+    "lessons_learned",
+    "closed"
+  ],
   "allowedNext": ["eradicated"],
   "endpoint": "/api/v1/isms/incidents/{id}/status",
   "method": "PUT",
-  "bodyShape": {"status":"<one of: ...>","reason":"<optional string>"}
+  "bodyShape": { "status": "<one of: ...>", "reason": "<optional string>" }
 }
 ```
 
 NIST-konforme 7-state Incident-Lifecycle. Vollständig.
 
 **End-to-End-Test:**
+
 - `PUT /api/v1/isms/incidents/{id}/status {status:'eradicated', reason:'...'}` → 200
 - Nach Transition: `current: eradicated, allowedNext: ['recovered']` ✅
 - **Hash-Chain bleibt healthy nach Transition** ✅
@@ -54,20 +64,20 @@ NIST-konforme 7-state Incident-Lifecycle. Vollständig.
 
 ### PR #142 — 4 weitere State-Machines
 
-| Modul | Status | Allowed-Transitions |
-|---|---|---|
-| Vendor | ✅ | `[under_review, suspended, terminated]` |
-| Contract | ✅ | `[renewal, expired, terminated]` |
-| Process | ✅ | `[published, in_review, archived]` |
-| DSR | ✅ | `/transitions` jetzt verfügbar (vorher nur named-routes) |
+| Modul    | Status | Allowed-Transitions                                      |
+| -------- | ------ | -------------------------------------------------------- |
+| Vendor   | ✅     | `[under_review, suspended, terminated]`                  |
+| Contract | ✅     | `[renewal, expired, terminated]`                         |
+| Process  | ✅     | `[published, in_review, archived]`                       |
+| DSR      | ✅     | `/transitions` jetzt verfügbar (vorher nur named-routes) |
 
 **4/4 wie versprochen.** State-Machine-Coverage jetzt:
 
-| Modul mit Status-Field | `/transitions` |
-|---|:-:|
-| Risk, BIA, DPIA, Audit, Finding, Vulnerability, Control, **Incident**, **Vendor**, **Contract**, **Process**, **DSR** | ✅ (12/14) |
-| Asset | ❌ |
-| Threat | ❌ |
+| Modul mit Status-Field                                                                                                | `/transitions` |
+| --------------------------------------------------------------------------------------------------------------------- | :------------: |
+| Risk, BIA, DPIA, Audit, Finding, Vulnerability, Control, **Incident**, **Vendor**, **Contract**, **Process**, **DSR** |   ✅ (12/14)   |
+| Asset                                                                                                                 |       ❌       |
+| Threat                                                                                                                |       ❌       |
 
 12 von 14 abgedeckt — die letzten beiden (Asset, Threat) sind P3-Polish.
 
@@ -89,6 +99,7 @@ Excellent. Liefert pro Org die Rolle des Users inkl. `lineOfDefense` (3LoD-Konze
 ### Hash-Chain unter Wave-11-Load
 
 Nach 1 Incident-Transition + 1 Risk-Field-Update:
+
 - `total: 1298 (war 1244)` → +54 Entries durch alle Tests
 - `v1: 1229 unverändert`
 - `v2: 69 (war 15)` → alle neuen Entries v2-verifiziert
@@ -105,6 +116,7 @@ Nach 1 Incident-Transition + 1 Risk-Field-Update:
 ### #WAVE11-PDF-01 (P1) — PDF-Pipeline: Helvetica.afm fehlt im Bundle
 
 Alle drei PDF-Endpoints:
+
 ```
 GET /api/v1/dpms/deadline-monitor/pdf  → 503
 GET /api/v1/ai-act/annual-report/2026/pdf → 503
@@ -112,6 +124,7 @@ GET /api/v1/dpms/annual-report/2026/pdf → 503
 ```
 
 Response-Body (vorbildliches RFC-7807):
+
 ```json
 {
   "type": "https://arctos.charliehund.de/errors/pdf-render-failed",
@@ -122,6 +135,7 @@ Response-Body (vorbildliches RFC-7807):
 ```
 
 **Bundling-Bug**, kein Code-Bug. Das Font-File (Helvetica.afm — Adobe Font Metrics, vermutlich für PDFKit) wird nicht in den Next.js-Standalone-Build kopiert. Fix wahrscheinlich:
+
 - Webpack `CopyWebpackPlugin` oder `outputFileTracingIncludes` in `next.config.js` ergänzen
 - Oder PDFKit auf eingebettete Standard-Fonts umstellen (`registerFont` mit dem Buffer der Standard-Schrift)
 - Oder migration zu Puppeteer/Playwright HTML→PDF (lustig: das war meine ursprüngliche Empfehlung)
@@ -139,11 +153,13 @@ GET /api/v1/findings/export?format=csv → 500 (empty body)
 `content-type: null, content-length: 0` — der RFC-7807-Wrapper greift hier nicht, das ist die "alte Krankheit". Vermutlich crashen die Endpoints vor dem Wrapper.
 
 ESG-Export:
+
 ```
 GET /api/v1/esg/report/2026/export → 200 application/json ✅
 ```
 
 Funktioniert. Aber:
+
 ```
 GET /api/v1/esg/report/2026 → 404
 ```
@@ -153,6 +169,7 @@ ESG-Report GET (ohne /export) ist 404. Vermutlich gewollt — das ist die Seite,
 ### #WAVE11-RBAC-01 (P2) — Test-User-Seed fehlt
 
 `GET /api/v1/users` returnt weiter nur 2 User (admin@arctos.dev, ciso@arctos.dev). Die Wave-11-Übergabe sagte "RBAC seed". Entweder:
+
 - Seed nicht gelaufen
 - Seed war nur für Roles-Permissions, nicht für Test-User per Rolle
 - Test-User existieren in einer anderen Org (ich bin in Meridian)
@@ -174,15 +191,15 @@ Die zwei wichtigsten Beta-Blocker waren PDF-Pipeline und Incident-State-Machine.
 
 **Compliance-Reifegrad:**
 
-| Säule | Wave 10 | Wave 11 |
-|---|---|---|
-| Audit-Hash-Chain | ✅ healthy | ✅ healthy (unter Wave-11-Last) |
-| State-Machine-Coverage | 7/14 | **12/14** (+5) ✅ |
-| PDF/A-Archive (GoBD §147) | 🟡 HTML | 🔴 broken (503) |
-| Incident-Workflow (DSGVO Art. 33) | ❌ fehlt | ✅ NIST-7-State ✓ |
-| RBAC-Discovery | 🟡 limited | ✅ full /roles-endpoint |
-| RBAC-Test-Coverage | 🟡 only admin | 🟡 still only 2 users |
-| Exports | 🔴 4 crashen | 🟡 1 fixed (ESG) |
+| Säule                             | Wave 10       | Wave 11                         |
+| --------------------------------- | ------------- | ------------------------------- |
+| Audit-Hash-Chain                  | ✅ healthy    | ✅ healthy (unter Wave-11-Last) |
+| State-Machine-Coverage            | 7/14          | **12/14** (+5) ✅               |
+| PDF/A-Archive (GoBD §147)         | 🟡 HTML       | 🔴 broken (503)                 |
+| Incident-Workflow (DSGVO Art. 33) | ❌ fehlt      | ✅ NIST-7-State ✓               |
+| RBAC-Discovery                    | 🟡 limited    | ✅ full /roles-endpoint         |
+| RBAC-Test-Coverage                | 🟡 only admin | 🟡 still only 2 users           |
+| Exports                           | 🔴 4 crashen  | 🟡 1 fixed (ESG)                |
 
 **Verdict:** Plattform deutlich näher an Beta. Ohne PDF-Pipeline aber kein GoBD-konformer Audit-Trail-Export. Mit 12 State-Machines + Incident-DSGVO-Art-33 + Roles-Discovery sind die wichtigsten Workflow-Foundations vorhanden.
 
@@ -214,4 +231,4 @@ Die zwei wichtigsten Beta-Blocker waren PDF-Pipeline und Incident-State-Machine.
 
 ---
 
-*Wave 11 abgeschlossen. State-Machine-Foundation komplett. PDF-Pipeline-Regression + 3 Export-Crashes für Wave 12.*
+_Wave 11 abgeschlossen. State-Machine-Foundation komplett. PDF-Pipeline-Regression + 3 Export-Crashes für Wave 12._
