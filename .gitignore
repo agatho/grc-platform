@@ -10,6 +10,9 @@ test-results/
 *.env.local
 .DS_Store
 coverage/
+# #WAVE14-CROSS-05: the new /api/v1/compliance/coverage route is named
+# "coverage" too — exempt it from the test-output ignore above.
+!apps/web/src/app/api/v1/compliance/coverage/
 .vercel/
 
 # Playwright artifacts — nicht in git tracken

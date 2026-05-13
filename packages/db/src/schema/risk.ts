@@ -43,12 +43,18 @@ export const riskSourceEnum = pgEnum("risk_source", [
   "process",
 ]);
 
+// #WAVE14-STATE-02: `reopened` makes the closed→back-into-lifecycle
+// transition explicit instead of hiding it as `closed → identified`.
+// Auditors can now read the audit_log row "X.status: closed → reopened"
+// and immediately know "this was a deliberate reopen, with reason
+// captured", instead of having to infer it from the chain.
 export const riskStatusEnum = pgEnum("risk_status", [
   "identified",
   "assessed",
   "treated",
   "accepted",
   "closed",
+  "reopened",
 ]);
 
 export const treatmentStrategyEnum = pgEnum("treatment_strategy", [
