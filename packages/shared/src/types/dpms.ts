@@ -112,7 +112,8 @@ export interface DpiaRisk {
   id: string;
   orgId: string;
   dpiaId: string;
-  riskDescription: string;
+  // #WAVE17-P3-DPIA: was riskDescription. See migration 0323.
+  description: string;
   severity: string;
   likelihood: string;
   impact: string;
@@ -123,7 +124,8 @@ export interface DpiaMeasure {
   id: string;
   orgId: string;
   dpiaId: string;
-  measureDescription: string;
+  // #WAVE17-P3-DPIA: was measureDescription. See migration 0323.
+  description: string;
   implementationTimeline?: string;
   createdAt: string;
 }

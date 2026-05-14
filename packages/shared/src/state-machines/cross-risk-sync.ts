@@ -11,7 +11,8 @@ export interface DpiaRiskSource {
   id: string;
   orgId: string;
   dpiaId: string;
-  riskDescription: string;
+  // #WAVE17-P3-DPIA: was riskDescription. See migration 0323.
+  description: string;
   severity: string;
   likelihood: string;
   impact: string;
@@ -55,13 +56,13 @@ export function mapDpiaRiskToErm(src: DpiaRiskSource): SyncedRiskDraft {
   const lh = toScale(src.likelihood);
   const im = toScale(src.impact);
   const title =
-    src.riskDescription.length > 100
-      ? src.riskDescription.slice(0, 97) + "..."
-      : src.riskDescription;
+    src.description.length > 100
+      ? src.description.slice(0, 97) + "..."
+      : src.description;
 
   return {
     title: `[DPIA] ${title}`,
-    description: `Source: DPIA ${src.dpiaId}. ${src.riskDescription}`,
+    description: `Source: DPIA ${src.dpiaId}. ${src.description}`,
     riskCategory: "compliance",
     riskSource: "isms",
     inherentLikelihood: lh,

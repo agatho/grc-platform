@@ -42,7 +42,8 @@ export async function POST(
       .values({
         orgId: ctx.orgId,
         dpiaId: id,
-        measureDescription: body.data.measureDescription,
+        // #WAVE17-P3-DPIA: column + Zod field renamed to `description`.
+        description: body.data.description,
         riskId: body.data.riskId ?? null,
         implementationTimeline: body.data.implementationTimeline,
         costOnetime: body.data.costOnetime

@@ -78,7 +78,7 @@ function buildDpiaHTML(
       const score = r.risk_score as number | null;
       const color = riskColor(score);
       return `<tr>
-        <td>${esc(r.riskDescription as string)}</td>
+        <td>${esc(r.description as string)}</td>
         <td style="text-align:center">${r.numeric_likelihood ?? "-"}</td>
         <td style="text-align:center">${r.numeric_impact ?? "-"}</td>
         <td style="text-align:center;font-weight:bold;color:${color}">${score ?? "-"}</td>
@@ -91,13 +91,13 @@ function buildDpiaHTML(
     .map((m) => {
       const linkedRisk = m.riskId ? risks.find((r) => r.id === m.riskId) : null;
       const riskLabel = linkedRisk
-        ? esc((linkedRisk.riskDescription as string).substring(0, 60)) + "..."
+        ? esc((linkedRisk.description as string).substring(0, 60)) + "..."
         : "DSFA-weit";
       const cost = m.costOnetime
         ? `${Number(m.costOnetime).toLocaleString("de-DE")} ${m.costCurrency ?? "EUR"}`
         : "-";
       return `<tr>
-        <td>${esc(m.measureDescription as string)}</td>
+        <td>${esc(m.description as string)}</td>
         <td>${riskLabel}</td>
         <td>${esc(m.implementationTimeline as string) || "-"}</td>
         <td style="text-align:right">${cost}</td>
@@ -361,7 +361,8 @@ export async function GET(
 
   // Fetch risks with numeric scores
   const risksResult = await db.execute(sql`
-    SELECT id, risk_description AS "riskDescription",
+    -- #WAVE17-P3-DPIA: column renamed risk_description → description.
+    SELECT id, description,
            severity, likelihood, impact,
            numeric_likelihood, numeric_impact, risk_score,
            erm_risk_id
@@ -374,7 +375,8 @@ export async function GET(
   const measures = await db
     .select({
       id: dpiaMeasure.id,
-      measureDescription: dpiaMeasure.measureDescription,
+      // #WAVE17-P3-DPIA: column renamed measure_description → description.
+      description: dpiaMeasure.description,
       riskId: dpiaMeasure.riskId,
       implementationTimeline: dpiaMeasure.implementationTimeline,
       costOnetime: dpiaMeasure.costOnetime,
