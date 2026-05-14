@@ -30,9 +30,11 @@ const updateBrandingSchema = z.object({
   darkModeAccentColor: HEX_COLOR.nullable().optional(),
   logoPath: z.string().max(1000).nullable().optional(),
   faviconPath: z.string().max(1000).nullable().optional(),
-  reportTemplate: z
-    .enum(["standard", "executive", "regulator", "minimalist"])
-    .optional(),
+  // #WAVE18-P2: Wave-17 ship had `executive | regulator | minimalist`
+  // here, but the actual `branding_template_style` enum (migrated in
+  // Sprint 13a) only has `standard | formal | minimal`. PUT bombed
+  // with 500 the moment QA tried any of the other values. Aligned.
+  reportTemplate: z.enum(["standard", "formal", "minimal"]).optional(),
   confidentialityNotice: z.string().nullable().optional(),
   customCss: z.string().nullable().optional(),
   inheritFromParent: z.boolean().optional(),
@@ -64,7 +66,7 @@ export const GET = withErrorHandler(async function GET(_req: Request) {
         darkModeAccentColor: null,
         logoPath: null,
         faviconPath: null,
-        reportTemplate: "standard",
+        reportTemplate: "standard" as const,
         confidentialityNotice: "CONFIDENTIAL -- For internal use only",
         customCss: null,
         inheritFromParent: true,
