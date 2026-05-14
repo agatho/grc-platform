@@ -93,9 +93,9 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     .sort((a, b) => b.annualSpend - a.annualSpend);
 
   const totalSpend = vendors.reduce((sum, v) => sum + v.annualSpend, 0);
-  const shares =
-    totalSpend > 0 ? vendors.map((v) => v.annualSpend / totalSpend) : [];
-  const hhiScore = computeHHI(shares);
+  const hhiScore = computeHHI(
+    vendors.map((v) => ({ vendorId: v.vendorId ?? "", spend: v.annualSpend })),
+  );
   const riskLevel = classifyHHI(hhiScore);
 
   return Response.json({
@@ -158,9 +158,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     .sort((a, b) => b.annualSpend - a.annualSpend);
 
   const totalSpend = vendors.reduce((sum, v) => sum + v.annualSpend, 0);
-  const shares =
-    totalSpend > 0 ? vendors.map((v) => v.annualSpend / totalSpend) : [];
-  const hhiScore = computeHHI(shares);
+  const hhiScore = computeHHI(
+    vendors.map((v) => ({ vendorId: v.vendorId ?? "", spend: v.annualSpend })),
+  );
   const riskLevel = classifyHHI(hhiScore);
 
   const created = await withAuditContext(ctx, async (tx) => {

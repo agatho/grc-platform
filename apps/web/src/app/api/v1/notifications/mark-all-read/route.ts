@@ -21,7 +21,7 @@ export const POST = withErrorHandler(async function POST(_req: Request) {
   if (ctx instanceof Response) return ctx;
 
   const result = await withAuditContext(ctx, async (tx) => {
-    const rows = await tx.execute<{ id: string }>(sql`
+    const rows = await tx.execute(sql`
       UPDATE notification
       SET is_read = true, updated_by = ${ctx.userId}
       WHERE user_id = ${ctx.userId}
