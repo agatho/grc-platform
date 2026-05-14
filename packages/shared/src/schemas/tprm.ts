@@ -201,45 +201,81 @@ export const updateDdQuestionSchema = z.object({
 
 // ─── Contract CRUD ───────────────────────────────────────────
 
-export const createContractSchema = z.object({
-  vendorId: z.string().uuid().optional(),
-  title: z.string().min(1).max(500),
-  description: z.string().optional(),
-  contractType: z.enum(contractTypeValues).default("service_agreement"),
-  contractNumber: z.string().max(100).optional(),
-  effectiveDate: z.string().optional(),
-  expirationDate: z.string().optional(),
-  noticePeriodDays: z.number().int().min(0).default(90),
-  autoRenewal: z.boolean().default(false),
-  renewalPeriodMonths: z.number().int().min(1).optional(),
-  totalValue: z.string().optional(),
-  currency: z.string().length(3).default("EUR"),
-  annualValue: z.string().optional(),
-  paymentTerms: z.string().max(255).optional(),
-  documentId: z.string().uuid().optional(),
-  ownerId: z.string().uuid().optional(),
-  approverId: z.string().uuid().optional(),
-});
+// #WAVE14D-P1-02: contract `value` is a decimal-as-string (Postgres
+// numeric → JSON-as-string idiom). Wave-14 QA accepted `value: -1000`
+// because the field had no value validation. This regex enforces
+// non-negative dotted-decimal — rejects "-1000", "abc", "1.234,56",
+// accepts "0", "0.00", "1000", "1234.56".
+const monetaryString = z
+  .string()
+  .regex(
+    /^\d+(\.\d+)?$/,
+    "Monetary value must be a non-negative decimal (e.g. '1000' or '1234.56'); use a dot as the decimal separator",
+  );
 
-export const updateContractSchema = z.object({
-  vendorId: z.string().uuid().nullable().optional(),
-  title: z.string().min(1).max(500).optional(),
-  description: z.string().nullable().optional(),
-  contractType: z.enum(contractTypeValues).optional(),
-  contractNumber: z.string().max(100).nullable().optional(),
-  effectiveDate: z.string().nullable().optional(),
-  expirationDate: z.string().nullable().optional(),
-  noticePeriodDays: z.number().int().min(0).optional(),
-  autoRenewal: z.boolean().optional(),
-  renewalPeriodMonths: z.number().int().min(1).nullable().optional(),
-  totalValue: z.string().nullable().optional(),
-  currency: z.string().length(3).optional(),
-  annualValue: z.string().nullable().optional(),
-  paymentTerms: z.string().max(255).nullable().optional(),
-  documentId: z.string().uuid().nullable().optional(),
-  ownerId: z.string().uuid().nullable().optional(),
-  approverId: z.string().uuid().nullable().optional(),
-});
+// #WAVE14D-P1-03: refine that rejects expirationDate < effectiveDate
+// when both are provided. Returned as a fieldError on expirationDate
+// so the UI can highlight the right input.
+const expirationAfterEffective = (data: {
+  effectiveDate?: string | null;
+  expirationDate?: string | null;
+}) => {
+  if (!data.effectiveDate || !data.expirationDate) return true;
+  return (
+    new Date(data.expirationDate).getTime() >=
+    new Date(data.effectiveDate).getTime()
+  );
+};
+
+export const createContractSchema = z
+  .object({
+    vendorId: z.string().uuid().optional(),
+    title: z.string().min(1).max(500),
+    description: z.string().optional(),
+    contractType: z.enum(contractTypeValues).default("service_agreement"),
+    contractNumber: z.string().max(100).optional(),
+    effectiveDate: z.string().optional(),
+    expirationDate: z.string().optional(),
+    noticePeriodDays: z.number().int().min(0).default(90),
+    autoRenewal: z.boolean().default(false),
+    renewalPeriodMonths: z.number().int().min(1).optional(),
+    totalValue: monetaryString.optional(),
+    currency: z.string().length(3).default("EUR"),
+    annualValue: monetaryString.optional(),
+    paymentTerms: z.string().max(255).optional(),
+    documentId: z.string().uuid().optional(),
+    ownerId: z.string().uuid().optional(),
+    approverId: z.string().uuid().optional(),
+  })
+  .refine(expirationAfterEffective, {
+    message: "expirationDate must be on or after effectiveDate",
+    path: ["expirationDate"],
+  });
+
+export const updateContractSchema = z
+  .object({
+    vendorId: z.string().uuid().nullable().optional(),
+    title: z.string().min(1).max(500).optional(),
+    description: z.string().nullable().optional(),
+    contractType: z.enum(contractTypeValues).optional(),
+    contractNumber: z.string().max(100).nullable().optional(),
+    effectiveDate: z.string().nullable().optional(),
+    expirationDate: z.string().nullable().optional(),
+    noticePeriodDays: z.number().int().min(0).optional(),
+    autoRenewal: z.boolean().optional(),
+    renewalPeriodMonths: z.number().int().min(1).nullable().optional(),
+    totalValue: monetaryString.nullable().optional(),
+    currency: z.string().length(3).optional(),
+    annualValue: monetaryString.nullable().optional(),
+    paymentTerms: z.string().max(255).nullable().optional(),
+    documentId: z.string().uuid().nullable().optional(),
+    ownerId: z.string().uuid().nullable().optional(),
+    approverId: z.string().uuid().nullable().optional(),
+  })
+  .refine(expirationAfterEffective, {
+    message: "expirationDate must be on or after effectiveDate",
+    path: ["expirationDate"],
+  });
 
 export const contractStatusTransitionSchema = z.object({
   status: z.enum(contractStatusValues),

@@ -33,15 +33,35 @@ export const GET = withErrorHandler<{ params: Promise<{ id: string }> }>(
     // #WAVE14-NAMING: see /risks/[id]/transitions/route.ts.
     const allowedNext = BIA_ALLOWED_TRANSITIONS[current] ?? [];
 
+    // #WAVE14D-P1-04: Wave-14 QA found that the previous discovery
+    // pointed `draft` at PUT /bcms/bia/{id}, but PUT explicitly rejects
+    // any status field with a hint to /finalize — and /finalize handles
+    // `in_progress → review`, not `draft → in_progress`. So no path
+    // existed for the very first transition. /start now covers that
+    // gap; this discovery picks the correct endpoint per state.
+    const transitionByState: Record<
+      BiaStatus,
+      { endpoint: string; method: "POST" | "PUT" } | null
+    > = {
+      draft: { endpoint: `/api/v1/bcms/bia/${id}/start`, method: "POST" },
+      in_progress: {
+        endpoint: `/api/v1/bcms/bia/${id}/finalize`,
+        method: "POST",
+      },
+      // review → approved + archived: still go through the generic PUT
+      // until dedicated approve/archive endpoints exist (Wave 16).
+      review: { endpoint: `/api/v1/bcms/bia/${id}`, method: "PUT" },
+      approved: { endpoint: `/api/v1/bcms/bia/${id}`, method: "PUT" },
+      archived: null,
+    };
+    const route = transitionByState[current];
+
     return Response.json({
       data: {
         current,
         allowedNext,
-        endpoint:
-          current === "in_progress"
-            ? `/api/v1/bcms/bia/${id}/finalize`
-            : `/api/v1/bcms/bia/${id}`,
-        method: current === "in_progress" ? "POST" : "PUT",
+        endpoint: route?.endpoint ?? null,
+        method: route?.method ?? null,
         note: "Gate blockers (B1 setup, B2 coverage) are evaluated by the transition endpoint, not by this discovery route.",
       },
     });

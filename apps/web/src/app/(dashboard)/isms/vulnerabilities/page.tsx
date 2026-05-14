@@ -55,7 +55,7 @@ function VulnerabilitiesInner() {
   const fetchVulns = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/isms/vulnerabilities?limit=500");
+      const res = await fetch("/api/v1/isms/vulnerabilities?limit=100");
       if (res.ok) {
         const json = await res.json();
         setVulns(json.data ?? []);

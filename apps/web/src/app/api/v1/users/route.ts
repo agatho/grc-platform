@@ -1,6 +1,7 @@
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/users — List users of current org.
 //
@@ -12,7 +13,10 @@ import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 // Sensitive admin-only fields (`is_active`, `last_login_at`) are only
 // returned when the caller is an admin; everyone else gets the picker
 // projection (id / name / email / language / avatar).
-export async function GET(req: Request) {
+//
+// #WAVE14D-P0-01/02: wrapped with withErrorHandler so PaginationError
+// from limit > 100 surfaces as 422 RFC-7807 instead of a 500 empty body.
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth(
     "admin",
     "risk_manager",
@@ -65,4 +69,4 @@ export async function GET(req: Request) {
   `);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

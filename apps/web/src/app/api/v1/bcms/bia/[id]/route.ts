@@ -49,13 +49,17 @@ export async function PUT(
   // stripped the field, the UPDATE only touched updated_at, and the
   // audit log made it look like the transition succeeded. Reject
   // explicitly with the canonical state-machine endpoint as a hint.
+  //
+  // #WAVE14D-P1-04: hint now mentions /start as well — Wave-14 QA hit
+  // a dead end because the old hint pointed only at /finalize, which
+  // handles in_progress→review and not draft→in_progress.
   const rawBody = (await req.json()) as Record<string, unknown>;
   if (Object.prototype.hasOwnProperty.call(rawBody, "status")) {
     return Response.json(
       {
         error:
           "BIA status changes must go through the state-machine endpoint, not this generic update path.",
-        hint: `Use POST /api/v1/bcms/bia/${id}/finalize for in_progress→review, or GET /api/v1/bcms/bia/${id}/transitions for the full discovery payload.`,
+        hint: `Use POST /api/v1/bcms/bia/${id}/start for draft→in_progress, POST /api/v1/bcms/bia/${id}/finalize for in_progress→review, or GET /api/v1/bcms/bia/${id}/transitions for the full discovery payload.`,
       },
       { status: 422 },
     );

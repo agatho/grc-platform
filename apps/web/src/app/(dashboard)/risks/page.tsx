@@ -237,7 +237,7 @@ function RisksPageInner() {
     setError(false);
     try {
       const [risksRes, summaryRes, auditImpactRes] = await Promise.all([
-        fetch("/api/v1/risks?limit=500&sortBy=riskScoreResidual&sortDir=desc"),
+        fetch("/api/v1/risks?limit=100&sortBy=riskScoreResidual&sortDir=desc"),
         fetch("/api/v1/risks/dashboard-summary"),
         fetch("/api/v1/risks/audit-impact-summary"),
       ]);

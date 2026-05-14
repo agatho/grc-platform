@@ -101,7 +101,7 @@ function VendorsPageInner() {
   const fetchVendors = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/vendors?limit=500");
+      const res = await fetch("/api/v1/vendors?limit=100");
       if (res.ok) {
         const json = await res.json();
         setVendors(json.data ?? []);

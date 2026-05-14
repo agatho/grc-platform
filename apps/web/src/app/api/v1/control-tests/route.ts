@@ -2,10 +2,11 @@ import { db, controlTest, control, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, desc, asc, inArray } from "drizzle-orm";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // GET /api/v1/control-tests — List control tests
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -81,4 +82,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

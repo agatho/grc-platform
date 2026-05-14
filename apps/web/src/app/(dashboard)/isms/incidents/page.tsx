@@ -70,7 +70,7 @@ function IncidentsInner() {
   const fetchIncidents = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/isms/incidents?limit=500");
+      const res = await fetch("/api/v1/isms/incidents?limit=100");
       if (res.ok) {
         const json = await res.json();
         setIncidents(json.data ?? []);

@@ -18,10 +18,23 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/dpms/dsr — Create DSR with auto 30-day deadline + auto work item
-export async function POST(req: Request) {
+//
+// #WAVE14D-P0-04: Wave-14 QA hit a 500 empty body on every POST that
+// passed Zod. Root cause: this route inserted `status: "open"` into
+// work_item, but workItemStatusGenericEnum only accepts
+// draft|in_evaluation|in_review|in_approval|management_approved|active|
+// in_treatment|completed|obsolete|cancelled. Postgres rejected the
+// insert with `invalid input value for enum`, the error propagated
+// uncaught (no withErrorHandler wrap), and Next returned 500 with no
+// body. Same enum-drift class as #WAVE12-RBAC-02. Fixed by dropping
+// the explicit status (defaults to "draft" via the column default) and
+// wrapping the route with withErrorHandler so future regressions
+// surface as RFC 7807 problem+json instead of empty 500s.
+export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "dpo");
   if (ctx instanceof Response) return ctx;
 
@@ -47,7 +60,8 @@ export async function POST(req: Request) {
         orgId: ctx.orgId,
         typeKey: "dsr",
         name: `DSR: ${body.data.requestType} - ${body.data.subjectName}`,
-        status: "open",
+        // status defaults to "draft" — see comment block at top of
+        // this file for why explicit "open" caused the 500.
         dueDate: deadline,
         grcPerspective: ["dpms"],
         createdBy: ctx.userId,
@@ -83,10 +97,14 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/dpms/dsr — List DSRs
-export async function GET(req: Request) {
+//
+// #WAVE14D-P0-01/02: wrapped with withErrorHandler so PaginationError
+// from limit > 100 surfaces as 422 RFC-7807 instead of crashing the
+// handler with an empty 500 body.
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -188,4 +206,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

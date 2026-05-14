@@ -44,7 +44,7 @@ function EamDashboardInner() {
     setLoading(true);
     try {
       const [elemRes, eolRes, spofRes, violRes] = await Promise.all([
-        fetch("/api/v1/eam/elements?limit=500"),
+        fetch("/api/v1/eam/elements?limit=100"),
         fetch("/api/v1/eam/applications/approaching-eol?months=6"),
         fetch("/api/v1/eam/spof"),
         fetch("/api/v1/eam/violations?status=open"),

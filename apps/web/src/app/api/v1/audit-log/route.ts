@@ -1,6 +1,7 @@
 import { db, auditLog, organization } from "@grc/db";
 import { eq, and, desc, sql, count, inArray, or } from "drizzle-orm";
 import { withAuth, paginate } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/audit-log — Audit log with filters (admin, auditor, dpo)
 //
@@ -18,7 +19,7 @@ import { withAuth, paginate } from "@/lib/api";
 // The whistleblowing_audit_log table is a separate relation and is NEVER
 // returned by this endpoint — only the whistleblowing role can access it
 // via /api/v1/whistleblowing/audit-log.
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "auditor", "dpo");
   if (ctx instanceof Response) return ctx;
 
@@ -137,7 +138,7 @@ export async function GET(req: Request) {
       resolvedOrgIds: orgIdScope,
     },
   });
-}
+});
 
 // Intentionally unused — left as a reference for future refinements.
 void or;

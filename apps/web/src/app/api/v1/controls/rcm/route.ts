@@ -2,10 +2,22 @@ import { db, control, risk, riskControl } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/controls/rcm — Risk-Control Matrix
-// Returns all risks x controls with linkage + gap identification
-export async function GET(req: Request) {
+//
+// Returns all risks x controls with linkage + gap identification.
+//
+// #WAVE14D-P0-05: Wave-14 QA found `/controls/rcm` rendering an empty
+// page despite this route returning data. Root cause: the page expects
+// a flat `{ risks, controls, cells }` shape but the route returned
+// `{ matrix, summary, unmitigatedRisks, orphanedControls }`. The page
+// then read `data.risks` as undefined and showed the empty state.
+//
+// Fix: keep the existing matrix/summary/unmitigated/orphaned payload
+// (other consumers may rely on it) but additively include the flat
+// shape the page wants. Both contracts are now satisfied.
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -86,6 +98,24 @@ export async function GET(req: Request) {
     };
   });
 
+  // Flat shape the /controls/rcm page consumes — see header comment.
+  const flatRisks = risks.map((r) => ({
+    id: r.id,
+    title: r.title,
+    riskCategory: r.riskCategory,
+    riskScoreResidual:
+      r.riskScoreResidual === null ? undefined : Number(r.riskScoreResidual),
+  }));
+  const flatControls = controls.map((c) => ({
+    id: c.id,
+    title: c.title,
+  }));
+  const flatCells = links.map((l) => ({
+    riskId: l.riskId,
+    controlId: l.controlId,
+    effectiveness: l.effectiveness,
+  }));
+
   return Response.json({
     data: {
       matrix,
@@ -98,6 +128,10 @@ export async function GET(req: Request) {
       },
       unmitigatedRisks,
       orphanedControls,
+      // Flat view for the matrix UI.
+      risks: flatRisks,
+      controls: flatControls,
+      cells: flatCells,
     },
   });
-}
+});

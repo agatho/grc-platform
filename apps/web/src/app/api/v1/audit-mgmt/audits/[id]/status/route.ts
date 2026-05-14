@@ -2,16 +2,26 @@ import { db, audit } from "@grc/db";
 import {
   auditStatusTransitionSchema,
   isValidAuditTransition,
+  VALID_AUDIT_STATUS_TRANSITIONS,
 } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
 // PUT /api/v1/audit-mgmt/audits/[id]/status
 // planned -> preparation -> fieldwork -> reporting -> review -> completed
-export async function PUT(req: Request, { params }: RouteParams) {
+//
+// #WAVE14D-P1-05: 422 responses now include `allowedNext` so callers
+// can self-correct. The bare "Cannot transition from X to Y" message
+// led Wave-14 QA to keep guessing. Same shape as the new GET
+// /transitions discovery endpoint.
+export const PUT = withErrorHandler<RouteParams>(async function PUT(
+  req: Request,
+  { params },
+) {
   const { id } = await params;
   const ctx = await withAuth("admin", "auditor", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -46,6 +56,10 @@ export async function PUT(req: Request, { params }: RouteParams) {
     return Response.json(
       {
         error: `Cannot transition from '${existing.status}' to '${body.data.status}'`,
+        current: existing.status,
+        attempted: body.data.status,
+        allowedNext: VALID_AUDIT_STATUS_TRANSITIONS[existing.status] ?? [],
+        hint: `GET /api/v1/audit-mgmt/audits/${id}/transitions for the full discovery payload incl. soft pre-conditions.`,
       },
       { status: 422 },
     );
@@ -77,4 +91,4 @@ export async function PUT(req: Request, { params }: RouteParams) {
   });
 
   return Response.json({ data: updated });
-}
+});
