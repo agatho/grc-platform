@@ -46,7 +46,8 @@ describe("createVendorSchema", () => {
       description: "Managed security services provider",
       category: "it_services",
       tier: "critical",
-      country: "DEU",
+      // #WAVE15-P2-05: country must be ISO 3166-1 alpha-2.
+      country: "DE",
       address: "Musterstrasse 1, 10115 Berlin",
       website: "https://security-solutions.example.com",
       taxId: "DE123456789",
@@ -55,6 +56,27 @@ describe("createVendorSchema", () => {
       ownerId: UUID,
     });
     expect(result.success).toBe(true);
+  });
+
+  it("upper-cases lower-case ISO country codes", () => {
+    const result = createVendorSchema.safeParse({
+      name: "Acme",
+      country: "de",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.country).toBe("DE");
+    }
+  });
+
+  it("rejects non-ISO-alpha-2 country codes", () => {
+    for (const bad of ["XX", "DEU", "Germany", "D", "12"]) {
+      const result = createVendorSchema.safeParse({
+        name: "Acme",
+        country: bad,
+      });
+      expect(result.success, `should reject "${bad}"`).toBe(false);
+    }
   });
 
   it("rejects missing name", () => {
