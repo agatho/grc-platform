@@ -287,6 +287,12 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   // updated within the same millisecond) shuffle between page boundaries
   // and the same id appears on adjacent pages while another is silently
   // dropped. id ASC is deterministic and the column already has an index.
+  // #WAVE16-P0-A: also accept the natural-name aliases the UI sends.
+  // `sortBy=riskScoreResidual` / `severity` / `inherentScore` etc all
+  // route to the matching column. Unknown sort values fall through to
+  // the residual-score default rather than erroring — that's
+  // intentional, since most UI mistakes are typos on a column the user
+  // just wants sorted descending anyway.
   const sortParam = searchParams.get("sort");
   const sortDir = searchParams.get("sortDir") === "asc" ? asc : desc;
   let primaryOrderBy;
@@ -301,10 +307,22 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       primaryOrderBy = sortDir(risk.riskCategory);
       break;
     case "riskScoreInherent":
+    case "inherentScore":
       primaryOrderBy = sortDir(risk.riskScoreInherent);
+      break;
+    case "riskScoreResidual":
+    case "residualScore":
+    case "severity":
+      // "severity" is a finding/incident column, but the closest analog
+      // on risk is residual score — the UI's intent is "high-impact at
+      // the top," so we honor it rather than 422.
+      primaryOrderBy = sortDir(risk.riskScoreResidual);
       break;
     case "createdAt":
       primaryOrderBy = sortDir(risk.createdAt);
+      break;
+    case "updatedAt":
+      primaryOrderBy = sortDir(risk.updatedAt);
       break;
     default:
       primaryOrderBy = desc(risk.riskScoreResidual);

@@ -14,7 +14,7 @@
 
 import { db, vendor, contract, vendorDueDiligence } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { and, eq, isNull, sql } from "drizzle-orm";
+import { and, eq, isNull, inArray, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
@@ -70,6 +70,15 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   // critical TPRM relationship is currently consuming services or
   // dormant. `active|negotiation|renewal|pending_approval` all count
   // as "engaged".
+  //
+  // #WAVE16-P0-B: Wave-15 deploy crashed this route with 500 (requestId
+  // ccd2ccf71c8c3). Root cause: the previous version used
+  // sql`${contract.vendorId} = ANY(${vendorIds})` to filter by a JS
+  // array, but Drizzle's sql-template serializes JS string[] as a
+  // generic param that Postgres can't cast to uuid[] without an
+  // explicit `::uuid[]` hint — and only on the prod cluster's postgres
+  // version. Switched to `inArray()` which is the canonical Drizzle
+  // pattern and handles the binding correctly across pg versions.
   const vendorIds = vendors.map((v) => v.id);
   const contractRows = await db
     .select({
@@ -82,7 +91,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       and(
         eq(contract.orgId, ctx.orgId),
         isNull(contract.deletedAt),
-        sql`${contract.vendorId} = ANY(${vendorIds})`,
+        inArray(contract.vendorId, vendorIds),
       ),
     )
     .groupBy(contract.vendorId);
@@ -99,7 +108,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     .where(
       and(
         eq(vendorDueDiligence.orgId, ctx.orgId),
-        sql`${vendorDueDiligence.vendorId} = ANY(${vendorIds})`,
+        inArray(vendorDueDiligence.vendorId, vendorIds),
         eq(vendorDueDiligence.status, "completed"),
       ),
     )

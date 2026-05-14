@@ -275,6 +275,43 @@ describe("createContractSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  // #WAVE16-P1-A regression guard: value/startDate/endDate must be
+  // aliased to their canonical names before the refine runs. The
+  // Wave-14 reproduction `{value:-5000, startDate:'2027-01-01',
+  // endDate:'2026-01-01'}` slipped through as 201 because Zod stripped
+  // the unknown keys and the refine never saw the inverted dates.
+  it("aliases value → totalValue and rejects negative values", () => {
+    const result = createContractSchema.safeParse({
+      title: "Bad Contract",
+      value: -5000,
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("aliases startDate/endDate and rejects endDate before startDate", () => {
+    const result = createContractSchema.safeParse({
+      title: "Inverted Contract",
+      startDate: "2027-01-01",
+      endDate: "2026-01-01",
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts the natural startDate/endDate aliases when ordered correctly", () => {
+    const result = createContractSchema.safeParse({
+      title: "Aliased Contract",
+      startDate: "2026-01-01",
+      endDate: "2027-12-31",
+      value: 100000,
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.effectiveDate).toBe("2026-01-01");
+      expect(result.data.expirationDate).toBe("2027-12-31");
+      expect(result.data.totalValue).toBe("100000");
+    }
+  });
+
   it("rejects empty title", () => {
     const result = createContractSchema.safeParse({ title: "" });
     expect(result.success).toBe(false);
