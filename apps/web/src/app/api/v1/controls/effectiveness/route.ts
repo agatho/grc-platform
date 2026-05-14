@@ -101,7 +101,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   // standing nonconformities as authoritative).
   const testedWithFindings = tested + impactedControls;
   const ineffWithFindings = ineff + impactedControls;
-  const effectivenessPctIncludingFindings =
+  const effectivenessPercentIncludingFindings =
     testedWithFindings > 0
       ? Math.round(((eff + partial * 0.5) / testedWithFindings) * 100)
       : 0;
