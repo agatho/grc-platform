@@ -30,14 +30,18 @@ export const GET = withErrorHandler<{ params: Promise<{ id: string }> }>(
     }
 
     const current = row.status;
-    const allowed = isRiskStatus(current)
+    // #WAVE14-NAMING: aligned with vendors/contracts/processes/dsr/incidents
+    // transitions on the `allowedNext` field name. The previous `allowed`
+    // alias was equivalent but inconsistent — UI clients now have one key
+    // to read across every state-machine discovery endpoint.
+    const allowedNext = isRiskStatus(current)
       ? (RISK_ALLOWED_TRANSITIONS[current] ?? [])
       : [];
 
     return Response.json({
       data: {
         current,
-        allowed,
+        allowedNext,
         endpoint: `/api/v1/risks/${id}/status`,
         method: "PUT",
         bodyShape: { status: "<target>", reason: "<optional string>" },

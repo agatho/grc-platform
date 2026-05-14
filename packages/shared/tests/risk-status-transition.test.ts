@@ -29,6 +29,8 @@ describe("riskStatusTransitionSchema — accepted lifecycle states", () => {
     "treated",
     "accepted",
     "closed",
+    // #WAVE14-STATE-02: explicit reopen state for closed risks.
+    "reopened",
   ] as const;
 
   for (const status of validStatuses) {

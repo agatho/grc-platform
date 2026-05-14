@@ -7,10 +7,13 @@ export function GET(req: Request) {
     data: {
       module: "compliance",
       description:
-        "Compliance utility endpoints — CCI catalogs and regulatory simulator",
+        "Compliance overview endpoints — CCI catalogs, regulatory simulator, and the cross-framework rollups that feed compliance dashboards",
       endpoints: [
         { method: "GET", path: "/api/v1/compliance/cci" },
         { method: "POST", path: "/api/v1/compliance/simulator" },
+        { method: "GET", path: "/api/v1/compliance/coverage" },
+        { method: "GET", path: "/api/v1/compliance/score" },
+        { method: "GET", path: "/api/v1/compliance/calendar" },
       ],
     },
     meta: { requestId: getRequestId(req) },

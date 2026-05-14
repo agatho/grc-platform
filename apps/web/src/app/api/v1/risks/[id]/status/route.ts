@@ -9,6 +9,7 @@ import {
 import {
   riskStatusTransitionSchema,
   validateRiskStatusTransition,
+  transitionRequiresReason,
   type RiskStatus,
 } from "@grc/shared";
 import { eq, and, isNull, inArray } from "drizzle-orm";
@@ -23,6 +24,10 @@ const RISK_TO_WORK_ITEM_STATUS: Record<string, string> = {
   treated: "in_treatment",
   accepted: "management_approved",
   closed: "completed",
+  // #WAVE14-STATE-02: a reopened risk reverts the work item to in_evaluation
+  // — same bucket as `assessed`, since the next legal state from `reopened`
+  // is back into the assessment lane.
+  reopened: "in_evaluation",
 };
 
 // PUT /api/v1/risks/:id/status — Status transition
@@ -82,6 +87,28 @@ export async function PUT(
         reason: transition.reason,
         from: currentStatus,
         to: targetStatus,
+      },
+      { status: 422 },
+    );
+  }
+
+  // #WAVE14-STATE-02: closed → reopened requires a non-empty reason. The
+  // transition is the audit-trail-load-bearing reopen edge; an empty
+  // reason defeats the entire point of forcing a separate state.
+  if (
+    transitionRequiresReason(currentStatus as RiskStatus, targetStatus) &&
+    (!body.data.reason || body.data.reason.trim().length === 0)
+  ) {
+    return Response.json(
+      {
+        error: "Validation failed",
+        details: {
+          fieldErrors: {
+            reason: [
+              `Transitions ${currentStatus} → ${targetStatus} require a non-empty reason explaining why the risk is being reopened.`,
+            ],
+          },
+        },
       },
       { status: 422 },
     );

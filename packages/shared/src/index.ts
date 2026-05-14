@@ -82,8 +82,10 @@ export {
 export {
   RISK_STATUSES,
   RISK_ALLOWED_TRANSITIONS,
+  RISK_TRANSITIONS_REQUIRING_REASON,
   isRiskStatus,
   validateRiskStatusTransition,
+  transitionRequiresReason,
   type RiskStatus,
   type RiskStatusTransitionInput,
   type RiskStatusTransitionResult,

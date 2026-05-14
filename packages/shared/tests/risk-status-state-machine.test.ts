@@ -9,6 +9,8 @@
 //      identified → assessed → treated → accepted → closed,
 //      plus reverse-jumps from later states back to "assessed" so
 //      auditors can re-evaluate risks that were previously closed.
+//      `closed` itself only transitions to the explicit `reopened`
+//      state (#WAVE14-STATE-02) — not directly back into the lifecycle.
 //   2. validateRiskStatusTransition() returns ok=false with a
 //      human-readable reason for forbidden jumps, and ok=true for
 //      no-op transitions where from === to.
@@ -19,6 +21,7 @@ import {
   RISK_ALLOWED_TRANSITIONS,
   isRiskStatus,
   validateRiskStatusTransition,
+  transitionRequiresReason,
   type RiskStatus,
 } from "../src/state-machines/risk-status";
 
@@ -44,18 +47,26 @@ describe("RISK_ALLOWED_TRANSITIONS — matrix shape", () => {
     }
   });
 
-  it("always allows reopening into 'identified' from later states", () => {
-    // Reopening forces the user back through the full assessment cycle
-    // rather than letting them jump straight to a treated/accepted state.
-    const reopenable: RiskStatus[] = [
-      "assessed",
-      "treated",
-      "accepted",
-      "closed",
-    ];
+  it("allows in-flight reopens (assessed/treated/accepted → identified)", () => {
+    // In-flight reopens are normal lifecycle backtracks; they don't go
+    // through `reopened`. closed is excluded (it has its own edge below).
+    const reopenable: RiskStatus[] = ["assessed", "treated", "accepted"];
     for (const status of reopenable) {
       expect(RISK_ALLOWED_TRANSITIONS[status]).toContain("identified");
     }
+  });
+
+  it("routes closed → reopened only (#WAVE14-STATE-02)", () => {
+    // The only legal exit from closed is into the explicit reopened
+    // state; the handler additionally enforces a non-empty reason.
+    expect(RISK_ALLOWED_TRANSITIONS.closed).toEqual(["reopened"]);
+    expect(transitionRequiresReason("closed", "reopened")).toBe(true);
+  });
+
+  it("reopened lands back in identified or assessed", () => {
+    expect(RISK_ALLOWED_TRANSITIONS.reopened).toEqual(
+      expect.arrayContaining(["identified", "assessed"]),
+    );
   });
 });
 
@@ -69,8 +80,10 @@ describe("validateRiskStatusTransition — happy paths", () => {
     ["treated", "closed"],
     ["treated", "assessed"], // step back if treatment plan changes
     ["accepted", "closed"],
-    ["accepted", "identified"], // reopen
-    ["closed", "identified"], // reopen
+    ["accepted", "identified"], // in-flight reopen
+    ["closed", "reopened"], // explicit reopen edge
+    ["reopened", "identified"], // landed back in triage
+    ["reopened", "assessed"], // landed back in assessment
   ] as Array<[RiskStatus, RiskStatus]>)("allows %s → %s", (from, to) => {
     const result = validateRiskStatusTransition({ from, to });
     expect(result.ok).toBe(true);
@@ -96,6 +109,9 @@ describe("validateRiskStatusTransition — forbidden jumps", () => {
     ["closed", "treated"],
     ["closed", "accepted"],
     ["closed", "assessed"],
+    // #WAVE14-STATE-02: closed → identified is no longer allowed; you go
+    // through the explicit `reopened` state and land somewhere from there.
+    ["closed", "identified"],
     // assessed cannot jump straight to closed (must go via accepted/treated first)
     ["assessed", "closed"],
   ] as Array<[RiskStatus, RiskStatus]>)("rejects %s → %s", (from, to) => {

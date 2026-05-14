@@ -20,6 +20,9 @@ const riskStatusValues = [
   "treated",
   "accepted",
   "closed",
+  // #WAVE14-STATE-02: `reopened` is the explicit reopen state — see
+  // packages/shared/src/state-machines/risk-status.ts for transitions.
+  "reopened",
 ] as const;
 
 const treatmentStrategyValues = [

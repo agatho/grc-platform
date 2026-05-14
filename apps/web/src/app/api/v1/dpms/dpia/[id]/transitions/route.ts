@@ -29,12 +29,13 @@ export const GET = withErrorHandler<{ params: Promise<{ id: string }> }>(
     }
 
     const current = row.status as DpiaStatus;
-    const allowed = DPIA_ALLOWED_TRANSITIONS[current] ?? [];
+    // #WAVE14-NAMING: see /risks/[id]/transitions/route.ts.
+    const allowedNext = DPIA_ALLOWED_TRANSITIONS[current] ?? [];
 
     return Response.json({
       data: {
         current,
-        allowed,
+        allowedNext,
         endpoint: `/api/v1/dpms/dpia/${id}/transition`,
         method: "POST",
         bodyShape: { targetStatus: "<target>" },

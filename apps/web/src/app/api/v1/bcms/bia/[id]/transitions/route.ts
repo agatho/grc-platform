@@ -30,12 +30,13 @@ export const GET = withErrorHandler<{ params: Promise<{ id: string }> }>(
     }
 
     const current = row.status as BiaStatus;
-    const allowed = BIA_ALLOWED_TRANSITIONS[current] ?? [];
+    // #WAVE14-NAMING: see /risks/[id]/transitions/route.ts.
+    const allowedNext = BIA_ALLOWED_TRANSITIONS[current] ?? [];
 
     return Response.json({
       data: {
         current,
-        allowed,
+        allowedNext,
         endpoint:
           current === "in_progress"
             ? `/api/v1/bcms/bia/${id}/finalize`
