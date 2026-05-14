@@ -140,23 +140,51 @@ export const VALID_DPIA_STATUS_TRANSITIONS: Record<string, string[]> = {
   rejected: ["draft"],
 };
 
-export const createDpiaRiskSchema = z.object({
-  riskDescription: z.string().min(1),
-  severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  likelihood: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-  impact: z.enum(["low", "medium", "high", "critical"]).default("medium"),
-});
+// #WAVE15-P2-08: DPIA risk + measure schemas historically used the
+// verbose `riskDescription` / `measureDescription` field names while
+// the rest of the system uses plain `description`. Cowork QA reported
+// this as an inconsistency — they sent `description` and got 422.
+// `.preprocess` aliases `description` → the verbose name so both work.
+// The DB column stays as-is (risk_description / measure_description).
+const aliasDescription = (
+  canonical: "riskDescription" | "measureDescription",
+) =>
+  z.preprocess((value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const v = value as Record<string, unknown>;
+      if (
+        typeof v.description === "string" &&
+        typeof v[canonical] === "undefined"
+      ) {
+        return { ...v, [canonical]: v.description };
+      }
+    }
+    return value;
+  }, z.unknown());
 
-export const createDpiaMeasureSchema = z.object({
-  measureDescription: z.string().min(1),
-  riskId: z.string().uuid().nullable().optional(),
-  implementationTimeline: z.string().max(255).optional(),
-  costOnetime: z.number().min(0).optional(),
-  costAnnual: z.number().min(0).optional(),
-  effortHours: z.number().min(0).optional(),
-  costCurrency: z.string().max(3).optional(),
-  costNote: z.string().optional(),
-});
+export const createDpiaRiskSchema = aliasDescription("riskDescription").pipe(
+  z.object({
+    riskDescription: z.string().min(1),
+    severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+    likelihood: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+    impact: z.enum(["low", "medium", "high", "critical"]).default("medium"),
+  }),
+);
+
+export const createDpiaMeasureSchema = aliasDescription(
+  "measureDescription",
+).pipe(
+  z.object({
+    measureDescription: z.string().min(1),
+    riskId: z.string().uuid().nullable().optional(),
+    implementationTimeline: z.string().max(255).optional(),
+    costOnetime: z.number().min(0).optional(),
+    costAnnual: z.number().min(0).optional(),
+    effortHours: z.number().min(0).optional(),
+    costCurrency: z.string().max(3).optional(),
+    costNote: z.string().optional(),
+  }),
+);
 
 // ──────────── DSR ────────────
 

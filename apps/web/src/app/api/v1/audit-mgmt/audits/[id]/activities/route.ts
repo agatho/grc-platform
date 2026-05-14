@@ -11,13 +11,29 @@ import { z } from "zod";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
-const createActivitySchema = z.object({
-  activityType: z.string().min(1).max(100),
-  title: z.string().min(1).max(500),
-  description: z.string().optional(),
-  duration: z.number().int().positive().optional(),
-  notes: z.string().optional(),
-});
+// #WAVE15-P2-09: Cowork QA hit a 422 because they sent `type` (the
+// idiom every other module uses) and the schema demanded
+// `activityType`. The DB column is `activity_type`, so we keep that
+// canonical, but accept `type` as an alias on the way in.
+const createActivitySchema = z
+  .preprocess((value) => {
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const v = value as Record<string, unknown>;
+      if (typeof v.type === "string" && typeof v.activityType === "undefined") {
+        return { ...v, activityType: v.type };
+      }
+    }
+    return value;
+  }, z.unknown())
+  .pipe(
+    z.object({
+      activityType: z.string().min(1).max(100),
+      title: z.string().min(1).max(500),
+      description: z.string().optional(),
+      duration: z.number().int().positive().optional(),
+      notes: z.string().optional(),
+    }),
+  );
 
 // POST /api/v1/audit-mgmt/audits/[id]/activities — Log activity
 export async function POST(req: Request, { params }: RouteParams) {

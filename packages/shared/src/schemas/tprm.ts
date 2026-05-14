@@ -92,13 +92,30 @@ export const VALID_CONTRACT_TRANSITIONS: Record<string, string[]> = {
 
 // ─── Vendor CRUD ─────────────────────────────────────────────
 
+// #WAVE15-P2-05: country must be a valid ISO 3166-1 alpha-2 code.
+// Two upper-case letters; uppercase coercion applied so callers can
+// send lower-case (e.g. "de") without bouncing through 422. The
+// explicit message lists the spec so operators don't have to guess.
+const isoCountryAlpha2 = z
+  .string()
+  .trim()
+  .toUpperCase()
+  .pipe(
+    z
+      .string()
+      .regex(
+        /^[A-Z]{2}$/,
+        "country must be a valid ISO 3166-1 alpha-2 code (e.g. DE, US, GB)",
+      ),
+  );
+
 export const createVendorSchema = z.object({
   name: z.string().min(1).max(500),
   legalName: z.string().max(500).optional(),
   description: z.string().optional(),
   category: z.enum(vendorCategoryValues).default("other"),
   tier: z.enum(vendorTierValues).default("standard"),
-  country: z.string().max(100).optional(),
+  country: isoCountryAlpha2.optional(),
   address: z.string().optional(),
   website: z.string().max(500).optional(),
   taxId: z.string().max(100).optional(),
@@ -113,7 +130,7 @@ export const updateVendorSchema = z.object({
   description: z.string().nullable().optional(),
   category: z.enum(vendorCategoryValues).optional(),
   tier: z.enum(vendorTierValues).optional(),
-  country: z.string().max(100).nullable().optional(),
+  country: isoCountryAlpha2.nullable().optional(),
   address: z.string().nullable().optional(),
   website: z.string().max(500).nullable().optional(),
   taxId: z.string().max(100).nullable().optional(),
