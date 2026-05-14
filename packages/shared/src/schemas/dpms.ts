@@ -156,7 +156,13 @@ const aliasLegacyDescription = (
         typeof v[legacy] === "string" &&
         typeof v.description === "undefined"
       ) {
-        const out = { ...v, description: v[legacy] };
+        // Cast back to the open-record type so `delete` on the
+        // dynamic legacy key compiles after the {description}-spread
+        // narrows the inferred type.
+        const out: Record<string, unknown> = {
+          ...v,
+          description: v[legacy],
+        };
         delete out[legacy];
         return out;
       }
