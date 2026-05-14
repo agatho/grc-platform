@@ -482,6 +482,47 @@ const monetaryString = z
     "Monetary value must be a non-negative decimal (e.g. '1000' or '1234.56'); use a dot as the decimal separator",
   );
 
+// #WAVE16-P1-A: Wave-15 QA verified that the value/date validators
+// shipped but didn't fire — the contract route uses the verbose
+// canonical field names (`totalValue`, `effectiveDate`, `expirationDate`)
+// while every reasonable caller (and the Wave-14 QA reproduction)
+// sends the natural names: `value`, `startDate`, `endDate`. Zod's
+// default-strip then dropped those keys, the refine never saw them,
+// and `{value:-5000, startDate:"2027", endDate:"2026"}` slipped
+// through as 201.
+//
+// `.preprocess` rewrites the natural names to the canonical names
+// before the object-schema sees the payload. Same pattern as the
+// DPIA + audit-activity aliases shipped in Wave 15. Also coerces
+// numeric `value` to a string so JS clients can send `-5000` (number)
+// and still trip the non-negative monetary-string regex.
+const aliasContractInput = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  const v = value as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...v };
+  if (typeof v.value !== "undefined" && typeof v.totalValue === "undefined") {
+    out.totalValue = typeof v.value === "number" ? String(v.value) : v.value;
+  }
+  if (
+    typeof v.startDate !== "undefined" &&
+    typeof v.effectiveDate === "undefined"
+  ) {
+    out.effectiveDate = v.startDate;
+  }
+  if (
+    typeof v.endDate !== "undefined" &&
+    typeof v.expirationDate === "undefined"
+  ) {
+    out.expirationDate = v.endDate;
+  }
+  delete out.value;
+  delete out.startDate;
+  delete out.endDate;
+  return out;
+}, z.unknown());
+
 // #WAVE14D-P1-03: refine that rejects expirationDate < effectiveDate
 // when both are provided. Returned as a fieldError on expirationDate
 // so the UI can highlight the right input.
@@ -496,55 +537,59 @@ const expirationAfterEffective = (data: {
   );
 };
 
-export const createContractSchema = z
-  .object({
-    vendorId: z.string().uuid().optional(),
-    title: z.string().min(1).max(500),
-    description: z.string().optional(),
-    contractType: z.enum(contractTypeValues).default("service_agreement"),
-    contractNumber: z.string().max(100).optional(),
-    effectiveDate: z.string().optional(),
-    expirationDate: z.string().optional(),
-    noticePeriodDays: z.number().int().min(0).default(90),
-    autoRenewal: z.boolean().default(false),
-    renewalPeriodMonths: z.number().int().min(1).optional(),
-    totalValue: monetaryString.optional(),
-    currency: z.string().length(3).default("EUR"),
-    annualValue: monetaryString.optional(),
-    paymentTerms: z.string().max(255).optional(),
-    documentId: z.string().uuid().optional(),
-    ownerId: z.string().uuid().optional(),
-    approverId: z.string().uuid().optional(),
-  })
-  .refine(expirationAfterEffective, {
-    message: "expirationDate must be on or after effectiveDate",
-    path: ["expirationDate"],
-  });
+export const createContractSchema = aliasContractInput.pipe(
+  z
+    .object({
+      vendorId: z.string().uuid().optional(),
+      title: z.string().min(1).max(500),
+      description: z.string().optional(),
+      contractType: z.enum(contractTypeValues).default("service_agreement"),
+      contractNumber: z.string().max(100).optional(),
+      effectiveDate: z.string().optional(),
+      expirationDate: z.string().optional(),
+      noticePeriodDays: z.number().int().min(0).default(90),
+      autoRenewal: z.boolean().default(false),
+      renewalPeriodMonths: z.number().int().min(1).optional(),
+      totalValue: monetaryString.optional(),
+      currency: z.string().length(3).default("EUR"),
+      annualValue: monetaryString.optional(),
+      paymentTerms: z.string().max(255).optional(),
+      documentId: z.string().uuid().optional(),
+      ownerId: z.string().uuid().optional(),
+      approverId: z.string().uuid().optional(),
+    })
+    .refine(expirationAfterEffective, {
+      message: "expirationDate must be on or after effectiveDate",
+      path: ["expirationDate"],
+    }),
+);
 
-export const updateContractSchema = z
-  .object({
-    vendorId: z.string().uuid().nullable().optional(),
-    title: z.string().min(1).max(500).optional(),
-    description: z.string().nullable().optional(),
-    contractType: z.enum(contractTypeValues).optional(),
-    contractNumber: z.string().max(100).nullable().optional(),
-    effectiveDate: z.string().nullable().optional(),
-    expirationDate: z.string().nullable().optional(),
-    noticePeriodDays: z.number().int().min(0).optional(),
-    autoRenewal: z.boolean().optional(),
-    renewalPeriodMonths: z.number().int().min(1).nullable().optional(),
-    totalValue: monetaryString.nullable().optional(),
-    currency: z.string().length(3).optional(),
-    annualValue: monetaryString.nullable().optional(),
-    paymentTerms: z.string().max(255).nullable().optional(),
-    documentId: z.string().uuid().nullable().optional(),
-    ownerId: z.string().uuid().nullable().optional(),
-    approverId: z.string().uuid().nullable().optional(),
-  })
-  .refine(expirationAfterEffective, {
-    message: "expirationDate must be on or after effectiveDate",
-    path: ["expirationDate"],
-  });
+export const updateContractSchema = aliasContractInput.pipe(
+  z
+    .object({
+      vendorId: z.string().uuid().nullable().optional(),
+      title: z.string().min(1).max(500).optional(),
+      description: z.string().nullable().optional(),
+      contractType: z.enum(contractTypeValues).optional(),
+      contractNumber: z.string().max(100).nullable().optional(),
+      effectiveDate: z.string().nullable().optional(),
+      expirationDate: z.string().nullable().optional(),
+      noticePeriodDays: z.number().int().min(0).optional(),
+      autoRenewal: z.boolean().optional(),
+      renewalPeriodMonths: z.number().int().min(1).nullable().optional(),
+      totalValue: monetaryString.nullable().optional(),
+      currency: z.string().length(3).optional(),
+      annualValue: monetaryString.nullable().optional(),
+      paymentTerms: z.string().max(255).nullable().optional(),
+      documentId: z.string().uuid().nullable().optional(),
+      ownerId: z.string().uuid().nullable().optional(),
+      approverId: z.string().uuid().nullable().optional(),
+    })
+    .refine(expirationAfterEffective, {
+      message: "expirationDate must be on or after effectiveDate",
+      path: ["expirationDate"],
+    }),
+);
 
 export const contractStatusTransitionSchema = z.object({
   status: z.enum(contractStatusValues),

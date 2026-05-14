@@ -249,6 +249,10 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   // #WAVE6-PAG-01: see /risks/route.ts — every primary sort key needs
   // an `id ASC` tiebreaker so rows that share a sort value don't shuffle
   // between page boundaries (causing duplicates and skipped ids).
+  //
+  // #WAVE16-P0-A: accept the natural-name aliases the UI sends so
+  // /controls?sortBy=updatedAt etc. doesn't 422. paginate() already
+  // collapses `sortBy` → `sort`.
   const sortParam = searchParams.get("sort");
   const sortDir = searchParams.get("sortDir") === "asc" ? asc : desc;
   let primaryOrderBy;
@@ -260,10 +264,14 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       primaryOrderBy = sortDir(control.status);
       break;
     case "type":
+    case "controlType":
       primaryOrderBy = sortDir(control.controlType);
       break;
     case "createdAt":
       primaryOrderBy = sortDir(control.createdAt);
+      break;
+    case "updatedAt":
+      primaryOrderBy = sortDir(control.updatedAt);
       break;
     default:
       primaryOrderBy = desc(control.updatedAt);

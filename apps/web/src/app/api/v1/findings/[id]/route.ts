@@ -55,6 +55,10 @@ export async function GET(
       controlId: finding.controlId,
       controlTestId: finding.controlTestId,
       riskId: finding.riskId,
+      // #WAVE16-P1-B: see /findings/route.ts — list + detail projections
+      // both need auditId so the audit-finding cross-module link is
+      // visible end-to-end.
+      auditId: finding.auditId,
       taskId: finding.taskId,
       ownerId: finding.ownerId,
       ownerName: user.name,

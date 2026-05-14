@@ -266,6 +266,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
         controlId: finding.controlId,
         controlTestId: finding.controlTestId,
         riskId: finding.riskId,
+        // #WAVE16-P1-B: Wave-15 QA verified POST persists auditId but
+        // GET dropped it from the projection — looked like a silent
+        // link-loss until you queried with ?auditId=X. Now included
+        // so the cross-module link is visible end-to-end.
+        auditId: finding.auditId,
         ownerId: finding.ownerId,
         ownerName: user.name,
         ownerEmail: user.email,

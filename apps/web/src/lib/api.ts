@@ -284,10 +284,33 @@ export function paginate(
   reqOrParams: Request | URLSearchParams,
   opts?: { allowedParams?: readonly string[] },
 ) {
-  const searchParams =
+  const sourceParams =
     reqOrParams instanceof Request
       ? new URL(reqOrParams.url).searchParams
       : reqOrParams;
+
+  // #WAVE16-P0-A: the UI sends `sortBy` / `sortOrder` (the idiom every
+  // public REST API uses), but route handlers historically read `sort`
+  // and `sortDir`. Wave-14's strict allow-list then rejected `sortBy`
+  // as an unknown param → /risks and /controls UI stayed broken even
+  // after the limit=500 fix. Normalise the well-known aliases up-front
+  // so both names are accepted and downstream handlers + the strict
+  // allow-list see the canonical form only. Clone the searchParams so
+  // we don't mutate the caller's URL object.
+  const searchParams = new URLSearchParams(sourceParams);
+  const SORT_ALIASES: Record<string, string> = {
+    sortBy: "sort",
+    sortOrder: "sortDir",
+  };
+  for (const [alias, canonical] of Object.entries(SORT_ALIASES)) {
+    const aliasValue = searchParams.get(alias);
+    if (aliasValue !== null && searchParams.get(canonical) === null) {
+      searchParams.set(canonical, aliasValue);
+    }
+    if (searchParams.has(alias)) {
+      searchParams.delete(alias);
+    }
+  }
 
   const rawLimit = searchParams.get("limit");
   let limit = DEFAULT_PAGE_SIZE;
