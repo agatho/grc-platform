@@ -285,7 +285,12 @@ export const dpiaRisk = pgTable(
     dpiaId: uuid("dpia_id")
       .notNull()
       .references(() => dpia.id, { onDelete: "cascade" }),
-    riskDescription: text("risk_description").notNull(),
+    // #WAVE17-P3-DPIA: column renamed from `risk_description` to
+    // `description` (migration 0323) for consistency with every other
+    // module's POST schema. Drizzle TS field renamed to `description`;
+    // the Wave-15 input alias still accepts `riskDescription` on the
+    // way in for backward compat.
+    description: text("description").notNull(),
     severity: varchar("severity", { length: 20 }).notNull().default("medium"),
     likelihood: varchar("likelihood", { length: 20 })
       .notNull()
@@ -315,7 +320,9 @@ export const dpiaMeasure = pgTable(
     dpiaId: uuid("dpia_id")
       .notNull()
       .references(() => dpia.id, { onDelete: "cascade" }),
-    measureDescription: text("measure_description").notNull(),
+    // #WAVE17-P3-DPIA: column renamed from `measure_description` to
+    // `description` (migration 0323) — see dpiaRisk note above.
+    description: text("description").notNull(),
     riskId: uuid("risk_id").references(() => dpiaRisk.id, {
       onDelete: "set null",
     }),

@@ -258,7 +258,8 @@ VALUES (
 -- 6. DPIA Risks (4 entries)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-INSERT INTO dpia_risk (id, org_id, dpia_id, risk_description, severity, likelihood, impact) VALUES
+-- #WAVE17-P3-DPIA: column renamed risk_description → description (migration 0323).
+INSERT INTO dpia_risk (id, org_id, dpia_id, description, severity, likelihood, impact) VALUES
   ('d0000000-0000-0000-0000-000000000545', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000540',
    'Überwachungsdruck führt zu psychischer Belastung der Mitarbeiter und Verletzung der Persönlichkeitsrechte.',
    'high', 'medium', 'high'),
@@ -277,7 +278,8 @@ ON CONFLICT (id) DO NOTHING;
 -- 7. DPIA Measures (4 entries)
 -- ─────────────────────────────────────────────────────────────────────────────
 
-INSERT INTO dpia_measure (id, org_id, dpia_id, measure_description, implementation_timeline,
+-- #WAVE17-P3-DPIA: column renamed measure_description → description (migration 0323).
+INSERT INTO dpia_measure (id, org_id, dpia_id, description, implementation_timeline,
   cost_onetime, cost_annual, effort_hours, cost_currency, cost_note) VALUES
   ('d0000000-0000-0000-0000-00000000054a', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', 'd0000000-0000-0000-0000-000000000540',
    'Betriebsvereinbarung zur Zeiterfassung mit klaren Nutzungsgrenzen und Zweckbindung abschliessen.',

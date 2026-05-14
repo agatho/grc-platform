@@ -52,7 +52,8 @@ export async function POST(req: Request) {
       id: dpiaRisk.id,
       orgId: dpiaRisk.orgId,
       dpiaId: dpiaRisk.dpiaId,
-      riskDescription: dpiaRisk.riskDescription,
+      // #WAVE17-P3-DPIA: column renamed risk_description → description.
+      description: dpiaRisk.description,
       severity: dpiaRisk.severity,
       likelihood: dpiaRisk.likelihood,
       impact: dpiaRisk.impact,

@@ -59,7 +59,8 @@ interface CriteriaCatalogEntry {
 
 interface DpiaRiskExt {
   id: string;
-  riskDescription: string;
+  // #WAVE17-P3-DPIA: was riskDescription. See migration 0323.
+  description: string;
   severity: string;
   likelihood: string;
   impact: string;
@@ -71,7 +72,8 @@ interface DpiaRiskExt {
 
 interface DpiaMeasureExt {
   id: string;
-  measureDescription: string;
+  // #WAVE17-P3-DPIA: was measureDescription. See migration 0323.
+  description: string;
   riskId?: string | null;
   implementationTimeline?: string | null;
   costOnetime?: string | null;
@@ -1002,7 +1004,8 @@ function MeasuresStep({
     if (!desc.trim()) return;
     setAdding(true);
     try {
-      const body: Record<string, unknown> = { measureDescription: desc.trim() };
+      // #WAVE17-P3-DPIA: schema renamed to canonical `description`.
+      const body: Record<string, unknown> = { description: desc.trim() };
       if (riskId) body.riskId = riskId;
       if (timeline) body.implementationTimeline = timeline;
       if (costOnetime) body.costOnetime = Number(costOnetime);
@@ -1068,7 +1071,7 @@ function MeasuresStep({
                 <option value="">DSFA-weite Massnahme</option>
                 {risks.map((r) => (
                   <option key={r.id} value={r.id}>
-                    {r.riskDescription.substring(0, 60)}
+                    {r.description.substring(0, 60)}
                   </option>
                 ))}
               </select>
@@ -1157,14 +1160,14 @@ function MeasuresStep({
                 key={m.id}
                 className="rounded-lg border border-gray-100 bg-gray-50 p-4"
               >
-                <p className="text-sm text-gray-900">{m.measureDescription}</p>
+                <p className="text-sm text-gray-900">{m.description}</p>
                 <div className="flex flex-wrap gap-2 mt-2">
                   {linkedRisk ? (
                     <Badge
                       variant="outline"
                       className="text-[10px] bg-blue-50 text-blue-700 border-blue-200"
                     >
-                      Risiko: {linkedRisk.riskDescription.substring(0, 50)}...
+                      Risiko: {linkedRisk.description.substring(0, 50)}...
                     </Badge>
                   ) : (
                     <Badge variant="outline" className="text-[10px]">
@@ -1448,7 +1451,8 @@ function DpiaRiskStep({
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          riskDescription: newDesc.trim(),
+          // #WAVE17-P3-DPIA: schema renamed to canonical `description`.
+          description: newDesc.trim(),
           severity: newSeverity,
           likelihood: newLikelihood,
           impact: newImpact,
@@ -1612,7 +1616,7 @@ function DpiaRiskStep({
                 className="rounded-lg border border-gray-200 bg-white p-4 space-y-3"
               >
                 <p className="text-sm text-gray-900 font-medium">
-                  {risk.riskDescription}
+                  {risk.description}
                 </p>
                 <div className="flex flex-wrap gap-2">
                   <Badge variant="outline" className="text-[10px]">

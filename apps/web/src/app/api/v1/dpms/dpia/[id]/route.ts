@@ -58,7 +58,8 @@ export async function GET(
   const [risksResult, measures] = await Promise.all([
     db.execute(sql`
       SELECT id, org_id AS "orgId", dpia_id AS "dpiaId",
-             risk_description AS "riskDescription",
+             -- #WAVE17-P3-DPIA: column renamed risk_description → description.
+             description,
              severity, likelihood, impact,
              numeric_likelihood, numeric_impact, risk_score,
              erm_risk_id, erm_synced_at,
@@ -72,7 +73,8 @@ export async function GET(
         id: dpiaMeasure.id,
         orgId: dpiaMeasure.orgId,
         dpiaId: dpiaMeasure.dpiaId,
-        measureDescription: dpiaMeasure.measureDescription,
+        // #WAVE17-P3-DPIA: column renamed measure_description → description.
+        description: dpiaMeasure.description,
         riskId: dpiaMeasure.riskId,
         implementationTimeline: dpiaMeasure.implementationTimeline,
         costOnetime: dpiaMeasure.costOnetime,

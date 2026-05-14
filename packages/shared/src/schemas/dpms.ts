@@ -140,42 +140,46 @@ export const VALID_DPIA_STATUS_TRANSITIONS: Record<string, string[]> = {
   rejected: ["draft"],
 };
 
-// #WAVE15-P2-08: DPIA risk + measure schemas historically used the
-// verbose `riskDescription` / `measureDescription` field names while
-// the rest of the system uses plain `description`. Cowork QA reported
-// this as an inconsistency — they sent `description` and got 422.
-// `.preprocess` aliases `description` → the verbose name so both work.
-// The DB column stays as-is (risk_description / measure_description).
-const aliasDescription = (
-  canonical: "riskDescription" | "measureDescription",
+// #WAVE17-P3-DPIA: canonical input field is now `description` —
+// matches the rest of the codebase + the renamed DB column (migration
+// 0323). The Wave-15 alias direction has flipped: the verbose
+// `riskDescription` / `measureDescription` names are now the legacy
+// input aliases, kept around so older API consumers don't break
+// mid-flight. Drop them in a future major bump.
+const aliasLegacyDescription = (
+  legacy: "riskDescription" | "measureDescription",
 ) =>
   z.preprocess((value) => {
     if (value && typeof value === "object" && !Array.isArray(value)) {
       const v = value as Record<string, unknown>;
       if (
-        typeof v.description === "string" &&
-        typeof v[canonical] === "undefined"
+        typeof v[legacy] === "string" &&
+        typeof v.description === "undefined"
       ) {
-        return { ...v, [canonical]: v.description };
+        const out = { ...v, description: v[legacy] };
+        delete out[legacy];
+        return out;
       }
     }
     return value;
   }, z.unknown());
 
-export const createDpiaRiskSchema = aliasDescription("riskDescription").pipe(
+export const createDpiaRiskSchema = aliasLegacyDescription(
+  "riskDescription",
+).pipe(
   z.object({
-    riskDescription: z.string().min(1),
+    description: z.string().min(1),
     severity: z.enum(["low", "medium", "high", "critical"]).default("medium"),
     likelihood: z.enum(["low", "medium", "high", "critical"]).default("medium"),
     impact: z.enum(["low", "medium", "high", "critical"]).default("medium"),
   }),
 );
 
-export const createDpiaMeasureSchema = aliasDescription(
+export const createDpiaMeasureSchema = aliasLegacyDescription(
   "measureDescription",
 ).pipe(
   z.object({
-    measureDescription: z.string().min(1),
+    description: z.string().min(1),
     riskId: z.string().uuid().nullable().optional(),
     implementationTimeline: z.string().max(255).optional(),
     costOnetime: z.number().min(0).optional(),

@@ -15,7 +15,7 @@ describe("mapDpiaRiskToErm", () => {
     id: "dr-1",
     orgId: "org-1",
     dpiaId: "dpia-1",
-    riskDescription: "Excessive personal data collection in marketing funnel.",
+    description: "Excessive personal data collection in marketing funnel.",
     severity: "high",
     likelihood: "medium",
     impact: "high",
@@ -42,7 +42,7 @@ describe("mapDpiaRiskToErm", () => {
 
   it("truncates long description in title", () => {
     const longDesc = "x".repeat(200);
-    const draft = mapDpiaRiskToErm({ ...src, riskDescription: longDesc });
+    const draft = mapDpiaRiskToErm({ ...src, description: longDesc });
     expect(draft.title.length).toBeLessThanOrEqual(110);
     expect(draft.title).toMatch(/^\[DPIA\]/);
   });
@@ -127,7 +127,7 @@ describe("decideRiskSync", () => {
     id: "dr",
     orgId: "o",
     dpiaId: "d",
-    riskDescription: "r",
+    description: "r",
     severity: "low",
     likelihood: "low",
     impact: "low",
@@ -144,7 +144,7 @@ describe("decideRiskSync", () => {
       id: "dr",
       orgId: "o",
       dpiaId: "d",
-      riskDescription: "r",
+      description: "r",
       severity: "high",
       likelihood: "high",
       impact: "high",
@@ -159,7 +159,7 @@ describe("decideRiskSync", () => {
       id: "dr",
       orgId: "o",
       dpiaId: "d",
-      riskDescription: "r",
+      description: "r",
       severity: "medium",
       likelihood: "medium",
       impact: "medium",
@@ -179,7 +179,7 @@ describe("buildSyncBatch", () => {
           id: "1",
           orgId: "o",
           dpiaId: "d",
-          riskDescription: "r",
+          description: "r",
           severity: "low",
           likelihood: "low",
           impact: "low",
@@ -188,7 +188,7 @@ describe("buildSyncBatch", () => {
           id: "2",
           orgId: "o",
           dpiaId: "d",
-          riskDescription: "r",
+          description: "r",
           severity: "high",
           likelihood: "high",
           impact: "high",
@@ -210,7 +210,7 @@ describe("buildSyncBatch", () => {
           id: "d1",
           orgId: "o",
           dpiaId: "dp",
-          riskDescription: "r",
+          description: "r",
           severity: "high",
           likelihood: "high",
           impact: "high",
