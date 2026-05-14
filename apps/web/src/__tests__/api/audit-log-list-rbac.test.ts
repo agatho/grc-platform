@@ -78,7 +78,13 @@ describe("GET /api/v1/audit-log", () => {
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
     const { GET } = await import("../../app/api/v1/audit-log/route");
-    const res = await GET(new Request("http://localhost/api/v1/audit-log"));
+    // #WAVE15: audit-log GET is now wrapped via withErrorHandler so its
+    // type carries the (req, ctx) signature. Flat routes pass `undefined`
+    // for ctx in production (Next.js calls handlers that way).
+    const res = await GET(
+      new Request("http://localhost/api/v1/audit-log"),
+      undefined,
+    );
     expect(res.status).toBe(401);
     // Audit-log is locked to admin / auditor / dpo
     expect(withAuthMock).toHaveBeenCalledWith("admin", "auditor", "dpo");
@@ -89,7 +95,13 @@ describe("GET /api/v1/audit-log", () => {
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
     const { GET } = await import("../../app/api/v1/audit-log/route");
-    const res = await GET(new Request("http://localhost/api/v1/audit-log"));
+    // #WAVE15: audit-log GET is now wrapped via withErrorHandler so its
+    // type carries the (req, ctx) signature. Flat routes pass `undefined`
+    // for ctx in production (Next.js calls handlers that way).
+    const res = await GET(
+      new Request("http://localhost/api/v1/audit-log"),
+      undefined,
+    );
     expect(res.status).toBe(403);
   });
 
@@ -120,6 +132,7 @@ describe("GET /api/v1/audit-log", () => {
     const { GET } = await import("../../app/api/v1/audit-log/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log?includeDescendants=true"),
+      undefined,
     );
     expect(res.status).toBe(403);
     const body = await res.json();

@@ -25,6 +25,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/findings — Create finding
@@ -88,7 +89,14 @@ export async function POST(req: Request) {
       })
       .returning();
 
-    // Create the finding
+    // Create the finding.
+    //
+    // #WAVE14D-P1-01: Wave-14 QA found that POST /findings {auditId}
+    // returned 201 but persisted auditId=NULL. The createFindingSchema
+    // already accepted auditId (packages/shared/.../control.ts line 255)
+    // and the finding table already had the column (control.ts:333),
+    // but this insert handler dropped it on the floor — silently
+    // breaking the audit→finding cross-module link. Now passed through.
     const [row] = await tx
       .insert(finding)
       .values({
@@ -101,6 +109,7 @@ export async function POST(req: Request) {
         controlId: body.data.controlId,
         controlTestId: body.data.controlTestId,
         riskId: body.data.riskId,
+        auditId: body.data.auditId,
         ownerId: body.data.ownerId,
         remediationPlan: body.data.remediationPlan,
         remediationDueDate: body.data.remediationDueDate,
@@ -137,7 +146,7 @@ export async function POST(req: Request) {
 }
 
 // GET /api/v1/findings — List findings with filters
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -278,4 +287,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

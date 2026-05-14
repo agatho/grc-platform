@@ -7,6 +7,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 import type { AssetTier } from "@grc/shared";
 
@@ -114,7 +115,7 @@ export async function POST(req: Request) {
 }
 
 // GET /api/v1/assets — List assets (paginated, filterable)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -170,4 +171,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

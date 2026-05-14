@@ -138,7 +138,7 @@ function ControlsPageInner() {
     setError(false);
     try {
       const res = await fetch(
-        "/api/v1/controls?limit=500&sortBy=title&sortDir=asc",
+        "/api/v1/controls?limit=100&sortBy=title&sortDir=asc",
       );
       if (!res.ok) throw new Error("Failed to fetch controls");
       const json = await res.json();

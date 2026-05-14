@@ -219,7 +219,7 @@ export default function NewOrganizationPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/v1/organizations?limit=500");
+        const res = await fetch("/api/v1/organizations?limit=100");
         if (!res.ok) return;
         const json = await res.json();
         const rows: OrgOption[] = (json.data ?? []).map(

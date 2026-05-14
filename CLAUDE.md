@@ -306,19 +306,28 @@ Element IDs auto-generated: RSK00000001, INC00000001, FND00000001, CTL00000001
 
 ### Role Matrix
 
-| Role                   | LoD | Permissions                                                 |
-| ---------------------- | --- | ----------------------------------------------------------- |
-| admin                  | —   | Full access, org management, settings                       |
-| risk_manager           | 2nd | Risks, KRIs, assessments, treatments                        |
-| control_owner          | 1st | Own controls, test results, evidence                        |
-| process_owner          | 1st | Own processes, BPMN editor, approvals                       |
-| auditor                | 3rd | Audits, findings, read-only cross-module                    |
-| dpo                    | 2nd | DPMS full access, DSR, breach management                    |
-| viewer                 | —   | Read-only on permitted modules                              |
-| whistleblowing_officer | —   | Whistleblowing cases and statistics only (legally isolated) |
-| ombudsperson           | —   | External ombudsperson for whistleblowing                    |
-| esg_manager            | 2nd | ESG module full access                                      |
-| esg_contributor        | 1st | ESG data entry                                              |
+| Role                   | LoD | Permissions                                                                                              |
+| ---------------------- | --- | -------------------------------------------------------------------------------------------------------- |
+| admin                  | —   | Full access, org management, settings                                                                    |
+| risk_manager           | 2nd | Risks, KRIs, assessments, treatments                                                                     |
+| control_owner          | 1st | Own controls, test results, evidence                                                                     |
+| process_owner          | 1st | Own processes, BPMN editor, approvals                                                                    |
+| auditor                | 3rd | Audits, findings, read-only cross-module                                                                 |
+| dpo                    | 2nd | DPMS full access, DSR, breach management                                                                 |
+| ciso                   | 2nd | ISMS/ICS full, ERM read+admin, BCMS/Audit read, **DPMS read** (cross-cutting), **ESG read** (CSRD-cyber) |
+| viewer                 | —   | Read-only on permitted modules                                                                           |
+| whistleblowing_officer | —   | Whistleblowing cases and statistics only (legally isolated)                                              |
+| ombudsperson           | —   | External ombudsperson for whistleblowing                                                                 |
+| esg_manager            | 2nd | ESG module full access                                                                                   |
+| esg_contributor        | 1st | ESG data entry                                                                                           |
+
+**Note (Wave-13/15):** CISO's DPMS + ESG read access is wired in
+migrations `0319_ciso_erm_admin.sql` (ERM admin row) and
+`0322_ciso_dpms_esg_read.sql` (DPMS + ESG read rows). These rows live
+in the `role_permission` table keyed off `custom_role.system_role_key
+= 'ciso'`. The cross-cutting reads keep the CISO informed of
+processing-activities (DPMS) and CSRD cybersecurity disclosures (ESG)
+without granting write access to either domain.
 
 ## Conventions
 

@@ -8,9 +8,10 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
 // GET /api/v1/isms/threats
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -43,7 +44,7 @@ export async function GET(req: Request) {
     .where(and(...conditions));
 
   return paginatedResponse(rows, allRows.length, page, limit);
-}
+});
 
 // POST /api/v1/isms/threats
 export async function POST(req: Request) {

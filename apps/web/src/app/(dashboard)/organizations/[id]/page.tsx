@@ -155,7 +155,7 @@ export default function OrganizationDetailPage() {
     let cancelled = false;
     (async () => {
       try {
-        const res = await fetch("/api/v1/organizations?limit=500");
+        const res = await fetch("/api/v1/organizations?limit=100");
         if (!res.ok) return;
         const json = await res.json();
         const rows = (json.data ?? [])

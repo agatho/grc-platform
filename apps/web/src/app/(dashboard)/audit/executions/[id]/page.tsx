@@ -1595,7 +1595,7 @@ function ChecklistsTab({ auditId, orgId }: { auditId: string; orgId: string }) {
   // Evidenzen, Policy-Dokumente usw.)
   const fetchEvidencePool = useCallback(async () => {
     try {
-      const res = await fetch("/api/v1/evidence?limit=500&sortDir=desc");
+      const res = await fetch("/api/v1/evidence?limit=100&sortDir=desc");
       if (res.ok) {
         const json = await res.json();
         setEvidencePool(json.data ?? []);

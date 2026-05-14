@@ -58,7 +58,7 @@ function ThreatsInner() {
   const fetchThreats = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/isms/threats?limit=500");
+      const res = await fetch("/api/v1/isms/threats?limit=100");
       if (res.ok) {
         const json = await res.json();
         setThreats(json.data ?? []);

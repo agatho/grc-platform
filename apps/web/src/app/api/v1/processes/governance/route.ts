@@ -1,10 +1,18 @@
-import { db, process, processVersion, processComment } from "@grc/db";
+import { db, process, processVersion, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull, sql, count, lte } from "drizzle-orm";
+import { eq, and, isNull, or, sql, count, lte, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 
-// GET /api/v1/processes/governance — Governance dashboard
-export async function GET(req: Request) {
+// GET /api/v1/processes/governance — Governance dashboard.
+//
+// #WAVE14D-P1-09: Wave-14 QA showed "GESAMTPROZESSE 0" on the page
+// despite 3 processes existing. Root cause was a shape mismatch — the
+// page reads `data.kpis.totalProcesses` + `kpis.published`, but the
+// route used to emit flat `data.totalProcesses` + `data.publishedProcesses`.
+// Same story for openTasks: the page expects an array of task rows, the
+// route emitted a count. Restructured to match the page's contract.
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "process_owner");
   if (ctx instanceof Response) return ctx;
 
@@ -103,15 +111,55 @@ export async function GET(req: Request) {
     )
     .groupBy(process.department);
 
-  // Open tasks = in_review + overdue count
-  const openTasks = Number(pendingApprovals) + Number(overdueReviews);
+  // Open-tasks list — pending approvals + overdue reviews flattened
+  // into one task feed for the UI. Caps at 50 so the dashboard doesn't
+  // page a huge backlog all at once; the page renders the first 10 via
+  // .slice(0, 10) anyway.
+  const taskRows = await db
+    .select({
+      id: process.id,
+      processId: process.id,
+      processName: process.name,
+      status: process.status,
+      reviewDate: process.reviewDate,
+      ownerId: process.processOwnerId,
+      ownerName: user.name,
+    })
+    .from(process)
+    .leftJoin(user, eq(process.processOwnerId, user.id))
+    .where(
+      and(
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+        or(
+          eq(process.status, "in_review"),
+          and(
+            sql`${process.reviewDate} IS NOT NULL`,
+            lte(process.reviewDate, now),
+          ),
+        ),
+      ),
+    )
+    .orderBy(desc(process.reviewDate))
+    .limit(50);
+
+  const openTasks = taskRows.map((r) => ({
+    id: r.id,
+    processId: r.processId,
+    processName: r.processName,
+    type: r.status === "in_review" ? "pending_approval" : "overdue_review",
+    dueDate: r.reviewDate ? new Date(r.reviewDate).toISOString() : undefined,
+    assignee: r.ownerName ?? undefined,
+  }));
 
   return Response.json({
     data: {
-      totalProcesses: Number(totalProcesses),
-      publishedProcesses: Number(publishedProcesses),
-      overdueReviews: Number(overdueReviews),
-      pendingApprovals: Number(pendingApprovals),
+      kpis: {
+        totalProcesses: Number(totalProcesses),
+        published: Number(publishedProcesses),
+        overdueReviews: Number(overdueReviews),
+        pendingApprovals: Number(pendingApprovals),
+      },
       statusDistribution: statusDistribution.map((s) => ({
         status: s.status,
         count: Number(s.count),
@@ -127,4 +175,4 @@ export async function GET(req: Request) {
       openTasks,
     },
   });
-}
+});

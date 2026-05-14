@@ -122,7 +122,7 @@ function FindingsPageInner() {
     setLoading(true);
     try {
       const res = await fetch(
-        "/api/v1/findings?limit=500&sortBy=createdAt&sortDir=desc",
+        "/api/v1/findings?limit=100&sortBy=createdAt&sortDir=desc",
       );
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();

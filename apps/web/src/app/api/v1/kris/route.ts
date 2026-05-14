@@ -7,6 +7,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import { requireModule } from "@grc/auth";
 import type { SQL } from "drizzle-orm";
 
@@ -87,7 +88,7 @@ export async function POST(req: Request) {
 }
 
 // GET /api/v1/kris -- List KRIs (paginated, filterable)
-export async function GET(req: Request) {
+export const GET = withErrorHandler(async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
@@ -161,4 +162,4 @@ export async function GET(req: Request) {
   ]);
 
   return paginatedResponse(items, total, page, limit);
-}
+});

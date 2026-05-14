@@ -84,7 +84,7 @@ function EvidencePageInner() {
   const fetchEvidence = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/v1/evidence?limit=500");
+      const res = await fetch("/api/v1/evidence?limit=100");
       if (!res.ok) throw new Error("Failed");
       const json = await res.json();
       setEvidence(json.data ?? []);
