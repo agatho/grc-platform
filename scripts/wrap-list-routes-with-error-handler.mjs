@@ -11,7 +11,7 @@
 // Usage: node scripts/wrap-list-routes-with-error-handler.mjs
 // Idempotent: if a file already imports withErrorHandler, it's left alone.
 
-import { readFileSync, writeFileSync, existsSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
 import { resolve, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -45,12 +45,19 @@ let skipped = 0;
 
 for (const rel of TARGETS) {
   const path = resolve(ROOT, rel);
-  if (!existsSync(path)) {
-    console.error(`MISSING ${rel}`);
-    continue;
-  }
 
-  let src = readFileSync(path, "utf8");
+  // Skip the existsSync→readFileSync TOCTOU and just attempt the read;
+  // ENOENT is reported as MISSING the same way the explicit check would.
+  let src;
+  try {
+    src = readFileSync(path, "utf8");
+  } catch (err) {
+    if (err && err.code === "ENOENT") {
+      console.error(`MISSING ${rel}`);
+      continue;
+    }
+    throw err;
+  }
 
   if (src.includes('from "@/lib/api-wrapper"')) {
     skipped += 1;

@@ -1,16 +1,6 @@
 import { db, process, processVersion, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import {
-  eq,
-  and,
-  isNull,
-  or,
-  sql,
-  count,
-  lte,
-  desc,
-  inArray,
-} from "drizzle-orm";
+import { eq, and, isNull, or, sql, count, lte, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
@@ -132,11 +122,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       processName: process.name,
       status: process.status,
       reviewDate: process.reviewDate,
-      ownerId: process.ownerId,
+      ownerId: process.processOwnerId,
       ownerName: user.name,
     })
     .from(process)
-    .leftJoin(user, eq(process.ownerId, user.id))
+    .leftJoin(user, eq(process.processOwnerId, user.id))
     .where(
       and(
         eq(process.orgId, ctx.orgId),

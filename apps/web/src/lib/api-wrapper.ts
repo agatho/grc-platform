@@ -38,10 +38,13 @@ import { PaginationError } from "@/lib/api";
 
 // Two-argument shape matches Next.js's invocation: (req, { params })
 // for dynamic routes, (req, undefined) for flat routes. Dynamic-route
-// handlers destructure params so the second arg must be present.
+// handlers destructure params so the second arg must be present at
+// runtime — but the type makes it optional so direct callers (notably
+// the route-level vitest specs) don't have to pass `undefined` just to
+// satisfy strict-mode arity checks.
 type RouteHandler<TCtx = unknown> = (
   req: Request,
-  ctx: TCtx,
+  ctx?: TCtx,
 ) => Promise<Response> | Response;
 
 interface PgError {
@@ -84,7 +87,7 @@ export function withErrorHandler<TCtx = unknown>(
   handler: RouteHandler<TCtx>,
   routeLabel?: string,
 ): RouteHandler<TCtx> {
-  return async (req, ctx) => {
+  return async (req: Request, ctx?: TCtx) => {
     const requestId = getRequestId(req);
     const label = routeLabel ?? `${req.method} ${new URL(req.url).pathname}`;
 
