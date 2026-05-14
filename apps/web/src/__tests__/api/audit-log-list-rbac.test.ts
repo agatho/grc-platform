@@ -132,6 +132,7 @@ describe("GET /api/v1/audit-log", () => {
     const { GET } = await import("../../app/api/v1/audit-log/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log?includeDescendants=true"),
+      undefined,
     );
     expect(res.status).toBe(403);
     const body = await res.json();
