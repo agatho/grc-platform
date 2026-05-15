@@ -154,7 +154,9 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
       score: controlsScore,
     },
     {
-      source: "securityIncidents",
+      // Source key is the canonical "incidents" enum literal from
+      // MaturitySource — even though the table is securityIncident.
+      source: "incidents",
       moduleEnabled: enabled("isms"),
       dataCount: securityIncidentStats?.total ?? 0,
       score: securityIncidentsScore,
