@@ -1,9 +1,16 @@
 // GET /api/v1/whistleblowing/cases — List cases (HinSchG officers, paginated)
 //
-// #WAVE13-RBAC-02: `whistleblowing_officer` was missing from every cases
-// route's role gate, so the role couldn't read its own caseload (a P1 since
-// HinSchG processing is the role's sole purpose). All six /cases routes
-// accept the same officer set: admin, whistleblowing_officer, ombudsperson.
+// #WAVE13-RBAC-02 / #WAVE19-W7: `whistleblowing_officer` was missing from
+// every cases route's role gate, so the role couldn't read its own caseload
+// (a P1 since HinSchG processing is the role's sole purpose). Wave-19 QA
+// then flagged the inverse problem: `admin` was in the role list, but
+// HinSchG §10/§11 + GDPR Art. 9(2)(b) require **case content isolation**
+// from any role outside the designated reporting channel staff. Admin must
+// NOT read case lists or case content — even for "platform oversight".
+// The /statistics endpoint stays accessible to admin because it returns
+// anonymized aggregate counts only (no case content), which is defensible
+// for SLA monitoring. The role set on the six case-content endpoints is now:
+// `whistleblowing_officer`, `ombudsperson` (no admin).
 
 import { db, wbCase, wbReport, user } from "@grc/db";
 import { requireModule } from "@grc/auth";
@@ -14,7 +21,8 @@ import { problem, getRequestId } from "@/lib/api-errors";
 import type { SQL } from "drizzle-orm";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "whistleblowing_officer", "ombudsperson");
+  // HinSchG isolation — admin deliberately excluded; see file header.
+  const ctx = await withAuth("whistleblowing_officer", "ombudsperson");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule(

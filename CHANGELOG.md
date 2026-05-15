@@ -163,6 +163,47 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
   pg version + driver) raised a cast error on the empty-string GUC.
   Catches PG `42P01` (undefined_table) and falls back to defaults so
   pre-Sprint-13a deployments stop returning 500.
+- **Contract drift Warning headers (W19-P3-01)**: `POST /contracts`
+  now emits an RFC-7234 `Warning: 299` header for every deprecated
+  alias the caller used (`value` → `totalValue`, `startDate` →
+  `effectiveDate`, `endDate` → `expirationDate`, `name` → `title`).
+  Aliases stay accepted for v0.2 to give frontend / integration
+  consumers a runway; the headers are the live migration signal.
+  Removal in v0.3.0 has been pre-announced.
+- **ESG-datapoints discovery + seed wired (W19-P3-03)**: New endpoint
+  `GET /esg/datapoints` returns the 65 ESRS datapoints (E1-E5, S1-S4,
+  G1) with optional `esrsStandard` + `mandatory` filters and a
+  `byStandard` grouping for the picker UI. `seed_esrs_datapoints.sql`
+  is now part of `seed-all.ts` REFERENCE_SEEDS — without it
+  `POST /esg/metrics` 422'd with `{datapointId:['Required']}`.
+- **Bulk-cap contract test extended (W19-N8)**: `bulk-cap-contract.test.ts`
+  now covers the `bulkMeasurementImportSchema` 500-item cap (intentional
+  ESG ingestion-tier exception) plus an absence-anchor test that
+  documents that risks/controls/findings/treatments still have no
+  bulk endpoints — if a future `/risks/bulk` is added it MUST follow
+  the Critical Rule #11 default of `.max(100)`.
+- **BIA gate blocker route guards (W19-W6)**: New
+  `apps/web/src/__tests__/api/bcms-bia-gates.test.ts` locks the
+  Gate-B1 (Setup) + Gate-B2 (Coverage) blocker contract at the route
+  layer:
+  - `/start` returns 422 + `missing_lead_assessor` when the snapshot
+    is incomplete and never proceeds to the audit-wrapped status update.
+  - `/finalize` returns 422 + `no_process_impacts` when zero impacts
+    are attached, and `score_coverage_below_threshold` at < 80%
+    scored MTPD/RTO/RPO.
+  - Wrong-status invocations (`/finalize` from `draft`) and missing
+    BIA (404) are explicitly pinned.
+- **HinSchG isolation — admin removed from case-content endpoints
+  (W19-W7)**: All six `/whistleblowing/cases/**` routes (`cases` GET,
+  `cases/[id]` GET, `assign`, `acknowledge`, `message`, `resolve`)
+  now reject `admin` per HinSchG §10/§11 + GDPR Art. 9(2)(b). Sole
+  access: `whistleblowing_officer`, `ombudsperson`. Same applies to
+  `/investigations` and `/protection`; `auditor` is retained on those
+  for LoD3 oversight (assurance the channel exists + works without
+  exposing case-content). `/statistics` deliberately keeps admin
+  access — anonymized aggregate counts only, no case content. New
+  `whistleblowing-hinschg-isolation.test.ts` (9 tests) pins the
+  contract.
 
 ### Contract-schema field-name history (W19-P3-01)
 
