@@ -25,7 +25,15 @@ import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/contracts — Create contract
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner");
+  // #WAVE19-MAR-P0-02: contract_manager + vendor_manager are the
+  // operator roles that own contract lifecycles in TPRM.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "contract_manager",
+    "vendor_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("contract", ctx.orgId, req.method);

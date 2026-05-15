@@ -6,7 +6,12 @@ import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/esg/measurements/bulk — Bulk import measurements (max 500)
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);

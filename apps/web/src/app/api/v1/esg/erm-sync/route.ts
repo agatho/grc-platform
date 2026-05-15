@@ -13,7 +13,12 @@ import { problem, getRequestId } from "@/lib/api-errors";
  * - Updates materiality_iro.erm_risk_id and erm_synced_at
  */
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);

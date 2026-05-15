@@ -10,7 +10,13 @@ import {
 } from "@/lib/api";
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
@@ -26,7 +32,12 @@ export async function GET(req: Request) {
 }
 
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;

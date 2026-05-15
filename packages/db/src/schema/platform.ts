@@ -55,6 +55,12 @@ export const userRoleEnum = pgEnum("user_role", [
   "security_analyst",
   "department_head",
   "external_auditor",
+  // #WAVE19-MAR-P0-02: vendor_manager exists as a real role on the
+  // org chart but Sprint-1 enum + Sprint-9 TPRM routes never wired
+  // it. Marathon QA hit 403 on every vendor mutation. Migration 0324
+  // adds the value to the live enum; Wave-19 routes opt the role
+  // into POST/PUT /vendors + /contracts.
+  "vendor_manager",
 ]);
 
 export const lineOfDefenseEnum = pgEnum("line_of_defense", [

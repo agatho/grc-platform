@@ -79,7 +79,14 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner");
+  // #WAVE19-MAR-P0-02: see /vendors/route.ts header.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "vendor_manager",
+    "contract_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("tprm", ctx.orgId, req.method);
