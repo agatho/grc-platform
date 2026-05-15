@@ -141,6 +141,47 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-19 — Cascade Completion (2026-05-15)
+
+- **Finding cross-module-link persistence (W19-P1-01)**: `POST /api/v1/findings`
+  with `controlId` / `auditId` / `riskId` / `controlTestId` now reliably
+  persists every FK; the inline `updateFindingSchema` in `[id]/route.ts`
+  was lifted to `packages/shared` so the canonical severity enum (with
+  the ISO-19011 values) stops drifting between POST and PUT/PATCH paths.
+  `PATCH /api/v1/findings/{id}` is now a real route (was 405). New
+  vitest guards in `apps/web/src/__tests__/api/findings-cross-module-links.test.ts`
+  pin the contract.
+- **Finding status strict-reject (W19-P1-01)**: `POST /findings {status: ...}`
+  now returns 422 with `rejectedFields: ["status"]` and a hint pointing
+  at the dedicated transition endpoint, instead of silently stripping
+  the field and letting the `identified` DB default win.
+- **CISO can raise findings (W19-P3-02)**: `ciso` added to the role list
+  in `POST /findings`. RBAC test suite updated.
+- **`/admin/branding` 500 → 200 (W19-P2-01)**: `GET` now runs through
+  `withReadContext` so the RLS GUC `app.current_org_id` is set before
+  the query; otherwise the policy filtered every row and (depending on
+  pg version + driver) raised a cast error on the empty-string GUC.
+  Catches PG `42P01` (undefined_table) and falls back to defaults so
+  pre-Sprint-13a deployments stop returning 500.
+
+### Contract-schema field-name history (W19-P3-01)
+
+The contract input schema has renamed several fields across waves;
+deployers should update API consumers accordingly. The current
+canonical names are the right-hand column.
+
+| Wave | Was         | Is               |
+| ---- | ----------- | ---------------- |
+| 14   | `value`     | `totalValue`     |
+| 14   | `startDate` | `effectiveDate`  |
+| 14   | `endDate`   | `expirationDate` |
+| 16   | `name`      | `title`          |
+
+The Wave-16 `value`/`startDate`/`endDate` aliases (preprocess) still
+accept the natural REST names on input for backward-compat, but the
+DB columns + GET-response keys are the canonical names. Tests in
+`packages/shared/tests/tprm-schemas.test.ts` pin both directions.
+
 ### Added
 
 - **ADR-014 Phase 3**: Schema-Stubs-Generator fuer 55 nicht-exportierte Tabellen (`scripts/generate-schema-stubs.mjs`, `packages/db/src/schema/_generated_stubs.ts`) ([`848897e`](../../commit/848897e))

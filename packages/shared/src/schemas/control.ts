@@ -112,7 +112,11 @@ export function checklistResultToFindingSeverity(
       return null;
   }
 }
-const findingStatusValues = [
+// #WAVE19-P1-01: exported (was private const) so the [id]/route.ts
+// updateFindingSchema can re-use the canonical enum instead of
+// duplicating a stale subset. Wave-18 QA hit a 422 because the
+// PUT-side enum still listed only the legacy 5 severities.
+export const findingStatusValues = [
   "identified",
   "in_remediation",
   "remediated",
@@ -120,13 +124,15 @@ const findingStatusValues = [
   "accepted",
   "closed",
 ] as const;
-const findingSourceValues = [
+export type FindingStatusValue = (typeof findingStatusValues)[number];
+export const findingSourceValues = [
   "control_test",
   "audit",
   "incident",
   "self_assessment",
   "external",
 ] as const;
+export type FindingSourceValue = (typeof findingSourceValues)[number];
 const evidenceCategoryValues = [
   "screenshot",
   "document",
@@ -260,6 +266,30 @@ export const createFindingSchema = z.object({
 
 export const findingStatusTransitionSchema = z.object({
   status: z.enum(findingStatusValues),
+});
+
+// #WAVE19-P1-01: PUT/PATCH-side update schema. Lives next to
+// createFindingSchema so future enum additions automatically flow
+// into the update path — Wave-18 QA hit a 422 because the previous
+// inline schema in [id]/route.ts hadn't been updated when the
+// canonical enum gained the ISO-19011 values
+// (major_nonconformity, minor_nonconformity, etc.). Includes auditId
+// (was missing) so callers can backfill the cross-module link after
+// the fact. Status transitions still go through /findings/[id]/status
+// — this schema deliberately omits `status` to keep the state-machine
+// path authoritative.
+export const updateFindingSchema = z.object({
+  title: z.string().min(1).max(500).optional(),
+  description: z.string().nullable().optional(),
+  severity: z.enum(findingSeverityValues).optional(),
+  source: z.enum(findingSourceValues).optional(),
+  controlId: z.string().uuid().nullable().optional(),
+  controlTestId: z.string().uuid().nullable().optional(),
+  riskId: z.string().uuid().nullable().optional(),
+  auditId: z.string().uuid().nullable().optional(),
+  ownerId: z.string().uuid().nullable().optional(),
+  remediationPlan: z.string().nullable().optional(),
+  remediationDueDate: z.string().nullable().optional(),
 });
 
 // ─── Evidence ────────────────────────────────────────────────

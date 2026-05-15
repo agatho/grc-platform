@@ -144,13 +144,16 @@ const SPECS: RouteSpec[] = [
     name: "POST /api/v1/findings",
     routePath: "../../app/api/v1/findings/route",
     method: "POST",
-    // Findings can be raised by audit/risk/control/process roles
+    // Findings can be raised by audit/risk/control/process roles +
+    // CISO (#WAVE19-P3-02) — 2nd-LoD compliance docu raises findings
+    // routinely.
     expectedRoles: [
       "admin",
       "auditor",
       "risk_manager",
       "control_owner",
       "process_owner",
+      "ciso",
     ],
     urlPath: "/api/v1/findings",
   },
