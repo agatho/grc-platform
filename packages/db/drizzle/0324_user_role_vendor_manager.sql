@@ -1,0 +1,22 @@
+-- Migration 0324: add `vendor_manager` to user_role enum.
+--
+-- #WAVE19-MAR-P0-02: Cowork QA's marathon found that the
+-- self-described "Vendor Manager" role can't perform any of its core
+-- duties (POST /vendors, PUT /vendors/{id}, POST /contracts) because
+-- the role doesn't exist as a `user_role` enum value. Sprint 1 seeded
+-- the enum with admin/risk_manager/control_owner/...; Sprint 9 added
+-- TPRM but mapped vendor management to `risk_manager` and
+-- `process_owner`, none of which match the operator's actual title.
+-- Migration 0317 (Wave 12) explicitly noted the gap: "the user_role
+-- enum has no `vendor_manager`" and worked around it by mapping
+-- vendor-mgr@meridian.test to `contract_manager`.
+--
+-- This migration closes the gap by adding the value. Wave-19 routes
+-- (this PR) then add `vendor_manager` to the `withAuth(...)` arrays
+-- on the relevant POST/PUT routes.
+--
+-- Idempotent: ALTER TYPE ... ADD VALUE IF NOT EXISTS, no transaction
+-- wrap (PG forbids referencing a new enum value in the same tx that
+-- added it — same constraint that gated migration 0318).
+
+ALTER TYPE user_role ADD VALUE IF NOT EXISTS 'vendor_manager';

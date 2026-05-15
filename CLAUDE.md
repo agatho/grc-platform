@@ -320,6 +320,8 @@ Element IDs auto-generated: RSK00000001, INC00000001, FND00000001, CTL00000001
 | ombudsperson           | —   | External ombudsperson for whistleblowing                                                                 |
 | esg_manager            | 2nd | ESG module full access                                                                                   |
 | esg_contributor        | 1st | ESG data entry                                                                                           |
+| vendor_manager         | 1st | TPRM full access (vendor + contract CRUD); does **not** include ERM-write                                 |
+| contract_manager       | 1st | Contract CRUD + vendor read; the procurement-side counterpart to vendor_manager                          |
 
 **Note (Wave-13/15):** CISO's DPMS + ESG read access is wired in
 migrations `0319_ciso_erm_admin.sql` (ERM admin row) and

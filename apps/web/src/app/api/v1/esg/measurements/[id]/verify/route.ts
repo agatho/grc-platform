@@ -9,7 +9,7 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "auditor");
+  const ctx = await withAuth("admin", "risk_manager", "esg_manager", "auditor");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);

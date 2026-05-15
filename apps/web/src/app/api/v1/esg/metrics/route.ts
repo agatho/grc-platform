@@ -12,7 +12,12 @@ import {
 
 // POST /api/v1/esg/metrics — Create metric linked to datapoint
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);

@@ -54,6 +54,20 @@ const SIDE_CHANNELS: Record<
       verifiedAt: "<ISO datetime, defaults to now>",
     },
   },
+  // verified → processing — DPO is starting the data collection.
+  // #WAVE19-MAR-P1-01: this side-channel was missing — discovery told
+  // callers `verified → processing` was allowed but didn't expose any
+  // route for it. The /process route now plugs the gap.
+  process: {
+    method: "POST",
+    endpoint: "<replaced at runtime>",
+    purpose:
+      "DPO has confirmed identity, has the request scope, and is starting work. Optional body reassigns the handler.",
+    bodyShape: {
+      handlerId: "<optional userId — reassign before processing starts>",
+      note: "<optional string — captured on the activity log>",
+    },
+  },
   // processing → response_sent — formal response delivered.
   respond: {
     method: "POST",

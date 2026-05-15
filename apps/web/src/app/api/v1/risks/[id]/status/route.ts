@@ -35,7 +35,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager");
+  // #WAVE19-MAR-P0-01/04: process_owner (1st-line risk owner) + ciso
+  // (2nd-line oversight) need status-transition rights so the risk
+  // lifecycle can advance without a CISO bottleneck. State-machine
+  // gates inside `validateRiskStatusTransition` still enforce the
+  // pre-conditions per status change.
+  const ctx = await withAuth("admin", "risk_manager", "process_owner", "ciso");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);

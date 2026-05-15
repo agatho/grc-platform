@@ -19,7 +19,13 @@ import {
 
 // GET /api/v1/esg/carbon — Carbon dashboard data
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager", "process_owner");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "esg_manager",
+    "esg_contributor",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;

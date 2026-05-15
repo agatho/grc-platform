@@ -49,70 +49,105 @@ const kriMeasurementFrequencyValues = [
 
 const likelihoodImpactScale = z.number().int().min(1).max(5);
 
+// #WAVE19-MAR-P3-01: Wave-17 dataflow QA noted that POST /risks
+// silently drops `likelihood`/`impact` when callers send the natural
+// short field names (instead of the canonical `inherentLikelihood`/
+// `inherentImpact`). Zod-strip would otherwise leave the wizard
+// confused about why the form's Step-2 inputs vanished. Preprocess
+// alias maps the short names to the canonical ones — same pattern
+// as the contract value/startDate/endDate aliases shipped in Wave 16.
+const aliasShortAssessment = z.preprocess((value) => {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return value;
+  }
+  const v = value as Record<string, unknown>;
+  const out: Record<string, unknown> = { ...v };
+  if (
+    typeof v.likelihood !== "undefined" &&
+    typeof v.inherentLikelihood === "undefined"
+  ) {
+    out.inherentLikelihood = v.likelihood;
+  }
+  if (
+    typeof v.impact !== "undefined" &&
+    typeof v.inherentImpact === "undefined"
+  ) {
+    out.inherentImpact = v.impact;
+  }
+  delete out.likelihood;
+  delete out.impact;
+  return out;
+}, z.unknown());
+
 // ─── Risk CRUD ───────────────────────────────────────────────
 
-export const createRiskSchema = z
-  .object({
-    title: z.string().min(1).max(500),
-    description: z.string().optional(),
-    riskCategory: z.enum(riskCategoryValues),
-    riskSource: z.enum(riskSourceValues),
-    ownerId: z.string().uuid().optional(),
-    department: z.string().max(255).optional(),
-    reviewDate: z.string().optional(),
-    financialImpactMin: z.number().nonnegative().optional(),
-    financialImpactMax: z.number().nonnegative().optional(),
-    financialImpactExpected: z.number().nonnegative().optional(),
-    // Inline assessment from create-wizard (Sprint 2 lifecycle entry point).
-    // Without these the wizard's Step-2 input was silently dropped after the
-    // initial create — tracked as QA-001 in the 2026-05-10 lifecycle audit.
-    inherentLikelihood: likelihoodImpactScale.optional(),
-    inherentImpact: likelihoodImpactScale.optional(),
-    residualLikelihood: likelihoodImpactScale.optional(),
-    residualImpact: likelihoodImpactScale.optional(),
-    // Inline treatment from create-wizard (Sprint 2 lifecycle entry point).
-    treatmentStrategy: z.enum(treatmentStrategyValues).optional(),
-    treatmentRationale: z.string().optional(),
-    // Catalog & Framework Layer hook (ADR-013)
-    catalogEntryId: z.string().uuid().optional(),
-    catalogSource: z.string().max(50).optional(),
-  })
-  .refine(
-    (data) => {
-      if (data.financialImpactMin != null && data.financialImpactMax != null) {
-        return data.financialImpactMax >= data.financialImpactMin;
-      }
-      return true;
-    },
-    {
-      message: "financialImpactMax must be >= financialImpactMin",
-      path: ["financialImpactMax"],
-    },
-  )
-  .refine(
-    (data) => {
-      const hasInhL = data.inherentLikelihood != null;
-      const hasInhI = data.inherentImpact != null;
-      return hasInhL === hasInhI;
-    },
-    {
-      message:
-        "inherentLikelihood and inherentImpact must both be provided or both omitted",
-      path: ["inherentImpact"],
-    },
-  )
-  .refine(
-    (data) => {
-      const hasResL = data.residualLikelihood != null;
-      const hasResI = data.residualImpact != null;
-      return hasResL === hasResI;
-    },
-    {
-      message:
-        "residualLikelihood and residualImpact must both be provided or both omitted",
-      path: ["residualImpact"],
-    },
-  );
+export const createRiskSchema = aliasShortAssessment.pipe(
+  z
+    .object({
+      title: z.string().min(1).max(500),
+      description: z.string().optional(),
+      riskCategory: z.enum(riskCategoryValues),
+      riskSource: z.enum(riskSourceValues),
+      ownerId: z.string().uuid().optional(),
+      department: z.string().max(255).optional(),
+      reviewDate: z.string().optional(),
+      financialImpactMin: z.number().nonnegative().optional(),
+      financialImpactMax: z.number().nonnegative().optional(),
+      financialImpactExpected: z.number().nonnegative().optional(),
+      // Inline assessment from create-wizard (Sprint 2 lifecycle entry point).
+      // Without these the wizard's Step-2 input was silently dropped after the
+      // initial create — tracked as QA-001 in the 2026-05-10 lifecycle audit.
+      inherentLikelihood: likelihoodImpactScale.optional(),
+      inherentImpact: likelihoodImpactScale.optional(),
+      residualLikelihood: likelihoodImpactScale.optional(),
+      residualImpact: likelihoodImpactScale.optional(),
+      // Inline treatment from create-wizard (Sprint 2 lifecycle entry point).
+      treatmentStrategy: z.enum(treatmentStrategyValues).optional(),
+      treatmentRationale: z.string().optional(),
+      // Catalog & Framework Layer hook (ADR-013)
+      catalogEntryId: z.string().uuid().optional(),
+      catalogSource: z.string().max(50).optional(),
+    })
+    .refine(
+      (data) => {
+        if (
+          data.financialImpactMin != null &&
+          data.financialImpactMax != null
+        ) {
+          return data.financialImpactMax >= data.financialImpactMin;
+        }
+        return true;
+      },
+      {
+        message: "financialImpactMax must be >= financialImpactMin",
+        path: ["financialImpactMax"],
+      },
+    )
+    .refine(
+      (data) => {
+        const hasInhL = data.inherentLikelihood != null;
+        const hasInhI = data.inherentImpact != null;
+        return hasInhL === hasInhI;
+      },
+      {
+        message:
+          "inherentLikelihood and inherentImpact must both be provided or both omitted",
+        path: ["inherentImpact"],
+      },
+    )
+    .refine(
+      (data) => {
+        const hasResL = data.residualLikelihood != null;
+        const hasResI = data.residualImpact != null;
+        return hasResL === hasResI;
+      },
+      {
+        message:
+          "residualLikelihood and residualImpact must both be provided or both omitted",
+        path: ["residualImpact"],
+      },
+    ),
+);
 
 export const updateRiskSchema = z
   .object({

@@ -22,7 +22,15 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner");
+  // #WAVE19-MAR-P0-01: process_owner is the 1st-line risk owner and
+  // proposes the treatment that mitigates their own risk. Without
+  // this they had to escalate every treatment to the CISO.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);

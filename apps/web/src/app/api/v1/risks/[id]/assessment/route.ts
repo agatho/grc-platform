@@ -15,7 +15,17 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager", "control_owner");
+  // #WAVE19-MAR-P0-01: process_owner is a 1st-line risk owner per
+  // Three-Lines-of-Defense (ADR-007), so they must be able to
+  // assess their own risks. ciso added for 2nd-line oversight and
+  // because POST /risks already accepts ciso.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "control_owner",
+    "process_owner",
+    "ciso",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
