@@ -517,9 +517,19 @@ const aliasContractInput = z.preprocess((value) => {
   ) {
     out.expirationDate = v.endDate;
   }
+  // #WAVE21-W22-C3: Wave-21 QA verified that POST /contracts {name:'X'}
+  // still 422'd. Wave-19-P3-01 added the Warning header for legacy
+  // names but the schema didn't accept `name` itself. Now mapped:
+  // `name` → `title` so the deprecated alias actually works during
+  // the v0.2 → v0.3 migration window. Caller-side warning is emitted
+  // by apps/web/src/app/api/v1/contracts/route.ts.
+  if (typeof v.name !== "undefined" && typeof v.title === "undefined") {
+    out.title = v.name;
+  }
   delete out.value;
   delete out.startDate;
   delete out.endDate;
+  delete out.name;
   return out;
 }, z.unknown());
 

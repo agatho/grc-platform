@@ -183,6 +183,7 @@ async function main() {
   }
 
   // ── 3.5 Programme Cockpit Templates ────────────────────────────────────
+  // Templates seeded BEFORE journeys (the SQL below references them).
   console.log("\nPhase 2.5: Programme Cockpit templates");
   try {
     const { seedProgrammeTemplates } =
@@ -193,6 +194,29 @@ async function main() {
     );
   } catch (err) {
     console.error("  ✗ programme-templates seed:", (err as Error).message);
+  }
+
+  // ── 3.6 Programme Journey demo instances ────────────────────────────────
+  // #WAVE21-W22-B6: 2 concrete programme journeys per Meridian (ISO 27001
+  // Cert 2026 + DSGVO Roadmap 2026). Runs AFTER programme-templates so
+  // the FK lookups resolve. Idempotent via ON CONFLICT (org_id, name).
+  console.log("\nPhase 2.6: Programme Cockpit journeys (demo instances)");
+  try {
+    let sql = readFileSync(
+      join(SQL_DIR, "seed_demo_13_programmes.sql"),
+      "utf-8",
+    );
+    sql = sql.replaceAll(OLD_ORG_ID, newOrgId);
+    sql = sql.replaceAll(OLD_USER_ID, newUserId);
+    sql = sql.replace(/^BEGIN;/gm, "-- BEGIN;");
+    sql = sql.replace(/^COMMIT;/gm, "-- COMMIT;");
+    await client.unsafe(sql);
+    const [{ n }] = await client.unsafe(
+      `SELECT count(*)::int AS n FROM programme_journey WHERE org_id = '${newOrgId}'`,
+    );
+    console.log(`  ✓ ${n} programme journeys for Meridian`);
+  } catch (err) {
+    console.error("  ✗ seed_demo_13_programmes.sql:", (err as Error).message);
   }
 
   // ── 4. Summary ─────────────────────────────────────────────────────────
