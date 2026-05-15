@@ -95,3 +95,138 @@ export async function aiComplete(
 }
 
 export { aiComplete as aiRouter };
+
+// ──────────────────────────────────────────────────────────────────
+// Failover wrapper (Wave-19-N2)
+// ──────────────────────────────────────────────────────────────────
+//
+// `aiComplete` itself is single-provider — it picks one and returns
+// whatever that provider returns (or throws). Wave-19 spec asks for
+// multi-provider failover: if the primary provider times out or
+// errors, automatically retry against a fallback list. This wrapper
+// adds that without changing the existing aiComplete contract — old
+// callers keep their behavior; new callers opt in.
+//
+// Usage:
+//   await aiCompleteWithFailover(req, {
+//     fallbackProviders: ["openai", "gemini", "ollama"],
+//     timeoutMs: 30_000,
+//   })
+//
+// Audit-log: each attempt is reported via the optional `onAttempt`
+// callback so the route handler can persist per-attempt provider +
+// outcome to the AI audit table (separate from this package).
+
+export interface FailoverOptions {
+  /** Providers to try in order if the primary attempt fails. */
+  fallbackProviders?: AiProvider[];
+  /** Per-attempt timeout in milliseconds. */
+  timeoutMs?: number;
+  /** Notification hook fired on every attempt — for audit-log. */
+  onAttempt?: (event: {
+    provider: AiProvider;
+    attempt: number;
+    success: boolean;
+    error?: string;
+    elapsedMs: number;
+  }) => void | Promise<void>;
+}
+
+export class AllProvidersFailedError extends Error {
+  constructor(
+    public readonly attempts: Array<{
+      provider: AiProvider;
+      error: string;
+    }>,
+  ) {
+    super(
+      `All ${attempts.length} AI providers failed: ${attempts.map((a) => `${a.provider}=${a.error}`).join(", ")}`,
+    );
+    this.name = "AllProvidersFailedError";
+  }
+}
+
+async function withTimeout<T>(p: Promise<T>, ms: number): Promise<T> {
+  return new Promise((resolve, reject) => {
+    const t = setTimeout(
+      () => reject(new Error(`provider timeout after ${ms}ms`)),
+      ms,
+    );
+    p.then(
+      (v) => {
+        clearTimeout(t);
+        resolve(v);
+      },
+      (e) => {
+        clearTimeout(t);
+        reject(e);
+      },
+    );
+  });
+}
+
+export async function aiCompleteWithFailover(
+  request: AiCompletionRequest,
+  options: FailoverOptions = {},
+): Promise<AiCompletionResponse> {
+  const { fallbackProviders = [], timeoutMs, onAttempt } = options;
+
+  // Build the ordered attempt list: primary first, then fallbacks.
+  // Primary is whatever aiComplete would have picked — we resolve it
+  // explicitly so the audit trail records the actual provider name
+  // even if the request didn't specify one.
+  let primary: AiProvider;
+  if (request.containsPersonalData) {
+    const av = getAvailableProviders();
+    primary = av.includes("ollama")
+      ? "ollama"
+      : av.includes("lmstudio")
+        ? "lmstudio"
+        : (request.provider ?? getDefaultProvider());
+  } else {
+    primary = request.provider ?? getDefaultProvider();
+  }
+
+  const order: AiProvider[] = [
+    primary,
+    ...fallbackProviders.filter((p) => p !== primary),
+  ];
+
+  const attempts: Array<{ provider: AiProvider; error: string }> = [];
+
+  for (let i = 0; i < order.length; i++) {
+    const provider = order[i];
+    const fn = PROVIDER_FNS[provider];
+    if (!fn) {
+      attempts.push({ provider, error: "unknown_provider" });
+      continue;
+    }
+    const start = Date.now();
+    try {
+      const reqWithProvider = { ...request, provider };
+      const result = timeoutMs
+        ? await withTimeout(fn(reqWithProvider), timeoutMs)
+        : await fn(reqWithProvider);
+      await onAttempt?.({
+        provider,
+        attempt: i + 1,
+        success: true,
+        elapsedMs: Date.now() - start,
+      });
+      return result;
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      attempts.push({ provider, error: msg });
+      await onAttempt?.({
+        provider,
+        attempt: i + 1,
+        success: false,
+        error: msg,
+        elapsedMs: Date.now() - start,
+      });
+      // Continue to the next provider in the fallback chain.
+    }
+  }
+
+  throw new AllProvidersFailedError(attempts);
+}
