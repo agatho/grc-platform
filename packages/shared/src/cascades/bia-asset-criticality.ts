@@ -19,7 +19,11 @@
 // writes the BIA-derived value to asset_classification; the
 // effective-classification resolver is what surfaces the override.
 
-export type ProtectionLevel = "normal" | "high" | "very_high";
+// Re-export the shared ISMS protection-level type so cascade
+// consumers don't need to know it lives in types/isms.ts. Naming
+// stays uniform with packages/db/src/schema/isms.ts.
+import type { ProtectionLevel } from "../types/isms";
+export type { ProtectionLevel };
 
 export interface BiaImpactInput {
   /** bia_process_impact.processId */

@@ -122,9 +122,13 @@ export const GET = withErrorHandler<RouteParams>(async function GET(
       };
     }
     if (classification) {
+      // Cast through unknown — the row's literal types include Date
+      // columns that don't fit a flat Record<string,string>; the
+      // field-name keys we look up are the C/I/A enums, all strings.
+      const value = (classification as unknown as Record<string, string>)[f];
       return {
         field: f,
-        effective: (classification as Record<string, string>)[f] ?? "normal",
+        effective: value ?? "normal",
         source: "bia_derived" as const,
       };
     }

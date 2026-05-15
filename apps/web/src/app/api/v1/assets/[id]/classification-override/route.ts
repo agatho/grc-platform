@@ -148,7 +148,7 @@ export const POST = withErrorHandler<RouteParams>(async function POST(
 
       if (approvers.length > 0) {
         await tx.insert(notification).values(
-          approvers.map((a) => ({
+          approvers.map((a: { userId: string }) => ({
             userId: a.userId,
             orgId: ctx.orgId,
             type: "approval_request" as const,
