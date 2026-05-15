@@ -19,7 +19,11 @@ export type UserRole =
   | "quality_manager"
   | "security_analyst"
   | "department_head"
-  | "external_auditor";
+  | "external_auditor"
+  // #WAVE19-MAR-P0-02: vendor_manager is the procurement-side
+  // counterpart to contract_manager. Added to the user_role enum
+  // via migration 0324; kept this TS union in sync.
+  | "vendor_manager";
 export type LineOfDefense = "first" | "second" | "third";
 
 export interface Organization {
