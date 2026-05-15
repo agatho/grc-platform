@@ -34,7 +34,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   const result = await bulkExecute<ControlInput, unknown>(
     envelope.data.items,
     createControlSchema as unknown as SafeParseable<ControlInput>,
-    async (data) => {
+    async (data: ControlInput) => {
       return await withAuditContext(ctx, async (tx) => {
         const [wi] = await tx
           .insert(workItem)

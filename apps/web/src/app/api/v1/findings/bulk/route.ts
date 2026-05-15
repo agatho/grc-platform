@@ -41,7 +41,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   const result = await bulkExecute<FindingInput, unknown>(
     envelope.data.items,
     createFindingSchema as unknown as SafeParseable<FindingInput>,
-    async (data) => {
+    async (data: FindingInput) => {
       return await withAuditContext(ctx, async (tx) => {
         const [wi] = await tx
           .insert(workItem)

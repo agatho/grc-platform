@@ -45,7 +45,7 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   const result = await bulkExecute<RiskInput, unknown>(
     envelope.data.items,
     createRiskSchema as unknown as SafeParseable<RiskInput>,
-    async (data) => {
+    async (data: RiskInput) => {
       // Validate owner is in same org (mirrors POST /risks).
       if (data.ownerId) {
         const [ownerRole] = await db
