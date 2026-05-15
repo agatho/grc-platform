@@ -94,7 +94,12 @@ export const POST = withErrorHandler(async function POST(req: Request) {
           .insert(workItem)
           .values({
             orgId: ctx.orgId,
-            typeKey: "single_risk",
+            // #WAVE21-W22-B4: was "single_risk" — wrong type_key. The
+            // canonical seeded value (per packages/db/drizzle/0005_*.sql)
+            // is "risk", which the single POST /risks/route.ts also uses.
+            // The "single_risk" alias appears only in the seed_work_item_types
+            // sprint5_9 comment header, not as an actual seeded value.
+            typeKey: "risk",
             name: data.title,
             status: "draft",
             responsibleId: data.ownerId,

@@ -317,6 +317,32 @@ describe("createContractSchema", () => {
     expect(result.success).toBe(false);
   });
 
+  // #WAVE21-W22-C3: Wave-21 verification reported that POST /contracts
+  // {name:'X'} 422'd. Wave-19-P3-01 added a Warning header for `name`
+  // but didn't make the schema actually accept it. Now mapped via the
+  // aliasContractInput preprocess.
+  it("aliases name → title (Wave-21 backwards-compat)", () => {
+    const result = createContractSchema.safeParse({
+      name: "Contract using legacy 'name' field",
+      contractType: "service_agreement",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.title).toBe("Contract using legacy 'name' field");
+    }
+  });
+
+  it("name + title both present: title wins (alias never overwrites canonical)", () => {
+    const result = createContractSchema.safeParse({
+      name: "ignored legacy",
+      title: "canonical wins",
+    });
+    expect(result.success).toBe(true);
+    if (result.success) {
+      expect(result.data.title).toBe("canonical wins");
+    }
+  });
+
   it("accepts all valid contract types", () => {
     const types = [
       "master_agreement",

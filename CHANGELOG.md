@@ -141,6 +141,76 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-22 — HotFix after Wave-21 verification (2026-05-15)
+
+Wave-21 verification (`docs/qa-reports/arctos-qa-verification-2026-05-15-wave21.md`)
+reported 6✅ / 3🟡 / 6🔴 across 15 items. Most of the green items
+were the Wave-21 ones I shipped. The reds split into:
+
+- **A1+A2** — already-correct repo code that doesn't match production
+  behavior (deploy/migration drift)
+- **B4** — actual code bug I introduced in PR #162
+- **B2/B6/B7/C3** — missing seed data + missing schema alias
+
+This PR fixes the items addressable in code. A1+A2 need a deploy +
+migration verification step on the production environment (documented
+in the PR description and pinned by the new schema-drift test).
+
+- **W22-B4 — bulk-create SQL error**: `POST /risks/bulk` was inserting
+  `work_item.type_key = 'single_risk'` but the seeded enum value is
+  just `'risk'` (per `0005_nostalgic_smiling_tiger.sql`). The single
+  POST `/risks/route.ts` uses `'risk'`; the bulk route was inconsistent.
+  Fixed.
+- **W22-C3 — `name → title` contract alias**: PR #160 added Warning
+  headers for the deprecated `name` field but the Zod schema still
+  rejected it. Added the alias to `aliasContractInput` preprocess
+  (`packages/shared/src/schemas/tprm.ts`) so `POST /contracts {name}`
+  now succeeds AND emits the deprecation warning. 2 new vitests pin
+  the contract.
+- **W22-B6 — programmes demo seed**: New
+  `packages/db/sql/seed_demo_13_programmes.sql` adds 2 programme
+  journey instances per Meridian (ISO 27001 Cert 2026 + DSGVO Roadmap
+  2026). Wired into `seed-all.ts` as Phase 2.6 — runs AFTER the
+  programme-templates Phase 2.5 so FK lookups resolve.
+- **W22-B7 — second-org RBAC users**: New migration
+  `0326_seed_arctistx_rbac_users.sql` adds 3 logins for the Arctis
+  Textilservice org (ciso, process_owner, contract_manager) plus 3
+  risks owned by that org. Unblocks the cross-tenant RLS probe suite
+  with real session cookies (Wave-21 reported `ciso@arctistx.test → 401`
+  because the user wasn't seeded).
+- **W22-B2/A1/A2 — diagnostic tests**: New
+  `packages/db/tests/unit/schema-drift-finding-fk.test.ts` runs against
+  the live DB and FAILS LOUDLY if `finding.control_id`/`audit_id`/
+  `risk_id`/`control_test_id` columns are missing OR if `org_branding`
+  table doesn't exist. Includes a raw INSERT/SELECT round-trip that
+  isolates schema-drift from app-layer bugs. New
+  `packages/db/tests/unit/seed-wiring.test.ts` pins that
+  `seed-all.ts` still references the ESG datapoints + programmes
+  seeds + the W22 migration — so a future "tidy up" PR doesn't
+  silently revert them.
+
+### Deploy-verification needed for A1 + A2
+
+Wave-21 verification's hypothesis is correct: the route handler
+`apps/web/src/app/api/v1/findings/route.ts` lines 122-141 already
+passes `controlId`/`auditId`/`riskId`/`controlTestId` through to the
+INSERT. The Drizzle schema (`packages/db/src/schema/control.ts:328`)
+has all four columns. The status strict-reject IS deployed — but the
+parallel FK-passthrough fix is not visible in production behavior.
+
+**Recommended ops steps before re-verification**:
+
+1. `git rev-parse HEAD` on the production checkout — does it match
+   `2537c3a1` (Wave-21 merge) or earlier?
+2. `\d finding` in psql — does the production DB actually have the
+   `control_id`, `audit_id`, `risk_id`, `control_test_id` columns?
+3. Run `cd packages/db && npm run migrate` to apply any pending
+   migrations.
+4. Run `cd packages/db && npm run seed:all` to load the new ESG +
+   programme seeds.
+5. Re-run the schema-drift vitest above against the live DB:
+   `INTEGRATION_DATABASE_URL=… npx vitest run packages/db/tests/unit/schema-drift-finding-fk.test.ts`
+
 ### Wave-21 — Pilot-Ready Closure (2026-05-15)
 
 Closes the 10 Black-Box-Items from `claude-code-wave21-prompt.md`. The
