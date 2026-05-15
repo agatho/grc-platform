@@ -141,6 +141,89 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-21 — Pilot-Ready Closure (2026-05-15)
+
+Closes the 10 Black-Box-Items from `claude-code-wave21-prompt.md`. The
+2 Beta-Blockers (A1 finding cross-module persistence, A2 /admin/branding 500) were already shipped in PR #159; Wave-21 QA hadn't seen the merge
+when it ran the verification. The remaining items are NEW endpoints,
+NEW seeds, and the PDF format-param bug — none of these existed yet.
+
+- **B1 — `GET /api/v1/ai/router/health`** (NEW): public health probe
+  for the multi-provider AI router. Returns provider availability +
+  privacy-tier routing matrix (public/internal/confidential/restricted)
+  - last-failover timestamp. `?probe=true` runs a 1-token completion
+    per provider with 5s timeout for live latency. 5 vitests pin the
+    contract.
+- **B3 — `GET /compliance/frameworks` + `/compliance/frameworks/[code]`**
+  (NEW): public discovery for the 46 seeded compliance frameworks.
+  Returns `{id, code, name, type, version, controlCount, targetModules}`
+  for each framework; the detail route includes the catalog_entry list
+  (paginated, max 500 per call). Optional `?targetModule=isms` and
+  `?type=control` filters narrow the result.
+- **B4 — Bulk-create endpoints for risks / controls / findings**
+  (NEW): `POST /{entity}/bulk` with `{items: [...]}` body, capped at
+  100 items per request (Critical Implementation Rule #11). Returns
+  201 + `{created: [...], errors: []}` on full success; 207
+  Multi-Status when mixed (per-item errors include the index). New
+  `apps/web/src/lib/bulk.ts` helper standardizes the validation +
+  per-item audit-wrapped transaction pattern. 6 vitests cover cap
+  enforcement, exact-100 boundary, mixed validity, empty body, and
+  per-item audit-log entries.
+- **B5 — `/dms/documents` canonical alias** (NEW): the DMS
+  implementation lives at `/api/v1/documents/**`; Wave-21 QA found
+  that `/api/v1/dms/documents` returned 404 even though the module
+  is named `dms`. Added an alias route that re-exports the same
+  GET + POST handlers, so both paths work without duplication.
+- **B7 — Multi-entity cross-tenant RLS API probe** (NEW): extended
+  Wave-19-W8's single-entity (risks) probe to a parametric test
+  across risks/controls/findings. Pins that GET `/{entity}/[id]`
+  returns 404 (not 403 / 200) when the row exists in another
+  tenant — and the response body never echoes the foreign tenant ID
+  (side-channel guard).
+- **B8 — Multi-entity notification triggers** (NEW): parametric test
+  covering risks/findings/controls. Each entity's POST with
+  `{ownerId: <other-user>}` must insert a notification row with
+  `channel: 'both'`, `entityType` matching the entity, `userId`
+  matching the assignee, and a non-empty `templateKey` (so the
+  worker dispatcher can pick the right React-Email template).
+- **B9 — `GET /export/{entityType}?format=pdf` actually returns PDF**
+  (BUG FIX): the export-engine's `case "pdf"` was falling through to
+  CSV silently. Wired up the existing `renderStructuredPdfBuffer`
+  from `apps/web/src/lib/pdf.ts` to produce structured PDF output
+  with the entity's columns as a table. 4 vitests cover all three
+  formats (csv/xlsx/pdf) + the magic-byte assertion for each.
+
+### Wave-21 — Already Shipped (verified)
+
+The 2 P0 Beta-Blockers from the spec were already addressed in PR #159
+and verified in this PR:
+
+- **A1 — Finding cross-module persistence**: `controlId`, `auditId`,
+  `riskId`, `controlTestId` all persist via POST `/findings` (lines
+  131-134 of route.ts). `processId` is NOT in the schema (findings
+  link to processes via control or task — no direct FK). Status
+  field is strict-rejected with 422 + helpful message pointing to
+  the dedicated transition endpoint.
+- **A2 — `/admin/branding` 500 → 200**: `withReadContext` wrapper
+  sets `app.current_org_id` GUC; defensive 42P01 catch falls back
+  to defaults for pre-Sprint-13a deployments.
+
+### Wave-21 — Out of Scope (already shipped in earlier PRs)
+
+- **B2 — ESG datapoints seed** — wired into `seed-all.ts` in PR #160;
+  `GET /esg/datapoints` returns the 65 ESRS datapoints. Already
+  covered.
+- **B6 — Programmes maturity auto-compute** — full CMMI-derived
+  maturity computation shipped in PR #158 (Wave 22). Already covered.
+- **B10 — Academy enrollment flow** — pinned in PR #161
+  (`academy-enrollment-flow.test.ts`, 5 vitests). Already covered.
+- **C1 — Playwright UI form tests** — Risk-form proof-of-concept
+  shipped in PR #161; pattern documented for the other 6 forms.
+- **C2 — Performance baseline** — k6 harness + methodology doc
+  shipped in PR #161 (`docs/performance/wave19-baseline.md`).
+- **C3 — Contract backwards-compat Warning headers** — shipped in
+  PR #160.
+
 ### Wave-19 — Cascade Completion (2026-05-15)
 
 - **Finding cross-module-link persistence (W19-P1-01)**: `POST /api/v1/findings`

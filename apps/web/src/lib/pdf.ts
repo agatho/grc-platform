@@ -102,7 +102,9 @@ export async function renderStructuredPdfResponse(
   }
 }
 
-function renderStructuredPdfBuffer(report: PdfReport): Promise<Buffer> {
+// Exported (Wave-21-B9) so the /export/{entityType}?format=pdf path
+// can produce structured PDFs without spinning up the Response wrapper.
+export function renderStructuredPdfBuffer(report: PdfReport): Promise<Buffer> {
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({

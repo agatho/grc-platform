@@ -46,11 +46,57 @@ export async function exportEntities(
     case "xlsx":
       return generateExcelExport(data, def, baseFileName);
     case "pdf":
-      // PDF generation would require puppeteer/pdfkit — return CSV as fallback
-      return generateCsvExport(data, def, baseFileName);
+      // #WAVE21-B9: was returning CSV — Wave-21 QA found this on
+      // GET /api/v1/export/risk?format=pdf. The pdfkit library is
+      // already wired up via apps/web/src/lib/pdf.ts (used by the
+      // /reports/* routes); we re-shape the entity rows into a
+      // single-section structured PDF and let pdfkit do the rest.
+      return generatePdfExport(data, def, baseFileName);
     default:
       throw new Error(`Unsupported format: ${format}`);
   }
+}
+
+/**
+ * Generate PDF export buffer using the structured-PDF helper that
+ * already powers /reports/* exports. One section per export, with
+ * a tabular row-set. (Wave-21-B9.)
+ */
+async function generatePdfExport(
+  data: Record<string, unknown>[],
+  def: EntityDefinition,
+  baseFileName: string,
+): Promise<ExportResult> {
+  // Lazy import keeps pdfkit out of the export-engine module's
+  // top-level dependency graph (CSV + XLSX are the hot path).
+  const { renderStructuredPdfBuffer } = await import("../pdf");
+  const headers = def.exportColumns.map((c) => c.header);
+  const rows = data.map((row) =>
+    def.exportColumns.map((col) => {
+      const snakeKey = col.key.replace(/[A-Z]/g, (m) => `_${m.toLowerCase()}`);
+      const v = row[col.key] ?? row[snakeKey] ?? "";
+      return v === null || v === undefined ? "" : String(v);
+    }),
+  );
+
+  const buffer = await renderStructuredPdfBuffer({
+    title: `${def.key} export`,
+    subtitle: `${data.length} records`,
+    generatedAt: new Date(),
+    sections: [
+      {
+        heading: def.key,
+        table: { headers, rows },
+      },
+    ],
+  });
+
+  return {
+    data: buffer,
+    contentType: "application/pdf",
+    fileName: `${baseFileName}.pdf`,
+    rowCount: data.length,
+  };
 }
 
 // #WAVE13-EXPORT-BIA: the previous `deleted_at IS NULL OR NOT EXISTS (... pg_columns ...)`
