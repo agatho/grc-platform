@@ -53,6 +53,13 @@ export const incidentStatusEnum = pgEnum("incident_status", [
   "closed",
 ]);
 
+// #WAVE21-MAR-P2-03: enum for the asset_classification_override
+// state machine — see migration 0325 for the full rationale.
+export const assetClassificationOverrideStatusEnum = pgEnum(
+  "asset_classification_override_status",
+  ["active", "pending_approval", "approved", "rejected", "revoked"],
+);
+
 // ──────────────────────────────────────────────────────────────
 // 5a.1 AssetClassification — PRQ per asset (C/I/A levels)
 //      One record per asset. Overall protection = max(C, I, A).
@@ -101,6 +108,48 @@ export const assetClassification = pgTable(
   (t) => [
     index("ac_org_idx").on(t.orgId),
     index("ac_overall_idx").on(t.orgId, t.overallProtection),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// 5a.1b AssetClassificationOverride — Manual override of the
+//        BIA-derived classification. See migration 0325.
+//        #WAVE21-MAR-P2-03.
+// ──────────────────────────────────────────────────────────────
+
+export const assetClassificationOverride = pgTable(
+  "asset_classification_override",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    assetId: uuid("asset_id")
+      .notNull()
+      .references(() => asset.id, { onDelete: "cascade" }),
+    fieldName: varchar("field_name", { length: 80 }).notNull(),
+    derivedValue: jsonb("derived_value").notNull(),
+    overrideValue: jsonb("override_value").notNull(),
+    reason: text("reason").notNull(),
+    requestApproval: boolean("request_approval").notNull().default(false),
+    status: assetClassificationOverrideStatusEnum("status").notNull(),
+    createdBy: uuid("created_by")
+      .notNull()
+      .references(() => user.id),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    approvedBy: uuid("approved_by").references(() => user.id),
+    approvedAt: timestamp("approved_at", { withTimezone: true }),
+    approvalNotes: text("approval_notes"),
+    revokedBy: uuid("revoked_by").references(() => user.id),
+    revokedAt: timestamp("revoked_at", { withTimezone: true }),
+    revocationReason: text("revocation_reason"),
+  },
+  (t) => [
+    index("aco_org_idx").on(t.orgId),
+    index("aco_asset_idx").on(t.assetId),
+    index("aco_status_idx").on(t.orgId, t.status),
   ],
 );
 
