@@ -12,6 +12,7 @@ import { requireModule } from "@grc/auth";
 import { validateBcmsGate2Coverage, type BiaCoverageStats } from "@grc/shared";
 import { and, eq, inArray, lte, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { runBiaToAssetCascade } from "@/lib/cascade-runner";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -159,9 +160,13 @@ export async function POST(_req: Request, { params }: RouteParams) {
     });
   }
 
-  // Transition auf 'review'
-  const [updated] = await withAuditContext(ctx, async (tx) => {
-    return tx
+  // Transition auf 'review' + BIA→Asset cascade in derselben tx —
+  // damit ein Cascade-Crash die Status-Transition rollback'd. Der
+  // Cascade re-läuft bei /finalize, damit nachträglich gesetzte
+  // priorityRanking-Werte (zwischen /start und /finalize) auch in
+  // asset_classification landen. #WAVE21-MAR-P2-03.
+  const { updated, cascade } = await withAuditContext(ctx, async (tx) => {
+    const [row] = await tx
       .update(biaAssessment)
       .set({
         status: "review",
@@ -169,6 +174,15 @@ export async function POST(_req: Request, { params }: RouteParams) {
       })
       .where(and(eq(biaAssessment.id, id), eq(biaAssessment.orgId, ctx.orgId)))
       .returning();
+
+    const cascadeResult = await runBiaToAssetCascade({
+      tx: tx as unknown as typeof db,
+      orgId: ctx.orgId,
+      biaAssessmentId: id,
+      userId: ctx.userId,
+      trigger: "finalize",
+    });
+    return { updated: row, cascade: cascadeResult };
   });
 
   return Response.json({
@@ -179,6 +193,7 @@ export async function POST(_req: Request, { params }: RouteParams) {
       autoMarkedEssential: autoEssentialCount,
       essentialProcessesCreated: essentialsCreated,
       coverageStats,
+      cascade,
       blockers, // Warnings falls vorhanden
       nextSteps: [
         {

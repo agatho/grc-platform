@@ -16,6 +16,7 @@ import { validateBcmsGate1Setup, type BiaSnapshot } from "@grc/shared";
 import { and, eq, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { runBiaToAssetCascade } from "@/lib/cascade-runner";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -112,8 +113,12 @@ export const POST = withErrorHandler<RouteParams>(async function POST(
     );
   }
 
-  const [updated] = await withAuditContext(ctx, async (tx) => {
-    return tx
+  // Status transition + BIA→Asset cascade run in the same audit-
+  // wrapped transaction so they're atomic — if the cascade upsert
+  // bombs we want the BIA to stay in 'draft' rather than half-
+  // transitioned. #WAVE21-MAR-P2-03.
+  const { updated, cascade } = await withAuditContext(ctx, async (tx) => {
+    const [row] = await tx
       .update(biaAssessment)
       .set({
         status: "in_progress",
@@ -121,6 +126,15 @@ export const POST = withErrorHandler<RouteParams>(async function POST(
       })
       .where(and(eq(biaAssessment.id, id), eq(biaAssessment.orgId, ctx.orgId)))
       .returning();
+
+    const cascadeResult = await runBiaToAssetCascade({
+      tx: tx as unknown as typeof db,
+      orgId: ctx.orgId,
+      biaAssessmentId: id,
+      userId: ctx.userId,
+      trigger: "start",
+    });
+    return { updated: row, cascade: cascadeResult };
   });
 
   return Response.json({
@@ -129,6 +143,7 @@ export const POST = withErrorHandler<RouteParams>(async function POST(
       status: updated.status,
       previousStatus: "draft",
       blockers, // any warnings B1 surfaced (none today, kept for future)
+      cascade,
       nextSteps: [
         {
           step: "score_process_impacts",
