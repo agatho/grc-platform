@@ -17,7 +17,7 @@ import {
   control,
   controlTest,
   finding,
-  incident,
+  securityIncident,
   audit,
   moduleConfig,
   esrsMetric,
@@ -80,21 +80,21 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
         )
       : 0;
 
-  const [incidentStats] = await db
+  const [securityIncidentStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
-      closed: sql<number>`count(*) filter (where ${incident.status} = 'closed')::int`,
+      closed: sql<number>`count(*) filter (where ${securityIncident.status} = 'closed')::int`,
     })
-    .from(incident)
+    .from(securityIncident)
     .where(
       and(
-        eq(incident.orgId, orgId),
-        sql`${incident.detectedAt} >= ${cutoffDate}`,
+        eq(securityIncident.orgId, orgId),
+        sql`${securityIncident.detectedAt} >= ${cutoffDate}`,
       ),
     );
-  const incidentsScore =
-    (incidentStats?.total ?? 0) > 0
-      ? Math.round(((incidentStats?.closed ?? 0) / incidentStats!.total) * 100)
+  const securityIncidentsScore =
+    (securityIncidentStats?.total ?? 0) > 0
+      ? Math.round(((securityIncidentStats?.closed ?? 0) / securityIncidentStats!.total) * 100)
       : 0;
 
   const [auditFindingStats] = await db
@@ -150,10 +150,10 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
       score: controlsScore,
     },
     {
-      source: "incidents",
+      source: "securityIncidents",
       moduleEnabled: enabled("isms"),
-      dataCount: incidentStats?.total ?? 0,
-      score: incidentsScore,
+      dataCount: securityIncidentStats?.total ?? 0,
+      score: securityIncidentsScore,
     },
     {
       source: "audits",
@@ -238,7 +238,7 @@ export const GET = withErrorHandler<RouteParams>(async function GET(
         },
       },
       orgWideDetail: orgWide,
-      note: "This programme's score currently inherits the org-wide control/incident/audit/training/esg signals. Catalog-scoped per-programme inputs are a Wave-23 enhancement.",
+      note: "This programme's score currently inherits the org-wide control/securityIncident/audit/training/esg signals. Catalog-scoped per-programme inputs are a Wave-23 enhancement.",
     },
   });
 });

@@ -1,7 +1,7 @@
 // GET /api/v1/erm/maturity
 //
 // #WAVE22-MAR-P2-04: org-wide CMMI maturity rollup. Aggregates per-
-// source signals (controls effectiveness, incident closure rate,
+// source signals (controls effectiveness, securityIncident closure rate,
 // audit-finding closure, training completion, ESG measurement
 // coverage), filters via the two-stage rule (module enabled + min
 // samples), re-normalises weights, and returns the CMMI level.
@@ -16,7 +16,7 @@ import {
   control,
   controlTest,
   finding,
-  incident,
+  securityIncident,
   audit,
   moduleConfig,
   esrsMetric,
@@ -30,7 +30,7 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import { calculateMaturity, type SourceInput } from "@grc/shared";
 
 // Cutoff for "recent enough" data points where we apply a 12-month
-// window (incidents, audits). Keeps the score from being dragged
+// window (securityIncidents, audits). Keeps the score from being dragged
 // around by ancient items the org has long since fixed.
 const TWELVE_MONTHS_MS = 365 * 24 * 60 * 60 * 1000;
 
@@ -80,24 +80,24 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
         )
       : 0;
 
-  // ── incidents source ────────────────────────────────────────────
-  // Score = % of incidents in the last 12 months that reached 'closed'.
-  // High closure rate = mature incident-management process.
-  const [incidentStats] = await db
+  // ── securityIncidents source ────────────────────────────────────────────
+  // Score = % of securityIncidents in the last 12 months that reached 'closed'.
+  // High closure rate = mature securityIncident-management process.
+  const [securityIncidentStats] = await db
     .select({
       total: sql<number>`count(*)::int`,
-      closed: sql<number>`count(*) filter (where ${incident.status} = 'closed')::int`,
+      closed: sql<number>`count(*) filter (where ${securityIncident.status} = 'closed')::int`,
     })
-    .from(incident)
+    .from(securityIncident)
     .where(
       and(
-        eq(incident.orgId, orgId),
-        sql`${incident.detectedAt} >= ${cutoffDate}`,
+        eq(securityIncident.orgId, orgId),
+        sql`${securityIncident.detectedAt} >= ${cutoffDate}`,
       ),
     );
-  const incidentsScore =
-    (incidentStats?.total ?? 0) > 0
-      ? Math.round(((incidentStats?.closed ?? 0) / incidentStats!.total) * 100)
+  const securityIncidentsScore =
+    (securityIncidentStats?.total ?? 0) > 0
+      ? Math.round(((securityIncidentStats?.closed ?? 0) / securityIncidentStats!.total) * 100)
       : 0;
 
   // ── audits source ────────────────────────────────────────────────
@@ -172,10 +172,10 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
       score: controlsScore,
     },
     {
-      source: "incidents",
+      source: "securityIncidents",
       moduleEnabled: enabled("isms"),
-      dataCount: incidentStats?.total ?? 0,
-      score: incidentsScore,
+      dataCount: securityIncidentStats?.total ?? 0,
+      score: securityIncidentsScore,
     },
     {
       source: "audits",
