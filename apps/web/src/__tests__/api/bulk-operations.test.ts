@@ -140,7 +140,9 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
     async () => {
       const { POST } = await import("../../app/api/v1/risks/bulk/route");
       const items = Array.from({ length: 50 }, () => makeRiskItem());
-      const res = await POST(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -162,7 +164,9 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
     async () => {
       const { POST } = await import("../../app/api/v1/risks/bulk/route");
       const items = Array.from({ length: 200 }, () => makeRiskItem());
-      const res = await POST(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -184,7 +188,9 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
     async () => {
       const { POST } = await import("../../app/api/v1/risks/bulk/route");
       const items = Array.from({ length: 100 }, () => makeRiskItem());
-      const res = await POST(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -209,7 +215,9 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
         makeRiskItem({ title: "" }), // empty title
         makeRiskItem(),
       ];
-      const res = await POST(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -233,7 +241,11 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
     "empty items array → 422",
     async () => {
       const { POST } = await import("../../app/api/v1/risks/bulk/route");
-      const res = await POST(
+      // POST is wrapped with withErrorHandler whose return type is
+      // (req, ctx) — flat (non-dynamic) routes pass undefined for ctx.
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -249,7 +261,11 @@ describe("POST /api/v1/risks/bulk (Wave-21-B4)", () => {
     "missing items field → 422",
     async () => {
       const { POST } = await import("../../app/api/v1/risks/bulk/route");
-      const res = await POST(
+      // POST is wrapped with withErrorHandler whose return type is
+      // (req, ctx) — flat (non-dynamic) routes pass undefined for ctx.
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks/bulk", {
           method: "POST",
           headers: { "content-type": "application/json" },

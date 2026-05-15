@@ -9,9 +9,22 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
-import type { z } from "zod";
 
-type FindingInput = z.infer<typeof createFindingSchema>;
+// Manual type — see comment in /risks/bulk/route.ts on why we don't
+// use z.infer here.
+interface FindingInput {
+  title: string;
+  description?: string;
+  severity: string;
+  source?: string;
+  controlId?: string;
+  controlTestId?: string;
+  riskId?: string;
+  auditId?: string;
+  ownerId?: string;
+  remediationPlan?: string;
+  remediationDueDate?: string;
+}
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(

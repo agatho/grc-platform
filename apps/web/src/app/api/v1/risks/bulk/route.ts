@@ -13,9 +13,31 @@ import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
-import type { z } from "zod";
 
-type RiskInput = z.infer<typeof createRiskSchema>;
+// `z.infer<typeof createRiskSchema>` collapses to `unknown` because
+// the schema is `aliasShortAssessment.pipe(z.object(...).refine(...))`
+// — the outer `z.preprocess<unknown>` defeats inference. Manually
+// declaring the parsed shape here avoids the cast-everywhere mess.
+interface RiskInput {
+  title: string;
+  description?: string;
+  riskCategory: string;
+  riskSource: string;
+  ownerId?: string;
+  department?: string;
+  reviewDate?: string;
+  financialImpactMin?: number;
+  financialImpactMax?: number;
+  financialImpactExpected?: number;
+  inherentLikelihood?: number;
+  inherentImpact?: number;
+  residualLikelihood?: number;
+  residualImpact?: number;
+  treatmentStrategy?: string;
+  treatmentRationale?: string;
+  catalogEntryId?: string;
+  catalogSource?: string;
+}
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(

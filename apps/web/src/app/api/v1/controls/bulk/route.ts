@@ -9,9 +9,27 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
-import type { z } from "zod";
 
-type ControlInput = z.infer<typeof createControlSchema>;
+// Manual type — see comment in /risks/bulk/route.ts on why we don't
+// use z.infer here.
+interface ControlInput {
+  title: string;
+  description?: string;
+  controlType: string;
+  frequency?: string;
+  automationLevel?: string;
+  assertions?: string[];
+  ownerId?: string;
+  department?: string;
+  objective?: string;
+  testInstructions?: string;
+  reviewDate?: string;
+  costOnetime?: number;
+  costAnnual?: number;
+  effortHours?: number;
+  budgetId?: string;
+  costNote?: string;
+}
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "control_owner", "process_owner");
