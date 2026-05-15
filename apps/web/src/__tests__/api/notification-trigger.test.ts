@@ -173,7 +173,9 @@ describe("Notification trigger — risk-owner-assigned (Wave-19-W9)", () => {
       const { POST } = await import("../../app/api/v1/risks/route");
       // POST is wrapped with withErrorHandler which has a (req, ctx)
       // signature; flat (non-dynamic) routes pass undefined for ctx.
-      const res = await (POST as (req: Request, ctx?: unknown) => Promise<Response>)(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -223,7 +225,9 @@ describe("Notification trigger — risk-owner-assigned (Wave-19-W9)", () => {
       const { POST } = await import("../../app/api/v1/risks/route");
       // POST is wrapped with withErrorHandler which has a (req, ctx)
       // signature; flat (non-dynamic) routes pass undefined for ctx.
-      const res = await (POST as (req: Request, ctx?: unknown) => Promise<Response>)(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks", {
           method: "POST",
           headers: { "content-type": "application/json" },
@@ -256,7 +260,9 @@ describe("Notification trigger — risk-owner-assigned (Wave-19-W9)", () => {
       const { POST } = await import("../../app/api/v1/risks/route");
       // POST is wrapped with withErrorHandler which has a (req, ctx)
       // signature; flat (non-dynamic) routes pass undefined for ctx.
-      const res = await (POST as (req: Request, ctx?: unknown) => Promise<Response>)(
+      const res = await (
+        POST as (req: Request, ctx?: unknown) => Promise<Response>
+      )(
         new Request("http://localhost/api/v1/risks", {
           method: "POST",
           headers: { "content-type": "application/json" },
