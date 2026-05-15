@@ -295,6 +295,35 @@ jobs:
         working-directory: apps/web
         run: npx playwright test e2e/ci-smoke.spec.ts --reporter=list
 
+      # ── Wave-21-C2: perf-baseline gated on percentile thresholds ──
+      # P95<500 / P99<1000 for risks-list, P95<200 for health.
+      # Runs against the same web server the Playwright smoke just used.
+      # Script's `thresholds` block exits non-zero on regression.
+      - name: Install k6
+        run: |
+          sudo gpg --no-default-keyring --keyring /usr/share/keyrings/k6-archive-keyring.gpg \
+            --keyserver hkp://keyserver.ubuntu.com:80 --recv-keys C5AD17C747E3415A3642D57D77C6C491D6AC1D69
+          echo "deb [signed-by=/usr/share/keyrings/k6-archive-keyring.gpg] https://dl.k6.io/deb stable main" \
+            | sudo tee /etc/apt/sources.list.d/k6.list
+          sudo apt-get update
+          sudo apt-get install -y k6
+          k6 version
+
+      - name: Run k6 perf baseline (Wave-21-C2)
+        env:
+          ARCTOS_BASE: http://localhost:3000
+          ARCTOS_EMAIL: admin@arctos.dev
+          ARCTOS_PASSWORD: admin123
+        run: k6 run --summary-export=/tmp/k6-summary.json scripts/perf/ci-baseline.js
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: k6-perf-baseline
+          path: /tmp/k6-summary.json
+          retention-days: 30
+
       - name: Upload server log on failure
         if: failure()
         uses: actions/upload-artifact@v7
