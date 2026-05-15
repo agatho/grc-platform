@@ -141,6 +141,36 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-22 — Deploy-flow follow-up (2026-05-15)
+
+After the first `arctos-update` post-merge, verification revealed that
+two seeds shipped in PRs #160/#163 weren't being loaded by the prod
+update flow:
+
+- `seed_esrs_datapoints.sql` (B2 — 65 ESRS datapoints) — file pattern
+  doesn't match the `seed_catalog_*` glob in `seed-catalogs.sh`
+- `seed_demo_13_programmes.sql` (B6 — 2 programme journeys) — demo data,
+  not loaded by the prod updater
+- Plus a missing dependency: `seedProgrammeTemplates()` had to run
+  before the journey demo file because the journeys join on
+  `programme_template.code` (Wave-22 verifier reported only 1 of 2
+  programmes seeded — the second template wasn't there yet).
+
+Added `[3c/5]` step to `deploy/update-all.sh` that runs all three
+idempotently after the migration loop:
+
+1. `seed_esrs_datapoints.sql` against grc_platform AND every tenant DB
+   (reference data, not demo)
+2. `seedProgrammeTemplates()` via the `worker` container's tsx (the
+   `web` Docker image only copies `packages/db/{drizzle,sql}` — not
+   `packages/db/src/`, so the TS seeder must run from the worker
+   image which has `COPY . .`)
+3. `seed_demo_13_programmes.sql` against grc_platform only (demo data;
+   tenants create programmes manually)
+
+All three steps are idempotent (`ON CONFLICT DO NOTHING`) and safe to
+re-run on every update — costs ~5 seconds when nothing changed.
+
 ### Wave-22 — HotFix after Wave-21 verification (2026-05-15)
 
 Wave-21 verification (`docs/qa-reports/arctos-qa-verification-2026-05-15-wave21.md`)

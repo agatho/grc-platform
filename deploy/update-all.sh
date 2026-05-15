@@ -91,6 +91,65 @@ else
   echo "  FEHLER: $SEEDER fehlt — Tenants bleiben ohne Frameworks!"
 fi
 
+# ── 3c. Wave-21+22 Reference-Seed-Top-up (idempotent) ────
+# Jenseits der Katalog-Frameworks landen weitere Reference- und
+# Demo-Seeds NICHT automatisch über die Migration-Loop:
+#
+#   - seed_esrs_datapoints.sql           → 65 ESRS-Datapoints (B2)
+#                                           POST /esg/metrics braucht das,
+#                                           sonst 422 {datapointId:Required}.
+#   - seedProgrammeTemplates() (TS)      → 4 Norm-Templates (ISO27001/22301,
+#                                           GDPR, ISO42001) — Voraussetzung für
+#                                           seed_demo_13_programmes.sql.
+#   - seed_demo_13_programmes.sql        → 2 Journey-Instances (ISO 27001 Cert
+#                                           2026 + DSGVO Roadmap) für die
+#                                           Haupt-/Demo-DB grc_platform.
+#
+# Alle drei sind idempotent (ON CONFLICT DO NOTHING) — kann bei jedem
+# Update neu laufen. Templates seeden wir nur in der Main-DB (Demo-Daten);
+# Tenants können Programme manuell anlegen.
+echo ""
+echo "[3c/5] Wave-21+22 Reference-Seed-Top-up..."
+
+# B2: ESG-Datapoints in jede DB (Reference-Data, kein Demo)
+echo "  → seed_esrs_datapoints.sql (alle DBs)"
+ESRS_FILE=/opt/arctos/packages/db/sql/seed_esrs_datapoints.sql
+if [ -f "$ESRS_FILE" ]; then
+  docker compose -f "$COMPOSE_FILE" exec -T postgres \
+    psql -U grc -d grc_platform -v ON_ERROR_STOP=0 -q -f /dev/stdin \
+    < "$ESRS_FILE" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
+  if [ -d /opt/arctos/tenants ]; then
+    for tdir in /opt/arctos/tenants/*/; do
+      [ -d "$tdir" ] || continue
+      TENANT=$(basename "$tdir")
+      docker compose -f "$COMPOSE_FILE" exec -T postgres \
+        psql -U grc -d "grc_${TENANT}" -v ON_ERROR_STOP=0 -q -f /dev/stdin \
+        < "$ESRS_FILE" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
+    done
+  fi
+else
+  echo "    (Datei fehlt — übersprungen)"
+fi
+
+# B6: Programme-Templates (TS-Seeder) + Demo-Journeys nur für Haupt-DB.
+# Templates müssen VOR den Journeys laufen (FK-Lookup auf
+# programme_template.code). Läuft im worker-Container, weil dessen
+# Image (Dockerfile.worker) den ganzen Source-Tree mitkopiert
+# (`COPY . .`) — das web-Image kopiert nur drizzle/ + sql/ und hat
+# kein packages/db/src/ zur Laufzeit verfügbar.
+echo "  → programme-templates (TS seeder via worker, Main-DB only)"
+docker compose -f "$COMPOSE_FILE" exec -T worker \
+  sh -c "cd /app && npx tsx -e \"import('./packages/db/src/seeds/programme-templates.js').then(m => m.seedProgrammeTemplates()).then(r => console.log('  ' + JSON.stringify(r))).catch(e => { console.error('  programme-templates failed:', e.message); process.exit(1); })\"" 2>&1 \
+  | sed 's/^/    /' || echo "    (Seeder-Fehler — manuell prüfen)"
+
+echo "  → seed_demo_13_programmes.sql (Main-DB only)"
+DEMO_PROG=/opt/arctos/packages/db/sql/seed_demo_13_programmes.sql
+if [ -f "$DEMO_PROG" ]; then
+  docker compose -f "$COMPOSE_FILE" exec -T postgres \
+    psql -U grc -d grc_platform -v ON_ERROR_STOP=0 -q -f /dev/stdin \
+    < "$DEMO_PROG" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
+fi
+
 # ── 4. Haupt-Container neu starten (web + worker) ─────────
 echo ""
 echo "[4/5] Haupt-Container neu starten (web + worker)..."
