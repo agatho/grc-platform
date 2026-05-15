@@ -66,4 +66,29 @@ describe("seed-all.ts wiring (Wave-21-W22-B2/B6)", () => {
     // 3 risks for the cross-tenant probe.
     expect(sql.match(/INSERT INTO risk/g)?.length).toBeGreaterThanOrEqual(1);
   });
+
+  // #WAVE22-FOLLOWUP: the first run of seed_demo_13_programmes.sql
+  // failed with `invalid input value for enum
+  // programme_journey_status: "in_progress"` because the seed used
+  // the WRONG enum (programme_step_status has 'in_progress';
+  // programme_journey_status doesn't). This test pins that the seed
+  // file doesn't reintroduce the invalid value.
+  it("seed_demo_13_programmes.sql does NOT use 'in_progress' (wrong enum)", () => {
+    const seedPath = join(
+      __dirname,
+      "..",
+      "..",
+      "sql",
+      "seed_demo_13_programmes.sql",
+    );
+    const sql = readFileSync(seedPath, "utf-8");
+    // Look for status='in_progress' specifically — the literal must
+    // NOT appear as a status value. (It can appear in a comment, so
+    // we only fail on the literal-on-its-own-line VALUES form.)
+    const invalidStatusLine = /^\s*'in_progress',\s*$/m.test(sql);
+    expect(
+      invalidStatusLine,
+      "seed_demo_13_programmes.sql contains 'in_progress' as a status literal — that's NOT a valid programme_journey_status enum value (valid: planned, active, on_track, at_risk, blocked, completed, archived).",
+    ).toBe(false);
+  });
 });
