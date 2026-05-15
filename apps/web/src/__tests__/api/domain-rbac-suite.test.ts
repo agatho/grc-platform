@@ -113,7 +113,16 @@ const SPECS: RouteSpec[] = [
     name: "POST /api/v1/vendors",
     routePath: "../../app/api/v1/vendors/route",
     method: "POST",
-    expectedRoles: ["admin", "risk_manager", "process_owner"],
+    // #WAVE19-MAR-P0-02: vendor_manager + contract_manager added to
+    // close the marathon-QA gap where the named operators couldn't
+    // own their domain.
+    expectedRoles: [
+      "admin",
+      "risk_manager",
+      "process_owner",
+      "vendor_manager",
+      "contract_manager",
+    ],
     expectedModule: "tprm",
     urlPath: "/api/v1/vendors",
   },
@@ -121,7 +130,13 @@ const SPECS: RouteSpec[] = [
     name: "POST /api/v1/contracts",
     routePath: "../../app/api/v1/contracts/route",
     method: "POST",
-    expectedRoles: ["admin", "risk_manager", "process_owner"],
+    expectedRoles: [
+      "admin",
+      "risk_manager",
+      "process_owner",
+      "contract_manager",
+      "vendor_manager",
+    ],
     expectedModule: "contract",
     urlPath: "/api/v1/contracts",
   },
