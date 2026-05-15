@@ -2,30 +2,13 @@ import { db, finding, workItem, user, evidence } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { z } from "zod";
+import { updateFindingSchema } from "@grc/shared";
 
-const updateFindingSchema = z.object({
-  title: z.string().min(1).max(500).optional(),
-  description: z.string().optional(),
-  severity: z
-    .enum([
-      "observation",
-      "recommendation",
-      "improvement_requirement",
-      "insignificant_nonconformity",
-      "significant_nonconformity",
-    ])
-    .optional(),
-  source: z
-    .enum(["control_test", "audit", "incident", "self_assessment", "external"])
-    .optional(),
-  controlId: z.string().uuid().nullable().optional(),
-  controlTestId: z.string().uuid().nullable().optional(),
-  riskId: z.string().uuid().nullable().optional(),
-  ownerId: z.string().uuid().nullable().optional(),
-  remediationPlan: z.string().optional(),
-  remediationDueDate: z.string().nullable().optional(),
-});
+// #WAVE19-P1-01: schema lifted to packages/shared so the canonical
+// enum (with ISO-19011 values like major_nonconformity) stays in
+// lock-step between POST and PUT/PATCH. Inline copy used to drift —
+// Wave-18 QA hit a 422 on PUT because the inline severity enum
+// hadn't been updated when the canonical one gained new values.
 
 // GET /api/v1/findings/:id — Finding detail with evidence
 export async function GET(
@@ -162,6 +145,12 @@ export async function PUT(
     if (body.data.controlTestId !== undefined)
       updateValues.controlTestId = body.data.controlTestId;
     if (body.data.riskId !== undefined) updateValues.riskId = body.data.riskId;
+    // #WAVE19-P1-01: backfill the audit cross-module link via PUT
+    // (or its PATCH alias). The inline schema previously omitted
+    // auditId, so updates that wanted to attach a finding to an
+    // audit retroactively had no path.
+    if (body.data.auditId !== undefined)
+      updateValues.auditId = body.data.auditId;
     if (body.data.ownerId !== undefined)
       updateValues.ownerId = body.data.ownerId;
     if (body.data.remediationPlan !== undefined)
@@ -202,6 +191,15 @@ export async function PUT(
 
   return Response.json({ data: updated });
 }
+
+// PATCH /api/v1/findings/:id — alias for PUT.
+//
+// #WAVE19-P1-01: Wave-18 QA expected PATCH semantics on findings (the
+// REST-y partial-update method). The route used to expose only PUT
+// → 405 on PATCH. PATCH and PUT share the exact same partial-update
+// semantics here (fields are individually `undefined`-checked), so
+// PATCH is a one-line re-export rather than duplicate logic.
+export const PATCH = PUT;
 
 // DELETE /api/v1/findings/:id — Soft delete
 export async function DELETE(

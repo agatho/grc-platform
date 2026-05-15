@@ -33,19 +33,41 @@ export async function POST(req: Request) {
   // Findings can be raised by any 1st-line operator that runs the
   // process whose control failed, plus 2nd-line and 3rd-line. Adding
   // process_owner closes the gap the parametric RBAC suite flagged.
+  //
+  // #WAVE19-P3-02: ciso added — 2nd-LoD CISO must be able to
+  // document compliance violations as findings (Wave-18 QA flagged
+  // this as an RBAC consistency gap).
   const ctx = await withAuth(
     "admin",
     "auditor",
     "risk_manager",
     "control_owner",
     "process_owner",
+    "ciso",
   );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = createFindingSchema.safeParse(await req.json());
+  // #WAVE19-P1-01: surface common client mistakes as 422 instead of
+  // silently dropping. Wave-18 QA sent `{status:'open'}` and got back
+  // `status:'identified'` — Zod stripped the unknown key and the DB
+  // default kicked in. Strict-reject teaches callers the canonical
+  // shape and the dedicated transition endpoint.
+  const rawBody = (await req.json()) as Record<string, unknown>;
+  if ("status" in rawBody) {
+    return Response.json(
+      {
+        error:
+          "Finding status is set automatically on create (defaults to 'identified'). Use POST /api/v1/findings/{id}/status for transitions.",
+        rejectedFields: ["status"],
+      },
+      { status: 422 },
+    );
+  }
+
+  const body = createFindingSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },

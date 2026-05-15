@@ -10,10 +10,10 @@
 // PUT is upsert — if no row exists for the org we create it with the
 // payload merged onto the column defaults.
 
-import { db, orgBranding } from "@grc/db";
+import { orgBranding } from "@grc/db";
 import { z } from "zod";
 import { and, eq } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 const HEX_COLOR = z
@@ -44,10 +44,33 @@ export const GET = withErrorHandler(async function GET(_req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
 
-  const [row] = await db
-    .select()
-    .from(orgBranding)
-    .where(eq(orgBranding.orgId, ctx.orgId));
+  // #WAVE19-P2-01: Wave-17 + Marathon + Wave-18 QA all hit 500 here.
+  // Root cause was a missing RLS context: `db.select()` without
+  // withReadContext runs outside any transaction → app.current_org_id
+  // GUC isn't set → the org_branding RLS policy filters out every
+  // row, OR (depending on pg version + driver) raises an
+  // invalid_text_representation cast error on the empty-string GUC.
+  // Wrapping the read in withReadContext sets the GUC inside the
+  // transaction, which is the canonical pattern documented in
+  // apps/web/src/lib/api.ts.
+  //
+  // Defence in depth: if the org_branding table genuinely doesn't
+  // exist on a given deploy (pre-Sprint-13a), fall back to the
+  // defaults payload rather than 500. The catch maps the PG
+  // 42P01 (undefined_table) onto the same defaults branch.
+  let row: typeof orgBranding.$inferSelect | undefined;
+  try {
+    const rows = await withReadContext(ctx, async (tx) =>
+      tx.select().from(orgBranding).where(eq(orgBranding.orgId, ctx.orgId)),
+    );
+    row = rows[0];
+  } catch (err) {
+    // Surface table-missing as a typed defaults response rather than
+    // a generic 500. Other PG errors propagate to withErrorHandler.
+    const code = (err as { code?: string }).code;
+    if (code !== "42P01") throw err;
+    row = undefined;
+  }
 
   // Surface defaults if no row exists yet — every UI element wants a
   // theme, even before the admin has customised one. Mirrors the
