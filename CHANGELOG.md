@@ -205,6 +205,79 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
   `whistleblowing-hinschg-isolation.test.ts` (9 tests) pins the
   contract.
 
+### Wave-19 Closure — Round 2 (Workflow + Hardening; 2026-05-15)
+
+Closes the remaining 10 items from `claude-code-wave19-full-closure-prompt.md`.
+The previous merge (#160) covered Block 1 + 2; this round closes Block 3
+workflow gaps + Block 4 hardening.
+
+- **W19-W5 — Incident NIST-7-state walk + DSGVO Art. 33 72h timer**:
+  Pinned the `incidentStatusTransitions` matrix (detected →
+  triaged → contained → eradicated → recovered → lessons_learned →
+  closed; closed → detected re-open) and the `computeBreachDeadline`
+  72h math (green/yellow/orange/red urgency boundaries) with 16
+  vitests in `packages/shared/tests/incident-lifecycle-w19-w5.test.ts`.
+  Catches matrix-shrink regressions and timezone bugs in the deadline
+  countdown.
+- **W19-W8 — RLS API-layer cross-tenant probe**: New
+  `apps/web/src/__tests__/api/rls-cross-tenant-api-probe.test.ts`
+  pins that `GET /risks/{id}` returns 404 (not 403, not 200, not 500)
+  when the row exists in another tenant. Complements the existing
+  DB-layer RLS coverage in `packages/db/tests/rls/`. Verifies the 404
+  response body does not leak the tenant ID (side-channel guard).
+- **W19-W9 — Notification trigger contract**: New
+  `notification-trigger.test.ts` pins `POST /risks {ownerId: <other>}`
+  → inserts a notification row with `channel: 'both'` (in-app + email),
+  `templateKey: 'risk_owner_assigned'`, and the right templateData
+  shape. Guards: self-assignment skipped, invalid-owner 422 produces
+  no notification leak.
+- **W19-W10 — PDF output contract** (PDF/A-2b deferred): 7 vitests
+  on the current pdfkit output (magic bytes, %%EOF marker, Info
+  dictionary entries, filename sanitization, null-cell + empty-section
+  rendering). Full PDF/A-2b conformance documented in
+  `docs/qa-reports/wave19-pdf-a-followup.md` as W20-PDF-A-01 (needs
+  Ghostscript post-process or a library swap; out of scope for v0.2).
+- **W19-N1 — Playwright UI form validation (proof-of-concept)**: Risk
+  form 5-step spec in `tests/e2e/regression/n-01-risk-form-validation.spec.ts`
+  covers required-field validation, happy-path submit, server-rejected
+  enum, persistence across reload. Pattern documented inline for
+  extending to the other 6 forms (Controls, Findings, DPIAs, Audits,
+  Vendors, Contracts) as their selectors stabilize.
+- **W19-N2 — AI Router multi-provider failover**: New
+  `aiCompleteWithFailover(req, {fallbackProviders, timeoutMs, onAttempt})`
+  wrapper in `packages/ai/src/router.ts`. Tries primary, falls back
+  to chained providers on error or timeout, throws
+  `AllProvidersFailedError` with per-attempt details when everything
+  fails. Privacy override (Ollama for personal data) still wins over
+  any explicit provider request. 7 vitests in
+  `packages/ai/tests/router-failover.test.ts`. Existing `aiComplete`
+  contract unchanged — old callers keep their behavior.
+- **W19-N3 — Performance baseline harness**: 3 reproducible k6
+  scripts in `scripts/perf/` (risks-list, controls-effectiveness,
+  hash-chain-watch) with thresholds (P95 < 500ms / P95 < 1s /
+  healthy=true) plus `docs/performance/wave19-baseline.md` with full
+  methodology, run instructions, acceptance criteria, and a TODO
+  results table for the first staging deployment to fill in.
+- **W19-N5 — Cross-framework mapping spot-check**: New static-parse
+  test in `packages/db/tests/unit/cross-framework-mapping-spot-check.test.ts`
+  reads the 5 `seed_cross_framework_mappings*.sql` files, verifies
+  total ≥ 900 mappings, every relationship is a known enum value,
+  every confidence is 0..100, NIST-CSF ↔ ISO 27002 has ≥ 50 pairs,
+  and 5 canonical pairs (e.g. `nist_csf_2:GV.PO-01 → iso27002_2022:A.5.1`)
+  exist. 18 tests; runs offline (no DB needed).
+- **W19-N6 — Academy enrollment flow**: 5 vitests in
+  `apps/web/src/__tests__/api/academy-enrollment-flow.test.ts` cover
+  POST /enrollments → PATCH /progress lifecycle. Pins the progress→
+  status mapping (50 → in_progress; 100 → completed + completedAt
+  timestamp), the orgId injection on insert, the 404 on
+  cross-tenant access, and the Zod max(100) bound on progressPct.
+- **W19-N7 — DMS multi-signer workflow**: Documented as out-of-scope
+  for v0.2 in `docs/qa-reports/wave19-n7-dms-scope-decision.md`.
+  Existing `/api/v1/documents/**` covers 4 of 5 spec items
+  (CRUD, versions, audit-trail, entity-links, single-signer
+  acknowledgment). True multi-signer + eIDAS QES is a vendor-or-build
+  decision; tracked as W21-DMS-MULTISIGN-01.
+
 ### Contract-schema field-name history (W19-P3-01)
 
 The contract input schema has renamed several fields across waves;

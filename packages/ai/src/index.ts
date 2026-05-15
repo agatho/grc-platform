@@ -5,8 +5,11 @@
 export {
   aiComplete,
   aiRouter,
+  aiCompleteWithFailover,
+  AllProvidersFailedError,
   getAvailableProviders,
   getDefaultProvider,
+  type FailoverOptions,
 } from "./router";
 export { callClaudeCli } from "./providers/claude-cli";
 export { callClaudeApi } from "./providers/claude-api";
