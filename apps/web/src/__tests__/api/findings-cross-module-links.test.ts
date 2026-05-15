@@ -170,52 +170,67 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
       : undefined;
   }
 
-  it("persists controlId from POST body into the finding insert", async () => {
-    withAuthMock.mockResolvedValue(authedCtx());
-    requireModuleMock.mockResolvedValue(undefined);
+  // 15s timeout: in CI under parallel workers the first dynamic
+  // import of a route can take >5s on a cold cache (other tests in
+  // the same pool import many other route modules first). Default
+  // 5000ms times out before the route finishes booting; the actual
+  // assertion logic runs in milliseconds.
+  const SLOW_TEST_TIMEOUT_MS = 15_000;
 
-    const { POST } = await import("../../app/api/v1/findings/route");
-    const res = await POST(
-      new Request("http://localhost/api/v1/findings", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: "Critical control failure",
-          severity: "major_nonconformity",
-          source: "audit",
-          controlId: CONTROL_ID,
+  it(
+    "persists controlId from POST body into the finding insert",
+    async () => {
+      withAuthMock.mockResolvedValue(authedCtx());
+      requireModuleMock.mockResolvedValue(undefined);
+
+      const { POST } = await import("../../app/api/v1/findings/route");
+      const res = await POST(
+        new Request("http://localhost/api/v1/findings", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: "Critical control failure",
+            severity: "major_nonconformity",
+            source: "audit",
+            controlId: CONTROL_ID,
+          }),
         }),
-      }),
-    );
+      );
 
-    expect(res.status).toBe(201);
-    expect(inserts.length).toBeGreaterThanOrEqual(2); // workItem + finding
-    expect(captured("controlId")).toBe(CONTROL_ID);
-  });
+      expect(res.status).toBe(201);
+      expect(inserts.length).toBeGreaterThanOrEqual(2); // workItem + finding
+      expect(captured("controlId")).toBe(CONTROL_ID);
+    },
+    SLOW_TEST_TIMEOUT_MS,
+  );
 
-  it("persists auditId + riskId together (cross-module fan-out)", async () => {
-    withAuthMock.mockResolvedValue(authedCtx());
-    requireModuleMock.mockResolvedValue(undefined);
+  it(
+    "persists auditId + riskId together (cross-module fan-out)",
+    async () => {
+      withAuthMock.mockResolvedValue(authedCtx());
+      requireModuleMock.mockResolvedValue(undefined);
 
-    const { POST } = await import("../../app/api/v1/findings/route");
-    const res = await POST(
-      new Request("http://localhost/api/v1/findings", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: "Audit raised cross-linked finding",
-          severity: "minor_nonconformity",
-          source: "audit",
-          auditId: AUDIT_ID,
-          riskId: RISK_ID,
+      const { POST } = await import("../../app/api/v1/findings/route");
+      const res = await POST(
+        new Request("http://localhost/api/v1/findings", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: "Audit raised cross-linked finding",
+            severity: "minor_nonconformity",
+            source: "audit",
+            auditId: AUDIT_ID,
+            riskId: RISK_ID,
+          }),
         }),
-      }),
-    );
+      );
 
-    expect(res.status).toBe(201);
-    expect(captured("auditId")).toBe(AUDIT_ID);
-    expect(captured("riskId")).toBe(RISK_ID);
-  });
+      expect(res.status).toBe(201);
+      expect(captured("auditId")).toBe(AUDIT_ID);
+      expect(captured("riskId")).toBe(RISK_ID);
+    },
+    SLOW_TEST_TIMEOUT_MS,
+  );
 
   it("rejects POST {status:'open'} with 422 + rejectedFields hint", async () => {
     withAuthMock.mockResolvedValue(authedCtx());
