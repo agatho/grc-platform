@@ -20,8 +20,10 @@ import {
 
 // GET /api/v1/whistleblowing/investigations
 export async function GET(req: Request) {
+  // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
+  // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
+  // that the channel exists + works, without exposing case-content).
   const ctx = await withAuth(
-    "admin",
     "whistleblowing_officer",
     "ombudsperson",
     "auditor",
@@ -53,8 +55,10 @@ export async function GET(req: Request) {
 
 // POST /api/v1/whistleblowing/investigations — Start investigation from case
 export async function POST(req: Request) {
+  // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
+  // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
+  // that the channel exists + works, without exposing case-content).
   const ctx = await withAuth(
-    "admin",
     "whistleblowing_officer",
     "ombudsperson",
     "auditor",
@@ -100,8 +104,10 @@ export async function POST(req: Request) {
 
 // PATCH /api/v1/whistleblowing/investigations — Advance phase
 export async function PATCH(req: Request) {
+  // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
+  // Auditor retained for LoD3 oversight per §16/§32 HinSchG (assurance
+  // that the channel exists + works, without exposing case-content).
   const ctx = await withAuth(
-    "admin",
     "whistleblowing_officer",
     "ombudsperson",
     "auditor",

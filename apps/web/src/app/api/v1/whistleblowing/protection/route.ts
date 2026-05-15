@@ -17,8 +17,8 @@ import {
 
 // GET /api/v1/whistleblowing/protection
 export async function GET(req: Request) {
+  // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   const ctx = await withAuth(
-    "admin",
     "whistleblowing_officer",
     "ombudsperson",
     "auditor",
@@ -44,8 +44,8 @@ export async function GET(req: Request) {
 
 // POST /api/v1/whistleblowing/protection
 export async function POST(req: Request) {
+  // #WAVE19-W7: admin removed (HinSchG isolation; see /cases/route.ts).
   const ctx = await withAuth(
-    "admin",
     "whistleblowing_officer",
     "ombudsperson",
     "auditor",

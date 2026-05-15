@@ -40,6 +40,12 @@ const REFERENCE_SEEDS = [
   "seed_catalog_toms.sql",
   "seed_catalog_owasp_asvs.sql",
   "seed_catalog_esrs.sql",
+  // #WAVE19-P3-03: 65 ESRS-Datapoints (E1-E5, S1-S4, G1) needed by
+  // POST /esg/metrics + /esg/measurements which require datapointId.
+  // Without this seed those endpoints 422 with
+  // {fieldErrors:{datapointId:['Required']}} because the dropdown
+  // discovery (`GET /esg/datapoints`) returns empty.
+  "seed_esrs_datapoints.sql",
   "seed_fachliche_stammdaten.sql",
   "seed_cross_framework_mappings.sql",
 ];

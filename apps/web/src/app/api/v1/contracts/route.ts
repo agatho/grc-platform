@@ -39,7 +39,26 @@ export async function POST(req: Request) {
   const moduleCheck = await requireModule("contract", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = createContractSchema.safeParse(await req.json());
+  // #WAVE19-P3-01: detect deprecated field-name aliases (value, startDate,
+  // endDate, name) before Zod normalises them away, so the response can
+  // emit RFC-7234 Warning headers pointing callers at the canonical
+  // names. Aliases stay accepted for v0.2 to give frontend consumers
+  // a runway; the headers are the migration signal.
+  const rawBody = (await req.json()) as Record<string, unknown>;
+  const deprecatedAliases: Array<{ from: string; to: string }> = [];
+  const ALIAS_MAP: Array<[string, string]> = [
+    ["value", "totalValue"],
+    ["startDate", "effectiveDate"],
+    ["endDate", "expirationDate"],
+    ["name", "title"],
+  ];
+  for (const [from, to] of ALIAS_MAP) {
+    if (from in rawBody && !(to in rawBody)) {
+      deprecatedAliases.push({ from, to });
+    }
+  }
+
+  const body = createContractSchema.safeParse(rawBody);
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -92,7 +111,21 @@ export async function POST(req: Request) {
     return { ...row, elementId: wi.elementId };
   });
 
-  return Response.json({ data: created }, { status: 201 });
+  // #WAVE19-P3-01: emit RFC-7234 Warning headers for each deprecated
+  // alias the caller used. Frontend / integration code can grep
+  // 299-status warnings in their HTTP middleware to spot pending
+  // deprecations before the v0.3 hard-cutover.
+  const headers = new Headers({ "content-type": "application/json" });
+  for (const { from, to } of deprecatedAliases) {
+    headers.append(
+      "Warning",
+      `299 - "Use '${to}' instead of '${from}', deprecated since v0.2.0 — alias removed in v0.3.0"`,
+    );
+  }
+  return new Response(JSON.stringify({ data: created }), {
+    status: 201,
+    headers,
+  });
 }
 
 // GET /api/v1/contracts — List contracts with filters

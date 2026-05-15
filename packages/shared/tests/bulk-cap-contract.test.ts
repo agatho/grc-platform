@@ -103,6 +103,68 @@ describe("Bulk-Cap — createApiKeySchema.scopeIds (api-platform)", () => {
   });
 });
 
+// #WAVE19-N8: extend the contract test to cover ESG measurements
+// import — historically the only bulk schema with a higher-than-100
+// cap (max 500), and explicitly so. Pin both the cap and the
+// rationale here so a future tightening doesn't accidentally
+// regress automated facility ingestion (typical monthly upload).
+
+import { bulkMeasurementImportSchema } from "../src/schemas/esg";
+
+describe("Bulk-Cap — bulkMeasurementImportSchema (ESG measurements)", () => {
+  it("rejects 501 measurements (over the 500 ingestion-tier cap)", () => {
+    const validMeasurement = {
+      metricId: VALID_UUID,
+      value: 1,
+      unit: "tCO2e",
+      periodStart: "2026-01-01",
+      periodEnd: "2026-01-31",
+      dataQuality: "estimated" as const,
+    };
+    const result = bulkMeasurementImportSchema.safeParse({
+      measurements: Array.from({ length: 501 }, () => validMeasurement),
+    });
+    expect(result.success).toBe(false);
+  });
+
+  it("accepts exactly 500 measurements (max boundary)", () => {
+    const validMeasurement = {
+      metricId: VALID_UUID,
+      value: 1,
+      unit: "tCO2e",
+      periodStart: "2026-01-01",
+      periodEnd: "2026-01-31",
+      dataQuality: "estimated" as const,
+    };
+    const result = bulkMeasurementImportSchema.safeParse({
+      measurements: Array.from({ length: 500 }, () => validMeasurement),
+    });
+    expect(result.success).toBe(true);
+  });
+
+  it("rejects empty measurements array (min 1)", () => {
+    const result = bulkMeasurementImportSchema.safeParse({
+      measurements: [],
+    });
+    expect(result.success).toBe(false);
+  });
+});
+
+// #WAVE19-N8: documenting absence — Risks/Controls/Findings/Treatments
+// have no /bulk endpoints today. The QA spec's hypothetical
+// `POST /risks/bulk` doesn't exist; CRUD goes one-at-a-time. If a
+// future bulk path is added it MUST follow the .max(100) Critical
+// Rule #11 default; ESG measurements is the documented exception
+// (data ingestion from facility sensors).
+describe("Bulk-Cap — absence of risks/controls/findings/treatments bulk", () => {
+  it("documents that no bulk schemas exist for these entities (CRUD only)", () => {
+    // This test passes by construction — it's a discovery anchor for
+    // future contributors. If a /risks/bulk endpoint is added without
+    // a Zod-side .max(100) guard, the bulk-cap rule is at risk.
+    expect(true).toBe(true);
+  });
+});
+
 describe("Bulk-Cap — updateApiKeySchema.scopeIds (optional but bounded)", () => {
   it("accepts omitted scopeIds (field is optional on update)", () => {
     const result = updateApiKeySchema.safeParse({
