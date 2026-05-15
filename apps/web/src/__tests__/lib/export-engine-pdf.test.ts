@@ -88,21 +88,25 @@ describe("Export engine PDF format (Wave-21-B9)", () => {
     expect(result.data[0]).not.toBe(0x25);
   });
 
-  it("format='xlsx' still produces XLSX (no regression)", async () => {
-    const { exportEntities } =
-      await import("../../lib/import-export/export-engine");
-    const result = await exportEntities("risk", "xlsx", {}, "org-123");
-
-    expect(result.contentType).toBe(
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    );
-    expect(result.fileName).toMatch(/\.xlsx$/);
-    // XLSX is a ZIP — magic bytes PK
-    expect(result.data[0]).toBe(0x50); // P
-    expect(result.data[1]).toBe(0x4b); // K
-  }, // ExcelJS cold import takes 5-10s under vitest's worker pool — the
+  // ExcelJS cold import takes 5-10s under vitest's worker pool — the
   // default 5s timeout flakes on the very first test that loads it.
-  15_000);
+  it(
+    "format='xlsx' still produces XLSX (no regression)",
+    { timeout: 15_000 },
+    async () => {
+      const { exportEntities } =
+        await import("../../lib/import-export/export-engine");
+      const result = await exportEntities("risk", "xlsx", {}, "org-123");
+
+      expect(result.contentType).toBe(
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+      );
+      expect(result.fileName).toMatch(/\.xlsx$/);
+      // XLSX is a ZIP — magic bytes PK
+      expect(result.data[0]).toBe(0x50); // P
+      expect(result.data[1]).toBe(0x4b); // K
+    },
+  );
 
   it("format='unknown' throws a clear error", async () => {
     const { exportEntities } =
