@@ -8,7 +8,10 @@ import { createFindingSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
-import { bulkExecute, bulkRequestSchema } from "@/lib/bulk";
+import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
+import type { z } from "zod";
+
+type FindingInput = z.infer<typeof createFindingSchema>;
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
@@ -35,9 +38,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     );
   }
 
-  const result = await bulkExecute(
+  const result = await bulkExecute<FindingInput, unknown>(
     envelope.data.items,
-    createFindingSchema,
+    createFindingSchema as unknown as SafeParseable<FindingInput>,
     async (data) => {
       return await withAuditContext(ctx, async (tx) => {
         const [wi] = await tx

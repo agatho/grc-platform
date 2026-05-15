@@ -12,7 +12,10 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
-import { bulkExecute, bulkRequestSchema } from "@/lib/bulk";
+import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
+import type { z } from "zod";
+
+type RiskInput = z.infer<typeof createRiskSchema>;
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth(
@@ -39,9 +42,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     );
   }
 
-  const result = await bulkExecute(
+  const result = await bulkExecute<RiskInput, unknown>(
     envelope.data.items,
-    createRiskSchema,
+    createRiskSchema as unknown as SafeParseable<RiskInput>,
     async (data) => {
       // Validate owner is in same org (mirrors POST /risks).
       if (data.ownerId) {

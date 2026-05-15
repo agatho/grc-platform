@@ -16,6 +16,19 @@
 
 import { z } from "zod";
 
+// Zod v4 changed the public-facing type to a complex internal type so
+// `z.ZodType<T>` no longer accepts ZodObject/ZodPipeline subclasses
+// without ceremony. We only need the schema's `safeParse` method, so a
+// minimal structural type captures the contract without dragging the
+// whole ZodType hierarchy into every caller.
+export interface SafeParseable<T> {
+  safeParse(input: unknown): {
+    success: boolean;
+    data?: T;
+    error?: { flatten(): unknown };
+  };
+}
+
 export const BULK_MAX_ITEMS = 100;
 
 export interface BulkResult<T> {
@@ -66,7 +79,7 @@ export function checkBulkCap(items: unknown[]): BulkResult<never> | null {
  */
 export async function bulkExecute<TItem, TCreated>(
   items: unknown[],
-  itemSchema: z.ZodType<TItem>,
+  itemSchema: SafeParseable<TItem>,
   executor: (item: TItem, index: number) => Promise<TCreated>,
 ): Promise<BulkResult<TCreated>> {
   const cap = checkBulkCap(items);
@@ -81,12 +94,13 @@ export async function bulkExecute<TItem, TCreated>(
       errors.push({
         index: i,
         error: "Validation failed",
-        details: parsed.error.flatten(),
+        details: parsed.error?.flatten(),
       });
       continue;
     }
     try {
-      const result = await executor(parsed.data, i);
+      // parsed.data is non-undefined when success=true (Zod's invariant).
+      const result = await executor(parsed.data as TItem, i);
       created.push(result);
     } catch (err) {
       errors.push({

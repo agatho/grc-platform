@@ -8,7 +8,10 @@ import { createControlSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
-import { bulkExecute, bulkRequestSchema } from "@/lib/bulk";
+import { bulkExecute, bulkRequestSchema, type SafeParseable } from "@/lib/bulk";
+import type { z } from "zod";
+
+type ControlInput = z.infer<typeof createControlSchema>;
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "control_owner", "process_owner");
@@ -28,9 +31,9 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     );
   }
 
-  const result = await bulkExecute(
+  const result = await bulkExecute<ControlInput, unknown>(
     envelope.data.items,
-    createControlSchema,
+    createControlSchema as unknown as SafeParseable<ControlInput>,
     async (data) => {
       return await withAuditContext(ctx, async (tx) => {
         const [wi] = await tx
