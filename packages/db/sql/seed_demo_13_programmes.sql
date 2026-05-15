@@ -32,7 +32,12 @@ SELECT
   'isms',
   'ISO 27001 Zertifizierung 2026',
   'Aufbau und Zertifizierung des ISMS nach ISO/IEC 27001:2022. Stage-1-Audit Q3/2026, Stage-2-Audit Q4/2026.',
-  'in_progress',
+  -- programme_journey_status enum: planned | active | on_track | at_risk
+  -- | blocked | completed | archived. (NOT 'in_progress' — that's a
+  -- different enum, programme_step_status.) Use 'on_track' for an
+  -- in-flight, healthy programme; 'at_risk' or 'blocked' if you want
+  -- to seed a UI demo that shows warning states.
+  'on_track',
   '42.50',
   '2026-01-15',
   '2026-12-15',
