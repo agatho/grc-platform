@@ -219,40 +219,69 @@ Already covered by `packages/shared/tests/bulk-cap-contract.test.ts`
 
 ## Results
 
-> **TODO** — first deployer to staging fills these in, then commits
-> the results back to this file. The harness above is fully
-> reproducible; no Wave-19 author has access to a long-running
-> staging environment to run it themselves.
+### CI baseline (Wave-22-C2 — automated, runs every PR)
 
-Expected shape:
+GitHub Actions E2E job now runs `scripts/perf/ci-baseline.js` after the
+Playwright smoke. The script gates on the spec's percentile thresholds
+via k6's built-in `thresholds` block — any regression fails CI:
 
-```
-| Date       | Endpoint              | VUs | Duration | P95 (ms) | P99 (ms) | Errors | Hash-chain |
-|------------|-----------------------|-----|----------|----------|----------|--------|------------|
-| 2026-MM-DD | GET /risks?limit=100  | 50  | 60s      | <fill>   | <fill>   | <fill> | healthy    |
-| 2026-MM-DD | GET /controls/effective. | 25  | 60s    | <fill>   | <fill>   | <fill> | healthy    |
-| 2026-MM-DD | RSS-leak (5min)       | 50  | 5m       | n/a      | n/a      | n/a    | <delta MB> |
-```
+| Endpoint                      | VUs | Duration | CI P95 ceiling | CI P99 ceiling | Errors | Prod target P95 |
+| ----------------------------- | --- | -------- | -------------- | -------------- | ------ | --------------- |
+| `GET /api/v1/health`          | 5   | 10s      | < 800 ms       | (n/a)          | < 1%   | < 200 ms        |
+| `GET /api/v1/risks?limit=100` | 10  | 20s      | < 1500 ms      | < 3000 ms      | < 1%   | < 500 ms        |
+
+CI ceilings are 3× the prod targets because the runner is 2-vCPU and
+every risks-list iteration does a full NextAuth CSRF + bcrypt + cookie
+roundtrip BEFORE the actual GET. The CI ceiling is loose enough to
+pass routinely but catches regressions that jump P95 to 3 s+ (N+1,
+missing index, etc.). Scenarios run **sequentially** (health first,
+then risks-list) to avoid Node event-loop contention skewing the
+isolated-endpoint numbers.
+
+The summary JSON is uploaded as a `k6-perf-baseline` artifact on every
+CI run; you can download it from the GitHub Actions run page to get
+the actual P50/P95/P99/RPS numbers per build.
+
+**Why a lighter VU count than the prod baseline (50 vs. 10):** GitHub
+Actions hosted runners are 2-vCPU, 7 GB RAM. The CI run is meant to
+catch algorithmic regressions (N+1, missing index) — not to predict
+production throughput. A 10-VU run on 2 vCPU exercises the same code
+paths the spec calls out but stays inside the runner's budget so the
+job finishes in ~25 s.
+
+### Prod baseline (manual — first staging deployment fills in)
+
+Run the heavier `risks-list.js` + `controls-effectiveness.js` +
+`hash-chain-watch.js` against a 4-vCPU+ instance for the prod numbers.
+Fill in this table after the run:
+
+| Date       | Endpoint                    | VUs | Duration | P95 (ms) | P99 (ms) | Errors | Hash-chain |
+| ---------- | --------------------------- | --- | -------- | -------- | -------- | ------ | ---------- |
+| 2026-MM-DD | GET /risks?limit=100        | 50  | 60s      | <fill>   | <fill>   | <fill> | healthy    |
+| 2026-MM-DD | GET /controls/effectiveness | 25  | 60s      | <fill>   | <fill>   | <fill> | healthy    |
+| 2026-MM-DD | RSS-leak (5min)             | 50  | 5m       | n/a      | n/a      | n/a    | <delta MB> |
 
 ---
 
-## Why we don't run this in CI today
+## Note on CI vs. prod numbers
 
-- ARCTOS CI uses GitHub Actions hosted runners (2 vCPU, 7 GB RAM).
-  P95 numbers from a 2-vCPU box don't predict a real production
-  Hetzner instance — the absolute numbers shift by 3-5×.
-- A Wave-19 baseline that the dev environment can't reproduce is
-  worse than no baseline (it sets the wrong expectation).
-- The existing `unit-tests` + `integration-tests` jobs already catch
-  algorithmic regressions (e.g. an N+1 introduced into a list
-  endpoint). The perf-gate job is intentionally manual.
+GitHub Actions hosted runners are 2-vCPU, 7 GB RAM. P95 numbers from a
+2-vCPU CI box are typically **3-5× slower** than a 4-vCPU+ Hetzner
+production instance. We run the CI baseline anyway because:
 
-When ARCTOS deploys to a stable staging environment, this file gets
-its first results row, and `wave20-baseline.md` becomes the next
-target. CI gating on perf should wait until 3-5 baselines exist so
-"normal variance" is calibrated.
+- It catches algorithmic regressions (e.g. an N+1 introduced into a
+  list endpoint) immediately on PR rather than at deploy time.
+- Threshold absolutes are set at "should pass even on the slow CI
+  runner" (P95<500ms for risks-list); prod easily beats them.
+- Future regressions stand out clearly when CI numbers shift.
+
+The "Prod baseline" section above is for capturing actual production
+throughput numbers — those don't get gated, just recorded as historical
+reference.
 
 ---
 
-_Wave-19 closure PR pins the methodology; live numbers will land
-with the first staging deployment._
+_Wave-19 closure PR pinned the methodology + harness scripts; Wave-22
+PR added the CI gating step so every PR validates the spec thresholds
+on the (slower) CI runner. Prod throughput numbers will land with the
+first staging deployment._

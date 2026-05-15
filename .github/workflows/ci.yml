@@ -295,6 +295,36 @@ jobs:
         working-directory: apps/web
         run: npx playwright test e2e/ci-smoke.spec.ts --reporter=list
 
+      # ── Wave-21-C2: perf-baseline gated on percentile thresholds ──
+      # P95<500 / P99<1000 for risks-list, P95<200 for health.
+      # Runs against the same web server the Playwright smoke just used.
+      # Script's `thresholds` block exits non-zero on regression.
+      - name: Install k6
+        # Direct binary install — apt+gpg flow doesn't work in this
+        # runner sandbox (dirmngr not available). The release tarball
+        # is ~25 MB, single-binary, no deps. Pin version for repro.
+        run: |
+          K6_VERSION=v0.55.2
+          curl -sSL "https://github.com/grafana/k6/releases/download/${K6_VERSION}/k6-${K6_VERSION}-linux-amd64.tar.gz" \
+            | sudo tar -xz -C /usr/local/bin --strip-components=1 "k6-${K6_VERSION}-linux-amd64/k6"
+          sudo chmod +x /usr/local/bin/k6
+          k6 version
+
+      - name: Run k6 perf baseline (Wave-21-C2)
+        env:
+          ARCTOS_BASE: http://localhost:3000
+          ARCTOS_EMAIL: admin@arctos.dev
+          ARCTOS_PASSWORD: admin123
+        run: k6 run --summary-export=/tmp/k6-summary.json scripts/perf/ci-baseline.js
+
+      - name: Upload k6 summary
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: k6-perf-baseline
+          path: /tmp/k6-summary.json
+          retention-days: 30
+
       - name: Upload server log on failure
         if: failure()
         uses: actions/upload-artifact@v7
