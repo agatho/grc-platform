@@ -187,9 +187,8 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
       // No impacts yet (B1 doesn't gate on those, only B2 does).
       setImpactCounts(0, 0, 0);
 
-      const { POST } = await import(
-        "../../app/api/v1/bcms/bia/[id]/start/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/bcms/bia/[id]/start/route");
       const res = await POST(
         new Request(`http://localhost/api/v1/bcms/bia/${BIA_ID}/start`, {
           method: "POST",
@@ -228,9 +227,8 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
       // case the Wave-19 spec wants to lock down.
       setImpactCounts(0, 0, 0);
 
-      const { POST } = await import(
-        "../../app/api/v1/bcms/bia/[id]/finalize/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/bcms/bia/[id]/finalize/route");
       const res = await POST(
         new Request(`http://localhost/api/v1/bcms/bia/${BIA_ID}/finalize`, {
           method: "POST",
@@ -268,9 +266,8 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
       // 10 impacts, 5 scored = 50% — below the 80% threshold.
       setImpactCounts(10, 5, 2);
 
-      const { POST } = await import(
-        "../../app/api/v1/bcms/bia/[id]/finalize/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/bcms/bia/[id]/finalize/route");
       const res = await POST(
         new Request(`http://localhost/api/v1/bcms/bia/${BIA_ID}/finalize`, {
           method: "POST",
@@ -284,8 +281,7 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
       expect(body.gate).toBe("B2");
       expect(
         body.blockers.some(
-          (b: { code: string }) =>
-            b.code === "score_coverage_below_threshold",
+          (b: { code: string }) => b.code === "score_coverage_below_threshold",
         ),
       ).toBe(true);
       expect(withAuditContextMock).not.toHaveBeenCalled();
@@ -306,9 +302,8 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
         leadAssessorId: LEAD_ASSESSOR_ID,
       });
 
-      const { POST } = await import(
-        "../../app/api/v1/bcms/bia/[id]/finalize/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/bcms/bia/[id]/finalize/route");
       const res = await POST(
         new Request(`http://localhost/api/v1/bcms/bia/${BIA_ID}/finalize`, {
           method: "POST",
@@ -328,9 +323,8 @@ describe("BIA gate blocker contract (Wave-19-W6)", () => {
     async () => {
       setBiaRow(undefined); // <-- not found
 
-      const { POST } = await import(
-        "../../app/api/v1/bcms/bia/[id]/start/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/bcms/bia/[id]/start/route");
       const res = await POST(
         new Request(`http://localhost/api/v1/bcms/bia/${BIA_ID}/start`, {
           method: "POST",

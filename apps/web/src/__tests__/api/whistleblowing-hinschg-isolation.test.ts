@@ -141,9 +141,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { GET } = await import(
-        "../../app/api/v1/whistleblowing/cases/route"
-      );
+      const { GET } =
+        await import("../../app/api/v1/whistleblowing/cases/route");
       const res = await GET(
         new Request("http://localhost/api/v1/whistleblowing/cases"),
       );
@@ -165,9 +164,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { GET } = await import(
-        "../../app/api/v1/whistleblowing/cases/[id]/route"
-      );
+      const { GET } =
+        await import("../../app/api/v1/whistleblowing/cases/[id]/route");
       const res = await GET(
         new Request(`http://localhost/api/v1/whistleblowing/cases/${CASE_ID}`),
         { params: Promise.resolve({ id: CASE_ID }) },
@@ -189,9 +187,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { PUT } = await import(
-        "../../app/api/v1/whistleblowing/cases/[id]/assign/route"
-      );
+      const { PUT } =
+        await import("../../app/api/v1/whistleblowing/cases/[id]/assign/route");
       const res = await PUT(
         new Request(
           `http://localhost/api/v1/whistleblowing/cases/${CASE_ID}/assign`,
@@ -216,9 +213,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { PUT } = await import(
-        "../../app/api/v1/whistleblowing/cases/[id]/acknowledge/route"
-      );
+      const { PUT } =
+        await import("../../app/api/v1/whistleblowing/cases/[id]/acknowledge/route");
       const res = await PUT(
         new Request(
           `http://localhost/api/v1/whistleblowing/cases/${CASE_ID}/acknowledge`,
@@ -243,9 +239,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { POST } = await import(
-        "../../app/api/v1/whistleblowing/cases/[id]/message/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/whistleblowing/cases/[id]/message/route");
       const res = await POST(
         new Request(
           `http://localhost/api/v1/whistleblowing/cases/${CASE_ID}/message`,
@@ -270,9 +265,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { PUT } = await import(
-        "../../app/api/v1/whistleblowing/cases/[id]/resolve/route"
-      );
+      const { PUT } =
+        await import("../../app/api/v1/whistleblowing/cases/[id]/resolve/route");
       const res = await PUT(
         new Request(
           `http://localhost/api/v1/whistleblowing/cases/${CASE_ID}/resolve`,
@@ -303,9 +297,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { GET } = await import(
-        "../../app/api/v1/whistleblowing/investigations/route"
-      );
+      const { GET } =
+        await import("../../app/api/v1/whistleblowing/investigations/route");
       const res = await GET(
         new Request("http://localhost/api/v1/whistleblowing/investigations"),
       );
@@ -327,9 +320,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { GET } = await import(
-        "../../app/api/v1/whistleblowing/protection/route"
-      );
+      const { GET } =
+        await import("../../app/api/v1/whistleblowing/protection/route");
       const res = await GET(
         new Request("http://localhost/api/v1/whistleblowing/protection"),
       );
@@ -354,9 +346,8 @@ describe("HinSchG isolation — admin denied on whistleblowing case-content endp
         Response.json({ error: "Forbidden" }, { status: 403 }),
       );
 
-      const { GET } = await import(
-        "../../app/api/v1/whistleblowing/statistics/route"
-      );
+      const { GET } =
+        await import("../../app/api/v1/whistleblowing/statistics/route");
       await GET(
         new Request("http://localhost/api/v1/whistleblowing/statistics"),
       );
