@@ -97,7 +97,11 @@ async function loadMaturityInputs(orgId: string): Promise<SourceInput[]> {
     );
   const securityIncidentsScore =
     (securityIncidentStats?.total ?? 0) > 0
-      ? Math.round(((securityIncidentStats?.closed ?? 0) / securityIncidentStats!.total) * 100)
+      ? Math.round(
+          ((securityIncidentStats?.closed ?? 0) /
+            securityIncidentStats!.total) *
+            100,
+        )
       : 0;
 
   // ── audits source ────────────────────────────────────────────────
