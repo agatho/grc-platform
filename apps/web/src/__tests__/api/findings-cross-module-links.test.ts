@@ -156,6 +156,20 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
     );
   });
 
+  // Find the captured finding insert by checking for finding-only
+  // fields (severity + source). The workItem insert has neither;
+  // matching by index would be fragile because vitest's parallel
+  // module-cache resolution can re-order calls in CI.
+  function captured(field: string): unknown {
+    const findingInsert = inserts.find((i) => {
+      const v = i.values as Record<string, unknown>;
+      return "severity" in v && "source" in v;
+    });
+    return findingInsert
+      ? (findingInsert.values as Record<string, unknown>)[field]
+      : undefined;
+  }
+
   it("persists controlId from POST body into the finding insert", async () => {
     withAuthMock.mockResolvedValue(authedCtx());
     requireModuleMock.mockResolvedValue(undefined);
@@ -175,13 +189,8 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
     );
 
     expect(res.status).toBe(201);
-    // Two inserts expected: workItem + finding. The finding insert is
-    // the second one and must carry controlId.
-    expect(inserts.length).toBeGreaterThanOrEqual(2);
-    const findingInsert = inserts[1];
-    expect((findingInsert.values as Record<string, unknown>).controlId).toBe(
-      CONTROL_ID,
-    );
+    expect(inserts.length).toBeGreaterThanOrEqual(2); // workItem + finding
+    expect(captured("controlId")).toBe(CONTROL_ID);
   });
 
   it("persists auditId + riskId together (cross-module fan-out)", async () => {
@@ -204,13 +213,8 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
     );
 
     expect(res.status).toBe(201);
-    const findingInsert = inserts[1];
-    expect((findingInsert.values as Record<string, unknown>).auditId).toBe(
-      AUDIT_ID,
-    );
-    expect((findingInsert.values as Record<string, unknown>).riskId).toBe(
-      RISK_ID,
-    );
+    expect(captured("auditId")).toBe(AUDIT_ID);
+    expect(captured("riskId")).toBe(RISK_ID);
   });
 
   it("rejects POST {status:'open'} with 422 + rejectedFields hint", async () => {
