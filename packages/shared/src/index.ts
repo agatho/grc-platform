@@ -5,6 +5,10 @@ export * from "./process-status";
 // #WAVE21-MAR-P2-03: BIA → Asset-Classification cascade (write-side
 // derivation). Override resolver lives in apps/web's ISMS routes.
 export * from "./cascades/bia-asset-criticality";
+// #WAVE22-MAR-P2-04: CMMI maturity calculation — pure function with
+// two-stage filter + confidence tag. Consumed by /erm/maturity (org-
+// wide) and /programmes/journeys/[id]/maturity (Catalog-Scoped).
+export * from "./maturity/cmmi";
 export {
   ALLOWED_TRANSITIONS,
   phaseForStatus,
