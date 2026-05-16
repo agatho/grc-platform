@@ -75,7 +75,7 @@ interface IntegrityWarning {
 interface IntegrityReport {
   scope: string;
   total: number;
-  verified: { v1: number; v2: number };
+  verified: { v1: number; v2: number; v3: number };
   skipped: { v0_broken: number };
   rowMismatches: Mismatch[];
   chainMismatches: ChainGap[];
