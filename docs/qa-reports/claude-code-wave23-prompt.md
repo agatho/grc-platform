@@ -60,6 +60,7 @@ console.log("[W23-DEBUG] Finding INSERT result:", { controlId: row.controlId, au
 ```
 
 Deploy auf Prod, Cowork QA macht einen Test-POST, **die Logs zeigen:**
+
 - Was kam in `body.data.controlId` an? (sollte gültige UUID sein)
 - Was kam aus dem INSERT zurück? (sollte gleiche UUID sein, kein null)
 
@@ -92,18 +93,19 @@ GET /findings/{id}
 ```
 
 Source-Code im Repo:
+
 - `apps/web/src/app/api/v1/findings/route.ts` Zeilen 122-141: INSERT enthält `controlId/auditId/riskId` ✓
 - `packages/shared/src/schemas/control.ts:253-265`: Zod-Schema akzeptiert die Felder ✓
 - `packages/db/src/schema/control.ts:328-333`: Drizzle-Tabelle hat die Spalten ✓
 
 **Wie das Bug-Suchen läuft (basierend auf D-Diagnose):**
 
-| D3-Log zeigt | Bug ist | Fix |
-|---|---|---|
-| `body.data.controlId: undefined` | Zod strippt das Feld | Schema-Strict-Mode korrigieren oder `.passthrough()` |
-| `body.data.controlId: <uuid>` aber `row.controlId: null` | Drizzle-Insert ignoriert es | Drizzle-Schema-Inferenz prüfen, evtl. `db.refresh()` |
-| Insert-Result `controlId: <uuid>` aber GET zeigt null | Trigger oder GET-Projection-Bug | Trigger-List in Prod prüfen, GET-Select-Statement |
-| Beide undefined nach Zod | Bug irgendwo zwischen `req.json()` und Schema-Parse | Body-JSON inspect, Middleware prüfen |
+| D3-Log zeigt                                             | Bug ist                                             | Fix                                                  |
+| -------------------------------------------------------- | --------------------------------------------------- | ---------------------------------------------------- |
+| `body.data.controlId: undefined`                         | Zod strippt das Feld                                | Schema-Strict-Mode korrigieren oder `.passthrough()` |
+| `body.data.controlId: <uuid>` aber `row.controlId: null` | Drizzle-Insert ignoriert es                         | Drizzle-Schema-Inferenz prüfen, evtl. `db.refresh()` |
+| Insert-Result `controlId: <uuid>` aber GET zeigt null    | Trigger oder GET-Projection-Bug                     | Trigger-List in Prod prüfen, GET-Select-Statement    |
+| Beide undefined nach Zod                                 | Bug irgendwo zwischen `req.json()` und Schema-Parse | Body-JSON inspect, Middleware prüfen                 |
 
 **Akzeptanz-Test (Cowork-QA-Reproduzierbar):**
 
@@ -112,35 +114,37 @@ Source-Code im Repo:
 test("W23-A1: POST /findings persists controlId, auditId, riskId from body", async () => {
   const ctrl = await getOrCreateControl();
   const audit = await getOrCreateAudit();
-  const risk  = await getOrCreateRisk();
-  
-  const r = await POST('/api/v1/findings', {
-    title: 'W23 A1 Test',
-    severity: 'major_nonconformity',
-    source: 'audit',
+  const risk = await getOrCreateRisk();
+
+  const r = await POST("/api/v1/findings", {
+    title: "W23 A1 Test",
+    severity: "major_nonconformity",
+    source: "audit",
     controlId: ctrl.id,
     auditId: audit.id,
-    riskId: risk.id
+    riskId: risk.id,
   });
   expect(r.status).toBe(201);
-  
+
   const g = await GET(`/api/v1/findings/${r.body.data.id}`);
-  expect(g.body.data.controlId).toBe(ctrl.id);    // <-- MUSS grün werden
-  expect(g.body.data.auditId).toBe(audit.id);     // <-- MUSS grün werden
-  expect(g.body.data.riskId).toBe(risk.id);       // <-- MUSS grün werden
+  expect(g.body.data.controlId).toBe(ctrl.id); // <-- MUSS grün werden
+  expect(g.body.data.auditId).toBe(audit.id); // <-- MUSS grün werden
+  expect(g.body.data.riskId).toBe(risk.id); // <-- MUSS grün werden
 });
 
 test("W23-A1: Cascade aggregation reflects new critical finding", async () => {
-  const before = (await GET('/api/v1/controls/effectiveness')).body.data.openCriticalFindings;
+  const before = (await GET("/api/v1/controls/effectiveness")).body.data
+    .openCriticalFindings;
   const ctrl = await getOrCreateControl();
-  await POST('/api/v1/findings', {
-    title: 'Cascade Test',
-    severity: 'major_nonconformity',
-    source: 'audit',
-    controlId: ctrl.id
+  await POST("/api/v1/findings", {
+    title: "Cascade Test",
+    severity: "major_nonconformity",
+    source: "audit",
+    controlId: ctrl.id,
   });
-  const after = (await GET('/api/v1/controls/effectiveness')).body.data.openCriticalFindings;
-  expect(after).toBe(before + 1);   // <-- MUSS grün werden
+  const after = (await GET("/api/v1/controls/effectiveness")).body.data
+    .openCriticalFindings;
+  expect(after).toBe(before + 1); // <-- MUSS grün werden
 });
 ```
 
@@ -153,6 +157,7 @@ test("W23-A1: Cascade aggregation reflects new critical finding", async () => {
 **Bekannter Stand:** `GET /admin/branding → 500 (RequestID 24a45b827c4f2e4d)`
 
 **Vorgehen:**
+
 1. **D4-Stack-Trace** ist die Diagnose-Quelle
 2. Wahrscheinliche Ursache: `select ... from organization_branding where org_id = ...` liefert 0 Zeilen, Code macht `branding.logoUrl` auf undefined → Crash
 3. Fix-Optionen:
@@ -161,10 +166,11 @@ test("W23-A1: Cascade aggregation reflects new critical finding", async () => {
    - **c)** Wenn Feature noch nicht ready: **501 Not Implemented mit RFC-7807-Body** (akzeptabel)
 
 **Akzeptanz-Test:**
+
 ```ts
 test("W23-A2: /admin/branding returns 200 with config OR 501 Not Implemented", async () => {
-  const r = await GET('/api/v1/admin/branding');
-  expect([200, 501]).toContain(r.status);   // <-- MUSS grün werden, niemals 500
+  const r = await GET("/api/v1/admin/branding");
+  expect([200, 501]).toContain(r.status); // <-- MUSS grün werden, niemals 500
 });
 ```
 
@@ -174,7 +180,8 @@ test("W23-A2: /admin/branding returns 200 with config OR 501 Not Implemented", a
 
 ### W23-C3 — Contract `name` 500-Regression (P1, neu in Wave 22)
 
-**Bekannter Stand:** Wave 22 brach den Backwards-Compat: 
+**Bekannter Stand:** Wave 22 brach den Backwards-Compat:
+
 - Wave 21: `POST /contracts {name:'…'}` → 422 "Validation failed"
 - Wave 22: `POST /contracts {name:'…'}` → **500 empty body**
 
@@ -183,6 +190,7 @@ test("W23-A2: /admin/branding returns 200 with config OR 501 Not Implemented", a
 Wave 22 hat vermutlich versucht, einen `name → title` Alias zu implementieren, aber der Code wirft eine ungefangene Exception. Drei Optionen:
 
 **Option A — Sauberer Backwards-Compat:**
+
 ```ts
 // Im Contract POST-Handler vor schema.parse:
 const raw = await req.json();
@@ -190,25 +198,33 @@ if (raw.name && !raw.title) {
   raw.title = raw.name;
   delete raw.name;
   // Response-Header anhängen
-  responseHeaders.set('Warning', '299 - "Use \'title\' instead of \'name\', deprecated since v0.2.x"');
+  responseHeaders.set(
+    "Warning",
+    "299 - \"Use 'title' instead of 'name', deprecated since v0.2.x\"",
+  );
 }
 ```
 
 **Option B — Striktes Reject mit Hinweis (akzeptabel):**
+
 ```ts
-if ('name' in raw && !('title' in raw)) {
-  return Response.json({
-    error: "Validation failed",
-    detail: "Field 'name' is deprecated. Use 'title' instead.",
-    deprecatedField: 'name',
-    suggestedField: 'title'
-  }, { status: 422 });
+if ("name" in raw && !("title" in raw)) {
+  return Response.json(
+    {
+      error: "Validation failed",
+      detail: "Field 'name' is deprecated. Use 'title' instead.",
+      deprecatedField: "name",
+      suggestedField: "title",
+    },
+    { status: 422 },
+  );
 }
 ```
 
 **Empfohlen: Option B** — weniger Aufwand, klare Migration-Aufforderung. Backwards-Compat-Aliase sind technische Schulden.
 
 **Akzeptanz-Test:**
+
 ```ts
 test("W23-C3: Contract with 'name' field returns 422 with hint (not 500)", async () => {
   const r = await POST('/api/v1/contracts', { name:'Test', contractType:'service_agreement', ... });
@@ -230,6 +246,7 @@ test("W23-C3: Contract with 'title' works", async () => {
 **Bekannter Stand:** `/programmes` ist ein Module-Info-Endpoint, kein Resource-List. Wave-21-Prompt-Erwartung war falsch.
 
 **Vorgehen:**
+
 1. **Doku:** Im OpenAPI-Spec klar dokumentieren, dass `/programmes` ein Modul-Discovery-Endpoint ist
 2. **Programme-Resource:** Falls geplant — Resource-Pfad einführen (`/programmes/journeys`), mit ≥ 2 Demo-Journeys seeden
 3. **Maturity-Endpoint:** Wenn `/programmes/journeys/{id}/maturity-breakdown` existieren soll, dann Demo-Seed-Daten plus Computation-Test
@@ -278,17 +295,20 @@ echo "✅ Pilot-Readiness-Gate PASSED"
 ## Vorgehen (zeitlich)
 
 **Tag 1: Diagnose (NICHT überspringen!)**
+
 - D1 Prod-Commit-SHA dokumentieren
 - D2 Prod-DB-Schema von `finding` dokumentieren
 - D3 Drizzle-Insert-Trace deployen + Cowork-QA-Test triggern → Logs lesen
 - D4 A2 RequestID-Stack-Trace lesen
 
 **Tag 2: Fix basierend auf Diagnose-Erkenntnissen**
+
 - W23-A1: Fix dort wo D3 den Bug isolierte
 - W23-A2: Fix basierend auf D4-Stack-Trace
 - W23-C3: Option B implementieren
 
 **Tag 3: Test + Gate**
+
 - Pilot-Readiness-Gate-Script schreiben
 - Vitest-Tests für W23-A1/A2/C3 hinzufügen
 - CI grün, merge
@@ -350,4 +370,4 @@ Cowork QA verifiziert dann Wave 23, danach Pilot-Sign-Off.
 
 ---
 
-*Wave 23 Endgame-Prompt geschrieben von Cowork QA, 2026-05-15. 4 Items + 4-stufige Diagnose-Pflicht. Erstmals mit CI-Gate-Script. Nach Wave 23 ist die Plattform pilot-ready oder es ist klar warum nicht.*
+_Wave 23 Endgame-Prompt geschrieben von Cowork QA, 2026-05-15. 4 Items + 4-stufige Diagnose-Pflicht. Erstmals mit CI-Gate-Script. Nach Wave 23 ist die Plattform pilot-ready oder es ist klar warum nicht._

@@ -186,7 +186,11 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     // zurückkommt, werfen wir eine strukturierte Exception, die der
     // withErrorHandler auf 500 mit Diagnostic-Body mappt. Stille
     // 201er werden damit unmöglich.
-    const fkMismatches: Array<{ field: string; expected: unknown; actual: unknown }> = [];
+    const fkMismatches: Array<{
+      field: string;
+      expected: unknown;
+      actual: unknown;
+    }> = [];
     const fkPairs: Array<[keyof typeof body.data, keyof typeof row]> = [
       ["controlId", "controlId"],
       ["controlTestId", "controlTestId"],

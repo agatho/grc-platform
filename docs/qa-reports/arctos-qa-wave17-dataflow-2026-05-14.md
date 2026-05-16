@@ -9,33 +9,33 @@
 
 **Aggregationen funktionieren mehrheitlich korrekt, aber 2 zentrale Cross-Module-Cascades fehlen.**
 
-| Datenfluss-Test | Ergebnis |
-|---|---|
-| Risk-Create → Total-Count | ✅ propagiert in Echtzeit (24→25) |
-| Risk-Create → byStatus-Aggregation | ✅ identified+1 |
-| `inherentLikelihood × inherentImpact` → `riskScoreInherent` | ✅ **auto-berechnet** (5×5=25) |
-| UI zeigt Score korrekt | ✅ "25 / Kritisch" in der Inherent-Spalte |
-| Status-Transition → Dashboard-Aggregation | ✅ assessed-1, treated+1 |
-| Audit-Finding-Link (`auditId`, `controlId`) | ✅ beide persistiert |
-| Critical-Finding auf Control → Controls-Effectiveness | 🔴 **reagiert nicht** |
-| Treatment-Cost → Budget-Aggregation | 🔴 **Endpoint fehlt** |
+| Datenfluss-Test                                             | Ergebnis                                  |
+| ----------------------------------------------------------- | ----------------------------------------- |
+| Risk-Create → Total-Count                                   | ✅ propagiert in Echtzeit (24→25)         |
+| Risk-Create → byStatus-Aggregation                          | ✅ identified+1                           |
+| `inherentLikelihood × inherentImpact` → `riskScoreInherent` | ✅ **auto-berechnet** (5×5=25)            |
+| UI zeigt Score korrekt                                      | ✅ "25 / Kritisch" in der Inherent-Spalte |
+| Status-Transition → Dashboard-Aggregation                   | ✅ assessed-1, treated+1                  |
+| Audit-Finding-Link (`auditId`, `controlId`)                 | ✅ beide persistiert                      |
+| Critical-Finding auf Control → Controls-Effectiveness       | 🔴 **reagiert nicht**                     |
+| Treatment-Cost → Budget-Aggregation                         | 🔴 **Endpoint fehlt**                     |
 
 ---
 
 ## Wave-17-Polish-Items
 
-| Endpoint | Status |
-|---|:-:|
-| `/tprm/concentration` | ✅ 200 |
-| `/admin/calendar/holidays` | ✅ 200 |
-| `/admin/settings` | ✅ 200 |
-| `/admin/license` | ✅ 200 |
-| `/admin/integrations` | ✅ 200 |
-| `/notifications/mark-all-read` | ✅ 200 |
-| `/controls/findings-summary` | 🔴 500 |
+| Endpoint                        | Status |
+| ------------------------------- | :----: |
+| `/tprm/concentration`           | ✅ 200 |
+| `/admin/calendar/holidays`      | ✅ 200 |
+| `/admin/settings`               | ✅ 200 |
+| `/admin/license`                | ✅ 200 |
+| `/admin/integrations`           | ✅ 200 |
+| `/notifications/mark-all-read`  | ✅ 200 |
+| `/controls/findings-summary`    | 🔴 500 |
 | `/processes/governance-summary` | 🔴 500 |
-| `/admin/branding` | 🔴 500 |
-| `/kris/{id}/history` | 🔴 404 |
+| `/admin/branding`               | 🔴 500 |
+| `/kris/{id}/history`            | 🔴 404 |
 
 **6 von 10 P2/P3-Items gefixt. 4 offen.**
 
@@ -100,6 +100,7 @@ NACHHER: testsRun=6, effective=2, partiallyEffective=1, ineffective=0, effective
 ### Test 6: 🔴 Treatment-Budget-Aggregation FEHLT
 
 Treatment mit `costEstimate: 7500 EUR` erstellt:
+
 ```
 GET /risks/treatments-summary → 422
 GET /risks/budget-summary → 422
@@ -177,4 +178,4 @@ Cowork QA empfiehlt 1 weitere Iteration auf Datenfluss-Cascades, dann ist die Pl
 
 ---
 
-*Wave 17 abgeschlossen. Polish 6/10. Datenfluss-Test: 6/8 OK, 2 Cascade-Lücken identifiziert.*
+_Wave 17 abgeschlossen. Polish 6/10. Datenfluss-Test: 6/8 OK, 2 Cascade-Lücken identifiziert._

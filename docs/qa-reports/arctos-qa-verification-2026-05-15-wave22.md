@@ -10,15 +10,15 @@
 
 **3 weitere Items gefixt: ESG-Datapoints-Seed, Bulk-Risks-INSERT, Multi-Tenant-RLS-Cross-Tenant.** ABER: Die zwei Beta-Blocker (A1 Finding-FKs, A2 /admin/branding) bleiben offen — **zum vierten Mal in Folge**. Eine neue Regression: C3 Contract `name`-Field gibt jetzt 500 statt 422.
 
-| Item | Marathon | W18 | W19+20 | W21 | **W22** |
-|---|:-:|:-:|:-:|:-:|:-:|
-| A1 Finding controlId | 🔴 | 🔴 | 🔴 | 🔴 | **🔴** |
-| A2 /admin/branding | 🔴 | 🔴 | 🔴 | 🔴 | **🔴** |
-| B2 ESG-Datapoints | 🟡 | 🟡 | 🔴 | 🔴 | **✅** (65 seed) |
-| B4 Bulk Risks INSERT | — | — | — | 🔴 | **✅** |
-| B6 Programmes (Maturity) | — | — | — | 🔴 | **🟡** (module-info nur) |
-| B7 Multi-Tenant RLS | — | — | 🟡 | 🟡 | **✅** |
-| C3 Contract `name` Compat | — | — | — | 🔴 | **🔴** (jetzt 500!) |
+| Item                      | Marathon | W18 | W19+20 | W21 |         **W22**          |
+| ------------------------- | :------: | :-: | :----: | :-: | :----------------------: |
+| A1 Finding controlId      |    🔴    | 🔴  |   🔴   | 🔴  |          **🔴**          |
+| A2 /admin/branding        |    🔴    | 🔴  |   🔴   | 🔴  |          **🔴**          |
+| B2 ESG-Datapoints         |    🟡    | 🟡  |   🔴   | 🔴  |     **✅** (65 seed)     |
+| B4 Bulk Risks INSERT      |    —     |  —  |   —    | 🔴  |          **✅**          |
+| B6 Programmes (Maturity)  |    —     |  —  |   —    | 🔴  | **🟡** (module-info nur) |
+| B7 Multi-Tenant RLS       |    —     |  —  |   🟡   | 🟡  |          **✅**          |
+| C3 Contract `name` Compat |    —     |  —  |   —    | 🔴  |   **🔴** (jetzt 500!)    |
 
 Hash-Chain: **healthy v1=1229, v2=513, total=1742, 0 mismatches.**
 
@@ -151,11 +151,11 @@ rowMismatches: 0
 
 ## Bilanz nach 22 Wellen
 
-| Severity | Anzahl Open vor Marathon | Open nach Wave 22 |
-|---|---:|---:|
-| P0 (Beta-Blocker) | 0 | **2** (A1, A2 — vier Wellen ohne Fix) |
-| P1 | 0 | 2 (B6 keine Daten, C3 Regression) |
-| P2 | viele | sinkt langsam |
+| Severity          | Anzahl Open vor Marathon |                     Open nach Wave 22 |
+| ----------------- | -----------------------: | ------------------------------------: |
+| P0 (Beta-Blocker) |                        0 | **2** (A1, A2 — vier Wellen ohne Fix) |
+| P1                |                        0 |     2 (B6 keine Daten, C3 Regression) |
+| P2                |                    viele |                         sinkt langsam |
 
 **Plattform-Stand:** Fundament ist 90 % production-stabil. Aber:
 
@@ -176,6 +176,7 @@ rowMismatches: 0
 4. **Trigger oder default-Logik:** Ein Insert-Trigger setzt `control_id` aktiv auf NULL.
 
 **Vorgehen:**
+
 - `prisma db pull` oder `drizzle introspect` gegen Prod-DB, mit lokalem Schema vergleichen
 - Drizzle-Query-Log aktivieren (`DEBUG=drizzle*` im Server-Env)
 - Test-Endpoint `/api/v1/_debug/finding-insert?controlId=X` der einen INSERT direkt ausführt und das executed SQL zurückgibt
@@ -202,4 +203,4 @@ Geschätzte Restarbeit für Pilot-Ready: **2 P0 + 2 P1 = 4 fokussierte Fixes.** 
 
 ---
 
-*Wave 22 Hotfix-Verifikation abgeschlossen 2026-05-15. 3 neue grüne Items (B2, B4, B7), 2 Beta-Blocker weiter offen, 1 neue Regression (C3). Hash-Chain healthy.*
+_Wave 22 Hotfix-Verifikation abgeschlossen 2026-05-15. 3 neue grüne Items (B2, B4, B7), 2 Beta-Blocker weiter offen, 1 neue Regression (C3). Hash-Chain healthy._

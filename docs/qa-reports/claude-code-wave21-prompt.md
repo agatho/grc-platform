@@ -60,12 +60,14 @@ GET /api/v1/findings/<new-id>
 6. Status-Mapping `'open' → 'identified'`: entweder strict-rejecten mit Enum-Liste UND OpenAPI-Doku ODER `'open'` als Alias akzeptieren mit Doku — **nicht still überschreiben**
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/findings/route.ts` (POST)
 - `apps/web/src/app/api/v1/findings/[id]/route.ts` (GET, PATCH/PUT)
 - `packages/shared/src/schemas/finding.ts`
 - `packages/db/src/schema/finding.ts` (FK-Spalten sollten existieren — verify)
 
 **Akzeptanz-Test:**
+
 ```ts
 // apps/web/src/__tests__/api/findings-cross-module-links.test.ts
 describe("Finding cross-module persistence", () => {
@@ -119,13 +121,15 @@ describe("Finding cross-module persistence", () => {
 4. Wenn Feature nicht produktiv ist: `501 Not Implemented` mit RFC-7807-Body statt 500
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/admin/branding/route.ts`
 - `packages/db/src/schema/admin.ts` oder `organization.ts`
 
 **Akzeptanz-Test:**
+
 ```ts
 test("GET /admin/branding returns 200 with branding-config OR 501 Not Implemented", async () => {
-  const r = await GET('/api/v1/admin/branding');
+  const r = await GET("/api/v1/admin/branding");
   expect([200, 501]).toContain(r.status);
   if (r.status === 200) {
     expect(r.body.data).toMatchObject({
@@ -146,6 +150,7 @@ test("GET /admin/branding returns 200 with branding-config OR 501 Not Implemente
 ### B1 — AI-Router Public-Health-Endpoint
 
 **Symptom:**
+
 ```
 GET /api/v1/ai/router/health → 404 (returns HTML login page = wirklich 404)
 GET /api/v1/ai/health        → 404
@@ -180,6 +185,7 @@ GET /api/v1/ai/router/health → 200
 **Suchpfade:** `apps/web/src/app/api/v1/ai/...`, `packages/ai/src/router.ts`
 
 **Akzeptanz-Test:**
+
 ```ts
 test("AI router health endpoint", async () => {
   const r = await GET('/api/v1/ai/router/health');
@@ -197,6 +203,7 @@ test("Failover when primary times out", async () => { ... });
 ### B2 — ESG-Datapoints Seed laden
 
 **Symptom:**
+
 ```
 GET /api/v1/esg/datapoints → 200
 { data: { total: 0, datapoints: [], byStandard: {} } }
@@ -212,21 +219,28 @@ GET /api/v1/esg/datapoints → 200
 4. `POST /esg/metrics {datapointId: <gültig>}` als esg_manager → 201
 
 **Suchpfade:**
+
 - `packages/db/sql/seed_esrs_datapoints.sql`
 - `packages/db/src/seed.ts` oder `seed-all.ts`
 - `packages/db/scripts/seed-all.ts`
 
 **Akzeptanz-Test:**
+
 ```ts
 test("ESG datapoints seeded", async () => {
-  const r = await GET('/api/v1/esg/datapoints?limit=100');
+  const r = await GET("/api/v1/esg/datapoints?limit=100");
   expect(r.data.total).toBeGreaterThan(100);
-  expect(r.data.byStandard).toHaveProperty('ESRS_E1');
+  expect(r.data.byStandard).toHaveProperty("ESRS_E1");
 });
 test("ESG manager can create metric with valid datapointId", async () => {
-  loginAs('esg@meridian.test');
-  const dp = (await GET('/esg/datapoints?limit=1')).data.datapoints[0];
-  const r = await POST('/esg/metrics', { name:'…', datapointId: dp.id, unit:'tCO2e', frequency:'quarterly' });
+  loginAs("esg@meridian.test");
+  const dp = (await GET("/esg/datapoints?limit=1")).data.datapoints[0];
+  const r = await POST("/esg/metrics", {
+    name: "…",
+    datapointId: dp.id,
+    unit: "tCO2e",
+    frequency: "quarterly",
+  });
   expect(r.status).toBe(201);
 });
 ```
@@ -238,6 +252,7 @@ test("ESG manager can create metric with valid datapointId", async () => {
 ### B3 — Compliance-Frameworks Public-API
 
 **Symptom:**
+
 ```
 GET /api/v1/compliance/frameworks → 404
 GET /api/v1/frameworks → 404
@@ -254,22 +269,24 @@ Aber: CLAUDE.md sagt "46 Frameworks geseedet, ~960 Cross-Framework-Mappings". `/
 4. `GET /compliance/cross-mappings?from=iso-27001&to=nis2` → ~30+ Mappings
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/compliance/...` (existiert vermutlich teilweise)
 - `packages/db/src/schema/compliance.ts` oder `framework.ts`
 
 **Akzeptanz-Test:**
+
 ```ts
 test("46 frameworks accessible via public API", async () => {
-  const r = await GET('/compliance/frameworks');
+  const r = await GET("/compliance/frameworks");
   expect(r.data.items.length).toBeGreaterThan(40);
 });
 test("Coverage shows realistic values", async () => {
-  const r = await GET('/compliance/coverage?framework=iso-27001');
+  const r = await GET("/compliance/coverage?framework=iso-27001");
   expect(r.data.frameworkCount).toBeGreaterThan(0);
   // wenigstens ein Control ist gemappt
 });
 test("Cross-mapping ISO 27001 → NIS2 returns mappings", async () => {
-  const r = await GET('/compliance/cross-mappings?from=iso-27001&to=nis2');
+  const r = await GET("/compliance/cross-mappings?from=iso-27001&to=nis2");
   expect(r.data.items.length).toBeGreaterThan(20);
 });
 ```
@@ -281,6 +298,7 @@ test("Cross-mapping ISO 27001 → NIS2 returns mappings", async () => {
 ### B4 — Bulk-Operations-API
 
 **Symptom:**
+
 ```
 POST /api/v1/risks/bulk → 405 Method Not Allowed
 POST /api/v1/bulk/risks → 404
@@ -300,6 +318,7 @@ Critical Implementation Rule #11 (Bulk-Cap) hat ein Test-Pendant aber keinen pro
 **Suchpfade:** Neue Routes unter `apps/web/src/app/api/v1/{entity}/bulk/route.ts`. Bulk-Cap-Util in `packages/api/src/lib/bulk.ts`.
 
 **Akzeptanz-Test:**
+
 ```ts
 test("Bulk-create 50 risks within cap", async () => {
   const r = await POST('/risks/bulk', { items: Array(50).fill({...}) });
@@ -326,6 +345,7 @@ test("Hash-chain entry per item", async () => {
 ### B5 — DMS Path-Drift
 
 **Symptom:**
+
 ```
 GET /api/v1/dms/documents     → 404
 GET /api/v1/documents         → 200 ✅ (anderer Pfad!)
@@ -339,13 +359,14 @@ DMS existiert unter `/documents`, nicht `/dms/documents`. Wave-19-Prompt empfahl
 **Suchpfade:** `apps/web/src/app/api/v1/documents/`, ggf. Konsolidierung mit DMS-Module
 
 **Akzeptanz-Test:**
+
 ```ts
 test("DMS at /dms/documents (canonical)", async () => {
-  expect((await GET('/dms/documents')).status).toBe(200);
+  expect((await GET("/dms/documents")).status).toBe(200);
 });
 test("Old /documents redirects with deprecation warning", async () => {
-  const r = await fetch('/api/v1/documents');
-  expect(r.headers.get('warning')).toMatch(/deprecated/);
+  const r = await fetch("/api/v1/documents");
+  expect(r.headers.get("warning")).toMatch(/deprecated/);
 });
 ```
 
@@ -356,6 +377,7 @@ test("Old /documents redirects with deprecation warning", async () => {
 ### B6 — Programmes Demo-Seed + Maturity-Auto-Compute
 
 **Symptom:**
+
 ```
 GET /programmes?limit=2 → 200, aber Liste vermutlich leer
 GET /programmes/{id}/maturity-breakdown → kann nicht getestet werden (kein Programme-id)
@@ -384,6 +406,7 @@ Marathon-Befund: "Maturity-Auto-Berechnung aus Control-Effectiveness ist hardgec
 4. Werte werden LIVE aus DB berechnet, nicht hardcoded
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/programmes/...`
 - `packages/db/src/seed.ts` für Programme-Seed
 - `packages/automation/src/...` für Maturity-Computation
@@ -395,6 +418,7 @@ Marathon-Befund: "Maturity-Auto-Berechnung aus Control-Effectiveness ist hardgec
 ### B7 — Multi-Tenant RLS Cross-Tenant-Probe-Suite
 
 **Symptom:**
+
 ```
 process-owner@meridian.test sucht "foreign" risk via /risks → none-found
 ```
@@ -412,10 +436,14 @@ Konnte nicht direkt probed werden, weil RLS schon im SELECT filtert. Aber: keine
 3. `docs/security/rls-coverage-report.md` zeigt 100% RLS-Coverage über alle 545 Tabellen, oder explizit ausgenommene mit ADR-Reference
 
 **Akzeptanz-Test:**
+
 ```ts
-test.each(TABLES_WITH_ORG_ID)("Cross-tenant isolation for %s", async (table) => {
-  // Org-A creates row, Org-B-user GETs by id → 404
-});
+test.each(TABLES_WITH_ORG_ID)(
+  "Cross-tenant isolation for %s",
+  async (table) => {
+    // Org-A creates row, Org-B-user GETs by id → 404
+  },
+);
 ```
 
 **Done:** Cross-tenant-test-suite grün über alle org-scoped Tabellen, RLS-Report 100%.
@@ -425,6 +453,7 @@ test.each(TABLES_WITH_ORG_ID)("Cross-tenant isolation for %s", async (table) => 
 ### B8 — Notifications Live-Trigger E2E
 
 **Symptom:**
+
 ```
 GET /notifications?limit=10 → 200 (Body durch Proxy blocked, Inhalt unbekannt)
 ```
@@ -434,6 +463,7 @@ Endpoint reagiert, aber nicht verifiziert ob Risk-Create/DSR-Create/Audit-Schedu
 **Erwartung:**
 
 E2E-Test pro Trigger:
+
 1. **Risk-assigned**: `POST /risks {ownerId:X}` → User X hat Notification mit `type:'risk_assigned'`
 2. **DSR-received**: `POST /dpms/dsr {...}` → alle DPOs der Org haben Notification
 3. **Audit-scheduled**: `POST /audit-mgmt/audits {assignedTo:X}` → User X + Audit-Subject Notifications
@@ -442,6 +472,7 @@ E2E-Test pro Trigger:
 6. **Mark-as-read** Flow: `POST /notifications/{id}/read` → unread-count -1
 
 **Akzeptanz-Test:**
+
 ```ts
 test.each([
   { trigger: 'risk-assigned', endpoint: '/risks', body: { ownerId: U.id }, expectType: 'risk_assigned' },
@@ -466,6 +497,7 @@ test.each([
 ### B9 — PDF-Export Format-Parameter respektieren
 
 **Symptom:** (Wave 19 neu gefunden)
+
 ```
 GET /export/risk?format=pdf      → 200, ABER content-type: text/csv (Format ignoriert!)
 GET /export/finding?format=pdf   → 200, ABER content-type: text/csv
@@ -479,25 +511,33 @@ GET /export/finding?format=pdf   → 200, ABER content-type: text/csv
 4. Bei `format=pdf`: ein Export-Job-Pattern (zurückgeben job-id, async-rendering) wenn synchron zu langsam wird
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/export/[entityType]/route.ts`
 - `packages/reporting/src/...` für PDF-Generation
 
 **Akzeptanz-Test:**
+
 ```ts
 test.each([
-  ['risk', 'pdf', 'application/pdf'],
-  ['risk', 'csv', 'text/csv'],
-  ['risk', 'xlsx', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
-  ['finding', 'pdf', 'application/pdf'],
-  ['control', 'pdf', 'application/pdf']
+  ["risk", "pdf", "application/pdf"],
+  ["risk", "csv", "text/csv"],
+  [
+    "risk",
+    "xlsx",
+    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  ],
+  ["finding", "pdf", "application/pdf"],
+  ["control", "pdf", "application/pdf"],
 ])("Export %s as %s returns %s", async (entity, format, expectedCT) => {
   const r = await fetch(`/api/v1/export/${entity}?format=${format}`);
   expect(r.status).toBe(200);
-  expect(r.headers.get('content-type')).toContain(expectedCT);
+  expect(r.headers.get("content-type")).toContain(expectedCT);
 });
 
 test("PDF export is PDF/A-2b compliant", async () => {
-  const buf = await (await fetch('/api/v1/export/risk?format=pdf')).arrayBuffer();
+  const buf = await (
+    await fetch("/api/v1/export/risk?format=pdf")
+  ).arrayBuffer();
   // Magic-bytes check + PDF/A marker
   expect(buf.byteLength).toBeGreaterThan(1024);
   expect(parsePdfAconformance(buf)).toMatch(/2[ab]/);
@@ -551,16 +591,16 @@ test("PDF export is PDF/A-2b compliant", async () => {
 
 ## Done-Kriterien für die Gesamt-PR
 
-| Kategorie | Done wenn |
-|---|---|
-| **Block A** | Beide Beta-Blocker (Finding controlId, /admin/branding) grün. |
-| **Block B** | Alle 10 Black-Box-Items haben Tests, Endpoints liefern Daten (nicht Zero/404/500). |
-| **Hash-Chain** | `healthy=true, mismatches=0, v1=1229` nach allen Mutationen. |
-| **RBAC-Suite** | `domain-rbac-suite.test.ts` SPECS für neue Bulk-Routes ergänzt. |
-| **RLS-Report** | `docs/security/rls-coverage-report.md` zeigt 100% Coverage. |
-| **CHANGELOG** | Jeder Endpoint-Add + Schema-Change dokumentiert. |
-| **Migrations** | Falls neue Spalten/Indizes: Nummer ≥ 0325, idempotent. |
-| **Wave-19-Regression** | Alle 5 Wave-19+20-Greens bleiben grün (CISO findings, Incident DSGVO 72h, BIA Gates, Whistleblowing HinSchG, Hash-Chain). |
+| Kategorie                      | Done wenn                                                                                                                                                                                                                                        |
+| ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Block A**                    | Beide Beta-Blocker (Finding controlId, /admin/branding) grün.                                                                                                                                                                                    |
+| **Block B**                    | Alle 10 Black-Box-Items haben Tests, Endpoints liefern Daten (nicht Zero/404/500).                                                                                                                                                               |
+| **Hash-Chain**                 | `healthy=true, mismatches=0, v1=1229` nach allen Mutationen.                                                                                                                                                                                     |
+| **RBAC-Suite**                 | `domain-rbac-suite.test.ts` SPECS für neue Bulk-Routes ergänzt.                                                                                                                                                                                  |
+| **RLS-Report**                 | `docs/security/rls-coverage-report.md` zeigt 100% Coverage.                                                                                                                                                                                      |
+| **CHANGELOG**                  | Jeder Endpoint-Add + Schema-Change dokumentiert.                                                                                                                                                                                                 |
+| **Migrations**                 | Falls neue Spalten/Indizes: Nummer ≥ 0325, idempotent.                                                                                                                                                                                           |
+| **Wave-19-Regression**         | Alle 5 Wave-19+20-Greens bleiben grün (CISO findings, Incident DSGVO 72h, BIA Gates, Whistleblowing HinSchG, Hash-Chain).                                                                                                                        |
 | **Pilot-Readiness-Checkliste** | Diese 4 müssen erfüllt sein, sonst kein Pilot:<br/>1. Finding-Cascade funktioniert end-to-end<br/>2. Admin-Endpoints liefern 200 oder 501 (kein 500)<br/>3. ESG/Compliance/Bulk/AI-Router APIs erreichbar<br/>4. Cross-Tenant-Isolation getestet |
 
 ---
@@ -568,20 +608,24 @@ test("PDF export is PDF/A-2b compliant", async () => {
 ## Vorgehen (empfohlen)
 
 **Tag 1: Block A (Beta-Blocker)**
+
 - A1 Finding-controlId (oberste Priorität)
 - A2 /admin/branding
 
 **Tag 2-3: Block B kritisch**
+
 - B4 Bulk-Operations
 - B7 Multi-Tenant RLS Test-Suite
 
 **Tag 4-5: Block B mittel**
+
 - B2 ESG-Datapoints Seed
 - B3 Compliance-Frameworks Public-API
 - B9 PDF-Export Format
 - B1 AI-Router Health
 
 **Tag 6-7: Block B Polish + Block C**
+
 - B5 DMS Path
 - B6 Programmes Seed
 - B8 Notifications E2E
@@ -617,6 +661,7 @@ admin@arctos.dev / admin123          admin
 ```
 
 **Für B7 Cross-Tenant-Test:** Zweite Org seeden mit eigenen Users:
+
 ```
 Vorschlag: Arctis Textilservice GmbH = 7cf7aa82-af08-48f5-80d0-eb46b6e37319
 Users seeden: ciso@arctistx.test, process-owner@arctistx.test, vendor-mgr@arctistx.test
@@ -639,6 +684,7 @@ Mit Daten: 10 Risks, 5 Controls, 3 Audits, 2 DPIAs
 ## Erfolgs-Meldung an Cowork QA
 
 Nach Merge:
+
 > "Wave 21 deployed. Hash-chain integrity: healthy v1=1229 v2=<N> mismatches=0.
 > Block A: 2/2 Beta-Blocker grün. Block B: 10/10 Black-Box-Items implementiert. Block C: 3/3 Polish.
 > Cowork QA bitte Final-Verifikation für Pilot-Ready-Sign-Off starten."
@@ -647,4 +693,4 @@ Cowork QA fährt dann den finalen Marathon: alle 19 Marathon-Items + alle 18 Wav
 
 ---
 
-*Wave 21 Final-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. Schließt 2 Beta-Blocker + 10 Black-Box-Items + 3 Polish = 15 Items. Nach Wave 21 ist die Plattform pilot-tauglich für GRC-Erstkunden.*
+_Wave 21 Final-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. Schließt 2 Beta-Blocker + 10 Black-Box-Items + 3 Polish = 15 Items. Nach Wave 21 ist die Plattform pilot-tauglich für GRC-Erstkunden._

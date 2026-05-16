@@ -10,12 +10,12 @@
 
 **6 von 15 Items vollständig grün. 4 partial. 5 noch offen.** Die zwei Beta-Blocker aus Block A sind **zum dritten Mal** nicht gefixt — Finding-`controlId`-Persistenz und `/admin/branding` 500 bleiben Open. Aber: viele Black-Box-Items aus Block B sind jetzt erreichbar.
 
-| Block | Items | ✅ | 🟡 | 🔴 |
-|---|---|---:|---:|---:|
-| A Beta-Blocker | 2 | 0 | 0 | **2** |
-| B Black-Box | 10 | 6 | 2 | 2 |
-| C Polish | 3 | 0 | 1 | 2 |
-| **Total** | **15** | **6** | **3** | **6** |
+| Block          | Items  |    ✅ |    🟡 |    🔴 |
+| -------------- | ------ | ----: | ----: | ----: |
+| A Beta-Blocker | 2      |     0 |     0 | **2** |
+| B Black-Box    | 10     |     6 |     2 |     2 |
+| C Polish       | 3      |     0 |     1 |     2 |
+| **Total**      | **15** | **6** | **3** | **6** |
 
 Hash-Chain: **healthy v1=1229, v2=477, total=1706, 0 mismatches.**
 
@@ -26,6 +26,7 @@ Hash-Chain: **healthy v1=1229, v2=477, total=1706, 0 mismatches.**
 ### A1 — Finding `controlId/auditId/riskId` Persistenz 🔴 DRITTES MAL NICHT GEFIXT
 
 **Test:**
+
 ```
 POST /findings {
   title:'W21-A1 Persistence Test',
@@ -45,6 +46,7 @@ GET /findings/{id}
 **Identisch zu Marathon-Befund + Wave 18 + Wave 19+20.** Die Felder werden trotz validem Schema, validem Route-Handler-Code (line 122-141 in `findings/route.ts`) und korrekter Drizzle-Schema-Definition (line 328-333 in `db/schema/control.ts`) als NULL gespeichert.
 
 **Partial-Fix bestätigt:** Wave-21 Status-Strict-Reject IST deployed:
+
 ```
 POST /findings {status:'open', ...}
 → 422 "Finding status is set automatically on create (defaults to 'identified'). Use POST /api/v1/findings/{id}/status for transitions."
@@ -100,6 +102,7 @@ GET /api/v1/compliance/frameworks → 200
 **953 Framework-Einträge!** Endpoint funktioniert. CLAUDE.md sprach von 46 Frameworks — vermutlich sind das 46 Top-Level-Frameworks mit ~ 953 Sub-Controls/Mappings.
 
 **Aber:** `/compliance/coverage?framework=iso-27001` zeigt weiter alle Werte 0:
+
 ```
 { frameworkCount: 0, fullyCovered: 0, atRisk: 0, critical: 0, overallCoveragePct: 0, frameworks: [] }
 ```
@@ -109,17 +112,20 @@ GET /api/v1/compliance/frameworks → 200
 ### B4 — Bulk-Operations ✅ Cap + Endpoint, 🟡 Insert SQL-Error
 
 **Cap funktioniert:**
+
 ```
 POST /risks/bulk { items: [101 items] } → 422 { maxBulkSize: 100 } ✅
 ```
 
 **Endpoints reagieren mit 207 Multi-Status:**
+
 ```
 POST /risks/bulk { items: [3 valid items] } → 207
 { created: [], errors: [3x SQL error] }
 ```
 
 **Aber: ALL 3 ITEMS FAILED mit DB-Error:**
+
 ```
 "Failed query: insert into 'work_item' ... params: ..., single_risk, W21 Bulk Risk 1, ..."
 ```
@@ -221,22 +227,22 @@ rowMismatches: 0
 
 ## Wave-Vergleich (Marathon → Wave 21)
 
-| Item | M | W18 | W19 | **W21** |
-|---|:-:|:-:|:-:|:-:|
-| A1 Finding controlId | 🔴 | 🔴 | 🔴 | **🔴** |
-| A2 /admin/branding | 🔴 | 🔴 | 🔴 | **🔴** |
-| B1 AI Router Health | — | — | 🔴 | **✅** |
-| B2 ESG Datapoints | — | 🟡 | 🟡 | **🔴** (unverändert) |
-| B3 Compliance Frameworks API | — | — | 🔴 | **✅** (953!) |
-| B4 Bulk-Operations | — | — | 🔴 | **🟡** (Cap ✅, Insert 🔴) |
-| B5 DMS Path | — | — | 🟡 | **✅** (beide funktionieren) |
-| B6 Programmes Maturity | 🟡 | — | 🟡 | **🔴** (keine Daten) |
-| B7 Multi-Tenant RLS | — | — | 🟡 | **🟡** (User-Seed fehlt) |
-| B8 Notifications | — | — | 🟡 | **🟡** |
-| B9 PDF Format | — | — | 🔴 | **✅** |
-| B10 Academy | — | — | 🟡 | **✅** |
-| C3 Contract Compat | — | — | — | **🔴** |
-| Wave-21 Status Strict-Reject | — | — | — | **✅** |
+| Item                         |  M  | W18 | W19 |           **W21**            |
+| ---------------------------- | :-: | :-: | :-: | :--------------------------: |
+| A1 Finding controlId         | 🔴  | 🔴  | 🔴  |            **🔴**            |
+| A2 /admin/branding           | 🔴  | 🔴  | 🔴  |            **🔴**            |
+| B1 AI Router Health          |  —  |  —  | 🔴  |            **✅**            |
+| B2 ESG Datapoints            |  —  | 🟡  | 🟡  |     **🔴** (unverändert)     |
+| B3 Compliance Frameworks API |  —  |  —  | 🔴  |        **✅** (953!)         |
+| B4 Bulk-Operations           |  —  |  —  | 🔴  |  **🟡** (Cap ✅, Insert 🔴)  |
+| B5 DMS Path                  |  —  |  —  | 🟡  | **✅** (beide funktionieren) |
+| B6 Programmes Maturity       | 🟡  |  —  | 🟡  |     **🔴** (keine Daten)     |
+| B7 Multi-Tenant RLS          |  —  |  —  | 🟡  |   **🟡** (User-Seed fehlt)   |
+| B8 Notifications             |  —  |  —  | 🟡  |            **🟡**            |
+| B9 PDF Format                |  —  |  —  | 🔴  |            **✅**            |
+| B10 Academy                  |  —  |  —  | 🟡  |            **✅**            |
+| C3 Contract Compat           |  —  |  —  |  —  |            **🔴**            |
+| Wave-21 Status Strict-Reject |  —  |  —  |  —  |            **✅**            |
 
 **Fortschritt:** 4 neue grüne Items in Wave 21. Aber die beiden wichtigsten — A1 + A2 — sind weiter offen.
 
@@ -247,6 +253,7 @@ rowMismatches: 0
 ### W21-B4-BulkInsertFails (P1)
 
 `/risks/bulk` Endpoint funktioniert (Cap + Multi-Status-Response), aber die einzelnen Inserts scheitern mit SQL-Error im `work_item`-Table:
+
 ```
 type_key: "single_risk"
 ```
@@ -268,6 +275,7 @@ Wave 21 Status-Strict-Reject ist deployed, aber im SELBEN Route-Handler die FK-P
 **Aber:** Die zwei Pilot-Critical-Items aus Block A sind zum dritten Mal nicht gefixt. Das ist die **Hauptfrage:** warum kommt Wave 21 nicht durch?
 
 **Drei mögliche Ursachen:**
+
 1. **Deploy-Pipeline-Issue:** Code im Repo sieht korrekt aus, aber Build-Artefakt enthält alte Version
 2. **Schema-/Migration-Drift:** finding-table hat zwar `control_id` Spalte (verifiziert in `db/schema/control.ts:328`), aber die Production-DB hat sie evtl. nicht (Migration nicht gelaufen)
 3. **Hidden bug:** Ein anderes Stück Code zwischen Zod-Parse und Drizzle-Insert lässt die FK-Felder fallen
@@ -275,6 +283,7 @@ Wave 21 Status-Strict-Reject ist deployed, aber im SELBEN Route-Handler die FK-P
 **Pilot-Readiness:** **NICHT erreicht.** Block A muss vor Pilot grün sein.
 
 **Empfehlung für Wave 22 (HotFix):**
+
 1. **DEPLOY-VERIFICATION:** Auf der Produktion verifizieren: `git rev-parse HEAD` matched die letzte Commit-SHA von Wave 21. Build-Logs prüfen.
 2. **PROD-DB-SCHEMA-CHECK:** `\d finding` in PostgreSQL — gibt es wirklich `control_id` Spalte? Letzte Migration angewendet?
 3. **HOTFIX:** Wenn Deploy-Issue → Re-Deploy mit cleanem Build. Wenn Schema-Issue → Migration laufen lassen. Wenn Code-Bug → Drizzle-Insert-Statement debuggen mit explizitem Console-Log.
@@ -289,4 +298,4 @@ Hash-Chain hat alle 14+ Wellen + Marathon + 4 Verifikations-Marathons überlebt.
 
 ---
 
-*Wave 21 Verifikation abgeschlossen 2026-05-15. 6/15 ✅, 3/15 🟡, 6/15 🔴. Hash-Chain healthy. Block A weiter Pilot-Showstopper.*
+_Wave 21 Verifikation abgeschlossen 2026-05-15. 6/15 ✅, 3/15 🟡, 6/15 🔴. Hash-Chain healthy. Block A weiter Pilot-Showstopper._

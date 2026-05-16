@@ -22,6 +22,7 @@ Jedes Item folgt dem Format: **Symptom → Erwartung → Suchpfade → Akzeptanz
 ### W19-P1-01: `POST /findings {controlId}` persistiert die Verknüpfung nicht
 
 **Symptom:**
+
 ```
 POST /api/v1/findings {controlId: '<uuid>', severity:'major_nonconformity', source:'audit', status:'open'}
 → 201
@@ -32,18 +33,21 @@ GET /api/v1/findings/{id}
 `controlId` wird im INSERT gedroppt. Daher schlägt kein API-erstelltes Critical Finding in der Cascade-Aggregation (`/controls/effectiveness`) durch — der WHERE-Filter `finding.controlId is not null` schließt sie aus. Spiegelung Wave-15-P1-01 (auditId).
 
 **Erwartung:**
+
 1. POST persistiert `controlId`, `auditId`, `riskId`, `processId`, alle bekannten Cross-Module-Foreign-Keys
 2. GET liefert sie in der JSON-Response
 3. PATCH `/findings/{id}` (oder PUT) erlaubt nachträgliches Setzen — derzeit PATCH 405, PUT 422
 4. Status-Mapping `open → identified` entweder strict-rejecten ODER im Schema dokumentieren
 
 **Suchpfade:**
+
 - `apps/web/src/app/api/v1/findings/route.ts` (POST)
 - `apps/web/src/app/api/v1/findings/[id]/route.ts` (GET, PATCH/PUT)
 - `packages/shared/src/schemas/finding.ts`
 - `packages/db/src/schema/finding.ts`
 
 **Akzeptanz-Test (Vitest):**
+
 ```ts
 // apps/web/src/__tests__/api/findings-cross-module-links.test.ts
 test("POST /findings persists controlId + GET returns it", ...)
@@ -77,11 +81,13 @@ test("Cascade picks up API-created critical finding", async () => {
 ### W19-P3-01: Contract-Schema-Drift dokumentieren
 
 Field-Renames über die Wellen:
+
 - Wave 14: `value`, `startDate`, `endDate`
 - Wave 16: → `totalValue`, `effectiveDate`, `expirationDate`
 - Wave 18: → `title` (war `name`)
 
 **Erwartung:**
+
 1. `CHANGELOG.md`-Eintrag pro Field-Rename (Pre-Release-Doku)
 2. OpenAPI-Spec markiert die alten Namen als `deprecated` mit `x-deprecated-in: <version>` für 2 Releases
 3. Zod-Schema akzeptiert beide für 1 Release mit Deprecation-Warn-Header in der Response
@@ -105,6 +111,7 @@ CISO ist 2nd-Line, sollte Compliance-Verletzungen als Findings dokumentieren kö
 ### W19-P3-03: ESG Datapoint-Discovery
 
 **Symptom:**
+
 ```
 POST /esg/metrics {name, category, unit, frequency}    → 422 {fieldErrors: {datapointId: ['Required']}}
 GET /esg/datapoints                                     → leere data-Liste
@@ -113,6 +120,7 @@ GET /esg/datapoints                                     → leere data-Liste
 Frontend kann den geforderten `datapointId` nicht auflösen.
 
 **Vorgehen:**
+
 1. `packages/db/sql/seed_esrs_datapoints.sql` wird im prod-seed nicht geladen — in `seed-all.ts` oder `seed.ts` ergänzen
 2. `GET /esg/datapoints` mit ESRS-Datapoint-Liste anreichern
 3. Discovery-Endpoint `GET /esg/metrics/schema` mit Body-Shape
@@ -128,6 +136,7 @@ Frontend kann den geforderten `datapointId` nicht auflösen.
 **Lücke:** Marathon hat nur Discovery + Transitions-Schema markiert. Echte 7-State-Walk-Through + 72h-Countdown-Trigger nicht verifiziert.
 
 **Verifikation:**
+
 1. Login als `security_analyst@meridian.test` (falls existiert; sonst seed nachziehen)
 2. `POST /isms/incidents {severity:'high', category:'data_breach', detectedAt:now}` → 201
 3. Walk `detected → triage → investigating → contained → eradicated → recovered → lessons_learned → closed` über die Discovery/Transition-Endpoints
@@ -135,12 +144,14 @@ Frontend kann den geforderten `datapointId` nicht auflösen.
 5. Beim Überschreiten der 72h soll `incident.escalation = 'dsgvo_overdue'` propagieren (testen mit `--time-warp` falls verfügbar, sonst per DB-Update simulieren)
 
 **Erwartung Code:**
+
 - 7-State + Discovery-Endpoint `/isms/incidents/{id}/transitions`
 - 72h-Countdown im Schema (`dsgvoNotificationDueAt`)
 - Notification-Trigger bei state-change → `confirmed`/`high-severity` an DPO
 - Cron oder pg-trigger der `escalation`-Flag setzt
 
 **Akzeptanz-Test:**
+
 ```ts
 test("Incident state-machine full walk", ...)
 test("Data-breach sets 72h deadline + notifies DPO", ...)
@@ -156,6 +167,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Marathon hat Discovery + Transitions markiert. Echte Blocker-Bedingung (`processImpacts.scored = all`) nicht durch unvollständige BIA verifiziert.
 
 **Verifikation:**
+
 1. Login als `risk_manager@arctos.dev` oder `bcm_manager@meridian.test`
 2. `POST /bcms/bia {name, scope}` → 201
 3. `POST /bcms/bia/{id}/start` → 200, status: in_progress, blockers: enthalten `process_impacts_incomplete`
@@ -172,9 +184,10 @@ test("Overdue incident escalates", ...)
 **Lücke:** "Konzeptionell korrekt" markiert, nicht durchgespielt. HinSchG-Vertraulichkeit ist Compliance-kritisch.
 
 **Verifikation:**
+
 1. Anonymous-Intake: `POST /whistleblowing/intake/<org-code> {report}` → 201
 2. Login als `whistleblowing@meridian.test` → Case sichtbar
-3. Walk `received → triage → investigation → conclusion → closed` 
+3. Walk `received → triage → investigation → conclusion → closed`
 4. **Cross-Role-Negativ-Test:** Login als CISO, Admin, DPO → kein Case-Detail-Read (`GET /whistleblowing/cases/{id}` muss für nicht-WB-Officer 403 sein, AUCH für admin)
 5. Bei der Case-Visibility muss `disclosureScope: 'wb-officers-only'` greifen — Wave-12 hatte das markiert, jetzt verifizieren
 
@@ -187,6 +200,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Alle Tests in Org `ccc4cc1c-...` (Meridian). Zweite Org + Cross-Tenant-Read-Attempt nicht verifiziert.
 
 **Verifikation:**
+
 1. Zweite Demo-Org seeden (falls noch nicht da): `Arctis Textil GmbH` oder `Arctos-Hardware-Demo`
 2. User in Org-A erstellt Risk → bekommt `risk-A.id`
 3. User in Org-B liest `GET /risks/risk-A.id` → muss 404 (oder 403) sein, niemals 200
@@ -194,6 +208,7 @@ test("Overdue incident escalates", ...)
 5. RLS-Policy-Coverage über die 545 Tabellen prüfen — Wave 1 hatte `rls-coverage-report.md` markiert dass einige Tabellen ohne RLS sind
 
 **Done:**
+
 - Cross-tenant-read-attempt 404
 - `docs/security/rls-coverage-report.md` ist 100 % covered (oder Lücken explizit als by-design markiert)
 - Automatisierter RLS-Test pro Tabelle (Pattern-Test in `packages/db/src/__tests__/rls/*.test.ts`)
@@ -205,12 +220,14 @@ test("Overdue incident escalates", ...)
 **Lücke:** Test-Coverage hat Email-Templates abgedeckt, aber kein Live-Trigger verifiziert.
 
 **Verifikation:**
+
 1. Risk-Create mit ownerId-Assignment → owner muss Notification + Email bekommen
 2. DSR-Create → DPO Notification + Email
 3. Audit-Schedule → Auditor + Auditee Notifications
 4. Incident-detected severity:high → CISO Notification
 
 **Erwartung:**
+
 - Notification-Tabelle hat Eintrag pro Trigger
 - Resend-API wurde aufgerufen (auch wenn im Dev-Mode mit Console-Log statt SMTP)
 - Email-Template rendert ohne Errors
@@ -225,6 +242,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Wave 12 hat PDFs getestet, seitdem 25+ neue Risks, 5 Treatments, 23 Findings. Aktualität der Exports nicht verifiziert.
 
 **Verifikation:**
+
 1. `GET /reports/risk-register.pdf` → muss aktuelle 27+ Risks enthalten, NICHT nur die Seed-Daten
 2. `GET /reports/audit-trail.pdf?from=2026-05-01&to=2026-05-15` → enthält alle Wave-18-Mutationen mit Hash-Chain-Verify
 3. `GET /dpms/dpia/{id}/export` → PDF/A-konform, GoBD §147 erfüllt
@@ -242,6 +260,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** UI-Spot-Checks nur, keine echten Form-State + Validation-Display + Optimistic-Updates getestet.
 
 **Verifikation pro Modul-Page** (Risks, Controls, Findings, DPIAs, Audits, Vendors, Contracts):
+
 1. Form öffnen via UI
 2. Required-Field-Validation visualisiert (rote Border + Hint-Text)
 3. Submit mit fehlendem Feld → kein API-Call, lokale Error-Display
@@ -259,6 +278,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Privacy-Router in Test-Coverage abgedeckt, aber Live-Failover nicht verifiziert.
 
 **Verifikation:**
+
 1. Provider-A (Claude) künstlich auf timeout setzen
 2. Request gegen `/ai/router/chat` → soll automatisch auf Provider-B (OpenAI) failover
 3. Privacy-Tier hochstufen auf `confidential` → muss Ollama (local) wählen
@@ -273,6 +293,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Wave 6 Phase F hat mal Performance gemessen, nicht recent.
 
 **Verifikation:**
+
 1. K6 oder autocannon Load-Test gegen `GET /risks?limit=100` mit 50 concurrent users für 60s
 2. P95-Latenz < 500ms, P99 < 1s, 0 Errors
 3. Cross-Module-Aggregation `GET /controls/effectiveness` unter Last → P95 < 1s
@@ -288,6 +309,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Marathon hat markiert: "Maturity-Auto-Berechnung aus Control-Effectiveness ist hardgecoded statt aus Daten abgeleitet".
 
 **Erwartung:**
+
 - `programme.maturityLevel` wird live aus Control-Effectiveness + Audit-Coverage + Risk-Treatment-Quote berechnet
 - Per Phase (inception/planning/execution/certification/continuous_improvement) angepasste Berechnung
 - Endpoint `GET /programmes/{id}/maturity-breakdown` zeigt die einzelnen Komponenten
@@ -301,6 +323,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** ~960 Cross-Framework-Mappings im Seed, nie verifiziert dass sie laufen.
 
 **Verifikation:**
+
 1. `GET /compliance/frameworks` → 46 Frameworks
 2. Random-Sample 10 Controls mit Multi-Framework-Mapping (z.B. ISO 27001 A.5.1 ↔ BSI Grundschutz CON.1 ↔ NIS2 Art. 21)
 3. Pro Mapping: Markiere Control als `effective` → muss in ALLEN gemappten Frameworks als "implementiert" zählen
@@ -315,6 +338,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Module existiert (Sprint 46 Whistleblowing-Advanced erwähnt es), nie getestet.
 
 **Verifikation:**
+
 1. `GET /academy/courses` → Seed-Courses (gdpr, info_security, anti_corruption, ...)
 2. `POST /academy/enrollments {courseId, userId}` als Department-Head → 201
 3. `GET /academy/users/{userId}/progress` → 0%
@@ -330,6 +354,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Modul existiert (`packages/db/src/schema/document.ts` o.ä.), nicht getestet.
 
 **Verifikation:**
+
 1. `POST /dms/documents {title, type, file-base64}` → 201, gespeichert mit Hash
 2. `POST /dms/documents/{id}/versions` → neue Version
 3. `POST /dms/documents/{id}/sign` → Multi-Signer-Workflow
@@ -345,6 +370,7 @@ test("Overdue incident escalates", ...)
 **Lücke:** Critical Implementation Rule #11 (Bulk-Cap) wurde mal getestet, nicht recent.
 
 **Verifikation:**
+
 1. `POST /risks/bulk` mit 50 Items → 201 (innerhalb cap)
 2. `POST /risks/bulk` mit 500 Items → 422 (über cap), klare Error-Message mit `maxBulkSize: 100`
 3. Bulk-Update + Bulk-Delete analog
@@ -356,31 +382,34 @@ test("Overdue incident escalates", ...)
 
 ## Done-Kriterien für die Gesamt-PR
 
-| Kategorie | Done wenn |
-|---|---|
-| **Tests** | Alle neuen Vitest + Playwright + RLS-Pattern-Tests grün. Coverage steigt nicht. |
-| **Hash-Chain** | `healthy=true, mismatches=0, v1=1229` nach allen Mutationen. |
-| **RBAC-Suite** | `domain-rbac-suite.test.ts` SPECS für POST /findings ergänzt um CISO. |
-| **Cascade-E2E** | Cowork-QA-Marathon-Cascade-Test reproduzierbar: POST /findings {controlId, severity:critical} → +1 in `/controls/effectiveness`. |
-| **RLS-Report** | `docs/security/rls-coverage-report.md` zeigt 100% Coverage oder explizite Ausnahmen mit ADR-Reference. |
-| **PDF/A** | 4 PDF-Exports validieren als PDF/A-2b oder besser. |
-| **Performance** | Load-Test-Report `docs/performance/wave19-baseline.md` mit P95/P99-Charts. |
-| **CHANGELOG** | Jeder API-Break + jedes neue Feature dokumentiert. |
-| **Migrations** | Falls neue Tables/Spalten: Migration-Nummer ≥ 0325, idempotent, reversible-Note. |
-| **Wave-18-Regression** | Alle 8 Marathon-Fixes von Wave 18 bleiben grün (re-run domain-rbac-suite). |
+| Kategorie              | Done wenn                                                                                                                        |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
+| **Tests**              | Alle neuen Vitest + Playwright + RLS-Pattern-Tests grün. Coverage steigt nicht.                                                  |
+| **Hash-Chain**         | `healthy=true, mismatches=0, v1=1229` nach allen Mutationen.                                                                     |
+| **RBAC-Suite**         | `domain-rbac-suite.test.ts` SPECS für POST /findings ergänzt um CISO.                                                            |
+| **Cascade-E2E**        | Cowork-QA-Marathon-Cascade-Test reproduzierbar: POST /findings {controlId, severity:critical} → +1 in `/controls/effectiveness`. |
+| **RLS-Report**         | `docs/security/rls-coverage-report.md` zeigt 100% Coverage oder explizite Ausnahmen mit ADR-Reference.                           |
+| **PDF/A**              | 4 PDF-Exports validieren als PDF/A-2b oder besser.                                                                               |
+| **Performance**        | Load-Test-Report `docs/performance/wave19-baseline.md` mit P95/P99-Charts.                                                       |
+| **CHANGELOG**          | Jeder API-Break + jedes neue Feature dokumentiert.                                                                               |
+| **Migrations**         | Falls neue Tables/Spalten: Migration-Nummer ≥ 0325, idempotent, reversible-Note.                                                 |
+| **Wave-18-Regression** | Alle 8 Marathon-Fixes von Wave 18 bleiben grün (re-run domain-rbac-suite).                                                       |
 
 ---
 
 ## Vorgehen (empfohlen)
 
 **Tag 1-2: Block 1 (Beta-Blocker)**
+
 - W19-P1-01 Finding-Cascade-Persistenz (am wichtigsten — schaltet Marathon-Pflanz frei)
 - W19-P2-01 /admin/branding
 
 **Tag 3: Block 2 (Polish)**
+
 - W19-P3-01/02/03 — alle drei sind kleine Diffs
 
 **Tag 4-6: Block 3 (Workflow-Lücken)**
+
 - W19-W5 Incident → das ist ein größerer Brocken, vermutlich fehlt die 72h-Logik
 - W19-W6 BIA-Gates
 - W19-W7 Whistleblowing-Vertraulichkeit (HinSchG-Compliance-kritisch)
@@ -389,6 +418,7 @@ test("Overdue incident escalates", ...)
 - W19-W10 PDF-Exports
 
 **Tag 7-10: Block 4 (Härtung)**
+
 - W19-N1 UI-Forms (Playwright)
 - W19-N2 AI-Router
 - W19-N3 Performance
@@ -451,4 +481,4 @@ Cowork QA fährt dann Verifikations-Marathon: alle 4 Blöcke durch, neue Befunde
 
 ---
 
-*Wave 19 + 20 Full-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. Adressiert: 4 Wave-18-Restpunkte + 6 Workflow-Lücken + 8 Härtungs-Items = 18 Items total.*
+_Wave 19 + 20 Full-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. Adressiert: 4 Wave-18-Restpunkte + 6 Workflow-Lücken + 8 Härtungs-Items = 18 Items total._

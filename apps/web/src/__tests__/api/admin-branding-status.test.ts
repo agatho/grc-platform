@@ -79,7 +79,9 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     });
 
     const { GET } = await import("../../app/api/v1/admin/branding/route");
-    const res = await GET(new Request("http://localhost/api/v1/admin/branding"));
+    const res = await GET(
+      new Request("http://localhost/api/v1/admin/branding"),
+    );
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -107,7 +109,9 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     });
 
     const { GET } = await import("../../app/api/v1/admin/branding/route");
-    const res = await GET(new Request("http://localhost/api/v1/admin/branding"));
+    const res = await GET(
+      new Request("http://localhost/api/v1/admin/branding"),
+    );
 
     // 42P01 must NOT escalate to 500 — Wave 19 made this an explicit
     // graceful-degradation path. Defaults are returned with source=defaults.
@@ -151,7 +155,9 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     });
 
     const { GET } = await import("../../app/api/v1/admin/branding/route");
-    const res = await GET(new Request("http://localhost/api/v1/admin/branding"));
+    const res = await GET(
+      new Request("http://localhost/api/v1/admin/branding"),
+    );
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -167,7 +173,9 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     );
 
     const { GET } = await import("../../app/api/v1/admin/branding/route");
-    const res = await GET(new Request("http://localhost/api/v1/admin/branding"));
+    const res = await GET(
+      new Request("http://localhost/api/v1/admin/branding"),
+    );
 
     expect(res.status).toBe(401);
     expect([200, 401, 501]).toContain(res.status);
@@ -191,7 +199,9 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     });
 
     const { GET } = await import("../../app/api/v1/admin/branding/route");
-    const res = await GET(new Request("http://localhost/api/v1/admin/branding"));
+    const res = await GET(
+      new Request("http://localhost/api/v1/admin/branding"),
+    );
 
     // Connection-timeout maps to 503 (database-unavailable branch in
     // api-wrapper). Acceptance for A2 is "never silently 500 with

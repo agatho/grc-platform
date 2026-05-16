@@ -9,13 +9,13 @@
 
 🎉 **Alle 4 verbleibenden Wave-15-Findings sind gefixt.** Plattform-Stand erstmals seit Wave 14 ohne offene P0/P1-Findings aus diesem Test-Backlog.
 
-| Finding | Wave 15 | Wave 16 |
-|---|---|---|
-| `#WAVE14-UI-01/02` `/risks` + `/controls` sortBy | 🔴 422 | ✅ **200** |
-| `#WAVE14D-P1-02/03` Contract-Validation | 🔴 201 mit invalid | ✅ **422** mit field-detail |
-| `#WAVE14D-P1-07` `/dora/critical-vendors` | 🔴 500 | ✅ **200** mit 2 critical vendors |
-| `#WAVE14D-P1-01` Audit→Finding `auditId`-Field | 🟡 persistiert, fehlte in GET-Response | ✅ **vollständig** in GET-Response |
-| Hash-Chain | ✅ | ✅ **healthy v1=1229, v2=374, 0 mismatches** |
+| Finding                                          | Wave 15                                | Wave 16                                      |
+| ------------------------------------------------ | -------------------------------------- | -------------------------------------------- |
+| `#WAVE14-UI-01/02` `/risks` + `/controls` sortBy | 🔴 422                                 | ✅ **200**                                   |
+| `#WAVE14D-P1-02/03` Contract-Validation          | 🔴 201 mit invalid                     | ✅ **422** mit field-detail                  |
+| `#WAVE14D-P1-07` `/dora/critical-vendors`        | 🔴 500                                 | ✅ **200** mit 2 critical vendors            |
+| `#WAVE14D-P1-01` Audit→Finding `auditId`-Field   | 🟡 persistiert, fehlte in GET-Response | ✅ **vollständig** in GET-Response           |
+| Hash-Chain                                       | ✅                                     | ✅ **healthy v1=1229, v2=374, 0 mismatches** |
 
 ---
 
@@ -24,12 +24,14 @@
 ### 1. `/risks` + `/controls` UI vollständig funktional
 
 **API-Test:**
+
 ```
 GET /api/v1/risks?limit=100&sortBy=riskScoreResidual&sortDir=desc → 200
 GET /api/v1/controls?limit=100&sortBy=effectiveness&sortDir=desc → 200
 ```
 
 **UI-Test:**
+
 - `/risks` zeigt jetzt: "Risikomanagement — 24 risks" mit voller Tabelle (Wave14-QA-W1-Risk als RSK-045 mit Status "Geschlossen" sichtbar)
 - `/controls` zeigt: "Internes Kontrollsystem — 18 Kontrollregister" mit voller Tabelle (Sarah Mueller als Verantwortliche)
 
@@ -51,6 +53,7 @@ POST /contracts {value: -5000, startDate: '2027-01-01', endDate: '2026-01-01'} �
 ```
 
 Beide Constraints fangen jetzt:
+
 - Negative Werte
 - endDate vor startDate
 
@@ -83,6 +86,7 @@ TPRM-Vendoren mit `tier: critical` werden automatisch in der DORA-Critical-Vendo
 ### 4. Audit→Finding `auditId` vollständig
 
 Wave-14-Finding `Wave15-CrossLink` mit `auditId: 92c78323-2641-4fe2-aa16-ce9ed34b00af` ist jetzt im GET-Response:
+
 ```json
 {
   "title": "Wave15-CrossLink",
@@ -111,13 +115,14 @@ mismatches: 0
 ## Detail-Bilanz Wave 14 → Wave 16
 
 | Severity | Wave 14 OPEN | Wave 15 OPEN | Wave 16 OPEN |
-|---|---:|---:|---:|
-| P0 | 5 | 1 | 0 ✅ |
-| P1 | 8 | 3 | 0 ✅ |
+| -------- | -----------: | -----------: | -----------: |
+| P0       |            5 |            1 |         0 ✅ |
+| P1       |            8 |            3 |         0 ✅ |
 
 **Alle P0 + P1 aus Wave 14 DEEP sind gefixt.**
 
 Verbleibende P2/P3 aus Wave 14 (nicht in Wave-16-Scope):
+
 - `/controls/findings` Aggregation zeigt 0 obwohl Daten existieren (P2)
 - `/processes/governance` "GESAMTPROZESSE 0" (P2)
 - `/tprm/concentration` returns null (P2)
@@ -133,10 +138,11 @@ Verbleibende P2/P3 aus Wave 14 (nicht in Wave-16-Scope):
 ## Lobenswerte Wave-16-Patterns
 
 ✅ **Contract-Field-Errors sind UX-Gold**:
-   - "Monetary value must be a non-negative decimal (e.g. '1000' or '1234.56'); use a dot as the decimal separator"
-   - "expirationDate must be on or after effectiveDate"
-   
-   Konkrete Hinweise statt nur "invalid". Frontend kann den Hilfetext direkt anzeigen.
+
+- "Monetary value must be a non-negative decimal (e.g. '1000' or '1234.56'); use a dot as the decimal separator"
+- "expirationDate must be on or after effectiveDate"
+
+Konkrete Hinweise statt nur "invalid". Frontend kann den Hilfetext direkt anzeigen.
 
 ✅ **DORA-Critical-Vendor-Response zeigt Risk-Scoring**: `inherentRiskScore: 82, residualRiskScore: 45` — Cross-Module-Aggregation aus TPRM → DORA mit voller Risk-Sicht. Compliance-tauglich.
 
@@ -148,21 +154,21 @@ Verbleibende P2/P3 aus Wave 14 (nicht in Wave-16-Scope):
 
 **Plattform-Stand nach Wave 16:** Alle harten P0/P1-Findings aus dem Funktional-Tiefen-Test sind gefixt.
 
-| Säule | Status |
-|---|:-:|
-| Hash-Chain (ISO 27001 A.18.1.3, GoBD §147, DSGVO Art. 5(2)) | ✅ |
-| State-Machine-Coverage | 12/14 + 2 by-design |
-| PDF/A (GoBD §147) | ✅ |
-| Incident DSGVO Art. 33 | ✅ NIST-7-State |
-| RBAC + 3LoD | ✅ |
-| HinSchG-Vertraulichkeit | ✅ §§-Referenz |
-| Multi-Tenant-Isolation | ✅ |
-| Exports (CSV/PDF/ZIP) | ✅ |
-| Validation-Layer | ✅ RFC-7807 + strict |
-| UI-API-Sync | ✅ (`/risks`, `/controls`, `/isms/*`) |
-| Cross-Module-Verkettung | ✅ Audit→Finding, TPRM→DORA |
-| DSR-Workflow (Art. 15-21) | ✅ |
-| BIA-Workflow + Gates | ✅ Discovery + `/start` |
+| Säule                                                       |                Status                 |
+| ----------------------------------------------------------- | :-----------------------------------: |
+| Hash-Chain (ISO 27001 A.18.1.3, GoBD §147, DSGVO Art. 5(2)) |                  ✅                   |
+| State-Machine-Coverage                                      |          12/14 + 2 by-design          |
+| PDF/A (GoBD §147)                                           |                  ✅                   |
+| Incident DSGVO Art. 33                                      |            ✅ NIST-7-State            |
+| RBAC + 3LoD                                                 |                  ✅                   |
+| HinSchG-Vertraulichkeit                                     |            ✅ §§-Referenz             |
+| Multi-Tenant-Isolation                                      |                  ✅                   |
+| Exports (CSV/PDF/ZIP)                                       |                  ✅                   |
+| Validation-Layer                                            |         ✅ RFC-7807 + strict          |
+| UI-API-Sync                                                 | ✅ (`/risks`, `/controls`, `/isms/*`) |
+| Cross-Module-Verkettung                                     |      ✅ Audit→Finding, TPRM→DORA      |
+| DSR-Workflow (Art. 15-21)                                   |                  ✅                   |
+| BIA-Workflow + Gates                                        |        ✅ Discovery + `/start`        |
 
 **Plattform-Stand jetzt realistisch beta-tauglich.** Restliche P2/P3-Items sind Polish-Material, kein Beta-Blocker.
 
@@ -181,4 +187,4 @@ Verbleibende P2/P3 aus Wave 14 (nicht in Wave-16-Scope):
 
 ---
 
-*Wave 16 abgeschlossen. Alle Wave-14-DEEP-P0/P1-Findings gefixt. Plattform beta-tauglich.*
+_Wave 16 abgeschlossen. Alle Wave-14-DEEP-P0/P1-Findings gefixt. Plattform beta-tauglich._

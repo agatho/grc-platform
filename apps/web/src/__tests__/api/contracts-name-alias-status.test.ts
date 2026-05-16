@@ -107,7 +107,9 @@ function crashingTxMock() {
         values(_values: Record<string, unknown>) {
           return {
             returning() {
-              const err = new Error("relation contract does not exist") as Error & {
+              const err = new Error(
+                "relation contract does not exist",
+              ) as Error & {
                 code?: string;
               };
               err.code = "42P01";

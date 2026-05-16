@@ -47,9 +47,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       // Uptime in Sekunden seit Prozess-Boot. Hilft zu unterscheiden
       // zwischen "Container wurde gerade neu gestartet" (Sekunden) vs.
       // "Container läuft seit Tagen, Deploy ist alt" (>86400).
-      runtimeUptimeSeconds: Math.floor(
-        (Date.now() - PROCESS_START_MS) / 1000,
-      ),
+      runtimeUptimeSeconds: Math.floor((Date.now() - PROCESS_START_MS) / 1000),
       requestId: getRequestId(req),
     },
   });

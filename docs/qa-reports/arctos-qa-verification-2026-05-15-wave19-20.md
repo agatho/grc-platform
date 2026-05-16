@@ -12,13 +12,13 @@
 
 **Aber:** Die Workflow-Lücken aus Block 3 (Incident NIST-7, BIA-Gates, Whistleblowing-HinSchG-Vertraulichkeit, Hash-Chain-Regression) sind alle GRÜN. Die fundamentale Architektur funktioniert.
 
-| Block | Items | ✅ | 🟡 | 🔴 |
-|---|---|---:|---:|---:|
-| 1 Beta-Blocker | 2 | 0 | 0 | **2** |
-| 2 Polish | 3 | 1 | 1 | 1 |
-| 3 Workflows | 6 | 3 | 3 | 0 |
-| 4 Hardening | 8 | 1 | 4 | 3 |
-| **Total** | **19** | **5** | **8** | **6** |
+| Block          | Items  |    ✅ |    🟡 |    🔴 |
+| -------------- | ------ | ----: | ----: | ----: |
+| 1 Beta-Blocker | 2      |     0 |     0 | **2** |
+| 2 Polish       | 3      |     1 |     1 |     1 |
+| 3 Workflows    | 6      |     3 |     3 |     0 |
+| 4 Hardening    | 8      |     1 |     4 |     3 |
+| **Total**      | **19** | **5** | **8** | **6** |
 
 Hash-Chain: **healthy v1=1229, v2=468, total=1697, 0 mismatches.**
 
@@ -73,6 +73,7 @@ POST /findings als ciso@meridian.test {title, severity:'minor_nonconformity', so
 ```
 
 CISO ist jetzt in der Permission-Liste:
+
 > "Required role(s): admin, auditor, risk_manager, control_owner, process_owner, ciso"
 
 **Wave-18-P3-02 sauber gefixt.**
@@ -102,6 +103,7 @@ Endpoint existiert + liefert Schema-Discovery (`bodyShape` mit required/optional
 ### W19-W5 Incident-Lifecycle NIST-7-State ✅ FIXED
 
 **Full State-Machine:**
+
 ```
 detected → triaged → contained → eradicated → recovered → lessons_learned → closed
 ```
@@ -179,12 +181,14 @@ Endpoints liefern 200. **Aber: nicht verifiziert** ob Risk-Create / DSR-Create /
 ### W19-W10 PDF-Exports 🟡 GEMISCHT
 
 **Funktionsfähig (PDF):**
+
 ```
 GET /dpms/annual-report/2026/pdf  → 200, application/pdf, 3447 bytes ✅
 GET /isms/cap-monitor/pdf          → 200, application/pdf, 2539 bytes ✅
 ```
 
 **CSV (kein PDF):**
+
 ```
 GET /export/risk?format=pdf      → 200, but content-type CSV (Header ignoriert format=pdf!)
 GET /export/finding?format=pdf   → 200, but content-type CSV
@@ -193,6 +197,7 @@ GET /export/finding?format=pdf   → 200, but content-type CSV
 → `/export/{entityType}?format=pdf` ist ein **bestätigter Bug:** ignoriert den Format-Parameter, liefert immer CSV. **Neue P2-Finding W19-W10-PDF-Format-Ignored.**
 
 **Nicht implementiert:**
+
 ```
 GET /reports/risk-register.pdf       → 404
 GET /audit-log/audit-trail.pdf       → 404
@@ -320,6 +325,7 @@ rowMismatches: 0
 2. 🔴 `/admin/branding` 500 — seit Wave 17 unverändert
 
 **Plus mehrere "Unverified" weil Endpoints fehlen oder Seed-Daten:**
+
 - AI-Router-Health-Endpoint
 - ESG-Datapoints (Seed)
 - Compliance-Frameworks-API-Public-Endpoint
@@ -329,26 +335,16 @@ rowMismatches: 0
 **Empfehlung für Wave 21:**
 
 **P0 (Beta-Blocker noch nicht fertig):**
+
 1. **W19-P1-01 Finding `controlId` Persistenz** — POST muss `controlId/auditId/riskId/processId` in den INSERT mitgeben
 2. **W19-P2-01 `/admin/branding` 500** — Route-Handler reparieren
 
-**P1 (Workflow-Vervollständigung):**
-3. **W19-W10-PDF-Format-Ignored** — `/export/{entityType}?format=pdf` muss PDF liefern, nicht CSV
-4. **ESG-Datapoints-Seed** in prod-seed-flow integrieren
-5. **Bulk-API** für mindestens Risks, Controls, Findings (POST `/bulk`)
+**P1 (Workflow-Vervollständigung):** 3. **W19-W10-PDF-Format-Ignored** — `/export/{entityType}?format=pdf` muss PDF liefern, nicht CSV 4. **ESG-Datapoints-Seed** in prod-seed-flow integrieren 5. **Bulk-API** für mindestens Risks, Controls, Findings (POST `/bulk`)
 
-**P2 (Hardening + Polish):**
-6. AI-Router-Health-Endpoint exposen
-7. DMS-Pfad vereinheitlichen (`/dms/documents` vs `/documents`)
-8. Compliance-Frameworks-Public-API
-9. Programmes-Demo-Seed
-10. Contract-Backwards-Compat-Layer (`name` weiter akzeptieren mit Deprecation-Warning)
-11. Cross-Tenant-RLS-Probe-Test-Suite (zweite Org-Seed)
-12. Notification-Trigger-E2E-Tests
-13. PDF/A-Konformitäts-Check-Skript
+**P2 (Hardening + Polish):** 6. AI-Router-Health-Endpoint exposen 7. DMS-Pfad vereinheitlichen (`/dms/documents` vs `/documents`) 8. Compliance-Frameworks-Public-API 9. Programmes-Demo-Seed 10. Contract-Backwards-Compat-Layer (`name` weiter akzeptieren mit Deprecation-Warning) 11. Cross-Tenant-RLS-Probe-Test-Suite (zweite Org-Seed) 12. Notification-Trigger-E2E-Tests 13. PDF/A-Konformitäts-Check-Skript
 
 Mit P0+P1 (5 Items) ist die Plattform pilot-tauglich. P2 sind GA-Themen.
 
 ---
 
-*Wave 19+20 Verifikation abgeschlossen 2026-05-15. 5/19 ✅, 8/19 🟡, 6/19 🔴. Hash-Chain healthy. Architektonisch solide, aber 2 Beta-Blocker bleiben unverändert offen.*
+_Wave 19+20 Verifikation abgeschlossen 2026-05-15. 5/19 ✅, 8/19 🟡, 6/19 🔴. Hash-Chain healthy. Architektonisch solide, aber 2 Beta-Blocker bleiben unverändert offen._

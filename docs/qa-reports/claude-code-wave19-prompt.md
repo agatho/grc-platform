@@ -17,6 +17,7 @@ Cowork QA hat 8 von 9 Wave-18-Fixes verifiziert. **2 Items sind noch offen + 3 P
 ### W19-P1-01: `POST /findings {controlId}` persistiert die Verknüpfung nicht
 
 **Symptom:**
+
 ```
 POST /api/v1/findings
 { title:'…', severity:'major_nonconformity', source:'audit', status:'open', controlId: '<uuid>' }
@@ -31,17 +32,20 @@ Das `controlId` aus dem POST-Body wird im INSERT nicht mitgegeben, daher kommt i
 **Spiegelung von Wave-15-P1-01** (gleicher Bug mit `auditId`). Damals wurde nur der Filter (`findings?auditId=X`) gefixt, nicht das POST-Schema.
 
 **Erwartung:**
+
 1. `POST /findings` akzeptiert UND persistiert `controlId` (und während wir dabei sind auch `auditId`, `riskId`, `processId`, alle existierenden Cross-Module-Joinable-Foreign-Keys).
 2. `GET /findings/{id}` Response enthält `controlId` (bei not-null) im JSON.
 3. `PATCH /findings/{id}` (oder PUT) erlaubt nachträgliches Setzen — derzeit PATCH 405, PUT 422.
 
 **Suche an:**
+
 - `apps/web/src/app/api/v1/findings/route.ts` (POST)
 - `apps/web/src/app/api/v1/findings/[id]/route.ts` (GET, PATCH/PUT)
 - `packages/shared/src/schemas/finding.ts` (Zod-Schema)
 - `packages/db/src/schema/finding.ts` (Drizzle-Schema — sollte die FK-Spalten bereits haben)
 
 **Akzeptanz:**
+
 ```ts
 // neue Vitest-Test in apps/web/src/__tests__/api/findings-cross-module-links.test.ts
 test("POST /findings persists controlId + GET returns it", async () => {
@@ -69,6 +73,7 @@ test("Cascade picks up API-created critical finding", async () => {
 ### W19-P2-01: `GET /admin/branding` 500
 
 **Symptom:**
+
 ```
 GET /api/v1/admin/branding → 500 "Internal server error"
 ```
@@ -86,6 +91,7 @@ War schon in Wave 17 + Marathon + Wave 18 markiert. Vermutlich missing Table, fa
 ### W19-P3-01: Contract-Schema-Drift — `name → title`
 
 **Beobachtung:** Über die Wellen hat sich das Contract-Schema mehrfach umbenannt:
+
 - Wave 14: `value`, `startDate`, `endDate`
 - Wave 16: → `totalValue`, `effectiveDate`, `expirationDate`
 - Wave 18: → `title` (war `name`)
@@ -93,6 +99,7 @@ War schon in Wave 17 + Marathon + Wave 18 markiert. Vermutlich missing Table, fa
 Frontend-Clients und API-Konsumenten brechen bei jedem Schema-Swap.
 
 **Erwartung:**
+
 1. CHANGELOG.md-Eintrag pro Field-Rename
 2. Im OpenAPI-Spec den deprecation-Marker für alte Field-Namen für 1-2 Releases halten (oder strict reject mit "use `title` not `name`" hint)
 3. Test in `domain-rbac-suite.test.ts` ergänzen der gegen das aktuelle Schema asserted
@@ -113,6 +120,7 @@ CISO ist 2nd-Line-of-Defense und sollte Compliance-Verletzungen als Findings dok
 ### W19-P3-03: ESG Body-Schema-Doku
 
 **Beobachtung:**
+
 ```
 POST /esg/metrics       → 422 {fieldErrors: {datapointId: ['Required']}}
 POST /esg/measurements  → 422 {fieldErrors: {datapointId: ['Required']}}
@@ -121,6 +129,7 @@ POST /esg/measurements  → 422 {fieldErrors: {datapointId: ['Required']}}
 Frontend-Form fehlt das Feld (Wave 18 hat nur RBAC verifiziert, nicht UI-Flow). Außerdem ist das Discovery für `datapointId`-Auswahl nicht offensichtlich (`/esg/datapoints` liefert leere data-Liste).
 
 **Erwartung:**
+
 1. `GET /esg/datapoints` mit Seed-Datapoints aus dem ESRS-Catalog populieren (`packages/db/sql/seed_esrs_datapoints.sql` existiert bereits — wird sie im prod-seed geladen?)
 2. Discovery-Endpoint `GET /esg/metrics/schema` oder ähnlich der das erwartete Body-Shape liefert
 3. Frontend-Form für `/esg/metrics` neu-Form um Datapoint-Picker erweitern
@@ -168,17 +177,17 @@ admin@arctos.dev / admin123               admin (cross-org)
 
 ## Erfolgs-Kriterien für Wave 19
 
-| Item | Kriterium |
-|---|---|
-| W19-P1-01 | `POST /findings {controlId}` persistiert. Cascade-Endpoint zeigt +1 nach Create. Test grün. |
-| W19-P2-01 | `GET /admin/branding` 200 oder 501 (Not Implemented), kein 500 |
-| W19-P3-01 | CHANGELOG-Eintrag pro Field-Rename, OpenAPI updated |
-| W19-P3-02 | `POST /findings` als CISO → 201, RBAC-Test angepasst |
-| Hash-Chain | `healthy=true, mismatches=0, v1=1229` |
-| Wave-18-Regression | Alle 8 Marathon-Fixes von Wave 18 bleiben grün |
+| Item               | Kriterium                                                                                   |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| W19-P1-01          | `POST /findings {controlId}` persistiert. Cascade-Endpoint zeigt +1 nach Create. Test grün. |
+| W19-P2-01          | `GET /admin/branding` 200 oder 501 (Not Implemented), kein 500                              |
+| W19-P3-01          | CHANGELOG-Eintrag pro Field-Rename, OpenAPI updated                                         |
+| W19-P3-02          | `POST /findings` als CISO → 201, RBAC-Test angepasst                                        |
+| Hash-Chain         | `healthy=true, mismatches=0, v1=1229`                                                       |
+| Wave-18-Regression | Alle 8 Marathon-Fixes von Wave 18 bleiben grün                                              |
 
 Cowork QA verifiziert anschließend in Wave 19, dann ist die Plattform für den ersten Pilot-Kunden technisch tauglich.
 
 ---
 
-*Wave 19 Sprint-Prompt geschrieben von Cowork QA, 2026-05-15.*
+_Wave 19 Sprint-Prompt geschrieben von Cowork QA, 2026-05-15._

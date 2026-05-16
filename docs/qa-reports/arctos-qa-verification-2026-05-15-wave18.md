@@ -10,19 +10,19 @@
 
 🎉 **8 von 9 Marathon-Findings sind gefixt.** Alle 4 P0-RBAC-Lücken (Process Owner, Vendor Manager, ESG Manager, CISO) sind geschlossen. DSR-Workflow ist vollständig (4 Side-Channels + Discovery). Cascade-Endpoints + KPI-Endpoints sind 200. **1 P1 nur teilweise** (Cascade-Endpoint korrekt, aber upstream-Bug verhindert dass neue Findings durchpropagieren). **1 P2 verbleibend** (`/admin/branding` weiter 500).
 
-| Befund | Marathon | Wave 18 |
-|---|---|---|
-| MAR-P0-01 Process Owner Risk-Lifecycle | 🔴 403 | ✅ **alle 3 Ops 200/201** |
-| MAR-P0-02 Vendor Manager Vendor+Contract | 🔴 403 | ✅ **beide 201** |
-| MAR-P0-03 ESG Manager Create/Update | 🔴 403 | ✅ **RBAC passed** (422 nur Body-Schema) |
-| MAR-P0-04 CISO Risk-Status-Transition | 🔴 403 | ✅ **200** |
-| MAR-P1-01 DSR /respond + /close | 🔴 422 | ✅ **alle 4 Side-Channels 200** |
-| MAR-P1-02 Finding→Control-Effectiveness | 🔴 kein Cascade | 🟡 **Endpoint da, aber upstream-Bug** |
-| MAR-P1-03 Treatment-Cost → Budget | 🔴 kein Endpoint | ✅ **`/risks/treatments/budget` 200** |
-| MAR-P1-04 `/controls/findings-summary` | 🔴 500 | ✅ **200** |
-| MAR-P1-05 `/processes/governance-summary` | 🔴 500 | ✅ **200** |
-| MAR-P2-01 `/kris/{id}/history` | 🔴 404 | ✅ **200** |
-| MAR-P2-02 `/admin/branding` | 🔴 500 | 🔴 **500** (nicht gefixt) |
+| Befund                                    | Marathon         | Wave 18                                  |
+| ----------------------------------------- | ---------------- | ---------------------------------------- |
+| MAR-P0-01 Process Owner Risk-Lifecycle    | 🔴 403           | ✅ **alle 3 Ops 200/201**                |
+| MAR-P0-02 Vendor Manager Vendor+Contract  | 🔴 403           | ✅ **beide 201**                         |
+| MAR-P0-03 ESG Manager Create/Update       | 🔴 403           | ✅ **RBAC passed** (422 nur Body-Schema) |
+| MAR-P0-04 CISO Risk-Status-Transition     | 🔴 403           | ✅ **200**                               |
+| MAR-P1-01 DSR /respond + /close           | 🔴 422           | ✅ **alle 4 Side-Channels 200**          |
+| MAR-P1-02 Finding→Control-Effectiveness   | 🔴 kein Cascade  | 🟡 **Endpoint da, aber upstream-Bug**    |
+| MAR-P1-03 Treatment-Cost → Budget         | 🔴 kein Endpoint | ✅ **`/risks/treatments/budget` 200**    |
+| MAR-P1-04 `/controls/findings-summary`    | 🔴 500           | ✅ **200**                               |
+| MAR-P1-05 `/processes/governance-summary` | 🔴 500           | ✅ **200**                               |
+| MAR-P2-01 `/kris/{id}/history`            | 🔴 404           | ✅ **200**                               |
+| MAR-P2-02 `/admin/branding`               | 🔴 500           | 🔴 **500** (nicht gefixt)                |
 
 Hash-Chain: **healthy v1=1229, v2=449, total=1678, 0 mismatches** — production-stabil über alle 18 Wellen.
 
@@ -34,12 +34,12 @@ Hash-Chain: **healthy v1=1229, v2=449, total=1678, 0 mismatches** — production
 
 Login als `process-owner@meridian.test`:
 
-| Operation | Wave 17 | Wave 18 | Beleg |
-|---|---|---|---|
-| `POST /risks` | ✅ 201 | ✅ 201 | id `8661ef00-2932-44bf-9e28-5456e11415eb` |
-| `PUT /risks/{id}/assessment` | 🔴 403 | ✅ **200** | `riskScoreInherent=12` (3×4) |
-| `PUT /risks/{id}/status` | 🔴 403 | ✅ **200** | identified → assessed |
-| `POST /risks/{id}/treatments` | 🔴 403 | ✅ **201** | id `02f5d1c5-b596-4014-b427-3b882c997ea8` |
+| Operation                     | Wave 17 | Wave 18    | Beleg                                     |
+| ----------------------------- | ------- | ---------- | ----------------------------------------- |
+| `POST /risks`                 | ✅ 201  | ✅ 201     | id `8661ef00-2932-44bf-9e28-5456e11415eb` |
+| `PUT /risks/{id}/assessment`  | 🔴 403  | ✅ **200** | `riskScoreInherent=12` (3×4)              |
+| `PUT /risks/{id}/status`      | 🔴 403  | ✅ **200** | identified → assessed                     |
+| `POST /risks/{id}/treatments` | 🔴 403  | ✅ **201** | id `02f5d1c5-b596-4014-b427-3b882c997ea8` |
 
 **Wave-19-MAR-P0-01 in `/risks/[id]/assessment/route.ts`, `/risks/[id]/status/route.ts`, `/risks/[id]/treatments/route.ts`** fügt `process_owner` (und `ciso`) zu `withAuth(...)` hinzu. Three-Lines-of-Defense ist endlich praktikabel: First-Line-Risikoeigentümer kann sein Risiko von Ende-zu-Ende selbst betreuen.
 
@@ -224,11 +224,11 @@ legacy: 9395 (pre-v1 entries, unchanged)
 
 ## Detail-Bilanz Wave 14 → Wave 18
 
-| Severity | W14 Open | W15 Open | W16 Open | W17 Open | Marathon Open | **W18 Open** |
-|---|---:|---:|---:|---:|---:|---:|
-| P0 | 5 | 1 | 0 | 0 | **4** (RBAC) | **0** ✅ |
-| P1 | 8 | 3 | 0 | 2 | **5** | **1** (Cascade-Upstream) |
-| P2 | viele | viele | viele | viele | 4 | **1** (`/admin/branding`) |
+| Severity | W14 Open | W15 Open | W16 Open | W17 Open | Marathon Open |              **W18 Open** |
+| -------- | -------: | -------: | -------: | -------: | ------------: | ------------------------: |
+| P0       |        5 |        1 |        0 |        0 |  **4** (RBAC) |                  **0** ✅ |
+| P1       |        8 |        3 |        0 |        2 |         **5** |  **1** (Cascade-Upstream) |
+| P2       |    viele |    viele |    viele |    viele |             4 | **1** (`/admin/branding`) |
 
 ---
 
@@ -261,4 +261,4 @@ Mit dem Fix von #1 (Finding controlId persistence) wäre die Cross-Module-Cascad
 
 ---
 
-*Wave 18 abgeschlossen. 4 P0 + 4 P1 gefixt, 1 P1 partial (Cascade-Endpoint ✅ aber Upstream-controlId-Bug), 1 P2 offen.*
+_Wave 18 abgeschlossen. 4 P0 + 4 P1 gefixt, 1 P1 partial (Cascade-Endpoint ✅ aber Upstream-controlId-Bug), 1 P2 offen._

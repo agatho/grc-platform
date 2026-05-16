@@ -9,19 +9,19 @@
 
 **Mehrere große Fixes, aber UI-Sync auf Risks/Controls noch nicht durch.**
 
-| Finding | Wave 14 | Wave 15 |
-|---|---|---|
-| `#WAVE14D-P0-02` Server-Cap auf alle 19 List-Endpoints | 🔴 500 empty | ✅ **422 RFC-7807** auf allen 19 (3 davon 403 für CISO) |
-| `#WAVE14D-P0-01` Server-DoS durch limit=500 | 🔴 502 Crash | ✅ kein Crash mehr (cap aktiv) |
-| `#WAVE14D-P0-03` ISMS-UI-Pages "0 gesamt" | 🔴 broken | ✅ **3 von 5 fixed** (`/isms/threats`, `/isms/incidents`, `/controls/rcm`); 2 noch broken (`/risks`, `/controls`) |
-| `#WAVE14D-P0-04` DSR-Create 500 empty | 🔴 500 | ✅ **201 Created** (als DPO) |
-| `#WAVE14D-P0-05` `/controls/rcm` mainLen=0 | 🔴 | ✅ **2098 chars** mit Risk-Kontroll-Matrix |
-| `#WAVE14D-P1-04` BIA-Discovery falscher Endpoint | 🔴 | ✅ **Discovery zeigt `/start`**, Workflow funktioniert |
-| `#WAVE14D-P1-05` Audit Discovery + fieldwork | 🔴 | ✅ **Discovery vorhanden**, `current → preparation → fieldwork` |
-| `#WAVE14D-P1-01` Audit→Finding link-loss | 🔴 silent loss | 🟡 **persistiert (Filter funktioniert)** aber Field nicht in GET-Response |
-| `#WAVE14D-P1-02/03` Contract-Validation | 🔴 akzeptiert neg + end<start | 🔴 **NICHT GEFIXT** — weiter 201 |
-| `#WAVE14D-P1-07` `/dora/critical-vendors` | 🔴 404 | 🔴 **NICHT GEFIXT** — jetzt 500 |
-| Hash-Chain | ✅ healthy | ✅ **healthy v1=1229, v2=368, 0 mismatches** |
+| Finding                                                | Wave 14                       | Wave 15                                                                                                           |
+| ------------------------------------------------------ | ----------------------------- | ----------------------------------------------------------------------------------------------------------------- |
+| `#WAVE14D-P0-02` Server-Cap auf alle 19 List-Endpoints | 🔴 500 empty                  | ✅ **422 RFC-7807** auf allen 19 (3 davon 403 für CISO)                                                           |
+| `#WAVE14D-P0-01` Server-DoS durch limit=500            | 🔴 502 Crash                  | ✅ kein Crash mehr (cap aktiv)                                                                                    |
+| `#WAVE14D-P0-03` ISMS-UI-Pages "0 gesamt"              | 🔴 broken                     | ✅ **3 von 5 fixed** (`/isms/threats`, `/isms/incidents`, `/controls/rcm`); 2 noch broken (`/risks`, `/controls`) |
+| `#WAVE14D-P0-04` DSR-Create 500 empty                  | 🔴 500                        | ✅ **201 Created** (als DPO)                                                                                      |
+| `#WAVE14D-P0-05` `/controls/rcm` mainLen=0             | 🔴                            | ✅ **2098 chars** mit Risk-Kontroll-Matrix                                                                        |
+| `#WAVE14D-P1-04` BIA-Discovery falscher Endpoint       | 🔴                            | ✅ **Discovery zeigt `/start`**, Workflow funktioniert                                                            |
+| `#WAVE14D-P1-05` Audit Discovery + fieldwork           | 🔴                            | ✅ **Discovery vorhanden**, `current → preparation → fieldwork`                                                   |
+| `#WAVE14D-P1-01` Audit→Finding link-loss               | 🔴 silent loss                | 🟡 **persistiert (Filter funktioniert)** aber Field nicht in GET-Response                                         |
+| `#WAVE14D-P1-02/03` Contract-Validation                | 🔴 akzeptiert neg + end<start | 🔴 **NICHT GEFIXT** — weiter 201                                                                                  |
+| `#WAVE14D-P1-07` `/dora/critical-vendors`              | 🔴 404                        | 🔴 **NICHT GEFIXT** — jetzt 500                                                                                   |
+| Hash-Chain                                             | ✅ healthy                    | ✅ **healthy v1=1229, v2=368, 0 mismatches**                                                                      |
 
 ---
 
@@ -39,16 +39,19 @@ processes: 422   assets: 422        contracts: 422      vendors: 422
 kris: 422        users: 403*        organizations: 403* control-tests: 422
 audit-log: 403*  tasks: 422
 ```
-(*403 weil CISO keinen Admin-Zugriff hat — by-design)
+
+(\*403 weil CISO keinen Admin-Zugriff hat — by-design)
 
 ### 2. UI-Sync auf `limit=100` (`#WAVE14D-P0-03` teilweise)
 
 UI-Code wurde auf `limit=100` umgestellt. Netzwerk-Mitschnitt zeigt:
+
 ```
 GET /api/v1/risks?limit=100&sortBy=riskScoreResidual&sortDir=desc
 ```
 
 Pages, die jetzt funktionieren:
+
 - ✅ `/isms/threats` zeigt 5 Bedrohungen (war 0)
 - ✅ `/isms/incidents` zeigt 2 Vorfälle inkl. Wave14-W5 (war 0)
 - ✅ `/isms/vulnerabilities` (vermutlich auch — nicht erneut verifiziert)
@@ -61,6 +64,7 @@ Pages, die jetzt funktionieren:
 ### 4. BIA Discovery + Start (`#WAVE14D-P1-04`)
 
 Discovery liefert jetzt korrekten Pfad:
+
 ```json
 {
   "current": "draft",
@@ -79,6 +83,7 @@ Discovery liefert jetzt korrekten Pfad:
 ### 6. Audit→Finding Link partial-fix (`#WAVE14D-P1-01`)
 
 POST `/findings {auditId}` setzt jetzt den Link in der DB:
+
 - `findings?auditId=X` liefert die verlinkten Findings ✅
 - ABER: das `auditId`-Feld erscheint nicht in der GET-Response des Findings selbst (Field-Projection issue)
 
@@ -91,6 +96,7 @@ Filter funktioniert, GET-Detail-Response zeigt es nicht. Kosmetisch, aber inkons
 ### `#WAVE14D-P0-03` Restliche UI-Pages (`/risks`, `/controls`)
 
 `/risks` und `/controls` zeigen weiter "konnten nicht geladen werden". Grund: UI sendet
+
 ```
 GET /api/v1/risks?limit=100&sortBy=riskScoreResidual&sortDir=desc → 422
 ```
@@ -128,10 +134,10 @@ Production-stabil durch alle 15 Wellen.
 
 ## Detail-Bilanz
 
-| Severity | Wave 14 OPEN | Wave 15 OPEN |
-|---|---:|---:|
-| P0 | 5 | 1 (UI `/risks`, `/controls`) |
-| P1 | 8 | 3 (Contract-Val, DORA-Critical, Audit→Finding-Field) |
+| Severity | Wave 14 OPEN |                                         Wave 15 OPEN |
+| -------- | -----------: | ---------------------------------------------------: |
+| P0       |            5 |                         1 (UI `/risks`, `/controls`) |
+| P1       |            8 | 3 (Contract-Val, DORA-Critical, Audit→Finding-Field) |
 
 **Quote FIXED:** ~70 % der P0 + P1 aus Wave 14 in einem Sprint.
 
@@ -184,4 +190,4 @@ Wave 15 hat die Mehrheit der Wave-14-DEEP-P0/P1-Findings gefixt. **Plattform-Sta
 
 ---
 
-*Wave 15 abgeschlossen. ~70 % FIXED, Hash-Chain healthy.*
+_Wave 15 abgeschlossen. ~70 % FIXED, Hash-Chain healthy._

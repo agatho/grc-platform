@@ -112,8 +112,7 @@ export function withErrorHandler<TCtx = unknown>(
         typeof err === "object" &&
         (err as { name?: string }).name === "FindingFkMismatchError"
       ) {
-        const mismatches =
-          (err as { mismatches?: unknown[] }).mismatches ?? [];
+        const mismatches = (err as { mismatches?: unknown[] }).mismatches ?? [];
         logger.error("finding FK persistence mismatch", {
           mismatches,
           message: e.message,
