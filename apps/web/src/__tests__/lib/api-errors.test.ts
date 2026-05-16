@@ -97,15 +97,34 @@ describe("getRequestId", () => {
     expect(getRequestId(req)).toBe("abc-123");
   });
 
-  it("returns empty string when header is absent (current behaviour)", () => {
+  // #WAVE23: getRequestId now falls back to `crypto.randomUUID()`
+  // when no x-request-id header is set. Production middleware always
+  // sets the header before handlers run, but the fallback guarantees
+  // that every problem+json error body carries a non-empty
+  // correlation ID for log-grep — Wave 23 acceptance-tests assert
+  // `requestId` truthy on every error response.
+  it("returns a fresh UUID fallback when header is absent", () => {
     const req = new Request("http://x/");
-    expect(getRequestId(req)).toBe("");
+    const id = getRequestId(req);
+    expect(id).toMatch(
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/,
+    );
   });
 
-  it("returns the same value for repeated calls on the same request", () => {
+  it("returns the same header value for repeated calls when header is set", () => {
     const req = new Request("http://x/", {
       headers: { "x-request-id": "r-stable" },
     });
     expect(getRequestId(req)).toBe(getRequestId(req));
+  });
+
+  it("returns a DIFFERENT fresh UUID per call when header is absent (fallback)", () => {
+    const req = new Request("http://x/");
+    const a = getRequestId(req);
+    const b = getRequestId(req);
+    // Two calls without a header → two distinct UUIDs. Production
+    // middleware prevents this in real traffic, but the test pins
+    // the fallback semantics: do not cache the UUID on Request.
+    expect(a).not.toBe(b);
   });
 });
