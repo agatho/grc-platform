@@ -146,6 +146,7 @@ describe("POST /api/v1/contracts — name→title alias + status contract", () =
           contractType: "service_agreement",
         }),
       }),
+      undefined as never,
     );
 
     expect(res.status).toBe(201);
@@ -167,6 +168,7 @@ describe("POST /api/v1/contracts — name→title alias + status contract", () =
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       }),
+      undefined as never,
     );
 
     expect(res.status).toBe(422);
@@ -190,6 +192,7 @@ describe("POST /api/v1/contracts — name→title alias + status contract", () =
           contractType: "service_agreement",
         }),
       }),
+      undefined as never,
     );
 
     // 42P01 isn't in CONSTRAINT_VIOLATION_CODES — falls through to
@@ -224,6 +227,7 @@ describe("POST /api/v1/contracts — name→title alias + status contract", () =
           endDate: "2026-12-31",
         }),
       }),
+      undefined as never,
     );
 
     expect(res.status).toBe(201);

@@ -195,6 +195,7 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
             controlId: CONTROL_ID,
           }),
         }),
+        undefined as never,
       );
 
       expect(res.status).toBe(201);
@@ -223,6 +224,7 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
             riskId: RISK_ID,
           }),
         }),
+        undefined as never,
       );
 
       expect(res.status).toBe(201);
@@ -248,6 +250,7 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
           status: "open",
         }),
       }),
+      undefined as never,
     );
 
     expect(res.status).toBe(422);
@@ -270,6 +273,7 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
         headers: { "content-type": "application/json" },
         body: JSON.stringify({}),
       }),
+      undefined as never,
     );
 
     expect(withAuthMock).toHaveBeenCalledWith(
@@ -355,6 +359,7 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
             controlId: CONTROL_ID,
           }),
         }),
+        undefined as never,
       );
 
       expect(res.status).toBe(500);

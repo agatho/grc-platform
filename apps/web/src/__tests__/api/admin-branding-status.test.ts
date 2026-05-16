@@ -81,6 +81,7 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     const { GET } = await import("../../app/api/v1/admin/branding/route");
     const res = await GET(
       new Request("http://localhost/api/v1/admin/branding"),
+      undefined as never,
     );
 
     expect(res.status).toBe(200);
@@ -111,6 +112,7 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     const { GET } = await import("../../app/api/v1/admin/branding/route");
     const res = await GET(
       new Request("http://localhost/api/v1/admin/branding"),
+      undefined as never,
     );
 
     // 42P01 must NOT escalate to 500 — Wave 19 made this an explicit
@@ -157,6 +159,7 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     const { GET } = await import("../../app/api/v1/admin/branding/route");
     const res = await GET(
       new Request("http://localhost/api/v1/admin/branding"),
+      undefined as never,
     );
 
     expect(res.status).toBe(200);
@@ -175,6 +178,7 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     const { GET } = await import("../../app/api/v1/admin/branding/route");
     const res = await GET(
       new Request("http://localhost/api/v1/admin/branding"),
+      undefined as never,
     );
 
     expect(res.status).toBe(401);
@@ -201,6 +205,7 @@ describe("GET /api/v1/admin/branding — status-code contract", () => {
     const { GET } = await import("../../app/api/v1/admin/branding/route");
     const res = await GET(
       new Request("http://localhost/api/v1/admin/branding"),
+      undefined as never,
     );
 
     // Connection-timeout maps to 503 (database-unavailable branch in
