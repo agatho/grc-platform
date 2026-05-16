@@ -2,21 +2,33 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-10**. Letzte Migration: `0299_programme_cost_approval.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Aktive Arbeit: ADR-014 Phase 3+4, ADR-019/020/021/023/024 (Proposed).
+> Stand: **2026-05-16**. Letzte Migration: `0326_seed_arctistx_rbac_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 22** (2026-05-16, PR #166). Aktive Arbeit: **Wave 23 Endgame** (A1 finding-FK, A2 /admin/branding, C3 contract-name, Pilot-Readiness-Gate), ADR-014 Phase 3+4, ADR-019/020/021/023/024 (Proposed).
+
+## Was ist seit STATUS-Stand 2026-05-10 passiert?
+
+563 Commits in 6 Wochen seit 2026-04-01 (~14/Tag). Hauptlinien:
+
+- **22 Wave-Cycles** (Wave 3 → Wave 22) als nightly QA → next-day-Hotfix-Pipeline. Wave-Themen: RFC-7807 Error-Envelopes, deterministic Pagination-Tiebreakers, Strict-Allow-Lists, `/transitions`-Discovery, Hash-Chain-Dispatch via `hash_version`, pdfkit PDF-Pipeline, RBAC-Konsistenz-Sweep, BIA-Export, Auth-Error-Normalization, **CMMI-Maturity-Derivation**, **BIA→Asset-Cascade**, **finding→control-Cascade**, Pilot-Ready 7 NEW Endpoints + Multi-Entity-Test-Sweep.
+- **Programme Cockpit Sprint 1 → Sprint 13** komplett ausgebaut (21 PRs, #54–#79): My Work, Evidence-Upload + Audit-Pack, Portfolio-Dashboard, Cost+Approval, Gantt, Custom Steps, Evidence-Suggest, **Synthetic Auditor**, **Reverse-Programme** (auch im Findings-Modul), **Predictive + What-if**, dynamische Velocity-Window + Calibration-Warning. CIS Controls v8 IG1/2/3-Templates seeded, BCMS/DPMS/AIMS-Templates v1.1 enriched.
+- **Audit-Trail-Hardening**: `0308` audit_trigger reason metadata · `0309` audit hash_version · `0310` audit work_item type · `0311` repair audit hash versioning · `0312` rehash v0 audit entries · `0313` audit `chain_seq` (deterministic ordering) · Forward-chain repair, dispatch via `hash_version`, anchor guard. Hash-Chain Stand 2026-05-15: **healthy v1=1229 v2=513 total=1742 mismatches=0**.
+- **27 neue Migrationen** (0300 → 0326), darunter `0314` incident-authority-notification, `0315` RLS-gap-closure-v4, `0316`–`0318`/`0326` RBAC-test/login-user-seeds + enum-backfill, `0319`/`0322` CISO-ERM/DPMS/ESG-read, `0321` risk-status `reopened`, `0324` `vendor_manager`-User-Role, `0325` asset-classification-override.
+- **16 neue Drizzle-Schemas**: `programme`, `risk-acceptance`, `isms-cap`, `ai-act-extended`, `audit-extras`, `approval-workflow`, `entity-comment`, `stakeholder-register`, `control-monitoring`, `connector`, `data-governance`, `esef-xbrl`, `content-narrative`, `checklist`, `phase3-extras`, `_generated_stubs`.
+- **Per-Tenant-Worker** für Compliance-grade Tenant-Isolation (#50). **Legal/Impressum/Datenschutz + Footer** (#55).
+- 18 `fix(night)`-Commits (automatisierte nightly QA-Closures), 15 `chore(deps)` Dependabot-Bumps.
 
 ## TL;DR
 
-ARCTOS ist **kein Greenfield-Projekt**. Stand heute:
+ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-16):
 
-- **86+ Sprints abgeschlossen** plus laufende Cross-Cutting-Arbeit (Audit-Trail-Hash-Chain, RLS-Gap-Closure, Programme Cockpit, EU-AI-Act-Vollständigkeit, ISO-27005-Kataloge).
-- **107 Drizzle-Schema-Files**, **278 SQL-Migrationen** bis `0299_programme_cost_approval.sql`.
-- **561 `pgTable()`-Definitionen** (statischer Count). Der RLS-Coverage-Report (Stand 2026-04-18) zählte 545 — die Differenz sind seither hinzugekommene Tabellen, die noch nicht im RLS-Audit erfasst wurden. Letzter dokumentierter Stand: 347 mit vollständiger RLS+Policy+Audit-Trigger, 131 mit RLS-Lücke, 52 mit Audit-Trigger-Lücke, 15 plattform-exempt.
-- **1.150 `route.ts`-Files** unter `/api/v1/` ergeben **1.606 HTTP-Endpoints** (laut LoD-Coverage-Audit — pro Route mehrere Methoden möglich).
-- **453 Next.js `page.tsx`** verteilt auf ~80 Top-Level-Routen-Gruppen.
-- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings**.
-- **236 Test-Files** (216 vor diesem Arbeitspaket, **+ 20 neue Tests mit ~180 Cases** in P0/P1/P2-Pfaden) + **40 Playwright-E2E-Specs**. Verifizierte Out-of-band-Läufe: webhook-signer 11/11, variable-resolver 16/16, bulk-cap 12/12, risk-status 20/20, condition-evaluator-deep 35/35, cn() 11/11, openapi-spec 8/8 — **113 Cases bewiesen grün** (Vitest 4 + Rolldown crash im Sandbox; CI lässt alle Tests via Vitest laufen). Coverage-Threshold-Gating jetzt aktiviert (40 % lines / 30 % branches als Floor, ratchet up).
+- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 22 abgeschlossen** plus laufende Cross-Cutting-Arbeit (Audit-Trail-Hash-Chain, RLS-Gap-Closure, EU-AI-Act-Vollständigkeit, ISO-27005-Kataloge).
+- **108 Drizzle-Schema-Files**, **305 SQL-Migrationen** bis `0326_seed_arctistx_rbac_users.sql` (vorher 278 / `0299`).
+- **563 `pgTable()`-Definitionen** (statischer Count, vorher 561). Der RLS-Coverage-Report (Stand 2026-04-18) zählte 545 — die Differenz sind seither hinzugekommene Tabellen, die noch nicht im RLS-Audit erfasst wurden. Letzter dokumentierter Stand: 347 mit vollständiger RLS+Policy+Audit-Trigger, 131 mit RLS-Lücke, 52 mit Audit-Trigger-Lücke, 15 plattform-exempt. Migration `0315_rls_gap_closure_v4.sql` hat weitere Lücken geschlossen — Re-Audit ausstehend.
+- **1.246 `route.ts`-Files** unter `/api/v1/` (vorher 1.150) ergeben **~1.700 HTTP-Endpoints** (Hochrechnung — letzter LoD-Audit zählte 1.606 bei 1.150 routes).
+- **470 Next.js `page.tsx`** (vorher 453), verteilt auf ~85 Top-Level-Routen-Gruppen.
+- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings** + 2 neue Programme-Journeys (W22-B6 Demo-Seed).
+- **258 Test-Files** (236 vor diesem Quartal) + **47 Playwright-E2E-Specs** (vorher 40, +6 wave-spezifisch + 1 dataflow). Verifizierte Out-of-band-Läufe der jüngsten Wellen: schema-drift-finding-fk 7/7, seed-wiring 6/6, tprm-schemas 26/26 (Wave 22). Coverage-Threshold-Gating in CI seit Wave 14 aktiviert (40 % lines / 30 % branches als Floor, ratchet up).
 - **~410k LOC** Source-Code insgesamt (apps + packages, ohne node_modules).
-- CI ist seit 2026-04-20 vollgrün ohne `continue-on-error`-Bypass (7 blockierende Jobs).
+- CI ist seit 2026-04-20 vollgrün ohne `continue-on-error`-Bypass (7 blockierende Jobs). Wave 23 fügt einen 8. Pilot-Readiness-Gate-Job hinzu.
 
 ## Code-Pfad-Hinweis (häufige Verwechslung)
 
@@ -208,5 +220,19 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | **20 weitere Email-Templates per Template-spezifische Tests**            |       P3 | abgedeckt durch Auto-Discovery-Smoke (alle 25 Templates × DE/EN), template-spezifische Edge-Cases offen                                                                       |
 | **State-Machine server-side** — z. B. `closed → identified` HTTP-422     |       P1 | offen — Schema layer akzeptiert Werte, Routing-Layer prüft nicht                                                                                                              |
 | **150 weitere mutating Endpoints** ohne dedizierten RBAC-Test            |       P1 | Pattern etabliert (Domain-RBAC-Suite ist parametrisch erweiterbar). Skalierung offen                                                                                          |
+| **W23-A1** finding controlId/auditId/riskId persistiert null in prod      |       P0 | Wave 23: post-insert FK-Verification + `_meta/build` für Self-Service-D1, gehärtet via withErrorHandler                                                                       |
+| **W23-A2** /admin/branding 500 (Wave 22 RequestID 24a45b827c4f2e4d)       |       P0 | Wave 23: Acceptance-Test 200/501-only, `_meta/build` für Deploy-SHA-Diagnose                                                                                                  |
+| **W23-C3** Contract POST {name:'X'} → 500 statt 422                       |       P1 | Wave 23: Wave-22-Alias funktioniert, POST jetzt withErrorHandler-gewrappt → niemals empty 500                                                                                 |
+| **W23-Pilot-Readiness-Gate** als CI-Pre-Merge-Check                       |       P0 | Wave 23: `scripts/pilot-readiness-gate.sh` läuft gegen Staging, GitHub-Actions-Job blockt Merges                                                                              |
 
-| \*\*packages/db
+## Wave 23 — Endgame (laufend, Pilot-Readiness-Gate)
+
+Wave 22 hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht:
+
+1. **`/api/v1/_meta/build`** — neuer Endpoint exposes Git-SHA + Build-Time + Drizzle-Migration-Count. Macht D1 (Prod-vs-Main-SHA-Vergleich) zum Self-Service per `curl`, ohne SSH.
+2. **Post-Insert-FK-Verification in `findings/route.ts` POST** — direkt nach dem Drizzle-Insert wird das returning-Row mit dem Input verglichen. Wenn ein FK gesendet wurde aber als null zurückkommt, **wirft die Route eine strukturierte 500 mit Diagnostic statt still 201 zu liefern**. Eliminiert die "201 + null FKs"-Failure-Klasse permanent.
+3. **`withErrorHandler`-Wrap auf `findings/route.ts` + `contracts/route.ts` POST** — alle uncaught Exceptions werden jetzt RFC-7807 problem+json mit RequestID. C3 "empty 500 body" ist damit unmöglich.
+4. **`scripts/pilot-readiness-gate.sh` + neuer CI-Job** — Smoke-Test gegen Staging vor jedem Merge, läuft A1 / A2 / C3 / Hash-Chain durch und blockt rote Merges. Subjektive Einschätzungen reichen nicht mehr.
+5. **3 neue Acceptance-Tests** (findings-fk-roundtrip, admin-branding 200/501-only, contracts-name-alias 201) als regression-guard im Vitest-Lauf.
+
+Status-Update folgt nach Wave-23-Merge + Cowork-QA-Verifikation.

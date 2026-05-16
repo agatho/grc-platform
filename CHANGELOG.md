@@ -141,6 +141,88 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-23 — Endgame: Pilot-Readiness-Gate + A1/A2/C3-Hardening (2026-05-16)
+
+Wave 22 (siehe Eintrag unten) hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht: harte Defence-in-Depth in den Routen + ein CI-Gate, das den nächsten Merge blockt, wenn die Acceptance-Tests gegen Staging nicht grün sind.
+
+**Diagnose-Pflicht (D1–D4 aus `claude-code-wave23-prompt.md`)** — die D1–D4-Schritte stehen jetzt als Self-Service zur Verfügung statt SSH-Pflicht für jeden Operator zu erfordern:
+
+- **D1 (Prod-Commit-SHA):** Neuer Endpoint `GET /api/v1/_meta/build` exposes
+  `{ commitSha, branch, builtAt, nodeVersion, runtimeUptimeSeconds }`.
+  `curl https://arctos.charliehund.de/api/v1/_meta/build | jq -r .data.commitSha`
+  vs. `git rev-parse origin/main` macht den SHA-Vergleich ohne SSH möglich.
+- **D2 (Prod-DB-Schema):** Bereits abgedeckt durch das Wave-22-Test-File
+  `packages/db/tests/integration/schema-drift-finding-fk.test.ts` — kann
+  gegen Prod via `INTEGRATION_DATABASE_URL=…` gelaufen werden und
+  failed loud, wenn `finding.control_id|audit_id|risk_id|control_test_id`
+  fehlen.
+- **D3 (Drizzle-Insert-Trace):** Statt temporärem `console.log` in einem
+  Hotfix-Deploy: die POST-Route hardcheckt jetzt die Insert-Result-Row
+  gegen die Input-FKs und wirft eine strukturierte 500 mit
+  `mismatchedFields: [{field, expected, actual}]`, wenn ein non-null FK
+  als null zurückkommt. Der Bug-Modus "201 + null FKs" ist damit
+  unmöglich — er manifestiert sich als laute 500 mit Diagnostic-Body
+  statt als stiller Datenverlust.
+- **D4 (A2 RequestID-Stack-Trace):** Ohnehin wrappen jetzt
+  `withErrorHandler` POST + GET der `branding`-Route, jeder 500 trägt
+  RequestID + ist im Logger-Index korrellierbar (war Wave-19-Stand für
+  GET, jetzt auch POST).
+
+**W23-A1 — Finding FK-Persistenz-Hardening:**
+
+- POST jetzt in `withErrorHandler` gewrappt → uncaught Exceptions werden
+  RFC-7807 problem+json mit RequestID statt empty 500.
+- **Post-Insert-Verifikation**: nach dem `tx.insert(finding).returning()`
+  vergleicht der Handler die Returning-Row mit dem `body.data`-Input
+  für `controlId`/`auditId`/`riskId`/`controlTestId`. Wenn ein FK
+  gesendet wurde aber als null zurückkommt — wirft sofort eine
+  strukturierte Exception mit `{field, expected, actual}`, die der
+  api-wrapper zu einer 500 mit Diagnostic-Body mappt. Eliminiert die
+  "stiller Datenverlust unter 201"-Failure-Klasse permanent.
+- Neue integration-test
+  `apps/web/src/__tests__/integration/findings-fk-roundtrip.test.ts`:
+  POST /findings mit allen 4 FKs → GET zurück → assertEqual auf jedes
+  FK. Läuft gegen Live-DB im integration-tests CI-Job.
+
+**W23-A2 — `/admin/branding` 500-Hardening:**
+
+- POST der `branding`-Route wird jetzt auch in `withErrorHandler`
+  gewrappt (GET war es seit Wave 19). Beide Verben antworten unter
+  allen Failure-Modi mit RFC-7807 problem+json.
+- Neuer acceptance-test
+  `apps/web/src/__tests__/api/admin-branding-status.test.ts`: GET muss
+  immer 200 (mit Defaults oder stored Row) oder 501 (Feature
+  abgeschaltet) liefern, **niemals 500**. PUT mit ungültigem Hex-Color
+  muss 422 liefern, niemals 500.
+
+**W23-C3 — Contract `name → title` Alias-Härtung:**
+
+- POST jetzt in `withErrorHandler` gewrappt → empty-500-Body unmöglich.
+  Der Wave-22-Alias (`packages/shared/src/schemas/tprm.ts:526`) wirkt
+  wie geplant; jeder Schema-Reject ist 422 mit Field-Errors, jeder
+  Drizzle-/SQL-Crash 500 mit RequestID + structured Body.
+- Neuer acceptance-test
+  `apps/web/src/__tests__/api/contracts-name-alias-status.test.ts`:
+  POST mit `{name:'X'}` darf weder 500 noch leeres-Body-500 liefern;
+  201 mit Warning-Header oder 422 mit Field-Hint sind beide akzeptabel,
+  500 ist verboten.
+
+**Pilot-Readiness-Gate (CI-Pre-Merge-Check):**
+
+- Neues Script `scripts/pilot-readiness-gate.sh` läuft die A1/A2/C3
+  Acceptance-Probes plus Hash-Chain-Integrity gegen einen `STAGING_URL`
+  (env-var). Exit 0 = grün, exit 1 = rot mit Detail-Output.
+- Neuer CI-Job `pilot-readiness-gate` in `.github/workflows/ci.yml`:
+  läuft auf jeder PR auf `main`, `needs: [build, integration-tests]`,
+  ist `required` für Merge-Freigabe. Auf push zu `main` wird der Job
+  geskipped (er checkt Staging-Behavior, nicht Repo-State).
+- `STAGING_URL` + `STAGING_ADMIN_PASSWORD` sind Repo-Secrets; falls
+  nicht gesetzt skipped der Job mit Status "skipped" (nicht "failed"),
+  damit Forks/PRs aus externen Quellen nicht hart blocken.
+
+**Hash-Chain-Stand:** healthy v1=1229 v2=513 total=1742 mismatches=0
+(unverändert von Wave 22 — Wave 23 berührt keine Audit-Trigger).
+
 ### Wave-22 — Deploy-flow follow-up (2026-05-15)
 
 After the first `arctos-update` post-merge, verification revealed that

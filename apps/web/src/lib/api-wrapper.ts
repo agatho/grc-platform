@@ -101,6 +101,44 @@ export function withErrorHandler<TCtx = unknown>(
         pgDetail: e.detail,
       });
 
+      // #WAVE23-A1: structured 500 für Finding-FK-Mismatch. Erkannt
+      // an `name === "FindingFkMismatchError"` damit der wrapper nicht
+      // das route-modul direkt importieren muss (würde einen
+      // App-Router → lib Zirkel-Import erzeugen). Body enthält die
+      // `mismatches` als Diagnostic — Cowork-QA kann ohne Server-Log
+      // sehen, welcher FK gedroppt wurde.
+      if (
+        err &&
+        typeof err === "object" &&
+        (err as { name?: string }).name === "FindingFkMismatchError"
+      ) {
+        const mismatches =
+          (err as { mismatches?: unknown[] }).mismatches ?? [];
+        logger.error("finding FK persistence mismatch", {
+          mismatches,
+          message: e.message,
+        });
+        return new Response(
+          JSON.stringify({
+            type: "https://arctos.charliehund.de/errors/fk-persistence-mismatch",
+            title: "Finding FK persistence mismatch",
+            status: 500,
+            detail:
+              "POST /findings returned a row whose FK columns differ from the input — schema-drift or trigger-induced data loss. The transaction was rolled back; no broken finding was created.",
+            mismatches,
+            requestId,
+            instance: req.url,
+          }),
+          {
+            status: 500,
+            headers: {
+              "content-type": "application/problem+json; charset=utf-8",
+              "x-request-id": requestId,
+            },
+          },
+        );
+      }
+
       // PaginationError from paginate() — strict pagination contract
       // enforces integer limits and rejects unknown query params (the
       // over-night QA found `limit=0`, `limit=abc`, `offset=N`, and

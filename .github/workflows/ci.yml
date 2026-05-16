@@ -636,7 +636,42 @@ jobs:
           skip-dirs: /usr/local/lib/node_modules/npm
 
   # ────────────────────────────────────────────────
-  # 6. Security audit
+  # 6. Pilot-Readiness-Gate (Wave-23)
+  #
+  # Runs scripts/pilot-readiness-gate.sh against the staging URL.
+  # Verifies the W23 acceptance items live: A1 finding FK persistence,
+  # A2 /admin/branding never-500, C3 contracts name-alias never-500,
+  # plus hash-chain integrity. Required for merge to main.
+  #
+  # Skips automatically when STAGING_URL secret is unavailable (e.g.
+  # PRs from forks). The skip is non-blocking — the matrix-required
+  # check passes with the script's "SKIPPED" exit-0.
+  # ────────────────────────────────────────────────
+  pilot-readiness-gate:
+    name: Pilot Readiness Gate
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [unit-tests, integration-tests]
+    # Only on PRs targeting main — push to main means the merge already
+    # happened, gate is informational at that point.
+    if: github.event_name == 'pull_request' && github.base_ref == 'main'
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run pilot-readiness-gate against staging
+        env:
+          STAGING_URL: ${{ secrets.STAGING_URL }}
+          STAGING_ADMIN_EMAIL: ${{ secrets.STAGING_ADMIN_EMAIL }}
+          STAGING_ADMIN_PASSWORD: ${{ secrets.STAGING_ADMIN_PASSWORD }}
+        run: |
+          if [[ -z "${STAGING_URL}" ]]; then
+            echo "::warning::STAGING_URL secret not set — gate will skip (exit 0)"
+          fi
+          bash scripts/pilot-readiness-gate.sh
+
+  # ────────────────────────────────────────────────
+  # 7. Security audit
   # ────────────────────────────────────────────────
   security:
     name: Security Audit

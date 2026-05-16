@@ -281,4 +281,96 @@ describe("POST /api/v1/findings — cross-module-link persistence", () => {
       "ciso",
     );
   });
+
+  // #WAVE23-A1: Post-Insert-FK-Verification. Wenn die Drizzle-Insert-
+  // Returning-Row einen FK auf null setzt, den der Caller mit non-null
+  // gesendet hat, MUSS die Route 500 mit `mismatches` im Body liefern,
+  // **niemals stille 201**. Das ist die Failure-Klasse, die Wave 22
+  // 4× hintereinander gegen Production beobachtet hat.
+  it(
+    "returns 500 + mismatches body when insert returning drops controlId",
+    async () => {
+      withAuthMock.mockResolvedValue(authedCtx());
+      requireModuleMock.mockResolvedValue(undefined);
+
+      // Override the per-test mock: insert returning drops controlId
+      // (simulating the Wave-22 prod-failure mode where the FK
+      // disappeared between Drizzle insert and returning).
+      withAuditContextMock.mockImplementation(
+        async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) => {
+          const tx = {
+            insert(table: unknown) {
+              return {
+                values(values: Record<string, unknown>) {
+                  inserts.push({ table, values });
+                  return {
+                    returning() {
+                      // Strip controlId from the returning row to
+                      // simulate the prod failure mode (FK disappears
+                      // between Drizzle .insert(...).values(...) and
+                      // .returning() — schema-drift, missing column,
+                      // or trigger BEFORE INSERT setting it to null).
+                      const { controlId: _drop, ...rest } = values as Record<
+                        string,
+                        unknown
+                      >;
+                      return Promise.resolve([
+                        {
+                          id: VALID_UUID,
+                          elementId: "FND00000001",
+                          ...rest,
+                          controlId: null,
+                        },
+                      ]);
+                    },
+                  };
+                },
+              };
+            },
+            select() {
+              return {
+                from() {
+                  return {
+                    where() {
+                      return Promise.resolve([{ id: VALID_UUID }]);
+                    },
+                  };
+                },
+              };
+            },
+          };
+          return fn(tx);
+        },
+      );
+
+      const { POST } = await import("../../app/api/v1/findings/route");
+      const res = await POST(
+        new Request("http://localhost/api/v1/findings", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({
+            title: "Should-fail-loud test",
+            severity: "major_nonconformity",
+            source: "audit",
+            controlId: CONTROL_ID,
+          }),
+        }),
+      );
+
+      expect(res.status).toBe(500);
+      const body = await res.json();
+      expect(body.title).toBe("Finding FK persistence mismatch");
+      expect(body.mismatches).toEqual(
+        expect.arrayContaining([
+          expect.objectContaining({
+            field: "controlId",
+            expected: CONTROL_ID,
+            actual: null,
+          }),
+        ]),
+      );
+      expect(body.requestId).toBeTruthy();
+    },
+    SLOW_TEST_TIMEOUT_MS,
+  );
 });
