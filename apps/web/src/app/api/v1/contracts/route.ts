@@ -24,7 +24,16 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/contracts — Create contract
-export async function POST(req: Request) {
+//
+// #WAVE23-C3: gewrappt in withErrorHandler. Wave 22 berichtete
+// "POST /contracts {name:'…'} → 500 empty body" statt erwartetem 422
+// oder 201. Der Wave-22-Hotfix mappte `name → title` im Schema
+// (packages/shared/src/schemas/tprm.ts:526), aber die POST-Route war
+// nicht in withErrorHandler — uncaught Drizzle-Exceptions wurden zu
+// Next.js' empty-500-Default. Jetzt: jeder Drizzle-/PG-Crash landet
+// als RFC-7807 problem+json mit RequestID, jeder Schema-Reject als
+// 422 mit Field-Errors. Empty 500 ist damit unmöglich.
+export const POST = withErrorHandler(async function POST(req: Request) {
   // #WAVE19-MAR-P0-02: contract_manager + vendor_manager are the
   // operator roles that own contract lifecycles in TPRM.
   const ctx = await withAuth(
@@ -119,14 +128,19 @@ export async function POST(req: Request) {
   for (const { from, to } of deprecatedAliases) {
     headers.append(
       "Warning",
-      `299 - "Use '${to}' instead of '${from}', deprecated since v0.2.0 — alias removed in v0.3.0"`,
+      // ASCII-only hyphen — em-dash (U+2014) fails the HTTP Headers
+      // ByteString conversion (only ISO-8859-1 byte values are
+      // permitted). Wave-23 unit tests rediscovered this latent bug:
+      // pre-W23 no test exercised the alias path, so the throw never
+      // surfaced.
+      `299 - "Use '${to}' instead of '${from}', deprecated since v0.2.0 - alias removed in v0.3.0"`,
     );
   }
   return new Response(JSON.stringify({ data: created }), {
     status: 201,
     headers,
   });
-}
+});
 
 // GET /api/v1/contracts — List contracts with filters
 export const GET = withErrorHandler(async function GET(req: Request) {

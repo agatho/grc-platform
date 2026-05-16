@@ -198,10 +198,17 @@ export const problem = {
 };
 
 /**
- * Extract requestId from a Request. Falls back to empty string if not
- * present. Wenn Middleware (middleware.ts) aktiv ist, ist X-Request-ID
- * garantiert gesetzt.
+ * Extract requestId from a Request. Falls back to a fresh
+ * `crypto.randomUUID()` if no `x-request-id` header is set.
+ *
+ * Production middleware (middleware.ts) sets the header on every
+ * request, so the fallback only activates in test, dev-without-
+ * middleware, or edge-case routes mounted before the middleware
+ * matcher (e.g. `/api/auth`). The fallback guarantees that every
+ * problem+json response carries a non-empty correlation ID for
+ * log-grep — Wave 23 acceptance tests assert `requestId` truthy on
+ * every error response.
  */
 export function getRequestId(req: Request): string {
-  return req.headers.get("x-request-id") ?? "";
+  return req.headers.get("x-request-id") ?? crypto.randomUUID();
 }

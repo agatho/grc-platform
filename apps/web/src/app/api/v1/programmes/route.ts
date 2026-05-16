@@ -2,6 +2,14 @@
 // there is no flat "programme" entity — only journeys, templates,
 // portfolio views, etc. Discovery payload + an explicit 405 on POST
 // pointing the caller at /journeys (the canonical creation endpoint).
+//
+// #WAVE23-B6: Wave-21 QA reported `/programmes` as a "missing" resource
+// list — that hypothesis was wrong (per Wave-22-prompt clarification).
+// /programmes is by-design a discovery endpoint, not a resource list.
+// The actual resource list is `/programmes/journeys`; Wave 22 seeded
+// 2 demo journeys per Meridian via `seed_demo_13_programmes.sql` (B6)
+// so the list is no longer empty after a fresh seed-all. Maturity-
+// Breakdown lives at `/programmes/journeys/{id}/maturity`.
 
 import { problem, getRequestId } from "@/lib/api-errors";
 

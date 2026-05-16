@@ -28,8 +28,43 @@ import {
 import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
+// #WAVE23-A1: Sentinel-Error-Class für Post-Insert-FK-Mismatch. Wave 22
+// festgestellt: POST /findings lieferte 201 aber FKs persistierten als
+// null. Statt das still durchgehen zu lassen, verifizieren wir die
+// Returning-Row gegen den Input und werfen — die Transaction rollt zurück
+// (kein halbkaputtes Finding bleibt liegen) und der withErrorHandler
+// emittiert eine 500 mit strukturiertem Body, der die genauen
+// `mismatches` enthält. Stille Datenverlust-201er werden damit unmöglich.
+export class FindingFkMismatchError extends Error {
+  public readonly mismatches: Array<{
+    field: string;
+    expected: unknown;
+    actual: unknown;
+  }>;
+  constructor(
+    mismatches: Array<{ field: string; expected: unknown; actual: unknown }>,
+  ) {
+    super(
+      `Finding insert returned mismatched FK values: ${mismatches
+        .map(
+          (m) =>
+            `${m.field}: expected=${String(m.expected)} actual=${String(m.actual)}`,
+        )
+        .join(", ")}`,
+    );
+    this.name = "FindingFkMismatchError";
+    this.mismatches = mismatches;
+  }
+}
+
 // POST /api/v1/findings — Create finding
-export async function POST(req: Request) {
+//
+// #WAVE23-A1: gewrappt in withErrorHandler so any uncaught Drizzle/PG
+// exception lands as RFC-7807 problem+json mit RequestID, statt empty
+// 500-Body. Vorher (Wave 22): bare `export async function POST` →
+// uncaught exceptions wurden zu Next.js' Default-Empty-500-Response,
+// was die Cowork-QA-Reproduzierbarkeit von A1 verzögerte.
+export const POST = withErrorHandler(async function POST(req: Request) {
   // Findings can be raised by any 1st-line operator that runs the
   // process whose control failed, plus 2nd-line and 3rd-line. Adding
   // process_owner closes the gap the parametric RBAC suite flagged.
@@ -140,6 +175,39 @@ export async function POST(req: Request) {
       })
       .returning();
 
+    // #WAVE23-A1: Post-Insert-FK-Verifikation. Wave 22 verifizierte
+    // 4× hintereinander, dass POST /findings 201 lieferte aber die FKs
+    // als null persistierten — `body.data.controlId` ging rein, `row.controlId`
+    // kam null raus. Im Repo ist der Code korrekt, also ist die
+    // Drift entweder im Deploy (alter Build), im Trigger (BEFORE INSERT
+    // setzt FK auf null) oder in der Drizzle-Inferenz (camel→snake
+    // misst die Spalte nicht). Diese Verifikation macht die Failure-
+    // Klasse beobachtbar: wenn ein FK gesendet wurde aber als null
+    // zurückkommt, werfen wir eine strukturierte Exception, die der
+    // withErrorHandler auf 500 mit Diagnostic-Body mappt. Stille
+    // 201er werden damit unmöglich.
+    const fkMismatches: Array<{
+      field: string;
+      expected: unknown;
+      actual: unknown;
+    }> = [];
+    const fkPairs: Array<[keyof typeof body.data, keyof typeof row]> = [
+      ["controlId", "controlId"],
+      ["controlTestId", "controlTestId"],
+      ["riskId", "riskId"],
+      ["auditId", "auditId"],
+    ];
+    for (const [inputKey, rowKey] of fkPairs) {
+      const expected = body.data[inputKey];
+      const actual = (row as Record<string, unknown>)[rowKey as string];
+      if (expected != null && actual !== expected) {
+        fkMismatches.push({ field: inputKey, expected, actual });
+      }
+    }
+    if (fkMismatches.length > 0) {
+      throw new FindingFkMismatchError(fkMismatches);
+    }
+
     // Notify owner
     if (body.data.ownerId && body.data.ownerId !== ctx.userId) {
       await tx.insert(notification).values({
@@ -165,7 +233,7 @@ export async function POST(req: Request) {
   });
 
   return Response.json({ data: created }, { status: 201 });
-}
+});
 
 // GET /api/v1/findings — List findings with filters
 export const GET = withErrorHandler(async function GET(req: Request) {
