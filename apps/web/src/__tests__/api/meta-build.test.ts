@@ -9,10 +9,7 @@ import { describe, it, expect } from "vitest";
 describe("GET /api/v1/_meta/build", () => {
   it("returns 200 with commitSha + branch + builtAt + nodeVersion + uptime", async () => {
     const { GET } = await import("../../app/api/v1/_meta/build/route");
-    const res = await GET(
-      new Request("http://localhost/api/v1/_meta/build"),
-      undefined as never,
-    );
+    const res = await GET(new Request("http://localhost/api/v1/_meta/build"));
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -33,10 +30,7 @@ describe("GET /api/v1/_meta/build", () => {
     // and this test merely re-runs the route to verify no throw on
     // a fresh request.
     const { GET } = await import("../../app/api/v1/_meta/build/route");
-    const res = await GET(
-      new Request("http://localhost/api/v1/_meta/build"),
-      undefined as never,
-    );
+    const res = await GET(new Request("http://localhost/api/v1/_meta/build"));
     expect(res.status).toBe(200);
   });
 });
