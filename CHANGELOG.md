@@ -141,6 +141,72 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-23.2 — Audit-Hash v3 (TZ-invariant) + Migrate-All Fix (2026-05-16)
+
+Discovered during Wave-23 prod-diagnose (D2 against the live DB,
+2026-05-16): the audit_log on production has **29 241 v0 entries**
+that migration 0312 was supposed to rehash to v2 but doesn't, even
+after multiple `migrate-all` runs. Root-cause two interacting bugs:
+
+1. **Hash formula is session-timezone-sensitive.** `compute_audit_hash_v1`
+   and `_v2` both feed `created_at::text` into SHA-256. `timestamptz`
+   cast to text renders in the SESSION timezone, not UTC. Hetzner's
+   Postgres cluster default is `Europe/Berlin`; CI containers run UTC.
+   Migration 0311's retag recomputes hashes from current row data, so
+   on each deploy in a different TZ the same row's recomputed hash
+   doesn't match the stored hash → tagged `hash_version = 0`.
+
+2. **`migrate-all.ts`'s per-file transaction conflicts with
+   migrations that wrap themselves in `BEGIN; ... COMMIT;`.**
+   `client.begin(...)` already provides the boundary; the inner
+   `COMMIT` ends the outer transaction prematurely. Subsequent
+   statements (the rehash loop in 0312, the `ALTER TABLE … ENABLE
+TRIGGER` restore) execute outside any transaction. Any error
+   (e.g. ownership-required `ALTER TABLE DISABLE TRIGGER` failing
+   silently) leaves the rehash half-done and unrecoverable.
+
+**Fix:**
+
+- **`packages/db/src/migrate-all.ts`** strips file-level `BEGIN;`
+  / `COMMIT;` / `ROLLBACK;` before executing, and sets
+  `SET LOCAL TIME ZONE 'UTC'` at the start of every transaction.
+  Retroactive cleanup for the 8+ hand-written migrations that use
+  explicit transaction blocks. UTC-pinning eliminates TZ drift even
+  before v3 lands.
+- **`packages/db/drizzle/0327_audit_hash_v3_tz_invariant.sql`**
+  introduces `compute_audit_hash_v3()`, which formats `created_at`
+  as `to_char(... AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')`
+  — byte-identical regardless of session TZ. Redeploys
+  `audit_trigger()` to write `hash_version = 3` for all NEW entries
+  and chain off the latest v3 row in the per-tenant scope.
+- **`packages/db/drizzle/0328_audit_chain_rehash_to_v3.sql`** is a
+  one-time chain rewrite. Per-tenant, in `created_at` order:
+  recompute each row's hash under v3, set `hash_version = 3`,
+  carry the new hash forward as the next row's `previous_hash`.
+  Writes one `hash_repair_v3` audit entry per tenant capturing
+  `repaired_count` + `from_versions` + first/last id in metadata —
+  preserves the forensic trail per ADR-011 rev.3. **Idempotent:**
+  short-circuits to NO-OP when 0 non-v3 rows remain.
+- **`apps/web/src/app/api/v1/audit-log/integrity/route.ts`** gains
+  a v3 branch in the recompute CASE (identical formula as 0327).
+  Response shape: `verified.{v1, v2, v3}` instead of just `{v1, v2}`.
+  Warning remedy text now points at 0327 + 0328 instead of the
+  non-idempotent 0312.
+- **`packages/db/tests/integration/audit-hash-v3-tz-invariance.test.ts`**
+  asserts `compute_audit_hash_v3(row, …)` is byte-identical between
+  a `SET LOCAL TIME ZONE 'UTC'` session and a `SET LOCAL TIME ZONE
+'Europe/Berlin'` session, and documents that v2 is NOT (to prevent
+  a future refactor from "fixing" v2 and breaking historic
+  verification of legacy backups).
+
+**Sensitive change.** This migration rewrites every audit_log
+entry's `entry_hash` and `previous_hash`. ADR-011 rev.3 explicitly
+carves out this one-time hash_repair action. After deploy, expect
+the integrity endpoint to report `verified.v3 = total` and
+`skipped.v0_broken = 0`. Any external pre-hash-repair proofs need
+re-anchoring (the `hash_repair_v3` audit entry per tenant has the
+metadata to do this).
+
 ### Wave-23 — Endgame: Pilot-Readiness-Gate + A1/A2/C3-Hardening (2026-05-16)
 
 Wave 22 (siehe Eintrag unten) hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht: harte Defence-in-Depth in den Routen + ein CI-Gate, das den nächsten Merge blockt, wenn die Acceptance-Tests gegen Staging nicht grün sind.

@@ -98,8 +98,17 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
   // transaction. Migration 0313 backfills it for existing rows.
   //
   // The CASE on hash_version dispatches v1 (9-field) vs v2 (11-field)
-  // recompute. v0 rows are recognised here so row_ok / chain_ok skip
-  // them rather than reporting a mismatch.
+  // vs v3 (11-field UTC-normalised) recompute. v0 rows are recognised
+  // here so row_ok / chain_ok skip them rather than reporting a mismatch.
+  //
+  // #WAVE23.2: v3 added — same fields as v2 but `created_at` is formatted
+  // as ISO-8601 UTC via `to_char(... AT TIME ZONE 'UTC', ...)`. This
+  // makes the formula independent of the verifier's session timezone.
+  // Prior versions used `created_at::text` which renders in the session
+  // TZ, causing verify failures when the session TZ didn't match the
+  // trigger's write-time TZ. Once migration 0328 rehashes every entry
+  // to v3, the v1/v2 branches are only kept for replaying historic
+  // backups; live audit_log will be 100% v3.
   const result = await db.execute<RowCheck>(sql`
     WITH ordered AS (
       SELECT
@@ -117,6 +126,21 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
           WHEN hash_version = 0 THEN
             -- broken-window marker; skipped in row_ok / chain_ok below
             entry_hash
+          WHEN hash_version = 3 THEN
+            encode(digest(
+              COALESCE(previous_hash, '0')                                              || '|' ||
+              COALESCE(org_id::text, '')                                                || '|' ||
+              COALESCE(user_id::text, '')                                               || '|' ||
+              entity_type                                                               || '|' ||
+              COALESCE(entity_id::text, '')                                             || '|' ||
+              action::text                                                              || '|' ||
+              COALESCE(changes::text, '')                                               || '|' ||
+              COALESCE(action_detail, '')                                               || '|' ||
+              COALESCE(metadata::text, '')                                              || '|' ||
+              to_char(created_at AT TIME ZONE 'UTC', 'YYYY-MM-DD"T"HH24:MI:SS.US"Z"')   || '|' ||
+              previous_hash_scope,
+              'sha256'
+            ), 'hex')
           WHEN hash_version = 2 THEN
             encode(digest(
               COALESCE(previous_hash, '0')      || '|' ||
@@ -173,12 +197,14 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
   const v0Rows = rows.filter((r) => r.hash_version === 0);
   const v1Rows = rows.filter((r) => r.hash_version === 1);
   const v2Rows = rows.filter((r) => r.hash_version === 2);
+  const v3Rows = rows.filter((r) => r.hash_version === 3);
 
   const rowMismatches = rows.filter((r) => !r.row_ok);
   const chainMismatches = rows.filter((r) => !r.chain_ok);
 
   const v1Verified = v1Rows.filter((r) => r.row_ok && r.chain_ok).length;
   const v2Verified = v2Rows.filter((r) => r.row_ok && r.chain_ok).length;
+  const v3Verified = v3Rows.filter((r) => r.row_ok && r.chain_ok).length;
 
   // healthy = no v1/v2 mismatches. v0 rows are tracked separately as
   // warnings so a chain with documented broken entries can still report
@@ -191,7 +217,13 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
       kind: "broken_hash_window",
       count: v0Rows.length,
       remedy:
-        "Run migration 0312_rehash_v0_audit_entries.sql to recompute these under hash_version=2 and clear this warning. The migration is idempotent and writes its own hash_repair audit entry.",
+        // #WAVE23.2: 0312 turned out to be non-idempotent in the
+        // presence of session-TZ drift (Hetzner cluster is
+        // Europe/Berlin, CI is UTC). 0327 introduces a TZ-invariant
+        // v3 formula and 0328 rehashes everything to v3 — running
+        // db:migrate-all picks up both. After they apply you should
+        // see v0=0 here.
+        "Run migrations 0327 (v3 helper + trigger) and 0328 (chain rehash) via `npm run db:migrate-all`. Wave-23.2 also fixes migrate-all.ts to strip stray BEGIN/COMMIT and pin session TZ = UTC, which was the root cause of the 0312 oscillation.",
     });
   }
 
@@ -209,7 +241,7 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
   return {
     scope,
     total: rows.length,
-    verified: { v1: v1Verified, v2: v2Verified },
+    verified: { v1: v1Verified, v2: v2Verified, v3: v3Verified },
     skipped: { v0_broken: v0Rows.length },
     rowMismatches: rowMismatches.slice(0, 50).map((r) => ({
       id: r.id,

@@ -43,6 +43,20 @@ async function runPass(files: string[]): Promise<PassResult> {
     // Drizzle-generated files use this sentinel between statements; strip it
     // so the driver sees a single multi-statement batch.
     sql = sql.replace(/--> statement-breakpoint/g, "");
+    // #WAVE23.2: strip leading `BEGIN;` and trailing `COMMIT;` /
+    // `ROLLBACK;`. Several hand-written migrations wrap themselves in
+    // explicit BEGIN/COMMIT (0284, 0308, 0309, 0311, 0312, ...). When
+    // runPass wraps the file in client.begin(...), the inner COMMIT
+    // ends the outer transaction prematurely; subsequent statements
+    // either run outside any transaction or fail silently. The v0
+    // audit-trail oscillation traces to exactly this — 0312's rehash
+    // loop runs post-COMMIT and any error there can't be rolled back.
+    // Stripping the file-level BEGIN/COMMIT is safe because the outer
+    // client.begin already provides the transaction boundary.
+    sql = sql
+      .replace(/^\s*BEGIN\s*;\s*/im, "")
+      .replace(/\s*COMMIT\s*;\s*$/im, "")
+      .replace(/\s*ROLLBACK\s*;\s*$/im, "");
     // Skip the file if it is effectively empty (only whitespace/comments).
     if (!/\S/.test(sql.replace(/--.*$/gm, ""))) {
       ok.push(file);
@@ -51,6 +65,16 @@ async function runPass(files: string[]): Promise<PassResult> {
 
     try {
       await client.begin(async (tx) => {
+        // #WAVE23.2: pin session timezone to UTC for every migration.
+        // The audit_log hash formula (v1/v2) feeds `created_at::text`
+        // into SHA-256; `timestamptz::text` renders in the SESSION
+        // timezone, so a migrate-all run in Europe/Berlin produces
+        // different hashes than one in UTC for the same row. That
+        // mismatch caused migration 0311's retag to flip rows between
+        // v0 and v2 across deploys (Hetzner: cluster default Berlin,
+        // CI: container default UTC). SET LOCAL is transaction-scoped
+        // so it doesn't leak into subsequent files.
+        await tx.unsafe("SET LOCAL TIME ZONE 'UTC'");
         await tx.unsafe(sql);
       });
       ok.push(file);

@@ -49,6 +49,11 @@ describe("Audit integrity endpoint logic (live DB)", () => {
           LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
           CASE
             WHEN hash_version = 0 THEN entry_hash  -- v0 rows pass-through
+            WHEN hash_version = 3 THEN compute_audit_hash_v3(
+              previous_hash, org_id, user_id, entity_type, entity_id,
+              action::text, changes, action_detail, metadata, created_at,
+              previous_hash_scope
+            )
             WHEN hash_version = 2 THEN compute_audit_hash_v2(
               previous_hash, org_id, user_id, entity_type, entity_id,
               action::text, changes, action_detail, metadata, created_at,
