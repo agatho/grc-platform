@@ -35,6 +35,10 @@ vi.mock("@/lib/api", () => ({
   // withAuditContext is only used by PUT — stub it so the import
   // doesn't fail.
   withAuditContext: vi.fn(),
+  // Required by withErrorHandler (api-wrapper imports PaginationError
+  // at module-load time). Stub class is enough for the `instanceof`
+  // check to short-circuit — we never throw it from this test.
+  PaginationError: class PaginationError extends Error {},
 }));
 
 vi.mock("drizzle-orm", () => {

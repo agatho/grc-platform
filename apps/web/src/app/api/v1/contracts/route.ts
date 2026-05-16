@@ -128,7 +128,12 @@ export const POST = withErrorHandler(async function POST(req: Request) {
   for (const { from, to } of deprecatedAliases) {
     headers.append(
       "Warning",
-      `299 - "Use '${to}' instead of '${from}', deprecated since v0.2.0 — alias removed in v0.3.0"`,
+      // ASCII-only hyphen — em-dash (U+2014) fails the HTTP Headers
+      // ByteString conversion (only ISO-8859-1 byte values are
+      // permitted). Wave-23 unit tests rediscovered this latent bug:
+      // pre-W23 no test exercised the alias path, so the throw never
+      // surfaced.
+      `299 - "Use '${to}' instead of '${from}', deprecated since v0.2.0 - alias removed in v0.3.0"`,
     );
   }
   return new Response(JSON.stringify({ data: created }), {

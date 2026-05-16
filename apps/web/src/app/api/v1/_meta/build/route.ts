@@ -17,7 +17,14 @@
 // 500-en wegen DB-Issues, was D1 verlässlich macht.
 
 import { getRequestId } from "@/lib/api-errors";
-import { withErrorHandler } from "@/lib/api-wrapper";
+
+// #WAVE23-D1: deliberately NOT wrapped in withErrorHandler. The
+// route does no DB call, no auth check, no schema parse — there's
+// no failure mode that needs the wrapper's RFC-7807 mapping. Pulling
+// in withErrorHandler also pulled in `@/lib/logger` which transitively
+// imports `next-auth` for SSR session reading; vitest can't resolve
+// that without the full Next.js runtime, breaking the meta-build
+// unit test. The route is pure and can't throw.
 
 // Build-time substitutionen via Next.js env-vars. Im Dockerfile gesetzt
 // via `ARG GIT_SHA` + `ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA`. Wenn sie zur
@@ -37,7 +44,7 @@ const BUILT_AT =
 
 const PROCESS_START_MS = Date.now();
 
-export const GET = withErrorHandler(async function GET(req: Request) {
+export function GET(req: Request) {
   return Response.json({
     data: {
       commitSha: COMMIT_SHA,
@@ -51,4 +58,4 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       requestId: getRequestId(req),
     },
   });
-});
+}
