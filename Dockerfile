@@ -47,6 +47,27 @@ ARG AUTH_SECRET=build-placeholder
 ARG AUTH_TRUST_HOST=true
 ARG DATABASE_URL=postgresql://placeholder:placeholder@localhost:5432/placeholder
 
+# #WAVE23.1: build-time SHA + branch + build-time injected into the
+# image so `/api/v1/_meta/build` can report which commit is actually
+# running. Defaults are "unknown" so the image still builds in dev /
+# CI without --build-arg. The deploy script should pass:
+#   --build-arg GIT_SHA=$(git rev-parse HEAD) \
+#   --build-arg GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD) \
+#   --build-arg BUILD_TIME=$(date -u +%Y-%m-%dT%H:%M:%SZ)
+# CI's docker/build-push-action receives them via the `build-args`
+# input.
+#
+# These are runtime ENVs (not just build-time ARGs) so the route can
+# read them at request time. NEXT_PUBLIC_ prefix forces Next.js to
+# inline them into the server bundle (the standalone build strips
+# unprefixed ENVs that weren't referenced at build time).
+ARG GIT_SHA=unknown
+ARG GIT_BRANCH=unknown
+ARG BUILD_TIME=unknown
+ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
+ENV NEXT_PUBLIC_GIT_BRANCH=$GIT_BRANCH
+ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
+
 # Run from workspace root so hoisted node_modules are resolved
 RUN AUTH_SECRET="$AUTH_SECRET" \
     AUTH_TRUST_HOST="$AUTH_TRUST_HOST" \
@@ -59,6 +80,18 @@ WORKDIR /app
 
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
+
+# #WAVE23.1: propagate build SHA/branch/time into the runtime image
+# so the `/api/v1/_meta/build` endpoint can serve them at request
+# time. We re-declare the ARGs in this stage (Docker scopes ARGs
+# per-stage) and re-bake them into ENV. NEXT_PUBLIC_ prefix matches
+# what next/server reads in the standalone server bundle.
+ARG GIT_SHA=unknown
+ARG GIT_BRANCH=unknown
+ARG BUILD_TIME=unknown
+ENV NEXT_PUBLIC_GIT_SHA=$GIT_SHA
+ENV NEXT_PUBLIC_GIT_BRANCH=$GIT_BRANCH
+ENV NEXT_PUBLIC_BUILD_TIME=$BUILD_TIME
 
 RUN addgroup --system --gid 1001 arctos && \
     adduser --system --uid 1001 arctos

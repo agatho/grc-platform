@@ -80,7 +80,15 @@ export default auth((req) => {
     pathname.startsWith("/login") ||
     pathname.startsWith("/api/auth") ||
     pathname === "/api/v1/health" ||
-    pathname.startsWith("/api/v1/whistleblowing/intake")
+    pathname.startsWith("/api/v1/whistleblowing/intake") ||
+    // #WAVE23.1: /api/v1/_meta/* is deploy-/build-diagnostic. Wave-23
+    // designed `GET /_meta/build` as self-service for the D1 prod-SHA
+    // check (commitSha + branch + builtAt + nodeVersion + uptime).
+    // The middleware was blocking it with 401 → SSH-only diagnostic
+    // again, defeating the purpose. The meta endpoints expose only
+    // build-time / process-time strings that are also visible in any
+    // GitHub push event — no secrets, no PII, no DB touch.
+    pathname.startsWith("/api/v1/_meta")
   ) {
     const res = NextResponse.next();
     res.headers.set("x-request-id", requestId);
