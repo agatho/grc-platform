@@ -115,11 +115,14 @@ BEGIN
         v_scope
       );
 
-      -- Update this row.
+      -- Update this row. Also normalise previous_hash_scope to the
+      -- per-tenant scope — pre-0284 rows can have NULL scope which
+      -- breaks the integrity-route's per-tenant CTE walk.
       UPDATE audit_log
-      SET entry_hash    = v_new_hash,
-          previous_hash = v_prev_hash,
-          hash_version  = 3
+      SET entry_hash          = v_new_hash,
+          previous_hash       = v_prev_hash,
+          previous_hash_scope = v_scope,
+          hash_version        = 3
       WHERE id = v_repair_id;
 
       -- This row's new v3 hash becomes the previous_hash input for the

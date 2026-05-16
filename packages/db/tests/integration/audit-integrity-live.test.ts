@@ -127,6 +127,11 @@ describe("Audit integrity endpoint logic (live DB)", () => {
           previous_hash AS stored_previous_hash,
           LAG(entry_hash) OVER (ORDER BY chain_seq) AS prev_row_entry_hash,
           CASE
+            WHEN hash_version = 3 THEN compute_audit_hash_v3(
+              previous_hash, org_id, user_id, entity_type, entity_id,
+              action::text, changes, action_detail, metadata, created_at,
+              previous_hash_scope
+            )
             WHEN hash_version = 2 THEN compute_audit_hash_v2(
               previous_hash, org_id, user_id, entity_type, entity_id,
               action::text, changes, action_detail, metadata, created_at,
@@ -152,7 +157,17 @@ describe("Audit integrity endpoint logic (live DB)", () => {
     expect(chainBroken).toBe(0);
   });
 
-  it("rehashes a v0-tagged row and clears the broken-window warning", async () => {
+  // #WAVE23.2: this test exercised the 0311+0312 retag/rehash logic in
+  // a v1/v2 world. Wave-23.2 moved the trigger to v3 (TZ-invariant) and
+  // 0328 wholesale-rehashes every row to v3 — after migrate-all runs in
+  // CI, every audit_log row is v3 with a v3-formula hash. The inline
+  // 0311 retag in this test then can't find any v1 or v2 matches and
+  // tags every row v0, breaking the assertion that only the deliberately
+  // injected row needs repair. The new TZ-invariance contract is pinned
+  // by `audit-hash-v3-tz-invariance.test.ts`. Keeping this test as a
+  // skipped historical reference — the underlying v0 oscillation it
+  // exercised is no longer reachable.
+  it.skip("rehashes a v0-tagged row and clears the broken-window warning [obsolete: superseded by W23.2 v3 rehash]", async () => {
     // #WAVE9 regression: end-to-end exercise of migration 0312's repair
     // path. Inject a row whose stored entry_hash matches NEITHER v1 nor
     // v2 (simulates the Wave-7 transition window), let 0311's observed
