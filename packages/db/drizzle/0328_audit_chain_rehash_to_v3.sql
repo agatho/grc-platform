@@ -33,11 +33,12 @@ DECLARE
   v_scope           text;
   v_metadata        jsonb;
   v_pre_count       int;
-  v_repair_id       uuid;
-  v_prev_hash       text;
-  v_old_hash        text;
-  v_new_hash        text;
-  v_repair_hash     text;
+  v_repair_id          uuid;
+  v_prev_hash          text;
+  v_old_hash           text;
+  v_new_hash           text;
+  v_repair_hash        text;
+  v_is_first_in_scope  boolean;
 BEGIN
   SELECT count(*) INTO v_pending_count
   FROM audit_log WHERE hash_version IS DISTINCT FROM 3;
@@ -78,27 +79,30 @@ BEGIN
 
     -- Walk this tenant's chain in created_at order, rewriting each row's
     -- entry_hash + the previous_hash of the NEXT row in chain order. We
-    -- need to carry the "previous v3 hash" across rows because each
-    -- row's previous_hash must reference the v3 hash of the prior row.
+    -- carry the "previous v3 hash" across rows because each row's
+    -- previous_hash must reference the v3 hash of the prior row.
     --
-    -- Start: previous_hash for the FIRST rewritten row is the existing
-    -- previous_hash of that row (which references either NULL/'0' for
-    -- the chain root, or a prior row's old hash). After rewriting we
-    -- update both this row's entry_hash AND, post-update, fix the
-    -- previous_hash of the next row to chain to the new value.
+    -- Chain root: the FIRST row in each per-tenant chain gets
+    -- previous_hash = NULL. Pre-0284 (per-tenant scoping) days, some
+    -- rows had cross-tenant previous_hash references that the
+    -- integrity-route's per-tenant CTE walk can't reach. By pinning
+    -- the chain root to NULL we eliminate that orphan class.
+    -- The v3 hash formula treats NULL prev_hash as the literal '0'
+    -- (`COALESCE(p_previous_hash, '0')`), so the formula is well-defined
+    -- regardless.
     v_prev_hash := NULL;
+    v_is_first_in_scope := TRUE;
     FOR v_repair_id, v_old_hash IN
       SELECT id, entry_hash
       FROM audit_log
       WHERE COALESCE(org_id::text, 'platform') = COALESCE(v_org_id::text, 'platform')
       ORDER BY created_at, id
     LOOP
-      -- Compute v3 hash from this row's current data. The previous_hash
-      -- INPUT to the formula is the v3 hash we computed for the prior
-      -- row (or whatever was in previous_hash for the first row).
-      IF v_prev_hash IS NULL THEN
-        SELECT previous_hash INTO v_prev_hash
-        FROM audit_log WHERE id = v_repair_id;
+      IF v_is_first_in_scope THEN
+        -- Pin chain root to NULL — overrides any legacy cross-tenant
+        -- previous_hash this row may have inherited.
+        v_prev_hash := NULL;
+        v_is_first_in_scope := FALSE;
       END IF;
 
       v_new_hash := compute_audit_hash_v3(
