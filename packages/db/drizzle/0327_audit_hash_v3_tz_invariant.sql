@@ -169,11 +169,22 @@ BEGIN
   -- Per-tenant chain: previous-hash lookup is scoped, AND must match
   -- the latest v3 entry. Once 0328 has rehashed all entries to v3,
   -- there are no v0/v1/v2 rows left in any scope's tail.
+  --
+  -- #WAVE23.2: ORDER BY chain_seq DESC (not created_at, id DESC).
+  -- Latent bug since Wave 10: when 5 rows share now() inside one tx,
+  -- (created_at, id DESC) picks the largest random UUID — which is
+  -- NOT necessarily the most recently inserted row. The integrity
+  -- verify CTE uses LAG OVER (ORDER BY chain_seq) which IS monotonic
+  -- by INSERT time. Trigger lookup and verify CTE must agree on the
+  -- chain order or chain_ok mismatches surface non-deterministically.
+  -- chain_seq is BIGSERIAL (assigned at INSERT time, strictly
+  -- monotonic within a single transaction; backfilled for pre-0313
+  -- rows by migration 0313).
   SELECT entry_hash INTO v_prev_hash
   FROM audit_log
   WHERE previous_hash_scope = v_scope
     AND hash_version = 3
-  ORDER BY created_at DESC, id DESC
+  ORDER BY chain_seq DESC
   LIMIT 1;
 
   v_entry_hash := compute_audit_hash_v3(
