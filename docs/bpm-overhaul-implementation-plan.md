@@ -41,16 +41,16 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 
 **Differenzierung gegenüber Marktführern:**
 
-| Aspekt | BIC (GBTec) | Aeneis | Signavio | ARCTOS-BPM (Ziel) |
-|---|---|---|---|---|
-| Self-hosted multi-tenant | Cloud-Default, On-Prem aufpreis | Ja | Nein (SAP Cloud) | **Ja, von Anfang an** |
-| RLS auf jeder Cross-Module-Verlinkung | Teil | Teil | Teil | **Hart erzwungen** |
-| Hash-Chain Audit-Trail auf jeder Änderung | Audit-Log | Audit-Log | Audit-Log | **SHA-256 chain, ISO 27001 A.18.1.3 / GoBD §147 / DSGVO Art. 5(2)** |
-| Compliance-Profil-Switcher (ROPA, ISO 9001, NIS2) | Manuelles Mapping | Manuelles Mapping | Manuelles Mapping | **Auto-derived aus den 46 Frameworks im Catalog** |
-| Process Owner = First Line of Defense | Implizit | Implizit | Implizit | **First-Class via ADR-007** |
-| KMU-tauglich | Eher Enterprise | Eher Enterprise | Enterprise-only | **MitTelstand + Enterprise** |
-| Preis | Hoch | Hoch | Sehr hoch | **Wettbewerbsfähig** |
-| Datensouveränität | EU-Cloud | DACH | US-Cloud | **EU/DACH, self-hosted** |
+| Aspekt                                            | BIC (GBTec)                     | Aeneis            | Signavio          | ARCTOS-BPM (Ziel)                                                   |
+| ------------------------------------------------- | ------------------------------- | ----------------- | ----------------- | ------------------------------------------------------------------- |
+| Self-hosted multi-tenant                          | Cloud-Default, On-Prem aufpreis | Ja                | Nein (SAP Cloud)  | **Ja, von Anfang an**                                               |
+| RLS auf jeder Cross-Module-Verlinkung             | Teil                            | Teil              | Teil              | **Hart erzwungen**                                                  |
+| Hash-Chain Audit-Trail auf jeder Änderung         | Audit-Log                       | Audit-Log         | Audit-Log         | **SHA-256 chain, ISO 27001 A.18.1.3 / GoBD §147 / DSGVO Art. 5(2)** |
+| Compliance-Profil-Switcher (ROPA, ISO 9001, NIS2) | Manuelles Mapping               | Manuelles Mapping | Manuelles Mapping | **Auto-derived aus den 46 Frameworks im Catalog**                   |
+| Process Owner = First Line of Defense             | Implizit                        | Implizit          | Implizit          | **First-Class via ADR-007**                                         |
+| KMU-tauglich                                      | Eher Enterprise                 | Eher Enterprise   | Enterprise-only   | **MitTelstand + Enterprise**                                        |
+| Preis                                             | Hoch                            | Hoch              | Sehr hoch         | **Wettbewerbsfähig**                                                |
+| Datensouveränität                                 | EU-Cloud                        | DACH              | US-Cloud          | **EU/DACH, self-hosted**                                            |
 
 **Kern-Botschaft:** „Ein BPM-Tool das nicht den Prozess malt, sondern den **Prozess als GRC-Objekt** in sein Risiko-, Kontroll-, Audit-, BCM- und Compliance-Universum einbettet."
 
@@ -61,6 +61,7 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 ### Was bereits funktioniert ✅
 
 **DB-Schema:**
+
 - `process` (Stammdaten + Lifecycle), `processVersion` (BPMN-XML + Diagram-JSON), `processStep` (Activity-Granularität)
 - `processAsset` + `processStepAsset` (vollständige FK zu `asset`) ✅
 - `processReviewSchedule` (automatische Review-Zyklen)
@@ -68,6 +69,7 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 - Advanced: `processEventLog`, `processEvent`, `processConformanceResult`, `processMiningSuggestion`, `processKpiDefinition`, `processKpiMeasurement`, `processMaturityAssessment`, `valueStreamMap`, `processTemplate`
 
 **API-Routes** (~45 Endpoints):
+
 - CRUD, Versions, Compare, Restore
 - State-Transitions mit Discovery
 - Cross-Module-Linking (mit Caveats unten)
@@ -77,6 +79,7 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 - Bulk, Excel-Import, AI-Generate
 
 **UI:**
+
 - bpmn-js 18.16 als Editor
 - Tree-Navigation (Hierarchie)
 - Metro-Map-Visualization
@@ -86,23 +89,23 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 
 ### Was fehlt / placeholder / nicht funktional 🔴
 
-| Lücke | Schweregrad | Ursache |
-|---|---|---|
-| **FK-Constraint fehlt** auf `processControl.controlId` | P0 | Sprint 4 Placeholder, nie gehärtet |
-| **FK-Constraint fehlt** auf `processDocument.documentId` | P0 | Sprint 4 Placeholder, nie gehärtet |
-| **FK-Constraint fehlt** auf `processRisk.processId` und `processStepRisk.processStepId` | P0 | Schema-Drift |
-| **BIA ↔ Process Bidirektional-Navigation** | P0 | BIA hat `processImpacts` als JSON ohne FK |
-| **DMS-Integration** für Policy/Doc-Attach pro Activity | P0 | Endpoint existiert, UI fehlt komplett |
-| **Cross-Module-UI-Surfacing** in Process-Detail-Page | P0 | Tabs nicht angebunden |
-| **Risk-Heatmap-Overlay auf BPMN-Diagram** | P1 | Nicht implementiert |
-| **RACM (Risk and Control Matrix) View** | P1 | Daten da, View fehlt |
-| **GDPR ROPA-Template als Prozess-Profile** | P1 | Konzept fehlt |
-| **Three-Lines-of-Defense Markierung pro Lane/Activity** | P1 | Nur global pro Rolle |
-| **Custom-Moddle-Extensions für `arctos:*` BPMN-Attribute** | P1 | XML-Persistence ohne GRC-Semantik |
-| **Compliance-Framework-Mapping per Process** | P2 | 46 Frameworks geseedet, aber nicht per Process verlinkt |
-| **Process Mining auf produktive Daten** | P2 | Nur isolierte Test-Imports |
-| **Quality-Manager Approval-Workflow** | P2 | Status existiert, Notifications fehlen |
-| **Multi-Language Beschreibungen** | P3 | Nur via i18n-UI, nicht auf Datenebene |
+| Lücke                                                                                   | Schweregrad | Ursache                                                 |
+| --------------------------------------------------------------------------------------- | ----------- | ------------------------------------------------------- |
+| **FK-Constraint fehlt** auf `processControl.controlId`                                  | P0          | Sprint 4 Placeholder, nie gehärtet                      |
+| **FK-Constraint fehlt** auf `processDocument.documentId`                                | P0          | Sprint 4 Placeholder, nie gehärtet                      |
+| **FK-Constraint fehlt** auf `processRisk.processId` und `processStepRisk.processStepId` | P0          | Schema-Drift                                            |
+| **BIA ↔ Process Bidirektional-Navigation**                                              | P0          | BIA hat `processImpacts` als JSON ohne FK               |
+| **DMS-Integration** für Policy/Doc-Attach pro Activity                                  | P0          | Endpoint existiert, UI fehlt komplett                   |
+| **Cross-Module-UI-Surfacing** in Process-Detail-Page                                    | P0          | Tabs nicht angebunden                                   |
+| **Risk-Heatmap-Overlay auf BPMN-Diagram**                                               | P1          | Nicht implementiert                                     |
+| **RACM (Risk and Control Matrix) View**                                                 | P1          | Daten da, View fehlt                                    |
+| **GDPR ROPA-Template als Prozess-Profile**                                              | P1          | Konzept fehlt                                           |
+| **Three-Lines-of-Defense Markierung pro Lane/Activity**                                 | P1          | Nur global pro Rolle                                    |
+| **Custom-Moddle-Extensions für `arctos:*` BPMN-Attribute**                              | P1          | XML-Persistence ohne GRC-Semantik                       |
+| **Compliance-Framework-Mapping per Process**                                            | P2          | 46 Frameworks geseedet, aber nicht per Process verlinkt |
+| **Process Mining auf produktive Daten**                                                 | P2          | Nur isolierte Test-Imports                              |
+| **Quality-Manager Approval-Workflow**                                                   | P2          | Status existiert, Notifications fehlen                  |
+| **Multi-Language Beschreibungen**                                                       | P3          | Nur via i18n-UI, nicht auf Datenebene                   |
 
 ---
 
@@ -128,16 +131,16 @@ Diese Überarbeitung positioniert das BPM-Modul **nicht** als BPM-Engine-Konkurr
 
 ### Compliance-Standards-Mapping
 
-| Standard | Verlangtes BPM-Feature |
-|---|---|
-| **ISO 9001** Qualitätsmanagement | Prozesslandkarte, Prozess-Owner, KVP-Schleife, RACI |
-| **ISO 27001** Annex A.5.30 | Prozess ↔ Risiko ↔ Control-Verlinkung, Risk Treatment Plan |
-| **ISO 22301** BCM | BIA-Felder MTPD/RTO/RPO pro Prozess, Dependencies (Assets, People, Vendors) |
-| **NIS2** | Identifikation kritischer Prozesse, Lieferketten-Prozesse, Change-Management mit Audit-Trail |
-| **DORA** | ICT-Risk pro kritischem Prozess, ICT-Provider-Mapping (Process→Asset→Vendor), Resilience-Testing |
-| **GDPR Art. 30** | ROPA = strukturierte Prozessliste mit Zweck, Empfängern, Drittlands-Transfer, Löschfristen, TOMs |
-| **GoBD** | Versionierte, freigegebene Verfahrens-Dokumentation mit Audit-Trail |
-| **SOX § 404** | RACM mit Test-of-Design + Test-of-Operating-Effectiveness pro Prozess |
+| Standard                         | Verlangtes BPM-Feature                                                                           |
+| -------------------------------- | ------------------------------------------------------------------------------------------------ |
+| **ISO 9001** Qualitätsmanagement | Prozesslandkarte, Prozess-Owner, KVP-Schleife, RACI                                              |
+| **ISO 27001** Annex A.5.30       | Prozess ↔ Risiko ↔ Control-Verlinkung, Risk Treatment Plan                                       |
+| **ISO 22301** BCM                | BIA-Felder MTPD/RTO/RPO pro Prozess, Dependencies (Assets, People, Vendors)                      |
+| **NIS2**                         | Identifikation kritischer Prozesse, Lieferketten-Prozesse, Change-Management mit Audit-Trail     |
+| **DORA**                         | ICT-Risk pro kritischem Prozess, ICT-Provider-Mapping (Process→Asset→Vendor), Resilience-Testing |
+| **GDPR Art. 30**                 | ROPA = strukturierte Prozessliste mit Zweck, Empfängern, Drittlands-Transfer, Löschfristen, TOMs |
+| **GoBD**                         | Versionierte, freigegebene Verfahrens-Dokumentation mit Audit-Trail                              |
+| **SOX § 404**                    | RACM mit Test-of-Design + Test-of-Operating-Effectiveness pro Prozess                            |
 
 ---
 
@@ -200,6 +203,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 **Pain-Points heute:** Kann Prozess malen, aber keine Risiken/Kontrollen eigenständig verknüpfen. Risk-Erstellung war bis Wave 18 nicht erlaubt für eigene Prozesse.
 
 **Anforderungen:**
+
 - Eigene Prozesse anlegen, modellieren, in Review schicken
 - Pro Activity: Risiko anlegen oder existierendes verlinken, Mitigationen vorschlagen
 - KPIs definieren + Measurements eingeben
@@ -212,6 +216,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.2 Quality Manager (2nd Line)
 
 **Anforderungen:**
+
 - Process-Inventory-Dashboard (alle Prozesse im Org, gefiltert nach Status)
 - Approval-Queue: Prozesse in `in_review` und `approved` (zur Publikation)
 - Diff-View zwischen Versionen mit Inline-Kommentaren
@@ -224,6 +229,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.3 Risk Manager (2nd Line)
 
 **Anforderungen:**
+
 - **Process-Risk-Matrix-View**: alle Risiken aggregiert pro Prozess, mit Inherent- und Residual-Score
 - **Process-Heatmap** als BPMN-Overlay: welche Activities tragen die größten Risiken
 - Bulk-Linking: Risiko XYZ zu N Prozessen gleichzeitig zuordnen
@@ -234,6 +240,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.4 Control Owner (1st Line)
 
 **Anforderungen:**
+
 - Welche Controls deckt mein Process-Portfolio ab
 - Control-Coverage-View pro Activity (welche Activity hat 0 Controls, welche überdeckt)
 - Pro Control: Liste der Prozess-Activities die diesen Control nutzen
@@ -244,6 +251,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.5 DPO (2nd Line, Datenschutz)
 
 **Anforderungen:**
+
 - **ROPA-View**: alle Prozesse als Art-30-Records mit Pflichtfeldern
 - Pro Prozess: Datenverarbeitungs-Profile (Zweck, Rechtsgrundlage, Betroffenenkategorien, Datenkategorien, Empfänger, Drittlands-Transfer, Löschfristen, TOMs)
 - DPIA-Trigger: wenn Process-Profile auf "high-risk" (Profiling, sensitive Kategorien, Drittlands-Transfer) → automatisch DPIA-Vorschlag
@@ -253,6 +261,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.6 BCM Manager (2nd Line, Business Continuity)
 
 **Anforderungen:**
+
 - **BIA-Process-Bridge**: in einer BIA Liste der Prozesse mit Criticality-Ranking; pro Prozess MTPD/RTO/RPO setzen
 - Dependency-Map: welche Assets, People-Roles, 3rd-Party-Vendoren stützen den Prozess
 - Critical-Process-Flag mit Auto-Propagation in NIS2/DORA
@@ -262,6 +271,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.7 Auditor (3rd Line)
 
 **Anforderungen:**
+
 - Read-Access auf alle published Prozesse + alle Versions-Historien
 - Audit-Universe-Selection: Prozesse als Universe-Entities markieren
 - Process-to-Finding-Drill: pro Audit-Activity Findings raisen die einen Prozess betreffen
@@ -272,6 +282,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.8 CISO (2nd Line, Information Security)
 
 **Anforderungen:**
+
 - Information-Security-Risk-Heatmap pro Prozess
 - ISO 27001 Annex-A-Mapping: welche A.5–A.18 Controls deckt der Prozess ab
 - NIS2-Critical-Process-Dashboard
@@ -281,6 +292,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 6.9 Compliance Officer (2nd Line)
 
 **Anforderungen:**
+
 - Framework-Coverage pro Prozess: welche Standards deckt dieser Prozess ab
 - Multi-Standard-Audit-Prep: ein Prozess kann gleichzeitig ISO 9001 + ISO 27001 + NIS2 dienen
 - Compliance-Gap-Analysis: welche Standards-Anforderungen sind NICHT durch Prozesse dokumentiert
@@ -293,6 +305,7 @@ ARCTOS hat 9 produktive GRC-Rollen. Jede hat eine eigene Sicht und Bedürfnis am
 ### 7.1 Data-Model-Erweiterungen
 
 **Migration 0327: FK-Härtung der Placeholder-Tabellen**
+
 ```sql
 -- processControl: controlId von uuid (no ref) auf FK
 ALTER TABLE process_control
@@ -325,6 +338,7 @@ CREATE INDEX process_step_risk_risk_idx ON process_step_risk(risk_id);
 ```
 
 **Migration 0328: BIA-Process-Bridge**
+
 ```sql
 -- BIA-Process-Bridge mit MTPD/RTO/RPO pro Prozess
 CREATE TABLE bia_process_impact (
@@ -365,6 +379,7 @@ CREATE INDEX bia_process_impact_org_idx ON bia_process_impact(org_id);
 ```
 
 **Migration 0329: Process-Finding-Link** (Direct, nicht nur via Control)
+
 ```sql
 ALTER TABLE finding
   ADD COLUMN process_id uuid REFERENCES process(id),
@@ -375,6 +390,7 @@ CREATE INDEX finding_process_step_idx ON finding(process_step_id);
 ```
 
 **Migration 0330: Three-Lines-of-Defense pro Activity**
+
 ```sql
 ALTER TABLE process_step
   ADD COLUMN line_of_defense lod_enum,  -- first/second/third/oversight
@@ -385,6 +401,7 @@ ALTER TABLE process_step
 ```
 
 **Migration 0331: GDPR-ROPA-Profile-Erweiterung**
+
 ```sql
 -- ROPA-Profile als Erweiterung von process (Art. 30 Pflichtfelder)
 CREATE TABLE process_ropa_profile (
@@ -426,6 +443,7 @@ CREATE TABLE process_ropa_profile (
 **Migration 0332: Custom-Moddle-Attributes für BPMN-XML-Persistence**
 
 Im BPMN-XML werden GRC-Properties via Custom-Moddle gespeichert:
+
 ```xml
 <bpmn:userTask id="Task_1" name="Approve Order">
   <bpmn:extensionElements>
@@ -449,6 +467,7 @@ Im BPMN-XML werden GRC-Properties via Custom-Moddle gespeichert:
 ### 7.2 Cross-Module-Aggregation-Patterns
 
 **Process-Risk-Heatmap-Computation:**
+
 ```typescript
 // GET /api/v1/processes/{id}/risk-heatmap
 // Returns: { activities: [{ activityBpmnId, riskCount, maxInherent, maxResidual }] }
@@ -468,6 +487,7 @@ const heatmap = await db
 ```
 
 **Process-Control-Coverage-Score:**
+
 ```typescript
 // Pro Activity: hat sie einen Control mit effectiveness >= 'effective'?
 // Process-Score = % Activities mit Control-Coverage
@@ -478,6 +498,7 @@ const heatmap = await db
 ### 7.3 BPMN-Custom-Moddle Extensions
 
 Neuer Modul in `apps/web/src/components/bpmn/`:
+
 - `arctos-moddle-extension.json` (XSD-Style-Definition)
 - `arctos-properties-provider.ts` (Custom Properties Panel)
 - `arctos-overlay-renderer.ts` (Heatmap, Badge-Icons pro Activity)
@@ -488,6 +509,7 @@ Neuer Modul in `apps/web/src/components/bpmn/`:
 Aktuell: `draft → in_review → approved → published → archived`
 
 Neu (mit Gates):
+
 ```
 draft → in_review        [Gate: Process Owner gesetzt + min. 1 Activity]
 in_review → approved     [Gate: Reviewer gesetzt + alle Activities mit Beschreibung]
@@ -508,6 +530,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** Datenintegrität herstellen, bevor Features draufgesetzt werden.
 
 **Items:**
+
 1. Migrations 0327 — FK-Härtung (processControl, processDocument, processRisk, processStepRisk)
 2. Migration 0329 — Finding.processId FK
 3. Cleanup-Job: orphaned Placeholder-Rows identifizieren + bereinigen
@@ -523,6 +546,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** UI macht die existierenden Daten endlich nutzbar.
 
 **Items:**
+
 1. Process-Detail-Page um 6 Tabs erweitern: **Übersicht | Diagramm | Risiken | Kontrollen | Dokumente | BIA | Audits/Findings**
 2. Pro Tab: List + Add/Remove + Drill-down
 3. bpmn-js Editor-Properties-Panel: rechte Sidebar pro Activity zeigt verknüpfte Risks/Controls
@@ -541,6 +565,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** Compliance-Tauglichkeit für die ersten Pilot-Kunden.
 
 **Items:**
+
 1. Migration 0330 — Three-Lines-of-Defense pro process_step
 2. Lane-Color-Coding im bpmn-js-Renderer für 1st/2nd/3rd-Line
 3. RACM-Matrix-View als eigene Page `/processes/{id}/racm`:
@@ -561,6 +586,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** ISO 22301 / NIS2 / DORA / GDPR Art. 30 sind native Profile.
 
 **Items:**
+
 1. Migration 0328 — bia_process_impact-Table
 2. Migration 0331 — process_ropa_profile-Table für GDPR Art. 30
 3. BIA-Detail-Page: Tab "Prozesse" mit Liste der gescorten Prozesse mit MTPD/RTO/RPO-Inputs
@@ -581,6 +607,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** GRC-Attribute reisen mit dem BPMN-XML.
 
 **Items:**
+
 1. `arctos-moddle-extension.json` definieren (riskRefs, controlRefs, lineOfDefense, raci, bcmKpi, ropa)
 2. bpmn-js Property-Panel-Erweiterung: pro Activity rechte Sidebar mit allen `arctos:*` Properties
 3. XML-Import: bestehende `arctos:*` Attribute werden in DB rehydriert
@@ -595,6 +622,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** Multi-Level-Editorial-Workflow wie BIC, mit Hash-Chain-Signatur.
 
 **Items:**
+
 1. **Process-Cockpit-Dashboard** als neue Top-Level-Page `/processes/cockpit`:
    - 4 Quadranten: "In Review", "Pending Approval", "Overdue Review", "Critical Risks"
    - Filter pro Department, Owner, Compliance-Status
@@ -614,6 +642,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** Schnelles Anlegen + intelligente Vorschläge.
 
 **Items:**
+
 1. **Text-zu-BPMN** via Multi-Provider-AI-Router:
    - User schreibt: "Wenn ein Kunde eine Bestellung aufgibt, wird sie geprüft, der Lagerbestand ermittelt, dann versendet"
    - LLM generiert BPMN-XML mit Activities + Gateways
@@ -630,6 +659,7 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 **Ziel:** Die existierende Sprint-47-Pipeline (Event Logs, Conformance, Maturity) wird productive.
 
 **Items:**
+
 1. **Event-Log-Ingestion-Pipeline:** Webhook-Receiver für CSV/XES-Uploads aus externen Systemen (SAP, Salesforce)
 2. **Conformance-Dashboard** pro Prozess: Soll vs. Ist mit Abweichungsliste
 3. **Bottleneck-Heatmap** im Diagram-Overlay
@@ -646,18 +676,18 @@ Jeder Gate-Block liefert strukturierte Blocker-Liste analog zu BIA (`code`, `gat
 
 ### 9.1 Neue/erweiterte Pages
 
-| Page | Zweck | Rollen |
-|---|---|---|
-| `/processes` (List) | Bestehend, erweitert um Compliance-Filter, Critical-Flag, LoD-Color | Alle |
-| `/processes/cockpit` (Phase 6) | Quality Manager Daily-Driver | Quality Manager, Compliance Officer |
-| `/processes/map` | Org-weite Prozess-Landkarte mit Hierarchie | Alle |
-| `/processes/{id}` (Detail) | 6 neue Tabs: Übersicht, Diagramm, Risiken, Kontrollen, Dokumente, BIA, Audits | Alle |
-| `/processes/{id}/racm` | Risk-Control-Matrix-View für SOX-Audit | Auditor, Compliance, Risk Mgr |
-| `/processes/{id}/ropa` | GDPR Art. 30 Profile-Editor | DPO |
-| `/processes/{id}/bia` | BIA-Score-Editor pro Prozess | BCM Manager |
-| `/processes/{id}/maturity` | Maturity-Breakdown (live-computed) | Quality Mgr, Process Owner |
-| `/processes/{id}/walkthrough` | Onboarding-View für neue Mitarbeiter | Process Owner + Operations |
-| `/processes/templates` | Template-Katalog (Sprint 47 schon angelegt) | Process Owner |
+| Page                           | Zweck                                                                         | Rollen                              |
+| ------------------------------ | ----------------------------------------------------------------------------- | ----------------------------------- |
+| `/processes` (List)            | Bestehend, erweitert um Compliance-Filter, Critical-Flag, LoD-Color           | Alle                                |
+| `/processes/cockpit` (Phase 6) | Quality Manager Daily-Driver                                                  | Quality Manager, Compliance Officer |
+| `/processes/map`               | Org-weite Prozess-Landkarte mit Hierarchie                                    | Alle                                |
+| `/processes/{id}` (Detail)     | 6 neue Tabs: Übersicht, Diagramm, Risiken, Kontrollen, Dokumente, BIA, Audits | Alle                                |
+| `/processes/{id}/racm`         | Risk-Control-Matrix-View für SOX-Audit                                        | Auditor, Compliance, Risk Mgr       |
+| `/processes/{id}/ropa`         | GDPR Art. 30 Profile-Editor                                                   | DPO                                 |
+| `/processes/{id}/bia`          | BIA-Score-Editor pro Prozess                                                  | BCM Manager                         |
+| `/processes/{id}/maturity`     | Maturity-Breakdown (live-computed)                                            | Quality Mgr, Process Owner          |
+| `/processes/{id}/walkthrough`  | Onboarding-View für neue Mitarbeiter                                          | Process Owner + Operations          |
+| `/processes/templates`         | Template-Katalog (Sprint 47 schon angelegt)                                   | Process Owner                       |
 
 ### 9.2 bpmn-js Editor-Erweiterungen
 
@@ -750,17 +780,17 @@ GET /api/v1/processes/{id}
 
 ## 11. DB-Migrations-Plan
 
-| Nr. | Zweck | Reversible? |
-|---|---|---|
-| 0327 | FK-Härtung Placeholder-Tabellen | Ja (DROP CONSTRAINT) |
-| 0328 | bia_process_impact-Table | Ja |
-| 0329 | Finding.processId + processStepId | Ja |
-| 0330 | process_step.line_of_defense | Ja |
-| 0331 | process_ropa_profile-Table | Ja |
-| 0332 | Custom-Moddle-Extension-Loader (kein DDL, nur Code) | Ja |
-| 0333 | process_sign_off-Table + Hash-Chain-Anker | Ja |
-| 0334 | process_event_log Production-Indexes | Ja |
-| 0335 | process_framework_mapping-Table (process ↔ framework_control) | Ja |
+| Nr.  | Zweck                                                         | Reversible?          |
+| ---- | ------------------------------------------------------------- | -------------------- |
+| 0327 | FK-Härtung Placeholder-Tabellen                               | Ja (DROP CONSTRAINT) |
+| 0328 | bia_process_impact-Table                                      | Ja                   |
+| 0329 | Finding.processId + processStepId                             | Ja                   |
+| 0330 | process_step.line_of_defense                                  | Ja                   |
+| 0331 | process_ropa_profile-Table                                    | Ja                   |
+| 0332 | Custom-Moddle-Extension-Loader (kein DDL, nur Code)           | Ja                   |
+| 0333 | process_sign_off-Table + Hash-Chain-Anker                     | Ja                   |
+| 0334 | process_event_log Production-Indexes                          | Ja                   |
+| 0335 | process_framework_mapping-Table (process ↔ framework_control) | Ja                   |
 
 Alle idempotent (`IF NOT EXISTS`, `ON CONFLICT DO NOTHING`), alle mit Up- + Down-Skript dokumentiert.
 
@@ -806,16 +836,16 @@ Audit-Pack-Export für ISO 9001 Stichprobe: 5 Prozesse, alle published, mit Audi
 
 ## 13. Aufwand + Reihenfolge
 
-| Phase | Wochen | Team-Aufwand | Pilot-Critical? |
-|---|---|---|---|
-| 1 Foundation | 1–2 | 1× Backend, 1× DevOps | ✅ |
-| 2 Cross-Module-Wiring | 3–4 | 1× FullStack, 1× UX | ✅ |
-| 3 GRC-Semantik & RACM | 5–6 | 1× Backend, 1× UX, 1× QA | ✅ |
-| 4 BIA + Compliance-Profile | 7–8 | 1× Backend, 1× UX | ⚠️ Empfohlen |
-| 5 Custom-Moddle | 9–10 | 1× Frontend-Spezialist | ⚠️ Empfohlen |
-| 6 Approval + Cockpit | 11–12 | 1× FullStack, 1× UX | Nice |
-| 7 AI-Assistent | 13–14 | 1× ML-Engineer, 1× UX | Nice |
-| 8 Process Mining Prod | 15–16 | 1× Data-Engineer, 1× UX | Nice |
+| Phase                      | Wochen | Team-Aufwand             | Pilot-Critical? |
+| -------------------------- | ------ | ------------------------ | --------------- |
+| 1 Foundation               | 1–2    | 1× Backend, 1× DevOps    | ✅              |
+| 2 Cross-Module-Wiring      | 3–4    | 1× FullStack, 1× UX      | ✅              |
+| 3 GRC-Semantik & RACM      | 5–6    | 1× Backend, 1× UX, 1× QA | ✅              |
+| 4 BIA + Compliance-Profile | 7–8    | 1× Backend, 1× UX        | ⚠️ Empfohlen    |
+| 5 Custom-Moddle            | 9–10   | 1× Frontend-Spezialist   | ⚠️ Empfohlen    |
+| 6 Approval + Cockpit       | 11–12  | 1× FullStack, 1× UX      | Nice            |
+| 7 AI-Assistent             | 13–14  | 1× ML-Engineer, 1× UX    | Nice            |
+| 8 Process Mining Prod      | 15–16  | 1× Data-Engineer, 1× UX  | Nice            |
 
 **Pilot-Minimum:** Phasen 1–3 (6 Wochen) — danach kann ein Pilot-Kunde mit ISO-9001/27001-Audit den BPM-Teil produktiv nutzen.
 
@@ -827,23 +857,24 @@ Audit-Pack-Export für ISO 9001 Stichprobe: 5 Prozesse, alle published, mit Audi
 
 ## 14. Risiken & Trade-offs
 
-| Risiko | Mitigation |
-|---|---|
-| **bpmn-js-Major-Upgrade während Implementation** | Version 18.16 fixieren, Upgrade als eigenes Sprint nach v0.3.0 |
-| **Custom-Moddle bricht externe Tool-Kompatibilität** | Test gegen Visio, Camunda, Signavio Trial im Phase 5 Round-Trip-Test |
-| **Performance bei großen RACM-Tabellen** | Caching mit 5min-TTL für RACM-Computation, falls > 200 Activities |
-| **GDPR-ROPA-Profile-Sprawl** | Profile als Soft-Mandatory, nicht Hard-Required (Process kann existieren ohne ROPA) |
-| **Approval-Pipeline-Lock-Outs** | Discovery-Endpoint zeigt Blocker, Admin-Override für Notfälle (mit Audit-Trail) |
-| **AI-Generierte BPMN ist syntaktisch invalide** | Validator-Pipeline VOR Save, mit Fallback "User editiert manuell" |
-| **Process Mining Hot-Storage-Cost** | Event-Log-Tabellen in TimescaleDB-Hypertable mit Retention 24 Monate |
+| Risiko                                                 | Mitigation                                                                            |
+| ------------------------------------------------------ | ------------------------------------------------------------------------------------- |
+| **bpmn-js-Major-Upgrade während Implementation**       | Version 18.16 fixieren, Upgrade als eigenes Sprint nach v0.3.0                        |
+| **Custom-Moddle bricht externe Tool-Kompatibilität**   | Test gegen Visio, Camunda, Signavio Trial im Phase 5 Round-Trip-Test                  |
+| **Performance bei großen RACM-Tabellen**               | Caching mit 5min-TTL für RACM-Computation, falls > 200 Activities                     |
+| **GDPR-ROPA-Profile-Sprawl**                           | Profile als Soft-Mandatory, nicht Hard-Required (Process kann existieren ohne ROPA)   |
+| **Approval-Pipeline-Lock-Outs**                        | Discovery-Endpoint zeigt Blocker, Admin-Override für Notfälle (mit Audit-Trail)       |
+| **AI-Generierte BPMN ist syntaktisch invalide**        | Validator-Pipeline VOR Save, mit Fallback "User editiert manuell"                     |
+| **Process Mining Hot-Storage-Cost**                    | Event-Log-Tabellen in TimescaleDB-Hypertable mit Retention 24 Monate                  |
 | **Customer Lock-in zu ARCTOS-spezifischen Attributes** | XML-Export hat zwei Modi: "full" (mit `arctos:*`) und "interoperable" (BPMN-2.0-only) |
-| **Wave-23-Endgame nicht durch** | Diese Roadmap startet ERST nach Wave-23-Pilot-Readiness-Gate grün |
+| **Wave-23-Endgame nicht durch**                        | Diese Roadmap startet ERST nach Wave-23-Pilot-Readiness-Gate grün                     |
 
 ---
 
 ## 15. Erfolgs-Definition
 
 Nach Phase 3 (Pilot-Minimum) kann ein deutscher Mittelständler:
+
 1. Seine Top-50 Prozesse modellieren in BPMN 2.0
 2. Pro Activity Risiken + Kontrollen + Verantwortlichkeiten (RACI) verknüpfen
 3. ISO 9001 + ISO 27001 Audit-Pack als PDF exportieren mit vollständigem Audit-Trail
@@ -851,14 +882,9 @@ Nach Phase 3 (Pilot-Minimum) kann ein deutscher Mittelständler:
 5. Process-Owner bekommt automatische Review-Erinnerungen
 6. Auditor (3rd Line) macht Stichproben mit Sign-Off-Vermerk
 
-Nach Phase 5 zusätzlich:
-7. DPO erstellt GDPR-Art-30-ROPA-Aufstellung als PDF für Behörden
-8. BCM Manager scort MTPD/RTO/RPO pro Prozess in der BIA
-9. BPMN-XML-Roundtrip via externe Tools (Visio, Signavio Trial) bleibt verlustfrei
+Nach Phase 5 zusätzlich: 7. DPO erstellt GDPR-Art-30-ROPA-Aufstellung als PDF für Behörden 8. BCM Manager scort MTPD/RTO/RPO pro Prozess in der BIA 9. BPMN-XML-Roundtrip via externe Tools (Visio, Signavio Trial) bleibt verlustfrei
 
-Nach Phase 8:
-10. Process Mining identifiziert Bottlenecks aus realen Log-Daten
-11. AI-Assistent generiert neue Prozesse aus Text-Description in <30s
+Nach Phase 8: 10. Process Mining identifiziert Bottlenecks aus realen Log-Daten 11. AI-Assistent generiert neue Prozesse aus Text-Description in <30s
 
 **Erfolgs-Metrik:** Pilot-Kunde durchläuft ein internes ISO-9001-Audit mit ARCTOS-BPM als alleinigem Tool, ohne Excel oder Visio nebenher.
 
@@ -871,6 +897,7 @@ Nach Phase 8:
 > Als **Thomas Fischer (Process Owner Operations)** möchte ich den **„Bestellungs-Genehmigungs-Prozess"** modellieren, jede Activity mit Risiko-Profil und Control-Coverage versehen, und meinen Vorgesetzten als Reviewer einbinden, damit das Audit-Pack für die jährliche ISO 9001-Zertifizierung automatisch generierbar ist.
 
 **Akzeptanz:**
+
 - Anlegen + Status `draft`
 - BPMN-Editor mit 8 Activities + 2 Gateways
 - Pro Activity ≥ 1 Risk verknüpft (via Context-Menu)
@@ -884,6 +911,7 @@ Nach Phase 8:
 > Als **Dr. Julia Krause (DPO)** möchte ich für alle 30 Prozesse meiner Organisation ein GDPR-Art-30-Profile pflegen und einmal pro Quartal als PDF an die Aufsichtsbehörde exportieren können.
 
 **Akzeptanz:**
+
 - ROPA-Profile-Editor zeigt Art-30-Pflichtfelder
 - `requires_dpia` auto-set bei high-risk-Profile
 - Export-PDF-Button erzeugt strukturiertes Behörden-Format
@@ -893,10 +921,11 @@ Nach Phase 8:
 > Als **Lisa Wagner (BCM Manager)** möchte ich in der jährlichen BIA für jeden kritischen Prozess MTPD, RTO und RPO setzen und die Dependencies (Assets, Vendoren, Mitarbeiter) anzeigen, damit der Disaster-Recovery-Plan vollständig ist.
 
 **Akzeptanz:**
+
 - BIA-Detail-Page Tab "Prozesse" listet alle gescorten Prozesse
 - Pro Prozess: MTPD/RTO/RPO + Dependency-Map (Asset, Vendor, User)
 - Critical-Process-Flag propagiert in NIS2-Dashboard
 
 ---
 
-*Implementation-Plan abgeschlossen. ~6.500 Worte. 8 Phasen, 9 Rollen-Profile, 9 Migration-Nummern. Vorbedingung: Wave 23 grün.*
+_Implementation-Plan abgeschlossen. ~6.500 Worte. 8 Phasen, 9 Rollen-Profile, 9 Migration-Nummern. Vorbedingung: Wave 23 grün._
