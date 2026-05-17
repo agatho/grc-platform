@@ -141,6 +141,61 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-23 — CLOSED: alle 3 Acceptance-Items live auf prod verifiziert (2026-05-17)
+
+Wave 23 ist geschlossen. Sechs PRs (#167 → #172), drei live-verifizierte Acceptance-Items, plus zwei weitere Drift-Klassen entdeckt + permanent geschlossen:
+
+**Live-Verification gegen `arctos.charliehund.de` (2026-05-17):**
+
+```
+A1  finding controlId persistence    ✅  POST 201 + GET-back: controlId matches input
+A2  /admin/branding never 500        ✅  HTTP 200 + {reportTemplate:"standard", source:"defaults"}
+C3  /contracts name→title alias      ✅  POST 201 + title aus name-Alias übernommen
+/api/v1/meta/build (D1)              ✅  HTTP 200 JSON
+audit_log hash_version distribution  ✅  50 231 / 50 231 v3 (zero v0/v1/v2)
+```
+
+**Was Wave 23 zusätzlich ans Licht gebracht hat (jenseits der ursprünglichen 3 Items):**
+
+1. **Audit-Hash-TZ-Drift** (29 241 v0-Entries auf prod) — W23.2 → v3-Formula `to_char(... AT TIME ZONE 'UTC', ...)` + Migration 0328 rehashed alle 50 231 Entries. Plus migrate-all-Fix für stripped `BEGIN/COMMIT` aus 8 älteren Migrationen + `SET LOCAL TIME ZONE 'UTC'` als Standard.
+2. **Next.js Private-Folder-Convention** — W23.3 → Rename `_meta` → `meta`. Root-cause war NICHT "Container ist alt" sondern "Route wurde von Next.js App Router silently aus der Routing-Tabelle gestrichen". ~12 h Debugging um eine 4-Zeichen-Verzeichnis-Namensregel.
+3. **org_branding Schema-Drift** (A2 root-cause) — W23.5 → Migration 0329 backfilled missing `report_template` Column via `ADD COLUMN IF NOT EXISTS`. Identische Failure-Klasse wie Wave-22 für A1 hypothesizte, nur auf einer anderen Tabelle.
+4. **GIT_SHA in local-build** — W23.4 → `deploy/update-all.sh` passt `--build-arg GIT_SHA=...` an, damit der prod-host-build (nicht nur CI) den realen Commit-SHA in `/meta/build` ausgibt.
+
+### Wave-23.5 — A2 Schema-Backfill (`org_branding.report_template`) (2026-05-17)
+
+Während der live-A2-Verifikation auf prod (2026-05-17) zeigte sich der echte A2-Root-Cause: die `org_branding`-Tabelle auf prod hatte die `report_template`-Spalte nicht (Drizzle-Schema + Migration 0024 deklarierten sie, aber `\d org_branding` listete sie nicht). Vermutete Sequenz: prod hat eine frühere Version von 0024 (vor Spalten-Add) angewandt, die Tabelle wurde ohne `report_template` erstellt, und erneutes Ausführen von 0024 schlug stillschweigend an "table already exists" fehl — neue Spalte erreichte die laufende Tabelle nie.
+
+Fix: neue Migration `0329_org_branding_add_report_template.sql` mit `CREATE TYPE IF NOT EXISTS` + `ALTER TABLE ... ADD COLUMN IF NOT EXISTS report_template branding_template_style NOT NULL DEFAULT 'standard'`. Idempotent — no-op auf frisch-erstellter DB, fügt Spalte auf drift-DB hinzu.
+
+Diagnose-Sequenz die diesen Bug aufdeckte (nur möglich durch W23 + W23.1 + W23.3 Stack):
+
+1. W23 wrappte branding-Route in `withErrorHandler` → empty 500 wurde RFC-7807 mit RequestID
+2. W23.1 + W23.3 machten `/api/v1/meta/build` self-service → Verifikation welcher Build live ist
+3. `docker logs arctos-web-1 | grep <requestId>` zeigte die Drizzle-`Failed query` mit dem genauen SELECT-Statement → `report_template` in SELECT-Liste, aber `\d org_branding` zeigte: Spalte fehlt
+
+Live-acceptance nach Deploy: `GET /admin/branding` → 200 mit `{reportTemplate:"standard", source:"defaults"}`.
+
+### Wave-23.4 — `arctos-update` passes GIT_SHA/BRANCH/BUILD_TIME (2026-05-17)
+
+Nach W23.3 (Routing-Fix) lieferte `/api/v1/meta/build` zwar HTTP 200 mit JSON, aber `commitSha`/`branch`/`builtAt` alle `"unknown"`. Cause: Dockerfile (W23.1) deklariert `ARG GIT_SHA/GIT_BRANCH/BUILD_TIME` mit Default `"unknown"`. CI passt diese via `docker/build-push-action.with.build-args` weiter, aber der local-build-Pfad in `update-all.sh` benutzte bare `docker compose build web worker` — keine build-args, defaults applied.
+
+Fix: `deploy/update-all.sh` Step `[2/5]` exported jetzt `GIT_SHA`/`GIT_BRANCH`/`BUILD_TIME` aus dem just-pulled Checkout und passt sie als `--build-arg` an `docker compose build`. Same source-of-truth (checked-out HEAD) für CI und prod-host. Nach einem `arctos-update` mit diesem Fix in place liefert `/api/v1/meta/build` den realen Commit-SHA.
+
+### Wave-23.3 — Rename `/api/v1/_meta` → `/api/v1/meta` (Next.js private-folder) (2026-05-16)
+
+Wave-23 prod-deploy-verification zeigte: trotz cleanem `docker compose build --no-cache` + force-recreate lieferte `curl /api/v1/_meta/build` HTML 404. Die Route-Datei war auf Disk, im Build-Context, im kompilierten `.next/standalone`-Output — aber Next.js' `app-paths-manifest` registrierte den Pfad nie.
+
+Root-cause: Next.js App Router behandelt Folders mit `_`-Prefix als **PRIVATE folders, vom Routing ausgeschlossen**. Originale `_meta`-Wahl war falsch. ([Next.js Docs: private folders](https://nextjs.org/docs/app/building-your-application/routing/colocation#private-folders))
+
+Fix: Rename `_meta` → `meta` in lockstep über alle 6 Call-Sites:
+
+- `apps/web/src/app/api/v1/_meta/*` → `apps/web/src/app/api/v1/meta/*` (git mv)
+- `middleware.ts` public-allowlist
+- `scripts/pilot-readiness-gate.sh` build-info URL
+- `apps/web/src/__tests__/api/meta-build.test.ts` import + Request URL
+- CHANGELOG, STATUS.md
+
 ### Wave-23.2 — Audit-Hash v3 (TZ-invariant) + Migrate-All Fix (2026-05-16)
 
 Discovered during Wave-23 prod-diagnose (D2 against the live DB,

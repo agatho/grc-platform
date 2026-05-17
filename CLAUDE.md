@@ -4,7 +4,7 @@
 
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **108 Drizzle schemas, 563 pgTable() definitions, 305 SQL migrations (latest: `0326_seed_arctistx_rbac_users.sql`), 1.246 `route.ts` files (~1.700 endpoints), 470 Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings, 258 test files + 47 Playwright E2E specs.** Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 22** (2026-05-16). Active: **Wave 23 endgame** + Programme Cockpit Sprint 13.
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **108 Drizzle schemas, 563 pgTable() definitions, 308 SQL migrations (latest: `0329_org_branding_add_report_template.sql`), 1.246 `route.ts` files (~1.700 endpoints), 470 Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings, 258 test files + 47 Playwright E2E specs.** Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 23** (closed 2026-05-17, PRs #167–#172, all 3 acceptance items live-verified on prod). Active: Programme Cockpit Sprint 13 + planning for Wave 24.
 
 ## Tech Stack
 
