@@ -42,6 +42,7 @@ export {
   buildTextToBpmnPrompt,
   buildRiskSuggestionPrompt,
   buildControlSuggestionPrompt,
+  buildDiagramOptimizationPrompt,
   buildFrameworkMappingPrompt,
   safeJsonParse,
 } from "./prompts/bpm";

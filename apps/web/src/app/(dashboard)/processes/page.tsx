@@ -28,6 +28,7 @@ import {
 } from "@/components/process/process-status-badge";
 import { ProcessGalleryCard } from "@/components/process/process-gallery-card";
 import { ProcessBulkActions } from "@/components/process/process-bulk-actions";
+import { BpmDashboardKpis } from "@/components/process/bpm-dashboard-kpis";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
@@ -231,6 +232,9 @@ function ProcessLandscape() {
 
   return (
     <div className="space-y-4">
+      {/* BPM Overhaul Phase 4: cross-module KPI tiles */}
+      <BpmDashboardKpis />
+
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
