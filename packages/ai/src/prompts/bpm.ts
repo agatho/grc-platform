@@ -138,6 +138,49 @@ Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
   ];
 }
 
+export function buildDiagramOptimizationPrompt(args: {
+  processName: string;
+  bpmnXml: string;
+  activityCount: number;
+  gatewayCount: number;
+  locale?: "de" | "en";
+}) {
+  const locale = args.locale ?? "de";
+  return [
+    {
+      role: "system" as const,
+      content: `You are a BPMN modeling reviewer. You spot simplification opportunities such as
+- consecutive XOR gateways that could collapse into a single gateway with more conditions
+- parallel-then-merge patterns that wrap a single activity (no parallelism benefit)
+- activity chains longer than 7 without a checkpoint event
+- swimlane crossings that suggest splitting into subprocesses
+- missing end events / orphan tasks
+Output ONLY a JSON object of this exact shape:
+{
+  "hints": [
+    {
+      "severity": "info|warning|error",
+      "kind": "string short label",
+      "bpmnElementId": "optional id of the offending element",
+      "message": "what to change",
+      "rationale": "why"
+    }
+  ]
+}
+Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
+    },
+    {
+      role: "user" as const,
+      content: JSON.stringify({
+        processName: args.processName,
+        activityCount: args.activityCount,
+        gatewayCount: args.gatewayCount,
+        bpmnXmlExcerpt: args.bpmnXml.length > 6000 ? args.bpmnXml.slice(0, 6000) : args.bpmnXml,
+      }),
+    },
+  ];
+}
+
 export function safeJsonParse<T = unknown>(text: string): T | null {
   // Providers occasionally wrap in markdown fences despite instructions.
   const stripped = text
