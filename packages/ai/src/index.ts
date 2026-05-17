@@ -46,3 +46,8 @@ export {
   buildFrameworkMappingPrompt,
   safeJsonParse,
 } from "./prompts/bpm";
+export {
+  buildChecklistGenerationPrompt,
+  buildFindingSuggestionPrompt,
+  buildAuditConclusionPrompt,
+} from "./prompts/audit";
