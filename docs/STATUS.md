@@ -220,8 +220,8 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | **20 weitere Email-Templates per Template-spezifische Tests**            |       P3 | abgedeckt durch Auto-Discovery-Smoke (alle 25 Templates × DE/EN), template-spezifische Edge-Cases offen                                                                       |
 | **State-Machine server-side** — z. B. `closed → identified` HTTP-422     |       P1 | offen — Schema layer akzeptiert Werte, Routing-Layer prüft nicht                                                                                                              |
 | **150 weitere mutating Endpoints** ohne dedizierten RBAC-Test            |       P1 | Pattern etabliert (Domain-RBAC-Suite ist parametrisch erweiterbar). Skalierung offen                                                                                          |
-| **W23-A1** finding controlId/auditId/riskId persistiert null in prod     |       P0 | Wave 23: post-insert FK-Verification + `_meta/build` für Self-Service-D1, gehärtet via withErrorHandler                                                                       |
-| **W23-A2** /admin/branding 500 (Wave 22 RequestID 24a45b827c4f2e4d)      |       P0 | Wave 23: Acceptance-Test 200/501-only, `_meta/build` für Deploy-SHA-Diagnose                                                                                                  |
+| **W23-A1** finding controlId/auditId/riskId persistiert null in prod     |       P0 | Wave 23: post-insert FK-Verification + `meta/build` für Self-Service-D1, gehärtet via withErrorHandler                                                                       |
+| **W23-A2** /admin/branding 500 (Wave 22 RequestID 24a45b827c4f2e4d)      |       P0 | Wave 23: Acceptance-Test 200/501-only, `meta/build` für Deploy-SHA-Diagnose                                                                                                  |
 | **W23-C3** Contract POST {name:'X'} → 500 statt 422                      |       P1 | Wave 23: Wave-22-Alias funktioniert, POST jetzt withErrorHandler-gewrappt → niemals empty 500                                                                                 |
 | **W23-Pilot-Readiness-Gate** als CI-Pre-Merge-Check                      |       P0 | Wave 23: `scripts/pilot-readiness-gate.sh` läuft gegen Staging, GitHub-Actions-Job blockt Merges                                                                              |
 
@@ -229,7 +229,7 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 
 Wave 22 hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht:
 
-1. **`/api/v1/_meta/build`** — neuer Endpoint exposes Git-SHA + Build-Time + Drizzle-Migration-Count. Macht D1 (Prod-vs-Main-SHA-Vergleich) zum Self-Service per `curl`, ohne SSH.
+1. **`/api/v1/meta/build`** — neuer Endpoint exposes Git-SHA + Build-Time + Drizzle-Migration-Count. Macht D1 (Prod-vs-Main-SHA-Vergleich) zum Self-Service per `curl`, ohne SSH.
 2. **Post-Insert-FK-Verification in `findings/route.ts` POST** — direkt nach dem Drizzle-Insert wird das returning-Row mit dem Input verglichen. Wenn ein FK gesendet wurde aber als null zurückkommt, **wirft die Route eine strukturierte 500 mit Diagnostic statt still 201 zu liefern**. Eliminiert die "201 + null FKs"-Failure-Klasse permanent.
 3. **`withErrorHandler`-Wrap auf `findings/route.ts` + `contracts/route.ts` POST** — alle uncaught Exceptions werden jetzt RFC-7807 problem+json mit RequestID. C3 "empty 500 body" ist damit unmöglich.
 4. **`scripts/pilot-readiness-gate.sh` + neuer CI-Job** — Smoke-Test gegen Staging vor jedem Merge, läuft A1 / A2 / C3 / Hash-Chain durch und blockt rote Merges. Subjektive Einschätzungen reichen nicht mehr.

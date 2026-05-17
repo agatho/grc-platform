@@ -213,9 +213,9 @@ Wave 22 (siehe Eintrag unten) hat festgestellt: A1 + A2 haben **korrekten Repo-C
 
 **Diagnose-Pflicht (D1–D4 aus `claude-code-wave23-prompt.md`)** — die D1–D4-Schritte stehen jetzt als Self-Service zur Verfügung statt SSH-Pflicht für jeden Operator zu erfordern:
 
-- **D1 (Prod-Commit-SHA):** Neuer Endpoint `GET /api/v1/_meta/build` exposes
+- **D1 (Prod-Commit-SHA):** Neuer Endpoint `GET /api/v1/meta/build` exposes
   `{ commitSha, branch, builtAt, nodeVersion, runtimeUptimeSeconds }`.
-  `curl https://arctos.charliehund.de/api/v1/_meta/build | jq -r .data.commitSha`
+  `curl https://arctos.charliehund.de/api/v1/meta/build | jq -r .data.commitSha`
   vs. `git rev-parse origin/main` macht den SHA-Vergleich ohne SSH möglich.
 - **D2 (Prod-DB-Schema):** Bereits abgedeckt durch das Wave-22-Test-File
   `packages/db/tests/integration/schema-drift-finding-fk.test.ts` — kann
