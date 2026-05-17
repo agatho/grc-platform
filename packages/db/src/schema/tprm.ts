@@ -128,6 +128,10 @@ export const vendor = pgTable(
     nextAssessmentDate: date("next_assessment_date", { mode: "string" }),
     isLksgRelevant: boolean("is_lksg_relevant").notNull().default(false),
     lksgTier: varchar("lksg_tier", { length: 20 }),
+    // TPRM Overhaul (migration 0340)
+    doraCriticalIct: boolean("dora_critical_ict").notNull().default(false),
+    lksgTier1: boolean("lksg_tier_1").notNull().default(false),
+    designationRationale: text("designation_rationale"),
     ownerId: uuid("owner_id").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -493,5 +497,39 @@ export const lksgAssessment = pgTable(
   (table) => [
     index("lksg_vendor_idx").on(table.vendorId),
     index("lksg_org_status_idx").on(table.orgId, table.status),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// TPRM Overhaul (migration 0340): vendor_sign_off (append-only)
+// ──────────────────────────────────────────────────────────────
+
+export const vendorSignOff = pgTable(
+  "vendor_sign_off",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    vendorId: uuid("vendor_id")
+      .notNull()
+      .references(() => vendor.id, { onDelete: "cascade" }),
+    signerId: uuid("signer_id").notNull(),
+    signerRole: varchar("signer_role", { length: 80 }).notNull(),
+    signoffType: varchar("signoff_type", { length: 32 }).notNull(),
+    comments: text("comments"),
+    payloadHash: varchar("payload_hash", { length: 128 }).notNull(),
+    previousChainHash: varchar("previous_chain_hash", { length: 128 }),
+    chainHash: varchar("chain_hash", { length: 128 }).notNull(),
+    signedAt: timestamp("signed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ipAddress: varchar("ip_address", { length: 64 }),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    index("vso_org_idx").on(table.orgId),
+    index("vso_vendor_idx").on(table.vendorId),
+    index("vso_chain_idx").on(table.vendorId, table.signedAt),
   ],
 );
