@@ -18,6 +18,8 @@ import {
 } from "drizzle-orm/pg-core";
 import { organization, user } from "./platform";
 import { asset } from "./asset";
+import { control } from "./control";
+import { document } from "./document";
 
 // ──────────────────────────────────────────────────────────────
 // Enums
@@ -45,6 +47,22 @@ export const stepTypeEnum = pgEnum("step_type", [
   "call_activity",
 ]);
 
+export const lodEnum = pgEnum("lod_enum", [
+  "first",
+  "second",
+  "third",
+  "oversight",
+]);
+
+export const complianceProfileEnum = pgEnum("compliance_profile_enum", [
+  "standard",
+  "gdpr_ropa",
+  "iso_22301_bia",
+  "nis2_critical",
+  "iso_9001_quality",
+  "dora_critical_ict",
+]);
+
 // ──────────────────────────────────────────────────────────────
 // 3.1 Process — Core process entity (Sprint 3, BPM)
 // ──────────────────────────────────────────────────────────────
@@ -70,6 +88,13 @@ export const process = pgTable(
     currentVersion: integer("current_version").notNull().default(1),
     isEssential: boolean("is_essential").notNull().default(false),
     publishedAt: timestamp("published_at", { withTimezone: true }),
+    // BPM Overhaul Phase 1 (0332)
+    defaultLineOfDefense: lodEnum("default_line_of_defense"),
+    isCriticalProcess: boolean("is_critical_process").notNull().default(false),
+    criticalityRationale: text("criticality_rationale"),
+    complianceProfile: complianceProfileEnum("compliance_profile")
+      .notNull()
+      .default("standard"),
     // Gallery thumbnail (Sprint 3b)
     galleryThumbnailPath: varchar("gallery_thumbnail_path", { length: 1000 }),
     // Review cycle (Gap 2)
@@ -153,6 +178,10 @@ export const processStep = pgTable(
     stepType: stepTypeEnum("step_type").notNull().default("task"),
     responsibleRole: varchar("responsible_role", { length: 255 }),
     sequenceOrder: integer("sequence_order").notNull().default(0),
+    // BPM Overhaul Phase 1 (0332): explicit LoD + RACI per step
+    lineOfDefense: lodEnum("line_of_defense"),
+    raciResponsibleRoleId: uuid("raci_responsible_role_id"),
+    raciAccountableRoleId: uuid("raci_accountable_role_id"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -165,6 +194,7 @@ export const processStep = pgTable(
     index("process_step_process_idx").on(table.processId),
     index("process_step_org_idx").on(table.orgId),
     uniqueIndex("process_step_unique").on(table.processId, table.bpmnElementId),
+    index("process_step_lod_idx").on(table.processId, table.lineOfDefense),
   ],
 );
 
@@ -182,7 +212,9 @@ export const processControl = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
-    controlId: uuid("control_id").notNull(), // FK → control added in Sprint 4
+    controlId: uuid("control_id")
+      .notNull()
+      .references(() => control.id, { onDelete: "cascade" }), // hardened in 0330
     controlContext: text("control_context"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -210,7 +242,9 @@ export const processStepControl = pgTable(
     processStepId: uuid("process_step_id")
       .notNull()
       .references(() => processStep.id, { onDelete: "cascade" }),
-    controlId: uuid("control_id").notNull(), // FK → control added in Sprint 4
+    controlId: uuid("control_id")
+      .notNull()
+      .references(() => control.id, { onDelete: "cascade" }), // hardened in 0330
     controlContext: text("control_context"),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
@@ -374,7 +408,9 @@ export const processDocument = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
-    documentId: uuid("document_id").notNull(), // No FK yet — Sprint 4 adds it
+    documentId: uuid("document_id")
+      .notNull()
+      .references(() => document.id, { onDelete: "cascade" }), // hardened in 0330
     documentType: varchar("document_type", { length: 50 }), // 'policy', 'procedure', 'guideline', 'sop', 'form'
     linkContext: text("link_context"),
     createdAt: timestamp("created_at", { withTimezone: true })

@@ -1,0 +1,65 @@
+{
+  "tabs": {
+    "controls": "Kontrollen",
+    "bia": "BIA",
+    "findings": "Findings",
+    "compliance": "Compliance",
+    "signoff": "Freigabe"
+  },
+  "cockpit": {
+    "title": "Process Cockpit",
+    "subtitle": "Quality Manager und Compliance Officer Daily-Driver-Dashboard",
+    "inReview": "In Prüfung",
+    "pendingApproval": "Freigabe ausstehend",
+    "overdueReview": "Überfällige Reviews",
+    "criticalRisks": "Prozesse mit kritischen Risiken"
+  },
+  "racm": {
+    "title": "RACM — Risiko- und Kontrollmatrix",
+    "export": "CSV exportieren",
+    "noControls": "Keine Kontrollen",
+    "noRisks": "Keine Risiken"
+  },
+  "ropa": {
+    "title": "GDPR Art. 30 — ROPA-Profil",
+    "subtitle": "Verzeichnis der Verarbeitungstätigkeit für diesen Prozess.",
+    "isProcessing": "Dieser Prozess ist eine Verarbeitungstätigkeit personenbezogener Daten",
+    "purpose": "Zweck der Verarbeitung",
+    "legalBasis": "Rechtsgrundlage (Art. 6)",
+    "dataSubjects": "Kategorien betroffener Personen",
+    "personalData": "Kategorien personenbezogener Daten",
+    "specialCategories": "Besondere Kategorien — Art. 9",
+    "recipients": "Empfänger",
+    "thirdCountry": "Übermittlung in Drittländer",
+    "safeguards": "Garantien (SCC, BCR, Angemessenheitsbeschluss)",
+    "retention": "Aufbewahrungsfrist",
+    "toms": "Technisch-organisatorische Maßnahmen (TOMs)",
+    "dpiaWarning": "DPIA wahrscheinlich erforderlich aufgrund besonderer Datenkategorien oder Drittlandsübermittlung (Art. 35 DSGVO)."
+  },
+  "signoff": {
+    "title": "Sign-off Hash Chain",
+    "chainOk": "Chain intakt",
+    "chainBroken": "Chain-Integritätsprüfung fehlgeschlagen",
+    "record": "Sign-off",
+    "asRole": "Als Rolle",
+    "type": "Sign-off-Typ",
+    "comments": "Kommentare",
+    "types": {
+      "review": "Prüfung",
+      "approval": "Freigabe",
+      "publish": "Veröffentlichung",
+      "retire": "Außerbetriebnahme"
+    }
+  },
+  "blockers": {
+    "missing_process_owner": "Process Owner muss zugewiesen sein.",
+    "no_activities": "Prozess muss mindestens eine Aktivität enthalten.",
+    "no_versions": "Prozess benötigt mindestens eine Version vor dem Review.",
+    "missing_reviewer": "Reviewer muss zugewiesen sein.",
+    "activities_missing_description": "Manche Aktivitäten haben keine Beschreibung.",
+    "open_findings": "Offene Findings müssen vor der Veröffentlichung geschlossen werden.",
+    "no_framework_mapping": "Mindestens ein Framework-Mapping (ISO/NIS2/GDPR/...) ist für die Veröffentlichung erforderlich.",
+    "weak_description": "Prozessbeschreibung muss mindestens 20 Zeichen umfassen.",
+    "untreated_risks": "Verknüpfte Risiken sind noch nicht behandelt."
+  }
+}

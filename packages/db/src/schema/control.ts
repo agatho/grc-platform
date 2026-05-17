@@ -331,6 +331,10 @@ export const finding = pgTable(
     taskId: uuid("task_id").references(() => task.id),
     // Sprint 8: FK to audit table (added via migration SQL, no import to avoid circular dep)
     auditId: uuid("audit_id"),
+    // BPM Overhaul 0331: direct link to process / process_step (Drizzle FK omitted to avoid
+    // circular control.ts → process.ts → control.ts; DB-level FK enforced via migration 0331).
+    processId: uuid("process_id"),
+    processStepId: uuid("process_step_id"),
     title: varchar("title", { length: 500 }).notNull(),
     description: text("description"),
     severity: findingSeverityEnum("severity").notNull(),
@@ -361,5 +365,7 @@ export const finding = pgTable(
     index("finding_risk_idx").on(table.riskId),
     index("finding_owner_idx").on(table.ownerId),
     index("finding_severity_idx").on(table.orgId, table.severity),
+    index("finding_process_idx").on(table.processId),
+    index("finding_process_step_idx").on(table.processStepId),
   ],
 );
