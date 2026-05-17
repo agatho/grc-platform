@@ -45,6 +45,20 @@ export const updateProcessSchema = z.object({
   isEssential: z.boolean().optional(),
   reviewDate: z.string().datetime().nullable().optional(),
   reviewCycleDays: z.number().int().min(1).max(730).nullable().optional(),
+  // BPM Overhaul Phase 4 C2
+  complianceProfile: z
+    .enum([
+      "standard",
+      "gdpr_ropa",
+      "iso_22301_bia",
+      "nis2_critical",
+      "iso_9001_quality",
+      "dora_critical_ict",
+    ])
+    .optional(),
+  isCriticalProcess: z.boolean().optional(),
+  criticalityRationale: z.string().max(2000).nullable().optional(),
+  defaultLineOfDefense: z.enum(["first", "second", "third", "oversight"]).nullable().optional(),
 });
 
 // ─── Process Version ─────────────────────────────────────────

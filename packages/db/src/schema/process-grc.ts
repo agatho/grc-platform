@@ -141,9 +141,11 @@ export const processFrameworkMapping = pgTable(
     processId: uuid("process_id")
       .notNull()
       .references(() => process.id, { onDelete: "cascade" }),
-    catalogEntryId: uuid("catalog_entry_id").notNull(),
+    catalogEntryId: uuid("catalog_entry_id"),
     catalogId: uuid("catalog_id"),
     frameworkCode: varchar("framework_code", { length: 40 }),
+    entryCode: varchar("entry_code", { length: 50 }),
+    entryTitle: text("entry_title"),
     mappingStrength: varchar("mapping_strength", { length: 20 })
       .notNull()
       .default("covers"),
@@ -158,7 +160,7 @@ export const processFrameworkMapping = pgTable(
     createdBy: uuid("created_by"),
   },
   (t) => [
-    uniqueIndex("pfm_process_entry_uniq").on(t.processId, t.catalogEntryId),
+    // pfm_process_resolved_uniq is a functional unique index, created in migration 0335.
     index("pfm_org_idx").on(t.orgId),
     index("pfm_process_idx").on(t.processId),
     index("pfm_entry_idx").on(t.catalogEntryId),

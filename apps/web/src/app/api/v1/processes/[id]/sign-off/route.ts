@@ -3,11 +3,15 @@
 // Each sign-off is anchored cryptographically to the previous sign-off on
 // the same process. Tampering with any past row invalidates the chain.
 
-import { createHash } from "node:crypto";
 import { db, process, processSignOff, processVersion } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import {
+  computePayloadHash,
+  computeChainHash,
+  verifyChain,
+} from "@/lib/sign-off-chain";
 import { z } from "zod";
 
 const signOffSchema = z.object({
@@ -25,10 +29,6 @@ const signOffSchema = z.object({
   processVersionId: z.string().uuid().optional().nullable(),
   comments: z.string().optional().nullable(),
 });
-
-function sha256(input: string) {
-  return createHash("sha256").update(input).digest("hex");
-}
 
 export async function POST(
   req: Request,
@@ -73,8 +73,7 @@ export async function POST(
     versionId = pv?.id ?? null;
   }
 
-  // Build payload to hash. Stable JSON ordering for determinism.
-  const payload = JSON.stringify({
+  const payloadHash = computePayloadHash({
     processId: id,
     processName: existing.name,
     processVersionId: versionId,
@@ -85,9 +84,7 @@ export async function POST(
     statusAtSign: existing.status,
     signedAt: new Date().toISOString(),
   });
-  const payloadHash = sha256(payload);
-  const chainInput = (prev?.chainHash ?? "") + payloadHash;
-  const chainHash = sha256(chainInput);
+  const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
 
   const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
   const ipAddress = ipHeader ? ipHeader.split(",")[0].trim().slice(0, 64) : null;
@@ -137,20 +134,10 @@ export async function GET(
     .where(and(eq(processSignOff.processId, id), eq(processSignOff.orgId, ctx.orgId)))
     .orderBy(desc(processSignOff.signedAt));
 
-  // Verify chain integrity
-  let prevHash: string | null = null;
-  let ok = true;
   const chrono = [...rows].reverse();
-  for (const r of chrono) {
-    const expected = sha256((prevHash ?? "") + r.payloadHash);
-    if (r.previousChainHash !== prevHash || r.chainHash !== expected) {
-      ok = false;
-      break;
-    }
-    prevHash = r.chainHash;
-  }
+  const { ok, brokenAt } = verifyChain(chrono);
 
   return Response.json({
-    data: { signOffs: rows, chainValid: ok, count: rows.length },
+    data: { signOffs: rows, chainValid: ok, brokenAt, count: rows.length },
   });
 }

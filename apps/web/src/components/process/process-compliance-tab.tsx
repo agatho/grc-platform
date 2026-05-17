@@ -10,8 +10,10 @@ import { Badge } from "@/components/ui/badge";
 
 interface Mapping {
   id: string;
-  catalogEntryId: string;
+  catalogEntryId: string | null;
   frameworkCode: string | null;
+  entryCode: string | null;
+  entryTitle: string | null;
   mappingStrength: string;
   rationale: string | null;
 }
@@ -159,9 +161,17 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
                     {ms.map((m) => (
                       <li key={m.id} className="flex items-start justify-between gap-2">
                         <div>
-                          <span className="font-mono text-xs">{m.catalogEntryId.slice(0, 8)}…</span>
-                          {" — "}
+                          <span className="font-mono text-xs">
+                            {m.entryCode ?? (m.catalogEntryId ? m.catalogEntryId.slice(0, 8) + "…" : "—")}
+                          </span>
+                          {m.entryTitle ? <span className="text-muted-foreground"> — {m.entryTitle}</span> : null}
+                          {" "}
                           <Badge variant="outline">{m.mappingStrength}</Badge>
+                          {!m.catalogEntryId && (
+                            <Badge variant="outline" className="ml-1 bg-amber-50 text-amber-800">
+                              unresolved
+                            </Badge>
+                          )}
                           {m.rationale && <div className="text-xs text-muted-foreground">{m.rationale}</div>}
                         </div>
                         <Button size="sm" variant="ghost" onClick={() => remove(m.id)}>
@@ -213,11 +223,3 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
   );
 }
 
-async function syntheticUuid(seed: string): Promise<string> {
-  const enc = new TextEncoder().encode(seed);
-  const buf = await crypto.subtle.digest("SHA-256", enc);
-  const hex = Array.from(new Uint8Array(buf))
-    .map((b) => b.toString(16).padStart(2, "0"))
-    .join("");
-  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
-}
