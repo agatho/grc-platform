@@ -40,9 +40,24 @@ fi
 # einem alten Image — typischer Crash-Loop wäre "Cannot find module ..."
 # nach Schema- oder Dep-Änderungen. Beide Images nutzen denselben
 # Layer-Cache; Worker-Build dauert ~30 s wenn nur Source geändert.
+#
+# #WAVE23.4: pass GIT_SHA / GIT_BRANCH / BUILD_TIME as build-args so
+# /api/v1/meta/build returns the real running commit instead of
+# "unknown". CI already passes these via docker/build-push-action's
+# build-args input; this mirrors it for the local-build deploy path.
+# Reading from the just-pulled checkout, so values match the source
+# tree that's about to be baked into the image.
 echo ""
 echo "[2/5] Docker Images neu bauen (web + worker)..."
-docker compose -f "$COMPOSE_FILE" build web worker 2>&1 | tail -15
+export GIT_SHA="$(git rev-parse HEAD)"
+export GIT_BRANCH="$(git rev-parse --abbrev-ref HEAD)"
+export BUILD_TIME="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+echo "  GIT_SHA=${GIT_SHA:0:8} GIT_BRANCH=${GIT_BRANCH} BUILD_TIME=${BUILD_TIME}"
+docker compose -f "$COMPOSE_FILE" build \
+  --build-arg "GIT_SHA=${GIT_SHA}" \
+  --build-arg "GIT_BRANCH=${GIT_BRANCH}" \
+  --build-arg "BUILD_TIME=${BUILD_TIME}" \
+  web worker 2>&1 | tail -15
 
 # ── 3. Migrationen auf alle DBs ──────────────────────────
 echo ""
