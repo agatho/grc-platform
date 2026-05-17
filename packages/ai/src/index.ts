@@ -52,6 +52,10 @@ export {
   buildAuditConclusionPrompt,
 } from "./prompts/audit";
 export {
+  buildVendorClassifyPrompt,
+  buildDdQuestionDraftPrompt,
+} from "./prompts/tprm";
+export {
   buildRopaFieldDraftPrompt,
   buildDpiaMeasureDraftPrompt,
 } from "./prompts/dpms";
