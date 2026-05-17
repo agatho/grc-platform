@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useTranslations } from "next-intl";
 import {
   Loader2,
   Activity,
@@ -11,9 +12,12 @@ import {
   ShieldAlert,
 } from "lucide-react";
 
+import { toast } from "sonner";
+
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 interface CockpitData {
   stats: {
@@ -34,32 +38,75 @@ interface CockpitData {
 }
 
 export default function CockpitPage() {
+  const t = useTranslations("bpmOverhaul");
   const [data, setData] = useState<CockpitData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [selected, setSelected] = useState<Set<string>>(new Set());
+  const [bulkPending, setBulkPending] = useState(false);
+
+  const reload = async () => {
+    setLoading(true);
+    const resp = await fetch(`/api/v1/processes/cockpit`);
+    if (resp.ok) {
+      const j = await resp.json();
+      setData(j.data);
+    }
+    setLoading(false);
+  };
 
   useEffect(() => {
-    let cancel = false;
-    (async () => {
-      const resp = await fetch(`/api/v1/processes/cockpit`);
-      if (resp.ok && !cancel) {
-        const j = await resp.json();
-        setData(j.data);
-      }
-      if (!cancel) setLoading(false);
-    })();
-    return () => {
-      cancel = true;
-    };
+    void reload();
   }, []);
+
+  const toggleSelect = (id: string) => {
+    setSelected((s) => {
+      const next = new Set(s);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const bulkApprove = async (targetStatus: "approved" | "published") => {
+    if (selected.size === 0) {
+      toast.error("Select at least one process");
+      return;
+    }
+    setBulkPending(true);
+    try {
+      const resp = await fetch(`/api/v1/processes/bulk-approve`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          processIds: Array.from(selected),
+          targetStatus,
+          signoffType: targetStatus === "published" ? "publish" : "approval",
+          signerRole: "quality_manager",
+        }),
+      });
+      if (resp.ok) {
+        const j = await resp.json();
+        toast.success(
+          `${j.data.successful}/${j.data.total} ${targetStatus} ` +
+            (j.data.skipped ? `(${j.data.skipped} blocked)` : ""),
+        );
+        setSelected(new Set());
+        await reload();
+      } else {
+        const e = await resp.json().catch(() => ({}));
+        toast.error(e.error ?? "Bulk-approve failed");
+      }
+    } finally {
+      setBulkPending(false);
+    }
+  };
 
   return (
     <ModuleGate moduleKey="bpm">
       <div className="space-y-4 p-4">
         <div>
-          <h1 className="text-2xl font-bold">Process Cockpit</h1>
-          <p className="text-sm text-muted-foreground">
-            Quality Manager & Compliance Officer daily-driver dashboard
-          </p>
+          <h1 className="text-2xl font-bold">{t("cockpit.title")}</h1>
+          <p className="text-sm text-muted-foreground">{t("cockpit.subtitle")}</p>
         </div>
 
         {loading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}
@@ -76,7 +123,7 @@ export default function CockpitPage() {
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
               <Quadrant
-                title="In Review"
+                title={t("cockpit.inReview")}
                 icon={<Activity className="h-5 w-5 text-blue-600" />}
                 rows={data.quadrants.inReview}
                 renderRow={(r) => (
@@ -88,21 +135,58 @@ export default function CockpitPage() {
                   </>
                 )}
               />
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 text-base">
+                      <CheckCircle2 className="h-5 w-5 text-amber-600" />
+                      Pending Approval (Quality Manager)
+                    </CardTitle>
+                    <CardDescription>
+                      {data.quadrants.pendingApproval.length} item(s)
+                      {selected.size > 0 && ` · ${selected.size} selected`}
+                    </CardDescription>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      disabled={selected.size === 0 || bulkPending}
+                      onClick={() => bulkApprove("published")}
+                    >
+                      Bulk publish
+                    </Button>
+                  </div>
+                </CardHeader>
+                <CardContent>
+                  {data.quadrants.pendingApproval.length === 0 ? (
+                    <p className="text-center text-sm text-muted-foreground">
+                      Nothing pending.
+                    </p>
+                  ) : (
+                    <ul className="max-h-96 space-y-1 overflow-auto">
+                      {data.quadrants.pendingApproval.slice(0, 25).map((r: any) => (
+                        <li key={r.id} className="flex items-start gap-2 rounded p-2 hover:bg-muted">
+                          <input
+                            type="checkbox"
+                            className="mt-1"
+                            checked={selected.has(r.id)}
+                            onChange={() => toggleSelect(r.id)}
+                          />
+                          <Link href={`/processes/${r.id}`} className="flex-1 block">
+                            <strong>{r.name}</strong>
+                            <div className="text-xs text-muted-foreground">
+                              Owner: {r.owner_name ?? "—"}
+                            </div>
+                          </Link>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </CardContent>
+              </Card>
               <Quadrant
-                title="Pending Approval (Quality Manager)"
-                icon={<CheckCircle2 className="h-5 w-5 text-amber-600" />}
-                rows={data.quadrants.pendingApproval}
-                renderRow={(r) => (
-                  <>
-                    <strong>{r.name}</strong>
-                    <div className="text-xs text-muted-foreground">
-                      Owner: {r.owner_name ?? "—"}
-                    </div>
-                  </>
-                )}
-              />
-              <Quadrant
-                title="Overdue Reviews"
+                title={t("cockpit.overdueReview")}
                 icon={<Clock className="h-5 w-5 text-red-600" />}
                 rows={data.quadrants.overdueReview}
                 renderRow={(r) => (
@@ -116,7 +200,7 @@ export default function CockpitPage() {
                 )}
               />
               <Quadrant
-                title="Processes with Critical Risks"
+                title={t("cockpit.criticalRisks")}
                 icon={<ShieldAlert className="h-5 w-5 text-red-600" />}
                 rows={data.quadrants.criticalRisks}
                 renderRow={(r) => (

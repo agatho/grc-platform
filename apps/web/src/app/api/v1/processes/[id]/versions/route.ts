@@ -9,6 +9,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
 
 // POST /api/v1/processes/:id/versions — Save BPMN as new version
 export async function POST(
@@ -171,6 +172,29 @@ export async function POST(
           .set({ deletedAt: new Date() })
           .where(eq(processStep.id, stepId));
       }
+    }
+
+    // BPM Overhaul Phase 5 P5: rehydrate DB cross-links from arctos:*
+    // metadata in the BPMN XML. Best-effort — never blocks the version save.
+    try {
+      // Re-read post-upsert step ids for the mapping
+      const allSteps = await tx
+        .select({ id: processStep.id, bpmnElementId: processStep.bpmnElementId })
+        .from(processStep)
+        .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
+      const stepIdByBpmnElement = new Map(
+        allSteps.map((s: { id: string; bpmnElementId: string }) => [s.bpmnElementId, s.id]),
+      );
+      await rehydrateFromBpmnXml({
+        tx,
+        processId: id,
+        orgId: ctx.orgId,
+        userId: ctx.userId,
+        bpmnXml: body.data.bpmnXml,
+        stepIdByBpmnElement,
+      });
+    } catch (e) {
+      console.error("arctos rehydrate failed", e);
     }
 
     return version;
