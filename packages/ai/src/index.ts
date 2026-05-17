@@ -51,3 +51,7 @@ export {
   buildFindingSuggestionPrompt,
   buildAuditConclusionPrompt,
 } from "./prompts/audit";
+export {
+  buildRopaFieldDraftPrompt,
+  buildDpiaMeasureDraftPrompt,
+} from "./prompts/dpms";
