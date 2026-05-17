@@ -37,6 +37,7 @@ async function loadIndividualFiles(locale: string) {
     ["esg-advanced", "esgAdvanced"],
     ["bpm-advanced", "bpmAdvanced"],
     ["bpm-derived", "bpmDerived"],
+    ["bpm-overhaul", "bpmOverhaul"],
     ["whistleblowing-advanced", "whistleblowingAdvanced"],
     ["platform-advanced", "platformAdvanced"],
     ["eam", "eam"],

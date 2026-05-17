@@ -1,0 +1,85 @@
+{
+  "name": "ArctosGRC",
+  "uri": "https://arctos.grc/schema/bpmn/1.0",
+  "prefix": "arctos",
+  "xml": { "tagAlias": "lowerCase" },
+  "associations": [],
+  "types": [
+    {
+      "name": "GrcMetadata",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "lineOfDefense", "isAttr": true, "type": "String" },
+        { "name": "complianceProfile", "isAttr": true, "type": "String" },
+        { "name": "isCriticalProcess", "isAttr": true, "type": "Boolean", "default": false },
+        { "name": "riskRefs", "type": "RiskRef", "isMany": true },
+        { "name": "controlRefs", "type": "ControlRef", "isMany": true },
+        { "name": "documentRefs", "type": "DocumentRef", "isMany": true },
+        { "name": "raci", "type": "Raci" },
+        { "name": "bcmKpi", "type": "BcmKpi" },
+        { "name": "ropa", "type": "Ropa" }
+      ]
+    },
+    {
+      "name": "RiskRef",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "id", "isAttr": true, "type": "String" },
+        { "name": "title", "isAttr": true, "type": "String" },
+        { "name": "inherentScore", "isAttr": true, "type": "Integer" },
+        { "name": "residualScore", "isAttr": true, "type": "Integer" },
+        { "name": "status", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "ControlRef",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "id", "isAttr": true, "type": "String" },
+        { "name": "title", "isAttr": true, "type": "String" },
+        { "name": "effectiveness", "isAttr": true, "type": "String" },
+        { "name": "controlType", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "DocumentRef",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "id", "isAttr": true, "type": "String" },
+        { "name": "title", "isAttr": true, "type": "String" },
+        { "name": "documentType", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "Raci",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "responsibleRoleId", "isAttr": true, "type": "String" },
+        { "name": "accountableRoleId", "isAttr": true, "type": "String" },
+        { "name": "consultedRoleIds", "isAttr": true, "type": "String" },
+        { "name": "informedRoleIds", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "BcmKpi",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "mtpdMinutes", "isAttr": true, "type": "Integer" },
+        { "name": "rtoMinutes", "isAttr": true, "type": "Integer" },
+        { "name": "rpoMinutes", "isAttr": true, "type": "Integer" },
+        { "name": "criticality", "isAttr": true, "type": "String" }
+      ]
+    },
+    {
+      "name": "Ropa",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "isProcessingActivity", "isAttr": true, "type": "Boolean", "default": false },
+        { "name": "purpose", "isAttr": true, "type": "String" },
+        { "name": "legalBasis", "isAttr": true, "type": "String" },
+        { "name": "requiresDpia", "isAttr": true, "type": "Boolean", "default": false }
+      ]
+    }
+  ],
+  "emumerations": []
+}

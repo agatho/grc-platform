@@ -73,6 +73,11 @@ import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
 import { ProcessComments } from "@/components/process/process-comments";
 import { ProcessReviewConfig } from "@/components/process/process-review-config";
+import { ProcessControlsTab } from "@/components/process/process-controls-tab";
+import { ProcessBiaTab } from "@/components/process/process-bia-tab";
+import { ProcessFindingsTab } from "@/components/process/process-findings-tab";
+import { ProcessComplianceTab } from "@/components/process/process-compliance-tab";
+import { ProcessSignOffTab } from "@/components/process/process-sign-off-tab";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
@@ -526,6 +531,11 @@ function ProcessDetailContent() {
           <TabsTrigger value="risks">{t("tabs.risks")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
           <TabsTrigger value="comments">{t("tabs.comments")}</TabsTrigger>
+          <TabsTrigger value="controls">Controls</TabsTrigger>
+          <TabsTrigger value="bia">BIA</TabsTrigger>
+          <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="signoff">Sign-off</TabsTrigger>
           <TabsTrigger value="documents">
             <FileText size={14} className="mr-1.5" />
             {t("tabs.documents")}
@@ -591,6 +601,37 @@ function ProcessDetailContent() {
                 <ProcessComments processId={processId} />
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* BPM Overhaul Phase 2: Cross-Module Tabs */}
+        <TabsContent value="controls">
+          <div className="mt-4">
+            <ProcessControlsTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="bia">
+          <div className="mt-4">
+            <ProcessBiaTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="findings">
+          <div className="mt-4">
+            <ProcessFindingsTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="compliance">
+          <div className="mt-4">
+            <ProcessComplianceTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="signoff">
+          <div className="mt-4">
+            <ProcessSignOffTab processId={processId} />
           </div>
         </TabsContent>
 

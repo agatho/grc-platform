@@ -1,0 +1,156 @@
+// BPM Overhaul Phase 6: Sign-off endpoint with SHA-256 hash chain.
+//
+// Each sign-off is anchored cryptographically to the previous sign-off on
+// the same process. Tampering with any past row invalidates the chain.
+
+import { createHash } from "node:crypto";
+import { db, process, processSignOff, processVersion } from "@grc/db";
+import { requireModule } from "@grc/auth";
+import { eq, and, isNull, desc } from "drizzle-orm";
+import { withAuth, withAuditContext } from "@/lib/api";
+import { z } from "zod";
+
+const signOffSchema = z.object({
+  signoffType: z.enum(["review", "approval", "publish", "retire"]),
+  signerRole: z.enum([
+    "process_owner",
+    "quality_manager",
+    "compliance_officer",
+    "dpo",
+    "auditor",
+    "admin",
+    "ciso",
+    "risk_manager",
+  ]),
+  processVersionId: z.string().uuid().optional().nullable(),
+  comments: z.string().optional().nullable(),
+});
+
+function sha256(input: string) {
+  return createHash("sha256").update(input).digest("hex");
+}
+
+export async function POST(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth();
+  if (ctx instanceof Response) return ctx;
+  const m = await requireModule("bpm", ctx.orgId, req.method);
+  if (m) return m;
+
+  const { id } = await params;
+  const [existing] = await db
+    .select({ id: process.id, status: process.status, name: process.name })
+    .from(process)
+    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
+  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+
+  const parsed = signOffSchema.safeParse(await req.json());
+  if (!parsed.success) {
+    return Response.json(
+      { error: "Validation failed", details: parsed.error.flatten() },
+      { status: 422 },
+    );
+  }
+
+  // Pull latest chain hash for this process
+  const [prev] = await db
+    .select({ chainHash: processSignOff.chainHash })
+    .from(processSignOff)
+    .where(eq(processSignOff.processId, id))
+    .orderBy(desc(processSignOff.signedAt))
+    .limit(1);
+
+  // If no explicit version supplied, use the current one
+  let versionId = parsed.data.processVersionId ?? null;
+  if (!versionId) {
+    const [pv] = await db
+      .select({ id: processVersion.id })
+      .from(processVersion)
+      .where(and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)))
+      .limit(1);
+    versionId = pv?.id ?? null;
+  }
+
+  // Build payload to hash. Stable JSON ordering for determinism.
+  const payload = JSON.stringify({
+    processId: id,
+    processName: existing.name,
+    processVersionId: versionId,
+    signerId: ctx.userId,
+    signerRole: parsed.data.signerRole,
+    signoffType: parsed.data.signoffType,
+    comments: parsed.data.comments ?? null,
+    statusAtSign: existing.status,
+    signedAt: new Date().toISOString(),
+  });
+  const payloadHash = sha256(payload);
+  const chainInput = (prev?.chainHash ?? "") + payloadHash;
+  const chainHash = sha256(chainInput);
+
+  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ipAddress = ipHeader ? ipHeader.split(",")[0].trim().slice(0, 64) : null;
+  const userAgent = req.headers.get("user-agent")?.slice(0, 1000) ?? null;
+
+  const result = await withAuditContext(
+    ctx,
+    async (tx) => {
+      const [row] = await tx
+        .insert(processSignOff)
+        .values({
+          orgId: ctx.orgId,
+          processId: id,
+          processVersionId: versionId,
+          signerId: ctx.userId,
+          signerRole: parsed.data.signerRole,
+          signoffType: parsed.data.signoffType,
+          comments: parsed.data.comments ?? null,
+          payloadHash,
+          previousChainHash: prev?.chainHash ?? null,
+          chainHash,
+          ipAddress,
+          userAgent,
+        })
+        .returning();
+      return row;
+    },
+    { actionDetail: `Sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}` },
+  );
+
+  return Response.json({ data: result }, { status: 201 });
+}
+
+export async function GET(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth();
+  if (ctx instanceof Response) return ctx;
+  const m = await requireModule("bpm", ctx.orgId, req.method);
+  if (m) return m;
+
+  const { id } = await params;
+  const rows = await db
+    .select()
+    .from(processSignOff)
+    .where(and(eq(processSignOff.processId, id), eq(processSignOff.orgId, ctx.orgId)))
+    .orderBy(desc(processSignOff.signedAt));
+
+  // Verify chain integrity
+  let prevHash: string | null = null;
+  let ok = true;
+  const chrono = [...rows].reverse();
+  for (const r of chrono) {
+    const expected = sha256((prevHash ?? "") + r.payloadHash);
+    if (r.previousChainHash !== prevHash || r.chainHash !== expected) {
+      ok = false;
+      break;
+    }
+    prevHash = r.chainHash;
+  }
+
+  return Response.json({
+    data: { signOffs: rows, chainValid: ok, count: rows.length },
+  });
+}

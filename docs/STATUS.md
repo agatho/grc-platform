@@ -4,6 +4,18 @@
 >
 > Stand: **2026-05-16**. Letzte Migration: `0326_seed_arctistx_rbac_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 22** (2026-05-16, PR #166). Aktive Arbeit: **Wave 23 Endgame** (A1 finding-FK, A2 /admin/branding, C3 contract-name, Pilot-Readiness-Gate), ADR-014 Phase 3+4, ADR-019/020/021/023/024 (Proposed).
 
+## Was ist seit STATUS-Stand 2026-05-17 passiert (Overnight BPM-Overhaul)?
+
+- **BPM-Modul Komplett-Überarbeitung** entlang [`bpm-overhaul-implementation-plan.md`](./bpm-overhaul-implementation-plan.md). 5 neue Migrationen (`0330` FK-Härtung, `0331` finding↔process Link, `0332` process_step LoD + critical-process, `0333` process_ropa_profile + compliance_profile_enum, `0334` process_sign_off + process_framework_mapping). Neuer Drizzle-Schema-Pfad: `packages/db/src/schema/process-grc.ts`.
+- **~18 neue API-Routes** unter `/api/v1/processes/[id]/*`: risk-heatmap, control-coverage, racm, findings, bia-impacts, ropa-profile, three-lines-distribution, coverage, framework-mappings, audit-trail, health-score, sign-off, bulk-link (risks/controls/documents), steps/[stepId]/line-of-defense, ai/{generate-from-text, suggest-risks, suggest-controls, map-frameworks}, event-logs, transitions/blockers + neuer `/api/v1/processes/cockpit`.
+- **Approval-Gates** (Phase 3): strukturierte Blocker-Liste via `apps/web/src/lib/process-gates.ts`. `PUT /api/v1/processes/[id]/status` lehnt Transitions mit 422 + Blocker-Liste ab. Discovery via `GET /transitions/blockers?target=...`.
+- **Sign-Off Hash Chain** (Phase 6): jeder `process_sign_off`-Eintrag verkettet `previous_chain_hash + payload_hash → chain_hash` (SHA-256). `GET /sign-off` validiert die Kette.
+- **5 neue Cross-Module-Tabs** auf `/processes/[id]`: Controls, BIA, Findings, Compliance, Sign-off. Bulk-Link-Modale für Controls + Risks + Documents. Neue Pages `/processes/[id]/racm`, `/processes/[id]/ropa`, `/processes/cockpit`.
+- **Custom Moddle-Extension `arctos:*`** (Phase 5): `arctos-moddle-extension.json` + `arctos-grc-extractor.ts` für GRC-Properties-Round-Trip im BPMN-XML (Risk-/Control-/Document-Refs, RACI, BCM-KPI, ROPA, Line-of-Defense). Round-Trip-Tests in `__tests__/components/arctos-grc-extractor.test.ts`.
+- **AI-Assistent** (Phase 7): Multi-Provider-Router via `@grc/ai` — Text-zu-BPMN, Risk-/Control-Vorschläge, Framework-Mapping-Vorschläge. Prompts in `packages/ai/src/prompts/bpm.ts`.
+- **i18n-Namespace `bpm-overhaul`** (DE/EN) für neue UI-Strings, registriert in `i18n/request.ts`.
+- **Tests**: `apps/web/src/__tests__/lib/process-gates.test.ts` (4 Gate-Szenarien), `__tests__/components/arctos-grc-extractor.test.ts` (Round-Trip + Idempotenz).
+
 ## Was ist seit STATUS-Stand 2026-05-10 passiert?
 
 563 Commits in 6 Wochen seit 2026-04-01 (~14/Tag). Hauptlinien:

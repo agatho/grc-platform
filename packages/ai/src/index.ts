@@ -38,3 +38,10 @@ export {
   type ParsedSoaGap,
   type ParsedRoadmapAction,
 } from "./prompts/isms-intelligence";
+export {
+  buildTextToBpmnPrompt,
+  buildRiskSuggestionPrompt,
+  buildControlSuggestionPrompt,
+  buildFrameworkMappingPrompt,
+  safeJsonParse,
+} from "./prompts/bpm";
