@@ -78,6 +78,8 @@ import { ProcessBiaTab } from "@/components/process/process-bia-tab";
 import { ProcessFindingsTab } from "@/components/process/process-findings-tab";
 import { ProcessComplianceTab } from "@/components/process/process-compliance-tab";
 import { ProcessSignOffTab } from "@/components/process/process-sign-off-tab";
+import { ProcessComplianceProfileSwitcher } from "@/components/process/process-compliance-profile-switcher";
+import { ProcessAuditTrailTab } from "@/components/process/process-audit-trail-tab";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
@@ -403,6 +405,11 @@ function ProcessDetailContent() {
                 {process.name}
               </h1>
               <ProcessStatusBadge status={process.status} size="lg" />
+              <ProcessComplianceProfileSwitcher
+                processId={processId}
+                initialProfile={(process as any).complianceProfile ?? "standard"}
+                onChange={() => fetchProcess()}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>
@@ -536,6 +543,7 @@ function ProcessDetailContent() {
           <TabsTrigger value="findings">Findings</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
           <TabsTrigger value="signoff">Sign-off</TabsTrigger>
+          <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
           <TabsTrigger value="documents">
             <FileText size={14} className="mr-1.5" />
             {t("tabs.documents")}
@@ -632,6 +640,12 @@ function ProcessDetailContent() {
         <TabsContent value="signoff">
           <div className="mt-4">
             <ProcessSignOffTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audit-trail">
+          <div className="mt-4">
+            <ProcessAuditTrailTab processId={processId} />
           </div>
         </TabsContent>
 

@@ -1,6 +1,6 @@
 // BPM Overhaul Phase 4: GET/PUT GDPR Art. 30 ROPA profile per process.
 
-import { db, process, processRopaProfile } from "@grc/db";
+import { db, process, processRopaProfile, dpia, notification, userOrganizationRole } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -101,7 +101,7 @@ export async function PUT(
     ctx,
     async (tx) => {
       const [existing] = await tx
-        .select({ id: processRopaProfile.id })
+        .select({ id: processRopaProfile.id, dpiaId: processRopaProfile.dpiaId })
         .from(processRopaProfile)
         .where(eq(processRopaProfile.processId, id));
 
@@ -114,18 +114,77 @@ export async function PUT(
         updatedBy: ctx.userId,
       } as any;
 
+      let row: any;
       if (existing) {
-        const [row] = await tx
+        [row] = await tx
           .update(processRopaProfile)
           .set(payload)
           .where(eq(processRopaProfile.id, existing.id))
           .returning();
-        return row;
+      } else {
+        [row] = await tx
+          .insert(processRopaProfile)
+          .values({ ...payload, createdBy: ctx.userId })
+          .returning();
       }
-      const [row] = await tx
-        .insert(processRopaProfile)
-        .values({ ...payload, createdBy: ctx.userId })
-        .returning();
+
+      // BPM Overhaul Phase 4 C3: auto-create DPIA on first high-risk activation
+      if (requiresDpia && !row.dpiaId && !(existing && existing.dpiaId)) {
+        const [proc] = await tx
+          .select({ name: process.name })
+          .from(process)
+          .where(eq(process.id, id));
+        const [newDpia] = await tx
+          .insert(dpia)
+          .values({
+            orgId: ctx.orgId,
+            title: `DSFA: ${proc?.name ?? id}`,
+            processingDescription: parsed.data.processingPurpose ?? null,
+            legalBasis: parsed.data.legalBasis ?? null,
+            dpoConsultationRequired: true,
+            status: "draft",
+            dataCategories: parsed.data.personalDataCategories ?? null,
+            dataSubjectCategories: parsed.data.dataSubjectCategories ?? null,
+            recipients: parsed.data.recipients ?? null,
+            createdBy: ctx.userId,
+          })
+          .returning({ id: dpia.id });
+
+        await tx
+          .update(processRopaProfile)
+          .set({ dpiaId: newDpia.id })
+          .where(eq(processRopaProfile.id, row.id));
+        row.dpiaId = newDpia.id;
+
+        // Notify org DPOs
+        const dpos = await tx
+          .select({ userId: userOrganizationRole.userId })
+          .from(userOrganizationRole)
+          .where(
+            and(
+              eq(userOrganizationRole.orgId, ctx.orgId),
+              eq(userOrganizationRole.role, "dpo"),
+            ),
+          );
+        for (const d of dpos) {
+          await tx.insert(notification).values({
+            userId: d.userId,
+            orgId: ctx.orgId,
+            type: "approval_request",
+            entityType: "dpia",
+            entityId: newDpia.id,
+            title: `DSFA automatisch erstellt fuer Prozess: ${proc?.name ?? id}`,
+            message:
+              parsed.data.dpiaTriggerReason ??
+              "ROPA-Profil mit High-Risk-Indikatoren markiert.",
+            channel: "both",
+            templateKey: "dpia_auto_created",
+            templateData: { processId: id, dpiaId: newDpia.id },
+            createdBy: ctx.userId,
+          });
+        }
+      }
+
       return row;
     },
     { actionDetail: "ROPA profile upserted" },

@@ -143,6 +143,59 @@ export async function PUT(
       .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)))
       .returning();
 
+    // BPM Overhaul Phase 6 P6: auto-version on major status transitions.
+    // Snapshots the current bpmn_xml of the active version into a new version
+    // row so the audit trail and diff-view have a stable per-status anchor.
+    if (["approved", "published", "archived"].includes(targetStatus)) {
+      try {
+        const [curr] = await tx
+          .select({
+            bpmnXml: processVersion.bpmnXml,
+            diagramJson: processVersion.diagramJson,
+            versionNumber: processVersion.versionNumber,
+          })
+          .from(processVersion)
+          .where(
+            and(
+              eq(processVersion.processId, id),
+              eq(processVersion.isCurrent, true),
+            ),
+          )
+          .limit(1);
+
+        if (curr) {
+          await tx
+            .update(processVersion)
+            .set({ isCurrent: false })
+            .where(
+              and(
+                eq(processVersion.processId, id),
+                eq(processVersion.isCurrent, true),
+              ),
+            );
+
+          await tx.insert(processVersion).values({
+            processId: id,
+            orgId: ctx.orgId,
+            versionNumber: (curr.versionNumber ?? 0) + 1,
+            bpmnXml: curr.bpmnXml,
+            diagramJson: curr.diagramJson,
+            isCurrent: true,
+            changeSummary: `Auto-version on status -> ${targetStatus}`,
+            createdBy: ctx.userId,
+          });
+
+          await tx
+            .update(process)
+            .set({ currentVersion: (curr.versionNumber ?? 0) + 1 })
+            .where(eq(process.id, id));
+        }
+      } catch (e) {
+        // Auto-versioning is best-effort; do not block the state transition.
+        console.error("auto-versioning failed", e);
+      }
+    }
+
     // Send notifications based on transition type
     if (targetStatus === "in_review" && existing.reviewerId) {
       await tx.insert(notification).values({
