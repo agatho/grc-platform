@@ -1,4 +1,4 @@
-// GET /api/v1/_meta/build — Wave-23 D1 Self-Service-Diagnose-Endpoint.
+// GET /api/v1/meta/build — Wave-23 D1 Self-Service-Diagnose-Endpoint.
 //
 // #WAVE23-D1: pinnt das Schema des Build-Endpoints, das Cowork-QA für
 // die D1-Diagnose (Production-Commit-SHA-Vergleich) verwendet. Wenn
@@ -6,10 +6,10 @@
 
 import { describe, it, expect } from "vitest";
 
-describe("GET /api/v1/_meta/build", () => {
+describe("GET /api/v1/meta/build", () => {
   it("returns 200 with commitSha + branch + builtAt + nodeVersion + uptime", async () => {
-    const { GET } = await import("../../app/api/v1/_meta/build/route");
-    const res = await GET(new Request("http://localhost/api/v1/_meta/build"));
+    const { GET } = await import("../../app/api/v1/meta/build/route");
+    const res = await GET(new Request("http://localhost/api/v1/meta/build"));
 
     expect(res.status).toBe(200);
     const body = await res.json();
@@ -29,8 +29,8 @@ describe("GET /api/v1/_meta/build", () => {
     // chain ("unknown") is already exercised in dev (no env vars set)
     // and this test merely re-runs the route to verify no throw on
     // a fresh request.
-    const { GET } = await import("../../app/api/v1/_meta/build/route");
-    const res = await GET(new Request("http://localhost/api/v1/_meta/build"));
+    const { GET } = await import("../../app/api/v1/meta/build/route");
+    const res = await GET(new Request("http://localhost/api/v1/meta/build"));
     expect(res.status).toBe(200);
   });
 });

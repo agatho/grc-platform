@@ -42,7 +42,7 @@ echo "▶ Pilot-Readiness-Gate against ${STAGING_URL}"
 # ────────────────────────────────────────────────────────────
 # D1 — Build-SHA-Diagnose (informational, never blocks).
 # ────────────────────────────────────────────────────────────
-BUILD_INFO=$(curl -fsS -m 10 "${STAGING_URL}/api/v1/_meta/build" 2>/dev/null || echo '{}')
+BUILD_INFO=$(curl -fsS -m 10 "${STAGING_URL}/api/v1/meta/build" 2>/dev/null || echo '{}')
 PROD_SHA=$(echo "$BUILD_INFO" | jq -r '.data.commitSha // "unknown"')
 PROD_BRANCH=$(echo "$BUILD_INFO" | jq -r '.data.branch // "unknown"')
 PROD_BUILT=$(echo "$BUILD_INFO" | jq -r '.data.builtAt // "unknown"')

@@ -1,12 +1,12 @@
-// GET /api/v1/_meta/build
+// GET /api/v1/meta/build
 //
-// #WAVE23-D1: Self-service Production-Commit-SHA-Diagnose. Wave 22 hat
-// festgestellt, dass A1+A2 Repo-Code-korrekt sind aber Production-Behavior
-// falsch ist — Deploy-/Migration-Drift, kein Code-Bug. Die Wave-23-Diagnose
-// (D1 im claude-code-wave23-prompt.md) braucht den prod-Commit-SHA, um
-// gegen `git rev-parse origin/main` zu vergleichen. Bisher war das eine
-// SSH-only Operation; dieser Endpoint macht es zum `curl` für jeden,
-// der einen authentifizierten Session-Cookie hat.
+// #WAVE23-D1: Self-service Production-Commit-SHA-Diagnose.
+//
+// #WAVE23.3: Path was `/api/v1/_meta/build` originally — Next.js App
+// Router treats folders prefixed with `_` as PRIVATE folders and
+// silently excludes them from routing. The route file was built into
+// the image but Next.js never registered the path, so every request
+// 404'd to the catch-all HTML page. Renamed `_meta` → `meta`.
 //
 // Public discovery on purpose: der commit-SHA, branch und build-time sind
 // in jedem GitHub-Push-Event sichtbar; sie enthüllen keine Geheimnisse.
