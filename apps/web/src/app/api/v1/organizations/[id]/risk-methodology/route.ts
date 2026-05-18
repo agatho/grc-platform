@@ -1,15 +1,18 @@
 import { db, orgRiskMethodology } from "@grc/db";
 import { setMethodologySchema } from "@grc/shared";
 import { eq } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/organizations/[id]/risk-methodology — Get org methodology config
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id: orgId } = await params;
 
@@ -48,6 +51,8 @@ export async function PUT(
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id: orgId } = await params;
 

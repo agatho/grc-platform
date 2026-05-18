@@ -1,6 +1,7 @@
 import { db, riskAnomalyDetection } from "@grc/db";
 import { updateAnomalySchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/predictive-risk/anomalies/:id
@@ -10,6 +11,8 @@ export async function GET(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const [anomaly] = await db
@@ -33,6 +36,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const body = updateAnomalySchema.safeParse(await req.json());

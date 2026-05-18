@@ -1,6 +1,7 @@
 import { db, doraIctRisk } from "@grc/db";
 import { updateDoraIctRiskSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/dora/ict-risks/:id
@@ -10,6 +11,8 @@ export async function GET(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
 
   const [row] = await db
@@ -34,6 +37,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
 
   const body = updateDoraIctRiskSchema.safeParse(await req.json());
@@ -64,6 +69,8 @@ export async function DELETE(
 ) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
 
   const result = await withAuditContext(ctx, async (tx) => {

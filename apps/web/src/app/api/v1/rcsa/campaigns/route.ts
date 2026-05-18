@@ -1,6 +1,7 @@
 import { db, rcsaCampaign, rcsaAssignment } from "@grc/db";
 import { createRcsaCampaignSchema } from "@grc/shared";
 import { eq, and, count, desc, ilike, or, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import {
   withAuth,
   withAuditContext,
@@ -13,6 +14,8 @@ import type { SQL } from "drizzle-orm";
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const body = createRcsaCampaignSchema.safeParse(await req.json());
   if (!body.success) {
@@ -56,6 +59,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { page, limit, offset, searchParams } = paginate(req);
 

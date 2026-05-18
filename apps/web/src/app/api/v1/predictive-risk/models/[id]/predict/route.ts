@@ -1,6 +1,7 @@
 import { db, riskPredictionModel, riskPrediction } from "@grc/db";
 import { generatePredictionsSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/predictive-risk/models/:id/predict — Generate predictions
@@ -10,6 +11,8 @@ export async function POST(
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const body = generatePredictionsSchema.safeParse(await req.json());

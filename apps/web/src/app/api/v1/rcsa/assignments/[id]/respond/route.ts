@@ -4,6 +4,7 @@ import {
   submitControlResponseSchema,
 } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 interface RouteParams {
@@ -14,6 +15,8 @@ interface RouteParams {
 export async function PUT(req: Request, { params }: RouteParams) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
 
