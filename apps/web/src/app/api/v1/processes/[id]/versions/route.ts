@@ -187,11 +187,13 @@ export async function POST(
         .where(
           and(eq(processStep.processId, id), isNull(processStep.deletedAt)),
         );
-      const stepIdByBpmnElement = new Map(
-        allSteps.map((s: { id: string; bpmnElementId: string }) => [
-          s.bpmnElementId,
-          s.id,
-        ]),
+      const stepIdByBpmnElement = new Map<string, string>(
+        allSteps.map(
+          (s: { id: string; bpmnElementId: string }): [string, string] => [
+            s.bpmnElementId,
+            s.id,
+          ],
+        ),
       );
       await rehydrateFromBpmnXml({
         tx,

@@ -221,7 +221,7 @@ export async function POST(req: Request) {
 
   zip.file("MANIFEST.txt", manifest.join("\n"));
   const buf = await zip.generateAsync({
-    type: "nodebuffer",
+    type: "uint8array",
     compression: "DEFLATE",
   });
 

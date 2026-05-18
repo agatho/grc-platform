@@ -22,14 +22,8 @@ import {
   processFrameworkMapping,
 } from "@grc/db";
 
-interface SchemaWithRefs {
-  // Drizzle table metadata — accessing internal `referencedTable` is brittle
-  // but stable across our usage of drizzle-orm pg-core.
-  [k: string]: unknown;
-}
-
 function getOnDeleteForFk(
-  table: SchemaWithRefs,
+  table: unknown,
   columnName: string,
 ): string | null {
   // Drizzle stores FK metadata on a private symbol. We probe it via the

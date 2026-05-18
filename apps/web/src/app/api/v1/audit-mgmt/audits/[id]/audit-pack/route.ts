@@ -228,7 +228,7 @@ export async function POST(
   );
 
   const buf = await zip.generateAsync({
-    type: "nodebuffer",
+    type: "uint8array",
     compression: "DEFLATE",
   });
   const safeTitle = (det?.title ?? a.title)

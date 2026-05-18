@@ -196,7 +196,7 @@ export async function POST(
   );
 
   const buf = await zip.generateAsync({
-    type: "nodebuffer",
+    type: "uint8array",
     compression: "DEFLATE",
   });
   const slug = v.name.replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 50);

@@ -15,7 +15,7 @@ const eventSchema = z.object({
   activity: z.string().min(1).max(500),
   timestamp: z.string().datetime(),
   resource: z.string().optional(),
-  additionalData: z.record(z.unknown()).optional(),
+  additionalData: z.record(z.string(), z.unknown()).optional(),
 });
 
 const ingestSchema = z.object({

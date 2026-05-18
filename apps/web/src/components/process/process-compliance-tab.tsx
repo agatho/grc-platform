@@ -14,6 +14,16 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
+async function syntheticUuid(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
+
 interface Mapping {
   id: string;
   catalogEntryId: string | null;
