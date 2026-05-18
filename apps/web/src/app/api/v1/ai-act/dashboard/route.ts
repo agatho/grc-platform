@@ -7,6 +7,7 @@ import {
   aiFria,
 } from "@grc/db";
 import { eq, and, sql, isNull, gte } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 export async function GET(req: Request) {
@@ -18,6 +19,8 @@ export async function GET(req: Request) {
     "viewer",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
 
   const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
   const [

@@ -1,11 +1,14 @@
 import { db, aiFria } from "@grc/db";
 import { createAiFriaSchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const body = createAiFriaSchema.safeParse(await req.json());
   if (!body.success)
     return Response.json(
@@ -32,6 +35,8 @@ export async function GET(req: Request) {
     "viewer",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const url = new URL(req.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? 1));
   const limit = Math.min(
