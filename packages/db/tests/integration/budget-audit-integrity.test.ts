@@ -267,10 +267,22 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
       WHERE id = ${testBudgetId}
     `;
 
-    // Walk the chain using recursive CTE (same pattern as CI workflow).
-    // The hash chain is global across all entity types, so the first budget entry's
-    // previous_hash may reference an earlier non-budget entry. We start from the
-    // oldest budget entry for this entity and walk forward through the chain.
+    // Walk the chain using recursive CTE. The hash chain is global across
+    // every entity_type — each audit_log row's previous_hash references the
+    // chronologically-prior row, which may belong to any table. After
+    // migration 0337 expanded audit_trigger to ~52 additional tables, the
+    // amount of non-budget interleaving rose significantly (organization,
+    // session, etc.), so a budget-filtered walk legitimately won't reach
+    // every budget row for this entity.
+    //
+    // What we still assert:
+    //   - the walk reaches at least 3 budget rows (INSERT + 2 UPDATEs)
+    //   - every walked row has a parent that exists somewhere in audit_log
+    //     (already covered by the previous "has_parent" test)
+    // What we no longer assert:
+    //   - chain_length == total_budget_entries (would require the chain to
+    //     be budget-only, which the global trigger surface no longer
+    //     guarantees)
     const chainResult = await testDb.client`
       WITH RECURSIVE chain AS (
         SELECT id, entry_hash, previous_hash, 1 as depth
@@ -291,15 +303,24 @@ describe("Budget & Catalog Audit Trail Integrity", () => {
       SELECT COUNT(*)::int as chain_length FROM chain
     `;
 
-    // We created: INSERT + UPDATE(name/amount) + UPDATE(status/approved) = 3 entries minimum
+    // INSERT + UPDATE(name/amount) + UPDATE(status/approved) = 3 budget
+    // entries minimum. The walk reaches at least these because they're
+    // created in tight succession with nothing else running in between.
     expect(chainResult[0].chain_length).toBeGreaterThanOrEqual(3);
 
-    // Verify chain length matches total entries for this entity
-    const totalEntries = await testDb.client`
-      SELECT COUNT(*)::int as total
-      FROM audit_log
-      WHERE entity_type = 'grc_budget' AND entity_id = ${testBudgetId}
+    // Sanity: every budget entry for this entity has a valid previous_hash
+    // pointer (to *some* audit_log row, not necessarily budget). This is
+    // the real integrity property — no dangling chain links.
+    const orphanCheck = await testDb.client`
+      SELECT COUNT(*)::int AS orphans
+      FROM audit_log a
+      WHERE a.entity_type = 'grc_budget'
+        AND a.entity_id = ${testBudgetId}
+        AND a.previous_hash IS NOT NULL
+        AND NOT EXISTS (
+          SELECT 1 FROM audit_log b WHERE b.entry_hash = a.previous_hash
+        )
     `;
-    expect(chainResult[0].chain_length).toBe(totalEntries[0].total);
+    expect(orphanCheck[0].orphans).toBe(0);
   });
 });
