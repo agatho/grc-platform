@@ -1,6 +1,25 @@
 import { z } from "zod";
+import { checkWebhookUrl } from "../url-safety";
 
 // Sprint 22: Where-Used + Event Bus / Webhook Zod schemas
+
+// SSRF guard: applied to all webhook URL fields. Rejects literal
+// localhost / private / link-local / cloud-metadata hosts at validation
+// time. Same check runs again in the worker before delivery (defence-
+// in-depth). See packages/shared/src/url-safety.ts.
+const safeWebhookUrl = z
+  .string()
+  .url()
+  .max(2000)
+  .superRefine((val, ctx) => {
+    const r = checkWebhookUrl(val);
+    if (!r.ok) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: r.reason,
+      });
+    }
+  });
 
 // ─── Entity Reference ───────────────────────────────────────
 
@@ -83,7 +102,7 @@ export const eventFilterSchema = z.object({
 
 export const createWebhookSchema = z.object({
   name: z.string().min(1).max(200),
-  url: z.string().url().max(2000),
+  url: safeWebhookUrl,
   eventFilter: eventFilterSchema,
   headers: z.record(z.string()).optional(),
   templateType: z.enum(templateTypeValues).default("generic"),
@@ -91,7 +110,7 @@ export const createWebhookSchema = z.object({
 
 export const updateWebhookSchema = z.object({
   name: z.string().min(1).max(200).optional(),
-  url: z.string().url().max(2000).optional(),
+  url: safeWebhookUrl.optional(),
   eventFilter: eventFilterSchema.optional(),
   headers: z.record(z.string()).optional(),
   isActive: z.boolean().optional(),
