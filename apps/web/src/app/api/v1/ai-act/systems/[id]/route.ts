@@ -1,6 +1,7 @@
 import { db, aiSystem } from "@grc/db";
 import { updateAiSystemSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function GET(
@@ -15,6 +16,8 @@ export async function GET(
     "viewer",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const [row] = await db
     .select()
@@ -36,6 +39,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const body = updateAiSystemSchema.safeParse(await req.json());
   if (!body.success)
@@ -62,6 +67,8 @@ export async function DELETE(
 ) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const result = await withAuditContext(ctx, async (tx) => {
     const [deleted] = await tx
