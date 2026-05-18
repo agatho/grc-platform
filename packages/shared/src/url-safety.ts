@@ -127,10 +127,7 @@ export function checkWebhookUrl(rawUrl: string): WebhookUrlCheckResult {
   }
 
   // Allow http in dev only — flag via env. Default: https-only.
-  if (
-    parsed.protocol === "http:" &&
-    process.env.WEBHOOK_ALLOW_HTTP !== "1"
-  ) {
+  if (parsed.protocol === "http:" && process.env.WEBHOOK_ALLOW_HTTP !== "1") {
     return { ok: false, reason: "Plain http:// is not allowed for webhooks." };
   }
 
