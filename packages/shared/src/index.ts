@@ -2,6 +2,12 @@ export * from "./schemas";
 export * from "./types";
 export * from "./modules";
 export * from "./process-status";
+export {
+  getRequiredHexKey,
+  aesGcmEncrypt,
+  aesGcmDecrypt,
+  type AesGcmCiphertext,
+} from "./env-key";
 // #WAVE21-MAR-P2-03: BIA → Asset-Classification cascade (write-side
 // derivation). Override resolver lives in apps/web's ISMS routes.
 export * from "./cascades/bia-asset-criticality";
