@@ -1,6 +1,7 @@
 import { db, certEvidencePackage } from "@grc/db";
 import { updateCertEvidencePackageSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function GET(
@@ -9,6 +10,8 @@ export async function GET(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("audit", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const [row] = await db
     .select()
@@ -29,6 +32,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("audit", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const body = updateCertEvidencePackageSchema.safeParse(await req.json());
   if (!body.success)
