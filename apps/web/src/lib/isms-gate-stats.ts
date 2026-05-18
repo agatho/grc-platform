@@ -12,19 +12,21 @@ import {
   orgActiveCatalog,
   soaEntry,
   assessmentRiskEval,
+  db,
 } from "@grc/db";
 import type { SoaStats, RiskEvalStats } from "@grc/shared";
 import { and, eq, inArray, or, ne, sql } from "drizzle-orm";
 
-type DbLike = {
-  select: (...args: unknown[]) => unknown;
-};
+// Both `db` and a `tx` from db.transaction(...) expose the same .select API.
+// Narrowing to Pick<typeof db, "select"> lets callers pass either without
+// the `as any` casts that the previous version relied on.
+type SelectClient = Pick<typeof db, "select">;
 
 export async function fetchSoaStats(
-  db: DbLike,
+  db: SelectClient,
   orgId: string,
 ): Promise<SoaStats> {
-  const activeCatalogs = (await (db as any)
+  const activeCatalogs = await db
     .select({ catalogId: orgActiveCatalog.catalogId })
     .from(orgActiveCatalog)
     .where(
@@ -35,7 +37,7 @@ export async function fetchSoaStats(
           eq(orgActiveCatalog.catalogType, "reference"),
         ),
       ),
-    )) as Array<{ catalogId: string }>;
+    );
 
   const catalogIds = activeCatalogs.map((c) => c.catalogId);
 
@@ -47,7 +49,7 @@ export async function fetchSoaStats(
     };
   }
 
-  const [{ count: totalCount }] = (await (db as any)
+  const [{ count: totalCount }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(catalogEntry)
     .where(
@@ -55,9 +57,9 @@ export async function fetchSoaStats(
         inArray(catalogEntry.catalogId, catalogIds),
         eq(catalogEntry.status, "active"),
       ),
-    )) as Array<{ count: number }>;
+    );
 
-  const [{ count: soaCount }] = (await (db as any)
+  const [{ count: soaCount }] = await db
     .select({
       count: sql<number>`count(DISTINCT ${soaEntry.catalogEntryId})::int`,
     })
@@ -69,9 +71,9 @@ export async function fetchSoaStats(
         inArray(catalogEntry.catalogId, catalogIds),
         eq(catalogEntry.status, "active"),
       ),
-    )) as Array<{ count: number }>;
+    );
 
-  const [{ count: notApplicableBadCount }] = (await (db as any)
+  const [{ count: notApplicableBadCount }] = await db
     .select({ count: sql<number>`count(*)::int` })
     .from(soaEntry)
     .innerJoin(catalogEntry, eq(catalogEntry.id, soaEntry.catalogEntryId))
@@ -82,7 +84,7 @@ export async function fetchSoaStats(
         inArray(catalogEntry.catalogId, catalogIds),
         sql`(${soaEntry.applicabilityJustification} IS NULL OR length(${soaEntry.applicabilityJustification}) < 50)`,
       ),
-    )) as Array<{ count: number }>;
+    );
 
   return {
     totalCatalogEntries: totalCount ?? 0,
@@ -92,11 +94,11 @@ export async function fetchSoaStats(
 }
 
 export async function fetchRiskEvalStats(
-  db: DbLike,
+  db: SelectClient,
   runId: string,
   orgId: string,
 ): Promise<RiskEvalStats> {
-  const [{ total }] = (await (db as any)
+  const [{ total }] = await db
     .select({ total: sql<number>`count(*)::int` })
     .from(assessmentRiskEval)
     .where(
@@ -104,9 +106,9 @@ export async function fetchRiskEvalStats(
         eq(assessmentRiskEval.assessmentRunId, runId),
         eq(assessmentRiskEval.orgId, orgId),
       ),
-    )) as Array<{ total: number }>;
+    );
 
-  const [{ decided }] = (await (db as any)
+  const [{ decided }] = await db
     .select({ decided: sql<number>`count(*)::int` })
     .from(assessmentRiskEval)
     .where(
@@ -115,9 +117,9 @@ export async function fetchRiskEvalStats(
         eq(assessmentRiskEval.orgId, orgId),
         ne(assessmentRiskEval.decision, "pending"),
       ),
-    )) as Array<{ decided: number }>;
+    );
 
-  const [{ scored }] = (await (db as any)
+  const [{ scored }] = await db
     .select({ scored: sql<number>`count(*)::int` })
     .from(assessmentRiskEval)
     .where(
@@ -127,7 +129,7 @@ export async function fetchRiskEvalStats(
         sql`${assessmentRiskEval.residualLikelihood} IS NOT NULL`,
         sql`${assessmentRiskEval.residualImpact} IS NOT NULL`,
       ),
-    )) as Array<{ scored: number }>;
+    );
 
   return {
     totalRiskEvals: total ?? 0,
