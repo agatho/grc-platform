@@ -10,9 +10,11 @@ test-results/
 *.env.local
 .DS_Store
 coverage/
-# #WAVE14-CROSS-05: the new /api/v1/compliance/coverage route is named
-# "coverage" too — exempt it from the test-output ignore above.
-!apps/web/src/app/api/v1/compliance/coverage/
+# #WAVE14-CROSS-05: API routes named "coverage" must NOT be caught by the
+# vitest-output ignore above. The original exception listed only the
+# /compliance/coverage path; we generalize to any /api/v1/**/coverage/
+# so future routes (e.g. processes/[id]/coverage) are tracked too.
+!apps/web/src/app/api/v1/**/coverage/
 *.tsbuildinfo
 .vercel/
 
