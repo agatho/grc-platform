@@ -9,10 +9,10 @@ Stand: 2026-05-18 overnight session.
 ## Drizzle-only (no matching CREATE TABLE found): 0
 
 These are Drizzle table definitions whose underlying CREATE TABLE was not found in any migration file. Either:
+
 - the table is created by `seed_*.sql` (legitimate),
 - the table is created via `CREATE TABLE LIKE` or `CREATE TABLE AS` (parser miss),
 - the Drizzle definition is stale and references a removed table (real drift).
-
 
 ## SQL-only (CREATE TABLE but no Drizzle definition): 2
 

@@ -12,22 +12,22 @@ Lower-risk but still worth flagging: untrusted strings inserted as user content 
 
 ## System-prompt interpolations: 11
 
-| File | Variables | Treatment |
-|---|---|---|
+| File       | Variables                                                         | Treatment             |
+| ---------- | ----------------------------------------------------------------- | --------------------- |
 | `audit.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
 | `audit.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
 | `audit.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `bpm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `bpm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `bpm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `bpm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `dpms.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `dpms.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `tprm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
-| `tprm.ts` | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `bpm.ts`   | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `bpm.ts`   | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `bpm.ts`   | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `bpm.ts`   | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `dpms.ts`  | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `dpms.ts`  | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `tprm.ts`  | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
+| `tprm.ts`  | `locale === "de" ? "Antworte auf Deutsch." : "Reply in English."` | raw template — REVIEW |
 
 ## User-prompt raw interpolations: 1
 
-| File | Snippet |
-|---|---|
+| File     | Snippet                 |
+| -------- | ----------------------- |
 | `bpm.ts` | ``${userInstruction...` |
