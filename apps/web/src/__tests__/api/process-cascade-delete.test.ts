@@ -22,10 +22,7 @@ import {
   processFrameworkMapping,
 } from "@grc/db";
 
-function getOnDeleteForFk(
-  table: unknown,
-  columnName: string,
-): string | null {
+function getOnDeleteForFk(table: unknown, columnName: string): string | null {
   // Drizzle stores FK metadata on a private symbol. We probe it via the
   // exported _ table introspection that's available on all pgTable rows.
   const cols = (table as any)[Symbol.for("drizzle:Columns")] ?? (table as any);
