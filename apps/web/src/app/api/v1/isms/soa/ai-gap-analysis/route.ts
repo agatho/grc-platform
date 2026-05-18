@@ -124,23 +124,42 @@ export async function POST(req: Request) {
   });
 
   // Call AI
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an ISO 27001 compliance auditor. Respond only with valid JSON.",
-      },
-      { role: "user", content: prompt },
-    ],
-    model: "claude-sonnet-4-20250514",
-    maxTokens: 4096,
-    temperature: 0.3,
-    provider: "claude_api",
-  });
+  let aiResponse;
+  try {
+    aiResponse = await aiComplete({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an ISO 27001 compliance auditor. Respond only with valid JSON.",
+        },
+        { role: "user", content: prompt },
+      ],
+      model: "claude-sonnet-4-20250514",
+      maxTokens: 4096,
+      temperature: 0.3,
+      provider: "claude_api",
+    });
+  } catch (err) {
+    return Response.json(
+      { error: "AI provider failure", details: (err as Error).message },
+      { status: 502 },
+    );
+  }
 
-  // Parse response
-  const gaps = parseSoaGapResponse(aiResponse.text);
+  // Parse response (defensive — AI may return malformed JSON)
+  let gaps;
+  try {
+    gaps = parseSoaGapResponse(aiResponse.text);
+  } catch (err) {
+    return Response.json(
+      {
+        error: "AI returned malformed response — please retry",
+        details: (err as Error).message,
+      },
+      { status: 502 },
+    );
+  }
 
   if (gaps.length === 0) {
     return Response.json({
