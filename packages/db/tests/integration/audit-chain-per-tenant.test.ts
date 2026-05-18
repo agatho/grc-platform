@@ -311,4 +311,74 @@ describe("Per-tenant audit chain (ADR-011 rev.2)", () => {
       `ALTER TABLE organization ENABLE TRIGGER audit_trigger`,
     );
   });
+
+  // Regression test for 0343: audit_trigger had `pg_advisory_xact_lock`
+  // in migration 0284, but later trigger redeploys (0308, 0309, 0313,
+  // 0327) recreated the function via CREATE OR REPLACE without the lock.
+  // Concurrent INSERTs on different tables within the same tenant could
+  // both read the same MAX(chain_seq) row as prev_hash and emit
+  // sibling rows with identical previous_hash → LAG-based verify CTE
+  // reports chain_ok=false at the second row, non-deterministically.
+  //
+  // This test uses TWO independent postgres connections, each running
+  // its own transaction, holding the row-mod open while the other tries
+  // to acquire the same advisory lock. With the lock, the second tx
+  // blocks until the first commits and then sees the updated tail.
+  it("true-parallel inserts via two connections do not branch the chain", async () => {
+    const postgres = (await import("postgres")).default;
+    const DATABASE_URL =
+      process.env.DATABASE_URL ??
+      "postgresql://grc:grc_dev_password@localhost:5432/grc_platform";
+    const a = postgres(DATABASE_URL, { max: 1 });
+    const b = postgres(DATABASE_URL, { max: 1 });
+    const now = Date.now();
+
+    const [org] = await a<{ id: string }[]>`
+      INSERT INTO organization (name, type, country, is_eu, is_data_controller)
+      VALUES (${"par-concurrent-" + now}, 'subsidiary', 'DE', true, true)
+      RETURNING id
+    `;
+    const orgId = org.id;
+
+    // Fire 20 cross-connection UPDATEs as fast as possible. With the
+    // advisory lock, all 21 audit_log rows (1 create + 20 updates) form
+    // a contiguous chain. Without the lock, at least one pair branches
+    // → the contiguous-link assertion below fails.
+    const writes: Promise<unknown>[] = [];
+    for (let i = 0; i < 10; i++) {
+      writes.push(
+        a`UPDATE organization SET name = ${"a-" + now + "-" + i} WHERE id = ${orgId}`,
+      );
+      writes.push(
+        b`UPDATE organization SET name = ${"b-" + now + "-" + i} WHERE id = ${orgId}`,
+      );
+    }
+    await Promise.all(writes);
+
+    const rows = await a<
+      { previous_hash: string | null; entry_hash: string; chain_seq: number }[]
+    >`
+      SELECT previous_hash, entry_hash, chain_seq
+      FROM audit_log
+      WHERE org_id = ${orgId}
+      ORDER BY chain_seq ASC
+    `;
+
+    expect(rows.length).toBe(21);
+    for (let i = 1; i < rows.length; i++) {
+      expect(
+        rows[i].previous_hash,
+        `row ${i} (chain_seq=${rows[i].chain_seq}) breaks the chain`,
+      ).toBe(rows[i - 1].entry_hash);
+    }
+
+    await a.unsafe(`ALTER TABLE organization DISABLE TRIGGER audit_trigger`);
+    await a.unsafe(`SET session_replication_role = 'replica'`);
+    await a`DELETE FROM audit_log WHERE org_id = ${orgId}`;
+    await a`DELETE FROM organization WHERE id = ${orgId}`;
+    await a.unsafe(`SET session_replication_role = 'origin'`);
+    await a.unsafe(`ALTER TABLE organization ENABLE TRIGGER audit_trigger`);
+    await a.end();
+    await b.end();
+  });
 });
