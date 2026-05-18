@@ -89,31 +89,47 @@ export async function POST(
     : null;
   const userAgent = req.headers.get("user-agent")?.slice(0, 1000) ?? null;
 
-  const result = await withAuditContext(
-    ctx,
-    async (tx) => {
-      const [row] = await tx
-        .insert(auditSignOff)
-        .values({
-          orgId: ctx.orgId,
-          auditId: id,
-          signerId: ctx.userId,
-          signerRole: parsed.data.signerRole,
-          signoffType: parsed.data.signoffType,
-          comments: parsed.data.comments ?? null,
-          payloadHash,
-          previousChainHash: prev?.chainHash ?? null,
-          chainHash,
-          ipAddress,
-          userAgent,
-        })
-        .returning();
-      return row;
-    },
-    {
-      actionDetail: `Audit sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}`,
-    },
-  );
+  let result;
+  try {
+    result = await withAuditContext(
+      ctx,
+      async (tx) => {
+        const [row] = await tx
+          .insert(auditSignOff)
+          .values({
+            orgId: ctx.orgId,
+            auditId: id,
+            signerId: ctx.userId,
+            signerRole: parsed.data.signerRole,
+            signoffType: parsed.data.signoffType,
+            comments: parsed.data.comments ?? null,
+            payloadHash,
+            previousChainHash: prev?.chainHash ?? null,
+            chainHash,
+            ipAddress,
+            userAgent,
+          })
+          .returning();
+        return row;
+      },
+      {
+        actionDetail: `Audit sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}`,
+      },
+    );
+  } catch (err) {
+    // See migration 0341 — UNIQUE (audit_id, previous_chain_hash)
+    // rejects concurrent appends so the chain stays linear.
+    if ((err as { code?: string }).code === "23505") {
+      return Response.json(
+        {
+          error: "Concurrent sign-off detected — chain head moved",
+          retry: true,
+        },
+        { status: 409 },
+      );
+    }
+    throw err;
+  }
 
   return Response.json({ data: result }, { status: 201 });
 }
