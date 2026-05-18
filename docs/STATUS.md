@@ -2,9 +2,19 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-16**. Letzte Migration: `0326_seed_arctistx_rbac_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 22** (2026-05-16, PR #166). Aktive Arbeit: **Wave 23 Endgame** (A1 finding-FK, A2 /admin/branding, C3 contract-name, Pilot-Readiness-Gate), ADR-014 Phase 3+4, ADR-019/020/021/023/024 (Proposed).
+> Stand: **2026-05-18**. Letzte Migration: `0340_tprm_overhaul.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (closed 2026-05-17, PRs #167–#172). Letzter Modul-Overhaul: **TPRM** (PR #180, merged 2026-05-18) — Audit/DPMS/TPRM komplett überarbeitet nach dem BPM-Muster (Sign-Off-Hash-Chain, Gates-Library, Cross-Module-Aggregation, ZIP-Export-Pack, AI-Endpoints, KPI-Dashboards).
 
-## Was ist seit STATUS-Stand 2026-05-17 passiert (Overnight BPM-Overhaul)?
+## Was ist seit STATUS-Stand 2026-05-17 passiert (Audit / DPMS / TPRM Overhauls)?
+
+- **3 Modul-Komplett-Überarbeitungen** in Folge nach dem BPM-Muster (PR #178 Audit · PR #179 DPMS · PR #180 TPRM): jeder Overhaul liefert eine Migration mit `*_sign_off` Append-Only-Hash-Chain + Cross-Module-FKs, eine Gates-Library (`audit-gates.ts`, `dpia-gates.ts`, `vendor-gates.ts`), Transition-Blocker-Endpoint, Sign-Off-Endpoint, Cross-Module-Aggregation, ZIP-Audit-Pack-Export, AI-Endpoints und Dashboard-KPIs.
+- **Audit-Mgmt Overhaul** (Migration `0338_audit_overhaul_signoff_fks.sql`): `audit_sign_off` + FK auf `audit.report_document_id`, RACM-Aggregation, ISO-19011-Checklisten-AI, Finding-Vorschläge.
+- **DPMS Overhaul** (Migration `0339_dpms_unify_ropa.sql`): `ropa_entry.process_id`-FK, `dpia.process_id`-FK, `data_breach.affected_process_ids[]`. DPIA-Gates inkl. Art-36-Konsultation. DSR-SLA-Tracker (Art-12(3) 30 Tage). Art-33 72-Stunden-Status-Endpoint + deutsches Notifikations-ZIP-Template. AI-Privacy-Tier-Routing für RoPA/DPIA-Drafting.
+- **TPRM Overhaul** (Migration `0340_tprm_overhaul.sql`): `vendor_sign_off` + DORA-critical-ICT/LkSG-tier-1 Designation-Flags + `contract.affected_process_ids[]`. Vendor-Gates blockieren z. B. DORA-Vendor-Aktivierung ohne Exit-Plan oder LkSG-Vendor-Aktivierung ohne LkSG-Assessment. Contracts: `renewal-watch`, `obligations-status`. AI-Tier-Klassifikator + DD-Fragebogen-Generator.
+- **Shared Sign-Off-Chain-Bibliothek** (`apps/web/src/lib/sign-off-chain.ts`) wird jetzt von 3 Modulen genutzt (process · audit · vendor; DPIA folgt einem einfacheren Approval-Pattern direkt auf der DPIA-Tabelle). Reine Funktionen (`computePayloadHash`, `computeChainHash`, `verifyChain`); GET-Endpoints validieren die Kette und melden `brokenAt`.
+- **~30 neue API-Routes** über die 3 Module: Transitions-Blockers, Sign-Off (GET+POST), Cross-Module/RACM/Scope-Aggregation, Audit-Pack-Export (JSZip), AI-Endpoints, KPI-Dashboards. Dashboard-Endpoints: `/api/v1/dashboard/{audit,dpms,tprm}-kpis`.
+- **RBAC-Matrix-Tests + Gates-Unit-Tests** pro Modul: `audit-rbac-matrix.test.ts` (12 routes), `dpms-rbac-matrix.test.ts` (10 routes), `tprm-rbac-matrix.test.ts` (10 routes), `audit-gates.test.ts` (6 Szenarien), `dpia-gates.test.ts` (5 Szenarien), `vendor-gates.test.ts` (6 Szenarien) + 4 ZIP-Pack-Routes mit `Blob`-Wrap.
+
+## Was ist seit STATUS-Stand 2026-05-16 passiert (Overnight BPM-Overhaul)?
 
 - **BPM-Modul Komplett-Überarbeitung** entlang [`bpm-overhaul-implementation-plan.md`](./bpm-overhaul-implementation-plan.md). 5 neue Migrationen (`0330` FK-Härtung, `0331` finding↔process Link, `0332` process_step LoD + critical-process, `0333` process_ropa_profile + compliance_profile_enum, `0334` process_sign_off + process_framework_mapping). Neuer Drizzle-Schema-Pfad: `packages/db/src/schema/process-grc.ts`.
 - **~18 neue API-Routes** unter `/api/v1/processes/[id]/*`: risk-heatmap, control-coverage, racm, findings, bia-impacts, ropa-profile, three-lines-distribution, coverage, framework-mappings, audit-trail, health-score, sign-off, bulk-link (risks/controls/documents), steps/[stepId]/line-of-defense, ai/{generate-from-text, suggest-risks, suggest-controls, map-frameworks}, event-logs, transitions/blockers + neuer `/api/v1/processes/cockpit`.
@@ -30,17 +40,23 @@
 
 ## TL;DR
 
-ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-16):
+ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-18):
 
-- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 22 abgeschlossen** plus laufende Cross-Cutting-Arbeit (Audit-Trail-Hash-Chain, RLS-Gap-Closure, EU-AI-Act-Vollständigkeit, ISO-27005-Kataloge).
-- **108 Drizzle-Schema-Files**, **305 SQL-Migrationen** bis `0326_seed_arctistx_rbac_users.sql` (vorher 278 / `0299`).
-- **563 `pgTable()`-Definitionen** (statischer Count, vorher 561). Der RLS-Coverage-Report (Stand 2026-04-18) zählte 545 — die Differenz sind seither hinzugekommene Tabellen, die noch nicht im RLS-Audit erfasst wurden. Letzter dokumentierter Stand: 347 mit vollständiger RLS+Policy+Audit-Trigger, 131 mit RLS-Lücke, 52 mit Audit-Trigger-Lücke, 15 plattform-exempt. Migration `0315_rls_gap_closure_v4.sql` hat weitere Lücken geschlossen — Re-Audit ausstehend.
-- **1.246 `route.ts`-Files** unter `/api/v1/` (vorher 1.150) ergeben **~1.700 HTTP-Endpoints** (Hochrechnung — letzter LoD-Audit zählte 1.606 bei 1.150 routes).
-- **470 Next.js `page.tsx`** (vorher 453), verteilt auf ~85 Top-Level-Routen-Gruppen.
-- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings** + 2 neue Programme-Journeys (W22-B6 Demo-Seed).
-- **258 Test-Files** (236 vor diesem Quartal) + **47 Playwright-E2E-Specs** (vorher 40, +6 wave-spezifisch + 1 dataflow). Verifizierte Out-of-band-Läufe der jüngsten Wellen: schema-drift-finding-fk 7/7, seed-wiring 6/6, tprm-schemas 26/26 (Wave 22). Coverage-Threshold-Gating in CI seit Wave 14 aktiviert (40 % lines / 30 % branches als Floor, ratchet up).
+- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 23 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18.
+- **108 Drizzle-Schema-Files**, **319 SQL-Migrationen** bis `0340_tprm_overhaul.sql` (vorher 305 / `0326`).
+- **563+ `pgTable()`-Definitionen** plus die 3 neuen `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report Re-Audit nach 0336 (gap-closure-v5) + 0337 (audit-trigger-gap-closure) ausstehend.
+- **1.310 `route.ts`-Files** unter `/api/v1/` (vorher 1.246, +64 durch BPM-Overhaul + Audit/DPMS/TPRM-Overhauls und Coverage-Route-Recovery via PR #185).
+- **470+ Next.js `page.tsx`**.
+- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings**.
+- **270+ Test-Files** (Stand 2026-05-18 nach BPM-Overhaul + 3 Modul-Overhauls): gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
 - **~410k LOC** Source-Code insgesamt (apps + packages, ohne node_modules).
-- CI ist seit 2026-04-20 vollgrün ohne `continue-on-error`-Bypass (7 blockierende Jobs). Wave 23 fügt einen 8. Pilot-Readiness-Gate-Job hinzu.
+- **CI-Status (2026-05-18 nach PR #185)**: Lint / Type Check / Unit / E2E / DB Migration / Static schema + RLS / Aggregate coverage / Security Audit / CodeQL / gitleaks **grün**. Einzige verbleibende Rote: `budget-audit-integrity` Integration-Test (pre-existing, `bb6a3c49`, erwartete 6 Einträge / aktuell 11; nicht durch Overhauls verursacht). Zwischendrin hatten die ZIP-Overhauls + Windows-CRLF-Drift Prettier + tsc kurzzeitig rot — durch PR #185 (`fix/prettier-lf-cleanup`) komplett bereinigt.
+
+## Bekannte technische Schulden aus den Overhauls
+
+- **Sign-Off-Chain-Race**: alle 3 Sign-Off-Tabellen (process/audit/vendor) haben **kein `UNIQUE (entity_id, previous_chain_hash)` Constraint** und lesen `prev` **außerhalb der INSERT-Transaktion**. Zwei gleichzeitige POST-/sign-off-Calls (Doppelklick, Retry) erzeugen Sibling-Rows mit identischem `previous_chain_hash` — `verifyChain` liefert dann `ok:false`. Severity in der Praxis niedrig (Sign-Off ist menschliche Aktion, append-only), aber leicht zu fixen via Migration `UNIQUE NULLS NOT DISTINCT`.
+- **Sign-Off-Payload-Type-Drift**: `apps/web/src/lib/sign-off-chain.ts` exportiert `SignOffPayload` mit `processId/processName/processVersionId` als Pflichtfelder. Audit + Vendor passen ihre eigenen IDs als `processId` durch (mit Kommentar „payload field is generic — reused as auditId here"). Funktional korrekt (Hash ist generisch), aber Type-Signatur lügt.
+- **`tsconfig.tsbuildinfo`** war versehentlich getrackt — gefixt + in `.gitignore` aufgenommen (PR #185).
 
 ## Code-Pfad-Hinweis (häufige Verwechslung)
 
