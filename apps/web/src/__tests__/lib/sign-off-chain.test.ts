@@ -6,6 +6,9 @@ import {
   verifyChain,
   computePayloadHash,
   computeChainHash,
+  buildProcessSignOffPayload,
+  buildAuditSignOffPayload,
+  buildVendorSignOffPayload,
   type SignOffPayload,
 } from "@/lib/sign-off-chain";
 
@@ -103,5 +106,66 @@ describe("sign-off hash chain", () => {
       payload({ signedAt: "2026-05-18T01:00:00.000Z" }),
     );
     expect(verifyChain([l2, l1]).ok).toBe(false);
+  });
+
+  // ── Builders must produce hash-equivalent output to the legacy ─────────
+  // raw-object shape. Otherwise existing audit/vendor/process sign-off
+  // rows in production (hashed with the original processId/processName
+  // field names) would fail verifyChain after this refactor.
+  describe("typed builders preserve hash compatibility", () => {
+    const common = {
+      signerId: "u1",
+      signerRole: "process_owner",
+      signoffType: "approval",
+      comments: null,
+      statusAtSign: "active",
+      signedAt: "2026-05-18T00:00:00.000Z",
+    };
+
+    it("buildProcessSignOffPayload matches the legacy raw shape", () => {
+      const legacy: SignOffPayload = {
+        processId: "p1",
+        processName: "Order Approval",
+        processVersionId: "v1",
+        ...common,
+      };
+      const builder = buildProcessSignOffPayload({
+        processId: "p1",
+        processName: "Order Approval",
+        processVersionId: "v1",
+        ...common,
+      });
+      expect(computePayloadHash(builder)).toBe(computePayloadHash(legacy));
+    });
+
+    it("buildAuditSignOffPayload matches the audit-route raw shape", () => {
+      const legacy: SignOffPayload = {
+        processId: "a1", // audit id passed through this field historically
+        processName: "Internal ISO 27001 Audit",
+        processVersionId: null,
+        ...common,
+      };
+      const builder = buildAuditSignOffPayload({
+        auditId: "a1",
+        auditTitle: "Internal ISO 27001 Audit",
+        ...common,
+      });
+      expect(computePayloadHash(builder)).toBe(computePayloadHash(legacy));
+    });
+
+    it("buildVendorSignOffPayload matches the vendor-route raw shape", () => {
+      const legacy: SignOffPayload = {
+        processId: "v1",
+        processName: "Acme Corp",
+        processVersionId: null,
+        ...common,
+      };
+      const builder = buildVendorSignOffPayload({
+        vendorId: "v1",
+        vendorName: "Acme Corp",
+        ...common,
+      });
+      expect(computePayloadHash(builder)).toBe(computePayloadHash(legacy));
+    });
   });
 });

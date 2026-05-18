@@ -8,6 +8,7 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import {
+  buildProcessSignOffPayload,
   computePayloadHash,
   computeChainHash,
   verifyChain,
@@ -85,17 +86,19 @@ export async function POST(
     versionId = pv?.id ?? null;
   }
 
-  const payloadHash = computePayloadHash({
-    processId: id,
-    processName: existing.name,
-    processVersionId: versionId,
-    signerId: ctx.userId,
-    signerRole: parsed.data.signerRole,
-    signoffType: parsed.data.signoffType,
-    comments: parsed.data.comments ?? null,
-    statusAtSign: existing.status,
-    signedAt: new Date().toISOString(),
-  });
+  const payloadHash = computePayloadHash(
+    buildProcessSignOffPayload({
+      processId: id,
+      processName: existing.name,
+      processVersionId: versionId,
+      signerId: ctx.userId,
+      signerRole: parsed.data.signerRole,
+      signoffType: parsed.data.signoffType,
+      comments: parsed.data.comments ?? null,
+      statusAtSign: existing.status,
+      signedAt: new Date().toISOString(),
+    }),
+  );
   const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
 
   const ipHeader =
