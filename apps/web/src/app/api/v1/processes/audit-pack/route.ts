@@ -225,11 +225,14 @@ export async function POST(req: Request) {
     compression: "DEFLATE",
   });
 
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="audit-pack-${parsed.data.frameworkCode ?? "all"}-${Date.now()}.zip"`,
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="audit-pack-${parsed.data.frameworkCode ?? "all"}-${Date.now()}.zip"`,
+      },
     },
-  });
+  );
 }

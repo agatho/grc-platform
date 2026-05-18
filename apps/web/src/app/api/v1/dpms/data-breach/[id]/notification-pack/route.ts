@@ -132,11 +132,14 @@ export async function POST(
     type: "uint8array",
     compression: "DEFLATE",
   });
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="breach-pack-${id.slice(0, 8)}-${Date.now()}.zip"`,
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="breach-pack-${id.slice(0, 8)}-${Date.now()}.zip"`,
+      },
     },
-  });
+  );
 }

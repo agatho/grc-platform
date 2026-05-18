@@ -235,11 +235,14 @@ export async function POST(
     .replace(/[^A-Za-z0-9_-]+/g, "-")
     .slice(0, 50);
 
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="audit-pack-${safeTitle}-${Date.now()}.zip"`,
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="audit-pack-${safeTitle}-${Date.now()}.zip"`,
+      },
     },
-  });
+  );
 }
