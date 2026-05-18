@@ -37,8 +37,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = ingestSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -48,7 +55,9 @@ export async function POST(
     );
   }
 
-  const dates = parsed.data.events.map((e) => new Date(e.timestamp)).sort((a, b) => a.getTime() - b.getTime());
+  const dates = parsed.data.events
+    .map((e) => new Date(e.timestamp))
+    .sort((a, b) => a.getTime() - b.getTime());
   const dateRangeStart = dates[0]?.toISOString().slice(0, 10);
   const dateRangeEnd = dates[dates.length - 1]?.toISOString().slice(0, 10);
   const caseIds = new Set(parsed.data.events.map((e) => e.caseId));

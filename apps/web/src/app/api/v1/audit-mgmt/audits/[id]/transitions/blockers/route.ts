@@ -32,7 +32,8 @@ export async function GET(
       auditId: id,
       targetStatus: target,
       blockers,
-      canTransition: blockers.filter((b) => b.severity === "error").length === 0,
+      canTransition:
+        blockers.filter((b) => b.severity === "error").length === 0,
     },
   });
 }

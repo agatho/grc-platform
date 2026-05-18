@@ -20,13 +20,23 @@ export async function GET(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const url = new URL(req.url);
   const format = (url.searchParams.get("format") ?? "pdf").toLowerCase();
   if (!["csv", "pdf"].includes(format)) {
-    return Response.json({ error: "format must be csv or pdf" }, { status: 400 });
+    return Response.json(
+      { error: "format must be csv or pdf" },
+      { status: 400 },
+    );
   }
 
   const rows = await withReadContext(ctx, async (tx) => {
@@ -62,7 +72,10 @@ export async function GET(
   });
 
   if (rows.length === 0) {
-    return Response.json({ error: "No ROPA profile for this process" }, { status: 404 });
+    return Response.json(
+      { error: "No ROPA profile for this process" },
+      { status: 404 },
+    );
   }
 
   const [org] = await db
@@ -80,5 +93,8 @@ export async function GET(
       },
     });
   }
-  return renderHtmlToPdfResponse(rowsToHtml(rows, orgName), `ropa-process-${id.slice(0, 8)}`);
+  return renderHtmlToPdfResponse(
+    rowsToHtml(rows, orgName),
+    `ropa-process-${id.slice(0, 8)}`,
+  );
 }

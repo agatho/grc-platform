@@ -31,7 +31,10 @@ export async function POST(req: Request) {
     );
   }
 
-  const prompt = buildTextToBpmnPrompt(parsed.data.description, parsed.data.locale ?? "de");
+  const prompt = buildTextToBpmnPrompt(
+    parsed.data.description,
+    parsed.data.locale ?? "de",
+  );
 
   let response;
   try {
@@ -62,7 +65,10 @@ export async function POST(req: Request) {
   // Quick sanity check: must contain bpmn:definitions opening tag
   if (!/<bpmn:definitions/i.test(parsedResp.bpmnXml)) {
     return Response.json(
-      { error: "AI output is not valid BPMN XML", rawSample: parsedResp.bpmnXml.slice(0, 500) },
+      {
+        error: "AI output is not valid BPMN XML",
+        rawSample: parsedResp.bpmnXml.slice(0, 500),
+      },
       { status: 502 },
     );
   }

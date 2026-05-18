@@ -16,7 +16,11 @@ import {
   processStepAsset,
   processRisk,
 } from "@grc/db";
-import { processRopaProfile, processSignOff, processFrameworkMapping } from "@grc/db";
+import {
+  processRopaProfile,
+  processSignOff,
+  processFrameworkMapping,
+} from "@grc/db";
 
 interface SchemaWithRefs {
   // Drizzle table metadata — accessing internal `referencedTable` is brittle
@@ -24,7 +28,10 @@ interface SchemaWithRefs {
   [k: string]: unknown;
 }
 
-function getOnDeleteForFk(table: SchemaWithRefs, columnName: string): string | null {
+function getOnDeleteForFk(
+  table: SchemaWithRefs,
+  columnName: string,
+): string | null {
   // Drizzle stores FK metadata on a private symbol. We probe it via the
   // exported _ table introspection that's available on all pgTable rows.
   const cols = (table as any)[Symbol.for("drizzle:Columns")] ?? (table as any);
@@ -57,7 +64,11 @@ describe("process cascade-delete schema declarations", () => {
     ["process_risk.riskId", processRisk, "riskId"],
     ["process_ropa_profile.processId", processRopaProfile, "processId"],
     ["process_sign_off.processId", processSignOff, "processId"],
-    ["process_framework_mapping.processId", processFrameworkMapping, "processId"],
+    [
+      "process_framework_mapping.processId",
+      processFrameworkMapping,
+      "processId",
+    ],
   ] as const;
 
   for (const [label, table, col] of drizzleCascades) {

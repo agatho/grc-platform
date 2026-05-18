@@ -16,7 +16,12 @@ export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "vendor_manager", "compliance_officer", "ciso");
+  const ctx = await withAuth(
+    "admin",
+    "vendor_manager",
+    "compliance_officer",
+    "ciso",
+  );
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("tprm", ctx.orgId, req.method);
   if (m) return m;
@@ -25,7 +30,13 @@ export async function POST(
   const [v] = await db
     .select({ id: vendor.id })
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) return Response.json({ error: "Vendor not found" }, { status: 404 });
 
   const parsed = schema.safeParse(await req.json());
@@ -36,7 +47,10 @@ export async function POST(
     );
   }
 
-  if (parsed.data.doraCriticalIct === undefined && parsed.data.lksgTier1 === undefined) {
+  if (
+    parsed.data.doraCriticalIct === undefined &&
+    parsed.data.lksgTier1 === undefined
+  ) {
     return Response.json(
       { error: "At least one designation flag must be provided" },
       { status: 422 },
@@ -53,7 +67,8 @@ export async function POST(
       };
       if (parsed.data.doraCriticalIct !== undefined)
         update.doraCriticalIct = parsed.data.doraCriticalIct;
-      if (parsed.data.lksgTier1 !== undefined) update.lksgTier1 = parsed.data.lksgTier1;
+      if (parsed.data.lksgTier1 !== undefined)
+        update.lksgTier1 = parsed.data.lksgTier1;
       const [row] = await tx
         .update(vendor)
         .set(update)

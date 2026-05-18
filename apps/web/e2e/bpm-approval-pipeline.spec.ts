@@ -20,16 +20,23 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     // 1. Create process
     const name = `e2e-bpm-${Date.now()}`;
     const createRes = await request.post("/api/v1/processes", {
-      data: { name, description: "Overnight E2E test process for BPM overhaul.", level: 2 },
+      data: {
+        name,
+        description: "Overnight E2E test process for BPM overhaul.",
+        level: 2,
+      },
     });
     expect(createRes.ok(), await createRes.text()).toBeTruthy();
     const processId: string = (await createRes.json()).data.id;
     expect(processId).toBeTruthy();
 
     // 2. Attempt to transition to in_review with no owner → should 422 with blockers
-    const earlyTransition = await request.put(`/api/v1/processes/${processId}/status`, {
-      data: { status: "in_review" },
-    });
+    const earlyTransition = await request.put(
+      `/api/v1/processes/${processId}/status`,
+      {
+        data: { status: "in_review" },
+      },
+    );
     expect(earlyTransition.status()).toBe(422);
     const earlyBody = await earlyTransition.json();
     expect(earlyBody.blockers).toBeDefined();
@@ -57,15 +64,21 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     });
 
     // 4. draft → in_review (should pass now)
-    const inReview = await request.put(`/api/v1/processes/${processId}/status`, {
-      data: { status: "in_review" },
-    });
+    const inReview = await request.put(
+      `/api/v1/processes/${processId}/status`,
+      {
+        data: { status: "in_review" },
+      },
+    );
     expect(inReview.ok(), await inReview.text()).toBeTruthy();
 
     // 5. Sign-off (review) before approval
-    const signReview = await request.post(`/api/v1/processes/${processId}/sign-off`, {
-      data: { signerRole: "process_owner", signoffType: "review" },
-    });
+    const signReview = await request.post(
+      `/api/v1/processes/${processId}/sign-off`,
+      {
+        data: { signerRole: "process_owner", signoffType: "review" },
+      },
+    );
     expect(signReview.ok()).toBeTruthy();
 
     // 6. in_review → approved (needs step descriptions; we accept the gate-warning if any)
@@ -82,14 +95,18 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     }
 
     // 7. Verify sign-off chain is valid
-    const chainRes = await request.get(`/api/v1/processes/${processId}/sign-off`);
+    const chainRes = await request.get(
+      `/api/v1/processes/${processId}/sign-off`,
+    );
     expect(chainRes.ok()).toBeTruthy();
     const chain = await chainRes.json();
     expect(chain.data.chainValid).toBe(true);
     expect(chain.data.count).toBeGreaterThan(0);
 
     // 8. Audit trail includes the sign-off event
-    const trail = await request.get(`/api/v1/processes/${processId}/audit-trail?limit=50`);
+    const trail = await request.get(
+      `/api/v1/processes/${processId}/audit-trail?limit=50`,
+    );
     expect(trail.ok()).toBeTruthy();
     const trailJson = await trail.json();
     expect(Array.isArray(trailJson.data)).toBe(true);

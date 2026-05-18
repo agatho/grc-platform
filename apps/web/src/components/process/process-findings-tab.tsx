@@ -47,7 +47,10 @@ export function ProcessFindingsTab({ processId }: { processId: string }) {
     };
   }, [processId]);
 
-  if (loading) return <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />;
+  if (loading)
+    return (
+      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+    );
 
   if (findings.length === 0) {
     return (
@@ -59,8 +62,12 @@ export function ProcessFindingsTab({ processId }: { processId: string }) {
     );
   }
 
-  const open = findings.filter((f) => !["closed", "verified", "remediated"].includes(f.status));
-  const closed = findings.filter((f) => ["closed", "verified", "remediated"].includes(f.status));
+  const open = findings.filter(
+    (f) => !["closed", "verified", "remediated"].includes(f.status),
+  );
+  const closed = findings.filter((f) =>
+    ["closed", "verified", "remediated"].includes(f.status),
+  );
 
   return (
     <div className="space-y-4">
@@ -73,7 +80,9 @@ export function ProcessFindingsTab({ processId }: { processId: string }) {
         </CardHeader>
         <CardContent>
           {open.length === 0 ? (
-            <p className="text-center text-sm text-muted-foreground">All clear.</p>
+            <p className="text-center text-sm text-muted-foreground">
+              All clear.
+            </p>
           ) : (
             <FindingList findings={open} />
           )}
@@ -93,20 +102,32 @@ export function ProcessFindingsTab({ processId }: { processId: string }) {
   );
 }
 
-function FindingList({ findings, dim }: { findings: Finding[]; dim?: boolean }) {
+function FindingList({
+  findings,
+  dim,
+}: {
+  findings: Finding[];
+  dim?: boolean;
+}) {
   return (
     <ul className="divide-y">
       {findings.map((f) => (
         <li key={f.id} className={`py-2 ${dim ? "opacity-70" : ""}`}>
           <div className="flex items-center justify-between">
-            <Link href={`/findings/${f.id}`} className="font-medium hover:underline">
+            <Link
+              href={`/findings/${f.id}`}
+              className="font-medium hover:underline"
+            >
               {f.title}
             </Link>
-            <Badge className={sevColor[f.severity] ?? "bg-gray-100"}>{f.severity}</Badge>
+            <Badge className={sevColor[f.severity] ?? "bg-gray-100"}>
+              {f.severity}
+            </Badge>
           </div>
           <div className="mt-1 text-xs text-muted-foreground">
             via <em>{f.link_via}</em> · {f.status} · {f.source}
-            {f.remediation_due_date && ` · due ${new Date(f.remediation_due_date).toLocaleDateString()}`}
+            {f.remediation_due_date &&
+              ` · due ${new Date(f.remediation_due_date).toLocaleDateString()}`}
           </div>
         </li>
       ))}

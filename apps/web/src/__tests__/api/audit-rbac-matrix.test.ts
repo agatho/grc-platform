@@ -4,7 +4,16 @@ import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { join } from "node:path";
 
-const ROOT = join(__dirname, "..", "..", "app", "api", "v1", "audit-mgmt", "audits");
+const ROOT = join(
+  __dirname,
+  "..",
+  "..",
+  "app",
+  "api",
+  "v1",
+  "audit-mgmt",
+  "audits",
+);
 
 interface RouteSpec {
   path: string;
@@ -13,7 +22,11 @@ interface RouteSpec {
 }
 
 const MATRIX: RouteSpec[] = [
-  { path: "[id]/transitions/blockers/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "[id]/transitions/blockers/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   { path: "[id]/sign-off/route.ts", method: "GET", expectedRoles: [] },
   { path: "[id]/sign-off/route.ts", method: "POST", expectedRoles: [] },
   { path: "[id]/racm/route.ts", method: "GET", expectedRoles: [] },
@@ -21,7 +34,12 @@ const MATRIX: RouteSpec[] = [
   {
     path: "[id]/audit-pack/route.ts",
     method: "POST",
-    expectedRoles: ["admin", "auditor", "compliance_officer", "quality_manager"],
+    expectedRoles: [
+      "admin",
+      "auditor",
+      "compliance_officer",
+      "quality_manager",
+    ],
   },
   {
     path: "[id]/ai/generate-checklist/route.ts",
@@ -55,8 +73,13 @@ describe("Audit-Mgmt endpoint RBAC matrix", () => {
     it(`${spec.method} ${spec.path}: roles = [${spec.expectedRoles.join(",") || "any-authenticated"}]`, () => {
       const src = readFileSync(join(ROOT, spec.path), "utf8");
       const roles = extractRoles(src, spec.method);
-      expect(roles, `withAuth call for ${spec.method} not found`).not.toBeNull();
-      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(new Set(spec.expectedRoles));
+      expect(
+        roles,
+        `withAuth call for ${spec.method} not found`,
+      ).not.toBeNull();
+      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(
+        new Set(spec.expectedRoles),
+      );
     });
   }
 });

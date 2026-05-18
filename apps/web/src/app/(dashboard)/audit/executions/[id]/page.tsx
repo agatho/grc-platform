@@ -267,11 +267,14 @@ function ExecutionDetailInner() {
           size="sm"
           variant="outline"
           onClick={async () => {
-            const resp = await fetch(`/api/v1/audit-mgmt/audits/${audit.id}/audit-pack`, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: "{}",
-            });
+            const resp = await fetch(
+              `/api/v1/audit-mgmt/audits/${audit.id}/audit-pack`,
+              {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: "{}",
+              },
+            );
             if (!resp.ok) return;
             const blob = await resp.blob();
             const url = URL.createObjectURL(blob);

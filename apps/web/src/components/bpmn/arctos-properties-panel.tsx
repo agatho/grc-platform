@@ -140,7 +140,8 @@ export function ArctosPropertiesPanel({
     return (
       <Card>
         <CardContent className="py-6 text-sm text-muted-foreground">
-          This element has no DB-side step record yet — save the process to sync.
+          This element has no DB-side step record yet — save the process to
+          sync.
         </CardContent>
       </Card>
     );
@@ -164,7 +165,9 @@ export function ArctosPropertiesPanel({
               <SelectContent>
                 <SelectItem value="">(inherit)</SelectItem>
                 <SelectItem value="first">First (Operations)</SelectItem>
-                <SelectItem value="second">Second (Risk / Compliance)</SelectItem>
+                <SelectItem value="second">
+                  Second (Risk / Compliance)
+                </SelectItem>
                 <SelectItem value="third">Third (Audit)</SelectItem>
                 <SelectItem value="oversight">Oversight</SelectItem>
               </SelectContent>
@@ -202,8 +205,17 @@ export function ArctosPropertiesPanel({
               </SelectContent>
             </Select>
           </div>
-          <Button size="sm" onClick={saveLod} disabled={saving} className="w-full">
-            {saving ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Save className="mr-2 h-3 w-3" />}
+          <Button
+            size="sm"
+            onClick={saveLod}
+            disabled={saving}
+            className="w-full"
+          >
+            {saving ? (
+              <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-3 w-3" />
+            )}
             Save
           </Button>
         </CardContent>
@@ -212,7 +224,8 @@ export function ArctosPropertiesPanel({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">
-            <ShieldCheck className="h-4 w-4" /> Linked controls ({controls.length})
+            <ShieldCheck className="h-4 w-4" /> Linked controls (
+            {controls.length})
           </CardTitle>
         </CardHeader>
         <CardContent>

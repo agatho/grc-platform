@@ -31,7 +31,9 @@ test.describe("BPM — RACM endpoint perf", () => {
 
     const max = Math.max(...samples);
     const avg = samples.reduce((a, b) => a + b, 0) / samples.length;
-    console.log(`RACM perf samples (ms): ${samples.map((s) => s.toFixed(0)).join(", ")} avg=${avg.toFixed(0)} max=${max.toFixed(0)}`);
+    console.log(
+      `RACM perf samples (ms): ${samples.map((s) => s.toFixed(0)).join(", ")} avg=${avg.toFixed(0)} max=${max.toFixed(0)}`,
+    );
 
     // Soft cap — plan target is 1000ms but small dev DBs may not exercise the
     // critical path. Anything slower than 5s indicates a regression.

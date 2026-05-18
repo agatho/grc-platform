@@ -63,7 +63,10 @@ export async function GET(
       defaultLineOfDefense: existing.defaultLineOfDefense,
       counts: buckets,
       totalActivities: total,
-      coveragePct: total === 0 ? 0 : Math.round(((total - buckets.unassigned) / total) * 100),
+      coveragePct:
+        total === 0
+          ? 0
+          : Math.round(((total - buckets.unassigned) / total) * 100),
     },
   });
 }

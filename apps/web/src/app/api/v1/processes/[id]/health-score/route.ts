@@ -11,8 +11,8 @@ import { withAuth, withReadContext } from "@/lib/api";
 
 interface Component {
   key: string;
-  score: number;          // 0–100, higher = healthier
-  weight: number;         // sums to 1.0 across components
+  score: number; // 0–100, higher = healthier
+  weight: number; // sums to 1.0 across components
   note: string;
 }
 
@@ -33,8 +33,15 @@ export async function GET(
   const [existing] = await db
     .select({ id: process.id, name: process.name, status: process.status })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const data = await withReadContext(ctx, async (tx) => {
     const [risks] = (await tx.execute(sql`
@@ -113,7 +120,8 @@ export async function GET(
   // 2. Control coverage = controls / activities (saturates at 1+/activity)
   const totalSteps = Number(data.steps?.total ?? 0);
   const totalControls = Number(data.controls?.total ?? 0);
-  const coverage = totalSteps === 0 ? 0 : Math.min(1, totalControls / totalSteps);
+  const coverage =
+    totalSteps === 0 ? 0 : Math.min(1, totalControls / totalSteps);
   components.push({
     key: "control_coverage",
     score: Math.round(coverage * 100),
@@ -122,7 +130,10 @@ export async function GET(
   });
 
   // 3. Control effectiveness = effective / total controls
-  const eff = totalControls === 0 ? 0 : Number(data.controls?.effective ?? 0) / totalControls;
+  const eff =
+    totalControls === 0
+      ? 0
+      : Number(data.controls?.effective ?? 0) / totalControls;
   components.push({
     key: "control_effectiveness",
     score: Math.round(eff * 100),
@@ -133,7 +144,9 @@ export async function GET(
   // 4. Open findings (each open critical −20, others −5)
   const openCritical = Number(data.findings?.open_critical ?? 0);
   const openTotal = Number(data.findings?.open_count ?? 0);
-  const findingScore = clamp(100 - openCritical * 20 - (openTotal - openCritical) * 5);
+  const findingScore = clamp(
+    100 - openCritical * 20 - (openTotal - openCritical) * 5,
+  );
   components.push({
     key: "findings",
     score: Math.round(findingScore),

@@ -15,7 +15,13 @@ import {
 import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -106,19 +112,35 @@ export default function CockpitPage() {
       <div className="space-y-4 p-4">
         <div>
           <h1 className="text-2xl font-bold">{t("cockpit.title")}</h1>
-          <p className="text-sm text-muted-foreground">{t("cockpit.subtitle")}</p>
+          <p className="text-sm text-muted-foreground">
+            {t("cockpit.subtitle")}
+          </p>
         </div>
 
-        {loading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}
+        {loading && (
+          <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+        )}
 
         {data && (
           <>
             <div className="grid grid-cols-2 gap-3 md:grid-cols-5">
               <StatCard label="Total" value={data.stats.total} />
               <StatCard label="Draft" value={data.stats.draft} />
-              <StatCard label="In Review" value={data.stats.in_review} tone="info" />
-              <StatCard label="Approved" value={data.stats.approved} tone="warn" />
-              <StatCard label="Published" value={data.stats.published} tone="ok" />
+              <StatCard
+                label="In Review"
+                value={data.stats.in_review}
+                tone="info"
+              />
+              <StatCard
+                label="Approved"
+                value={data.stats.approved}
+                tone="warn"
+              />
+              <StatCard
+                label="Published"
+                value={data.stats.published}
+                tone="ok"
+              />
             </div>
 
             <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
@@ -130,7 +152,8 @@ export default function CockpitPage() {
                   <>
                     <strong>{r.name}</strong>
                     <div className="text-xs text-muted-foreground">
-                      Owner: {r.owner_name ?? "—"} · Reviewer: {r.reviewer_name ?? "—"}
+                      Owner: {r.owner_name ?? "—"} · Reviewer:{" "}
+                      {r.reviewer_name ?? "—"}
                     </div>
                   </>
                 )}
@@ -165,22 +188,30 @@ export default function CockpitPage() {
                     </p>
                   ) : (
                     <ul className="max-h-96 space-y-1 overflow-auto">
-                      {data.quadrants.pendingApproval.slice(0, 25).map((r: any) => (
-                        <li key={r.id} className="flex items-start gap-2 rounded p-2 hover:bg-muted">
-                          <input
-                            type="checkbox"
-                            className="mt-1"
-                            checked={selected.has(r.id)}
-                            onChange={() => toggleSelect(r.id)}
-                          />
-                          <Link href={`/processes/${r.id}`} className="flex-1 block">
-                            <strong>{r.name}</strong>
-                            <div className="text-xs text-muted-foreground">
-                              Owner: {r.owner_name ?? "—"}
-                            </div>
-                          </Link>
-                        </li>
-                      ))}
+                      {data.quadrants.pendingApproval
+                        .slice(0, 25)
+                        .map((r: any) => (
+                          <li
+                            key={r.id}
+                            className="flex items-start gap-2 rounded p-2 hover:bg-muted"
+                          >
+                            <input
+                              type="checkbox"
+                              className="mt-1"
+                              checked={selected.has(r.id)}
+                              onChange={() => toggleSelect(r.id)}
+                            />
+                            <Link
+                              href={`/processes/${r.id}`}
+                              className="flex-1 block"
+                            >
+                              <strong>{r.name}</strong>
+                              <div className="text-xs text-muted-foreground">
+                                Owner: {r.owner_name ?? "—"}
+                              </div>
+                            </Link>
+                          </li>
+                        ))}
                     </ul>
                   )}
                 </CardContent>
@@ -194,7 +225,9 @@ export default function CockpitPage() {
                     <strong>{r.name}</strong>
                     <div className="text-xs text-muted-foreground">
                       Owner: {r.owner_name ?? "—"} · Due:{" "}
-                      {r.review_date ? new Date(r.review_date).toLocaleDateString() : "—"}
+                      {r.review_date
+                        ? new Date(r.review_date).toLocaleDateString()
+                        : "—"}
                     </div>
                   </>
                 )}
@@ -269,7 +302,9 @@ function Quadrant({
       </CardHeader>
       <CardContent>
         {rows.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">Nothing here. </p>
+          <p className="text-center text-sm text-muted-foreground">
+            Nothing here.{" "}
+          </p>
         ) : (
           <ul className="max-h-96 space-y-1 overflow-auto">
             {rows.slice(0, 25).map((r, i) => (

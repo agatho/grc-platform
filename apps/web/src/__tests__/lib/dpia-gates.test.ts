@@ -26,7 +26,9 @@ const baseDpia = {
 describe("evaluateDpiaGates", () => {
   it("draft → in_progress: requires description + legal basis", async () => {
     const blockers = await evaluateDpiaGates({
-      tx: mkTx([{ ...baseDpia, processing_description: "short", legal_basis: null }]) as any,
+      tx: mkTx([
+        { ...baseDpia, processing_description: "short", legal_basis: null },
+      ]) as any,
       dpiaId: "d1",
       orgId: "o1",
       target: "in_progress" as DpiaStatus,
@@ -50,7 +52,9 @@ describe("evaluateDpiaGates", () => {
 
   it("pending_dpo_review → approved: requires DPO opinion", async () => {
     const blockers = await evaluateDpiaGates({
-      tx: mkTx([{ ...baseDpia, dpo_opinion: null, risk_count: 3, measure_count: 5 }]) as any,
+      tx: mkTx([
+        { ...baseDpia, dpo_opinion: null, risk_count: 3, measure_count: 5 },
+      ]) as any,
       dpiaId: "d1",
       orgId: "o1",
       target: "approved" as DpiaStatus,

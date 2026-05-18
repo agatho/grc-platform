@@ -22,8 +22,15 @@ export async function GET(
   const [existing] = await db
     .select({ id: audit.id, title: audit.title })
     .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)));
-  if (!existing) return Response.json({ error: "Audit not found" }, { status: 404 });
+    .where(
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Audit not found" }, { status: 404 });
 
   const rows = await withReadContext(ctx, async (tx) => {
     return tx.execute(sql`
@@ -75,5 +82,7 @@ export async function GET(
     },
   );
 
-  return Response.json({ data: { auditId: id, auditTitle: existing.title, rows, summary } });
+  return Response.json({
+    data: { auditId: id, auditTitle: existing.title, rows, summary },
+  });
 }

@@ -24,8 +24,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = bulkSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -48,7 +55,10 @@ export async function POST(
   const validIds = new Set(validControls.map((c) => c.id));
   const invalid = parsed.data.controlIds.filter((cid) => !validIds.has(cid));
   if (invalid.length) {
-    return Response.json({ error: "Some controls not found", details: { invalid } }, { status: 422 });
+    return Response.json(
+      { error: "Some controls not found", details: { invalid } },
+      { status: 422 },
+    );
   }
 
   const result = await withAuditContext(
@@ -79,7 +89,9 @@ export async function POST(
       );
       return { created: toInsert.length, skippedDuplicates: skip.size };
     },
-    { actionDetail: `Bulk-linked ${parsed.data.controlIds.length} controls to process` },
+    {
+      actionDetail: `Bulk-linked ${parsed.data.controlIds.length} controls to process`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });

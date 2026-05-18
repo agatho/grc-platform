@@ -11,7 +11,10 @@ export async function GET(req: Request) {
   if (m) return m;
 
   const url = new URL(req.url);
-  const horizonDays = Math.min(365, Math.max(1, parseInt(url.searchParams.get("horizonDays") ?? "90", 10)));
+  const horizonDays = Math.min(
+    365,
+    Math.max(1, parseInt(url.searchParams.get("horizonDays") ?? "90", 10)),
+  );
 
   const data = await withReadContext(ctx, async (tx) => {
     const overdue = await tx.execute(sql`

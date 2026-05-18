@@ -25,12 +25,20 @@ export async function POST(
   const [v] = await db
     .select()
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) return Response.json({ error: "Vendor not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
-  const servicesProvided = body.success ? body.data.servicesProvided ?? null : null;
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
+  const servicesProvided = body.success
+    ? (body.data.servicesProvided ?? null)
+    : null;
 
   const prompt = buildVendorClassifyPrompt({
     vendorName: v.name,
@@ -42,7 +50,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 800, temperature: 0.2 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 800,
+      temperature: 0.2,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },

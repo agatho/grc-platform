@@ -1,7 +1,11 @@
 // BPM Overhaul Phase 7: Suggest controls for a process.
 
 import { db, process, processStep, control } from "@grc/db";
-import { aiComplete, buildControlSuggestionPrompt, safeJsonParse } from "@grc/ai";
+import {
+  aiComplete,
+  buildControlSuggestionPrompt,
+  safeJsonParse,
+} from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -28,13 +32,24 @@ export async function POST(
 
   const { id } = await params;
   const [existing] = await db
-    .select({ id: process.id, name: process.name, description: process.description })
+    .select({
+      id: process.id,
+      name: process.name,
+      description: process.description,
+    })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const steps = await db
     .select({ name: processStep.name })
@@ -80,7 +95,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 1500, temperature: 0.4 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 1500,
+      temperature: 0.4,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },
@@ -90,6 +109,10 @@ export async function POST(
 
   const parsed = safeJsonParse<{ controls?: Suggestion[] }>(resp.text);
   return Response.json({
-    data: { suggestions: parsed?.controls ?? [], provider: resp.provider, model: resp.model },
+    data: {
+      suggestions: parsed?.controls ?? [],
+      provider: resp.provider,
+      model: resp.model,
+    },
   });
 }

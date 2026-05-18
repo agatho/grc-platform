@@ -82,7 +82,10 @@ export async function POST(req: Request) {
             stepType: step.stepType,
             sequenceOrder: step.sequenceOrder,
           })
-          .returning({ id: processStep.id, bpmnElementId: processStep.bpmnElementId });
+          .returning({
+            id: processStep.id,
+            bpmnElementId: processStep.bpmnElementId,
+          });
         stepIdByBpmnElement.set(row.bpmnElementId, row.id);
       }
 
@@ -101,7 +104,12 @@ export async function POST(req: Request) {
         console.error("arctos rehydrate during import failed", e);
       }
 
-      return { process: newProcess, version, stepCount: parsedSteps.length, rehydrateStats };
+      return {
+        process: newProcess,
+        version,
+        stepCount: parsedSteps.length,
+        rehydrateStats,
+      };
     },
     { actionDetail: `Imported process "${parsed.data.name}"` },
   );

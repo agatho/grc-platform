@@ -1,6 +1,13 @@
 // BPM Overhaul Phase 7: Suggest risks for a process.
 
-import { db, process, processStep, processRisk, processStepRisk, risk } from "@grc/db";
+import {
+  db,
+  process,
+  processStep,
+  processRisk,
+  processStepRisk,
+  risk,
+} from "@grc/db";
 import { aiComplete, buildRiskSuggestionPrompt, safeJsonParse } from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, inArray, sql } from "drizzle-orm";
@@ -29,13 +36,24 @@ export async function POST(
 
   const { id } = await params;
   const [existing] = await db
-    .select({ id: process.id, name: process.name, description: process.description })
+    .select({
+      id: process.id,
+      name: process.name,
+      description: process.description,
+    })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const steps = await db
     .select({ name: processStep.name })
@@ -68,7 +86,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 1500, temperature: 0.5 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 1500,
+      temperature: 0.5,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },

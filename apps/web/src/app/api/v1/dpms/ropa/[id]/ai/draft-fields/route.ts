@@ -25,16 +25,23 @@ export async function POST(
   const [r] = await db
     .select()
     .from(ropaEntry)
-    .where(and(eq(ropaEntry.id, id), eq(ropaEntry.orgId, ctx.orgId), isNull(ropaEntry.deletedAt)));
-  if (!r) return Response.json({ error: "ROPA entry not found" }, { status: 404 });
+    .where(
+      and(
+        eq(ropaEntry.id, id),
+        eq(ropaEntry.orgId, ctx.orgId),
+        isNull(ropaEntry.deletedAt),
+      ),
+    );
+  if (!r)
+    return Response.json({ error: "ROPA entry not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const prompt = buildRopaFieldDraftPrompt({
     ropaTitle: r.title,
     processingDescription: r.processingDescription,
-    hint: body.success ? body.data.hint ?? null : null,
+    hint: body.success ? (body.data.hint ?? null) : null,
     locale,
   });
 

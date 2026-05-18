@@ -5,7 +5,14 @@
 //   - effectivenessAvg: % of controls in effective state
 //   - per-activity control list with status
 
-import { db, process, processStep, processStepControl, processControl, control } from "@grc/db";
+import {
+  db,
+  process,
+  processStep,
+  processStepControl,
+  processControl,
+  control,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -49,8 +56,17 @@ export async function GET(
       designedCount: sql<number>`SUM(CASE WHEN ${control.status} = 'designed' THEN 1 ELSE 0 END)::int`,
     })
     .from(processStep)
-    .leftJoin(processStepControl, eq(processStep.id, processStepControl.processStepId))
-    .leftJoin(control, and(eq(control.id, processStepControl.controlId), isNull(control.deletedAt)))
+    .leftJoin(
+      processStepControl,
+      eq(processStep.id, processStepControl.processStepId),
+    )
+    .leftJoin(
+      control,
+      and(
+        eq(control.id, processStepControl.controlId),
+        isNull(control.deletedAt),
+      ),
+    )
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)))
     .groupBy(processStep.id, processStep.bpmnElementId, processStep.name);
 
@@ -62,13 +78,24 @@ export async function GET(
       status: control.status,
     })
     .from(processControl)
-    .innerJoin(control, and(eq(control.id, processControl.controlId), isNull(control.deletedAt)))
+    .innerJoin(
+      control,
+      and(eq(control.id, processControl.controlId), isNull(control.deletedAt)),
+    )
     .where(eq(processControl.processId, id));
 
   const totalActivities = perStep.length;
-  const activitiesWithoutControl = perStep.filter((s) => (s.controlCount ?? 0) === 0).length;
-  const totalControls = perStep.reduce((acc, s) => acc + (s.controlCount ?? 0), 0);
-  const totalEffective = perStep.reduce((acc, s) => acc + (s.effectiveCount ?? 0), 0);
+  const activitiesWithoutControl = perStep.filter(
+    (s) => (s.controlCount ?? 0) === 0,
+  ).length;
+  const totalControls = perStep.reduce(
+    (acc, s) => acc + (s.controlCount ?? 0),
+    0,
+  );
+  const totalEffective = perStep.reduce(
+    (acc, s) => acc + (s.effectiveCount ?? 0),
+    0,
+  );
 
   return Response.json({
     data: {
@@ -81,11 +108,17 @@ export async function GET(
         coveragePct:
           totalActivities === 0
             ? 0
-            : Math.round(((totalActivities - activitiesWithoutControl) / totalActivities) * 100),
+            : Math.round(
+                ((totalActivities - activitiesWithoutControl) /
+                  totalActivities) *
+                  100,
+              ),
         totalControls,
         effectiveCount: totalEffective,
         effectivenessAvgPct:
-          totalControls === 0 ? 0 : Math.round((totalEffective / totalControls) * 100),
+          totalControls === 0
+            ? 0
+            : Math.round((totalEffective / totalControls) * 100),
       },
     },
   });

@@ -19,7 +19,13 @@ export async function GET(
   const [a] = await db
     .select({ id: audit.id, scopeProcesses: audit.scopeProcesses })
     .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)));
+    .where(
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
+    );
   if (!a) return Response.json({ error: "Audit not found" }, { status: 404 });
 
   const data = await withReadContext(ctx, async (tx) => {

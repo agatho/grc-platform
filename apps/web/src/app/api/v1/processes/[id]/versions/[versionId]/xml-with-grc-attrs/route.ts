@@ -24,8 +24,15 @@ export async function GET(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const [version] = await db
     .select({
@@ -34,7 +41,9 @@ export async function GET(
       bpmnXml: processVersion.bpmnXml,
     })
     .from(processVersion)
-    .where(and(eq(processVersion.id, versionId), eq(processVersion.processId, id)));
+    .where(
+      and(eq(processVersion.id, versionId), eq(processVersion.processId, id)),
+    );
   if (!version || !version.bpmnXml) {
     return Response.json({ error: "Version not found" }, { status: 404 });
   }

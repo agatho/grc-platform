@@ -42,7 +42,8 @@ const ropaProfileSchema = z.object({
 
 function autoDpiaFlag(input: z.infer<typeof ropaProfileSchema>): boolean {
   const highRisk =
-    (input.specialCategories?.length ?? 0) > 0 || input.thirdCountryTransfers === true;
+    (input.specialCategories?.length ?? 0) > 0 ||
+    input.thirdCountryTransfers === true;
   return input.requiresDpia ?? highRisk;
 }
 

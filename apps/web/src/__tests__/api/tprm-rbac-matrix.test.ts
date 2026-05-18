@@ -13,10 +13,18 @@ interface RouteSpec {
 }
 
 const MATRIX: RouteSpec[] = [
-  { path: "vendors/[id]/transitions/blockers/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "vendors/[id]/transitions/blockers/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   { path: "vendors/[id]/sign-off/route.ts", method: "POST", expectedRoles: [] },
   { path: "vendors/[id]/sign-off/route.ts", method: "GET", expectedRoles: [] },
-  { path: "vendors/[id]/cross-module/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "vendors/[id]/cross-module/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   {
     path: "vendors/[id]/onboarding-pack/route.ts",
     method: "POST",
@@ -37,8 +45,16 @@ const MATRIX: RouteSpec[] = [
     method: "POST",
     expectedRoles: ["admin", "vendor_manager", "compliance_officer"],
   },
-  { path: "contracts/renewal-watch/route.ts", method: "GET", expectedRoles: [] },
-  { path: "contracts/[id]/obligations-status/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "contracts/renewal-watch/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
+  {
+    path: "contracts/[id]/obligations-status/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
 ];
 
 function extractRoles(src: string, method: string): string[] | null {
@@ -62,7 +78,9 @@ describe("TPRM endpoint RBAC matrix", () => {
       const src = readFileSync(join(ROOT, spec.path), "utf8");
       const roles = extractRoles(src, spec.method);
       expect(roles).not.toBeNull();
-      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(new Set(spec.expectedRoles));
+      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(
+        new Set(spec.expectedRoles),
+      );
     });
   }
 });

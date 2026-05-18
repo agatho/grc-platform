@@ -2,7 +2,10 @@
 
 import { withAuth, withReadContext } from "@/lib/api";
 import { requireModule } from "@grc/auth";
-import { evaluateTransitionGates, type ProcessStatus } from "@/lib/process-gates";
+import {
+  evaluateTransitionGates,
+  type ProcessStatus,
+} from "@/lib/process-gates";
 
 export async function GET(
   req: Request,
@@ -18,7 +21,10 @@ export async function GET(
   const target = url.searchParams.get("target") as ProcessStatus | null;
   if (!target) {
     return Response.json(
-      { error: "Query parameter `target` is required (in_review|approved|published)" },
+      {
+        error:
+          "Query parameter `target` is required (in_review|approved|published)",
+      },
       { status: 400 },
     );
   }
@@ -32,7 +38,8 @@ export async function GET(
       processId: id,
       targetStatus: target,
       blockers,
-      canTransition: blockers.filter((b) => b.severity === "error").length === 0,
+      canTransition:
+        blockers.filter((b) => b.severity === "error").length === 0,
     },
   });
 }

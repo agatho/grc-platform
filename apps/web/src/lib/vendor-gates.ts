@@ -51,7 +51,14 @@ export async function evaluateVendorGates({
   `)) as any[];
 
   if (!v) {
-    return [{ code: "vendor_not_found", gate: "preflight", message: "Vendor not found", severity: "error" }];
+    return [
+      {
+        code: "vendor_not_found",
+        gate: "preflight",
+        message: "Vendor not found",
+        severity: "error",
+      },
+    ];
   }
 
   // prospect → onboarding
@@ -80,7 +87,8 @@ export async function evaluateVendorGates({
       blockers.push({
         code: "no_dd_completed",
         gate: "onboarding_to_active",
-        message: "At least one due-diligence must be completed before activation.",
+        message:
+          "At least one due-diligence must be completed before activation.",
         severity: "error",
       });
     }
@@ -96,7 +104,8 @@ export async function evaluateVendorGates({
       blockers.push({
         code: "dora_exit_plan_required",
         gate: "onboarding_to_active",
-        message: "DORA-critical-ICT vendor requires an approved exit plan (Art. 28(8) RTS).",
+        message:
+          "DORA-critical-ICT vendor requires an approved exit plan (Art. 28(8) RTS).",
         severity: "error",
       });
     }
@@ -116,7 +125,8 @@ export async function evaluateVendorGates({
       blockers.push({
         code: "exit_plan_required_for_dora_critical",
         gate: "active_to_terminated",
-        message: "DORA-critical vendor cannot be exited without an activated exit plan.",
+        message:
+          "DORA-critical vendor cannot be exited without an activated exit plan.",
         severity: "error",
       });
     }

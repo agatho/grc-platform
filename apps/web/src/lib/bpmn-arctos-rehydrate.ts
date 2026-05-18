@@ -6,7 +6,10 @@
 // links unless explicitly requested.
 
 import { sql } from "drizzle-orm";
-import { extractGrcMetadata, type GrcMetadata } from "@/components/bpmn/arctos-grc-extractor";
+import {
+  extractGrcMetadata,
+  type GrcMetadata,
+} from "@/components/bpmn/arctos-grc-extractor";
 
 interface RehydrateArgs {
   tx: any;
@@ -25,7 +28,9 @@ export interface RehydrationStats {
   ropaProfilesUpdated: number;
 }
 
-export async function rehydrateFromBpmnXml(args: RehydrateArgs): Promise<RehydrationStats> {
+export async function rehydrateFromBpmnXml(
+  args: RehydrateArgs,
+): Promise<RehydrationStats> {
   const stats: RehydrationStats = {
     riskLinksAdded: 0,
     controlLinksAdded: 0,

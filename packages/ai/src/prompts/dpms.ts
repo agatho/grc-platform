@@ -37,7 +37,11 @@ Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
 export function buildDpiaMeasureDraftPrompt(args: {
   dpiaTitle: string;
   processingDescription: string | null;
-  identifiedRisks: Array<{ title: string; description?: string | null; inherentRiskScore?: number | null }>;
+  identifiedRisks: Array<{
+    title: string;
+    description?: string | null;
+    inherentRiskScore?: number | null;
+  }>;
   locale?: "de" | "en";
 }) {
   const locale = args.locale ?? "de";

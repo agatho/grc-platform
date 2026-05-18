@@ -15,9 +15,22 @@ describe("evaluateAuditGates", () => {
   it("planned → preparation: requires lead auditor", async () => {
     const tx = mkTx({
       audit: [
-        { id: "a1", status: "planned", lead_auditor_id: null, scope_description: "x".repeat(30) },
+        {
+          id: "a1",
+          status: "planned",
+          lead_auditor_id: null,
+          scope_description: "x".repeat(30),
+        },
       ],
-      stats: [{ checklist_count: 0, item_count: 0, unrated_items: 0, evidence_count: 0, open_finding_count: 0 }],
+      stats: [
+        {
+          checklist_count: 0,
+          item_count: 0,
+          unrated_items: 0,
+          evidence_count: 0,
+          open_finding_count: 0,
+        },
+      ],
     });
     const blockers = await evaluateAuditGates({
       tx: tx as any,
@@ -31,9 +44,22 @@ describe("evaluateAuditGates", () => {
   it("preparation → fieldwork: requires checklist + items", async () => {
     const tx = mkTx({
       audit: [
-        { id: "a1", status: "preparation", lead_auditor_id: "u1", scope_description: "x".repeat(30) },
+        {
+          id: "a1",
+          status: "preparation",
+          lead_auditor_id: "u1",
+          scope_description: "x".repeat(30),
+        },
       ],
-      stats: [{ checklist_count: 0, item_count: 0, unrated_items: 0, evidence_count: 0, open_finding_count: 0 }],
+      stats: [
+        {
+          checklist_count: 0,
+          item_count: 0,
+          unrated_items: 0,
+          evidence_count: 0,
+          open_finding_count: 0,
+        },
+      ],
     });
     const blockers = await evaluateAuditGates({
       tx: tx as any,
@@ -49,9 +75,22 @@ describe("evaluateAuditGates", () => {
   it("fieldwork → reporting: requires all items rated", async () => {
     const tx = mkTx({
       audit: [
-        { id: "a1", status: "fieldwork", lead_auditor_id: "u1", scope_description: "x".repeat(30) },
+        {
+          id: "a1",
+          status: "fieldwork",
+          lead_auditor_id: "u1",
+          scope_description: "x".repeat(30),
+        },
       ],
-      stats: [{ checklist_count: 1, item_count: 10, unrated_items: 3, evidence_count: 0, open_finding_count: 0 }],
+      stats: [
+        {
+          checklist_count: 1,
+          item_count: 10,
+          unrated_items: 3,
+          evidence_count: 0,
+          open_finding_count: 0,
+        },
+      ],
     });
     const blockers = await evaluateAuditGates({
       tx: tx as any,
@@ -65,9 +104,23 @@ describe("evaluateAuditGates", () => {
   it("reporting → review: requires conclusion", async () => {
     const tx = mkTx({
       audit: [
-        { id: "a1", status: "reporting", lead_auditor_id: "u1", scope_description: "x".repeat(30), conclusion: null },
+        {
+          id: "a1",
+          status: "reporting",
+          lead_auditor_id: "u1",
+          scope_description: "x".repeat(30),
+          conclusion: null,
+        },
       ],
-      stats: [{ checklist_count: 1, item_count: 10, unrated_items: 0, evidence_count: 5, open_finding_count: 0 }],
+      stats: [
+        {
+          checklist_count: 1,
+          item_count: 10,
+          unrated_items: 0,
+          evidence_count: 5,
+          open_finding_count: 0,
+        },
+      ],
     });
     const blockers = await evaluateAuditGates({
       tx: tx as any,
@@ -90,7 +143,15 @@ describe("evaluateAuditGates", () => {
           report_document_id: null,
         },
       ],
-      stats: [{ checklist_count: 1, item_count: 10, unrated_items: 0, evidence_count: 5, open_finding_count: 3 }],
+      stats: [
+        {
+          checklist_count: 1,
+          item_count: 10,
+          unrated_items: 0,
+          evidence_count: 5,
+          open_finding_count: 3,
+        },
+      ],
     });
     const blockers = await evaluateAuditGates({
       tx: tx as any,

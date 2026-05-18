@@ -13,7 +13,13 @@ import {
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -22,7 +28,13 @@ interface RacmRow {
   bpmnElementId: string;
   stepName: string | null;
   lineOfDefense: string | null;
-  risks: Array<{ id: string; title: string; inherent: number | null; residual: number | null; status: string }>;
+  risks: Array<{
+    id: string;
+    title: string;
+    inherent: number | null;
+    residual: number | null;
+    status: string;
+  }>;
   controls: Array<{
     id: string;
     title: string;
@@ -32,7 +44,12 @@ interface RacmRow {
     latestToeResult: string | null;
     latestTestDate: string | null;
   }>;
-  findings: Array<{ id: string; title: string; severity: string; status: string }>;
+  findings: Array<{
+    id: string;
+    title: string;
+    severity: string;
+    status: string;
+  }>;
 }
 
 interface RacmResponse {
@@ -93,7 +110,12 @@ export default function RacmPage() {
       "Activity,LineOfDefense,Risk,Inherent,Residual,Control,ControlStatus,ToE,Finding,FindingSeverity",
     ];
     for (const r of data.rows) {
-      const maxN = Math.max(r.risks.length, r.controls.length, r.findings.length, 1);
+      const maxN = Math.max(
+        r.risks.length,
+        r.controls.length,
+        r.findings.length,
+        1,
+      );
       for (let i = 0; i < maxN; i++) {
         const risk = r.risks[i];
         const ctrl = r.controls[i];
@@ -114,7 +136,9 @@ export default function RacmPage() {
         );
       }
     }
-    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8" });
+    const blob = new Blob([lines.join("\n")], {
+      type: "text/csv;charset=utf-8",
+    });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
@@ -135,7 +159,12 @@ export default function RacmPage() {
           >
             <ArrowLeft className="mr-1 h-4 w-4" /> Back to process
           </Link>
-          <Button size="sm" variant="outline" onClick={exportCsv} disabled={!data}>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={exportCsv}
+            disabled={!data}
+          >
             <Download className="mr-2 h-4 w-4" /> Export CSV
           </Button>
         </div>
@@ -147,15 +176,17 @@ export default function RacmPage() {
               {data?.processName ?? "…"}
               {data && (
                 <span className="ml-3 text-xs">
-                  {data.counts.totalActivities} activities · {data.counts.totalRisks} risks ·
-                  {" "}
-                  {data.counts.totalControls} controls · {data.counts.totalFindings} findings
+                  {data.counts.totalActivities} activities ·{" "}
+                  {data.counts.totalRisks} risks · {data.counts.totalControls}{" "}
+                  controls · {data.counts.totalFindings} findings
                 </span>
               )}
             </CardDescription>
           </CardHeader>
           <CardContent>
-            {loading && <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />}
+            {loading && (
+              <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+            )}
             {!loading && data && data.rows.length === 0 && (
               <p className="text-center text-sm text-muted-foreground">
                 This process has no activities yet.
@@ -191,16 +222,23 @@ export default function RacmPage() {
                             {r.lineOfDefense ? (
                               <Badge variant="outline">{r.lineOfDefense}</Badge>
                             ) : (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
                             )}
                           </td>
                           <td className="px-3 py-2">
                             {r.risks.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">No risks</span>
+                              <span className="text-xs text-muted-foreground">
+                                No risks
+                              </span>
                             ) : (
                               <ul className="space-y-1">
                                 {r.risks.map((risk) => (
-                                  <li key={risk.id} className="flex items-center gap-2">
+                                  <li
+                                    key={risk.id}
+                                    className="flex items-center gap-2"
+                                  >
                                     <ShieldAlert className="h-3 w-3 text-amber-600" />
                                     <Link
                                       href={`/risks/${risk.id}`}
@@ -209,7 +247,8 @@ export default function RacmPage() {
                                       {risk.title}
                                     </Link>
                                     <span className="text-xs text-muted-foreground">
-                                      I:{risk.inherent ?? "—"} R:{risk.residual ?? "—"}
+                                      I:{risk.inherent ?? "—"} R:
+                                      {risk.residual ?? "—"}
                                     </span>
                                   </li>
                                 ))}
@@ -218,11 +257,16 @@ export default function RacmPage() {
                           </td>
                           <td className="px-3 py-2">
                             {r.controls.length === 0 ? (
-                              <span className="text-xs text-red-600">No controls</span>
+                              <span className="text-xs text-red-600">
+                                No controls
+                              </span>
                             ) : (
                               <ul className="space-y-1">
                                 {r.controls.map((ctrl) => (
-                                  <li key={ctrl.id} className="flex items-center gap-2">
+                                  <li
+                                    key={ctrl.id}
+                                    className="flex items-center gap-2"
+                                  >
                                     <ShieldCheck className="h-3 w-3 text-emerald-600" />
                                     <Link
                                       href={`/controls/${ctrl.id}`}
@@ -232,7 +276,9 @@ export default function RacmPage() {
                                     </Link>
                                     <Badge
                                       variant="outline"
-                                      className={ctrlStatusBadge[ctrl.status] ?? ""}
+                                      className={
+                                        ctrlStatusBadge[ctrl.status] ?? ""
+                                      }
                                     >
                                       {ctrl.status}
                                     </Badge>
@@ -248,11 +294,16 @@ export default function RacmPage() {
                           </td>
                           <td className="px-3 py-2">
                             {r.findings.length === 0 ? (
-                              <span className="text-xs text-muted-foreground">—</span>
+                              <span className="text-xs text-muted-foreground">
+                                —
+                              </span>
                             ) : (
                               <ul className="space-y-1">
                                 {r.findings.map((f) => (
-                                  <li key={f.id} className="flex items-center gap-2">
+                                  <li
+                                    key={f.id}
+                                    className="flex items-center gap-2"
+                                  >
                                     <AlertOctagon className="h-3 w-3 text-red-600" />
                                     <Link
                                       href={`/findings/${f.id}`}
@@ -260,7 +311,9 @@ export default function RacmPage() {
                                     >
                                       {f.title}
                                     </Link>
-                                    <Badge className={sevBadge[f.severity] ?? ""}>
+                                    <Badge
+                                      className={sevBadge[f.severity] ?? ""}
+                                    >
                                       {f.severity}
                                     </Badge>
                                   </li>

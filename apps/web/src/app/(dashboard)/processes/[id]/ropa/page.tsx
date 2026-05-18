@@ -7,7 +7,13 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save, AlertTriangle } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -107,7 +113,9 @@ export default function RopaProfilePage() {
   }, [processId, profile, reload]);
 
   if (loading) {
-    return <Loader2 className="mx-auto mt-12 h-6 w-6 animate-spin text-muted-foreground" />;
+    return (
+      <Loader2 className="mx-auto mt-12 h-6 w-6 animate-spin text-muted-foreground" />
+    );
   }
 
   return (
@@ -124,8 +132,8 @@ export default function RopaProfilePage() {
           <CardHeader>
             <CardTitle>GDPR Art. 30 — ROPA Profile</CardTitle>
             <CardDescription>
-              Record of processing activity for this process. Auto-flags DPIA when high-risk
-              indicators are present.
+              Record of processing activity for this process. Auto-flags DPIA
+              when high-risk indicators are present.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -145,7 +153,10 @@ export default function RopaProfilePage() {
                   <Textarea
                     value={profile.processingPurpose ?? ""}
                     onChange={(e) =>
-                      setProfile({ ...profile, processingPurpose: e.target.value })
+                      setProfile({
+                        ...profile,
+                        processingPurpose: e.target.value,
+                      })
                     }
                   />
                 </Field>
@@ -153,7 +164,9 @@ export default function RopaProfilePage() {
                 <Field label="Legal basis (Art. 6)">
                   <Select
                     value={profile.legalBasis ?? ""}
-                    onValueChange={(v) => setProfile({ ...profile, legalBasis: v })}
+                    onValueChange={(v) =>
+                      setProfile({ ...profile, legalBasis: v })
+                    }
                   >
                     <SelectTrigger>
                       <SelectValue placeholder="Choose legal basis" />
@@ -161,10 +174,18 @@ export default function RopaProfilePage() {
                     <SelectContent>
                       <SelectItem value="consent">Consent</SelectItem>
                       <SelectItem value="contract">Contract</SelectItem>
-                      <SelectItem value="legal_obligation">Legal obligation</SelectItem>
-                      <SelectItem value="vital_interest">Vital interest</SelectItem>
-                      <SelectItem value="public_interest">Public interest</SelectItem>
-                      <SelectItem value="legitimate_interest">Legitimate interest</SelectItem>
+                      <SelectItem value="legal_obligation">
+                        Legal obligation
+                      </SelectItem>
+                      <SelectItem value="vital_interest">
+                        Vital interest
+                      </SelectItem>
+                      <SelectItem value="public_interest">
+                        Public interest
+                      </SelectItem>
+                      <SelectItem value="legitimate_interest">
+                        Legitimate interest
+                      </SelectItem>
                     </SelectContent>
                   </Select>
                 </Field>
@@ -173,7 +194,10 @@ export default function RopaProfilePage() {
                   <Textarea
                     value={profile.legalBasisDetail ?? ""}
                     onChange={(e) =>
-                      setProfile({ ...profile, legalBasisDetail: e.target.value })
+                      setProfile({
+                        ...profile,
+                        legalBasisDetail: e.target.value,
+                      })
                     }
                   />
                 </Field>
@@ -218,7 +242,10 @@ export default function RopaProfilePage() {
                   <Input
                     value={csvField(profile.recipients)}
                     onChange={(e) =>
-                      setProfile({ ...profile, recipients: parseCsv(e.target.value) })
+                      setProfile({
+                        ...profile,
+                        recipients: parseCsv(e.target.value),
+                      })
                     }
                   />
                 </Field>
@@ -230,7 +257,9 @@ export default function RopaProfilePage() {
                       setProfile({ ...profile, thirdCountryTransfers: v })
                     }
                   />
-                  <Label>Transfers to third countries / international organisations</Label>
+                  <Label>
+                    Transfers to third countries / international organisations
+                  </Label>
                 </div>
 
                 {profile.thirdCountryTransfers && (
@@ -238,7 +267,10 @@ export default function RopaProfilePage() {
                     <Textarea
                       value={profile.thirdCountrySafeguards ?? ""}
                       onChange={(e) =>
-                        setProfile({ ...profile, thirdCountrySafeguards: e.target.value })
+                        setProfile({
+                          ...profile,
+                          thirdCountrySafeguards: e.target.value,
+                        })
                       }
                     />
                   </Field>
@@ -286,8 +318,8 @@ export default function RopaProfilePage() {
                   <div className="flex items-start gap-2 rounded border border-amber-300 bg-amber-50 p-3 text-sm">
                     <AlertTriangle className="h-4 w-4 text-amber-600" />
                     <div>
-                      <strong>DPIA likely required</strong> based on special data categories or
-                      third-country transfers (Art. 35 GDPR).
+                      <strong>DPIA likely required</strong> based on special
+                      data categories or third-country transfers (Art. 35 GDPR).
                     </div>
                   </div>
                 ) : null}
@@ -298,7 +330,11 @@ export default function RopaProfilePage() {
 
         <div className="flex justify-end">
           <Button onClick={save} disabled={saving}>
-            {saving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Save className="mr-2 h-4 w-4" />}
+            {saving ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Save className="mr-2 h-4 w-4" />
+            )}
             Save profile
           </Button>
         </div>
@@ -307,7 +343,13 @@ export default function RopaProfilePage() {
   );
 }
 
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
+function Field({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div>
       <Label className="mb-1 block">{label}</Label>

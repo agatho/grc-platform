@@ -37,7 +37,8 @@ export function ProcessComplianceProfileSwitcher({
   const [pending, setPending] = useState(false);
 
   useEffect(() => {
-    if (initialProfile && initialProfile !== profile) setProfile(initialProfile);
+    if (initialProfile && initialProfile !== profile)
+      setProfile(initialProfile);
     // Only react to initialProfile changes
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialProfile]);

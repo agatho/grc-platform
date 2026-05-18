@@ -13,9 +13,17 @@ interface RouteSpec {
 }
 
 const MATRIX: RouteSpec[] = [
-  { path: "dpia/[id]/transitions/blockers/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "dpia/[id]/transitions/blockers/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   { path: "dsr/sla-status/route.ts", method: "GET", expectedRoles: [] },
-  { path: "data-breach/[id]/72h-status/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "data-breach/[id]/72h-status/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   {
     path: "data-breach/[id]/notification-pack/route.ts",
     method: "POST",
@@ -54,7 +62,9 @@ describe("DPMS endpoint RBAC matrix", () => {
       const src = readFileSync(join(ROOT, spec.path), "utf8");
       const roles = extractRoles(src, spec.method);
       expect(roles).not.toBeNull();
-      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(new Set(spec.expectedRoles));
+      expect(new Set(roles!), `${spec.method} ${spec.path}`).toEqual(
+        new Set(spec.expectedRoles),
+      );
     });
   }
 });

@@ -25,7 +25,9 @@ function parseCsv(text: string): ParsedEvent[] {
   const header = lines[0]
     .split(/[,;\t]/)
     .map((h) => h.trim().toLowerCase().replace(/^"|"$/g, ""));
-  const idxCase = header.findIndex((h) => /^(case|case_id|fall|fall_id|caseid)$/.test(h));
+  const idxCase = header.findIndex((h) =>
+    /^(case|case_id|fall|fall_id|caseid)$/.test(h),
+  );
   const idxActivity = header.findIndex((h) =>
     /^(activity|aktivit(ae|ä)t|task|step)$/.test(h),
   );
@@ -42,9 +44,10 @@ function parseCsv(text: string): ParsedEvent[] {
   }
   const out: ParsedEvent[] = [];
   for (const line of lines.slice(1)) {
-    const cells = line
-      .match(/(".*?"|[^,;\t]+)(?=\s*[,;\t]|\s*$)/g)
-      ?.map((c) => c.trim().replace(/^"|"$/g, "")) ?? [];
+    const cells =
+      line
+        .match(/(".*?"|[^,;\t]+)(?=\s*[,;\t]|\s*$)/g)
+        ?.map((c) => c.trim().replace(/^"|"$/g, "")) ?? [];
     if (cells.length < 3) continue;
     out.push({
       caseId: cells[idxCase]?.slice(0, 200) ?? "",
@@ -72,9 +75,15 @@ function parseXes(xml: string): ParsedEvent[] {
     let evMatch: RegExpExecArray | null;
     while ((evMatch = eventRe.exec(traceBlock)) !== null) {
       const eb = evMatch[1];
-      const actMatch = eb.match(/<string\s+key="concept:name"\s+value="([^"]+)"/);
-      const tsMatch = eb.match(/<date\s+key="time:timestamp"\s+value="([^"]+)"/);
-      const resMatch = eb.match(/<string\s+key="org:resource"\s+value="([^"]+)"/);
+      const actMatch = eb.match(
+        /<string\s+key="concept:name"\s+value="([^"]+)"/,
+      );
+      const tsMatch = eb.match(
+        /<date\s+key="time:timestamp"\s+value="([^"]+)"/,
+      );
+      const resMatch = eb.match(
+        /<string\s+key="org:resource"\s+value="([^"]+)"/,
+      );
       if (!actMatch || !tsMatch) continue;
       events.push({
         caseId,
@@ -100,23 +109,39 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const form = await req.formData();
   const file = form.get("file");
   if (!(file instanceof File)) {
-    return Response.json({ error: "multipart field `file` required" }, { status: 422 });
+    return Response.json(
+      { error: "multipart field `file` required" },
+      { status: 422 },
+    );
   }
   if (file.size > 20 * 1024 * 1024) {
-    return Response.json({ error: "File too large (max 20MB)" }, { status: 422 });
+    return Response.json(
+      { error: "File too large (max 20MB)" },
+      { status: 422 },
+    );
   }
 
   const text = await file.text();
   let events: ParsedEvent[];
   let format: "csv" | "xes";
   try {
-    if (file.name.toLowerCase().endsWith(".xes") || /<log\b/.test(text.slice(0, 200))) {
+    if (
+      file.name.toLowerCase().endsWith(".xes") ||
+      /<log\b/.test(text.slice(0, 200))
+    ) {
       events = parseXes(text);
       format = "xes";
     } else {
@@ -131,7 +156,10 @@ export async function POST(
   }
 
   if (events.length === 0) {
-    return Response.json({ error: "No events parsed from file" }, { status: 422 });
+    return Response.json(
+      { error: "No events parsed from file" },
+      { status: 422 },
+    );
   }
 
   const sortedDates = events.map((e) => e.timestamp).sort();
@@ -174,7 +202,9 @@ export async function POST(
       }
       return log;
     },
-    { actionDetail: `Uploaded ${format.toUpperCase()} event log: ${events.length} events` },
+    {
+      actionDetail: `Uploaded ${format.toUpperCase()} event log: ${events.length} events`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });
