@@ -5,7 +5,27 @@ import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createCipheriv, randomBytes } from "crypto";
 
-const ENCRYPTION_KEY = process.env.CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64);
+/**
+ * Resolve the AES-256-GCM key for connector-credential encryption.
+ *
+ * SECURITY (#OVERNIGHT-2026-05-18): the previous implementation fell
+ * back to `"0".repeat(64)` if the env var was missing — an all-zero
+ * 32-byte key. AES-GCM with an all-zero key is mathematically valid
+ * but trivially compromised: anyone with DB access could decrypt every
+ * stored OAuth token / API key. Mirror the wb-crypto.ts pattern and
+ * fail hard at first call.
+ */
+function getConnectorEncryptionKey(): Buffer {
+  const keyHex = process.env.CONNECTOR_ENCRYPTION_KEY;
+  if (!keyHex || keyHex.length !== 64 || !/^[0-9a-fA-F]{64}$/.test(keyHex)) {
+    throw new Error(
+      "SECURITY: CONNECTOR_ENCRYPTION_KEY must be set to a 64-character hex string (32 bytes). " +
+        "Generate with: node -e \"console.log(require('crypto').randomBytes(32).toString('hex'))\". " +
+        "See ADR-018 for key-rotation procedure.",
+    );
+  }
+  return Buffer.from(keyHex, "hex");
+}
 
 function encryptPayload(payload: string): {
   encryptedPayload: string;
@@ -13,8 +33,7 @@ function encryptPayload(payload: string): {
   authTag: string;
 } {
   const iv = randomBytes(16);
-  const key = Buffer.from(ENCRYPTION_KEY, "hex");
-  const cipher = createCipheriv("aes-256-gcm", key, iv);
+  const cipher = createCipheriv("aes-256-gcm", getConnectorEncryptionKey(), iv);
   let encrypted = cipher.update(payload, "utf8", "hex");
   encrypted += cipher.final("hex");
   const authTag = cipher.getAuthTag().toString("hex");
