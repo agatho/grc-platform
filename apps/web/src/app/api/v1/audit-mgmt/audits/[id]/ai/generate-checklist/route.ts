@@ -1,7 +1,11 @@
 // Audit Overhaul Phase 3: AI checklist generator from framework + scope.
 
 import { db, audit } from "@grc/db";
-import { aiComplete, buildChecklistGenerationPrompt, safeJsonParse } from "@grc/ai";
+import {
+  aiComplete,
+  buildChecklistGenerationPrompt,
+  safeJsonParse,
+} from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -38,11 +42,18 @@ export async function POST(
       scopeProcesses: audit.scopeProcesses,
     })
     .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)));
-  if (!existing) return Response.json({ error: "Audit not found" }, { status: 404 });
+    .where(
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Audit not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const prompt = buildChecklistGenerationPrompt({
     auditTitle: existing.title,
@@ -55,7 +66,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 2500, temperature: 0.3 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 2500,
+      temperature: 0.3,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },
@@ -65,6 +80,10 @@ export async function POST(
 
   const parsed = safeJsonParse<{ items?: ChecklistItem[] }>(resp.text);
   return Response.json({
-    data: { items: parsed?.items ?? [], provider: resp.provider, model: resp.model },
+    data: {
+      items: parsed?.items ?? [],
+      provider: resp.provider,
+      model: resp.model,
+    },
   });
 }

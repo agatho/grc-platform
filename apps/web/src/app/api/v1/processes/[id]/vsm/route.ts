@@ -18,13 +18,25 @@ export async function GET(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const rows = await db
     .select()
     .from(valueStreamMap)
-    .where(and(eq(valueStreamMap.processId, id), eq(valueStreamMap.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(valueStreamMap.processId, id),
+        eq(valueStreamMap.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(valueStreamMap.createdAt));
 
   return Response.json({ data: rows });

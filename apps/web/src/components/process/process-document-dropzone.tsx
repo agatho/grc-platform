@@ -32,7 +32,11 @@ export function ProcessDocumentDropzone({
         const docIds = (docIdsRaw ?? "")
           .split(/[\s,;]+/)
           .map((s) => s.trim())
-          .filter((s) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(s));
+          .filter((s) =>
+            /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+              s,
+            ),
+          );
 
         if (docIds.length > 0) {
           const resp = await fetch(
@@ -67,18 +71,24 @@ export function ProcessDocumentDropzone({
             const fd = new FormData();
             fd.append("file", file);
             fd.append("title", file.name);
-            const up = await fetch(`/api/v1/dms/documents`, { method: "POST", body: fd });
+            const up = await fetch(`/api/v1/dms/documents`, {
+              method: "POST",
+              body: fd,
+            });
             if (up.ok) {
               const j = await up.json();
               if (j.data?.id) uploaded.push(j.data.id);
             }
           }
           if (uploaded.length > 0) {
-            await fetch(`/api/v1/processes/${processId}/documents/bulk-attach`, {
-              method: "POST",
-              headers: { "content-type": "application/json" },
-              body: JSON.stringify({ documentIds: uploaded }),
-            });
+            await fetch(
+              `/api/v1/processes/${processId}/documents/bulk-attach`,
+              {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: JSON.stringify({ documentIds: uploaded }),
+              },
+            );
             toast.success(`Uploaded + attached ${uploaded.length} document(s)`);
             onAttached?.();
           } else {

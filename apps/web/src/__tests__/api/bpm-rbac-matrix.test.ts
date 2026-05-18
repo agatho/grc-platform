@@ -32,7 +32,11 @@ const MATRIX: RouteSpec[] = [
     method: "PUT",
     expectedRoles: ["admin", "dpo", "process_owner"],
   },
-  { path: "[id]/three-lines-distribution/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "[id]/three-lines-distribution/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   {
     path: "[id]/coverage/route.ts",
     method: "POST",
@@ -65,7 +69,12 @@ const MATRIX: RouteSpec[] = [
   {
     path: "[id]/steps/[stepId]/line-of-defense/route.ts",
     method: "PUT",
-    expectedRoles: ["admin", "process_owner", "quality_manager", "risk_manager"],
+    expectedRoles: [
+      "admin",
+      "process_owner",
+      "quality_manager",
+      "risk_manager",
+    ],
   },
   {
     path: "ai/generate-from-text/route.ts",
@@ -97,7 +106,11 @@ const MATRIX: RouteSpec[] = [
     method: "POST",
     expectedRoles: ["admin", "quality_manager", "process_owner"],
   },
-  { path: "[id]/mining/bottlenecks/route.ts", method: "GET", expectedRoles: [] },
+  {
+    path: "[id]/mining/bottlenecks/route.ts",
+    method: "GET",
+    expectedRoles: [],
+  },
   { path: "[id]/mining/rework/route.ts", method: "GET", expectedRoles: [] },
   { path: "cockpit/route.ts", method: "GET", expectedRoles: [] },
 ];
@@ -129,10 +142,14 @@ describe("BPM endpoint RBAC matrix", () => {
         throw new Error(`Route file missing: ${file}`);
       }
       const roles = extractRolesForMethod(src, spec.method);
-      expect(roles, `withAuth call for ${spec.method} not found`).not.toBeNull();
-      expect(new Set(roles!), `${spec.method} ${spec.path} role mismatch`).toEqual(
-        new Set(spec.expectedRoles),
-      );
+      expect(
+        roles,
+        `withAuth call for ${spec.method} not found`,
+      ).not.toBeNull();
+      expect(
+        new Set(roles!),
+        `${spec.method} ${spec.path} role mismatch`,
+      ).toEqual(new Set(spec.expectedRoles));
     });
   }
 });

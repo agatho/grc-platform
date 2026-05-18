@@ -4,7 +4,13 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { Loader2, Clock, Activity, AlertTriangle } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface BiaImpact {
@@ -53,7 +59,9 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
   }, [processId]);
 
   if (loading) {
-    return <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />;
+    return (
+      <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
+    );
   }
 
   if (impacts.length === 0) {
@@ -62,7 +70,10 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
         <CardContent className="py-10 text-center text-sm text-muted-foreground">
           This process is not yet scored in any BIA.
           <br />
-          <Link href="/bcms/bia/new" className="mt-2 inline-block text-primary underline">
+          <Link
+            href="/bcms/bia/new"
+            className="mt-2 inline-block text-primary underline"
+          >
             Start a BIA →
           </Link>
         </CardContent>
@@ -82,15 +93,18 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
       {isCritical && (
         <div className="flex items-center gap-2 rounded-md border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900">
           <AlertTriangle className="h-4 w-4" />
-          This process is flagged as <strong>critical</strong> in at least one BIA. Ensure NIS2/DORA
-          downstream dashboards are reviewed.
+          This process is flagged as <strong>critical</strong> in at least one
+          BIA. Ensure NIS2/DORA downstream dashboards are reviewed.
         </div>
       )}
       {impacts.map((i) => (
         <Card key={i.id}>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
-              <Link href={`/bcms/bia/${i.biaAssessmentId}`} className="hover:underline">
+              <Link
+                href={`/bcms/bia/${i.biaAssessmentId}`}
+                className="hover:underline"
+              >
                 {i.biaName}
               </Link>
               <Badge variant="outline">{i.biaStatus}</Badge>
@@ -103,9 +117,21 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
-              <Metric icon={<Clock className="h-4 w-4" />} label="MTPD" value={fmtHours(i.mtpdHours)} />
-              <Metric icon={<Activity className="h-4 w-4" />} label="RTO" value={fmtHours(i.rtoHours)} />
-              <Metric icon={<Activity className="h-4 w-4" />} label="RPO" value={fmtHours(i.rpoHours)} />
+              <Metric
+                icon={<Clock className="h-4 w-4" />}
+                label="MTPD"
+                value={fmtHours(i.mtpdHours)}
+              />
+              <Metric
+                icon={<Activity className="h-4 w-4" />}
+                label="RTO"
+                value={fmtHours(i.rtoHours)}
+              />
+              <Metric
+                icon={<Activity className="h-4 w-4" />}
+                label="RPO"
+                value={fmtHours(i.rpoHours)}
+              />
               <Metric
                 icon={<AlertTriangle className="h-4 w-4" />}
                 label="Priority"
@@ -139,7 +165,15 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
   );
 }
 
-function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; value: string }) {
+function Metric({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded border p-2">
       <div className="flex items-center gap-1 text-xs text-muted-foreground">
@@ -151,7 +185,13 @@ function Metric({ icon, label, value }: { icon: React.ReactNode; label: string; 
   );
 }
 
-function ImpactScore({ label, value }: { label: string; value: number | null }) {
+function ImpactScore({
+  label,
+  value,
+}: {
+  label: string;
+  value: number | null;
+}) {
   const color =
     value == null
       ? "text-muted-foreground"

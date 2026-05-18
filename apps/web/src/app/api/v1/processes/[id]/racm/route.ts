@@ -3,7 +3,17 @@
 // Returns one row per (activity × risk × control) combination, plus findings,
 // suitable for the SOX-style RACM page and PDF/Excel export.
 
-import { db, process, processStep, processStepRisk, processStepControl, risk, control, finding, controlTest } from "@grc/db";
+import {
+  db,
+  process,
+  processStep,
+  processStepRisk,
+  processStepControl,
+  risk,
+  control,
+  finding,
+  controlTest,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql, desc } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -48,8 +58,14 @@ export async function GET(
       riskStatus: risk.status,
     })
     .from(processStep)
-    .leftJoin(processStepRisk, eq(processStep.id, processStepRisk.processStepId))
-    .leftJoin(risk, and(eq(risk.id, processStepRisk.riskId), isNull(risk.deletedAt)))
+    .leftJoin(
+      processStepRisk,
+      eq(processStep.id, processStepRisk.processStepId),
+    )
+    .leftJoin(
+      risk,
+      and(eq(risk.id, processStepRisk.riskId), isNull(risk.deletedAt)),
+    )
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)))
     .orderBy(processStep.sequenceOrder, processStep.bpmnElementId);
 
@@ -78,8 +94,17 @@ export async function GET(
       )`,
     })
     .from(processStep)
-    .leftJoin(processStepControl, eq(processStep.id, processStepControl.processStepId))
-    .leftJoin(control, and(eq(control.id, processStepControl.controlId), isNull(control.deletedAt)))
+    .leftJoin(
+      processStepControl,
+      eq(processStep.id, processStepControl.processStepId),
+    )
+    .leftJoin(
+      control,
+      and(
+        eq(control.id, processStepControl.controlId),
+        isNull(control.deletedAt),
+      ),
+    )
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
 
   // Findings tied to this process (or its steps)
@@ -189,8 +214,10 @@ export async function GET(
       counts: {
         totalActivities: rows.length,
         activitiesWithRisks: rows.filter((r) => r.risks.length > 0).length,
-        activitiesWithControls: rows.filter((r) => r.controls.length > 0).length,
-        activitiesWithFindings: rows.filter((r) => r.findings.length > 0).length,
+        activitiesWithControls: rows.filter((r) => r.controls.length > 0)
+          .length,
+        activitiesWithFindings: rows.filter((r) => r.findings.length > 0)
+          .length,
         totalRisks: rows.reduce((a, r) => a + r.risks.length, 0),
         totalControls: rows.reduce((a, r) => a + r.controls.length, 0),
         totalFindings: rows.reduce((a, r) => a + r.findings.length, 0),

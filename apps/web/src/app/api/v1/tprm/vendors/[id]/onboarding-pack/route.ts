@@ -26,7 +26,13 @@ export async function POST(
   const [v] = await db
     .select()
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) return Response.json({ error: "Vendor not found" }, { status: 404 });
 
   const data = await withReadContext(ctx, async (tx) => {
@@ -104,7 +110,14 @@ export async function POST(
     [
       "ID,Title,Status,Start,Completed,Score",
       ...data.dd.map((d: any) =>
-        [csv(d.id), csv(d.title), csv(d.status), csv(d.start_date), csv(d.completed_date), csv(d.overall_score)].join(","),
+        [
+          csv(d.id),
+          csv(d.title),
+          csv(d.status),
+          csv(d.start_date),
+          csv(d.completed_date),
+          csv(d.overall_score),
+        ].join(","),
       ),
     ].join("\n"),
   );
@@ -114,7 +127,16 @@ export async function POST(
     [
       "ID,Title,Type,Status,Start,End,Value,Currency",
       ...data.contracts.map((c: any) =>
-        [csv(c.id), csv(c.title), csv(c.contract_type), csv(c.status), csv(c.start_date), csv(c.end_date), csv(c.value_amount), csv(c.value_currency)].join(","),
+        [
+          csv(c.id),
+          csv(c.title),
+          csv(c.contract_type),
+          csv(c.status),
+          csv(c.start_date),
+          csv(c.end_date),
+          csv(c.value_amount),
+          csv(c.value_currency),
+        ].join(","),
       ),
     ].join("\n"),
   );
@@ -124,7 +146,14 @@ export async function POST(
     [
       "Period,Overall,Quality,SLA,Security,Financial",
       ...data.scorecards.map((s: any) =>
-        [csv(s.scoring_period), csv(s.overall_score), csv(s.quality_score), csv(s.sla_score), csv(s.security_score), csv(s.financial_score)].join(","),
+        [
+          csv(s.scoring_period),
+          csv(s.overall_score),
+          csv(s.quality_score),
+          csv(s.sla_score),
+          csv(s.security_score),
+          csv(s.financial_score),
+        ].join(","),
       ),
     ].join("\n"),
   );
@@ -134,7 +163,12 @@ export async function POST(
     [
       "Name,Country,Services,Status",
       ...data.subProcessors.map((s: any) =>
-        [csv(s.sub_processor_name), csv(s.country), csv(s.services_provided), csv(s.status)].join(","),
+        [
+          csv(s.sub_processor_name),
+          csv(s.country),
+          csv(s.services_provided),
+          csv(s.status),
+        ].join(","),
       ),
     ].join("\n"),
   );
@@ -144,7 +178,9 @@ export async function POST(
     [
       "AssessmentDate,Status,RiskCategories",
       ...data.lksg.map((l: any) =>
-        [csv(l.assessment_date), csv(l.status), csv(l.risk_categories)].join(","),
+        [csv(l.assessment_date), csv(l.status), csv(l.risk_categories)].join(
+          ",",
+        ),
       ),
     ].join("\n"),
   );
@@ -159,14 +195,20 @@ export async function POST(
       .join("\n\n"),
   );
 
-  const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
+  const buf = await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
+  });
   const slug = v.name.replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 50);
 
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="vendor-pack-${slug}-${Date.now()}.zip"`,
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="vendor-pack-${slug}-${Date.now()}.zip"`,
+      },
     },
-  });
+  );
 }

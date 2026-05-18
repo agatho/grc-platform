@@ -9,15 +9,21 @@
 // Returns a per-process result list so the UI can render a successes/failures
 // summary.
 
-import { db, process, processSignOff, processVersion, notification } from "@grc/db";
+import {
+  db,
+  process,
+  processSignOff,
+  processVersion,
+  notification,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { evaluateTransitionGates, type ProcessStatus } from "@/lib/process-gates";
 import {
-  computePayloadHash,
-  computeChainHash,
-} from "@/lib/sign-off-chain";
+  evaluateTransitionGates,
+  type ProcessStatus,
+} from "@/lib/process-gates";
+import { computePayloadHash, computeChainHash } from "@/lib/sign-off-chain";
 import { z } from "zod";
 
 const bulkSchema = z.object({
@@ -65,10 +71,18 @@ export async function POST(req: Request) {
         })
         .from(process)
         .where(
-          and(eq(process.id, processId), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)),
+          and(
+            eq(process.id, processId),
+            eq(process.orgId, ctx.orgId),
+            isNull(process.deletedAt),
+          ),
         );
       if (!existing) {
-        results.push({ processId, status: "error", error: "Process not found" });
+        results.push({
+          processId,
+          status: "error",
+          error: "Process not found",
+        });
         continue;
       }
 
@@ -96,7 +110,10 @@ export async function POST(req: Request) {
             .update(process)
             .set({
               status: parsed.data.targetStatus,
-              publishedAt: parsed.data.targetStatus === "published" ? new Date() : undefined,
+              publishedAt:
+                parsed.data.targetStatus === "published"
+                  ? new Date()
+                  : undefined,
               updatedAt: new Date(),
               updatedBy: ctx.userId,
             })
@@ -111,7 +128,10 @@ export async function POST(req: Request) {
             })
             .from(processVersion)
             .where(
-              and(eq(processVersion.processId, processId), eq(processVersion.isCurrent, true)),
+              and(
+                eq(processVersion.processId, processId),
+                eq(processVersion.isCurrent, true),
+              ),
             )
             .limit(1);
           if (curr) {
@@ -119,7 +139,10 @@ export async function POST(req: Request) {
               .update(processVersion)
               .set({ isCurrent: false })
               .where(
-                and(eq(processVersion.processId, processId), eq(processVersion.isCurrent, true)),
+                and(
+                  eq(processVersion.processId, processId),
+                  eq(processVersion.isCurrent, true),
+                ),
               );
             await tx.insert(processVersion).values({
               processId,
@@ -155,7 +178,10 @@ export async function POST(req: Request) {
             statusAtSign: parsed.data.targetStatus,
             signedAt: new Date().toISOString(),
           });
-          const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
+          const chainHash = computeChainHash(
+            prev?.chainHash ?? null,
+            payloadHash,
+          );
           await tx.insert(processSignOff).values({
             orgId: ctx.orgId,
             processId,
@@ -186,10 +212,16 @@ export async function POST(req: Request) {
             });
           }
         },
-        { actionDetail: `Bulk ${parsed.data.targetStatus} (${parsed.data.signerRole})` },
+        {
+          actionDetail: `Bulk ${parsed.data.targetStatus} (${parsed.data.signerRole})`,
+        },
       );
 
-      results.push({ processId, status: "approved", newStatus: parsed.data.targetStatus });
+      results.push({
+        processId,
+        status: "approved",
+        newStatus: parsed.data.targetStatus,
+      });
     } catch (err) {
       results.push({
         processId,

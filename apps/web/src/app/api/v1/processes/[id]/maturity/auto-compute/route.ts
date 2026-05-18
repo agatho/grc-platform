@@ -38,8 +38,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const inputs = await withReadContext(ctx, async (tx) => {
     const [c] = (await tx.execute(sql`
@@ -89,14 +96,26 @@ export async function POST(
   const auditPenalty = Math.max(0, 100 - openFindings * 15);
 
   const scores: DimensionScore[] = [
-    { dimension: "control_coverage", level: bucket(coveragePct), basis: `${Math.round(coveragePct)}% coverage` },
+    {
+      dimension: "control_coverage",
+      level: bucket(coveragePct),
+      basis: `${Math.round(coveragePct)}% coverage`,
+    },
     {
       dimension: "control_effectiveness",
       level: bucket(effectivenessPct),
       basis: `${effective}/${total} effective`,
     },
-    { dimension: "kpi_performance", level: bucket(kpiPct), basis: `${kpiGreen}/${kpiDefs} green` },
-    { dimension: "audit_health", level: bucket(auditPenalty), basis: `${openFindings} open findings` },
+    {
+      dimension: "kpi_performance",
+      level: bucket(kpiPct),
+      basis: `${kpiGreen}/${kpiDefs} green`,
+    },
+    {
+      dimension: "audit_health",
+      level: bucket(auditPenalty),
+      basis: `${openFindings} open findings`,
+    },
     {
       dimension: "documentation_completeness",
       level: bucket(docPct),
@@ -104,7 +123,9 @@ export async function POST(
     },
   ];
 
-  const overall = Math.round(scores.reduce((a, s) => a + s.level, 0) / scores.length);
+  const overall = Math.round(
+    scores.reduce((a, s) => a + s.level, 0) / scores.length,
+  );
 
   const result = await withAuditContext(
     ctx,

@@ -47,18 +47,75 @@ export function AuditDashboardKpis() {
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-6">
-      <Tile icon={<Database className="h-4 w-4" />} label="Audits total" value={kpis.total_audits} />
-      <Tile icon={<ClipboardCheck className="h-4 w-4" />} label="Planned" value={kpis.planned} />
-      <Tile icon={<Activity className="h-4 w-4" />} label="In progress" value={kpis.in_progress} tone="info" />
-      <Tile icon={<Clock className="h-4 w-4" />} label="Pending close" value={kpis.pending_close} tone="warn" />
-      <Tile icon={<CheckCircle2 className="h-4 w-4" />} label="Completed" value={kpis.completed} tone="ok" />
-      <Tile icon={<AlertTriangle className="h-4 w-4" />} label="Overdue" value={kpis.overdue} tone="bad" />
-      <Tile icon={<AlertOctagon className="h-4 w-4" />} label="Open findings" value={kpis.open} tone="warn" />
-      <Tile icon={<ShieldAlert className="h-4 w-4" />} label="Open critical" value={kpis.open_critical} tone="bad" />
-      <Tile icon={<AlertTriangle className="h-4 w-4" />} label="Open high" value={kpis.open_high} tone="warn" />
-      <Tile icon={<Clock className="h-4 w-4" />} label="Remediation overdue" value={kpis.overdue_remediation} tone="bad" />
-      <Tile icon={<Database className="h-4 w-4" />} label="Universe entries" value={kpis.total_universe} />
-      <Tile icon={<Clock className="h-4 w-4" />} label="Audit-cycle overdue" value={kpis.overdue_audit_cycle} tone="bad" />
+      <Tile
+        icon={<Database className="h-4 w-4" />}
+        label="Audits total"
+        value={kpis.total_audits}
+      />
+      <Tile
+        icon={<ClipboardCheck className="h-4 w-4" />}
+        label="Planned"
+        value={kpis.planned}
+      />
+      <Tile
+        icon={<Activity className="h-4 w-4" />}
+        label="In progress"
+        value={kpis.in_progress}
+        tone="info"
+      />
+      <Tile
+        icon={<Clock className="h-4 w-4" />}
+        label="Pending close"
+        value={kpis.pending_close}
+        tone="warn"
+      />
+      <Tile
+        icon={<CheckCircle2 className="h-4 w-4" />}
+        label="Completed"
+        value={kpis.completed}
+        tone="ok"
+      />
+      <Tile
+        icon={<AlertTriangle className="h-4 w-4" />}
+        label="Overdue"
+        value={kpis.overdue}
+        tone="bad"
+      />
+      <Tile
+        icon={<AlertOctagon className="h-4 w-4" />}
+        label="Open findings"
+        value={kpis.open}
+        tone="warn"
+      />
+      <Tile
+        icon={<ShieldAlert className="h-4 w-4" />}
+        label="Open critical"
+        value={kpis.open_critical}
+        tone="bad"
+      />
+      <Tile
+        icon={<AlertTriangle className="h-4 w-4" />}
+        label="Open high"
+        value={kpis.open_high}
+        tone="warn"
+      />
+      <Tile
+        icon={<Clock className="h-4 w-4" />}
+        label="Remediation overdue"
+        value={kpis.overdue_remediation}
+        tone="bad"
+      />
+      <Tile
+        icon={<Database className="h-4 w-4" />}
+        label="Universe entries"
+        value={kpis.total_universe}
+      />
+      <Tile
+        icon={<Clock className="h-4 w-4" />}
+        label="Audit-cycle overdue"
+        value={kpis.overdue_audit_cycle}
+        tone="bad"
+      />
     </div>
   );
 }

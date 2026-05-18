@@ -18,8 +18,15 @@ export async function GET(
   const [c] = await db
     .select({ id: contract.id, title: contract.title })
     .from(contract)
-    .where(and(eq(contract.id, id), eq(contract.orgId, ctx.orgId), isNull(contract.deletedAt)));
-  if (!c) return Response.json({ error: "Contract not found" }, { status: 404 });
+    .where(
+      and(
+        eq(contract.id, id),
+        eq(contract.orgId, ctx.orgId),
+        isNull(contract.deletedAt),
+      ),
+    );
+  if (!c)
+    return Response.json({ error: "Contract not found" }, { status: 404 });
 
   const data = await withReadContext(ctx, async (tx) => {
     const obligations = await tx.execute(sql`
@@ -47,5 +54,7 @@ export async function GET(
     return { obligations, summary };
   });
 
-  return Response.json({ data: { contractId: id, contractTitle: c.title, ...data } });
+  return Response.json({
+    data: { contractId: id, contractTitle: c.title, ...data },
+  });
 }

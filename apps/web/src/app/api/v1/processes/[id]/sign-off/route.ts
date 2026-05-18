@@ -43,8 +43,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id, status: process.status, name: process.name })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = signOffSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -68,7 +75,12 @@ export async function POST(
     const [pv] = await db
       .select({ id: processVersion.id })
       .from(processVersion)
-      .where(and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)))
+      .where(
+        and(
+          eq(processVersion.processId, id),
+          eq(processVersion.isCurrent, true),
+        ),
+      )
       .limit(1);
     versionId = pv?.id ?? null;
   }
@@ -86,8 +98,11 @@ export async function POST(
   });
   const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
 
-  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
-  const ipAddress = ipHeader ? ipHeader.split(",")[0].trim().slice(0, 64) : null;
+  const ipHeader =
+    req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ipAddress = ipHeader
+    ? ipHeader.split(",")[0].trim().slice(0, 64)
+    : null;
   const userAgent = req.headers.get("user-agent")?.slice(0, 1000) ?? null;
 
   const result = await withAuditContext(
@@ -112,7 +127,9 @@ export async function POST(
         .returning();
       return row;
     },
-    { actionDetail: `Sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}` },
+    {
+      actionDetail: `Sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });
@@ -131,7 +148,12 @@ export async function GET(
   const rows = await db
     .select()
     .from(processSignOff)
-    .where(and(eq(processSignOff.processId, id), eq(processSignOff.orgId, ctx.orgId)))
+    .where(
+      and(
+        eq(processSignOff.processId, id),
+        eq(processSignOff.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(processSignOff.signedAt));
 
   const chrono = [...rows].reverse();

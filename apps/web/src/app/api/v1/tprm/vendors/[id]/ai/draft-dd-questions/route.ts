@@ -30,11 +30,17 @@ export async function POST(
   const [v] = await db
     .select()
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) return Response.json({ error: "Vendor not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const prompt = buildDdQuestionDraftPrompt({
     vendorName: v.name,
@@ -47,7 +53,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 2500, temperature: 0.3 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 2500,
+      temperature: 0.3,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },
@@ -57,6 +67,10 @@ export async function POST(
 
   const parsed = safeJsonParse<{ questions?: Question[] }>(resp.text);
   return Response.json({
-    data: { questions: parsed?.questions ?? [], provider: resp.provider, model: resp.model },
+    data: {
+      questions: parsed?.questions ?? [],
+      provider: resp.provider,
+      model: resp.model,
+    },
   });
 }

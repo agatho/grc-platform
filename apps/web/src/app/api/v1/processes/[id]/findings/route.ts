@@ -1,6 +1,13 @@
 // BPM Overhaul Phase 2: List all findings tied to a process (direct or via step/control).
 
-import { db, process, processStep, processStepControl, processControl, finding } from "@grc/db";
+import {
+  db,
+  process,
+  processStep,
+  processStepControl,
+  processControl,
+  finding,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";

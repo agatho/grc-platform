@@ -17,7 +17,10 @@ export async function GET(
   const url = new URL(req.url);
   const target = url.searchParams.get("target") as DpiaStatus | null;
   if (!target) {
-    return Response.json({ error: "target query param required" }, { status: 400 });
+    return Response.json(
+      { error: "target query param required" },
+      { status: 400 },
+    );
   }
 
   const blockers = await withReadContext(ctx, async (tx) =>
@@ -29,7 +32,8 @@ export async function GET(
       dpiaId: id,
       targetStatus: target,
       blockers,
-      canTransition: blockers.filter((b) => b.severity === "error").length === 0,
+      canTransition:
+        blockers.filter((b) => b.severity === "error").length === 0,
     },
   });
 }

@@ -43,7 +43,14 @@ export async function evaluateAuditGates({
     WHERE a.id = ${auditId} AND a.org_id = ${orgId} AND a.deleted_at IS NULL
   `)) as any[];
   if (!a) {
-    return [{ code: "audit_not_found", gate: "preflight", message: "Audit not found", severity: "error" }];
+    return [
+      {
+        code: "audit_not_found",
+        gate: "preflight",
+        message: "Audit not found",
+        severity: "error",
+      },
+    ];
   }
 
   const [stats] = (await tx.execute(sql`
@@ -79,7 +86,10 @@ export async function evaluateAuditGates({
         severity: "error",
       });
     }
-    if (!a.scope_description || String(a.scope_description).trim().length < 20) {
+    if (
+      !a.scope_description ||
+      String(a.scope_description).trim().length < 20
+    ) {
       blockers.push({
         code: "weak_scope",
         gate: "planned_to_preparation",

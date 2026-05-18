@@ -4,7 +4,10 @@
 // produces the expected blocker codes for the canonical scenarios.
 
 import { describe, it, expect } from "vitest";
-import { evaluateTransitionGates, type ProcessStatus } from "@/lib/process-gates";
+import {
+  evaluateTransitionGates,
+  type ProcessStatus,
+} from "@/lib/process-gates";
 
 function mkTx(scenarios: Record<string, any[]>) {
   let call = 0;

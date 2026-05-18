@@ -49,7 +49,9 @@ export const processRopaProfile = pgTable(
     specialCategories: text("special_categories")
       .array()
       .default(sql`'{}'::text[]`),
-    recipients: text("recipients").array().default(sql`'{}'::text[]`),
+    recipients: text("recipients")
+      .array()
+      .default(sql`'{}'::text[]`),
     thirdCountryTransfers: boolean("third_country_transfers")
       .notNull()
       .default(false),

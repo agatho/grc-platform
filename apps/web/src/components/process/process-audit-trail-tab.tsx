@@ -6,7 +6,13 @@
 import { useEffect, useState } from "react";
 import { Loader2, History } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface TrailEntry {
@@ -50,7 +56,9 @@ export function ProcessAuditTrailTab({ processId }: { processId: string }) {
   useEffect(() => {
     let cancel = false;
     (async () => {
-      const resp = await fetch(`/api/v1/processes/${processId}/audit-trail?limit=300`);
+      const resp = await fetch(
+        `/api/v1/processes/${processId}/audit-trail?limit=300`,
+      );
       if (resp.ok && !cancel) {
         const j = await resp.json();
         setEntries(j.data ?? []);
@@ -76,19 +84,25 @@ export function ProcessAuditTrailTab({ processId }: { processId: string }) {
         {loading ? (
           <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
         ) : entries.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">Keine Einträge.</p>
+          <p className="text-center text-sm text-muted-foreground">
+            Keine Einträge.
+          </p>
         ) : (
           <ul className="divide-y">
             {entries.map((e) => (
               <li key={e.id} className="py-2">
                 <div className="flex items-center justify-between text-sm">
                   <div className="flex items-center gap-2">
-                    <Badge className={actionColor[e.action] ?? "bg-gray-100"}>{e.action}</Badge>
+                    <Badge className={actionColor[e.action] ?? "bg-gray-100"}>
+                      {e.action}
+                    </Badge>
                     <span className="font-medium">
                       {entityTypeLabel[e.entity_type] ?? e.entity_type}
                     </span>
                     {e.action_detail && (
-                      <span className="text-muted-foreground">— {e.action_detail}</span>
+                      <span className="text-muted-foreground">
+                        — {e.action_detail}
+                      </span>
                     )}
                   </div>
                   <div className="text-xs text-muted-foreground">

@@ -46,11 +46,21 @@ export async function evaluateDpiaGates({
   `)) as any[];
 
   if (!d) {
-    return [{ code: "dpia_not_found", gate: "preflight", message: "DPIA not found", severity: "error" }];
+    return [
+      {
+        code: "dpia_not_found",
+        gate: "preflight",
+        message: "DPIA not found",
+        severity: "error",
+      },
+    ];
   }
 
   if (target === "in_progress") {
-    if (!d.processing_description || String(d.processing_description).trim().length < 30) {
+    if (
+      !d.processing_description ||
+      String(d.processing_description).trim().length < 30
+    ) {
       blockers.push({
         code: "weak_processing_description",
         gate: "draft_to_in_progress",
@@ -89,7 +99,8 @@ export async function evaluateDpiaGates({
       blockers.push({
         code: "missing_necessity_assessment",
         gate: "in_progress_to_review",
-        message: "Necessity & proportionality assessment is required (Art. 35(7)(b)).",
+        message:
+          "Necessity & proportionality assessment is required (Art. 35(7)(b)).",
         severity: "warning",
       });
     }
@@ -119,7 +130,8 @@ export async function evaluateDpiaGates({
       blockers.push({
         code: "missing_residual_signoff",
         gate: "approved_to_completed",
-        message: "Residual-risk sign-off (controller/management) required before completion.",
+        message:
+          "Residual-risk sign-off (controller/management) required before completion.",
         severity: "error",
       });
     }

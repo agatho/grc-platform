@@ -12,7 +12,13 @@ import {
 import { z } from "zod";
 
 const schema = z.object({
-  signoffType: z.enum(["onboarding", "designation", "renewal", "exit", "dd_complete"]),
+  signoffType: z.enum([
+    "onboarding",
+    "designation",
+    "renewal",
+    "exit",
+    "dd_complete",
+  ]),
   signerRole: z.enum([
     "admin",
     "vendor_manager",
@@ -38,7 +44,13 @@ export async function POST(
   const [v] = await db
     .select({ id: vendor.id, name: vendor.name, status: vendor.status })
     .from(vendor)
-    .where(and(eq(vendor.id, id), eq(vendor.orgId, ctx.orgId), isNull(vendor.deletedAt)));
+    .where(
+      and(
+        eq(vendor.id, id),
+        eq(vendor.orgId, ctx.orgId),
+        isNull(vendor.deletedAt),
+      ),
+    );
   if (!v) return Response.json({ error: "Vendor not found" }, { status: 404 });
 
   const parsed = schema.safeParse(await req.json());
@@ -69,8 +81,11 @@ export async function POST(
   });
   const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
 
-  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
-  const ipAddress = ipHeader ? ipHeader.split(",")[0].trim().slice(0, 64) : null;
+  const ipHeader =
+    req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ipAddress = ipHeader
+    ? ipHeader.split(",")[0].trim().slice(0, 64)
+    : null;
   const userAgent = req.headers.get("user-agent")?.slice(0, 1000) ?? null;
 
   const result = await withAuditContext(
@@ -94,7 +109,9 @@ export async function POST(
         .returning();
       return row;
     },
-    { actionDetail: `Vendor sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}` },
+    {
+      actionDetail: `Vendor sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });
@@ -113,7 +130,9 @@ export async function GET(
   const rows = await db
     .select()
     .from(vendorSignOff)
-    .where(and(eq(vendorSignOff.vendorId, id), eq(vendorSignOff.orgId, ctx.orgId)))
+    .where(
+      and(eq(vendorSignOff.vendorId, id), eq(vendorSignOff.orgId, ctx.orgId)),
+    )
     .orderBy(desc(vendorSignOff.signedAt));
 
   const chrono = [...rows].reverse();

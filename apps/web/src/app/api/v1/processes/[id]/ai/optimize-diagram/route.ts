@@ -34,16 +34,25 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id, name: process.name })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const [version] = await db
     .select({ bpmnXml: processVersion.bpmnXml })
     .from(processVersion)
-    .where(and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)))
+    .where(
+      and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
+    )
     .limit(1);
   if (!version?.bpmnXml) {
     return Response.json({ error: "No current BPMN version" }, { status: 404 });
@@ -68,7 +77,11 @@ export async function POST(
 
   let resp;
   try {
-    resp = await aiComplete({ messages: prompt, maxTokens: 1800, temperature: 0.2 });
+    resp = await aiComplete({
+      messages: prompt,
+      maxTokens: 1800,
+      temperature: 0.2,
+    });
   } catch (err) {
     return Response.json(
       { error: "AI provider failure", details: (err as Error).message },
@@ -78,6 +91,10 @@ export async function POST(
 
   const parsed = safeJsonParse<{ hints?: Hint[] }>(resp.text);
   return Response.json({
-    data: { hints: parsed?.hints ?? [], provider: resp.provider, model: resp.model },
+    data: {
+      hints: parsed?.hints ?? [],
+      provider: resp.provider,
+      model: resp.model,
+    },
   });
 }

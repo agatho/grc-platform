@@ -4,7 +4,10 @@
 // reasoning about prose. We provide both a JSON-shape spec and a tiny
 // example to nudge consistent output from any provider.
 
-export function buildTextToBpmnPrompt(description: string, locale: "de" | "en" = "de") {
+export function buildTextToBpmnPrompt(
+  description: string,
+  locale: "de" | "en" = "de",
+) {
   const userInstruction =
     locale === "de"
       ? `Erzeuge ein BPMN 2.0 XML-Diagramm für die folgende Prozessbeschreibung:`
@@ -42,7 +45,8 @@ export function buildRiskSuggestionPrompt(args: {
   existingRiskTitles: string[];
   locale?: "de" | "en";
 }) {
-  const { processName, processDescription, activityNames, existingRiskTitles } = args;
+  const { processName, processDescription, activityNames, existingRiskTitles } =
+    args;
   const locale = args.locale ?? "de";
   return [
     {
@@ -175,7 +179,10 @@ Language: ${locale === "de" ? "Antworte auf Deutsch." : "Reply in English."}`,
         processName: args.processName,
         activityCount: args.activityCount,
         gatewayCount: args.gatewayCount,
-        bpmnXmlExcerpt: args.bpmnXml.length > 6000 ? args.bpmnXml.slice(0, 6000) : args.bpmnXml,
+        bpmnXmlExcerpt:
+          args.bpmnXml.length > 6000
+            ? args.bpmnXml.slice(0, 6000)
+            : args.bpmnXml,
       }),
     },
   ];

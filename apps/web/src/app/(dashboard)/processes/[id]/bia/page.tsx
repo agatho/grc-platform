@@ -9,7 +9,13 @@ import Link from "next/link";
 import { ArrowLeft, Loader2, AlertTriangle, Plus } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ProcessBiaTab } from "@/components/process/process-bia-tab";
 
@@ -33,7 +39,8 @@ export default function ProcessBiaPage() {
               <AlertTriangle className="h-6 w-6" /> Business Impact Analysis
             </h1>
             <p className="text-sm text-muted-foreground">
-              MTPD / RTO / RPO and impact dimensions for this process across all BIAs
+              MTPD / RTO / RPO and impact dimensions for this process across all
+              BIAs
             </p>
           </div>
           <Link href="/bcms/bia/new">

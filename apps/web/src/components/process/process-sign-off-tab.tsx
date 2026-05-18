@@ -4,7 +4,13 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Loader2, ShieldCheck, ShieldX, FileSignature } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -66,7 +72,11 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
       const resp = await fetch(`/api/v1/processes/${processId}/sign-off`, {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({ signerRole, signoffType, comments: comments || null }),
+        body: JSON.stringify({
+          signerRole,
+          signoffType,
+          comments: comments || null,
+        }),
       });
       if (resp.ok) {
         toast.success("Sign-off recorded");
@@ -99,7 +109,9 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
             ) : (
               <>
                 <ShieldX className="h-4 w-4 text-red-600" />
-                <span className="text-red-600">Chain integrity check failed</span>
+                <span className="text-red-600">
+                  Chain integrity check failed
+                </span>
               </>
             )}
           </CardDescription>
@@ -121,8 +133,12 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="process_owner">Process Owner</SelectItem>
-                    <SelectItem value="quality_manager">Quality Manager</SelectItem>
-                    <SelectItem value="compliance_officer">Compliance Officer</SelectItem>
+                    <SelectItem value="quality_manager">
+                      Quality Manager
+                    </SelectItem>
+                    <SelectItem value="compliance_officer">
+                      Compliance Officer
+                    </SelectItem>
                     <SelectItem value="risk_manager">Risk Manager</SelectItem>
                     <SelectItem value="ciso">CISO</SelectItem>
                     <SelectItem value="dpo">DPO</SelectItem>
@@ -147,12 +163,17 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
               </div>
               <div>
                 <label className="text-sm font-medium">Comments</label>
-                <Textarea value={comments} onChange={(e) => setComments(e.target.value)} />
+                <Textarea
+                  value={comments}
+                  onChange={(e) => setComments(e.target.value)}
+                />
               </div>
             </div>
             <DialogFooter>
               <Button onClick={submit} disabled={submitting}>
-                {submitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {submitting && (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                )}
                 Record
               </Button>
             </DialogFooter>
@@ -163,7 +184,9 @@ export function ProcessSignOffTab({ processId }: { processId: string }) {
         {loading ? (
           <Loader2 className="mx-auto h-6 w-6 animate-spin text-muted-foreground" />
         ) : rows.length === 0 ? (
-          <p className="text-center text-sm text-muted-foreground">No sign-offs yet.</p>
+          <p className="text-center text-sm text-muted-foreground">
+            No sign-offs yet.
+          </p>
         ) : (
           <ul className="divide-y">
             {rows.map((r) => (

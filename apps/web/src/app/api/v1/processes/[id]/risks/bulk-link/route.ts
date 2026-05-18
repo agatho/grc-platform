@@ -24,8 +24,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = bulkSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -63,7 +70,10 @@ export async function POST(
         .select({ riskId: processRisk.riskId })
         .from(processRisk)
         .where(
-          and(eq(processRisk.processId, id), inArray(processRisk.riskId, parsed.data.riskIds)),
+          and(
+            eq(processRisk.processId, id),
+            inArray(processRisk.riskId, parsed.data.riskIds),
+          ),
         );
       const skip = new Set(existingLinks.map((l: any) => l.riskId));
       const toInsert = parsed.data.riskIds.filter((rid) => !skip.has(rid));
@@ -81,7 +91,9 @@ export async function POST(
       );
       return { created: toInsert.length, skippedDuplicates: skip.size };
     },
-    { actionDetail: `Bulk-linked ${parsed.data.riskIds.length} risks to process` },
+    {
+      actionDetail: `Bulk-linked ${parsed.data.riskIds.length} risks to process`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });

@@ -1,6 +1,13 @@
 // BPM Overhaul Phase 4: GET/PUT GDPR Art. 30 ROPA profile per process.
 
-import { db, process, processRopaProfile, dpia, notification, userOrganizationRole } from "@grc/db";
+import {
+  db,
+  process,
+  processRopaProfile,
+  dpia,
+  notification,
+  userOrganizationRole,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
@@ -44,7 +51,11 @@ async function ensureProcess(ctx: { orgId: string }, id: string) {
     .select({ id: process.id })
     .from(process)
     .where(
-      and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)),
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
     );
   return row;
 }
@@ -60,7 +71,8 @@ export async function GET(
 
   const { id } = await params;
   const exists = await ensureProcess(ctx, id);
-  if (!exists) return Response.json({ error: "Process not found" }, { status: 404 });
+  if (!exists)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const [row] = await db
     .select()
@@ -81,7 +93,8 @@ export async function PUT(
 
   const { id } = await params;
   const exists = await ensureProcess(ctx, id);
-  if (!exists) return Response.json({ error: "Process not found" }, { status: 404 });
+  if (!exists)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = ropaProfileSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -101,7 +114,10 @@ export async function PUT(
     ctx,
     async (tx) => {
       const [existing] = await tx
-        .select({ id: processRopaProfile.id, dpiaId: processRopaProfile.dpiaId })
+        .select({
+          id: processRopaProfile.id,
+          dpiaId: processRopaProfile.dpiaId,
+        })
         .from(processRopaProfile)
         .where(eq(processRopaProfile.processId, id));
 

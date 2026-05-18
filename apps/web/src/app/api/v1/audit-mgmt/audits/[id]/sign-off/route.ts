@@ -44,8 +44,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: audit.id, status: audit.status, title: audit.title })
     .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)));
-  if (!existing) return Response.json({ error: "Audit not found" }, { status: 404 });
+    .where(
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Audit not found" }, { status: 404 });
 
   const parsed = signOffSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -75,8 +82,11 @@ export async function POST(
   });
   const chainHash = computeChainHash(prev?.chainHash ?? null, payloadHash);
 
-  const ipHeader = req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
-  const ipAddress = ipHeader ? ipHeader.split(",")[0].trim().slice(0, 64) : null;
+  const ipHeader =
+    req.headers.get("x-forwarded-for") || req.headers.get("x-real-ip");
+  const ipAddress = ipHeader
+    ? ipHeader.split(",")[0].trim().slice(0, 64)
+    : null;
   const userAgent = req.headers.get("user-agent")?.slice(0, 1000) ?? null;
 
   const result = await withAuditContext(
@@ -100,7 +110,9 @@ export async function POST(
         .returning();
       return row;
     },
-    { actionDetail: `Audit sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}` },
+    {
+      actionDetail: `Audit sign-off ${parsed.data.signoffType} by ${parsed.data.signerRole}`,
+    },
   );
 
   return Response.json({ data: result }, { status: 201 });

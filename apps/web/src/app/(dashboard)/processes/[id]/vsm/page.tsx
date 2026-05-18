@@ -5,10 +5,22 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { Loader2, ArrowLeft, GitMerge, Hourglass, TrendingUp } from "lucide-react";
+import {
+  Loader2,
+  ArrowLeft,
+  GitMerge,
+  Hourglass,
+  TrendingUp,
+} from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 
 interface Vsm {
@@ -74,64 +86,78 @@ export default function VsmPage() {
           </Card>
         )}
 
-        {!loading && maps.map((m) => {
-          const lead = m.totalLeadTimeMinutes ? parseFloat(m.totalLeadTimeMinutes) : 0;
-          const va = m.totalValueAddMinutes ? parseFloat(m.totalValueAddMinutes) : 0;
-          const ratio = m.valueAddRatio ? parseFloat(m.valueAddRatio) : 0;
-          return (
-            <Card key={m.id}>
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span>{m.title}</span>
-                  <Badge variant="outline">{m.mapType === "current" ? "IS" : m.mapType === "future" ? "SOLL" : m.mapType}</Badge>
-                </CardTitle>
-                <CardDescription>
-                  Status: {m.status} · Erstellt: {new Date(m.createdAt).toLocaleDateString()}
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="mb-4 grid grid-cols-3 gap-3">
-                  <Metric
-                    icon={<Hourglass className="h-4 w-4" />}
-                    label="Lead Time"
-                    value={`${(lead / 60).toFixed(1)} h`}
-                  />
-                  <Metric
-                    icon={<TrendingUp className="h-4 w-4" />}
-                    label="Value-Add"
-                    value={`${(va / 60).toFixed(1)} h`}
-                  />
-                  <Metric
-                    icon={<GitMerge className="h-4 w-4" />}
-                    label="VA-Ratio"
-                    value={`${ratio.toFixed(1)} %`}
-                    tone={ratio >= 60 ? "ok" : ratio >= 30 ? "warn" : "bad"}
-                  />
-                </div>
-                {(m.wasteAnalysis ?? []).length > 0 && (
-                  <div>
-                    <h4 className="mb-1 text-sm font-semibold">Waste Analysis</h4>
-                    <ul className="space-y-1">
-                      {m.wasteAnalysis.map((w, i) => (
-                        <li key={i} className="text-sm">
-                          <Badge variant="outline" className="mr-2">
-                            {w.type}
-                          </Badge>
-                          {w.description}
-                          {w.impact && (
-                            <span className="ml-2 text-xs text-muted-foreground">
-                              Impact: {w.impact}
-                            </span>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+        {!loading &&
+          maps.map((m) => {
+            const lead = m.totalLeadTimeMinutes
+              ? parseFloat(m.totalLeadTimeMinutes)
+              : 0;
+            const va = m.totalValueAddMinutes
+              ? parseFloat(m.totalValueAddMinutes)
+              : 0;
+            const ratio = m.valueAddRatio ? parseFloat(m.valueAddRatio) : 0;
+            return (
+              <Card key={m.id}>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span>{m.title}</span>
+                    <Badge variant="outline">
+                      {m.mapType === "current"
+                        ? "IS"
+                        : m.mapType === "future"
+                          ? "SOLL"
+                          : m.mapType}
+                    </Badge>
+                  </CardTitle>
+                  <CardDescription>
+                    Status: {m.status} · Erstellt:{" "}
+                    {new Date(m.createdAt).toLocaleDateString()}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="mb-4 grid grid-cols-3 gap-3">
+                    <Metric
+                      icon={<Hourglass className="h-4 w-4" />}
+                      label="Lead Time"
+                      value={`${(lead / 60).toFixed(1)} h`}
+                    />
+                    <Metric
+                      icon={<TrendingUp className="h-4 w-4" />}
+                      label="Value-Add"
+                      value={`${(va / 60).toFixed(1)} h`}
+                    />
+                    <Metric
+                      icon={<GitMerge className="h-4 w-4" />}
+                      label="VA-Ratio"
+                      value={`${ratio.toFixed(1)} %`}
+                      tone={ratio >= 60 ? "ok" : ratio >= 30 ? "warn" : "bad"}
+                    />
                   </div>
-                )}
-              </CardContent>
-            </Card>
-          );
-        })}
+                  {(m.wasteAnalysis ?? []).length > 0 && (
+                    <div>
+                      <h4 className="mb-1 text-sm font-semibold">
+                        Waste Analysis
+                      </h4>
+                      <ul className="space-y-1">
+                        {m.wasteAnalysis.map((w, i) => (
+                          <li key={i} className="text-sm">
+                            <Badge variant="outline" className="mr-2">
+                              {w.type}
+                            </Badge>
+                            {w.description}
+                            {w.impact && (
+                              <span className="ml-2 text-xs text-muted-foreground">
+                                Impact: {w.impact}
+                              </span>
+                            )}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            );
+          })}
       </div>
     </ModuleGate>
   );

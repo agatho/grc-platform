@@ -67,7 +67,9 @@ export default function ProcessMiningPage() {
     if (!processId) return;
     let cancel = false;
     (async () => {
-      const resp = await fetch(`/api/v1/processes/${processId}/mining/bottlenecks`);
+      const resp = await fetch(
+        `/api/v1/processes/${processId}/mining/bottlenecks`,
+      );
       if (resp.ok && !cancel) {
         const j = await resp.json();
         setRows(j.data ?? []);
@@ -82,7 +84,13 @@ export default function ProcessMiningPage() {
   const latest = rows[0];
   const score = latest ? parseFloat(latest.conformance_score) : 0;
   const band =
-    score >= 90 ? "excellent" : score >= 70 ? "good" : score >= 50 ? "at_risk" : "critical";
+    score >= 90
+      ? "excellent"
+      : score >= 70
+        ? "good"
+        : score >= 50
+          ? "at_risk"
+          : "critical";
   const scoreColor =
     band === "excellent"
       ? "text-emerald-700"
@@ -108,7 +116,9 @@ export default function ProcessMiningPage() {
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
               No conformance results yet. Ingest event logs via
-              <code className="ml-1">POST /api/v1/processes/{processId}/event-logs</code>
+              <code className="ml-1">
+                POST /api/v1/processes/{processId}/event-logs
+              </code>
               and the conformance worker will compute results.
             </CardContent>
           </Card>
@@ -119,7 +129,9 @@ export default function ProcessMiningPage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-4">
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-xs uppercase text-muted-foreground">Conformance</div>
+                  <div className="text-xs uppercase text-muted-foreground">
+                    Conformance
+                  </div>
                   <div className={`text-4xl font-bold ${scoreColor}`}>
                     {score.toFixed(1)}%
                   </div>
@@ -128,8 +140,12 @@ export default function ProcessMiningPage() {
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-xs uppercase text-muted-foreground">Traces</div>
-                  <div className="text-4xl font-bold">{latest.total_traces}</div>
+                  <div className="text-xs uppercase text-muted-foreground">
+                    Traces
+                  </div>
+                  <div className="text-4xl font-bold">
+                    {latest.total_traces}
+                  </div>
                   <div className="text-xs text-muted-foreground">
                     {latest.conformant_traces} conformant
                   </div>
@@ -137,20 +153,28 @@ export default function ProcessMiningPage() {
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-xs uppercase text-muted-foreground">Fitness gaps</div>
+                  <div className="text-xs uppercase text-muted-foreground">
+                    Fitness gaps
+                  </div>
                   <div className="text-4xl font-bold text-amber-700">
                     {latest.fitness_gaps?.length ?? 0}
                   </div>
-                  <div className="text-xs text-muted-foreground">unmodeled activities</div>
+                  <div className="text-xs text-muted-foreground">
+                    unmodeled activities
+                  </div>
                 </CardContent>
               </Card>
               <Card>
                 <CardContent className="p-4">
-                  <div className="text-xs uppercase text-muted-foreground">Rework loops</div>
+                  <div className="text-xs uppercase text-muted-foreground">
+                    Rework loops
+                  </div>
                   <div className="text-4xl font-bold text-red-700">
                     {latest.rework_loops?.length ?? 0}
                   </div>
-                  <div className="text-xs text-muted-foreground">repeated activities</div>
+                  <div className="text-xs text-muted-foreground">
+                    repeated activities
+                  </div>
                 </CardContent>
               </Card>
             </div>
@@ -158,9 +182,12 @@ export default function ProcessMiningPage() {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <TrendingDown className="h-5 w-5" /> Bottlenecks (median wait time)
+                  <TrendingDown className="h-5 w-5" /> Bottlenecks (median wait
+                  time)
                 </CardTitle>
-                <CardDescription>Top 10 activities by median wait time</CardDescription>
+                <CardDescription>
+                  Top 10 activities by median wait time
+                </CardDescription>
               </CardHeader>
               <CardContent style={{ height: 300 }}>
                 {(latest.bottlenecks?.length ?? 0) === 0 ? (
@@ -182,7 +209,11 @@ export default function ProcessMiningPage() {
                         tickFormatter={(v) => `${Math.round(v / 60)}m`}
                         tick={{ fontSize: 11 }}
                       />
-                      <Tooltip formatter={(v: any) => `${Math.round(Number(v) / 60)} min`} />
+                      <Tooltip
+                        formatter={(v: any) =>
+                          `${Math.round(Number(v) / 60)} min`
+                        }
+                      />
                       <Bar dataKey="median_wait_seconds" fill="#dc2626" />
                     </BarChart>
                   </ResponsiveContainer>
@@ -196,17 +227,26 @@ export default function ProcessMiningPage() {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <AlertTriangle className="h-4 w-4" /> Fitness gaps
                   </CardTitle>
-                  <CardDescription>Activities in log not modeled in BPMN</CardDescription>
+                  <CardDescription>
+                    Activities in log not modeled in BPMN
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {(latest.fitness_gaps?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground">None — model matches log.</p>
+                    <p className="text-sm text-muted-foreground">
+                      None — model matches log.
+                    </p>
                   ) : (
                     <ul className="space-y-1">
                       {latest.fitness_gaps.map((g) => (
-                        <li key={g.activity} className="flex justify-between text-sm">
+                        <li
+                          key={g.activity}
+                          className="flex justify-between text-sm"
+                        >
                           <span>{g.activity}</span>
-                          <span className="font-mono text-muted-foreground">{g.count}×</span>
+                          <span className="font-mono text-muted-foreground">
+                            {g.count}×
+                          </span>
                         </li>
                       ))}
                     </ul>
@@ -218,15 +258,22 @@ export default function ProcessMiningPage() {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <RotateCw className="h-4 w-4" /> Rework loops
                   </CardTitle>
-                  <CardDescription>Activities repeated within a single case</CardDescription>
+                  <CardDescription>
+                    Activities repeated within a single case
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   {(latest.rework_loops?.length ?? 0) === 0 ? (
-                    <p className="text-sm text-muted-foreground">None — clean traces.</p>
+                    <p className="text-sm text-muted-foreground">
+                      None — clean traces.
+                    </p>
                   ) : (
                     <ul className="space-y-1">
                       {latest.rework_loops.map((g) => (
-                        <li key={g.activity} className="flex justify-between text-sm">
+                        <li
+                          key={g.activity}
+                          className="flex justify-between text-sm"
+                        >
                           <span>{g.activity}</span>
                           <span className="font-mono text-muted-foreground">
                             {g.repeatOccurrences}×
@@ -245,7 +292,9 @@ export default function ProcessMiningPage() {
                   <CardTitle className="flex items-center gap-2 text-base">
                     <Activity className="h-4 w-4" /> History
                   </CardTitle>
-                  <CardDescription>Last {rows.length} conformance runs</CardDescription>
+                  <CardDescription>
+                    Last {rows.length} conformance runs
+                  </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <table className="w-full text-sm">

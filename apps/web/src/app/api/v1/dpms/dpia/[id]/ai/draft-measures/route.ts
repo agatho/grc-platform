@@ -1,7 +1,11 @@
 // DPMS Overhaul: AI-draft mitigation measures for identified DPIA risks.
 
 import { db, dpia, dpiaRisk } from "@grc/db";
-import { aiComplete, buildDpiaMeasureDraftPrompt, safeJsonParse } from "@grc/ai";
+import {
+  aiComplete,
+  buildDpiaMeasureDraftPrompt,
+  safeJsonParse,
+} from "@grc/ai";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -22,22 +26,24 @@ export async function POST(
   const [d] = await db
     .select()
     .from(dpia)
-    .where(and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)));
+    .where(
+      and(eq(dpia.id, id), eq(dpia.orgId, ctx.orgId), isNull(dpia.deletedAt)),
+    );
   if (!d) return Response.json({ error: "DPIA not found" }, { status: 404 });
 
-  const risks = await db
-    .select()
-    .from(dpiaRisk)
-    .where(eq(dpiaRisk.dpiaId, id));
+  const risks = await db.select().from(dpiaRisk).where(eq(dpiaRisk.dpiaId, id));
 
   if (risks.length === 0) {
     return Response.json({
-      data: { measures: [], note: "No identified risks to draft measures for." },
+      data: {
+        measures: [],
+        note: "No identified risks to draft measures for.",
+      },
     });
   }
 
   const body = schema.safeParse(await req.json().catch(() => ({})));
-  const locale = body.success ? body.data.locale ?? "de" : "de";
+  const locale = body.success ? (body.data.locale ?? "de") : "de";
 
   const prompt = buildDpiaMeasureDraftPrompt({
     dpiaTitle: d.title,
@@ -67,6 +73,10 @@ export async function POST(
 
   const parsed = safeJsonParse<{ measures?: any[] }>(resp.text);
   return Response.json({
-    data: { measures: parsed?.measures ?? [], provider: resp.provider, model: resp.model },
+    data: {
+      measures: parsed?.measures ?? [],
+      provider: resp.provider,
+      model: resp.model,
+    },
   });
 }

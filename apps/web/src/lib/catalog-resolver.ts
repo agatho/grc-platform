@@ -45,7 +45,7 @@ const FRAMEWORK_TOKENS: Record<string, string[]> = {
   esrs: ["ESRS", "CSRD"],
   lksg: ["LkSG"],
   mitre: ["MITRE ATT&CK"],
-  "soc2": ["SOC 2", "ISAE 3402"],
+  soc2: ["SOC 2", "ISAE 3402"],
   idw: ["IDW PS"],
   iia: ["IIA Standards"],
 };
@@ -66,13 +66,19 @@ export async function resolveCatalogEntry(
     return { catalogEntryId: eid, catalogId: cid };
   }
 
-  const tokens = FRAMEWORK_TOKENS[frameworkCode.toLowerCase()] ?? [frameworkCode];
+  const tokens = FRAMEWORK_TOKENS[frameworkCode.toLowerCase()] ?? [
+    frameworkCode,
+  ];
   // Build an OR of ILIKE clauses on catalog.source/name
   const likeClauses = tokens
-    .map((t) => `(c.source ILIKE '%' || ${`'${t.replace(/'/g, "''")}'`} || '%' OR c.name ILIKE '%' || ${`'${t.replace(/'/g, "''")}'`} || '%')`)
+    .map(
+      (t) =>
+        `(c.source ILIKE '%' || ${`'${t.replace(/'/g, "''")}'`} || '%' OR c.name ILIKE '%' || ${`'${t.replace(/'/g, "''")}'`} || '%')`,
+    )
     .join(" OR ");
 
-  const result = await db.execute(sql.raw(`
+  const result = await db.execute(
+    sql.raw(`
     SELECT ce.id AS entry_id, ce.catalog_id
     FROM catalog_entry ce
     JOIN catalog c ON c.id = ce.catalog_id
@@ -81,7 +87,8 @@ export async function resolveCatalogEntry(
       AND c.is_active = true
     ORDER BY c.created_at DESC
     LIMIT 1
-  `));
+  `),
+  );
 
   const row = (result as any[])[0];
   if (!row) {

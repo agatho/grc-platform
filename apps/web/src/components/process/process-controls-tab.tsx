@@ -5,10 +5,23 @@ import { toast } from "sonner";
 import { Plus, Loader2, Unlink, ShieldCheck } from "lucide-react";
 import Link from "next/link";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 
 interface Control {
@@ -93,11 +106,14 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
     if (selected.size === 0) return;
     setLinking(true);
     try {
-      const resp = await fetch(`/api/v1/processes/${processId}/controls/bulk-link`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ controlIds: Array.from(selected) }),
-      });
+      const resp = await fetch(
+        `/api/v1/processes/${processId}/controls/bulk-link`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({ controlIds: Array.from(selected) }),
+        },
+      );
       if (!resp.ok) {
         const e = await resp.json().catch(() => ({}));
         throw new Error(e.error ?? "Bulk-link failed");
@@ -105,7 +121,9 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
       const j = await resp.json();
       toast.success(
         `Linked ${j.data?.created ?? 0} control(s)` +
-          (j.data?.skippedDuplicates ? ` (${j.data.skippedDuplicates} duplicate)` : ""),
+          (j.data?.skippedDuplicates
+            ? ` (${j.data.skippedDuplicates} duplicate)`
+            : ""),
       );
       setSelected(new Set());
       setPickerOpen(false);
@@ -119,9 +137,12 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
 
   const unlink = useCallback(
     async (linkId: string) => {
-      const resp = await fetch(`/api/v1/processes/${processId}/controls/${linkId}`, {
-        method: "DELETE",
-      });
+      const resp = await fetch(
+        `/api/v1/processes/${processId}/controls/${linkId}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (resp.ok) {
         toast.success("Control unlinked");
         reload();
@@ -153,7 +174,10 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
               value={String(summary.activitiesWithoutControl)}
               tone={summary.activitiesWithoutControl > 0 ? "warn" : "ok"}
             />
-            <Stat label="Total Controls" value={String(summary.totalControls)} />
+            <Stat
+              label="Total Controls"
+              value={String(summary.totalControls)}
+            />
             <Stat
               label="Effectiveness"
               value={`${summary.effectivenessAvgPct}%`}
@@ -167,7 +191,9 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle>Linked Controls</CardTitle>
-            <CardDescription>{links.length} control(s) at process level</CardDescription>
+            <CardDescription>
+              {links.length} control(s) at process level
+            </CardDescription>
           </div>
           <Dialog open={pickerOpen} onOpenChange={setPickerOpen}>
             <DialogTrigger asChild>
@@ -204,7 +230,10 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
                     <div className="flex-1">
                       <div className="font-medium">{c.title}</div>
                       <div className="text-xs text-muted-foreground">
-                        {c.controlType} · <span className={statusColor[c.status]}>{c.status}</span>
+                        {c.controlType} ·{" "}
+                        <span className={statusColor[c.status]}>
+                          {c.status}
+                        </span>
                       </div>
                     </div>
                   </label>
@@ -216,8 +245,13 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
                 )}
               </div>
               <DialogFooter>
-                <Button onClick={submit} disabled={selected.size === 0 || linking}>
-                  {linking ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                <Button
+                  onClick={submit}
+                  disabled={selected.size === 0 || linking}
+                >
+                  {linking ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : null}
                   Link {selected.size} control(s)
                 </Button>
               </DialogFooter>
@@ -234,7 +268,10 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
           ) : (
             <ul className="divide-y">
               {links.map((l) => (
-                <li key={l.linkId} className="flex items-center justify-between py-2">
+                <li
+                  key={l.linkId}
+                  className="flex items-center justify-between py-2"
+                >
                   <div className="flex-1">
                     <Link
                       href={`/controls/${l.controlId}`}
@@ -243,14 +280,21 @@ export function ProcessControlsTab({ processId }: { processId: string }) {
                       {l.title}
                     </Link>
                     <div className="text-xs text-muted-foreground">
-                      <Badge variant="outline" className={statusColor[l.status]}>
+                      <Badge
+                        variant="outline"
+                        className={statusColor[l.status]}
+                      >
                         {l.status}
                       </Badge>{" "}
                       {l.controlType ?? ""}
                       {l.controlContext ? ` — ${l.controlContext}` : ""}
                     </div>
                   </div>
-                  <Button size="sm" variant="ghost" onClick={() => unlink(l.linkId)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => unlink(l.linkId)}
+                  >
                     <Unlink className="h-4 w-4" />
                   </Button>
                 </li>

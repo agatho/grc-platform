@@ -9,7 +9,13 @@ import { toast } from "sonner";
 import { Loader2, ArrowLeft, RefreshCw, Award } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 
@@ -27,7 +33,14 @@ interface MaturityResult {
   dimensions: DimensionScore[];
 }
 
-const LEVEL_LABELS = ["—", "Initial", "Repeatable", "Defined", "Managed", "Optimizing"];
+const LEVEL_LABELS = [
+  "—",
+  "Initial",
+  "Repeatable",
+  "Defined",
+  "Managed",
+  "Optimizing",
+];
 
 function levelColor(level: number): string {
   if (level >= 5) return "bg-emerald-100 text-emerald-800";
@@ -92,10 +105,13 @@ export default function MaturityPage() {
           id: j.data.id,
           overall: j.data.overall,
           overallLevel: j.data.overall,
-          assessmentDate: j.data.assessmentDate ?? new Date().toISOString().slice(0, 10),
+          assessmentDate:
+            j.data.assessmentDate ?? new Date().toISOString().slice(0, 10),
           dimensions: j.data.dimensions ?? [],
         });
-        toast.success(`Maturity Level ${j.data.overall}: ${LEVEL_LABELS[j.data.overall] ?? ""}`);
+        toast.success(
+          `Maturity Level ${j.data.overall}: ${LEVEL_LABELS[j.data.overall] ?? ""}`,
+        );
       } else {
         const e = await resp.json().catch(() => ({}));
         toast.error(e.error ?? "Compute failed");
@@ -134,7 +150,8 @@ export default function MaturityPage() {
         {!loading && !result && (
           <Card>
             <CardContent className="py-10 text-center text-sm text-muted-foreground">
-              No maturity assessment yet. Click "Compute now" to derive one from live data.
+              No maturity assessment yet. Click "Compute now" to derive one from
+              live data.
             </CardContent>
           </Card>
         )}
@@ -150,7 +167,8 @@ export default function MaturityPage() {
                   </Badge>
                 </CardTitle>
                 <CardDescription>
-                  Last computed {new Date(result.assessmentDate).toLocaleDateString()}
+                  Last computed{" "}
+                  {new Date(result.assessmentDate).toLocaleDateString()}
                 </CardDescription>
               </CardHeader>
             </Card>
@@ -168,9 +186,13 @@ export default function MaturityPage() {
                         <span className="font-medium">
                           {DIMENSION_LABELS[d.dimension] ?? d.dimension}
                         </span>
-                        <Badge className={levelColor(d.level)}>L{d.level}</Badge>
+                        <Badge className={levelColor(d.level)}>
+                          L{d.level}
+                        </Badge>
                       </div>
-                      <div className="mt-1 text-xs text-muted-foreground">{d.basis}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {d.basis}
+                      </div>
                       <div className="mt-2 h-2 w-full overflow-hidden rounded bg-gray-100">
                         <div
                           className="h-full rounded bg-blue-500"

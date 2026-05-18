@@ -20,7 +20,10 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const format = (url.searchParams.get("format") ?? "csv").toLowerCase();
   if (!["csv", "pdf"].includes(format)) {
-    return Response.json({ error: "format must be csv or pdf" }, { status: 400 });
+    return Response.json(
+      { error: "format must be csv or pdf" },
+      { status: 400 },
+    );
   }
 
   const rows = await withReadContext(ctx, async (tx) => {
@@ -71,5 +74,8 @@ export async function GET(req: Request) {
       },
     });
   }
-  return renderHtmlToPdfResponse(rowsToHtml(rows, orgName), `process-ropa-${ctx.orgId.slice(0, 8)}`);
+  return renderHtmlToPdfResponse(
+    rowsToHtml(rows, orgName),
+    `process-ropa-${ctx.orgId.slice(0, 8)}`,
+  );
 }

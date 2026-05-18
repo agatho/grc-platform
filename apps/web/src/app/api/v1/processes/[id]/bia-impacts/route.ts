@@ -53,8 +53,16 @@ export async function GET(
       updatedAt: biaProcessImpact.updatedAt,
     })
     .from(biaProcessImpact)
-    .innerJoin(biaAssessment, eq(biaAssessment.id, biaProcessImpact.biaAssessmentId))
-    .where(and(eq(biaProcessImpact.processId, id), eq(biaProcessImpact.orgId, ctx.orgId)))
+    .innerJoin(
+      biaAssessment,
+      eq(biaAssessment.id, biaProcessImpact.biaAssessmentId),
+    )
+    .where(
+      and(
+        eq(biaProcessImpact.processId, id),
+        eq(biaProcessImpact.orgId, ctx.orgId),
+      ),
+    )
     .orderBy(desc(biaProcessImpact.updatedAt));
 
   return Response.json({ data: impacts });

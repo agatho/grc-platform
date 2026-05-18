@@ -26,7 +26,13 @@ export async function POST(
   const [b] = await db
     .select()
     .from(dataBreach)
-    .where(and(eq(dataBreach.id, id), eq(dataBreach.orgId, ctx.orgId), isNull(dataBreach.deletedAt)));
+    .where(
+      and(
+        eq(dataBreach.id, id),
+        eq(dataBreach.orgId, ctx.orgId),
+        isNull(dataBreach.deletedAt),
+      ),
+    );
   if (!b) return Response.json({ error: "Breach not found" }, { status: 404 });
 
   const notifications = await db
@@ -102,7 +108,8 @@ export async function POST(
 
   zip.file(
     "affected-data-categories.csv",
-    "Category\n" + (b.dataCategoriesAffected ?? []).map((c) => csv(c)).join("\n"),
+    "Category\n" +
+      (b.dataCategoriesAffected ?? []).map((c) => csv(c)).join("\n"),
   );
 
   zip.file(
@@ -121,12 +128,18 @@ export async function POST(
     ].join("\n"),
   );
 
-  const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="breach-pack-${id.slice(0, 8)}-${Date.now()}.zip"`,
-    },
+  const buf = await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
   });
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="breach-pack-${id.slice(0, 8)}-${Date.now()}.zip"`,
+      },
+    },
+  );
 }

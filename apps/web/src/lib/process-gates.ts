@@ -8,11 +8,16 @@ import { sql } from "drizzle-orm";
 export interface GateBlocker {
   code: string;
   gate: string;
-  message: string;          // English fallback; UI overrides via i18n by code
+  message: string; // English fallback; UI overrides via i18n by code
   severity: "error" | "warning";
 }
 
-export type ProcessStatus = "draft" | "in_review" | "approved" | "published" | "archived";
+export type ProcessStatus =
+  | "draft"
+  | "in_review"
+  | "approved"
+  | "published"
+  | "archived";
 
 interface CheckArgs {
   tx: any;
@@ -150,7 +155,8 @@ export async function evaluateTransitionGates({
       blockers.push({
         code: "no_framework_mapping",
         gate: "approved_to_published",
-        message: "At least one framework mapping (ISO/NIS2/GDPR/...) is required for publication.",
+        message:
+          "At least one framework mapping (ISO/NIS2/GDPR/...) is required for publication.",
         severity: "error",
       });
     }
@@ -158,7 +164,8 @@ export async function evaluateTransitionGates({
       blockers.push({
         code: "weak_description",
         gate: "approved_to_published",
-        message: "Process description must be at least 20 characters before publication.",
+        message:
+          "Process description must be at least 20 characters before publication.",
         severity: "warning",
       });
     }

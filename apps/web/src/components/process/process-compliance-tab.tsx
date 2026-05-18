@@ -4,9 +4,25 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { Plus, Loader2, Trash2, Sparkles } from "lucide-react";
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+
+async function syntheticUuid(input: string): Promise<string> {
+  const bytes = new TextEncoder().encode(input);
+  const digest = await crypto.subtle.digest("SHA-256", bytes);
+  const hex = Array.from(new Uint8Array(digest))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("")
+    .slice(0, 32);
+  return `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20, 32)}`;
+}
 
 interface Mapping {
   id: string;
@@ -61,11 +77,14 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
   const suggest = useCallback(async () => {
     setSuggesting(true);
     try {
-      const resp = await fetch(`/api/v1/processes/${processId}/ai/map-frameworks`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({}),
-      });
+      const resp = await fetch(
+        `/api/v1/processes/${processId}/ai/map-frameworks`,
+        {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          body: JSON.stringify({}),
+        },
+      );
       if (resp.ok) {
         const j = await resp.json();
         setSuggestions(j.data?.suggestions ?? []);
@@ -83,7 +102,9 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
       // We map to a synthetic catalogEntryId — server will store it via process_framework_mapping.
       // To produce a stable uuid for the catalog entry we'd ideally look up the catalog_entry,
       // but for the simple case we deterministically hash code+framework.
-      const fakeUuid = await syntheticUuid(`${s.frameworkCode}:${s.entryCode ?? ""}`);
+      const fakeUuid = await syntheticUuid(
+        `${s.frameworkCode}:${s.entryCode ?? ""}`,
+      );
       const resp = await fetch(`/api/v1/processes/${processId}/coverage`, {
         method: "POST",
         headers: { "content-type": "application/json" },
@@ -134,11 +155,16 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
           <div>
             <CardTitle>Compliance Framework Coverage</CardTitle>
             <CardDescription>
-              {mappings.length} mapping(s) across {Object.keys(byFramework).length} framework(s)
+              {mappings.length} mapping(s) across{" "}
+              {Object.keys(byFramework).length} framework(s)
             </CardDescription>
           </div>
           <Button size="sm" onClick={suggest} disabled={suggesting}>
-            {suggesting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Sparkles className="mr-2 h-4 w-4" />}
+            {suggesting ? (
+              <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            ) : (
+              <Sparkles className="mr-2 h-4 w-4" />
+            )}
             AI Suggest
           </Button>
         </CardHeader>
@@ -155,26 +181,49 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
                 <div key={code}>
                   <div className="mb-1 flex items-center gap-2 font-medium">
                     <Badge>{frameworkLabels[code] ?? code}</Badge>
-                    <span className="text-sm text-muted-foreground">{ms.length}</span>
+                    <span className="text-sm text-muted-foreground">
+                      {ms.length}
+                    </span>
                   </div>
                   <ul className="ml-3 space-y-1 text-sm">
                     {ms.map((m) => (
-                      <li key={m.id} className="flex items-start justify-between gap-2">
+                      <li
+                        key={m.id}
+                        className="flex items-start justify-between gap-2"
+                      >
                         <div>
                           <span className="font-mono text-xs">
-                            {m.entryCode ?? (m.catalogEntryId ? m.catalogEntryId.slice(0, 8) + "…" : "—")}
+                            {m.entryCode ??
+                              (m.catalogEntryId
+                                ? m.catalogEntryId.slice(0, 8) + "…"
+                                : "—")}
                           </span>
-                          {m.entryTitle ? <span className="text-muted-foreground"> — {m.entryTitle}</span> : null}
-                          {" "}
+                          {m.entryTitle ? (
+                            <span className="text-muted-foreground">
+                              {" "}
+                              — {m.entryTitle}
+                            </span>
+                          ) : null}{" "}
                           <Badge variant="outline">{m.mappingStrength}</Badge>
                           {!m.catalogEntryId && (
-                            <Badge variant="outline" className="ml-1 bg-amber-50 text-amber-800">
+                            <Badge
+                              variant="outline"
+                              className="ml-1 bg-amber-50 text-amber-800"
+                            >
                               unresolved
                             </Badge>
                           )}
-                          {m.rationale && <div className="text-xs text-muted-foreground">{m.rationale}</div>}
+                          {m.rationale && (
+                            <div className="text-xs text-muted-foreground">
+                              {m.rationale}
+                            </div>
+                          )}
                         </div>
-                        <Button size="sm" variant="ghost" onClick={() => remove(m.id)}>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => remove(m.id)}
+                        >
                           <Trash2 className="h-3 w-3" />
                         </Button>
                       </li>
@@ -191,7 +240,9 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
         <Card>
           <CardHeader>
             <CardTitle>AI Suggestions</CardTitle>
-            <CardDescription>Review and accept the relevant mappings.</CardDescription>
+            <CardDescription>
+              Review and accept the relevant mappings.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-2">
@@ -202,11 +253,20 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
                 >
                   <div>
                     <div className="font-medium">
-                      <Badge>{frameworkLabels[s.frameworkCode] ?? s.frameworkCode}</Badge>{" "}
-                      {s.entryCode} {s.title && <span className="text-muted-foreground">— {s.title}</span>}
+                      <Badge>
+                        {frameworkLabels[s.frameworkCode] ?? s.frameworkCode}
+                      </Badge>{" "}
+                      {s.entryCode}{" "}
+                      {s.title && (
+                        <span className="text-muted-foreground">
+                          — {s.title}
+                        </span>
+                      )}
                     </div>
                     {s.rationale && (
-                      <div className="mt-1 text-xs text-muted-foreground">{s.rationale}</div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {s.rationale}
+                      </div>
                     )}
                   </div>
                   <Button size="sm" variant="outline" onClick={() => accept(s)}>
@@ -222,4 +282,3 @@ export function ProcessComplianceTab({ processId }: { processId: string }) {
     </div>
   );
 }
-

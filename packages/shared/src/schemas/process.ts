@@ -58,7 +58,10 @@ export const updateProcessSchema = z.object({
     .optional(),
   isCriticalProcess: z.boolean().optional(),
   criticalityRationale: z.string().max(2000).nullable().optional(),
-  defaultLineOfDefense: z.enum(["first", "second", "third", "oversight"]).nullable().optional(),
+  defaultLineOfDefense: z
+    .enum(["first", "second", "third", "oversight"])
+    .nullable()
+    .optional(),
 });
 
 // ─── Process Version ─────────────────────────────────────────

@@ -64,7 +64,10 @@ function groupRacmRows(
         findings: [],
       });
     }
-    if (r.riskId && !byStep.get(r.stepId)!.risks.find((x) => x.id === r.riskId)) {
+    if (
+      r.riskId &&
+      !byStep.get(r.stepId)!.risks.find((x) => x.id === r.riskId)
+    ) {
       byStep.get(r.stepId)!.risks.push({
         id: r.riskId,
         title: r.riskTitle,
@@ -170,7 +173,13 @@ describe("RACM aggregation", () => {
       ],
       [],
       [
-        { id: "f1", title: "Issue", severity: "high", status: "open", processStepId: "s2" },
+        {
+          id: "f1",
+          title: "Issue",
+          severity: "high",
+          status: "open",
+          processStepId: "s2",
+        },
       ],
     );
     expect(rows.find((r) => r.stepId === "s2")!.findings).toHaveLength(1);
@@ -192,7 +201,14 @@ describe("RACM aggregation", () => {
           riskStatus: null,
         },
       ],
-      [{ stepId: "s1", controlId: "c1", controlTitle: "C1", controlStatus: "effective" }],
+      [
+        {
+          stepId: "s1",
+          controlId: "c1",
+          controlTitle: "C1",
+          controlStatus: "effective",
+        },
+      ],
       [],
     );
     expect(rows[0].controls).toHaveLength(1);

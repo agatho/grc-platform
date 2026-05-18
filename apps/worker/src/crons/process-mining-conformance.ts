@@ -29,7 +29,9 @@ interface ConformanceResult {
 
 export async function processMiningConformance(): Promise<ConformanceResult> {
   const startedAt = new Date();
-  console.log(`[cron:process-mining-conformance] Starting at ${startedAt.toISOString()}`);
+  console.log(
+    `[cron:process-mining-conformance] Starting at ${startedAt.toISOString()}`,
+  );
 
   const logs = await db
     .select({
@@ -92,7 +94,8 @@ export async function processMiningConformance(): Promise<ConformanceResult> {
       }
 
       const total = traceRows.length;
-      const score = total === 0 ? 0 : Math.round((conformantTraces / total) * 10000) / 100;
+      const score =
+        total === 0 ? 0 : Math.round((conformantTraces / total) * 10000) / 100;
 
       const bottlenecks = (await db.execute(sql`
         WITH ordered AS (
@@ -110,7 +113,11 @@ export async function processMiningConformance(): Promise<ConformanceResult> {
         GROUP BY activity
         ORDER BY median_wait_seconds DESC NULLS LAST
         LIMIT 10
-      `)) as Array<{ activity: string; occurrences: number; median_wait_seconds: number }>;
+      `)) as Array<{
+        activity: string;
+        occurrences: number;
+        median_wait_seconds: number;
+      }>;
 
       const fitnessGaps = Array.from(fitnessGapCount.entries())
         .sort((a, b) => b[1] - a[1])
@@ -149,7 +156,10 @@ export async function processMiningConformance(): Promise<ConformanceResult> {
     } catch (err) {
       errors += 1;
       const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:process-mining-conformance] log=${log.id} failed:`, message);
+      console.error(
+        `[cron:process-mining-conformance] log=${log.id} failed:`,
+        message,
+      );
       await db
         .update(processEventLog)
         .set({ status: "error", errorMessage: message.slice(0, 1000) })

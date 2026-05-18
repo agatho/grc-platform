@@ -13,7 +13,9 @@ import { test, expect } from "@playwright/test";
 test.describe("BPM — ROPA profile + DPIA auto-create + export", () => {
   test.use({ storageState: "e2e/.auth/admin.json" });
 
-  test("high-risk ROPA save → DPIA created → CSV export downloads", async ({ request }) => {
+  test("high-risk ROPA save → DPIA created → CSV export downloads", async ({
+    request,
+  }) => {
     const name = `e2e-ropa-${Date.now()}`;
     const createRes = await request.post("/api/v1/processes", {
       data: { name, description: "Process for ROPA E2E", level: 2 },
@@ -22,21 +24,25 @@ test.describe("BPM — ROPA profile + DPIA auto-create + export", () => {
     const processId: string = (await createRes.json()).data.id;
 
     // PUT high-risk ROPA profile
-    const putRes = await request.put(`/api/v1/processes/${processId}/ropa-profile`, {
-      data: {
-        isProcessingActivity: true,
-        processingPurpose: "Verarbeitung von Gesundheitsdaten zur Behandlung",
-        legalBasis: "consent",
-        dataSubjectCategories: ["Patienten"],
-        personalDataCategories: ["Name", "Adresse", "Geburtsdatum"],
-        specialCategories: ["Gesundheitsdaten"],
-        recipients: ["Krankenkassen"],
-        thirdCountryTransfers: false,
-        retentionPeriodDescription: "10 Jahre nach Behandlungsende",
-        retentionPeriodMonths: 120,
-        tomDescription: "AES-256 at rest, TLS 1.3 in transit, role-based access",
+    const putRes = await request.put(
+      `/api/v1/processes/${processId}/ropa-profile`,
+      {
+        data: {
+          isProcessingActivity: true,
+          processingPurpose: "Verarbeitung von Gesundheitsdaten zur Behandlung",
+          legalBasis: "consent",
+          dataSubjectCategories: ["Patienten"],
+          personalDataCategories: ["Name", "Adresse", "Geburtsdatum"],
+          specialCategories: ["Gesundheitsdaten"],
+          recipients: ["Krankenkassen"],
+          thirdCountryTransfers: false,
+          retentionPeriodDescription: "10 Jahre nach Behandlungsende",
+          retentionPeriodMonths: 120,
+          tomDescription:
+            "AES-256 at rest, TLS 1.3 in transit, role-based access",
+        },
       },
-    });
+    );
     expect(putRes.ok(), await putRes.text()).toBeTruthy();
     const ropaData = await putRes.json();
 
@@ -55,7 +61,9 @@ test.describe("BPM — ROPA profile + DPIA auto-create + export", () => {
     expect(csvText).toContain("Gesundheitsdaten");
 
     // Org-wide ROPA export should also include this process
-    const orgCsv = await request.get("/api/v1/processes/ropa-export?format=csv");
+    const orgCsv = await request.get(
+      "/api/v1/processes/ropa-export?format=csv",
+    );
     expect(orgCsv.status()).toBe(200);
     const orgText = await orgCsv.text();
     expect(orgText).toContain(name);
@@ -68,14 +76,17 @@ test.describe("BPM — ROPA profile + DPIA auto-create + export", () => {
     });
     const processId: string = (await createRes.json()).data.id;
 
-    const putRes = await request.put(`/api/v1/processes/${processId}/ropa-profile`, {
-      data: {
-        isProcessingActivity: true,
-        processingPurpose: "Newsletter dispatch",
-        legalBasis: "consent",
-        personalDataCategories: ["Email"],
+    const putRes = await request.put(
+      `/api/v1/processes/${processId}/ropa-profile`,
+      {
+        data: {
+          isProcessingActivity: true,
+          processingPurpose: "Newsletter dispatch",
+          legalBasis: "consent",
+          personalDataCategories: ["Email"],
+        },
       },
-    });
+    );
     const data = (await putRes.json()).data;
     expect(data.requiresDpia).toBe(false);
     expect(data.dpiaId).toBeFalsy();

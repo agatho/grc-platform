@@ -34,7 +34,13 @@ export async function POST(
   const [a] = await db
     .select()
     .from(audit)
-    .where(and(eq(audit.id, id), eq(audit.orgId, ctx.orgId), isNull(audit.deletedAt)));
+    .where(
+      and(
+        eq(audit.id, id),
+        eq(audit.orgId, ctx.orgId),
+        isNull(audit.deletedAt),
+      ),
+    );
   if (!a) return Response.json({ error: "Audit not found" }, { status: 404 });
 
   const data = await withReadContext(ctx, async (tx) => {
@@ -88,7 +94,14 @@ export async function POST(
       ORDER BY signed_at
     `)) as any[];
 
-    return { auditDetail, checklist, findings, evidence, workingPapers, signOffs };
+    return {
+      auditDetail,
+      checklist,
+      findings,
+      evidence,
+      workingPapers,
+      signOffs,
+    };
   });
 
   const zip = new JSZip();
@@ -143,7 +156,9 @@ export async function POST(
           csv(c.control_title),
           csv(c.result),
           csv(c.risk_rating),
-          csv((c.method_entries ?? []).map((m: any) => m?.method ?? m).join("|")),
+          csv(
+            (c.method_entries ?? []).map((m: any) => m?.method ?? m).join("|"),
+          ),
           csv(c.notes),
         ].join(","),
       ),
@@ -191,9 +206,13 @@ export async function POST(
     [
       "ID,Title,Status,Summary,Created",
       ...data.workingPapers.map((w: any) =>
-        [csv(w.id), csv(w.title), csv(w.status), csv(w.content_summary), csv(w.created_at)].join(
-          ",",
-        ),
+        [
+          csv(w.id),
+          csv(w.title),
+          csv(w.status),
+          csv(w.content_summary),
+          csv(w.created_at),
+        ].join(","),
       ),
     ].join("\n"),
   );
@@ -208,14 +227,22 @@ export async function POST(
       .join("\n\n"),
   );
 
-  const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-  const safeTitle = (det?.title ?? a.title).replace(/[^A-Za-z0-9_-]+/g, "-").slice(0, 50);
-
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="audit-pack-${safeTitle}-${Date.now()}.zip"`,
-    },
+  const buf = await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
   });
+  const safeTitle = (det?.title ?? a.title)
+    .replace(/[^A-Za-z0-9_-]+/g, "-")
+    .slice(0, 50);
+
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="audit-pack-${safeTitle}-${Date.now()}.zip"`,
+      },
+    },
+  );
 }

@@ -9,7 +9,13 @@ import { toast } from "sonner";
 import { ArrowLeft, Loader2, Save } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardHeader,
+  CardTitle,
+  CardDescription,
+} from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Switch } from "@/components/ui/switch";
@@ -111,7 +117,9 @@ export default function BiaProcessesPage() {
         <Card>
           <CardHeader>
             <CardTitle>Prozesse in dieser BIA</CardTitle>
-            <CardDescription>MTPD / RTO / RPO und Impact-Werte pro Prozess</CardDescription>
+            <CardDescription>
+              MTPD / RTO / RPO und Impact-Werte pro Prozess
+            </CardDescription>
           </CardHeader>
           <CardContent>
             {loading ? (
@@ -172,7 +180,9 @@ export default function BiaProcessesPage() {
                         <td className="px-2 py-1">
                           <NumCell
                             value={r.impactOperational}
-                            onChange={(v) => update(i, { impactOperational: v })}
+                            onChange={(v) =>
+                              update(i, { impactOperational: v })
+                            }
                             min={0}
                             max={5}
                           />
@@ -195,7 +205,9 @@ export default function BiaProcessesPage() {
                         <td className="px-2 py-1">
                           <Switch
                             checked={r.isEssential}
-                            onCheckedChange={(v) => update(i, { isEssential: v })}
+                            onCheckedChange={(v) =>
+                              update(i, { isEssential: v })
+                            }
                           />
                         </td>
                         <td className="px-2 py-1">

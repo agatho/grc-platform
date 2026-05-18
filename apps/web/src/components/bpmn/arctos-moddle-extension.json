@@ -11,7 +11,12 @@
       "properties": [
         { "name": "lineOfDefense", "isAttr": true, "type": "String" },
         { "name": "complianceProfile", "isAttr": true, "type": "String" },
-        { "name": "isCriticalProcess", "isAttr": true, "type": "Boolean", "default": false },
+        {
+          "name": "isCriticalProcess",
+          "isAttr": true,
+          "type": "Boolean",
+          "default": false
+        },
         { "name": "riskRefs", "type": "RiskRef", "isMany": true },
         { "name": "controlRefs", "type": "ControlRef", "isMany": true },
         { "name": "documentRefs", "type": "DocumentRef", "isMany": true },
@@ -74,10 +79,20 @@
       "name": "Ropa",
       "superClass": ["Element"],
       "properties": [
-        { "name": "isProcessingActivity", "isAttr": true, "type": "Boolean", "default": false },
+        {
+          "name": "isProcessingActivity",
+          "isAttr": true,
+          "type": "Boolean",
+          "default": false
+        },
         { "name": "purpose", "isAttr": true, "type": "String" },
         { "name": "legalBasis", "isAttr": true, "type": "String" },
-        { "name": "requiresDpia", "isAttr": true, "type": "Boolean", "default": false }
+        {
+          "name": "requiresDpia",
+          "isAttr": true,
+          "type": "Boolean",
+          "default": false
+        }
       ]
     }
   ],

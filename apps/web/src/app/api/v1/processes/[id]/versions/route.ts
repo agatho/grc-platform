@@ -179,11 +179,21 @@ export async function POST(
     try {
       // Re-read post-upsert step ids for the mapping
       const allSteps = await tx
-        .select({ id: processStep.id, bpmnElementId: processStep.bpmnElementId })
+        .select({
+          id: processStep.id,
+          bpmnElementId: processStep.bpmnElementId,
+        })
         .from(processStep)
-        .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)));
-      const stepIdByBpmnElement = new Map(
-        allSteps.map((s: { id: string; bpmnElementId: string }) => [s.bpmnElementId, s.id]),
+        .where(
+          and(eq(processStep.processId, id), isNull(processStep.deletedAt)),
+        );
+      const stepIdByBpmnElement = new Map<string, string>(
+        allSteps.map(
+          (s: { id: string; bpmnElementId: string }): [string, string] => [
+            s.bpmnElementId,
+            s.id,
+          ],
+        ),
       );
       await rehydrateFromBpmnXml({
         tx,

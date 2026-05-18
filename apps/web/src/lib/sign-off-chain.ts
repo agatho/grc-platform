@@ -35,11 +35,17 @@ export function computePayloadHash(payload: SignOffPayload): string {
   return sha256(JSON.stringify(ordered));
 }
 
-export function computeChainHash(previous: string | null, payloadHash: string): string {
+export function computeChainHash(
+  previous: string | null,
+  payloadHash: string,
+): string {
   return sha256((previous ?? "") + payloadHash);
 }
 
-export function buildLink(previous: string | null, payload: SignOffPayload): ChainLink {
+export function buildLink(
+  previous: string | null,
+  payload: SignOffPayload,
+): ChainLink {
   const payloadHash = computePayloadHash(payload);
   const chainHash = computeChainHash(previous, payloadHash);
   return { payloadHash, previousChainHash: previous, chainHash };
@@ -52,7 +58,10 @@ export interface ChainRow {
 }
 
 /** Verifies a chronologically ordered list of rows. */
-export function verifyChain(rowsChrono: ChainRow[]): { ok: boolean; brokenAt: number | null } {
+export function verifyChain(rowsChrono: ChainRow[]): {
+  ok: boolean;
+  brokenAt: number | null;
+} {
   let prev: string | null = null;
   for (let i = 0; i < rowsChrono.length; i++) {
     const r = rowsChrono[i];

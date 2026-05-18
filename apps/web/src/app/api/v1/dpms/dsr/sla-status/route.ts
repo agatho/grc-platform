@@ -34,8 +34,12 @@ export async function GET(req: Request) {
     `);
   });
 
-  const overdue = (data as any[]).filter((r) => r.sla_status === "overdue").length;
-  const dueSoon = (data as any[]).filter((r) => r.sla_status === "due_soon").length;
+  const overdue = (data as any[]).filter(
+    (r) => r.sla_status === "overdue",
+  ).length;
+  const dueSoon = (data as any[]).filter(
+    (r) => r.sla_status === "due_soon",
+  ).length;
 
   return Response.json({
     data: {

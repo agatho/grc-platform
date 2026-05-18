@@ -18,17 +18,28 @@ export async function GET(
   const [b] = await db
     .select()
     .from(dataBreach)
-    .where(and(eq(dataBreach.id, id), eq(dataBreach.orgId, ctx.orgId), isNull(dataBreach.deletedAt)));
+    .where(
+      and(
+        eq(dataBreach.id, id),
+        eq(dataBreach.orgId, ctx.orgId),
+        isNull(dataBreach.deletedAt),
+      ),
+    );
   if (!b) return Response.json({ error: "Breach not found" }, { status: 404 });
 
   const detected = b.detectedAt ? new Date(b.detectedAt) : null;
-  const deadline = detected ? new Date(detected.getTime() + 72 * 3600 * 1000) : null;
+  const deadline = detected
+    ? new Date(detected.getTime() + 72 * 3600 * 1000)
+    : null;
   const now = new Date();
   const hoursElapsed = detected
     ? Math.floor((now.getTime() - detected.getTime()) / 3600 / 1000)
     : null;
   const hoursRemaining = deadline
-    ? Math.max(0, Math.floor((deadline.getTime() - now.getTime()) / 3600 / 1000))
+    ? Math.max(
+        0,
+        Math.floor((deadline.getTime() - now.getTime()) / 3600 / 1000),
+      )
     : null;
 
   let status: "on_track" | "due_soon" | "overdue" | "notified" | "n_a" = "n_a";

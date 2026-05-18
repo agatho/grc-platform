@@ -6,7 +6,10 @@
 // links unless explicitly requested.
 
 import { sql } from "drizzle-orm";
-import { extractGrcMetadata, type GrcMetadata } from "@/components/bpmn/arctos-grc-extractor";
+import {
+  extractGrcMetadata,
+  type GrcMetadata,
+} from "@/components/bpmn/arctos-grc-extractor";
 
 interface RehydrateArgs {
   tx: any;
@@ -25,7 +28,9 @@ export interface RehydrationStats {
   ropaProfilesUpdated: number;
 }
 
-export async function rehydrateFromBpmnXml(args: RehydrateArgs): Promise<RehydrationStats> {
+export async function rehydrateFromBpmnXml(
+  args: RehydrateArgs,
+): Promise<RehydrationStats> {
   const stats: RehydrationStats = {
     riskLinksAdded: 0,
     controlLinksAdded: 0,
@@ -34,10 +39,13 @@ export async function rehydrateFromBpmnXml(args: RehydrateArgs): Promise<Rehydra
     ropaProfilesUpdated: 0,
   };
 
-  // Find every bpmn element id in the xml that has arctos:grcMetadata
-  // Simple regex scan — sufficient for our flat structure.
+  // Find every bpmn element id whose body directly wraps an
+  // <arctos:grcMetadata>. The negative lookahead on `id="..."` excludes
+  // outer wrappers (e.g. <bpmn:process id="Proc">) when an inner element
+  // (e.g. <bpmn:userTask id="Task_1">) is the actual parent.
   const elementIds = new Set<string>();
-  const re = /\bid="([^"]+)"[^>]*?>[\s\S]*?<arctos:grcMetadata/g;
+  const re =
+    /<[a-zA-Z:]+\b[^>]*?\bid="([^"]+)"[^>]*?>(?:(?!\bid="[^"]+").)*?<arctos:grcMetadata/gs;
   let m: RegExpExecArray | null;
   while ((m = re.exec(args.bpmnXml)) !== null) {
     elementIds.add(m[1]);

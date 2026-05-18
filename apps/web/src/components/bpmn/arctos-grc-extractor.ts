@@ -63,7 +63,8 @@ export function ensureArctosNamespace(xml: string): string {
   if (xml.includes("xmlns:arctos=")) return xml;
   return xml.replace(
     /<(bpmn:)?definitions\b([^>]*)>/,
-    (_m, prefix, attrs) => `<${prefix ?? ""}definitions${attrs} xmlns:arctos="${NS}">`,
+    (_m, prefix, attrs) =>
+      `<${prefix ?? ""}definitions${attrs} xmlns:arctos="${NS}">`,
   );
 }
 
@@ -75,7 +76,10 @@ function escapeAttr(s: string): string {
     .replace(/>/g, "&gt;");
 }
 
-function renderRefs<T extends Record<string, any>>(tag: string, items: T[]): string {
+function renderRefs<T extends Record<string, any>>(
+  tag: string,
+  items: T[],
+): string {
   return items
     .map((it) => {
       const attrs = Object.entries(it)
@@ -88,8 +92,9 @@ function renderRefs<T extends Record<string, any>>(tag: string, items: T[]): str
 }
 
 function renderMetadata(meta: GrcMetadata): string {
-  const segments: string[] = ['    <arctos:grcMetadata'];
-  if (meta.lineOfDefense) segments[0] += ` lineOfDefense="${escapeAttr(meta.lineOfDefense)}"`;
+  const segments: string[] = ["    <arctos:grcMetadata"];
+  if (meta.lineOfDefense)
+    segments[0] += ` lineOfDefense="${escapeAttr(meta.lineOfDefense)}"`;
   if (meta.complianceProfile)
     segments[0] += ` complianceProfile="${escapeAttr(meta.complianceProfile)}"`;
   if (meta.isCriticalProcess) segments[0] += ` isCriticalProcess="true"`;
@@ -162,7 +167,8 @@ export function injectGrcMetadata(
   // Self-closing? Convert to open/close.
   if (openTag.endsWith("/>")) {
     const replacement = openTag.replace(/\/>$/, ">") + `</${tagName}>`;
-    out = out.slice(0, openIdx) + replacement + out.slice(openIdx + openTag.length);
+    out =
+      out.slice(0, openIdx) + replacement + out.slice(openIdx + openTag.length);
   }
 
   // Find close tag index
@@ -177,7 +183,10 @@ export function injectGrcMetadata(
     /<(bpmn:)?extensionElements>[\s\S]*?<\/(bpmn:)?extensionElements>/g,
     (m) => {
       // Drop existing arctos:grcMetadata inside
-      return m.replace(/<arctos:grcMetadata[\s\S]*?<\/arctos:grcMetadata>/g, "");
+      return m.replace(
+        /<arctos:grcMetadata[\s\S]*?<\/arctos:grcMetadata>/g,
+        "",
+      );
     },
   );
 
@@ -198,7 +207,10 @@ export function injectGrcMetadata(
 /**
  * Extract GRC metadata from a BPMN XML for the given element id.
  */
-export function extractGrcMetadata(xml: string, bpmnElementId: string): GrcMetadata | null {
+export function extractGrcMetadata(
+  xml: string,
+  bpmnElementId: string,
+): GrcMetadata | null {
   const block = extractElementInner(xml, bpmnElementId);
   if (!block) return null;
   const meta: GrcMetadata = {};
@@ -211,7 +223,13 @@ export function extractGrcMetadata(xml: string, bpmnElementId: string): GrcMetad
   meta.complianceProfile = attrs.complianceProfile;
   meta.isCriticalProcess = attrs.isCriticalProcess === "true";
 
-  meta.riskRefs = parseRefs<GrcRiskRef>(root[2], "riskRef", ["id", "title", "inherentScore", "residualScore", "status"]);
+  meta.riskRefs = parseRefs<GrcRiskRef>(root[2], "riskRef", [
+    "id",
+    "title",
+    "inherentScore",
+    "residualScore",
+    "status",
+  ]);
   meta.controlRefs = parseRefs<GrcControlRef>(root[2], "controlRef", [
     "id",
     "title",
@@ -248,7 +266,10 @@ export function extractGrcMetadata(xml: string, bpmnElementId: string): GrcMetad
   return meta;
 }
 
-function extractElementInner(xml: string, bpmnElementId: string): string | null {
+function extractElementInner(
+  xml: string,
+  bpmnElementId: string,
+): string | null {
   const elemRegex = new RegExp(
     `<(bpmn:)?([A-Za-z]+)\\b[^>]*\\bid="${escapeRegex(bpmnElementId)}"[^>]*?>`,
     "i",

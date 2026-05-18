@@ -16,7 +16,10 @@ interface ArctosDiff {
   bpmnElementId: string;
   added: { risks: string[]; controls: string[]; documents: string[] };
   removed: { risks: string[]; controls: string[]; documents: string[] };
-  lodChange?: { from: string | null | undefined; to: string | null | undefined };
+  lodChange?: {
+    from: string | null | undefined;
+    to: string | null | undefined;
+  };
 }
 
 export async function GET(
@@ -32,14 +35,24 @@ export async function GET(
   const [existing] = await db
     .select({ id: process.id, name: process.name })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const url = new URL(req.url);
   const fromId = url.searchParams.get("from");
   const toId = url.searchParams.get("to");
   if (!fromId || !toId) {
-    return Response.json({ error: "from + to query params required" }, { status: 400 });
+    return Response.json(
+      { error: "from + to query params required" },
+      { status: 400 },
+    );
   }
 
   const rows = await db
@@ -52,7 +65,12 @@ export async function GET(
       createdBy: processVersion.createdBy,
     })
     .from(processVersion)
-    .where(and(eq(processVersion.processId, id), inArray(processVersion.id, [fromId, toId])));
+    .where(
+      and(
+        eq(processVersion.processId, id),
+        inArray(processVersion.id, [fromId, toId]),
+      ),
+    );
 
   const from = rows.find((r) => r.id === fromId);
   const to = rows.find((r) => r.id === toId);
@@ -70,19 +88,34 @@ export async function GET(
     elementIdRe.lastIndex = 0;
     return set;
   };
-  const ids = new Set<string>([...collect(from.bpmnXml), ...collect(to.bpmnXml)]);
+  const ids = new Set<string>([
+    ...collect(from.bpmnXml),
+    ...collect(to.bpmnXml),
+  ]);
 
   const diffs: ArctosDiff[] = [];
   for (const eid of ids) {
     const a = from.bpmnXml ? extractGrcMetadata(from.bpmnXml, eid) : null;
     const b = to.bpmnXml ? extractGrcMetadata(to.bpmnXml, eid) : null;
 
-    const aRisks = new Set((a?.riskRefs ?? []).map((r) => r.id).filter(Boolean) as string[]);
-    const bRisks = new Set((b?.riskRefs ?? []).map((r) => r.id).filter(Boolean) as string[]);
-    const aCtrls = new Set((a?.controlRefs ?? []).map((c) => c.id).filter(Boolean) as string[]);
-    const bCtrls = new Set((b?.controlRefs ?? []).map((c) => c.id).filter(Boolean) as string[]);
-    const aDocs = new Set((a?.documentRefs ?? []).map((d) => d.id).filter(Boolean) as string[]);
-    const bDocs = new Set((b?.documentRefs ?? []).map((d) => d.id).filter(Boolean) as string[]);
+    const aRisks = new Set(
+      (a?.riskRefs ?? []).map((r) => r.id).filter(Boolean) as string[],
+    );
+    const bRisks = new Set(
+      (b?.riskRefs ?? []).map((r) => r.id).filter(Boolean) as string[],
+    );
+    const aCtrls = new Set(
+      (a?.controlRefs ?? []).map((c) => c.id).filter(Boolean) as string[],
+    );
+    const bCtrls = new Set(
+      (b?.controlRefs ?? []).map((c) => c.id).filter(Boolean) as string[],
+    );
+    const aDocs = new Set(
+      (a?.documentRefs ?? []).map((d) => d.id).filter(Boolean) as string[],
+    );
+    const bDocs = new Set(
+      (b?.documentRefs ?? []).map((d) => d.id).filter(Boolean) as string[],
+    );
 
     const diff: ArctosDiff = {
       bpmnElementId: eid,
@@ -113,8 +146,18 @@ export async function GET(
 
   return Response.json({
     data: {
-      from: { id: from.id, versionNumber: from.versionNumber, bpmnXml: from.bpmnXml, changeSummary: from.changeSummary },
-      to: { id: to.id, versionNumber: to.versionNumber, bpmnXml: to.bpmnXml, changeSummary: to.changeSummary },
+      from: {
+        id: from.id,
+        versionNumber: from.versionNumber,
+        bpmnXml: from.bpmnXml,
+        changeSummary: from.changeSummary,
+      },
+      to: {
+        id: to.id,
+        versionNumber: to.versionNumber,
+        bpmnXml: to.bpmnXml,
+        changeSummary: to.changeSummary,
+      },
       arctosDiff: diffs,
     },
   });

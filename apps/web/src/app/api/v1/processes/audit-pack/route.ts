@@ -34,7 +34,12 @@ export async function POST(req: Request) {
   }
 
   // Resolve target processes: explicit IDs, OR all published + filtered by framework code
-  let processes: { id: string; name: string; department: string | null; status: string }[];
+  let processes: {
+    id: string;
+    name: string;
+    department: string | null;
+    status: string;
+  }[];
   if (parsed.data.processIds?.length) {
     processes = await db
       .select({
@@ -90,7 +95,9 @@ export async function POST(req: Request) {
     "ARCTOS Audit Pack",
     `Generated: ${new Date().toISOString()}`,
     `Organization: ${ctx.orgId}`,
-    parsed.data.frameworkCode ? `Framework filter: ${parsed.data.frameworkCode}` : "",
+    parsed.data.frameworkCode
+      ? `Framework filter: ${parsed.data.frameworkCode}`
+      : "",
     `Process count: ${processes.length}`,
     "",
     "Contents:",
@@ -207,17 +214,25 @@ export async function POST(req: Request) {
         .join("\n\n"),
     );
 
-    manifest.push(`- ${slug}/ (${meta.racmRows.length} activities, ${meta.signOffs.length} sign-offs)`);
+    manifest.push(
+      `- ${slug}/ (${meta.racmRows.length} activities, ${meta.signOffs.length} sign-offs)`,
+    );
   }
 
   zip.file("MANIFEST.txt", manifest.join("\n"));
-  const buf = await zip.generateAsync({ type: "nodebuffer", compression: "DEFLATE" });
-
-  return new Response(buf, {
-    status: 200,
-    headers: {
-      "content-type": "application/zip",
-      "content-disposition": `attachment; filename="audit-pack-${parsed.data.frameworkCode ?? "all"}-${Date.now()}.zip"`,
-    },
+  const buf = await zip.generateAsync({
+    type: "uint8array",
+    compression: "DEFLATE",
   });
+
+  return new Response(
+    new Blob([buf as BlobPart], { type: "application/zip" }),
+    {
+      status: 200,
+      headers: {
+        "content-type": "application/zip",
+        "content-disposition": `attachment; filename="audit-pack-${parsed.data.frameworkCode ?? "all"}-${Date.now()}.zip"`,
+      },
+    },
+  );
 }

@@ -409,7 +409,9 @@ function ProcessDetailContent() {
               <ProcessStatusBadge status={process.status} size="lg" />
               <ProcessComplianceProfileSwitcher
                 processId={processId}
-                initialProfile={(process as any).complianceProfile ?? "standard"}
+                initialProfile={
+                  (process as any).complianceProfile ?? "standard"
+                }
                 onChange={() => fetchProcess()}
               />
             </div>
@@ -427,7 +429,10 @@ function ProcessDetailContent() {
               <span>v{process.currentVersion}</span>
             </div>
             <div className="mt-2 w-[420px]">
-              <ProcessDocumentDropzone processId={processId} onAttached={fetchProcess} />
+              <ProcessDocumentDropzone
+                processId={processId}
+                onAttached={fetchProcess}
+              />
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               {process.ownerName && (
@@ -977,7 +982,9 @@ function EditorTab({
           if (!step) continue;
           const k = step.bpmnElementId;
           const agg = byStep.get(k) ?? { open: 0, critical: 0 };
-          const isOpen = !["closed", "verified", "remediated"].includes(f.status);
+          const isOpen = !["closed", "verified", "remediated"].includes(
+            f.status,
+          );
           if (isOpen) agg.open += 1;
           if (isOpen && f.severity === "critical") agg.critical += 1;
           byStep.set(k, agg);
@@ -1154,7 +1161,9 @@ function EditorTab({
             onElementClick={handleElementClick}
             onChanged={markChanged}
             riskOverlayData={showRiskOverlay ? overlayData : []}
-            controlCoverageOverlayData={showCoverageOverlay ? coverageOverlay : []}
+            controlCoverageOverlayData={
+              showCoverageOverlay ? coverageOverlay : []
+            }
             lodOverlayData={showLodOverlay ? lodOverlay : []}
             findingsOverlayData={showFindingsOverlay ? findingsOverlay : []}
             className="h-full"

@@ -34,14 +34,32 @@ describe("injectGrcMetadata → extractGrcMetadata round-trip", () => {
       lineOfDefense: "first",
       isCriticalProcess: true,
       riskRefs: [
-        { id: "00000000-0000-0000-0000-000000000001", title: "Fraud", inherentScore: 12, residualScore: 6 },
+        {
+          id: "00000000-0000-0000-0000-000000000001",
+          title: "Fraud",
+          inherentScore: 12,
+          residualScore: 6,
+        },
       ],
       controlRefs: [
-        { id: "00000000-0000-0000-0000-000000000002", title: "Dual Approval", effectiveness: "effective" },
+        {
+          id: "00000000-0000-0000-0000-000000000002",
+          title: "Dual Approval",
+          effectiveness: "effective",
+        },
       ],
       raci: { responsibleRoleId: "r1", accountableRoleId: "a1" },
-      bcmKpi: { mtpdMinutes: 240, rtoMinutes: 120, rpoMinutes: 60, criticality: "high" },
-      ropa: { isProcessingActivity: true, purpose: "Order processing", legalBasis: "contract" },
+      bcmKpi: {
+        mtpdMinutes: 240,
+        rtoMinutes: 120,
+        rpoMinutes: 60,
+        criticality: "high",
+      },
+      ropa: {
+        isProcessingActivity: true,
+        purpose: "Order processing",
+        legalBasis: "contract",
+      },
     };
 
     const xml = injectGrcMetadata(BASIC, "Task_1", meta);
@@ -53,7 +71,9 @@ describe("injectGrcMetadata → extractGrcMetadata round-trip", () => {
     expect(round).toBeTruthy();
     expect(round!.lineOfDefense).toBe("first");
     expect(round!.isCriticalProcess).toBe(true);
-    expect(round!.riskRefs?.[0]?.id).toBe("00000000-0000-0000-0000-000000000001");
+    expect(round!.riskRefs?.[0]?.id).toBe(
+      "00000000-0000-0000-0000-000000000001",
+    );
     expect(round!.controlRefs?.[0]?.title).toBe("Dual Approval");
     expect(round!.raci?.responsibleRoleId).toBe("r1");
     expect(round!.bcmKpi?.mtpdMinutes).toBe(240);

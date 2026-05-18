@@ -16,7 +16,12 @@ export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; stepId: string }> },
 ) {
-  const ctx = await withAuth("admin", "process_owner", "quality_manager", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "process_owner",
+    "quality_manager",
+    "risk_manager",
+  );
   if (ctx instanceof Response) return ctx;
   const m = await requireModule("bpm", ctx.orgId, req.method);
   if (m) return m;

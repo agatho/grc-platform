@@ -4,7 +4,14 @@
 // aggregate risk scores. Used by the BPMN-js overlay renderer to color
 // activities red/amber/green.
 
-import { db, process, processStep, processStepRisk, processRisk, risk } from "@grc/db";
+import {
+  db,
+  process,
+  processStep,
+  processStepRisk,
+  processRisk,
+  risk,
+} from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
@@ -50,8 +57,14 @@ export async function GET(
       lowCount: sql<number>`SUM(CASE WHEN ${risk.riskScoreResidual} <= 3 THEN 1 ELSE 0 END)::int`,
     })
     .from(processStep)
-    .leftJoin(processStepRisk, eq(processStep.id, processStepRisk.processStepId))
-    .leftJoin(risk, and(eq(risk.id, processStepRisk.riskId), isNull(risk.deletedAt)))
+    .leftJoin(
+      processStepRisk,
+      eq(processStep.id, processStepRisk.processStepId),
+    )
+    .leftJoin(
+      risk,
+      and(eq(risk.id, processStepRisk.riskId), isNull(risk.deletedAt)),
+    )
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)))
     .groupBy(processStep.id, processStep.bpmnElementId, processStep.name);
 

@@ -46,7 +46,9 @@ describe("evaluateVendorGates", () => {
 
   it("LkSG-tier-1 vendor cannot go active without LkSG assessment", async () => {
     const blockers = await evaluateVendorGates({
-      tx: mkTx([{ ...base, completed_dd: 1, lksg_tier_1: true, lksg_assessments: 0 }]) as any,
+      tx: mkTx([
+        { ...base, completed_dd: 1, lksg_tier_1: true, lksg_assessments: 0 },
+      ]) as any,
       vendorId: "v1",
       orgId: "o1",
       target: "active" as VendorStatus,
@@ -56,7 +58,9 @@ describe("evaluateVendorGates", () => {
 
   it("DORA-critical vendor cannot go active without exit plan", async () => {
     const blockers = await evaluateVendorGates({
-      tx: mkTx([{ ...base, completed_dd: 1, dora_critical_ict: true, exit_plans: 0 }]) as any,
+      tx: mkTx([
+        { ...base, completed_dd: 1, dora_critical_ict: true, exit_plans: 0 },
+      ]) as any,
       vendorId: "v1",
       orgId: "o1",
       target: "active" as VendorStatus,

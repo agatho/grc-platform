@@ -51,16 +51,65 @@ export function BpmDashboardKpis() {
 
   return (
     <div className="grid grid-cols-2 gap-3 md:grid-cols-4 lg:grid-cols-5">
-      <Tile icon={<Database className="h-4 w-4" />} label="Total processes" value={kpis.total_processes} />
-      <Tile icon={<FileCheck className="h-4 w-4" />} label="Published" value={kpis.published} tone="ok" />
-      <Tile icon={<Activity className="h-4 w-4" />} label="In review" value={kpis.in_review} tone="info" />
-      <Tile icon={<CheckCircle2 className="h-4 w-4" />} label="Pending approval" value={kpis.pending_approval} tone="warn" />
-      <Tile icon={<AlertTriangle className="h-4 w-4" />} label="Critical processes" value={kpis.critical_processes} tone="bad" />
-      <Tile icon={<ShieldAlert className="h-4 w-4" />} label="≥1 critical risk" value={kpis.processes_with_critical_risk} tone="bad" />
-      <Tile icon={<Clock className="h-4 w-4" />} label="Overdue review" value={kpis.overdue_review} tone="warn" />
-      <Tile icon={<ShieldCheck className="h-4 w-4" />} label="Framework mapped" value={kpis.processes_with_framework_mapping} tone="ok" />
-      <Tile icon={<AlertTriangle className="h-4 w-4" />} label="Open findings" value={kpis.processes_with_open_findings} tone="warn" />
-      <Tile icon={<ShieldAlert className="h-4 w-4" />} label="DPIA required" value={kpis.processes_requiring_dpia} tone="bad" />
+      <Tile
+        icon={<Database className="h-4 w-4" />}
+        label="Total processes"
+        value={kpis.total_processes}
+      />
+      <Tile
+        icon={<FileCheck className="h-4 w-4" />}
+        label="Published"
+        value={kpis.published}
+        tone="ok"
+      />
+      <Tile
+        icon={<Activity className="h-4 w-4" />}
+        label="In review"
+        value={kpis.in_review}
+        tone="info"
+      />
+      <Tile
+        icon={<CheckCircle2 className="h-4 w-4" />}
+        label="Pending approval"
+        value={kpis.pending_approval}
+        tone="warn"
+      />
+      <Tile
+        icon={<AlertTriangle className="h-4 w-4" />}
+        label="Critical processes"
+        value={kpis.critical_processes}
+        tone="bad"
+      />
+      <Tile
+        icon={<ShieldAlert className="h-4 w-4" />}
+        label="≥1 critical risk"
+        value={kpis.processes_with_critical_risk}
+        tone="bad"
+      />
+      <Tile
+        icon={<Clock className="h-4 w-4" />}
+        label="Overdue review"
+        value={kpis.overdue_review}
+        tone="warn"
+      />
+      <Tile
+        icon={<ShieldCheck className="h-4 w-4" />}
+        label="Framework mapped"
+        value={kpis.processes_with_framework_mapping}
+        tone="ok"
+      />
+      <Tile
+        icon={<AlertTriangle className="h-4 w-4" />}
+        label="Open findings"
+        value={kpis.processes_with_open_findings}
+        tone="warn"
+      />
+      <Tile
+        icon={<ShieldAlert className="h-4 w-4" />}
+        label="DPIA required"
+        value={kpis.processes_requiring_dpia}
+        tone="bad"
+      />
     </div>
   );
 }

@@ -53,8 +53,15 @@ export async function POST(
   const [existing] = await db
     .select({ id: process.id })
     .from(process)
-    .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId), isNull(process.deletedAt)));
-  if (!existing) return Response.json({ error: "Process not found" }, { status: 404 });
+    .where(
+      and(
+        eq(process.id, id),
+        eq(process.orgId, ctx.orgId),
+        isNull(process.deletedAt),
+      ),
+    );
+  if (!existing)
+    return Response.json({ error: "Process not found" }, { status: 404 });
 
   const parsed = scenarioSchema.safeParse(await req.json());
   if (!parsed.success) {
@@ -73,11 +80,16 @@ export async function POST(
     let caseDuration = 0;
     let caseCost = 0;
     for (const a of parsed.data.activities) {
-      const duration = triangular(a.durationMin, a.durationMostLikely, a.durationMax);
+      const duration = triangular(
+        a.durationMin,
+        a.durationMostLikely,
+        a.durationMax,
+      );
       caseDuration += duration;
       caseCost += a.costPerExecution;
       activityCostBreakdown[a.activityName ?? a.activityId] =
-        (activityCostBreakdown[a.activityName ?? a.activityId] ?? 0) + a.costPerExecution;
+        (activityCostBreakdown[a.activityName ?? a.activityId] ?? 0) +
+        a.costPerExecution;
     }
     cycleTimes.push(caseDuration);
     caseCosts.push(caseCost);
@@ -94,7 +106,11 @@ export async function POST(
 
   // Identify bottleneck activities by mean cost contribution
   const bottlenecks = Object.entries(activityCostBreakdown)
-    .map(([name, total]) => ({ name, totalCost: total, avgCost: total / caseCount }))
+    .map(([name, total]) => ({
+      name,
+      totalCost: total,
+      avgCost: total / caseCount,
+    }))
     .sort((a, b) => b.totalCost - a.totalCost)
     .slice(0, 5);
 

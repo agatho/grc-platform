@@ -283,7 +283,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           add: (
             elementId: string,
             type: string,
-            opts: { position: { top: number; left: number }; html: HTMLElement },
+            opts: {
+              position: { top: number; left: number };
+              html: HTMLElement;
+            },
           ) => void;
         };
         const overlays = instance.get("overlays") as OverlayService;
@@ -321,7 +324,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           add: (
             elementId: string,
             type: string,
-            opts: { position: { top: number; left: number }; html: HTMLElement },
+            opts: {
+              position: { top: number; left: number };
+              html: HTMLElement;
+            },
           ) => void;
         };
         const overlays = instance.get("overlays") as OverlayService;
@@ -359,7 +365,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           add: (
             elementId: string,
             type: string,
-            opts: { position: { bottom: number; right: number }; html: HTMLElement },
+            opts: {
+              position: { bottom: number; right: number };
+              html: HTMLElement;
+            },
           ) => void;
         };
         const overlays = instance.get("overlays") as OverlayService;
