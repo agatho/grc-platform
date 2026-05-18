@@ -4,12 +4,15 @@ import {
   evidenceReviewJobQuerySchema,
 } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/evidence-review/jobs — Create evidence review job
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "control_owner", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const body = createEvidenceReviewJobSchema.safeParse(await req.json());
   if (!body.success) {
@@ -44,6 +47,8 @@ export async function GET(req: Request) {
     "risk_manager",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const url = new URL(req.url);
   const query = evidenceReviewJobQuerySchema.safeParse(

@@ -1,11 +1,14 @@
 import { db, finding, findingSlaConfig } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/findings/analytics/ttr — Time-to-Resolution by severity
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   // Average TTR in days per severity for resolved findings
   const rows = await db

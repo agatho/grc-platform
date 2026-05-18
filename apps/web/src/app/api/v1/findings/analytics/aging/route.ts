@@ -1,11 +1,14 @@
 import { db, finding } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/findings/analytics/aging — Aging distribution of open findings
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   // Get open findings with their age in days
   const rows = await db

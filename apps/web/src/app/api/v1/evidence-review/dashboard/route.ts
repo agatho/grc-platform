@@ -5,6 +5,7 @@ import {
   evidenceReviewResult,
 } from "@grc/db";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/evidence-review/dashboard — Dashboard stats
@@ -16,6 +17,8 @@ export async function GET(req: Request) {
     "risk_manager",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const [summary] = await db
     .select({
