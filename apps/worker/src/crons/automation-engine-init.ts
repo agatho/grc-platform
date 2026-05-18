@@ -2,10 +2,23 @@
 // Subscribes the AutomationEngine to the Event Bus (Sprint 22)
 // Provides GRC-internal action services (task, notification, email, etc.)
 
-import { eventBus } from "@grc/events";
+import {
+  eventBus,
+  formatWebhookPayload,
+  signPayload,
+  type GrcEvent,
+} from "@grc/events";
 import { AutomationEngine } from "@grc/automation";
 import type { ActionServices } from "@grc/automation";
-import { db, notification, task } from "@grc/db";
+import {
+  db,
+  notification,
+  task,
+  webhookRegistration,
+  webhookDeliveryLog,
+} from "@grc/db";
+import { checkWebhookUrl } from "@grc/shared";
+import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
 /**
@@ -131,9 +144,117 @@ const automationActionServices: ActionServices = {
   },
 
   triggerWebhook: async (params) => {
-    console.log(
-      `[AutomationServices] triggerWebhook: webhookId=${params.webhookId}`,
-    );
+    // F#6 (overnight 2026-05-18): replace the console.log stub with a real
+    // HTTP delivery. Reads the registered webhook, formats the payload per
+    // its template type, signs with HMAC-SHA256, re-checks the URL for
+    // SSRF safety, fires POST with a 10s timeout, and records the result
+    // in webhook_delivery_log. Failures are logged but do not throw —
+    // the automation engine treats this action as best-effort.
+    try {
+      const [webhook] = await db
+        .select()
+        .from(webhookRegistration)
+        .where(
+          and(
+            eq(webhookRegistration.id, params.webhookId),
+            eq(webhookRegistration.isActive, true),
+          ),
+        );
+
+      if (!webhook) {
+        console.warn(
+          `[AutomationServices] triggerWebhook: webhook ${params.webhookId} not found or inactive`,
+        );
+        return;
+      }
+
+      // Defence-in-depth SSRF check. Registration-time validation already
+      // ran (PR #200), but rows that predate it could still be delivered.
+      const urlCheck = checkWebhookUrl(webhook.url);
+      if (!urlCheck.ok) {
+        console.error(
+          `[AutomationServices] triggerWebhook: refusing unsafe URL for webhook ${webhook.id}: ${urlCheck.reason}`,
+        );
+        await db.insert(webhookDeliveryLog).values({
+          webhookId: webhook.id,
+          eventType: "automation.trigger",
+          entityType: String(params.event.entityType ?? "unknown"),
+          entityId: String(
+            params.event.entityId ?? "00000000-0000-0000-0000-000000000000",
+          ),
+          payload: params.event as Record<string, unknown>,
+          status: "failed",
+          errorMessage: `SSRF guard rejected URL: ${urlCheck.reason}`,
+        });
+        return;
+      }
+
+      const grcEvent: GrcEvent = {
+        orgId: webhook.orgId,
+        eventType: "entity.updated",
+        entityType: String(params.event.entityType ?? "unknown"),
+        entityId: String(
+          params.event.entityId ?? "00000000-0000-0000-0000-000000000000",
+        ),
+        payload: { after: params.event },
+        emittedAt: new Date(),
+      };
+
+      const formatted = formatWebhookPayload(webhook.templateType, grcEvent);
+      const signature = signPayload(formatted.body, webhook.secretHash);
+
+      const controller = new AbortController();
+      const timeoutHandle = setTimeout(() => controller.abort(), 10_000);
+
+      let responseStatus: number | null = null;
+      let responseBody: string | null = null;
+      let errorMessage: string | null = null;
+      let deliveryStatus: "delivered" | "failed" = "failed";
+
+      try {
+        const response = await fetch(webhook.url, {
+          method: "POST",
+          headers: {
+            ...formatted.headers,
+            ...((webhook.headers as Record<string, string>) ?? {}),
+            "X-Arctos-Signature": signature,
+            "X-Arctos-Event": "automation.trigger",
+            "User-Agent": "ARCTOS-Webhook/1.0",
+          },
+          body: formatted.body,
+          signal: controller.signal,
+        });
+
+        responseStatus = response.status;
+        responseBody = (await response.text().catch(() => "")).slice(0, 2000);
+        deliveryStatus = response.ok ? "delivered" : "failed";
+        if (!response.ok) {
+          errorMessage = `HTTP ${response.status}`;
+        }
+      } catch (err) {
+        errorMessage = err instanceof Error ? err.message : String(err);
+        if (errorMessage.includes("aborted")) {
+          errorMessage = "Webhook delivery timed out after 10s";
+        }
+      } finally {
+        clearTimeout(timeoutHandle);
+      }
+
+      await db.insert(webhookDeliveryLog).values({
+        webhookId: webhook.id,
+        eventType: "automation.trigger",
+        entityType: grcEvent.entityType,
+        entityId: grcEvent.entityId,
+        payload: grcEvent.payload as Record<string, unknown>,
+        responseStatus,
+        responseBody,
+        deliveredAt: deliveryStatus === "delivered" ? new Date() : null,
+        status: deliveryStatus,
+        errorMessage,
+      });
+    } catch (err) {
+      console.error("[AutomationServices] triggerWebhook failed:", err);
+    }
   },
 };
 
