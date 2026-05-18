@@ -154,7 +154,7 @@ fi
 # kein packages/db/src/ zur Laufzeit verfügbar.
 echo "  → programme-templates (TS seeder via worker, Main-DB only)"
 docker compose -f "$COMPOSE_FILE" exec -T worker \
-  sh -c "cd /app && npx tsx -e \"import('./packages/db/src/seeds/programme-templates.js').then(m => m.seedProgrammeTemplates()).then(r => console.log('  ' + JSON.stringify(r))).catch(e => { console.error('  programme-templates failed:', e.message); process.exit(1); })\"" 2>&1 \
+  sh -c "cd /app && npx tsx packages/db/src/seeds/run-programme-templates.ts" 2>&1 \
   | sed 's/^/    /' || echo "    (Seeder-Fehler — manuell prüfen)"
 
 echo "  → seed_demo_13_programmes.sql (Main-DB only)"
