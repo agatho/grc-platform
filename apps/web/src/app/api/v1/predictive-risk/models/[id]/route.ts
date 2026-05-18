@@ -1,6 +1,7 @@
 import { db, riskPredictionModel } from "@grc/db";
 import { updatePredictionModelSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/predictive-risk/models/:id
@@ -10,6 +11,8 @@ export async function GET(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const [model] = await db
@@ -33,6 +36,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const body = updatePredictionModelSchema.safeParse(await req.json());
@@ -68,6 +73,8 @@ export async function DELETE(
 ) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const result = await withAuditContext(ctx, async (tx) => {
