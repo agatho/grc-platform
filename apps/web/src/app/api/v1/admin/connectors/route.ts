@@ -1,11 +1,23 @@
 // #NIGHT-036: /admin/connectors discovery — connector configs are
 // scattered across /api/v1/{cloud-connectors,identity-saas-connectors,
 // devops-connectors,evidence-connectors}. This payload lists them.
+//
+// F#18 (overnight 2026-05-18): this route used to skip auth entirely
+// because the payload is structural only. But the /admin/ prefix
+// invariant in the rest of the app is "admin-only" — leaving one route
+// open invites future routes in this directory to copy the wrong
+// pattern. Now requires admin.
+
+import { withAuth } from "@/lib/api";
 
 function getRequestId(req: Request): string {
   return req.headers.get("x-request-id") ?? "";
 }
-export function GET(req: Request) {
+
+export async function GET(req: Request) {
+  const ctx = await withAuth("admin");
+  if (ctx instanceof Response) return ctx;
+
   return Response.json({
     data: {
       module: "admin.connectors",
