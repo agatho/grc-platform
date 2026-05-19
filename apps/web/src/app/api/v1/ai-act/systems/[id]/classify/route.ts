@@ -157,8 +157,21 @@ export async function POST(req: Request, { params }: RouteParams) {
   // context wasn't supplied we still emit a "may be required" hint when
   // the classification came back high-risk, pointing at the dedicated
   // /fria-required endpoint for the full determination.
+  //
+  // Map AiRiskCategory ("high_risk" | "limited_risk" | ...) → the narrower
+  // FriaDetermination.riskClassification ("high" | "limited" | "minimal" |
+  // "unacceptable"). GPAI categories aren't FRIA-relevant and collapse to
+  // "minimal" so the validator returns "not_required" cleanly.
+  const friaRiskClassification: FriaDetermination["riskClassification"] =
+    category === "prohibited"
+      ? "unacceptable"
+      : category === "high_risk"
+        ? "high"
+        : category === "limited_risk"
+          ? "limited"
+          : "minimal";
   const friaCtx: FriaDetermination = {
-    riskClassification: category,
+    riskClassification: friaRiskClassification,
     deployerType: parsed.data.deployerType ?? "private_sector",
     annexIIICategory: parsed.data.annexIII.lawEnforcement
       ? "law_enforcement"
@@ -178,7 +191,7 @@ export async function POST(req: Request, { params }: RouteParams) {
     );
   }
   if (
-    category === "high" &&
+    friaRiskClassification === "high" &&
     parsed.data.deployerType === undefined &&
     fria.recommendationLevel !== "not_required"
   ) {
