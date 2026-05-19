@@ -7,8 +7,10 @@ import { db, aiSystem, aiProhibitedScreening } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   classifyAiSystem,
+  determineFriaRequirement,
   hasProhibitedPractice,
   type ClassificationContext,
+  type FriaDetermination,
   type ProhibitedPracticesFlags,
 } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
@@ -46,6 +48,12 @@ const bodySchema = z.object({
   hasArt50TransparencyObligation: z.boolean().default(false),
   exceptionApplied: z.boolean().default(false),
   exceptionJustification: z.string().max(5000).nullable().optional(),
+  // F#25 (overnight 2026-05-18): if the deployer context is known at
+  // classification time, also tell the caller whether a FRIA is required.
+  // All three default to neutral values so existing callers don't break.
+  deployerType: z.enum(["public_sector", "private_sector"]).optional(),
+  isCreditScoring: z.boolean().default(false),
+  isLifeHealthInsurance: z.boolean().default(false),
 });
 
 export async function POST(req: Request, { params }: RouteParams) {
@@ -144,6 +152,41 @@ export async function POST(req: Request, { params }: RouteParams) {
     }
   });
 
+  // F#25: derive the FRIA recommendation in the same response, so callers
+  // see the Art. 27 obligation without a second round-trip. If deployer
+  // context wasn't supplied we still emit a "may be required" hint when
+  // the classification came back high-risk, pointing at the dedicated
+  // /fria-required endpoint for the full determination.
+  const friaCtx: FriaDetermination = {
+    riskClassification: category,
+    deployerType: parsed.data.deployerType ?? "private_sector",
+    annexIIICategory: parsed.data.annexIII.lawEnforcement
+      ? "law_enforcement"
+      : parsed.data.annexIII.criticalInfra
+        ? "critical_infrastructure"
+        : null,
+    isCreditScoring: parsed.data.isCreditScoring,
+    isLifeHealthInsurance: parsed.data.isLifeHealthInsurance,
+    isLawEnforcement: parsed.data.annexIII.lawEnforcement,
+  };
+  const fria = determineFriaRequirement(friaCtx);
+
+  const warnings: string[] = [];
+  if (hasProhibitedPractice(flags) && !parsed.data.exceptionApplied) {
+    warnings.push(
+      "HARD-STOP: prohibited practice erkannt. Transition zu production nur mit exceptionApplied + justification moeglich.",
+    );
+  }
+  if (
+    category === "high" &&
+    parsed.data.deployerType === undefined &&
+    fria.recommendationLevel !== "not_required"
+  ) {
+    warnings.push(
+      "High-Risk classified — FRIA may be required (Art. 27). Call POST /api/v1/ai-act/systems/:id/fria-required with deployerType + sector flags for the full determination.",
+    );
+  }
+
   return Response.json({
     data: {
       aiSystemId: id,
@@ -153,12 +196,8 @@ export async function POST(req: Request, { params }: RouteParams) {
         category,
         reasoning,
       },
-      warnings:
-        hasProhibitedPractice(flags) && !parsed.data.exceptionApplied
-          ? [
-              "HARD-STOP: prohibited practice erkannt. Transition zu production nur mit exceptionApplied + justification moeglich.",
-            ]
-          : [],
+      fria,
+      warnings,
     },
   });
 }
