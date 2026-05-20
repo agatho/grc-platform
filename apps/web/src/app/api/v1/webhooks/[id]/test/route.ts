@@ -3,7 +3,8 @@ import { formatWebhookPayload, signPayload } from "@grc/events";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { GrcEvent } from "@grc/events";
-import { checkWebhookUrl, checkResolvedHostIsPublic } from "@grc/shared";
+import { checkWebhookUrl } from "@grc/shared";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 
 // POST /api/v1/webhooks/:id/test — Send a test event to the webhook
 export async function POST(

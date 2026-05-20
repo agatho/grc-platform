@@ -17,7 +17,8 @@ import {
   webhookRegistration,
   webhookDeliveryLog,
 } from "@grc/db";
-import { checkWebhookUrl, checkResolvedHostIsPublic } from "@grc/shared";
+import { checkWebhookUrl } from "@grc/shared";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 

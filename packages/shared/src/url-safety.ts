@@ -179,69 +179,15 @@ export function webhookUrlRefineMessage(rawUrl: string): string {
   return r.ok ? "" : r.reason;
 }
 
-/**
- * Async DNS check that closes the DNS-rebinding hole left open by the
- * sync `checkWebhookUrl`. Call this right before issuing an outbound
- * `fetch` on a webhook URL — it resolves the hostname via the system
- * resolver (so `/etc/hosts` shenanigans, split-horizon DNS, and CNAME
- * chains that ultimately land on a private IP all get caught) and
- * verifies the resolved IP is not in a private/reserved range.
- *
- * Caveats:
- * - There's still a small TOCTOU window between this lookup and the
- *   subsequent `fetch`'s own DNS resolution. Defeating that race
- *   robustly needs a custom undici Agent that pins the IP from this
- *   lookup; that's a follow-up. The current implementation is much
- *   stronger than the literal-hostname check alone (which trivially
- *   bypassed by `aaa.example.com` → A 10.0.0.5).
- *
- * - Skips when WEBHOOK_ALLOW_PRIVATE_HOSTS=1, matching the sync check's
- *   escape hatch.
- *
- * Dynamic import of `node:dns/promises` avoids pulling Node's `dns`
- * into bundlers that target the browser when this package is consumed
- * from the web app's shared imports.
- */
-export async function checkResolvedHostIsPublic(
-  hostname: string,
-): Promise<WebhookUrlCheckResult> {
-  if (process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS === "1") {
-    return { ok: true, url: new URL(`https://${hostname}`) };
-  }
+// The async `checkResolvedHostIsPublic` (DNS-rebind defense) lives in
+// ./url-safety-server.ts. It's NOT re-exported from this file or
+// index.ts because pulling Node's `dns/promises` into the client-side
+// bundle breaks Next.js build (UnhandledSchemeError on "node:" prefix).
+// Import it directly from server code via @grc/shared/lib/url-safety-server.
 
-  let resolved: Array<{ address: string; family: number }>;
-  try {
-    const dns = await import("node:dns/promises");
-    resolved = await dns.lookup(hostname, { all: true });
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    return {
-      ok: false,
-      reason: `DNS lookup failed for '${hostname}': ${message}`,
-    };
-  }
-
-  if (resolved.length === 0) {
-    return {
-      ok: false,
-      reason: `DNS lookup returned no addresses for '${hostname}'.`,
-    };
-  }
-
-  for (const { address, family } of resolved) {
-    if (family === 4 && isPrivateIPv4(address)) {
-      return {
-        ok: false,
-        reason: `'${hostname}' resolves to private IPv4 ${address}; refusing.`,
-      };
-    }
-    if (family === 6 && isPrivateIPv6Literal(address)) {
-      return {
-        ok: false,
-        reason: `'${hostname}' resolves to private IPv6 ${address}; refusing.`,
-      };
-    }
-  }
-
-  return { ok: true, url: new URL(`https://${hostname}`) };
-}
+// Expose the IP predicates to the server helper without re-exporting them
+// as public API.
+export const __privateIpHelpers = {
+  isPrivateIPv4,
+  isPrivateIPv6Literal,
+};

@@ -12,9 +12,12 @@ export {
   checkWebhookUrl,
   webhookUrlRefine,
   webhookUrlRefineMessage,
-  checkResolvedHostIsPublic,
   type WebhookUrlCheckResult,
 } from "./url-safety";
+// NOTE: `checkResolvedHostIsPublic` (DNS-rebind defense) is server-only
+// — import via `@grc/shared/lib/url-safety-server` from server code.
+// Not re-exported here because pulling Node's `dns` into the client
+// bundle breaks Next.js webpack.
 // #WAVE21-MAR-P2-03: BIA → Asset-Classification cascade (write-side
 // derivation). Override resolver lives in apps/web's ISMS routes.
 export * from "./cascades/bia-asset-criticality";

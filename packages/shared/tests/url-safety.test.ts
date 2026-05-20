@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { checkWebhookUrl, checkResolvedHostIsPublic } from "../src/url-safety";
+import { checkWebhookUrl } from "../src/url-safety";
+import { checkResolvedHostIsPublic } from "../src/url-safety-server";
 
 describe("checkWebhookUrl — SSRF guard", () => {
   describe("accepts safe URLs", () => {
