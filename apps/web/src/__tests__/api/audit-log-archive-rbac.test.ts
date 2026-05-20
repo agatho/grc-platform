@@ -153,7 +153,16 @@ describe("GET /api/v1/audit-log/integrity", () => {
       new Request("http://localhost/api/v1/audit-log/integrity"),
     );
     expect(res.status).toBe(401);
-    expect(withAuthMock).toHaveBeenCalledWith("admin", "auditor");
+    // #WAVE24-B1: integrity widened to include ciso + compliance_officer
+    // (read-only chain health check). Archive (export) and anchor
+    // (timestamping) remain admin/auditor only — see consistency test
+    // below.
+    expect(withAuthMock).toHaveBeenCalledWith(
+      "admin",
+      "auditor",
+      "ciso",
+      "compliance_officer",
+    );
   });
 
   it("returns 403 for non-admin/auditor roles", async () => {
@@ -167,13 +176,17 @@ describe("GET /api/v1/audit-log/integrity", () => {
     expect(res.status).toBe(403);
   });
 
-  it("RBAC consistency: archive, anchor, integrity all use same role list", async () => {
-    // Defensive test against silent RBAC drift across the three audit-log endpoints.
+  it("RBAC: archive + anchor stay admin/auditor; integrity adds read-only roles", async () => {
+    // #WAVE24-B1: defensive test against silent RBAC drift. Archive
+    // (export-with-audit-trail) and anchor (FreeTSA mutation) remain
+    // restricted to admin/auditor — they have compliance side-effects.
+    // Integrity is read-only and now includes ciso + compliance_officer
+    // so 2nd-line oversight roles can verify chain health for their
+    // quarterly reviews without needing audit-team privileges.
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
 
-    // Reset call history across imports
     withAuthMock.mockClear();
 
     const { GET: archiveGet } =
@@ -199,11 +212,12 @@ describe("GET /api/v1/audit-log/integrity", () => {
       new Request("http://localhost/api/v1/audit-log/integrity"),
     );
 
-    // All three calls should pass identical role list
     const calls = withAuthMock.mock.calls;
     expect(calls.length).toBe(3);
-    for (const call of calls) {
-      expect(call).toEqual(["admin", "auditor"]);
-    }
+    // archive + anchor stay locked down
+    expect(calls[0]).toEqual(["admin", "auditor"]);
+    expect(calls[1]).toEqual(["admin", "auditor"]);
+    // integrity widened for read-only oversight roles
+    expect(calls[2]).toEqual(["admin", "auditor", "ciso", "compliance_officer"]);
   });
 });

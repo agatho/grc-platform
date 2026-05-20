@@ -269,7 +269,12 @@ async function computeIntegrity(orgId: string): Promise<IntegrityReport> {
 }
 
 export async function GET(req: Request) {
-  const ctx = await withAuth("admin", "auditor");
+  // #WAVE24-B1: CISO + compliance_officer added back. Wave-23 tightened
+  // this to admin+auditor and broke the CISO's quarterly hash-chain
+  // health check (ISO 27001 A.12.4.2 requires the IS-responsible role
+  // can verify audit-log integrity). The endpoint never mutates state
+  // and the response carries no cross-tenant data.
+  const ctx = await withAuth("admin", "auditor", "ciso", "compliance_officer");
   if (ctx instanceof Response) return ctx;
 
   const requestId = getRequestId(req);
