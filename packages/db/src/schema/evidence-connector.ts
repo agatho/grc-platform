@@ -77,7 +77,18 @@ export const connectorCredential = pgTable(
     authTag: varchar("auth_tag", { length: 64 }).notNull(), // GCM auth tag
     keyVersion: integer("key_version").notNull().default(1),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
-    refreshToken: text("refresh_token"), // encrypted OAuth2 refresh token
+    // #WAVE24-AUDIT: dormant column. The Sprint-62 evidence-connector
+    // OAuth2 flow never shipped (no route writes to refresh_token
+    // today; grep -r refreshToken in apps/ returns zero hits). The
+    // earlier comment claimed "encrypted" but the column is plain
+    // text and no encryption pipeline exists for it. Before the
+    // first OAuth2 refresh flow ships, mirror this column into the
+    // encrypted_payload / iv / auth_tag scheme used by the rest of
+    // this table (see /api/v1/connectors/[id]/credentials/route.ts
+    // for the pattern). Leaving the column nullable + plain so the
+    // pending refactor can introduce a typed `RefreshTokenEnvelope`
+    // without a schema migration today.
+    refreshToken: text("refresh_token"),
     scopes: jsonb("scopes").default("[]"), // granted OAuth2 scopes
     lastRotatedAt: timestamp("last_rotated_at", { withTimezone: true }),
     createdBy: uuid("created_by").references(() => user.id),
