@@ -150,20 +150,20 @@ async function fromCatalogLinks(
   // catalog_entry_id. Maps to "how much of this framework do we have
   // any control claim coverage of".
   //
-  // The `framework` filter here is matched against catalog.code. Tier
+  // The `framework` filter here is matched against catalog.source. Tier
   // mappings (iso-27001-annex-a, iso27001-2022, etc) are catalog-side
   // so we accept both the canonical id and any catalog code with
   // partial match.
   const catalogs = await db
     .select({
       catalogId: catalog.id,
-      code: catalog.code,
+      code: catalog.source,
     })
     .from(catalog)
     .where(
       filter
-        ? sql`(${catalog.code} = ${filter} OR ${catalog.code} ILIKE ${"%" + filter + "%"})`
-        : sql`${catalog.code} IS NOT NULL`,
+        ? sql`(${catalog.source} = ${filter} OR ${catalog.source} ILIKE ${"%" + filter + "%"})`
+        : sql`${catalog.source} IS NOT NULL`,
     );
 
   if (catalogs.length === 0) return [];
@@ -200,23 +200,23 @@ async function fromCatalogLinks(
   const coveredByCatalog = new Map<string, number>();
   for (const c of covered) coveredByCatalog.set(c.catalogId, c.coveredEntries);
 
-  return catalogs
-    .map((cat) => {
-      const total = totalsByCatalog.get(cat.catalogId) ?? 0;
-      const cov = coveredByCatalog.get(cat.catalogId) ?? 0;
-      if (total === 0) return null;
-      const pct = Math.round((cov / total) * 100);
-      return {
-        framework: cat.code,
-        coveragePct: pct,
-        coveredControls: cov,
-        notCoveredControls: total - cov,
-        totalControls: total,
-        analysisDate: new Date().toISOString().slice(0, 10),
-        source: "live_catalog_link" as const,
-      };
-    })
-    .filter((r): r is FrameworkRow => r !== null);
+  const out: FrameworkRow[] = [];
+  for (const cat of catalogs) {
+    const total = totalsByCatalog.get(cat.catalogId) ?? 0;
+    if (total === 0) continue;
+    const cov = coveredByCatalog.get(cat.catalogId) ?? 0;
+    const pct = Math.round((cov / total) * 100);
+    out.push({
+      framework: String(cat.code ?? ""),
+      coveragePct: pct,
+      coveredControls: cov,
+      notCoveredControls: total - cov,
+      totalControls: total,
+      analysisDate: new Date().toISOString().slice(0, 10),
+      source: "live_catalog_link",
+    });
+  }
+  return out;
 }
 
 export const GET = withErrorHandler(async function GET(req: Request) {
