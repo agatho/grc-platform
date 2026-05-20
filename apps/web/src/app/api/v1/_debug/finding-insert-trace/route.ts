@@ -9,17 +9,25 @@
 // a layer we haven't observed live yet (Drizzle inference, DB
 // trigger, RLS).
 //
-// This endpoint isolates the "where does the FK go missing" question
-// by exercising three paths against the same payload and returning
-// the result of each:
+// This endpoint exercises three paths against the same payload and
+// returns the result of each, INSIDE the same withAuditContext the
+// production POST handler uses so RLS / session-vars are identical:
 //
 //   raw-body      — the JSON body as parsed, for sanity
-//   direct-sql    — raw INSERT via db.execute(sql`…`) using the
+//   direct-sql    — raw INSERT via tx.execute(sql`…`) using the
 //                   request's FK literals, bypassing Drizzle entirely
-//   drizzle       — db.insert(finding).values({…}).returning(), the
+//   drizzle       — tx.insert(finding).values({…}).returning(), the
 //                   exact path the production POST handler uses
 //
-// Cowork QA can run this against a prod-mirror with valid IDs to
+// Both insert paths first create their own work_item via the typed
+// Drizzle insert (the same way the production route does at
+// route.ts:135). Wave-23 review correctly flagged that the previous
+// version of this endpoint used `gen_random_uuid()` as the
+// work_item_id literal, which fails the FK to `work_item` every
+// time and obscures the actual diagnostic signal.
+//
+// Cowork QA / the next SSH-having operator runs this against
+// prod with valid IDs (`controlId` from `GET /controls?limit=1`) to
 // pinpoint which layer is dropping the FK. The trace is purposely
 // verbose so the resulting PR comment is unambiguous.
 //
@@ -34,9 +42,9 @@
 // is deleted via a follow-up migration commit. The endpoint is not
 // a long-term API surface.
 
-import { db, finding } from "@grc/db";
+import { db, finding, workItem } from "@grc/db";
 import { sql } from "drizzle-orm";
-import { withAuth } from "@/lib/api";
+import { withAuth, withAuditContext } from "@/lib/api";
 
 function debugEnabled(req: Request): boolean {
   if (process.env.ARCTOS_DEBUG_TRACE_ENABLED === "1") return true;
@@ -72,92 +80,139 @@ export async function POST(req: Request) {
   const traces: Trace[] = [];
   traces.push({ stage: "raw-body", value: raw });
 
-  // Path 1 — direct SQL. Bypasses Drizzle's column-name conversion,
-  // proves whether the DB itself accepts the FK literals.
-  try {
-    const directResult = await db.execute<{
-      id: string;
-      control_id: string | null;
-      audit_id: string | null;
-      risk_id: string | null;
-      control_test_id: string | null;
-    }>(sql`
-      INSERT INTO finding (
-        org_id, work_item_id, title, severity, source,
-        control_id, audit_id, risk_id, control_test_id,
-        created_by, updated_by
-      )
-      VALUES (
-        ${ctx.orgId},
-        gen_random_uuid(),
-        ${typeof raw.title === "string" ? raw.title : "debug-direct-insert"},
-        ${typeof raw.severity === "string" ? raw.severity : "minor_nonconformity"}::finding_severity,
-        ${typeof raw.source === "string" ? raw.source : "audit"}::finding_source,
-        ${raw.controlId ?? null}::uuid,
-        ${raw.auditId ?? null}::uuid,
-        ${raw.riskId ?? null}::uuid,
-        ${raw.controlTestId ?? null}::uuid,
-        ${ctx.userId},
-        ${ctx.userId}
-      )
-      RETURNING id, control_id, audit_id, risk_id, control_test_id;
-    `);
-    const rows = Array.isArray(directResult) ? directResult : [];
-    traces.push({ stage: "direct-sql-insert", result: rows[0] ?? null });
-  } catch (e) {
-    traces.push({
-      stage: "direct-sql-insert",
-      error: e instanceof Error ? e.message : String(e),
-    });
-  }
+  // CRITICAL: run inside withAuditContext so app.current_org_id /
+  // app.current_user_id session vars are set. The production POST
+  // handler does this at route.ts:133; without it RLS will reject
+  // BOTH insert paths even with valid IDs, producing 0 useful
+  // diagnostic signal. Audit-trail rows written during this trace
+  // are tagged with the same actor as the call.
+  const result = await withAuditContext(ctx, async (tx) => {
+    const localTraces: Trace[] = [];
 
-  // Path 2 — Drizzle ORM. Same code path the production POST handler
-  // uses; if this returns null FKs while direct-SQL persisted, the
-  // bug is in the ORM layer.
-  try {
-    const drizzleResult = await db
-      .insert(finding)
-      .values({
-        orgId: ctx.orgId,
-        workItemId: crypto.randomUUID(),
-        title: typeof raw.title === "string" ? raw.title : "drizzle-test",
-        severity: (typeof raw.severity === "string"
-          ? raw.severity
-          : "minor_nonconformity") as
-          | "minor_nonconformity"
-          | "major_nonconformity",
-        source: (typeof raw.source === "string" ? raw.source : "audit") as
-          | "audit"
-          | "control_test"
-          | "incident"
-          | "self_assessment"
-          | "external",
-        controlId:
-          typeof raw.controlId === "string" ? raw.controlId : undefined,
-        controlTestId:
-          typeof raw.controlTestId === "string" ? raw.controlTestId : undefined,
-        riskId: typeof raw.riskId === "string" ? raw.riskId : undefined,
-        auditId: typeof raw.auditId === "string" ? raw.auditId : undefined,
-        createdBy: ctx.userId,
-        updatedBy: ctx.userId,
-      })
-      .returning();
-    traces.push({
-      stage: "drizzle-insert",
-      result: drizzleResult[0] ?? null,
-    });
-  } catch (e) {
-    traces.push({
-      stage: "drizzle-insert",
-      error: e instanceof Error ? e.message : String(e),
-    });
-  }
+    // Path 1 — direct SQL. Bypasses Drizzle's column-name conversion,
+    // proves whether the DB itself accepts the FK literals.
+    //
+    // First create a work_item to satisfy the FK from finding.work_item_id.
+    // The previous version used `gen_random_uuid()` as the FK literal,
+    // which always failed because no work_item with that ID existed.
+    try {
+      const [wiDirect] = await tx
+        .insert(workItem)
+        .values({
+          orgId: ctx.orgId,
+          typeKey: "finding",
+          name: "debug-direct-insert",
+          status: "draft",
+          grcPerspective: ["ics"],
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      const directResult = await tx.execute<{
+        id: string;
+        control_id: string | null;
+        audit_id: string | null;
+        risk_id: string | null;
+        control_test_id: string | null;
+      }>(sql`
+        INSERT INTO finding (
+          org_id, work_item_id, title, severity, source,
+          control_id, audit_id, risk_id, control_test_id,
+          created_by, updated_by
+        )
+        VALUES (
+          ${ctx.orgId},
+          ${wiDirect.id}::uuid,
+          ${typeof raw.title === "string" ? raw.title : "debug-direct-insert"},
+          ${typeof raw.severity === "string" ? raw.severity : "minor_nonconformity"}::finding_severity,
+          ${typeof raw.source === "string" ? raw.source : "audit"}::finding_source,
+          ${raw.controlId ?? null}::uuid,
+          ${raw.auditId ?? null}::uuid,
+          ${raw.riskId ?? null}::uuid,
+          ${raw.controlTestId ?? null}::uuid,
+          ${ctx.userId},
+          ${ctx.userId}
+        )
+        RETURNING id, control_id, audit_id, risk_id, control_test_id;
+      `);
+      const rows = Array.isArray(directResult) ? directResult : [];
+      localTraces.push({
+        stage: "direct-sql-insert",
+        result: rows[0] ?? null,
+      });
+    } catch (e) {
+      localTraces.push({
+        stage: "direct-sql-insert",
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    // Path 2 — Drizzle ORM. Same code path the production POST handler
+    // uses; if this returns null FKs while direct-SQL persisted, the
+    // bug is in the ORM layer.
+    try {
+      const [wiDrizzle] = await tx
+        .insert(workItem)
+        .values({
+          orgId: ctx.orgId,
+          typeKey: "finding",
+          name: "drizzle-test",
+          status: "draft",
+          grcPerspective: ["ics"],
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+
+      const drizzleResult = await tx
+        .insert(finding)
+        .values({
+          orgId: ctx.orgId,
+          workItemId: wiDrizzle.id,
+          title: typeof raw.title === "string" ? raw.title : "drizzle-test",
+          severity: (typeof raw.severity === "string"
+            ? raw.severity
+            : "minor_nonconformity") as
+            | "minor_nonconformity"
+            | "major_nonconformity",
+          source: (typeof raw.source === "string" ? raw.source : "audit") as
+            | "audit"
+            | "control_test"
+            | "incident"
+            | "self_assessment"
+            | "external",
+          controlId:
+            typeof raw.controlId === "string" ? raw.controlId : undefined,
+          controlTestId:
+            typeof raw.controlTestId === "string"
+              ? raw.controlTestId
+              : undefined,
+          riskId: typeof raw.riskId === "string" ? raw.riskId : undefined,
+          auditId: typeof raw.auditId === "string" ? raw.auditId : undefined,
+          createdBy: ctx.userId,
+          updatedBy: ctx.userId,
+        })
+        .returning();
+      localTraces.push({
+        stage: "drizzle-insert",
+        result: drizzleResult[0] ?? null,
+      });
+    } catch (e) {
+      localTraces.push({
+        stage: "drizzle-insert",
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+
+    return localTraces;
+  });
 
   return Response.json({
     enabled: true,
     note: "DEBUG endpoint — see ADR-026 + wave-24 prompt A1. Removed once A1 is closed.",
     orgId: ctx.orgId,
     userId: ctx.userId,
-    traces,
+    traces: [...traces, ...result],
   });
 }
