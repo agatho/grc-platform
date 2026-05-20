@@ -8,7 +8,10 @@
 // — so dropping the annotation here loses nothing in practice and keeps
 // the file compatible across both vitest majors during the bump.
 export const sharedCoverageConfig = {
-  provider: "v8",
+  // Cast `provider` to its literal type so spreading this object into a
+  // vitest `coverage: { ... }` (which expects `'v8' | 'istanbul' | ...`,
+  // not `string`) typechecks on both vitest 3 and 4.
+  provider: "v8" as const,
   reporter: ["text-summary", "json-summary", "json", "lcov", "html"],
   reportsDirectory: "coverage",
   // Inputs the report should consider — overridden per package as needed.
