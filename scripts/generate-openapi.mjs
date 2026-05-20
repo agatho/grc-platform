@@ -52,9 +52,21 @@ function pathFromFile(absPath) {
 }
 
 function extractMethods(src) {
-  return ["get", "post", "put", "patch", "delete"].filter((m) =>
-    new RegExp(`export\\s+async\\s+function\\s+${m.toUpperCase()}\\b`).test(src),
-  );
+  // Match all three handler-export patterns Next.js accepts:
+  //   - export async function GET() { ... }
+  //   - export const GET = withErrorHandler(...)
+  //   - export { GET, POST } from "..." (re-export alias)
+  // The Wave-23/24 routes mostly use the `withErrorHandler` wrapper
+  // so the original `export async function` regex missed them.
+  return ["get", "post", "put", "patch", "delete"].filter((m) => {
+    const upper = m.toUpperCase();
+    const asyncFn = new RegExp(`export\\s+async\\s+function\\s+${upper}\\b`);
+    const constExport = new RegExp(`export\\s+const\\s+${upper}\\s*=`);
+    const reExport = new RegExp(
+      `export\\s*\\{[^}]*\\b${upper}\\b[^}]*\\}\\s*from`,
+    );
+    return asyncFn.test(src) || constExport.test(src) || reExport.test(src);
+  });
 }
 
 function extractRoles(src) {
