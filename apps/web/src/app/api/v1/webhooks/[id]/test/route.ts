@@ -3,6 +3,7 @@ import { formatWebhookPayload, signPayload } from "@grc/events";
 import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { GrcEvent } from "@grc/events";
+import { checkWebhookUrl } from "@grc/shared";
 
 // POST /api/v1/webhooks/:id/test — Send a test event to the webhook
 export async function POST(
@@ -26,6 +27,20 @@ export async function POST(
 
   if (!webhook) {
     return Response.json({ error: "Webhook not found" }, { status: 404 });
+  }
+
+  // Defence-in-depth: even though createWebhookSchema rejects unsafe URLs
+  // at registration time, re-check before issuing the outbound fetch. Older
+  // rows from before the SSRF guard landed could otherwise still be tested.
+  const urlCheck = checkWebhookUrl(webhook.url);
+  if (!urlCheck.ok) {
+    return Response.json(
+      {
+        error: "Webhook URL is not allowed",
+        detail: urlCheck.reason,
+      },
+      { status: 422 },
+    );
   }
 
   // Create a test event

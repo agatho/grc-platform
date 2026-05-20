@@ -2,7 +2,80 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-17**. Letzte Migration: `0329_org_branding_add_report_template.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (2026-05-17, PRs #167–#172) — **alle drei Acceptance-Items (A1/A2/C3) live auf prod verifiziert**. Aktive Arbeit: ADR-014 Phase 3+4, ADR-019/020/021/023/024 (Proposed).
+> Stand: **2026-05-18 (abends)**. Letzte Migration: `0343_audit_chain_concurrency_lock.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (closed 2026-05-17, PRs #167–#172). Aktive Arbeit heute: **Alpha-Readiness-Audit + Overnight-Deep-Audit** (PRs #185–#197). Letzter Modul-Overhaul: **TPRM** (PR #180).
+
+## Alpha-Readiness-Audit 2026-05-18 (Overnight)
+
+Diese Session brachte die Plattform aus dem Zustand „grünes CI mit unbekanntem Tech-Debt darunter" in einen verifizierten Zustand pro Modul.
+
+### Verifizierte Fixes (PRs #185–#197 merged oder open)
+
+- **#185** Prettier-Cleanup (110 Files, CRLF/LF-Drift), 7 Typecheck-Fehler, gitignored `coverage/route.ts` recovered, Rehydrate-Regex Bug-Fix.
+- **#186** STATUS.md refresh (initial pass).
+- **#187** Sign-off chain concurrency guard: `UNIQUE NULLS NOT DISTINCT (entity_id, previous_chain_hash)` auf process / audit / vendor sign_off; POST-Handler fangen 23505 → 409 retry-Hint.
+- **#188** Budget-audit integrity test: relaxed über-strenge Chain-Equality nach 0337 trigger-sprawl.
+- **#189** SignOff payload typed builders (process / audit / vendor) — hash-compat preserved.
+- **#190** RLS UPDATE/DELETE policies backfilled auf audit_sign_off + vendor_sign_off.
+- **#191** 🔥 **Restored lost `pg_advisory_xact_lock` in `audit_trigger()`** — Regression seit Migration 0284, durch 0308/0309/0313/0327 silent dropped. Concurrent commits in derselben Tenant-Scope hätten die globale Audit-Hash-Chain branched.
+- **#192** ISMS: G2 (SoA coverage) + G3 (risk assessment) gates enforced auf `/transition` (bisher nur advisory). Plus 12 AI Act-Routes mit fehlendem `requireModule("isms")`.
+- **#193** ICS: 15 routes mit fehlendem requireModule patched (controls/ces, evidence-review, findings analytics, cert-wizard, tax-cms ICFR).
+- **#194** ERM: 30 routes mit fehlendem requireModule patched (predictive-risk, RCSA, DORA ICT, tax-cms risks).
+- **#195** AI 502-wrap auf 2 ungewrappte ISMS-AI-Routes; `scripts/perf/alpha-readiness-smoke.js` (k6) + `scripts/dr-restore-drill.sh` (manuell auf prod auszuführen).
+- **#196** 🔥 **URGENT** — `CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64)` Fallback eliminiert. Fail-hard auf prod wenn env-var fehlt. **Vor Merge: env-var auf prod setzen prüfen!**
+- **#197** Overnight-Audit-PR: 4 Phase-1-Reports (schema-drift / dead-routes / prompt-injection / as-any) + 6 Phase-2-Module-Reports + Master-Triage-Doc unter `docs/audits-overnight-2026-05-18/`. Plus BPM AI-prompt-injection Hardening (`buildTextToBpmnPrompt`) + 7 `as any` casts eliminiert in `isms-gate-stats.ts`.
+
+### Verifizierte Module — vollständig clean (no PR needed)
+
+| Modul             | Routes | Befund                                                                                                                   |
+| ----------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| BCMS              | 51     | Alle auth+module-gated; Crisis/BCP/Exercise state machines wired; BIA per-Phase Endpoints (`/start` G1, `/finalize` G2). |
+| ESG               | 25     | Auth+module clean; Materiality-Finalize mit Status-Vorprüfung.                                                           |
+| Programme Cockpit | 32     | Journey + step state machines wired; 2 ungatete Routes sind Discovery-Stub + cross-system Rollup.                        |
+| Whistleblowing    | 12     | HinSchG-konforme öffentliche Intake-Routes; Rest auth+module clean.                                                      |
+| EAM               | 82     | **82/82** mit `withAuth` + `requireModule`. Cleanstes Modul.                                                             |
+
+### 🚨 Identifizierte offene Alpha-Blocker (Triage-Doc, noch kein PR)
+
+8 Findings im Triage-Doc `docs/audits-overnight-2026-05-18/00-triage-summary.md`:
+
+1. OAuth refresh-tokens plaintext in `evidence_connector.refresh_token`.
+2. **Risk Acceptance-Modul** — Schema + Authority-Matrix-Tabellen + Demo-Seed vorhanden, aber **keine API-Routes**. UI claimt ✅ Done. Entweder Doku falsch oder Feature unvollständig.
+3. Copilot privilege escalation auf `/copilot/conversations/[id]/actions` (kein RBAC auf action-effect).
+4. Webhook URL validation fehlt (SSRF) in `triggerWebhook`-Automation-Action.
+5. Webhook dispatcher gestubbt — HMAC-Funktionen vorhanden, aber tatsächlicher Versand ist `console.log`.
+6. Usage-Event ohne Idempotency-Key → Double-Billing-Risiko.
+7. Copilot Rate-Limit definiert (`LIMITS.COPILOT`) aber nie aufgerufen.
+8. Plugin-Code-Execution ohne Sandbox — `executionMode` deklariert aber nicht enforced.
+
+Empfohlene Reihenfolge: nach Sequenz im Triage-Doc, ~6h Aufwand insgesamt.
+
+### Cross-Cutting Takeaways aus dem Overnight-Audit
+
+1. **CI-Lint einführen**, der jede neue `route.ts` ohne `requireModule(key)` rot färbt. ~120 Routes nachgepatched in dieser Session — der Pattern wurde von Sprint zu Sprint nicht konsistent angewandt.
+2. **CLAUDE.md / STATUS.md Reconciliation-Pass** — mehrere „✅ Done"-Features haben Schema aber keine API (Risk Acceptance) oder Stub-Implementation (Webhook-Dispatcher, Cloud-Connector-Execute). Sprint-Tabelle braucht Realitätsabgleich.
+3. **Hex-Env-Var-Helper** zentralisieren — wir haben aktuell zwei Patterns (`wb-crypto.ts` korrekt, ehemaliger Connector falsch). Ein gemeinsames `getRequiredHexKey()` würde künftige Instanzen verhindern.
+
+## Was ist seit STATUS-Stand 2026-05-17 passiert (Audit / DPMS / TPRM Overhauls)?
+
+- **3 Modul-Komplett-Überarbeitungen** in Folge nach dem BPM-Muster (PR #178 Audit · PR #179 DPMS · PR #180 TPRM): jeder Overhaul liefert eine Migration mit `*_sign_off` Append-Only-Hash-Chain + Cross-Module-FKs, eine Gates-Library (`audit-gates.ts`, `dpia-gates.ts`, `vendor-gates.ts`), Transition-Blocker-Endpoint, Sign-Off-Endpoint, Cross-Module-Aggregation, ZIP-Audit-Pack-Export, AI-Endpoints und Dashboard-KPIs.
+- **Audit-Mgmt Overhaul** (Migration `0338_audit_overhaul_signoff_fks.sql`): `audit_sign_off` + FK auf `audit.report_document_id`, RACM-Aggregation, ISO-19011-Checklisten-AI, Finding-Vorschläge.
+- **DPMS Overhaul** (Migration `0339_dpms_unify_ropa.sql`): `ropa_entry.process_id`-FK, `dpia.process_id`-FK, `data_breach.affected_process_ids[]`. DPIA-Gates inkl. Art-36-Konsultation. DSR-SLA-Tracker (Art-12(3) 30 Tage). Art-33 72-Stunden-Status-Endpoint + deutsches Notifikations-ZIP-Template. AI-Privacy-Tier-Routing für RoPA/DPIA-Drafting.
+- **TPRM Overhaul** (Migration `0340_tprm_overhaul.sql`): `vendor_sign_off` + DORA-critical-ICT/LkSG-tier-1 Designation-Flags + `contract.affected_process_ids[]`. Vendor-Gates blockieren z. B. DORA-Vendor-Aktivierung ohne Exit-Plan oder LkSG-Vendor-Aktivierung ohne LkSG-Assessment. Contracts: `renewal-watch`, `obligations-status`. AI-Tier-Klassifikator + DD-Fragebogen-Generator.
+- **Shared Sign-Off-Chain-Bibliothek** (`apps/web/src/lib/sign-off-chain.ts`) wird jetzt von 3 Modulen genutzt (process · audit · vendor; DPIA folgt einem einfacheren Approval-Pattern direkt auf der DPIA-Tabelle). Reine Funktionen (`computePayloadHash`, `computeChainHash`, `verifyChain`); GET-Endpoints validieren die Kette und melden `brokenAt`.
+- **~30 neue API-Routes** über die 3 Module: Transitions-Blockers, Sign-Off (GET+POST), Cross-Module/RACM/Scope-Aggregation, Audit-Pack-Export (JSZip), AI-Endpoints, KPI-Dashboards. Dashboard-Endpoints: `/api/v1/dashboard/{audit,dpms,tprm}-kpis`.
+- **RBAC-Matrix-Tests + Gates-Unit-Tests** pro Modul: `audit-rbac-matrix.test.ts` (12 routes), `dpms-rbac-matrix.test.ts` (10 routes), `tprm-rbac-matrix.test.ts` (10 routes), `audit-gates.test.ts` (6 Szenarien), `dpia-gates.test.ts` (5 Szenarien), `vendor-gates.test.ts` (6 Szenarien) + 4 ZIP-Pack-Routes mit `Blob`-Wrap.
+
+## Was ist seit STATUS-Stand 2026-05-16 passiert (Overnight BPM-Overhaul)?
+
+- **BPM-Modul Komplett-Überarbeitung** entlang [`bpm-overhaul-implementation-plan.md`](./bpm-overhaul-implementation-plan.md). 5 neue Migrationen (`0330` FK-Härtung, `0331` finding↔process Link, `0332` process_step LoD + critical-process, `0333` process_ropa_profile + compliance_profile_enum, `0334` process_sign_off + process_framework_mapping). Neuer Drizzle-Schema-Pfad: `packages/db/src/schema/process-grc.ts`.
+- **~18 neue API-Routes** unter `/api/v1/processes/[id]/*`: risk-heatmap, control-coverage, racm, findings, bia-impacts, ropa-profile, three-lines-distribution, coverage, framework-mappings, audit-trail, health-score, sign-off, bulk-link (risks/controls/documents), steps/[stepId]/line-of-defense, ai/{generate-from-text, suggest-risks, suggest-controls, map-frameworks}, event-logs, transitions/blockers + neuer `/api/v1/processes/cockpit`.
+- **Approval-Gates** (Phase 3): strukturierte Blocker-Liste via `apps/web/src/lib/process-gates.ts`. `PUT /api/v1/processes/[id]/status` lehnt Transitions mit 422 + Blocker-Liste ab. Discovery via `GET /transitions/blockers?target=...`.
+- **Sign-Off Hash Chain** (Phase 6): jeder `process_sign_off`-Eintrag verkettet `previous_chain_hash + payload_hash → chain_hash` (SHA-256). `GET /sign-off` validiert die Kette.
+- **5 neue Cross-Module-Tabs** auf `/processes/[id]`: Controls, BIA, Findings, Compliance, Sign-off. Bulk-Link-Modale für Controls + Risks + Documents. Neue Pages `/processes/[id]/racm`, `/processes/[id]/ropa`, `/processes/cockpit`.
+- **Custom Moddle-Extension `arctos:*`** (Phase 5): `arctos-moddle-extension.json` + `arctos-grc-extractor.ts` für GRC-Properties-Round-Trip im BPMN-XML (Risk-/Control-/Document-Refs, RACI, BCM-KPI, ROPA, Line-of-Defense). Round-Trip-Tests in `__tests__/components/arctos-grc-extractor.test.ts`.
+- **AI-Assistent** (Phase 7): Multi-Provider-Router via `@grc/ai` — Text-zu-BPMN, Risk-/Control-Vorschläge, Framework-Mapping-Vorschläge. Prompts in `packages/ai/src/prompts/bpm.ts`.
+- **i18n-Namespace `bpm-overhaul`** (DE/EN) für neue UI-Strings, registriert in `i18n/request.ts`.
+- **Tests**: `apps/web/src/__tests__/lib/process-gates.test.ts` (4 Gate-Szenarien), `__tests__/components/arctos-grc-extractor.test.ts` (Round-Trip + Idempotenz).
 
 ## Was ist seit STATUS-Stand 2026-05-10 passiert?
 
@@ -18,17 +91,23 @@
 
 ## TL;DR
 
-ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-17):
+ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-18):
 
-- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 23 abgeschlossen** plus laufende Cross-Cutting-Arbeit (RLS-Gap-Closure, EU-AI-Act-Vollständigkeit, ISO-27005-Kataloge). Audit-Trail-Hash-Chain mit Wave-23.2 TZ-invariant geclosed (50 231 Entries jetzt 100% v3).
-- **108 Drizzle-Schema-Files**, **308 SQL-Migrationen** bis `0329_org_branding_add_report_template.sql` (Wave 23 fügte 0327 + 0328 + 0329 hinzu).
-- **563 `pgTable()`-Definitionen** (statischer Count, vorher 561). Der RLS-Coverage-Report (Stand 2026-04-18) zählte 545 — die Differenz sind seither hinzugekommene Tabellen, die noch nicht im RLS-Audit erfasst wurden. Letzter dokumentierter Stand: 347 mit vollständiger RLS+Policy+Audit-Trigger, 131 mit RLS-Lücke, 52 mit Audit-Trigger-Lücke, 15 plattform-exempt. Migration `0315_rls_gap_closure_v4.sql` hat weitere Lücken geschlossen — Re-Audit ausstehend.
-- **1.246 `route.ts`-Files** unter `/api/v1/` (vorher 1.150) ergeben **~1.700 HTTP-Endpoints** (Hochrechnung — letzter LoD-Audit zählte 1.606 bei 1.150 routes).
-- **470 Next.js `page.tsx`** (vorher 453), verteilt auf ~85 Top-Level-Routen-Gruppen.
-- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings** + 2 neue Programme-Journeys (W22-B6 Demo-Seed).
-- **258 Test-Files** (236 vor diesem Quartal) + **47 Playwright-E2E-Specs** (vorher 40, +6 wave-spezifisch + 1 dataflow). Verifizierte Out-of-band-Läufe der jüngsten Wellen: schema-drift-finding-fk 7/7, seed-wiring 6/6, tprm-schemas 26/26 (Wave 22). Coverage-Threshold-Gating in CI seit Wave 14 aktiviert (40 % lines / 30 % branches als Floor, ratchet up).
+- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 23 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18.
+- **108 Drizzle-Schema-Files**, **319 SQL-Migrationen** bis `0340_tprm_overhaul.sql` (vorher 305 / `0326`).
+- **563+ `pgTable()`-Definitionen** plus die 3 neuen `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report Re-Audit nach 0336 (gap-closure-v5) + 0337 (audit-trigger-gap-closure) ausstehend.
+- **1.310 `route.ts`-Files** unter `/api/v1/` (vorher 1.246, +64 durch BPM-Overhaul + Audit/DPMS/TPRM-Overhauls und Coverage-Route-Recovery via PR #185).
+- **470+ Next.js `page.tsx`**.
+- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings**.
+- **270+ Test-Files** (Stand 2026-05-18 nach BPM-Overhaul + 3 Modul-Overhauls): gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
 - **~410k LOC** Source-Code insgesamt (apps + packages, ohne node_modules).
-- CI ist seit 2026-04-20 vollgrün ohne `continue-on-error`-Bypass (7 blockierende Jobs). Wave 23 fügt einen 8. Pilot-Readiness-Gate-Job hinzu.
+- **CI-Status (2026-05-18 nach PR #185)**: Lint / Type Check / Unit / E2E / DB Migration / Static schema + RLS / Aggregate coverage / Security Audit / CodeQL / gitleaks **grün**. Einzige verbleibende Rote: `budget-audit-integrity` Integration-Test (pre-existing, `bb6a3c49`, erwartete 6 Einträge / aktuell 11; nicht durch Overhauls verursacht). Zwischendrin hatten die ZIP-Overhauls + Windows-CRLF-Drift Prettier + tsc kurzzeitig rot — durch PR #185 (`fix/prettier-lf-cleanup`) komplett bereinigt.
+
+## Bekannte technische Schulden aus den Overhauls
+
+- **Sign-Off-Chain-Race**: alle 3 Sign-Off-Tabellen (process/audit/vendor) haben **kein `UNIQUE (entity_id, previous_chain_hash)` Constraint** und lesen `prev` **außerhalb der INSERT-Transaktion**. Zwei gleichzeitige POST-/sign-off-Calls (Doppelklick, Retry) erzeugen Sibling-Rows mit identischem `previous_chain_hash` — `verifyChain` liefert dann `ok:false`. Severity in der Praxis niedrig (Sign-Off ist menschliche Aktion, append-only), aber leicht zu fixen via Migration `UNIQUE NULLS NOT DISTINCT`.
+- **Sign-Off-Payload-Type-Drift**: `apps/web/src/lib/sign-off-chain.ts` exportiert `SignOffPayload` mit `processId/processName/processVersionId` als Pflichtfelder. Audit + Vendor passen ihre eigenen IDs als `processId` durch (mit Kommentar „payload field is generic — reused as auditId here"). Funktional korrekt (Hash ist generisch), aber Type-Signatur lügt.
+- **`tsconfig.tsbuildinfo`** war versehentlich getrackt — gefixt + in `.gitignore` aufgenommen (PR #185).
 
 ## Code-Pfad-Hinweis (häufige Verwechslung)
 
@@ -197,61 +276,42 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 
 ## Bekannte Lücken (für die nächste Iteration)
 
-| Gap                                                                      | Severity | Status nach diesem Arbeitspaket                                                                                                                                                                                                                          |
-| ------------------------------------------------------------------------ | -------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Coverage in `apps/web`** — Domain-CRUD-Tests                           |       P0 | ✅ 7 neue Tests + Domain-RBAC-Suite (8 Endpoints parametrisch). Bleibt: ~140 weitere mutating Endpoints                                                                                                                                                  |
-| **Coverage in `packages/reporting`, `packages/events`**                  |       P0 | ✅ Beide Packages haben jetzt Tests; PDF/Excel-Generator-Pipeline weiterhin nur partial (section-data-fetcher abgedeckt, generator.ts nicht)                                                                                                             |
-| **OpenAPI-Spec-Validation** (`docs/openapi.yaml`, 1.034 Paths)           |       P3 | ✅ Strukturelle Validation-Tests (8 Cases verifiziert grün, 1.034 Paths gezählt)                                                                                                                                                                         |
-| **Coverage-Threshold-Gating in CI**                                      |       P2 | ✅ `vitest.coverage.shared.ts`: 40 % lines / 30 % branches als Floor, ratchet-up-Strategie dokumentiert                                                                                                                                                  |
-| **Bulk-Cap (Critical Rule #11)**                                         |       P0 | ✅ 12 Cases verifiziert grün gegen 3 Schemas (bulkEnroll, createApiKey, updateApiKey)                                                                                                                                                                    |
-| **Webhook-HMAC-Tampering-Schutz**                                        |       P0 | ✅ 11 Cases verifiziert grün — Tampering, Length-Attack, Unicode                                                                                                                                                                                         |
-| **Template-Injection in Reporting**                                      |       P0 | ✅ 16 Cases verifiziert grün — Whitelist-Namespaces, no nested re-rendering                                                                                                                                                                              |
-| **Risk-Lifecycle-State-Validation (Schema-Layer)**                       |       P1 | ✅ 16+20 Cases — alle 5 Status-Werte, case-sensitivity, Financial-Impact-Refine. **Server-side State-Transition-Logik (z. B. closed → identified verbieten) fehlt weiterhin**                                                                            |
-| 131 Tabellen ohne RLS-Policy                                             |       P1 | Pure-Function-Test der Klassifikationslogik geschrieben (10 Cases). Schließung läuft im `release/0.2-rls-gap-closure`                                                                                                                                    |
-| 52 Tabellen ohne `audit_trigger()`                                       |       P1 | dito                                                                                                                                                                                                                                                     |
-| 99 verbleibende TypeScript-Errors (Web 0, Worker 0, Rest in Tests/Tools) |       P3 | offen                                                                                                                                                                                                                                                    |
-| 137 N+1-Query-Kandidaten                                                 |       P3 | offen                                                                                                                                                                                                                                                    |
-| 1.738 fehlende Index-Vorschläge (53 davon RLS-High)                      |       P2 | offen                                                                                                                                                                                                                                                    |
-| ~30 verbleibende Schema-Drift-Migrationen (von urspr. 79)                |       P2 | offen                                                                                                                                                                                                                                                    |
-| OTS-Upgrade-Walker noch Stub                                             |       P3 | offen                                                                                                                                                                                                                                                    |
-| Helm-Charts / K8s-Manifeste fehlen                                       |       P2 | offen — ADR-012 noch Proposed                                                                                                                                                                                                                            |
-| 83 extra DB-Tabellen ohne Drizzle-Schema-Export                          |       P2 | offen — ADR-014 Phase 3                                                                                                                                                                                                                                  |
-| **Reporting-PDF/Excel-Generator** (Puppeteer-Pipeline + ExcelJS)         |       P1 | offen — braucht Puppeteer-Mock oder Snapshot-Tests                                                                                                                                                                                                       |
-| **20 weitere Email-Templates per Template-spezifische Tests**            |       P3 | abgedeckt durch Auto-Discovery-Smoke (alle 25 Templates × DE/EN), template-spezifische Edge-Cases offen                                                                                                                                                  |
-| **State-Machine server-side** — z. B. `closed → identified` HTTP-422     |       P1 | offen — Schema layer akzeptiert Werte, Routing-Layer prüft nicht                                                                                                                                                                                         |
-| **150 weitere mutating Endpoints** ohne dedizierten RBAC-Test            |       P1 | Pattern etabliert (Domain-RBAC-Suite ist parametrisch erweiterbar). Skalierung offen                                                                                                                                                                     |
-| **W23-A1** finding controlId/auditId/riskId persistiert null in prod     |       P0 | **✅ closed 2026-05-17** — root cause war Deploy-Drift (alter Container), Code im Repo war korrekt. Wave-23-Deploy + W23.1/3 (meta/build) + Hardening verifizierten live auf prod: POST /findings mit controlId → GET zeigt controlId persistiert.       |
-| **W23-A2** /admin/branding 500 (Wave 22 RequestID 24a45b827c4f2e4d)      |       P0 | **✅ closed 2026-05-17** — echter Schema-Drift: `org_branding.report_template` Column fehlte auf prod. W23.5-Migration (0329) backfilled via `ADD COLUMN IF NOT EXISTS`. Live-verifiziert: GET 200 mit `reportTemplate:"standard"`, `source:"defaults"`. |
-| **W23-C3** Contract POST {name:'X'} → 500 statt 422                      |       P1 | **✅ closed 2026-05-17** — Wave-22-Schema-Alias funktioniert + POST in withErrorHandler gewrappt. Live-verifiziert: POST {name:'X'} → 201 mit title aus name übernommen.                                                                                 |
-| **W23-Pilot-Readiness-Gate** als CI-Pre-Merge-Check                      |       P0 | **✅ closed** — `scripts/pilot-readiness-gate.sh` + CI-Job in `.github/workflows/ci.yml` aktiv, blockt PRs auf main wenn STAGING_URL gesetzt (skipped sauber bei externen Forks).                                                                        |
+| Gap                                                                      | Severity | Status nach diesem Arbeitspaket                                                                                                                                               |
+| ------------------------------------------------------------------------ | -------: | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Coverage in `apps/web`** — Domain-CRUD-Tests                           |       P0 | ✅ 7 neue Tests + Domain-RBAC-Suite (8 Endpoints parametrisch). Bleibt: ~140 weitere mutating Endpoints                                                                       |
+| **Coverage in `packages/reporting`, `packages/events`**                  |       P0 | ✅ Beide Packages haben jetzt Tests; PDF/Excel-Generator-Pipeline weiterhin nur partial (section-data-fetcher abgedeckt, generator.ts nicht)                                  |
+| **OpenAPI-Spec-Validation** (`docs/openapi.yaml`, 1.034 Paths)           |       P3 | ✅ Strukturelle Validation-Tests (8 Cases verifiziert grün, 1.034 Paths gezählt)                                                                                              |
+| **Coverage-Threshold-Gating in CI**                                      |       P2 | ✅ `vitest.coverage.shared.ts`: 40 % lines / 30 % branches als Floor, ratchet-up-Strategie dokumentiert                                                                       |
+| **Bulk-Cap (Critical Rule #11)**                                         |       P0 | ✅ 12 Cases verifiziert grün gegen 3 Schemas (bulkEnroll, createApiKey, updateApiKey)                                                                                         |
+| **Webhook-HMAC-Tampering-Schutz**                                        |       P0 | ✅ 11 Cases verifiziert grün — Tampering, Length-Attack, Unicode                                                                                                              |
+| **Template-Injection in Reporting**                                      |       P0 | ✅ 16 Cases verifiziert grün — Whitelist-Namespaces, no nested re-rendering                                                                                                   |
+| **Risk-Lifecycle-State-Validation (Schema-Layer)**                       |       P1 | ✅ 16+20 Cases — alle 5 Status-Werte, case-sensitivity, Financial-Impact-Refine. **Server-side State-Transition-Logik (z. B. closed → identified verbieten) fehlt weiterhin** |
+| 131 Tabellen ohne RLS-Policy                                             |       P1 | Pure-Function-Test der Klassifikationslogik geschrieben (10 Cases). Schließung läuft im `release/0.2-rls-gap-closure`                                                         |
+| 52 Tabellen ohne `audit_trigger()`                                       |       P1 | dito                                                                                                                                                                          |
+| 99 verbleibende TypeScript-Errors (Web 0, Worker 0, Rest in Tests/Tools) |       P3 | offen                                                                                                                                                                         |
+| 137 N+1-Query-Kandidaten                                                 |       P3 | offen                                                                                                                                                                         |
+| 1.738 fehlende Index-Vorschläge (53 davon RLS-High)                      |       P2 | offen                                                                                                                                                                         |
+| ~30 verbleibende Schema-Drift-Migrationen (von urspr. 79)                |       P2 | offen                                                                                                                                                                         |
+| OTS-Upgrade-Walker noch Stub                                             |       P3 | offen                                                                                                                                                                         |
+| Helm-Charts / K8s-Manifeste fehlen                                       |       P2 | offen — ADR-012 noch Proposed                                                                                                                                                 |
+| 83 extra DB-Tabellen ohne Drizzle-Schema-Export                          |       P2 | offen — ADR-014 Phase 3                                                                                                                                                       |
+| **Reporting-PDF/Excel-Generator** (Puppeteer-Pipeline + ExcelJS)         |       P1 | offen — braucht Puppeteer-Mock oder Snapshot-Tests                                                                                                                            |
+| **20 weitere Email-Templates per Template-spezifische Tests**            |       P3 | abgedeckt durch Auto-Discovery-Smoke (alle 25 Templates × DE/EN), template-spezifische Edge-Cases offen                                                                       |
+| **State-Machine server-side** — z. B. `closed → identified` HTTP-422     |       P1 | offen — Schema layer akzeptiert Werte, Routing-Layer prüft nicht                                                                                                              |
+| **150 weitere mutating Endpoints** ohne dedizierten RBAC-Test            |       P1 | Pattern etabliert (Domain-RBAC-Suite ist parametrisch erweiterbar). Skalierung offen                                                                                          |
+| **W23-A1** finding controlId/auditId/riskId persistiert null in prod     |       P0 | Wave 23: post-insert FK-Verification + `meta/build` für Self-Service-D1, gehärtet via withErrorHandler                                                                        |
+| **W23-A2** /admin/branding 500 (Wave 22 RequestID 24a45b827c4f2e4d)      |       P0 | Wave 23: Acceptance-Test 200/501-only, `meta/build` für Deploy-SHA-Diagnose                                                                                                   |
+| **W23-C3** Contract POST {name:'X'} → 500 statt 422                      |       P1 | Wave 23: Wave-22-Alias funktioniert, POST jetzt withErrorHandler-gewrappt → niemals empty 500                                                                                 |
+| **W23-Pilot-Readiness-Gate** als CI-Pre-Merge-Check                      |       P0 | Wave 23: `scripts/pilot-readiness-gate.sh` läuft gegen Staging, GitHub-Actions-Job blockt Merges                                                                              |
 
-## Wave 23 — Endgame (closed 2026-05-17, 6 PRs)
+## Wave 23 — Endgame (laufend, Pilot-Readiness-Gate)
 
-Wave 22 hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 war der Endgame-Cycle, der genau das zur Unmöglichkeit gemacht hat — und im Zuge dessen die nächsten Drift-Layer aufgedeckt + geschlossen hat.
+Wave 22 hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht:
 
-### Closed PRs
+1. **`/api/v1/meta/build`** — neuer Endpoint exposes Git-SHA + Build-Time + Drizzle-Migration-Count. Macht D1 (Prod-vs-Main-SHA-Vergleich) zum Self-Service per `curl`, ohne SSH.
+2. **Post-Insert-FK-Verification in `findings/route.ts` POST** — direkt nach dem Drizzle-Insert wird das returning-Row mit dem Input verglichen. Wenn ein FK gesendet wurde aber als null zurückkommt, **wirft die Route eine strukturierte 500 mit Diagnostic statt still 201 zu liefern**. Eliminiert die "201 + null FKs"-Failure-Klasse permanent.
+3. **`withErrorHandler`-Wrap auf `findings/route.ts` + `contracts/route.ts` POST** — alle uncaught Exceptions werden jetzt RFC-7807 problem+json mit RequestID. C3 "empty 500 body" ist damit unmöglich.
+4. **`scripts/pilot-readiness-gate.sh` + neuer CI-Job** — Smoke-Test gegen Staging vor jedem Merge, läuft A1 / A2 / C3 / Hash-Chain durch und blockt rote Merges. Subjektive Einschätzungen reichen nicht mehr.
+5. **3 neue Acceptance-Tests** (findings-fk-roundtrip, admin-branding 200/501-only, contracts-name-alias 201) als regression-guard im Vitest-Lauf.
 
-| PR   | Wave  | Effekt                                                                                                                                                                             |
-| ---- | ----- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| #167 | W23   | A1 post-insert FK-Verification, A2/C3 Hardening (withErrorHandler), 3 neue Vitest, pilot-readiness-gate.sh                                                                         |
-| #168 | W23.1 | `/api/v1/_meta/build` public + Dockerfile bakes GIT_SHA via build-args (CI passes them)                                                                                            |
-| #169 | W23.2 | Audit-Hash v3 TZ-invariant (root-cause für 29 241 v0-Entries), migrate-all strips inner BEGIN/COMMIT + pins SET LOCAL TIME ZONE UTC, trigger uses chain_seq for prev-lookup        |
-| #170 | W23.3 | Rename `_meta` → `meta` (Next.js App Router excludes `_`-prefixed folders from routing — root-cause der "Container ist alt"-Theorie, war eigentlich "Route wurde nie registriert") |
-| #171 | W23.4 | `deploy/update-all.sh` passes GIT_SHA/BRANCH/BUILD_TIME als build-args, damit local-build (nicht nur CI) den realen SHA bakes                                                      |
-| #172 | W23.5 | Migration 0329 backfilled `org_branding.report_template` Column (war auf prod missing trotz 0024 — table existierte aus früherer Version)                                          |
-
-### Live-Verification Ergebnis (2026-05-17)
-
-| Item                                                       | HTTP      | Body                                                                                          | Verdict |
-| ---------------------------------------------------------- | --------- | --------------------------------------------------------------------------------------------- | ------- |
-| `GET /api/v1/meta/build`                                   | 200       | JSON mit `commitSha/branch/builtAt/uptime` (commit auf "unknown" bis nach 2tem arctos-update) | ✅      |
-| `POST /api/v1/findings {controlId}` → `GET /findings/{id}` | 201 + 200 | controlId persistiert (Match)                                                                 | ✅ A1   |
-| `GET /api/v1/admin/branding`                               | 200       | `{reportTemplate:"standard", source:"defaults"}`                                              | ✅ A2   |
-| `POST /api/v1/contracts {name:'X'}`                        | 201       | title aus name-Alias übernommen                                                               | ✅ C3   |
-
-### Cross-Cutting-Findings entdeckt + geschlossen während Wave 23
-
-- **Audit-Hash-TZ-Drift**: prod hatte 29 241 v0-Entries die Migration 0312 nicht rehashen konnte. Root-cause `created_at::text` rendert in Session-TZ (Hetzner=Europe/Berlin, CI=UTC). W23.2 führt v3 mit `to_char(... AT TIME ZONE 'UTC', ...)` ein. Nach W23.2-Deploy: **alle 50 231 Einträge sind v3** (1 row in audit_log group-by hash_version).
-- **migrate-all-Transaktions-Konflikt**: 8+ Hand-geschriebene Migrationen hatten `BEGIN; ... COMMIT;` was die outer `client.begin()`-Transaction abbrach. W23.2 stripped diese.
-- **Next.js Private-Folder-Convention**: `_meta` wurde von App Router silently aus der Route-Tabelle ausgeschlossen. War der eigentliche Grund warum `/api/v1/_meta/build` während ~12 h Debugging 404 zurückgab, nicht "Container ist alt".
-- **org_branding Schema-Drift**: identische Failure-Klasse wie Wave-22 A1 hypothesizte, nur auf einer anderen Tabelle. W23.5 backfilled.
+Status-Update folgt nach Wave-23-Merge + Cowork-QA-Verifikation.

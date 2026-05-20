@@ -1,5 +1,6 @@
 import { db, rcsaAssignment, rcsaCampaign, user } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 interface RouteParams {
@@ -10,6 +11,8 @@ interface RouteParams {
 export async function GET(req: Request, { params }: RouteParams) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
 

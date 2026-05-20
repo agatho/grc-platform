@@ -38,3 +38,24 @@ export {
   type ParsedSoaGap,
   type ParsedRoadmapAction,
 } from "./prompts/isms-intelligence";
+export {
+  buildTextToBpmnPrompt,
+  buildRiskSuggestionPrompt,
+  buildControlSuggestionPrompt,
+  buildDiagramOptimizationPrompt,
+  buildFrameworkMappingPrompt,
+  safeJsonParse,
+} from "./prompts/bpm";
+export {
+  buildChecklistGenerationPrompt,
+  buildFindingSuggestionPrompt,
+  buildAuditConclusionPrompt,
+} from "./prompts/audit";
+export {
+  buildVendorClassifyPrompt,
+  buildDdQuestionDraftPrompt,
+} from "./prompts/tprm";
+export {
+  buildRopaFieldDraftPrompt,
+  buildDpiaMeasureDraftPrompt,
+} from "./prompts/dpms";

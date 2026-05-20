@@ -73,6 +73,15 @@ import { useBpmnEditor } from "@/hooks/use-bpmn-editor";
 import { useProcessStepRisks } from "@/hooks/use-processes";
 import { ProcessComments } from "@/components/process/process-comments";
 import { ProcessReviewConfig } from "@/components/process/process-review-config";
+import { ProcessControlsTab } from "@/components/process/process-controls-tab";
+import { ProcessBiaTab } from "@/components/process/process-bia-tab";
+import { ProcessFindingsTab } from "@/components/process/process-findings-tab";
+import { ProcessComplianceTab } from "@/components/process/process-compliance-tab";
+import { ProcessSignOffTab } from "@/components/process/process-sign-off-tab";
+import { ProcessComplianceProfileSwitcher } from "@/components/process/process-compliance-profile-switcher";
+import { ProcessAuditTrailTab } from "@/components/process/process-audit-trail-tab";
+import { ArctosPropertiesPanel } from "@/components/bpmn/arctos-properties-panel";
+import { ProcessDocumentDropzone } from "@/components/process/process-document-dropzone";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
@@ -398,6 +407,13 @@ function ProcessDetailContent() {
                 {process.name}
               </h1>
               <ProcessStatusBadge status={process.status} size="lg" />
+              <ProcessComplianceProfileSwitcher
+                processId={processId}
+                initialProfile={
+                  (process as any).complianceProfile ?? "standard"
+                }
+                onChange={() => fetchProcess()}
+              />
             </div>
             <div className="flex items-center gap-2 text-sm text-gray-500">
               <span>
@@ -411,6 +427,12 @@ function ProcessDetailContent() {
               )}
               <span>·</span>
               <span>v{process.currentVersion}</span>
+            </div>
+            <div className="mt-2 w-[420px]">
+              <ProcessDocumentDropzone
+                processId={processId}
+                onAttached={fetchProcess}
+              />
             </div>
             <div className="flex items-center gap-4 text-sm text-gray-500">
               {process.ownerName && (
@@ -526,6 +548,12 @@ function ProcessDetailContent() {
           <TabsTrigger value="risks">{t("tabs.risks")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
           <TabsTrigger value="comments">{t("tabs.comments")}</TabsTrigger>
+          <TabsTrigger value="controls">Controls</TabsTrigger>
+          <TabsTrigger value="bia">BIA</TabsTrigger>
+          <TabsTrigger value="findings">Findings</TabsTrigger>
+          <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="signoff">Sign-off</TabsTrigger>
+          <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
           <TabsTrigger value="documents">
             <FileText size={14} className="mr-1.5" />
             {t("tabs.documents")}
@@ -591,6 +619,43 @@ function ProcessDetailContent() {
                 <ProcessComments processId={processId} />
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* BPM Overhaul Phase 2: Cross-Module Tabs */}
+        <TabsContent value="controls">
+          <div className="mt-4">
+            <ProcessControlsTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="bia">
+          <div className="mt-4">
+            <ProcessBiaTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="findings">
+          <div className="mt-4">
+            <ProcessFindingsTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="compliance">
+          <div className="mt-4">
+            <ProcessComplianceTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="signoff">
+          <div className="mt-4">
+            <ProcessSignOffTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="audit-trail">
+          <div className="mt-4">
+            <ProcessAuditTrailTab processId={processId} />
           </div>
         </TabsContent>
 
@@ -867,6 +932,74 @@ function EditorTab({
     refetch: refetchRisks,
   } = useProcessStepRisks(processId);
 
+  // BPM Overhaul Phase 3: additional overlay toggles + data
+  const [showRiskOverlay, setShowRiskOverlay] = useState(true);
+  const [showCoverageOverlay, setShowCoverageOverlay] = useState(false);
+  const [showLodOverlay, setShowLodOverlay] = useState(false);
+  const [showFindingsOverlay, setShowFindingsOverlay] = useState(false);
+
+  const [coverageOverlay, setCoverageOverlay] = useState<any[]>([]);
+  const [lodOverlay, setLodOverlay] = useState<any[]>([]);
+  const [findingsOverlay, setFindingsOverlay] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!showCoverageOverlay) return;
+    fetch(`/api/v1/processes/${processId}/control-coverage`)
+      .then((r) => (r.ok ? r.json() : { data: { activities: [] } }))
+      .then((j) =>
+        setCoverageOverlay(
+          (j.data?.activities ?? []).map((a: any) => ({
+            bpmnElementId: a.bpmnElementId,
+            controlCount: a.controlCount ?? 0,
+            effectiveCount: a.effectiveCount ?? 0,
+          })),
+        ),
+      )
+      .catch(() => setCoverageOverlay([]));
+  }, [showCoverageOverlay, processId]);
+
+  useEffect(() => {
+    if (!showLodOverlay) return;
+    // process.steps already carries lineOfDefense per step
+    setLodOverlay(
+      (process.steps ?? []).map((s: any) => ({
+        bpmnElementId: s.bpmnElementId,
+        lineOfDefense: s.lineOfDefense ?? null,
+      })),
+    );
+  }, [showLodOverlay, process.steps]);
+
+  useEffect(() => {
+    if (!showFindingsOverlay) return;
+    fetch(`/api/v1/processes/${processId}/findings`)
+      .then((r) => (r.ok ? r.json() : { data: [] }))
+      .then((j) => {
+        const byStep = new Map<string, { open: number; critical: number }>();
+        for (const f of j.data ?? []) {
+          const stepId = f.process_step_id;
+          if (!stepId) continue;
+          const step = (process.steps ?? []).find((s: any) => s.id === stepId);
+          if (!step) continue;
+          const k = step.bpmnElementId;
+          const agg = byStep.get(k) ?? { open: 0, critical: 0 };
+          const isOpen = !["closed", "verified", "remediated"].includes(
+            f.status,
+          );
+          if (isOpen) agg.open += 1;
+          if (isOpen && f.severity === "critical") agg.critical += 1;
+          byStep.set(k, agg);
+        }
+        setFindingsOverlay(
+          Array.from(byStep.entries()).map(([bpmnElementId, agg]) => ({
+            bpmnElementId,
+            openCount: agg.open,
+            criticalCount: agg.critical,
+          })),
+        );
+      })
+      .catch(() => setFindingsOverlay([]));
+  }, [showFindingsOverlay, processId, process.steps]);
+
   // Selected element for side panel
   const [selectedElement, setSelectedElement] =
     useState<SelectedElement | null>(null);
@@ -984,6 +1117,42 @@ function EditorTab({
             selectedElement ? "w-[70%]" : "w-full",
           )}
         >
+          {/* BPM Overhaul Phase 3: Overlay toggles */}
+          <div className="absolute top-2 right-2 z-10 flex gap-1 rounded-md border bg-white/95 p-1 shadow-sm">
+            <button
+              type="button"
+              title="Risk heatmap"
+              onClick={() => setShowRiskOverlay((v) => !v)}
+              className={`rounded px-2 py-0.5 text-xs ${showRiskOverlay ? "bg-red-100 text-red-800" : "text-muted-foreground"}`}
+            >
+              Risks
+            </button>
+            <button
+              type="button"
+              title="Control coverage"
+              onClick={() => setShowCoverageOverlay((v) => !v)}
+              className={`rounded px-2 py-0.5 text-xs ${showCoverageOverlay ? "bg-emerald-100 text-emerald-800" : "text-muted-foreground"}`}
+            >
+              Ctrls
+            </button>
+            <button
+              type="button"
+              title="Line of Defense"
+              onClick={() => setShowLodOverlay((v) => !v)}
+              className={`rounded px-2 py-0.5 text-xs ${showLodOverlay ? "bg-blue-100 text-blue-800" : "text-muted-foreground"}`}
+            >
+              LoD
+            </button>
+            <button
+              type="button"
+              title="Open findings"
+              onClick={() => setShowFindingsOverlay((v) => !v)}
+              className={`rounded px-2 py-0.5 text-xs ${showFindingsOverlay ? "bg-amber-100 text-amber-800" : "text-muted-foreground"}`}
+            >
+              Findings
+            </button>
+          </div>
+
           <BpmnEditorDynamic
             ref={editorRef}
             initialXml={initialXml}
@@ -991,14 +1160,19 @@ function EditorTab({
             onSave={handleSave}
             onElementClick={handleElementClick}
             onChanged={markChanged}
-            riskOverlayData={overlayData}
+            riskOverlayData={showRiskOverlay ? overlayData : []}
+            controlCoverageOverlayData={
+              showCoverageOverlay ? coverageOverlay : []
+            }
+            lodOverlayData={showLodOverlay ? lodOverlay : []}
+            findingsOverlayData={showFindingsOverlay ? findingsOverlay : []}
             className="h-full"
           />
         </div>
 
         {/* Side Panel */}
         {selectedElement && (
-          <div className="w-[30%] min-w-[320px] max-w-[450px]">
+          <div className="flex w-[30%] min-w-[320px] max-w-[450px] flex-col gap-2 overflow-y-auto">
             <ShapeSidePanel
               elementId={selectedElement.id}
               elementType={selectedElement.type}
@@ -1012,6 +1186,10 @@ function EditorTab({
               onRiskLinked={() => refetchRisks()}
               onRiskUnlinked={handleRiskUnlink}
               onResponsibleRoleChange={handleResponsibleRoleChange}
+            />
+            <ArctosPropertiesPanel
+              processId={processId}
+              bpmnElementId={selectedElement.id}
             />
           </div>
         )}

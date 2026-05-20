@@ -39,6 +39,24 @@ export interface RiskOverlayData {
   highestScore: number;
 }
 
+// BPM Overhaul Phase 2 A3–A5: additional overlay channels.
+export interface ControlCoverageOverlayData {
+  bpmnElementId: string;
+  controlCount: number;
+  effectiveCount: number;
+}
+
+export interface LodOverlayData {
+  bpmnElementId: string;
+  lineOfDefense: "first" | "second" | "third" | "oversight" | null;
+}
+
+export interface FindingsOverlayData {
+  bpmnElementId: string;
+  openCount: number;
+  criticalCount: number;
+}
+
 export interface BpmnEditorRef {
   saveXml: () => Promise<string>;
   saveSvg: () => Promise<string>;
@@ -60,6 +78,9 @@ interface BpmnEditorProps {
   ) => void;
   onChanged?: () => void;
   riskOverlayData?: RiskOverlayData[];
+  controlCoverageOverlayData?: ControlCoverageOverlayData[];
+  lodOverlayData?: LodOverlayData[];
+  findingsOverlayData?: FindingsOverlayData[];
   className?: string;
 }
 
@@ -76,6 +97,9 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
       onElementClick,
       onChanged,
       riskOverlayData,
+      controlCoverageOverlayData,
+      lodOverlayData,
+      findingsOverlayData,
       className,
     },
     ref,
@@ -248,6 +272,126 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
         // Overlays may fail if elements don't exist in the diagram
       }
     }, [riskOverlayData, loading]);
+
+    // BPM Overhaul A5: control-coverage overlay
+    useEffect(() => {
+      const instance = modelerRef.current;
+      if (!instance || loading || !controlCoverageOverlayData?.length) return;
+      try {
+        type OverlayService = {
+          remove: (opts: { type: string }) => void;
+          add: (
+            elementId: string,
+            type: string,
+            opts: {
+              position: { top: number; left: number };
+              html: HTMLElement;
+            },
+          ) => void;
+        };
+        const overlays = instance.get("overlays") as OverlayService;
+        overlays.remove({ type: "control-badge" });
+        for (const item of controlCoverageOverlayData) {
+          const color =
+            item.controlCount === 0
+              ? "bg-gray-200 text-gray-600 border-gray-300"
+              : item.effectiveCount === item.controlCount
+                ? "bg-emerald-100 text-emerald-800 border-emerald-300"
+                : item.effectiveCount > 0
+                  ? "bg-amber-100 text-amber-800 border-amber-300"
+                  : "bg-red-100 text-red-800 border-red-300";
+          const html = document.createElement("div");
+          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
+          html.textContent = `\u{1F6E1} ${item.effectiveCount}/${item.controlCount}`;
+          html.style.transform = "translate(-50%, 0)";
+          overlays.add(item.bpmnElementId, "control-badge", {
+            position: { top: -14, left: -14 },
+            html,
+          });
+        }
+      } catch {
+        /* element may be missing */
+      }
+    }, [controlCoverageOverlayData, loading]);
+
+    // BPM Overhaul A4: LoD overlay (left edge accent)
+    useEffect(() => {
+      const instance = modelerRef.current;
+      if (!instance || loading || !lodOverlayData?.length) return;
+      try {
+        type OverlayService = {
+          remove: (opts: { type: string }) => void;
+          add: (
+            elementId: string,
+            type: string,
+            opts: {
+              position: { top: number; left: number };
+              html: HTMLElement;
+            },
+          ) => void;
+        };
+        const overlays = instance.get("overlays") as OverlayService;
+        overlays.remove({ type: "lod-stripe" });
+        const colorMap: Record<string, string> = {
+          first: "bg-blue-500",
+          second: "bg-purple-500",
+          third: "bg-amber-500",
+          oversight: "bg-slate-500",
+        };
+        for (const item of lodOverlayData) {
+          if (!item.lineOfDefense) continue;
+          const html = document.createElement("div");
+          html.className = `${colorMap[item.lineOfDefense] ?? "bg-gray-400"} rounded-l`;
+          html.style.width = "4px";
+          html.style.height = "60px";
+          html.title = `LoD: ${item.lineOfDefense}`;
+          overlays.add(item.bpmnElementId, "lod-stripe", {
+            position: { top: 0, left: -6 },
+            html,
+          });
+        }
+      } catch {
+        /* */
+      }
+    }, [lodOverlayData, loading]);
+
+    // BPM Overhaul Phase 6: findings overlay (bottom badge)
+    useEffect(() => {
+      const instance = modelerRef.current;
+      if (!instance || loading || !findingsOverlayData?.length) return;
+      try {
+        type OverlayService = {
+          remove: (opts: { type: string }) => void;
+          add: (
+            elementId: string,
+            type: string,
+            opts: {
+              position: { bottom: number; right: number };
+              html: HTMLElement;
+            },
+          ) => void;
+        };
+        const overlays = instance.get("overlays") as OverlayService;
+        overlays.remove({ type: "finding-badge" });
+        for (const item of findingsOverlayData) {
+          if (item.openCount === 0) continue;
+          const color =
+            item.criticalCount > 0
+              ? "bg-red-600 text-white border-red-700"
+              : "bg-amber-200 text-amber-900 border-amber-300";
+          const html = document.createElement("div");
+          html.className = `inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-semibold shadow-sm cursor-pointer ${color}`;
+          html.textContent = `⚠ ${item.openCount}`;
+          html.style.transform = "translate(50%, 50%)";
+          overlays.add(item.bpmnElementId, "finding-badge", {
+            position: { bottom: -14, right: -14 },
+            html,
+          });
+        }
+      } catch {
+        /* */
+      }
+    }, [findingsOverlayData, loading]);
 
     // Imperative handle for parent components
     useImperativeHandle(ref, () => {

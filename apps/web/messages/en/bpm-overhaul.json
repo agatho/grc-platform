@@ -1,0 +1,65 @@
+{
+  "tabs": {
+    "controls": "Controls",
+    "bia": "BIA",
+    "findings": "Findings",
+    "compliance": "Compliance",
+    "signoff": "Sign-off"
+  },
+  "cockpit": {
+    "title": "Process Cockpit",
+    "subtitle": "Quality Manager & Compliance Officer daily-driver dashboard",
+    "inReview": "In Review",
+    "pendingApproval": "Pending Approval",
+    "overdueReview": "Overdue Reviews",
+    "criticalRisks": "Processes with Critical Risks"
+  },
+  "racm": {
+    "title": "RACM — Risk and Control Matrix",
+    "export": "Export CSV",
+    "noControls": "No controls",
+    "noRisks": "No risks"
+  },
+  "ropa": {
+    "title": "GDPR Art. 30 — ROPA Profile",
+    "subtitle": "Record of processing activity for this process.",
+    "isProcessing": "This process is a personal-data processing activity",
+    "purpose": "Processing purpose",
+    "legalBasis": "Legal basis (Art. 6)",
+    "dataSubjects": "Data subject categories",
+    "personalData": "Personal data categories",
+    "specialCategories": "Special categories — Art. 9",
+    "recipients": "Recipients",
+    "thirdCountry": "Third-country transfers",
+    "safeguards": "Safeguards (SCC, BCR, Adequacy)",
+    "retention": "Retention period",
+    "toms": "Technical & organisational measures (TOMs)",
+    "dpiaWarning": "DPIA likely required based on special categories or third-country transfers (Art. 35 GDPR)."
+  },
+  "signoff": {
+    "title": "Sign-off Hash Chain",
+    "chainOk": "Chain intact",
+    "chainBroken": "Chain integrity check failed",
+    "record": "Sign-off",
+    "asRole": "As role",
+    "type": "Sign-off type",
+    "comments": "Comments",
+    "types": {
+      "review": "Review",
+      "approval": "Approval",
+      "publish": "Publish",
+      "retire": "Retire"
+    }
+  },
+  "blockers": {
+    "missing_process_owner": "Process owner must be assigned.",
+    "no_activities": "Process must contain at least one activity.",
+    "no_versions": "Process must have at least one version before review.",
+    "missing_reviewer": "Reviewer must be assigned.",
+    "activities_missing_description": "Some activities are missing a description.",
+    "open_findings": "Open findings must be resolved before publication.",
+    "no_framework_mapping": "At least one framework mapping (ISO/NIS2/GDPR/...) is required for publication.",
+    "weak_description": "Process description must be at least 20 characters.",
+    "untreated_risks": "Linked risks are not yet treated."
+  }
+}

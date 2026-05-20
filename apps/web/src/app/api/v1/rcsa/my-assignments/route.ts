@@ -7,6 +7,7 @@ import {
   control,
 } from "@grc/db";
 import { eq, and, count, desc } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, paginate, paginatedResponse } from "@/lib/api";
 import type { SQL } from "drizzle-orm";
 
@@ -14,6 +15,8 @@ import type { SQL } from "drizzle-orm";
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { page, limit, offset, searchParams } = paginate(req);
 

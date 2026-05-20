@@ -145,6 +145,11 @@ export const usageRecord = pgTable(
     periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
     periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
     metadata: jsonb("metadata").default("{}"),
+    // F#7 (alpha-readiness 2026-05-18): optional caller-supplied idempotency
+    // key. Two requests with the same (org_id, idempotency_key) collapse to
+    // one row (partial unique index in migration 0344). Prevents double-
+    // billing on client/network retries.
+    idempotencyKey: varchar("idempotency_key", { length: 128 }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),

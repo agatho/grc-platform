@@ -1,6 +1,7 @@
 import { db, taxIcfrControl } from "@grc/db";
 import { updateTaxIcfrControlSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function GET(
@@ -15,6 +16,8 @@ export async function GET(
     "viewer",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const [row] = await db
     .select()
@@ -30,6 +33,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "risk_manager", "control_owner");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
   const { id } = await params;
   const body = updateTaxIcfrControlSchema.safeParse(await req.json());
   if (!body.success)

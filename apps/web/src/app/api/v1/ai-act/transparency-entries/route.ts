@@ -1,12 +1,15 @@
 import { db, aiTransparencyEntry } from "@grc/db";
 import { createAiTransparencyEntrySchema } from "@grc/shared";
 import { eq, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 export const POST = withErrorHandler(async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "dpo");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const body = createAiTransparencyEntrySchema.safeParse(await req.json());
   if (!body.success)
     return Response.json(
@@ -33,6 +36,8 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     "viewer",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("isms", ctx.orgId, req.method);
+  if (m) return m;
   const url = new URL(req.url);
   const page = Math.max(1, Number(url.searchParams.get("page") ?? 1));
   const limit = Math.min(

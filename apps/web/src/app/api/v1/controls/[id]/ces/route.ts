@@ -1,5 +1,6 @@
 import { db, controlEffectivenessScore, control } from "@grc/db";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/controls/:id/ces — Get CES for a single control
@@ -9,6 +10,8 @@ export async function GET(
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
 

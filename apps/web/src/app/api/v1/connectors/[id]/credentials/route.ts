@@ -1,24 +1,25 @@
 import { db, connectorCredential, evidenceConnector } from "@grc/db";
-import { createConnectorCredentialSchema } from "@grc/shared";
+import {
+  createConnectorCredentialSchema,
+  getRequiredHexKey,
+  aesGcmEncrypt,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { createCipheriv, randomBytes } from "crypto";
 
-const ENCRYPTION_KEY = process.env.CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64);
-
-function encryptPayload(payload: string): {
-  encryptedPayload: string;
-  iv: string;
-  authTag: string;
-} {
-  const iv = randomBytes(16);
-  const key = Buffer.from(ENCRYPTION_KEY, "hex");
-  const cipher = createCipheriv("aes-256-gcm", key, iv);
-  let encrypted = cipher.update(payload, "utf8", "hex");
-  encrypted += cipher.final("hex");
-  const authTag = cipher.getAuthTag().toString("hex");
-  return { encryptedPayload: encrypted, iv: iv.toString("hex"), authTag };
+// Connector credential encryption: AES-256-GCM with a 32-byte key from
+// env. Fails hard if the key is missing/short/non-hex — never silently
+// falls back to a placeholder. See packages/shared/src/env-key.ts.
+//
+// History: this used to read CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64),
+// which meant a missing env-var produced a mathematically-broken all-zero
+// key and any DB-read could decrypt every stored credential. (Triage F#1,
+// originally fixed inline in PR #196; this PR replaces the inline fix
+// with the shared helper so we don't need to remember the pattern next
+// time someone adds a new encrypted column.)
+function getConnectorKey(): Buffer {
+  return getRequiredHexKey("CONNECTOR_ENCRYPTION_KEY", 32);
 }
 
 // POST /api/v1/connectors/:id/credentials — Store encrypted credential
@@ -58,7 +59,10 @@ export async function POST(
     );
   }
 
-  const { encryptedPayload, iv, authTag } = encryptPayload(body.data.payload);
+  const { encryptedPayload, iv, authTag } = aesGcmEncrypt(
+    getConnectorKey(),
+    body.data.payload,
+  );
 
   const created = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx

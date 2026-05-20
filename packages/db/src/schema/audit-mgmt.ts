@@ -18,6 +18,7 @@ import { organization, user } from "./platform";
 import { workItem } from "./work-item";
 import { control } from "./control";
 import { evidence } from "./control";
+import { document } from "./document";
 
 // ──────────────────────────────────────────────────────────────
 // Enums
@@ -239,7 +240,9 @@ export const audit = pgTable(
     actualEnd: date("actual_end", { mode: "string" }),
     findingCount: integer("finding_count").default(0),
     conclusion: auditConclusionEnum("conclusion"),
-    reportDocumentId: uuid("report_document_id"),
+    reportDocumentId: uuid("report_document_id").references(() => document.id, {
+      onDelete: "set null",
+    }), // hardened in 0338
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -391,5 +394,39 @@ export const auditEvidence = pgTable(
   (table) => [
     index("ae_audit_idx").on(table.auditId),
     index("aev_org_idx").on(table.orgId),
+  ],
+);
+
+// ──────────────────────────────────────────────────────────────
+// Audit Overhaul Phase 1 (migration 0338): audit_sign_off
+// ──────────────────────────────────────────────────────────────
+
+export const auditSignOff = pgTable(
+  "audit_sign_off",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    auditId: uuid("audit_id")
+      .notNull()
+      .references(() => audit.id, { onDelete: "cascade" }),
+    signerId: uuid("signer_id").notNull(),
+    signerRole: varchar("signer_role", { length: 80 }).notNull(),
+    signoffType: varchar("signoff_type", { length: 32 }).notNull(),
+    comments: text("comments"),
+    payloadHash: varchar("payload_hash", { length: 128 }).notNull(),
+    previousChainHash: varchar("previous_chain_hash", { length: 128 }),
+    chainHash: varchar("chain_hash", { length: 128 }).notNull(),
+    signedAt: timestamp("signed_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    ipAddress: varchar("ip_address", { length: 64 }),
+    userAgent: text("user_agent"),
+  },
+  (table) => [
+    index("aso_org_idx").on(table.orgId),
+    index("aso_audit_idx").on(table.auditId),
+    index("aso_chain_idx").on(table.auditId, table.signedAt),
   ],
 );

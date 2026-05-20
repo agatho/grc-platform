@@ -1,6 +1,7 @@
 import { db, evidenceReviewGap } from "@grc/db";
 import { updateEvidenceReviewGapSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // PATCH /api/v1/evidence-review/gaps/:id — Update gap status
@@ -10,6 +11,8 @@ export async function PATCH(
 ) {
   const ctx = await withAuth("admin", "control_owner", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const body = updateEvidenceReviewGapSchema.safeParse(await req.json());

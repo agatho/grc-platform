@@ -13,11 +13,14 @@ import { db, assessmentRun } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import {
   validateTransition,
+  validateGate2SoaCoverage,
+  validateGate3RiskAssessment,
   type AssessmentSnapshot,
   type AssessmentStatus,
 } from "@grc/shared";
 import { and, eq } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { fetchSoaStats, fetchRiskEvalStats } from "@/lib/isms-gate-stats";
 import { z } from "zod";
 
 const transitionSchema = z.object({
@@ -92,6 +95,40 @@ export async function POST(req: Request, { params }: RouteParams) {
       },
       { status: 422 },
     );
+  }
+
+  // G2 + G3 enforcement on in_progress → review. validateTransition only
+  // runs G1 (Setup) and G4 (Coverage) because those are derivable from
+  // the AssessmentSnapshot. G2 (SoA coverage) and G3 (risk assessment)
+  // need DB queries — historically they were only checked by the
+  // discovery endpoints /soa-gate-check and /risk-gate-check, so a
+  // client could skip them by POSTing directly here. Enforce them now.
+  if (
+    existing.status === "in_progress" &&
+    (targetStatus === "review" || targetStatus === "completed")
+  ) {
+    const [soaStats, riskStats] = await Promise.all([
+      fetchSoaStats(db, ctx.orgId),
+      fetchRiskEvalStats(db, id, ctx.orgId),
+    ]);
+    const extraBlockers = [
+      ...validateGate2SoaCoverage(soaStats),
+      ...validateGate3RiskAssessment(riskStats),
+    ];
+    const blockingErrors = extraBlockers.filter((b) => b.severity === "error");
+    if (blockingErrors.length > 0) {
+      return Response.json(
+        {
+          blocked: true,
+          currentStatus: existing.status,
+          targetStatus,
+          blockers: [...validation.blockers, ...extraBlockers],
+        },
+        { status: 422 },
+      );
+    }
+    // Carry G2/G3 warnings forward into the success response below.
+    validation.blockers = [...validation.blockers, ...extraBlockers];
   }
 
   // Transition erlaubt -- durchfuehren

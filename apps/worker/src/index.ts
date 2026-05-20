@@ -10,6 +10,7 @@ import { processRiskReviewReminders } from "./crons/risk-review-reminder";
 import { processTreatmentOverdueReminders } from "./crons/treatment-overdue-reminder";
 import { processAuditRemediationDeadlines } from "./crons/audit-remediation-deadline-monitor";
 import { processReviewReminders } from "./crons/process-review-reminder";
+import { processMiningConformance } from "./crons/process-mining-conformance";
 import { processDsrSlaMonitor } from "./crons/dsr-sla-monitor";
 import { processBreach72hMonitor } from "./crons/breach-72h-monitor";
 import { processAiActIncidentDeadlineMonitor } from "./crons/ai-act-incident-deadline-monitor";
@@ -301,6 +302,17 @@ app.post("/crons/process-review-reminders", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] process-review-reminders cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+app.post("/crons/process-mining-conformance", async (c) => {
+  try {
+    const result = await processMiningConformance();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] process-mining-conformance cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

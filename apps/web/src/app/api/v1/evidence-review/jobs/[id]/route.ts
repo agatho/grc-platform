@@ -1,5 +1,6 @@
 import { db, evidenceReviewJob } from "@grc/db";
 import { eq, and } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // GET /api/v1/evidence-review/jobs/:id
@@ -14,6 +15,8 @@ export async function GET(
     "risk_manager",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const [job] = await db
@@ -34,6 +37,8 @@ export async function POST(
 ) {
   const ctx = await withAuth("admin", "control_owner");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const result = await withAuditContext(ctx, async (tx) => {

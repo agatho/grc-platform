@@ -1,12 +1,15 @@
 import { db, riskPrediction } from "@grc/db";
 import { radarQuerySchema } from "@grc/shared";
 import { eq, and, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/predictive-risk/radar — Predictive Risk Radar data
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const url = new URL(req.url);
   const query = radarQuerySchema.safeParse(

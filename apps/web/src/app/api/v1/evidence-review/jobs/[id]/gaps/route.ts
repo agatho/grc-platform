@@ -1,6 +1,7 @@
 import { db, evidenceReviewGap } from "@grc/db";
 import { evidenceReviewGapQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/evidence-review/jobs/:id/gaps — List gaps for job
@@ -15,6 +16,8 @@ export async function GET(
     "risk_manager",
   );
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
   const url = new URL(req.url);

@@ -1,11 +1,14 @@
 import { db, taxRisk } from "@grc/db";
 import { createTaxRiskSchema, taxRiskQuerySchema } from "@grc/shared";
 import { eq, and, desc, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
   const body = createTaxRiskSchema.safeParse(await req.json());
   if (!body.success)
     return Response.json(
@@ -25,6 +28,8 @@ export async function POST(req: Request) {
 export async function GET(req: Request) {
   const ctx = await withAuth("admin", "risk_manager", "auditor", "viewer");
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
   const url = new URL(req.url);
   const query = taxRiskQuerySchema.safeParse(
     Object.fromEntries(url.searchParams),

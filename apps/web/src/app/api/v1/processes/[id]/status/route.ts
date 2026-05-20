@@ -14,6 +14,7 @@ import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 import type { ProcessStatus } from "@grc/shared";
+import { evaluateTransitionGates } from "@/lib/process-gates";
 
 // PUT /api/v1/processes/:id/status — Status transition
 export async function PUT(
@@ -100,19 +101,24 @@ export async function PUT(
     );
   }
 
-  // Pre-condition: must have at least 1 version to submit for review
-  if (targetStatus === "in_review") {
-    const versions = await db
-      .select({ id: processVersion.id })
-      .from(processVersion)
-      .where(eq(processVersion.processId, id))
-      .limit(1);
-
-    if (versions.length === 0) {
+  // BPM Overhaul Phase 3: structured gate-checks via evaluateTransitionGates.
+  // Replaces the ad-hoc version pre-condition; the gate library now owns it.
+  if (["in_review", "approved", "published"].includes(targetStatus)) {
+    const blockers = await db.transaction(async (tx) =>
+      evaluateTransitionGates({
+        tx,
+        processId: id,
+        orgId: ctx.orgId,
+        target: targetStatus as any,
+      }),
+    );
+    const errorBlockers = blockers.filter((b) => b.severity === "error");
+    if (errorBlockers.length > 0) {
       return Response.json(
         {
-          error:
-            "Process must have at least one version before submitting for review",
+          error: "Transition blocked by unmet gates",
+          blockers,
+          targetStatus,
         },
         { status: 422 },
       );
@@ -136,6 +142,59 @@ export async function PUT(
       .set(updateData)
       .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)))
       .returning();
+
+    // BPM Overhaul Phase 6 P6: auto-version on major status transitions.
+    // Snapshots the current bpmn_xml of the active version into a new version
+    // row so the audit trail and diff-view have a stable per-status anchor.
+    if (["approved", "published", "archived"].includes(targetStatus)) {
+      try {
+        const [curr] = await tx
+          .select({
+            bpmnXml: processVersion.bpmnXml,
+            diagramJson: processVersion.diagramJson,
+            versionNumber: processVersion.versionNumber,
+          })
+          .from(processVersion)
+          .where(
+            and(
+              eq(processVersion.processId, id),
+              eq(processVersion.isCurrent, true),
+            ),
+          )
+          .limit(1);
+
+        if (curr) {
+          await tx
+            .update(processVersion)
+            .set({ isCurrent: false })
+            .where(
+              and(
+                eq(processVersion.processId, id),
+                eq(processVersion.isCurrent, true),
+              ),
+            );
+
+          await tx.insert(processVersion).values({
+            processId: id,
+            orgId: ctx.orgId,
+            versionNumber: (curr.versionNumber ?? 0) + 1,
+            bpmnXml: curr.bpmnXml,
+            diagramJson: curr.diagramJson,
+            isCurrent: true,
+            changeSummary: `Auto-version on status -> ${targetStatus}`,
+            createdBy: ctx.userId,
+          });
+
+          await tx
+            .update(process)
+            .set({ currentVersion: (curr.versionNumber ?? 0) + 1 })
+            .where(eq(process.id, id));
+        }
+      } catch (e) {
+        // Auto-versioning is best-effort; do not block the state transition.
+        console.error("auto-versioning failed", e);
+      }
+    }
 
     // Send notifications based on transition type
     if (targetStatus === "in_review" && existing.reviewerId) {

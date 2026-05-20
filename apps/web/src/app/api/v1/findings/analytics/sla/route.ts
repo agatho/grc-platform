@@ -1,5 +1,6 @@
 import { db, finding, findingSlaConfig } from "@grc/db";
 import { eq, and, isNull, sql } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { isWithinSla } from "@grc/shared";
 
@@ -7,6 +8,8 @@ import { isWithinSla } from "@grc/shared";
 export async function GET(req: Request) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("ics", ctx.orgId, req.method);
+  if (m) return m;
 
   // Fetch SLA configs
   const slaConfigs = await db

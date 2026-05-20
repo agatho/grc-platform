@@ -263,6 +263,34 @@ function ExecutionDetailInner() {
         >
           Details bearbeiten
         </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={async () => {
+            const resp = await fetch(
+              `/api/v1/audit-mgmt/audits/${audit.id}/audit-pack`,
+              {
+                method: "POST",
+                headers: { "content-type": "application/json" },
+                body: "{}",
+              },
+            );
+            if (!resp.ok) return;
+            const blob = await resp.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement("a");
+            a.href = url;
+            const cd = resp.headers.get("content-disposition") ?? "";
+            const m = cd.match(/filename="([^"]+)"/);
+            a.download = m?.[1] ?? `audit-pack-${audit.id.slice(0, 8)}.zip`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+          }}
+        >
+          <Download size={14} className="mr-1" /> Audit-Pack
+        </Button>
         {nextStatus[audit.status] && (
           <Button
             size="sm"

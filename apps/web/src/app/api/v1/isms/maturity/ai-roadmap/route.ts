@@ -107,23 +107,42 @@ export async function POST(req: Request) {
     targetMaturity: parsed.data.targetMaturity,
   });
 
-  const aiResponse = await aiComplete({
-    messages: [
-      {
-        role: "system",
-        content:
-          "You are an ISMS maturity consultant. Respond only with valid JSON.",
-      },
-      { role: "user", content: prompt },
-    ],
-    model: "claude-sonnet-4-20250514",
-    maxTokens: 4096,
-    temperature: 0.4,
-    provider: "claude_api",
-  });
+  let aiResponse;
+  try {
+    aiResponse = await aiComplete({
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an ISMS maturity consultant. Respond only with valid JSON.",
+        },
+        { role: "user", content: prompt },
+      ],
+      model: "claude-sonnet-4-20250514",
+      maxTokens: 4096,
+      temperature: 0.4,
+      provider: "claude_api",
+    });
+  } catch (err) {
+    return Response.json(
+      { error: "AI provider failure", details: (err as Error).message },
+      { status: 502 },
+    );
+  }
 
-  // Parse response
-  const actions = parseMaturityRoadmapResponse(aiResponse.text);
+  // Parse response (defensive — AI may return malformed JSON)
+  let actions;
+  try {
+    actions = parseMaturityRoadmapResponse(aiResponse.text);
+  } catch (err) {
+    return Response.json(
+      {
+        error: "AI returned malformed response — please retry",
+        details: (err as Error).message,
+      },
+      { status: 502 },
+    );
+  }
 
   if (actions.length === 0) {
     return Response.json({

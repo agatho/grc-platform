@@ -1,5 +1,6 @@
 import { db, risk, riskControl, controlEffectivenessScore } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
+import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
 import { computeResidualScore } from "@grc/shared";
 
@@ -10,6 +11,8 @@ export async function GET(
 ) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
+  const m = await requireModule("erm", ctx.orgId, req.method);
+  if (m) return m;
 
   const { id } = await params;
 

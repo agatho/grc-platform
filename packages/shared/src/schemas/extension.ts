@@ -30,7 +30,13 @@ export const createPluginSchema = z.object({
   tags: z.array(z.string().max(50)).max(20).default([]),
   iconUrl: z.string().url().max(500).optional(),
   entryPoint: z.string().min(1).max(500),
-  executionMode: z.enum(["wasm", "isolated", "native"]).default("wasm"),
+  // F#9 (overnight 2026-05-18): the `native` executionMode would run
+  // plugin code directly in the worker process — and no sandbox engine
+  // is wired today. Until a real runtime ships (wasmtime / vm2 /
+  // isolated-vm), the API refuses `native` here. The DB schema keeps
+  // the column wide so existing demo seeds load, but the constraint at
+  // the API boundary stops a pilot from installing arbitrary code.
+  executionMode: z.enum(["wasm", "isolated"]).default("wasm"),
   permissions: z.array(z.string().max(100)).max(50).default([]),
   configSchema: z.record(z.unknown()).default({}),
   minPlatformVersion: z.string().max(20).optional(),

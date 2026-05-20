@@ -54,6 +54,10 @@ export const recordUsageSchema = z.object({
   meterKey: z.string().min(1).max(100),
   quantity: z.number().min(0),
   metadata: z.record(z.unknown()).default({}),
+  // F#7 (alpha 2026-05-18): optional caller-supplied idempotency key.
+  // Header `Idempotency-Key` takes precedence over this body field if both
+  // are present. Same key under same org collapses to one row.
+  idempotencyKey: z.string().min(1).max(128).optional(),
 });
 
 export const bulkRecordUsageSchema = z.object({
@@ -63,6 +67,7 @@ export const bulkRecordUsageSchema = z.object({
         meterKey: z.string().min(1).max(100),
         quantity: z.number().min(0),
         metadata: z.record(z.unknown()).default({}),
+        idempotencyKey: z.string().min(1).max(128).optional(),
       }),
     )
     .min(1)
