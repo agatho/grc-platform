@@ -59,3 +59,37 @@ export async function PATCH(
   if (!updated) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json({ data: updated });
 }
+
+// F#19 (overnight 2026-05-18): Identity connector configs had no DELETE
+// handler. Hard delete (no soft-delete column on this table). Audit
+// context still captures the deletion.
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth("admin");
+  if (ctx instanceof Response) return ctx;
+  const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+  const { id } = await params;
+
+  const deleted = await withAuditContext(
+    ctx,
+    async (tx) => {
+      const [row] = await tx
+        .delete(identityConnectorConfig)
+        .where(
+          and(
+            eq(identityConnectorConfig.id, id),
+            eq(identityConnectorConfig.orgId, ctx.orgId),
+          ),
+        )
+        .returning({ id: identityConnectorConfig.id });
+      return row;
+    },
+    { actionDetail: `Deleted identity connector config ${id}` },
+  );
+
+  if (!deleted) return Response.json({ error: "Not found" }, { status: 404 });
+  return new Response(null, { status: 204 });
+}

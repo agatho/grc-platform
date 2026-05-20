@@ -34,6 +34,13 @@ export async function GET(
 }
 
 // PATCH /api/v1/copilot/conversations/:id/actions — Update action status
+//
+// RBAC tightening (alpha-readiness overnight 2026-05-18):
+// Marking an action `executed` records a permanent claim in the audit chain
+// that the suggested action was actually applied. Read-only roles (auditor,
+// viewer) must not be able to author that claim. Other state transitions
+// (dismissed/pending) remain open to the wider set so reviewers can curate
+// the suggestion list.
 export async function PATCH(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -55,6 +62,30 @@ export async function PATCH(
       { error: "Validation failed", details: body.error.flatten() },
       { status: 422 },
     );
+  }
+
+  // Only roles with first-/second-line write authority can claim execution.
+  if (body.data.status === "executed") {
+    const allowedExecutors = new Set([
+      "admin",
+      "risk_manager",
+      "control_owner",
+      "process_owner",
+      "dpo",
+    ]);
+    const canExecute = !!ctx.session.user.roles?.some(
+      (r) => r.orgId === ctx.orgId && allowedExecutors.has(r.role),
+    );
+    if (!canExecute) {
+      return Response.json(
+        {
+          error: "Forbidden",
+          detail:
+            "Marking a copilot action as executed requires a write-authority role (admin, risk_manager, control_owner, process_owner, dpo).",
+        },
+        { status: 403 },
+      );
+    }
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

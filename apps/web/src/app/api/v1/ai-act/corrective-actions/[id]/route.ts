@@ -76,7 +76,21 @@ export async function PUT(
       ? sql`, verified_at = COALESCE(verified_at, now()), verified_by = COALESCE(verified_by, ${ctx.userId})`
       : sql``;
 
+  // F#24 (overnight 2026-05-18): two concurrent PATCH requests on the
+  // same CAP row could silently overwrite each other's fields. The
+  // transaction wrapper protected the audit-log entry but not the row
+  // itself. Now we SELECT ... FOR UPDATE first to serialize concurrent
+  // writers on the row, then UPDATE inside the same lock window.
   const result = await withAuditContext(ctx, async (tx) => {
+    const lockRes = await tx.execute(sql`
+      SELECT id FROM ai_corrective_action
+      WHERE id = ${id} AND org_id = ${ctx.orgId}
+      FOR UPDATE
+    `);
+    const lockRows = Array.isArray(lockRes) ? lockRes : (lockRes?.rows ?? []);
+    if (lockRows.length === 0) {
+      return null;
+    }
     const res = await tx.execute(sql`
       UPDATE ai_corrective_action SET
         title = COALESCE(${title ?? null}, title),

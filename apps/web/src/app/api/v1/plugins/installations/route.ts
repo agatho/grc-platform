@@ -16,6 +16,35 @@ export async function POST(req: Request) {
     );
   }
 
+  // F#9 (overnight 2026-05-18): refuse to install plugins whose
+  // executionMode = 'native'. No sandbox engine is wired today; running
+  // arbitrary code in-process is an RCE vector. The createPluginSchema
+  // also rejects `native` at registration, but legacy rows from before
+  // that change could still slip through — this is the run-time defence.
+  const [target] = await db
+    .select({
+      id: plugin.id,
+      executionMode: plugin.executionMode,
+      isVerified: plugin.isVerified,
+    })
+    .from(plugin)
+    .where(eq(plugin.id, body.data.pluginId));
+
+  if (!target) {
+    return Response.json({ error: "Plugin not found" }, { status: 404 });
+  }
+
+  if (target.executionMode === "native") {
+    return Response.json(
+      {
+        error: "Plugin uses native execution mode and cannot be installed",
+        detail:
+          "ARCTOS does not currently ship a sandboxed runtime for native plugins. Only wasm or isolated plugins may be installed.",
+      },
+      { status: 422 },
+    );
+  }
+
   // Check if already installed
   const [existing] = await db
     .select()

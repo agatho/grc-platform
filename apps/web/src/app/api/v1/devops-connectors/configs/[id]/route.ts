@@ -57,3 +57,38 @@ export async function PATCH(
   if (!updated) return Response.json({ error: "Not found" }, { status: 404 });
   return Response.json({ data: updated });
 }
+
+// F#19 (overnight 2026-05-18): DevOps connector configs had no DELETE
+// handler, leaving stale rows un-removable from the API. The schema has
+// no soft-delete column, so this is a hard delete. Audit context is
+// still set so the deletion lands in audit_log.
+export async function DELETE(
+  req: Request,
+  { params }: { params: Promise<{ id: string }> },
+) {
+  const ctx = await withAuth("admin");
+  if (ctx instanceof Response) return ctx;
+  const moduleCheck = await requireModule("ics", ctx.orgId, req.method);
+  if (moduleCheck) return moduleCheck;
+  const { id } = await params;
+
+  const deleted = await withAuditContext(
+    ctx,
+    async (tx) => {
+      const [row] = await tx
+        .delete(devopsConnectorConfig)
+        .where(
+          and(
+            eq(devopsConnectorConfig.id, id),
+            eq(devopsConnectorConfig.orgId, ctx.orgId),
+          ),
+        )
+        .returning({ id: devopsConnectorConfig.id });
+      return row;
+    },
+    { actionDetail: `Deleted DevOps connector config ${id}` },
+  );
+
+  if (!deleted) return Response.json({ error: "Not found" }, { status: 404 });
+  return new Response(null, { status: 204 });
+}

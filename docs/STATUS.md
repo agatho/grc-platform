@@ -2,7 +2,58 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-18**. Letzte Migration: `0340_tprm_overhaul.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (closed 2026-05-17, PRs #167–#172). Letzter Modul-Overhaul: **TPRM** (PR #180, merged 2026-05-18) — Audit/DPMS/TPRM komplett überarbeitet nach dem BPM-Muster (Sign-Off-Hash-Chain, Gates-Library, Cross-Module-Aggregation, ZIP-Export-Pack, AI-Endpoints, KPI-Dashboards).
+> Stand: **2026-05-18 (abends)**. Letzte Migration: `0343_audit_chain_concurrency_lock.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (closed 2026-05-17, PRs #167–#172). Aktive Arbeit heute: **Alpha-Readiness-Audit + Overnight-Deep-Audit** (PRs #185–#197). Letzter Modul-Overhaul: **TPRM** (PR #180).
+
+## Alpha-Readiness-Audit 2026-05-18 (Overnight)
+
+Diese Session brachte die Plattform aus dem Zustand „grünes CI mit unbekanntem Tech-Debt darunter" in einen verifizierten Zustand pro Modul.
+
+### Verifizierte Fixes (PRs #185–#197 merged oder open)
+
+- **#185** Prettier-Cleanup (110 Files, CRLF/LF-Drift), 7 Typecheck-Fehler, gitignored `coverage/route.ts` recovered, Rehydrate-Regex Bug-Fix.
+- **#186** STATUS.md refresh (initial pass).
+- **#187** Sign-off chain concurrency guard: `UNIQUE NULLS NOT DISTINCT (entity_id, previous_chain_hash)` auf process / audit / vendor sign_off; POST-Handler fangen 23505 → 409 retry-Hint.
+- **#188** Budget-audit integrity test: relaxed über-strenge Chain-Equality nach 0337 trigger-sprawl.
+- **#189** SignOff payload typed builders (process / audit / vendor) — hash-compat preserved.
+- **#190** RLS UPDATE/DELETE policies backfilled auf audit_sign_off + vendor_sign_off.
+- **#191** 🔥 **Restored lost `pg_advisory_xact_lock` in `audit_trigger()`** — Regression seit Migration 0284, durch 0308/0309/0313/0327 silent dropped. Concurrent commits in derselben Tenant-Scope hätten die globale Audit-Hash-Chain branched.
+- **#192** ISMS: G2 (SoA coverage) + G3 (risk assessment) gates enforced auf `/transition` (bisher nur advisory). Plus 12 AI Act-Routes mit fehlendem `requireModule("isms")`.
+- **#193** ICS: 15 routes mit fehlendem requireModule patched (controls/ces, evidence-review, findings analytics, cert-wizard, tax-cms ICFR).
+- **#194** ERM: 30 routes mit fehlendem requireModule patched (predictive-risk, RCSA, DORA ICT, tax-cms risks).
+- **#195** AI 502-wrap auf 2 ungewrappte ISMS-AI-Routes; `scripts/perf/alpha-readiness-smoke.js` (k6) + `scripts/dr-restore-drill.sh` (manuell auf prod auszuführen).
+- **#196** 🔥 **URGENT** — `CONNECTOR_ENCRYPTION_KEY ?? "0".repeat(64)` Fallback eliminiert. Fail-hard auf prod wenn env-var fehlt. **Vor Merge: env-var auf prod setzen prüfen!**
+- **#197** Overnight-Audit-PR: 4 Phase-1-Reports (schema-drift / dead-routes / prompt-injection / as-any) + 6 Phase-2-Module-Reports + Master-Triage-Doc unter `docs/audits-overnight-2026-05-18/`. Plus BPM AI-prompt-injection Hardening (`buildTextToBpmnPrompt`) + 7 `as any` casts eliminiert in `isms-gate-stats.ts`.
+
+### Verifizierte Module — vollständig clean (no PR needed)
+
+| Modul             | Routes | Befund                                                                                                                   |
+| ----------------- | ------ | ------------------------------------------------------------------------------------------------------------------------ |
+| BCMS              | 51     | Alle auth+module-gated; Crisis/BCP/Exercise state machines wired; BIA per-Phase Endpoints (`/start` G1, `/finalize` G2). |
+| ESG               | 25     | Auth+module clean; Materiality-Finalize mit Status-Vorprüfung.                                                           |
+| Programme Cockpit | 32     | Journey + step state machines wired; 2 ungatete Routes sind Discovery-Stub + cross-system Rollup.                        |
+| Whistleblowing    | 12     | HinSchG-konforme öffentliche Intake-Routes; Rest auth+module clean.                                                      |
+| EAM               | 82     | **82/82** mit `withAuth` + `requireModule`. Cleanstes Modul.                                                             |
+
+### 🚨 Identifizierte offene Alpha-Blocker (Triage-Doc, noch kein PR)
+
+8 Findings im Triage-Doc `docs/audits-overnight-2026-05-18/00-triage-summary.md`:
+
+1. OAuth refresh-tokens plaintext in `evidence_connector.refresh_token`.
+2. **Risk Acceptance-Modul** — Schema + Authority-Matrix-Tabellen + Demo-Seed vorhanden, aber **keine API-Routes**. UI claimt ✅ Done. Entweder Doku falsch oder Feature unvollständig.
+3. Copilot privilege escalation auf `/copilot/conversations/[id]/actions` (kein RBAC auf action-effect).
+4. Webhook URL validation fehlt (SSRF) in `triggerWebhook`-Automation-Action.
+5. Webhook dispatcher gestubbt — HMAC-Funktionen vorhanden, aber tatsächlicher Versand ist `console.log`.
+6. Usage-Event ohne Idempotency-Key → Double-Billing-Risiko.
+7. Copilot Rate-Limit definiert (`LIMITS.COPILOT`) aber nie aufgerufen.
+8. Plugin-Code-Execution ohne Sandbox — `executionMode` deklariert aber nicht enforced.
+
+Empfohlene Reihenfolge: nach Sequenz im Triage-Doc, ~6h Aufwand insgesamt.
+
+### Cross-Cutting Takeaways aus dem Overnight-Audit
+
+1. **CI-Lint einführen**, der jede neue `route.ts` ohne `requireModule(key)` rot färbt. ~120 Routes nachgepatched in dieser Session — der Pattern wurde von Sprint zu Sprint nicht konsistent angewandt.
+2. **CLAUDE.md / STATUS.md Reconciliation-Pass** — mehrere „✅ Done"-Features haben Schema aber keine API (Risk Acceptance) oder Stub-Implementation (Webhook-Dispatcher, Cloud-Connector-Execute). Sprint-Tabelle braucht Realitätsabgleich.
+3. **Hex-Env-Var-Helper** zentralisieren — wir haben aktuell zwei Patterns (`wb-crypto.ts` korrekt, ehemaliger Connector falsch). Ein gemeinsames `getRequiredHexKey()` würde künftige Instanzen verhindern.
 
 ## Was ist seit STATUS-Stand 2026-05-17 passiert (Audit / DPMS / TPRM Overhauls)?
 
