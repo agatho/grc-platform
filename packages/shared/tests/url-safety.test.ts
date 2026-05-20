@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { checkWebhookUrl } from "../src/url-safety";
+import { checkWebhookUrl, checkResolvedHostIsPublic } from "../src/url-safety";
 
 describe("checkWebhookUrl — SSRF guard", () => {
   describe("accepts safe URLs", () => {
@@ -121,5 +121,31 @@ describe("checkWebhookUrl — SSRF guard", () => {
     it("rejects 224.0.0.1 (multicast)", () => {
       expect(checkWebhookUrl("https://224.0.0.1/x").ok).toBe(false);
     });
+  });
+});
+
+describe("checkResolvedHostIsPublic — DNS rebinding defense", () => {
+  it("rejects an unresolvable hostname", async () => {
+    // Use a TLD reserved by RFC 6761 so the lookup deterministically fails.
+    const r = await checkResolvedHostIsPublic(
+      "this-host-does-not-exist.invalid",
+    );
+    expect(r.ok).toBe(false);
+    if (!r.ok) expect(r.reason).toMatch(/DNS lookup failed/);
+  });
+
+  it("opt-out via WEBHOOK_ALLOW_PRIVATE_HOSTS=1", async () => {
+    const prev = process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS;
+    process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS = "1";
+    try {
+      // Even a guaranteed-fail host returns ok=true when the override is set.
+      const r = await checkResolvedHostIsPublic(
+        "this-host-does-not-exist.invalid",
+      );
+      expect(r.ok).toBe(true);
+    } finally {
+      if (prev === undefined) delete process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS;
+      else process.env.WEBHOOK_ALLOW_PRIVATE_HOSTS = prev;
+    }
   });
 });

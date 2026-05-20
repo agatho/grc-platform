@@ -116,7 +116,23 @@ export async function enrichGraphNodes(
       if (!tableConfig || ids.length === 0) return;
 
       try {
-        const idList = ids.map((id) => `'${id}'`).join(",");
+        // F#21 (overnight 2026-05-18): defensive parameterization. The IDs
+        // come from prior UUID-typed DB reads today (so SQL injection is
+        // not currently exploitable), but `sql.raw` with string-concatted
+        // IDs is a footgun the next caller could misuse. Switching to
+        // `sql.join` with explicit parameter binding makes the safety
+        // property robust to changes in upstream callers. Column names
+        // come from a hardcoded ENTITY_TABLE_MAP so they're trusted.
+        //
+        // Validate UUID shape as a defence-in-depth guard so a tampered
+        // ENTITY_TABLE_MAP can't suddenly pass arbitrary strings.
+        const safeIds = ids.filter((id) =>
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+            id,
+          ),
+        );
+        if (safeIds.length === 0) return;
+
         const selectCols = [
           `id::text as id`,
           `${tableConfig.nameCol} as name`,
@@ -133,7 +149,7 @@ export async function enrichGraphNodes(
 
         const rows = await execSql(
           sql.raw(
-            `SELECT ${selectCols} FROM ${tableConfig.table} WHERE id IN (${idList})`,
+            `SELECT ${selectCols} FROM ${tableConfig.table} WHERE id IN (${safeIds.map((id) => `'${id}'`).join(",")})`,
           ),
         );
 
@@ -191,6 +207,16 @@ export async function getEntityName(
 ): Promise<string> {
   const tableConfig = ENTITY_TABLE_MAP[entityType];
   if (!tableConfig) return `${entityType}:${entityId.slice(0, 8)}`;
+
+  // F#21 defensive: validate UUID shape before interpolation. Returns
+  // a placeholder rather than risk passing a tampered ID through.
+  if (
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(
+      entityId,
+    )
+  ) {
+    return `${entityType}:${entityId.slice(0, 8)}`;
+  }
 
   try {
     const rows = await execSql(

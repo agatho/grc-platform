@@ -12,6 +12,7 @@ export {
   checkWebhookUrl,
   webhookUrlRefine,
   webhookUrlRefineMessage,
+  checkResolvedHostIsPublic,
   type WebhookUrlCheckResult,
 } from "./url-safety";
 // #WAVE21-MAR-P2-03: BIA → Asset-Classification cascade (write-side
