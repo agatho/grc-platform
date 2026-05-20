@@ -80,9 +80,16 @@ describe("aesGcmEncrypt / aesGcmDecrypt round-trip", () => {
 
   it("rejects tampered ciphertext (GCM auth tag fails)", () => {
     const ct = aesGcmEncrypt(key, "secret");
+    // Flip the first nibble of the auth tag unconditionally — XOR with
+    // 0x8 guarantees a different hex digit no matter what was there.
+    // The previous attempt (`encryptedPayload.replace(/.$/, "0")`) was a
+    // no-op ~6% of the time when the original ciphertext already ended
+    // in '0', causing a flaky pass instead of the expected throw.
+    const firstAuthByte = parseInt(ct.authTag.slice(0, 2), 16);
+    const flipped = (firstAuthByte ^ 0x80).toString(16).padStart(2, "0");
     const tampered = {
       ...ct,
-      encryptedPayload: ct.encryptedPayload.replace(/.$/, "0"),
+      authTag: flipped + ct.authTag.slice(2),
     };
     expect(() => aesGcmDecrypt(key, tampered)).toThrow();
   });
