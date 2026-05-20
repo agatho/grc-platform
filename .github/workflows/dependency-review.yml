@@ -20,7 +20,17 @@ jobs:
         with:
           # Fail on high/critical vulnerabilities
           fail-on-severity: high
-          # Deny copyleft licenses
+          # Deny copyleft licenses for runtime deps
           deny-licenses: GPL-2.0-only, GPL-3.0-only, AGPL-3.0-only
+          # Per-package exemptions — these CI-only actions are AGPL but we
+          # accept the licence because they don't ship in any built
+          # artefact. Adding a package here is a deliberate decision: only
+          # CI/dev-only tools belong in this list.
+          #
+          # - trufflesecurity/trufflehog (AGPL-3.0): secret scanner. Kept
+          #   alongside gitleaks as second-opinion coverage ("4 eyes see
+          #   more than 2"). Runs in CI only; never bundled into web /
+          #   worker images.
+          allow-dependencies-licenses: pkg:githubactions/trufflesecurity/trufflehog
           # Comment on PR with findings
           comment-summary-in-pr: always
