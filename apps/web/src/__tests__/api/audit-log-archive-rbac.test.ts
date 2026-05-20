@@ -218,6 +218,11 @@ describe("GET /api/v1/audit-log/integrity", () => {
     expect(calls[0]).toEqual(["admin", "auditor"]);
     expect(calls[1]).toEqual(["admin", "auditor"]);
     // integrity widened for read-only oversight roles
-    expect(calls[2]).toEqual(["admin", "auditor", "ciso", "compliance_officer"]);
+    expect(calls[2]).toEqual([
+      "admin",
+      "auditor",
+      "ciso",
+      "compliance_officer",
+    ]);
   });
 });

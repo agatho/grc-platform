@@ -289,7 +289,10 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     allowed: T,
   ): { values: T[number][]; error: Response | null } => {
     if (!raw) return { values: [], error: null };
-    const parts = raw.split(",").map((s) => s.trim()).filter(Boolean);
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
     const invalid = parts.filter(
       (v) => !(allowed as readonly string[]).includes(v),
     );

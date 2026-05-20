@@ -14,11 +14,7 @@
 // covered by integration tests against a real Postgres in CI.
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  makeMockDb,
-  chainable,
-  type MockDb,
-} from "./helpers/mock-context";
+import { makeMockDb, chainable, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
 const withAuthMock = vi.fn();
@@ -266,9 +262,8 @@ describe("W24-B3: GET /api/v1/erm/management-summary", () => {
   });
 
   it("returns 200 with risksSummary/controlsSummary/findingsSummary", async () => {
-    const { GET } = await import(
-      "../../app/api/v1/erm/management-summary/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/erm/management-summary/route");
     const res = await GET(
       new Request("http://localhost/api/v1/erm/management-summary"),
     );
@@ -298,9 +293,8 @@ describe("W24-B3: GET /api/v1/erm/management-summary", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/erm/management-summary/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/erm/management-summary/route");
     const res = await GET(
       new Request("http://localhost/api/v1/erm/management-summary"),
     );
@@ -311,9 +305,8 @@ describe("W24-B3: GET /api/v1/erm/management-summary", () => {
     requireModuleMock.mockResolvedValue(
       Response.json({ error: "Module disabled" }, { status: 404 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/erm/management-summary/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/erm/management-summary/route");
     const res = await GET(
       new Request("http://localhost/api/v1/erm/management-summary"),
     );

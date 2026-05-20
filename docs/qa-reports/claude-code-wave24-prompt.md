@@ -5,6 +5,7 @@
 **User-Direktive:** „Auch an eine Alpha habe ich Qualitätsansprüche. Alles was wir finden muss gefixed werden."
 
 **Vorbedingung:**
+
 - Hash-Chain v3 healthy `total=15425 mismatches=0` muss bleiben
 - Wave 23 has shipped: A2 `/admin/branding` ✅, ESG/Bulk/RLS-Cross-Tenant/Compliance-Frameworks ✅
 - A1 Finding-FK-Persistenz ist nach **5 Wellen** noch nicht gefixt
@@ -15,13 +16,13 @@
 
 13 Items aus der Alpha-Verification 2026-05-15. Alles wird gefixed — keine Priorisierung als „später", da der User auch in der Alpha Qualitätsansprüche stellt.
 
-| Block | Items | Severity |
-|---|---|---|
-| **A. A1 ENDGAME** mit Live-Debug | 1 | P0 (5. Welle!) |
-| **B. Wave-23-Regressions reverten** | 4 | P1 (von W23 verursacht) |
-| **C. Hash-Chain v3 Continuity ADR** | 1 | P0 (Compliance) |
-| **D. Workflow-Endpoint-Lücken** | 7 | P1/P2 |
-| **E. Verbleibende Journey-Tests** | 5 | Test-Pflicht |
+| Block                               | Items | Severity                |
+| ----------------------------------- | ----- | ----------------------- |
+| **A. A1 ENDGAME** mit Live-Debug    | 1     | P0 (5. Welle!)          |
+| **B. Wave-23-Regressions reverten** | 4     | P1 (von W23 verursacht) |
+| **C. Hash-Chain v3 Continuity ADR** | 1     | P0 (Compliance)         |
+| **D. Workflow-Endpoint-Lücken**     | 7     | P1/P2                   |
+| **E. Verbleibende Journey-Tests**   | 5     | Test-Pflicht            |
 
 ---
 
@@ -80,12 +81,12 @@ import { sql } from "drizzle-orm";
 export async function POST(req: Request) {
   const ctx = await withAuth("admin");
   if (ctx instanceof Response) return ctx;
-  
+
   const raw = await req.json();
   const traces: any[] = [];
-  
+
   traces.push({ stage: "raw-body", value: raw });
-  
+
   // Direct insert bypassing all middleware
   try {
     const directResult = await db.execute(sql`
@@ -93,9 +94,9 @@ export async function POST(req: Request) {
       VALUES (
         ${ctx.orgId},
         gen_random_uuid(),
-        ${raw.title || 'debug-direct-insert'},
-        ${raw.severity || 'minor_nonconformity'},
-        ${raw.source || 'audit'},
+        ${raw.title || "debug-direct-insert"},
+        ${raw.severity || "minor_nonconformity"},
+        ${raw.source || "audit"},
         ${raw.controlId},
         ${raw.auditId},
         ${raw.riskId},
@@ -108,26 +109,29 @@ export async function POST(req: Request) {
   } catch (e: any) {
     traces.push({ stage: "direct-sql-insert", error: e.message });
   }
-  
+
   // Drizzle ORM insert with explicit values
   try {
-    const drizzleResult = await db.insert(finding).values({
-      orgId: ctx.orgId,
-      workItemId: crypto.randomUUID(),
-      title: 'drizzle-test',
-      severity: 'minor_nonconformity',
-      source: 'audit',
-      controlId: raw.controlId,
-      auditId: raw.auditId,
-      riskId: raw.riskId,
-      createdBy: ctx.userId,
-      updatedBy: ctx.userId,
-    }).returning();
+    const drizzleResult = await db
+      .insert(finding)
+      .values({
+        orgId: ctx.orgId,
+        workItemId: crypto.randomUUID(),
+        title: "drizzle-test",
+        severity: "minor_nonconformity",
+        source: "audit",
+        controlId: raw.controlId,
+        auditId: raw.auditId,
+        riskId: raw.riskId,
+        createdBy: ctx.userId,
+        updatedBy: ctx.userId,
+      })
+      .returning();
     traces.push({ stage: "drizzle-insert", result: drizzleResult[0] });
   } catch (e: any) {
     traces.push({ stage: "drizzle-insert", error: e.message });
   }
-  
+
   return Response.json({ traces });
 }
 ```
@@ -146,10 +150,12 @@ Dieser Debug-Endpoint **bleibt drin bis A1 gefixt** und wird dann via Migration 
 // apps/web/src/__tests__/api/findings-fk-persistence.test.ts
 test("W24-A1: Live test against prod via debug endpoint", async () => {
   const ctrl = await getOrCreateControl();
-  const r = await POST("/api/v1/_debug/finding-insert-trace", { controlId: ctrl.id });
-  expect(r.body.traces[0].value.controlId).toBe(ctrl.id);  // raw body
+  const r = await POST("/api/v1/_debug/finding-insert-trace", {
+    controlId: ctrl.id,
+  });
+  expect(r.body.traces[0].value.controlId).toBe(ctrl.id); // raw body
   expect(r.body.traces[1].result.control_id).toBe(ctrl.id); // direct SQL
-  expect(r.body.traces[2].result.controlId).toBe(ctrl.id);  // drizzle
+  expect(r.body.traces[2].result.controlId).toBe(ctrl.id); // drizzle
 });
 
 test("W24-A1: POST /findings persists controlId via production endpoint", async () => {
@@ -158,7 +164,7 @@ test("W24-A1: POST /findings persists controlId via production endpoint", async 
     title: "Persistence",
     severity: "major_nonconformity",
     source: "audit",
-    controlId: ctrl.id
+    controlId: ctrl.id,
   });
   const g = await GET(`/api/v1/findings/${r.body.data.id}`);
   expect(g.body.data.controlId).toBe(ctrl.id);
@@ -176,6 +182,7 @@ Wave 23 hat 4 RBAC/Method-Tightening-Änderungen deployed, die User-facing Workf
 ### B1 — W24-CISO-HASH-403: CISO darf `/audit-log/integrity` wieder lesen
 
 **Verhalten heute:**
+
 ```
 GET /api/v1/audit-log/integrity als ciso@meridian.test → 403 "Required role(s): admin, auditor"
 ```
@@ -189,6 +196,7 @@ const ctx = await withAuth("admin", "auditor", "ciso", "compliance_officer");
 ```
 
 **Test:**
+
 ```ts
 test.each(["admin", "auditor", "ciso", "compliance_officer"])(
   "W24-B1: %s can read /audit-log/integrity",
@@ -197,13 +205,14 @@ test.each(["admin", "auditor", "ciso", "compliance_officer"])(
     const r = await GET("/api/v1/audit-log/integrity");
     expect(r.status).toBe(200);
     expect(r.body.data.healthy).toBe(true);
-  }
+  },
 );
 ```
 
 ### B2 — W24-F1-FILTER-500: `GET /findings?status=open|in_review` 500
 
 **Verhalten:**
+
 - `?status=identified` → 200 ✅
 - `?status=open` → 500 mit RequestID `81d9101ffa46f648`
 - `?status=in_review` → 500
@@ -213,27 +222,39 @@ test.each(["admin", "auditor", "ciso", "compliance_officer"])(
 **Wahrscheinliche Ursache:** Filter-Query macht `where(eq(finding.status, statusParam))` ohne Validierung. PostgreSQL rejected den Cast auf `finding_status_enum` und der Server crasht statt 422 zurückzugeben.
 
 **Fix:**
+
 ```typescript
 // In findings/route.ts GET handler
-const validStatuses = ['identified', 'in_review', 'remediated', 'verified', 'accepted', 'closed'] as const;
-const statusFilter = url.searchParams.get('status');
+const validStatuses = [
+  "identified",
+  "in_review",
+  "remediated",
+  "verified",
+  "accepted",
+  "closed",
+] as const;
+const statusFilter = url.searchParams.get("status");
 if (statusFilter && !validStatuses.includes(statusFilter as any)) {
-  return Response.json({
-    error: "Validation failed",
-    detail: `Invalid status '${statusFilter}'. Valid: ${validStatuses.join(', ')}`,
-    invalidParam: 'status'
-  }, { status: 422 });
+  return Response.json(
+    {
+      error: "Validation failed",
+      detail: `Invalid status '${statusFilter}'. Valid: ${validStatuses.join(", ")}`,
+      invalidParam: "status",
+    },
+    { status: 422 },
+  );
 }
 ```
 
 **Test:**
+
 ```ts
 test.each([
-  ['identified', 200],
-  ['in_review', 200],
-  ['closed', 200],
-  ['open', 422],  // invalid → 422 not 500
-  ['xyz', 422],
+  ["identified", 200],
+  ["in_review", 200],
+  ["closed", 200],
+  ["open", 422], // invalid → 422 not 500
+  ["xyz", 422],
 ])("W24-B2: Finding filter status=%s returns %i", async (status, expected) => {
   const r = await GET(`/api/v1/findings?status=${status}`);
   expect(r.status).toBe(expected);
@@ -247,8 +268,10 @@ test.each([
 **Fix:** Wenn der Endpoint POST-only ist (z.B. weil er Snapshot generiert), Doku-Hinweis im GET 405-Body geben. Oder GET als read-only-Variante implementieren.
 
 **Vorgehen:**
+
 1. Bestehende Route-File inspizieren (`apps/web/src/app/api/v1/erm/management-summary/route.ts`)
 2. GET-Handler implementieren, der aggregierte Quartals-Daten liefert ohne Side-Effects:
+
 ```typescript
 export const GET = withErrorHandler(async (req) => {
   const ctx = await withAuth();
@@ -259,12 +282,13 @@ export const GET = withErrorHandler(async (req) => {
 ```
 
 **Test:**
+
 ```ts
 test("W24-B3: GET /erm/management-summary returns 200 for CISO", async () => {
   loginAs("ciso");
   const r = await GET("/api/v1/erm/management-summary");
   expect(r.status).toBe(200);
-  expect(r.body.data).toHaveProperty('risksSummary');
+  expect(r.body.data).toHaveProperty("risksSummary");
 });
 ```
 
@@ -275,6 +299,7 @@ test("W24-B3: GET /erm/management-summary returns 200 for CISO", async () => {
 **Fix:** POST-Handler in der korrekten Route-File implementieren. Path-Check: ist es `/api/v1/control-tests` oder `/api/v1/controls/{id}/tests`?
 
 **Test:**
+
 ```ts
 test("W24-B4: POST /control-tests succeeds for compliance_officer", async () => {
   loginAs("compliance_officer");
@@ -295,6 +320,7 @@ test("W24-B4: POST /control-tests succeeds for compliance_officer", async () => 
 ### C1 — W24-HASH-V3-MIGRATION: ADR + Live-Verification
 
 Wave 23 hat Hash-Chain auf v3 migriert:
+
 - v1: 1229 → 0
 - v2: 513 → 0
 - v3 (neu): 15425
@@ -302,6 +328,7 @@ Wave 23 hat Hash-Chain auf v3 migriert:
 **Compliance-Risiko:** Bei einer Tamper-Evidence-Audit-Chain (ISO 27001 A.12.4.2, GoBD §147, DSGVO Art. 5(2)) ist die **Continuity** der Verkettung entscheidend, nicht der Reset.
 
 **Pflicht:**
+
 1. **ADR-026** schreiben: `docs/adr/0026-hash-chain-v3-migration.md` mit:
    - Was wurde migriert (Schema-Änderungen, neues Hashing-Schema)
    - Warum (Performance? Crypto-Update? Compliance-Anforderung?)
@@ -309,21 +336,31 @@ Wave 23 hat Hash-Chain auf v3 migriert:
    - FreeTSA-Timestamp-Bestätigung der Migration
 
 2. **Continuity-Verification-Endpoint** `/api/v1/audit-log/integrity/continuity`:
+
    ```typescript
    // Returns proof that v3 chain references v1+v2 history
    return Response.json({
      data: {
        v1: { lastHash, anchoredAt, freeTSAReceipt },
-       v2: { firstHash, lastHash, continuityProof: 'v2.first.prev === v1.last.hash' },
-       v3: { firstHash, lastHash, continuityProof: 'v3.first.prev === v2.last.hash' },
-       totalContinuityValid: true
-     }
+       v2: {
+         firstHash,
+         lastHash,
+         continuityProof: "v2.first.prev === v1.last.hash",
+       },
+       v3: {
+         firstHash,
+         lastHash,
+         continuityProof: "v3.first.prev === v2.last.hash",
+       },
+       totalContinuityValid: true,
+     },
    });
    ```
 
 3. **Wenn keine Continuity möglich** (z.B. weil Migration v1+v2 wirklich gelöscht hat): explizit dokumentieren als Migration-Event mit FreeTSA-Anker + Org-Sign-Off der Plattform-Owners. Dann ist es ein **bewusster Re-Genesis** und nicht ein Compliance-Bruch.
 
 **Test:**
+
 ```ts
 test("W24-C1: Hash chain has documented continuity from v1 → v3", async () => {
   const r = await GET("/api/v1/audit-log/integrity/continuity");
@@ -339,6 +376,7 @@ test("W24-C1: Hash chain has documented continuity from v1 → v3", async () => 
 ### D1 — W24-PO-TREAT-STATUS: Process Owner kann Treatment-Status updaten
 
 **Verhalten:**
+
 ```
 POST /risks/{id}/treatments als process_owner → 201 ✅
 PUT /risks/{id}/treatments/{tid} {status:'in_progress'} → 403 "Required role(s): admin, risk_manager"
@@ -348,10 +386,16 @@ PUT /risks/{id}/treatments/{tid} {status:'in_progress'} → 403 "Required role(s
 
 ```typescript
 // In /risks/[id]/treatments/[tid]/route.ts PUT
-const ctx = await withAuth("admin", "risk_manager", "process_owner", "control_owner");
+const ctx = await withAuth(
+  "admin",
+  "risk_manager",
+  "process_owner",
+  "control_owner",
+);
 ```
 
 **Test:**
+
 ```ts
 test("W24-D1: process_owner can update treatment status they created", async () => {
   loginAs("process_owner");
@@ -367,11 +411,13 @@ test("W24-D1: process_owner can update treatment status they created", async () 
 **Wahrscheinliche Ursache:** Endpoint-Pfad ist anders (`/api/v1/tprm/vendors/{id}/assessments`?) oder Route fehlt komplett.
 
 **Fix:**
+
 1. Route-File anlegen falls fehlt
 2. RBAC: `admin, risk_manager, vendor_manager, contract_manager`
 3. Body-Schema: `assessmentType`, `scoringScale`, optional `dueDate`
 
 **Test:**
+
 ```ts
 test("W24-D2: POST /vendors/{id}/assessments creates assessment", async () => {
   loginAs("vendor_manager");
@@ -386,12 +432,13 @@ test("W24-D2: POST /vendors/{id}/assessments creates assessment", async () => {
 **Fix:** GET-Endpoint mit Aggregation aus `vendor_assessment` + `vendor_risk_score` Tabellen.
 
 **Test:**
+
 ```ts
 test("W24-D3: GET /vendors/{id}/risk-profile returns profile", async () => {
   const r = await GET(`/vendors/${vendorId}/risk-profile`);
   expect(r.status).toBe(200);
-  expect(r.body.data).toHaveProperty('inherentRiskScore');
-  expect(r.body.data).toHaveProperty('residualRiskScore');
+  expect(r.body.data).toHaveProperty("inherentRiskScore");
+  expect(r.body.data).toHaveProperty("residualRiskScore");
 });
 ```
 
@@ -404,6 +451,7 @@ test("W24-D3: GET /vendors/{id}/risk-profile returns profile", async () => {
 ### D5 — W24-AUDIT-ACTIVITY-422: Audit-Activity Body-Schema
 
 **Verhalten:**
+
 ```
 POST /audit-mgmt/audits/{id}/activities {name:'X', description:'Y'} → 422
 ```
@@ -411,10 +459,14 @@ POST /audit-mgmt/audits/{id}/activities {name:'X', description:'Y'} → 422
 **Vorgehen:** Body-Schema validieren + im PR dokumentieren welche Felder Required sind. Schema-Discovery-Endpoint `/audit-mgmt/audits/{id}/activities/schema`.
 
 **Test:**
+
 ```ts
 test("W24-D5: Audit activity create with documented schema", async () => {
   const schema = await GET(`/audit-mgmt/audits/${aid}/activities/schema`);
-  const a = await POST(`/audit-mgmt/audits/${aid}/activities`, schema.body.data.example);
+  const a = await POST(
+    `/audit-mgmt/audits/${aid}/activities`,
+    schema.body.data.example,
+  );
   expect(a.status).toBe(201);
 });
 ```
@@ -426,6 +478,7 @@ test("W24-D5: Audit activity create with documented schema", async () => {
 ### D7 — W24-COMPLIANCE-COVERAGE: 0/0/0 trotz 1319 Frameworks
 
 **Verhalten:**
+
 ```
 GET /compliance/coverage?framework=iso-27001 → {coverage:0, frameworkCount:0, ...}
 ```
@@ -433,10 +486,12 @@ GET /compliance/coverage?framework=iso-27001 → {coverage:0, frameworkCount:0, 
 Aber `/compliance/frameworks` zeigt 1319 Einträge. **Cross-Mapping Org-Controls ↔ Framework-Controls** fehlt.
 
 **Fix:**
+
 1. Falls Mapping-Daten existieren: Computation-Bug in der Coverage-Aggregation
 2. Falls Mapping-Daten fehlen: Migration die Demo-Mappings seedet (z.B. 10–20 Controls aus Meridian-Org auf ISO-27001-Annex-A-Controls mappen)
 
 **Test:**
+
 ```ts
 test("W24-D7: ISO 27001 coverage returns realistic value > 0", async () => {
   const r = await GET("/compliance/coverage?framework=iso-27001");
@@ -451,13 +506,13 @@ test("W24-D7: ISO 27001 coverage returns realistic value > 0", async () => {
 
 5 Journeys aus Alpha-Verification waren noch offen. Müssen nach Block A–D abgearbeitet sein:
 
-| Journey | Test-User | Was zu prüfen |
-|---|---|---|
-| US-10 Risk Manager | `risk.manager@arctos.dev` | Cross-Process-Risk-Aggregation, KRI-History |
-| US-11 Control Owner | `control.owner@arctos.dev` | ToE-Test-Workflow (hängt von B4 control-tests ab) |
-| US-12 BCM Manager | seed-User existiert? | BIA-Quartals-Lifecycle |
-| US-13 Security Analyst | seed-User existiert? | NIST-7-State + DSGVO-72h |
-| US-15 External Auditor | seed-User existiert? | Read-Only-Audit-Universe |
+| Journey                | Test-User                  | Was zu prüfen                                     |
+| ---------------------- | -------------------------- | ------------------------------------------------- |
+| US-10 Risk Manager     | `risk.manager@arctos.dev`  | Cross-Process-Risk-Aggregation, KRI-History       |
+| US-11 Control Owner    | `control.owner@arctos.dev` | ToE-Test-Workflow (hängt von B4 control-tests ab) |
+| US-12 BCM Manager      | seed-User existiert?       | BIA-Quartals-Lifecycle                            |
+| US-13 Security Analyst | seed-User existiert?       | NIST-7-State + DSGVO-72h                          |
+| US-15 External Auditor | seed-User existiert?       | Read-Only-Audit-Universe                          |
 
 **Vorgehen:** Cowork QA fährt die 5 Journeys nach Block-A-D-Merge. Wenn Test-User fehlen, im Seed nachziehen:
 
@@ -518,6 +573,7 @@ CONT=$(curl ... /api/v1/audit-log/integrity/continuity | jq -r '.data.totalConti
 ## Vorgehen (zeitlich)
 
 **Tag 1 — Block A Live-Debug:**
+
 - A1-D1 Build-SHA-Check
 - A1-D2 DB-Schema-Check
 - A1-D3 Debug-Endpoint deploy + Cowork-QA-Run gegen Prod
@@ -525,6 +581,7 @@ CONT=$(curl ... /api/v1/audit-log/integrity/continuity | jq -r '.data.totalConti
 - Fix deploy + Re-Test
 
 **Tag 2 — Block B + C:**
+
 - B1 CISO Hash-Chain-Access wiederherstellen
 - B2 Filter-422-statt-500
 - B3 /erm/management-summary GET implementieren
@@ -532,17 +589,20 @@ CONT=$(curl ... /api/v1/audit-log/integrity/continuity | jq -r '.data.totalConti
 - C1 Hash-Chain v3 Continuity ADR + Endpoint
 
 **Tag 3 — Block D:**
+
 - D1 RBAC-Asymmetrie Treatment-Status
 - D2/D3/D4 Vendor-Sub-Endpoints
 - D5/D6 Body-Schema-Discovery für Audit-Activity + ESG-Measurement
 - D7 Compliance-Coverage-Mapping seeden
 
 **Tag 4 — Block E:**
+
 - Seed-Migration 0337 für BCM/Security/External-Auditor-User
 - Cowork QA fährt 5 Journeys
 - Befunde sammeln, ggf. Wave 25 planen
 
 **Tag 5 — Pilot-Readiness-Gate-Run:**
+
 - Erweitertes Gate-Script gegen Staging laufen lassen
 - Bei grün → Pilot-Sign-Off
 
@@ -632,4 +692,4 @@ Hash-Chain v3: healthy total=<N> mismatches=0
 
 ---
 
-*Wave 24 Alpha-Quality-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. 13 Items in 5 Blöcken. A1 Live-Debug-Endpoint ist die Schlüssel-Innovation für die 5-Wellen-Persistenz-Frage.*
+_Wave 24 Alpha-Quality-Closure-Prompt geschrieben von Cowork QA, 2026-05-15. 13 Items in 5 Blöcken. A1 Live-Debug-Endpoint ist die Schlüssel-Innovation für die 5-Wellen-Persistenz-Frage._
