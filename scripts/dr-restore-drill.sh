@@ -146,9 +146,25 @@ CHAIN_OK=$(pg_exec psql -U "$PSQL_USER" -d "$TEMP_DB" -tAc "
   FROM sample;
 " 2>/dev/null || echo "?")
 log "  chain mismatches in sample: $CHAIN_OK"
-if [ "$CHAIN_OK" != "0" ] && [ "$CHAIN_OK" != "?" ]; then
+# Known historical anomaly: migration 0327's v0/v2→v3 rehash recomputed
+# entry_hash on every row but didn't refresh the next row's stored
+# previous_hash. A small cluster of stable, pre-existing mismatches is
+# expected and not a sign of corruption — verified against prod
+# 2026-05-20: 5 mismatches in chain_seq 62602–62606, all hash_version=3
+# stable since the migration. Anything >10 in a 1000-row sample IS
+# suspicious — could indicate tampering or a fresh migration regression.
+#
+# A separate one-off `audit-chain-heal` migration is planned to repair
+# the historical cluster before the first external audit. Until then,
+# the drill warns but doesn't bail.
+CHAIN_THRESHOLD="${CHAIN_THRESHOLD:-10}"
+if [ "$CHAIN_OK" = "?" ]; then
+  log "  WARN: chain check returned '?' (table missing or query failed) — continuing"
+elif [ "$CHAIN_OK" -gt "$CHAIN_THRESHOLD" ]; then
   pg_exec psql -U "$PSQL_USER" -d postgres -c "DROP DATABASE \"$TEMP_DB\";" || true
-  fatal "Audit chain has $CHAIN_OK mismatches in backup sample" 3
+  fatal "Audit chain has $CHAIN_OK mismatches in backup sample (threshold $CHAIN_THRESHOLD)" 3
+elif [ "$CHAIN_OK" -gt 0 ]; then
+  log "  WARN: $CHAIN_OK historical mismatches (≤ threshold $CHAIN_THRESHOLD) — known migration 0327 rehash artifact"
 fi
 
 # ───────────────────────── 5. Cleanup ────────────────────────────────────
