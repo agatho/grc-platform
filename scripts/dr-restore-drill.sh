@@ -117,16 +117,32 @@ if [ "$MISSING" -gt 1 ]; then
   fatal "Restored DB missing $MISSING sentinel columns — backup is stale or corrupt" 3
 fi
 
-log "Sanity check 3/3 — audit_log chain integrity (1k-row sample)"
+log "Sanity check 3/3 — audit_log chain integrity (1k-row sample per tenant)"
+# Chain is per-tenant (ADR-011 rev.2): previous_hash_scope='org:<uuid>' or
+# 'platform' partitions the hash chain. We MUST PARTITION BY scope in the
+# window function — a global LAG mixes tenant chains and produces fake
+# mismatches at every cross-tenant boundary. Pre-rev2 rows have
+# previous_hash_scope=NULL and are excluded (legacy global chain, audited
+# separately by migration 0312's rehash pass).
 CHAIN_OK=$(pg_exec psql -U "$PSQL_USER" -d "$TEMP_DB" -tAc "
   WITH sample AS (
-    SELECT entry_hash, previous_hash,
-           LAG(entry_hash) OVER (ORDER BY chain_seq) AS expected_prev
-    FROM audit_log
-    ORDER BY chain_seq DESC
-    LIMIT 1000
+    SELECT entry_hash, previous_hash, previous_hash_scope,
+           LAG(entry_hash) OVER (
+             PARTITION BY previous_hash_scope
+             ORDER BY chain_seq
+           ) AS expected_prev
+    FROM (
+      SELECT entry_hash, previous_hash, previous_hash_scope, chain_seq
+      FROM audit_log
+      WHERE previous_hash_scope IS NOT NULL
+      ORDER BY chain_seq DESC
+      LIMIT 1000
+    ) latest
   )
-  SELECT count(*) FILTER (WHERE previous_hash IS DISTINCT FROM expected_prev AND expected_prev IS NOT NULL)
+  SELECT count(*) FILTER (
+    WHERE previous_hash IS DISTINCT FROM expected_prev
+      AND expected_prev IS NOT NULL
+  )
   FROM sample;
 " 2>/dev/null || echo "?")
 log "  chain mismatches in sample: $CHAIN_OK"
