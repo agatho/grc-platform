@@ -7,10 +7,7 @@
 // code only (worker, Next.js Route Handlers, API endpoints).
 
 import { lookup } from "node:dns/promises";
-import {
-  __privateIpHelpers,
-  type WebhookUrlCheckResult,
-} from "../url-safety";
+import { __privateIpHelpers, type WebhookUrlCheckResult } from "../url-safety";
 
 const { isPrivateIPv4, isPrivateIPv6Literal } = __privateIpHelpers;
 
