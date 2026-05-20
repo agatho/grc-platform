@@ -1,10 +1,17 @@
 // Shared coverage settings for all packages — import in each vitest.config.ts.
 // Centralised so threshold + reporter changes happen in one place.
 
-import type { CoverageOptions } from "vitest/node";
-
-export const sharedCoverageConfig: CoverageOptions = {
-  provider: "v8",
+// Drop the `CoverageOptions` type import — vitest 3.x exposed it from
+// `vitest/node`, vitest 4.x dropped that subpath, and the main entry's
+// shape moved too. Each per-package `vitest.config.ts` already gets full
+// type-checking when it spreads this object into its own `coverage: {}`
+// — so dropping the annotation here loses nothing in practice and keeps
+// the file compatible across both vitest majors during the bump.
+export const sharedCoverageConfig = {
+  // Cast `provider` to its literal type so spreading this object into a
+  // vitest `coverage: { ... }` (which expects `'v8' | 'istanbul' | ...`,
+  // not `string`) typechecks on both vitest 3 and 4.
+  provider: "v8" as const,
   reporter: ["text-summary", "json-summary", "json", "lcov", "html"],
   reportsDirectory: "coverage",
   // Inputs the report should consider — overridden per package as needed.
