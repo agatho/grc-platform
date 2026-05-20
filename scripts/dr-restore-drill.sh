@@ -82,18 +82,40 @@ if [ "$TABLES_RESTORED" -lt $(( TABLES_LIVE - 5 )) ]; then
   fatal "Restored DB has $TABLES_RESTORED tables, live has $TABLES_LIVE — schema drift" 3
 fi
 
-log "Sanity check 2/3 — latest migration matches"
-LATEST_MIG_RESTORED=$(pg_exec psql -U "$PSQL_USER" -d "$TEMP_DB" -tAc \
-  "SELECT max(hash) FROM __drizzle_migrations;" 2>/dev/null || echo "")
-LATEST_MIG_LIVE=$(pg_exec psql -U "$PSQL_USER" -d "$SOURCE_DB" -tAc \
-  "SELECT max(hash) FROM __drizzle_migrations;" 2>/dev/null || echo "")
-log "  restored=${LATEST_MIG_RESTORED:0:12}…  live=${LATEST_MIG_LIVE:0:12}…"
-# Latest migration in backup will be older than live by up to 24h — that's
-# expected. We only fail if the backup has NO migrations recorded.
-[ -z "$LATEST_MIG_RESTORED" ] && {
+log "Sanity check 2/3 — recent-migration sentinel columns present"
+# ARCTOS uses a custom migration runner (packages/db/src/migrate-all.ts)
+# that does NOT track applied migrations in a __drizzle_migrations table
+# — it runs every SQL file every time and relies on IF NOT EXISTS for
+# idempotency. So we can't compare migration hashes. Instead: probe for
+# columns added by recent migrations as a proxy for "schema reasonably
+# up to date". Update this list when you ship a new big migration.
+#
+# Each entry: "table.column added_by_migration".
+SENTINELS=(
+  "usage_record.idempotency_key:0344"  # idempotency-key bump
+  "risk_acceptance.revoked_at:0088"    # risk-acceptance core
+  "audit_log.chain_seq:0284"           # audit hash chain v3
+  "webhook_registration.template_type:0022"
+)
+MISSING=0
+for entry in "${SENTINELS[@]}"; do
+  tbl_col="${entry%%:*}"
+  mig="${entry##*:}"
+  tbl="${tbl_col%%.*}"
+  col="${tbl_col##*.}"
+  EXISTS=$(pg_exec psql -U "$PSQL_USER" -d "$TEMP_DB" -tAc \
+    "SELECT 1 FROM information_schema.columns WHERE table_schema='public' AND table_name='$tbl' AND column_name='$col';" 2>/dev/null || echo "")
+  if [ -z "$EXISTS" ]; then
+    log "  MISSING: $tbl.$col (expected from migration $mig)"
+    MISSING=$((MISSING + 1))
+  else
+    log "  OK: $tbl.$col"
+  fi
+done
+if [ "$MISSING" -gt 1 ]; then
   pg_exec psql -U "$PSQL_USER" -d postgres -c "DROP DATABASE \"$TEMP_DB\";" || true
-  fatal "Restored DB has no __drizzle_migrations rows" 3
-}
+  fatal "Restored DB missing $MISSING sentinel columns — backup is stale or corrupt" 3
+fi
 
 log "Sanity check 3/3 — audit_log chain integrity (1k-row sample)"
 CHAIN_OK=$(pg_exec psql -U "$PSQL_USER" -d "$TEMP_DB" -tAc "
