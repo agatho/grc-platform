@@ -4,6 +4,7 @@ import { eq, and } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import type { GrcEvent } from "@grc/events";
 import { checkWebhookUrl } from "@grc/shared";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 
 // POST /api/v1/webhooks/:id/test — Send a test event to the webhook
 export async function POST(
@@ -38,6 +39,20 @@ export async function POST(
       {
         error: "Webhook URL is not allowed",
         detail: urlCheck.reason,
+      },
+      { status: 422 },
+    );
+  }
+
+  // DNS-rebinding defense: hostname could still resolve to a private IP
+  // (split-horizon DNS, /etc/hosts, CNAME to internal). Async check
+  // before issuing fetch.
+  const hostCheck = await checkResolvedHostIsPublic(urlCheck.url.hostname);
+  if (!hostCheck.ok) {
+    return Response.json(
+      {
+        error: "Webhook URL resolves to a private host",
+        detail: hostCheck.reason,
       },
       { status: 422 },
     );

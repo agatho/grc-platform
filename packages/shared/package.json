@@ -7,7 +7,8 @@
     "./lib/merkle-tree": "./src/lib/merkle-tree.ts",
     "./lib/freetsa": "./src/lib/freetsa.ts",
     "./lib/opentimestamps": "./src/lib/opentimestamps.ts",
-    "./lib/opentimestamps-upgrade": "./src/lib/opentimestamps-upgrade.ts"
+    "./lib/opentimestamps-upgrade": "./src/lib/opentimestamps-upgrade.ts",
+    "./lib/url-safety-server": "./src/lib/url-safety-server.ts"
   },
   "scripts": {
     "test": "vitest run",

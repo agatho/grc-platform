@@ -178,3 +178,16 @@ export function webhookUrlRefineMessage(rawUrl: string): string {
   const r = checkWebhookUrl(rawUrl);
   return r.ok ? "" : r.reason;
 }
+
+// The async `checkResolvedHostIsPublic` (DNS-rebind defense) lives in
+// ./url-safety-server.ts. It's NOT re-exported from this file or
+// index.ts because pulling Node's `dns/promises` into the client-side
+// bundle breaks Next.js build (UnhandledSchemeError on "node:" prefix).
+// Import it directly from server code via @grc/shared/lib/url-safety-server.
+
+// Expose the IP predicates to the server helper without re-exporting them
+// as public API.
+export const __privateIpHelpers = {
+  isPrivateIPv4,
+  isPrivateIPv6Literal,
+};

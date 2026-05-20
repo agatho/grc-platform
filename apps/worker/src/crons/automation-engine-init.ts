@@ -18,6 +18,7 @@ import {
   webhookDeliveryLog,
 } from "@grc/db";
 import { checkWebhookUrl } from "@grc/shared";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 import { and, eq } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 
@@ -185,6 +186,29 @@ const automationActionServices: ActionServices = {
           payload: params.event as Record<string, unknown>,
           status: "failed",
           errorMessage: `SSRF guard rejected URL: ${urlCheck.reason}`,
+        });
+        return;
+      }
+
+      // DNS-rebinding defense: even if the URL passed the literal-host
+      // check, the hostname could still resolve to a private IP (DNS
+      // rebinding, /etc/hosts override, CNAME chain to internal IP).
+      // Resolve and verify before issuing fetch.
+      const hostCheck = await checkResolvedHostIsPublic(urlCheck.url.hostname);
+      if (!hostCheck.ok) {
+        console.error(
+          `[AutomationServices] triggerWebhook: DNS rebind guard rejected ${webhook.id}: ${hostCheck.reason}`,
+        );
+        await db.insert(webhookDeliveryLog).values({
+          webhookId: webhook.id,
+          eventType: "automation.trigger",
+          entityType: String(params.event.entityType ?? "unknown"),
+          entityId: String(
+            params.event.entityId ?? "00000000-0000-0000-0000-000000000000",
+          ),
+          payload: params.event as Record<string, unknown>,
+          status: "failed",
+          errorMessage: `DNS rebind guard rejected: ${hostCheck.reason}`,
         });
         return;
       }
