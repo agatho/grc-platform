@@ -19,31 +19,19 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { withAuth } from "@/lib/api";
+import { withErrorHandler } from "@/lib/api-wrapper";
 import { eq, and, isNull, sql } from "drizzle-orm";
 
-export async function GET(
-  req: Request,
-  { params }: { params: Promise<{ id: string }> },
-) {
-  try {
-    return await handleGet(req, params);
-  } catch (err) {
-    console.error("[predictive] uncaught error", err);
-    return Response.json(
-      {
-        error: "Predictive failed",
-        message: err instanceof Error ? err.message : String(err),
-        stack:
-          process.env.NODE_ENV !== "production" && err instanceof Error
-            ? err.stack
-            : undefined,
-      },
-      { status: 500 },
-    );
-  }
-}
+// #SEC-LEAK-FIX: previous hand-rolled catch returned `message: err.message`
+// (unconditional) and `stack: err.stack` (non-prod) directly in the JSON
+// body. CodeQL flagged this as js/stack-trace-exposure in Wave 11 and
+// the same shape lingered here. Replaced with `withErrorHandler` which
+// emits an RFC-7807 problem+json with only a requestId for correlation —
+// the full message + stack are logged server-side via `log`.
 
-async function handleGet(req: Request, params: Promise<{ id: string }>) {
+type IdCtx = { params: Promise<{ id: string }> };
+
+export const GET = withErrorHandler<IdCtx>(async function GET(req, { params }) {
   const ctx = await withAuth();
   if (ctx instanceof Response) return ctx;
   const moduleCheck = await requireModule("programme", ctx.orgId, req.method);
@@ -204,4 +192,4 @@ async function handleGet(req: Request, params: Promise<{ id: string }>) {
       generatedAt: new Date().toISOString(),
     },
   });
-}
+});
