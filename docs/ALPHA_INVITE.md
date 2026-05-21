@@ -38,20 +38,20 @@ the platform from any line-of-defence perspective.
 **URL:** `https://arctos.charliehund.de/login`
 **Password (all accounts):** `WaveQA-2026!`
 
-| Email                            | Role                     | LoD | Best for trying                            |
-| -------------------------------- | ------------------------ | --- | ------------------------------------------ |
-| `ciso@meridian.test`             | CISO                     | 2nd | ISMS overview, hash-chain integrity, ERM   |
-| `dpo@meridian.test`              | Data Protection Officer  | 2nd | DPMS, RoPA, DSR, DPIA, breach handling     |
-| `compliance@meridian.test`       | Compliance Officer       | 2nd | Framework coverage, controls, audit prep   |
-| `auditor@meridian.test`          | Internal Auditor         | 3rd | Audit universe, plans, working papers      |
-| `process-owner@meridian.test`    | Process Owner            | 1st | BPMN editor, process controls, RACM        |
-| `vendor-mgr@meridian.test`       | Vendor / Contract Mgr    | 1st | TPRM, vendor lifecycle, concentration risk |
-| `esg@meridian.test`              | ESG Manager              | 2nd | ESRS materiality, datapoints, emissions    |
-| `whistleblowing@meridian.test`   | Whistleblowing Officer   | —   | Case management (legally isolated module)  |
-| `viewer@meridian.test`           | Viewer                   | —   | Read-only across modules                   |
-| `bcm@meridian.test`              | BCM Manager **(new)**    | 2nd | BIA, BCP, crisis scenarios, exercises      |
-| `security@meridian.test`         | Security Analyst **(new)** | 1st | Incidents, vulnerabilities, NIST 7-state   |
-| `ext-auditor@meridian.test`      | External Auditor **(new)** | 3rd | Read-only audit universe                   |
+| Email                          | Role                       | LoD | Best for trying                            |
+| ------------------------------ | -------------------------- | --- | ------------------------------------------ |
+| `ciso@meridian.test`           | CISO                       | 2nd | ISMS overview, hash-chain integrity, ERM   |
+| `dpo@meridian.test`            | Data Protection Officer    | 2nd | DPMS, RoPA, DSR, DPIA, breach handling     |
+| `compliance@meridian.test`     | Compliance Officer         | 2nd | Framework coverage, controls, audit prep   |
+| `auditor@meridian.test`        | Internal Auditor           | 3rd | Audit universe, plans, working papers      |
+| `process-owner@meridian.test`  | Process Owner              | 1st | BPMN editor, process controls, RACM        |
+| `vendor-mgr@meridian.test`     | Vendor / Contract Mgr      | 1st | TPRM, vendor lifecycle, concentration risk |
+| `esg@meridian.test`            | ESG Manager                | 2nd | ESRS materiality, datapoints, emissions    |
+| `whistleblowing@meridian.test` | Whistleblowing Officer     | —   | Case management (legally isolated module)  |
+| `viewer@meridian.test`         | Viewer                     | —   | Read-only across modules                   |
+| `bcm@meridian.test`            | BCM Manager **(new)**      | 2nd | BIA, BCP, crisis scenarios, exercises      |
+| `security@meridian.test`       | Security Analyst **(new)** | 1st | Incidents, vulnerabilities, NIST 7-state   |
+| `ext-auditor@meridian.test`    | External Auditor **(new)** | 3rd | Read-only audit universe                   |
 
 **(new)** = added in Wave 24 (this invite cycle). The other nine
 have existed since Wave 12.
@@ -123,6 +123,7 @@ We're tracking these openly; please ignore the rough edges or
 report new ones.
 
 ### Working, but with caveats
+
 - **Email delivery** — Notifications and DPIA/DSR/audit-related
   emails compile and queue, but the production tenant's outbound
   SMTP is sandboxed. You won't actually receive emails. The
@@ -138,6 +139,7 @@ report new ones.
   tenant you'll see the heuristic until you run a gap analysis.
 
 ### Not yet finished
+
 - **Finding cross-module FK persistence** — There's a known issue
   where `controlId` / `auditId` / `riskId` posted to `POST /findings`
   occasionally persist as `null`. We're root-causing it via a
@@ -151,6 +153,7 @@ report new ones.
   content is light. Browse, but don't expect 1.0 polish.
 
 ### Hard limits
+
 - Bulk operations are capped at 100 rows per request (server-side
   Zod). Bigger imports go through the import wizards.
 - Frontend translations are DE + EN only. Mixed-locale view falls

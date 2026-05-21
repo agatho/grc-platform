@@ -7,11 +7,7 @@
 // names which acceptance item regressed.
 
 import { describe, it, expect, beforeEach, vi } from "vitest";
-import {
-  makeMockDb,
-  chainable,
-  type MockDb,
-} from "./helpers/mock-context";
+import { makeMockDb, chainable, type MockDb } from "./helpers/mock-context";
 
 let mockDb: MockDb;
 const withAuthMock = vi.fn();
@@ -188,9 +184,8 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       // FreeTSA anchors query (the inner try)
       .mockResolvedValueOnce([]);
 
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity/continuity/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
     );
@@ -223,9 +218,8 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       .mockResolvedValueOnce([]) // no migration anchors
       .mockResolvedValueOnce([]); // no freetsa anchors
 
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity/continuity/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
     );
@@ -241,9 +235,8 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/audit-log/integrity/continuity/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
     );
@@ -260,9 +253,8 @@ describe("W24-D1: PUT /api/v1/risks/{id}/treatments/{tid}", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { PUT } = await import(
-      "../../app/api/v1/risks/[id]/treatments/[treatmentId]/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/risks/[id]/treatments/[treatmentId]/route");
     await PUT(
       new Request("http://localhost/x", {
         method: "PUT",
@@ -283,13 +275,11 @@ describe("W24-D1: PUT /api/v1/risks/{id}/treatments/{tid}", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { DELETE } = await import(
-      "../../app/api/v1/risks/[id]/treatments/[treatmentId]/route"
-    );
-    await DELETE(
-      new Request("http://localhost/x", { method: "DELETE" }),
-      { params: Promise.resolve({ id: "r1", treatmentId: "t1" }) },
-    );
+    const { DELETE } =
+      await import("../../app/api/v1/risks/[id]/treatments/[treatmentId]/route");
+    await DELETE(new Request("http://localhost/x", { method: "DELETE" }), {
+      params: Promise.resolve({ id: "r1", treatmentId: "t1" }),
+    });
     expect(withAuthMock).toHaveBeenCalledWith(
       "admin",
       "risk_manager",
@@ -308,9 +298,8 @@ describe("W24-D2: POST /api/v1/vendors/{id}/risk-assessments", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { POST } = await import(
-      "../../app/api/v1/vendors/[id]/risk-assessments/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/vendors/[id]/risk-assessments/route");
     await POST(
       new Request("http://localhost/x", {
         method: "POST",
@@ -328,12 +317,10 @@ describe("W24-D2: POST /api/v1/vendors/{id}/risk-assessments", () => {
   });
 
   it("alias /vendors/{id}/assessments re-exports the canonical handler", async () => {
-    const canonical = await import(
-      "../../app/api/v1/vendors/[id]/risk-assessments/route"
-    );
-    const alias = await import(
-      "../../app/api/v1/vendors/[id]/assessments/route"
-    );
+    const canonical =
+      await import("../../app/api/v1/vendors/[id]/risk-assessments/route");
+    const alias =
+      await import("../../app/api/v1/vendors/[id]/assessments/route");
     expect(alias.POST).toBe(canonical.POST);
     expect(alias.GET).toBe(canonical.GET);
   });
@@ -350,9 +337,8 @@ describe("W24-D3: GET /api/v1/vendors/{id}/risk-profile", () => {
 
   it("404 when vendor not in org", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/vendors/[id]/risk-profile/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/vendors/[id]/risk-profile/route");
     const res = await GET(
       new Request("http://localhost/api/v1/vendors/v1/risk-profile"),
       { params: Promise.resolve({ id: "v1" }) },
@@ -407,9 +393,8 @@ describe("W24-D3: GET /api/v1/vendors/{id}/risk-profile", () => {
       return chainable([{ count: 3, totalAnnualValue: "150000" }]);
     });
 
-    const { GET } = await import(
-      "../../app/api/v1/vendors/[id]/risk-profile/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/vendors/[id]/risk-profile/route");
     const res = await GET(
       new Request("http://localhost/api/v1/vendors/v1/risk-profile"),
       { params: Promise.resolve({ id: "v1" }) },
@@ -442,9 +427,7 @@ describe("W24-D4: GET /api/v1/tprm/concentration", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/tprm/concentration/route"
-    );
+    const { GET } = await import("../../app/api/v1/tprm/concentration/route");
     await GET(new Request("http://localhost/api/v1/tprm/concentration"));
     expect(withAuthMock).toHaveBeenCalledWith(
       "admin",
@@ -467,9 +450,8 @@ describe("W24-D5: GET /api/v1/audit-mgmt/audits/{id}/activities/schema", () => {
 
   it("returns schema fields + example body when audit exists", async () => {
     mockDb.select.mockReturnValue(chainable([{ id: "a1" }]));
-    const { GET } = await import(
-      "../../app/api/v1/audit-mgmt/audits/[id]/activities/schema/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-mgmt/audits/[id]/activities/schema/route");
     const res = await GET(
       new Request(
         "http://localhost/api/v1/audit-mgmt/audits/a1/activities/schema",
@@ -492,9 +474,8 @@ describe("W24-D5: GET /api/v1/audit-mgmt/audits/{id}/activities/schema", () => {
 
   it("returns 404 when audit not found", async () => {
     mockDb.select.mockReturnValue(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/audit-mgmt/audits/[id]/activities/schema/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/audit-mgmt/audits/[id]/activities/schema/route");
     const res = await GET(
       new Request(
         "http://localhost/api/v1/audit-mgmt/audits/a1/activities/schema",
@@ -512,9 +493,8 @@ describe("W24-D5: GET /api/v1/audit-mgmt/audits/{id}/activities/schema", () => {
 describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
   it("returns schema with required metricId/periodStart/periodEnd/value", async () => {
     withAuthMock.mockResolvedValue(authedCtx("esg_manager"));
-    const { GET } = await import(
-      "../../app/api/v1/esg/measurements/schema/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
     );
@@ -544,9 +524,8 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
     requireModuleMock.mockResolvedValue(
       Response.json({ error: "Module disabled" }, { status: 404 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/esg/measurements/schema/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
     );
@@ -565,9 +544,8 @@ describe("W24-A1: POST /api/v1/_debug/finding-insert-trace", () => {
     delete process.env.ARCTOS_DEBUG_TRACE_ENABLED;
     delete process.env.ARCTOS_DEBUG_TOKEN;
     try {
-      const { POST } = await import(
-        "../../app/api/v1/_debug/finding-insert-trace/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/_debug/finding-insert-trace/route");
       const res = await POST(
         new Request("http://localhost/api/v1/_debug/finding-insert-trace", {
           method: "POST",
@@ -590,9 +568,8 @@ describe("W24-A1: POST /api/v1/_debug/finding-insert-trace", () => {
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
     try {
-      const { POST } = await import(
-        "../../app/api/v1/_debug/finding-insert-trace/route"
-      );
+      const { POST } =
+        await import("../../app/api/v1/_debug/finding-insert-trace/route");
       const res = await POST(
         new Request("http://localhost/api/v1/_debug/finding-insert-trace", {
           method: "POST",

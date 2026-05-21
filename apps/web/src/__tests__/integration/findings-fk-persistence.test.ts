@@ -177,9 +177,7 @@ describe.skip("Findings cross-module FK persistence (Wave-24-A1)", () => {
 
   // Helper: read back outside the insert tx (mimics the prod symptom
   // — POST returns OK, then a follow-up GET reveals the FK is null).
-  async function readbackFindingFks(
-    id: string,
-  ): Promise<{
+  async function readbackFindingFks(id: string): Promise<{
     control_id: string | null;
     control_test_id: string | null;
     risk_id: string | null;

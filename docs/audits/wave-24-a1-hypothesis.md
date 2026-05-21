@@ -29,23 +29,23 @@ write path) (c) the deployed binary is stale.
 
 ## 1. Code-path trace (what should happen)
 
-| # | Step | File | Expected state |
-|---|------|------|----------------|
-| 1 | Client sends `POST /api/v1/findings` with `{title, severity, source, controlId}` | n/a | Raw JSON `{controlId:"<uuid>"}` |
-| 2 | `withAuth("admin","auditor","risk_manager","control_owner","process_owner","ciso")` returns ctx | `apps/web/src/app/api/v1/findings/route.ts:75` | `ctx.orgId`, `ctx.userId` populated |
-| 3 | `requireModule("ics", ctx.orgId, req.method)` returns `null` (module enabled) | `route.ts:85` | OK, falls through |
-| 4 | `await req.json()` returns body; `rawBody.status` not set | `route.ts:93` | `rawBody.controlId = <uuid>` |
-| 5 | `createFindingSchema.safeParse(rawBody)` succeeds | `packages/shared/src/schemas/control.ts:253` | `body.data.controlId = <uuid>` (Zod accepts uuid) |
-| 6 | `withAuditContext(ctx, fn)` opens tx, sets `app.current_org_id`, `app.current_user_id` via `SELECT set_config(...)` | `apps/web/src/lib/api.ts:165` | RLS scoped to ctx.orgId |
-| 7 | `tx.insert(workItem).values({...}).returning()` — creates the work_item parent first | `route.ts:135` | `wi.id` populated |
-| 8 | `tx.insert(finding).values({orgId, workItemId: wi.id, ..., controlId: body.data.controlId, ...}).returning()` | `route.ts:157` | row has all FKs populated |
-| 9 | BEFORE-INSERT trigger `finding_auto_create_work_item` only fires WHEN `NEW.work_item_id IS NULL` | `packages/db/drizzle/0011_flimsy_lifeguard.sql:520` | **Does NOT fire** in step 8 because step 7 already supplied `work_item_id` |
-| 10 | `audit_trigger` (AFTER INSERT/UPDATE/DELETE) writes to audit_log | `0011_flimsy_lifeguard.sql:418` | Side-effect only, can't null `finding.*` |
-| 11 | `sync_er_finding_control` (AFTER INSERT OR UPDATE OF control_id OR DELETE) writes to entity_reference | `0034_sprint22_where_used_event_bus.sql:310` | Side-effect only, doesn't touch `finding` |
-| 12 | Drizzle `returning()` reads RETURNING columns into JS row | drizzle-orm internals | `row.controlId === body.data.controlId` |
-| 13 | Wave-23 verifier (route.ts:189-209) compares input vs row; no mismatch → no throw | `route.ts:200` | OK |
-| 14 | tx commits; route returns 201 with `{data: {...row}}` | `route.ts:235` | Client sees 201 |
-| 15 | Subsequent `GET /api/v1/findings` reads `finding.controlId` and exposes in projection | `route.ts:417` | **Prod reports: null** |
+| #   | Step                                                                                                                | File                                                | Expected state                                                             |
+| --- | ------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------- | -------------------------------------------------------------------------- |
+| 1   | Client sends `POST /api/v1/findings` with `{title, severity, source, controlId}`                                    | n/a                                                 | Raw JSON `{controlId:"<uuid>"}`                                            |
+| 2   | `withAuth("admin","auditor","risk_manager","control_owner","process_owner","ciso")` returns ctx                     | `apps/web/src/app/api/v1/findings/route.ts:75`      | `ctx.orgId`, `ctx.userId` populated                                        |
+| 3   | `requireModule("ics", ctx.orgId, req.method)` returns `null` (module enabled)                                       | `route.ts:85`                                       | OK, falls through                                                          |
+| 4   | `await req.json()` returns body; `rawBody.status` not set                                                           | `route.ts:93`                                       | `rawBody.controlId = <uuid>`                                               |
+| 5   | `createFindingSchema.safeParse(rawBody)` succeeds                                                                   | `packages/shared/src/schemas/control.ts:253`        | `body.data.controlId = <uuid>` (Zod accepts uuid)                          |
+| 6   | `withAuditContext(ctx, fn)` opens tx, sets `app.current_org_id`, `app.current_user_id` via `SELECT set_config(...)` | `apps/web/src/lib/api.ts:165`                       | RLS scoped to ctx.orgId                                                    |
+| 7   | `tx.insert(workItem).values({...}).returning()` — creates the work_item parent first                                | `route.ts:135`                                      | `wi.id` populated                                                          |
+| 8   | `tx.insert(finding).values({orgId, workItemId: wi.id, ..., controlId: body.data.controlId, ...}).returning()`       | `route.ts:157`                                      | row has all FKs populated                                                  |
+| 9   | BEFORE-INSERT trigger `finding_auto_create_work_item` only fires WHEN `NEW.work_item_id IS NULL`                    | `packages/db/drizzle/0011_flimsy_lifeguard.sql:520` | **Does NOT fire** in step 8 because step 7 already supplied `work_item_id` |
+| 10  | `audit_trigger` (AFTER INSERT/UPDATE/DELETE) writes to audit_log                                                    | `0011_flimsy_lifeguard.sql:418`                     | Side-effect only, can't null `finding.*`                                   |
+| 11  | `sync_er_finding_control` (AFTER INSERT OR UPDATE OF control_id OR DELETE) writes to entity_reference               | `0034_sprint22_where_used_event_bus.sql:310`        | Side-effect only, doesn't touch `finding`                                  |
+| 12  | Drizzle `returning()` reads RETURNING columns into JS row                                                           | drizzle-orm internals                               | `row.controlId === body.data.controlId`                                    |
+| 13  | Wave-23 verifier (route.ts:189-209) compares input vs row; no mismatch → no throw                                   | `route.ts:200`                                      | OK                                                                         |
+| 14  | tx commits; route returns 201 with `{data: {...row}}`                                                               | `route.ts:235`                                      | Client sees 201                                                            |
+| 15  | Subsequent `GET /api/v1/findings` reads `finding.controlId` and exposes in projection                               | `route.ts:417`                                      | **Prod reports: null**                                                     |
 
 Steps 8–14 each have a candidate failure mode (next section).
 
@@ -88,6 +88,7 @@ fires (`expected != null && actual !== expected` → throws) — UNLESS the
 
 Wait — under that interpretation Wave-23 would throw and we'd see a 500
 with `mismatches`. We don't. So either:
+
 - the stale image predates Wave-23 too (collapses into H1), or
 - the runtime `finding` schema object has `controlId` but Drizzle is
   mapping it to a no-op SQL column (very unlikely, but…)
@@ -214,17 +215,17 @@ ssh hetzner "docker exec arctos-db psql -U grc -d grc_platform -c \"SELECT name,
 
 ## 3. Critical evidence on the repo side (static-analysis findings)
 
-| Check | Result | Citation |
-|-------|--------|----------|
-| SQL migrations that DROP / RENAME `finding.control_id`, `audit_id`, `risk_id`, `control_test_id` | **None found** across 0001–0346. The only finding-touching migrations are 0011 (create), 0034 (sync_er_finding_control trigger), 0077 (global_tag_system — unrelated), 0290 (audit_checklist_item enum widening, no finding change), 0293 (finding_severity enum widening), 0331 (ADD COLUMN process_id, process_step_id), 0338 (CREATE INDEX on audit_id). | `Grep -i finding packages/db/drizzle/*.sql` |
-| BEFORE-INSERT trigger on `finding` that could null FK columns | `finding_auto_create_work_item` exists but only fires `WHEN (NEW.work_item_id IS NULL)`. Body sets `NEW.work_item_id` only. **Cannot null `control_id`.** | `packages/db/drizzle/0011_flimsy_lifeguard.sql:495-524` |
-| RLS policies that strip columns | All `finding` policies are row-level `FOR ALL USING (...)`; no per-column policy, no `WITH CHECK` clause. Cannot rewrite column values. | `packages/db/drizzle/0011_flimsy_lifeguard.sql:333-337,384-387` |
-| Drizzle column-name mapping | `controlId: uuid("control_id")` ✅ — `controlTestId: uuid("control_test_id")` ✅ — `riskId: uuid("risk_id")` ✅ — `auditId: uuid("audit_id")` ✅ | `packages/db/src/schema/control.ts:328-333` |
-| `requireModule` early-return that skips body parse | `requireModule` returns a `Response` if module disabled; route does `if (moduleCheck) return moduleCheck;` (route.ts:86). Returns BEFORE `req.json()` — but that just means we never insert, we don't insert-with-null-FK. | `apps/web/src/app/api/v1/findings/route.ts:85-86` |
-| Zod schema silently strips fields via `.optional()` | `createFindingSchema` declares each FK as `.uuid().optional()`. Optional just means the key can be absent; values that ARE present are kept. **No silent strip.** | `packages/shared/src/schemas/control.ts:258-261` |
-| Drizzle journal coverage | `_journal.json` only lists 25 entries (0000–0024). Migrations 0025–0346 exist as `.sql` files but are not in the journal. `db:migrate-all` reads all `.sql` files anyway, so this only matters if prod uses `db:migrate`. | `packages/db/drizzle/meta/_journal.json` |
-| Audit triggers as the writer of the null | `audit_trigger AFTER INSERT OR UPDATE OR DELETE ON finding` only inserts to `audit_log`, doesn't update the source row. | `packages/db/drizzle/0011_flimsy_lifeguard.sql:418` |
-| where-used trigger as the writer of the null | `sync_er_finding_control AFTER INSERT OR UPDATE OF control_id OR DELETE` only writes to `entity_reference`. Doesn't update the source row. | `packages/db/drizzle/0034_sprint22_where_used_event_bus.sql:310-312` |
+| Check                                                                                            | Result                                                                                                                                                                                                                                                                                                                                                      | Citation                                                             |
+| ------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------- |
+| SQL migrations that DROP / RENAME `finding.control_id`, `audit_id`, `risk_id`, `control_test_id` | **None found** across 0001–0346. The only finding-touching migrations are 0011 (create), 0034 (sync_er_finding_control trigger), 0077 (global_tag_system — unrelated), 0290 (audit_checklist_item enum widening, no finding change), 0293 (finding_severity enum widening), 0331 (ADD COLUMN process_id, process_step_id), 0338 (CREATE INDEX on audit_id). | `Grep -i finding packages/db/drizzle/*.sql`                          |
+| BEFORE-INSERT trigger on `finding` that could null FK columns                                    | `finding_auto_create_work_item` exists but only fires `WHEN (NEW.work_item_id IS NULL)`. Body sets `NEW.work_item_id` only. **Cannot null `control_id`.**                                                                                                                                                                                                   | `packages/db/drizzle/0011_flimsy_lifeguard.sql:495-524`              |
+| RLS policies that strip columns                                                                  | All `finding` policies are row-level `FOR ALL USING (...)`; no per-column policy, no `WITH CHECK` clause. Cannot rewrite column values.                                                                                                                                                                                                                     | `packages/db/drizzle/0011_flimsy_lifeguard.sql:333-337,384-387`      |
+| Drizzle column-name mapping                                                                      | `controlId: uuid("control_id")` ✅ — `controlTestId: uuid("control_test_id")` ✅ — `riskId: uuid("risk_id")` ✅ — `auditId: uuid("audit_id")` ✅                                                                                                                                                                                                            | `packages/db/src/schema/control.ts:328-333`                          |
+| `requireModule` early-return that skips body parse                                               | `requireModule` returns a `Response` if module disabled; route does `if (moduleCheck) return moduleCheck;` (route.ts:86). Returns BEFORE `req.json()` — but that just means we never insert, we don't insert-with-null-FK.                                                                                                                                  | `apps/web/src/app/api/v1/findings/route.ts:85-86`                    |
+| Zod schema silently strips fields via `.optional()`                                              | `createFindingSchema` declares each FK as `.uuid().optional()`. Optional just means the key can be absent; values that ARE present are kept. **No silent strip.**                                                                                                                                                                                           | `packages/shared/src/schemas/control.ts:258-261`                     |
+| Drizzle journal coverage                                                                         | `_journal.json` only lists 25 entries (0000–0024). Migrations 0025–0346 exist as `.sql` files but are not in the journal. `db:migrate-all` reads all `.sql` files anyway, so this only matters if prod uses `db:migrate`.                                                                                                                                   | `packages/db/drizzle/meta/_journal.json`                             |
+| Audit triggers as the writer of the null                                                         | `audit_trigger AFTER INSERT OR UPDATE OR DELETE ON finding` only inserts to `audit_log`, doesn't update the source row.                                                                                                                                                                                                                                     | `packages/db/drizzle/0011_flimsy_lifeguard.sql:418`                  |
+| where-used trigger as the writer of the null                                                     | `sync_er_finding_control AFTER INSERT OR UPDATE OF control_id OR DELETE` only writes to `entity_reference`. Doesn't update the source row.                                                                                                                                                                                                                  | `packages/db/drizzle/0034_sprint22_where_used_event_bus.sql:310-312` |
 
 ### Anything weird I found
 
@@ -274,15 +275,15 @@ curl -sS -X POST https://prod.arctos.example/api/v1/_debug/finding-insert-trace 
 }
 ```
 
-| Trace shape | Diagnosis |
-|---|---|
-| `direct-sql.result.control_id === CTL_ID` AND `drizzle.result.controlId === CTL_ID` | The DB persists, ORM persists. The bug is downstream of insert. Look at the GET projection or post-commit triggers. Pursue **H4** or **H7**. |
-| `direct-sql.result.control_id === CTL_ID` AND `drizzle.result.controlId === null` | Drizzle is dropping the column at insert time. Strong **H2** (stale compiled schema). |
-| `direct-sql.result.control_id === null` AND `drizzle.result.controlId === null` | The DB itself is dropping the value. Look for a trigger that doesn't appear in this repo (run the trigger inventory in H4). |
-| Both arms `error` with `42P01` (relation doesn't exist) | Schema migration didn't run. **H3.** |
-| Both arms `error` with `42501` (RLS blocks) | The endpoint runs without `app.current_org_id` set — known issue from "Anything weird" #2 above. Fix by wrapping in `withAuditContext` or adding `SET LOCAL app.bypass_rls = 'true'` at the top of the route. Not a bug indicator. |
-| `direct-sql.error` "violates foreign key constraint finding_work_item_id_work_item_id_fk" | "Anything weird" #3 — the trace's `gen_random_uuid()` for work_item_id always fails the FK. Fix the trace, not the bug. |
-| `enabled: false` / 404 | Env var `ARCTOS_DEBUG_TRACE_ENABLED=1` and `ARCTOS_DEBUG_TOKEN=<token>` are not set on the running container. Set them via `docker exec arctos-web env` or restart with `-e`. |
+| Trace shape                                                                               | Diagnosis                                                                                                                                                                                                                          |
+| ----------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `direct-sql.result.control_id === CTL_ID` AND `drizzle.result.controlId === CTL_ID`       | The DB persists, ORM persists. The bug is downstream of insert. Look at the GET projection or post-commit triggers. Pursue **H4** or **H7**.                                                                                       |
+| `direct-sql.result.control_id === CTL_ID` AND `drizzle.result.controlId === null`         | Drizzle is dropping the column at insert time. Strong **H2** (stale compiled schema).                                                                                                                                              |
+| `direct-sql.result.control_id === null` AND `drizzle.result.controlId === null`           | The DB itself is dropping the value. Look for a trigger that doesn't appear in this repo (run the trigger inventory in H4).                                                                                                        |
+| Both arms `error` with `42P01` (relation doesn't exist)                                   | Schema migration didn't run. **H3.**                                                                                                                                                                                               |
+| Both arms `error` with `42501` (RLS blocks)                                               | The endpoint runs without `app.current_org_id` set — known issue from "Anything weird" #2 above. Fix by wrapping in `withAuditContext` or adding `SET LOCAL app.bypass_rls = 'true'` at the top of the route. Not a bug indicator. |
+| `direct-sql.error` "violates foreign key constraint finding_work_item_id_work_item_id_fk" | "Anything weird" #3 — the trace's `gen_random_uuid()` for work_item_id always fails the FK. Fix the trace, not the bug.                                                                                                            |
+| `enabled: false` / 404                                                                    | Env var `ARCTOS_DEBUG_TRACE_ENABLED=1` and `ARCTOS_DEBUG_TOKEN=<token>` are not set on the running container. Set them via `docker exec arctos-web env` or restart with `-e`.                                                      |
 
 ### Alternative: env-flag path
 
