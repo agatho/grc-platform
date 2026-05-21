@@ -188,6 +188,7 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
+      undefined as never,
     );
     expect(res.status).toBe(200);
     expect(withAuthMock).toHaveBeenCalledWith(
@@ -222,6 +223,7 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
+      undefined as never,
     );
     expect(res.status).toBe(503);
     const body = (await res.json()) as {
@@ -239,6 +241,7 @@ describe("W24-C1: GET /api/v1/audit-log/integrity/continuity", () => {
       await import("../../app/api/v1/audit-log/integrity/continuity/route");
     const res = await GET(
       new Request("http://localhost/api/v1/audit-log/integrity/continuity"),
+      undefined as never,
     );
     expect(res.status).toBe(403);
   });
@@ -428,7 +431,10 @@ describe("W24-D4: GET /api/v1/tprm/concentration", () => {
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
     const { GET } = await import("../../app/api/v1/tprm/concentration/route");
-    await GET(new Request("http://localhost/api/v1/tprm/concentration"));
+    await GET(
+      new Request("http://localhost/api/v1/tprm/concentration"),
+      undefined as never,
+    );
     expect(withAuthMock).toHaveBeenCalledWith(
       "admin",
       "risk_manager",
@@ -497,6 +503,7 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
       await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
+      undefined as never,
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -528,6 +535,7 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
       await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
+      undefined as never,
     );
     expect(res.status).toBe(404);
   });

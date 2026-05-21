@@ -109,13 +109,10 @@ export async function POST(req: Request) {
         })
         .returning();
 
-      const directResult = await tx.execute<{
-        id: string;
-        control_id: string | null;
-        audit_id: string | null;
-        risk_id: string | null;
-        control_test_id: string | null;
-      }>(sql`
+      // tx.execute<T> isn't typed in the withAuditContext callback
+      // (tx is inferred as a bare connection). Cast through unknown
+      // → array of rows; we only read the FK columns below.
+      const directResult = (await tx.execute(sql`
         INSERT INTO finding (
           org_id, work_item_id, title, severity, source,
           control_id, audit_id, risk_id, control_test_id,
@@ -135,7 +132,13 @@ export async function POST(req: Request) {
           ${ctx.userId}
         )
         RETURNING id, control_id, audit_id, risk_id, control_test_id;
-      `);
+      `)) as unknown as Array<{
+        id: string;
+        control_id: string | null;
+        audit_id: string | null;
+        risk_id: string | null;
+        control_test_id: string | null;
+      }>;
       const rows = Array.isArray(directResult) ? directResult : [];
       localTraces.push({
         stage: "direct-sql-insert",
