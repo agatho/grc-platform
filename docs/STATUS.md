@@ -34,10 +34,13 @@ Ziel: alle 13 Wave-24-Items des QA-Reports (`docs/qa-reports/claude-code-wave24-
 
 - `0346_seed_bcm_security_external_auditor_users.sql`: Login-User `bcm@meridian.test`, `security@meridian.test`, `ext-auditor@meridian.test` (alle Passwort `WaveQA-2026!`). Rollen `bcm_manager`, `security_analyst`, `external_auditor` waren bereits im `user_role`-Enum.
 
-### Block A1 — Debug-Endpoint deployed, Live-Verification deferred (0/1)
+### Block A1 — ✅ CLOSED 2026-05-21 (Wave-24 deploy fixed it)
 
-- `POST /api/v1/_debug/finding-insert-trace` deployed: läuft denselben Payload durch (a) Raw-SQL-INSERT und (b) Drizzle-Insert, gibt beide Resultate zurück. Aktiviert über `ARCTOS_DEBUG_TRACE_ENABLED=1` oder `x-arctos-debug-token`-Header — sonst 404 in Production. Live-Trace gegen Prod offen, sobald SSH-Zugriff wieder gegeben ist (fail2ban-Block).
-- Diagnose-Pfade dokumentiert: Direct-SQL OK + Drizzle null → ORM-Bug; beide null → DB-Trigger/RLS; beide OK → Route-Handler.
+A1 schliesst nach fünf Wellen. Root-Cause: **H1 (stale prod build)** — die 40-%-Top-Hypothese aus `docs/audits/wave-24-a1-hypothesis.md` war richtig. Der Wave-24-Deploy (PR #218) brachte den post-Wave-22 Code im Findings-Insert-Handler (`route.ts:166–169` — `controlId`, `controlTestId`, `riskId`, `auditId` in den Drizzle-Insert übergeben) zum ersten Mal live auf prod. Verifiziert via Direct-POST + GET-Round-Trip am 2026-05-21 13:49 UTC: `controlId` persistiert end-to-end.
+
+Der Diagnose-Endpoint unter `_debug/finding-insert-trace/` war nie erreichbar — Next.js-App-Router behandelt `_<name>`-Ordner als _private folders_ und schliesst sie still vom Routing aus. Same trap wie Wave-23.3 `_meta`. Endpoint + Trace-Script + Skip-Integration-Test sind im A1-Closure-Commit entfernt.
+
+**Lesson archived:** when prod misbehaves but repo HEAD looks correct, **check `/api/v1/meta/build` SHA vs `git log origin/main -1` FIRST** before opening any hypothesis-tree. A1 verlor 5 Wellen an deploy-vs-code-Confusion.
 
 ### Pilot-Readiness-Gate erweitert
 

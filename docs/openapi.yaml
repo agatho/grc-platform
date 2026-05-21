@@ -19,40 +19,6 @@ components:
       bearerFormat: JWT
       description: Session cookie-based auth via Auth.js. Values in security[].bearerAuth[] are REQUIRED role names.
 paths:
-  "/api/v1/_debug/finding-insert-trace":
-    post:
-      summary: POST /api/v1/_debug/finding-insert-trace
-      tags:
-        - _debug
-      security:
-        - 
-          bearerAuth:
-            - admin
-      parameters: []
-      responses:
-        "200":
-          description: OK
-        "201":
-          description: Created / Updated
-          content:
-            "application/json":
-              schema:
-                type: object
-        "401":
-          description: Unauthorized
-        "403":
-          description: Forbidden
-        "422":
-          description: Validation failed
-          content:
-            "application/json":
-              schema:
-                type: object
-                properties:
-                  error:
-                    type: string
-                  details:
-                    type: object
   "/api/v1/academy/certificates":
     get:
       summary: GET /api/v1/academy/certificates

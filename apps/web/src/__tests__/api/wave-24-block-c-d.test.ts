@@ -542,52 +542,25 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
 });
 
 // ───────────────────────────────────────────────────────────────
-// A1 — debug endpoint is gated by env / token
+// A1 — CLOSED 2026-05-21
 // ───────────────────────────────────────────────────────────────
+//
+// The five-wave-stale finding-FK persistence bug was finally
+// resolved when the Wave-24 deploy carried the post-Wave-22
+// finding insert code (route.ts:166–169) to production. Verified
+// via direct POST /api/v1/findings round-trip on prod
+// (controlId persisted through to GET).
+//
+// The diagnostic endpoint at /api/v1/_debug/finding-insert-trace
+// was never reachable: `_<name>` folders are Next.js App Router
+// "private folders" that get silently excluded from routing —
+// same trap that bit Wave-23.3 with `_meta`. We discovered this
+// while trying to wire up the trace; by the time the fix would
+// have been to rename `_debug → debug-trace`, the direct POST
+// /findings test had already confirmed A1 was already fixed by
+// the deploy itself.
+//
+// The endpoint + tests are removed in this commit. If a similar
+// "FKs go missing" symptom returns, write a new diagnostic route
+// at a NON-underscore-prefixed path.
 
-describe("W24-A1: POST /api/v1/_debug/finding-insert-trace", () => {
-  it("returns 404 when ARCTOS_DEBUG_TRACE_ENABLED is not set and no token", async () => {
-    const previousEnabled = process.env.ARCTOS_DEBUG_TRACE_ENABLED;
-    const previousToken = process.env.ARCTOS_DEBUG_TOKEN;
-    delete process.env.ARCTOS_DEBUG_TRACE_ENABLED;
-    delete process.env.ARCTOS_DEBUG_TOKEN;
-    try {
-      const { POST } =
-        await import("../../app/api/v1/_debug/finding-insert-trace/route");
-      const res = await POST(
-        new Request("http://localhost/api/v1/_debug/finding-insert-trace", {
-          method: "POST",
-          body: "{}",
-          headers: { "content-type": "application/json" },
-        }),
-      );
-      expect(res.status).toBe(404);
-    } finally {
-      if (previousEnabled !== undefined)
-        process.env.ARCTOS_DEBUG_TRACE_ENABLED = previousEnabled;
-      if (previousToken !== undefined)
-        process.env.ARCTOS_DEBUG_TOKEN = previousToken;
-    }
-  });
-
-  it("returns 401 when enabled but unauthenticated", async () => {
-    process.env.ARCTOS_DEBUG_TRACE_ENABLED = "1";
-    withAuthMock.mockResolvedValue(
-      Response.json({ error: "Unauthorized" }, { status: 401 }),
-    );
-    try {
-      const { POST } =
-        await import("../../app/api/v1/_debug/finding-insert-trace/route");
-      const res = await POST(
-        new Request("http://localhost/api/v1/_debug/finding-insert-trace", {
-          method: "POST",
-          body: "{}",
-          headers: { "content-type": "application/json" },
-        }),
-      );
-      expect(res.status).toBe(401);
-    } finally {
-      delete process.env.ARCTOS_DEBUG_TRACE_ENABLED;
-    }
-  });
-});

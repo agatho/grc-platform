@@ -171,10 +171,11 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 - **`0346_seed_bcm_security_external_auditor_users.sql`**: Login-User `bcm@meridian.test`, `security@meridian.test`, `ext-auditor@meridian.test` (alle Passwort `WaveQA-2026!`). Rollen `bcm_manager`, `security_analyst`, `external_auditor` waren bereits im `user_role`-Enum. Damit haben Alpha-Tester 12 rollen-distinkte Accounts in Meridian.
 
-#### Block A1 — Diagnose-Endpoint, Live-Trace deferred
+#### Block A1 — ✅ CLOSED 2026-05-21 (5 Wellen, H1 war korrekt)
 
-- **`POST /api/v1/_debug/finding-insert-trace`** deployed. Läuft denselben Payload durch (a) Raw-SQL-INSERT und (b) Drizzle-Insert innerhalb `withAuditContext` (kritisch — vorherige Iteration hatte das vergessen und RLS hätte beide Pfade blockiert). Aktiviert über `ARCTOS_DEBUG_TRACE_ENABLED=1` oder `x-arctos-debug-token`-Header — sonst 404 in Production.
-- **Hypothesis Doc** `docs/audits/wave-24-a1-hypothesis.md` ranked 7 Theorien, Top-2: (H1, 40%) Stale Prod-Build, (H2, 35%) Stale Compiled Drizzle-Schema. Inklusive 10-Minuten-Runbook für den nächsten SSH-Operator.
+- A1 schliesst. Root-Cause **H1 — stale prod build** (40-%-Top-Hypothese). Der Wave-24-Deploy brachte den post-Wave-22 Findings-Insert-Code (`route.ts:166–169`) zum ersten Mal live auf prod. Verifiziert via direct POST/GET-Round-Trip 2026-05-21 13:49 UTC: `controlId` persistiert.
+- **Der Diagnose-Endpoint war nie erreichbar.** Er lebte unter `apps/web/src/app/api/v1/_debug/finding-insert-trace/` — Next.js-App-Router behandelt `_<name>`-Ordner als _private folders_ und schliesst sie still vom Routing aus. Same trap wie Wave-23.3 `_meta`. Endpoint + Script + Integration-Test-Scaffold via cleanup-Commit entfernt.
+- **Lesson:** "/api/v1/meta/build SHA vs git log origin/main -1" ist der 60-Sekunden-Test der A1 sofort gelöst hätte. 5 Wellen vermeidbarem Debugging. Memory: `feedback_stale_build_mimics_code_bug.md`.
 
 #### Cross-Cutting
 

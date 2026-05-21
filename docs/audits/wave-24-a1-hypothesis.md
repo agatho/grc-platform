@@ -1,7 +1,29 @@
 # Wave 24 — A1 Hypothesis: `POST /findings` drops cross-module FKs
 
-**Status:** open across Waves 19, 20, 21, 22, 23. This document gives the next
-operator a 10-minute runbook once SSH access to the prod host is back.
+**Status:** ✅ **CLOSED 2026-05-21** after five waves. Root cause: **H1 — stale
+prod build** (the 40 % top-of-list hypothesis below was correct).
+
+The Wave-24 deploy (carrying PR #218) brought the post-Wave-22 finding insert
+code to production (`apps/web/src/app/api/v1/findings/route.ts:166-169` now
+passes `controlId`, `controlTestId`, `riskId`, `auditId` into the Drizzle
+insert). Verified by direct round-trip on prod 2026-05-21 13:49 UTC:
+
+```
+POST /api/v1/findings {controlId:"d0000000-…-1101", title:"a1", severity:…, source:"audit"}
+  → 201 {data:{id:"8f797a3a-…", controlId:"d0000000-…-1101", …}}
+GET /api/v1/findings/8f797a3a-…
+  → {data:{id:"8f797a3a-…", controlId:"d0000000-…-1101", …}}
+```
+
+The diagnostic endpoint at `_debug/finding-insert-trace/` was never reachable —
+Next.js silently excludes `_<name>` folders from routing. The hypothesis runbook
+below is preserved for archive in case a similar symptom recurs on a future
+migration. The endpoint + script + integration-test scaffold are removed in the
+same commit that closes this doc.
+
+---
+
+## Original hypothesis (archived)
 
 **Bug shape.** `POST /api/v1/findings` with body
 `{controlId: <valid uuid>, ...}` returns 201, but a subsequent
