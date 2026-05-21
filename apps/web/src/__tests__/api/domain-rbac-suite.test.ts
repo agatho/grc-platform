@@ -185,7 +185,9 @@ const SPECS: RouteSpec[] = [
     name: "POST /api/v1/bcms/bia",
     routePath: "../../app/api/v1/bcms/bia/route",
     method: "POST",
-    expectedRoles: ["admin", "risk_manager"],
+    // #WAVE25-B2: bcm_manager added — BCM Manager's primary workflow
+    // is the BIA lifecycle, so they need POST.
+    expectedRoles: ["admin", "risk_manager", "bcm_manager"],
     expectedModule: "bcms",
     urlPath: "/api/v1/bcms/bia",
   },

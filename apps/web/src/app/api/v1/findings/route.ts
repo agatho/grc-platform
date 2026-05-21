@@ -347,28 +347,65 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     conditions.push(inArray(finding.source, sourceCheck.values));
   }
 
+  // #WAVE25-B1: UUID-typed filters were pushed into the WHERE clause
+  // without validation. Postgres then rejected the parameter cast on
+  // any non-UUID value (e.g. `?controlId=not-a-uuid`), bubbling up as
+  // a 500. Same as the W24-B2 fix but for UUID-typed FK filters
+  // instead of enum-typed status filters. Invalid value → 422 with a
+  // structured body naming the rejected param. Empty string is treated
+  // the same as a missing filter so callers can no-op cleanly.
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  const validateUuidParam = (
+    paramName: string,
+    raw: string | null,
+  ): { value: string | null; error: Response | null } => {
+    if (!raw || raw.trim() === "") return { value: null, error: null };
+    if (!UUID_RE.test(raw)) {
+      return {
+        value: null,
+        error: Response.json(
+          {
+            error: "Validation failed",
+            detail: `Invalid UUID for '${paramName}': ${raw}`,
+            invalidParam: paramName,
+          },
+          { status: 422 },
+        ),
+      };
+    }
+    return { value: raw, error: null };
+  };
+
   // Control filter
-  const controlId = searchParams.get("controlId");
-  if (controlId) {
-    conditions.push(eq(finding.controlId, controlId));
+  const controlCheck = validateUuidParam(
+    "controlId",
+    searchParams.get("controlId"),
+  );
+  if (controlCheck.error) return controlCheck.error;
+  if (controlCheck.value) {
+    conditions.push(eq(finding.controlId, controlCheck.value));
   }
 
   // Audit filter -- scope findings to a single audit execution
-  const auditId = searchParams.get("auditId");
-  if (auditId) {
-    conditions.push(eq(finding.auditId, auditId));
+  const auditCheck = validateUuidParam("auditId", searchParams.get("auditId"));
+  if (auditCheck.error) return auditCheck.error;
+  if (auditCheck.value) {
+    conditions.push(eq(finding.auditId, auditCheck.value));
   }
 
   // Risk filter -- list findings linked to a risk (Audit-ERM feedback loop)
-  const riskId = searchParams.get("riskId");
-  if (riskId) {
-    conditions.push(eq(finding.riskId, riskId));
+  const riskCheck = validateUuidParam("riskId", searchParams.get("riskId"));
+  if (riskCheck.error) return riskCheck.error;
+  if (riskCheck.value) {
+    conditions.push(eq(finding.riskId, riskCheck.value));
   }
 
   // Owner filter
-  const ownerId = searchParams.get("ownerId");
-  if (ownerId) {
-    conditions.push(eq(finding.ownerId, ownerId));
+  const ownerCheck = validateUuidParam("ownerId", searchParams.get("ownerId"));
+  if (ownerCheck.error) return ownerCheck.error;
+  if (ownerCheck.value) {
+    conditions.push(eq(finding.ownerId, ownerCheck.value));
   }
 
   // Search

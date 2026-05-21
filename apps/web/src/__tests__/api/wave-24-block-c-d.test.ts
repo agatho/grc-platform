@@ -85,6 +85,9 @@ vi.mock("@grc/db", () => ({
     deletedAt: "deletedAt",
   },
   auditLog: {},
+  // #WAVE25-C3: esrsMetric needed by the schema endpoint which now
+  // resolves a real metric for the example body.
+  esrsMetric: { id: "id", orgId: "orgId", unit: "unit" },
 }));
 
 vi.mock("@grc/auth", () => ({
@@ -563,4 +566,3 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
 // The endpoint + tests are removed in this commit. If a similar
 // "FKs go missing" symptom returns, write a new diagnostic route
 // at a NON-underscore-prefixed path.
-
