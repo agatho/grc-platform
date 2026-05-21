@@ -85,6 +85,9 @@ vi.mock("@grc/db", () => ({
     deletedAt: "deletedAt",
   },
   auditLog: {},
+  // #WAVE25-C3: esrsMetric needed by the schema endpoint which now
+  // resolves a real metric for the example body.
+  esrsMetric: { id: "id", orgId: "orgId", unit: "unit" },
 }));
 
 vi.mock("@grc/auth", () => ({
