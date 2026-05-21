@@ -4,17 +4,18 @@
 
 import { db, task, notification, user } from "@grc/db";
 import { eq, and, lt, isNull, notInArray, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface OverdueTaskResult {
   processed: number;
   errors: string[];
 }
 
-export async function processOverdueTasks(): Promise<OverdueTaskResult> {
-  const errors: string[] = [];
-  const now = new Date();
-
-  console.log(`[cron:overdue-tasks] Starting at ${now.toISOString()}`);
+export const processOverdueTasks = withCronInstrumentation(
+  "overdue-tasks",
+  async (): Promise<OverdueTaskResult> => {
+    const errors: string[] = [];
+    const now = new Date();
 
   // Find all tasks where due_date < NOW() and status is not terminal/overdue
   const overdueTasks = await db
@@ -36,10 +37,9 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
       ),
     );
 
-  if (overdueTasks.length === 0) {
-    console.log("[cron:overdue-tasks] No overdue tasks found");
-    return { processed: 0, errors: [] };
-  }
+    if (overdueTasks.length === 0) {
+      return { processed: 0, errors: [] };
+    }
 
   // Batch update all found tasks to status='overdue'
   const taskIds = overdueTasks.map((t) => t.id);
@@ -54,12 +54,13 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
       .where(
         and(sql`${task.id} = ANY(${taskIds}::uuid[])`, isNull(task.deletedAt)),
       );
-  } catch (err) {
-    const message = err instanceof Error ? err.message : String(err);
-    errors.push(`Batch status update failed: ${message}`);
-    console.error("[cron:overdue-tasks] Batch update error:", message);
-    return { processed: 0, errors };
-  }
+    } catch (err) {
+      // In-result error counter kept for downstream callers; the wrapper
+      // also logs a structured 'error' phase entry.
+      const message = err instanceof Error ? err.message : String(err);
+      errors.push(`Batch status update failed: ${message}`);
+      return { processed: 0, errors };
+    }
 
   // Create notifications for each overdue task
   for (const overdueTask of overdueTasks) {
@@ -111,16 +112,9 @@ export async function processOverdueTasks(): Promise<OverdueTaskResult> {
     } catch (err) {
       const message = err instanceof Error ? err.message : String(err);
       errors.push(`Notification for task ${overdueTask.id}: ${message}`);
-      console.error(
-        `[cron:overdue-tasks] Notification error for task ${overdueTask.id}:`,
-        message,
-      );
     }
   }
 
-  console.log(
-    `[cron:overdue-tasks] Processed ${overdueTasks.length} tasks, ${errors.length} errors`,
-  );
-
-  return { processed: overdueTasks.length, errors };
-}
+    return { processed: overdueTasks.length, errors };
+  },
+);

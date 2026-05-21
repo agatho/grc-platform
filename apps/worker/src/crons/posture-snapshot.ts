@@ -17,6 +17,7 @@ import {
 import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
 import { computeSecurityPosture } from "@grc/shared";
 import type { PostureData, PostureDomain } from "@grc/shared";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface PostureSnapshotResult {
   orgsProcessed: number;
@@ -24,12 +25,13 @@ interface PostureSnapshotResult {
   errors: number;
 }
 
-export async function processPostureSnapshot(): Promise<PostureSnapshotResult> {
-  const now = new Date();
-  const snapshotDate = now.toISOString().split("T")[0];
-  console.log(`[cron:posture-snapshot] Starting at ${now.toISOString()}`);
+export const processPostureSnapshot = withCronInstrumentation(
+  "posture-snapshot",
+  async (): Promise<PostureSnapshotResult> => {
+    const now = new Date();
+    const snapshotDate = now.toISOString().split("T")[0];
 
-  let orgsProcessed = 0;
+    let orgsProcessed = 0;
   let snapshotsCreated = 0;
   let errors = 0;
 
@@ -70,21 +72,15 @@ export async function processPostureSnapshot(): Promise<PostureSnapshotResult> {
 
       snapshotsCreated++;
       orgsProcessed++;
-    } catch (err) {
+    } catch {
+      // Wrapper logs structured error; bump per-org counter.
       errors++;
-      console.error(
-        `[cron:posture-snapshot] Error for org ${org.id}:`,
-        err instanceof Error ? err.message : String(err),
-      );
     }
   }
 
-  console.log(
-    `[cron:posture-snapshot] Done. Orgs: ${orgsProcessed}, Snapshots: ${snapshotsCreated}, Errors: ${errors}`,
-  );
-
-  return { orgsProcessed, snapshotsCreated, errors };
-}
+    return { orgsProcessed, snapshotsCreated, errors };
+  },
+);
 
 async function collectPostureData(orgId: string): Promise<PostureData> {
   const [assetStats] = await db

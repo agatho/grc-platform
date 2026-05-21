@@ -8,6 +8,7 @@ import {
   organization,
 } from "@grc/db";
 import { eq, and, sql, isNull, lte } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface Nis2DeadlineResult {
   orgsProcessed: number;
@@ -16,11 +17,12 @@ interface Nis2DeadlineResult {
   errors: number;
 }
 
-export async function processNis2DeadlineMonitor(): Promise<Nis2DeadlineResult> {
-  const now = new Date();
-  console.log(`[cron:nis2-deadline-monitor] Starting at ${now.toISOString()}`);
+export const processNis2DeadlineMonitor = withCronInstrumentation(
+  "nis2-deadline-monitor",
+  async (): Promise<Nis2DeadlineResult> => {
+    const now = new Date();
 
-  let orgsProcessed = 0;
+    let orgsProcessed = 0;
   let overdueReports = 0;
   let upcomingAlerts = 0;
   let errors = 0;
@@ -78,31 +80,20 @@ export async function processNis2DeadlineMonitor(): Promise<Nis2DeadlineResult> 
 
         upcomingAlerts += upcomingRows.length;
 
-        // In production: create notifications and tasks for overdue/upcoming
-        for (const report of overdueRows) {
-          console.log(
-            `[cron:nis2-deadline-monitor] OVERDUE: ${report.incidentElementId} - ${report.reportType} - deadline: ${report.deadlineAt}`,
-          );
-        }
-      } catch (err) {
+        // In production: create notifications and tasks for overdue/upcoming.
+        // Per-incident details are visible via the dashboard; we don't
+        // emit per-incident log lines from the cron.
+        void overdueRows;
+      } catch {
+        // Wrapper logs structured error; bump the per-org counter.
         errors++;
-        console.error(
-          `[cron:nis2-deadline-monitor] Error processing org ${org.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
       }
     }
-  } catch (err) {
+  } catch {
+    // Wrapper logs structured error; bump the fatal counter.
     errors++;
-    console.error(
-      "[cron:nis2-deadline-monitor] Fatal error:",
-      err instanceof Error ? err.message : String(err),
-    );
   }
 
-  console.log(
-    `[cron:nis2-deadline-monitor] Done: ${orgsProcessed} orgs, ${overdueReports} overdue, ${upcomingAlerts} upcoming, ${errors} errors`,
-  );
-
-  return { orgsProcessed, overdueReports, upcomingAlerts, errors };
-}
+    return { orgsProcessed, overdueReports, upcomingAlerts, errors };
+  },
+);

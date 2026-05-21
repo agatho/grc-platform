@@ -3,6 +3,7 @@
 
 import { db, benchmarkSubmission, benchmarkPool } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface BenchmarkAggregatorResult {
   poolsUpdated: number;
@@ -10,7 +11,9 @@ interface BenchmarkAggregatorResult {
   errors: number;
 }
 
-export async function processBenchmarkAggregator(): Promise<BenchmarkAggregatorResult> {
+export const processBenchmarkAggregator = withCronInstrumentation(
+  "benchmark-aggregator",
+  async (): Promise<BenchmarkAggregatorResult> => {
   const result: BenchmarkAggregatorResult = {
     poolsUpdated: 0,
     submissionsProcessed: 0,
@@ -79,10 +82,12 @@ export async function processBenchmarkAggregator(): Promise<BenchmarkAggregatorR
     }
 
     result.submissionsProcessed = (aggregations as Array<unknown>).length;
-  } catch (err) {
-    console.error("[worker] benchmark-aggregator: Failed:", err);
-    result.errors++;
-  }
+  } catch {
+      // Wrapper logs structured error; bump the in-result error counter
+      // for downstream callers that inspect it.
+      result.errors++;
+    }
 
-  return result;
-}
+    return result;
+  },
+);
