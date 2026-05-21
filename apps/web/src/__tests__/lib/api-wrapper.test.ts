@@ -48,7 +48,9 @@ vi.mock("@/lib/api-errors", () => ({
         }),
         {
           status: 422,
-          headers: { "content-type": "application/problem+json; charset=utf-8" },
+          headers: {
+            "content-type": "application/problem+json; charset=utf-8",
+          },
         },
       ),
   },
