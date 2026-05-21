@@ -192,10 +192,15 @@ describe("W24-B2: GET /api/v1/findings status filter validation", () => {
     ["identified", 200],
     ["closed", 200],
     ["identified,closed", 200],
-  ])("accepts %s → %i", async (status, expected) => {
+  ])("accepts %s → %i", { timeout: 15_000 }, async (status, expected) => {
     // For count() second `.select` returns a chainable resolving to
     // a single row. Easiest: configure the chainable to flatten —
     // we override the second call to return chainable with count row.
+    //
+    // Linux CI runners take ~4s for the first case (cold import of
+    // findings/route.ts + its deep dependency graph: drizzle-orm,
+    // postgres, @grc/db schema closure, @grc/shared zod schemas).
+    // Bumped from the 5s default to 15s so even a slow runner clears.
     let calls = 0;
     mockDb.select.mockImplementation(() => {
       calls += 1;
