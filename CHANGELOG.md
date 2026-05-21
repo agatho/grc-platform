@@ -141,6 +141,50 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-24 — Alpha-Quality-Closure (2026-05-20/21, PR #218 in CI)
+
+12 von 13 QA-Items aus `docs/qa-reports/claude-code-wave24-prompt.md` geliefert; nur A1's _Live-Verification_ braucht noch SSH-Zugriff auf Hetzner (fail2ban-Block am 2026-05-20). Damit ist die Plattform invite-ready für Alpha-Tester.
+
+#### Block B — Wave-23-Regressionen reverten
+
+- **B1 — `/audit-log/integrity` für CISO + `compliance_officer` wieder lesbar.** Wave-23 hatte das auf admin/auditor verschärft, was den quartalsweisen Hash-Chain-Health-Check des CISO blockierte (ISO 27001 A.12.4.2). Archive + Anchor bleiben unverändert admin/auditor.
+- **B2 — `GET /findings?status=invalid` → 422 statt 500.** Wave-23 cast-Trick crashte den Server. Jetzt validiert `validateEnumParam()` Status/Severity/Source vor der WHERE-Clause.
+- **B3 — Neue `GET /erm/management-summary`.** Vorher 405. Liefert `risksSummary` / `controlsSummary` / `findingsSummary` für CISO/Compliance-Quartalsreviews. POST refaktoriert auf `buildSummary()`-Helper (gemeinsamer Code-Pfad).
+- **B4 — Neue `POST /control-tests`.** Vorher 405. Wiederverwendet `executeTestSchema` aus `@grc/shared`. RBAC: admin/risk_manager/auditor/control_owner/compliance_officer.
+
+#### Block C — Hash-Chain v3 Continuity
+
+- **ADR-026** (`docs/ADR-026-hash-chain-v3-migration.md`) erklärt warum v3-Rehash ein _Continuity-Event_ ist (Row-Content unverändert, nur Formel-Update) und nicht eine Re-Genesis. Drei Continuity-Beweise: Verifiable Rehash, Migration Anchor, FreeTSA-Timestamp Anchor.
+- **Neue `GET /audit-log/integrity/continuity`** liefert `versionDistribution`, `migrationAnchors`, `freeTsaAnchors` und `totalContinuityValid`-Flag. 503 wenn Continuity nicht beweisbar. Externe Auditoren können in O(1) prüfen statt die ganze Chain herunterzuladen.
+
+#### Block D — Workflow-Endpoint-Lücken
+
+- **D1 — PUT/DELETE `/risks/{id}/treatments/{tid}`** für `process_owner` + `control_owner` geöffnet. Wer ein Treatment via POST anlegen darf, darf es jetzt auch progressen.
+- **D2 — `POST /vendors/{id}/risk-assessments`** für `vendor_manager` + `contract_manager` geöffnet. Alias `/vendors/{id}/assessments` re-exportiert canonical handler (Identity-Test pin't das fest).
+- **D3 — Neue `GET /vendors/{id}/risk-profile`** aggregiert Vendor-Row + Latest-Assessment + Engaged-Contract-Spend + DORA/LkSG-Flags in eine Payload (statt 4–5 Round-Trips).
+- **D4 — `GET /tprm/concentration`** für `vendor_manager` + `contract_manager` + `ciso` geöffnet (DORA Art. 28).
+- **D5 — Neue `GET /audit-mgmt/audits/{id}/activities/schema`** liefert benötigte/optionale Felder + Beispiel-Body. Behebt Wave-24-QA-422-Loop bei Audit-Activity-Anlage.
+- **D6 — Neue `GET /esg/measurements/schema`** mit analogem Discovery-Format für ESG-Measurements.
+- **D7 — `GET /compliance/coverage` 3-stufiger Fallback** (Snapshot → Live-`control_framework_coverage` → Catalog-Entry-Heuristik) + `?framework=`-Filter. Realistische Coverage-Zahlen auf frischen Tenants ohne vorherigen Gap-Analysis-Run.
+
+#### Block E — Seed-Migration für neue Test-User
+
+- **`0346_seed_bcm_security_external_auditor_users.sql`**: Login-User `bcm@meridian.test`, `security@meridian.test`, `ext-auditor@meridian.test` (alle Passwort `WaveQA-2026!`). Rollen `bcm_manager`, `security_analyst`, `external_auditor` waren bereits im `user_role`-Enum. Damit haben Alpha-Tester 12 rollen-distinkte Accounts in Meridian.
+
+#### Block A1 — Diagnose-Endpoint, Live-Trace deferred
+
+- **`POST /api/v1/_debug/finding-insert-trace`** deployed. Läuft denselben Payload durch (a) Raw-SQL-INSERT und (b) Drizzle-Insert innerhalb `withAuditContext` (kritisch — vorherige Iteration hatte das vergessen und RLS hätte beide Pfade blockiert). Aktiviert über `ARCTOS_DEBUG_TRACE_ENABLED=1` oder `x-arctos-debug-token`-Header — sonst 404 in Production.
+- **Hypothesis Doc** `docs/audits/wave-24-a1-hypothesis.md` ranked 7 Theorien, Top-2: (H1, 40%) Stale Prod-Build, (H2, 35%) Stale Compiled Drizzle-Schema. Inklusive 10-Minuten-Runbook für den nächsten SSH-Operator.
+
+#### Cross-Cutting
+
+- **Alpha-Tester-Onboarding-Doc** `docs/ALPHA_INVITE.md` für eingeladene Kolleg:innen: Login-URL, 15 Accounts × Rollen, 15-Minuten-Tour pro Rolle, Known Limitations, Issue-Reporting-Template.
+- **STATUS.md** auf Wave-24 aktualisiert.
+- **Alpha-Blocker-Audit** `docs/audits/wave-24-alpha-blockers-status-2026-05-21.md`: 7 von 8 Findings aus dem 2026-05-18 Overnight-Audit sind in Waves 23/24 abgearbeitet; 1 PARTIAL (refresh_token-Spalten-Kommentar — in PR korrigiert); 0 OPEN.
+- **Pilot-Readiness-Gate-Script** erweitert um B1/B2/B3/B4/C1/D1-Checks. Künftige RBAC-Verschärfungen, die einen dieser Wave-24-Contracts brechen, fallen am Pre-Merge-Gate auf.
+- **27 neue Vitest-Tests** in 2 Files (`wave-24-block-b.test.ts` + `wave-24-block-c-d.test.ts`) plus skipped Integration-Test (`findings-fk-persistence.test.ts`) als Harness für A1's Live-Trace-Run.
+- **AES-GCM-Tamper-Test entflakt** (PR #219): Test ist seit Einführung 1-von-16 rot wegen `.replace(/.$/, "0")`-No-Op wenn Ciphertext auf `'0'` endet. Jetzt XOR-Flip des ersten authTag-Nibbles → 0% Flake-Rate.
+
 ### Wave-23 — CLOSED: alle 3 Acceptance-Items live auf prod verifiziert (2026-05-17)
 
 Wave 23 ist geschlossen. Sechs PRs (#167 → #172), drei live-verifizierte Acceptance-Items, plus zwei weitere Drift-Klassen entdeckt + permanent geschlossen:

@@ -2,7 +2,59 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-18 (abends)**. Letzte Migration: `0343_audit_chain_concurrency_lock.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 23** (closed 2026-05-17, PRs #167–#172). Aktive Arbeit heute: **Alpha-Readiness-Audit + Overnight-Deep-Audit** (PRs #185–#197). Letzter Modul-Overhaul: **TPRM** (PR #180).
+> Stand: **2026-05-21**. Letzte Migration: `0346_seed_bcm_security_external_auditor_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** (Wave 24 + DR-Drill #217 merged).
+
+## Wave 24 — Alpha-Quality-Closure 2026-05-20 (PR #218, awaiting CI)
+
+Ziel: alle 13 Wave-24-Items des QA-Reports (`docs/qa-reports/claude-code-wave24-prompt.md`) schließen, damit die Plattform invite-ready ist. **12 von 13 geliefert**; nur A1's _Live-Verification_ braucht noch Hetzner-SSH-Zugriff.
+
+### Block B — Wave-23-Regressionen reverten (4/4)
+
+- B1: CISO + `compliance_officer` wieder `GET /audit-log/integrity` erlaubt (vorher 403). Archive + Anchor bleiben admin/auditor.
+- B2: `GET /findings?status=…` validiert Enum vor der Query; ungültige Werte → 422 statt 500.
+- B3: Neue `GET /erm/management-summary` (vorher 405). POST refaktoriert auf `buildSummary()`-Helper.
+- B4: Neue `POST /control-tests` (vorher 405). Wiederverwendet `executeTestSchema` aus `@grc/shared`.
+
+### Block C — Hash-Chain v3 Continuity (1/1)
+
+- ADR-026 (`docs/ADR-026-hash-chain-v3-migration.md`) dokumentiert, warum v3-Rehash ein Continuity-Event ist (Row-Content unverändert, nur Formel-Update).
+- Neue `GET /audit-log/integrity/continuity` liefert Version-Distribution, Migration-Anchors, FreeTSA-Receipts und `totalContinuityValid`-Flag.
+
+### Block D — Workflow-Endpoint-Lücken (7/7)
+
+- D1: PUT/DELETE `/risks/{id}/treatments/{tid}` für `process_owner` + `control_owner` geöffnet.
+- D2: `POST /vendors/{id}/risk-assessments` für `vendor_manager` + `contract_manager` geöffnet; Alias `/vendors/{id}/assessments` re-exported.
+- D3: Neue `GET /vendors/{id}/risk-profile` aggregiert Vendor + Latest-Assessment + Engaged-Contract-Spend + DORA/LkSG-Flags.
+- D4: `GET /tprm/concentration` für `vendor_manager` + `contract_manager` + `ciso` geöffnet.
+- D5: Neue `GET /audit-mgmt/audits/{id}/activities/schema` — Schema-Discovery + Beispiel-Body.
+- D6: Neue `GET /esg/measurements/schema` — Schema-Discovery + Beispiel-Body.
+- D7: `GET /compliance/coverage` mit 3-stufiger Fallback-Logik (Snapshot → Live-`control_framework_coverage` → Catalog-Entry-Heuristik) + `?framework=`-Filter.
+
+### Block E — Seed-Migration für neue Test-User (1/1)
+
+- `0346_seed_bcm_security_external_auditor_users.sql`: Login-User `bcm@meridian.test`, `security@meridian.test`, `ext-auditor@meridian.test` (alle Passwort `WaveQA-2026!`). Rollen `bcm_manager`, `security_analyst`, `external_auditor` waren bereits im `user_role`-Enum.
+
+### Block A1 — Debug-Endpoint deployed, Live-Verification deferred (0/1)
+
+- `POST /api/v1/_debug/finding-insert-trace` deployed: läuft denselben Payload durch (a) Raw-SQL-INSERT und (b) Drizzle-Insert, gibt beide Resultate zurück. Aktiviert über `ARCTOS_DEBUG_TRACE_ENABLED=1` oder `x-arctos-debug-token`-Header — sonst 404 in Production. Live-Trace gegen Prod offen, sobald SSH-Zugriff wieder gegeben ist (fail2ban-Block).
+- Diagnose-Pfade dokumentiert: Direct-SQL OK + Drizzle null → ORM-Bug; beide null → DB-Trigger/RLS; beide OK → Route-Handler.
+
+### Pilot-Readiness-Gate erweitert
+
+- `scripts/pilot-readiness-gate.sh` checkt jetzt zusätzlich B1–B4, C1, D1 vor jedem Merge. Memory: zukünftige RBAC-Verschärfungen, die einen dieser Wave-24-Contracts brechen, fallen am Pre-Merge-Gate auf.
+
+### Alpha-Tester-Doku
+
+- `docs/ALPHA_INVITE.md` — selbstgehosteter Onboarding-Guide für eingeladene Kolleg:innen: Login-URL, 15 Accounts mit Rollen, 15-Minuten-Tour pro Rolle, bekannte Limits, Issue-Reporting.
+
+## Wave 23 + DR-Drill-Fixes 2026-05-19/20 (PRs #215, #216, #217, alle merged)
+
+- **#215** Defensive-Fixes: DNS-Rebind-Schutz, SSRF-Validation, URL-Safety in Server-Helper.
+- **#216** DR-Drill-Sentinel-Columns (Drizzle-Migration-Tabelle existiert nicht, also Schema-Drift via Marker-Spalten erkennen).
+- **#217** DR-Drill-Chain-Partitionierung (per-Tenant `previous_hash_scope` statt globalem LAG; threshold 10 für historische Rehash-Artefakte).
+- DR-Drill auf Hetzner re-runable, sobald SSH zurück ist.
+
+## Alpha-Readiness-Audit 2026-05-18 (Overnight) — Stand Memory
 
 ## Alpha-Readiness-Audit 2026-05-18 (Overnight)
 

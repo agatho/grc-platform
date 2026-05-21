@@ -5,11 +5,21 @@ import { eq, and, isNull, desc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // POST /api/v1/vendors/:id/risk-assessments — Create risk assessment
+//
+// #WAVE24-D2: RBAC widened to include vendor_manager + contract_manager.
+// They own the vendor lifecycle; locking them out of risk-assessment
+// creation forced them to delegate to risk_manager for every routine
+// vendor review.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "vendor_manager",
+    "contract_manager",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("tprm", ctx.orgId, req.method);

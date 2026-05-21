@@ -11,11 +11,22 @@ import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 
 // PUT /api/v1/risks/:id/treatments/:treatmentId — Update treatment
+//
+// #WAVE24-D1: was admin/risk_manager only, which broke the obvious
+// workflow of "I'm a process owner, I created a treatment via POST
+// (allowed there), now I can't progress its status". Widened to the
+// 1st-line operational roles (process_owner, control_owner) that
+// already have POST. Same widening applies to DELETE below.
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string; treatmentId: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
@@ -159,7 +170,14 @@ export async function DELETE(
   req: Request,
   { params }: { params: Promise<{ id: string; treatmentId: string }> },
 ) {
-  const ctx = await withAuth("admin", "risk_manager");
+  // #WAVE24-D1: mirrors PUT widening. Deleting a treatment is a 1st-line
+  // operational action when the owner decides the treatment is obsolete.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "process_owner",
+    "control_owner",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);

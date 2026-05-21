@@ -250,40 +250,101 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     isNull(finding.deletedAt),
   ];
 
+  // #WAVE24-B2: pre-validate enum filters before pushing into the
+  // WHERE-clause. Wave-23 cast-trick blew up the PG enum coercion when
+  // callers passed bogus values like `?status=open` (5xx with RequestID
+  // 81d9101ffa46f648). Now any non-enum value returns 422 with a
+  // structured body listing the legal options.
+  const FINDING_STATUS_VALUES = [
+    "identified",
+    "in_remediation",
+    "remediated",
+    "verified",
+    "accepted",
+    "closed",
+  ] as const;
+  const FINDING_SEVERITY_VALUES = [
+    "positive",
+    "conforming",
+    "opportunity_for_improvement",
+    "minor_nonconformity",
+    "major_nonconformity",
+    "observation",
+    "recommendation",
+    "improvement_requirement",
+    "insignificant_nonconformity",
+    "significant_nonconformity",
+  ] as const;
+  const FINDING_SOURCE_VALUES = [
+    "control_test",
+    "audit",
+    "incident",
+    "self_assessment",
+    "external",
+  ] as const;
+
+  const validateEnumParam = <T extends readonly string[]>(
+    paramName: string,
+    raw: string | null,
+    allowed: T,
+  ): { values: T[number][]; error: Response | null } => {
+    if (!raw) return { values: [], error: null };
+    const parts = raw
+      .split(",")
+      .map((s) => s.trim())
+      .filter(Boolean);
+    const invalid = parts.filter(
+      (v) => !(allowed as readonly string[]).includes(v),
+    );
+    if (invalid.length > 0) {
+      return {
+        values: [],
+        error: Response.json(
+          {
+            error: "Validation failed",
+            detail: `Invalid value(s) for '${paramName}': ${invalid.join(", ")}. Allowed: ${allowed.join(", ")}.`,
+            invalidParam: paramName,
+            invalidValues: invalid,
+            allowed,
+          },
+          { status: 422 },
+        ),
+      };
+    }
+    return { values: parts as T[number][], error: null };
+  };
+
   // Status filter
-  const statusParam = searchParams.get("status");
-  if (statusParam) {
-    const statuses = statusParam.split(",") as Array<
-      | "identified"
-      | "in_remediation"
-      | "remediated"
-      | "verified"
-      | "accepted"
-      | "closed"
-    >;
-    conditions.push(inArray(finding.status, statuses));
+  const statusCheck = validateEnumParam(
+    "status",
+    searchParams.get("status"),
+    FINDING_STATUS_VALUES,
+  );
+  if (statusCheck.error) return statusCheck.error;
+  if (statusCheck.values.length > 0) {
+    conditions.push(inArray(finding.status, statusCheck.values));
   }
 
   // Severity filter
-  const severityParam = searchParams.get("severity");
-  if (severityParam) {
-    const severities = severityParam.split(",") as Array<
-      | "observation"
-      | "recommendation"
-      | "improvement_requirement"
-      | "insignificant_nonconformity"
-      | "significant_nonconformity"
-    >;
-    conditions.push(inArray(finding.severity, severities));
+  const severityCheck = validateEnumParam(
+    "severity",
+    searchParams.get("severity"),
+    FINDING_SEVERITY_VALUES,
+  );
+  if (severityCheck.error) return severityCheck.error;
+  if (severityCheck.values.length > 0) {
+    conditions.push(inArray(finding.severity, severityCheck.values));
   }
 
   // Source filter
-  const sourceParam = searchParams.get("source");
-  if (sourceParam) {
-    const sources = sourceParam.split(",") as Array<
-      "control_test" | "audit" | "incident" | "self_assessment" | "external"
-    >;
-    conditions.push(inArray(finding.source, sources));
+  const sourceCheck = validateEnumParam(
+    "source",
+    searchParams.get("source"),
+    FINDING_SOURCE_VALUES,
+  );
+  if (sourceCheck.error) return sourceCheck.error;
+  if (sourceCheck.values.length > 0) {
+    conditions.push(inArray(finding.source, sourceCheck.values));
   }
 
   // Control filter

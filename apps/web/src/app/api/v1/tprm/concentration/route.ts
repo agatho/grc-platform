@@ -16,7 +16,18 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 // historical analyses (with their analyst-curated commentary) aren't
 // shadowed by today's compute.
 export const GET = withErrorHandler(async function GET(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  // #WAVE24-D4: vendor_manager + contract_manager added. They own
+  // the vendor + contract data this view aggregates, so locking them
+  // out of their own concentration tile made no sense. CISO read
+  // access is also added — DORA Art. 28 expects the IS-responsible
+  // role to monitor third-party concentration risk.
+  const ctx = await withAuth(
+    "admin",
+    "risk_manager",
+    "vendor_manager",
+    "contract_manager",
+    "ciso",
+  );
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("tprm", ctx.orgId, req.method);
