@@ -32,51 +32,51 @@ export const processPostureSnapshot = withCronInstrumentation(
     const snapshotDate = now.toISOString().split("T")[0];
 
     let orgsProcessed = 0;
-  let snapshotsCreated = 0;
-  let errors = 0;
+    let snapshotsCreated = 0;
+    let errors = 0;
 
-  const orgs = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(isNull(organization.deletedAt));
+    const orgs = await db
+      .select({ id: organization.id })
+      .from(organization)
+      .where(isNull(organization.deletedAt));
 
-  for (const org of orgs) {
-    try {
-      const data = await collectPostureData(org.id);
-      const result = computeSecurityPosture(data);
+    for (const org of orgs) {
+      try {
+        const data = await collectPostureData(org.id);
+        const result = computeSecurityPosture(data);
 
-      // Compute domain scores
-      const domainScores = await computeDomainScores(org.id);
+        // Compute domain scores
+        const domainScores = await computeDomainScores(org.id);
 
-      await db
-        .insert(securityPostureSnapshot)
-        .values({
-          orgId: org.id,
-          overallScore: result.score,
-          factors: result.factors,
-          domainScores,
-          snapshotDate,
-        })
-        .onConflictDoUpdate({
-          target: [
-            securityPostureSnapshot.orgId,
-            securityPostureSnapshot.snapshotDate,
-          ],
-          set: {
+        await db
+          .insert(securityPostureSnapshot)
+          .values({
+            orgId: org.id,
             overallScore: result.score,
             factors: result.factors,
             domainScores,
-            computedAt: new Date(),
-          },
-        });
+            snapshotDate,
+          })
+          .onConflictDoUpdate({
+            target: [
+              securityPostureSnapshot.orgId,
+              securityPostureSnapshot.snapshotDate,
+            ],
+            set: {
+              overallScore: result.score,
+              factors: result.factors,
+              domainScores,
+              computedAt: new Date(),
+            },
+          });
 
-      snapshotsCreated++;
-      orgsProcessed++;
-    } catch {
-      // Wrapper logs structured error; bump per-org counter.
-      errors++;
+        snapshotsCreated++;
+        orgsProcessed++;
+      } catch {
+        // Wrapper logs structured error; bump per-org counter.
+        errors++;
+      }
     }
-  }
 
     return { orgsProcessed, snapshotsCreated, errors };
   },

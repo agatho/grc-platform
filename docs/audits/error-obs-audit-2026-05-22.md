@@ -64,25 +64,25 @@ with `requestId` and the client gets only the requestId. The routes
 below should adopt `withErrorHandler` or, at minimum, drop the message
 from the response.
 
-| File:Line | Risk | Notes |
-| --- | --- | --- |
-| `apps/web/src/app/api/v1/programmes/journeys/[id]/predictive/route.ts:30-43` | **High** | Returns `err.message` **and** `err.stack` (gated only on `NODE_ENV !== "production"` — leaks in staging / preview). |
-| `apps/web/src/app/api/v1/programmes/journeys/[id]/next-actions/route.ts:127-130` | Medium | Returns `reason: message` in body. |
-| `apps/web/src/app/api/v1/programmes/journeys/route.ts:111-119` | Medium | Unique-violation string-match on `err.message` — fragile + leaky. |
-| `apps/web/src/app/api/v1/bi-reports/queries/execute/route.ts:88-90` | Medium | Returns `details: message` from arbitrary SQL execution — most likely to leak schema/table names. |
-| `apps/web/src/app/api/v1/eam/ai/config/validate/route.ts:71-76` | Medium | AI provider error surfaced raw. |
-| `apps/web/src/app/api/v1/automation/rules/[id]/test/route.ts:73-79` | Medium | Dry-run path returns user-rule eval errors verbatim. |
-| `apps/web/src/app/api/v1/import/upload/route.ts:121-127` | Medium | Returns `details: err.message` from FS / parse errors. |
-| `apps/web/src/app/api/v1/import/[jobId]/validate/route.ts:110-116` | Medium | Same shape as above. |
-| `apps/web/src/app/api/v1/import/[jobId]/execute/route.ts:101, 112` | Medium | Per-row + outer 500 both leak. |
-| `apps/web/src/app/api/v1/import/templates/[entityType]/route.ts:36-40` | Low | Leaks parser detail. |
-| `apps/web/src/app/api/v1/export/bulk/route.ts:65-73` | Medium | Drizzle / CSV streaming errors → raw `err.message`. |
-| `apps/web/src/app/api/v1/dashboards/[id]/data/route.ts:101-107` | Medium | Per-widget fetch errors echoed back. |
-| `apps/web/src/app/api/v1/dmn/[id]/batch-test/route.ts:49-55` | Low | Eval-engine errors per test case. |
-| `apps/web/src/app/api/v1/webhooks/[id]/test/route.ts:109-118` | Low | Test-button only, but returns DNS / TLS error strings raw. |
-| `apps/web/src/app/api/v1/processes/bulk-approve/route.ts:225-231` | Low | Per-row error array contains raw `(err as Error).message`. |
-| `apps/web/src/app/api/v1/processes/bulk/route.ts:141-146` | Low | Same. |
-| `apps/web/src/app/api/v1/translations/import/route.ts:185-191, 220-223, 339-341` | Low | XLIFF / CSV parser errors echoed verbatim. |
+| File:Line                                                                        | Risk     | Notes                                                                                                               |
+| -------------------------------------------------------------------------------- | -------- | ------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/api/v1/programmes/journeys/[id]/predictive/route.ts:30-43`     | **High** | Returns `err.message` **and** `err.stack` (gated only on `NODE_ENV !== "production"` — leaks in staging / preview). |
+| `apps/web/src/app/api/v1/programmes/journeys/[id]/next-actions/route.ts:127-130` | Medium   | Returns `reason: message` in body.                                                                                  |
+| `apps/web/src/app/api/v1/programmes/journeys/route.ts:111-119`                   | Medium   | Unique-violation string-match on `err.message` — fragile + leaky.                                                   |
+| `apps/web/src/app/api/v1/bi-reports/queries/execute/route.ts:88-90`              | Medium   | Returns `details: message` from arbitrary SQL execution — most likely to leak schema/table names.                   |
+| `apps/web/src/app/api/v1/eam/ai/config/validate/route.ts:71-76`                  | Medium   | AI provider error surfaced raw.                                                                                     |
+| `apps/web/src/app/api/v1/automation/rules/[id]/test/route.ts:73-79`              | Medium   | Dry-run path returns user-rule eval errors verbatim.                                                                |
+| `apps/web/src/app/api/v1/import/upload/route.ts:121-127`                         | Medium   | Returns `details: err.message` from FS / parse errors.                                                              |
+| `apps/web/src/app/api/v1/import/[jobId]/validate/route.ts:110-116`               | Medium   | Same shape as above.                                                                                                |
+| `apps/web/src/app/api/v1/import/[jobId]/execute/route.ts:101, 112`               | Medium   | Per-row + outer 500 both leak.                                                                                      |
+| `apps/web/src/app/api/v1/import/templates/[entityType]/route.ts:36-40`           | Low      | Leaks parser detail.                                                                                                |
+| `apps/web/src/app/api/v1/export/bulk/route.ts:65-73`                             | Medium   | Drizzle / CSV streaming errors → raw `err.message`.                                                                 |
+| `apps/web/src/app/api/v1/dashboards/[id]/data/route.ts:101-107`                  | Medium   | Per-widget fetch errors echoed back.                                                                                |
+| `apps/web/src/app/api/v1/dmn/[id]/batch-test/route.ts:49-55`                     | Low      | Eval-engine errors per test case.                                                                                   |
+| `apps/web/src/app/api/v1/webhooks/[id]/test/route.ts:109-118`                    | Low      | Test-button only, but returns DNS / TLS error strings raw.                                                          |
+| `apps/web/src/app/api/v1/processes/bulk-approve/route.ts:225-231`                | Low      | Per-row error array contains raw `(err as Error).message`.                                                          |
+| `apps/web/src/app/api/v1/processes/bulk/route.ts:141-146`                        | Low      | Same.                                                                                                               |
+| `apps/web/src/app/api/v1/translations/import/route.ts:185-191, 220-223, 339-341` | Low      | XLIFF / CSV parser errors echoed verbatim.                                                                          |
 
 Out-of-scope but worth a follow-up: every SSO / SCIM route
 (`auth/sso/saml/callback`, `auth/sso/oidc/{login,callback}`,
@@ -171,6 +171,7 @@ durationMs, ...stats})`.
 
 Only 16 of 1,183 route files invoke `getRequestId()` directly. The
 other 1,167 rely on:
+
 - **The wrapper** (125 files) — gets requestId for free.
 - **Nothing** (~1,042 files) — error responses carry no correlation ID,
   so operators cannot grep the logs from a customer ticket.
@@ -183,6 +184,7 @@ comment lines 31-33).
 
 Critical paths confirmed to be missing requestId despite custom error
 handling:
+
 - All of `apps/web/src/app/api/v1/import/**` — high-failure surface.
 - All of `apps/web/src/app/api/v1/export/**`.
 - `apps/web/src/app/api/v1/bi-reports/queries/execute/route.ts` — runs

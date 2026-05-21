@@ -43,10 +43,7 @@ type CronHandler<R extends CronResult> = () => Promise<R>;
 
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-worker";
 
-function emit(
-  level: "info" | "error",
-  payload: Record<string, unknown>,
-): void {
+function emit(level: "info" | "error", payload: Record<string, unknown>): void {
   const line = JSON.stringify({
     ts: new Date().toISOString(),
     level,

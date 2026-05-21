@@ -23,9 +23,8 @@ describe("checkApiKeyExpiry", () => {
   });
 
   it("returns {revoked, expiringSoon} counts when no expired keys exist", async () => {
-    const { checkApiKeyExpiry } = await import(
-      "../../src/crons/api-key-expiry-check"
-    );
+    const { checkApiKeyExpiry } =
+      await import("../../src/crons/api-key-expiry-check");
     const result = await checkApiKeyExpiry();
     expect(result).toMatchObject({
       revoked: expect.any(Number),

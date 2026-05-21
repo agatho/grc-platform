@@ -25,6 +25,7 @@ Out of scope: migrations 0300+ (Wave 23+ — already well-indexed), historical p
 
 **File:** `apps/web/src/app/api/v1/cross/risk-sync/route.ts:138-188`
 **Query pattern:**
+
 ```ts
 .where(and(
   eq(risk.orgId, ctx.orgId),
@@ -32,16 +33,19 @@ Out of scope: migrations 0300+ (Wave 23+ — already well-indexed), historical p
   eq(risk.catalogEntryId, draft.catalogEntryId),
 ))
 ```
+
 The endpoint runs this `SELECT id` inside `for (const draft of batch.drafts)`, then `UPDATE` or `INSERT`. Each iteration is a full transaction round-trip. `batch.drafts` can be hundreds of rows when reconciling DPIA + FRIA + AI-incident sources against the central register.
 
 **Why slow:** `risk` schema (`packages/db/src/schema/risk.ts:199-207`) declares only `(orgId, status)`, `ownerId`, `riskScoreResidual`, and `(orgId, riskAppetiteExceeded)`. `catalogSource` + `catalogEntryId` have no index. With `orgId`-filtered scans + filter on two NULLable cols, planner falls back to seq-scan after the `orgId` selectivity is exhausted.
 
 **Fix:**
+
 ```sql
 CREATE INDEX CONCURRENTLY risk_catalog_link_idx
   ON risk (org_id, catalog_source, catalog_entry_id)
   WHERE catalog_entry_id IS NOT NULL;
 ```
+
 This is also the natural unique-key for the upsert; a partial unique index would let us replace the loop with a single `INSERT ... ON CONFLICT (org_id, catalog_source, catalog_entry_id) DO UPDATE`.
 
 ---
@@ -50,6 +54,7 @@ This is also the natural unique-key for the upsert; a partial unique index would
 
 **File:** `apps/web/src/app/api/v1/ics/ces/recompute/route.ts:46-148`
 **Query pattern:** For each `ctrl` in `controls`:
+
 1. `SELECT controlTest WHERE controlId = ? AND orgId = ? ORDER BY testDate DESC LIMIT 4`
 2. `SELECT finding WHERE controlId = ? AND orgId = ? AND deletedAt IS NULL AND status NOT IN ('closed','verified')`
 3. `SELECT controlEffectivenessScore WHERE controlId = ? AND orgId = ?`
@@ -65,6 +70,7 @@ This is also the natural unique-key for the upsert; a partial unique index would
 
 **File:** `apps/web/src/app/api/v1/erm/residual/recompute/route.ts:23-56`
 **Query pattern:** For each `r` in `risks`:
+
 ```ts
 .from(riskControl)
 .innerJoin(controlEffectivenessScore, ...)
@@ -75,6 +81,7 @@ This is also the natural unique-key for the upsert; a partial unique index would
 **Why slow:** Same shape as F-02 — full org risk register, two queries each. ~500 risks × 2 = 1,000 round-trips per call.
 
 **Fix:** Single SQL aggregate:
+
 ```sql
 WITH ces_avg AS (
   SELECT rc.risk_id, AVG(ces.score) AS avg_ces, COUNT(*) AS ces_count
@@ -91,6 +98,7 @@ UPDATE risk r
 FROM ces_avg ca
 WHERE ca.risk_id = r.id AND r.org_id = $1 AND r.deleted_at IS NULL AND ca.ces_count > 0;
 ```
+
 No new index needed (`riskControl.riskId`, `controlEffectivenessScore.controlId` already covered).
 
 ---
@@ -99,6 +107,7 @@ No new index needed (`riskControl.riskId`, `controlEffectivenessScore.controlId`
 
 **File:** `apps/web/src/app/api/v1/portal/dd/[token]/responses/route.ts:32-90`
 **Query pattern:**
+
 ```ts
 for (const resp of body.data.responses) {
   const question = await db.query.questionnaireQuestion.findFirst({ where: eq(...) });
@@ -120,10 +129,12 @@ for (const resp of body.data.responses) {
 **Problem:** Every TPRM dashboard / vendor-list endpoint scopes by `WHERE org_id = ?`. Without an `org_id` index, Postgres falls back to a seq-scan of the table or relies on `vendor_id`'s correlation (which only helps when filtering by a known vendor). For a multi-tenant table this is a tenant-isolation perf risk as soon as one tenant accumulates >10k DD records.
 
 **Fix:**
+
 ```sql
 CREATE INDEX CONCURRENTLY vdd_org_status_idx
   ON vendor_due_diligence (org_id, status);
 ```
+
 The status column is co-filtered in most list endpoints; composite gives both org-scope and status-scope coverage.
 
 ---
@@ -132,14 +143,18 @@ The status column is co-filtered in most list endpoints; composite gives both or
 
 **File:** `apps/web/src/app/api/v1/dd-sessions/[id]/results/route.ts:54-63`
 **Query pattern:**
+
 ```ts
 for (const section of sections) {
-  const sectionQuestions = await db.select().from(questionnaireQuestion)
+  const sectionQuestions = await db
+    .select()
+    .from(questionnaireQuestion)
     .where(eq(questionnaireQuestion.sectionId, section.id))
     .orderBy(asc(questionnaireQuestion.sortOrder));
   allQuestions.push(...sectionQuestions);
 }
 ```
+
 **Why slow:** A questionnaire template has ~10–20 sections; results endpoint round-trips per section instead of one `inArray(sectionId, sectionIds)` query. Less hot than F-04 (read-only, called once per result view).
 
 **Fix:** Replace loop with `inArray(questionnaireQuestion.sectionId, sections.map(s => s.id))`. No new index — `qq_section_idx` already covers it.
@@ -168,13 +183,16 @@ for (const section of sections) {
 
 **File:** `packages/db/src/schema/isms.ts:309-316`; used by `isms/dashboard/route.ts:119-138`
 **Query pattern:**
+
 ```ts
 .where(and(eq(securityIncident.orgId, orgId), isNull(securityIncident.deletedAt)))
 .orderBy(sql`${securityIncident.detectedAt} DESC`)
 .limit(10)
 ```
+
 **Why slow:** `si_org_idx` filters by org, then Postgres must sort by `detected_at` for that subset. On large incident histories this becomes a Sort node above a Bitmap Index Scan.
 **Fix:**
+
 ```sql
 CREATE INDEX CONCURRENTLY si_org_detected_at_idx
   ON security_incident (org_id, detected_at DESC)
@@ -187,17 +205,21 @@ CREATE INDEX CONCURRENTLY si_org_detected_at_idx
 
 **File:** `packages/db/src/schema/process.ts:151-158`; used by `processes/bulk-approve/route.ts:123-146`
 **Query pattern:**
+
 ```ts
 .where(and(eq(processVersion.processId, processId), eq(processVersion.isCurrent, true)))
 .limit(1);
 ```
+
 **Why slow:** `process_version_unique (processId, versionNumber)` exists but doesn't filter by `is_current`. Each "find current version" must scan all versions of a process and filter — small effect per call but bulk-approve loops up to 100×.
 **Fix:**
+
 ```sql
 CREATE INDEX CONCURRENTLY pv_process_current_idx
   ON process_version (process_id)
   WHERE is_current = true;
 ```
+
 Partial index makes "find current version of process X" a unique-row lookup.
 
 ---
@@ -207,12 +229,15 @@ Partial index makes "find current version of process X" a unique-row lookup.
 **File:** `packages/db/src/schema/control.ts:361-370`
 **Indexes:** `(orgId, status)`, `(orgId, severity)`, `controlId`, `controlTestId`, `riskId`, `ownerId`, `processId`, `processStepId`.
 **Query pattern (multiple routes, e.g. `findings/analytics/sla/route.ts:38`):**
+
 ```ts
 .where(and(eq(finding.orgId, orgId), isNull(finding.deletedAt)))
 ```
+
 Findings list pages typically sort by `created_at DESC` for "newest first" — there's no `(orgId, createdAt)` index, so the bitmap-and on `orgId` is followed by a Sort.
 
 **Fix:**
+
 ```sql
 CREATE INDEX CONCURRENTLY finding_org_created_idx
   ON finding (org_id, created_at DESC)
@@ -247,22 +272,22 @@ CREATE INDEX CONCURRENTLY finding_org_created_idx
 
 ## Hot-table index coverage — pass/fail summary
 
-| Table | `org_id` indexed | Status filter combo | Notes |
-|-------|-------------------|---------------------|-------|
-| `risk` | (orgId, status) | (orgId, status) | Missing `(catalogSource, catalogEntryId)` — F-01 |
-| `control` | (orgId, status) | (orgId, status), (orgId, controlType) | OK |
-| `finding` | (orgId, status), (orgId, severity) | OK | Missing `(orgId, createdAt)` for list-by-date — F-11 |
-| `audit_log` | (orgId, createdAt) | yes | Well-indexed (ADR-011 rev.2) |
-| `audit` | (orgId, status), (orgId, auditType) | OK | |
-| `control_test` | (orgId), (orgId, status) | OK | |
-| `security_incident` | (orgId, status), (orgId, severity) | OK | Missing `(orgId, detectedAt)` — F-09 |
-| `vendor` | (orgId, status), (orgId, tier) | OK | |
-| `vendor_due_diligence` | **NO `org_id` idx** | n/a | F-05 |
-| `dd_session` | (orgId, status), `accessToken` unique | OK | |
-| `dd_response` | unique (sessionId, questionId) | OK | |
-| `process` | (orgId), (orgId, status), (orgId, level) | OK | |
-| `process_sign_off` | (orgId), (processId, signedAt) | OK | |
-| `notification` | orgId, (userId, isRead) | OK | |
+| Table                  | `org_id` indexed                         | Status filter combo                   | Notes                                                |
+| ---------------------- | ---------------------------------------- | ------------------------------------- | ---------------------------------------------------- |
+| `risk`                 | (orgId, status)                          | (orgId, status)                       | Missing `(catalogSource, catalogEntryId)` — F-01     |
+| `control`              | (orgId, status)                          | (orgId, status), (orgId, controlType) | OK                                                   |
+| `finding`              | (orgId, status), (orgId, severity)       | OK                                    | Missing `(orgId, createdAt)` for list-by-date — F-11 |
+| `audit_log`            | (orgId, createdAt)                       | yes                                   | Well-indexed (ADR-011 rev.2)                         |
+| `audit`                | (orgId, status), (orgId, auditType)      | OK                                    |                                                      |
+| `control_test`         | (orgId), (orgId, status)                 | OK                                    |                                                      |
+| `security_incident`    | (orgId, status), (orgId, severity)       | OK                                    | Missing `(orgId, detectedAt)` — F-09                 |
+| `vendor`               | (orgId, status), (orgId, tier)           | OK                                    |                                                      |
+| `vendor_due_diligence` | **NO `org_id` idx**                      | n/a                                   | F-05                                                 |
+| `dd_session`           | (orgId, status), `accessToken` unique    | OK                                    |                                                      |
+| `dd_response`          | unique (sessionId, questionId)           | OK                                    |                                                      |
+| `process`              | (orgId), (orgId, status), (orgId, level) | OK                                    |                                                      |
+| `process_sign_off`     | (orgId), (processId, signedAt)           | OK                                    |                                                      |
+| `notification`         | orgId, (userId, isRead)                  | OK                                    |                                                      |
 
 ---
 

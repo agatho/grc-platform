@@ -30,10 +30,11 @@ Coverage: GOOD for `withAuth` (no-session, no-user-id, no-org, role denial, cust
 Gap: `withAuditContext` and `withReadContext` have NO direct unit tests — only exercised transitively via integration tests. Audit-context bleed between transactions (annotation reset to "") is asserted nowhere at the unit level.
 Priority: MEDIUM
 Sketch:
-  - it("withAuditContext sets app.current_org_id / user_id / email / name session vars in a single tx")
-  - it("withAuditContext resets audit_action_detail to '' when annotation is omitted so a previous tx's value cannot bleed")
-  - it("withAuditContext sets audit_action_detail and audit_reason when annotation is passed")
-  - it("withReadContext sets only org_id and user_id, not the audit vars")
+
+- it("withAuditContext sets app.current_org_id / user_id / email / name session vars in a single tx")
+- it("withAuditContext resets audit_action_detail to '' when annotation is omitted so a previous tx's value cannot bleed")
+- it("withAuditContext sets audit_action_detail and audit_reason when annotation is passed")
+- it("withReadContext sets only org_id and user_id, not the audit vars")
 
 ### 2. RBAC enforcement (`packages/auth/src/rbac.ts`, `module-guard.ts`)
 
@@ -42,13 +43,14 @@ Coverage: GOOD for rbac.ts. ZERO for `src/middleware/module-guard.ts` (the only 
 Gap: requireModule never unit-tested. Cache pollution (`module-config-cache`) between tests likely. Preview+POST 403 path is regression-prone.
 Priority: HIGH
 Sketch:
-  - it("requireModule returns 404 problem-json when config is missing")
-  - it("requireModule returns 404 when uiStatus = 'disabled'")
-  - it("requireModule returns 404 when uiStatus = 'maintenance' (does not reveal module exists)")
-  - it("requireModule returns 403 when uiStatus = 'preview' and method = 'POST'")
-  - it("requireModule returns 403 for PUT/PATCH/DELETE in preview, allows GET")
-  - it("requireModule returns null when uiStatus = 'enabled'")
-  - it("module-config-cache: stale entry invalidation when org config changes")
+
+- it("requireModule returns 404 problem-json when config is missing")
+- it("requireModule returns 404 when uiStatus = 'disabled'")
+- it("requireModule returns 404 when uiStatus = 'maintenance' (does not reveal module exists)")
+- it("requireModule returns 403 when uiStatus = 'preview' and method = 'POST'")
+- it("requireModule returns 403 for PUT/PATCH/DELETE in preview, allows GET")
+- it("requireModule returns null when uiStatus = 'enabled'")
+- it("module-config-cache: stale entry invalidation when org config changes")
 
 ### 3. RLS enforcement
 
@@ -69,8 +71,9 @@ Coverage: GOOD — pure transition tables exhaustively tested.
 Gap: `apps/web/src/lib/generic-transitions.ts` (the thin discovery helper) is not unit-tested; emits `allowedNext` + deprecated `knownStatuses` alias. Trivial enough that BACKWARDS-COMPAT regression risk is low, but a test pins the contract.
 Priority: LOW (optional)
 Sketch:
-  - it("buildTransitionsResponse exposes both allowedNext and knownStatuses with the same values")
-  - it("buildTransitionsResponse falls back to 'unknown' when current is null")
+
+- it("buildTransitionsResponse exposes both allowedNext and knownStatuses with the same values")
+- it("buildTransitionsResponse falls back to 'unknown' when current is null")
 
 ### 6. Bulk operations (cap = 100)
 
@@ -84,8 +87,9 @@ Source files: 121. Test files: 119. Untested: `process-mining-conformance.ts`, `
 Coverage: GOOD (98.3 %).
 Priority: LOW
 Sketch:
-  - it("process-mining-conformance: handles empty DB without throwing")
-  - it("soa-programme-backfill: skip when no SoA entries to backfill")
+
+- it("process-mining-conformance: handles empty DB without throwing")
+- it("soa-programme-backfill: skip when no SoA entries to backfill")
 
 ### 8. Sign-off chain (`apps/web/src/lib/sign-off-chain.ts`)
 
@@ -100,13 +104,14 @@ Coverage: NONE for the resolver helper, which uses **raw SQL string interpolatio
 Gap: cache is pollution-prone (no exported reset). SQL injection surface via `entryCode` parameter; manual escaping is the only defense.
 Priority: HIGH (security: raw-SQL builder + shared cache)
 Sketch:
-  - it("resolveCatalogEntry returns null when frameworkCode is null/undefined or entryCode is empty")
-  - it("resolveCatalogEntry caches null misses (second call does not re-query DB)")
-  - it("resolveCatalogEntry caches hits with composite key (catalogEntryId|catalogId)")
-  - it("resolveCatalogEntry escapes single quotes in entryCode so SQL injection (`x' OR '1'='1`) returns null instead of dumping rows")
-  - it("resolveCatalogEntry falls back to verbatim frameworkCode when not in FRAMEWORK_TOKENS table")
-  - it("resolveCatalogEntry filters out inactive catalogs (is_active = false)")
-  - NOTE: tests must reset the module-scoped `cache` Map between cases — pollution-prone.
+
+- it("resolveCatalogEntry returns null when frameworkCode is null/undefined or entryCode is empty")
+- it("resolveCatalogEntry caches null misses (second call does not re-query DB)")
+- it("resolveCatalogEntry caches hits with composite key (catalogEntryId|catalogId)")
+- it("resolveCatalogEntry escapes single quotes in entryCode so SQL injection (`x' OR '1'='1`) returns null instead of dumping rows")
+- it("resolveCatalogEntry falls back to verbatim frameworkCode when not in FRAMEWORK_TOKENS table")
+- it("resolveCatalogEntry filters out inactive catalogs (is_active = false)")
+- NOTE: tests must reset the module-scoped `cache` Map between cases — pollution-prone.
 
 ### 10. Encryption helpers (`packages/shared/src/lib/env-key.ts`)
 
@@ -125,15 +130,16 @@ Coverage: NONE for the central Postgres-error→HTTP mapper that every API route
 Gap: FK/NOT-NULL/CHECK/UNIQUE→422, 22P02 invalid-UUID→422, postgres-js timeout→503, generic→500 mappings are entirely untested at the unit level. Empty-body 500 regressions were the original motivator (2026-05-12 over-night QA) and now have no guard.
 Priority: HIGH
 Sketch:
-  - it("withErrorHandler maps Postgres FK violation (23503) to 422 problem+json")
-  - it("withErrorHandler maps Postgres NOT NULL (23502) to 422")
-  - it("withErrorHandler maps Postgres CHECK (23514) to 422 with constraint name")
-  - it("withErrorHandler maps Postgres UNIQUE (23505) to 422 with conflict field")
-  - it("withErrorHandler maps Postgres invalid_text_representation (22P02) to 422")
-  - it("withErrorHandler maps postgres-js connection timeout to 503")
-  - it("withErrorHandler maps unknown Error to 500 with stable problem+json body (never empty)")
-  - it("withErrorHandler preserves x-request-id in problem body")
-  - it("withErrorHandler logs route + URL + pgCode/pgDetail on every error")
+
+- it("withErrorHandler maps Postgres FK violation (23503) to 422 problem+json")
+- it("withErrorHandler maps Postgres NOT NULL (23502) to 422")
+- it("withErrorHandler maps Postgres CHECK (23514) to 422 with constraint name")
+- it("withErrorHandler maps Postgres UNIQUE (23505) to 422 with conflict field")
+- it("withErrorHandler maps Postgres invalid_text_representation (22P02) to 422")
+- it("withErrorHandler maps postgres-js connection timeout to 503")
+- it("withErrorHandler maps unknown Error to 500 with stable problem+json body (never empty)")
+- it("withErrorHandler preserves x-request-id in problem body")
+- it("withErrorHandler logs route + URL + pgCode/pgDetail on every error")
 
 ### B. `apps/web/src/lib/portal-auth.ts` (DD portal token validation)
 
@@ -141,14 +147,15 @@ Existing: NONE. No `dd-portal` integration test references it directly.
 Coverage: NONE for `validateDdToken` — a public-facing token gate for due-diligence portal sessions.
 Priority: HIGH (security boundary: unauthenticated entry point)
 Sketch:
-  - it("validateDdToken returns 401 when token is missing")
-  - it("validateDdToken returns 401 when token.length < 32")
-  - it("validateDdToken returns 401 when no matching session row")
-  - it("validateDdToken returns 401 when session.expiresAt < now")
-  - it("validateDdToken transitions status from 'invited' to 'in_progress' on first access")
-  - it("validateDdToken does NOT re-transition status on subsequent accesses")
-  - it("validateDdToken appends caller IP to ip_address_log (x-forwarded-for first entry)")
-  - it("validateDdToken falls back to x-real-ip when x-forwarded-for absent")
+
+- it("validateDdToken returns 401 when token is missing")
+- it("validateDdToken returns 401 when token.length < 32")
+- it("validateDdToken returns 401 when no matching session row")
+- it("validateDdToken returns 401 when session.expiresAt < now")
+- it("validateDdToken transitions status from 'invited' to 'in_progress' on first access")
+- it("validateDdToken does NOT re-transition status on subsequent accesses")
+- it("validateDdToken appends caller IP to ip_address_log (x-forwarded-for first entry)")
+- it("validateDdToken falls back to x-real-ip when x-forwarded-for absent")
 
 ### C. `apps/web/src/lib/cascade-runner.ts` (BIA → Asset-Classification cascade)
 
@@ -156,11 +163,12 @@ Existing: NONE for the runner wrapper. Pure cascade covered by `packages/shared/
 Coverage: NONE for the Drizzle-wired wrapper (snapshot-load + upsert).
 Priority: HIGH (one bug here silently mis-classifies assets across orgs)
 Sketch:
-  - it("runBiaCascade: BIA with no process_impact rows touches 0 assets")
-  - it("runBiaCascade: BIA with linked process_asset upserts asset_classification for each linked asset")
-  - it("runBiaCascade: respects org_id boundary — never touches assets in a different org")
-  - it("runBiaCascade: upsert preserves manual overrides (override system at READ time)")
-  - it("runBiaCascade: returns assertsTouched + assertsUpserted + reason")
+
+- it("runBiaCascade: BIA with no process_impact rows touches 0 assets")
+- it("runBiaCascade: BIA with linked process_asset upserts asset_classification for each linked asset")
+- it("runBiaCascade: respects org_id boundary — never touches assets in a different org")
+- it("runBiaCascade: upsert preserves manual overrides (override system at READ time)")
+- it("runBiaCascade: returns assertsTouched + assertsUpserted + reason")
 
 ### D. `apps/web/src/lib/playbook-engine.ts` (421 LOC, incident playbook orchestrator)
 
@@ -168,11 +176,12 @@ Existing: NONE.
 Coverage: NONE for activation, phase-progression, role-resolution, task generation.
 Priority: MEDIUM (incident response is high-impact but rarer hot path)
 Sketch:
-  - it("resolveRoleToUser maps 'incident_responder' to a user with the matching ARCTOS role")
-  - it("resolveRoleToUser returns null when no user in the org has the role")
-  - it("activatePlaybook creates tasks for phase 0 with computed deadlines")
-  - it("progressPhase fires only when isPhaseComplete returns true")
-  - it("matchesSeverityThreshold filters templates correctly")
+
+- it("resolveRoleToUser maps 'incident_responder' to a user with the matching ARCTOS role")
+- it("resolveRoleToUser returns null when no user in the org has the role")
+- it("activatePlaybook creates tasks for phase 0 with computed deadlines")
+- it("progressPhase fires only when isPhaseComplete returns true")
+- it("matchesSeverityThreshold filters templates correctly")
 
 ### E. `apps/web/src/lib/param-validation.ts` (UUID gate on every dynamic route)
 
@@ -180,9 +189,10 @@ Existing: only exercised via wave-24/25 block tests + RLS probes.
 Coverage: MEDIUM — used but no dedicated unit assertions on the UUID-shape regex (relaxed from zod's strict v4 to plain 8-4-4-4-12 hex to accept seed UUIDs like `00000000-0000-0000-0000-000000000001`).
 Priority: MEDIUM (not security-critical but regression-prone — last bumped in WAVE7)
 Sketch:
-  - it("validatePathParam accepts the relaxed RFC-shape UUIDs used in seed data (all-zeros + final 1)")
-  - it("validatePathParam rejects non-hex shapes with 422 problem+json")
-  - it("validatePathParam accepts mixed-case hex")
+
+- it("validatePathParam accepts the relaxed RFC-shape UUIDs used in seed data (all-zeros + final 1)")
+- it("validatePathParam rejects non-hex shapes with 422 problem+json")
+- it("validatePathParam accepts mixed-case hex")
 
 ---
 
