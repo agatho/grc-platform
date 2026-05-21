@@ -159,6 +159,7 @@ Block A (A1 endgame) im Wave-25-Prompt war bei Auftrags-Erstellung schon obsolet
 #### Pilot-Readiness-Gate erweitert
 
 `scripts/pilot-readiness-gate.sh` checkt jetzt zusätzlich:
+
 - W25-B1: `/findings?controlId=not-a-uuid` ≠ 500
 - W25-B2: `POST /bcms/bia` ≠ 403 für admin (proxy für die Rollen-Widening)
 - W25-C1: ISO-27001-Coverage hat `frameworkCount ≥ 1`, ideally `overallCoveragePct > 0`

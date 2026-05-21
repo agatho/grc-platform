@@ -563,4 +563,3 @@ describe("W24-D6: GET /api/v1/esg/measurements/schema", () => {
 // The endpoint + tests are removed in this commit. If a similar
 // "FKs go missing" symptom returns, write a new diagnostic route
 // at a NON-underscore-prefixed path.
-
