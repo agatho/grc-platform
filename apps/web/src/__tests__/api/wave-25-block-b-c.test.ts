@@ -267,6 +267,7 @@ describe("W25-C3: GET /api/v1/esg/measurements/schema", () => {
       await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
+      undefined as never,
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
@@ -286,6 +287,7 @@ describe("W25-C3: GET /api/v1/esg/measurements/schema", () => {
       await import("../../app/api/v1/esg/measurements/schema/route");
     const res = await GET(
       new Request("http://localhost/api/v1/esg/measurements/schema"),
+      undefined as never,
     );
     expect(res.status).toBe(200);
     const body = (await res.json()) as {
