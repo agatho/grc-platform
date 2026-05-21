@@ -10,6 +10,8 @@
 // keep in sync.
 
 import { requireModule } from "@grc/auth";
+import { db, esrsMetric } from "@grc/db";
+import { eq } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
@@ -20,11 +22,31 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const moduleCheck = await requireModule("esg", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
+  // #WAVE25-C3: Wave-24 D6 example used a hardcoded placeholder UUID
+  // for metricId, which made the POST example fail with 404 "Metric
+  // not found in this organization". Now we resolve a real metric
+  // from the caller's org and use its ID in the example so the
+  // schema -> POST flow round-trips successfully out of the box.
+  // Falls back to the placeholder + a hint string when no metric
+  // exists (fresh tenant, no ESG data seeded yet).
+  const [sampleMetric] = await db
+    .select({ id: esrsMetric.id, unit: esrsMetric.unit })
+    .from(esrsMetric)
+    .where(eq(esrsMetric.orgId, ctx.orgId))
+    .limit(1);
+  const exampleMetricId =
+    sampleMetric?.id ?? "00000000-0000-0000-0000-000000000000";
+  const exampleUnit = sampleMetric?.unit ?? "tCO2e";
+  const exampleHint = sampleMetric
+    ? undefined
+    : "No ESG metrics seeded in this org yet — replace metricId with a real UUID from GET /api/v1/esg/metrics before POSTing.";
+
   return Response.json({
     data: {
       endpoint: "/api/v1/esg/measurements",
       method: "POST",
       contentType: "application/json",
+      hint: exampleHint,
       fields: {
         metricId: {
           type: "uuid",
@@ -74,11 +96,11 @@ export const GET = withErrorHandler(async function GET(req: Request) {
         },
       },
       example: {
-        metricId: "00000000-0000-0000-0000-000000000000",
+        metricId: exampleMetricId,
         periodStart: "2026-01-01",
         periodEnd: "2026-03-31",
         value: 1234.56,
-        unit: "tCO2e",
+        unit: exampleUnit,
         dataQuality: "measured",
         source: "Energy meter export Q1-2026",
         notes: "Scope-1 stationary combustion, gas heating.",

@@ -270,19 +270,106 @@ fi
 echo "✓ D1 passed (status=${D1_CODE}; 404/422 expected for stub IDs)"
 
 # ────────────────────────────────────────────────────────────
+# #WAVE25: Block-B / Block-C regression checks. Locks down the
+# four endpoint contracts added in Wave 25 so RBAC narrowing or
+# filter-validation regressions can't sneak back in.
+# ────────────────────────────────────────────────────────────
+
+# W25-B1 — Finding filter rejects bogus UUID with 422, not 500.
+echo ""
+echo "▶ W25-B1: /findings?controlId=not-a-uuid → 422"
+W25_B1=$(curl -sS -m 10 -o /dev/null -w "%{http_code}" \
+  -b "$COOKIE_JAR" "${STAGING_URL}/api/v1/findings?controlId=not-a-uuid")
+if [[ "$W25_B1" == "500" ]]; then
+  echo "::error::W25-B1 GATE FAIL — invalid controlId returned 500 (regression!)"
+  exit 1
+fi
+if [[ "$W25_B1" != "422" ]]; then
+  echo "::warning::W25-B1 unexpected status ${W25_B1} (expected 422)"
+fi
+echo "✓ W25-B1 passed (status=${W25_B1})"
+
+# W25-B2 — POST /bcms/bia not 403 for admin (the underlying widening
+# adds bcm_manager — admin remains allowed).
+echo ""
+echo "▶ W25-B2: POST /bcms/bia not 403 for admin"
+W25_B2=$(curl -sS -m 10 -o /dev/null -w "%{http_code}" \
+  -b "$COOKIE_JAR" -H "content-type: application/json" \
+  -X POST "${STAGING_URL}/api/v1/bcms/bia" \
+  -d '{"invalid":"body"}')
+if [[ "$W25_B2" == "403" ]]; then
+  echo "::error::W25-B2 GATE FAIL — admin got 403 on /bcms/bia POST (regression!)"
+  exit 1
+fi
+echo "✓ W25-B2 passed (status=${W25_B2}; 422 expected for invalid body)"
+
+# W25-C1 — Compliance coverage tile shows iso_27001_2022 > 0%.
+echo ""
+echo "▶ W25-C1: /compliance/coverage?framework=iso_27001_2022 > 0%"
+W25_COV=$(curl -sS -m 15 -b "$COOKIE_JAR" \
+  "${STAGING_URL}/api/v1/compliance/coverage?framework=iso_27001_2022")
+W25_COV_PCT=$(echo "$W25_COV" | jq -r '.data.overallCoveragePct // 0')
+W25_COV_FW=$(echo "$W25_COV" | jq -r '.data.frameworkCount // 0')
+if [[ "$W25_COV_FW" -lt "1" ]]; then
+  echo "::error::W25-C1 GATE FAIL — ISO 27001 frameworkCount=${W25_COV_FW}"
+  exit 1
+fi
+if [[ "$W25_COV_PCT" == "0" ]]; then
+  echo "::warning::W25-C1 ISO 27001 coverage = 0% (migration 0347 should seed >0)"
+fi
+echo "✓ W25-C1 passed (coverage=${W25_COV_PCT}%, frameworks=${W25_COV_FW})"
+
+# W25-C2 — Vendor-assessment schema-discovery endpoint exists.
+echo ""
+echo "▶ W25-C2: /vendors/{id}/assessments/schema returns example body"
+VENDOR_ID=$(curl -fsS -m 10 -b "$COOKIE_JAR" \
+  "${STAGING_URL}/api/v1/vendors?limit=1" | jq -r '.data.items[0].id // empty')
+if [[ -n "$VENDOR_ID" ]]; then
+  W25_C2=$(curl -sS -m 10 -b "$COOKIE_JAR" \
+    "${STAGING_URL}/api/v1/vendors/${VENDOR_ID}/assessments/schema")
+  W25_C2_EXAMPLE=$(echo "$W25_C2" | jq -r '.data.example.assessmentDate // empty')
+  if [[ -z "$W25_C2_EXAMPLE" ]]; then
+    echo "::error::W25-C2 GATE FAIL — schema example missing assessmentDate"
+    echo "$W25_C2"
+    exit 1
+  fi
+  echo "✓ W25-C2 passed (example.assessmentDate=${W25_C2_EXAMPLE})"
+else
+  echo "::warning::W25-C2 skipped (no vendors in staging)"
+fi
+
+# W25-C3 — ESG measurement schema example uses a real metric (no
+# placeholder UUID when the org has seeded metrics).
+echo ""
+echo "▶ W25-C3: /esg/measurements/schema example.metricId is real"
+W25_C3=$(curl -sS -m 10 -b "$COOKIE_JAR" \
+  "${STAGING_URL}/api/v1/esg/measurements/schema")
+W25_C3_MID=$(echo "$W25_C3" | jq -r '.data.example.metricId // empty')
+W25_C3_HINT=$(echo "$W25_C3" | jq -r '.data.hint // empty')
+if [[ "$W25_C3_MID" == "00000000-0000-0000-0000-000000000000" && -z "$W25_C3_HINT" ]]; then
+  echo "::error::W25-C3 GATE FAIL — placeholder metricId without hint (resolver broken)"
+  exit 1
+fi
+echo "✓ W25-C3 passed (metricId=${W25_C3_MID:0:8}...)"
+
+# ────────────────────────────────────────────────────────────
 # Done
 # ────────────────────────────────────────────────────────────
 echo ""
 echo "✅ Pilot-Readiness-Gate PASSED"
 echo "   Staging SHA: ${PROD_SHA:0:8}"
-echo "   A1 controlId persistence: ✓"
-echo "   A2 /admin/branding: ${BRAND_CODE}"
-echo "   C3 /contracts {name}: ${C3_CODE}"
-echo "   B1 /audit-log/integrity: ${B1_CODE}"
-echo "   B2 /findings?status=invalid: ${B2_CODE}"
-echo "   B3 /erm/management-summary: ${B3_CODE}"
-echo "   B4 POST /control-tests: ${B4_CODE}"
-echo "   C1 hash-chain continuity: ${CONT_CLAIM}"
-echo "   D1 treatments PUT (admin): ${D1_CODE}"
+echo "   W23 A1 controlId persistence: ✓"
+echo "   W23 A2 /admin/branding: ${BRAND_CODE}"
+echo "   W23 C3 /contracts {name}: ${C3_CODE}"
+echo "   W24 B1 /audit-log/integrity: ${B1_CODE}"
+echo "   W24 B2 /findings?status=invalid: ${B2_CODE}"
+echo "   W24 B3 /erm/management-summary: ${B3_CODE}"
+echo "   W24 B4 POST /control-tests: ${B4_CODE}"
+echo "   W24 C1 hash-chain continuity: ${CONT_CLAIM}"
+echo "   W24 D1 treatments PUT (admin): ${D1_CODE}"
+echo "   W25 B1 /findings?controlId=invalid: ${W25_B1}"
+echo "   W25 B2 /bcms/bia POST (admin): ${W25_B2}"
+echo "   W25 C1 ISO 27001 coverage: ${W25_COV_PCT}% (${W25_COV_FW} frameworks)"
+echo "   W25 C3 /esg/measurements/schema metricId: ${W25_C3_MID:0:8}..."
 echo "   Hash-Chain mismatches: ${MISMATCHES}"
 exit 0

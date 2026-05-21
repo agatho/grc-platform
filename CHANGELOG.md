@@ -141,6 +141,35 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-25 — Alpha-Quality-Followup (2026-05-21)
+
+Block A (A1 endgame) im Wave-25-Prompt war bei Auftrags-Erstellung schon obsolet — A1 closed 2026-05-21 13:49 UTC unter Wave 24 (siehe unten). Bleibender Scope dieses PRs: 5 Endpoint-Fixes + 1 Demo-Seed + Gate-Erweiterung.
+
+#### Block B — Wave-24-Folge-Regressionen
+
+- **B1 — `/findings?controlId=X` 500 → 422 für invalide UUIDs.** Analog zur W24-B2-Enum-Validierung, jetzt für UUID-typisierte FK-Filter (`controlId`, `auditId`, `riskId`, `ownerId`). Empty-String = no-filter, valid UUID → 200, alles andere → 422 mit `invalidParam`-Hinweis.
+- **B2 — `POST /bcms/bia` für `bcm_manager` geöffnet.** BCM Manager ist die Rolle deren Kern-Workflow BIA-Anlage ist; Verweigerung bei POST defeatete den Sinn der Rolle. RBAC: `admin / risk_manager / bcm_manager`.
+
+#### Block C — Wave-24-Restpunkte
+
+- **C1 — Migration `0347_seed_iso27001_demo_coverage.sql`.** Seedet 15 `control_framework_coverage`-Zeilen für Meridian, die existierende Controls auf ISO 27001:2022 Annex A-Clauses mappen (titel-basiert, illustrativ). Die `/compliance/coverage`-Tile zeigt ab jetzt realistische Zahlen statt 0 %. Sobald eine Org einen echten Gap-Analyse-Run macht, übernimmt der Snapshot-Pfad.
+- **C2 — Neue `GET /vendors/{id}/assessments/schema`.** Schema-Discovery für den W24-D2-Alias. Liefert Felder + Beispiel-Body mit `assessmentDate`/`inherentRiskScore`/`residualRiskScore` (alle required) + CIA-Triade-Scores (optional). 404 wenn Vendor nicht in Org. Spiegelt das Pattern der W24-D5/D6-Schema-Endpoints.
+- **C3 — ESG Measurement Schema example.metricId.** W24-D6 verwendete einen hardcodierten Platzhalter-UUID, was POST mit dem Schema-Beispiel zu 404 „Metric not found" führte. Schema-Endpoint resolvt jetzt einen echten metricId aus der Caller-Org und fällt auf den Platzhalter + `hint`-Feld zurück, wenn keine Metric geseedet ist.
+
+#### Pilot-Readiness-Gate erweitert
+
+`scripts/pilot-readiness-gate.sh` checkt jetzt zusätzlich:
+- W25-B1: `/findings?controlId=not-a-uuid` ≠ 500
+- W25-B2: `POST /bcms/bia` ≠ 403 für admin (proxy für die Rollen-Widening)
+- W25-C1: ISO-27001-Coverage hat `frameworkCount ≥ 1`, ideally `overallCoveragePct > 0`
+- W25-C2: Vendor-Assessment-Schema-Endpoint liefert `example.assessmentDate`
+- W25-C3: ESG-Measurement-Schema `example.metricId` ist nicht der Placeholder (oder hat erklärenden `hint`)
+
+#### Tests
+
+- `wave-25-block-b-c.test.ts` — 14 neue Contract-Tests (B1 8 Fälle, B2 RBAC-Liste, C2 Schema-Shape + 404, C3 dynamic-metric + fallback-hint).
+- Wave-24-Block-B/C/D-Tests bleiben grün (33 / 14).
+
 ### Wave-24 — Alpha-Quality-Closure (2026-05-20/21, PR #218 in CI)
 
 12 von 13 QA-Items aus `docs/qa-reports/claude-code-wave24-prompt.md` geliefert; nur A1's _Live-Verification_ braucht noch SSH-Zugriff auf Hetzner (fail2ban-Block am 2026-05-20). Damit ist die Plattform invite-ready für Alpha-Tester.

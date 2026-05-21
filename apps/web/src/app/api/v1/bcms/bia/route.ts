@@ -12,8 +12,14 @@ import { withErrorHandler } from "@/lib/api-wrapper";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/bcms/bia — Create BIA assessment
+//
+// #WAVE25-B2: bcm_manager added. BCM Manager is the role whose
+// primary workflow IS the BIA lifecycle (impact assessment,
+// continuity planning). Locking them out of POST forced them to
+// delegate to risk_manager for every routine assessment, which
+// defeats the whole reason the role exists.
 export async function POST(req: Request) {
-  const ctx = await withAuth("admin", "risk_manager");
+  const ctx = await withAuth("admin", "risk_manager", "bcm_manager");
   if (ctx instanceof Response) return ctx;
 
   const moduleCheck = await requireModule("bcms", ctx.orgId, req.method);
