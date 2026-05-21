@@ -76,9 +76,6 @@ export async function POST(
     // require withErrorHandler; for this manual catch we surface a
     // static message and rely on Docker logs for diagnosis.
     console.error("[automation/rules/[id]/test] dry-run failed", err);
-    return Response.json(
-      { error: "Dry-run failed" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Dry-run failed" }, { status: 500 });
   }
 }
