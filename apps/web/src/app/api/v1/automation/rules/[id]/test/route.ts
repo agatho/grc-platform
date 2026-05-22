@@ -70,12 +70,12 @@ export async function POST(
       },
     });
   } catch (err) {
-    return Response.json(
-      {
-        error: "Dry-run failed",
-        message: err instanceof Error ? err.message : String(err),
-      },
-      { status: 500 },
-    );
+    // #SEC-LEAK-FIX: previously returned err.message in the response —
+    // CodeQL js/stack-trace-exposure. Now logs full detail server-side
+    // and returns only a generic body. requestId in the response would
+    // require withErrorHandler; for this manual catch we surface a
+    // static message and rely on Docker logs for diagnosis.
+    console.error("[automation/rules/[id]/test] dry-run failed", err);
+    return Response.json({ error: "Dry-run failed" }, { status: 500 });
   }
 }
