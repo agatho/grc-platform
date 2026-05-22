@@ -9,6 +9,7 @@ import {
   notification,
 } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ContinuousAuditRunnerResult {
   processed: number;
@@ -17,15 +18,14 @@ interface ContinuousAuditRunnerResult {
   errors: number;
 }
 
-export async function processContinuousAuditRunner(): Promise<ContinuousAuditRunnerResult> {
-  const now = new Date();
-  let passed = 0;
-  let exceptionsFound = 0;
-  let errors = 0;
-
-  console.log(
-    `[cron:continuous-audit-runner] Starting at ${now.toISOString()}`,
-  );
+export const processContinuousAuditRunner = withCronInstrumentation(
+  "continuous-audit-runner",
+  async (): Promise<ContinuousAuditRunnerResult> => {
+    const now = new Date();
+    void now;
+    let passed = 0;
+    let exceptionsFound = 0;
+    let errors = 0;
 
   // Find active rules due for execution based on schedule
   const dueRules = await db
@@ -113,11 +113,9 @@ export async function processContinuousAuditRunner(): Promise<ContinuousAuditRun
     }
   }
 
-  console.log(
-    `[cron:continuous-audit-runner] Completed: ${dueRules.length} rules, ${passed} passed, ${exceptionsFound} with exceptions, ${errors} errors`,
-  );
-  return { processed: dueRules.length, passed, exceptionsFound, errors };
-}
+    return { processed: dueRules.length, passed, exceptionsFound, errors };
+  },
+);
 
 async function executeBuiltinRule(
   rule: typeof continuousAuditRule.$inferSelect,

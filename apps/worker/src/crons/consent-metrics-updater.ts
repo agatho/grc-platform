@@ -3,7 +3,8 @@
 // Alert if withdrawal rate exceeds configurable threshold (default 30%)
 
 import { db, consentType, consentRecord, notification } from "@grc/db";
-import { eq, and, isNull, isNotNull, count, sql } from "drizzle-orm";
+import { eq, and, isNotNull, count } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface MetricsResult {
   processed: number;
@@ -12,74 +13,70 @@ interface MetricsResult {
 
 const DEFAULT_WITHDRAWAL_THRESHOLD = 30;
 
-export async function processConsentMetrics(): Promise<MetricsResult> {
-  const now = new Date();
-  let alerts = 0;
+export const processConsentMetrics = withCronInstrumentation(
+  "consent-metrics-updater",
+  async (): Promise<MetricsResult> => {
+    const now = new Date();
+    let alerts = 0;
 
-  console.log(
-    `[cron:consent-metrics-updater] Starting at ${now.toISOString()}`,
-  );
+    const types = await db.select().from(consentType);
 
-  const types = await db.select().from(consentType);
+    for (const ct of types) {
+      // Count total given
+      const [{ value: totalGiven }] = await db
+        .select({ value: count() })
+        .from(consentRecord)
+        .where(eq(consentRecord.consentTypeId, ct.id));
 
-  for (const ct of types) {
-    // Count total given
-    const [{ value: totalGiven }] = await db
-      .select({ value: count() })
-      .from(consentRecord)
-      .where(eq(consentRecord.consentTypeId, ct.id));
+      // Count total withdrawn
+      const [{ value: totalWithdrawn }] = await db
+        .select({ value: count() })
+        .from(consentRecord)
+        .where(
+          and(
+            eq(consentRecord.consentTypeId, ct.id),
+            isNotNull(consentRecord.withdrawnAt),
+          ),
+        );
 
-    // Count total withdrawn
-    const [{ value: totalWithdrawn }] = await db
-      .select({ value: count() })
-      .from(consentRecord)
-      .where(
-        and(
-          eq(consentRecord.consentTypeId, ct.id),
-          isNotNull(consentRecord.withdrawnAt),
-        ),
-      );
+      const activeConsents = Number(totalGiven) - Number(totalWithdrawn);
+      const withdrawalRate =
+        Number(totalGiven) > 0
+          ? (Number(totalWithdrawn) / Number(totalGiven)) * 100
+          : 0;
 
-    const activeConsents = Number(totalGiven) - Number(totalWithdrawn);
-    const withdrawalRate =
-      Number(totalGiven) > 0
-        ? (Number(totalWithdrawn) / Number(totalGiven)) * 100
-        : 0;
+      // Update consent type metrics
+      await db
+        .update(consentType)
+        .set({
+          totalGiven: Number(totalGiven),
+          totalWithdrawn: Number(totalWithdrawn),
+          activeConsents,
+          withdrawalRate: withdrawalRate.toFixed(2),
+          metricsUpdatedAt: now,
+        })
+        .where(eq(consentType.id, ct.id));
 
-    // Update consent type metrics
-    await db
-      .update(consentType)
-      .set({
-        totalGiven: Number(totalGiven),
-        totalWithdrawn: Number(totalWithdrawn),
-        activeConsents,
-        withdrawalRate: withdrawalRate.toFixed(2),
-        metricsUpdatedAt: now,
-      })
-      .where(eq(consentType.id, ct.id));
-
-    // Alert if withdrawal rate exceeds threshold
-    if (withdrawalRate > DEFAULT_WITHDRAWAL_THRESHOLD && ct.createdBy) {
-      await db.insert(notification).values({
-        orgId: ct.orgId,
-        userId: ct.createdBy,
-        type: "escalation",
-        title: `High Withdrawal Rate: ${ct.name}`,
-        message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
-        entityType: "consent_type",
-        entityId: ct.id,
-        templateData: {
-          module: "dpms",
-          priority: "high",
-          subtype: "consent_withdrawal_alert",
-        },
-      });
-      alerts++;
+      // Alert if withdrawal rate exceeds threshold
+      if (withdrawalRate > DEFAULT_WITHDRAWAL_THRESHOLD && ct.createdBy) {
+        await db.insert(notification).values({
+          orgId: ct.orgId,
+          userId: ct.createdBy,
+          type: "escalation",
+          title: `High Withdrawal Rate: ${ct.name}`,
+          message: `Consent type "${ct.name}" has a withdrawal rate of ${withdrawalRate.toFixed(1)}%, exceeding the ${DEFAULT_WITHDRAWAL_THRESHOLD}% threshold. This may indicate dark patterns or unfair consent practices.`,
+          entityType: "consent_type",
+          entityId: ct.id,
+          templateData: {
+            module: "dpms",
+            priority: "high",
+            subtype: "consent_withdrawal_alert",
+          },
+        });
+        alerts++;
+      }
     }
-  }
 
-  console.log(
-    `[cron:consent-metrics-updater] Completed: ${types.length} types, ${alerts} alerts`,
-  );
-  return { processed: types.length, alerts };
-}
+    return { processed: types.length, alerts };
+  },
+);

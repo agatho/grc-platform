@@ -3,11 +3,11 @@
 
 import { db, controlTestExecution, controlTestLearning } from "@grc/db";
 import { eq, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processControlTestLearning(): Promise<{
-  patternsUpdated: number;
-}> {
-  console.log("[control-test-learning] Analyzing test execution history");
+export const processControlTestLearning = withCronInstrumentation(
+  "control-test-learning-updater",
+  async (): Promise<{ patternsUpdated: number }> => {
 
   // Find controls with multiple test executions to analyze patterns
   const controlStats = await db
@@ -50,6 +50,6 @@ export async function processControlTestLearning(): Promise<{
     }
   }
 
-  console.log(`[control-test-learning] Updated ${patternsUpdated} patterns`);
-  return { patternsUpdated };
-}
+    return { patternsUpdated };
+  },
+);

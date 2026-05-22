@@ -3,6 +3,7 @@
 
 import { db, contract, notification } from "@grc/db";
 import { and, sql, eq, isNull } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ContractExpiryResult {
   processed: number;
@@ -10,14 +11,12 @@ interface ContractExpiryResult {
   transitioned: number;
 }
 
-export async function processContractExpiryMonitor(): Promise<ContractExpiryResult> {
-  const now = new Date();
-  let notified = 0;
-  let transitioned = 0;
-
-  console.log(
-    `[cron:contract-expiry-monitor] Starting at ${now.toISOString()}`,
-  );
+export const processContractExpiryMonitor = withCronInstrumentation(
+  "contract-expiry-monitor",
+  async (): Promise<ContractExpiryResult> => {
+    const now = new Date();
+    let notified = 0;
+    let transitioned = 0;
 
   // 1. Find contracts that are past their expiration date and still active
   const expiredContracts = await db
@@ -164,10 +163,7 @@ export async function processContractExpiryMonitor(): Promise<ContractExpiryResu
     }
   }
 
-  const totalProcessed = expiredContracts.length + approachingNotice.length;
-  console.log(
-    `[cron:contract-expiry-monitor] Processed ${totalProcessed} contracts, ${transitioned} transitioned, ${notified} notifications`,
-  );
-
-  return { processed: totalProcessed, notified, transitioned };
-}
+    const totalProcessed = expiredContracts.length + approachingNotice.length;
+    return { processed: totalProcessed, notified, transitioned };
+  },
+);
