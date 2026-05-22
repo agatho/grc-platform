@@ -4,6 +4,7 @@
 
 import { db, rcsaCampaign, rcsaAssignment, notification, user } from "@grc/db";
 import { eq, and, sql, lt, gt } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface RcsaReminderResult {
   processed: number;
@@ -11,12 +12,12 @@ interface RcsaReminderResult {
   errors: string[];
 }
 
-export async function processRcsaReminder(): Promise<RcsaReminderResult> {
-  const errors: string[] = [];
-  let remindersSent = 0;
-  const now = new Date();
-
-  console.log(`[cron:rcsa-reminder] Starting at ${now.toISOString()}`);
+export const processRcsaReminder = withCronInstrumentation(
+  "rcsa-reminder",
+  async (): Promise<RcsaReminderResult> => {
+    const errors: string[] = [];
+    let remindersSent = 0;
+    const now = new Date();
 
   // Find all active campaigns
   const activeCampaigns = await db
@@ -116,9 +117,6 @@ export async function processRcsaReminder(): Promise<RcsaReminderResult> {
     }
   }
 
-  console.log(
-    `[cron:rcsa-reminder] Processed ${activeCampaigns.length} campaigns, sent ${remindersSent} reminders, ${errors.length} errors`,
-  );
-
-  return { processed: activeCampaigns.length, remindersSent, errors };
-}
+    return { processed: activeCampaigns.length, remindersSent, errors };
+  },
+);

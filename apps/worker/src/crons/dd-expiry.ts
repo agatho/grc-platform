@@ -3,17 +3,18 @@
 
 import { db, ddSession } from "@grc/db";
 import { and, sql, inArray, eq } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface DdExpiryResult {
   processed: number;
   expired: number;
 }
 
-export async function processDdExpiry(): Promise<DdExpiryResult> {
-  const now = new Date();
-  let expired = 0;
-
-  console.log(`[cron:dd-expiry] Starting at ${now.toISOString()}`);
+export const processDdExpiry = withCronInstrumentation(
+  "dd-expiry",
+  async (): Promise<DdExpiryResult> => {
+    const now = new Date();
+    let expired = 0;
 
   // Find sessions that are still active but past their deadline
   const overdueSessions = await db
@@ -62,9 +63,6 @@ export async function processDdExpiry(): Promise<DdExpiryResult> {
     }
   }
 
-  console.log(
-    `[cron:dd-expiry] Processed ${overdueSessions.length} sessions, ${expired} expired`,
-  );
-
-  return { processed: overdueSessions.length, expired };
-}
+    return { processed: overdueSessions.length, expired };
+  },
+);
