@@ -3,17 +3,18 @@
 
 import { db, controlDeficiency, notification } from "@grc/db";
 import { and, sql, inArray } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface EscalationResult {
   processed: number;
   escalated: number;
 }
 
-export async function processDeficiencyEscalation(): Promise<EscalationResult> {
-  const now = new Date();
-  let escalated = 0;
-
-  console.log(`[cron:deficiency-escalation] Starting at ${now.toISOString()}`);
+export const processDeficiencyEscalation = withCronInstrumentation(
+  "deficiency-escalation",
+  async (): Promise<EscalationResult> => {
+    const now = new Date();
+    let escalated = 0;
 
   // Find deficiencies with overdue remediation deadlines
   const overdue = await db
@@ -53,8 +54,6 @@ export async function processDeficiencyEscalation(): Promise<EscalationResult> {
     escalated++;
   }
 
-  console.log(
-    `[cron:deficiency-escalation] Completed: ${overdue.length} overdue, ${escalated} escalated`,
-  );
-  return { processed: overdue.length, escalated };
-}
+    return { processed: overdue.length, escalated };
+  },
+);

@@ -3,19 +3,18 @@
 
 import { db, doraIctIncident, notification } from "@grc/db";
 import { and, sql, isNull, isNotNull, ne } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface DoraDeadlineResult {
   processed: number;
   notified: number;
 }
 
-export async function processDoraIncidentDeadlineMonitor(): Promise<DoraDeadlineResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(
-    `[cron:dora-incident-deadlines] Starting at ${now.toISOString()}`,
-  );
+export const processDoraIncidentDeadlineMonitor = withCronInstrumentation(
+  "dora-incident-deadline-monitor",
+  async (): Promise<DoraDeadlineResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find incidents with overdue initial reports (4h deadline)
   const overdueInitial = await db
@@ -68,8 +67,6 @@ export async function processDoraIncidentDeadlineMonitor(): Promise<DoraDeadline
     }
   }
 
-  console.log(
-    `[cron:dora-incident-deadlines] Processed ${overdueInitial.length} overdue reports, ${notified} notifications created`,
-  );
-  return { processed: overdueInitial.length, notified };
-}
+    return { processed: overdueInitial.length, notified };
+  },
+);
