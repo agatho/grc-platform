@@ -3,6 +3,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { discoverOIDCEndpoints } from "@grc/auth/oidc";
 import { generatePKCE } from "@grc/auth/oidc";
 import { cookies } from "next/headers";
+import { getBaseUrl } from "@/lib/base-url";
 
 // GET /api/v1/auth/sso/oidc/login?orgId=... — SP-initiated OIDC login
 export async function GET(req: Request) {
@@ -35,7 +36,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
   const callbackUrl = url.searchParams.get("callbackUrl") ?? "/dashboard";
 
   try {
