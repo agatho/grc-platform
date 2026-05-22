@@ -20,25 +20,25 @@ export const processCalendarOverdueCheck = withCronInstrumentation(
     let escalationsSent = 0;
     const now = new Date();
 
-  // Get all active orgs
-  const orgs = await db.execute(
-    sql`SELECT id FROM organization WHERE deleted_at IS NULL`,
-  );
+    // Get all active orgs
+    const orgs = await db.execute(
+      sql`SELECT id FROM organization WHERE deleted_at IS NULL`,
+    );
 
-  if (!orgs || orgs.length === 0) {
-    return { processed: 0, overdueFound: 0, escalationsSent: 0, errors: [] };
-  }
+    if (!orgs || orgs.length === 0) {
+      return { processed: 0, overdueFound: 0, escalationsSent: 0, errors: [] };
+    }
 
-  for (const org of orgs as Array<Record<string, unknown>>) {
-    const orgId = String(org.id);
+    for (const org of orgs as Array<Record<string, unknown>>) {
+      const orgId = String(org.id);
 
-    try {
-      await db.execute(
-        sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
-      );
+      try {
+        await db.execute(
+          sql`SELECT set_config('app.current_org_id', ${orgId}, false)`,
+        );
 
-      // Check DSR deadlines that are overdue and still open
-      const overdueDsrs = await db.execute(sql`
+        // Check DSR deadlines that are overdue and still open
+        const overdueDsrs = await db.execute(sql`
         SELECT d.id, d.handler_id, 'DSR: ' || d.request_type as title
         FROM dsr d
         WHERE d.org_id = ${orgId}
@@ -46,35 +46,37 @@ export const processCalendarOverdueCheck = withCronInstrumentation(
           AND d.status IN ('received', 'verified', 'processing')
       `);
 
-      for (const dsr of (overdueDsrs ?? []) as Array<Record<string, unknown>>) {
-        overdueFound++;
-        if (dsr.handler_id) {
-          try {
-            await db.insert(notification).values({
-              orgId,
-              userId: String(dsr.handler_id),
-              type: "escalation",
-              entityType: "dsr",
-              entityId: String(dsr.id),
-              title: `Overdue: ${String(dsr.title)}`,
-              message:
-                "This DSR has passed its deadline and is still open. Immediate action is required.",
-              channel: "both",
-              templateKey: "calendar_overdue_escalation",
-              createdAt: now,
-              updatedAt: now,
-            });
-            escalationsSent++;
-          } catch (err) {
-            errors.push(
-              `DSR notification ${dsr.id}: ${err instanceof Error ? err.message : String(err)}`,
-            );
+        for (const dsr of (overdueDsrs ?? []) as Array<
+          Record<string, unknown>
+        >) {
+          overdueFound++;
+          if (dsr.handler_id) {
+            try {
+              await db.insert(notification).values({
+                orgId,
+                userId: String(dsr.handler_id),
+                type: "escalation",
+                entityType: "dsr",
+                entityId: String(dsr.id),
+                title: `Overdue: ${String(dsr.title)}`,
+                message:
+                  "This DSR has passed its deadline and is still open. Immediate action is required.",
+                channel: "both",
+                templateKey: "calendar_overdue_escalation",
+                createdAt: now,
+                updatedAt: now,
+              });
+              escalationsSent++;
+            } catch (err) {
+              errors.push(
+                `DSR notification ${dsr.id}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
           }
         }
-      }
 
-      // Check overdue data breach 72h notifications
-      const overdueBreaches = await db.execute(sql`
+        // Check overdue data breach 72h notifications
+        const overdueBreaches = await db.execute(sql`
         SELECT db.id, db.assignee_id, 'Breach 72h: ' || db.title as title
         FROM data_breach db
         WHERE db.org_id = ${orgId}
@@ -84,37 +86,37 @@ export const processCalendarOverdueCheck = withCronInstrumentation(
           AND db.deleted_at IS NULL
       `);
 
-      for (const breach of (overdueBreaches ?? []) as Array<
-        Record<string, unknown>
-      >) {
-        overdueFound++;
-        if (breach.assignee_id) {
-          try {
-            await db.insert(notification).values({
-              orgId,
-              userId: String(breach.assignee_id),
-              type: "escalation",
-              entityType: "data_breach",
-              entityId: String(breach.id),
-              title: `URGENT Overdue: ${String(breach.title)}`,
-              message:
-                "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
-              channel: "both",
-              templateKey: "calendar_overdue_escalation",
-              createdAt: now,
-              updatedAt: now,
-            });
-            escalationsSent++;
-          } catch (err) {
-            errors.push(
-              `Breach notification ${breach.id}: ${err instanceof Error ? err.message : String(err)}`,
-            );
+        for (const breach of (overdueBreaches ?? []) as Array<
+          Record<string, unknown>
+        >) {
+          overdueFound++;
+          if (breach.assignee_id) {
+            try {
+              await db.insert(notification).values({
+                orgId,
+                userId: String(breach.assignee_id),
+                type: "escalation",
+                entityType: "data_breach",
+                entityId: String(breach.id),
+                title: `URGENT Overdue: ${String(breach.title)}`,
+                message:
+                  "The 72-hour breach notification deadline has passed without DPA notification. This requires immediate escalation.",
+                channel: "both",
+                templateKey: "calendar_overdue_escalation",
+                createdAt: now,
+                updatedAt: now,
+              });
+              escalationsSent++;
+            } catch (err) {
+              errors.push(
+                `Breach notification ${breach.id}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
           }
         }
-      }
 
-      // Check overdue finding remediations
-      const overdueFindings = await db.execute(sql`
+        // Check overdue finding remediations
+        const overdueFindings = await db.execute(sql`
         SELECT f.id, f.assignee_id, 'Finding: ' || f.title as title
         FROM finding f
         WHERE f.org_id = ${orgId}
@@ -124,39 +126,39 @@ export const processCalendarOverdueCheck = withCronInstrumentation(
           AND f.deleted_at IS NULL
       `);
 
-      for (const finding of (overdueFindings ?? []) as Array<
-        Record<string, unknown>
-      >) {
-        overdueFound++;
-        if (finding.assignee_id) {
-          try {
-            await db.insert(notification).values({
-              orgId,
-              userId: String(finding.assignee_id),
-              type: "escalation",
-              entityType: "finding",
-              entityId: String(finding.id),
-              title: `Overdue: ${String(finding.title)}`,
-              message:
-                "This finding has passed its remediation due date and is still open.",
-              channel: "both",
-              templateKey: "calendar_overdue_escalation",
-              createdAt: now,
-              updatedAt: now,
-            });
-            escalationsSent++;
-          } catch (err) {
-            errors.push(
-              `Finding notification ${finding.id}: ${err instanceof Error ? err.message : String(err)}`,
-            );
+        for (const finding of (overdueFindings ?? []) as Array<
+          Record<string, unknown>
+        >) {
+          overdueFound++;
+          if (finding.assignee_id) {
+            try {
+              await db.insert(notification).values({
+                orgId,
+                userId: String(finding.assignee_id),
+                type: "escalation",
+                entityType: "finding",
+                entityId: String(finding.id),
+                title: `Overdue: ${String(finding.title)}`,
+                message:
+                  "This finding has passed its remediation due date and is still open.",
+                channel: "both",
+                templateKey: "calendar_overdue_escalation",
+                createdAt: now,
+                updatedAt: now,
+              });
+              escalationsSent++;
+            } catch (err) {
+              errors.push(
+                `Finding notification ${finding.id}: ${err instanceof Error ? err.message : String(err)}`,
+              );
+            }
           }
         }
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        errors.push(`Org ${orgId}: ${message}`);
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      errors.push(`Org ${orgId}: ${message}`);
     }
-  }
 
     return {
       processed: (orgs ?? []).length,
