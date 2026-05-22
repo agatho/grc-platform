@@ -3,17 +3,18 @@
 
 import { db, certReadinessAssessment } from "@grc/db";
 import { eq, ne } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface CertSnapshotResult {
   processed: number;
   updated: number;
 }
 
-export async function processCertReadinessCheck(): Promise<CertSnapshotResult> {
-  const now = new Date();
-  let updated = 0;
-
-  console.log(`[cron:cert-readiness-check] Starting at ${now.toISOString()}`);
+export const processCertReadinessCheck = withCronInstrumentation(
+  "cert-readiness-check",
+  async (): Promise<CertSnapshotResult> => {
+    const now = new Date();
+    let updated = 0;
 
   const activeAssessments = await db
     .select()
@@ -62,8 +63,6 @@ export async function processCertReadinessCheck(): Promise<CertSnapshotResult> {
     }
   }
 
-  console.log(
-    `[cron:cert-readiness-check] Processed ${activeAssessments.length}, updated ${updated}`,
-  );
-  return { processed: activeAssessments.length, updated };
-}
+    return { processed: activeAssessments.length, updated };
+  },
+);

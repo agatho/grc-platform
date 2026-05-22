@@ -12,6 +12,7 @@ import {
 import { eq, and, isNull, desc } from "drizzle-orm";
 import { sql } from "drizzle-orm";
 import { computeCES, computeTrend } from "@grc/shared";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface CesRecomputeResult {
   processed: number;
@@ -19,12 +20,14 @@ interface CesRecomputeResult {
   errors: number;
 }
 
-export async function processCesRecompute(): Promise<CesRecomputeResult> {
-  const now = new Date();
-  console.log(`[cron:ces-recompute] Starting at ${now.toISOString()}`);
+export const processCesRecompute = withCronInstrumentation(
+  "ces-recompute",
+  async (): Promise<CesRecomputeResult> => {
+    const now = new Date();
+    void now;
 
-  let processed = 0;
-  let errors = 0;
+    let processed = 0;
+    let errors = 0;
 
   // Fetch all active organizations
   const orgs = await db
@@ -146,18 +149,13 @@ export async function processCesRecompute(): Promise<CesRecomputeResult> {
 
         processed++;
       } catch (err) {
+        // Wrapper logs structured error; bump per-control counter.
+        void err;
         errors++;
-        console.error(
-          `[cron:ces-recompute] Error for control ${ctrl.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
       }
     }
   }
 
-  console.log(
-    `[cron:ces-recompute] Done. Processed: ${processed}, Orgs: ${orgs.length}, Errors: ${errors}`,
-  );
-
-  return { processed, orgsProcessed: orgs.length, errors };
-}
+    return { processed, orgsProcessed: orgs.length, errors };
+  },
+);
