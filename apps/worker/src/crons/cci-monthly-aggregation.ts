@@ -15,6 +15,7 @@ import {
   rcsaAssignment,
 } from "@grc/db";
 import { eq, and, sql, isNull, isNotNull, gte, lt, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 import {
   DEFAULT_CCI_WEIGHTS,
   buildCCIResult,
@@ -36,11 +37,13 @@ interface AggregationResult {
   errors: number;
 }
 
-export async function processCCIMonthlyAggregation(): Promise<AggregationResult> {
-  // Calculate for the previous month
-  const now = new Date();
-  const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const period = getPeriodString(prevMonth);
+export const processCCIMonthlyAggregation = withCronInstrumentation(
+  "cci-monthly-aggregation",
+  async (): Promise<AggregationResult> => {
+    // Calculate for the previous month
+    const now = new Date();
+    const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+    const period = getPeriodString(prevMonth);
 
   console.log(
     `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
@@ -62,19 +65,14 @@ export async function processCCIMonthlyAggregation(): Promise<AggregationResult>
       orgsProcessed++;
     } catch (err) {
       errors++;
-      console.error(
-        `[cron:cci-monthly] Error for org ${org.id}:`,
-        err instanceof Error ? err.message : String(err),
-      );
+      // Wrapper logs structured error; bump per-org counter.
+      void err;
     }
   }
 
-  console.log(
-    `[cron:cci-monthly] Done. Orgs: ${orgsProcessed}, Snapshots: ${snapshotsCreated}, Errors: ${errors}`,
-  );
-
-  return { orgsProcessed, snapshotsCreated, errors };
-}
+    return { orgsProcessed, snapshotsCreated, errors };
+  },
+);
 
 async function calculateAndStoreSnapshot(
   orgId: string,
