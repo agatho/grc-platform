@@ -188,13 +188,20 @@ describe("runBiaToAssetCascade — org / soft-delete filtering", () => {
   it("filters out assets that don't pass the org+deletedAt validity check", async () => {
     setSelectResults(
       [{ processId: "p1", priorityRanking: 1, isEssential: true }], // impacts
-      [{ processId: "p1", assetId: "a-ok" }, { processId: "p1", assetId: "a-deleted" }], // links
+      [
+        { processId: "p1", assetId: "a-ok" },
+        { processId: "p1", assetId: "a-deleted" },
+      ], // links
       [{ id: "a-ok" }], // valid assets — only a-ok, a-deleted is filtered
       [], // no existing classification for a-ok
     );
     deriveAssetClassificationsMock.mockReturnValue([
       { assetId: "a-ok", protectionLevel: "high", reason: "essential proc" },
-      { assetId: "a-deleted", protectionLevel: "high", reason: "essential proc" },
+      {
+        assetId: "a-deleted",
+        protectionLevel: "high",
+        reason: "essential proc",
+      },
     ]);
     const result = await runBiaToAssetCascade({
       tx: txStub as never,
@@ -227,7 +234,14 @@ describe("runBiaToAssetCascade — upsert decision", () => {
       trigger: "finalize",
     });
     expect(result.assetsUpserted).toBe(1);
-    const calls = (txStub as { _calls: Array<{ op: string; payload?: { confidentialityLevel?: string } }> })._calls;
+    const calls = (
+      txStub as {
+        _calls: Array<{
+          op: string;
+          payload?: { confidentialityLevel?: string };
+        }>;
+      }
+    )._calls;
     const updateCall = calls.find((c) => c.op === "update");
     expect(updateCall).toBeDefined();
     // The CIA-triad triple-write property — all three dimensions get
@@ -253,9 +267,11 @@ describe("runBiaToAssetCascade — upsert decision", () => {
       trigger: "finalize",
     });
     expect(result.assetsUpserted).toBe(1);
-    const calls = (txStub as {
-      _calls: Array<{ op: string; payload?: Record<string, unknown> }>;
-    })._calls;
+    const calls = (
+      txStub as {
+        _calls: Array<{ op: string; payload?: Record<string, unknown> }>;
+      }
+    )._calls;
     const insertCall = calls.find((c) => c.op === "insert");
     expect(insertCall).toBeDefined();
     // INSERT must include orgId + assetId + classifiedBy for audit

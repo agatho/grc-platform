@@ -168,10 +168,7 @@ describe("validateDdToken — happy path", () => {
     expect(result.session.status).toBe("in_progress");
     // DB was updated with new status
     expect(updateSetMock).toHaveBeenCalled();
-    const setCall = updateSetMock.mock.calls[0][0] as Record<
-      string,
-      unknown
-    >;
+    const setCall = updateSetMock.mock.calls[0][0] as Record<string, unknown>;
     expect(setCall.status).toBe("in_progress");
   });
 
@@ -202,10 +199,15 @@ describe("validateDdToken — GDPR IP handling", () => {
     );
     expect(updateSetMock).toHaveBeenCalled();
     const args = updateSetMock.mock.calls[0][0] as Record<string, unknown>;
-    const ipLogSql = args.ipAddressLog as { sql: readonly string[]; args: unknown[] };
+    const ipLogSql = args.ipAddressLog as {
+      sql: readonly string[];
+      args: unknown[];
+    };
     // The SHA-256 hash of "203.0.113.42" is c3f0b… (precomputed).
-    const expectedHash =
-      require("crypto").createHash("sha256").update("203.0.113.42").digest("hex");
+    const expectedHash = require("crypto")
+      .createHash("sha256")
+      .update("203.0.113.42")
+      .digest("hex");
     // The arg interpolated into the array_append() call should be the
     // hash, not the raw IP. The raw IP must NOT appear anywhere.
     const allArgsStr = JSON.stringify(ipLogSql.args);
@@ -222,8 +224,10 @@ describe("validateDdToken — GDPR IP handling", () => {
     await validateDdToken(VALID_TOKEN, req({ "x-real-ip": "10.0.0.1" }));
     const args = updateSetMock.mock.calls[0][0] as Record<string, unknown>;
     const ipLogSql = args.ipAddressLog as { args: unknown[] };
-    const expectedHash =
-      require("crypto").createHash("sha256").update("10.0.0.1").digest("hex");
+    const expectedHash = require("crypto")
+      .createHash("sha256")
+      .update("10.0.0.1")
+      .digest("hex");
     expect(JSON.stringify(ipLogSql.args)).toContain(expectedHash);
   });
 
@@ -236,8 +240,10 @@ describe("validateDdToken — GDPR IP handling", () => {
     await validateDdToken(VALID_TOKEN, req());
     const args = updateSetMock.mock.calls[0][0] as Record<string, unknown>;
     const ipLogSql = args.ipAddressLog as { args: unknown[] };
-    const expectedHash =
-      require("crypto").createHash("sha256").update("unknown").digest("hex");
+    const expectedHash = require("crypto")
+      .createHash("sha256")
+      .update("unknown")
+      .digest("hex");
     expect(JSON.stringify(ipLogSql.args)).toContain(expectedHash);
   });
 });
