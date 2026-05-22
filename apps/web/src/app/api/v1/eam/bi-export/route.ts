@@ -23,7 +23,7 @@ export async function GET(req: Request) {
 
   const parsed = biExportQuerySchema.safeParse(params);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // Fetch all applications with portfolio data (flat tabular format for BI)
   const apps = await db

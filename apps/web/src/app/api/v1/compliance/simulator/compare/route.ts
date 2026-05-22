@@ -24,7 +24,7 @@ export async function GET(req: Request) {
   const ids = idsParam.split(",");
   const parsed = simulationCompareSchema.safeParse({ ids });
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const rows = await db

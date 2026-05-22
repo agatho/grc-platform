@@ -19,7 +19,7 @@ export async function POST(
   const body = await req.json();
   const parsed = createFindingFromAnalysisSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   // Verify result exists

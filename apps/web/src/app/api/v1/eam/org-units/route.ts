@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createOrgUnitSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const created = await db
     .insert(eamOrgUnit)
@@ -60,7 +60,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = updateOrgUnitSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const updated = await db
     .update(eamOrgUnit)
