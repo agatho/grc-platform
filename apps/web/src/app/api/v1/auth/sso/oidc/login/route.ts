@@ -82,8 +82,14 @@ export async function GET(req: Request) {
     const redirectUrl = `${discovery.authorization_endpoint}?${params.toString()}`;
     return Response.redirect(redirectUrl, 302);
   } catch (err) {
-    const message =
-      err instanceof Error ? err.message : "OIDC discovery failed";
-    return Response.json({ error: message }, { status: 500 });
+    // #SEC-LEAK-FIX: OIDC discovery failures can leak the discovery
+    // URL, internal DNS hints, or library-specific parse errors. The
+    // unauthenticated caller doesn't need any of that — log it server-
+    // side, return a stable opaque message.
+    console.error("[oidc/login] OIDC discovery failed", err);
+    return Response.json(
+      { error: "OIDC discovery failed for this organization" },
+      { status: 500 },
+    );
   }
 }

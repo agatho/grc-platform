@@ -19,9 +19,21 @@ export async function GET(req: Request) {
   const error = url.searchParams.get("error");
 
   if (error) {
+    // #SEC-LEAK-FIX: previously passed `error_description` from the IDP
+    // straight to the response. That string is attacker-controllable if
+    // an attacker can craft a malicious redirect from a compromised IDP
+    // or a misconfigured open IDP — passing it back unfiltered widens
+    // any reflected-XSS attack surface in the consuming UI. Logging the
+    // detail server-side; client sees a stable opaque message.
     const errorDesc = url.searchParams.get("error_description") ?? error;
+    await logAccessEvent({
+      emailAttempted: "unknown",
+      eventType: "login_failed",
+      authMethod: "sso_oidc",
+      failureReason: `oidc_callback_error: ${errorDesc}`,
+    });
     return Response.json(
-      { error: `OIDC error: ${errorDesc}` },
+      { error: "OIDC authentication failed at the identity provider" },
       { status: 401 },
     );
   }
@@ -198,6 +210,10 @@ export async function GET(req: Request) {
     const redirectUrl = new URL(`${baseUrl}${callbackUrl}`);
     return Response.redirect(redirectUrl.toString(), 302);
   } catch (err) {
+    // #SEC-LEAK-FIX: log the validation-failure detail server-side
+    // (which step failed: token exchange, ID-token signature, audience,
+    // expiry, nonce) but never return it to the unauthenticated
+    // caller — that's intel for an attacker probing the IDP flow.
     const message =
       err instanceof Error ? err.message : "OIDC authentication failed";
     await logAccessEvent({
@@ -206,6 +222,9 @@ export async function GET(req: Request) {
       authMethod: "sso_oidc",
       failureReason: message,
     });
-    return Response.json({ error: message }, { status: 401 });
+    return Response.json(
+      { error: "OIDC authentication failed" },
+      { status: 401 },
+    );
   }
 }
