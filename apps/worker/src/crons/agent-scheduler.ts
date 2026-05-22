@@ -3,14 +3,12 @@
 
 import { db, agentRegistration } from "@grc/db";
 import { lte, eq, and } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processAgentScheduler(): Promise<{
-  checked: number;
-  triggered: number;
-}> {
-  console.log("[agent-scheduler] Checking for agents due for execution");
-
-  const now = new Date();
+export const processAgentScheduler = withCronInstrumentation(
+  "agent-scheduler",
+  async (): Promise<{ checked: number; triggered: number }> => {
+    const now = new Date();
 
   // Find active agents due for execution
   const dueAgents = await db
@@ -28,11 +26,6 @@ export async function processAgentScheduler(): Promise<{
 
   for (const agent of dueAgents) {
     try {
-      // Trigger agent run via internal API
-      console.log(
-        `[agent-scheduler] Triggering agent ${agent.name} (${agent.agentType})`,
-      );
-
       await db
         .update(agentRegistration)
         .set({ status: "running", updatedAt: new Date() })
@@ -55,7 +48,9 @@ export async function processAgentScheduler(): Promise<{
 
       triggered++;
     } catch (err) {
-      console.error(`[agent-scheduler] Agent ${agent.name} failed:`, err);
+      // Wrapper logs structured error; we also persist the message
+      // on the agent record so the UI can show it without grepping
+      // logs.
       await db
         .update(agentRegistration)
         .set({
@@ -67,8 +62,6 @@ export async function processAgentScheduler(): Promise<{
     }
   }
 
-  console.log(
-    `[agent-scheduler] Checked ${dueAgents.length} agents, triggered ${triggered}`,
-  );
-  return { checked: dueAgents.length, triggered };
-}
+    return { checked: dueAgents.length, triggered };
+  },
+);
