@@ -37,51 +37,51 @@ export const processBiReportScheduler = withCronInstrumentation(
   async (): Promise<BiReportSchedulerResult> => {
     const now = new Date();
     const result: BiReportSchedulerResult = {
-    checked: 0,
-    triggered: 0,
-    errors: 0,
-  };
+      checked: 0,
+      triggered: 0,
+      errors: 0,
+    };
 
-  const schedules = await db
-    .select()
-    .from(biScheduledReport)
-    .where(
-      and(
-        eq(biScheduledReport.isActive, true),
-        lte(biScheduledReport.nextRunAt, now),
-      ),
-    );
-
-  result.checked = schedules.length;
-
-  for (const schedule of schedules) {
-    try {
-      // Create execution record
-      await db.insert(biReportExecution).values({
-        orgId: schedule.orgId,
-        reportId: schedule.reportId,
-        scheduledReportId: schedule.id,
-        outputFormat: schedule.outputFormat,
-        parametersJson: schedule.parametersJson,
-        status: "queued",
-      });
-
-      // Update schedule
-      const nextRun = computeNextRun(schedule.frequency, now);
-      await db
-        .update(biScheduledReport)
-        .set({ lastRunAt: now, nextRunAt: nextRun })
-        .where(eq(biScheduledReport.id, schedule.id));
-
-      result.triggered++;
-    } catch (err) {
-      console.error(
-        `[worker] bi-report-scheduler: Failed for schedule ${schedule.id}:`,
-        err,
+    const schedules = await db
+      .select()
+      .from(biScheduledReport)
+      .where(
+        and(
+          eq(biScheduledReport.isActive, true),
+          lte(biScheduledReport.nextRunAt, now),
+        ),
       );
-      result.errors++;
+
+    result.checked = schedules.length;
+
+    for (const schedule of schedules) {
+      try {
+        // Create execution record
+        await db.insert(biReportExecution).values({
+          orgId: schedule.orgId,
+          reportId: schedule.reportId,
+          scheduledReportId: schedule.id,
+          outputFormat: schedule.outputFormat,
+          parametersJson: schedule.parametersJson,
+          status: "queued",
+        });
+
+        // Update schedule
+        const nextRun = computeNextRun(schedule.frequency, now);
+        await db
+          .update(biScheduledReport)
+          .set({ lastRunAt: now, nextRunAt: nextRun })
+          .where(eq(biScheduledReport.id, schedule.id));
+
+        result.triggered++;
+      } catch (err) {
+        console.error(
+          `[worker] bi-report-scheduler: Failed for schedule ${schedule.id}:`,
+          err,
+        );
+        result.errors++;
+      }
     }
-  }
 
     return result;
   },

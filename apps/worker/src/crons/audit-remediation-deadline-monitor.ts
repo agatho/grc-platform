@@ -45,161 +45,161 @@ export const processAuditRemediationDeadlines = withCronInstrumentation(
     let notifiedChecklistItems = 0;
     let notifiedFindings = 0;
 
-  // ── 1. Checklist-Items mit überfälliger oder baldiger Frist ──
-  const overdueItems = await db
-    .select({
-      id: auditChecklistItem.id,
-      orgId: auditChecklistItem.orgId,
-      checklistId: auditChecklistItem.checklistId,
-      question: auditChecklistItem.question,
-      result: auditChecklistItem.result,
-      remediationDeadline: auditChecklistItem.remediationDeadline,
-      riskRating: auditChecklistItem.riskRating,
-      // Per Checkliste → Audit → Lead-Auditor
-      auditId: audit.id,
-      auditTitle: audit.title,
-      leadAuditorId: audit.leadAuditorId,
-    })
-    .from(auditChecklistItem)
-    .leftJoin(
-      auditChecklist,
-      eq(auditChecklistItem.checklistId, auditChecklist.id),
-    )
-    .leftJoin(audit, eq(auditChecklist.auditId, audit.id))
-    .where(
-      and(
-        isNotNull(auditChecklistItem.remediationDeadline),
-        lt(auditChecklistItem.remediationDeadline, warnUpToIso),
-        inArray(auditChecklistItem.result, [
-          "major_nonconformity",
-          "minor_nonconformity",
-          "nonconforming",
-        ]),
-        isNull(audit.deletedAt),
-      ),
-    );
-
-  for (const item of overdueItems) {
-    if (!item.leadAuditorId) continue;
-    try {
-      const daysDiff = item.remediationDeadline
-        ? Math.floor(
-            (new Date(item.remediationDeadline).getTime() -
-              new Date(today).getTime()) /
-              86400000,
-          )
-        : 0;
-      const overdue = daysDiff < 0;
-      const absDays = Math.abs(daysDiff);
-      const questionSnippet =
-        item.question.length > 100
-          ? item.question.slice(0, 97) + "..."
-          : item.question;
-
-      await db.insert(notification).values({
-        userId: item.leadAuditorId,
-        orgId: item.orgId,
-        type: "deadline_approaching" as const,
-        entityType: "audit_checklist_item",
-        entityId: item.id,
-        title: overdue
-          ? `Korrektur überfällig: ${absDays} Tag(e)`
-          : `Korrektur fällig in ${absDays} Tag(en)`,
-        message: `NC-Bewertung in Audit "${item.auditTitle ?? "?"}": ${questionSnippet}`,
-        channel: "both" as const,
-        templateKey: "audit_remediation_deadline",
-        templateData: {
-          auditId: item.auditId,
-          auditTitle: item.auditTitle,
-          checklistItemId: item.id,
-          question: item.question,
-          result: item.result,
-          riskRating: item.riskRating,
-          remediationDeadline: item.remediationDeadline,
-          daysDiff,
-          overdue,
-        },
-        createdAt: now,
-        updatedAt: now,
-      });
-      notifiedChecklistItems++;
-    } catch (err) {
-      console.error(
-        `[cron:audit-remediation-deadline-monitor] Failed for checklist item ${item.id}:`,
-        err instanceof Error ? err.message : String(err),
+    // ── 1. Checklist-Items mit überfälliger oder baldiger Frist ──
+    const overdueItems = await db
+      .select({
+        id: auditChecklistItem.id,
+        orgId: auditChecklistItem.orgId,
+        checklistId: auditChecklistItem.checklistId,
+        question: auditChecklistItem.question,
+        result: auditChecklistItem.result,
+        remediationDeadline: auditChecklistItem.remediationDeadline,
+        riskRating: auditChecklistItem.riskRating,
+        // Per Checkliste → Audit → Lead-Auditor
+        auditId: audit.id,
+        auditTitle: audit.title,
+        leadAuditorId: audit.leadAuditorId,
+      })
+      .from(auditChecklistItem)
+      .leftJoin(
+        auditChecklist,
+        eq(auditChecklistItem.checklistId, auditChecklist.id),
+      )
+      .leftJoin(audit, eq(auditChecklist.auditId, audit.id))
+      .where(
+        and(
+          isNotNull(auditChecklistItem.remediationDeadline),
+          lt(auditChecklistItem.remediationDeadline, warnUpToIso),
+          inArray(auditChecklistItem.result, [
+            "major_nonconformity",
+            "minor_nonconformity",
+            "nonconforming",
+          ]),
+          isNull(audit.deletedAt),
+        ),
       );
+
+    for (const item of overdueItems) {
+      if (!item.leadAuditorId) continue;
+      try {
+        const daysDiff = item.remediationDeadline
+          ? Math.floor(
+              (new Date(item.remediationDeadline).getTime() -
+                new Date(today).getTime()) /
+                86400000,
+            )
+          : 0;
+        const overdue = daysDiff < 0;
+        const absDays = Math.abs(daysDiff);
+        const questionSnippet =
+          item.question.length > 100
+            ? item.question.slice(0, 97) + "..."
+            : item.question;
+
+        await db.insert(notification).values({
+          userId: item.leadAuditorId,
+          orgId: item.orgId,
+          type: "deadline_approaching" as const,
+          entityType: "audit_checklist_item",
+          entityId: item.id,
+          title: overdue
+            ? `Korrektur überfällig: ${absDays} Tag(e)`
+            : `Korrektur fällig in ${absDays} Tag(en)`,
+          message: `NC-Bewertung in Audit "${item.auditTitle ?? "?"}": ${questionSnippet}`,
+          channel: "both" as const,
+          templateKey: "audit_remediation_deadline",
+          templateData: {
+            auditId: item.auditId,
+            auditTitle: item.auditTitle,
+            checklistItemId: item.id,
+            question: item.question,
+            result: item.result,
+            riskRating: item.riskRating,
+            remediationDeadline: item.remediationDeadline,
+            daysDiff,
+            overdue,
+          },
+          createdAt: now,
+          updatedAt: now,
+        });
+        notifiedChecklistItems++;
+      } catch (err) {
+        console.error(
+          `[cron:audit-remediation-deadline-monitor] Failed for checklist item ${item.id}:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
-  }
 
-  // ── 2. Findings mit überfälliger oder baldiger Frist ──
-  const overdueFindings = await db
-    .select({
-      id: finding.id,
-      orgId: finding.orgId,
-      title: finding.title,
-      severity: finding.severity,
-      status: finding.status,
-      ownerId: finding.ownerId,
-      remediationDueDate: finding.remediationDueDate,
-      auditId: finding.auditId,
-    })
-    .from(finding)
-    .where(
-      and(
-        isNotNull(finding.remediationDueDate),
-        lt(sql`${finding.remediationDueDate}::date`, sql`(CURRENT_DATE + 7)`),
-        inArray(finding.status, ["identified", "in_remediation"]),
-        isNotNull(finding.ownerId),
-        isNull(finding.deletedAt),
-      ),
-    );
-
-  for (const f of overdueFindings) {
-    if (!f.ownerId) continue;
-    try {
-      const daysDiff = f.remediationDueDate
-        ? Math.floor(
-            (new Date(f.remediationDueDate).getTime() -
-              new Date(today).getTime()) /
-              86400000,
-          )
-        : 0;
-      const overdue = daysDiff < 0;
-      const absDays = Math.abs(daysDiff);
-
-      await db.insert(notification).values({
-        userId: f.ownerId,
-        orgId: f.orgId,
-        type: "deadline_approaching" as const,
-        entityType: "finding",
-        entityId: f.id,
-        title: overdue
-          ? `Finding überfällig: ${absDays} Tag(e)`
-          : `Finding-Korrektur fällig in ${absDays} Tag(en)`,
-        message: `Finding "${f.title}" (Severity: ${f.severity}) — Frist: ${f.remediationDueDate}`,
-        channel: "both" as const,
-        templateKey: "audit_finding_deadline",
-        templateData: {
-          findingId: f.id,
-          title: f.title,
-          severity: f.severity,
-          status: f.status,
-          remediationDueDate: f.remediationDueDate,
-          daysDiff,
-          overdue,
-          auditId: f.auditId,
-        },
-        createdAt: now,
-        updatedAt: now,
-      });
-      notifiedFindings++;
-    } catch (err) {
-      console.error(
-        `[cron:audit-remediation-deadline-monitor] Failed for finding ${f.id}:`,
-        err instanceof Error ? err.message : String(err),
+    // ── 2. Findings mit überfälliger oder baldiger Frist ──
+    const overdueFindings = await db
+      .select({
+        id: finding.id,
+        orgId: finding.orgId,
+        title: finding.title,
+        severity: finding.severity,
+        status: finding.status,
+        ownerId: finding.ownerId,
+        remediationDueDate: finding.remediationDueDate,
+        auditId: finding.auditId,
+      })
+      .from(finding)
+      .where(
+        and(
+          isNotNull(finding.remediationDueDate),
+          lt(sql`${finding.remediationDueDate}::date`, sql`(CURRENT_DATE + 7)`),
+          inArray(finding.status, ["identified", "in_remediation"]),
+          isNotNull(finding.ownerId),
+          isNull(finding.deletedAt),
+        ),
       );
+
+    for (const f of overdueFindings) {
+      if (!f.ownerId) continue;
+      try {
+        const daysDiff = f.remediationDueDate
+          ? Math.floor(
+              (new Date(f.remediationDueDate).getTime() -
+                new Date(today).getTime()) /
+                86400000,
+            )
+          : 0;
+        const overdue = daysDiff < 0;
+        const absDays = Math.abs(daysDiff);
+
+        await db.insert(notification).values({
+          userId: f.ownerId,
+          orgId: f.orgId,
+          type: "deadline_approaching" as const,
+          entityType: "finding",
+          entityId: f.id,
+          title: overdue
+            ? `Finding überfällig: ${absDays} Tag(e)`
+            : `Finding-Korrektur fällig in ${absDays} Tag(en)`,
+          message: `Finding "${f.title}" (Severity: ${f.severity}) — Frist: ${f.remediationDueDate}`,
+          channel: "both" as const,
+          templateKey: "audit_finding_deadline",
+          templateData: {
+            findingId: f.id,
+            title: f.title,
+            severity: f.severity,
+            status: f.status,
+            remediationDueDate: f.remediationDueDate,
+            daysDiff,
+            overdue,
+            auditId: f.auditId,
+          },
+          createdAt: now,
+          updatedAt: now,
+        });
+        notifiedFindings++;
+      } catch (err) {
+        console.error(
+          `[cron:audit-remediation-deadline-monitor] Failed for finding ${f.id}:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
-  }
 
     return {
       processed: overdueItems.length + overdueFindings.length,
