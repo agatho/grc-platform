@@ -148,7 +148,13 @@ export default function IncidentsMonitorPage() {
   }
 
   if (error) {
-    return <ErrorRetry title="Monitor konnte nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Monitor konnte nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   const renderRow = (r: IncidentWithOverdue) => {

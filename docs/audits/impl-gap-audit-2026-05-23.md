@@ -9,7 +9,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
 ## TL;DR
 
 - Files audited: ~1,750 API route.ts + 470 pages + 121 cron handlers + 108 schema files
-  + 144 i18n namespace files spot-checked.
+  - 144 i18n namespace files spot-checked.
 - HIGH gaps: **3** (alpha-user-visible broken behaviour)
 - MEDIUM: **2** (operator- or dev-visible only)
 - LOW: **4** (cosmetic / future cleanup, mostly Phase-3-stub schemas documented in ADR-014)
@@ -24,7 +24,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
    freshly-seeded org sees the `ModuleTeaser` ("module disabled") on every one of those 11 pages
    even though the underlying API routes (`/api/v1/community/...`, `/api/v1/marketplace/...`,
    `/api/v1/portals/...`, `/api/v1/simulations/...`) are fully implemented.
-   *Fix sketch:* add the four rows to `seed_platform_baseline.sql` AND add a migration that
+   _Fix sketch:_ add the four rows to `seed_platform_baseline.sql` AND add a migration that
    inserts them with `ON CONFLICT (module_key) DO NOTHING`.
 
 2. **HIGH — Report scheduler never emails recipients despite UI promise.**
@@ -33,7 +33,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
    Meanwhile the UI at `apps/web/src/app/(dashboard)/reports/schedules/page.tsx:96,214,351-360`
    collects an explicit `recipientEmails[]` list with placeholder + help text. Alpha users will
    create scheduled reports expecting an email and never get one (no error surfaced).
-   *Fix sketch:* import `sendEmail` from `@grc/email` and wire it after `reportGenerator.generate`
+   _Fix sketch:_ import `sendEmail` from `@grc/email` and wire it after `reportGenerator.generate`
    completes (also wire failure path to error notification).
 
 3. **HIGH — `<ModuleGate>` `loading` UX is silent for unknown keys.**
@@ -41,14 +41,14 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
    missing module definitions to `status: "disabled"` — there is no console warning, no admin
    surfacing. Combined with gap #1, four modules silently disappear from prod. Independent of #1,
    recommend logging `console.warn` once per unknown moduleKey in `use-module-config.tsx`.
-   *Fix sketch:* in `useModuleConfig`, if `configs.length > 0 && !config && !loading` then
+   _Fix sketch:_ in `useModuleConfig`, if `configs.length > 0 && !config && !loading` then
    `console.warn` and capture via Sentry; alternatively render an explicit "module not provisioned"
    teaser distinct from "module disabled".
 
 4. **MEDIUM — Process SVG-export endpoint 501s, but the cleaner fix is to remove the route.**
    `apps/web/src/app/api/v1/processes/[id]/export/svg/route.ts` returns `501 Not Implemented`
    with a documented reason ("SVG only renders client-side"). No UI calls it (grep confirms).
-   *Fix sketch:* delete the route file; client-side `<BpmnEditor>` already exports SVG locally.
+   _Fix sketch:_ delete the route file; client-side `<BpmnEditor>` already exports SVG locally.
    Leaving the dead endpoint suggests a missing feature to first-time auditors.
 
 5. **MEDIUM — Phase-3 schema stubs still ship without UI/API.**
@@ -64,7 +64,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
    `esef-xbrl.ts` (7), `phase3-extras.ts` (most), `erm-advanced.ts::bowtieTemplate`.
    Documented in `docs/adr-014-phase3-stubs.md` as known unfinished, **but** they pollute the
    migration set, audit trail, and RLS coverage report.
-   *Fix sketch:* either follow up with implementing Sprints, OR mark each table with
+   _Fix sketch:_ either follow up with implementing Sprints, OR mark each table with
    `-- Phase-3 placeholder (not yet exposed via API; see ADR-014)` in its migration and exclude
    them from the RLS-coverage-report total to keep the security baseline honest.
 
@@ -90,12 +90,12 @@ wired front-to-back, only the seed row is missing, so the gate hides the page.
 
 ### Module-gate orphans
 
-| Page (count)                         | `moduleKey` | Seed row exists? | API exists? |
-| ------------------------------------ | ----------- | ---------------- | ----------- |
-| `community/page.tsx`, `community/contributions/page.tsx` | `community` | NO | YES (`/api/v1/community/`) |
-| `marketplace/page.tsx`, `marketplace/publishers/`, `marketplace/listings/[id]/`, `marketplace/installed/` | `marketplace` | NO | YES (`/api/v1/marketplace/`) |
-| `simulations/page.tsx`, `simulations/scenarios/[id]/`, `simulations/comparisons/` | `simulations` | NO | YES (`/api/v1/simulations/`) |
-| `portals/page.tsx`, `portals/sessions/`, `portals/configs/[id]/` | `portals` | NO | YES (`/api/v1/portals/`) |
+| Page (count)                                                                                              | `moduleKey`   | Seed row exists? | API exists?                  |
+| --------------------------------------------------------------------------------------------------------- | ------------- | ---------------- | ---------------------------- |
+| `community/page.tsx`, `community/contributions/page.tsx`                                                  | `community`   | NO               | YES (`/api/v1/community/`)   |
+| `marketplace/page.tsx`, `marketplace/publishers/`, `marketplace/listings/[id]/`, `marketplace/installed/` | `marketplace` | NO               | YES (`/api/v1/marketplace/`) |
+| `simulations/page.tsx`, `simulations/scenarios/[id]/`, `simulations/comparisons/`                         | `simulations` | NO               | YES (`/api/v1/simulations/`) |
+| `portals/page.tsx`, `portals/sessions/`, `portals/configs/[id]/`                                          | `portals`     | NO               | YES (`/api/v1/portals/`)     |
 
 Seed sources checked: `packages/db/sql/seed_platform_baseline.sql` (15 keys),
 `packages/db/sql/seed_module_definitions_sprint4_9.sql` (sprint-4–9 keys),
@@ -122,17 +122,17 @@ with real DB queries below.
 
 ### Unused schemas (LOW — already known via ADR-014)
 
-| Schema file | Tables | Used by app? |
-| ----------- | ------ | ------------ |
-| `approval-workflow.ts` | 7 | No (only `db-exports.ts`) |
-| `audit-extras.ts` | 3 | No |
-| `checklist.ts` | 2 | No |
-| `content-narrative.ts` | 4 | No |
-| `control-monitoring.ts` | 2 | No |
-| `data-governance.ts` | 5 | No |
-| `esef-xbrl.ts` | 7 | No |
-| `erm-advanced.ts::bowtieTemplate` | 1 | No |
-| `phase3-extras.ts` (most) | ~7 | No |
+| Schema file                       | Tables | Used by app?              |
+| --------------------------------- | ------ | ------------------------- |
+| `approval-workflow.ts`            | 7      | No (only `db-exports.ts`) |
+| `audit-extras.ts`                 | 3      | No                        |
+| `checklist.ts`                    | 2      | No                        |
+| `content-narrative.ts`            | 4      | No                        |
+| `control-monitoring.ts`           | 2      | No                        |
+| `data-governance.ts`              | 5      | No                        |
+| `esef-xbrl.ts`                    | 7      | No                        |
+| `erm-advanced.ts::bowtieTemplate` | 1      | No                        |
+| `phase3-extras.ts` (most)         | ~7     | No                        |
 
 These are formally listed in `docs/adr-014-phase3-stubs.md` and form ~37 tables. They are not
 strictly "implementation gaps" in the alpha-user sense (no UI promises them) but they do inflate

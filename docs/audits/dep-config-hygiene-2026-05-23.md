@@ -33,42 +33,42 @@
 4 moderate, 0 high, 0 critical (1266 total deps, 552 prod)
 ```
 
-| Advisory | Pkg | Range | Root | Notes |
-|---|---|---|---|---|
-| GHSA-w5hq-g745-h8pq | uuid | <11.1.1 | exceljs (4.4.0) → archiver | OOB write in v3/v5/v6 buffer mode. ARCTOS uses `exceljs.Workbook().xlsx.write*` only; v4-random path is not hit. Risk: low. Fix requires major upgrade of exceljs (SemVer-major reported). |
-| GHSA-qx2v-qp2m-jg93 | postcss | <8.5.10 | next 15.5.18 | XSS via unescaped `</style>` in stringify. CSS pipeline at build only — no runtime CSS-injection from user input. Fix is `next@16` (major, not yet vetted). Risk: low. |
+| Advisory            | Pkg     | Range   | Root                       | Notes                                                                                                                                                                                      |
+| ------------------- | ------- | ------- | -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| GHSA-w5hq-g745-h8pq | uuid    | <11.1.1 | exceljs (4.4.0) → archiver | OOB write in v3/v5/v6 buffer mode. ARCTOS uses `exceljs.Workbook().xlsx.write*` only; v4-random path is not hit. Risk: low. Fix requires major upgrade of exceljs (SemVer-major reported). |
+| GHSA-qx2v-qp2m-jg93 | postcss | <8.5.10 | next 15.5.18               | XSS via unescaped `</style>` in stringify. CSS pipeline at build only — no runtime CSS-injection from user input. Fix is `next@16` (major, not yet vetted). Risk: low.                     |
 
 Both moderates are noisy but not exploitable in the current code paths. **No action required this sprint** beyond an SCA suppression note.
 
 ### Outdated critical-path deps (>6 months behind)
 
-| Package | Current | Latest | Verdict |
-|---|---|---|---|
-| `next` | 15.5.18 | 16.2.6 | Skip until alpha exit. Next 16 has app-router breaking changes. |
-| `@types/node` | 22.19.19 | 25.9.1 | Acceptable; pinned to Node 22 LTS. |
-| `next-auth` | 5.0.0-beta.31 | beta.31 (latest stable is 4.24.14) | On beta intentionally per ADR-007 rev.1. |
-| `drizzle-orm` | 0.45.2 | (no newer in registry view) | OK. |
-| `react-grid-layout` | 1.5.3 | 2.2.3 | Behind; review when alpha closes. |
-| `puppeteer` | 24.43.1 | 25.0.4 | Behind one major. Chromium-binding break risk. Skip. |
-| `hono` | 4.12.21 | 4.12.22 | Patch-level only. Trivial bump for worker. |
-| `@hono/node-server` | 1.19.14 | 2.0.3 | Major; skip. |
-| `zod` | 3.25.76 | 4.4.3 | Major; entire codebase uses v3 imports. Skip. |
-| `motion` | 12.39.0 | 12.40.0 | Patch; bump on next minor sweep. |
+| Package             | Current       | Latest                             | Verdict                                                         |
+| ------------------- | ------------- | ---------------------------------- | --------------------------------------------------------------- |
+| `next`              | 15.5.18       | 16.2.6                             | Skip until alpha exit. Next 16 has app-router breaking changes. |
+| `@types/node`       | 22.19.19      | 25.9.1                             | Acceptable; pinned to Node 22 LTS.                              |
+| `next-auth`         | 5.0.0-beta.31 | beta.31 (latest stable is 4.24.14) | On beta intentionally per ADR-007 rev.1.                        |
+| `drizzle-orm`       | 0.45.2        | (no newer in registry view)        | OK.                                                             |
+| `react-grid-layout` | 1.5.3         | 2.2.3                              | Behind; review when alpha closes.                               |
+| `puppeteer`         | 24.43.1       | 25.0.4                             | Behind one major. Chromium-binding break risk. Skip.            |
+| `hono`              | 4.12.21       | 4.12.22                            | Patch-level only. Trivial bump for worker.                      |
+| `@hono/node-server` | 1.19.14       | 2.0.3                              | Major; skip.                                                    |
+| `zod`               | 3.25.76       | 4.4.3                              | Major; entire codebase uses v3 imports. Skip.                   |
+| `motion`            | 12.39.0       | 12.40.0                            | Patch; bump on next minor sweep.                                |
 
 Lockfile is **in sync** with package.json (`npm install --dry-run` = "up to date"). Engine pin: `node >=22`, `npm@11.12.0`.
 
 ### Deprecated transitive deps (prod)
 
-| Package | Path | Severity |
-|---|---|---|
-| `glob@7.2.3` | exceljs → archiver/archiver-utils + unzipper/fstream/rimraf | Low — load-time only |
-| `inflight@1.0.6` | glob@7 transitive | Memory-leak risk; only hit during archive ops |
-| `rimraf@2.7.1` | unzipper → fstream | unzipper itself is also archived upstream |
-| `fstream@1.0.12` | unzipper | unmaintained |
-| `lodash.isequal@4.5.0` | recharts ancestor | deprecated, replaced upstream; recharts 3.x will drop. |
-| `@react-email/*` (body/button/code-block/heading/img/link/text/etc.) | @react-email/components | Marked deprecated because consolidated into `@react-email/components`. Functional, but a future SCA scan will flag them. |
-| `@esbuild-kit/core-utils`, `@esbuild-kit/esm-loader` | merged into tsx | Dev only via drizzle-kit. |
-| `@types/react-grid-layout` | shipped with `react-grid-layout` upstream now | Dev only. |
+| Package                                                              | Path                                                        | Severity                                                                                                                 |
+| -------------------------------------------------------------------- | ----------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `glob@7.2.3`                                                         | exceljs → archiver/archiver-utils + unzipper/fstream/rimraf | Low — load-time only                                                                                                     |
+| `inflight@1.0.6`                                                     | glob@7 transitive                                           | Memory-leak risk; only hit during archive ops                                                                            |
+| `rimraf@2.7.1`                                                       | unzipper → fstream                                          | unzipper itself is also archived upstream                                                                                |
+| `fstream@1.0.12`                                                     | unzipper                                                    | unmaintained                                                                                                             |
+| `lodash.isequal@4.5.0`                                               | recharts ancestor                                           | deprecated, replaced upstream; recharts 3.x will drop.                                                                   |
+| `@react-email/*` (body/button/code-block/heading/img/link/text/etc.) | @react-email/components                                     | Marked deprecated because consolidated into `@react-email/components`. Functional, but a future SCA scan will flag them. |
+| `@esbuild-kit/core-utils`, `@esbuild-kit/esm-loader`                 | merged into tsx                                             | Dev only via drizzle-kit.                                                                                                |
+| `@types/react-grid-layout`                                           | shipped with `react-grid-layout` upstream now               | Dev only.                                                                                                                |
 
 **No deprecated prod dep is currently exploitable.** Action: track for the next major-bump sprint.
 
@@ -76,18 +76,18 @@ Lockfile is **in sync** with package.json (`npm install --dry-run` = "up to date
 
 #### Hardcoded `??` / `||` fallbacks (sensitive ones)
 
-| File | Var | Fallback | Verdict |
-|---|---|---|---|
-| `apps/web/src/app/api/v1/auth/sso/oidc/login/route.ts` | `NEXTAUTH_URL` | `https://localhost:3000` | **Bad** in prod — OIDC `redirect_uri` will literally point at localhost. 8 SSO/SCIM routes share this pattern. Make it required, not defaulted. |
-| `apps/web/src/app/api/v1/scim/v2/Users/*` | `NEXTAUTH_URL` | `https://localhost:3000` | Same. |
-| `apps/web/src/app/api/v1/calendar/ical/generate-token/route.ts` | `NEXT_PUBLIC_APP_URL` | `https://arctos.local` | Tokens get baked with arctos.local URL; harmless but operator-confusing. |
-| `apps/web/src/app/api/v1/vendors/[id]/dd/invite/route.ts` | `PORTAL_BASE_URL → NEXTAUTH_URL → (nothing?)` | chained | OK as graceful fallback. |
-| `apps/web/src/app/api/v1/documents/[id]/{download,upload}/route.ts` | `UPLOAD_DIR` | `process.cwd() + "../../uploads/documents"` | Filesystem traversal-style relative path. In standalone Docker the cwd is `/app`, so this resolves to `/uploads/documents` which doesn't exist. Make required or anchor to a known prefix. |
-| `packages/reporting/src/generator.ts` | `REPORT_OUTPUT_DIR` | `/tmp/arctos-reports` | OK on Linux; ephemeral tmpfs in compose means reports are lost on container restart. |
-| `packages/email/src/EmailService.ts` | `RESEND_FROM_NAME/RESEND_FROM_EMAIL` | `noreply@arctos.cws.de` | Hardcoded vendor name in fallback — stale brand. |
-| `packages/ai/src/providers/lmstudio.ts` | `LMSTUDIO_API_KEY` | `lm-studio` | Local-only; harmless. |
-| `packages/shared/src/wb-crypto.ts` | `WB_ENCRYPTION_KEY` | **throws** | Correct. |
-| `apps/web/src/app/api/v1/connectors/[id]/credentials/route.ts` | `CONNECTOR_ENCRYPTION_KEY` | (via `packages/shared/src/env-key.ts`) | Throws if unset. Correct. |
+| File                                                                | Var                                           | Fallback                                    | Verdict                                                                                                                                                                                    |
+| ------------------------------------------------------------------- | --------------------------------------------- | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `apps/web/src/app/api/v1/auth/sso/oidc/login/route.ts`              | `NEXTAUTH_URL`                                | `https://localhost:3000`                    | **Bad** in prod — OIDC `redirect_uri` will literally point at localhost. 8 SSO/SCIM routes share this pattern. Make it required, not defaulted.                                            |
+| `apps/web/src/app/api/v1/scim/v2/Users/*`                           | `NEXTAUTH_URL`                                | `https://localhost:3000`                    | Same.                                                                                                                                                                                      |
+| `apps/web/src/app/api/v1/calendar/ical/generate-token/route.ts`     | `NEXT_PUBLIC_APP_URL`                         | `https://arctos.local`                      | Tokens get baked with arctos.local URL; harmless but operator-confusing.                                                                                                                   |
+| `apps/web/src/app/api/v1/vendors/[id]/dd/invite/route.ts`           | `PORTAL_BASE_URL → NEXTAUTH_URL → (nothing?)` | chained                                     | OK as graceful fallback.                                                                                                                                                                   |
+| `apps/web/src/app/api/v1/documents/[id]/{download,upload}/route.ts` | `UPLOAD_DIR`                                  | `process.cwd() + "../../uploads/documents"` | Filesystem traversal-style relative path. In standalone Docker the cwd is `/app`, so this resolves to `/uploads/documents` which doesn't exist. Make required or anchor to a known prefix. |
+| `packages/reporting/src/generator.ts`                               | `REPORT_OUTPUT_DIR`                           | `/tmp/arctos-reports`                       | OK on Linux; ephemeral tmpfs in compose means reports are lost on container restart.                                                                                                       |
+| `packages/email/src/EmailService.ts`                                | `RESEND_FROM_NAME/RESEND_FROM_EMAIL`          | `noreply@arctos.cws.de`                     | Hardcoded vendor name in fallback — stale brand.                                                                                                                                           |
+| `packages/ai/src/providers/lmstudio.ts`                             | `LMSTUDIO_API_KEY`                            | `lm-studio`                                 | Local-only; harmless.                                                                                                                                                                      |
+| `packages/shared/src/wb-crypto.ts`                                  | `WB_ENCRYPTION_KEY`                           | **throws**                                  | Correct.                                                                                                                                                                                   |
+| `apps/web/src/app/api/v1/connectors/[id]/credentials/route.ts`      | `CONNECTOR_ENCRYPTION_KEY`                    | (via `packages/shared/src/env-key.ts`)      | Throws if unset. Correct.                                                                                                                                                                  |
 
 `AUTH_SECRET` is never defaulted in source — only at build time the Dockerfile uses a placeholder ARG, then the runtime image strips it. Confirmed clean.
 
@@ -125,15 +125,15 @@ No fishy callbacks. No `redirect` callback override (next-auth defaults are safe
 
 ### tsconfig strictness
 
-| File | strict | noUnusedLocals | noUncheckedIndexedAccess | extends base? |
-|---|---|---|---|---|
-| `tsconfig.base.json` | ✅ | ✅ | ✅ | — |
-| `apps/web/tsconfig.json` | ✅ | ❌ missing | ❌ missing | ❌ no |
-| `apps/worker/tsconfig.json` | ✅ | ❌ missing | ❌ missing | ❌ no |
-| `packages/automation/tsconfig.json` | (from base) | **explicitly disabled** | **explicitly disabled** | ✅ |
-| `packages/events/tsconfig.json` | (from base) | ✅ | ✅ | ✅ |
-| `packages/graph/tsconfig.json` | (from base) | **explicitly disabled** | **explicitly disabled** | ✅ |
-| `packages/reporting/tsconfig.json` | (from base) | ✅ | ✅ | ✅ |
+| File                                | strict      | noUnusedLocals          | noUncheckedIndexedAccess | extends base? |
+| ----------------------------------- | ----------- | ----------------------- | ------------------------ | ------------- |
+| `tsconfig.base.json`                | ✅          | ✅                      | ✅                       | —             |
+| `apps/web/tsconfig.json`            | ✅          | ❌ missing              | ❌ missing               | ❌ no         |
+| `apps/worker/tsconfig.json`         | ✅          | ❌ missing              | ❌ missing               | ❌ no         |
+| `packages/automation/tsconfig.json` | (from base) | **explicitly disabled** | **explicitly disabled**  | ✅            |
+| `packages/events/tsconfig.json`     | (from base) | ✅                      | ✅                       | ✅            |
+| `packages/graph/tsconfig.json`      | (from base) | **explicitly disabled** | **explicitly disabled**  | ✅            |
+| `packages/reporting/tsconfig.json`  | (from base) | ✅                      | ✅                       | ✅            |
 
 Weakest: `apps/web` and `apps/worker` — neither extends the base. Both `packages/automation` and `packages/graph` explicitly opt out of `noUnusedLocals` and `noUncheckedIndexedAccess`. Documented exception or technical debt — pick one.
 
@@ -162,10 +162,10 @@ Weakest: `apps/web` and `apps/worker` — neither extends the base. Both `packag
 
 Real TODOs in source (non-vendored): **2**
 
-| File | Comment |
-|---|---|
-| `apps/web/src/app/(dashboard)/organizations/[id]/page.tsx:190` | `TODO(alpha-followup):` camelCase normalization — stale, alpha closing |
-| `apps/web/src/lib/rate-limit.ts:94` | `TODO: Phase 2 — echte Redis-Implementation hinter REDIS_URL` — still relevant; rate-limit currently in-memory only |
+| File                                                           | Comment                                                                                                             |
+| -------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| `apps/web/src/app/(dashboard)/organizations/[id]/page.tsx:190` | `TODO(alpha-followup):` camelCase normalization — stale, alpha closing                                              |
+| `apps/web/src/lib/rate-limit.ts:94`                            | `TODO: Phase 2 — echte Redis-Implementation hinter REDIS_URL` — still relevant; rate-limit currently in-memory only |
 
 The rate-limit TODO is the one worth tracking — `REDIS_URL` is set in compose, and rate-limit not hitting Redis means per-pod limits in any multi-pod future. Add a Wave-25/26 backlog item.
 
@@ -178,6 +178,7 @@ The rate-limit TODO is the one worth tracking — `REDIS_URL` is set in compose,
 ### Unused production deps (spot check)
 
 Sampled high-value packages — all confirmed referenced:
+
 - `jszip` → 5 routes
 - `papaparse` → import-export parser
 - `pdfkit` → `apps/web/src/lib/pdf.ts`

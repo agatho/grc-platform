@@ -159,7 +159,13 @@ export default function BcmsReadinessMonitorPage() {
     // #WAVE27-FE: reusable ErrorRetry replaces the per-page copy of the
     // AlertTriangle + RefreshCcw pattern. The bcms-specific title is
     // preserved via the `title` prop; common.retry handles i18n.
-    return <ErrorRetry title="Monitor konnte nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Monitor konnte nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   if (!data) return null;

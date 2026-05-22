@@ -109,24 +109,24 @@ The frontend is structurally sound — **no `dangerouslySetInnerHTML`, no `.inne
   2. **Portal pages** at `apps/web/src/app/(portal)/dd/[token]/page.tsx` — uses an inline `lang === "de" ? "X" : "Y"` ternary at lines 350, 505, 515 etc. instead of `useTranslations`. Acceptable for portal-bounded code (the portal carries its own `?lang=` parameter) but inconsistent.
   3. **Error fallbacks**: see top-5 #5.
   4. `apps/web/src/app/(dashboard)/grc-findings/page.tsx:336` — `<CardTitle>Filter</CardTitle>`. Single literal but in a generic card title — easy fix.
-  5. `apps/web/src/lib/ropa-export.ts:83` — `new Date().toLocaleDateString("de-DE", ...)` hardcodes German. This is RoPA-export, which is *legally* German-formatted (GDPR Art. 30), so likely intentional — flag for review only.
+  5. `apps/web/src/lib/ropa-export.ts:83` — `new Date().toLocaleDateString("de-DE", ...)` hardcodes German. This is RoPA-export, which is _legally_ German-formatted (GDPR Art. 30), so likely intentional — flag for review only.
 - **Locale-blind date formatting** — see top-5 #2 for the 68-file list.
-- **`.toLocaleString()` (datetime + number combined) without locale arg** — 15 files. Same fix as #2, but the call site `apps/web/src/app/(dashboard)/admin/performance/page.tsx:242` (`q.callCount.toLocaleString()`) is a number, not a date, and *should* take a locale to honour the `1.234,56` vs `1,234.56` contract.
+- **`.toLocaleString()` (datetime + number combined) without locale arg** — 15 files. Same fix as #2, but the call site `apps/web/src/app/(dashboard)/admin/performance/page.tsx:242` (`q.callCount.toLocaleString()`) is a number, not a date, and _should_ take a locale to honour the `1.234,56` vs `1,234.56` contract.
 
 ## Recommendations (cost-ordered, lowest first)
 
-| #   | Item                                                               | Effort | Impact                                  |
-| --- | ------------------------------------------------------------------ | ------ | --------------------------------------- |
-| R1  | Add `common.errorTitle` + `common.retry` + replace 7 hardcoded     | 1 h    | Closes English-locale UX gap (#5)       |
-| R2  | Add `aria-label` to all top-of-page search `<input>`s              | 1 h    | a11y                                    |
-| R3  | Add `submitting` guards to 6 AI-Act submit buttons                 | 1 h    | Stops double-submit                     |
-| R4  | Wrap `load()` in `useCallback` in the 3 programmes pages           | 30 m   | Future-proofs eslint-disabled deps      |
-| R5  | Create `src/lib/format-date.ts` + sed-replace 68 call sites        | 4 h    | Honour i18n contract (#2)               |
-| R6  | Add `aria-label` + `role=progressbar` to coloured progress bars    | 1 h    | a11y                                    |
-| R7  | Create `messages/{de,en}/ai-act.json`, migrate 21+ pages           | 1.5 d  | Closes top-5 #1                         |
-| R8  | Migrate 9 error pages to AlertTriangle+Retry shape                 | 4 h    | Closes top-5 #3                         |
-| R9  | Replace 5 raw `<img>` with `next/image` + remote-pattern config    | 3 h    | LCP + CSP enforcement                   |
-| R10 | (Long term) RSC migration for read-only pages                      | weeks  | Bundle-size; not for alpha              |
+| #   | Item                                                            | Effort | Impact                             |
+| --- | --------------------------------------------------------------- | ------ | ---------------------------------- |
+| R1  | Add `common.errorTitle` + `common.retry` + replace 7 hardcoded  | 1 h    | Closes English-locale UX gap (#5)  |
+| R2  | Add `aria-label` to all top-of-page search `<input>`s           | 1 h    | a11y                               |
+| R3  | Add `submitting` guards to 6 AI-Act submit buttons              | 1 h    | Stops double-submit                |
+| R4  | Wrap `load()` in `useCallback` in the 3 programmes pages        | 30 m   | Future-proofs eslint-disabled deps |
+| R5  | Create `src/lib/format-date.ts` + sed-replace 68 call sites     | 4 h    | Honour i18n contract (#2)          |
+| R6  | Add `aria-label` + `role=progressbar` to coloured progress bars | 1 h    | a11y                               |
+| R7  | Create `messages/{de,en}/ai-act.json`, migrate 21+ pages        | 1.5 d  | Closes top-5 #1                    |
+| R8  | Migrate 9 error pages to AlertTriangle+Retry shape              | 4 h    | Closes top-5 #3                    |
+| R9  | Replace 5 raw `<img>` with `next/image` + remote-pattern config | 3 h    | LCP + CSP enforcement              |
+| R10 | (Long term) RSC migration for read-only pages                   | weeks  | Bundle-size; not for alpha         |
 
 ## What we explicitly did NOT find
 
