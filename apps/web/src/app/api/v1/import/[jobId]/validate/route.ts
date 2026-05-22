@@ -111,9 +111,6 @@ export async function POST(
     // = "failed" transition is the operator's signal; detail isn't
     // needed in the response body.
     console.error("[import/validate] failed", err);
-    return Response.json(
-      { error: "Validation failed" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Validation failed" }, { status: 500 });
   }
 }

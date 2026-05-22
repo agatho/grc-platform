@@ -111,9 +111,6 @@ export async function POST(
     // via GET /api/v1/import/{jobId}). The response body itself stays
     // generic so the detail isn't double-emitted to the network.
     console.error("[import/execute] failed", err);
-    return Response.json(
-      { error: "Import execution failed" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Import execution failed" }, { status: 500 });
   }
 }

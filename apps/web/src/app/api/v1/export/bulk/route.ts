@@ -65,9 +65,6 @@ export async function POST(req: Request) {
   } catch (err) {
     // #SEC-LEAK-FIX: don't echo err.message back to the client.
     console.error("[export/bulk] failed", err);
-    return Response.json(
-      { error: "Bulk export failed" },
-      { status: 500 },
-    );
+    return Response.json({ error: "Bulk export failed" }, { status: 500 });
   }
 }
