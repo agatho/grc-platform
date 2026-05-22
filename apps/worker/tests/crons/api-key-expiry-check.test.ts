@@ -22,10 +22,14 @@ describe("checkApiKeyExpiry", () => {
     mockDb = makeMockDb();
   });
 
-  it("runs without error when no expired keys exist", async () => {
+  it("returns {revoked, expiringSoon} counts when no expired keys exist", async () => {
     const { checkApiKeyExpiry } =
       await import("../../src/crons/api-key-expiry-check");
-    await expect(checkApiKeyExpiry()).resolves.toBeUndefined();
+    const result = await checkApiKeyExpiry();
+    expect(result).toMatchObject({
+      revoked: expect.any(Number),
+      expiringSoon: expect.any(Number),
+    });
   });
 
   it("calls update with expired status", async () => {

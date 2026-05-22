@@ -3,24 +3,18 @@
 
 import { db, auditAnalyticsImport } from "@grc/db";
 import { lte } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processAnalyticsCleanup(): Promise<{
-  deleted: number;
-}> {
-  console.log(
-    "[analytics-cleanup] Starting daily cleanup of expired analytics imports",
-  );
+export const processAnalyticsCleanup = withCronInstrumentation(
+  "analytics-cleanup",
+  async (): Promise<{ deleted: number }> => {
+    const now = new Date();
 
-  const now = new Date();
+    const expired = await db
+      .delete(auditAnalyticsImport)
+      .where(lte(auditAnalyticsImport.expiresAt, now))
+      .returning({ id: auditAnalyticsImport.id });
 
-  const expired = await db
-    .delete(auditAnalyticsImport)
-    .where(lte(auditAnalyticsImport.expiresAt, now))
-    .returning({ id: auditAnalyticsImport.id });
-
-  const deleted = expired.length;
-
-  console.log(`[analytics-cleanup] Deleted ${deleted} expired import(s)`);
-
-  return { deleted };
-}
+    return { deleted: expired.length };
+  },
+);
