@@ -14,6 +14,7 @@ import {
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { computeAssuranceScore } from "@grc/shared";
 import type { ModuleAssuranceData } from "@grc/shared";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 const ASSURANCE_MODULES = [
   "erm",
@@ -32,92 +33,90 @@ interface AssuranceSnapshotResult {
   errors: number;
 }
 
-export async function processAssuranceSnapshot(): Promise<AssuranceSnapshotResult> {
-  const now = new Date();
-  const snapshotDate = now.toISOString().split("T")[0];
-  console.log(`[cron:assurance-snapshot] Starting at ${now.toISOString()}`);
+export const processAssuranceSnapshot = withCronInstrumentation(
+  "assurance-snapshot",
+  async (): Promise<AssuranceSnapshotResult> => {
+    const now = new Date();
+    const snapshotDate = now.toISOString().split("T")[0];
 
-  let orgsProcessed = 0;
-  let snapshotsCreated = 0;
-  let errors = 0;
+    let orgsProcessed = 0;
+    let snapshotsCreated = 0;
+    let errors = 0;
 
-  const orgs = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(isNull(organization.deletedAt));
+    const orgs = await db
+      .select({ id: organization.id })
+      .from(organization)
+      .where(isNull(organization.deletedAt));
 
-  for (const org of orgs) {
-    try {
-      // Get enabled modules
-      const enabledModules = await db
-        .select({ moduleKey: moduleConfig.moduleKey })
-        .from(moduleConfig)
-        .where(
-          and(
-            eq(moduleConfig.orgId, org.id),
-            eq(moduleConfig.uiStatus, "enabled"),
-          ),
-        );
+    for (const org of orgs) {
+      try {
+        // Get enabled modules
+        const enabledModules = await db
+          .select({ moduleKey: moduleConfig.moduleKey })
+          .from(moduleConfig)
+          .where(
+            and(
+              eq(moduleConfig.orgId, org.id),
+              eq(moduleConfig.uiStatus, "enabled"),
+            ),
+          );
 
-      const enabledSet = new Set(enabledModules.map((m) => m.moduleKey));
+        const enabledSet = new Set(enabledModules.map((m) => m.moduleKey));
 
-      for (const mod of ASSURANCE_MODULES) {
-        if (!enabledSet.has(mod)) continue;
+        for (const mod of ASSURANCE_MODULES) {
+          if (!enabledSet.has(mod)) continue;
 
-        try {
-          const data = await collectModuleData(org.id);
-          const result = computeAssuranceScore(mod, data);
+          try {
+            const data = await collectModuleData(org.id);
+            const result = computeAssuranceScore(mod, data);
 
-          await db
-            .insert(assuranceScoreSnapshot)
-            .values({
-              orgId: org.id,
-              module: mod,
-              score: result.score,
-              factors: result.factors,
-              recommendations: result.recommendations,
-              snapshotDate,
-            })
-            .onConflictDoUpdate({
-              target: [
-                assuranceScoreSnapshot.orgId,
-                assuranceScoreSnapshot.module,
-                assuranceScoreSnapshot.snapshotDate,
-              ],
-              set: {
+            await db
+              .insert(assuranceScoreSnapshot)
+              .values({
+                orgId: org.id,
+                module: mod,
                 score: result.score,
                 factors: result.factors,
                 recommendations: result.recommendations,
-                computedAt: new Date(),
-              },
-            });
+                snapshotDate,
+              })
+              .onConflictDoUpdate({
+                target: [
+                  assuranceScoreSnapshot.orgId,
+                  assuranceScoreSnapshot.module,
+                  assuranceScoreSnapshot.snapshotDate,
+                ],
+                set: {
+                  score: result.score,
+                  factors: result.factors,
+                  recommendations: result.recommendations,
+                  computedAt: new Date(),
+                },
+              });
 
-          snapshotsCreated++;
-        } catch (err) {
-          errors++;
-          console.error(
-            `[cron:assurance-snapshot] Error for org ${org.id} module ${mod}:`,
-            err instanceof Error ? err.message : String(err),
-          );
+            snapshotsCreated++;
+          } catch (err) {
+            errors++;
+            console.error(
+              `[cron:assurance-snapshot] Error for org ${org.id} module ${mod}:`,
+              err instanceof Error ? err.message : String(err),
+            );
+          }
         }
+
+        orgsProcessed++;
+      } catch (err) {
+        errors++;
+        console.error(
+          `[cron:assurance-snapshot] Error for org ${org.id}:`,
+          err instanceof Error ? err.message : String(err),
+        );
       }
-
-      orgsProcessed++;
-    } catch (err) {
-      errors++;
-      console.error(
-        `[cron:assurance-snapshot] Error for org ${org.id}:`,
-        err instanceof Error ? err.message : String(err),
-      );
     }
-  }
 
-  console.log(
-    `[cron:assurance-snapshot] Done. Orgs: ${orgsProcessed}, Snapshots: ${snapshotsCreated}, Errors: ${errors}`,
-  );
-
-  return { orgsProcessed, snapshotsCreated, errors };
-}
+    return { orgsProcessed, snapshotsCreated, errors };
+  },
+);
 
 async function collectModuleData(orgId: string): Promise<ModuleAssuranceData> {
   const [controlStats] = await db
