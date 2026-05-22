@@ -9,6 +9,7 @@ import {
   notification,
 } from "@grc/db";
 import { eq, and, sql, gt } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface PolicyReminderResult {
   processed: number;
@@ -16,12 +17,12 @@ interface PolicyReminderResult {
   errors: string[];
 }
 
-export async function processPolicyReminder(): Promise<PolicyReminderResult> {
-  const errors: string[] = [];
-  let remindersSent = 0;
-  const now = new Date();
-
-  console.log(`[cron:policy-reminder] Starting at ${now.toISOString()}`);
+export const processPolicyReminder = withCronInstrumentation(
+  "policy-reminder",
+  async (): Promise<PolicyReminderResult> => {
+    const errors: string[] = [];
+    let remindersSent = 0;
+    const now = new Date();
 
   // Find all active distributions
   const activeDistributions = await db
@@ -102,9 +103,6 @@ export async function processPolicyReminder(): Promise<PolicyReminderResult> {
     }
   }
 
-  console.log(
-    `[cron:policy-reminder] Processed ${activeDistributions.length} distributions, sent ${remindersSent} reminders, ${errors.length} errors`,
-  );
-
-  return { processed: activeDistributions.length, remindersSent, errors };
-}
+    return { processed: activeDistributions.length, remindersSent, errors };
+  },
+);

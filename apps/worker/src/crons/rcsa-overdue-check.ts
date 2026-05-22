@@ -3,6 +3,7 @@
 
 import { db, rcsaCampaign, rcsaAssignment, notification } from "@grc/db";
 import { eq, and, sql, lt } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface RcsaOverdueResult {
   processed: number;
@@ -11,13 +12,13 @@ interface RcsaOverdueResult {
   errors: string[];
 }
 
-export async function processRcsaOverdueCheck(): Promise<RcsaOverdueResult> {
-  const errors: string[] = [];
-  let markedOverdue = 0;
-  let escalationsSent = 0;
-  const now = new Date();
-
-  console.log(`[cron:rcsa-overdue-check] Starting at ${now.toISOString()}`);
+export const processRcsaOverdueCheck = withCronInstrumentation(
+  "rcsa-overdue-check",
+  async (): Promise<RcsaOverdueResult> => {
+    const errors: string[] = [];
+    let markedOverdue = 0;
+    let escalationsSent = 0;
+    const now = new Date();
 
   // Find all active campaigns
   const activeCampaigns = await db
@@ -96,14 +97,11 @@ export async function processRcsaOverdueCheck(): Promise<RcsaOverdueResult> {
     }
   }
 
-  console.log(
-    `[cron:rcsa-overdue-check] Processed ${activeCampaigns.length} campaigns, marked ${markedOverdue} overdue, sent ${escalationsSent} escalations, ${errors.length} errors`,
-  );
-
-  return {
-    processed: activeCampaigns.length,
-    markedOverdue,
-    escalationsSent,
-    errors,
-  };
-}
+    return {
+      processed: activeCampaigns.length,
+      markedOverdue,
+      escalationsSent,
+      errors,
+    };
+  },
+);
