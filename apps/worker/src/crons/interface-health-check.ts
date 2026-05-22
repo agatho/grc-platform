@@ -3,6 +3,7 @@
 
 import { db, applicationInterface } from "@grc/db";
 import { isNotNull, eq } from "drizzle-orm";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 
 export async function processInterfaceHealthCheck(): Promise<{
   checked: number;
@@ -36,12 +37,15 @@ export async function processInterfaceHealthCheck(): Promise<{
             previousStatus: iface.healthStatus,
           };
         }
+        // #SEC-HIGH-SSRF: previously a hand-rolled regex on the literal
+        // hostname. Missed IPv6 entirely, CGNAT (100.64.0.0/10), the
+        // link-local space (169.254/16 — incl. AWS/GCP metadata
+        // endpoint), and any DNS-name that resolves to a private IP.
+        // Now using checkResolvedHostIsPublic from @grc/shared which
+        // does an actual DNS lookup + checks every resolved address.
         const hostname = parsed.hostname;
-        if (
-          /^(10\.|172\.(1[6-9]|2\d|3[01])\.|192\.168\.|127\.|localhost|0\.)/.test(
-            hostname,
-          )
-        ) {
+        const safetyCheck = await checkResolvedHostIsPublic(hostname);
+        if (!safetyCheck.ok) {
           return {
             id: iface.id,
             status: "down" as const,

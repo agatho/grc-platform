@@ -2,9 +2,25 @@ import { db, apiUsageLog } from "@grc/db";
 import { withAuth } from "@/lib/api";
 import { z } from "zod";
 
+// #SEC-HIGH-SSRF: the `path` is fed into `new URL(path, base)`. When
+// `path` is itself an absolute URL (starts with "http://" or
+// "https://"), the URL constructor IGNORES the base and uses `path`
+// directly — admin can target arbitrary internal hosts, cloud-
+// metadata endpoints (169.254.169.254), localhost services, etc.
+// The Zod refine below blocks anything that doesn't start with "/".
+// That keeps the playground useful (callers test their own API
+// endpoints) while shutting the SSRF door.
 const executeSchema = z.object({
   method: z.enum(["GET", "POST", "PUT", "PATCH", "DELETE"]),
-  path: z.string().min(1).max(500),
+  path: z
+    .string()
+    .min(1)
+    .max(500)
+    .refine((p) => p.startsWith("/") && !p.startsWith("//"), {
+      message:
+        "path must be a relative URL beginning with '/' — absolute URLs " +
+        "and protocol-relative URLs are blocked (SSRF prevention)",
+    }),
   headers: z.record(z.string(), z.string()).default({}),
   queryParams: z.record(z.string(), z.string()).default({}),
   body: z.string().max(50000).optional(),
