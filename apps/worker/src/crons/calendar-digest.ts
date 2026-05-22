@@ -3,6 +3,7 @@
 
 import { db, notification } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface CalendarDigestResult {
   processed: number;
@@ -10,14 +11,12 @@ interface CalendarDigestResult {
   errors: string[];
 }
 
-export async function processCalendarDigest(): Promise<CalendarDigestResult> {
-  const errors: string[] = [];
-  let emailsSent = 0;
-  const now = new Date();
-
-  console.log(
-    `[cron:calendar-digest] Starting weekly digest at ${now.toISOString()}`,
-  );
+export const processCalendarDigest = withCronInstrumentation(
+  "calendar-digest",
+  async (): Promise<CalendarDigestResult> => {
+    const errors: string[] = [];
+    let emailsSent = 0;
+    const now = new Date();
 
   // Calculate this week's date range (Monday to Sunday)
   const dayOfWeek = now.getDay();
@@ -123,9 +122,6 @@ export async function processCalendarDigest(): Promise<CalendarDigestResult> {
     }
   }
 
-  console.log(
-    `[cron:calendar-digest] Processed ${userOrgMap.size} users, sent ${emailsSent} digests, ${errors.length} errors`,
-  );
-
-  return { processed: userOrgMap.size, emailsSent, errors };
-}
+    return { processed: userOrgMap.size, emailsSent, errors };
+  },
+);

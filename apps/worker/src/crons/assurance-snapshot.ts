@@ -14,6 +14,7 @@ import {
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { computeAssuranceScore } from "@grc/shared";
 import type { ModuleAssuranceData } from "@grc/shared";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 const ASSURANCE_MODULES = [
   "erm",
@@ -32,16 +33,17 @@ interface AssuranceSnapshotResult {
   errors: number;
 }
 
-export async function processAssuranceSnapshot(): Promise<AssuranceSnapshotResult> {
-  const now = new Date();
-  const snapshotDate = now.toISOString().split("T")[0];
-  console.log(`[cron:assurance-snapshot] Starting at ${now.toISOString()}`);
+export const processAssuranceSnapshot = withCronInstrumentation(
+  "assurance-snapshot",
+  async (): Promise<AssuranceSnapshotResult> => {
+    const now = new Date();
+    const snapshotDate = now.toISOString().split("T")[0];
 
-  let orgsProcessed = 0;
-  let snapshotsCreated = 0;
-  let errors = 0;
+    let orgsProcessed = 0;
+    let snapshotsCreated = 0;
+    let errors = 0;
 
-  const orgs = await db
+    const orgs = await db
     .select({ id: organization.id })
     .from(organization)
     .where(isNull(organization.deletedAt));
@@ -112,12 +114,9 @@ export async function processAssuranceSnapshot(): Promise<AssuranceSnapshotResul
     }
   }
 
-  console.log(
-    `[cron:assurance-snapshot] Done. Orgs: ${orgsProcessed}, Snapshots: ${snapshotsCreated}, Errors: ${errors}`,
-  );
-
-  return { orgsProcessed, snapshotsCreated, errors };
-}
+    return { orgsProcessed, snapshotsCreated, errors };
+  },
+);
 
 async function collectModuleData(orgId: string): Promise<ModuleAssuranceData> {
   const [controlStats] = await db
