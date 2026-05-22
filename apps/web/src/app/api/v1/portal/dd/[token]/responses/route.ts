@@ -75,7 +75,9 @@ export async function PUT(req: Request, { params }: RouteParams) {
   }
 
   // 2. Compute the score per response (the pure-function part).
-  type RowValues = Parameters<typeof db.insert<typeof ddResponse>>[0] extends never
+  type RowValues = Parameters<
+    typeof db.insert<typeof ddResponse>
+  >[0] extends never
     ? never
     : unknown;
   const rowsToUpsert: Array<{
