@@ -104,8 +104,7 @@ describe("withAuditContext — session variable plumbing", () => {
     ).toBe(true);
     expect(
       txExecutions.some(
-        (sql) =>
-          sql.includes("app.current_user_name") && sql.includes("Alice"),
+        (sql) => sql.includes("app.current_user_name") && sql.includes("Alice"),
       ),
     ).toBe(true);
   });
@@ -140,9 +139,7 @@ describe("withAuditContext — bleed guard (critical)", () => {
     const actionDetailCalls = txExecutions.filter((sql) =>
       sql.includes("app.audit_action_detail"),
     );
-    expect(actionDetailCalls[0]).toContain(
-      "status:identified→remediated",
-    );
+    expect(actionDetailCalls[0]).toContain("status:identified→remediated");
   });
 
   it("propagates explicit reason value", async () => {
