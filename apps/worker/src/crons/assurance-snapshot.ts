@@ -44,75 +44,75 @@ export const processAssuranceSnapshot = withCronInstrumentation(
     let errors = 0;
 
     const orgs = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(isNull(organization.deletedAt));
+      .select({ id: organization.id })
+      .from(organization)
+      .where(isNull(organization.deletedAt));
 
-  for (const org of orgs) {
-    try {
-      // Get enabled modules
-      const enabledModules = await db
-        .select({ moduleKey: moduleConfig.moduleKey })
-        .from(moduleConfig)
-        .where(
-          and(
-            eq(moduleConfig.orgId, org.id),
-            eq(moduleConfig.uiStatus, "enabled"),
-          ),
-        );
+    for (const org of orgs) {
+      try {
+        // Get enabled modules
+        const enabledModules = await db
+          .select({ moduleKey: moduleConfig.moduleKey })
+          .from(moduleConfig)
+          .where(
+            and(
+              eq(moduleConfig.orgId, org.id),
+              eq(moduleConfig.uiStatus, "enabled"),
+            ),
+          );
 
-      const enabledSet = new Set(enabledModules.map((m) => m.moduleKey));
+        const enabledSet = new Set(enabledModules.map((m) => m.moduleKey));
 
-      for (const mod of ASSURANCE_MODULES) {
-        if (!enabledSet.has(mod)) continue;
+        for (const mod of ASSURANCE_MODULES) {
+          if (!enabledSet.has(mod)) continue;
 
-        try {
-          const data = await collectModuleData(org.id);
-          const result = computeAssuranceScore(mod, data);
+          try {
+            const data = await collectModuleData(org.id);
+            const result = computeAssuranceScore(mod, data);
 
-          await db
-            .insert(assuranceScoreSnapshot)
-            .values({
-              orgId: org.id,
-              module: mod,
-              score: result.score,
-              factors: result.factors,
-              recommendations: result.recommendations,
-              snapshotDate,
-            })
-            .onConflictDoUpdate({
-              target: [
-                assuranceScoreSnapshot.orgId,
-                assuranceScoreSnapshot.module,
-                assuranceScoreSnapshot.snapshotDate,
-              ],
-              set: {
+            await db
+              .insert(assuranceScoreSnapshot)
+              .values({
+                orgId: org.id,
+                module: mod,
                 score: result.score,
                 factors: result.factors,
                 recommendations: result.recommendations,
-                computedAt: new Date(),
-              },
-            });
+                snapshotDate,
+              })
+              .onConflictDoUpdate({
+                target: [
+                  assuranceScoreSnapshot.orgId,
+                  assuranceScoreSnapshot.module,
+                  assuranceScoreSnapshot.snapshotDate,
+                ],
+                set: {
+                  score: result.score,
+                  factors: result.factors,
+                  recommendations: result.recommendations,
+                  computedAt: new Date(),
+                },
+              });
 
-          snapshotsCreated++;
-        } catch (err) {
-          errors++;
-          console.error(
-            `[cron:assurance-snapshot] Error for org ${org.id} module ${mod}:`,
-            err instanceof Error ? err.message : String(err),
-          );
+            snapshotsCreated++;
+          } catch (err) {
+            errors++;
+            console.error(
+              `[cron:assurance-snapshot] Error for org ${org.id} module ${mod}:`,
+              err instanceof Error ? err.message : String(err),
+            );
+          }
         }
-      }
 
-      orgsProcessed++;
-    } catch (err) {
-      errors++;
-      console.error(
-        `[cron:assurance-snapshot] Error for org ${org.id}:`,
-        err instanceof Error ? err.message : String(err),
-      );
+        orgsProcessed++;
+      } catch (err) {
+        errors++;
+        console.error(
+          `[cron:assurance-snapshot] Error for org ${org.id}:`,
+          err instanceof Error ? err.message : String(err),
+        );
+      }
     }
-  }
 
     return { orgsProcessed, snapshotsCreated, errors };
   },

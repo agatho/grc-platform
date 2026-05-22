@@ -45,30 +45,30 @@ export const processCCIMonthlyAggregation = withCronInstrumentation(
     const prevMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
     const period = getPeriodString(prevMonth);
 
-  console.log(
-    `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
-  );
+    console.log(
+      `[cron:cci-monthly] Starting CCI aggregation for period ${period}`,
+    );
 
-  let orgsProcessed = 0;
-  let snapshotsCreated = 0;
-  let errors = 0;
+    let orgsProcessed = 0;
+    let snapshotsCreated = 0;
+    let errors = 0;
 
-  const orgs = await db
-    .select({ id: organization.id })
-    .from(organization)
-    .where(isNull(organization.deletedAt));
+    const orgs = await db
+      .select({ id: organization.id })
+      .from(organization)
+      .where(isNull(organization.deletedAt));
 
-  for (const org of orgs) {
-    try {
-      const result = await calculateAndStoreSnapshot(org.id, period);
-      if (result) snapshotsCreated++;
-      orgsProcessed++;
-    } catch (err) {
-      errors++;
-      // Wrapper logs structured error; bump per-org counter.
-      void err;
+    for (const org of orgs) {
+      try {
+        const result = await calculateAndStoreSnapshot(org.id, period);
+        if (result) snapshotsCreated++;
+        orgsProcessed++;
+      } catch (err) {
+        errors++;
+        // Wrapper logs structured error; bump per-org counter.
+        void err;
+      }
     }
-  }
 
     return { orgsProcessed, snapshotsCreated, errors };
   },
