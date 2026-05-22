@@ -55,11 +55,29 @@ export async function GET(
   const fileName = doc.fileName ?? "download";
   const mimeType = doc.mimeType ?? "application/octet-stream";
 
+  // #SEC-HIGH-SVG-XSS: documents (uploaded via /:id/upload) are allowed
+  // to be SVG, and the download endpoint serves the original Content-
+  // Type. Even with Content-Disposition: attachment, a determined
+  // attacker could fetch + display inline in a context they control;
+  // X-Content-Type-Options: nosniff stops browsers from MIME-sniffing
+  // an SVG into image/svg+xml when it's served with another type or
+  // forced as binary. Combined with the existing attachment header,
+  // this closes the SVG-stored-XSS gap end-to-end for documents.
+  //
+  // For SVG specifically we also force Content-Type to application/
+  // octet-stream so any client that bypasses Content-Disposition
+  // (e.g. `curl > foo.svg` then opens in browser later) doesn't
+  // execute it inline. The original mime type is preserved in the
+  // document.mimeType column for the UI's preview/icon picker.
+  const effectiveMimeType =
+    mimeType === "image/svg+xml" ? "application/octet-stream" : mimeType;
+
   return new Response(buffer, {
     headers: {
-      "Content-Type": mimeType,
+      "Content-Type": effectiveMimeType,
       "Content-Disposition": `attachment; filename="${encodeURIComponent(fileName)}"`,
       "Content-Length": String(buffer.length),
+      "X-Content-Type-Options": "nosniff",
     },
   });
 }
