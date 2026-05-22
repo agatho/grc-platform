@@ -118,9 +118,6 @@ export async function POST(req: Request) {
     // names + table names from the failed query). validationError is
     // stored on the row for the admin to inspect.
     console.error("[bi-reports/execute] query failed", err);
-    return Response.json(
-      { error: "Query execution failed" },
-      { status: 400 },
-    );
+    return Response.json({ error: "Query execution failed" }, { status: 400 });
   }
 }
