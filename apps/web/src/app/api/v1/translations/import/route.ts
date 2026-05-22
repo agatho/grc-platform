@@ -15,6 +15,13 @@ import { parseXliff, parseCsv } from "@grc/shared";
 import { sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
+// #CRIT-SEC-XLIFF-SQLI: hoisted to module scope so both
+// handleXliffImport and handleCsvImport see it (the previous local
+// declaration in handleXliffImport was out of scope in the CSV
+// handler — caught by tsc on PR review).
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export async function POST(req: Request) {
   const ctx = await withAuth("admin", "risk_manager");
   if (ctx instanceof Response) return ctx;
@@ -91,23 +98,13 @@ async function handleXliffImport(
   }
 
   // #CRIT-SEC-XLIFF-SQLI: entityId / orgId / field / tableName are all
-  // interpolated into raw SQL via sql.raw — and entityId comes
-  // directly from the XLIFF file's <trans-unit id="..."> attribute,
-  // which the parser unescapeXml-decodes (resurrecting &apos; → ' and
-  // &amp; → &, defeating the manual quote-escape used in the UPDATE
-  // value). A tampered XLIFF file from an admin/risk_manager (the only
-  // roles allowed here) was a clear SQLi.
-  //
-  // Defence in depth:
-  // 1. UUID-validate entityId before EVER putting it into sql.raw.
-  //    Done in a single regex per loop iteration; reject + skip on
-  //    mismatch.
-  // 2. tableName + field are already allow-listed via ENTITY_TABLE_MAP
-  //    and TRANSLATABLE_FIELDS (kept as-is — those are safe).
-  // 3. ctx.orgId is a UUID from the session (already validated by
-  //    NextAuth on login) — safe to interpolate.
-  const UUID_RE =
-    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  // interpolated into raw SQL via sql.raw. entityId comes directly
+  // from the XLIFF <trans-unit id="..."> attribute (unescapeXml-decoded
+  // by parseXliff, which resurrects &apos; → ' and defeats the manual
+  // quote-escape used on the UPDATE value). UUID_RE (module-scoped
+  // above) guards every entityId before it touches sql.raw. tableName
+  // + field are allow-listed via ENTITY_TABLE_MAP / TRANSLATABLE_FIELDS.
+  // ctx.orgId is a UUID from the validated session.
 
   // Actual import
   await withAuditContext(ctx, async (tx) => {
