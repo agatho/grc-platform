@@ -32,7 +32,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createContextSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // If isDefault, ensure no other default exists (handled by partial unique index)
   const created = await db
@@ -63,7 +63,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = updateContextSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const updated = await db
     .update(eamContext)

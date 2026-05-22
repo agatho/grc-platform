@@ -46,7 +46,7 @@ export async function POST(
   const body = await req.json();
   const parsed = activatePlaybookSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   try {
@@ -58,6 +58,11 @@ export async function POST(
     );
     return Response.json({ data: result });
   } catch (err) {
+    // #SEC-LEAK-FIX: keep the CONFLICT-prefixed sentinel handling
+    // (it's a structured signal from activatePlaybook for the
+    // already-activated case), but stop reflecting arbitrary
+    // err.message values to the client. Other failures land as a
+    // generic 400; the engine's full detail goes to console.error.
     const message = err instanceof Error ? err.message : String(err);
     if (message.startsWith("CONFLICT")) {
       return Response.json(
@@ -65,7 +70,11 @@ export async function POST(
         { status: 409 },
       );
     }
-    return Response.json({ error: message }, { status: 400 });
+    console.error("[isms/incidents/playbook] activation failed", err);
+    return Response.json(
+      { error: "Playbook activation failed" },
+      { status: 400 },
+    );
   }
 }
 

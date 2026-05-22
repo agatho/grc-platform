@@ -106,12 +106,11 @@ export async function POST(
         .where(eq(importJob.id, jobId));
     });
 
-    return Response.json(
-      {
-        error: "Import execution failed",
-        details: err instanceof Error ? err.message : String(err),
-      },
-      { status: 500 },
-    );
+    // #SEC-LEAK-FIX: the importJob.logJson row above already captures
+    // the error detail for the admin who triggered the job (visible
+    // via GET /api/v1/import/{jobId}). The response body itself stays
+    // generic so the detail isn't double-emitted to the network.
+    console.error("[import/execute] failed", err);
+    return Response.json({ error: "Import execution failed" }, { status: 500 });
   }
 }

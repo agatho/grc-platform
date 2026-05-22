@@ -107,12 +107,10 @@ export async function POST(
         .where(eq(importJob.id, jobId));
     });
 
-    return Response.json(
-      {
-        error: "Validation failed",
-        details: err instanceof Error ? err.message : String(err),
-      },
-      { status: 500 },
-    );
+    // #SEC-LEAK-FIX: see /import/[jobId]/execute — the importJob.status
+    // = "failed" transition is the operator's signal; detail isn't
+    // needed in the response body.
+    console.error("[import/validate] failed", err);
+    return Response.json({ error: "Validation failed" }, { status: 500 });
   }
 }
