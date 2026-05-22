@@ -38,7 +38,12 @@
 //   …then the error is re-thrown so the runner's own retry / alert
 //   policy still fires.
 
-type CronResult = Record<string, unknown> | void;
+// CronResult is intentionally permissive: any JSON-serialisable object,
+// or nothing. `Record<string, unknown>` was too narrow — concrete
+// shapes like `{ deleted: number }` don't extend it (values aren't
+// unknown's subtype in writable position), which tripped TS2345 at
+// every wrapped call site.
+type CronResult = void | object;
 type CronHandler<R extends CronResult> = () => Promise<R>;
 
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-worker";
