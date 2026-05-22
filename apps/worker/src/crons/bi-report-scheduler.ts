@@ -3,6 +3,7 @@
 
 import { db, biScheduledReport, biReportExecution } from "@grc/db";
 import { eq, and, lte, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface BiReportSchedulerResult {
   checked: number;
@@ -31,9 +32,11 @@ function computeNextRun(frequency: string, fromDate: Date): Date {
   return next;
 }
 
-export async function processBiReportScheduler(): Promise<BiReportSchedulerResult> {
-  const now = new Date();
-  const result: BiReportSchedulerResult = {
+export const processBiReportScheduler = withCronInstrumentation(
+  "bi-report-scheduler",
+  async (): Promise<BiReportSchedulerResult> => {
+    const now = new Date();
+    const result: BiReportSchedulerResult = {
     checked: 0,
     triggered: 0,
     errors: 0,
@@ -80,5 +83,6 @@ export async function processBiReportScheduler(): Promise<BiReportSchedulerResul
     }
   }
 
-  return result;
-}
+    return result;
+  },
+);

@@ -23,6 +23,7 @@ import {
   notification,
 } from "@grc/db";
 import { and, isNull, isNotNull, lt, eq, inArray, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface AuditRemediationResult {
   processed: number;
@@ -30,20 +31,19 @@ interface AuditRemediationResult {
   notifiedFindings: number;
 }
 
-export async function processAuditRemediationDeadlines(): Promise<AuditRemediationResult> {
-  const now = new Date();
-  const nowIso = now.toISOString();
-  const today = nowIso.slice(0, 10);
-  const warnUpToIso = new Date(Date.now() + 7 * 86400000)
-    .toISOString()
-    .slice(0, 10);
+export const processAuditRemediationDeadlines = withCronInstrumentation(
+  "audit-remediation-deadline-monitor",
+  async (): Promise<AuditRemediationResult> => {
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const today = nowIso.slice(0, 10);
+    const warnUpToIso = new Date(Date.now() + 7 * 86400000)
+      .toISOString()
+      .slice(0, 10);
+    void nowIso; // start-log removed; preserved as scoped const
 
-  console.log(
-    `[cron:audit-remediation-deadline-monitor] Starting at ${nowIso}`,
-  );
-
-  let notifiedChecklistItems = 0;
-  let notifiedFindings = 0;
+    let notifiedChecklistItems = 0;
+    let notifiedFindings = 0;
 
   // ── 1. Checklist-Items mit überfälliger oder baldiger Frist ──
   const overdueItems = await db
@@ -201,13 +201,10 @@ export async function processAuditRemediationDeadlines(): Promise<AuditRemediati
     }
   }
 
-  console.log(
-    `[cron:audit-remediation-deadline-monitor] Processed ${overdueItems.length} checklist items + ${overdueFindings.length} findings → ${notifiedChecklistItems} + ${notifiedFindings} notifications created`,
-  );
-
-  return {
-    processed: overdueItems.length + overdueFindings.length,
-    notifiedChecklistItems,
-    notifiedFindings,
-  };
-}
+    return {
+      processed: overdueItems.length + overdueFindings.length,
+      notifiedChecklistItems,
+      notifiedFindings,
+    };
+  },
+);

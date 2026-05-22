@@ -4,17 +4,18 @@
 
 import { db, dataBreach, notification } from "@grc/db";
 import { and, isNull, sql, eq } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface Breach72hResult {
   processed: number;
   notified: number;
 }
 
-export async function processBreach72hMonitor(): Promise<Breach72hResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:breach-72h-monitor] Starting at ${now.toISOString()}`);
+export const processBreach72hMonitor = withCronInstrumentation(
+  "breach-72h-monitor",
+  async (): Promise<Breach72hResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find active breaches (not closed) that require DPA notification and haven't been notified yet
   const activeBreaches = await db
@@ -113,9 +114,7 @@ export async function processBreach72hMonitor(): Promise<Breach72hResult> {
     }
   }
 
-  console.log(
-    `[cron:breach-72h-monitor] Processed ${activeBreaches.length} breaches, ${notified} notifications created`,
-  );
-
-  return { processed: activeBreaches.length, notified };
-}
+  void notified;
+    return { processed: activeBreaches.length, notified };
+  },
+);

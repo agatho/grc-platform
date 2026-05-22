@@ -4,19 +4,18 @@
 
 import { db, aiIncident, notification } from "@grc/db";
 import { and, isNull, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface AiIncidentMonitorResult {
   processed: number;
   notified: number;
 }
 
-export async function processAiActIncidentDeadlineMonitor(): Promise<AiIncidentMonitorResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(
-    `[cron:ai-act-incident-deadline] Starting at ${now.toISOString()}`,
-  );
+export const processAiActIncidentDeadlineMonitor = withCronInstrumentation(
+  "ai-act-incident-deadline-monitor",
+  async (): Promise<AiIncidentMonitorResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find incidents that are not resolved/closed and not yet notified.
   const activeIncidents = await db
@@ -122,9 +121,6 @@ export async function processAiActIncidentDeadlineMonitor(): Promise<AiIncidentM
     }
   }
 
-  console.log(
-    `[cron:ai-act-incident-deadline] Processed ${activeIncidents.length} incidents, ${notified} notifications created`,
-  );
-
-  return { processed: activeIncidents.length, notified };
-}
+    return { processed: activeIncidents.length, notified };
+  },
+);
