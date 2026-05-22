@@ -23,7 +23,7 @@ export async function PUT(
 
   const parsed = incidentStatusTransitionSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const { status: newStatus } = parsed.data;

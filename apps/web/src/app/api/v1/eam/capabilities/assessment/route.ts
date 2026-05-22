@@ -20,7 +20,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = updateCapabilityAssessmentSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const updated = await db
     .update(businessCapability)

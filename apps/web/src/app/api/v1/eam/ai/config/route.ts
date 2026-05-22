@@ -51,7 +51,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = aiConfigSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // Encrypt config (in production, use AES-256 from Sprint 1)
   const configJson = JSON.stringify(parsed.data);
