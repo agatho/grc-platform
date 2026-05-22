@@ -63,7 +63,7 @@ export async function PUT(
   const body = await req.json();
   const parsed = classifyAssetSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   // Verify asset exists in org

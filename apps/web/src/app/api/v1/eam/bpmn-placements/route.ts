@@ -49,7 +49,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createBpmnPlacementSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const { positionX, positionY, ...rest } = parsed.data;
   const created = await db
