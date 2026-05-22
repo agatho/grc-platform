@@ -78,9 +78,15 @@ function makeTx() {
 // Drives what `.select()...` chains resolve to next. Set this before
 // each lifecycle step to control what the cascade sees from the DB.
 let currentSelectResult: unknown[] = [];
+type TxStub = {
+  _reset: () => void;
+  _calls: Array<{ op: string; table: string; payload?: unknown }>;
+  select: unknown;
+};
+
 function setSelectResults(...results: unknown[][]) {
   let i = 0;
-  const tx = txStub as ReturnType<typeof makeTx>;
+  const tx = txStub as TxStub;
   tx._reset();
   const origSelect = (tx as unknown as { select: unknown }).select;
   void origSelect;
