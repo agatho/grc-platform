@@ -3,10 +3,43 @@ import { eq, and, isNull } from "drizzle-orm";
 import { compare } from "bcryptjs";
 import { breakGlassLoginSchema } from "@grc/shared";
 import { logAccessEvent } from "@grc/auth/providers";
+import { rateLimit, getClientIp, LIMITS } from "@/lib/rate-limit";
 
 // POST /api/v1/auth/admin-login — Break-glass admin login
 // Only works for admin users when SSO enforcement is active
+//
+// #SEC-HIGH-RL: rate-limit by client IP. The break-glass endpoint
+// bypasses NextAuth's own throttling. Memory note: prod
+// admin@arctos.dev still ships with the default `admin123` password
+// pending the operator's rotation step. Without per-IP throttling,
+// any internet host can brute-force at line rate.
+// LIMITS.AUTH = 10 attempts/60s per IP — generous enough that a
+// fat-fingered admin doesn't get locked out, tight enough to stop
+// online brute force.
 export async function POST(req: Request) {
+  const ip = getClientIp(req);
+  const limit = await rateLimit({
+    key: `admin-login:${ip}`,
+    ...LIMITS.AUTH,
+  });
+  if (!limit.allowed) {
+    return new Response(
+      JSON.stringify({
+        type: "https://arctos.charliehund.de/errors/rate-limited",
+        title: "Rate limit exceeded",
+        status: 429,
+        detail: `Too many admin-login attempts from this IP. Retry in ${limit.retryAfterSeconds}s.`,
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/problem+json; charset=utf-8",
+          "Retry-After": String(limit.retryAfterSeconds),
+        },
+      },
+    );
+  }
+
   const body = await req.json();
   const parsed = breakGlassLoginSchema.safeParse(body);
   if (!parsed.success) {
