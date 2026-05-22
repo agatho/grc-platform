@@ -54,7 +54,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
 5. **MEDIUM — Phase-3 schema stubs still ship without UI/API.**
    The following Drizzle tables are exported from `packages/db/src/index.ts` and only referenced
    by `apps/worker/tests/helpers/db-exports.ts` (no app reads/writes them):
-   `approval-workflow.ts` (7 tables: approval_workflow, approval_request, approval_decision,
+   `approval-workflow.ts` (7 tables: approval*workflow, approval_request, approval_decision,
    review_cycle, review_decision, attestation_campaign, attestation_response),
    `audit-extras.ts` (3 tables: audit_sample, board_report, exception_report),
    `checklist.ts` (2: checklist_template, checklist_instance),
@@ -64,7 +64,7 @@ critical-path tests (see `docs/audits/*-2026-05-22.md`).
    `esef-xbrl.ts` (7), `phase3-extras.ts` (most), `erm-advanced.ts::bowtieTemplate`.
    Documented in `docs/adr-014-phase3-stubs.md` as known unfinished, **but** they pollute the
    migration set, audit trail, and RLS coverage report.
-   _Fix sketch:_ either follow up with implementing Sprints, OR mark each table with
+   \_Fix sketch:* either follow up with implementing Sprints, OR mark each table with
    `-- Phase-3 placeholder (not yet exposed via API; see ADR-014)` in its migration and exclude
    them from the RLS-coverage-report total to keep the security baseline honest.
 
