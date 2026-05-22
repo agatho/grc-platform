@@ -90,6 +90,25 @@ async function handleXliffImport(
     });
   }
 
+  // #CRIT-SEC-XLIFF-SQLI: entityId / orgId / field / tableName are all
+  // interpolated into raw SQL via sql.raw — and entityId comes
+  // directly from the XLIFF file's <trans-unit id="..."> attribute,
+  // which the parser unescapeXml-decodes (resurrecting &apos; → ' and
+  // &amp; → &, defeating the manual quote-escape used in the UPDATE
+  // value). A tampered XLIFF file from an admin/risk_manager (the only
+  // roles allowed here) was a clear SQLi.
+  //
+  // Defence in depth:
+  // 1. UUID-validate entityId before EVER putting it into sql.raw.
+  //    Done in a single regex per loop iteration; reject + skip on
+  //    mismatch.
+  // 2. tableName + field are already allow-listed via ENTITY_TABLE_MAP
+  //    and TRANSLATABLE_FIELDS (kept as-is — those are safe).
+  // 3. ctx.orgId is a UUID from the session (already validated by
+  //    NextAuth on login) — safe to interpolate.
+  const UUID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
   // Actual import
   await withAuditContext(ctx, async (tx) => {
     for (const unit of doc.units) {
@@ -102,6 +121,14 @@ async function handleXliffImport(
       const fields = TRANSLATABLE_FIELDS[unit.entityType];
       if (!tableName || !fields || !fields.includes(unit.field)) {
         errors.push({ unitId: unit.id, error: "Invalid entity type or field" });
+        continue;
+      }
+
+      if (!UUID_RE.test(unit.entityId)) {
+        errors.push({
+          unitId: unit.id,
+          error: "Invalid entityId — must be a UUID",
+        });
         continue;
       }
 
@@ -258,6 +285,15 @@ async function handleCsvImport(
       const fields = TRANSLATABLE_FIELDS[row.entityType];
       if (!tableName || !fields || !fields.includes(row.field)) {
         errors.push({ unitId: row.id, error: "Invalid entity type or field" });
+        continue;
+      }
+
+      // #CRIT-SEC-XLIFF-SQLI: same UUID guard for the CSV-import path.
+      if (!UUID_RE.test(row.entityId)) {
+        errors.push({
+          unitId: row.id,
+          error: "Invalid entityId — must be a UUID",
+        });
         continue;
       }
 
