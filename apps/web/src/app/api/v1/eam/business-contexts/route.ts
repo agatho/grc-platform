@@ -35,7 +35,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createBusinessContextSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const created = await db
     .insert(eamBusinessContext)
@@ -64,7 +64,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = updateBusinessContextSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const updated = await db
     .update(eamBusinessContext)

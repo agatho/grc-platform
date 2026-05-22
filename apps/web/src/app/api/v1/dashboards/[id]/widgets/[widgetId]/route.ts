@@ -15,7 +15,7 @@ export async function PUT(
   const body = await req.json();
   const parsed = updateWidgetSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const data = parsed.data;

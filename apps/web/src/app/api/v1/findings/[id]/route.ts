@@ -88,6 +88,12 @@ export async function GET(
 }
 
 // PUT /api/v1/findings/:id — Update finding
+//
+// #RBAC-AUDIT-FIX: role list aligned with POST /findings. The post-Wave-25
+// RBAC audit (docs/audits/rbac-rls-audit-2026-05-22.md §asymmetric) found
+// that process_owner and ciso could raise a finding (POST) but were
+// blocked from editing the one they raised (PUT). That mismatch made
+// the workflow unfinishable for either role.
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -97,6 +103,8 @@ export async function PUT(
     "risk_manager",
     "auditor",
     "control_owner",
+    "process_owner",
+    "ciso",
   );
   if (ctx instanceof Response) return ctx;
 

@@ -114,15 +114,11 @@ export async function POST(req: Request) {
       { status: 201 },
     );
   } catch (err) {
-    console.error(
-      "[import/upload] Error:",
-      err instanceof Error ? err.message : String(err),
-    );
+    // #SEC-LEAK-FIX: full detail to console.error for operator grep;
+    // only generic error body to the caller.
+    console.error("[import/upload] Error:", err);
     return Response.json(
-      {
-        error: "Failed to process upload",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Failed to process upload" },
       { status: 500 },
     );
   }

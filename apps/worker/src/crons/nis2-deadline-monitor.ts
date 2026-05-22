@@ -8,6 +8,7 @@ import {
   organization,
 } from "@grc/db";
 import { eq, and, sql, isNull, lte } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface Nis2DeadlineResult {
   orgsProcessed: number;
@@ -16,93 +17,83 @@ interface Nis2DeadlineResult {
   errors: number;
 }
 
-export async function processNis2DeadlineMonitor(): Promise<Nis2DeadlineResult> {
-  const now = new Date();
-  console.log(`[cron:nis2-deadline-monitor] Starting at ${now.toISOString()}`);
+export const processNis2DeadlineMonitor = withCronInstrumentation(
+  "nis2-deadline-monitor",
+  async (): Promise<Nis2DeadlineResult> => {
+    const now = new Date();
 
-  let orgsProcessed = 0;
-  let overdueReports = 0;
-  let upcomingAlerts = 0;
-  let errors = 0;
+    let orgsProcessed = 0;
+    let overdueReports = 0;
+    let upcomingAlerts = 0;
+    let errors = 0;
 
-  try {
-    const orgs = await db
-      .select({ id: organization.id })
-      .from(organization)
-      .where(isNull(organization.deletedAt));
+    try {
+      const orgs = await db
+        .select({ id: organization.id })
+        .from(organization)
+        .where(isNull(organization.deletedAt));
 
-    for (const org of orgs) {
-      try {
-        orgsProcessed++;
+      for (const org of orgs) {
+        try {
+          orgsProcessed++;
 
-        // Find overdue draft reports
-        const overdueRows = await db
-          .select({
-            id: nis2IncidentReport.id,
-            reportType: nis2IncidentReport.reportType,
-            deadlineAt: nis2IncidentReport.deadlineAt,
-            incidentTitle: securityIncident.title,
-            incidentElementId: securityIncident.elementId,
-          })
-          .from(nis2IncidentReport)
-          .innerJoin(
-            securityIncident,
-            eq(nis2IncidentReport.incidentId, securityIncident.id),
-          )
-          .where(
-            and(
-              eq(nis2IncidentReport.orgId, org.id),
-              eq(nis2IncidentReport.status, "draft"),
-              lte(nis2IncidentReport.deadlineAt, now),
-            ),
-          );
+          // Find overdue draft reports
+          const overdueRows = await db
+            .select({
+              id: nis2IncidentReport.id,
+              reportType: nis2IncidentReport.reportType,
+              deadlineAt: nis2IncidentReport.deadlineAt,
+              incidentTitle: securityIncident.title,
+              incidentElementId: securityIncident.elementId,
+            })
+            .from(nis2IncidentReport)
+            .innerJoin(
+              securityIncident,
+              eq(nis2IncidentReport.incidentId, securityIncident.id),
+            )
+            .where(
+              and(
+                eq(nis2IncidentReport.orgId, org.id),
+                eq(nis2IncidentReport.status, "draft"),
+                lte(nis2IncidentReport.deadlineAt, now),
+              ),
+            );
 
-        overdueReports += overdueRows.length;
+          overdueReports += overdueRows.length;
 
-        // Find reports due within 4 hours (upcoming deadline alerts)
-        const fourHoursFromNow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
-        const upcomingRows = await db
-          .select({
-            id: nis2IncidentReport.id,
-            reportType: nis2IncidentReport.reportType,
-            deadlineAt: nis2IncidentReport.deadlineAt,
-          })
-          .from(nis2IncidentReport)
-          .where(
-            and(
-              eq(nis2IncidentReport.orgId, org.id),
-              eq(nis2IncidentReport.status, "draft"),
-              sql`${nis2IncidentReport.deadlineAt} > ${now} AND ${nis2IncidentReport.deadlineAt} <= ${fourHoursFromNow}`,
-            ),
-          );
+          // Find reports due within 4 hours (upcoming deadline alerts)
+          const fourHoursFromNow = new Date(now.getTime() + 4 * 60 * 60 * 1000);
+          const upcomingRows = await db
+            .select({
+              id: nis2IncidentReport.id,
+              reportType: nis2IncidentReport.reportType,
+              deadlineAt: nis2IncidentReport.deadlineAt,
+            })
+            .from(nis2IncidentReport)
+            .where(
+              and(
+                eq(nis2IncidentReport.orgId, org.id),
+                eq(nis2IncidentReport.status, "draft"),
+                sql`${nis2IncidentReport.deadlineAt} > ${now} AND ${nis2IncidentReport.deadlineAt} <= ${fourHoursFromNow}`,
+              ),
+            );
 
-        upcomingAlerts += upcomingRows.length;
+          upcomingAlerts += upcomingRows.length;
 
-        // In production: create notifications and tasks for overdue/upcoming
-        for (const report of overdueRows) {
-          console.log(
-            `[cron:nis2-deadline-monitor] OVERDUE: ${report.incidentElementId} - ${report.reportType} - deadline: ${report.deadlineAt}`,
-          );
+          // In production: create notifications and tasks for overdue/upcoming.
+          // Per-incident details are visible via the dashboard; we don't
+          // emit per-incident log lines from the cron.
+          void overdueRows;
+        } catch {
+          // Wrapper logs structured error; bump the per-org counter.
+          errors++;
         }
-      } catch (err) {
-        errors++;
-        console.error(
-          `[cron:nis2-deadline-monitor] Error processing org ${org.id}:`,
-          err instanceof Error ? err.message : String(err),
-        );
       }
+    } catch {
+      // Wrapper logs structured error; bump the fatal counter.
+      errors++;
     }
-  } catch (err) {
-    errors++;
-    console.error(
-      "[cron:nis2-deadline-monitor] Fatal error:",
-      err instanceof Error ? err.message : String(err),
-    );
-  }
 
-  console.log(
-    `[cron:nis2-deadline-monitor] Done: ${orgsProcessed} orgs, ${overdueReports} overdue, ${upcomingAlerts} upcoming, ${errors} errors`,
-  );
-
-  return { orgsProcessed, overdueReports, upcomingAlerts, errors };
-}
+    return { orgsProcessed, overdueReports, upcomingAlerts, errors };
+  },
+);

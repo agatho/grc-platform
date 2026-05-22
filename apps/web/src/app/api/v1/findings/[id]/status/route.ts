@@ -18,6 +18,11 @@ const FINDING_TO_WORK_ITEM_STATUS: Record<string, string> = {
 };
 
 // PUT /api/v1/findings/:id/status — Status transition
+//
+// #RBAC-AUDIT-FIX: role list aligned with POST /findings. process_owner
+// and ciso could raise a finding but couldn't transition it through
+// remediation. Adding them here closes the workflow asymmetry the
+// post-Wave-25 RBAC audit flagged.
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -27,6 +32,8 @@ export async function PUT(
     "risk_manager",
     "auditor",
     "control_owner",
+    "process_owner",
+    "ciso",
   );
   if (ctx instanceof Response) return ctx;
 
