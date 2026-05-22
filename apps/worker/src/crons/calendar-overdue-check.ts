@@ -3,6 +3,7 @@
 
 import { db, notification } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface CalendarOverdueResult {
   processed: number;
@@ -11,13 +12,13 @@ interface CalendarOverdueResult {
   errors: string[];
 }
 
-export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResult> {
-  const errors: string[] = [];
-  let overdueFound = 0;
-  let escalationsSent = 0;
-  const now = new Date();
-
-  console.log(`[cron:calendar-overdue-check] Starting at ${now.toISOString()}`);
+export const processCalendarOverdueCheck = withCronInstrumentation(
+  "calendar-overdue-check",
+  async (): Promise<CalendarOverdueResult> => {
+    const errors: string[] = [];
+    let overdueFound = 0;
+    let escalationsSent = 0;
+    const now = new Date();
 
   // Get all active orgs
   const orgs = await db.execute(
@@ -157,14 +158,11 @@ export async function processCalendarOverdueCheck(): Promise<CalendarOverdueResu
     }
   }
 
-  console.log(
-    `[cron:calendar-overdue-check] Processed ${(orgs ?? []).length} orgs, found ${overdueFound} overdue items, sent ${escalationsSent} escalations, ${errors.length} errors`,
-  );
-
-  return {
-    processed: (orgs ?? []).length,
-    overdueFound,
-    escalationsSent,
-    errors,
-  };
-}
+    return {
+      processed: (orgs ?? []).length,
+      overdueFound,
+      escalationsSent,
+      errors,
+    };
+  },
+);

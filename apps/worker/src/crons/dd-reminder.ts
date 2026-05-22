@@ -3,6 +3,7 @@
 
 import { db, ddSession, notification, vendor } from "@grc/db";
 import { and, sql, eq, isNull, inArray } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface DdReminderResult {
   processed: number;
@@ -11,11 +12,11 @@ interface DdReminderResult {
 
 const REMINDER_DAYS = [7, 3, 1] as const;
 
-export async function processDdReminder(): Promise<DdReminderResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:dd-reminder] Starting at ${now.toISOString()}`);
+export const processDdReminder = withCronInstrumentation(
+  "dd-reminder",
+  async (): Promise<DdReminderResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find active sessions (invited or in_progress) with deadlines at reminder thresholds
   const activeSessions = await db
@@ -109,9 +110,6 @@ export async function processDdReminder(): Promise<DdReminderResult> {
     }
   }
 
-  console.log(
-    `[cron:dd-reminder] Processed ${activeSessions.length} sessions, ${notified} reminders sent`,
-  );
-
-  return { processed: activeSessions.length, notified };
-}
+    return { processed: activeSessions.length, notified };
+  },
+);
