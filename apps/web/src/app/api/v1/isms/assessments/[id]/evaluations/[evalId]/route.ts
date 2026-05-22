@@ -51,7 +51,7 @@ export async function PUT(
 
   const parsed = submitControlEvalSchema.partial().safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const [existing] = await db

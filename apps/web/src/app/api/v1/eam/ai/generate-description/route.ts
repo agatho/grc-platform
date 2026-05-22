@@ -33,7 +33,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = generateDescriptionSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const element = await db
     .select()

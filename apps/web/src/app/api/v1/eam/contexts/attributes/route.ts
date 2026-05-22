@@ -50,7 +50,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = setContextAttributeSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // Upsert: insert or update
   const existing = await db

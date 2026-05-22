@@ -41,7 +41,7 @@ export async function POST(req: Request) {
   const body = await req.json();
   const parsed = createDataObjectSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   // Validate hierarchy depth (max 5)
   if (parsed.data.parentId) {

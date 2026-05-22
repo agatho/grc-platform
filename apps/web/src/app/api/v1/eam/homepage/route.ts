@@ -70,7 +70,7 @@ export async function PUT(req: Request) {
   const body = await req.json();
   const parsed = updateHomepageLayoutSchema.safeParse(body);
   if (!parsed.success)
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
 
   const existing = await db
     .select()

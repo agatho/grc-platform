@@ -64,7 +64,7 @@ export async function POST(
 
   const parsed = createIncidentTimelineEntrySchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const data = parsed.data;
