@@ -3,11 +3,14 @@
 
 import { db, frameworkGapAnalysis, frameworkCoverageSnapshot } from "@grc/db";
 import { eq, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const frameworkCoverageSnapshotCron = "0 3 * * 0"; // Weekly Sunday at 3 AM
 
-export async function frameworkCoverageSnapshotJob(): Promise<void> {
-  // Get unique org IDs from gap analyses
+export const frameworkCoverageSnapshotJob = withCronInstrumentation(
+  "framework-coverage-snapshot",
+  async (): Promise<void> => {
+    // Get unique org IDs from gap analyses
   const analyses = await db
     .select()
     .from(frameworkGapAnalysis)
@@ -67,4 +70,5 @@ export async function frameworkCoverageSnapshotJob(): Promise<void> {
       trendData: {},
     });
   }
-}
+  },
+);

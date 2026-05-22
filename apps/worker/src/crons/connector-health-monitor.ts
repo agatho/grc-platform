@@ -3,11 +3,14 @@
 
 import { db, evidenceConnector, connectorHealthCheck } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const connectorHealthMonitorCron = "0 */4 * * *"; // Every 4 hours
 
-export async function connectorHealthMonitor(): Promise<void> {
-  const activeConnectors = await db
+export const connectorHealthMonitor = withCronInstrumentation(
+  "connector-health-monitor",
+  async (): Promise<void> => {
+    const activeConnectors = await db
     .select()
     .from(evidenceConnector)
     .where(
@@ -62,4 +65,5 @@ export async function connectorHealthMonitor(): Promise<void> {
         .where(eq(evidenceConnector.id, connector.id));
     }
   }
-}
+  },
+);
