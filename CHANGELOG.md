@@ -141,6 +141,90 @@ Von 79 → 37 → jetzt ~30 failing. Alpha-Triage abgeschlossen
 
 ## [Unreleased]
 
+### Wave-26 — Overnight enhancement marathon (2026-05-21 / 2026-05-22)
+
+User asked for ≥200 iterations of enhance / enrich / harden / perf
+work. Delivered ~130 atomic iterations across 10 PRs. The work was
+driven by four parallel reconnaissance audits committed under
+`docs/audits/*-2026-05-22.md`:
+
+- `perf-db-index-audit-2026-05-22.md` — 5 HIGH + 6 MEDIUM + 3 LOW
+- `test-coverage-gap-audit-2026-05-22.md` — 5 HIGH-priority untested libs
+- `error-obs-audit-2026-05-22.md` — 17 routes leaking err.message,
+  121 crons with no structured logging
+- `rbac-rls-audit-2026-05-22.md` — 1 critical RBAC asymmetry + 1
+  RLS gap
+
+#### Performance
+
+- **Migration 0348** — 6 missing indexes (2 HIGH + 4 MEDIUM):
+  `risk_catalog_link_idx`, `vdd_org_status_idx`,
+  `security_incident_org_detected_idx`, `process_version_current_idx`,
+  `finding_org_created_active_idx`, `audit_evidence_audit_idx`.
+- **N+1 fix — `POST /erm/residual/recompute`** — was 1 + 2N
+  sequential DB round-trips (1 SELECT, then SELECT + UPDATE per
+  risk). Now 1 + 1 + N-parallel = ~3 sequential RTTs total on a
+  500-risk org (~30× speedup). Behaviour preserved (formula, skip-
+  if-no-CES, org boundary).
+
+#### Security hardening
+
+- **Migration 0349** — enables RLS + 4 standard tenant policies on
+  `catalog_entry_reference`. This was the ONLY org-scoped table
+  shipping live customer data without RLS. RLS-baseline test moves
+  142 → 143.
+- **RBAC asymmetry** — `findings` POST allowed `process_owner` and
+  `ciso` but PUT and PUT-status did not, leaving the workflow
+  unfinishable. Role lists now aligned with POST.
+- **err.message-in-response leaks fixed** (11 of 17 from the audit):
+  `/programmes/journeys/{id}/predictive`,
+  `/automation/rules/{id}/test`,
+  `/auth/sso/saml/callback`, `/auth/sso/oidc/callback`,
+  `/auth/sso/oidc/login`,
+  `/import/templates/{entityType}`, `/import/upload`,
+  `/import/{jobId}/execute`, `/import/{jobId}/validate`,
+  `/export/bulk`, `/isms/incidents/{id}/playbook` (CONFLICT-prefix
+  sentinel kept). Remaining 6 retained as intentional admin-
+  debugging UX behind admin RBAC.
+
+#### Observability
+
+- **`apps/worker/src/lib/cron-instrument.ts`** — NDJSON
+  start/finish/error wrapper with duration tracking + error-class
+  reporting (uses constructor.name for ergonomic subclass handling).
+  15 of 121 crons migrated; 106 remain (queued in future batches).
+
+#### Test coverage
+
+- **`apps/web/src/__tests__/lib/api-wrapper.test.ts`** — 21 cases
+  pinning the `withErrorHandler` SQLSTATE / Zod / Pagination / FK-
+  mismatch mapping table.
+- **`packages/auth/tests/module-guard.test.ts`** — 21 cases for
+  `requireModule` (disabled vs absent body identical for
+  enumeration-resistance).
+- **`apps/web/src/__tests__/lib/portal-auth.test.ts`** — 13 cases
+  for `validateDdToken`. Includes GDPR IP-hashing assertion (raw IP
+  never written to DB).
+- **`apps/web/src/__tests__/lib/catalog-resolver.test.ts`** — 22
+  cases including SQL-injection probes asserting single-quote
+  doubling.
+- **`apps/web/src/__tests__/lib/cascade-runner.test.ts`** — 7 cases
+  for the BIA → asset-classification cascade boundary properties.
+- **`apps/worker/tests/lib/cron-instrument.test.ts`** — 7 cases for
+  the wrapper (pass-through, start/finish/error log, duration
+  accuracy, error subclass naming).
+
+#### Disk-full incident
+
+Mid-session the dev disk filled to 260 MB free, then 233 MB; an
+ENOSPC mid-edit truncated 3 cron files (academy-overdue-check,
+budget-forecast, architecture-health-snapshot) to 0 bytes and a
+naive `git add -A` swept the truncated versions into a prettier
+commit. Caught + recovered from `origin/main` on the cron branch
+before merge. Memory entry
+`project_overnight_enhancement_2026_05_22.md` captures the recovery
+recipe.
+
 ### Wave-25 — Alpha-Quality-Followup (2026-05-21)
 
 Block A (A1 endgame) im Wave-25-Prompt war bei Auftrags-Erstellung schon obsolet — A1 closed 2026-05-21 13:49 UTC unter Wave 24 (siehe unten). Bleibender Scope dieses PRs: 5 Endpoint-Fixes + 1 Demo-Seed + Gate-Erweiterung.
