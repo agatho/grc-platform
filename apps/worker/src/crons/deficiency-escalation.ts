@@ -16,43 +16,43 @@ export const processDeficiencyEscalation = withCronInstrumentation(
     const now = new Date();
     let escalated = 0;
 
-  // Find deficiencies with overdue remediation deadlines
-  const overdue = await db
-    .select({
-      id: controlDeficiency.id,
-      orgId: controlDeficiency.orgId,
-      title: controlDeficiency.title,
-      classification: controlDeficiency.classification,
-      remediationResponsible: controlDeficiency.remediationResponsible,
-      remediationDeadline: controlDeficiency.remediationDeadline,
-    })
-    .from(controlDeficiency)
-    .where(
-      and(
-        inArray(controlDeficiency.remediationStatus, ["open", "in_progress"]),
-        sql`${controlDeficiency.remediationDeadline}::date < CURRENT_DATE`,
-      ),
-    );
+    // Find deficiencies with overdue remediation deadlines
+    const overdue = await db
+      .select({
+        id: controlDeficiency.id,
+        orgId: controlDeficiency.orgId,
+        title: controlDeficiency.title,
+        classification: controlDeficiency.classification,
+        remediationResponsible: controlDeficiency.remediationResponsible,
+        remediationDeadline: controlDeficiency.remediationDeadline,
+      })
+      .from(controlDeficiency)
+      .where(
+        and(
+          inArray(controlDeficiency.remediationStatus, ["open", "in_progress"]),
+          sql`${controlDeficiency.remediationDeadline}::date < CURRENT_DATE`,
+        ),
+      );
 
-  for (const def of overdue) {
-    if (!def.remediationResponsible) continue;
-    await db.insert(notification).values({
-      orgId: def.orgId,
-      userId: def.remediationResponsible,
-      type: "escalation",
-      title: `Overdue Remediation: ${def.title}`,
-      message: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
-      entityType: "control_deficiency",
-      entityId: def.id,
-      templateData: {
-        module: "ics",
-        priority:
-          def.classification === "material_weakness" ? "urgent" : "high",
-        subtype: "deficiency_overdue",
-      },
-    });
-    escalated++;
-  }
+    for (const def of overdue) {
+      if (!def.remediationResponsible) continue;
+      await db.insert(notification).values({
+        orgId: def.orgId,
+        userId: def.remediationResponsible,
+        type: "escalation",
+        title: `Overdue Remediation: ${def.title}`,
+        message: `Deficiency "${def.title}" (${def.classification}) has passed its remediation deadline of ${def.remediationDeadline}. Please update the status or request an extension.`,
+        entityType: "control_deficiency",
+        entityId: def.id,
+        templateData: {
+          module: "ics",
+          priority:
+            def.classification === "material_weakness" ? "urgent" : "high",
+          subtype: "deficiency_overdue",
+        },
+      });
+      escalated++;
+    }
 
     return { processed: overdue.length, escalated };
   },
