@@ -173,6 +173,12 @@ export async function POST(req: Request) {
     const redirectUrl = new URL(`${baseUrl}${callbackUrl}`);
     return Response.redirect(redirectUrl.toString(), 302);
   } catch (err) {
+    // #SEC-LEAK-FIX: was returning err.message to the unauthenticated
+    // caller. That message leaked SAML-library specifics (which step
+    // of validation failed: signature, audience, expiry, replay) —
+    // useful intel for an attacker probing the IDP integration. Now
+    // the structured failureReason is logged server-side for audit;
+    // the response carries only a stable opaque message.
     const message =
       err instanceof Error ? err.message : "SAML authentication failed";
     await logAccessEvent({
@@ -181,6 +187,9 @@ export async function POST(req: Request) {
       authMethod: "sso_oidc",
       failureReason: message,
     });
-    return Response.json({ error: message }, { status: 401 });
+    return Response.json(
+      { error: "SAML authentication failed" },
+      { status: 401 },
+    );
   }
 }
