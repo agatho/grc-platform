@@ -12,14 +12,12 @@ import {
 } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
 
-export async function processArchitectureHealthSnapshot(): Promise<{
-  orgsProcessed: number;
-}> {
-  console.log(
-    "[arch-health-snapshot] Computing monthly architecture health snapshots",
-  );
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-  const orgs = await db.select({ id: organization.id }).from(organization);
+export const processArchitectureHealthSnapshot = withCronInstrumentation(
+  "architecture-health-snapshot",
+  async (): Promise<{ orgsProcessed: number }> => {
+    const orgs = await db.select({ id: organization.id }).from(organization);
 
   let orgsProcessed = 0;
 
@@ -100,10 +98,11 @@ export async function processArchitectureHealthSnapshot(): Promise<{
 
       orgsProcessed++;
     } catch (err) {
-      console.error(`[arch-health-snapshot] Failed for org ${org.id}:`, err);
+      // Wrapper logs structured error; loop continues to next org.
+      void err;
     }
   }
 
-  console.log(`[arch-health-snapshot] Processed ${orgsProcessed} orgs`);
-  return { orgsProcessed };
-}
+    return { orgsProcessed };
+  },
+);

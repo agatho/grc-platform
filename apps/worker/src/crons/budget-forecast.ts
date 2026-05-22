@@ -9,6 +9,7 @@ import {
   organization,
 } from "@grc/db";
 import { eq, and, isNull, sql, lte, gte } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface BudgetForecastResult {
   processed: number;
@@ -16,13 +17,14 @@ interface BudgetForecastResult {
   errors: number;
 }
 
-export async function processBudgetForecast(): Promise<BudgetForecastResult> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  const currentMonth = now.getMonth() + 1; // 1-12
-  console.log(`[cron:budget-forecast] Starting at ${now.toISOString()}`);
+export const processBudgetForecast = withCronInstrumentation(
+  "budget-forecast",
+  async (): Promise<BudgetForecastResult> => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth() + 1; // 1-12
 
-  let processed = 0;
+    let processed = 0;
   let errors = 0;
 
   // Fetch all active organizations
@@ -110,9 +112,6 @@ export async function processBudgetForecast(): Promise<BudgetForecastResult> {
     }
   }
 
-  console.log(
-    `[cron:budget-forecast] Done. Processed: ${processed}, Orgs: ${orgs.length}, Errors: ${errors}`,
-  );
-
-  return { processed, orgsProcessed: orgs.length, errors };
-}
+    return { processed, orgsProcessed: orgs.length, errors };
+  },
+);

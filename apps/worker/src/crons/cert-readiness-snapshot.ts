@@ -11,6 +11,7 @@ import {
   organization,
 } from "@grc/db";
 import { eq, and, isNull, sql, desc, or } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 import {
   CERT_READINESS_CHECKS,
   computeCertReadinessScore,
@@ -23,14 +24,13 @@ interface CertSnapshotResult {
   errors: number;
 }
 
-export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult> {
-  const now = new Date();
-  console.log(
-    `[cron:cert-readiness-snapshot] Starting at ${now.toISOString()}`,
-  );
+export const processCertReadinessSnapshot = withCronInstrumentation(
+  "cert-readiness-snapshot",
+  async (): Promise<CertSnapshotResult> => {
+    const now = new Date();
 
-  let orgsProcessed = 0;
-  let snapshotsCreated = 0;
+    let orgsProcessed = 0;
+    let snapshotsCreated = 0;
   let errors = 0;
 
   try {
@@ -222,9 +222,6 @@ export async function processCertReadinessSnapshot(): Promise<CertSnapshotResult
     );
   }
 
-  console.log(
-    `[cron:cert-readiness-snapshot] Done: ${orgsProcessed} orgs, ${snapshotsCreated} snapshots, ${errors} errors`,
-  );
-
-  return { orgsProcessed, snapshotsCreated, errors };
-}
+    return { orgsProcessed, snapshotsCreated, errors };
+  },
+);
