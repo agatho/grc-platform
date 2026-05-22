@@ -52,7 +52,7 @@ export async function PATCH(
   const body = await req.json();
   const parsed = updateOrgRelationshipSchema.safeParse(body);
   if (!parsed.success) {
-    return Response.json({ error: parsed.error.flatten() }, { status: 400 });
+    return Response.json({ error: parsed.error.flatten() }, { status: 422 });
   }
 
   const result = await withAuditContext(ctx, async (tx) => {

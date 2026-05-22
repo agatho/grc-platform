@@ -32,11 +32,11 @@ export async function GET(
       },
     });
   } catch (err) {
+    // #SEC-LEAK-FIX: don't echo err.message back to the client; log
+    // server-side so operators can grep by route + requestId.
+    console.error("[import/templates] template generation failed", err);
     return Response.json(
-      {
-        error: "Failed to generate template",
-        details: err instanceof Error ? err.message : String(err),
-      },
+      { error: "Failed to generate template" },
       { status: 500 },
     );
   }
