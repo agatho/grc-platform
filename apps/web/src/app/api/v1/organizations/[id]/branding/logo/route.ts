@@ -61,11 +61,15 @@ export async function POST(
 
   // Reject SVG: it would be served inline from /uploads/, and SVG
   // supports <script>. PNG/JPG/WebP only.
-  if (file.type === "image/svg+xml" || file.name.toLowerCase().endsWith(".svg")) {
+  if (
+    file.type === "image/svg+xml" ||
+    file.name.toLowerCase().endsWith(".svg")
+  ) {
     return Response.json(
       {
         error: "SVG upload is not allowed for branding assets",
-        detail: "Use PNG, JPG, or WebP. SVG can carry stored XSS when served inline.",
+        detail:
+          "Use PNG, JPG, or WebP. SVG can carry stored XSS when served inline.",
       },
       { status: 415 },
     );
