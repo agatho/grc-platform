@@ -3,14 +3,11 @@
 
 import { db } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamPortfolioHealthCheck(): Promise<{
-  totalApplications: number;
-  alertsGenerated: number;
-}> {
-  console.log(
-    "[eam-portfolio-health-check] Computing portfolio health indicators",
-  );
+export const processEamPortfolioHealthCheck = withCronInstrumentation(
+  "eam-portfolio-health-check",
+  async (): Promise<{ totalApplications: number; alertsGenerated: number }> => {
 
   const result = await db.execute(sql`
     SELECT
@@ -58,9 +55,6 @@ export async function processEamPortfolioHealthCheck(): Promise<{
     alertsGenerated++;
   }
 
-  console.log(
-    `[eam-portfolio-health-check] Complete: ${total} apps, ${alertsGenerated} alerts`,
-  );
-
-  return { totalApplications: total, alertsGenerated };
-}
+    return { totalApplications: total, alertsGenerated };
+  },
+);

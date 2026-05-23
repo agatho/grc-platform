@@ -3,17 +3,18 @@
 
 import { db, emergingRisk, notification } from "@grc/db";
 import { and, isNotNull, sql, isNull } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ReviewResult {
   processed: number;
   notified: number;
 }
 
-export async function processEmergingRiskReviews(): Promise<ReviewResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:emerging-risk-review] Starting at ${now.toISOString()}`);
+export const processEmergingRiskReviews = withCronInstrumentation(
+  "emerging-risk-review",
+  async (): Promise<ReviewResult> => {
+    const now = new Date();
+    let notified = 0;
 
   const upcomingReviews = await db
     .select({
@@ -51,8 +52,6 @@ export async function processEmergingRiskReviews(): Promise<ReviewResult> {
     notified++;
   }
 
-  console.log(
-    `[cron:emerging-risk-review] Completed: ${upcomingReviews.length} found, ${notified} notified`,
-  );
-  return { processed: upcomingReviews.length, notified };
-}
+    return { processed: upcomingReviews.length, notified };
+  },
+);
