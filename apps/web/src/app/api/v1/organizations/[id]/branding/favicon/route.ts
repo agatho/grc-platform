@@ -8,6 +8,16 @@ import { join } from "path";
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "branding");
 
 // POST /api/v1/organizations/:id/branding/favicon -- Upload favicon
+//
+// #CRIT-SEC-CROSS-TENANT: same fix as the logo route — admin of org
+// A could overwrite org B's favicon both on disk and in the
+// orgBranding row by changing the URL path. Now guarded against.
+//
+// Note: SVG/ico are accepted here historically because favicons
+// have to be one of: image/x-icon, image/vnd.microsoft.icon, image/
+// png. We don't include SVG in the favicon contract (it's not
+// reliably supported across browsers anyway), so no new SVG-XSS
+// guard is needed here beyond what the Zod schema already enforces.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -16,6 +26,13 @@ export async function POST(
   if (ctx instanceof Response) return ctx;
 
   const { id: orgId } = await params;
+
+  if (orgId !== ctx.orgId) {
+    return Response.json(
+      { error: "Forbidden — cannot modify another organization's branding" },
+      { status: 403 },
+    );
+  }
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -91,6 +108,13 @@ export async function DELETE(
   if (ctx instanceof Response) return ctx;
 
   const { id: orgId } = await params;
+
+  if (orgId !== ctx.orgId) {
+    return Response.json(
+      { error: "Forbidden — cannot modify another organization's branding" },
+      { status: 403 },
+    );
+  }
 
   await withAuditContext(ctx, async (tx) => {
     const brandings = await tx

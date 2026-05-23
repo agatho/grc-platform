@@ -8,6 +8,19 @@ import { join } from "path";
 const UPLOAD_DIR = join(process.cwd(), "public", "uploads", "branding");
 
 // POST /api/v1/organizations/:id/branding/logo -- Upload logo
+//
+// #CRIT-SEC-CROSS-TENANT: previously the orgId from the URL path was
+// trusted blindly. An admin of org A could POST to
+// /organizations/{org_B_id}/branding/logo and (a) overwrite the file
+// on disk at uploads/branding/{org_B_id}/, (b) update org_B's
+// orgBranding row. The orgId path param was used in both filesystem
+// path and DB record without ever being compared to ctx.orgId.
+//
+// #CRIT-SEC-SVG-XSS: SVG was accepted as upload type and then served
+// inline from /uploads/. SVG can contain arbitrary <script> — stored
+// XSS against anyone who later views that branding. Dropping SVG
+// outright; the only safe inline-served SVG would need DOMPurify-grade
+// sanitisation, which we don't currently do.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -16,6 +29,15 @@ export async function POST(
   if (ctx instanceof Response) return ctx;
 
   const { id: orgId } = await params;
+
+  // Cross-tenant guard: the URL's orgId must match the caller's own
+  // org. Without this, an admin of org A can write org B's branding.
+  if (orgId !== ctx.orgId) {
+    return Response.json(
+      { error: "Forbidden — cannot modify another organization's branding" },
+      { status: 403 },
+    );
+  }
 
   const formData = await req.formData();
   const file = formData.get("file") as File | null;
@@ -37,7 +59,23 @@ export async function POST(
     );
   }
 
-  const ext = file.type === "image/svg+xml" ? "svg" : "png";
+  // Reject SVG: it would be served inline from /uploads/, and SVG
+  // supports <script>. PNG/JPG/WebP only.
+  if (
+    file.type === "image/svg+xml" ||
+    file.name.toLowerCase().endsWith(".svg")
+  ) {
+    return Response.json(
+      {
+        error: "SVG upload is not allowed for branding assets",
+        detail:
+          "Use PNG, JPG, or WebP. SVG can carry stored XSS when served inline.",
+      },
+      { status: 415 },
+    );
+  }
+
+  const ext = "png";
   const storagePath = `branding/${orgId}/logo.${ext}`;
   const fullPath = join(UPLOAD_DIR, orgId);
 
@@ -80,6 +118,9 @@ export async function POST(
 }
 
 // DELETE /api/v1/organizations/:id/branding/logo -- Remove logo
+//
+// Same cross-tenant guard as POST — DELETE on another org's branding
+// row was also previously possible.
 export async function DELETE(
   _req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -88,6 +129,13 @@ export async function DELETE(
   if (ctx instanceof Response) return ctx;
 
   const { id: orgId } = await params;
+
+  if (orgId !== ctx.orgId) {
+    return Response.json(
+      { error: "Forbidden — cannot modify another organization's branding" },
+      { status: 403 },
+    );
+  }
 
   await withAuditContext(ctx, async (tx) => {
     const brandings = await tx
