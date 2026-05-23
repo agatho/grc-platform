@@ -7,6 +7,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useLayout } from "@/hooks/use-layout-preference";
 import { ModernDashboard } from "./modern-dashboard";
+import { useDateFormat } from "@/lib/format-date";
 import {
   ShieldAlert,
   ShieldCheck,
@@ -262,6 +263,8 @@ const STATUS_COLORS: Record<string, string> = {
 export default function DashboardPage() {
   const t = useTranslations("dashboard");
   const rt = useTranslations("risk.dashboard");
+  // #FE-HIGH-2: locale-aware date formatter (CLAUDE.md DE/EN convention)
+  const { formatDate } = useDateFormat();
   const { data: session } = useSession();
   const { isEnabled: ermEnabled } = useModuleConfig("erm");
 
@@ -794,7 +797,7 @@ export default function DashboardPage() {
                                 size={11}
                                 className="inline-block mr-1 -mt-0.5"
                               />
-                              {new Date(task.dueDate).toLocaleDateString()}
+                              {formatDate(task.dueDate)}
                             </p>
                           )}
                         </div>
