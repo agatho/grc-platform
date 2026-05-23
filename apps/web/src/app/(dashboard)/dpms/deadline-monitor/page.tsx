@@ -131,7 +131,13 @@ export default function DpmsDeadlineMonitorPage() {
   }
 
   if (error) {
-    return <ErrorRetry title="Monitor konnte nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Monitor konnte nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   if (!data) return null;

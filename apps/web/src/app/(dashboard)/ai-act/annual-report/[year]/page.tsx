@@ -201,7 +201,13 @@ export default function AiActAnnualReportPage() {
   if (error) {
     // #WAVE27-FE: previously missing the retry button entirely; the
     // ErrorRetry component adds it back end-to-end.
-    return <ErrorRetry title="Annual Report konnte nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Annual Report konnte nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   if (!data) return null;

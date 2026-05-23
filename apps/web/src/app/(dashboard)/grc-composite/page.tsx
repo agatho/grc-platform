@@ -139,7 +139,13 @@ export default function GrcCompositeDashboardPage() {
   }
 
   if (error) {
-    return <ErrorRetry title="Dashboard konnte nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Dashboard konnte nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   if (!data) return null;

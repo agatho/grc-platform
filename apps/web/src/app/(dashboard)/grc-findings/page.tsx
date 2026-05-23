@@ -185,7 +185,13 @@ export default function GrcFindingsPage() {
   }
 
   if (error) {
-    return <ErrorRetry title="Findings konnten nicht geladen werden" message={error} onRetry={fetchData} />;
+    return (
+      <ErrorRetry
+        title="Findings konnten nicht geladen werden"
+        message={error}
+        onRetry={fetchData}
+      />
+    );
   }
 
   if (!data) return null;
