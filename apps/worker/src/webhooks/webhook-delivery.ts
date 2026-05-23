@@ -6,6 +6,7 @@ import { db, webhookRegistration, webhookDeliveryLog } from "@grc/db";
 import { formatWebhookPayload, signPayload } from "@grc/events";
 import { eq } from "drizzle-orm";
 import type { GrcEvent } from "@grc/events";
+import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
 
 // Retry backoff intervals in milliseconds: 60s, 300s, 1800s
 const RETRY_DELAYS = [60_000, 300_000, 1_800_000];
@@ -63,6 +64,42 @@ export async function processWebhookDelivery(
       })
       .returning({ id: webhookDeliveryLog.id });
     deliveryLogId = log.id;
+  }
+
+  // #SEC-HIGH-SSRF: re-resolve and check the URL's host before EVERY
+  // delivery, not just at webhook registration time. DNS rebinding
+  // attacks pivot in the time between registration and delivery: a
+  // hostname that resolved to a public IP at registration can later
+  // resolve to 127.0.0.1 / 169.254.169.254 / 10.0.0.0/8 by the time
+  // the worker fires the cron-scheduled delivery. Refusing the
+  // delivery is preferable to leaking the request to a private host.
+  try {
+    const webhookHost = new URL(webhook.url).hostname;
+    const safetyCheck = await checkResolvedHostIsPublic(webhookHost);
+    if (!safetyCheck.ok) {
+      await db
+        .update(webhookDeliveryLog)
+        .set({
+          status: "failed",
+          errorMessage: `Refused delivery: ${safetyCheck.reason}`,
+          deliveredAt: new Date(),
+        })
+        .where(eq(webhookDeliveryLog.id, deliveryLogId!));
+      return;
+    }
+  } catch (err) {
+    // Bad URL — bail without delivering. This shouldn't happen if
+    // webhookRegistration validated at create time, but defence in
+    // depth.
+    await db
+      .update(webhookDeliveryLog)
+      .set({
+        status: "failed",
+        errorMessage: `Invalid webhook URL: ${err instanceof Error ? err.message : String(err)}`,
+        deliveredAt: new Date(),
+      })
+      .where(eq(webhookDeliveryLog.id, deliveryLogId!));
+    return;
   }
 
   try {
