@@ -9,6 +9,7 @@ import {
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import type { SamlAttributeMapping, GroupRoleMapping } from "@grc/shared";
+import { getBaseUrl } from "@/lib/base-url";
 
 // POST /api/v1/auth/sso/saml/callback — SAML ACS (Assertion Consumer Service)
 export async function POST(req: Request) {
@@ -53,7 +54,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   try {
     // Decode the SAML response

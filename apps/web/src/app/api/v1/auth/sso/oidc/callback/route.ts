@@ -10,6 +10,7 @@ import {
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
 import type { OidcClaimMapping, GroupRoleMapping } from "@grc/shared";
+import { getBaseUrl } from "@/lib/base-url";
 
 // GET /api/v1/auth/sso/oidc/callback — OIDC authorization callback
 export async function GET(req: Request) {
@@ -103,7 +104,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   try {
     // Discover endpoints

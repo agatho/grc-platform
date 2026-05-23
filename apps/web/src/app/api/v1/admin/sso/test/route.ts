@@ -5,6 +5,7 @@ import { testSsoLoginSchema } from "@grc/shared";
 import { buildAuthnRequest, buildSamlRedirectUrl } from "@grc/auth/saml";
 import { discoverOIDCEndpoints } from "@grc/auth/oidc";
 import { generatePKCE } from "@grc/auth/oidc";
+import { getBaseUrl } from "@/lib/base-url";
 
 // POST /api/v1/admin/sso/test — Generate a test login URL
 export async function POST(req: Request) {
@@ -32,7 +33,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   if (parsed.data.provider === "saml") {
     if (!config.samlSsoUrl || !config.samlEntityId) {

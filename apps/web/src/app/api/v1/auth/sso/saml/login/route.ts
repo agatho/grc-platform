@@ -1,6 +1,7 @@
 import { db, ssoConfig } from "@grc/db";
 import { eq, and, isNull } from "drizzle-orm";
 import { buildAuthnRequest, buildSamlRedirectUrl } from "@grc/auth/saml";
+import { getBaseUrl } from "@/lib/base-url";
 
 // GET /api/v1/auth/sso/saml/login?orgId=... — SP-initiated SAML login
 export async function GET(req: Request) {
@@ -33,7 +34,7 @@ export async function GET(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
   const callbackUrl = url.searchParams.get("callbackUrl") ?? "/dashboard";
 
   const { xml, requestId } = buildAuthnRequest({

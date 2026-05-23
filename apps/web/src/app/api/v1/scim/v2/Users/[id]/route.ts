@@ -3,6 +3,7 @@ import { eq, and, isNull, sql } from "drizzle-orm";
 import { validateScimToken } from "@grc/auth/scim";
 import { arctosToScimUser, buildScimError } from "@grc/auth/scim";
 import { scimPatchOpSchema, scimReplaceUserSchema } from "@grc/shared";
+import { getBaseUrl } from "@/lib/base-url";
 
 const SCIM_CONTENT_TYPE = "application/scim+json";
 
@@ -24,7 +25,7 @@ export async function GET(
   }
 
   const { id } = await params;
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   // Verify user belongs to org
   const result = await db.execute(sql`
@@ -80,7 +81,7 @@ export async function PUT(
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   // Verify user belongs to org
   const [existing] = (await db.execute(sql`
@@ -162,7 +163,7 @@ export async function PATCH(
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   // Verify user belongs to org
   const [existing] = (await db.execute(sql`

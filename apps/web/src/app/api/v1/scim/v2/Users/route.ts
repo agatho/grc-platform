@@ -8,6 +8,7 @@ import {
   buildScimError,
 } from "@grc/auth/scim";
 import { parseScimFilter } from "@grc/auth/scim";
+import { getBaseUrl } from "@/lib/base-url";
 import { scimCreateUserSchema } from "@grc/shared";
 
 const SCIM_CONTENT_TYPE = "application/scim+json";
@@ -37,7 +38,7 @@ export async function GET(req: Request) {
   );
   const filterStr = url.searchParams.get("filter");
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   // Build filter conditions
   let filterCondition = sql`1=1`;
@@ -123,7 +124,7 @@ export async function POST(req: Request) {
     );
   }
 
-  const baseUrl = process.env.NEXTAUTH_URL ?? "https://localhost:3000";
+  const baseUrl = getBaseUrl();
 
   try {
     const arctosUser = scimToArctosUser(parsed.data as any);
