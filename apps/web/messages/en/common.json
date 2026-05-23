@@ -646,7 +646,10 @@
     "page": "Page",
     "of": "of",
     "showing": "Showing",
-    "entries": "entries"
+    "entries": "entries",
+    "errorTitle": "Something went wrong",
+    "loadError": "Failed to load data",
+    "retry": "Retry"
   },
   "auditLog": {
     "title": "Audit Trail",

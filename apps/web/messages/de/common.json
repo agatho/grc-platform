@@ -646,7 +646,10 @@
     "page": "Seite",
     "of": "von",
     "showing": "Zeige",
-    "entries": "Einträge"
+    "entries": "Einträge",
+    "errorTitle": "Etwas ist schiefgelaufen",
+    "loadError": "Daten konnten nicht geladen werden",
+    "retry": "Erneut versuchen"
   },
   "auditLog": {
     "title": "Änderungshistorie",
