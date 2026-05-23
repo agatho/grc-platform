@@ -4,17 +4,18 @@
 
 import { db, dsr, notification } from "@grc/db";
 import { and, sql, isNotNull } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface DsrSlaResult {
   processed: number;
   notified: number;
 }
 
-export async function processDsrSlaMonitor(): Promise<DsrSlaResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:dsr-sla-monitor] Starting at ${now.toISOString()}`);
+export const processDsrSlaMonitor = withCronInstrumentation(
+  "dsr-sla-monitor",
+  async (): Promise<DsrSlaResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find open DSRs (not closed/rejected) where deadline is approaching
   // Warn at specific thresholds: 10 days, 5 days, 2 days before deadline
@@ -85,9 +86,6 @@ export async function processDsrSlaMonitor(): Promise<DsrSlaResult> {
     }
   }
 
-  console.log(
-    `[cron:dsr-sla-monitor] Processed ${approachingDeadline.length} DSRs, ${notified} notifications created`,
-  );
-
-  return { processed: approachingDeadline.length, notified };
-}
+    return { processed: approachingDeadline.length, notified };
+  },
+);

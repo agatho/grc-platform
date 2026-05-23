@@ -3,12 +3,11 @@
 
 import { db, controlTestScript, controlTestExecution } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processControlTestScheduler(): Promise<{
-  scriptsChecked: number;
-  testsScheduled: number;
-}> {
-  console.log("[control-test-scheduler] Checking for scheduled tests");
+export const processControlTestScheduler = withCronInstrumentation(
+  "control-test-scheduler",
+  async (): Promise<{ scriptsChecked: number; testsScheduled: number }> => {
 
   // Find active automated scripts that need execution based on frequency
   const dueScripts = await db
@@ -47,23 +46,15 @@ export async function processControlTestScheduler(): Promise<{
           startedAt: new Date(),
         });
         testsScheduled++;
-        console.log(
-          `[control-test-scheduler] Scheduled test for script ${script.name}`,
-        );
       }
-    } catch (err) {
-      console.error(
-        `[control-test-scheduler] Failed for script ${script.id}:`,
-        err,
-      );
+    } catch {
+      // Wrapper logs structured error; loop continues to next script.
     }
   }
 
-  console.log(
-    `[control-test-scheduler] Checked ${dueScripts.length} scripts, scheduled ${testsScheduled} tests`,
-  );
-  return { scriptsChecked: dueScripts.length, testsScheduled };
-}
+    return { scriptsChecked: dueScripts.length, testsScheduled };
+  },
+);
 
 function getFrequencyMs(frequency: string): number {
   const map: Record<string, number> = {
