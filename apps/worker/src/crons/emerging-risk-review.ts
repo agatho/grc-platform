@@ -16,41 +16,41 @@ export const processEmergingRiskReviews = withCronInstrumentation(
     const now = new Date();
     let notified = 0;
 
-  const upcomingReviews = await db
-    .select({
-      id: emergingRisk.id,
-      orgId: emergingRisk.orgId,
-      title: emergingRisk.title,
-      responsibleId: emergingRisk.responsibleId,
-      nextReviewDate: emergingRisk.nextReviewDate,
-    })
-    .from(emergingRisk)
-    .where(
-      and(
-        sql`${emergingRisk.nextReviewDate}::date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '14 days'`,
-        isNotNull(emergingRisk.responsibleId),
-        sql`${emergingRisk.status} NOT IN ('promoted', 'archived')`,
-      ),
-    );
+    const upcomingReviews = await db
+      .select({
+        id: emergingRisk.id,
+        orgId: emergingRisk.orgId,
+        title: emergingRisk.title,
+        responsibleId: emergingRisk.responsibleId,
+        nextReviewDate: emergingRisk.nextReviewDate,
+      })
+      .from(emergingRisk)
+      .where(
+        and(
+          sql`${emergingRisk.nextReviewDate}::date BETWEEN CURRENT_DATE AND CURRENT_DATE + INTERVAL '14 days'`,
+          isNotNull(emergingRisk.responsibleId),
+          sql`${emergingRisk.status} NOT IN ('promoted', 'archived')`,
+        ),
+      );
 
-  for (const risk of upcomingReviews) {
-    if (!risk.responsibleId) continue;
-    await db.insert(notification).values({
-      orgId: risk.orgId,
-      userId: risk.responsibleId,
-      type: "deadline_approaching",
-      title: `Emerging Risk Review Due: ${risk.title}`,
-      message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
-      entityType: "emerging_risk",
-      entityId: risk.id,
-      templateData: {
-        module: "erm",
-        priority: "normal",
-        subtype: "emerging_risk_review",
-      },
-    });
-    notified++;
-  }
+    for (const risk of upcomingReviews) {
+      if (!risk.responsibleId) continue;
+      await db.insert(notification).values({
+        orgId: risk.orgId,
+        userId: risk.responsibleId,
+        type: "deadline_approaching",
+        title: `Emerging Risk Review Due: ${risk.title}`,
+        message: `The emerging risk "${risk.title}" is due for review by ${risk.nextReviewDate}.`,
+        entityType: "emerging_risk",
+        entityId: risk.id,
+        templateData: {
+          module: "erm",
+          priority: "normal",
+          subtype: "emerging_risk_review",
+        },
+      });
+      notified++;
+    }
 
     return { processed: upcomingReviews.length, notified };
   },

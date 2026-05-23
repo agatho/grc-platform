@@ -8,8 +8,7 @@ import { withCronInstrumentation } from "../lib/cron-instrument";
 export const processEamPortfolioHealthCheck = withCronInstrumentation(
   "eam-portfolio-health-check",
   async (): Promise<{ totalApplications: number; alertsGenerated: number }> => {
-
-  const result = await db.execute(sql`
+    const result = await db.execute(sql`
     SELECT
       COUNT(*)::int AS total,
       COUNT(*) FILTER (WHERE ap.functional_fit = 'insufficient')::int AS insufficient_fit,
@@ -21,39 +20,39 @@ export const processEamPortfolioHealthCheck = withCronInstrumentation(
     WHERE ae.status != 'retired'
   `);
 
-  const row = (result as unknown as Array<Record<string, number>>)[0] ?? {
-    total: 0,
-  };
-  const total = row.total || 1;
+    const row = (result as unknown as Array<Record<string, number>>)[0] ?? {
+      total: 0,
+    };
+    const total = row.total || 1;
 
-  const indicators = {
-    insufficientFitPct: Math.round((row.insufficient_fit / total) * 100),
-    approachingEolPct: Math.round((row.approaching_eol / total) * 100),
-    unassessedPct: Math.round((row.unassessed / total) * 100),
-    noSixRPct: Math.round((row.no_six_r / total) * 100),
-  };
+    const indicators = {
+      insufficientFitPct: Math.round((row.insufficient_fit / total) * 100),
+      approachingEolPct: Math.round((row.approaching_eol / total) * 100),
+      unassessedPct: Math.round((row.unassessed / total) * 100),
+      noSixRPct: Math.round((row.no_six_r / total) * 100),
+    };
 
-  let alertsGenerated = 0;
+    let alertsGenerated = 0;
 
-  // Default thresholds (configurable per org in production)
-  if (indicators.insufficientFitPct > 20) {
-    console.log(
-      `[eam-portfolio-health-check] ALERT: ${indicators.insufficientFitPct}% insufficient functional fit (threshold: 20%)`,
-    );
-    alertsGenerated++;
-  }
-  if (indicators.approachingEolPct > 15) {
-    console.log(
-      `[eam-portfolio-health-check] ALERT: ${indicators.approachingEolPct}% approaching EOL`,
-    );
-    alertsGenerated++;
-  }
-  if (indicators.unassessedPct > 30) {
-    console.log(
-      `[eam-portfolio-health-check] ALERT: ${indicators.unassessedPct}% unassessed`,
-    );
-    alertsGenerated++;
-  }
+    // Default thresholds (configurable per org in production)
+    if (indicators.insufficientFitPct > 20) {
+      console.log(
+        `[eam-portfolio-health-check] ALERT: ${indicators.insufficientFitPct}% insufficient functional fit (threshold: 20%)`,
+      );
+      alertsGenerated++;
+    }
+    if (indicators.approachingEolPct > 15) {
+      console.log(
+        `[eam-portfolio-health-check] ALERT: ${indicators.approachingEolPct}% approaching EOL`,
+      );
+      alertsGenerated++;
+    }
+    if (indicators.unassessedPct > 30) {
+      console.log(
+        `[eam-portfolio-health-check] ALERT: ${indicators.unassessedPct}% unassessed`,
+      );
+      alertsGenerated++;
+    }
 
     return { totalApplications: total, alertsGenerated };
   },
