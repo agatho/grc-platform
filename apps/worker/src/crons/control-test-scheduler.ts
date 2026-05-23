@@ -3,67 +3,57 @@
 
 import { db, controlTestScript, controlTestExecution } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processControlTestScheduler(): Promise<{
-  scriptsChecked: number;
-  testsScheduled: number;
-}> {
-  console.log("[control-test-scheduler] Checking for scheduled tests");
-
-  // Find active automated scripts that need execution based on frequency
-  const dueScripts = await db
-    .select()
-    .from(controlTestScript)
-    .where(
-      and(
-        eq(controlTestScript.isActive, true),
-        sql`${controlTestScript.testType} IN ('automated', 'hybrid')`,
-        sql`${controlTestScript.frequency} IS NOT NULL`,
-      ),
-    );
-
-  let testsScheduled = 0;
-
-  for (const script of dueScripts) {
-    try {
-      // Check last execution time
-      const [lastExec] = await db
-        .select({ createdAt: controlTestExecution.createdAt })
-        .from(controlTestExecution)
-        .where(eq(controlTestExecution.scriptId, script.id))
-        .orderBy(sql`${controlTestExecution.createdAt} DESC`)
-        .limit(1);
-
-      const frequencyMs = getFrequencyMs(script.frequency ?? "weekly");
-      const lastRunAt = lastExec?.createdAt?.getTime() ?? 0;
-
-      if (Date.now() - lastRunAt >= frequencyMs) {
-        await db.insert(controlTestExecution).values({
-          scriptId: script.id,
-          orgId: script.orgId,
-          controlId: script.controlId,
-          status: "pending",
-          triggeredBy: "scheduled",
-          startedAt: new Date(),
-        });
-        testsScheduled++;
-        console.log(
-          `[control-test-scheduler] Scheduled test for script ${script.name}`,
-        );
-      }
-    } catch (err) {
-      console.error(
-        `[control-test-scheduler] Failed for script ${script.id}:`,
-        err,
+export const processControlTestScheduler = withCronInstrumentation(
+  "control-test-scheduler",
+  async (): Promise<{ scriptsChecked: number; testsScheduled: number }> => {
+    // Find active automated scripts that need execution based on frequency
+    const dueScripts = await db
+      .select()
+      .from(controlTestScript)
+      .where(
+        and(
+          eq(controlTestScript.isActive, true),
+          sql`${controlTestScript.testType} IN ('automated', 'hybrid')`,
+          sql`${controlTestScript.frequency} IS NOT NULL`,
+        ),
       );
-    }
-  }
 
-  console.log(
-    `[control-test-scheduler] Checked ${dueScripts.length} scripts, scheduled ${testsScheduled} tests`,
-  );
-  return { scriptsChecked: dueScripts.length, testsScheduled };
-}
+    let testsScheduled = 0;
+
+    for (const script of dueScripts) {
+      try {
+        // Check last execution time
+        const [lastExec] = await db
+          .select({ createdAt: controlTestExecution.createdAt })
+          .from(controlTestExecution)
+          .where(eq(controlTestExecution.scriptId, script.id))
+          .orderBy(sql`${controlTestExecution.createdAt} DESC`)
+          .limit(1);
+
+        const frequencyMs = getFrequencyMs(script.frequency ?? "weekly");
+        const lastRunAt = lastExec?.createdAt?.getTime() ?? 0;
+
+        if (Date.now() - lastRunAt >= frequencyMs) {
+          await db.insert(controlTestExecution).values({
+            scriptId: script.id,
+            orgId: script.orgId,
+            controlId: script.controlId,
+            status: "pending",
+            triggeredBy: "scheduled",
+            startedAt: new Date(),
+          });
+          testsScheduled++;
+        }
+      } catch {
+        // Wrapper logs structured error; loop continues to next script.
+      }
+    }
+
+    return { scriptsChecked: dueScripts.length, testsScheduled };
+  },
+);
 
 function getFrequencyMs(frequency: string): number {
   const map: Record<string, number> = {
