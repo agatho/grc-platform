@@ -17,74 +17,74 @@ export const processDsrSlaMonitor = withCronInstrumentation(
     const now = new Date();
     let notified = 0;
 
-  // Find open DSRs (not closed/rejected) where deadline is approaching
-  // Warn at specific thresholds: 10 days, 5 days, 2 days before deadline
-  const approachingDeadline = await db
-    .select({
-      id: dsr.id,
-      orgId: dsr.orgId,
-      requestType: dsr.requestType,
-      subjectName: dsr.subjectName,
-      deadline: dsr.deadline,
-      handlerId: dsr.handlerId,
-      createdBy: dsr.createdBy,
-    })
-    .from(dsr)
-    .where(
-      and(
-        sql`${dsr.status} NOT IN ('closed', 'rejected')`,
-        sql`${dsr.deadline}::date - CURRENT_DATE IN (2, 5, 10)`,
-      ),
-    );
-
-  if (approachingDeadline.length === 0) {
-    console.log(
-      "[cron:dsr-sla-monitor] No DSRs approaching deadline threshold",
-    );
-    return { processed: 0, notified: 0 };
-  }
-
-  for (const dsrRow of approachingDeadline) {
-    try {
-      const deadlineDate = new Date(dsrRow.deadline);
-      const daysRemaining = Math.ceil(
-        (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+    // Find open DSRs (not closed/rejected) where deadline is approaching
+    // Warn at specific thresholds: 10 days, 5 days, 2 days before deadline
+    const approachingDeadline = await db
+      .select({
+        id: dsr.id,
+        orgId: dsr.orgId,
+        requestType: dsr.requestType,
+        subjectName: dsr.subjectName,
+        deadline: dsr.deadline,
+        handlerId: dsr.handlerId,
+        createdBy: dsr.createdBy,
+      })
+      .from(dsr)
+      .where(
+        and(
+          sql`${dsr.status} NOT IN ('closed', 'rejected')`,
+          sql`${dsr.deadline}::date - CURRENT_DATE IN (2, 5, 10)`,
+        ),
       );
 
-      // Notify the handler, or fallback to the creator
-      const recipientId = dsrRow.handlerId ?? dsrRow.createdBy;
-      if (!recipientId) continue;
-
-      await db.insert(notification).values({
-        userId: recipientId,
-        orgId: dsrRow.orgId,
-        type: "deadline_approaching" as const,
-        entityType: "dsr",
-        entityId: dsrRow.id,
-        title: `DSR deadline approaching: ${dsrRow.subjectName ?? dsrRow.requestType}`,
-        message: `Data subject request (${dsrRow.requestType}) for "${dsrRow.subjectName}" has ${daysRemaining} day(s) remaining until the 30-day GDPR deadline.`,
-        channel: "both" as const,
-        templateKey: "dsr_sla_warning",
-        templateData: {
-          dsrId: dsrRow.id,
-          requestType: dsrRow.requestType,
-          subjectName: dsrRow.subjectName,
-          daysRemaining,
-          deadline: deadlineDate.toISOString(),
-        },
-        createdAt: now,
-        updatedAt: now,
-      });
-
-      notified++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:dsr-sla-monitor] Failed for DSR ${dsrRow.id}:`,
-        message,
+    if (approachingDeadline.length === 0) {
+      console.log(
+        "[cron:dsr-sla-monitor] No DSRs approaching deadline threshold",
       );
+      return { processed: 0, notified: 0 };
     }
-  }
+
+    for (const dsrRow of approachingDeadline) {
+      try {
+        const deadlineDate = new Date(dsrRow.deadline);
+        const daysRemaining = Math.ceil(
+          (deadlineDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        );
+
+        // Notify the handler, or fallback to the creator
+        const recipientId = dsrRow.handlerId ?? dsrRow.createdBy;
+        if (!recipientId) continue;
+
+        await db.insert(notification).values({
+          userId: recipientId,
+          orgId: dsrRow.orgId,
+          type: "deadline_approaching" as const,
+          entityType: "dsr",
+          entityId: dsrRow.id,
+          title: `DSR deadline approaching: ${dsrRow.subjectName ?? dsrRow.requestType}`,
+          message: `Data subject request (${dsrRow.requestType}) for "${dsrRow.subjectName}" has ${daysRemaining} day(s) remaining until the 30-day GDPR deadline.`,
+          channel: "both" as const,
+          templateKey: "dsr_sla_warning",
+          templateData: {
+            dsrId: dsrRow.id,
+            requestType: dsrRow.requestType,
+            subjectName: dsrRow.subjectName,
+            daysRemaining,
+            deadline: deadlineDate.toISOString(),
+          },
+          createdAt: now,
+          updatedAt: now,
+        });
+
+        notified++;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.error(
+          `[cron:dsr-sla-monitor] Failed for DSR ${dsrRow.id}:`,
+          message,
+        );
+      }
+    }
 
     return { processed: approachingDeadline.length, notified };
   },
