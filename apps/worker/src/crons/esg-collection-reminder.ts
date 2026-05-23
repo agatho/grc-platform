@@ -8,15 +8,17 @@ import {
   notification,
 } from "@grc/db";
 import { and, eq, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface CollectionReminderResult {
   processed: number;
   reminders: number;
 }
 
-export async function processEsgCollectionReminder(): Promise<CollectionReminderResult> {
-  console.log(`[cron:esg-collection-reminder] Starting`);
-  let reminders = 0;
+export const processEsgCollectionReminder = withCronInstrumentation(
+  "esg-collection-reminder",
+  async (): Promise<CollectionReminderResult> => {
+    let reminders = 0;
 
   // Find active campaigns with approaching deadlines
   const campaigns = await db
@@ -61,6 +63,6 @@ export async function processEsgCollectionReminder(): Promise<CollectionReminder
     }
   }
 
-  console.log(`[cron:esg-collection-reminder] Sent ${reminders} reminders`);
-  return { processed: campaigns.length, reminders };
-}
+    return { processed: campaigns.length, reminders };
+  },
+);

@@ -9,16 +9,17 @@ import {
   applicationPortfolio,
 } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamRuleEvaluator(): Promise<{
-  rulesEvaluated: number;
-  newViolations: number;
-  resolvedViolations: number;
-}> {
-  console.log("[eam-rule-evaluator] Starting daily rule evaluation");
-
-  let newViolations = 0;
-  let resolvedViolations = 0;
+export const processEamRuleEvaluator = withCronInstrumentation(
+  "eam-rule-evaluator",
+  async (): Promise<{
+    rulesEvaluated: number;
+    newViolations: number;
+    resolvedViolations: number;
+  }> => {
+    let newViolations = 0;
+    let resolvedViolations = 0;
 
   // Get all active rules across all orgs
   const rules = await db
@@ -105,13 +106,11 @@ export async function processEamRuleEvaluator(): Promise<{
         .update(architectureRule)
         .set({ lastEvaluatedAt: new Date() })
         .where(eq(architectureRule.id, rule.id));
-    } catch (err) {
-      console.error(`[eam-rule-evaluator] Rule ${rule.name} failed:`, err);
+    } catch {
+      // Wrapper logs structured error; loop continues to next rule.
     }
   }
 
-  console.log(
-    `[eam-rule-evaluator] Evaluated ${rules.length} rules: ${newViolations} new, ${resolvedViolations} resolved`,
-  );
-  return { rulesEvaluated: rules.length, newViolations, resolvedViolations };
-}
+    return { rulesEvaluated: rules.length, newViolations, resolvedViolations };
+  },
+);

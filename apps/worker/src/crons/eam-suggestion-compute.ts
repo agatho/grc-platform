@@ -8,13 +8,12 @@ import {
   eamObjectSuggestion,
 } from "@grc/db";
 import { eq, and, sql, lte, isNull, or } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamSuggestionCompute(): Promise<{
-  suggestionsCreated: number;
-}> {
-  console.log("[eam-suggestion-compute] Computing rule-based suggestions");
-
-  // Clear old suggestions (recompute fresh)
+export const processEamSuggestionCompute = withCronInstrumentation(
+  "eam-suggestion-compute",
+  async (): Promise<{ suggestionsCreated: number }> => {
+    // Clear old suggestions (recompute fresh)
   await db.execute(
     sql`DELETE FROM eam_object_suggestion WHERE computed_at < NOW() - INTERVAL '7 days'`,
   );
@@ -75,9 +74,6 @@ export async function processEamSuggestionCompute(): Promise<{
     suggestionsCreated++;
   }
 
-  console.log(
-    `[eam-suggestion-compute] Complete: ${suggestionsCreated} suggestions created`,
-  );
-
-  return { suggestionsCreated };
-}
+    return { suggestionsCreated };
+  },
+);
