@@ -3,59 +3,54 @@
 
 import { db, applicationPortfolio, architectureElement } from "@grc/db";
 import { and, lte, eq, sql, isNull, or } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamAssessmentReminder(): Promise<{
-  flagged: number;
-  notificationsSent: number;
-}> {
-  console.log("[eam-assessment-reminder] Checking for unassessed applications");
+export const processEamAssessmentReminder = withCronInstrumentation(
+  "eam-assessment-reminder",
+  async (): Promise<{ flagged: number; notificationsSent: number }> => {
+    const twelveMonthsAgo = new Date();
+    twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
 
-  const twelveMonthsAgo = new Date();
-  twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
-
-  const unassessed = await db
-    .select({
-      elementId: applicationPortfolio.elementId,
-      name: architectureElement.name,
-      lastAssessedAt: applicationPortfolio.lastAssessedAt,
-      owner: architectureElement.owner,
-    })
-    .from(applicationPortfolio)
-    .innerJoin(
-      architectureElement,
-      eq(applicationPortfolio.elementId, architectureElement.id),
-    )
-    .where(
-      and(
-        eq(applicationPortfolio.lifecycleStatus, "active"),
-        or(
-          isNull(applicationPortfolio.lastAssessedAt),
-          lte(applicationPortfolio.lastAssessedAt, twelveMonthsAgo),
+    const unassessed = await db
+      .select({
+        elementId: applicationPortfolio.elementId,
+        name: architectureElement.name,
+        lastAssessedAt: applicationPortfolio.lastAssessedAt,
+        owner: architectureElement.owner,
+      })
+      .from(applicationPortfolio)
+      .innerJoin(
+        architectureElement,
+        eq(applicationPortfolio.elementId, architectureElement.id),
+      )
+      .where(
+        and(
+          eq(applicationPortfolio.lifecycleStatus, "active"),
+          or(
+            isNull(applicationPortfolio.lastAssessedAt),
+            lte(applicationPortfolio.lastAssessedAt, twelveMonthsAgo),
+          ),
         ),
-      ),
-    );
+      );
 
-  let notificationsSent = 0;
+    let notificationsSent = 0;
 
-  for (const app of unassessed) {
-    const monthsSinceAssessment = app.lastAssessedAt
-      ? Math.floor(
-          (Date.now() - new Date(app.lastAssessedAt).getTime()) /
-            (30 * 24 * 60 * 60 * 1000),
-        )
-      : null;
+    for (const app of unassessed) {
+      const monthsSinceAssessment = app.lastAssessedAt
+        ? Math.floor(
+            (Date.now() - new Date(app.lastAssessedAt).getTime()) /
+              (30 * 24 * 60 * 60 * 1000),
+          )
+        : null;
 
-    console.log(
-      `[eam-assessment-reminder] ${app.name} — ${monthsSinceAssessment ? `last assessed ${monthsSinceAssessment} months ago` : "never assessed"}`,
-    );
+      console.log(
+        `[eam-assessment-reminder] ${app.name} — ${monthsSinceAssessment ? `last assessed ${monthsSinceAssessment} months ago` : "never assessed"}`,
+      );
 
-    // In production: createNotification() for application owner
-    if (app.owner) notificationsSent++;
-  }
+      // In production: createNotification() for application owner
+      if (app.owner) notificationsSent++;
+    }
 
-  console.log(
-    `[eam-assessment-reminder] Complete: ${unassessed.length} flagged, ${notificationsSent} notifications`,
-  );
-
-  return { flagged: unassessed.length, notificationsSent };
-}
+    return { flagged: unassessed.length, notificationsSent };
+  },
+);
