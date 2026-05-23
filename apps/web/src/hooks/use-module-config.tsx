@@ -101,6 +101,17 @@ export function useAllModuleConfigs() {
 // Hook: get single module config by key
 // ---------------------------------------------------------------------------
 
+// #IMPL-GAP-HIGH-3: when a ModuleGate references a moduleKey that has
+// NO row in module_definition, the hook silently treats it as
+// "disabled" — that's the root cause behind the 4 ghost modules
+// (community/marketplace/portals/simulations) we just seeded in 0351.
+// To make the same class of bug self-announcing next time, log a
+// one-shot console.warn per missing key. Once-per-key prevents log
+// spam when ModuleGate re-renders. Dev console + production browser
+// console will surface the moduleKey clearly so operators can spot
+// the next provisioning gap before customers do.
+const warnedMissingKeys = new Set<string>();
+
 export function useModuleConfig(moduleKey: ModuleKey) {
   const { configs, loading } = useAllModuleConfigs();
   const { data: session } = useSession();
@@ -110,6 +121,18 @@ export function useModuleConfig(moduleKey: ModuleKey) {
   // Determine if the current user is an admin in the current org
   const isAdmin =
     session?.user?.roles?.some((r) => r.role === "admin") ?? false;
+
+  // Surface the missing-definition footgun. `loading` guards against
+  // the initial render before the configs fetch resolves.
+  if (!loading && !config && !warnedMissingKeys.has(moduleKey)) {
+    warnedMissingKeys.add(moduleKey);
+    // eslint-disable-next-line no-console -- intentional: surface a
+    // provisioning gap that would otherwise default-disable the page.
+    console.warn(
+      `[useModuleConfig] No module_definition row found for moduleKey="${moduleKey}". ` +
+        `Defaulting to status="disabled". Add a row via migration or seed_platform_baseline.sql.`,
+    );
+  }
 
   return {
     /** Current UI status: enabled | preview | disabled | maintenance */
