@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
+import { ErrorRetry } from "@/components/ui/error-retry";
 
 interface SectionHealth {
   healthScore: number;
@@ -198,21 +199,9 @@ export default function AiActAnnualReportPage() {
   }
 
   if (error) {
-    return (
-      <div className="p-6">
-        <Card className="border-red-300 bg-red-50 dark:bg-red-950/20">
-          <CardContent className="p-6">
-            <div className="flex items-center gap-2 text-red-800">
-              <AlertTriangle className="h-5 w-5" />
-              <p className="font-medium">
-                Annual Report konnte nicht geladen werden
-              </p>
-            </div>
-            <p className="text-sm text-red-700 mt-2">{error}</p>
-          </CardContent>
-        </Card>
-      </div>
-    );
+    // #WAVE27-FE: previously missing the retry button entirely; the
+    // ErrorRetry component adds it back end-to-end.
+    return <ErrorRetry title="Annual Report konnte nicht geladen werden" message={error} onRetry={fetchData} />;
   }
 
   if (!data) return null;
