@@ -2,9 +2,22 @@
 # ARCTOS GRC Platform — Production Docker Image
 # Multi-stage build: deps → build → runtime
 # ============================================================================
+#
+# #DEP-CONFIG: base images pinned to specific minor.patch tags
+# (was previously `node:22-alpine` — a moving tag that could pick up
+# a new minor each rebuild). For maximum immutability you can replace
+# the version tag with a digest:
+#   FROM node@sha256:<sha> AS deps
+# Trade-off: tag is human-readable + easy to bump on a roll; digest
+# is bit-identical-or-fail but rebuilds need explicit SHA updates.
+# The pinned tag below balances both — moves only on `node:22.20.x`
+# patch releases (security fixes) but won't silently jump majors.
+
+# Common Node base — single source of truth for all three stages.
+ARG NODE_IMAGE=node:22.20-alpine
 
 # ── Stage 1: Dependencies ───────────────────────────────────────
-FROM node:22-alpine AS deps
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 
 COPY package.json package-lock.json turbo.json ./
@@ -24,7 +37,7 @@ COPY packages/ui/package.json packages/ui/
 RUN npm ci
 
 # ── Stage 2: Build ──────────────────────────────────────────────
-FROM node:22-alpine AS builder
+FROM ${NODE_IMAGE} AS builder
 WORKDIR /app
 
 COPY --from=deps /app/ ./
@@ -75,7 +88,7 @@ RUN AUTH_SECRET="$AUTH_SECRET" \
     sh -c 'npx next build --dir apps/web || (cd apps/web && npx next build)'
 
 # ── Stage 3: Runtime ────────────────────────────────────────────
-FROM node:22-alpine AS runner
+FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
 ENV NODE_ENV=production
