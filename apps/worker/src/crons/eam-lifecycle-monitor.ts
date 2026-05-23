@@ -8,44 +8,43 @@ import { withCronInstrumentation } from "../lib/cron-instrument";
 export const processEamLifecycleMonitor = withCronInstrumentation(
   "eam-lifecycle-monitor",
   async (): Promise<{ approachingEol: number; notificationsSent: number }> => {
+    const thresholds = [90, 60, 30]; // days before EOL
+    let totalApproaching = 0;
+    let notificationsSent = 0;
 
-  const thresholds = [90, 60, 30]; // days before EOL
-  let totalApproaching = 0;
-  let notificationsSent = 0;
+    for (const days of thresholds) {
+      const cutoff = new Date();
+      cutoff.setDate(cutoff.getDate() + days);
 
-  for (const days of thresholds) {
-    const cutoff = new Date();
-    cutoff.setDate(cutoff.getDate() + days);
-
-    const approaching = await db
-      .select({
-        elementId: applicationPortfolio.elementId,
-        name: architectureElement.name,
-        eol: applicationPortfolio.plannedEol,
-        owner: architectureElement.owner,
-      })
-      .from(applicationPortfolio)
-      .innerJoin(
-        architectureElement,
-        eq(applicationPortfolio.elementId, architectureElement.id),
-      )
-      .where(
-        and(
-          lte(
-            applicationPortfolio.plannedEol,
-            cutoff.toISOString().split("T")[0]!,
+      const approaching = await db
+        .select({
+          elementId: applicationPortfolio.elementId,
+          name: architectureElement.name,
+          eol: applicationPortfolio.plannedEol,
+          owner: architectureElement.owner,
+        })
+        .from(applicationPortfolio)
+        .innerJoin(
+          architectureElement,
+          eq(applicationPortfolio.elementId, architectureElement.id),
+        )
+        .where(
+          and(
+            lte(
+              applicationPortfolio.plannedEol,
+              cutoff.toISOString().split("T")[0]!,
+            ),
+            eq(applicationPortfolio.lifecycleStatus, "active"),
           ),
-          eq(applicationPortfolio.lifecycleStatus, "active"),
-        ),
-      );
+        );
 
-    totalApproaching += approaching.length;
+      totalApproaching += approaching.length;
 
-    for (const app of approaching) {
-      void app;
-      notificationsSent++;
+      for (const app of approaching) {
+        void app;
+        notificationsSent++;
+      }
     }
-  }
 
     return { approachingEol: totalApproaching, notificationsSent };
   },
