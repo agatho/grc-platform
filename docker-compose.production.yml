@@ -6,7 +6,13 @@
 services:
   # ── PostgreSQL + TimescaleDB ──────────────────────────────────
   postgres:
-    image: timescale/timescaledb:latest-pg16
+    # #DEP-CONFIG: was `:latest-pg16`. `latest` is a moving tag —
+    # every restart could pull a new image, and ARCTOS relies on
+    # TimescaleDB extension semantics that don't always survive
+    # major bumps. Pinned to a specific TimescaleDB minor. Operators
+    # who want bit-identical can replace with a digest:
+    #   image: timescale/timescaledb@sha256:...
+    image: timescale/timescaledb:2.17.2-pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: grc
@@ -24,7 +30,8 @@ services:
 
   # ── Redis ─────────────────────────────────────────────────────
   redis:
-    image: redis:7-alpine
+    # #DEP-CONFIG: pinned minor (was `redis:7-alpine`, moving tag).
+    image: redis:7.4-alpine
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
