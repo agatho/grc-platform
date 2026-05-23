@@ -12,6 +12,7 @@ import type { Provider } from "next-auth/providers";
 import { db, userOrganizationRole } from "@grc/db";
 import { and, eq, isNull } from "drizzle-orm";
 import type { RoleAssignment } from "@grc/auth";
+import { log } from "@/lib/logger";
 
 const ORG_COOKIE = "arctos-org-id";
 
@@ -102,7 +103,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         try {
           roles = await fetchFreshRoles(token.userId as string);
         } catch (err) {
-          console.warn("[auth] fresh role fetch failed, using JWT copy:", err);
+          // #DEP-CONFIG: structured log so the operator can grep
+          // for `route:"auth.session"` + correlate with the user/org
+          // when DB lookups fail (typical cause: pool exhaustion or
+          // a transient pg connection error). Falling back to the
+          // JWT-embedded role list is intentional — the JWT can't be
+          // forged without AUTH_SECRET, and stale roles are better
+          // than denying every session refresh during a brief blip.
+          log.warn("auth: fresh role fetch failed, using JWT copy", {
+            route: "auth.session",
+            userId: token.userId as string,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
         }
       }
       (session.user as any).roles = roles;
@@ -142,7 +154,20 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           (authUser as any).language = provisioned.language;
           (authUser as any).roles = provisioned.roles;
         } catch (err) {
-          console.error("[SSO] JIT provisioning failed:", err);
+          // #DEP-CONFIG: structured log lets the operator see WHY
+          // SSO provisioning fell over (DB schema drift, duplicate
+          // email collision, etc.) without scraping container
+          // stderr. Includes the IDP-supplied email + sub for
+          // correlation — both are already in the access_event log
+          // table on the success path; logging them here too keeps
+          // the failure path queryable.
+          log.error("sso: JIT provisioning failed", {
+            route: "auth.signIn",
+            provider: account?.provider,
+            emailAttempted: (profile?.email as string)?.toLowerCase(),
+            sub: profile?.sub ?? profile?.oid,
+            errorMessage: err instanceof Error ? err.message : String(err),
+          });
           return false; // Deny sign-in on provisioning failure
         }
       }
