@@ -107,14 +107,18 @@ export function useDateFormat() {
   const locale = useLocale();
   return useMemo(
     () => ({
-      formatDate: (d: Date | string | number | null | undefined, opts?: Intl.DateTimeFormatOptions) =>
-        formatDate(locale, d, opts),
+      formatDate: (
+        d: Date | string | number | null | undefined,
+        opts?: Intl.DateTimeFormatOptions,
+      ) => formatDate(locale, d, opts),
       formatDateTime: (
         d: Date | string | number | null | undefined,
         opts?: Intl.DateTimeFormatOptions,
       ) => formatDateTime(locale, d, opts),
-      formatNumber: (n: number | null | undefined, opts?: Intl.NumberFormatOptions) =>
-        formatNumber(locale, n, opts),
+      formatNumber: (
+        n: number | null | undefined,
+        opts?: Intl.NumberFormatOptions,
+      ) => formatNumber(locale, n, opts),
       locale,
     }),
     [locale],
