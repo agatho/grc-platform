@@ -14,14 +14,14 @@ export const processEamSuggestionCompute = withCronInstrumentation(
   "eam-suggestion-compute",
   async (): Promise<{ suggestionsCreated: number }> => {
     // Clear old suggestions (recompute fresh)
-  await db.execute(
-    sql`DELETE FROM eam_object_suggestion WHERE computed_at < NOW() - INTERVAL '7 days'`,
-  );
+    await db.execute(
+      sql`DELETE FROM eam_object_suggestion WHERE computed_at < NOW() - INTERVAL '7 days'`,
+    );
 
-  let suggestionsCreated = 0;
+    let suggestionsCreated = 0;
 
-  // Rule 1: EOL approaching (within 12 months)
-  const eolApproaching = await db.execute(sql`
+    // Rule 1: EOL approaching (within 12 months)
+    const eolApproaching = await db.execute(sql`
     SELECT ae.id AS entity_id, ae.owner AS user_id, ae.org_id
     FROM application_portfolio ap
     JOIN architecture_element ae ON ap.element_id = ae.id
@@ -32,25 +32,25 @@ export const processEamSuggestionCompute = withCronInstrumentation(
       AND ae.owner IS NOT NULL
   `);
 
-  for (const row of eolApproaching as unknown as Array<
-    Record<string, string>
-  >) {
-    await db
-      .insert(eamObjectSuggestion)
-      .values({
-        orgId: row.org_id,
-        userId: row.user_id,
-        entityId: row.entity_id,
-        entityType: "application",
-        reason: "eol_approaching",
-        priority: 8,
-      })
-      .onConflictDoNothing();
-    suggestionsCreated++;
-  }
+    for (const row of eolApproaching as unknown as Array<
+      Record<string, string>
+    >) {
+      await db
+        .insert(eamObjectSuggestion)
+        .values({
+          orgId: row.org_id,
+          userId: row.user_id,
+          entityId: row.entity_id,
+          entityType: "application",
+          reason: "eol_approaching",
+          priority: 8,
+        })
+        .onConflictDoNothing();
+      suggestionsCreated++;
+    }
 
-  // Rule 2: Unassessed applications (no assessment in 12+ months)
-  const unassessed = await db.execute(sql`
+    // Rule 2: Unassessed applications (no assessment in 12+ months)
+    const unassessed = await db.execute(sql`
     SELECT ae.id AS entity_id, ae.owner AS user_id, ae.org_id
     FROM application_portfolio ap
     JOIN architecture_element ae ON ap.element_id = ae.id
@@ -59,20 +59,20 @@ export const processEamSuggestionCompute = withCronInstrumentation(
       AND ae.owner IS NOT NULL
   `);
 
-  for (const row of unassessed as unknown as Array<Record<string, string>>) {
-    await db
-      .insert(eamObjectSuggestion)
-      .values({
-        orgId: row.org_id,
-        userId: row.user_id,
-        entityId: row.entity_id,
-        entityType: "application",
-        reason: "unassessed",
-        priority: 5,
-      })
-      .onConflictDoNothing();
-    suggestionsCreated++;
-  }
+    for (const row of unassessed as unknown as Array<Record<string, string>>) {
+      await db
+        .insert(eamObjectSuggestion)
+        .values({
+          orgId: row.org_id,
+          userId: row.user_id,
+          entityId: row.entity_id,
+          entityType: "application",
+          reason: "unassessed",
+          priority: 5,
+        })
+        .onConflictDoNothing();
+      suggestionsCreated++;
+    }
 
     return { suggestionsCreated };
   },
