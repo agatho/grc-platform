@@ -3,14 +3,11 @@
 
 import { db, applicationPortfolio, architectureElement } from "@grc/db";
 import { and, lte, eq, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamLifecycleMonitor(): Promise<{
-  approachingEol: number;
-  notificationsSent: number;
-}> {
-  console.log(
-    "[eam-lifecycle-monitor] Checking for approaching EOL applications",
-  );
+export const processEamLifecycleMonitor = withCronInstrumentation(
+  "eam-lifecycle-monitor",
+  async (): Promise<{ approachingEol: number; notificationsSent: number }> => {
 
   const thresholds = [90, 60, 30]; // days before EOL
   let totalApproaching = 0;
@@ -45,15 +42,11 @@ export async function processEamLifecycleMonitor(): Promise<{
     totalApproaching += approaching.length;
 
     for (const app of approaching) {
-      console.log(
-        `[eam-lifecycle-monitor] ${app.name} EOL in ≤${days} days (${app.eol})`,
-      );
+      void app;
       notificationsSent++;
     }
   }
 
-  console.log(
-    `[eam-lifecycle-monitor] Found ${totalApproaching} approaching EOL, sent ${notificationsSent} notifications`,
-  );
-  return { approachingEol: totalApproaching, notificationsSent };
-}
+    return { approachingEol: totalApproaching, notificationsSent };
+  },
+);

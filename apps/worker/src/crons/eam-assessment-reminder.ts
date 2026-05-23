@@ -3,12 +3,11 @@
 
 import { db, applicationPortfolio, architectureElement } from "@grc/db";
 import { and, lte, eq, sql, isNull, or } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processEamAssessmentReminder(): Promise<{
-  flagged: number;
-  notificationsSent: number;
-}> {
-  console.log("[eam-assessment-reminder] Checking for unassessed applications");
+export const processEamAssessmentReminder = withCronInstrumentation(
+  "eam-assessment-reminder",
+  async (): Promise<{ flagged: number; notificationsSent: number }> => {
 
   const twelveMonthsAgo = new Date();
   twelveMonthsAgo.setMonth(twelveMonthsAgo.getMonth() - 12);
@@ -53,9 +52,6 @@ export async function processEamAssessmentReminder(): Promise<{
     if (app.owner) notificationsSent++;
   }
 
-  console.log(
-    `[eam-assessment-reminder] Complete: ${unassessed.length} flagged, ${notificationsSent} notifications`,
-  );
-
-  return { flagged: unassessed.length, notificationsSent };
-}
+    return { flagged: unassessed.length, notificationsSent };
+  },
+);
