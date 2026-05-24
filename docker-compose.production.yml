@@ -16,7 +16,12 @@ services:
     restart: unless-stopped
     environment:
       POSTGRES_USER: grc
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-grc_prod_password}
+      # #DEP-CONFIG-HIGH-3: fail-fast on missing. The previous fallback
+      # `grc_prod_password` was identical to the dev default — trivial
+      # to ship a prod node with the dev password by accident.
+      # `${VAR:?msg}` aborts `docker compose up` if VAR is unset,
+      # matching the pattern AUTH_SECRET + WB_ENCRYPTION_KEY use below.
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD in .env}
       POSTGRES_DB: grc_platform
     volumes:
       - pgdata:/var/lib/postgresql/data
@@ -56,12 +61,12 @@ services:
     tmpfs:
       - /tmp
     environment:
-      DATABASE_URL: postgresql://grc:${DB_PASSWORD:-grc_prod_password}@postgres:5432/grc_platform
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env}
-      CRON_SECRET: ${CRON_SECRET:-change-me}
+      CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       RUN_SEEDS: ${RUN_SEEDS:-false}
@@ -113,8 +118,8 @@ services:
     security_opt:
       - no-new-privileges:true
     environment:
-      DATABASE_URL: postgresql://grc:${DB_PASSWORD:-grc_prod_password}@postgres:5432/grc_platform
-      CRON_SECRET: ${CRON_SECRET:-change-me}
+      DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
+      CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
       RESEND_API_KEY: ${RESEND_API_KEY:-}
