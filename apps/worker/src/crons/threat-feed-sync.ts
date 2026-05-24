@@ -4,6 +4,7 @@
 
 import { db, threatFeedSource, threatFeedItem } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ThreatFeedSyncResult {
   sourcesChecked: number;
@@ -109,105 +110,101 @@ function parseAtomFeed(xml: string): ParsedFeedItem[] {
   return items;
 }
 
-export async function processThreatFeedSync(): Promise<ThreatFeedSyncResult> {
-  let sourcesChecked = 0;
-  let newItems = 0;
-  let errors = 0;
+export const processThreatFeedSync = withCronInstrumentation(
+  "threat-feed-sync",
+  async (): Promise<ThreatFeedSyncResult> => {
+    let sourcesChecked = 0;
+    let newItems = 0;
+    let errors = 0;
 
-  // Get all active feed sources across all orgs
-  const sources = await db
-    .select()
-    .from(threatFeedSource)
-    .where(eq(threatFeedSource.isActive, true));
+    // Get all active feed sources across all orgs
+    const sources = await db
+      .select()
+      .from(threatFeedSource)
+      .where(eq(threatFeedSource.isActive, true));
 
-  for (const source of sources) {
-    sourcesChecked++;
-    try {
-      // Fetch feed
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 30000);
+    for (const source of sources) {
+      sourcesChecked++;
+      try {
+        // Fetch feed
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000);
 
-      const response = await fetch(source.feedUrl, {
-        signal: controller.signal,
-        headers: {
-          "User-Agent": "ARCTOS-ThreatFeedSync/1.0",
-          Accept: "application/xml, text/xml, application/atom+xml, */*",
-        },
-      });
-      clearTimeout(timeoutId);
+        const response = await fetch(source.feedUrl, {
+          signal: controller.signal,
+          headers: {
+            "User-Agent": "ARCTOS-ThreatFeedSync/1.0",
+            Accept: "application/xml, text/xml, application/atom+xml, */*",
+          },
+        });
+        clearTimeout(timeoutId);
 
-      if (!response.ok) {
-        console.error(
-          `[threat-feed-sync] Source ${source.name}: HTTP ${response.status}`,
+        if (!response.ok) {
+          errors++;
+          continue;
+        }
+
+        const xml = await response.text();
+
+        // Parse based on feed type
+        let parsedItems: ParsedFeedItem[];
+        if (source.feedType === "atom") {
+          parsedItems = parseAtomFeed(xml);
+        } else {
+          parsedItems = parseRssFeed(xml);
+        }
+
+        // Get existing GUIDs to deduplicate
+        const existingGuids = new Set(
+          (
+            await db
+              .select({ guid: threatFeedItem.guid })
+              .from(threatFeedItem)
+              .where(
+                and(
+                  eq(threatFeedItem.sourceId, source.id),
+                  eq(threatFeedItem.orgId, source.orgId),
+                ),
+              )
+          )
+            .map((r) => r.guid)
+            .filter(Boolean),
         );
+
+        // Insert new items
+        const newItemsToInsert = parsedItems.filter(
+          (item) => !item.guid || !existingGuids.has(item.guid),
+        );
+
+        if (newItemsToInsert.length > 0) {
+          await db.insert(threatFeedItem).values(
+            newItemsToInsert.map((item) => ({
+              orgId: source.orgId,
+              sourceId: source.id,
+              title: item.title,
+              description: item.description,
+              link: item.link,
+              publishedAt: item.publishedAt,
+              guid: item.guid,
+              category: item.category,
+            })),
+          );
+          newItems += newItemsToInsert.length;
+        }
+
+        // Update source metadata
+        await db
+          .update(threatFeedSource)
+          .set({
+            lastFetchAt: new Date(),
+            lastItemCount: parsedItems.length,
+          })
+          .where(eq(threatFeedSource.id, source.id));
+      } catch {
         errors++;
-        continue;
       }
-
-      const xml = await response.text();
-
-      // Parse based on feed type
-      let parsedItems: ParsedFeedItem[];
-      if (source.feedType === "atom") {
-        parsedItems = parseAtomFeed(xml);
-      } else {
-        parsedItems = parseRssFeed(xml);
-      }
-
-      // Get existing GUIDs to deduplicate
-      const existingGuids = new Set(
-        (
-          await db
-            .select({ guid: threatFeedItem.guid })
-            .from(threatFeedItem)
-            .where(
-              and(
-                eq(threatFeedItem.sourceId, source.id),
-                eq(threatFeedItem.orgId, source.orgId),
-              ),
-            )
-        )
-          .map((r) => r.guid)
-          .filter(Boolean),
-      );
-
-      // Insert new items
-      const newItemsToInsert = parsedItems.filter(
-        (item) => !item.guid || !existingGuids.has(item.guid),
-      );
-
-      if (newItemsToInsert.length > 0) {
-        await db.insert(threatFeedItem).values(
-          newItemsToInsert.map((item) => ({
-            orgId: source.orgId,
-            sourceId: source.id,
-            title: item.title,
-            description: item.description,
-            link: item.link,
-            publishedAt: item.publishedAt,
-            guid: item.guid,
-            category: item.category,
-          })),
-        );
-        newItems += newItemsToInsert.length;
-      }
-
-      // Update source metadata
-      await db
-        .update(threatFeedSource)
-        .set({
-          lastFetchAt: new Date(),
-          lastItemCount: parsedItems.length,
-        })
-        .where(eq(threatFeedSource.id, source.id));
-    } catch (error) {
-      console.error(
-        `[threat-feed-sync] Source ${source.name} failed:`,
-        error instanceof Error ? error.message : String(error),
-      );
-      errors++;
     }
-  }
 
-  return { sourcesChecked, newItems, errors };
-}
+    return { sourcesChecked, newItems, errors };
+  },
+);
