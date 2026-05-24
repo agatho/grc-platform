@@ -314,6 +314,7 @@ function KriSparkline({
   measurements: KRIMeasurement[];
   alertStatus: KriAlertStatus;
 }) {
+  const { formatDate } = useDateFormat();
   const lineColor =
     alertStatus === "red"
       ? "#ef4444"
