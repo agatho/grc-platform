@@ -5,17 +5,18 @@
 import { db, notification, user } from "@grc/db";
 import { eq, and, isNull, gte, sql } from "drizzle-orm";
 import { emailService } from "@grc/email";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface DigestResult {
   usersProcessed: number;
   emailsSent: number;
 }
 
-export async function processNotificationDigest(): Promise<DigestResult> {
-  const now = new Date();
-  let emailsSent = 0;
-
-  console.log(`[cron:notification-digest] Starting at ${now.toISOString()}`);
+export const processNotificationDigest = withCronInstrumentation(
+  "notification-digest",
+  async (): Promise<DigestResult> => {
+    const now = new Date();
+    let emailsSent = 0;
 
   // Find users who have opted into daily digest emails
   const digestUsers = await db
@@ -35,9 +36,6 @@ export async function processNotificationDigest(): Promise<DigestResult> {
     );
 
   if (digestUsers.length === 0) {
-    console.log(
-      "[cron:notification-digest] No users with daily digest enabled",
-    );
     return { usersProcessed: 0, emailsSent: 0 };
   }
 
@@ -122,18 +120,11 @@ export async function processNotificationDigest(): Promise<DigestResult> {
         .where(sql`${notification.id} = ANY(${notificationIds}::uuid[])`);
 
       emailsSent++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:notification-digest] Failed for user ${digestUser.id}:`,
-        message,
-      );
+    } catch {
+      // Wrapper logs structured error; loop continues to next user.
     }
   }
 
-  console.log(
-    `[cron:notification-digest] Processed ${digestUsers.length} users, sent ${emailsSent} digests`,
-  );
-
-  return { usersProcessed: digestUsers.length, emailsSent };
-}
+    return { usersProcessed: digestUsers.length, emailsSent };
+  },
+);

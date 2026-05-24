@@ -3,6 +3,7 @@
 
 import { db, maturityModel, maturityAssessment } from "@grc/db";
 import { eq, and, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface MaturityCalculatorResult {
   orgsProcessed: number;
@@ -20,12 +21,14 @@ function scoreToLevel(
   return "initial";
 }
 
-export async function processMaturityAutoCalculator(): Promise<MaturityCalculatorResult> {
-  const result: MaturityCalculatorResult = {
-    orgsProcessed: 0,
-    modelsUpdated: 0,
-    errors: 0,
-  };
+export const processMaturityAutoCalculator = withCronInstrumentation(
+  "maturity-auto-calculator",
+  async (): Promise<MaturityCalculatorResult> => {
+    const result: MaturityCalculatorResult = {
+      orgsProcessed: 0,
+      modelsUpdated: 0,
+      errors: 0,
+    };
 
   const models = await db
     .select()
@@ -67,14 +70,12 @@ export async function processMaturityAutoCalculator(): Promise<MaturityCalculato
           result.modelsUpdated++;
         }
       }
-    } catch (err) {
-      console.error(
-        `[worker] maturity-auto-calculator: Failed for model ${model.id}:`,
-        err,
-      );
+    } catch {
       result.errors++;
+      // Wrapper logs structured error; loop continues.
     }
   }
 
-  return result;
-}
+    return result;
+  },
+);

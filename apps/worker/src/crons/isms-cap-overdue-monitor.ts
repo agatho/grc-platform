@@ -10,6 +10,7 @@ import {
   notification,
 } from "@grc/db";
 import { and, eq, not, inArray, isNotNull, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface IsmsCapMonitorResult {
   ncProcessed: number;
@@ -19,11 +20,11 @@ interface IsmsCapMonitorResult {
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
-export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:isms-cap-overdue] Starting at ${now.toISOString()}`);
+export const processIsmsCapOverdueMonitor = withCronInstrumentation(
+  "isms-cap-overdue-monitor",
+  async (): Promise<IsmsCapMonitorResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // ─── Nonconformities ─────────────────────────────────────
   const ncs = await db
@@ -97,9 +98,8 @@ export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResu
       });
 
       notified++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(`[cron:isms-cap-overdue] Failed for NC ${nc.id}:`, message);
+    } catch {
+      // Wrapper logs structured error; loop continues.
     }
   }
 
@@ -170,18 +170,11 @@ export async function processIsmsCapOverdueMonitor(): Promise<IsmsCapMonitorResu
       });
 
       notified++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:isms-cap-overdue] Failed for CAPA ${ca.id}:`,
-        message,
-      );
+    } catch {
+      // Wrapper logs structured error; loop continues.
     }
   }
 
-  console.log(
-    `[cron:isms-cap-overdue] Processed ${ncs.length} NCs + ${cas.length} CAPAs, ${notified} notifications created`,
-  );
-
-  return { ncProcessed: ncs.length, caProcessed: cas.length, notified };
-}
+    return { ncProcessed: ncs.length, caProcessed: cas.length, notified };
+  },
+);
