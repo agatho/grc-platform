@@ -34,18 +34,9 @@ export const processImportJobs = withCronInstrumentation(
             .from(templatePackItem)
             .where(eq(templatePackItem.packId, job.templatePackId));
 
-          for (const item of items) {
-            try {
-              // Process each template item
-              processedCount++;
-            } catch (err) {
-              failedCount++;
-              errors.push({
-                item: item.title,
-                error: err instanceof Error ? err.message : "Unknown error",
-              });
-            }
-          }
+          // Pre-existing stub: actual per-item processing not yet wired up,
+          // so we simply count the pack items as "processed" without iterating.
+          processedCount += items.length;
         }
 
         await db
