@@ -33,6 +33,7 @@ import type {
   FindingStatus,
   FindingSource,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -82,11 +83,6 @@ const STATUSES: FindingStatus[] = [
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 function statusBadgeClass(status: FindingStatus): string {
   const map: Record<FindingStatus, string> = {
     identified: "bg-gray-100 text-gray-700 border-gray-200",
@@ -114,6 +110,7 @@ export default function FindingsPage() {
 
 function FindingsPageInner() {
   const t = useTranslations("findings");
+  const { formatDate } = useDateFormat();
   const [findings, setFindings] = useState<FindingRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("__all__");
@@ -255,7 +252,7 @@ function FindingsPageInner() {
         ),
       },
     ],
-    [t],
+    [t, formatDate],
   );
 
   if (loading) {
