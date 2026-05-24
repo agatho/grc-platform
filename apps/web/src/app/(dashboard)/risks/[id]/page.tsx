@@ -37,6 +37,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
+import { useDateFormat } from "@/lib/format-date";
 import { Badge } from "@/components/ui/badge";
 import {
   Card,
@@ -326,7 +327,7 @@ function KriSparkline({
         new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime(),
     )
     .map((m) => ({
-      date: new Date(m.measuredAt).toLocaleDateString(),
+      date: formatDate(m.measuredAt),
       value: parseFloat(m.value),
     }));
 
@@ -366,6 +367,7 @@ function RiskDetailContent() {
   const params = useParams();
   const router = useRouter();
   const riskId = params.id as string;
+  const { formatDate } = useDateFormat();
 
   const [riskData, setRiskData] = useState<RiskDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -879,11 +881,7 @@ function RiskDetailContent() {
               <CardContent>
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar size={14} className="text-gray-400" />
-                  <span>
-                    {r.reviewDate
-                      ? new Date(r.reviewDate).toLocaleDateString()
-                      : "-"}
-                  </span>
+                  <span>{r.reviewDate ? formatDate(r.reviewDate) : "-"}</span>
                 </div>
               </CardContent>
             </Card>
@@ -1128,7 +1126,7 @@ function RiskDetailContent() {
                               className={`flex items-center gap-1 ${isOverdue ? "text-red-600 font-medium" : ""}`}
                             >
                               <Calendar size={12} />
-                              {new Date(tr.dueDate).toLocaleDateString()}
+                              {formatDate(tr.dueDate)}
                               {isOverdue && ` (${t("treatmentOverdue")})`}
                             </span>
                           )}

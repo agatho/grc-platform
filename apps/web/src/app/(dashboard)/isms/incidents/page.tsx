@@ -30,6 +30,7 @@ import type {
   IncidentSeverity,
   IncidentStatus,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const SEVERITIES: IncidentSeverity[] = ["low", "medium", "high", "critical"];
 const STATUSES: IncidentStatus[] = [
@@ -61,6 +62,7 @@ export default function IncidentsPage() {
 function IncidentsInner() {
   const t = useTranslations("isms");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [incidents, setIncidents] = useState<SecurityIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState("");
@@ -224,7 +226,7 @@ function IncidentsInner() {
                     {t(`incidentStatus.${inc.status}`)}
                   </Badge>
                   <span className="text-xs text-gray-400">
-                    {new Date(inc.detectedAt).toLocaleDateString()}
+                    {formatDate(inc.detectedAt)}
                   </span>
                 </div>
               </Link>

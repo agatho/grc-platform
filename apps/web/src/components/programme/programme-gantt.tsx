@@ -6,6 +6,7 @@
 
 import { useMemo } from "react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 
 interface GanttPhase {
   id: string;
@@ -70,6 +71,7 @@ export function ProgrammeGantt({
   startDate,
   endDate,
 }: Props) {
+  const { formatDate } = useDateFormat();
   const today = new Date();
   today.setUTCHours(0, 0, 0, 0);
   const todayStr = today.toISOString().slice(0, 10);
@@ -118,7 +120,7 @@ export function ProgrammeGantt({
       const iso = cursor.toISOString().slice(0, 10);
       result.push({
         pct: xPct(iso),
-        label: cursor.toLocaleDateString("de-DE", {
+        label: formatDate(cursor, {
           month: "short",
           year: "2-digit",
         }),
@@ -126,7 +128,7 @@ export function ProgrammeGantt({
       cursor.setUTCMonth(cursor.getUTCMonth() + 1);
     }
     return result;
-  }, [rangeStart, rangeEnd]);
+  }, [rangeStart, rangeEnd, formatDate]);
 
   const todayPct = xPct(todayStr);
 
