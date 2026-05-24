@@ -8,77 +8,75 @@ import {
   simulationScenario,
 } from "@grc/db";
 import { eq, and } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processSimulationRunner(): Promise<{
-  runsProcessed: number;
-  runsCompleted: number;
-  runsFailed: number;
-}> {
-  console.log("[simulation-runner] Processing pending simulation runs");
+export const processSimulationRunner = withCronInstrumentation(
+  "simulation-runner",
+  async (): Promise<{
+    runsProcessed: number;
+    runsCompleted: number;
+    runsFailed: number;
+  }> => {
+    const pendingRuns = await db
+      .select()
+      .from(simulationRun)
+      .where(eq(simulationRun.status, "running"));
 
-  const pendingRuns = await db
-    .select()
-    .from(simulationRun)
-    .where(eq(simulationRun.status, "running"));
+    let runsCompleted = 0;
+    let runsFailed = 0;
 
-  let runsCompleted = 0;
-  let runsFailed = 0;
+    for (const run of pendingRuns) {
+      const startTime = Date.now();
+      try {
+        // In production: execute Monte Carlo / what-if analysis based on scenario type
+        // Generate results with statistical metrics
+        const durationMs = Date.now() - startTime;
 
-  for (const run of pendingRuns) {
-    const startTime = Date.now();
-    try {
-      // In production: execute Monte Carlo / what-if analysis based on scenario type
-      // Generate results with statistical metrics
-      const durationMs = Date.now() - startTime;
+        // Insert placeholder results
+        await db.insert(simulationRunResult).values({
+          orgId: run.orgId,
+          runId: run.id,
+          metricKey: "total_impact",
+          metricName: "Total Impact",
+          meanValue: String(Math.random() * 1000000),
+          medianValue: String(Math.random() * 900000),
+          p5Value: String(Math.random() * 200000),
+          p95Value: String(Math.random() * 1800000),
+          unit: "EUR",
+        });
 
-      // Insert placeholder results
-      await db.insert(simulationRunResult).values({
-        orgId: run.orgId,
-        runId: run.id,
-        metricKey: "total_impact",
-        metricName: "Total Impact",
-        meanValue: String(Math.random() * 1000000),
-        medianValue: String(Math.random() * 900000),
-        p5Value: String(Math.random() * 200000),
-        p95Value: String(Math.random() * 1800000),
-        unit: "EUR",
-      });
+        await db
+          .update(simulationRun)
+          .set({
+            status: "completed",
+            durationMs,
+            completedAt: new Date(),
+          })
+          .where(eq(simulationRun.id, run.id));
 
-      await db
-        .update(simulationRun)
-        .set({
-          status: "completed",
-          durationMs,
-          completedAt: new Date(),
-        })
-        .where(eq(simulationRun.id, run.id));
+        await db
+          .update(simulationScenario)
+          .set({
+            status: "completed",
+            updatedAt: new Date(),
+          })
+          .where(eq(simulationScenario.id, run.scenarioId));
 
-      await db
-        .update(simulationScenario)
-        .set({
-          status: "completed",
-          updatedAt: new Date(),
-        })
-        .where(eq(simulationScenario.id, run.scenarioId));
-
-      runsCompleted++;
-    } catch (err) {
-      console.error(`[simulation-runner] Run ${run.id} failed:`, err);
-      await db
-        .update(simulationRun)
-        .set({
-          status: "failed",
-          errorMessage: err instanceof Error ? err.message : String(err),
-          completedAt: new Date(),
-          durationMs: Date.now() - startTime,
-        })
-        .where(eq(simulationRun.id, run.id));
-      runsFailed++;
+        runsCompleted++;
+      } catch (err) {
+        await db
+          .update(simulationRun)
+          .set({
+            status: "failed",
+            errorMessage: err instanceof Error ? err.message : String(err),
+            completedAt: new Date(),
+            durationMs: Date.now() - startTime,
+          })
+          .where(eq(simulationRun.id, run.id));
+        runsFailed++;
+      }
     }
-  }
 
-  console.log(
-    `[simulation-runner] Processed ${pendingRuns.length}: ${runsCompleted} completed, ${runsFailed} failed`,
-  );
-  return { runsProcessed: pendingRuns.length, runsCompleted, runsFailed };
-}
+    return { runsProcessed: pendingRuns.length, runsCompleted, runsFailed };
+  },
+);
