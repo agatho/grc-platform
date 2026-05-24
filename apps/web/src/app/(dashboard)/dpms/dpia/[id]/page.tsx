@@ -1220,6 +1220,7 @@ function ConsultationStep({
   saving: boolean;
   onSave: (f: Record<string, unknown>) => Promise<void>;
 }) {
+  const { formatDate } = useDateFormat();
   return (
     <div className="space-y-5">
       <h2 className="font-semibold text-gray-900">DSB-Konsultation</h2>
