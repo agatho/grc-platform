@@ -11,6 +11,7 @@ import {
   notification,
 } from "@grc/db";
 import { and, eq, sql, isNull, count } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface EsgCompletenessResult {
   processed: number;
@@ -18,15 +19,13 @@ interface EsgCompletenessResult {
   updated: number;
 }
 
-export async function processEsgCompletenessCheck(): Promise<EsgCompletenessResult> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  let notified = 0;
-  let updated = 0;
-
-  console.log(
-    `[cron:esg-completeness-check] Starting at ${now.toISOString()} for year ${currentYear}`,
-  );
+export const processEsgCompletenessCheck = withCronInstrumentation(
+  "esg-completeness-check",
+  async (): Promise<EsgCompletenessResult> => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let notified = 0;
+    let updated = 0;
 
   // 1. Find all annual reports for the current year (all orgs)
   const reports = await db
@@ -143,9 +142,6 @@ export async function processEsgCompletenessCheck(): Promise<EsgCompletenessResu
     }
   }
 
-  console.log(
-    `[cron:esg-completeness-check] Processed ${reports.length} reports, ${updated} updated, ${notified} notifications`,
-  );
-
-  return { processed: reports.length, notified, updated };
-}
+    return { processed: reports.length, notified, updated };
+  },
+);

@@ -10,6 +10,7 @@ import {
   notification,
 } from "@grc/db";
 import { and, eq, sql, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface EsgTargetStatusResult {
   processed: number;
@@ -17,13 +18,13 @@ interface EsgTargetStatusResult {
   notified: number;
 }
 
-export async function processEsgTargetStatus(): Promise<EsgTargetStatusResult> {
-  const now = new Date();
-  const currentYear = now.getFullYear();
-  let updated = 0;
-  let notified = 0;
-
-  console.log(`[cron:esg-target-status] Starting at ${now.toISOString()}`);
+export const processEsgTargetStatus = withCronInstrumentation(
+  "esg-target-status",
+  async (): Promise<EsgTargetStatusResult> => {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    let updated = 0;
+    let notified = 0;
 
   // 1. Fetch all active targets
   const targets = await db
@@ -147,18 +148,11 @@ export async function processEsgTargetStatus(): Promise<EsgTargetStatusResult> {
           }
         }
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:esg-target-status] Failed for target ${target.id}:`,
-        message,
-      );
+    } catch {
+      // Wrapper logs structured error; loop continues to next target.
     }
   }
 
-  console.log(
-    `[cron:esg-target-status] Processed ${targets.length} targets, ${updated} updated, ${notified} notifications`,
-  );
-
-  return { processed: targets.length, updated, notified };
-}
+    return { processed: targets.length, updated, notified };
+  },
+);

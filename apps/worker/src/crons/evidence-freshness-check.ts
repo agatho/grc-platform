@@ -3,11 +3,14 @@
 
 import { db, evidenceFreshnessConfig, connectorTestResult } from "@grc/db";
 import { eq, and, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 export const evidenceFreshnessCheckCron = "0 6 * * *"; // Daily at 6 AM
 
-export async function evidenceFreshnessCheck(): Promise<void> {
-  const configs = await db
+export const evidenceFreshnessCheck = withCronInstrumentation(
+  "evidence-freshness-check",
+  async (): Promise<void> => {
+    const configs = await db
     .select()
     .from(evidenceFreshnessConfig)
     .where(eq(evidenceFreshnessConfig.notifyOnStale, true));
@@ -49,4 +52,5 @@ export async function evidenceFreshnessCheck(): Promise<void> {
       );
     }
   }
-}
+  },
+);
