@@ -50,11 +50,6 @@ function categoryBadgeClass(category: EvidenceCategory): string {
   return map[category] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 function formatFileSize(bytes?: number): string {
   if (!bytes) return "";
   if (bytes < 1024) return `${bytes} B`;
@@ -77,6 +72,7 @@ export default function EvidencePage() {
 
 function EvidencePageInner() {
   const t = useTranslations("controls");
+  const { formatDate } = useDateFormat();
   const [evidence, setEvidence] = useState<Evidence[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "grid">("list");

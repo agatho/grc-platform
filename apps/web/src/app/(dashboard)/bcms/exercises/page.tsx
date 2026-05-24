@@ -11,6 +11,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BcExercise } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const TYPE_COLORS: Record<string, string> = {
   tabletop: "bg-blue-100 text-blue-900",
@@ -46,6 +47,7 @@ export default function ExerciseListPage() {
 function ExerciseListInner() {
   const t = useTranslations("bcms");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<BcExercise[]>([]);
   const [loading, setLoading] = useState(true);
   const [viewMode, setViewMode] = useState<"list" | "calendar">("list");
@@ -266,7 +268,7 @@ function ExerciseListInner() {
                 className="rounded-lg border border-gray-200 bg-white p-4"
               >
                 <h3 className="text-sm font-semibold text-gray-700 mb-3">
-                  {new Date(month + "-01").toLocaleDateString(undefined, {
+                  {formatDate(month + "-01", {
                     year: "numeric",
                     month: "long",
                   })}
