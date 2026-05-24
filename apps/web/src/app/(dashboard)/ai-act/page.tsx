@@ -117,7 +117,7 @@ export default function AiActDashboardPage() {
             </p>
           </CardContent>
         </Card>
-        {/* Art. 18-19: Dokumentation faellig */}
+        {/* Art. 18-19: documentation due */}
         <Card
           className={
             data.documentationDue > 0
@@ -131,7 +131,7 @@ export default function AiActDashboardPage() {
                 <FileWarning className="h-4 w-4 text-orange-600" />
               )}
               <p className="text-sm text-muted-foreground">
-                Dokumentation faellig
+                {t("documentationDue")}
               </p>
             </div>
             <p
@@ -141,7 +141,7 @@ export default function AiActDashboardPage() {
             </p>
             {data.documentationDue > 0 && (
               <p className="text-xs text-orange-600 mt-1">
-                Prüfung überfällig oder Ablauf in 90 Tagen
+                {t("documentationDueDesc")}
               </p>
             )}
           </CardContent>

@@ -10,6 +10,8 @@
   "oversightLogs30d": "Aufsichtsprotokolle (30T)",
   "transparencyEntries": "Transparenzeinträge",
   "friasPending": "FRIAs ausstehend",
+  "documentationDue": "Dokumentation fällig",
+  "documentationDueDesc": "Prüfung überfällig oder Ablauf in 90 Tagen",
   "systemInventory": "KI-System-Inventar",
   "addSystem": "KI-System registrieren",
   "noSystems": "Noch keine KI-Systeme registriert",
