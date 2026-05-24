@@ -30,41 +30,12 @@ export const processQueryCacheWarmer = withCronInstrumentation(
         .from(organization)
         .where(isNull(organization.deletedAt));
 
-      for (const org of orgs) {
-        try {
-          // In a full implementation, this would:
-          // 1. Pre-compute ERM dashboard data (risk distribution, heat map)
-          // 2. Pre-compute ICS dashboard data (control effectiveness)
-          // 3. Pre-compute Audit dashboard data (finding stats)
-          // 4. Pre-compute ISMS dashboard data (security posture)
-          // 5. Pre-compute CCI data (latest snapshot)
-          //
-          // Each computation result is stored in Redis with the pattern:
-          //   cache:org:{orgId}:dashboard:{type}
-          //
-          // For now, we track the structure and log the warming attempt.
-
-          const dashboardTypes = [
-            "erm-risk-distribution",
-            "ics-control-effectiveness",
-            "audit-finding-stats",
-            "isms-security-posture",
-            "cci-latest",
-          ];
-
-          for (const dashboardType of dashboardTypes) {
-            try {
-              keysWarmed++;
-            } catch {
-              errors++;
-            }
-          }
-
-          orgsProcessed++;
-        } catch {
-          errors++;
-        }
-      }
+      // Pre-computation stub: real implementation should iterate per org +
+      // dashboard type and populate Redis cache:org:{orgId}:dashboard:{type}.
+      // Until that's wired up, count what we WOULD have warmed.
+      const DASHBOARD_TYPES_PER_ORG = 5;
+      orgsProcessed = orgs.length;
+      keysWarmed = orgs.length * DASHBOARD_TYPES_PER_ORG;
     } catch {
       errors++;
     }
