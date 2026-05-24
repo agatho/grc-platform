@@ -6,6 +6,7 @@ import { Loader2, AlertOctagon } from "lucide-react";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Finding {
   id: string;
@@ -28,6 +29,7 @@ const sevColor: Record<string, string> = {
 };
 
 export function ProcessFindingsTab({ processId }: { processId: string }) {
+  const { formatDate } = useDateFormat();
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -127,7 +129,7 @@ function FindingList({
           <div className="mt-1 text-xs text-muted-foreground">
             via <em>{f.link_via}</em> · {f.status} · {f.source}
             {f.remediation_due_date &&
-              ` · due ${new Date(f.remediation_due_date).toLocaleDateString()}`}
+              ` · due ${formatDate(f.remediation_due_date)}`}
           </div>
         </li>
       ))}
