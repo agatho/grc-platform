@@ -22,6 +22,7 @@ import {
   syncAllSoaEntriesToProgramme,
 } from "@grc/db";
 import { and, eq, isNull, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface SoaBackfillResult {
   orgsScanned: number;
@@ -33,69 +34,57 @@ interface SoaBackfillResult {
   errors: number;
 }
 
-export async function processSoaProgrammeBackfill(): Promise<SoaBackfillResult> {
-  console.log(
-    `[cron:soa-programme-backfill] Starting at ${new Date().toISOString()}`,
-  );
-
-  // Find orgs that have a non-archived ISO 27001 journey AND at least one
-  // SoA entry. Doing this in one query avoids scanning idle orgs.
-  const orgRows = await db
-    .selectDistinct({ orgId: programmeJourney.orgId })
-    .from(programmeJourney)
-    .where(
-      and(
-        eq(programmeJourney.templateCode, "iso27001-2022"),
-        isNull(programmeJourney.deletedAt),
-        sql`${programmeJourney.status} != 'archived'`,
-      ),
-    );
-
-  let totalEntries = 0;
-  let created = 0;
-  let updated = 0;
-  let skipped = 0;
-  let errors = 0;
-  let orgsWithJourney = 0;
-
-  for (const { orgId } of orgRows) {
-    // Skip orgs without any SoA entries — saves a sync round-trip.
-    const [{ count }] = await db
-      .select({ count: sql<number>`count(*)::int` })
-      .from(soaEntry)
-      .where(eq(soaEntry.orgId, orgId));
-    if (count === 0) continue;
-
-    orgsWithJourney++;
-    try {
-      const r = await syncAllSoaEntriesToProgramme(db, orgId, null);
-      totalEntries += r.total;
-      created += r.created;
-      updated += r.updated;
-      skipped += r.skipped;
-      console.log(
-        `[cron:soa-programme-backfill] org=${orgId} total=${r.total} created=${r.created} updated=${r.updated} skipped=${r.skipped}`,
+export const processSoaProgrammeBackfill = withCronInstrumentation(
+  "soa-programme-backfill",
+  async (): Promise<SoaBackfillResult> => {
+    // Find orgs that have a non-archived ISO 27001 journey AND at least one
+    // SoA entry. Doing this in one query avoids scanning idle orgs.
+    const orgRows = await db
+      .selectDistinct({ orgId: programmeJourney.orgId })
+      .from(programmeJourney)
+      .where(
+        and(
+          eq(programmeJourney.templateCode, "iso27001-2022"),
+          isNull(programmeJourney.deletedAt),
+          sql`${programmeJourney.status} != 'archived'`,
+        ),
       );
-    } catch (err) {
-      errors++;
-      console.error(
-        `[cron:soa-programme-backfill] org=${orgId} sync failed:`,
-        err,
-      );
+
+    let totalEntries = 0;
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    let errors = 0;
+    let orgsWithJourney = 0;
+
+    for (const { orgId } of orgRows) {
+      // Skip orgs without any SoA entries — saves a sync round-trip.
+      const [{ count }] = await db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(soaEntry)
+        .where(eq(soaEntry.orgId, orgId));
+      if (count === 0) continue;
+
+      orgsWithJourney++;
+      try {
+        const r = await syncAllSoaEntriesToProgramme(db, orgId, null);
+        totalEntries += r.total;
+        created += r.created;
+        updated += r.updated;
+        skipped += r.skipped;
+      } catch {
+        errors++;
+      }
     }
-  }
 
-  console.log(
-    `[cron:soa-programme-backfill] Done. orgsScanned=${orgRows.length} orgsWithJourney=${orgsWithJourney} totalEntries=${totalEntries} created=${created} updated=${updated} skipped=${skipped} errors=${errors}`,
-  );
-
-  return {
-    orgsScanned: orgRows.length,
-    orgsWithJourney,
-    totalEntries,
-    created,
-    updated,
-    skipped,
-    errors,
-  };
-}
+    return {
+      orgsScanned: orgRows.length,
+      orgsWithJourney,
+      totalEntries,
+      created,
+      updated,
+      skipped,
+      errors,
+    };
+  },
+);
