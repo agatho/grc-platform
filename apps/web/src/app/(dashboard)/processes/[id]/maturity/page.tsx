@@ -18,6 +18,7 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface DimensionScore {
   dimension: string;
@@ -61,6 +62,7 @@ const DIMENSION_LABELS: Record<string, string> = {
 export default function MaturityPage() {
   const params = useParams<{ id: string }>();
   const processId = params?.id ?? "";
+  const { formatDate } = useDateFormat();
 
   const [result, setResult] = useState<MaturityResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -167,8 +169,7 @@ export default function MaturityPage() {
                   </Badge>
                 </CardTitle>
                 <CardDescription>
-                  Last computed{" "}
-                  {new Date(result.assessmentDate).toLocaleDateString()}
+                  Last computed {formatDate(result.assessmentDate)}
                 </CardDescription>
               </CardHeader>
             </Card>

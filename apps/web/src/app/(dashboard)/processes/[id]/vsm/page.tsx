@@ -22,6 +22,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Vsm {
   id: string;
@@ -38,6 +39,7 @@ interface Vsm {
 export default function VsmPage() {
   const params = useParams<{ id: string }>();
   const processId = params?.id ?? "";
+  const { formatDate } = useDateFormat();
   const [maps, setMaps] = useState<Vsm[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -109,8 +111,7 @@ export default function VsmPage() {
                     </Badge>
                   </CardTitle>
                   <CardDescription>
-                    Status: {m.status} · Erstellt:{" "}
-                    {new Date(m.createdAt).toLocaleDateString()}
+                    Status: {m.status} · Erstellt: {formatDate(m.createdAt)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
