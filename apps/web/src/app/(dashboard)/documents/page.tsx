@@ -268,7 +268,7 @@ function DocumentsPageInner() {
         },
       },
     ],
-    [t],
+    [t, formatDate],
   );
 
   if (loading && documents.length === 0) {
