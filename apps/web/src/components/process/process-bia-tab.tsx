@@ -12,6 +12,7 @@ import {
   CardDescription,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface BiaImpact {
   id: string;
@@ -39,6 +40,7 @@ function fmtHours(h: number | null) {
 }
 
 export function ProcessBiaTab({ processId }: { processId: string }) {
+  const { formatDate } = useDateFormat();
   const [impacts, setImpacts] = useState<BiaImpact[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,7 +113,7 @@ export function ProcessBiaTab({ processId }: { processId: string }) {
             </CardTitle>
             {i.assessedAt && (
               <CardDescription>
-                Assessed {new Date(i.assessedAt).toLocaleDateString()}
+                Assessed {formatDate(i.assessedAt)}
               </CardDescription>
             )}
           </CardHeader>
