@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Select,
   SelectContent,
@@ -139,6 +140,7 @@ function SeverityPill({ severity }: { severity: Severity }) {
 }
 
 export default function GrcFindingsPage() {
+  const { formatDate } = useDateFormat();
   const [data, setData] = useState<CrossFindingResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -451,7 +453,7 @@ export default function GrcFindingsPage() {
                             ueberfaellig
                           </Badge>
                         ) : f.dueDate ? (
-                          new Date(f.dueDate).toLocaleDateString("de-DE")
+                          formatDate(f.dueDate)
                         ) : (
                           "—"
                         )}

@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { RiskCategory, RiskStatus, TreatmentStrategy } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -163,11 +164,6 @@ function reviewDateClass(dateStr?: string): string {
   return "text-gray-600";
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -186,6 +182,7 @@ function RisksPageInner() {
   const tActions = useTranslations("actions");
   const router = useRouter();
   const { data: session } = useSession();
+  const { formatDate } = useDateFormat();
 
   // Data state
   const [risks, setRisks] = useState<RiskRow[]>([]);
@@ -614,7 +611,7 @@ function RisksPageInner() {
         ),
       },
     ],
-    [filteredRisks, selectedRows, toggleAll, toggleRow, t],
+    [filteredRisks, selectedRows, toggleAll, toggleRow, t, formatDate],
   );
 
   // ---------------------------------------------------------------------------
