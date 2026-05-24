@@ -3,23 +3,22 @@
 
 import { db, portalSession } from "@grc/db";
 import { eq, and, lt, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processPortalSessionExpiry(): Promise<{
-  expiredCount: number;
-}> {
-  console.log("[portal-session-expiry] Running session expiry check");
+export const processPortalSessionExpiry = withCronInstrumentation(
+  "portal-session-expiry",
+  async (): Promise<{ expiredCount: number }> => {
+    const result = await db
+      .update(portalSession)
+      .set({ status: "expired" })
+      .where(
+        and(
+          eq(portalSession.status, "active"),
+          lt(portalSession.expiresAt, new Date()),
+        ),
+      )
+      .returning({ id: portalSession.id });
 
-  const result = await db
-    .update(portalSession)
-    .set({ status: "expired" })
-    .where(
-      and(
-        eq(portalSession.status, "active"),
-        lt(portalSession.expiresAt, new Date()),
-      ),
-    )
-    .returning({ id: portalSession.id });
-
-  console.log(`[portal-session-expiry] Expired ${result.length} sessions`);
-  return { expiredCount: result.length };
-}
+    return { expiredCount: result.length };
+  },
+);
