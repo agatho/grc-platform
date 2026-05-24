@@ -10,6 +10,8 @@
   "oversightLogs30d": "Oversight Logs (30d)",
   "transparencyEntries": "Transparency Entries",
   "friasPending": "FRIAs Pending",
+  "documentationDue": "Documentation due",
+  "documentationDueDesc": "Review overdue or expires within 90 days",
   "systemInventory": "AI System Inventory",
   "addSystem": "Register AI System",
   "noSystems": "No AI systems registered yet",
