@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 interface CockpitData {
   stats: {
@@ -45,6 +46,7 @@ interface CockpitData {
 
 export default function CockpitPage() {
   const t = useTranslations("bpmOverhaul");
+  const { formatDate } = useDateFormat();
   const [data, setData] = useState<CockpitData | null>(null);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState<Set<string>>(new Set());
@@ -225,9 +227,7 @@ export default function CockpitPage() {
                     <strong>{r.name}</strong>
                     <div className="text-xs text-muted-foreground">
                       Owner: {r.owner_name ?? "—"} · Due:{" "}
-                      {r.review_date
-                        ? new Date(r.review_date).toLocaleDateString()
-                        : "—"}
+                      {formatDate(r.review_date)}
                     </div>
                   </>
                 )}
