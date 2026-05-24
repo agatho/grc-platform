@@ -3,6 +3,7 @@
 
 import { db, regulatoryFeedItem } from "@grc/db";
 import { sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface FeedFetcherResult {
   fetched: number;
@@ -116,68 +117,54 @@ async function fetchRssFeed(
   }
 }
 
-export async function processRegulatoryFeedFetcher(): Promise<FeedFetcherResult> {
-  const now = new Date();
-  console.log(
-    `[cron:regulatory-feed-fetcher] Starting at ${now.toISOString()}`,
-  );
+export const processRegulatoryFeedFetcher = withCronInstrumentation(
+  "regulatory-feed-fetcher",
+  async (): Promise<FeedFetcherResult> => {
+    let fetched = 0;
+    let newItems = 0;
+    let errors = 0;
+    const processedSources: string[] = [];
 
-  let fetched = 0;
-  let newItems = 0;
-  let errors = 0;
-  const processedSources: string[] = [];
+    for (const source of FEED_SOURCES) {
+      try {
+        const entries = await fetchRssFeed(source);
+        fetched += entries.length;
+        processedSources.push(source.name);
 
-  for (const source of FEED_SOURCES) {
-    try {
-      const entries = await fetchRssFeed(source);
-      fetched += entries.length;
-      processedSources.push(source.name);
+        for (const entry of entries) {
+          try {
+            // Check for duplicate by URL
+            if (entry.url) {
+              const [existing] = await db
+                .select({ id: regulatoryFeedItem.id })
+                .from(regulatoryFeedItem)
+                .where(sql`${regulatoryFeedItem.url} = ${entry.url}`)
+                .limit(1);
 
-      for (const entry of entries) {
-        try {
-          // Check for duplicate by URL
-          if (entry.url) {
-            const [existing] = await db
-              .select({ id: regulatoryFeedItem.id })
-              .from(regulatoryFeedItem)
-              .where(sql`${regulatoryFeedItem.url} = ${entry.url}`)
-              .limit(1);
+              if (existing) continue;
+            }
 
-            if (existing) continue;
+            await db.insert(regulatoryFeedItem).values({
+              source: entry.source,
+              title: entry.title,
+              summary: entry.summary || null,
+              url: entry.url || null,
+              publishedAt: new Date(entry.publishedAt),
+              category: entry.category || null,
+              jurisdictions: entry.jurisdictions,
+              frameworks: entry.frameworks,
+            });
+
+            newItems++;
+          } catch {
+            errors++;
           }
-
-          await db.insert(regulatoryFeedItem).values({
-            source: entry.source,
-            title: entry.title,
-            summary: entry.summary || null,
-            url: entry.url || null,
-            publishedAt: new Date(entry.publishedAt),
-            category: entry.category || null,
-            jurisdictions: entry.jurisdictions,
-            frameworks: entry.frameworks,
-          });
-
-          newItems++;
-        } catch (err) {
-          errors++;
-          console.error(
-            `[cron:regulatory-feed-fetcher] Error inserting item:`,
-            err instanceof Error ? err.message : String(err),
-          );
         }
+      } catch {
+        errors++;
       }
-    } catch (err) {
-      errors++;
-      console.error(
-        `[cron:regulatory-feed-fetcher] Error processing ${source.name}:`,
-        err instanceof Error ? err.message : String(err),
-      );
     }
-  }
 
-  console.log(
-    `[cron:regulatory-feed-fetcher] Done. Fetched: ${fetched}, New: ${newItems}, Errors: ${errors}`,
-  );
-
-  return { fetched, newItems, errors, sources: processedSources };
-}
+    return { fetched, newItems, errors, sources: processedSources };
+  },
+);
