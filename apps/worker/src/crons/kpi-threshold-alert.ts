@@ -8,15 +8,17 @@ import {
   notification,
 } from "@grc/db";
 import { eq, sql, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface KpiAlertResult {
   processed: number;
   alerts: number;
 }
 
-export async function processKpiThresholdAlert(): Promise<KpiAlertResult> {
-  console.log(`[cron:kpi-threshold-alert] Starting`);
-  let alerts = 0;
+export const processKpiThresholdAlert = withCronInstrumentation(
+  "kpi-threshold-alert",
+  async (): Promise<KpiAlertResult> => {
+    let alerts = 0;
 
   // Find recent measurements (last 24h) that are yellow or red
   const recentMeasurements = await db.execute(
@@ -49,6 +51,6 @@ export async function processKpiThresholdAlert(): Promise<KpiAlertResult> {
     }
   }
 
-  console.log(`[cron:kpi-threshold-alert] ${alerts} KPI alerts sent`);
-  return { processed: (recentMeasurements as any[]).length, alerts };
-}
+    return { processed: (recentMeasurements as any[]).length, alerts };
+  },
+);

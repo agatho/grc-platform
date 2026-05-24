@@ -4,17 +4,18 @@
 
 import { db, kri, notification, userOrganizationRole } from "@grc/db";
 import { eq, and, isNull, lt, inArray, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface KriOverdueResult {
   processed: number;
   notified: number;
 }
 
-export async function processKriOverdueAlerts(): Promise<KriOverdueResult> {
-  const now = new Date();
-  let notified = 0;
-
-  console.log(`[cron:kri-overdue-alerts] Starting at ${now.toISOString()}`);
+export const processKriOverdueAlerts = withCronInstrumentation(
+  "kri-overdue-alert",
+  async (): Promise<KriOverdueResult> => {
+    const now = new Date();
+    let notified = 0;
 
   // Find KRIs where alert_enabled=true and measurement is overdue based on frequency.
   // Overdue thresholds:
@@ -45,7 +46,6 @@ export async function processKriOverdueAlerts(): Promise<KriOverdueResult> {
     );
 
   if (overdueKris.length === 0) {
-    console.log("[cron:kri-overdue-alerts] No overdue KRIs found");
     return { processed: 0, notified: 0 };
   }
 
@@ -103,18 +103,11 @@ export async function processKriOverdueAlerts(): Promise<KriOverdueResult> {
         });
         notified++;
       }
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      console.error(
-        `[cron:kri-overdue-alerts] Failed for KRI ${overdueKri.id}:`,
-        message,
-      );
+    } catch {
+      // Wrapper logs structured error; loop continues to next KRI.
     }
   }
 
-  console.log(
-    `[cron:kri-overdue-alerts] Processed ${overdueKris.length} KRIs, ${notified} notifications created`,
-  );
-
-  return { processed: overdueKris.length, notified };
-}
+    return { processed: overdueKris.length, notified };
+  },
+);

@@ -12,6 +12,7 @@ import {
   userOrganizationRole,
 } from "@grc/db";
 import { eq, and, isNull, isNotNull, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface FAIRAppetiteCheckResult {
   orgsProcessed: number;
@@ -20,16 +21,15 @@ interface FAIRAppetiteCheckResult {
   errors: number;
 }
 
-export async function processFairAppetiteCheck(): Promise<FAIRAppetiteCheckResult> {
-  const now = new Date();
-  console.log(`[cron:fair-appetite-check] Starting at ${now.toISOString()}`);
+export const processFairAppetiteCheck = withCronInstrumentation(
+  "fair-appetite-check",
+  async (): Promise<FAIRAppetiteCheckResult> => {
+    let orgsProcessed = 0;
+    let breachesDetected = 0;
+    let notificationsCreated = 0;
+    let errors = 0;
 
-  let orgsProcessed = 0;
-  let breachesDetected = 0;
-  let notificationsCreated = 0;
-  let errors = 0;
-
-  try {
+    try {
     // Fetch orgs with FAIR or hybrid methodology
     const orgs = await db
       .select({
@@ -121,28 +121,19 @@ export async function processFairAppetiteCheck(): Promise<FAIRAppetiteCheckResul
             }
           }
         }
-      } catch (err) {
+      } catch {
         errors++;
-        console.error(
-          `[cron:fair-appetite-check] Error processing org ${org.id}:`,
-          err instanceof Error ? err.message : err,
-        );
+        // Wrapper logs structured error; loop continues to next org.
       }
     }
-  } catch (err) {
-    errors++;
-    console.error(
-      "[cron:fair-appetite-check] Fatal error:",
-      err instanceof Error ? err.message : err,
-    );
-  }
+    } catch {
+      errors++;
+      // Wrapper logs structured fatal error.
+    }
 
-  console.log(
-    `[cron:fair-appetite-check] Done. Orgs: ${orgsProcessed}, Breaches: ${breachesDetected}, Notifications: ${notificationsCreated}, Errors: ${errors}`,
-  );
-
-  return { orgsProcessed, breachesDetected, notificationsCreated, errors };
-}
+    return { orgsProcessed, breachesDetected, notificationsCreated, errors };
+  },
+);
 
 function formatEUR(value: number): string {
   return new Intl.NumberFormat("de-DE", {
