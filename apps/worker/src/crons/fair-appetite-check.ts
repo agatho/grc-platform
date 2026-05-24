@@ -30,42 +30,42 @@ export const processFairAppetiteCheck = withCronInstrumentation(
     let errors = 0;
 
     try {
-    // Fetch orgs with FAIR or hybrid methodology
-    const orgs = await db
-      .select({
-        id: organization.id,
-        settings: organization.settings,
-      })
-      .from(organization)
-      .where(isNull(organization.deletedAt));
+      // Fetch orgs with FAIR or hybrid methodology
+      const orgs = await db
+        .select({
+          id: organization.id,
+          settings: organization.settings,
+        })
+        .from(organization)
+        .where(isNull(organization.deletedAt));
 
-    for (const org of orgs) {
-      try {
-        const settings = (org.settings ?? {}) as Record<string, unknown>;
-        const methodology = settings.riskMethodology as string | undefined;
+      for (const org of orgs) {
+        try {
+          const settings = (org.settings ?? {}) as Record<string, unknown>;
+          const methodology = settings.riskMethodology as string | undefined;
 
-        // Skip orgs not using FAIR
-        if (!methodology || methodology === "qualitative") continue;
+          // Skip orgs not using FAIR
+          if (!methodology || methodology === "qualitative") continue;
 
-        orgsProcessed++;
+          orgsProcessed++;
 
-        // Get active ALE thresholds per category
-        const thresholds = await db
-          .select()
-          .from(riskAppetiteThreshold)
-          .where(
-            and(
-              eq(riskAppetiteThreshold.orgId, org.id),
-              eq(riskAppetiteThreshold.isActive, true),
-              isNull(riskAppetiteThreshold.deletedAt),
-              isNotNull(riskAppetiteThreshold.maxResidualAle),
-            ),
-          );
+          // Get active ALE thresholds per category
+          const thresholds = await db
+            .select()
+            .from(riskAppetiteThreshold)
+            .where(
+              and(
+                eq(riskAppetiteThreshold.orgId, org.id),
+                eq(riskAppetiteThreshold.isActive, true),
+                isNull(riskAppetiteThreshold.deletedAt),
+                isNotNull(riskAppetiteThreshold.maxResidualAle),
+              ),
+            );
 
-        if (thresholds.length === 0) continue;
+          if (thresholds.length === 0) continue;
 
-        // Get latest completed simulations for all risks in this org
-        const latestSims = await db.execute(sql`
+          // Get latest completed simulations for all risks in this org
+          const latestSims = await db.execute(sql`
           SELECT DISTINCT ON (fsr.risk_id)
             fsr.risk_id,
             fsr.ale_p50,
@@ -80,52 +80,52 @@ export const processFairAppetiteCheck = withCronInstrumentation(
           ORDER BY fsr.risk_id, fsr.computed_at DESC
         `);
 
-        const rows = latestSims as unknown as Array<{
-          risk_id: string;
-          ale_p50: string;
-          risk_category: string;
-          risk_title: string;
-          owner_id: string | null;
-        }>;
+          const rows = latestSims as unknown as Array<{
+            risk_id: string;
+            ale_p50: string;
+            risk_category: string;
+            risk_title: string;
+            owner_id: string | null;
+          }>;
 
-        // Check each simulated risk against its category threshold
-        for (const row of rows) {
-          const threshold = thresholds.find(
-            (t) => t.riskCategory === row.risk_category,
-          );
-          if (!threshold || !threshold.maxResidualAle) continue;
+          // Check each simulated risk against its category threshold
+          for (const row of rows) {
+            const threshold = thresholds.find(
+              (t) => t.riskCategory === row.risk_category,
+            );
+            if (!threshold || !threshold.maxResidualAle) continue;
 
-          const aleP50 = Number(row.ale_p50);
-          const maxAle = Number(threshold.maxResidualAle);
+            const aleP50 = Number(row.ale_p50);
+            const maxAle = Number(threshold.maxResidualAle);
 
-          if (aleP50 > maxAle) {
-            breachesDetected++;
+            if (aleP50 > maxAle) {
+              breachesDetected++;
 
-            // Create notification for risk owner or admin
-            const recipientId = row.owner_id;
-            if (recipientId) {
-              await db.insert(notification).values({
-                userId: recipientId,
-                orgId: org.id,
-                type: "escalation",
-                entityType: "risk",
-                entityId: row.risk_id,
-                title: `FAIR ALE Breach: ${row.risk_title}`,
-                message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
-                channel: "in_app",
-                templateData: {
-                  link: `/erm/risks/${row.risk_id}/fair/results`,
-                },
-              });
-              notificationsCreated++;
+              // Create notification for risk owner or admin
+              const recipientId = row.owner_id;
+              if (recipientId) {
+                await db.insert(notification).values({
+                  userId: recipientId,
+                  orgId: org.id,
+                  type: "escalation",
+                  entityType: "risk",
+                  entityId: row.risk_id,
+                  title: `FAIR ALE Breach: ${row.risk_title}`,
+                  message: `ALE P50 of ${formatEUR(aleP50)} exceeds threshold of ${formatEUR(maxAle)} for category ${row.risk_category}.`,
+                  channel: "in_app",
+                  templateData: {
+                    link: `/erm/risks/${row.risk_id}/fair/results`,
+                  },
+                });
+                notificationsCreated++;
+              }
             }
           }
+        } catch {
+          errors++;
+          // Wrapper logs structured error; loop continues to next org.
         }
-      } catch {
-        errors++;
-        // Wrapper logs structured error; loop continues to next org.
       }
-    }
     } catch {
       errors++;
       // Wrapper logs structured fatal error.
