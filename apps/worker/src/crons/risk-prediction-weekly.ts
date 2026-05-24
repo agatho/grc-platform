@@ -9,6 +9,7 @@ import {
   riskPredictionModel,
 } from "@grc/db";
 import { eq, desc } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 const ALERT_THRESHOLD = 70; // Escalation probability > 70% triggers alert
 const MIN_DATA_MONTHS = 6;
@@ -58,35 +59,21 @@ function predictEscalation(
   return { probability, topFactors };
 }
 
-export async function processRiskPredictionWeekly(): Promise<{
-  processed: number;
-  alerts: number;
-  skipped: number;
-}> {
-  let processed = 0;
-  let alerts = 0;
-  let skipped = 0;
+export const processRiskPredictionWeekly = withCronInstrumentation(
+  "risk-prediction-weekly",
+  async (): Promise<{
+    processed: number;
+    alerts: number;
+    skipped: number;
+  }> => {
+    const processed = 0;
+    const alerts = 0;
+    const skipped = 0;
 
-  // This worker runs across all orgs — simplified for now
-  // In production, iterate over all active orgs
+    // This worker runs across all orgs — simplified stub for now.
+    // Real implementation will iterate active orgs, fetch latest model
+    // weights, and compute predictions with sigmoid/predictEscalation.
 
-  console.log("[risk-prediction-weekly] Starting weekly prediction run");
-
-  // For each org, fetch latest model weights and compute predictions
-  // Simplified: uses default weights
-  const defaultWeights: ModelWeights = {
-    scoreTrend: 0.35,
-    kriMomentum: 0.28,
-    incidentFrequency: 0.15,
-    findingBacklog: 0.12,
-    controlEffectiveness: -0.2,
-    daysSinceReview: 0.1,
-  };
-  const bias = -1.5;
-
-  console.log(
-    `[risk-prediction-weekly] Completed: ${processed} predictions, ${alerts} alerts, ${skipped} skipped`,
-  );
-
-  return { processed, alerts, skipped };
-}
+    return { processed, alerts, skipped };
+  },
+);

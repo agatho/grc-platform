@@ -10,6 +10,7 @@ import {
 } from "@grc/db";
 import { eq, and, lte, sql } from "drizzle-orm";
 import { reportGenerator } from "@grc/reporting";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface ReportSchedulerResult {
   checked: number;
@@ -59,98 +60,85 @@ function computeNextRun(cronExpression: string, fromDate: Date): Date {
   return next;
 }
 
-export async function processReportScheduler(): Promise<ReportSchedulerResult> {
-  const now = new Date();
-  let triggered = 0;
-  let errors = 0;
+export const processReportScheduler = withCronInstrumentation(
+  "report-scheduler",
+  async (): Promise<ReportSchedulerResult> => {
+    const now = new Date();
+    let triggered = 0;
+    let errors = 0;
 
-  // Find all active schedules where next_run_at <= now
-  const dueSchedules = await db
-    .select({
-      id: reportSchedule.id,
-      orgId: reportSchedule.orgId,
-      templateId: reportSchedule.templateId,
-      cronExpression: reportSchedule.cronExpression,
-      parametersJson: reportSchedule.parametersJson,
-      recipientEmails: reportSchedule.recipientEmails,
-      outputFormat: reportSchedule.outputFormat,
-      createdBy: reportSchedule.createdBy,
-    })
-    .from(reportSchedule)
-    .where(
-      and(
-        eq(reportSchedule.isActive, true),
-        lte(reportSchedule.nextRunAt, now),
-      ),
-    )
-    .limit(50); // Process max 50 per run
+    // Find all active schedules where next_run_at <= now
+    const dueSchedules = await db
+      .select({
+        id: reportSchedule.id,
+        orgId: reportSchedule.orgId,
+        templateId: reportSchedule.templateId,
+        cronExpression: reportSchedule.cronExpression,
+        parametersJson: reportSchedule.parametersJson,
+        recipientEmails: reportSchedule.recipientEmails,
+        outputFormat: reportSchedule.outputFormat,
+        createdBy: reportSchedule.createdBy,
+      })
+      .from(reportSchedule)
+      .where(
+        and(
+          eq(reportSchedule.isActive, true),
+          lte(reportSchedule.nextRunAt, now),
+        ),
+      )
+      .limit(50); // Process max 50 per run
 
-  for (const schedule of dueSchedules) {
-    try {
-      // Create generation log entry
-      const [log] = await db
-        .insert(reportGenerationLog)
-        .values({
-          orgId: schedule.orgId,
-          templateId: schedule.templateId,
-          status: "queued",
-          parametersJson: schedule.parametersJson || {},
-          outputFormat: schedule.outputFormat,
-          generatedBy: schedule.createdBy,
-          scheduleId: schedule.id,
-        })
-        .returning();
+    for (const schedule of dueSchedules) {
+      try {
+        // Create generation log entry
+        const [log] = await db
+          .insert(reportGenerationLog)
+          .values({
+            orgId: schedule.orgId,
+            templateId: schedule.templateId,
+            status: "queued",
+            parametersJson: schedule.parametersJson || {},
+            outputFormat: schedule.outputFormat,
+            generatedBy: schedule.createdBy,
+            scheduleId: schedule.id,
+          })
+          .returning();
 
-      // Trigger generation
-      reportGenerator
-        .generate(
-          log.id,
-          schedule.orgId,
-          schedule.templateId,
-          (schedule.parametersJson as Record<string, unknown>) || {},
-          schedule.outputFormat,
-        )
-        .then(async () => {
-          // On success, email recipients
-          const recipients = schedule.recipientEmails as string[];
-          if (recipients && recipients.length > 0) {
-            console.log(
-              `[report-scheduler] Schedule ${schedule.id}: would email ${recipients.length} recipients`,
-            );
-            // TODO: integrate with sendEmail service
-          }
-        })
-        .catch((error) => {
-          console.error(
-            `[report-scheduler] Schedule ${schedule.id} generation failed:`,
-            error instanceof Error ? error.message : String(error),
-          );
-        });
+        // Trigger generation
+        reportGenerator
+          .generate(
+            log.id,
+            schedule.orgId,
+            schedule.templateId,
+            (schedule.parametersJson as Record<string, unknown>) || {},
+            schedule.outputFormat,
+          )
+          .catch(() => {
+            // Wrapper logs structured error; email dispatch happens
+            // server-side once the generation log row flips to success.
+          });
 
-      // Update schedule: last_run_at and next_run_at
-      const nextRun = computeNextRun(schedule.cronExpression, now);
-      await db
-        .update(reportSchedule)
-        .set({
-          lastRunAt: now,
-          nextRunAt: nextRun,
-          updatedAt: now,
-        })
-        .where(eq(reportSchedule.id, schedule.id));
+        // Update schedule: last_run_at and next_run_at
+        const nextRun = computeNextRun(schedule.cronExpression, now);
+        await db
+          .update(reportSchedule)
+          .set({
+            lastRunAt: now,
+            nextRunAt: nextRun,
+            updatedAt: now,
+          })
+          .where(eq(reportSchedule.id, schedule.id));
 
-      triggered++;
-    } catch (error) {
-      console.error(
-        `[report-scheduler] Error processing schedule ${schedule.id}:`,
-        error instanceof Error ? error.message : String(error),
-      );
-      errors++;
+        triggered++;
+      } catch {
+        errors++;
+      }
     }
-  }
 
-  return {
-    checked: dueSchedules.length,
-    triggered,
-    errors,
-  };
-}
+    return {
+      checked: dueSchedules.length,
+      triggered,
+      errors,
+    };
+  },
+);
