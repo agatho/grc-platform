@@ -3,6 +3,7 @@
 
 import { db, riskVarCalculation } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface VarCalculationRunnerResult {
   queued: number;
@@ -10,32 +11,34 @@ interface VarCalculationRunnerResult {
   failed: number;
 }
 
-export async function processVarCalculationRunner(): Promise<VarCalculationRunnerResult> {
-  const result: VarCalculationRunnerResult = {
-    queued: 0,
-    completed: 0,
-    failed: 0,
-  };
+export const processVarCalculationRunner = withCronInstrumentation(
+  "var-calculation-runner",
+  async (): Promise<VarCalculationRunnerResult> => {
+    const result: VarCalculationRunnerResult = {
+      queued: 0,
+      completed: 0,
+      failed: 0,
+    };
 
-  // Get pending calculations
-  const pending = await db
-    .select()
-    .from(riskVarCalculation)
-    .where(eq(riskVarCalculation.status, "pending"))
-    .limit(5);
+    // Get pending calculations
+    const pending = await db
+      .select()
+      .from(riskVarCalculation)
+      .where(eq(riskVarCalculation.status, "pending"))
+      .limit(5);
 
-  result.queued = pending.length;
+    result.queued = pending.length;
 
-  for (const calc of pending) {
-    try {
-      // Mark as running
-      await db
-        .update(riskVarCalculation)
-        .set({ status: "running" })
-        .where(eq(riskVarCalculation.id, calc.id));
+    for (const calc of pending) {
+      try {
+        // Mark as running
+        await db
+          .update(riskVarCalculation)
+          .set({ status: "running" })
+          .where(eq(riskVarCalculation.id, calc.id));
 
-      // Get risk data for this org
-      const risks = await db.execute(sql`
+        // Get risk data for this org
+        const risks = await db.execute(sql`
         SELECT r.id, fp.lef_min, fp.lef_most_likely, fp.lef_max,
                fp.lm_min, fp.lm_most_likely, fp.lm_max
         FROM risk r
@@ -43,75 +46,76 @@ export async function processVarCalculationRunner(): Promise<VarCalculationRunne
         WHERE r.org_id = ${calc.orgId}
       `);
 
-      const riskArray = risks as Array<Record<string, unknown>>;
-      const iterations = calc.iterations ?? 10000;
+        const riskArray = risks as Array<Record<string, unknown>>;
+        const iterations = calc.iterations ?? 10000;
 
-      if (riskArray.length === 0) {
+        if (riskArray.length === 0) {
+          await db
+            .update(riskVarCalculation)
+            .set({ status: "completed", riskCount: 0, computedAt: new Date() })
+            .where(eq(riskVarCalculation.id, calc.id));
+          result.completed++;
+          continue;
+        }
+
+        // Simple Monte Carlo simulation
+        const losses: number[] = [];
+        for (let i = 0; i < iterations; i++) {
+          let totalLoss = 0;
+          for (const risk of riskArray) {
+            const lef = randomPert(
+              Number(risk.lef_min),
+              Number(risk.lef_most_likely),
+              Number(risk.lef_max),
+            );
+            const lm = randomPert(
+              Number(risk.lm_min),
+              Number(risk.lm_most_likely),
+              Number(risk.lm_max),
+            );
+            totalLoss += lef * lm;
+          }
+          losses.push(totalLoss);
+        }
+
+        losses.sort((a, b) => a - b);
+        const percentile = (p: number) =>
+          losses[Math.floor(losses.length * p)] ?? 0;
+        const mean = losses.reduce((a, b) => a + b, 0) / losses.length;
+        const stdDev = Math.sqrt(
+          losses.reduce((a, b) => a + (b - mean) ** 2, 0) / losses.length,
+        );
+
         await db
           .update(riskVarCalculation)
-          .set({ status: "completed", riskCount: 0, computedAt: new Date() })
+          .set({
+            status: "completed",
+            riskCount: riskArray.length,
+            varP50: String(percentile(0.5).toFixed(2)),
+            varP75: String(percentile(0.75).toFixed(2)),
+            varP90: String(percentile(0.9).toFixed(2)),
+            varP95: String(percentile(0.95).toFixed(2)),
+            varP99: String(percentile(0.99).toFixed(2)),
+            expectedLoss: String(mean.toFixed(2)),
+            standardDeviation: String(stdDev.toFixed(2)),
+            computedAt: new Date(),
+          })
           .where(eq(riskVarCalculation.id, calc.id));
+
         result.completed++;
-        continue;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        await db
+          .update(riskVarCalculation)
+          .set({ status: "failed", error: message })
+          .where(eq(riskVarCalculation.id, calc.id));
+        result.failed++;
       }
-
-      // Simple Monte Carlo simulation
-      const losses: number[] = [];
-      for (let i = 0; i < iterations; i++) {
-        let totalLoss = 0;
-        for (const risk of riskArray) {
-          const lef = randomPert(
-            Number(risk.lef_min),
-            Number(risk.lef_most_likely),
-            Number(risk.lef_max),
-          );
-          const lm = randomPert(
-            Number(risk.lm_min),
-            Number(risk.lm_most_likely),
-            Number(risk.lm_max),
-          );
-          totalLoss += lef * lm;
-        }
-        losses.push(totalLoss);
-      }
-
-      losses.sort((a, b) => a - b);
-      const percentile = (p: number) =>
-        losses[Math.floor(losses.length * p)] ?? 0;
-      const mean = losses.reduce((a, b) => a + b, 0) / losses.length;
-      const stdDev = Math.sqrt(
-        losses.reduce((a, b) => a + (b - mean) ** 2, 0) / losses.length,
-      );
-
-      await db
-        .update(riskVarCalculation)
-        .set({
-          status: "completed",
-          riskCount: riskArray.length,
-          varP50: String(percentile(0.5).toFixed(2)),
-          varP75: String(percentile(0.75).toFixed(2)),
-          varP90: String(percentile(0.9).toFixed(2)),
-          varP95: String(percentile(0.95).toFixed(2)),
-          varP99: String(percentile(0.99).toFixed(2)),
-          expectedLoss: String(mean.toFixed(2)),
-          standardDeviation: String(stdDev.toFixed(2)),
-          computedAt: new Date(),
-        })
-        .where(eq(riskVarCalculation.id, calc.id));
-
-      result.completed++;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : String(err);
-      await db
-        .update(riskVarCalculation)
-        .set({ status: "failed", error: message })
-        .where(eq(riskVarCalculation.id, calc.id));
-      result.failed++;
     }
-  }
 
-  return result;
-}
+    return result;
+  },
+);
 
 function randomPert(min: number, mode: number, max: number): number {
   if (min >= max) return mode;
