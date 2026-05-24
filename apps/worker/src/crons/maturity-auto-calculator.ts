@@ -30,51 +30,51 @@ export const processMaturityAutoCalculator = withCronInstrumentation(
       errors: 0,
     };
 
-  const models = await db
-    .select()
-    .from(maturityModel)
-    .where(eq(maturityModel.autoCalculated, true));
+    const models = await db
+      .select()
+      .from(maturityModel)
+      .where(eq(maturityModel.autoCalculated, true));
 
-  const orgIds = [...new Set(models.map((m) => m.orgId))];
-  result.orgsProcessed = orgIds.length;
+    const orgIds = [...new Set(models.map((m) => m.orgId))];
+    result.orgsProcessed = orgIds.length;
 
-  for (const model of models) {
-    try {
-      // Get the latest completed assessment for this module
-      const [latestAssessment] = await db
-        .select()
-        .from(maturityAssessment)
-        .where(
-          and(
-            eq(maturityAssessment.orgId, model.orgId),
-            eq(maturityAssessment.moduleKey, model.moduleKey),
-            eq(maturityAssessment.status, "completed"),
-          ),
-        )
-        .orderBy(desc(maturityAssessment.createdAt))
-        .limit(1);
+    for (const model of models) {
+      try {
+        // Get the latest completed assessment for this module
+        const [latestAssessment] = await db
+          .select()
+          .from(maturityAssessment)
+          .where(
+            and(
+              eq(maturityAssessment.orgId, model.orgId),
+              eq(maturityAssessment.moduleKey, model.moduleKey),
+              eq(maturityAssessment.status, "completed"),
+            ),
+          )
+          .orderBy(desc(maturityAssessment.createdAt))
+          .limit(1);
 
-      if (latestAssessment && latestAssessment.overallScore) {
-        const score = Number(latestAssessment.overallScore);
-        const newLevel = scoreToLevel(score);
+        if (latestAssessment && latestAssessment.overallScore) {
+          const score = Number(latestAssessment.overallScore);
+          const newLevel = scoreToLevel(score);
 
-        if (newLevel !== model.currentLevel) {
-          await db
-            .update(maturityModel)
-            .set({
-              currentLevel: newLevel,
-              lastCalculatedAt: new Date(),
-              updatedAt: new Date(),
-            })
-            .where(eq(maturityModel.id, model.id));
-          result.modelsUpdated++;
+          if (newLevel !== model.currentLevel) {
+            await db
+              .update(maturityModel)
+              .set({
+                currentLevel: newLevel,
+                lastCalculatedAt: new Date(),
+                updatedAt: new Date(),
+              })
+              .where(eq(maturityModel.id, model.id));
+            result.modelsUpdated++;
+          }
         }
+      } catch {
+        result.errors++;
+        // Wrapper logs structured error; loop continues.
       }
-    } catch {
-      result.errors++;
-      // Wrapper logs structured error; loop continues.
     }
-  }
 
     return result;
   },
