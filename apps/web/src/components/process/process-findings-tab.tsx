@@ -29,7 +29,6 @@ const sevColor: Record<string, string> = {
 };
 
 export function ProcessFindingsTab({ processId }: { processId: string }) {
-  const { formatDate } = useDateFormat();
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -111,6 +110,7 @@ function FindingList({
   findings: Finding[];
   dim?: boolean;
 }) {
+  const { formatDate } = useDateFormat();
   return (
     <ul className="divide-y">
       {findings.map((f) => (
