@@ -49,6 +49,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { cn } from "@grc/ui";
+import { useDateFormat } from "@/lib/format-date";
 import type {
   Process,
   ProcessVersion,
@@ -683,6 +684,7 @@ function OverviewTab({
 }) {
   const steps = process.steps ?? [];
   const tGov = useTranslations("processGovernance");
+  const { formatDate } = useDateFormat();
 
   // Validation state
   const [validation, setValidation] = useState<{
@@ -752,7 +754,7 @@ function OverviewTab({
             {process.publishedAt && (
               <MetaRow
                 label={t("detail.publishedAt")}
-                value={new Date(process.publishedAt).toLocaleDateString()}
+                value={formatDate(process.publishedAt)}
               />
             )}
             <MetaRow
