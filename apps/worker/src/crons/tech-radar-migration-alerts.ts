@@ -8,37 +8,27 @@ import {
   architectureElement,
 } from "@grc/db";
 import { eq, and, sql } from "drizzle-orm";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
-export async function processTechRadarMigrationAlerts(): Promise<{
-  holdTechnologies: number;
-  alertsCreated: number;
-}> {
-  console.log(
-    "[tech-radar-migration] Checking HOLD technologies with active applications",
-  );
+export const processTechRadarMigrationAlerts = withCronInstrumentation(
+  "tech-radar-migration-alerts",
+  async (): Promise<{
+    holdTechnologies: number;
+    alertsCreated: number;
+  }> => {
+    const holdWithUsage = await db
+      .select({
+        techId: technologyEntry.id,
+        techName: technologyEntry.name,
+        orgId: technologyEntry.orgId,
+        appCount: sql<number>`(SELECT count(*) FROM technology_application_link tal WHERE tal.technology_id = ${technologyEntry.id})::int`,
+      })
+      .from(technologyEntry)
+      .where(eq(technologyEntry.ring, "hold"));
 
-  const holdWithUsage = await db
-    .select({
-      techId: technologyEntry.id,
-      techName: technologyEntry.name,
-      orgId: technologyEntry.orgId,
-      appCount: sql<number>`(SELECT count(*) FROM technology_application_link tal WHERE tal.technology_id = ${technologyEntry.id})::int`,
-    })
-    .from(technologyEntry)
-    .where(eq(technologyEntry.ring, "hold"));
+    const withApps = holdWithUsage.filter((t) => t.appCount > 0);
+    const alertsCreated = withApps.length;
 
-  const withApps = holdWithUsage.filter((t) => t.appCount > 0);
-  let alertsCreated = 0;
-
-  for (const tech of withApps) {
-    console.log(
-      `[tech-radar-migration] ${tech.techName}: ${tech.appCount} applications still using HOLD technology`,
-    );
-    alertsCreated++;
-  }
-
-  console.log(
-    `[tech-radar-migration] Found ${withApps.length} HOLD techs with usage, created ${alertsCreated} alerts`,
-  );
-  return { holdTechnologies: withApps.length, alertsCreated };
-}
+    return { holdTechnologies: withApps.length, alertsCreated };
+  },
+);
