@@ -19,6 +19,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
+import { useDateFormat } from "@/lib/format-date";
 import { ControlStatusBadge } from "@/components/control/control-status-badge";
 import { FindingSeverityBadge } from "@/components/control/finding-severity-badge";
 import { Badge } from "@/components/ui/badge";
@@ -111,11 +112,6 @@ function testResultBadge(result?: TestResult): {
   return map[result] ?? map.not_tested;
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 function coverageClass(coverage?: string): string {
   const map: Record<string, string> = {
     full: "bg-emerald-500",
@@ -139,6 +135,7 @@ export default function ControlDetailPage() {
 }
 
 function ControlDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("controls");
   const tFindings = useTranslations("findings");
   const params = useParams();

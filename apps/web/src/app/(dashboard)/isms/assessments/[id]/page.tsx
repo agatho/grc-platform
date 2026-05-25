@@ -15,6 +15,7 @@ import type {
   AssessmentRiskEval,
   EvalResult,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const RESULT_COLORS: Record<EvalResult, string> = {
   effective: "bg-green-100 text-green-900",
@@ -33,6 +34,7 @@ export default function AssessmentDetailPage() {
 }
 
 function AssessmentDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("ismsAssessment");
   const params = useParams();
   const router = useRouter();
@@ -277,9 +279,7 @@ function AssessmentDetailInner() {
                       {ev.targetMaturity ?? "-"}
                     </td>
                     <td className="px-4 py-3 text-xs text-gray-400">
-                      {ev.assessedAt
-                        ? new Date(ev.assessedAt).toLocaleDateString()
-                        : "-"}
+                      {ev.assessedAt ? formatDate(ev.assessedAt) : "-"}
                     </td>
                   </tr>
                 ))

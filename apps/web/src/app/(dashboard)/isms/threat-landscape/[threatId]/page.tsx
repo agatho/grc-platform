@@ -20,6 +20,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ThreatDetail {
   id: string;
@@ -41,6 +42,7 @@ interface AffectedAsset {
 }
 
 export default function ThreatDetailPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("reporting");
   const params = useParams();
   const threatId = params.threatId as string;
@@ -186,7 +188,7 @@ export default function ThreatDetailPage() {
                       {t("firstDetected")}
                     </dt>
                     <dd className="font-medium">
-                      {new Date(threat.createdAt).toLocaleDateString("de-DE")}
+                      {formatDate(threat.createdAt)}
                     </dd>
                   </div>
                 </dl>
@@ -207,7 +209,7 @@ export default function ThreatDetailPage() {
                     <div>
                       <p className="font-medium">{t("threatCreated")}</p>
                       <p className="text-muted-foreground">
-                        {new Date(threat.createdAt).toLocaleDateString("de-DE")}
+                        {formatDate(threat.createdAt)}
                       </p>
                     </div>
                   </div>
