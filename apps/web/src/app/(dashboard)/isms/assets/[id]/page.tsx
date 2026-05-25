@@ -29,6 +29,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ────────────────────────────────────────────────────────
 interface AssetDetail {
@@ -93,6 +94,7 @@ export default function IsmsAssetDetailPage() {
 }
 
 function AssetDetailInner() {
+  const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const t = useTranslations("assets");
@@ -372,26 +374,17 @@ function AssetDetailInner() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} className="shrink-0" />
-                  <span>
-                    Erstellt:{" "}
-                    {new Date(asset.createdAt).toLocaleDateString("de-DE")}
-                  </span>
+                  <span>Erstellt: {formatDate(asset.createdAt)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <Clock size={14} className="shrink-0" />
-                  <span>
-                    Aktualisiert:{" "}
-                    {new Date(asset.updatedAt).toLocaleDateString("de-DE")}
-                  </span>
+                  <span>Aktualisiert: {formatDate(asset.updatedAt)}</span>
                 </div>
                 {asset.latestAuditDate && (
                   <div className="flex items-center gap-2 text-gray-500">
                     <FileText size={14} className="shrink-0" />
                     <span>
-                      Letztes Audit:{" "}
-                      {new Date(asset.latestAuditDate).toLocaleDateString(
-                        "de-DE",
-                      )}
+                      Letztes Audit: {formatDate(asset.latestAuditDate)}
                     </span>
                   </div>
                 )}
@@ -467,10 +460,7 @@ function AssetDetailInner() {
                       </div>
                     </div>
                     <div className="ml-auto text-xs text-gray-400">
-                      Klassifiziert am{" "}
-                      {new Date(classification.classifiedAt).toLocaleDateString(
-                        "de-DE",
-                      )}
+                      Klassifiziert am {formatDate(classification.classifiedAt)}
                     </div>
                   </div>
 
@@ -529,9 +519,7 @@ function AssetDetailInner() {
                       <Calendar size={14} />
                       <span>
                         Nächste Überprüfung:{" "}
-                        {new Date(classification.reviewDate).toLocaleDateString(
-                          "de-DE",
-                        )}
+                        {formatDate(classification.reviewDate)}
                       </span>
                     </div>
                   )}
@@ -668,7 +656,7 @@ function AssetDetailInner() {
                           {entry.entityTitle ?? "Asset"}
                         </p>
                         <p className="text-xs text-gray-400 mt-0.5">
-                          {new Date(entry.createdAt).toLocaleString("de-DE")}
+                          {formatDateTime(entry.createdAt)}
                         </p>
                       </div>
                     </div>
