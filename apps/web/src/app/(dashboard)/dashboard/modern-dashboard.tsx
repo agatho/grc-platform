@@ -19,6 +19,7 @@ import {
   Activity,
 } from "lucide-react";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types (shared with classic dashboard)
@@ -177,6 +178,7 @@ export function ModernDashboard({
   markAsRead,
   timeAgo,
 }: ModernDashboardProps) {
+  const { formatDate } = useDateFormat();
   // Derived stats
   const complianceScore = (() => {
     if (!ermEnabled || !riskSummary) return null;
@@ -554,7 +556,7 @@ export function ModernDashboard({
                             }`}
                           >
                             <Clock size={9} />
-                            {new Date(task.dueDate).toLocaleDateString()}
+                            {formatDate(task.dueDate)}
                           </p>
                         )}
                       </div>

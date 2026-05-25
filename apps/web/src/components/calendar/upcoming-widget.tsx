@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import type { AggregatedCalendarEvent } from "@grc/shared";
 import { MODULE_COLORS } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const MODULE_LABELS: Record<string, string> = {
   erm: "ERM",
@@ -46,6 +47,7 @@ interface UpcomingEvent extends AggregatedCalendarEvent {
 
 export function CalendarUpcomingWidget() {
   const t = useTranslations("calendar");
+  const { formatDate } = useDateFormat();
   const [events, setEvents] = useState<UpcomingEvent[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -118,7 +120,7 @@ export function CalendarUpcomingWidget() {
                   </div>
                   <div className="flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {new Date(event.startAt).toLocaleDateString()}
+                    {formatDate(event.startAt)}
                   </div>
                 </div>
                 <Badge variant="outline" className="text-xs flex-shrink-0">
