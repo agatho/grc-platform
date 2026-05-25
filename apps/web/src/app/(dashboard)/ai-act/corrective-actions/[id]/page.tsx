@@ -25,6 +25,7 @@ import {
   ShieldAlert,
 } from "lucide-react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 
 interface CorrectiveAction {
   id: string;
@@ -73,6 +74,7 @@ const STATUS_COLORS: Record<string, string> = {
 function CorrectiveActionDetailInner() {
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { formatDate } = useDateFormat();
   const [data, setData] = useState<CorrectiveAction | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -392,8 +394,7 @@ function CorrectiveActionDetailInner() {
           </div>
           {data.verified_at && (
             <p className="text-sm text-muted-foreground">
-              Verifiziert am:{" "}
-              {new Date(data.verified_at).toLocaleDateString("de-DE")}
+              Verifiziert am: {formatDate(data.verified_at)}
             </p>
           )}
         </CardContent>
@@ -407,20 +408,20 @@ function CorrectiveActionDetailInner() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
             <span className="font-medium text-foreground">Erstellt am:</span>{" "}
-            {new Date(data.created_at).toLocaleDateString("de-DE")}
+            {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
               Aktualisiert am:
             </span>{" "}
-            {new Date(data.updated_at).toLocaleDateString("de-DE")}
+            {formatDate(data.updated_at)}
           </div>
           {data.completed_at && (
             <div>
               <span className="font-medium text-foreground">
                 Abgeschlossen am:
               </span>{" "}
-              {new Date(data.completed_at).toLocaleDateString("de-DE")}
+              {formatDate(data.completed_at)}
             </div>
           )}
           <div>
