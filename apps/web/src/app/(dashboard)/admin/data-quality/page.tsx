@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -79,6 +80,7 @@ const ruleTypeLabels: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function DataQualityPage() {
+  const { formatDate } = useDateFormat();
   const [stats, setStats] = useState<DataQualityStats | null>(null);
   const [rules, setRules] = useState<DataQualityRule[]>([]);
   const [loading, setLoading] = useState(true);
@@ -161,9 +163,7 @@ export default function DataQualityPage() {
               <Clock className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {stats?.lastCheck
-                    ? new Date(stats.lastCheck).toLocaleDateString("de-DE")
-                    : "\u2014"}
+                  {stats?.lastCheck ? formatDate(stats.lastCheck) : "\u2014"}
                 </p>
                 <p className="text-xs text-gray-500">Letzte Pr&uuml;fung</p>
               </div>
