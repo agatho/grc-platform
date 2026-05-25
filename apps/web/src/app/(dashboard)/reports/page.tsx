@@ -22,6 +22,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Card,
   CardContent,
@@ -59,6 +60,7 @@ interface GenerationJob {
 }
 
 export default function ReportCenterPage() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations("reporting");
   const router = useRouter();
 
@@ -382,7 +384,7 @@ export default function ReportCenterPage() {
                           : "—"}
                       </td>
                       <td className="px-4 py-3 text-muted-foreground">
-                        {new Date(entry.createdAt).toLocaleString("de-DE")}
+                        {formatDateTime(entry.createdAt)}
                       </td>
                       <td className="px-4 py-3">
                         {entry.status === "completed" && (

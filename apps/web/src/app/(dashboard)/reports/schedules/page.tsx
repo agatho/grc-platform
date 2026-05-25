@@ -19,6 +19,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 import { Input } from "@/components/ui/input";
 import {
   Dialog,
@@ -39,6 +40,7 @@ import {
 import type { ReportSchedule, ReportTemplate } from "@grc/shared";
 
 export default function ScheduledReportsPage() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations("reporting");
 
   const [schedules, setSchedules] = useState<ReportSchedule[]>([]);
@@ -217,7 +219,7 @@ export default function ScheduledReportsPage() {
                       </td>
                       <td className="px-4 py-3 text-muted-foreground text-xs">
                         {schedule.nextRunAt
-                          ? new Date(schedule.nextRunAt).toLocaleString("de-DE")
+                          ? formatDateTime(schedule.nextRunAt)
                           : "—"}
                       </td>
                       <td className="px-4 py-3">
