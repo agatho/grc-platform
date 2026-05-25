@@ -74,6 +74,7 @@ const MODULE_OPTIONS = [
 export default function CatalogActivationPage() {
   const t = useTranslations("catalogs");
   const { data: session } = useSession();
+  const { formatDate } = useDateFormat();
   const orgId = (session?.user?.currentOrgId ??
     session?.user?.roles?.[0]?.orgId) as string | undefined;
 
@@ -253,7 +254,7 @@ export default function CatalogActivationPage() {
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-gray-400">
-                  {new Date(ac.activatedAt).toLocaleDateString("de-DE")}
+                  {formatDate(ac.activatedAt)}
                 </span>
                 {!ac.isMandatoryFromParent && (
                   <Button
