@@ -33,6 +33,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Nonconformity {
   id: string;
@@ -86,6 +87,7 @@ const SOURCE_LABELS: Record<string, string> = {
 };
 
 function CapInner() {
+  const { formatDate } = useDateFormat();
   const router = useRouter();
   const [items, setItems] = useState<Nonconformity[]>([]);
   const [loading, setLoading] = useState(true);
@@ -370,8 +372,7 @@ function CapInner() {
                               : ""
                           }
                         >
-                          Frist:{" "}
-                          {new Date(nc.due_date).toLocaleDateString("de-DE")}
+                          Frist: {formatDate(nc.due_date)}
                         </span>
                       )}
                     </div>

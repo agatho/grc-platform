@@ -18,6 +18,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ReadinessCheck {
   id: string;
@@ -70,6 +71,7 @@ export default function CertificationsPage() {
 }
 
 function CertificationsInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("certifications");
   const router = useRouter();
   const [readiness, setReadiness] = useState<ReadinessData | null>(null);
@@ -214,8 +216,7 @@ function CertificationsInner() {
               </div>
               {timeline?.estimatedDate && (
                 <p className="text-xs text-gray-400 text-right mt-1">
-                  ~{" "}
-                  {new Date(timeline.estimatedDate).toLocaleDateString("de-DE")}
+                  ~ {formatDate(timeline.estimatedDate)}
                 </p>
               )}
             </div>
