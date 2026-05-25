@@ -27,6 +27,7 @@ import type {
   ControlStatus,
   AutomationLevel,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,11 +96,6 @@ function automationBadgeClass(level: AutomationLevel): string {
   return map[level] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -116,6 +112,7 @@ export default function ControlsPage() {
 function ControlsPageInner() {
   const t = useTranslations("controls");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
 
   const [controls, setControls] = useState<ControlRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -265,7 +262,7 @@ function ControlsPageInner() {
         ),
       },
     ],
-    [t],
+    [t, formatDate],
   );
 
   if (loading && controls.length === 0) {
