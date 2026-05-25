@@ -31,6 +31,7 @@ import { EntityDocumentsPanel } from "@/components/documents/entity-documents-pa
 import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Card,
   CardContent,
@@ -1215,6 +1216,7 @@ function VersionsTab({
   onRestore: () => void;
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
+  const { formatDateTime } = useDateFormat();
   const [viewingVersion, setViewingVersion] = useState<ProcessVersion | null>(
     null,
   );
@@ -1299,7 +1301,7 @@ function VersionsTab({
                       )}
                     </div>
                     <p className="text-sm text-gray-500">
-                      {new Date(version.createdAt).toLocaleString()}
+                      {formatDateTime(version.createdAt)}
                       {version.createdBy && ` · ${version.createdBy}`}
                     </p>
                     {version.changeSummary && (
@@ -1755,6 +1757,7 @@ function HistoryTab({
   loading: boolean;
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
+  const { formatDateTime } = useDateFormat();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -1787,7 +1790,7 @@ function HistoryTab({
               <div className="flex-1 mb-4 pb-4">
                 <div className="flex items-center gap-2 text-sm text-gray-500">
                   <Clock size={12} />
-                  <span>{new Date(entry.createdAt).toLocaleString()}</span>
+                  <span>{formatDateTime(entry.createdAt)}</span>
                   {(entry.userName || entry.userEmail) && (
                     <>
                       <span>·</span>
