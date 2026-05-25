@@ -15,6 +15,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ListingDetail {
   id: string;
@@ -64,6 +65,7 @@ export default function MarketplaceListingDetailPage() {
 }
 
 function ListingDetail() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("marketplace");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -200,7 +202,7 @@ function ListingDetail() {
                 </div>
                 {v.publishedAt && (
                   <span className="text-xs text-gray-400">
-                    {new Date(v.publishedAt).toLocaleDateString()}
+                    {formatDate(v.publishedAt)}
                   </span>
                 )}
               </div>

@@ -13,6 +13,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface MaturityModelRecord {
   id: string;
@@ -32,6 +33,7 @@ const levelColors: Record<string, string> = {
 };
 
 export default function MaturityOverviewPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("benchmarking");
   const router = useRouter();
   const [models, setModels] = useState<MaturityModelRecord[]>([]);
@@ -122,8 +124,7 @@ export default function MaturityOverviewPage() {
                 )}
                 {model.lastCalculatedAt && (
                   <p className="text-xs text-muted-foreground">
-                    {t("lastCalculated")}:{" "}
-                    {new Date(model.lastCalculatedAt).toLocaleDateString()}
+                    {t("lastCalculated")}: {formatDate(model.lastCalculatedAt)}
                   </p>
                 )}
               </CardContent>

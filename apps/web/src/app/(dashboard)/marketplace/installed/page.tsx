@@ -7,6 +7,7 @@ import { Loader2, RefreshCcw, Trash2, Settings } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Installation {
   id: string;
@@ -27,6 +28,7 @@ export default function InstalledPage() {
 
 function InstalledList() {
   const t = useTranslations("marketplace");
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<Installation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -105,8 +107,7 @@ function InstalledList() {
                   )}
                 </div>
                 <p className="text-xs text-gray-400 mt-1">
-                  {t("installedAt")}:{" "}
-                  {new Date(item.installedAt).toLocaleDateString()}
+                  {t("installedAt")}: {formatDate(item.installedAt)}
                 </p>
               </div>
               <div className="flex gap-2">
