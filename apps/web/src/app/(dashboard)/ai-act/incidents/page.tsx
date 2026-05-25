@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AiIncident {
   id: string;
@@ -77,6 +78,7 @@ function getDeadlineBadge(deadline: string) {
 
 function IncidentsPageInner() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AiIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -228,8 +230,7 @@ function IncidentsPageInner() {
                     )}
                   </div>
                   <p className="text-sm text-muted-foreground">
-                    Erkannt:{" "}
-                    {new Date(inc.detected_at).toLocaleDateString("de-DE")}
+                    Erkannt: {formatDate(inc.detected_at)}
                   </p>
                 </div>
                 <div className="flex gap-2">

@@ -17,6 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ProhibitedScreening {
   id: string;
@@ -50,6 +51,7 @@ const PROHIBITED_LABELS: Record<string, string> = {
 
 function ProhibitedPageInner() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<ProhibitedScreening[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -195,8 +197,7 @@ function ProhibitedPageInner() {
                 <div>
                   <p className="font-medium">System: {s.ai_system_id}</p>
                   <p className="text-sm text-muted-foreground">
-                    Gepruft am{" "}
-                    {new Date(s.created_at).toLocaleDateString("de-DE")}
+                    Gepruft am {formatDate(s.created_at)}
                   </p>
                 </div>
                 <Badge
