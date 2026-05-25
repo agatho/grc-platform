@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AgentRecommendation } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const SEVERITY_COLORS: Record<string, string> = {
   info: "bg-blue-100 text-blue-900",
@@ -17,6 +18,7 @@ const SEVERITY_COLORS: Record<string, string> = {
 
 export default function RecommendationsPage() {
   const t = useTranslations("agents");
+  const { formatDateTime } = useDateFormat();
   const [recs, setRecs] = useState<AgentRecommendation[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -74,7 +76,7 @@ export default function RecommendationsPage() {
                   </span>
                 </div>
                 <span className="text-xs text-muted-foreground">
-                  {new Date(rec.createdAt).toLocaleString()}
+                  {formatDateTime(rec.createdAt)}
                 </span>
               </div>
               <p className="font-medium">{rec.title}</p>
