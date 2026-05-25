@@ -31,6 +31,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -66,6 +67,7 @@ const ENTITY_TYPES = [
 export default function ExportSchedulesPage() {
   const t = useTranslations("import.export.schedules");
   const tTypes = useTranslations("import.entityTypes");
+  const { formatDate } = useDateFormat();
 
   const [schedules, setSchedules] = useState<ExportScheduleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -207,9 +209,7 @@ export default function ExportSchedulesPage() {
       accessorKey: "lastRunAt",
       header: t("lastRun"),
       cell: ({ row }) =>
-        row.original.lastRunAt
-          ? new Date(row.original.lastRunAt).toLocaleDateString("de-DE")
-          : "-",
+        row.original.lastRunAt ? formatDate(row.original.lastRunAt) : "-",
     },
     {
       id: "actions",
