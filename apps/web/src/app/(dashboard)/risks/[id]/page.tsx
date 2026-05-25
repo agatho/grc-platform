@@ -368,7 +368,7 @@ function RiskDetailContent() {
   const params = useParams();
   const router = useRouter();
   const riskId = params.id as string;
-  const { formatDate } = useDateFormat();
+  const { formatDate, formatDateTime, formatNumber } = useDateFormat();
 
   const [riskData, setRiskData] = useState<RiskDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -1288,7 +1288,7 @@ function RiskDetailContent() {
                     {treatmentBudgets.map((b) => (
                       <option key={b.id} value={b.id}>
                         {b.name} ({b.currency}{" "}
-                        {parseFloat(b.totalAmount).toLocaleString()})
+                        {formatNumber(parseFloat(b.totalAmount))})
                       </option>
                     ))}
                   </select>
@@ -1663,7 +1663,7 @@ function RiskDetailContent() {
                             {entry.userName ?? entry.userEmail ?? "System"}
                           </span>
                           <span className="text-xs text-gray-400">
-                            {new Date(entry.createdAt).toLocaleString()}
+                            {formatDateTime(entry.createdAt)}
                           </span>
                         </div>
                         <p className="text-xs text-gray-500 mt-1">
