@@ -31,6 +31,7 @@ import {
   CardTitle,
   CardDescription,
 } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Bottleneck {
   activity: string;
@@ -58,6 +59,7 @@ interface ConformanceRow {
 }
 
 export default function ProcessMiningPage() {
+  const { formatDateTime } = useDateFormat();
   const params = useParams<{ id: string }>();
   const processId = params?.id ?? "";
   const [rows, setRows] = useState<ConformanceRow[]>([]);
@@ -311,7 +313,7 @@ export default function ProcessMiningPage() {
                         <tr key={i} className="border-t">
                           <td className="py-1">{r.import_name}</td>
                           <td className="py-1 text-muted-foreground">
-                            {new Date(r.computed_at).toLocaleString()}
+                            {formatDateTime(r.computed_at)}
                           </td>
                           <td className="py-1 font-mono">
                             {parseFloat(r.conformance_score).toFixed(1)}%
