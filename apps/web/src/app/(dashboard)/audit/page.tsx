@@ -21,6 +21,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { AuditQuickStatsBar } from "@/components/audit/audit-quick-stats-bar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AuditDashboard {
   totalAudits: number;
@@ -60,6 +61,7 @@ export default function AuditPage() {
 
 function AuditDashboardInner() {
   const t = useTranslations("auditMgmt");
+  const { formatDateTime } = useDateFormat();
   const router = useRouter();
   const [data, setData] = useState<AuditDashboard | null>(null);
   const [kris, setKris] = useState<AuditImpactKris | null>(null);
@@ -259,7 +261,7 @@ function AuditDashboardInner() {
               </p>
             </div>
             <span className="text-xs text-gray-400">
-              Stand: {new Date(kris.generatedAt).toLocaleString("de-DE")}
+              Stand: {formatDateTime(kris.generatedAt)}
             </span>
           </div>
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
