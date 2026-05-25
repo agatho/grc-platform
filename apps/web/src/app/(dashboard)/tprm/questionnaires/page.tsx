@@ -19,6 +19,7 @@ import { toast } from "sonner";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { useDateFormat } from "@/lib/format-date";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -78,6 +79,7 @@ export default function QuestionnairesPage() {
 function QuestionnairesInner() {
   const t = useTranslations("questionnaire");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
 
   const [templates, setTemplates] = useState<TemplateRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -293,7 +295,7 @@ function QuestionnairesInner() {
         ),
         cell: ({ row }) => (
           <span className="text-sm text-gray-500">
-            {new Date(row.original.updatedAt).toLocaleDateString()}
+            {formatDate(row.original.updatedAt)}
           </span>
         ),
       },
@@ -337,7 +339,7 @@ function QuestionnairesInner() {
         },
       },
     ],
-    [t, handlePublish, handleArchive, handleDuplicate],
+    [t, handlePublish, handleArchive, handleDuplicate, formatDate],
   );
 
   // ──────────────────────────────────────────────────────────────

@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Dialog,
   DialogContent,
@@ -147,6 +148,7 @@ function DetailsTab({
   item: WorkItemDetail;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   const fields = [
     { label: t("name"), value: item.name },
     { label: t("type"), value: item.typeDisplayName ?? item.typeKey },
@@ -156,13 +158,11 @@ function DetailsTab({
     { label: t("reviewer"), value: item.reviewerName ?? "-" },
     {
       label: t("dueDate"),
-      value: item.dueDate ? new Date(item.dueDate).toLocaleDateString() : "-",
+      value: item.dueDate ? formatDate(item.dueDate) : "-",
     },
     {
       label: t("completedAt"),
-      value: item.completedAt
-        ? new Date(item.completedAt).toLocaleDateString()
-        : "-",
+      value: item.completedAt ? formatDate(item.completedAt) : "-",
     },
   ];
 
