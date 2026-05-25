@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { HorizonScanItem } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const CLASS_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-900",
@@ -15,6 +16,7 @@ const CLASS_COLORS: Record<string, string> = {
 
 export default function HorizonScanItemsPage() {
   const t = useTranslations("horizonScanner");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<HorizonScanItem[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -55,9 +57,7 @@ export default function HorizonScanItemsPage() {
               </div>
               <p className="text-sm text-muted-foreground mt-1">
                 {item.jurisdiction} | {item.regulatoryBody ?? ""} |{" "}
-                {item.publishedAt
-                  ? new Date(item.publishedAt).toLocaleDateString()
-                  : ""}
+                {item.publishedAt ? formatDate(item.publishedAt) : ""}
               </p>
               {item.aiSummary && (
                 <p className="text-sm mt-2">
