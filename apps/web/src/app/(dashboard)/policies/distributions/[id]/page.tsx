@@ -29,13 +29,14 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { useDateFormat } from "@/lib/format-date";
 import type {
   PolicyDistributionWithStats,
   PolicyAcknowledgmentWithUser,
 } from "@grc/shared";
-import { useDateFormat } from "@/lib/format-date";
 
 export default function DistributionDetailPage() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations("policies");
   const router = useRouter();
   const { formatDate } = useDateFormat();
@@ -313,7 +314,7 @@ export default function DistributionDetailPage() {
                   <p className="font-medium text-muted-foreground">
                     {t("distribution.distributedAt")}
                   </p>
-                  <p>{new Date(dist.distributedAt).toLocaleString("de-DE")}</p>
+                  <p>{formatDateTime(dist.distributedAt)}</p>
                 </div>
               )}
             </div>
@@ -369,7 +370,7 @@ export default function DistributionDetailPage() {
                     )}
                     {ack.acknowledgedAt && (
                       <span className="text-xs text-muted-foreground">
-                        {new Date(ack.acknowledgedAt).toLocaleString("de-DE")}
+                        {formatDateTime(ack.acknowledgedAt)}
                       </span>
                     )}
                     <Badge className={ackStatusColors[ack.status]}>

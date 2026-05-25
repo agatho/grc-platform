@@ -24,6 +24,7 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { useDateFormat } from "@/lib/format-date";
 
 interface PolicyDetail {
   distributionId: string;
@@ -49,6 +50,7 @@ interface PolicyDetail {
 }
 
 export default function AcknowledgePolicyPage() {
+  const { formatDate, formatDateTime } = useDateFormat();
   const t = useTranslations("policies");
   const router = useRouter();
   const params = useParams();
@@ -229,7 +231,7 @@ export default function AcknowledgePolicyPage() {
               {result.acknowledgedAt && (
                 <p className="text-sm">
                   {t("acknowledge.date")}:{" "}
-                  {new Date(result.acknowledgedAt).toLocaleString("de-DE")}
+                  {formatDateTime(result.acknowledgedAt)}
                 </p>
               )}
 
@@ -291,8 +293,7 @@ export default function AcknowledgePolicyPage() {
             {policy.isMandatory ? t("mandatory") : t("optional")}
           </Badge>
           <span className="text-sm text-muted-foreground">
-            {t("distribution.deadline")}:{" "}
-            {new Date(policy.deadline).toLocaleDateString("de-DE")}
+            {t("distribution.deadline")}: {formatDate(policy.deadline)}
           </span>
           {policy.requiresQuiz && (
             <Badge variant="outline">
