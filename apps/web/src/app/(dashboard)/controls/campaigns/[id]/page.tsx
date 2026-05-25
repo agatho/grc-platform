@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { CampaignStatus, TestResult, TestStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,11 +73,6 @@ function resultClass(result?: TestResult): string {
   return map[result] ?? "text-gray-400";
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -91,6 +87,7 @@ export default function CampaignDetailPage() {
 
 function CampaignDetailInner() {
   const t = useTranslations("controls");
+  const { formatDate } = useDateFormat();
   const params = useParams();
   const router = useRouter();
   const campaignId = params.id as string;

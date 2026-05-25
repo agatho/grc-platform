@@ -531,6 +531,7 @@ function HistoryTab({
   t: ReturnType<typeof useTranslations>;
 }) {
   const tAudit = useTranslations("auditLog");
+  const { formatDateTime } = useDateFormat();
   const [entries, setEntries] = useState<AuditEntry[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -596,7 +597,7 @@ function HistoryTab({
                   </Badge>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {new Date(entry.timestamp).toLocaleString()}
+                  {formatDateTime(entry.timestamp)}
                 </p>
                 {Object.keys(entry.changes).length > 0 && (
                   <div className="mt-2 space-y-1">
