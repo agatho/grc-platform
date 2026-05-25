@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface UserRole {
   userId: string;
@@ -32,6 +33,7 @@ interface UserRole {
 export default function AccessReviewsPage() {
   const t = useTranslations("accessLog");
   const { data: session } = useSession();
+  const { formatDate } = useDateFormat();
   const [users, setUsers] = useState<UserRole[]>([]);
   const [loading, setLoading] = useState(true);
   const [reviewing, setReviewing] = useState<Set<string>>(new Set());
@@ -240,8 +242,7 @@ export default function AccessReviewsPage() {
                   <div className="text-right shrink-0">
                     {user.lastLogin ? (
                       <p className="text-xs text-gray-500">
-                        Letzter Login:{" "}
-                        {new Date(user.lastLogin).toLocaleDateString("de-DE")}
+                        Letzter Login: {formatDate(user.lastLogin)}
                       </p>
                     ) : (
                       <p className="text-xs text-red-500">Nie eingeloggt</p>
