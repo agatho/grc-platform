@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { GeneralCatalogEntry, CatalogLifecyclePhase } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 interface WhereUsedRef {
   id: string;
@@ -36,6 +37,7 @@ const phaseColors: Record<string, string> = {
 
 export default function ObjectDetailPage() {
   const t = useTranslations("catalogs");
+  const { formatDate } = useDateFormat();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -353,7 +355,7 @@ export default function ObjectDetailPage() {
                     </span>
                   </div>
                   <span className="text-xs text-gray-400">
-                    {new Date(ref.createdAt).toLocaleDateString("de-DE")}
+                    {formatDate(ref.createdAt)}
                   </span>
                 </div>
               ))}
