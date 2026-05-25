@@ -17,6 +17,7 @@ import { and, eq, isNotNull, sql, asc, gte, lt } from "drizzle-orm";
 import { merkleRoot } from "@grc/shared/lib/merkle-tree";
 import * as freetsa from "@grc/shared/lib/freetsa";
 import * as opentimestamps from "@grc/shared/lib/opentimestamps";
+import { withCronInstrumentation } from "../lib/cron-instrument";
 
 interface AnchorResult {
   orgsProcessed: number;
@@ -24,9 +25,10 @@ interface AnchorResult {
   errors: string[];
 }
 
-export async function processDailyAuditAnchor(
-  targetDate?: Date,
-): Promise<AnchorResult> {
+export const processDailyAuditAnchor = withCronInstrumentation<
+  AnchorResult,
+  [Date | undefined]
+>("daily-audit-anchor", async (targetDate?: Date): Promise<AnchorResult> => {
   const errors: string[] = [];
   let anchorsCreated = 0;
 
@@ -73,7 +75,7 @@ export async function processDailyAuditAnchor(
     `[cron:daily-audit-anchor] done — orgs=${rows.length} anchors=${anchorsCreated} errors=${errors.length}`,
   );
   return { orgsProcessed: rows.length, anchorsCreated, errors };
-}
+});
 
 async function anchorOneTenant(
   orgId: string,
