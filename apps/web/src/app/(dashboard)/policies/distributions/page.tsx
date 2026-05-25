@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import type { PolicyDistributionStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -60,6 +61,7 @@ function statusBadgeClass(status: PolicyDistributionStatus): string {
 export default function PolicyDistributionsPage() {
   const t = useTranslations("policies");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
 
   const [rows, setRows] = useState<DistributionRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -119,8 +121,7 @@ export default function PolicyDistributionsPage() {
       {
         accessorKey: "deadline",
         header: t("distribution.deadline"),
-        cell: ({ row }) =>
-          new Date(row.original.deadline).toLocaleDateString("de-DE"),
+        cell: ({ row }) => formatDate(row.original.deadline),
       },
       {
         accessorKey: "status",
@@ -167,7 +168,7 @@ export default function PolicyDistributionsPage() {
         ),
       },
     ],
-    [t],
+    [t, formatDate],
   );
 
   return (

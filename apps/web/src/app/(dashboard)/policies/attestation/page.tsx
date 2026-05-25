@@ -42,6 +42,7 @@ export default function PolicyAttestationPage() {
 }
 
 function PolicyAttestationInner() {
+  const { formatDate } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<AttestationCampaign[]>([]);
 
@@ -123,10 +124,7 @@ function PolicyAttestationInner() {
                         </span>
                         <span className="flex items-center gap-1">
                           <CalendarClock className="h-3.5 w-3.5" />
-                          Frist:{" "}
-                          {new Date(campaign.deadline).toLocaleDateString(
-                            "de-DE",
-                          )}
+                          Frist: {formatDate(campaign.deadline)}
                         </span>
                       </div>
                     </div>
