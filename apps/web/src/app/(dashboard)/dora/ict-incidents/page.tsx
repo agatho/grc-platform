@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { DoraIctIncident } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const CLASS_COLORS: Record<string, string> = {
   major: "bg-red-100 text-red-900",
@@ -15,6 +16,7 @@ const CLASS_COLORS: Record<string, string> = {
 
 export default function DoraIctIncidentsPage() {
   const t = useTranslations("dora");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<DoraIctIncident[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -55,7 +57,7 @@ export default function DoraIctIncidentsPage() {
                 </p>
                 <p className="text-sm text-muted-foreground">
                   {inc.incidentType} | {t("detected")}:{" "}
-                  {new Date(inc.detectedAt).toLocaleDateString()}
+                  {formatDate(inc.detectedAt)}
                 </p>
               </div>
               <div className="flex gap-2">

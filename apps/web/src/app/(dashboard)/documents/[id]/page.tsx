@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 import type {
   Document,
   DocumentVersion,
@@ -61,11 +62,6 @@ interface AuditLogEntry {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 function statusBadgeClass(status: DocumentStatus): string {
   const map: Record<DocumentStatus, string> = {
     draft: "bg-gray-100 text-gray-700 border-gray-200",
@@ -91,6 +87,7 @@ export default function DocumentDetailPage() {
 }
 
 function DocumentDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("documents");
   const params = useParams();
   const router = useRouter();

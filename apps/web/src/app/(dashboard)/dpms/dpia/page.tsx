@@ -11,6 +11,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Dpia } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -31,6 +32,7 @@ export default function DpiaListPage() {
 }
 
 function DpiaListInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("dpms");
   const router = useRouter();
   const [items, setItems] = useState<Dpia[]>([]);
@@ -132,7 +134,7 @@ function DpiaListInner() {
                   : t("dpia.noConsultation")}
               </p>
               <p className="text-xs text-gray-400 mt-2">
-                {new Date(item.updatedAt).toLocaleDateString()}
+                {formatDate(item.updatedAt)}
               </p>
             </Link>
           ))}
