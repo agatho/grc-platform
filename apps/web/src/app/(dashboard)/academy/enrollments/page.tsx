@@ -7,6 +7,7 @@ import { Loader2, RefreshCcw } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Enrollment {
   id: string;
@@ -28,6 +29,7 @@ export default function EnrollmentsPage() {
 
 function EnrollmentsList() {
   const t = useTranslations("academy");
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<Enrollment[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -108,13 +110,12 @@ function EnrollmentsList() {
               <div className="text-right">
                 {e.dueDate && (
                   <p className="text-xs text-gray-400">
-                    {t("dueDate")}: {new Date(e.dueDate).toLocaleDateString()}
+                    {t("dueDate")}: {formatDate(e.dueDate)}
                   </p>
                 )}
                 {e.completedAt && (
                   <p className="text-xs text-green-600">
-                    {t("completedAt")}:{" "}
-                    {new Date(e.completedAt).toLocaleDateString()}
+                    {t("completedAt")}: {formatDate(e.completedAt)}
                   </p>
                 )}
               </div>

@@ -6,6 +6,7 @@ import { Loader2, RefreshCcw, Award, Download } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Certificate {
   id: string;
@@ -26,6 +27,7 @@ export default function CertificatesPage() {
 
 function CertificatesList() {
   const t = useTranslations("academy");
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<Certificate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -86,13 +88,11 @@ function CertificatesList() {
                 </span>
               </div>
               <p className="text-xs text-gray-500">
-                {t("certificates.issuedAt")}:{" "}
-                {new Date(cert.issuedAt).toLocaleDateString()}
+                {t("certificates.issuedAt")}: {formatDate(cert.issuedAt)}
               </p>
               {cert.expiresAt && (
                 <p className="text-xs text-gray-500">
-                  {t("certificates.expiresAt")}:{" "}
-                  {new Date(cert.expiresAt).toLocaleDateString()}
+                  {t("certificates.expiresAt")}: {formatDate(cert.expiresAt)}
                 </p>
               )}
               {cert.pdfUrl && (
