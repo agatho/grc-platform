@@ -22,6 +22,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -41,18 +42,6 @@ interface SyncLogEntry {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
-  });
-}
 
 function formatDuration(ms: number): string {
   if (ms < 1000) return `${ms}ms`;
@@ -106,6 +95,16 @@ function StatusBadge({ status }: { status: SyncLogEntry["status"] }) {
 // ── Component ─────────────────────────────────────────────────
 
 export default function SyncLogPage() {
+  const { formatDateTime, formatNumber } = useDateFormat();
+  const formatDate = (d: string | null) =>
+    formatDateTime(d, {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+      second: "2-digit",
+    });
   const [logs, setLogs] = useState<SyncLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -307,10 +306,10 @@ export default function SyncLogPage() {
                         <StatusBadge status={log.status} />
                       </td>
                       <td className="py-3 pr-4 text-right tabular-nums">
-                        {log.recordsPulled.toLocaleString("de-DE")}
+                        {formatNumber(log.recordsPulled)}
                       </td>
                       <td className="py-3 pr-4 text-right tabular-nums">
-                        {log.recordsWritten.toLocaleString("de-DE")}
+                        {formatNumber(log.recordsWritten)}
                       </td>
                       <td className="py-3 pr-4 text-right tabular-nums">
                         <span
@@ -318,7 +317,7 @@ export default function SyncLogPage() {
                             log.errorCount > 0 ? "font-medium text-red-600" : ""
                           }
                         >
-                          {log.errorCount.toLocaleString("de-DE")}
+                          {formatNumber(log.errorCount)}
                         </span>
                       </td>
                       <td className="py-3 pr-4 text-right whitespace-nowrap tabular-nums">

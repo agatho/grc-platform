@@ -22,6 +22,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -52,6 +53,7 @@ interface ScimStats {
 
 export default function ScimDashboardPage() {
   const t = useTranslations("identity");
+  const { formatDateTime } = useDateFormat();
   const [tokens, setTokens] = useState<ScimTokenData[]>([]);
   const [logs, setLogs] = useState<ScimLogEntry[]>([]);
   const [stats, setStats] = useState<ScimStats | null>(null);
@@ -132,10 +134,7 @@ export default function ScimDashboardPage() {
     setTimeout(() => setCopied(false), 2000);
   }
 
-  function formatDate(dateStr: string | null) {
-    if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleString();
-  }
+  const formatDate = (dateStr: string | null) => formatDateTime(dateStr);
 
   function timeAgo(dateStr: string | null) {
     if (!dateStr) return t("never");

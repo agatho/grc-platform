@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -59,14 +60,10 @@ const PROVIDER_CONFIG: Record<
   },
 };
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleString("de-DE");
-}
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function MessagingIntegrationsPage() {
+  const { formatDateTime: formatDate } = useDateFormat();
   const [integrations, setIntegrations] = useState<MessagingIntegration[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
