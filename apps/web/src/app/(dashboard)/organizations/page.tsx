@@ -26,6 +26,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -309,6 +310,7 @@ function DeleteConfirmDialog({
 export default function OrganizationsPage() {
   const t = useTranslations("organizations");
   const tStatus = useTranslations("status");
+  const { formatDate } = useDateFormat();
 
   const [organizations, setOrganizations] = useState<Organization[]>([]);
   const [loading, setLoading] = useState(true);
@@ -501,7 +503,7 @@ export default function OrganizationsPage() {
       ),
       cell: ({ row }) => (
         <span className="text-gray-500 text-sm">
-          {new Date(row.original.createdAt).toLocaleDateString()}
+          {formatDate(row.original.createdAt)}
         </span>
       ),
     },
