@@ -6,9 +6,11 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { AiHumanOversightLog } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function AiOversightLogsPage() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AiHumanOversightLog[]>([]);
   const [loading, setLoading] = useState(true);
   const fetchData = useCallback(async () => {
@@ -48,8 +50,7 @@ export default function AiOversightLogsPage() {
                   {log.description.substring(0, 100)}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {log.logType} |{" "}
-                  {new Date(log.reviewedAt).toLocaleDateString()}
+                  {log.logType} | {formatDate(log.reviewedAt)}
                 </p>
               </div>
               <Badge variant="outline">{log.logType}</Badge>

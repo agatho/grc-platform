@@ -26,6 +26,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
 interface CorrectiveAction {
   id: string;
@@ -55,6 +56,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function CorrectiveActionsInner() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<CorrectiveAction[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -248,9 +250,7 @@ function CorrectiveActionsInner() {
                   </div>
                   <p className="text-sm text-muted-foreground">
                     {a.action_type}
-                    {a.due_date
-                      ? ` | Fallig: ${new Date(a.due_date).toLocaleDateString("de-DE")}`
-                      : ""}
+                    {a.due_date ? ` | Fallig: ${formatDate(a.due_date)}` : ""}
                   </p>
                 </div>
                 <div className="flex gap-2">

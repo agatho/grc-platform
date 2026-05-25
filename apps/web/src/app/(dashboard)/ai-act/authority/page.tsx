@@ -24,6 +24,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AuthorityCommunication {
   id: string;
@@ -67,6 +68,7 @@ function getDeadlineInfo(deadline: string | null) {
 
 function AuthorityPageInner() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<AuthorityCommunication[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -245,9 +247,7 @@ function AuthorityPageInner() {
                 </div>
                 <p className="text-sm text-muted-foreground mt-1">
                   {c.authority_name} |{" "}
-                  {c.communication_date
-                    ? new Date(c.communication_date).toLocaleDateString("de-DE")
-                    : ""}
+                  {c.communication_date ? formatDate(c.communication_date) : ""}
                 </p>
               </CardContent>
             </Card>
