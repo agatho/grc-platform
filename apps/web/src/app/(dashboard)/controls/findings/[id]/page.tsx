@@ -22,6 +22,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CreateRemediationButton } from "@/components/programme/create-remediation-button";
 import type { Finding, Evidence, FindingStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -53,11 +54,6 @@ interface AuditLogEntry {
 // Helpers
 // ---------------------------------------------------------------------------
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 function statusBadgeClass(status: FindingStatus): string {
   const map: Record<FindingStatus, string> = {
     identified: "bg-gray-100 text-gray-700 border-gray-200",
@@ -87,6 +83,7 @@ function FindingDetailInner() {
   const params = useParams();
   const router = useRouter();
   const findingId = params.id as string;
+  const { formatDate } = useDateFormat();
 
   const [finding, setFinding] = useState<FindingDetail | null>(null);
   const [statusHistory, setStatusHistory] = useState<StatusHistoryEntry[]>([]);
