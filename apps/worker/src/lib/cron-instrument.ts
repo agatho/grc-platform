@@ -44,7 +44,13 @@
 // unknown's subtype in writable position), which tripped TS2345 at
 // every wrapped call site.
 type CronResult = void | object;
-type CronHandler<R extends CronResult> = () => Promise<R>;
+// Handler accepts an arbitrary positional-argument tuple A so that crons
+// taking optional inputs (e.g. a target date for backfill runs) can be
+// wrapped without splitting them into a thin shim. A defaults to []
+// — existing zero-arg handlers continue to satisfy the type.
+type CronHandler<R extends CronResult, A extends unknown[] = []> = (
+  ...args: A
+) => Promise<R>;
 
 const SERVICE = process.env.ARCTOS_SERVICE ?? "arctos-worker";
 
@@ -75,15 +81,15 @@ function emit(level: "info" | "error", payload: Record<string, unknown>): void {
  *                  void or a small JSON-serialisable object summarising
  *                  what was done; that object lands in the finish log.
  */
-export function withCronInstrumentation<R extends CronResult>(
-  cronName: string,
-  handler: CronHandler<R>,
-): CronHandler<R> {
-  return async () => {
+export function withCronInstrumentation<
+  R extends CronResult,
+  A extends unknown[] = [],
+>(cronName: string, handler: CronHandler<R, A>): CronHandler<R, A> {
+  return async (...args: A) => {
     const startedAt = Date.now();
     emit("info", { cron: cronName, phase: "start" });
     try {
-      const result = await handler();
+      const result = await handler(...args);
       const durationMs = Date.now() - startedAt;
       emit("info", {
         cron: cronName,
