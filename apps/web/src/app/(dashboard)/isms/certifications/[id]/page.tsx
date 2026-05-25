@@ -48,7 +48,7 @@ export default function CertificationDetailPage() {
 }
 
 function CertDetailInner() {
-  const { formatDate } = useDateFormat();
+  const { formatDate, formatDateTime } = useDateFormat();
   const t = useTranslations("certifications");
   const params = useParams();
   const router = useRouter();
@@ -252,8 +252,10 @@ function CertDetailInner() {
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {formatDate(snap.createdAt)} -{" "}
-                    {new Date(snap.createdAt).toLocaleTimeString("de-DE", {
+                    {formatDateTime(snap.createdAt, {
+                      day: "2-digit",
+                      month: "2-digit",
+                      year: "numeric",
                       hour: "2-digit",
                       minute: "2-digit",
                     })}

@@ -593,7 +593,10 @@ function CrisisDetailInner() {
                   <div className="flex-1 pb-2">
                     <div className="flex items-baseline gap-2">
                       <span className="text-xs text-gray-400">
-                        {new Date(entry.timestamp).toLocaleTimeString()}
+                        {formatDateTime(entry.timestamp, {
+                          hour: "2-digit",
+                          minute: "2-digit",
+                        })}
                       </span>
                       <Badge variant="outline" className="text-[10px]">
                         {t(`crisis.logEntry.${entry.entryType}`)}
