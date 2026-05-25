@@ -11,6 +11,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CrisisScenario } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   standby: "bg-gray-100 text-gray-700",
@@ -38,6 +39,7 @@ export default function CrisisListPage() {
 function CrisisListInner() {
   const t = useTranslations("bcms");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<CrisisScenario[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
@@ -220,7 +222,7 @@ function CrisisListInner() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-400">
-                    {new Date(item.updatedAt).toLocaleDateString()}
+                    {formatDate(item.updatedAt)}
                   </td>
                 </tr>
               ))}
