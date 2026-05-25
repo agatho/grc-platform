@@ -42,6 +42,7 @@ import type {
   MethodEntry,
 } from "@grc/shared";
 import { checklistResultToFindingSeverity } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AuditDetail extends Audit {
   leadAuditorName?: string | null;
@@ -3049,6 +3050,7 @@ type ActivityWithUser = AuditActivity & { performedByName?: string | null };
 
 function ActivitiesTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
+  const { formatDate, formatDateTime } = useDateFormat();
   const [activities, setActivities] = useState<ActivityWithUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -3346,7 +3348,7 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
               <div key={day} className="space-y-2">
                 <div className="flex items-center gap-2 sticky top-0 bg-gray-50 -mx-1 px-2 py-1 rounded border-l-4 border-blue-500">
                   <span className="text-xs font-semibold text-gray-700">
-                    {new Date(day).toLocaleDateString("de-DE", {
+                    {formatDate(day, {
                       weekday: "long",
                       day: "2-digit",
                       month: "2-digit",
@@ -3383,10 +3385,10 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
                           </span>
                         </div>
                         <span className="text-[11px] text-gray-500">
-                          {new Date(activity.performedAt).toLocaleTimeString(
-                            "de-DE",
-                            { hour: "2-digit", minute: "2-digit" },
-                          )}
+                          {formatDateTime(activity.performedAt, {
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                           {activity.duration
                             ? ` · ${activity.duration} min`
                             : ""}
@@ -3421,6 +3423,7 @@ function ActivitiesTab({ auditId }: { auditId: string }) {
 
 function FindingsTab({ auditId }: { auditId: string }) {
   const t = useTranslations("auditMgmt");
+  const { formatDate } = useDateFormat();
   const [findings, setFindings] = useState<Finding[]>([]);
   const [loading, setLoading] = useState(true);
   const [addOpen, setAddOpen] = useState(false);
@@ -3677,7 +3680,7 @@ function FindingsTab({ auditId }: { auditId: string }) {
                 </div>
               </div>
               <p className="text-xs text-gray-500 mt-1">
-                {new Date(f.createdAt).toLocaleDateString()}
+                {formatDate(f.createdAt)}
               </p>
             </div>
           ))}
@@ -3770,6 +3773,7 @@ interface ReportData {
 
 function ReportTab({ audit }: { audit: AuditDetail }) {
   const t = useTranslations("auditMgmt");
+  const { formatDateTime } = useDateFormat();
   const params = useParams<{ id: string }>();
   const [report, setReport] = useState<ReportData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -4265,8 +4269,7 @@ function ReportTab({ audit }: { audit: AuditDetail }) {
       )}
 
       <p className="text-xs text-gray-400 text-right">
-        Bericht generiert:{" "}
-        {new Date(report.generatedAt).toLocaleString("de-DE")}
+        Bericht generiert: {formatDateTime(report.generatedAt)}
       </p>
 
       {audit.reportDocumentId && (
