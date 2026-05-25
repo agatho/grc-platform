@@ -34,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -93,10 +94,6 @@ function statusBadgeClass(status: string): string {
     default:
       return "";
   }
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString();
 }
 
 // ---------------------------------------------------------------------------
@@ -246,6 +243,7 @@ function CreateScheduledDialog({
 export default function ScheduledNotificationsPage() {
   const t = useTranslations("settings.scheduled");
   const tRoles = useTranslations("roles");
+  const { formatDateTime } = useDateFormat();
   const { data: session } = useSession();
 
   const [notifications, setNotifications] = useState<ScheduledNotification[]>(
