@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Card,
   CardContent,
@@ -48,6 +49,7 @@ type DashboardListItem = CustomDashboardRecord & { widgetCount: number };
 export default function DashboardListPage() {
   const t = useTranslations("dashboard");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [dashboards, setDashboards] = useState<DashboardListItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("all");
@@ -329,8 +331,7 @@ export default function DashboardListPage() {
                       </Badge>
                     )}
                     <div className="mt-2 text-[10px] text-muted-foreground">
-                      {t("lastUpdated")}:{" "}
-                      {new Date(dash.updatedAt).toLocaleDateString("de-DE")}
+                      {t("lastUpdated")}: {formatDate(dash.updatedAt)}
                     </div>
                   </CardContent>
                 </Card>
