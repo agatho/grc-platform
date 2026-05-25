@@ -22,6 +22,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -94,17 +95,6 @@ const CATEGORY_ORDER: CategoryKey[] = [
   "Messaging",
 ];
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "—";
-  return new Date(dateStr).toLocaleString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
-
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return "Nie";
   const diff = Date.now() - new Date(dateStr).getTime();
@@ -120,6 +110,7 @@ function timeAgo(dateStr: string | null): string {
 // ── Component ─────────────────────────────────────────────────
 
 export default function ConnectorManagementPage() {
+  const { formatDateTime, formatNumber } = useDateFormat();
   const [connectorTypes, setConnectorTypes] = useState<ConnectorType[]>([]);
   const [instances, setInstances] = useState<ConnectorInstance[]>([]);
   const [loading, setLoading] = useState(true);
@@ -394,8 +385,7 @@ export default function ConnectorManagementPage() {
                                   {inst.name}
                                 </span>
                                 <span className="text-muted-foreground">
-                                  {inst.recordCount.toLocaleString("de-DE")}{" "}
-                                  Datensätze
+                                  {formatNumber(inst.recordCount)} Datensätze
                                 </span>
                               </div>
                               <div className="flex items-center gap-2 shrink-0">
@@ -425,7 +415,7 @@ export default function ConnectorManagementPage() {
                                 )}
                                 <span
                                   className="text-[10px] text-muted-foreground whitespace-nowrap"
-                                  title={formatDate(inst.lastSyncAt)}
+                                  title={formatDateTime(inst.lastSyncAt)}
                                 >
                                   <Clock className="mr-0.5 inline h-3 w-3" />
                                   {timeAgo(inst.lastSyncAt)}
