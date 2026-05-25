@@ -9,6 +9,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { DataBreach, DataBreachNotification } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const SEVERITY_COLORS: Record<string, string> = {
   low: "bg-green-100 text-green-900",
@@ -31,6 +32,7 @@ interface BreachDetailData extends DataBreach {
 }
 
 function BreachDetailInner() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -177,7 +179,7 @@ function BreachDetailInner() {
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">
-              {t("breaches.detected")}: {detectedAt.toLocaleString()}
+              {t("breaches.detected")}: {formatDateTime(detectedAt)}
             </span>
             <span
               className={`font-bold ${isOverdue ? "text-red-700" : "text-orange-700"}`}
@@ -199,8 +201,7 @@ function BreachDetailInner() {
       {data.dpaNotifiedAt && !isClosed && (
         <div className="rounded-lg border border-green-200 bg-green-50 p-4">
           <span className="text-sm text-green-700 font-medium">
-            {t("breaches.dpaNotified")} -{" "}
-            {new Date(data.dpaNotifiedAt).toLocaleString()}
+            {t("breaches.dpaNotified")} - {formatDateTime(data.dpaNotifiedAt)}
           </span>
         </div>
       )}
@@ -258,7 +259,7 @@ function BreachDetailInner() {
               />
               <FieldRow
                 label={t("breaches.detected")}
-                value={detectedAt.toLocaleString()}
+                value={formatDateTime(detectedAt)}
               />
             </div>
           </div>
@@ -318,9 +319,7 @@ function BreachDetailInner() {
                     </span>
                   </div>
                   <span className="text-xs text-gray-500">
-                    {notif.sentAt
-                      ? new Date(notif.sentAt).toLocaleString()
-                      : "-"}
+                    {notif.sentAt ? formatDateTime(notif.sentAt) : "-"}
                   </span>
                 </div>
               ))
