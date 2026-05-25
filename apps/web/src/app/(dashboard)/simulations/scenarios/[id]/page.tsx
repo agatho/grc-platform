@@ -8,6 +8,7 @@ import { Loader2, ArrowLeft, Play } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ScenarioDetail {
   id: string;
@@ -41,6 +42,7 @@ interface Parameter {
 }
 
 export default function ScenarioDetailPage() {
+  const { formatDateTime, formatNumber } = useDateFormat();
   return (
     <ModuleGate moduleKey="simulations">
       <ScenarioDetail />
@@ -186,14 +188,12 @@ function ScenarioDetail() {
                     {r.status}
                   </Badge>
                   <span className="text-gray-400">
-                    {r.iterations.toLocaleString()} {t("iterations")}
+                    {formatNumber(r.iterations)} {t("iterations")}
                   </span>
                 </div>
                 <div className="text-xs text-gray-400">
                   {r.durationMs && <span>{r.durationMs}ms</span>}
-                  <span className="ml-2">
-                    {new Date(r.startedAt).toLocaleString()}
-                  </span>
+                  <span className="ml-2">{formatDateTime(r.startedAt)}</span>
                 </div>
               </div>
             ))}
