@@ -27,6 +27,7 @@ import type {
   IncidentTimelineEntry,
   IncidentStatus,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_ORDER: IncidentStatus[] = [
   "detected",
@@ -68,6 +69,7 @@ export default function IncidentDetailPage() {
 }
 
 function IncidentDetailInner() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations("isms");
   const router = useRouter();
   const params = useParams();
@@ -247,7 +249,7 @@ function IncidentDetailInner() {
                   {t("detectedAt")}
                 </h3>
                 <p className="text-sm text-gray-900">
-                  {new Date(incident.detectedAt).toLocaleString()}
+                  {formatDateTime(incident.detectedAt)}
                 </p>
               </div>
               <div>
@@ -264,7 +266,7 @@ function IncidentDetailInner() {
                     {t("closedAt")}
                   </h3>
                   <p className="text-sm text-gray-900">
-                    {new Date(incident.closedAt).toLocaleString()}
+                    {formatDateTime(incident.closedAt)}
                   </p>
                 </div>
               )}
@@ -289,7 +291,7 @@ function IncidentDetailInner() {
                     <div>
                       <div className="flex items-center gap-2">
                         <span className="text-xs text-gray-400">
-                          {new Date(entry.occurredAt).toLocaleString()}
+                          {formatDateTime(entry.occurredAt)}
                         </span>
                         <Badge variant="outline" className="text-[10px]">
                           {entry.actionType}

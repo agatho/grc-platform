@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface NIS2Report {
   id: string;
@@ -51,6 +52,7 @@ export default function NIS2ReportingPage() {
 }
 
 function NIS2ReportingInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("nis2");
   const [reports, setReports] = useState<NIS2Report[]>([]);
   const [stats, setStats] = useState<ReportStats | null>(null);
@@ -232,9 +234,7 @@ function NIS2ReportingInner() {
                           />
                           <span className="text-xs text-gray-500">
                             {t("reporting.deadline")}:{" "}
-                            {new Date(report.deadlineAt).toLocaleDateString(
-                              "de-DE",
-                            )}
+                            {formatDate(report.deadlineAt)}
                           </span>
                           {report.bsiReference && (
                             <span className="text-xs text-gray-400">

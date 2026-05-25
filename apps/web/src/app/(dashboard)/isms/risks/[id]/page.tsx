@@ -18,6 +18,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 /* ── Types ── */
 
@@ -112,15 +113,6 @@ function riskLabel(score: number): string {
   return "Niedrig";
 }
 
-function fmtDate(v: string | null | undefined): string {
-  if (!v) return "—";
-  return new Date(v).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 /* ── Component ── */
 
 export default function IsmsRiskDetailPage() {
@@ -132,6 +124,7 @@ export default function IsmsRiskDetailPage() {
 }
 
 function RiskDetailInner() {
+  const { formatDate: fmtDate } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<RiskScenarioDetail | null>(null);
