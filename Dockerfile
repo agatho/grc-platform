@@ -91,6 +91,14 @@ RUN AUTH_SECRET="$AUTH_SECRET" \
 FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
+# Pull Alpine security patches into the runtime layer. The pinned
+# node:22.x-alpine base lags Alpine's security feed by days-to-weeks
+# (libcrypto3/musl/zlib CVEs accumulate), and the Trivy gate fails
+# CI Build when HIGH+CRITICAL show up. `apk upgrade --no-cache` is
+# the standard fix — keeps the base pin for reproducibility while
+# patching userland on every build.
+RUN apk upgrade --no-cache
+
 ENV NODE_ENV=production
 ENV NEXT_TELEMETRY_DISABLED=1
 
