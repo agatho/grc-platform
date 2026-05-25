@@ -122,7 +122,7 @@ function formatDateKey(d: Date): string {
 export default function CalendarPage() {
   const t = useTranslations("calendar");
   const router = useRouter();
-  const { formatDate } = useDateFormat();
+  const { formatDate, formatDateTime } = useDateFormat();
 
   // State
   const [events, setEvents] = useState<AggregatedCalendarEvent[]>([]);
@@ -535,7 +535,7 @@ export default function CalendarPage() {
                     >
                       <div className="font-medium truncate">{event.title}</div>
                       <div className="opacity-75">
-                        {new Date(event.startAt).toLocaleTimeString([], {
+                        {formatDateTime(event.startAt, {
                           hour: "2-digit",
                           minute: "2-digit",
                         })}
@@ -590,12 +590,12 @@ export default function CalendarPage() {
                   <div>
                     <div className="font-medium">{event.title}</div>
                     <div className="text-sm text-muted-foreground">
-                      {new Date(event.startAt).toLocaleTimeString([], {
+                      {formatDateTime(event.startAt, {
                         hour: "2-digit",
                         minute: "2-digit",
                       })}
                       {event.endAt &&
-                        ` - ${new Date(event.endAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}`}
+                        ` - ${formatDateTime(event.endAt, { hour: "2-digit", minute: "2-digit" })}`}
                     </div>
                   </div>
                   <Badge variant="outline" className="ml-auto">
