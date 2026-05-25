@@ -21,6 +21,7 @@ import { toast } from "sonner";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 // ──────────────────────────────────────────────────────────────
 // Types
@@ -110,6 +111,7 @@ function DdResultsInner() {
   const t = useTranslations("ddResults");
   const tPortal = useTranslations("portal");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const { id: vendorId, sessionId } = useParams<{
     id: string;
     sessionId: string;
@@ -230,8 +232,7 @@ function DdResultsInner() {
             {t("title")}: {sess.vendorName}
           </h1>
           <p className="text-xs text-gray-500">
-            {sess.templateName} &middot;{" "}
-            {new Date(sess.submittedAt).toLocaleDateString()}
+            {sess.templateName} &middot; {formatDate(sess.submittedAt)}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -497,7 +498,7 @@ function DdResultsInner() {
                     </p>
                     <p className="text-[10px] text-gray-500">
                       {Math.round(ev.fileSize / 1024)} KB &middot;{" "}
-                      {new Date(ev.uploadedAt).toLocaleDateString()}
+                      {formatDate(ev.uploadedAt)}
                     </p>
                   </div>
                 </div>
