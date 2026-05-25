@@ -37,6 +37,7 @@ function CaseDetailInner() {
   const t = useTranslations("whistleblowing");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { formatDate } = useDateFormat();
   const [data, setData] = useState<WbCaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState("");
@@ -181,7 +182,7 @@ function CaseDetailInner() {
             <div className="flex items-center gap-2 mb-4">
               <Badge className="text-xs">{t(`cat.${report.category}`)}</Badge>
               <span className="text-sm text-gray-400">
-                {new Date(report.submittedAt).toLocaleDateString("de-DE")}
+                {formatDate(report.submittedAt)}
               </span>
             </div>
             <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
@@ -513,7 +514,7 @@ function CaseDetailInner() {
               </p>
               {caseRow.resolvedAt && (
                 <p className="text-xs text-gray-400 mt-2">
-                  {new Date(caseRow.resolvedAt).toLocaleDateString("de-DE")}
+                  {formatDate(caseRow.resolvedAt)}
                 </p>
               )}
             </div>
@@ -531,7 +532,7 @@ function CaseDetailInner() {
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Calendar className="h-4 w-4" />
-                {new Date(report.submittedAt).toLocaleDateString("de-DE")}
+                {formatDate(report.submittedAt)}
               </div>
               <div className="flex items-center gap-2 text-gray-500">
                 <Globe className="h-4 w-4" />
