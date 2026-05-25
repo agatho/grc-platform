@@ -20,6 +20,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Card,
   CardContent,
@@ -67,6 +68,7 @@ const STEPS = [
 export default function CreateDistributionPage() {
   const t = useTranslations("policies");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [step, setStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
   const [documents, setDocuments] = useState<DocumentOption[]>([]);
@@ -654,11 +656,7 @@ export default function CreateDistributionPage() {
                   <p className="font-medium text-muted-foreground">
                     {t("create.deadline")}
                   </p>
-                  <p>
-                    {deadline
-                      ? new Date(deadline).toLocaleDateString("de-DE")
-                      : "-"}
-                  </p>
+                  <p>{deadline ? formatDate(deadline) : "-"}</p>
                 </div>
                 <div>
                   <p className="font-medium text-muted-foreground">

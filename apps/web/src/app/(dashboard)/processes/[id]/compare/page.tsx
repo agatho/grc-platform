@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@grc/ui";
+import { useDateFormat } from "@/lib/format-date";
 import type { VersionComparison, ElementDiffDetail } from "@grc/shared";
 
 // ---------------------------------------------------------------------------
@@ -54,6 +55,7 @@ function CompareContent() {
   const tProcess = useTranslations("process");
   const params = useParams();
   const searchParams = useSearchParams();
+  const { formatDate } = useDateFormat();
   const processId = params.id as string;
 
   const initialFrom = searchParams.get("from");
@@ -159,8 +161,7 @@ function CompareContent() {
                   key={v.versionNumber}
                   value={String(v.versionNumber)}
                 >
-                  v{v.versionNumber} &mdash;{" "}
-                  {new Date(v.createdAt).toLocaleDateString()}
+                  v{v.versionNumber} &mdash; {formatDate(v.createdAt)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -183,8 +184,7 @@ function CompareContent() {
                   key={v.versionNumber}
                   value={String(v.versionNumber)}
                 >
-                  v{v.versionNumber} &mdash;{" "}
-                  {new Date(v.createdAt).toLocaleDateString()}
+                  v{v.versionNumber} &mdash; {formatDate(v.createdAt)}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -332,6 +332,7 @@ function VersionPanel({
   version?: ProcessVersion;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   if (!version) return null;
 
   return (
@@ -348,7 +349,7 @@ function VersionPanel({
         <div className="flex justify-between text-gray-600">
           <span>Date</span>
           <span className="font-medium text-gray-900">
-            {new Date(version.createdAt).toLocaleDateString()}
+            {formatDate(version.createdAt)}
           </span>
         </div>
         {version.createdByName && (
