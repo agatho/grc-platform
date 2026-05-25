@@ -21,6 +21,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -89,14 +90,10 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: "Niedrig",
 };
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString("de-DE");
-}
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ContentRequestsPage() {
+  const { formatDate } = useDateFormat();
   const [requests, setRequests] = useState<ContentRequest[]>([]);
   const [stats, setStats] = useState<ContentRequestStats | null>(null);
   const [loading, setLoading] = useState(true);
