@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useDateFormat } from "@/lib/format-date";
 
 interface DoraState {
   earlyWarningAtIso: string;
@@ -124,6 +125,7 @@ function doraBadge(crisis: ActiveCrisis) {
 }
 
 export default function BcmsReadinessMonitorPage() {
+  const { formatDateTime } = useDateFormat();
   const [data, setData] = useState<MonitorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -305,10 +307,7 @@ export default function BcmsReadinessMonitorPage() {
                       <Badge variant="outline" className="text-xs">
                         {c.severity}
                       </Badge>
-                      <span>
-                        Aktiviert:{" "}
-                        {new Date(c.activatedAtIso).toLocaleString("de-DE")}
-                      </span>
+                      <span>Aktiviert: {formatDateTime(c.activatedAtIso)}</span>
                       {c.frameworks?.map((fw) => (
                         <Badge
                           key={fw}
@@ -334,9 +333,7 @@ export default function BcmsReadinessMonitorPage() {
                       4h Early Warning
                     </p>
                     <p className="font-medium">
-                      {new Date(c.dora.earlyWarningAtIso).toLocaleString(
-                        "de-DE",
-                      )}
+                      {formatDateTime(c.dora.earlyWarningAtIso)}
                     </p>
                   </div>
                   <div
@@ -346,9 +343,7 @@ export default function BcmsReadinessMonitorPage() {
                       72h Intermediate
                     </p>
                     <p className="font-medium">
-                      {new Date(c.dora.intermediateAtIso).toLocaleString(
-                        "de-DE",
-                      )}
+                      {formatDateTime(c.dora.intermediateAtIso)}
                     </p>
                   </div>
                   <div className={c.dora.finalOverdue ? "text-red-700" : ""}>
@@ -356,7 +351,7 @@ export default function BcmsReadinessMonitorPage() {
                       1-Monat Final
                     </p>
                     <p className="font-medium">
-                      {new Date(c.dora.finalAtIso).toLocaleString("de-DE")}
+                      {formatDateTime(c.dora.finalAtIso)}
                     </p>
                   </div>
                 </div>

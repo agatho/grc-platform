@@ -25,6 +25,7 @@ import type {
   WebhookDeliveryLogEntry,
   EventFilter,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Status badge config ───────────────────────────────────────
 
@@ -37,6 +38,7 @@ const STATUS_STYLES: Record<string, { color: string; icon: typeof Check }> = {
 
 export default function WebhookDetailPage() {
   const t = useTranslations("platform");
+  const { formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const [webhook, setWebhook] = useState<WebhookRegistrationData | null>(null);
@@ -266,7 +268,7 @@ export default function WebhookDetailPage() {
                       </span>
                     )}
                     <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
-                      {new Date(d.createdAt).toLocaleString("de-DE")}
+                      {formatDateTime(d.createdAt)}
                     </span>
                   </div>
                 );

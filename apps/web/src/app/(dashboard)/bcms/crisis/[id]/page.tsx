@@ -17,6 +17,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { CrisisScenario, CrisisLog as CrisisLogEntry } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 interface TeamMember {
   id: string;
@@ -46,6 +47,7 @@ export default function CrisisDetailPage() {
 
 function CrisisDetailInner() {
   const t = useTranslations("bcms");
+  const { formatDateTime } = useDateFormat();
   const params = useParams();
   const router = useRouter();
   const id = params.id as string;
@@ -273,9 +275,7 @@ function CrisisDetailInner() {
               </p>
               <p className="text-xs text-red-600">
                 {t("crisis.activatedAt")}:{" "}
-                {crisis.activatedAt
-                  ? new Date(crisis.activatedAt).toLocaleString()
-                  : "-"}
+                {crisis.activatedAt ? formatDateTime(crisis.activatedAt) : "-"}
               </p>
             </div>
           </div>
@@ -484,10 +484,10 @@ function CrisisDetailInner() {
           ) && (
             <span className="text-xs text-gray-400 ml-auto">
               Synchronisiert:{" "}
-              {new Date(
+              {formatDateTime(
                 (crisis as unknown as Record<string, unknown>)
                   .ermSyncedAt as string,
-              ).toLocaleString("de-DE")}
+              )}
             </span>
           )}
         </div>
