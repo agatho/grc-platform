@@ -19,6 +19,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { DocumentCategory, DocumentStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -95,11 +96,6 @@ function statusBadgeClass(status: DocumentStatus): string {
   return map[status] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function formatDate(dateStr?: string): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -115,6 +111,7 @@ export default function DocumentsPage() {
 function DocumentsPageInner() {
   const t = useTranslations("documents");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
 
   const [documents, setDocuments] = useState<DocumentRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -271,7 +268,7 @@ function DocumentsPageInner() {
         },
       },
     ],
-    [t],
+    [t, formatDate],
   );
 
   if (loading && documents.length === 0) {

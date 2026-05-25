@@ -20,6 +20,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 const WIZARD_STEPS = [
   "prescreen",
@@ -127,6 +128,7 @@ function DpiaDetailInner() {
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { formatDate } = useDateFormat();
   const [data, setData] = useState<DpiaDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeStep, setActiveStep] = useState<WizardStep>("prescreen");
@@ -1218,6 +1220,7 @@ function ConsultationStep({
   saving: boolean;
   onSave: (f: Record<string, unknown>) => Promise<void>;
 }) {
+  const { formatDate } = useDateFormat();
   return (
     <div className="space-y-5">
       <h2 className="font-semibold text-gray-900">DSB-Konsultation</h2>
@@ -1246,7 +1249,7 @@ function ConsultationStep({
         </dt>
         <dd className="text-sm text-gray-900 mt-0.5">
           {data.consultationDate ? (
-            new Date(data.consultationDate).toLocaleDateString("de-DE")
+            formatDate(data.consultationDate)
           ) : (
             <span className="text-gray-400">Nicht gesetzt</span>
           )}
