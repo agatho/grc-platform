@@ -17,6 +17,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ModuleGate } from "@/components/module/module-gate";
+import { useDateFormat } from "@/lib/format-date";
 
 interface RcsaCampaign {
   id: string;
@@ -38,6 +39,7 @@ const statusColors: Record<string, string> = {
 export default function RcsaCampaignsListPage() {
   const t = useTranslations("rcsa");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [campaigns, setCampaigns] = useState<RcsaCampaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [statusFilter, setStatusFilter] = useState<string>("");
@@ -148,12 +150,7 @@ export default function RcsaCampaignsListPage() {
                         {campaign.dueDate && (
                           <>
                             <Clock className="h-3.5 w-3.5 ml-2" />
-                            <span>
-                              Fällig:{" "}
-                              {new Date(campaign.dueDate).toLocaleDateString(
-                                "de-DE",
-                              )}
-                            </span>
+                            <span>Fällig: {formatDate(campaign.dueDate)}</span>
                           </>
                         )}
                       </div>
