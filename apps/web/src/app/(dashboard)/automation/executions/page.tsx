@@ -19,6 +19,7 @@ import Link from "next/link";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Execution {
   id: string;
@@ -77,6 +78,7 @@ const STATUS_CONFIG: Record<
 
 export default function ExecutionLogPage() {
   const t = useTranslations("automation");
+  const { formatDateTime } = useDateFormat();
   const searchParams = useSearchParams();
 
   const [executions, setExecutions] = useState<Execution[]>([]);
@@ -222,7 +224,7 @@ export default function ExecutionLogPage() {
                       {t(`executionLog.statuses.${exec.status}`)}
                     </Badge>
                     <span className="text-xs text-gray-500">
-                      {new Date(exec.executedAt).toLocaleString()}
+                      {formatDateTime(exec.executedAt)}
                     </span>
                     {isExpanded ? (
                       <ChevronUp size={14} className="text-gray-400" />

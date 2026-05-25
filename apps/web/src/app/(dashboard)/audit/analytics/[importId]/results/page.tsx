@@ -16,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AuditAnalyticsResult, BenfordResult } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function AnalysisResultsPage() {
   return (
@@ -27,6 +28,7 @@ export default function AnalysisResultsPage() {
 
 function ResultsInner() {
   const t = useTranslations("analytics");
+  const { formatDateTime } = useDateFormat();
   const router = useRouter();
   const params = useParams<{ importId: string }>();
   const [loading, setLoading] = useState(true);
@@ -216,8 +218,7 @@ function ResultsInner() {
                   )}
 
                   <p className="mt-4 text-xs text-muted-foreground">
-                    {t("analyzedAt")}:{" "}
-                    {new Date(result.createdAt).toLocaleString("de-DE")}
+                    {t("analyzedAt")}: {formatDateTime(result.createdAt)}
                   </p>
                 </CardContent>
               </Card>
