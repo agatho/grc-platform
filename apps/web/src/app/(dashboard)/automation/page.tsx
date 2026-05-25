@@ -49,6 +49,7 @@ interface RuleRow {
 export default function AutomationOverviewPage() {
   const t = useTranslations("automation");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [rules, setRules] = useState<RuleRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -267,7 +268,7 @@ export default function AutomationOverviewPage() {
                   </span>
                   {rule.lastExecutedAt && (
                     <span className="text-xs text-gray-400">
-                      {new Date(rule.lastExecutedAt).toLocaleDateString()}
+                      {formatDate(rule.lastExecutedAt)}
                     </span>
                   )}
                 </div>
