@@ -31,9 +31,11 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function CalendarSettingsPage() {
   const t = useTranslations("calendarSettings");
+  const { formatDate } = useDateFormat();
   const [loading, setLoading] = useState(false);
   const [icalUrl, setIcalUrl] = useState<string | null>(null);
   const [icalToken, setIcalToken] = useState<string | null>(null);
@@ -134,8 +136,7 @@ export default function CalendarSettingsPage() {
               )}
               {tokenCreatedAt && (
                 <div className="text-sm text-muted-foreground">
-                  {t("tokenCreated")}:{" "}
-                  {new Date(tokenCreatedAt).toLocaleDateString()}
+                  {t("tokenCreated")}: {formatDate(tokenCreatedAt)}
                 </div>
               )}
               <div className="flex gap-2">
