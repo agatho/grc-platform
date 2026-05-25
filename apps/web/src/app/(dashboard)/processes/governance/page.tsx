@@ -316,6 +316,7 @@ function DashboardTab({
   t: ReturnType<typeof useTranslations>;
   tProcess: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   const statusDist = data?.statusDistribution ?? [];
   const monthlyAct = data?.monthlyActivity ?? [];
   const deptDist = data?.departmentDistribution ?? [];
@@ -524,6 +525,7 @@ function RoadmapTab({
   loading: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
