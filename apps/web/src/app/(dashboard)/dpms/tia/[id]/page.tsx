@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 /* ── Types ── */
 
@@ -59,15 +60,6 @@ const LEGAL_BASIS_LABELS: Record<string, string> = {
 
 /* ── Helpers ── */
 
-function fmtDate(v: string | null | undefined): string {
-  if (!v) return "—";
-  return new Date(v).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 function isReviewDue(nextReview: string | null): boolean {
   if (!nextReview) return false;
   return new Date(nextReview) < new Date();
@@ -84,6 +76,7 @@ export default function TiaDetailPage() {
 }
 
 function TiaDetailInner() {
+  const { formatDate: fmtDate } = useDateFormat();
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
