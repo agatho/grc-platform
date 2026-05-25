@@ -60,6 +60,7 @@ function workflowTypeLabel(type: string): string {
 // ---------------------------------------------------------------------------
 
 export default function ApprovalWorkflowsPage() {
+  const { formatDate } = useDateFormat();
   const [workflows, setWorkflows] = useState<ApprovalWorkflow[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -167,10 +168,7 @@ export default function ApprovalWorkflowsPage() {
                       {workflow.stepsCount}
                     </span>
                   </span>
-                  <span>
-                    Erstellt:{" "}
-                    {new Date(workflow.createdAt).toLocaleDateString("de-DE")}
-                  </span>
+                  <span>Erstellt: {formatDate(workflow.createdAt)}</span>
                 </div>
               </CardContent>
             </Card>

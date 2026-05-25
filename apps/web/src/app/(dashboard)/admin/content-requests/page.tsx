@@ -89,14 +89,10 @@ const PRIORITY_LABELS: Record<string, string> = {
   low: "Niedrig",
 };
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString("de-DE");
-}
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ContentRequestsPage() {
+  const { formatDate } = useDateFormat();
   const [requests, setRequests] = useState<ContentRequest[]>([]);
   const [stats, setStats] = useState<ContentRequestStats | null>(null);
   const [loading, setLoading] = useState(true);
