@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { AgentDashboard } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   idle: "bg-green-100 text-green-900",
@@ -26,6 +27,7 @@ const AGENT_ICONS: Record<string, string> = {
 
 export default function AgentDashboardPage() {
   const t = useTranslations("agents");
+  const { formatDateTime } = useDateFormat();
   const [data, setData] = useState<AgentDashboard | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -83,9 +85,7 @@ export default function AgentDashboardPage() {
           <CardContent className="p-4">
             <p className="text-sm text-muted-foreground">{t("lastScan")}</p>
             <p className="text-2xl font-bold">
-              {data.lastScanAt
-                ? new Date(data.lastScanAt).toLocaleString()
-                : "-"}
+              {data.lastScanAt ? formatDateTime(data.lastScanAt) : "-"}
             </p>
           </CardContent>
         </Card>

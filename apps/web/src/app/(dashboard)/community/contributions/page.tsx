@@ -7,6 +7,7 @@ import { Loader2, RefreshCcw, Code, GitPullRequest } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Contribution {
   id: string;
@@ -29,6 +30,7 @@ export default function ContributionsPage() {
 
 function ContributionsList() {
   const t = useTranslations("community");
+  const { formatDate } = useDateFormat();
   const [items, setItems] = useState<Contribution[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -107,7 +109,7 @@ function ContributionsList() {
                   {c.contributionType.replace(/_/g, " ")}
                 </Badge>
                 <span className="text-xs text-gray-400">
-                  {new Date(c.createdAt).toLocaleDateString()}
+                  {formatDate(c.createdAt)}
                 </span>
               </div>
               {c.description && (
