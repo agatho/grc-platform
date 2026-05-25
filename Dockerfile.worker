@@ -31,6 +31,11 @@ RUN npm ci --ignore-scripts
 FROM ${NODE_IMAGE} AS runner
 WORKDIR /app
 
+# Pull Alpine security patches into the runtime layer — see comment
+# in apps' Dockerfile for context. Same Trivy gate applies to the
+# worker image.
+RUN apk upgrade --no-cache
+
 ENV NODE_ENV=production
 
 RUN addgroup --system --gid 1001 arctos && \
