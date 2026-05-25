@@ -21,6 +21,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { BcmsDashboard, CrisisScenario, BcExercise } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function BcmsPage() {
   return (
@@ -33,6 +34,7 @@ export default function BcmsPage() {
 
 function BcmsDashboardInner() {
   const t = useTranslations("bcms");
+  const { formatDateTime } = useDateFormat();
   const router = useRouter();
   const [data, setData] = useState<BcmsDashboard | null>(null);
   const [activeCrises, setActiveCrises] = useState<CrisisScenario[]>([]);
@@ -158,9 +160,7 @@ function BcmsDashboardInner() {
               <p className="font-medium text-red-900">{crisis.name}</p>
               <p className="text-xs text-red-700 mt-1">
                 {t("crisis.activatedAt")}:{" "}
-                {crisis.activatedAt
-                  ? new Date(crisis.activatedAt).toLocaleString()
-                  : "-"}
+                {crisis.activatedAt ? formatDateTime(crisis.activatedAt) : "-"}
                 {" | "}
                 {t("crisis.severity")}: {crisis.severity.replace(/_/g, " ")}
               </p>
