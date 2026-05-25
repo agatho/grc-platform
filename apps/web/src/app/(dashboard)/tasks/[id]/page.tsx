@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -131,15 +132,6 @@ function dueDateClass(dueDate: string | null): string {
   return "text-gray-600";
 }
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
-}
-
-function formatDateTime(dateStr: string): string {
-  return new Date(dateStr).toLocaleString();
-}
-
 // ---------------------------------------------------------------------------
 // Component
 // ---------------------------------------------------------------------------
@@ -150,6 +142,7 @@ export default function TaskDetailPage() {
   const taskId = params.id as string;
   const t = useTranslations("tasks");
   const { data: session } = useSession();
+  const { formatDate, formatDateTime } = useDateFormat();
 
   const [task, setTask] = useState<TaskDetail | null>(null);
   const [loading, setLoading] = useState(true);
