@@ -15,6 +15,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -51,6 +52,7 @@ export default function EvidenceRequestsPage() {
 }
 
 function EvidenceRequestsInner() {
+  const { formatDate } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<EvidenceRequestDashboard | null>(null);
 
@@ -205,7 +207,7 @@ function EvidenceRequestsInner() {
                         {req.requestedBy}
                       </td>
                       <td className="px-4 py-3 text-gray-600">
-                        {new Date(req.deadline).toLocaleDateString("de-DE")}
+                        {formatDate(req.deadline)}
                       </td>
                       <td className="px-4 py-3 text-center">
                         <PriorityBadge priority={req.priority} />
