@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import type { CampaignStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -43,10 +44,6 @@ function statusBadgeClass(status: CampaignStatus): string {
   return map[status] ?? "bg-gray-100 text-gray-600 border-gray-200";
 }
 
-function formatDate(dateStr: string): string {
-  return new Date(dateStr).toLocaleDateString();
-}
-
 // ---------------------------------------------------------------------------
 // Main Page
 // ---------------------------------------------------------------------------
@@ -62,6 +59,7 @@ export default function CampaignsPage() {
 
 function CampaignsPageInner() {
   const t = useTranslations("controls");
+  const { formatDate } = useDateFormat();
   const router = useRouter();
   const [campaigns, setCampaigns] = useState<CampaignRow[]>([]);
   const [loading, setLoading] = useState(true);

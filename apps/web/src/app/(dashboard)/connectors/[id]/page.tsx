@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Connector {
   id: string;
@@ -48,6 +49,7 @@ interface TestResult {
 
 export default function ConnectorDetailPage() {
   const t = useTranslations("connectors");
+  const { formatDateTime } = useDateFormat();
   const params = useParams();
   const router = useRouter();
   const [connector, setConnector] = useState<Connector | null>(null);
@@ -239,7 +241,7 @@ export default function ConnectorDetailPage() {
                     {r.durationMs}ms
                   </span>
                   <span className="text-xs text-gray-400">
-                    {new Date(r.executedAt).toLocaleString()}
+                    {formatDateTime(r.executedAt)}
                   </span>
                 </div>
               </div>
