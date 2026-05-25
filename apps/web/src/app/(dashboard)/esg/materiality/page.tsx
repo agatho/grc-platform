@@ -10,6 +10,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Dialog,
   DialogContent,
@@ -52,6 +53,7 @@ export default function Page() {
 }
 
 function PageInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("esgAdvanced");
   const [assessments, setAssessments] = useState<MaterialityAssessment[]>([]);
   const [loading, setLoading] = useState(true);
@@ -247,16 +249,12 @@ function PageInner() {
                   <div className="space-y-2 text-sm text-gray-600">
                     <div className="flex justify-between">
                       <span>Erstellt</span>
-                      <span>
-                        {new Date(a.createdAt).toLocaleDateString("de-DE")}
-                      </span>
+                      <span>{formatDate(a.createdAt)}</span>
                     </div>
                     {a.finalizedAt && (
                       <div className="flex justify-between">
                         <span>Abgeschlossen</span>
-                        <span>
-                          {new Date(a.finalizedAt).toLocaleDateString("de-DE")}
-                        </span>
+                        <span>{formatDate(a.finalizedAt)}</span>
                       </div>
                     )}
                   </div>

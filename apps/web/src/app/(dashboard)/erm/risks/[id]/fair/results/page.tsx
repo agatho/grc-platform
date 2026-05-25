@@ -32,6 +32,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 interface SimResult {
   id: string;
@@ -64,6 +65,7 @@ export default function FAIRResultsPage() {
 }
 
 function FAIRResultsInner() {
+  const { formatDateTime, formatNumber } = useDateFormat();
   const t = useTranslations("fair");
   const params = useParams();
   const router = useRouter();
@@ -140,11 +142,8 @@ function FAIRResultsInner() {
           <div>
             <h1 className="text-2xl font-bold">{t("resultsTitle")}</h1>
             <p className="text-sm text-muted-foreground">
-              {result.iterations.toLocaleString()} {t("iterationsLabel")}{" "}
-              &middot;{" "}
-              {result.computedAt
-                ? new Date(result.computedAt).toLocaleString("de-DE")
-                : "-"}
+              {formatNumber(result.iterations)} {t("iterationsLabel")} &middot;{" "}
+              {result.computedAt ? formatDateTime(result.computedAt) : "-"}
             </p>
           </div>
         </div>
@@ -412,12 +411,10 @@ function FAIRResultsInner() {
                 {allResults.map((r) => (
                   <tr key={r.id} className="border-b last:border-0">
                     <td className="p-2">
-                      {r.computedAt
-                        ? new Date(r.computedAt).toLocaleString("de-DE")
-                        : "-"}
+                      {r.computedAt ? formatDateTime(r.computedAt) : "-"}
                     </td>
                     <td className="p-2 text-right">
-                      {r.iterations.toLocaleString()}
+                      {formatNumber(r.iterations)}
                     </td>
                     <td className="p-2 text-right font-mono">
                       {r.aleP50 ? formatEUR(Number(r.aleP50)) : "-"}
