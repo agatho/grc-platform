@@ -30,6 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -133,11 +134,6 @@ function dueDateClass(dueDate: string | null): string {
   if (diffDays < 0) return "text-red-600 font-medium";
   if (diffDays <= 3) return "text-orange-600 font-medium";
   return "text-gray-600";
-}
-
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString();
 }
 
 // ---------------------------------------------------------------------------
@@ -315,6 +311,7 @@ function CreateTaskDialog({
 export default function TasksPage() {
   const t = useTranslations("tasks");
   const { data: session } = useSession();
+  const { formatDate } = useDateFormat();
 
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);

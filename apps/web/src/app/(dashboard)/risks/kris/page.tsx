@@ -37,6 +37,7 @@ import type {
   KriTrend,
   KriMeasurementFrequency,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -102,13 +103,14 @@ function KriSparkline({
   alertStatus: KriAlertStatus;
   height?: number;
 }) {
+  const { formatDate } = useDateFormat();
   const data = [...measurements]
     .sort(
       (a, b) =>
         new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime(),
     )
     .map((m) => ({
-      date: new Date(m.measuredAt).toLocaleDateString(),
+      date: formatDate(m.measuredAt),
       value: parseFloat(m.value),
     }));
 
@@ -157,13 +159,14 @@ function KriSlideOver({
   onClose: () => void;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   const chartData = [...measurements]
     .sort(
       (a, b) =>
         new Date(a.measuredAt).getTime() - new Date(b.measuredAt).getTime(),
     )
     .map((m) => ({
-      date: new Date(m.measuredAt).toLocaleDateString(),
+      date: formatDate(m.measuredAt),
       value: parseFloat(m.value),
     }));
 
@@ -296,7 +299,7 @@ function KriSlideOver({
                     {measurements.map((m) => (
                       <tr key={m.id} className="border-t">
                         <td className="py-2 px-3 text-gray-600">
-                          {new Date(m.measuredAt).toLocaleDateString()}
+                          {formatDate(m.measuredAt)}
                         </td>
                         <td className="py-2 px-3 text-right font-medium">
                           {m.value}
@@ -324,6 +327,7 @@ function KriSlideOver({
 
 function KriDashboardContent() {
   const t = useTranslations("risk.kri");
+  const { formatDate } = useDateFormat();
 
   const [kris, setKris] = useState<KriListItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -595,7 +599,7 @@ function KriDashboardContent() {
                   {k.lastMeasuredAt && (
                     <p className="text-xs text-gray-400 flex items-center gap-1">
                       <Clock size={10} />
-                      {new Date(k.lastMeasuredAt).toLocaleDateString()}
+                      {formatDate(k.lastMeasuredAt)}
                     </p>
                   )}
 
