@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ExceptionReport {
   id: string;
