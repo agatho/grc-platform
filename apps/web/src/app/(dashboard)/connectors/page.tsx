@@ -22,6 +22,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface DashboardStats {
   totalConnectors: number;
@@ -49,6 +50,7 @@ interface ConnectorRow {
 export default function ConnectorDashboardPage() {
   const t = useTranslations("connectors");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [connectors, setConnectors] = useState<ConnectorRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -241,7 +243,7 @@ export default function ConnectorDashboardPage() {
                   </Badge>
                   {connector.lastHealthCheck && (
                     <span className="text-xs text-gray-400">
-                      {new Date(connector.lastHealthCheck).toLocaleDateString()}
+                      {formatDate(connector.lastHealthCheck)}
                     </span>
                   )}
                 </div>

@@ -22,6 +22,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface PlanInfo {
   subscription: {
@@ -68,6 +69,7 @@ interface InvoiceRow {
 
 export default function BillingPage() {
   const t = useTranslations("billing");
+  const { formatDate } = useDateFormat();
   const [planInfo, setPlanInfo] = useState<PlanInfo | null>(null);
   const [usage, setUsage] = useState<UsageSummary | null>(null);
   const [invoices, setInvoices] = useState<InvoiceRow[]>([]);
@@ -170,9 +172,7 @@ export default function BillingPage() {
                 </Badge>
                 <p className="text-sm text-muted-foreground mt-1">
                   {t("periodEnds")}:{" "}
-                  {new Date(
-                    planInfo.subscription.currentPeriodEnd,
-                  ).toLocaleDateString()}
+                  {formatDate(planInfo.subscription.currentPeriodEnd)}
                 </p>
               </div>
             </div>
@@ -196,9 +196,8 @@ export default function BillingPage() {
               {t("usage.title")}
             </CardTitle>
             <CardDescription>
-              {t("usage.period")}:{" "}
-              {new Date(usage.period.start).toLocaleDateString()} -{" "}
-              {new Date(usage.period.end).toLocaleDateString()}
+              {t("usage.period")}: {formatDate(usage.period.start)} -{" "}
+              {formatDate(usage.period.end)}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -270,8 +269,8 @@ export default function BillingPage() {
                         </Badge>
                       </td>
                       <td className="py-2 px-3 text-xs">
-                        {new Date(inv.periodStart).toLocaleDateString()} -{" "}
-                        {new Date(inv.periodEnd).toLocaleDateString()}
+                        {formatDate(inv.periodStart)} -{" "}
+                        {formatDate(inv.periodEnd)}
                       </td>
                       <td className="py-2 px-3 text-right font-medium">
                         {formatCurrency(inv.total, inv.currency)}
