@@ -42,7 +42,6 @@ interface Parameter {
 }
 
 export default function ScenarioDetailPage() {
-  const { formatDateTime, formatNumber } = useDateFormat();
   return (
     <ModuleGate moduleKey="simulations">
       <ScenarioDetail />
@@ -52,6 +51,7 @@ export default function ScenarioDetailPage() {
 
 function ScenarioDetail() {
   const t = useTranslations("simulations");
+  const { formatDateTime, formatNumber } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [scenario, setScenario] = useState<ScenarioDetail | null>(null);

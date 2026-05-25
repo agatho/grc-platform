@@ -34,7 +34,6 @@ import type {
   PolicyDistributionWithStats,
   PolicyAcknowledgmentWithUser,
 } from "@grc/shared";
-import { useDateFormat } from "@/lib/format-date";
 
 export default function DistributionDetailPage() {
   const { formatDateTime } = useDateFormat();
