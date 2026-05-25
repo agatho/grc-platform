@@ -12,6 +12,7 @@ import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import type { CatalogObjectType } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ObjectRow {
   id: string;
@@ -41,6 +42,7 @@ const objectTypeColors: Record<string, string> = {
 
 export default function ObjectCatalogPage() {
   const t = useTranslations("catalogs");
+  const { formatDate } = useDateFormat();
   const router = useRouter();
   const [objects, setObjects] = useState<ObjectRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -153,8 +155,7 @@ export default function ObjectCatalogPage() {
         header: ({ column }) => (
           <SortableHeader column={column}>{t("updatedAt")}</SortableHeader>
         ),
-        cell: ({ row }) =>
-          new Date(row.original.updatedAt).toLocaleDateString("de-DE"),
+        cell: ({ row }) => formatDate(row.original.updatedAt),
       },
     ],
     [t],

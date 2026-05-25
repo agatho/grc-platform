@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Calendar, Loader2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface LifecycleEntity {
   entityId: string;
@@ -32,6 +33,7 @@ const phaseColorMap: Record<string, string> = {
 
 export default function LifecycleRoadmapPage() {
   const t = useTranslations("catalogs");
+  const { formatDate } = useDateFormat();
   const [entities, setEntities] = useState<LifecycleEntity[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -110,11 +112,9 @@ export default function LifecycleRoadmapPage() {
           {/* Header row with time markers */}
           <div className="border-b border-gray-200 px-4 py-2">
             <div className="flex items-center justify-between text-xs text-gray-500">
-              <span>{new Date(minDate).toLocaleDateString("de-DE")}</span>
-              <span>
-                {new Date((minDate + maxDate) / 2).toLocaleDateString("de-DE")}
-              </span>
-              <span>{new Date(maxDate).toLocaleDateString("de-DE")}</span>
+              <span>{formatDate(minDate)}</span>
+              <span>{formatDate((minDate + maxDate) / 2)}</span>
+              <span>{formatDate(maxDate)}</span>
             </div>
           </div>
 
