@@ -47,6 +47,7 @@ interface PushNotifRow {
 
 export default function MobilePage() {
   const t = useTranslations("mobile");
+  const { formatDate } = useDateFormat();
   const [devices, setDevices] = useState<DeviceRow[]>([]);
   const [notifications, setNotifications] = useState<PushNotifRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -237,7 +238,7 @@ export default function MobilePage() {
                       {notif.category}
                     </Badge>
                     <span className="text-xs text-muted-foreground">
-                      {new Date(notif.createdAt).toLocaleDateString()}
+                      {formatDate(notif.createdAt)}
                     </span>
                   </div>
                 </div>

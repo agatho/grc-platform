@@ -24,6 +24,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { MyPendingPolicy } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function MyPoliciesPage() {
   const t = useTranslations("policies");
@@ -177,6 +178,7 @@ function PolicyCard({
   policy: MyPendingPolicy;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   const deadlineDate = new Date(policy.deadline);
   const now = new Date();
   const daysRemaining = Math.ceil(
@@ -215,13 +217,12 @@ function PolicyCard({
               <>
                 {t("myPolicies.acknowledgedOn")}{" "}
                 {policy.acknowledgedAt
-                  ? new Date(policy.acknowledgedAt).toLocaleDateString("de-DE")
+                  ? formatDate(policy.acknowledgedAt)
                   : "-"}
               </>
             ) : (
               <>
-                {t("distribution.deadline")}:{" "}
-                {deadlineDate.toLocaleDateString("de-DE")}
+                {t("distribution.deadline")}: {formatDate(deadlineDate)}
                 {daysRemaining > 0 && (
                   <span className="ml-1">
                     ({daysRemaining} {t("myPolicies.daysRemaining")})
