@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { getLucideIcon } from "@/components/module/icon-map";
+import { useDateFormat } from "@/lib/format-date";
 import { useTabNavigation } from "@/hooks/use-tab-navigation";
 
 // ---------------------------------------------------------------------------
@@ -332,6 +333,7 @@ export default function WorkItemsPage() {
   const tCommon = useTranslations("common");
   const router = useRouter();
   const { openTab } = useTabNavigation();
+  const { formatDate } = useDateFormat();
 
   const [workItems, setWorkItems] = useState<WorkItemRow[]>([]);
   const [workItemTypes, setWorkItemTypes] = useState<WorkItemType[]>([]);
@@ -468,7 +470,7 @@ export default function WorkItemsPage() {
       ),
       cell: ({ row }) => (
         <span className="text-xs text-gray-500">
-          {new Date(row.original.updatedAt).toLocaleDateString()}
+          {formatDate(row.original.updatedAt)}
         </span>
       ),
     },
