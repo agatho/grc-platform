@@ -17,6 +17,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface RCA {
   id: string;
@@ -46,6 +47,7 @@ const statusColors: Record<string, string> = {
 };
 
 export default function RootCauseAnalysisPage() {
+  const { formatDate } = useDateFormat();
   const [analyses, setAnalyses] = useState<RCA[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -137,7 +139,7 @@ export default function RootCauseAnalysisPage() {
               {rca.dueDate && (
                 <span className="text-xs text-gray-400 shrink-0">
                   <Calendar size={12} className="inline mr-1" />
-                  {new Date(rca.dueDate).toLocaleDateString("de-DE")}
+                  {formatDate(rca.dueDate)}
                 </span>
               )}
             </div>
