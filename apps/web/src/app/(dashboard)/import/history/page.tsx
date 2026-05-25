@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -69,6 +70,7 @@ function StatusBadge({ status }: { status: string }) {
 // ---------------------------------------------------------------------------
 
 export default function ImportHistoryPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("import");
   const router = useRouter();
 
@@ -103,8 +105,7 @@ export default function ImportHistoryPage() {
           {t("history.columns.date")}
         </SortableHeader>
       ),
-      cell: ({ row }) =>
-        new Date(row.original.createdAt).toLocaleDateString("de-DE"),
+      cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
       accessorKey: "entityType",
