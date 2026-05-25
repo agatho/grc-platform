@@ -22,6 +22,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import type { ImportLogEntry, ValidationError } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -61,6 +62,7 @@ interface LogResponse {
 // ---------------------------------------------------------------------------
 
 export default function ImportJobDetailPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("import");
   const params = useParams<{ jobId: string }>();
   const jobId = params.jobId;
@@ -113,8 +115,7 @@ export default function ImportJobDetailPage() {
         <div>
           <h1 className="text-2xl font-bold">Import: {job.fileName}</h1>
           <p className="text-muted-foreground">
-            {t(`entityTypes.${job.entityType}`)} |{" "}
-            {new Date(job.createdAt).toLocaleDateString("de-DE")}
+            {t(`entityTypes.${job.entityType}`)} | {formatDate(job.createdAt)}
           </p>
         </div>
         <Button

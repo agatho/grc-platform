@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { DataTable } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -28,6 +29,7 @@ interface MappingRow {
 
 export default function ImportMappingsPage() {
   const t = useTranslations("import");
+  const { formatDate } = useDateFormat();
 
   const [mappings, setMappings] = useState<MappingRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -90,8 +92,7 @@ export default function ImportMappingsPage() {
     {
       accessorKey: "createdAt",
       header: t("history.columns.date"),
-      cell: ({ row }) =>
-        new Date(row.original.createdAt).toLocaleDateString("de-DE"),
+      cell: ({ row }) => formatDate(row.original.createdAt),
     },
     {
       id: "actions",
