@@ -7,6 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import { Badge } from "@/components/ui/badge";
 import type { ProcessStatus } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ProcessGalleryCardProps {
   id: string;
@@ -26,6 +27,7 @@ export function ProcessGalleryCard({
   updatedAt,
 }: ProcessGalleryCardProps) {
   const t = useTranslations("process");
+  const { formatDate } = useDateFormat();
 
   return (
     <Link href={`/processes/${id}`}>
@@ -59,7 +61,7 @@ export function ProcessGalleryCard({
             )}
             <div className="flex items-center gap-1">
               <Clock size={12} />
-              <span>{new Date(updatedAt).toLocaleDateString()}</span>
+              <span>{formatDate(updatedAt)}</span>
             </div>
           </div>
         </CardContent>
