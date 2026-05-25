@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Dialog,
   DialogContent,
@@ -111,6 +112,7 @@ function roleBadgeVariant(
 // ---------- Page Component ----------
 
 export default function UsersPage() {
+  const { formatDateTime } = useDateFormat();
   const t = useTranslations();
 
   const [users, setUsers] = useState<UserRecord[]>([]);
@@ -354,9 +356,7 @@ export default function UsersPage() {
             );
           }
           return (
-            <span className="text-sm text-gray-600">
-              {new Date(val).toLocaleString()}
-            </span>
+            <span className="text-sm text-gray-600">{formatDateTime(val)}</span>
           );
         },
       },

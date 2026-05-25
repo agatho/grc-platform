@@ -38,7 +38,7 @@ function CaseDetailInner() {
   const t = useTranslations("whistleblowing");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
-  const { formatDate } = useDateFormat();
+  const { formatDate, formatDateTime } = useDateFormat();
   const [data, setData] = useState<WbCaseDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [messageText, setMessageText] = useState("");
@@ -229,7 +229,7 @@ function CaseDetailInner() {
                         {msg.content}
                       </p>
                       <p className="text-xs text-gray-400 mt-1">
-                        {new Date(msg.createdAt).toLocaleString("de-DE")}
+                        {formatDateTime(msg.createdAt)}
                       </p>
                     </div>
                   </div>

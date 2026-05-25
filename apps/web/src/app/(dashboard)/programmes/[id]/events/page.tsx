@@ -6,6 +6,7 @@ import { useTranslations } from "next-intl";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, ArrowLeft } from "lucide-react";
+import { useDateFormat } from "@/lib/format-date";
 
 interface EventRow {
   id: string;
@@ -23,6 +24,7 @@ export default function EventsPage({
 }) {
   const { id } = use(params);
   const t = useTranslations("programme");
+  const { formatDateTime } = useDateFormat();
   const [events, setEvents] = useState<EventRow[] | null>(null);
 
   useEffect(() => {
@@ -73,7 +75,7 @@ export default function EventsPage({
                   >
                     <div className="flex items-center justify-between">
                       <span className="font-mono text-xs text-slate-500">
-                        {new Date(e.occurredAt).toLocaleString()}
+                        {formatDateTime(e.occurredAt)}
                       </span>
                       <span className="font-medium">{e.eventType}</span>
                     </div>
