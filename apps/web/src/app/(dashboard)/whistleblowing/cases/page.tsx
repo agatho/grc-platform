@@ -75,6 +75,7 @@ function deadlineBadge(
 function CaseListInner() {
   const t = useTranslations("whistleblowing");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [cases, setCases] = useState<WbCaseListItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
@@ -230,7 +231,7 @@ function CaseListInner() {
                     </Badge>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-600">
-                    {new Date(c.submittedAt).toLocaleDateString("de-DE")}
+                    {formatDate(c.submittedAt)}
                   </td>
                   <td className="px-4 py-3">
                     {deadlineBadge(c.acknowledgeDeadline, c.acknowledgedAt)}
