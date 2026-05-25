@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 /* ── Types ── */
 
@@ -134,15 +135,6 @@ const CA_STATUS_LABELS: Record<string, string> = {
 
 /* ── Helpers ── */
 
-function fmtDate(v: string | null | undefined): string {
-  if (!v) return "—";
-  return new Date(v).toLocaleDateString("de-DE", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  });
-}
-
 function isOverdue(dueDate: string | null, status: string): boolean {
   if (!dueDate || status === "closed") return false;
   return new Date(dueDate) < new Date();
@@ -159,6 +151,7 @@ export default function IsmsCapDetailPage() {
 }
 
 function CapDetailInner() {
+  const { formatDate: fmtDate } = useDateFormat();
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<NonconformityDetail | null>(null);

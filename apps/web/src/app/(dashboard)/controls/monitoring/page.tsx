@@ -15,6 +15,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -52,6 +53,7 @@ export default function ControlMonitoringPage() {
 }
 
 function ControlMonitoringInner() {
+  const { formatDateTime } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [data, setData] = useState<MonitoringDashboard | null>(null);
 
@@ -122,9 +124,7 @@ function ControlMonitoringInner() {
           </CardHeader>
           <CardContent>
             <div className="text-lg font-bold">
-              {data?.lastCheckAt
-                ? new Date(data.lastCheckAt).toLocaleString("de-DE")
-                : "--"}
+              {data?.lastCheckAt ? formatDateTime(data.lastCheckAt) : "--"}
             </div>
           </CardContent>
         </Card>

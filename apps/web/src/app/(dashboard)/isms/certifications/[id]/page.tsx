@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface GapItem {
   id: string;
@@ -47,6 +48,7 @@ export default function CertificationDetailPage() {
 }
 
 function CertDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("certifications");
   const params = useParams();
   const router = useRouter();
@@ -250,7 +252,7 @@ function CertDetailInner() {
               >
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {new Date(snap.createdAt).toLocaleDateString("de-DE")} -{" "}
+                    {formatDate(snap.createdAt)} -{" "}
                     {new Date(snap.createdAt).toLocaleTimeString("de-DE", {
                       hour: "2-digit",
                       minute: "2-digit",
