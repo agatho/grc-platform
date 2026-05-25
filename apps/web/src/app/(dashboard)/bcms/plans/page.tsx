@@ -11,6 +11,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Bcp } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -32,6 +33,7 @@ export default function BcpListPage() {
 
 function BcpListInner() {
   const t = useTranslations("bcms");
+  const { formatDate } = useDateFormat();
   const router = useRouter();
   const [items, setItems] = useState<Bcp[]>([]);
   const [loading, setLoading] = useState(true);
@@ -162,7 +164,7 @@ function BcpListInner() {
                   </td>
                   <td className="px-4 py-3 text-gray-600">v{item.version}</td>
                   <td className="px-4 py-3 text-xs text-gray-400">
-                    {new Date(item.updatedAt).toLocaleDateString()}
+                    {formatDate(item.updatedAt)}
                   </td>
                 </tr>
               ))}
