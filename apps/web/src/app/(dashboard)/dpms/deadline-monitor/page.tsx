@@ -24,6 +24,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useDateFormat } from "@/lib/format-date";
 
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
@@ -98,6 +99,7 @@ function formatHours(h: number | null): string {
 }
 
 export default function DpmsDeadlineMonitorPage() {
+  const { formatDateTime } = useDateFormat();
   const [data, setData] = useState<MonitorResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -206,13 +208,10 @@ export default function DpmsDeadlineMonitorPage() {
                   <p className="font-medium truncate">{i.title}</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                  <span>
-                    Erfasst: {new Date(i.createdAtIso).toLocaleString("de-DE")}
-                  </span>
+                  <span>Erfasst: {formatDateTime(i.createdAtIso)}</span>
                   {i.deadlineIso && (
                     <span>
-                      {deadlineLabel}:{" "}
-                      {new Date(i.deadlineIso).toLocaleString("de-DE")}
+                      {deadlineLabel}: {formatDateTime(i.deadlineIso)}
                     </span>
                   )}
                   <Badge variant="outline" className="text-xs py-0">
@@ -244,9 +243,7 @@ export default function DpmsDeadlineMonitorPage() {
               {i.isClosed ? (
                 <span className="text-emerald-700">
                   ✓ Geschlossen{" "}
-                  {i.closedAtIso
-                    ? `am ${new Date(i.closedAtIso).toLocaleString("de-DE")}`
-                    : ""}
+                  {i.closedAtIso ? `am ${formatDateTime(i.closedAtIso)}` : ""}
                 </span>
               ) : i.escalationLevel === "overdue" ||
                 i.escalationLevel === "critical_overdue" ? (

@@ -9,6 +9,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Dsr, DsrActivity } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function DsrDetailPage() {
   return (
@@ -24,6 +25,7 @@ interface DsrDetailData extends Dsr {
 }
 
 function DsrDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -122,7 +124,7 @@ function DsrDetailInner() {
           <div className="flex items-center gap-2 mt-1">
             <Badge variant="outline">{data.status.replace(/_/g, " ")}</Badge>
             <span className="text-sm text-gray-500">
-              {t("dsr.deadline")}: {deadline.toLocaleDateString()}
+              {t("dsr.deadline")}: {formatDate(deadline)}
             </span>
           </div>
         </div>
@@ -158,17 +160,10 @@ function DsrDetailInner() {
           <FieldRow label={t("dsr.type")} value={data.requestType} />
           <FieldRow label={t("dsr.subject")} value={data.subjectName ?? "-"} />
           <FieldRow label={t("dsr.email")} value={data.subjectEmail ?? "-"} />
-          <FieldRow
-            label={t("dsr.received")}
-            value={receivedAt.toLocaleDateString()}
-          />
+          <FieldRow label={t("dsr.received")} value={formatDate(receivedAt)} />
           <FieldRow
             label={t("dsr.verified")}
-            value={
-              data.verifiedAt
-                ? new Date(data.verifiedAt).toLocaleDateString()
-                : "-"
-            }
+            value={data.verifiedAt ? formatDate(data.verifiedAt) : "-"}
           />
           <FieldRow
             label={t("dsr.handler")}
@@ -260,7 +255,7 @@ function DsrDetailInner() {
             {data.activities.map((activity) => (
               <div key={activity.id} className="flex items-start gap-3 text-sm">
                 <span className="text-xs text-gray-400 shrink-0 mt-0.5 w-20">
-                  {new Date(activity.timestamp).toLocaleDateString()}
+                  {formatDate(activity.timestamp)}
                 </span>
                 <div>
                   <Badge variant="outline" className="text-[10px] mr-2">
