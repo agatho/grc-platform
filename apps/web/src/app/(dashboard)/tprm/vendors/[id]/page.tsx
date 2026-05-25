@@ -20,6 +20,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useDateFormat } from "@/lib/format-date";
 
 const TIER_COLORS: Record<string, string> = {
   critical: "bg-red-100 text-red-800 border-red-200",
@@ -49,6 +50,7 @@ function VendorDetailInner() {
   const t = useTranslations("tprm");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
+  const { formatDate } = useDateFormat();
 
   const [vendor, setVendor] = useState<Record<string, unknown> | null>(null);
   const [contacts, setContacts] = useState<Array<Record<string, unknown>>>([]);
@@ -327,14 +329,12 @@ function VendorDetailInner() {
                   <div className="flex items-center gap-4 mt-1 text-xs text-gray-500">
                     <span>
                       {t("dd.sentAt")}:{" "}
-                      {dd.sentAt
-                        ? new Date(String(dd.sentAt)).toLocaleDateString()
-                        : "\u2014"}
+                      {dd.sentAt ? formatDate(String(dd.sentAt)) : "\u2014"}
                     </span>
                     {Boolean(dd.completedAt) && (
                       <span>
                         {t("dd.completedAt")}:{" "}
-                        {new Date(String(dd.completedAt)).toLocaleDateString()}
+                        {formatDate(String(dd.completedAt))}
                       </span>
                     )}
                     {dd.riskScore != null && dd.riskScore !== undefined && (
