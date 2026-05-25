@@ -24,7 +24,7 @@
     "postgres": "^3.4.9"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.6",
+    "@vitest/coverage-v8": "^4.1.7",
     "dotenv-cli": "^11.0.0",
     "drizzle-kit": "^0.31.10",
     "tsx": "^4.22.3",
