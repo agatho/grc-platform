@@ -7,6 +7,7 @@ import { Loader2, RefreshCcw, XCircle } from "lucide-react";
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface SessionItem {
   id: string;
@@ -30,6 +31,7 @@ export default function SessionsPage() {
 
 function SessionsList() {
   const t = useTranslations("portals");
+  const { formatDateTime } = useDateFormat();
   const [sessions, setSessions] = useState<SessionItem[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -123,7 +125,7 @@ function SessionsList() {
                     </Badge>
                   )}
                   <span className="text-xs text-gray-400">
-                    {t("expiresAt")}: {new Date(s.expiresAt).toLocaleString()}
+                    {t("expiresAt")}: {formatDateTime(s.expiresAt)}
                   </span>
                 </div>
               </div>

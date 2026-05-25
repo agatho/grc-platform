@@ -20,6 +20,7 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -77,6 +78,7 @@ const categoryLabels: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function NarrativeBuilderPage() {
+  const { formatDate } = useDateFormat();
   const [templates, setTemplates] = useState<NarrativeTemplate[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -220,9 +222,7 @@ export default function NarrativeBuilderPage() {
                     <Hash className="h-3 w-3" />
                     {tpl.placeholderCount} Platzhalter
                   </span>
-                  <span>
-                    {new Date(tpl.updatedAt).toLocaleDateString("de-DE")}
-                  </span>
+                  <span>{formatDate(tpl.updatedAt)}</span>
                 </div>
               </CardContent>
             </Card>

@@ -24,6 +24,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { EsrsMetric, EsgMeasurement } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function MetricDetailPage() {
   return (
@@ -34,6 +35,7 @@ export default function MetricDetailPage() {
 }
 
 function MetricDetailInner() {
+  const { formatDate, formatNumber } = useDateFormat();
   const t = useTranslations("esg");
   const params = useParams();
   const router = useRouter();
@@ -374,7 +376,7 @@ function MetricDetailInner() {
                     {m.periodStart} - {m.periodEnd}
                   </td>
                   <td className="px-4 py-3 text-right font-medium text-gray-900">
-                    {Number(m.value).toLocaleString()} {m.unit}
+                    {formatNumber(Number(m.value))} {m.unit}
                   </td>
                   <td className="px-4 py-3 text-center">
                     <QualityBadge quality={m.dataQuality} t={t} />
@@ -393,7 +395,7 @@ function MetricDetailInner() {
                     )}
                   </td>
                   <td className="px-4 py-3 text-xs text-gray-500">
-                    {new Date(m.recordedAt).toLocaleDateString()}
+                    {formatDate(m.recordedAt)}
                   </td>
                   <td className="px-4 py-3 text-center">
                     {!m.verifiedAt && (
