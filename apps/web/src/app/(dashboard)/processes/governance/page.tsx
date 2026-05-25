@@ -31,6 +31,7 @@ import { ModuleTabNav } from "@/components/layout/module-tab-nav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 import { cn } from "@grc/ui";
 
 // ---------------------------------------------------------------------------
@@ -135,6 +136,7 @@ export default function GovernancePage() {
 function GovernanceCockpit() {
   const t = useTranslations("processGovernance");
   const tProcess = useTranslations("process");
+  const { formatDate } = useDateFormat();
 
   const [data, setData] = useState<GovernanceData | null>(null);
   const [roadmap, setRoadmap] = useState<RoadmapItem[]>([]);
@@ -314,6 +316,7 @@ function DashboardTab({
   t: ReturnType<typeof useTranslations>;
   tProcess: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   const statusDist = data?.statusDistribution ?? [];
   const monthlyAct = data?.monthlyActivity ?? [];
   const deptDist = data?.departmentDistribution ?? [];
@@ -488,9 +491,7 @@ function DashboardTab({
                       </td>
                       <td className="py-2 text-gray-600">{task.type}</td>
                       <td className="py-2 text-gray-600">
-                        {task.dueDate
-                          ? new Date(task.dueDate).toLocaleDateString()
-                          : "-"}
+                        {task.dueDate ? formatDate(task.dueDate) : "-"}
                       </td>
                       <td className="py-2 text-gray-600">
                         {task.assignee ?? "-"}
@@ -524,6 +525,7 @@ function RoadmapTab({
   loading: boolean;
   t: ReturnType<typeof useTranslations>;
 }) {
+  const { formatDate } = useDateFormat();
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -568,7 +570,7 @@ function RoadmapTab({
               </Link>
               <p className="text-xs text-gray-500 mt-0.5">
                 {item.reviewerName && `Reviewer: ${item.reviewerName} · `}
-                Review: {new Date(item.nextReviewDate).toLocaleDateString()}
+                Review: {formatDate(item.nextReviewDate)}
               </p>
             </div>
             <Badge
