@@ -17,6 +17,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Scenario {
   id: string;
@@ -39,6 +40,7 @@ export default function SimulationsPage() {
 function SimulationsDashboard() {
   const t = useTranslations("simulations");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const [scenarios, setScenarios] = useState<Scenario[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -139,7 +141,7 @@ function SimulationsDashboard() {
                 </div>
               </div>
               <span className="text-xs text-gray-400">
-                {new Date(s.createdAt).toLocaleDateString()}
+                {formatDate(s.createdAt)}
               </span>
             </Link>
           ))}
