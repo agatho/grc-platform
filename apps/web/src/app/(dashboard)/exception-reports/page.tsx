@@ -15,6 +15,7 @@ import {
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ExceptionReport {
   id: string;
@@ -47,6 +48,7 @@ const exceptionTypeLabels: Record<string, string> = {
 };
 
 export default function ExceptionReportsPage() {
+  const { formatDate } = useDateFormat();
   const [exceptions, setExceptions] = useState<ExceptionReport[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -193,7 +195,7 @@ export default function ExceptionReportsPage() {
                 </span>
               )}
               <span className="text-xs text-gray-400 shrink-0">
-                {new Date(exc.createdAt).toLocaleDateString("de-DE")}
+                {formatDate(exc.createdAt)}
               </span>
             </div>
           ))}
