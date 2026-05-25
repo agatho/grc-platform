@@ -20,6 +20,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ─────────────────────────────────────────────────────
 
@@ -61,14 +62,10 @@ const STATUS_LABELS: Record<string, string> = {
   escalated: "Eskaliert",
 };
 
-function formatDate(dateStr: string | null): string {
-  if (!dateStr) return "\u2014";
-  return new Date(dateStr).toLocaleDateString("de-DE");
-}
-
 // ── Component ─────────────────────────────────────────────────
 
 export default function ReviewCyclesPage() {
+  const { formatDate } = useDateFormat();
   const [cycles, setCycles] = useState<ReviewCycle[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);

@@ -15,6 +15,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -72,6 +73,7 @@ const linkTypeLabels: Record<string, string> = {
 // ---------------------------------------------------------------------------
 
 export default function DataLinksPage() {
+  const { formatDate } = useDateFormat();
   const [stats, setStats] = useState<DataLinkStats | null>(null);
   const [links, setLinks] = useState<DataLink[]>([]);
   const [loading, setLoading] = useState(true);
@@ -181,9 +183,7 @@ export default function DataLinksPage() {
               <Clock className="h-8 w-8 text-orange-500" />
               <div>
                 <p className="text-2xl font-bold">
-                  {stats?.lastSync
-                    ? new Date(stats.lastSync).toLocaleDateString("de-DE")
-                    : "\u2014"}
+                  {stats?.lastSync ? formatDate(stats.lastSync) : "\u2014"}
                 </p>
                 <p className="text-xs text-gray-500">Letzte Synchronisation</p>
               </div>

@@ -30,6 +30,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Types ────────────────────────────────────────────────────────
 
@@ -66,6 +67,7 @@ const STATUS_OPTIONS = [
 
 export default function TranslationQueuePage() {
   const t = useTranslations("translations");
+  const { formatDate } = useDateFormat();
   const searchParams = useSearchParams();
 
   const [items, setItems] = useState<QueueItem[]>([]);
@@ -280,7 +282,7 @@ export default function TranslationQueuePage() {
                       {item.translatedFieldCount}/{item.fieldCount}
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(item.lastModified).toLocaleDateString()}
+                      {formatDate(item.lastModified)}
                     </TableCell>
                     <TableCell>
                       <div className="flex gap-1">
