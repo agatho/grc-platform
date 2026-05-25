@@ -14,6 +14,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -42,6 +43,7 @@ export default function PolicyAttestationPage() {
 }
 
 function PolicyAttestationInner() {
+  const { formatDate } = useDateFormat();
   const [loading, setLoading] = useState(true);
   const [campaigns, setCampaigns] = useState<AttestationCampaign[]>([]);
 
@@ -123,10 +125,7 @@ function PolicyAttestationInner() {
                         </span>
                         <span className="flex items-center gap-1">
                           <CalendarClock className="h-3.5 w-3.5" />
-                          Frist:{" "}
-                          {new Date(campaign.deadline).toLocaleDateString(
-                            "de-DE",
-                          )}
+                          Frist: {formatDate(campaign.deadline)}
                         </span>
                       </div>
                     </div>
