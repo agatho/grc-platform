@@ -24,6 +24,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { useDateFormat } from "@/lib/format-date";
 
 interface ProviderQms {
   id: string;
@@ -76,6 +77,7 @@ const MATURITY_COLORS: Record<number, string> = {
 
 function QmsPageInner() {
   const t = useTranslations("aiAct");
+  const { formatDate } = useDateFormat();
   const [rows, setRows] = useState<ProviderQms[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -223,7 +225,7 @@ function QmsPageInner() {
                 <p className="text-sm text-muted-foreground">
                   {countChecked(qms)}/10 Verfahren erfullt
                   {qms.next_audit_date &&
-                    ` | Nachstes Audit: ${new Date(qms.next_audit_date).toLocaleDateString("de-DE")}`}
+                    ` | Nachstes Audit: ${formatDate(qms.next_audit_date)}`}
                 </p>
               </div>
               <div className="flex gap-2">
