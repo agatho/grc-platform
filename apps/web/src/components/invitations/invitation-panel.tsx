@@ -30,6 +30,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { toast } from "sonner";
+import { useDateFormat } from "@/lib/format-date";
 import { UserPlus, XCircle, Mail, Clock, Loader2 } from "lucide-react";
 import type { UserRole, LineOfDefense, InvitationStatus } from "@grc/shared";
 
@@ -78,6 +79,7 @@ function StatusBadge({
 
 export function InvitationPanel() {
   const t = useTranslations();
+  const { formatDateTime } = useDateFormat();
   const [invitations, setInvitations] = useState<InvitationRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [dialogOpen, setDialogOpen] = useState(false);
@@ -178,15 +180,14 @@ export function InvitationPanel() {
     setLineOfDefense("");
   };
 
-  const formatDate = (dateStr: string) => {
-    return new Date(dateStr).toLocaleDateString(undefined, {
+  const formatDate = (dateStr: string) =>
+    formatDateTime(dateStr, {
       year: "numeric",
       month: "short",
       day: "numeric",
       hour: "2-digit",
       minute: "2-digit",
     });
-  };
 
   return (
     <div className="space-y-4">

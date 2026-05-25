@@ -13,6 +13,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -50,6 +51,7 @@ const INTERVAL_OPTIONS = [3, 6, 12, 24, 36, 48, 60];
 
 export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
   const t = useTranslations("processGovernance");
+  const { formatDate } = useDateFormat();
 
   const [schedule, setSchedule] = useState<ReviewSchedule | null>(null);
   const [loading, setLoading] = useState(true);
@@ -223,7 +225,7 @@ export function ProcessReviewConfig({ processId }: ProcessReviewConfigProps) {
                 <Calendar size={14} />
                 <span>{t("review.nextReview")}:</span>
                 <span className="font-medium">
-                  {new Date(schedule.nextReviewDate).toLocaleDateString()}
+                  {formatDate(schedule.nextReviewDate)}
                 </span>
               </div>
             )}
