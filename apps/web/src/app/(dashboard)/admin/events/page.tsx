@@ -29,6 +29,7 @@ import {
 } from "@/components/ui/dialog";
 
 import type { EventLogEntry } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 // ── Event type styling ────────────────────────────────────────
 
@@ -64,6 +65,7 @@ const EVENT_TYPES = [
 
 export default function EventLogPage() {
   const t = useTranslations("platform");
+  const { formatDateTime } = useDateFormat();
   const [events, setEvents] = useState<EventLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
@@ -202,7 +204,7 @@ export default function EventLogPage() {
                 </span>
               )}
               <span className="ml-auto text-xs text-muted-foreground whitespace-nowrap">
-                {new Date(evt.emittedAt).toLocaleString("de-DE")}
+                {formatDateTime(evt.emittedAt)}
               </span>
             </div>
           ))}
@@ -280,7 +282,7 @@ export default function EventLogPage() {
                   <span className="text-muted-foreground">
                     {t("events.timestamp")}:
                   </span>{" "}
-                  {new Date(selectedEvent.emittedAt).toLocaleString("de-DE")}
+                  {formatDateTime(selectedEvent.emittedAt)}
                 </div>
               </div>
               <div>

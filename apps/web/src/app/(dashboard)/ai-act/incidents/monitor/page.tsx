@@ -22,6 +22,7 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ErrorRetry } from "@/components/ui/error-retry";
+import { useDateFormat } from "@/lib/format-date";
 
 type EscalationLevel = "none" | "approaching" | "overdue" | "critical_overdue";
 
@@ -97,6 +98,7 @@ function formatHours(h: number | null): string {
 }
 
 export default function IncidentsMonitorPage() {
+  const { formatDateTime } = useDateFormat();
   const [rows, setRows] = useState<IncidentWithOverdue[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -194,12 +196,8 @@ export default function IncidentsMonitorPage() {
               <div className="flex-1 min-w-0">
                 <p className="font-medium truncate">{r.title}</p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-1 flex-wrap">
-                  <span>
-                    Erkannt: {new Date(r.detectedAt).toLocaleString("de-DE")}
-                  </span>
-                  <span>
-                    Frist: {new Date(r.deadlineAt).toLocaleString("de-DE")}
-                  </span>
+                  <span>Erkannt: {formatDateTime(r.detectedAt)}</span>
+                  <span>Frist: {formatDateTime(r.deadlineAt)}</span>
                   {r.isSerious && (
                     <Badge
                       variant="outline"
@@ -230,7 +228,7 @@ export default function IncidentsMonitorPage() {
                 <span className="text-emerald-700">
                   ✓ Authority notified at{" "}
                   {r.authorityNotifiedAt
-                    ? new Date(r.authorityNotifiedAt).toLocaleString("de-DE")
+                    ? formatDateTime(r.authorityNotifiedAt)
                     : "—"}
                 </span>
               ) : ov.isOverdue ? (
