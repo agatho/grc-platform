@@ -26,6 +26,7 @@ import {
   ClipboardCheck,
 } from "lucide-react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 
 interface GpaiModel {
   id: string;
@@ -105,6 +106,7 @@ function serializeCodeOfPracticeNotes(data: CodeOfPracticeData): string {
 
 function GpaiDetailInner() {
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<GpaiModel | null>(null);
   const [loading, setLoading] = useState(true);
@@ -524,13 +526,13 @@ function GpaiDetailInner() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
             <span className="font-medium text-foreground">Erstellt am:</span>{" "}
-            {new Date(data.created_at).toLocaleDateString("de-DE")}
+            {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
               Aktualisiert am:
             </span>{" "}
-            {new Date(data.updated_at).toLocaleDateString("de-DE")}
+            {formatDate(data.updated_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">ID:</span> {data.id}
