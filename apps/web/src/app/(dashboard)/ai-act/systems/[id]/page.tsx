@@ -19,6 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save } from "lucide-react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AiSystemDetail {
   id: string;
@@ -50,6 +51,7 @@ const RISK_COLORS: Record<string, string> = {
 
 function SystemDetailInner() {
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AiSystemDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -346,13 +348,13 @@ function SystemDetailInner() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
             <span className="font-medium text-foreground">Erstellt am:</span>{" "}
-            {new Date(data.createdAt).toLocaleDateString("de-DE")}
+            {formatDate(data.createdAt)}
           </div>
           <div>
             <span className="font-medium text-foreground">
               Aktualisiert am:
             </span>{" "}
-            {new Date(data.updatedAt).toLocaleDateString("de-DE")}
+            {formatDate(data.updatedAt)}
           </div>
           <div>
             <span className="font-medium text-foreground">ID:</span> {data.id}

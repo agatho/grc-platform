@@ -19,6 +19,7 @@ import {
 import { Switch } from "@/components/ui/switch";
 import { Loader2, ArrowLeft, Save, AlertTriangle, Clock } from "lucide-react";
 import Link from "next/link";
+import { useDateFormat } from "@/lib/format-date";
 
 interface AiIncident {
   id: string;
@@ -75,6 +76,7 @@ function getDeadlineInfo(deadline: string | null) {
 
 function IncidentDetailInner() {
   const router = useRouter();
+  const { formatDate, formatDateTime } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const [data, setData] = useState<AiIncident | null>(null);
   const [loading, setLoading] = useState(true);
@@ -194,11 +196,7 @@ function IncidentDetailInner() {
                   : `Meldefrist: noch ${deadlineInfo.diffD > 0 ? `${deadlineInfo.diffD} Tage` : `${deadlineInfo.diffH} Stunden`}`}
               </p>
               <p className="text-sm text-muted-foreground">
-                Frist: {deadlineInfo.date.toLocaleDateString("de-DE")}{" "}
-                {deadlineInfo.date.toLocaleTimeString("de-DE", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })}
+                Frist: {formatDateTime(deadlineInfo.date)}
                 {data.is_serious
                   ? " (2 Tage - schwerwiegend)"
                   : " (15 Tage - Standard)"}
@@ -407,18 +405,18 @@ function IncidentDetailInner() {
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-muted-foreground">
           <div>
             <span className="font-medium text-foreground">Erstellt am:</span>{" "}
-            {new Date(data.created_at).toLocaleDateString("de-DE")}
+            {formatDate(data.created_at)}
           </div>
           <div>
             <span className="font-medium text-foreground">
               Aktualisiert am:
             </span>{" "}
-            {new Date(data.updated_at).toLocaleDateString("de-DE")}
+            {formatDate(data.updated_at)}
           </div>
           {data.resolved_at && (
             <div>
               <span className="font-medium text-foreground">Behoben am:</span>{" "}
-              {new Date(data.resolved_at).toLocaleDateString("de-DE")}
+              {formatDate(data.resolved_at)}
             </div>
           )}
           <div>
