@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent } from "@/components/ui/card";
 import type { ControlTestChecklist } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -18,6 +19,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 export default function ControlTestChecklistsPage() {
   const t = useTranslations("controlTesting");
+  const { formatDate } = useDateFormat();
   const [checklists, setChecklists] = useState<ControlTestChecklist[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -80,8 +82,7 @@ export default function ControlTestChecklistsPage() {
                       )}
                       {cl.dueDate && (
                         <span>
-                          {t("checklists.due")}:{" "}
-                          {new Date(cl.dueDate).toLocaleDateString()}
+                          {t("checklists.due")}: {formatDate(cl.dueDate)}
                         </span>
                       )}
                     </div>
