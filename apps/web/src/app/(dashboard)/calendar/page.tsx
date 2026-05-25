@@ -25,6 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Select,
   SelectContent,
@@ -121,6 +122,7 @@ function formatDateKey(d: Date): string {
 export default function CalendarPage() {
   const t = useTranslations("calendar");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
 
   // State
   const [events, setEvents] = useState<AggregatedCalendarEvent[]>([]);
@@ -468,8 +470,7 @@ export default function CalendarPage() {
               )}
             </div>
             <div className="text-xs text-muted-foreground mt-1 ml-5">
-              {new Date(event.startAt).toLocaleDateString()} &middot;{" "}
-              {event.eventType}
+              {formatDate(event.startAt)} &middot; {event.eventType}
             </div>
           </button>
         ))}
@@ -508,7 +509,7 @@ export default function CalendarPage() {
                 className={`min-h-[300px] border rounded-lg p-2 ${isToday ? "ring-2 ring-primary" : ""}`}
               >
                 <div className="text-sm font-medium mb-2">
-                  {day.toLocaleDateString(undefined, {
+                  {formatDate(day, {
                     weekday: "short",
                     day: "numeric",
                   })}
@@ -560,7 +561,7 @@ export default function CalendarPage() {
     return (
       <div className="flex-1 overflow-auto p-4">
         <h3 className="text-lg font-semibold mb-4">
-          {currentDate.toLocaleDateString(undefined, {
+          {formatDate(currentDate, {
             weekday: "long",
             year: "numeric",
             month: "long",
@@ -622,7 +623,7 @@ export default function CalendarPage() {
         : view === "week"
           ? { year: "numeric", month: "short", day: "numeric" }
           : { year: "numeric", month: "long", day: "numeric" };
-    return currentDate.toLocaleDateString(undefined, opts);
+    return formatDate(currentDate, opts);
   }
 
   // ──────────────────────────────────────────────────────────
