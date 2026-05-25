@@ -27,6 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useDateFormat } from "@/lib/format-date";
 
 // ---------------------------------------------------------------------------
 // Types
@@ -83,6 +84,7 @@ const SOURCES = ["all", "BSI", "EUR-Lex", "BaFin"];
 
 export default function RegulatoryFeedPage() {
   const t = useTranslations("intelligence");
+  const { formatDate } = useDateFormat();
 
   const [items, setItems] = useState<RegulatoryItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -236,7 +238,7 @@ export default function RegulatoryFeedPage() {
                       </div>
                       <h3 className="font-medium">{item.title}</h3>
                       <p className="text-sm text-muted-foreground">
-                        {new Date(item.publishedAt).toLocaleDateString("de-DE")}
+                        {formatDate(item.publishedAt)}
                         {item.category && ` | ${item.category}`}
                       </p>
                     </div>

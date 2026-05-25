@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import type { RegulationSimulation } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function SimulatorHistoryPage() {
   return (
@@ -21,6 +22,7 @@ export default function SimulatorHistoryPage() {
 
 function HistoryInner() {
   const t = useTranslations("simulator");
+  const { formatDate } = useDateFormat();
   const router = useRouter();
   const [simulations, setSimulations] = useState<RegulationSimulation[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,9 +117,7 @@ function HistoryInner() {
                     onCheckedChange={() => toggleSelect(sim.id)}
                   />
                 </td>
-                <td className="p-3">
-                  {new Date(sim.createdAt).toLocaleDateString("de-DE")}
-                </td>
+                <td className="p-3">{formatDate(sim.createdAt)}</td>
                 <td className="p-3 font-medium">{sim.regulationName}</td>
                 <td className="p-3">
                   <Badge variant="outline">{sim.scenarioType}</Badge>
