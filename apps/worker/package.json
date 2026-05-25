@@ -16,7 +16,7 @@
     "@grc/events": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "@hono/node-server": "^1.13.7",
-    "hono": "^4.12.21",
+    "hono": "^4.12.23",
     "svix": "^1.94.0"
   },
   "devDependencies": {
