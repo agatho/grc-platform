@@ -19,6 +19,7 @@ import {
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 import {
   Card,
   CardContent,
@@ -48,6 +49,7 @@ interface UsageStats {
 
 export default function DeveloperPortalPage() {
   const t = useTranslations("developerPortal");
+  const { formatDate } = useDateFormat();
   const [apiKeys, setApiKeys] = useState<ApiKeyRow[]>([]);
   const [stats, setStats] = useState<UsageStats | null>(null);
   const [loading, setLoading] = useState(true);
@@ -254,7 +256,7 @@ export default function DeveloperPortalPage() {
                       </td>
                       <td className="py-2 px-3">
                         {key.lastUsedAt
-                          ? new Date(key.lastUsedAt).toLocaleDateString()
+                          ? formatDate(key.lastUsedAt)
                           : t("apiKeysTable.neverUsed")}
                       </td>
                       <td className="py-2 px-3">
