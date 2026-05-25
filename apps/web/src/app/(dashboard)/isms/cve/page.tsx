@@ -29,6 +29,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { CveDashboardKpis } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const SEVERITIES = ["critical", "high", "medium", "low"] as const;
 
@@ -75,6 +76,7 @@ export default function CveDashboardPage() {
 }
 
 function CveDashboardInner() {
+  const { formatDate, formatDateTime } = useDateFormat();
   const t = useTranslations("cve");
   const [kpis, setKpis] = useState<CveDashboardKpis | null>(null);
   const [matches, setMatches] = useState<CveMatch[]>([]);
@@ -205,7 +207,7 @@ function CveDashboardInner() {
         <div className="flex items-center gap-2">
           {kpis?.lastSyncAt && (
             <span className="text-xs text-gray-400">
-              {t("lastSync")}: {new Date(kpis.lastSyncAt).toLocaleString()}
+              {t("lastSync")}: {formatDateTime(kpis.lastSyncAt)}
             </span>
           )}
           <Button
@@ -419,7 +421,7 @@ function CveDashboardInner() {
                     </Badge>
                   </td>
                   <td className="px-3 py-3 text-xs text-gray-500">
-                    {new Date(match.matchedAt).toLocaleDateString()}
+                    {formatDate(match.matchedAt)}
                   </td>
                   <td className="px-3 py-3 text-right">
                     <div className="flex items-center justify-end gap-1">
