@@ -21,6 +21,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useDateFormat } from "@/lib/format-date";
 
 interface Threat {
   id: string;
@@ -51,6 +52,7 @@ export default function ThreatDetailPage() {
 }
 
 function ThreatDetailInner() {
+  const { formatDate } = useDateFormat();
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
   const t = useTranslations("isms");
@@ -255,10 +257,7 @@ function ThreatDetailInner() {
               <CardContent className="space-y-3 text-sm">
                 <div className="flex items-center gap-2 text-gray-500">
                   <Calendar size={14} className="shrink-0" />
-                  <span>
-                    Erstellt:{" "}
-                    {new Date(threat.createdAt).toLocaleDateString("de-DE")}
-                  </span>
+                  <span>Erstellt: {formatDate(threat.createdAt)}</span>
                 </div>
                 <div className="flex items-center gap-2 text-gray-500">
                   <Zap size={14} className="shrink-0" />
