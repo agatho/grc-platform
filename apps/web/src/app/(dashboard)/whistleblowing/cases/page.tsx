@@ -17,6 +17,7 @@ import { ModuleGate } from "@/components/module/module-gate";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { WbCaseListItem } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function WbCasesPage() {
   return (
