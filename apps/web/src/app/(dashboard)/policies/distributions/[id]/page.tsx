@@ -33,10 +33,12 @@ import type {
   PolicyDistributionWithStats,
   PolicyAcknowledgmentWithUser,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 export default function DistributionDetailPage() {
   const t = useTranslations("policies");
   const router = useRouter();
+  const { formatDate } = useDateFormat();
   const params = useParams();
   const id = params.id as string;
 
@@ -286,7 +288,7 @@ export default function DistributionDetailPage() {
                 <p className="font-medium text-muted-foreground">
                   {t("distribution.deadline")}
                 </p>
-                <p>{new Date(dist.deadline).toLocaleDateString("de-DE")}</p>
+                <p>{formatDate(dist.deadline)}</p>
               </div>
               <div>
                 <p className="font-medium text-muted-foreground">

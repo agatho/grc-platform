@@ -34,6 +34,7 @@ export default function CampaignDetailPage() {
   const router = useRouter();
   const params = useParams();
   const id = params.id as string;
+  const { formatDate } = useDateFormat();
 
   const [campaign, setCampaign] = useState<
     | (RcsaCampaignWithStats & { overdueCount?: number; pendingCount?: number })
@@ -538,7 +539,7 @@ export default function CampaignDetailPage() {
                         </td>
                         <td className="p-3 text-gray-500">
                           {entry.lastActivity
-                            ? new Date(entry.lastActivity).toLocaleDateString()
+                            ? formatDate(entry.lastActivity)
                             : "-"}
                         </td>
                       </tr>
