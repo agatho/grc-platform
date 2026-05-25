@@ -14,6 +14,7 @@ import type {
   RopaDataSubject,
   RopaRecipient,
 } from "@grc/shared";
+import { useDateFormat } from "@/lib/format-date";
 
 const STATUS_COLORS: Record<string, string> = {
   draft: "bg-gray-100 text-gray-700",
@@ -38,6 +39,7 @@ interface RopaDetailData extends RopaEntry {
 }
 
 function RopaDetailInner() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("dpms");
   const router = useRouter();
   const { id } = useParams<{ id: string }>();
@@ -216,11 +218,7 @@ function RopaDetailInner() {
             />
             <FieldRow
               label={t("ropa.lastReviewed")}
-              value={
-                data.lastReviewed
-                  ? new Date(data.lastReviewed).toLocaleDateString()
-                  : "-"
-              }
+              value={data.lastReviewed ? formatDate(data.lastReviewed) : "-"}
             />
           </div>
         </div>

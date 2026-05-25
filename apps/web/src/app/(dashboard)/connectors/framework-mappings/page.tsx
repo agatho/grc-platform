@@ -13,6 +13,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface FrameworkScore {
   framework: string;
@@ -35,6 +36,7 @@ interface FrameworkDashboard {
 }
 
 export default function FrameworkMappingsPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("connectors");
   const [dashboard, setDashboard] = useState<FrameworkDashboard | null>(null);
   const [loading, setLoading] = useState(true);
@@ -135,7 +137,7 @@ export default function FrameworkMappingsPage() {
               </p>
               <p className="text-sm text-gray-900 mt-2">
                 {dashboard.lastAnalysisDate
-                  ? new Date(dashboard.lastAnalysisDate).toLocaleDateString()
+                  ? formatDate(dashboard.lastAnalysisDate)
                   : t("frameworks.noAnalysis")}
               </p>
             </div>
