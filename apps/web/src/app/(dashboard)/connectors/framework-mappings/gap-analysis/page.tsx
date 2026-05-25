@@ -5,6 +5,7 @@ import { useTranslations } from "next-intl";
 import { Loader2, RefreshCcw, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { useDateFormat } from "@/lib/format-date";
 
 interface GapAnalysis {
   id: string;
@@ -32,6 +33,7 @@ const FRAMEWORKS = [
 ];
 
 export default function GapAnalysisPage() {
+  const { formatDate } = useDateFormat();
   const t = useTranslations("connectors");
   const [analyses, setAnalyses] = useState<GapAnalysis[]>([]);
   const [loading, setLoading] = useState(true);
@@ -156,8 +158,8 @@ export default function GapAnalysisPage() {
                     {a.framework}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {new Date(a.analysisDate).toLocaleDateString()} -{" "}
-                    {a.totalControls} {t("gapAnalysis.controls")}
+                    {formatDate(a.analysisDate)} - {a.totalControls}{" "}
+                    {t("gapAnalysis.controls")}
                   </p>
                 </div>
                 <div className="flex items-center gap-3">
