@@ -6,13 +6,21 @@
 services:
   # ── PostgreSQL + TimescaleDB ──────────────────────────────────
   postgres:
-    # #DEP-CONFIG: was `:latest-pg16`. `latest` is a moving tag —
-    # every restart could pull a new image, and ARCTOS relies on
-    # TimescaleDB extension semantics that don't always survive
-    # major bumps. Pinned to a specific TimescaleDB minor. Operators
-    # who want bit-identical can replace with a digest:
+    # #DEP-CONFIG: pinned to a specific TimescaleDB minor for
+    # immutability. `latest-pg16` is a moving tag and TimescaleDB
+    # extension semantics don't always survive bumps.
+    #
+    # 2026-05-26: bumped 2.17.2 → 2.26.3. The DB was previously run
+    # under `:latest-pg16` and the timescaledb extension was upgraded
+    # to 2.26.3 in pg_extension. After the pin to 2.17.2 in #265,
+    # every postgres connection hit `could not access file
+    # "$libdir/timescaledb-2.26.3"` — the catalog referenced the
+    # newer .so but the older container only shipped 2.17.x. Worker
+    # crash-looped; web survived only because it caches at boot.
+    # 2.26.3-pg16 matches the DB's expected extension version.
+    # Operators who want bit-identical can replace with a digest:
     #   image: timescale/timescaledb@sha256:...
-    image: timescale/timescaledb:2.17.2-pg16
+    image: timescale/timescaledb:2.26.3-pg16
     restart: unless-stopped
     environment:
       POSTGRES_USER: grc
