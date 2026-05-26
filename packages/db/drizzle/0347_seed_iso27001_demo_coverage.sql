@@ -114,6 +114,11 @@ SELECT
   'fresh',
   now()
 FROM deduped
-ON CONFLICT ON CONSTRAINT cfc_unique_idx DO NOTHING;
+-- #WAVE25-C1-FIX: cfc_unique_idx is a UNIQUE INDEX (0107), not a named
+-- constraint, so `ON CONFLICT ON CONSTRAINT cfc_unique_idx` raised
+-- "constraint does not exist" and rolled the whole tx back. Switch to
+-- the column-inference form, which works against any matching unique
+-- index. Columns must match cfc_unique_idx exactly.
+ON CONFLICT (org_id, control_id, framework, framework_control_id) DO NOTHING;
 
 COMMIT;
