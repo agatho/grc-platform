@@ -60,6 +60,17 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      # Build-time provenance metadata. deploy/update-all.sh exports
+      # these env vars before `docker compose build`. If a manual
+      # `docker compose up --build` is run without them set, the
+      # Dockerfile's `ARG ... =unknown` defaults kick in and
+      # /api/v1/meta/build serves "unknown" — visible in CI gates
+      # and the build endpoint, which is the prompt to either run
+      # via the wrapper or `export GIT_SHA=$(git rev-parse HEAD)` first.
+      args:
+        GIT_SHA: ${GIT_SHA:-unknown}
+        GIT_BRANCH: ${GIT_BRANCH:-unknown}
+        BUILD_TIME: ${BUILD_TIME:-unknown}
     restart: unless-stopped
     ports:
       - "127.0.0.1:3000:3000"
