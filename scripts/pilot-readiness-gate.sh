@@ -87,6 +87,25 @@ fi
 echo "✓ Authenticated as ${SESSION_USER}"
 
 # ────────────────────────────────────────────────────────────
+# Org context: switch to the demo tenant so the data assertions
+# below see populated seed data. Admin lands in their first org
+# by default (often a fresh/empty tenant); the demo seeds live
+# in the Meridian Demo tenant.
+# Override via STAGING_DEMO_ORG_ID env var if your staging uses
+# a different tenant id.
+# ────────────────────────────────────────────────────────────
+STAGING_DEMO_ORG_ID="${STAGING_DEMO_ORG_ID:-ccc4cc1c-4b09-499c-8420-ebd8da655cd7}"
+SWITCH_RES=$(curl -sS -m 10 -b "$COOKIE_JAR" -c "$COOKIE_JAR" \
+  -X POST -H "Content-Type: application/json" \
+  "${STAGING_URL}/api/v1/auth/switch-org" \
+  -d "{\"orgId\":\"${STAGING_DEMO_ORG_ID}\"}")
+if [[ "$(echo "$SWITCH_RES" | jq -r '.ok // false')" != "true" ]]; then
+  echo "::error::Org-switch to ${STAGING_DEMO_ORG_ID} failed: $SWITCH_RES"
+  exit 1
+fi
+echo "✓ Org context set to ${STAGING_DEMO_ORG_ID:0:8}..."
+
+# ────────────────────────────────────────────────────────────
 # A1 — POST /findings persists controlId from body
 # ────────────────────────────────────────────────────────────
 echo ""
