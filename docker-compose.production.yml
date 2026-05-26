@@ -66,6 +66,7 @@ services:
       AUTH_URL: ${AUTH_URL:-http://localhost:3000}
       AUTH_TRUST_HOST: "true"
       WB_ENCRYPTION_KEY: ${WB_ENCRYPTION_KEY:?Set WB_ENCRYPTION_KEY in .env}
+      CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
       CRON_SECRET: ${CRON_SECRET:?Set CRON_SECRET in .env}
       NODE_ENV: production
       REDIS_URL: redis://redis:6379
