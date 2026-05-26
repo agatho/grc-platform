@@ -25,6 +25,18 @@
 -- explicitly carves out a one-time hash_repair action for this exact
 -- failure mode (hash-function-version drift during deploy).
 
+-- Perf prereq: the inner loop below does
+--   UPDATE audit_log SET previous_hash = ... WHERE previous_hash = ...
+-- once per v0 row. Without an index on previous_hash that's a full
+-- table scan per row → O(N²). On a prod with 71k audit rows that
+-- meant the migration could not complete in any reasonable wall
+-- time. Build the index BEFORE the rehash loop. Idempotent — a
+-- subsequent run finds the index already exists and skips.
+-- (Statement runs OUTSIDE the rehash transaction so the index is
+-- usable inside it.)
+CREATE INDEX IF NOT EXISTS idx_audit_log_previous_hash
+  ON audit_log(previous_hash);
+
 BEGIN;
 
 -- The append-only guard (audit_log_tombstone_only_guard, migration 0284)
