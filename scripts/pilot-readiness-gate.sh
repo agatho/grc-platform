@@ -92,7 +92,7 @@ echo "✓ Authenticated as ${SESSION_USER}"
 echo ""
 echo "▶ A1: POST /findings persists controlId"
 CTRL=$(curl -fsS -m 10 -b "$COOKIE_JAR" \
-  "${STAGING_URL}/api/v1/controls?limit=1" | jq -r '.data.items[0].id // empty')
+  "${STAGING_URL}/api/v1/controls?limit=1" | jq -r '.data[0].id // empty')
 if [[ -z "$CTRL" ]]; then
   echo "::error::A1 setup: no control row available on staging"
   exit 1
@@ -323,7 +323,7 @@ echo "✓ W25-C1 passed (coverage=${W25_COV_PCT}%, frameworks=${W25_COV_FW})"
 echo ""
 echo "▶ W25-C2: /vendors/{id}/assessments/schema returns example body"
 VENDOR_ID=$(curl -fsS -m 10 -b "$COOKIE_JAR" \
-  "${STAGING_URL}/api/v1/vendors?limit=1" | jq -r '.data.items[0].id // empty')
+  "${STAGING_URL}/api/v1/vendors?limit=1" | jq -r '.data[0].id // empty')
 if [[ -n "$VENDOR_ID" ]]; then
   W25_C2=$(curl -sS -m 10 -b "$COOKIE_JAR" \
     "${STAGING_URL}/api/v1/vendors/${VENDOR_ID}/assessments/schema")
