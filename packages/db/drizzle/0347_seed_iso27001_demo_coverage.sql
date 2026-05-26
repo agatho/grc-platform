@@ -26,6 +26,14 @@
 
 BEGIN;
 
+-- #WAVE25-C1-FIX: control_framework_coverage has FORCE ROW LEVEL
+-- SECURITY (relrowsecurity=t, relforcerowsecurity=t). The RLS policy
+-- gates INSERT/SELECT on the app.current_org_id GUC. Plain psql
+-- sessions (which the entrypoint and update-all.sh use) don't set
+-- it, so every INSERT below was silently dropped.
+-- Same pattern as packages/db/sql/seed_demo_data.sql:16.
+SELECT set_config('app.current_org_id', 'ccc4cc1c-4b09-499c-8420-ebd8da655cd7', true);
+
 -- Helper: insert one mapping if the matching control exists.
 -- Using CTE to keep the org_id constant + only insert when control found.
 WITH meridian AS (
@@ -33,22 +41,40 @@ WITH meridian AS (
 ),
 m AS (
   -- (control title pattern, framework code, status, source)
+  -- #WAVE25-C1-FIX: original migration had English-only patterns but
+  -- Meridian's seeded controls are bilingual (mostly German). Added
+  -- German equivalents next to each English pattern so the same Annex A
+  -- mapping fires regardless of which language a particular control
+  -- happens to be titled in. ON CONFLICT in the INSERT below keeps
+  -- both-language matches idempotent.
   SELECT * FROM (VALUES
-    ('%patch%',         'A.8.8',  'covered',           'mapped'),
-    ('%access%control%','A.5.15', 'covered',           'mapped'),
-    ('%passw%',         'A.5.17', 'covered',           'mapped'),
-    ('%backup%',        'A.8.13', 'covered',           'mapped'),
-    ('%incident%',      'A.5.24', 'covered',           'mapped'),
-    ('%logging%',       'A.8.15', 'covered',           'mapped'),
-    ('%vulnerab%',      'A.8.8',  'partially_covered', 'mapped'),
-    ('%encrypt%',       'A.8.24', 'covered',           'mapped'),
-    ('%firewall%',      'A.8.20', 'covered',           'mapped'),
-    ('%awareness%',     'A.6.3',  'covered',           'mapped'),
-    ('%supplier%',      'A.5.19', 'partially_covered', 'mapped'),
-    ('%segregation%',   'A.5.3',  'covered',           'mapped'),
-    ('%mobile%device%', 'A.8.1',  'partially_covered', 'mapped'),
-    ('%clear%desk%',    'A.7.7',  'covered',           'mapped'),
-    ('%physical%',      'A.7.2',  'covered',           'mapped')
+    ('%patch%',                'A.8.8',  'covered',           'mapped'),
+    ('%access%control%',       'A.5.15', 'covered',           'mapped'),
+    ('%zugriffs%kontroll%',    'A.5.15', 'covered',           'mapped'),
+    ('%passw%',                'A.5.17', 'covered',           'mapped'),
+    ('%privileged%access%',    'A.5.17', 'covered',           'mapped'),
+    ('%backup%',               'A.8.13', 'covered',           'mapped'),
+    ('%datensicher%',          'A.8.13', 'covered',           'mapped'),
+    ('%incident%',             'A.5.24', 'covered',           'mapped'),
+    ('%vorfall%',              'A.5.24', 'covered',           'mapped'),
+    ('%logging%',              'A.8.15', 'covered',           'mapped'),
+    ('%vulnerab%',             'A.8.8',  'partially_covered', 'mapped'),
+    ('%schwachstellen%',       'A.8.8',  'partially_covered', 'mapped'),
+    ('%encrypt%',              'A.8.24', 'covered',           'mapped'),
+    ('%verschl%ssel%',         'A.8.24', 'covered',           'mapped'),
+    ('%firewall%',             'A.8.20', 'covered',           'mapped'),
+    ('%netzwerk%segment%',     'A.8.20', 'partially_covered', 'mapped'),
+    ('%awareness%',            'A.6.3',  'covered',           'mapped'),
+    ('%schulung%',             'A.6.3',  'covered',           'mapped'),
+    ('%supplier%',             'A.5.19', 'partially_covered', 'mapped'),
+    ('%lieferant%',            'A.5.19', 'covered',           'mapped'),
+    ('%segregation%',          'A.5.3',  'covered',           'mapped'),
+    ('%mobile%device%',        'A.8.1',  'partially_covered', 'mapped'),
+    ('%clear%desk%',           'A.7.7',  'covered',           'mapped'),
+    ('%physical%',             'A.7.2',  'covered',           'mapped'),
+    ('%offboarding%',          'A.6.5',  'covered',           'mapped'),
+    ('%richtlinie%',           'A.5.1',  'covered',           'mapped'),
+    ('%policy%',               'A.5.1',  'covered',           'mapped')
   ) AS t(title_pat, fw_control, status, src)
 ),
 matches AS (
