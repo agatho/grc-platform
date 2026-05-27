@@ -34,7 +34,7 @@ import {
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, desc, sql, isNull, inArray } from "drizzle-orm";
-import { withAuth } from "@/lib/api";
+import { withAuth, withReadContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
 
 type FrameworkRow = {
@@ -62,6 +62,7 @@ function classify(pct: number): {
 }
 
 async function fromSnapshots(
+  tx: typeof db,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {
@@ -72,7 +73,7 @@ async function fromSnapshots(
       )
     : eq(frameworkGapAnalysis.orgId, orgId);
 
-  const recent = await db
+  const recent = await tx
     .select()
     .from(frameworkGapAnalysis)
     .where(baseWhere)
@@ -98,6 +99,7 @@ async function fromSnapshots(
 }
 
 async function fromControlFrameworkCoverage(
+  tx: typeof db,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {
@@ -110,7 +112,7 @@ async function fromControlFrameworkCoverage(
       )
     : eq(controlFrameworkCoverage.orgId, orgId);
 
-  const rows = await db
+  const rows = await tx
     .select({
       framework: controlFrameworkCoverage.framework,
       total: sql<number>`count(*)::int`,
@@ -142,6 +144,7 @@ async function fromControlFrameworkCoverage(
 }
 
 async function fromCatalogLinks(
+  tx: typeof db,
   orgId: string,
   filter: string | null,
 ): Promise<FrameworkRow[]> {
@@ -154,7 +157,7 @@ async function fromCatalogLinks(
   // mappings (iso-27001-annex-a, iso27001-2022, etc) are catalog-side
   // so we accept both the canonical id and any catalog code with
   // partial match.
-  const catalogs = await db
+  const catalogs = await tx
     .select({
       catalogId: catalog.id,
       code: catalog.source,
@@ -169,7 +172,7 @@ async function fromCatalogLinks(
   if (catalogs.length === 0) return [];
   const catalogIds = catalogs.map((c) => c.catalogId);
 
-  const totals = await db
+  const totals = await tx
     .select({
       catalogId: catalogEntry.catalogId,
       total: sql<number>`count(*)::int`,
@@ -181,7 +184,7 @@ async function fromCatalogLinks(
   const totalsByCatalog = new Map<string, number>();
   for (const t of totals) totalsByCatalog.set(t.catalogId, t.total);
 
-  const covered = await db
+  const covered = await tx
     .select({
       catalogId: catalogEntry.catalogId,
       coveredEntries: sql<number>`count(distinct ${catalogEntry.id})::int`,
@@ -229,47 +232,49 @@ export const GET = withErrorHandler(async function GET(req: Request) {
   const url = new URL(req.url);
   const framework = url.searchParams.get("framework");
 
-  // Preferred path — periodic gap-analysis snapshots.
-  let frameworks = await fromSnapshots(ctx.orgId, framework);
-  let usedSource: FrameworkRow["source"] = "snapshot";
+  return withReadContext(ctx, async (tx) => {
+    // Preferred path — periodic gap-analysis snapshots.
+    let frameworks = await fromSnapshots(tx, ctx.orgId, framework);
+    let usedSource: FrameworkRow["source"] = "snapshot";
 
-  if (frameworks.length === 0) {
-    frameworks = await fromControlFrameworkCoverage(ctx.orgId, framework);
-    usedSource = "live_cfc";
-  }
-  if (frameworks.length === 0) {
-    frameworks = await fromCatalogLinks(ctx.orgId, framework);
-    usedSource = "live_catalog_link";
-  }
+    if (frameworks.length === 0) {
+      frameworks = await fromControlFrameworkCoverage(tx, ctx.orgId, framework);
+      usedSource = "live_cfc";
+    }
+    if (frameworks.length === 0) {
+      frameworks = await fromCatalogLinks(tx, ctx.orgId, framework);
+      usedSource = "live_catalog_link";
+    }
 
-  let fullyCovered = 0;
-  let atRisk = 0;
-  let critical = 0;
-  for (const f of frameworks) {
-    const c = classify(f.coveragePct);
-    fullyCovered += c.fullyCovered;
-    atRisk += c.atRisk;
-    critical += c.critical;
-  }
+    let fullyCovered = 0;
+    let atRisk = 0;
+    let critical = 0;
+    for (const f of frameworks) {
+      const c = classify(f.coveragePct);
+      fullyCovered += c.fullyCovered;
+      atRisk += c.atRisk;
+      critical += c.critical;
+    }
 
-  const overallCoveragePct =
-    frameworks.length > 0
-      ? Math.round(
-          frameworks.reduce((sum, f) => sum + f.coveragePct, 0) /
-            frameworks.length,
-        )
-      : 0;
+    const overallCoveragePct =
+      frameworks.length > 0
+        ? Math.round(
+            frameworks.reduce((sum, f) => sum + f.coveragePct, 0) /
+              frameworks.length,
+          )
+        : 0;
 
-  return Response.json({
-    data: {
-      overallCoveragePct,
-      frameworkCount: frameworks.length,
-      fullyCovered,
-      atRisk,
-      critical,
-      frameworks,
-      source: usedSource,
-      asOf: new Date().toISOString(),
-    },
+    return Response.json({
+      data: {
+        overallCoveragePct,
+        frameworkCount: frameworks.length,
+        fullyCovered,
+        atRisk,
+        critical,
+        frameworks,
+        source: usedSource,
+        asOf: new Date().toISOString(),
+      },
+    });
   });
 });
