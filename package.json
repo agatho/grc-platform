@@ -38,6 +38,6 @@
   "packageManager": "npm@11.12.0",
   "dependencies": {
     "@react-email/components": "^1.0.12",
-    "resend": "^6.12.3"
+    "resend": "^6.12.4"
   }
 }
