@@ -9,7 +9,7 @@
   "dependencies": {
     "@react-email/components": "^1.0.12",
     "react": "^19.2.6",
-    "resend": "^6.12.3"
+    "resend": "^6.12.4"
   },
   "devDependencies": {
     "@types/react": "^19.2.15",
