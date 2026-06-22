@@ -3,9 +3,9 @@
   "version": "0.1.0",
   "main": "src/index.ts",
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.97.1",
+    "@anthropic-ai/sdk": "^0.105.0",
     "@google/generative-ai": "^0.24.1",
-    "openai": "^6.38.0"
+    "openai": "^6.44.0"
   },
   "devDependencies": {
     "typescript": "^5.7"
