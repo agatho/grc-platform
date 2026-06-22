@@ -13,7 +13,7 @@
   },
   "devDependencies": {
     "@types/react": "^19.2.15",
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.9",
     "typescript": "^5.7",
     "vitest": "^4.1.5"
   }
