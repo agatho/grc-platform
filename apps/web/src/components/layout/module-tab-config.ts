@@ -268,6 +268,8 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
         href: "/processes",
         match: "exact",
       },
+      // Prozesslandkarte — label lives in the processMap namespace
+      { labelKey: "processMap.tab", href: "/process-map", match: "prefix" },
       { labelKey: "nav.tabs.governance", href: "/processes/governance" },
       { labelKey: "nav.tabs.mining", href: "/bpm/mining" },
       { labelKey: "nav.tabs.kpis", href: "/bpm/kpis" },

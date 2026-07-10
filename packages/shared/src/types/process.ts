@@ -12,6 +12,8 @@ export type StepType =
   | "event"
   | "subprocess"
   | "call_activity";
+/** Prozesslandkarte: value-chain band (management / core / support) */
+export type ProcessMapCategory = "management" | "core" | "support";
 
 export interface Process {
   id: string;
@@ -27,6 +29,8 @@ export interface Process {
   department?: string;
   currentVersion: number;
   isEssential: boolean;
+  /** Prozesslandkarte: null = inherits the parent's band on the map */
+  mapCategory?: ProcessMapCategory | null;
   publishedAt?: string;
   // Review cycle (Gap 2)
   reviewDate?: string;

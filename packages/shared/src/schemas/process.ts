@@ -17,6 +17,8 @@ const stepTypeValues = [
   "subprocess",
   "call_activity",
 ] as const;
+// Prozesslandkarte: value-chain band (management / core / support)
+const processMapCategoryValues = ["management", "core", "support"] as const;
 
 // ─── Process CRUD ────────────────────────────────────────────
 
@@ -62,6 +64,8 @@ export const updateProcessSchema = z.object({
     .enum(["first", "second", "third", "oversight"])
     .nullable()
     .optional(),
+  // Prozesslandkarte: null = keine Kategorie (erbt Band des Parents)
+  mapCategory: z.enum(processMapCategoryValues).nullable().optional(),
 });
 
 // ─── Process Version ─────────────────────────────────────────

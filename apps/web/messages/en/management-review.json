@@ -1,0 +1,127 @@
+{
+  "cockpit": {
+    "tab": "Cockpit",
+    "loading": "Loading cockpit …",
+    "loadError": "Could not load cockpit data.",
+    "period": "Period",
+    "periodSource": {
+      "override": "manually selected",
+      "review_period": "configured on review",
+      "last_completed": "since last completed review",
+      "fallback_12m": "last 12 months (no previous review)"
+    },
+    "adopt": "Adopt as review item",
+    "adopted": "Adopted",
+    "noData": "No data in period",
+    "sections": {
+      "previousActions": {
+        "title": "Actions from previous review",
+        "sourceReview": "Source",
+        "none": "No completed previous review found.",
+        "empty": "The previous review contains no linked actions.",
+        "openCount": "Open",
+        "doneCount": "Done"
+      },
+      "risks": {
+        "title": "Risk landscape",
+        "open": "Open risks",
+        "newInPeriod": "New in period",
+        "closedInPeriod": "Closed in period",
+        "topRisks": "Top risks (residual)",
+        "acceptances": "Active risk acceptances",
+        "acceptancesExpiring": "Expiring next",
+        "validUntil": "valid until"
+      },
+      "findings": {
+        "title": "Findings & nonconformities",
+        "open": "Open",
+        "closedInPeriod": "Closed in period",
+        "overdue": "Overdue",
+        "dueSince": "due since"
+      },
+      "audits": {
+        "title": "Audit results",
+        "completedInPeriod": "Audits completed in period",
+        "findings": "Findings",
+        "conclusion": "Conclusion"
+      },
+      "controlEffectiveness": {
+        "title": "Control effectiveness",
+        "testedInPeriod": "Tests in period",
+        "effective": "Effective",
+        "partially_effective": "Partially effective",
+        "ineffective": "Ineffective",
+        "not_tested": "Not tested"
+      },
+      "incidents": {
+        "title": "Security incidents",
+        "totalInPeriod": "Incidents in period",
+        "bySeverity": "By severity",
+        "recent": "Recent incidents"
+      },
+      "documents": {
+        "title": "Document control",
+        "overdueReviews": "Overdue document reviews",
+        "reviewDue": "Review due since"
+      },
+      "kpis": {
+        "title": "Key indicators (KRIs)",
+        "byAlert": "Alert status",
+        "red": "Red KRIs",
+        "green": "Green",
+        "yellow": "Yellow",
+        "redLabel": "Red"
+      }
+    }
+  },
+  "protocol": {
+    "tab": "Minutes",
+    "title": "Findings and decisions",
+    "empty": "No review items yet. Adopt findings from the cockpit or add items manually.",
+    "category": "Category",
+    "content": "Finding",
+    "decision": "Decision",
+    "action": "Action",
+    "noAction": "No action",
+    "addItem": "Add review item",
+    "createAction": "Create action",
+    "actionTitle": "Action title",
+    "responsible": "Responsible",
+    "noResponsible": "No responsible",
+    "dueDate": "Due date",
+    "save": "Save",
+    "cancel": "Cancel",
+    "delete": "Delete",
+    "readOnly": "This review is completed — the minutes are read-only.",
+    "contentPlaceholder": "Finding / status …",
+    "decisionPlaceholder": "Management decision …",
+    "categories": {
+      "previous_actions": "Actions from previous review",
+      "context_changes": "Context changes",
+      "risks": "Risk landscape",
+      "findings": "Nonconformities & findings",
+      "audits": "Audit results",
+      "control_effectiveness": "Control effectiveness",
+      "incidents": "Security incidents",
+      "documents": "Document control",
+      "kpis": "Key indicators",
+      "improvement": "Improvement",
+      "other": "Other"
+    }
+  },
+  "statusFlow": {
+    "start": "Start review",
+    "complete": "Complete review",
+    "completeConfirm": "Complete this review? The minutes will become read-only.",
+    "completedAt": "Completed at"
+  },
+  "exportPdf": "Minutes (PDF)",
+  "list": {
+    "participants": "Participants",
+    "participantsCount": "{count} participants",
+    "period": "Period",
+    "periodStart": "Period from",
+    "periodEnd": "Period to",
+    "selectParticipants": "Select participants"
+  }
+}

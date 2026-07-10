@@ -1,0 +1,127 @@
+{
+  "cockpit": {
+    "tab": "Cockpit",
+    "loading": "Cockpit wird geladen …",
+    "loadError": "Cockpit-Daten konnten nicht geladen werden.",
+    "period": "Zeitraum",
+    "periodSource": {
+      "override": "manuell gewählt",
+      "review_period": "am Review gepflegt",
+      "last_completed": "seit letztem abgeschlossenen Review",
+      "fallback_12m": "letzte 12 Monate (kein Vorgänger-Review)"
+    },
+    "adopt": "Als Review-Punkt übernehmen",
+    "adopted": "Übernommen",
+    "noData": "Keine Daten im Zeitraum",
+    "sections": {
+      "previousActions": {
+        "title": "Maßnahmen aus dem letzten Review",
+        "sourceReview": "Quelle",
+        "none": "Kein abgeschlossenes Vorgänger-Review vorhanden.",
+        "empty": "Das letzte Review enthält keine verlinkten Maßnahmen.",
+        "openCount": "Offen",
+        "doneCount": "Erledigt"
+      },
+      "risks": {
+        "title": "Risiko-Lage",
+        "open": "Offene Risiken",
+        "newInPeriod": "Neu im Zeitraum",
+        "closedInPeriod": "Geschlossen im Zeitraum",
+        "topRisks": "Top-Risiken (Restrisiko)",
+        "acceptances": "Aktive Risiko-Akzeptanzen",
+        "acceptancesExpiring": "Nächste Abläufe",
+        "validUntil": "gültig bis"
+      },
+      "findings": {
+        "title": "Findings & Nichtkonformitäten",
+        "open": "Offen",
+        "closedInPeriod": "Geschlossen im Zeitraum",
+        "overdue": "Überfällig",
+        "dueSince": "fällig seit"
+      },
+      "audits": {
+        "title": "Audit-Ergebnisse",
+        "completedInPeriod": "Abgeschlossene Audits im Zeitraum",
+        "findings": "Findings",
+        "conclusion": "Fazit"
+      },
+      "controlEffectiveness": {
+        "title": "Kontroll-Wirksamkeit",
+        "testedInPeriod": "Tests im Zeitraum",
+        "effective": "Wirksam",
+        "partially_effective": "Teilweise wirksam",
+        "ineffective": "Unwirksam",
+        "not_tested": "Nicht getestet"
+      },
+      "incidents": {
+        "title": "Sicherheitsvorfälle",
+        "totalInPeriod": "Vorfälle im Zeitraum",
+        "bySeverity": "Nach Schweregrad",
+        "recent": "Letzte Vorfälle"
+      },
+      "documents": {
+        "title": "Dokumentenlenkung",
+        "overdueReviews": "Überfällige Dokument-Reviews",
+        "reviewDue": "Review fällig seit"
+      },
+      "kpis": {
+        "title": "Kennzahlen (KRIs)",
+        "byAlert": "Ampel-Status",
+        "red": "Rote KRIs",
+        "green": "Grün",
+        "yellow": "Gelb",
+        "redLabel": "Rot"
+      }
+    }
+  },
+  "protocol": {
+    "tab": "Protokoll",
+    "title": "Feststellungen und Beschlüsse",
+    "empty": "Noch keine Review-Punkte erfasst. Übernimm Feststellungen aus dem Cockpit oder lege manuell Punkte an.",
+    "category": "Kategorie",
+    "content": "Feststellung",
+    "decision": "Beschluss",
+    "action": "Maßnahme",
+    "noAction": "Keine Maßnahme",
+    "addItem": "Review-Punkt hinzufügen",
+    "createAction": "Maßnahme anlegen",
+    "actionTitle": "Maßnahmen-Titel",
+    "responsible": "Verantwortlich",
+    "noResponsible": "Kein Verantwortlicher",
+    "dueDate": "Fällig am",
+    "save": "Speichern",
+    "cancel": "Abbrechen",
+    "delete": "Löschen",
+    "readOnly": "Das Review ist abgeschlossen — das Protokoll ist schreibgeschützt.",
+    "contentPlaceholder": "Feststellung / Sachstand …",
+    "decisionPlaceholder": "Beschluss der Leitung …",
+    "categories": {
+      "previous_actions": "Maßnahmen aus dem letzten Review",
+      "context_changes": "Änderungen im Kontext",
+      "risks": "Risikolage",
+      "findings": "Nichtkonformitäten & Findings",
+      "audits": "Auditergebnisse",
+      "control_effectiveness": "Kontroll-Wirksamkeit",
+      "incidents": "Sicherheitsvorfälle",
+      "documents": "Dokumentenlenkung",
+      "kpis": "Kennzahlen",
+      "improvement": "Verbesserung",
+      "other": "Sonstiges"
+    }
+  },
+  "statusFlow": {
+    "start": "Review starten",
+    "complete": "Review abschließen",
+    "completeConfirm": "Review abschließen? Das Protokoll ist danach schreibgeschützt.",
+    "completedAt": "Abgeschlossen am"
+  },
+  "exportPdf": "Protokoll (PDF)",
+  "list": {
+    "participants": "Teilnehmer",
+    "participantsCount": "{count} Teilnehmer",
+    "period": "Zeitraum",
+    "periodStart": "Zeitraum von",
+    "periodEnd": "Zeitraum bis",
+    "selectParticipants": "Teilnehmer auswählen"
+  }
+}

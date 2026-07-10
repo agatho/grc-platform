@@ -18,6 +18,7 @@ import {
   Eye,
   LayoutGrid,
   List,
+  Map as MapIcon,
 } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
@@ -78,6 +79,7 @@ function ProcessLandscape() {
   const t = useTranslations("process");
   const tGov = useTranslations("processGovernance");
   const tActions = useTranslations("actions");
+  const tMap = useTranslations("processMap");
   const router = useRouter();
 
   const [treeData, setTreeData] = useState<TreeNode[]>([]);
@@ -274,6 +276,12 @@ function ProcessLandscape() {
             </button>
           </div>
 
+          <Link href="/process-map">
+            <Button variant="ghost" size="sm">
+              <MapIcon size={16} />
+              {tMap("toMap")}
+            </Button>
+          </Link>
           <Link href="/processes/governance">
             <Button variant="outline" size="sm">
               {tGov("governance.title")}

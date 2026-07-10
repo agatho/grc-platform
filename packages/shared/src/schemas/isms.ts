@@ -329,6 +329,9 @@ export const createManagementReviewSchema = z.object({
   chairId: z.string().uuid().optional(),
   participantIds: z.array(z.string().uuid()).default([]),
   nextReviewDate: z.string().optional(),
+  // Cockpit: optionaler Review-Zeitraum für die 9.3-Input-Aggregation
+  periodStart: z.string().optional(),
+  periodEnd: z.string().optional(),
 });
 
 export const updateManagementReviewSchema = z.object({
@@ -347,6 +350,54 @@ export const updateManagementReviewSchema = z.object({
   actionItems: z.record(z.unknown()).optional(),
   minutes: z.string().max(50000).optional(),
   nextReviewDate: z.string().nullable().optional(),
+  // Cockpit: optionaler Review-Zeitraum für die 9.3-Input-Aggregation
+  periodStart: z.string().nullable().optional(),
+  periodEnd: z.string().nullable().optional(),
+});
+
+// ─── Management Review Items (Cockpit, ISO 27001 9.3.2) ───────
+
+// Input-Kategorien für Review-Punkte. Deckt die 9.3.2-Pflicht-Inputs
+// (a–f) ab plus die Cockpit-Datenquellen (Dokumente, KPIs).
+export const MANAGEMENT_REVIEW_ITEM_CATEGORIES = [
+  "previous_actions", // 9.3.2 a) Status der Maßnahmen aus dem letzten Review
+  "context_changes", // 9.3.2 b) Änderungen externer/interner Themen
+  "risks", // 9.3.2 e) Risikobewertung / Risk-Treatment-Plan-Status
+  "findings", // 9.3.2 c1) Nichtkonformitäten & Korrekturmaßnahmen
+  "audits", // 9.3.2 c4) Auditergebnisse
+  "control_effectiveness", // 9.3.2 c2) Mess- und Überwachungsergebnisse
+  "incidents", // Sicherheitsvorfälle im Zeitraum
+  "documents", // überfällige Dokumenten-Reviews (Dokumentenlenkung)
+  "kpis", // Kennzahlen / KRIs
+  "improvement", // 9.3.2 f) Chancen zur fortlaufenden Verbesserung
+  "other",
+] as const;
+
+export type ManagementReviewItemCategory =
+  (typeof MANAGEMENT_REVIEW_ITEM_CATEGORIES)[number];
+
+// Optionale Maßnahme: legt beim Anlegen/Aktualisieren ein work_item
+// (typeKey management_review_action) an und verlinkt es.
+const reviewItemActionSchema = z.object({
+  title: z.string().min(1).max(500),
+  responsibleId: z.string().uuid().optional(),
+  dueDate: z.string().optional(),
+});
+
+export const createManagementReviewItemSchema = z.object({
+  category: z.enum(MANAGEMENT_REVIEW_ITEM_CATEGORIES),
+  content: z.string().min(1).max(10000),
+  decision: z.string().max(10000).optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  action: reviewItemActionSchema.optional(),
+});
+
+export const updateManagementReviewItemSchema = z.object({
+  category: z.enum(MANAGEMENT_REVIEW_ITEM_CATEGORIES).optional(),
+  content: z.string().min(1).max(10000).optional(),
+  decision: z.string().max(10000).nullable().optional(),
+  sortOrder: z.number().int().min(0).optional(),
+  action: reviewItemActionSchema.optional(),
 });
 
 // ─── Maturity Rating ───────────────────────────────────────────

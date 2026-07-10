@@ -40,6 +40,7 @@ export async function GET(
       department: process.department,
       currentVersion: process.currentVersion,
       isEssential: process.isEssential,
+      mapCategory: process.mapCategory,
       publishedAt: process.publishedAt,
       createdAt: process.createdAt,
       updatedAt: process.updatedAt,

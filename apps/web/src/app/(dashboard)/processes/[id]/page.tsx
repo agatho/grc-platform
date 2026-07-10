@@ -84,6 +84,7 @@ import { ProcessComplianceProfileSwitcher } from "@/components/process/process-c
 import { ProcessAuditTrailTab } from "@/components/process/process-audit-trail-tab";
 import { ArctosPropertiesPanel } from "@/components/bpmn/arctos-properties-panel";
 import { ProcessDocumentDropzone } from "@/components/process/process-document-dropzone";
+import { ProcessMapCategorySelect } from "@/components/process/process-map-category-select";
 import { ProcessApprovalTab } from "@/components/process/process-approval-tab";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
@@ -615,7 +616,7 @@ function ProcessDetailContent() {
 
         {/* Overview Tab */}
         <TabsContent value="overview">
-          <OverviewTab process={process} t={t} />
+          <OverviewTab process={process} canEdit={canEdit} t={t} />
         </TabsContent>
 
         {/* BPMN Editor Tab */}
@@ -742,14 +743,17 @@ function ProcessDetailContent() {
 
 function OverviewTab({
   process,
+  canEdit,
   t,
 }: {
   process: ProcessDetail;
+  canEdit: boolean;
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const steps = process.steps ?? [];
   const tGov = useTranslations("processGovernance");
   const tDrill = useTranslations("bpmOverhaul");
+  const tMap = useTranslations("processMap");
   const router = useRouter();
   const { formatDate } = useDateFormat();
 
@@ -867,6 +871,19 @@ function OverviewTab({
                   : t("detail.essentialNo")
               }
             />
+            {/* Prozesslandkarte: value-chain band assignment */}
+            <div className="flex flex-col sm:flex-row sm:items-center gap-1">
+              <dt className="text-sm text-gray-500 sm:w-40 flex-shrink-0">
+                {tMap("category.label")}
+              </dt>
+              <dd className="text-sm font-medium text-gray-900">
+                <ProcessMapCategorySelect
+                  processId={process.id}
+                  value={process.mapCategory ?? null}
+                  disabled={!canEdit}
+                />
+              </dd>
+            </div>
           </dl>
 
           {/* Process Steps */}

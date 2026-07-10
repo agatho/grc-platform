@@ -2,9 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useTranslations } from "next-intl";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Plus, Loader2, CalendarCheck } from "lucide-react";
+import { Plus, Loader2, CalendarCheck, Users } from "lucide-react";
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
@@ -19,6 +18,21 @@ const STATUS_COLORS: Record<ReviewStatus, string> = {
   cancelled: "bg-red-100 text-red-900",
 };
 
+interface OrgUser {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
+interface CreateReviewData {
+  title: string;
+  reviewDate: string;
+  nextReviewDate?: string;
+  periodStart?: string;
+  periodEnd?: string;
+  participantIds: string[];
+}
+
 export default function ReviewsPage() {
   return (
     <ModuleGate moduleKey="isms">
@@ -30,8 +44,9 @@ export default function ReviewsPage() {
 
 function ReviewsInner() {
   const t = useTranslations("ismsAssessment");
-  const router = useRouter();
+  const tmr = useTranslations("managementReview");
   const [reviews, setReviews] = useState<ManagementReview[]>([]);
+  const [users, setUsers] = useState<OrgUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
 
@@ -50,13 +65,16 @@ function ReviewsInner() {
 
   useEffect(() => {
     void fetchReviews();
+    void (async () => {
+      const res = await fetch("/api/v1/users?limit=100");
+      if (res.ok) {
+        const json = await res.json();
+        setUsers((json.data ?? []) as OrgUser[]);
+      }
+    })();
   }, [fetchReviews]);
 
-  const handleCreate = async (formData: {
-    title: string;
-    reviewDate: string;
-    nextReviewDate: string;
-  }) => {
+  const handleCreate = async (formData: CreateReviewData) => {
     const res = await fetch("/api/v1/isms/reviews", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -87,7 +105,9 @@ function ReviewsInner() {
           <CreateReviewForm
             onSubmit={handleCreate}
             onCancel={() => setShowCreate(false)}
+            users={users}
             t={t}
+            tmr={tmr}
           />
         </div>
       )}
@@ -122,13 +142,27 @@ function ReviewsInner() {
                       {t(`review.statuses.${r.status}`)}
                     </Badge>
                   </div>
-                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400">
+                  <div className="flex items-center gap-4 mt-2 text-xs text-gray-400 flex-wrap">
                     <span>
                       {t("review.date")}: {r.reviewDate}
                     </span>
+                    {(r.periodStart || r.periodEnd) && (
+                      <span>
+                        {tmr("list.period")}: {r.periodStart ?? "—"} —{" "}
+                        {r.periodEnd ?? r.reviewDate}
+                      </span>
+                    )}
                     {r.nextReviewDate && (
                       <span>
                         {t("review.nextReview")}: {r.nextReviewDate}
+                      </span>
+                    )}
+                    {(r.participantIds?.length ?? 0) > 0 && (
+                      <span className="flex items-center gap-1">
+                        <Users size={12} />
+                        {tmr("list.participantsCount", {
+                          count: r.participantIds.length,
+                        })}
                       </span>
                     )}
                   </div>
@@ -145,19 +179,28 @@ function ReviewsInner() {
 function CreateReviewForm({
   onSubmit,
   onCancel,
+  users,
   t,
+  tmr,
 }: {
-  onSubmit: (data: {
-    title: string;
-    reviewDate: string;
-    nextReviewDate: string;
-  }) => void;
+  onSubmit: (data: CreateReviewData) => void;
   onCancel: () => void;
+  users: OrgUser[];
   t: ReturnType<typeof useTranslations>;
+  tmr: ReturnType<typeof useTranslations>;
 }) {
   const [title, setTitle] = useState("");
   const [reviewDate, setReviewDate] = useState("");
   const [nextReviewDate, setNextReviewDate] = useState("");
+  const [periodStart, setPeriodStart] = useState("");
+  const [periodEnd, setPeriodEnd] = useState("");
+  const [participantIds, setParticipantIds] = useState<string[]>([]);
+
+  const toggleParticipant = (uid: string) => {
+    setParticipantIds((prev) =>
+      prev.includes(uid) ? prev.filter((p) => p !== uid) : [...prev, uid],
+    );
+  };
 
   return (
     <>
@@ -197,6 +240,52 @@ function CreateReviewForm({
             onChange={(e) => setNextReviewDate(e.target.value)}
           />
         </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            {tmr("list.periodStart")}
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={periodStart}
+            onChange={(e) => setPeriodStart(e.target.value)}
+          />
+        </div>
+        <div>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            {tmr("list.periodEnd")}
+          </label>
+          <input
+            type="date"
+            className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+            value={periodEnd}
+            onChange={(e) => setPeriodEnd(e.target.value)}
+          />
+        </div>
+      </div>
+      <div>
+        <label className="block text-xs font-medium text-gray-700 mb-2">
+          {tmr("list.selectParticipants")}
+        </label>
+        <div className="flex flex-wrap gap-2 max-h-40 overflow-y-auto rounded-md border border-gray-200 bg-white p-3">
+          {users.map((u) => {
+            const selected = participantIds.includes(u.id);
+            return (
+              <button
+                key={u.id}
+                type="button"
+                onClick={() => toggleParticipant(u.id)}
+                className={`rounded-full border px-3 py-1 text-xs transition-colors ${
+                  selected
+                    ? "border-blue-500 bg-blue-100 text-blue-900"
+                    : "border-gray-200 bg-gray-50 text-gray-600 hover:border-gray-300"
+                }`}
+              >
+                {u.name || u.email}
+              </button>
+            );
+          })}
+        </div>
       </div>
       <div className="flex justify-end gap-2">
         <Button variant="outline" size="sm" onClick={onCancel}>
@@ -204,7 +293,16 @@ function CreateReviewForm({
         </Button>
         <Button
           size="sm"
-          onClick={() => onSubmit({ title, reviewDate, nextReviewDate })}
+          onClick={() =>
+            onSubmit({
+              title,
+              reviewDate,
+              ...(nextReviewDate ? { nextReviewDate } : {}),
+              ...(periodStart ? { periodStart } : {}),
+              ...(periodEnd ? { periodEnd } : {}),
+              participantIds,
+            })
+          }
           disabled={!title || !reviewDate}
         >
           {t("review.create")}

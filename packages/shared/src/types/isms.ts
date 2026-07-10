@@ -263,9 +263,34 @@ export interface ManagementReview {
   actionItems?: unknown;
   minutes?: string;
   nextReviewDate?: string;
+  periodStart?: string | null;
+  periodEnd?: string | null;
+  completedAt?: string | null;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
+}
+
+// Cockpit (ISO 27001 9.3): strukturierter Review-Punkt mit Beschluss
+// und optionaler Maßnahme (work_item-Verknüpfung).
+export interface ManagementReviewItem {
+  id: string;
+  orgId: string;
+  reviewId: string;
+  category: string;
+  content: string;
+  decision?: string | null;
+  actionWorkItemId?: string | null;
+  sortOrder: number;
+  createdAt: string;
+  updatedAt: string;
+  createdBy?: string | null;
+  updatedBy?: string | null;
+  // Joined work_item fields (GET /items)
+  actionElementId?: string | null;
+  actionName?: string | null;
+  actionStatus?: string | null;
+  actionDueDate?: string | null;
 }
 
 // Sprint 5b: Computed / Dashboard types

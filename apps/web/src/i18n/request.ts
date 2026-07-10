@@ -39,6 +39,7 @@ async function loadIndividualFiles(locale: string) {
     ["bpm-derived", "bpmDerived"],
     ["bpm-overhaul", "bpmOverhaul"],
     ["process-portal", "processPortal"],
+    ["process-map", "processMap"],
     ["whistleblowing-advanced", "whistleblowingAdvanced"],
     ["platform-advanced", "platformAdvanced"],
     ["eam", "eam"],
@@ -83,6 +84,7 @@ async function loadIndividualFiles(locale: string) {
     ["attack-paths", "attackPaths"],
     ["correlation", "correlation"],
     ["cci", "cci"],
+    ["management-review", "managementReview"],
   ];
 
   const modules = await Promise.all(

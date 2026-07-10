@@ -62,6 +62,42 @@ export async function PUT(
   }
 
   const data = parsed.data;
+
+  // Cockpit (0369): Status-Übergänge server-seitig erzwingen.
+  // planned → in_progress → completed; cancelled aus planned/in_progress.
+  // completed/cancelled sind terminal — das Review ist dann read-only.
+  const VALID_TRANSITIONS: Record<string, string[]> = {
+    planned: ["in_progress", "cancelled"],
+    in_progress: ["completed", "cancelled"],
+    completed: [],
+    cancelled: [],
+  };
+
+  if (existing.status === "completed" || existing.status === "cancelled") {
+    return Response.json(
+      {
+        error: "Review is read-only",
+        detail: `Review has status '${existing.status}' and can no longer be modified.`,
+      },
+      { status: 422 },
+    );
+  }
+
+  if (data.status !== undefined && data.status !== existing.status) {
+    const allowed = VALID_TRANSITIONS[existing.status] ?? [];
+    if (!allowed.includes(data.status)) {
+      return Response.json(
+        {
+          error: "Invalid status transition",
+          from: existing.status,
+          to: data.status,
+          allowed,
+        },
+        { status: 422 },
+      );
+    }
+  }
+
   const result = await withAuditContext(ctx, async (tx) => {
     const updates: Record<string, unknown> = { updatedAt: new Date() };
     if (data.title !== undefined) updates.title = data.title;
@@ -86,6 +122,13 @@ export async function PUT(
     if (data.minutes !== undefined) updates.minutes = data.minutes;
     if (data.nextReviewDate !== undefined)
       updates.nextReviewDate = data.nextReviewDate;
+    if (data.periodStart !== undefined) updates.periodStart = data.periodStart;
+    if (data.periodEnd !== undefined) updates.periodEnd = data.periodEnd;
+
+    // Abschluss-Zeitstempel beim Übergang → completed
+    if (data.status === "completed" && existing.status !== "completed") {
+      updates.completedAt = new Date();
+    }
 
     const [updated] = await tx
       .update(managementReview)

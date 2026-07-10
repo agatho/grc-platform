@@ -60,6 +60,13 @@ export const processVersionTypeEnum = pgEnum("process_version_type", [
   "released",
 ]);
 
+// Prozesslandkarte (0373): value-chain band on the graphical process map
+export const processMapCategoryEnum = pgEnum("process_map_category", [
+  "management",
+  "core",
+  "support",
+]);
+
 export const complianceProfileEnum = pgEnum("compliance_profile_enum", [
   "standard",
   "gdpr_ropa",
@@ -103,6 +110,9 @@ export const process = pgTable(
       .default("standard"),
     // Gallery thumbnail (Sprint 3b)
     galleryThumbnailPath: varchar("gallery_thumbnail_path", { length: 1000 }),
+    // Prozesslandkarte (0373): management / core / support band. Nullable —
+    // children without a category inherit their parent's band on the map.
+    mapCategory: processMapCategoryEnum("map_category"),
     // Sprint 56 (migrations 0132/0133) — previously missing from the
     // Drizzle schema (B1.4 drift fix): traffic-light health + metro map
     // layout used by the metro-layout endpoints.
@@ -131,6 +141,7 @@ export const process = pgTable(
     index("process_owner_idx").on(table.processOwnerId),
     index("process_status_idx").on(table.orgId, table.status),
     index("process_level_idx").on(table.orgId, table.level),
+    index("process_map_category_idx").on(table.orgId, table.mapCategory),
   ],
 );
 

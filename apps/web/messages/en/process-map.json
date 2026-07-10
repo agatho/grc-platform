@@ -1,0 +1,35 @@
+{
+  "title": "Process Map",
+  "subtitle": "The organization's value chain — management, core and support processes",
+  "tab": "Map",
+  "breadcrumbRoot": "Map",
+  "print": "Print",
+  "toMap": "Open process map",
+  "loadError": "Failed to load the process map",
+  "bands": {
+    "management": "Management processes",
+    "core": "Core processes",
+    "support": "Support processes",
+    "unassigned": "Unassigned"
+  },
+  "bandEmpty": "No processes in this band",
+  "tile": {
+    "subprocesses": "{count, plural, =0 {No subprocesses} one {# subprocess} other {# subprocesses}}",
+    "openDetail": "Open detail page",
+    "drillIn": "Show subprocesses"
+  },
+  "empty": {
+    "title": "No processes on this level yet",
+    "hint": "Create processes and assign them a map category to populate the map.",
+    "goToProcesses": "Go to process register"
+  },
+  "category": {
+    "label": "Map category",
+    "management": "Management",
+    "core": "Core process",
+    "support": "Support",
+    "none": "— unassigned",
+    "saved": "Map category saved",
+    "saveError": "Saving failed"
+  }
+}

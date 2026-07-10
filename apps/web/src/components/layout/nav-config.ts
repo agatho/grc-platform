@@ -306,7 +306,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "nav.grouped.ismsReviews",
         href: "/isms/reviews",
         icon: ClipboardCheck,
-        roles: ["admin", "risk_manager"],
+        // Management-Review-Cockpit (ISO 27001 9.3): oberste Leitung /
+        // 2nd Line führen das Review, Auditoren lesen die Protokolle.
+        roles: ["admin", "ciso", "quality_manager", "risk_manager", "auditor"],
         moduleKey: "isms",
         parentModule: "isms",
       },

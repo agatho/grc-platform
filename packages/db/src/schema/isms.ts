@@ -629,6 +629,14 @@ export const managementReview = pgTable(
     actionItems: jsonb("action_items"),
     minutes: text("minutes"),
     nextReviewDate: date("next_review_date", { mode: "string" }),
+    // Cockpit (0369): Review-Zeitraum für die 9.3-Input-Aggregation.
+    // NULL = seit letztem completed Review (period_start) bzw. review_date
+    // (period_end).
+    periodStart: date("period_start", { mode: "string" }),
+    periodEnd: date("period_end", { mode: "string" }),
+    // Cockpit (0369): gesetzt beim Übergang in_progress → completed;
+    // danach ist das Review read-only (Item-Mutationen → 422).
+    completedAt: timestamp("completed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -641,5 +649,49 @@ export const managementReview = pgTable(
     index("mr_org_idx").on(t.orgId),
     index("mr_status_idx").on(t.orgId, t.status),
     index("mr_date_idx").on(t.orgId, t.reviewDate),
+  ],
+);
+
+// ══════════════════════════════════════════════════════════════
+// 5b.7 ManagementReviewItem — strukturierte Review-Punkte des
+//      Cockpits (Migration 0369): Kategorie + Feststellung +
+//      Beschluss + optionale Maßnahme (work_item-FK).
+// ══════════════════════════════════════════════════════════════
+
+export const managementReviewItem = pgTable(
+  "management_review_item",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    orgId: uuid("org_id")
+      .notNull()
+      .references(() => organization.id),
+    reviewId: uuid("review_id")
+      .notNull()
+      .references(() => managementReview.id, { onDelete: "cascade" }),
+    // ISO 27001 9.3.2 Input-Kategorie — VARCHAR statt Enum, Zod-validiert
+    // (siehe MANAGEMENT_REVIEW_ITEM_CATEGORIES in @grc/shared)
+    category: varchar("category", { length: 50 }).notNull(),
+    content: text("content").notNull(),
+    decision: text("decision"),
+    actionWorkItemId: uuid("action_work_item_id").references(
+      () => workItem.id,
+      { onDelete: "set null" },
+    ),
+    sortOrder: integer("sort_order").notNull().default(0),
+    createdAt: timestamp("created_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true })
+      .notNull()
+      .defaultNow(),
+    createdBy: uuid("created_by").references(() => user.id),
+    updatedBy: uuid("updated_by").references(() => user.id),
+  },
+  (t) => [
+    // Prefix mgmt_review_item_: "mri_" ist bereits von maturity_roadmap_item
+    // belegt (Indexnamen sind schema-global).
+    index("mgmt_review_item_org_idx").on(t.orgId),
+    index("mgmt_review_item_review_idx").on(t.reviewId, t.sortOrder),
+    index("mgmt_review_item_action_wi_idx").on(t.actionWorkItemId),
   ],
 );

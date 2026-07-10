@@ -1,0 +1,35 @@
+{
+  "title": "Prozesslandkarte",
+  "subtitle": "Wertschöpfungskette der Organisation — Management-, Kern- und Supportprozesse",
+  "tab": "Landkarte",
+  "breadcrumbRoot": "Landkarte",
+  "print": "Drucken",
+  "toMap": "Zur Prozesslandkarte",
+  "loadError": "Prozesslandkarte konnte nicht geladen werden",
+  "bands": {
+    "management": "Managementprozesse",
+    "core": "Kernprozesse",
+    "support": "Supportprozesse",
+    "unassigned": "Nicht zugeordnet"
+  },
+  "bandEmpty": "Keine Prozesse in diesem Band",
+  "tile": {
+    "subprocesses": "{count, plural, =0 {Keine Subprozesse} one {# Subprozess} other {# Subprozesse}}",
+    "openDetail": "Detailseite öffnen",
+    "drillIn": "Subprozesse anzeigen"
+  },
+  "empty": {
+    "title": "Noch keine Prozesse auf dieser Ebene",
+    "hint": "Lege Prozesse an und weise ihnen eine Landkarten-Kategorie zu, um die Landkarte zu füllen.",
+    "goToProcesses": "Zum Prozessregister"
+  },
+  "category": {
+    "label": "Landkarten-Kategorie",
+    "management": "Management",
+    "core": "Kernprozess",
+    "support": "Support",
+    "none": "— nicht zugeordnet",
+    "saved": "Landkarten-Kategorie gespeichert",
+    "saveError": "Speichern fehlgeschlagen"
+  }
+}

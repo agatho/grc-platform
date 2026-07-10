@@ -75,6 +75,8 @@ export async function POST(req: Request) {
         chairId: data.chairId ?? null,
         participantIds: data.participantIds,
         nextReviewDate: data.nextReviewDate ?? null,
+        periodStart: data.periodStart ?? null,
+        periodEnd: data.periodEnd ?? null,
         createdBy: ctx.userId,
       })
       .returning();
