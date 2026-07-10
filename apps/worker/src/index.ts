@@ -1500,6 +1500,8 @@ import { aggregateUsage } from "./crons/usage-aggregation";
 import { processDocumentReviewReminders } from "./crons/document-review-reminder";
 import { processDocumentAutoExpire } from "./crons/document-auto-expire";
 import { processDocumentRetentionPurge } from "./crons/document-retention-purge";
+// Risk Acceptance (ISO 27005 Clause 10) — befristete Akzeptanzen ablaufen lassen
+import { processRiskAcceptanceExpiry } from "./crons/risk-acceptance-expiry";
 
 const batchCrons: Record<string, () => Promise<unknown>> = {
   "anomaly-detection": processAnomalyDetection,
@@ -1527,6 +1529,7 @@ const batchCrons: Record<string, () => Promise<unknown>> = {
   "regulatory-digest": processRegulatoryDigest,
   "regulatory-sources": processRegulatorySources,
   "resilience-score": processResilienceScoreSnapshot,
+  "risk-acceptance-expiry": processRiskAcceptanceExpiry,
   "retention-monitoring": processRetentionMonitoring,
   "translation-staleness": processTranslationStalenessCheck,
   "usage-aggregation": aggregateUsage,

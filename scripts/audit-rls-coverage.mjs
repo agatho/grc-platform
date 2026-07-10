@@ -80,6 +80,17 @@ const TABLES_WITHOUT_ORG_ID = new Set([
   "xbrl_tag",                 // XBRL-Tags gehoeren zur Taxonomie, nicht zum Tenant
 ]);
 
+// Tables deliberately WITHOUT audit_trigger() (see migration 0357):
+// Auth.js tables carry secrets (session/OAuth/verification tokens) that must
+// not be copied into audit_log.changes; process_event is a high-volume
+// process-mining event stream (excluded since 0337).
+const AUDIT_EXEMPT = new Set([
+  "session",
+  "account",
+  "verification_token",
+  "process_event",
+]);
+
 async function main() {
   console.log("→ Extracting tables from schema...");
   const tables = await extractTables();
@@ -99,7 +110,7 @@ async function main() {
     const status =
       needsRLS && !rlsOK ? "RLS_MISSING" :
       needsRLS && !policyOK ? "POLICY_MISSING" :
-      needsRLS && !auditOK ? "AUDIT_MISSING" :
+      needsRLS && !auditOK ? (AUDIT_EXEMPT.has(table) ? "AUDIT_EXEMPT" : "AUDIT_MISSING") :
       !needsRLS ? "PLATFORM_EXEMPT" :
       "OK";
     rows.push({ table, file, needsRLS, rlsOK, policyOK, auditOK, status });
@@ -127,6 +138,7 @@ async function main() {
     `- \`RLS_MISSING\`: Table contains \`org_id\` (multi-tenant) but no \`ENABLE ROW LEVEL SECURITY\` statement was found in any migration.`,
     `- \`POLICY_MISSING\`: RLS enabled but no \`CREATE POLICY\` referencing the table.`,
     `- \`AUDIT_MISSING\`: Table missing an \`audit_trigger()\` registration (ADR-011).`,
+    `- \`AUDIT_EXEMPT\`: Table deliberately without \`audit_trigger()\` — Auth.js secret-bearing tables (session/account/verification_token) and the high-volume process-mining stream (process_event). See migration 0357.`,
     `- \`PLATFORM_EXEMPT\`: Platform-wide table (user, module_definition, catalog, …) which by design does not use org-scoped RLS.`,
     `- \`OK\`: RLS + policy + audit trigger all present.`,
     ``,
@@ -134,7 +146,7 @@ async function main() {
     ``,
   ];
 
-  for (const status of ["RLS_MISSING", "POLICY_MISSING", "AUDIT_MISSING", "PLATFORM_EXEMPT", "OK"]) {
+  for (const status of ["RLS_MISSING", "POLICY_MISSING", "AUDIT_MISSING", "AUDIT_EXEMPT", "PLATFORM_EXEMPT", "OK"]) {
     const list = rows.filter((r) => r.status === status);
     if (list.length === 0) continue;
     mdLines.push(`### ${status} (${list.length})`);

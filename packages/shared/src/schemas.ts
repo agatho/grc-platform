@@ -55,6 +55,8 @@ export * from "./schemas/eam-ai";
 export * from "./schemas/eam-catalog";
 export * from "./schemas/eam-governance";
 export * from "./schemas/risk-evaluation";
+// Risk Acceptance (ISO 27005 Clause 10) — API nachgezogen 2026-07-10
+export * from "./schemas/risk-acceptance";
 export * from "./schemas/grc-ux";
 export * from "./schemas/bpm-derived";
 export * from "./schemas/api-platform";

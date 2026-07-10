@@ -9,33 +9,10 @@
 // load-bearing governance decision and should be visible in audit_log.
 
 import { db, riskAcceptanceAuthority } from "@grc/db";
+import { upsertAcceptanceAuthoritySchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { and, eq, asc } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { z } from "zod";
-
-const ROLE_VALUES = [
-  "admin",
-  "risk_manager",
-  "control_owner",
-  "process_owner",
-  "ciso",
-  "dpo",
-] as const;
-
-const upsertAuthoritySchema = z.object({
-  entries: z
-    .array(
-      z.object({
-        maxScore: z.number().int().min(1).max(25),
-        requiredRole: z.enum(ROLE_VALUES),
-        requiredRoleLabel: z.string().max(200).optional(),
-        isActive: z.boolean().default(true),
-      }),
-    )
-    .min(1)
-    .max(10),
-});
 
 // GET /api/v1/risk-acceptance/authority — list authority matrix.
 export async function GET(req: Request) {
@@ -75,7 +52,7 @@ export async function PUT(req: Request) {
   const moduleCheck = await requireModule("erm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  const body = upsertAuthoritySchema.safeParse(await req.json());
+  const body = upsertAcceptanceAuthoritySchema.safeParse(await req.json());
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -117,9 +94,11 @@ export async function PUT(req: Request) {
         .values(
           body.data.entries.map((e) => ({
             orgId: ctx.orgId,
+            minScore: e.minScore,
             maxScore: e.maxScore,
             requiredRole: e.requiredRole,
             requiredRoleLabel: e.requiredRoleLabel,
+            description: e.description,
             isActive: e.isActive,
           })),
         )

@@ -7,14 +7,14 @@
 // to status=identified so it re-enters the assessment lane.
 
 import { db, risk, riskAcceptance } from "@grc/db";
+import {
+  revokeRiskAcceptanceSchema,
+  validateRiskAcceptanceTransition,
+  isRiskAcceptanceStatus,
+} from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { and, eq, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { z } from "zod";
-
-const revokeSchema = z.object({
-  reason: z.string().min(10).max(2000),
-});
 
 export async function PATCH(
   req: Request,
@@ -28,7 +28,9 @@ export async function PATCH(
 
   const { id: riskId, acceptanceId } = await params;
 
-  const body = revokeSchema.safeParse(await req.json().catch(() => ({})));
+  const body = revokeRiskAcceptanceSchema.safeParse(
+    await req.json().catch(() => ({})),
+  );
   if (!body.success) {
     return Response.json(
       { error: "Validation failed", details: body.error.flatten() },
@@ -61,12 +63,29 @@ export async function PATCH(
     );
   }
 
+  // State-machine guard: only `active` acceptances can be revoked —
+  // an expired acceptance is already void, revoking it would falsify
+  // the audit trail.
+  if (isRiskAcceptanceStatus(existing.status)) {
+    const transition = validateRiskAcceptanceTransition({
+      from: existing.status,
+      to: "revoked",
+    });
+    if (!transition.ok) {
+      return Response.json(
+        { error: `Cannot revoke acceptance: ${transition.reason}` },
+        { status: 409 },
+      );
+    }
+  }
+
   const result = await withAuditContext(
     ctx,
     async (tx) => {
       const [revoked] = await tx
         .update(riskAcceptance)
         .set({
+          status: "revoked",
           revokedAt: new Date(),
           revokedBy: ctx.userId,
           revokeReason: body.data.reason,

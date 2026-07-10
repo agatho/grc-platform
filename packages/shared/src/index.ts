@@ -119,6 +119,20 @@ export {
   type RiskStatusTransitionResult,
 } from "./state-machines/risk-status";
 export {
+  RISK_ACCEPTANCE_STATUSES,
+  RISK_ACCEPTANCE_ALLOWED_TRANSITIONS,
+  isRiskAcceptanceStatus,
+  validateRiskAcceptanceTransition,
+  validateAcceptanceFourEyes,
+  resolveAcceptanceAuthority,
+  canAcceptWithRoles,
+  riskLevelFromScore,
+  type RiskAcceptanceStatus,
+  type RiskAcceptanceTransitionResult,
+  type AcceptanceAuthorityBand,
+  type ResolvedAcceptanceAuthority,
+} from "./state-machines/risk-acceptance";
+export {
   PROGRAMME_JOURNEY_STATUSES,
   PROGRAMME_JOURNEY_TRANSITIONS,
   isProgrammeJourneyStatus,

@@ -4,6 +4,18 @@
 >
 > Stand: **2026-05-21**. Letzte Migration: `0346_seed_bcm_security_external_auditor_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** (Wave 24 + DR-Drill #217 merged).
 
+## Risk-Acceptance-API nachgezogen 2026-07-10 (Triage-Finding F#2/F#3 Closure)
+
+Das Risk-Acceptance-Modul (ISO 27005 Kap. 10) war als „✅ Done" geführt, hatte aber nur Schema-/Migrationsdateien — **und die Tabellen existierten auf der Dev-DB gar nicht**: Migration `0088` rollte wegen des hartkodierten Seed-org_id komplett zurück (MIGRATIONS_KNOWN_ISSUES Kategorie A), womit auch die RLS-/Trigger-Statements aus `0089`/`0105`/`0345` ins Leere liefen. Nachgezogen:
+
+- **Repair-Migration `0360_risk_acceptance_repair.sql`** — Tabellen idempotent neu (voller 0088-Spaltensatz), org-sicherer Authority-Matrix-Seed pro Organisation, RLS ENABLE+FORCE+Policies (USING+WITH CHECK, Pattern 0345). UNIQUE-Band-Constraint durch partiellen Unique-Index (nur `is_active`) ersetzt, damit die Authority-PUT-Route (Soft-Deactivate + Insert) idempotent bleibt. **Noch nicht ausgeführt.**
+- **Drizzle-Schema-Drift behoben** (`packages/db/src/schema/risk-acceptance.ts`): `accepted_by`, `justification`, `risk_score_at_acceptance`, `status`, `valid_until`, `acceptance_conditions`, `tags`, Authority `min_score`/`description`/`required_approver_id` fehlten — der alte POST-Insert wäre an NOT-NULL-Spalten gescheitert.
+- **API komplettiert**: `GET /api/v1/risk-acceptances` (org-weite Review-Liste, Pagination/Filter status/riskId/expiringBefore), `GET|PATCH /api/v1/risk-acceptances/[id]`; `POST/GET /risks/[id]/acceptance` persistiert jetzt den vollen ISO-Datensatz inkl. **Vier-Augen-Prinzip** (Risk-Owner darf eigenes Risiko nicht akzeptieren → 422) und Risk-Status-Transition-Guard; Revoke-Route setzt `status='revoked'` mit State-Machine-Guard.
+- **Shared**: State-Machine `active → expired|revoked` + Authority-Band-Resolver + Zod-Schemas (`@grc/shared` state-machines/risk-acceptance, schemas/risk-acceptance).
+- **Worker-Cron `risk-acceptance-expiry`** (analog document-auto-expire, aber org-iterierend wegen FORCE RLS): befristete Akzeptanzen → `expired`, Risk zurück in `identified`, Notification an Akzeptierenden.
+- **Tests**: `packages/shared/tests/risk-acceptance-state-machine.test.ts` + `apps/web/src/__tests__/api/risk-acceptances-rbac.test.ts` (401/403/404/409/422/RBAC/Four-Eyes).
+- **Offen**: `risk_acceptance`/`risk_acceptance_authority` fehlen im Audit-Trigger-Backfill `0357` (auf frischen DBs greift 0089 nicht, weil die Tabellen erst mit 0360 entstehen) — Trigger-Registrierung dort ergänzen. Dedizierte Risk-Acceptance-UI existiert weiterhin nicht (nur Status-Badge im Risk-Register) — „UI Done"-Claim war falsch.
+
 ## Wave 24 — Alpha-Quality-Closure 2026-05-20 (PR #218, awaiting CI)
 
 Ziel: alle 13 Wave-24-Items des QA-Reports (`docs/qa-reports/claude-code-wave24-prompt.md`) schließen, damit die Plattform invite-ready ist. **12 von 13 geliefert**; nur A1's _Live-Verification_ braucht noch Hetzner-SSH-Zugriff.

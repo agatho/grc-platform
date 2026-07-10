@@ -605,3 +605,15 @@ This report is static analysis only:
 - `PLATFORM_EXEMPT` list is hand-curated (see script `scripts/audit-rls-coverage.mjs`)
 
 False positives are possible if RLS is enabled via custom SQL not matched by the regex (e.g. dynamic SQL, conditional DO blocks that only fire under specific branches). Cross-check via `SELECT * FROM pg_policies` in the live DB for authoritative data.
+
+---
+
+## Addendum 2026-07-10: audit trigger backfill via `0357_audit_trigger_backfill.sql`
+
+Der AUDIT_MISSING-Bestand dieses Reports (180 Tabellen, Stand 2026-05-13) wurde per Migration **`packages/db/drizzle/0357_audit_trigger_backfill.sql`** geschlossen:
+
+- **177 Tabellen** erhalten eine **explizite, statisch analysierbare** `audit_trigger()`-Registrierung: 174 aus der AUDIT_MISSING-Liste dieses Reports, dazu `asset_classification_override` (Migration 0325, erst nach dem Report ins Schema gekommen) sowie 2 Legacy-DMS-Tabellen `acknowledgment` / `document_entity_link`, die seit dem DMS-Overhaul 0353–0356 nicht mehr im Drizzle-Schema sind, aber in der Migrationskette (0011) weiterexistieren.
+- Hintergrund: Migration `0337_audit_trigger_gap_closure.sql` hatte die Trigger bereits **dynamisch** (EXECUTE format) auf alle org_id-Tabellen gelegt — für die Regex-basierte statische Analyse dieses Reports unsichtbar. Auf Bestands-DBs sind die 0357-Blöcke daher überwiegend No-Ops; 7 Tabellen **ohne** org_id-Spalte (`asset_type_risk_recommendation`, `cloud_service_catalog`, `dd_evidence`, `dd_response`, `extension_marketplace`, `process_template`, `wb_anonymous_mailbox`) erhalten dadurch erstmals tatsächlich einen Trigger.
+- Idempotenz/Duplikatschutz: Guard via `pg_trigger ⋈ pg_proc (tgfoid = audit_trigger)` — greift unabhängig von der Trigger-Namenskonvention; `to_regclass()`-Guard verhindert Trigger auf nicht existierende Tabellen.
+- **Bewusst ausgenommen (4 Tabellen, neuer Status `AUDIT_EXEMPT` im Script):** `session`, `account`, `verification_token` (Auth.js — Session-/OAuth-/Verification-Tokens dürfen nicht in `audit_log.changes` kopiert werden), `process_event` (Process-Mining-Massendaten, bereits in 0337 ausgenommen).
+- Erwarteter Stand nach Regenerierung (`node scripts/audit-rls-coverage.mjs`): **AUDIT_MISSING 0, AUDIT_EXEMPT 4, OK 546, PLATFORM_EXEMPT 15** (565 Schema-Tabellen, Stand 2026-07-10 — per Dry-Run der Script-Logik verifiziert; Report selbst wurde bewusst nicht neu generiert).
