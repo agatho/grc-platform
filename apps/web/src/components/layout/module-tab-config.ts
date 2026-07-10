@@ -35,6 +35,11 @@ export const MODULE_TAB_GROUPS: ModuleTabGroup[] = [
       { labelKey: "nav.tabs.kri", href: "/risks/kris" },
       { labelKey: "nav.tabs.riskGroups", href: "/risks/group" },
       {
+        labelKey: "nav.tabs.riskAcceptances",
+        href: "/risk-acceptances",
+        match: "prefix",
+      },
+      {
         labelKey: "nav.tabs.heatmap",
         href: "/controls/heatmap",
         match: "exact",

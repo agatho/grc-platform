@@ -56,6 +56,7 @@
       "risks": "Risk Register",
       "kris": "Key Risk Indicators",
       "riskGroup": "Risk Groups",
+      "riskAcceptances": "Risk Acceptances",
       "riskAppetite": "Risk Appetite",
       "fair": "FAIR Analysis",
       "controls": "Controls",
@@ -185,6 +186,7 @@
       "register": "Register",
       "kri": "Key Risk Indicators",
       "riskGroups": "Groups",
+      "riskAcceptances": "Acceptances",
       "heatmap": "Heatmap",
       "appetite": "Risk Appetite",
       "fair": "FAIR Analysis",
@@ -927,6 +929,116 @@
     "edit": "Edit Risk",
     "register": "Risk Register",
     "backToList": "Back to Risk Register",
+    "acceptance": {
+      "title": "Risk Acceptances",
+      "subtitle": "Review cockpit for formal acceptance decisions (ISO 27005 Clause 10)",
+      "status": {
+        "active": "Active",
+        "expired": "Expired",
+        "revoked": "Revoked"
+      },
+      "columns": {
+        "risk": "Risk",
+        "score": "Score at Acceptance",
+        "acceptedBy": "Accepted by",
+        "status": "Status",
+        "validUntil": "Valid until",
+        "justification": "Justification",
+        "actions": "Actions"
+      },
+      "filter": {
+        "allStatuses": "All Statuses",
+        "expiringSoonOnly": "Expiring soon only"
+      },
+      "expiry": {
+        "unlimited": "Unlimited",
+        "expiresInDays": "Expires in {days} days",
+        "expiresToday": "Expires today",
+        "expired": "Expired"
+      },
+      "pagination": {
+        "pageOf": "Page {page} of {totalPages}",
+        "previous": "Previous",
+        "next": "Next",
+        "total": "{total} entries"
+      },
+      "empty": {
+        "title": "No risk acceptances found",
+        "hint": "Formal acceptances are issued directly on the risk (tab \"Risk Acceptance\")."
+      },
+      "loadError": "Failed to load risk acceptances",
+      "retry": "Retry",
+      "details": "Show details",
+      "detail": {
+        "title": "Risk Acceptance",
+        "openRisk": "Open risk",
+        "acceptedBy": "Accepted by",
+        "acceptedAt": "Accepted at",
+        "justification": "Justification",
+        "conditions": "Conditions",
+        "validUntil": "Valid until",
+        "tags": "Tags",
+        "revokedBy": "Revoked by",
+        "revokedAt": "Revoked at",
+        "revokeReason": "Revocation reason",
+        "loadError": "Failed to load acceptance record"
+      },
+      "edit": {
+        "action": "Edit",
+        "title": "Edit acceptance",
+        "description": "Only conditions, validity and tags of an active acceptance can be changed — justification and score snapshot are immutable audit artefacts.",
+        "conditions": "Conditions",
+        "conditionsPlaceholder": "Conditions under which the risk remains accepted …",
+        "validUntil": "Valid until",
+        "tags": "Tags",
+        "save": "Save",
+        "cancel": "Cancel",
+        "success": "Acceptance updated",
+        "error": "Failed to update acceptance"
+      },
+      "revoke": {
+        "action": "Revoke",
+        "title": "Revoke acceptance",
+        "description": "Revoking moves the risk back into assessment (status \"Identified\"). A reason is mandatory (at least 10 characters).",
+        "reasonLabel": "Revocation reason *",
+        "reasonPlaceholder": "Why is this acceptance being revoked?",
+        "reasonTooShort": "The reason must be at least 10 characters long",
+        "confirm": "Revoke acceptance",
+        "cancel": "Cancel",
+        "success": "Acceptance revoked",
+        "error": "Revocation failed"
+      },
+      "accept": {
+        "action": "Accept risk",
+        "title": "Formally accept risk",
+        "description": "Formal acceptance per ISO 27005 Clause 10 — the decision is recorded in the tamper-evident audit trail.",
+        "justificationLabel": "Justification *",
+        "justificationPlaceholder": "Why is this risk being accepted? (at least 10 characters)",
+        "justificationTooShort": "The justification must be at least 10 characters long",
+        "conditionsLabel": "Conditions",
+        "conditionsPlaceholder": "Optional conditions under which the risk is accepted …",
+        "validUntilLabel": "Valid until",
+        "validUntilHint": "Leave empty for an unlimited acceptance",
+        "tagsLabel": "Tags",
+        "submit": "Record acceptance",
+        "cancel": "Cancel",
+        "success": "Risk formally accepted"
+      },
+      "errors": {
+        "fourEyes": "Four-eyes principle: the risk owner cannot formally accept their own risk. An independent role per the acceptance-authority matrix must decide.",
+        "insufficientAuthority": "Insufficient authority: accepting a risk with score {score} requires the role \"{requiredRole}\" (or admin).",
+        "alreadyAccepted": "An active acceptance already exists for this risk.",
+        "notScored": "An unscored risk cannot be accepted — please complete the assessment first.",
+        "validation": "Invalid input — please check the fields.",
+        "generic": "Action failed"
+      },
+      "history": {
+        "title": "Acceptance History",
+        "empty": "No acceptance decisions for this risk yet",
+        "activeTitle": "Active Risk Acceptance",
+        "noActive": "No active acceptance — this risk can be formally accepted."
+      }
+    },
     "status": {
       "identified": "Identified",
       "assessed": "Assessed",
@@ -1086,7 +1198,8 @@
         "kris": "KRIs",
         "linkages": "Linkages",
         "history": "History",
-        "documents": "Documents"
+        "documents": "Documents",
+        "acceptance": "Risk Acceptance"
       },
       "status": "Status",
       "owner": "Owner",

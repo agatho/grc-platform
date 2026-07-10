@@ -56,6 +56,7 @@
       "risks": "Risikoregister",
       "kris": "Risikoindikatoren (KRI)",
       "riskGroup": "Risikogruppen",
+      "riskAcceptances": "Risikoakzeptanzen",
       "riskAppetite": "Risikoappetit",
       "fair": "FAIR-Analyse",
       "controls": "Kontrollen",
@@ -185,6 +186,7 @@
       "register": "Register",
       "kri": "Risikoindikatoren",
       "riskGroups": "Gruppen",
+      "riskAcceptances": "Akzeptanzen",
       "heatmap": "Heatmap",
       "appetite": "Risikoappetit",
       "fair": "FAIR-Analyse",
@@ -927,6 +929,116 @@
     "edit": "Risiko bearbeiten",
     "register": "Risikoregister",
     "backToList": "Zurück zum Risikoregister",
+    "acceptance": {
+      "title": "Risikoakzeptanzen",
+      "subtitle": "Review-Cockpit für formale Akzeptanz-Entscheidungen (ISO 27005 Kap. 10)",
+      "status": {
+        "active": "Aktiv",
+        "expired": "Abgelaufen",
+        "revoked": "Widerrufen"
+      },
+      "columns": {
+        "risk": "Risiko",
+        "score": "Score bei Akzeptanz",
+        "acceptedBy": "Akzeptiert von",
+        "status": "Status",
+        "validUntil": "Gültig bis",
+        "justification": "Begründung",
+        "actions": "Aktionen"
+      },
+      "filter": {
+        "allStatuses": "Alle Status",
+        "expiringSoonOnly": "Nur bald ablaufende"
+      },
+      "expiry": {
+        "unlimited": "Unbefristet",
+        "expiresInDays": "Läuft in {days} Tagen ab",
+        "expiresToday": "Läuft heute ab",
+        "expired": "Abgelaufen"
+      },
+      "pagination": {
+        "pageOf": "Seite {page} von {totalPages}",
+        "previous": "Zurück",
+        "next": "Weiter",
+        "total": "{total} Einträge"
+      },
+      "empty": {
+        "title": "Keine Risikoakzeptanzen gefunden",
+        "hint": "Formale Akzeptanzen werden direkt am Risiko ausgesprochen (Tab „Risikoakzeptanz“)."
+      },
+      "loadError": "Risikoakzeptanzen konnten nicht geladen werden",
+      "retry": "Erneut versuchen",
+      "details": "Details anzeigen",
+      "detail": {
+        "title": "Risikoakzeptanz",
+        "openRisk": "Risiko öffnen",
+        "acceptedBy": "Akzeptiert von",
+        "acceptedAt": "Akzeptiert am",
+        "justification": "Begründung",
+        "conditions": "Auflagen",
+        "validUntil": "Gültig bis",
+        "tags": "Tags",
+        "revokedBy": "Widerrufen von",
+        "revokedAt": "Widerrufen am",
+        "revokeReason": "Widerrufsbegründung",
+        "loadError": "Akzeptanz konnte nicht geladen werden"
+      },
+      "edit": {
+        "action": "Bearbeiten",
+        "title": "Akzeptanz bearbeiten",
+        "description": "Nur Auflagen, Befristung und Tags einer aktiven Akzeptanz sind änderbar — Begründung und Score-Snapshot sind Audit-Artefakte.",
+        "conditions": "Auflagen",
+        "conditionsPlaceholder": "Bedingungen, unter denen das Risiko akzeptiert bleibt …",
+        "validUntil": "Gültig bis",
+        "tags": "Tags",
+        "save": "Speichern",
+        "cancel": "Abbrechen",
+        "success": "Akzeptanz aktualisiert",
+        "error": "Akzeptanz konnte nicht aktualisiert werden"
+      },
+      "revoke": {
+        "action": "Widerrufen",
+        "title": "Akzeptanz widerrufen",
+        "description": "Der Widerruf setzt das Risiko zurück in die Bewertung (Status „Identifiziert“). Eine Begründung ist Pflicht (mindestens 10 Zeichen).",
+        "reasonLabel": "Widerrufsbegründung *",
+        "reasonPlaceholder": "Warum wird die Akzeptanz widerrufen?",
+        "reasonTooShort": "Die Begründung muss mindestens 10 Zeichen lang sein",
+        "confirm": "Akzeptanz widerrufen",
+        "cancel": "Abbrechen",
+        "success": "Akzeptanz widerrufen",
+        "error": "Widerruf fehlgeschlagen"
+      },
+      "accept": {
+        "action": "Risiko akzeptieren",
+        "title": "Risiko formal akzeptieren",
+        "description": "Formale Akzeptanz nach ISO 27005 Kap. 10 — die Entscheidung wird revisionssicher protokolliert.",
+        "justificationLabel": "Begründung *",
+        "justificationPlaceholder": "Warum wird dieses Risiko akzeptiert? (mindestens 10 Zeichen)",
+        "justificationTooShort": "Die Begründung muss mindestens 10 Zeichen lang sein",
+        "conditionsLabel": "Auflagen",
+        "conditionsPlaceholder": "Optionale Bedingungen, unter denen akzeptiert wird …",
+        "validUntilLabel": "Gültig bis",
+        "validUntilHint": "Leer lassen für eine unbefristete Akzeptanz",
+        "tagsLabel": "Tags",
+        "submit": "Akzeptanz aussprechen",
+        "cancel": "Abbrechen",
+        "success": "Risiko formal akzeptiert"
+      },
+      "errors": {
+        "fourEyes": "Vier-Augen-Prinzip: Der Risk-Owner darf sein eigenes Risiko nicht formal akzeptieren. Eine unabhängige Rolle gemäß Authority-Matrix muss entscheiden.",
+        "insufficientAuthority": "Unzureichende Befugnis: Für Score {score} ist die Rolle „{requiredRole}“ (oder Admin) erforderlich.",
+        "alreadyAccepted": "Für dieses Risiko existiert bereits eine aktive Akzeptanz.",
+        "notScored": "Ein unbewertetes Risiko kann nicht akzeptiert werden — bitte zuerst die Bewertung durchführen.",
+        "validation": "Eingaben ungültig — bitte Felder prüfen.",
+        "generic": "Aktion fehlgeschlagen"
+      },
+      "history": {
+        "title": "Akzeptanz-Historie",
+        "empty": "Noch keine Akzeptanz-Entscheidungen für dieses Risiko",
+        "activeTitle": "Aktive Risikoakzeptanz",
+        "noActive": "Keine aktive Akzeptanz — das Risiko kann formal akzeptiert werden."
+      }
+    },
     "status": {
       "identified": "Identifiziert",
       "assessed": "Bewertet",
@@ -1086,7 +1198,8 @@
         "kris": "KRIs",
         "linkages": "Verknüpfungen",
         "history": "Historie",
-        "documents": "Dokumente"
+        "documents": "Dokumente",
+        "acceptance": "Risikoakzeptanz"
       },
       "status": "Status",
       "owner": "Verantwortlicher",

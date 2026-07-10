@@ -130,6 +130,15 @@ export const NAV_GROUPS: NavGroup[] = [
         parentModule: "erm",
       },
       {
+        // ISO 27005 Clause 10 — org-wide acceptance review cockpit.
+        labelKey: "nav.grouped.riskAcceptances",
+        href: "/risk-acceptances",
+        icon: ShieldCheck,
+        roles: ["admin", "risk_manager", "ciso", "auditor"],
+        moduleKey: "erm",
+        parentModule: "erm",
+      },
+      {
         labelKey: "nav.grouped.riskAppetite",
         href: "/erm/risk-appetite",
         icon: Target,

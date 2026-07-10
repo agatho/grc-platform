@@ -37,6 +37,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
+import { RiskAcceptancePanel } from "@/components/risk/risk-acceptance-panel";
 import { useDateFormat } from "@/lib/format-date";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -758,6 +759,10 @@ function RiskDetailContent() {
           <TabsTrigger value="overview">{t("tabs.overview")}</TabsTrigger>
           <TabsTrigger value="assessment">{t("tabs.assessment")}</TabsTrigger>
           <TabsTrigger value="treatment">{t("tabs.treatment")}</TabsTrigger>
+          <TabsTrigger value="acceptance">
+            <ShieldCheck size={14} className="mr-1.5" />
+            {t("tabs.acceptance")}
+          </TabsTrigger>
           <TabsTrigger value="kris">{t("tabs.kris")}</TabsTrigger>
           <TabsTrigger value="linkages">{t("tabs.linkages")}</TabsTrigger>
           <TabsTrigger value="history">{t("tabs.history")}</TabsTrigger>
@@ -1322,6 +1327,19 @@ function RiskDetailContent() {
               </DialogFooter>
             </DialogContent>
           </Dialog>
+        </TabsContent>
+
+        {/* ══════ Risk-Acceptance Tab (ISO 27005 Clause 10) ══════ */}
+        <TabsContent value="acceptance" className="space-y-4 mt-4">
+          <RiskAcceptancePanel
+            riskId={riskId}
+            onChanged={() => {
+              // Accept/revoke flips the risk status (accepted ⇄ identified)
+              // and writes audit-log rows — refresh both.
+              void fetchRisk();
+              void fetchAuditLog();
+            }}
+          />
         </TabsContent>
 
         {/* ══════ KRIs Tab ══════ */}
