@@ -1,0 +1,107 @@
+# Doku-Realitäts-Audit — 2026-07-10
+
+Anlass: Drei falsche „Done"-Claims sind diese Woche aufgeflogen — (a) `docs/qa-reports/wave19-n7-dms-scope-decision.md` behauptete „SHA-256 file hash implemented" (existierte nicht, am 2026-07-10 nachgerüstet), (b) derselbe Report behauptete `POST /documents/[id]/versions` (existierte nie), (c) STATUS.md/CLAUDE.md führten Risk-Acceptance als „UI Done" (weder UI noch funktionierende API; am 2026-07-10 nachgerüstet). Dieses Audit gleicht **jeden prüfbaren Claim** aus `docs/STATUS.md` und die Kopfzahlen aus `CLAUDE.md` gegen den Code ab.
+
+**Methode:** Zählungen via Glob/`find`/`grep` über `apps/web/src/app/api/v1/` (route.ts), `apps/web/src/app/` (page.tsx), `packages/db/src/schema/` (pgTable), `packages/db/drizzle/` (Migrationen), `apps/worker/src/crons/`, Test-Globs; Existenzprüfung jeder behaupteten Route/Lib/Migration/Testdatei; Abgleich zitierter Reports (`rls-coverage-report.md`, `lod-coverage.md`, `coverage/aggregated-summary.md`, `CHANGELOG.md`). Code-Stand: Commit `1f8fc354` (2026-07-10).
+
+**Ergebnis: 58 Claims geprüft — 30 KORREKT · 19 VERALTET (korrigiert) · 3 FALSCH · 6 NICHT PRÜFBAR.**
+
+## Kategorien
+
+- **KORREKT** — Claim stimmt mit dem Code überein.
+- **VERALTET** — war zum damaligen Stand richtig, von jüngeren Änderungen überholt (v. a. Migrationen 0341–0361, DMS/BPM-Nachrüstungen, Risk-Acceptance-Repair vom 2026-07-10). In STATUS.md/CLAUDE.md richtiggestellt.
+- **FALSCH** — war nie richtig.
+- **NICHT PRÜFBAR** — prod-/CI-/DB-Laufzeitzustände oder PR-Referenzen, die statisch nicht verifizierbar sind.
+
+## Befundtabelle
+
+### KORREKT (30)
+
+| # | Claim (Quelle) | Beleg |
+| - | -------------- | ----- |
+| 1 | Release 0.1.0-alpha (2026-04-20) | `CHANGELOG.md` (`## [0.1.0-alpha] — 2026-04-20`) |
+| 2 | Repair-Migration `0360_risk_acceptance_repair.sql` mit Tabellen/Seed/RLS wie beschrieben | `packages/db/drizzle/0360_risk_acceptance_repair.sql` |
+| 3 | Drizzle-Schema-Drift behoben (`risk-acceptance.ts`) | `packages/db/src/schema/risk-acceptance.ts` |
+| 4 | `GET /api/v1/risk-acceptances` + `GET\|PATCH /risk-acceptances/[id]` | `apps/web/src/app/api/v1/risk-acceptances/route.ts`, `.../[id]/route.ts` |
+| 5 | `POST/GET /risks/[id]/acceptance` + Revoke-Route | `apps/web/src/app/api/v1/risks/[id]/acceptance/route.ts`, `.../[acceptanceId]/revoke/route.ts` |
+| 6 | Shared State-Machine + Zod-Schemas Risk-Acceptance | `packages/shared/src/state-machines/risk-acceptance.ts`, `packages/shared/src/schemas/risk-acceptance.ts` |
+| 7 | Worker-Cron `risk-acceptance-expiry` | `apps/worker/src/crons/risk-acceptance-expiry.ts` |
+| 8 | Risk-Acceptance-Tests (State-Machine + RBAC) | `packages/shared/tests/risk-acceptance-state-machine.test.ts`, `apps/web/src/__tests__/api/risk-acceptances-rbac.test.ts` |
+| 9 | Wave-24 B1: CISO + compliance_officer auf `GET /audit-log/integrity` | `apps/web/src/app/api/v1/audit-log/integrity/route.ts:277` (`withAuth("admin","auditor","ciso","compliance_officer")`) |
+| 10 | Wave-24 B3: `GET /erm/management-summary` (GET+POST) | `apps/web/src/app/api/v1/erm/management-summary/route.ts` |
+| 11 | Wave-24 B4: `POST /control-tests` | `apps/web/src/app/api/v1/control-tests/route.ts` |
+| 12 | Wave-24 C: ADR-026 + `GET /audit-log/integrity/continuity` | `docs/ADR-026-hash-chain-v3-migration.md`, `.../integrity/continuity/route.ts` |
+| 13 | Wave-24 D3: `GET /vendors/[id]/risk-profile` | `apps/web/src/app/api/v1/vendors/[id]/risk-profile/route.ts` |
+| 14 | Wave-24 D4: `/tprm/concentration` existiert | `apps/web/src/app/api/v1/tprm/concentration/route.ts` |
+| 15 | Wave-24 D5: `GET /audit-mgmt/audits/[id]/activities/schema` | entsprechende `route.ts` vorhanden |
+| 16 | Wave-24 D6: `GET /esg/measurements/schema` | entsprechende `route.ts` vorhanden |
+| 17 | Wave-24 D7: `GET /compliance/coverage` | `apps/web/src/app/api/v1/compliance/coverage/route.ts` (zuletzt gehärtet in Commit `ea6f8233`) |
+| 18 | Seed-Migration `0346_seed_bcm_security_external_auditor_users.sql` | Datei vorhanden |
+| 19 | `scripts/pilot-readiness-gate.sh` | Datei vorhanden (zuletzt angepasst in Commit `d1ee8c12`) |
+| 20 | `docs/ALPHA_INVITE.md` | Datei vorhanden |
+| 21 | BPM-Overhaul: Migrationen `0330`–`0334` + `process-grc.ts` | `packages/db/drizzle/0330_bpm_overhaul_fk_hardening.sql` … `0334_process_sign_off_framework_mapping.sql`, `packages/db/src/schema/process-grc.ts` |
+| 22 | Audit/DPMS/TPRM-Overhauls: `0338`/`0339`/`0340` + Gates-Libs + Sign-Off-Chain-Lib | `0338_audit_overhaul_signoff_fks.sql`, `0339_dpms_unify_ropa.sql`, `0340_tprm_overhaul.sql`; `apps/web/src/lib/{audit-gates,dpia-gates,vendor-gates,process-gates,sign-off-chain}.ts` |
+| 23 | RBAC-Matrix- + Gates-Tests pro Modul | `apps/web/src/__tests__/api/{bpm,audit,dpms,tprm}-rbac-matrix.test.ts`, `.../lib/{process,audit,dpia,vendor}-gates.test.ts` |
+| 24 | Dashboard-Endpoints `/dashboard/{audit,dpms,tprm}-kpis` | jeweilige `route.ts` vorhanden |
+| 25 | `/api/v1/meta/build` + `/processes/cockpit` | jeweilige `route.ts` vorhanden |
+| 26 | Aggregierte Coverage 78,4 / 76,6 / 66,5 / 66,4 % (nur auth+shared) | identisch mit `coverage/aggregated-summary.md` (generiert 2026-04-30) |
+| 27 | LoD: 1.606 Routen / 796 mutating / 17 anonymous mutating | identisch mit `docs/security/lod-coverage.md` (generiert 2026-04-18; zitiert korrekt, Report selbst ist älter als der Routenbestand) |
+| 28 | 46 Compliance-Frameworks geseedet | 46 `packages/db/sql/seed_catalog_*.sql`-Files + 5 `seed_cross_framework_mappings*.sql` |
+| 29 | „470+ Next.js page.tsx" | 479 `page.tsx` gezählt — als Untergrenze korrekt (präzisiert auf 479) |
+| 30 | Smoke-Netz: `all-routes-smoke.test.ts`, `f-17`, `f-18`, `audit-integrity-live.test.ts` | alle vier Dateien vorhanden |
+
+### VERALTET (19) — in STATUS.md / CLAUDE.md richtiggestellt
+
+| # | Claim (Quelle) | Ist-Stand 2026-07-10 | Beleg |
+| - | -------------- | -------------------- | ----- |
+| 31 | STATUS-Header: „Stand 2026-05-21, letzte Migration `0346`" | letzte Migration `0361_audit_trigger_dedupe.sql`, 340 Files (Lücken: 0358/0359 fehlen; 0349a/0349b existieren) | `packages/db/drizzle/` |
+| 32 | „Offen: risk_acceptance fehlt im Audit-Trigger-Backfill 0357" | `0360` registriert die Trigger inzwischen selbst (idempotenter Guard) | `0360_risk_acceptance_repair.sql:165–179` |
+| 33 | „Dedizierte Risk-Acceptance-UI existiert weiterhin nicht" | Review-Cockpit vorhanden (Commit `f255dd13`) | `apps/web/src/app/(dashboard)/risk-acceptances/page.tsx` |
+| 34 | TL;DR „108 Drizzle-Schema-Files" | 110 | `ls packages/db/src/schema/*.ts` |
+| 35 | TL;DR „563+ pgTable()" | 576 | `grep -c "pgTable(" packages/db/src/schema/` |
+| 36 | TL;DR „319 SQL-Migrationen bis 0340" | 340 Files bis `0361` | `packages/db/drizzle/` |
+| 37 | TL;DR „1.310 route.ts unter /api/v1/" | 1.332 | `find apps/web/src/app/api/v1 -name route.ts` |
+| 38 | TL;DR „270+ Test-Files" (bzw. Tabelle „236", CLAUDE.md „258") | 314 Test-Files in apps/+packages/ (Tabellen-Snapshot 2026-05-10 bleibt datiert stehen) | Test-Glob apps/+packages/ |
+| 39 | E2E-Abschnitt „40 Specs" | 47 Specs | `tests/e2e/regression/*.spec.ts` |
+| 40 | Tech-Stack-Tabelle „107 Schemas, 278 Migrationen" (widersprach schon dem eigenen TL;DR) | 110 / 340 | s. o. |
+| 41 | Tech-Stack-Tabelle „Worker hat 120 Cron-Jobs" | 124 Cron-Job-Files (inkl. `risk-acceptance-expiry`) | `apps/worker/src/crons/` |
+| 42 | RLS-Tabelle „347 OK / 131 RLS_MISSING / 52 AUDIT_MISSING / 545 (Stand 2026-04-18)" | Report 2026-05-13: **365 OK / 0 RLS_MISSING / 180 AUDIT_MISSING / 560**; `0357` registriert 177 Tabellen explizit, `0361` dedupliziert 117 Doppel-Trigger; Report-Re-Run ausstehend | `docs/security/rls-coverage-report.md`, `0357_audit_trigger_backfill.sql`, `0361_audit_trigger_dedupe.sql` |
+| 43 | RLS-„Lücken-Schwerpunkte"-Liste (bcms/dpms/tprm/process/wb/isms/esg ohne RLS) | obsolet — RLS_MISSING = 0 seit Gap-Closure-Wellen bis 0336 | `docs/security/rls-coverage-report.md` (2026-05-13) |
+| 44 | Bekannte-Lücken-Zeilen „131 Tabellen ohne RLS-Policy" / „52 ohne audit_trigger()" | geschlossen bzw. per 0357/0360/0361 backfilled | s. o. |
+| 45 | Tech-Debt „Sign-Off-Chain-Race: kein UNIQUE-Constraint" (widersprach dem #187-Eintrag im selben Dokument) | behoben via `0341_signoff_chain_concurrency_guard.sql` (UNIQUE NULLS NOT DISTINCT) + `0342` RLS-Policies | `packages/db/drizzle/0341…`, `0342…` |
+| 46 | Abschnittstitel „Wave 23 — Endgame (laufend)" | Wave 23 abgeschlossen (Wave 24 closed 2026-05-21) | STATUS.md Wave-24-Abschnitt |
+| 47 | Modul-Reifegrad-Matrix (Zählstand ~2026-05-16) | vor BPM/Audit/DPMS/TPRM-Overhauls + Juli-Nachrüstungen gezählt (z. B. bpm: 3 statt 4 Schema-Files); als Snapshot annotiert | `packages/db/src/schema/process-grc.ts` u. a. |
+| 48 | CLAUDE.md-Header: „305 migrations (latest 0326), 1.246 route.ts, 258 test files, Wave 22 completed / Wave 23 active" | 340 / `0361` / 1.332 / 314 / Wave 24 closed | s. o. |
+| 49 | CLAUDE.md Projekt-Struktur „SQL migrations (0001–0068)" + i18n „71 namespace files" | 0001–0361 (340 Files); 72 Namespace-Files | `packages/db/drizzle/`, `apps/web/messages/de/` |
+
+### FALSCH (3) — war nie richtig
+
+| # | Claim (Quelle) | Befund | Beleg / Richtigstellung |
+| - | -------------- | ------ | ----------------------- |
+| 50 | **Risk Acceptance „✅ Done" / „UI Done"** (STATUS Sprint-Tabelle post-86, CLAUDE.md Cross-Cutting-Tabelle; Triage-Finding F#2) | Bis 2026-07-10 existierten nur Schema-/Migrationsdateien; die Tabellen fehlten auf der Dev-DB (0088-Rollback, MIGRATIONS_KNOWN_ISSUES Kat. A), keine API, keine UI | Nachgerüstet 2026-07-10: `0360` + API + UI + Cron + Tests (Commits `33c851d4`, `f255dd13`); Fußnoten in STATUS.md + CLAUDE.md ergänzt |
+| 51 | **„SHA-256 file hash implemented"** (`docs/qa-reports/wave19-n7-dms-scope-decision.md`) | existierte zum Behauptungszeitpunkt nicht | Nachgerüstet 2026-07-10: `GET /documents/[id]/verify-integrity` (`createHash("sha256")`, Z. 60) + `0355_dms_integrity_retention.sql` |
+| 52 | **`POST /documents/[id]/versions`** (derselbe QA-Report) | existierte nie — und existiert weiterhin bewusst nicht; `documents/[id]/versions/route.ts` exportiert nur `GET`, Versionen entstehen über `POST /documents/[id]/upload` | `apps/web/src/app/api/v1/documents/[id]/versions/route.ts:7` |
+
+### NICHT PRÜFBAR (6)
+
+| # | Claim (Quelle) | Grund |
+| - | -------------- | ----- |
+| 53 | „A1/A2/C3 live auf prod verifiziert" / A1-Closure „Direct-POST 2026-05-21 13:49 UTC" | Prod-Zustand aus dem Repo nicht verifizierbar (kein Hetzner-Zugriff) |
+| 54 | PR-Nummern (#185–#218, #363–#369) und „CI vollgrün ohne continue-on-error" | GitHub-Zustand nicht verfügbar; Commit-Messages im Log stützen die PR-Nummern ≥ #363 |
+| 55 | Hash-Chain „healthy v1=1229 v2=513 total=1742 mismatches=0" (2026-05-15) | DB-Laufzeitzustand |
+| 56 | „Migration 0360 noch nicht ausgeführt" | Dev-DB-Zustand aus der Audit-Umgebung nicht erreichbar |
+| 57 | „~2.860 Catalog-Einträge / ~960 Cross-Framework-Mappings" | Aggregat über Seed-SQL-Inhalte; nur Datei-Anzahl (46/5) verifiziert |
+| 58 | „~410k LOC" / „563 Commits in 6 Wochen (~14/Tag)" | nicht nachgezählt (Größenordnung plausibel, kein Reifegrad-Risiko) |
+
+## Nebenbefunde (keine Doku-Änderung, nur Notiz)
+
+1. **Kommentar-Drift in `0360`**: Der Kopf-Kommentar sagt „Audit-Trigger werden hier bewusst NICHT registriert", der später ergänzte Block Z. 165–179 registriert sie doch. Kein Code-Change im Rahmen dieses Audits — in STATUS.md als Hinweis vermerkt; beim nächsten Touch der Datei Kommentar anpassen.
+2. **`grcfiles/CLAUDE.md` (Repo-Root, außerhalb `grc-platform/`)** trägt ebenfalls veraltete Zahlen (308 Migrationen bis `0329`, 1.246 route.ts, 258 Test-Files, „Wave 23 closed … aktiv Wave 24 Planning"). Nicht Teil dieses Auftrags-Scopes — bei Gelegenheit nachziehen.
+3. **Report-Re-Runs fällig**: `rls-coverage-report.md` (nach 0357/0360/0361), `lod-coverage.md` (Routenbestand 1.606 → heute 1.332 unter `/api/v1` allein), `coverage/aggregated-summary.md` (2026-04-30).
+4. **Email-Template-Zahlen inkonsistent** (Tech-Stack „27 Templates" vs. Test-Abschnitt „25 Templates"; grobe Datei-Zählung ergibt ~26) — nicht sauber zählbar ohne Template-Registry, unverändert gelassen.
+
+## Lessons
+
+- „✅ Done" in Sprint-/Feature-Tabellen ist eine **Behauptung, keine Verifikation** — vor Verlass immer Route (`apps/web/src/app/api/v1/...`), Page und Migration im Code prüfen.
+- Zahlenclaims (Routen/Migrationen/Tests) altern in diesem Repo binnen Tagen — datierte Snapshots („gezählt YYYY-MM-DD") sind in Ordnung, undatierte Kopfzahlen müssen bei jedem Doc-Touch nachgezählt werden.
+- Interne Widersprüche im selben Dokument (Tech-Stack-Tabelle vs. TL;DR; Tech-Debt-Liste vs. Fix-Liste) sind das billigste Frühwarnsignal für Doku-Drift.

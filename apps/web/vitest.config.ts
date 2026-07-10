@@ -8,6 +8,10 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
+    // 5s default flakes under full parallel load: route-module imports alone
+    // take ~3.7s on cold transform, so unrelated tests tip over the limit.
+    // Raised to 15s (2026-07-10) — real hangs still fail fast enough.
+    testTimeout: 15000,
     include: ["src/__tests__/**/*.test.ts", "src/__tests__/**/*.test.tsx"],
     exclude: ["src/__tests__/api/helpers/**"],
     // `environmentMatchGlobs` was removed in vitest 4; component tests now

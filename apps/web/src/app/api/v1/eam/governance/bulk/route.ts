@@ -38,33 +38,45 @@ export async function POST(req: Request) {
       ),
     );
 
+  // #PERF-N-PLUS-1: was one UPDATE + one INSERT per element (up to
+  // 100 elements → 200 sequential round-trips). Replaced with ONE
+  // batched UPDATE (inArray over the org-verified ids) and ONE
+  // multi-row INSERT for the governance log. Response shape and
+  // per-element fromStatus are unchanged — the log rows still carry
+  // each element's own prior governanceStatus from the pre-fetch.
+  if (elements.length > 0) {
+    await db
+      .update(architectureElement)
+      .set({ governanceStatus: targetStatus, updatedAt: new Date() })
+      .where(
+        and(
+          eq(architectureElement.orgId, ctx.orgId),
+          inArray(
+            architectureElement.id,
+            elements.map((el) => el.id),
+          ),
+        ),
+      );
+
+    await db.insert(eamGovernanceLog).values(
+      elements.map((el) => ({
+        orgId: ctx.orgId,
+        elementId: el.id,
+        elementType: el.type,
+        fromStatus: el.governanceStatus ?? "draft",
+        toStatus: targetStatus,
+        action,
+        performedBy: ctx.userId,
+        justification,
+      })),
+    );
+  }
+
   const results: Array<{
     elementId: string;
     success: boolean;
     error?: string;
-  }> = [];
-
-  for (const el of elements) {
-    // Update element
-    await db
-      .update(architectureElement)
-      .set({ governanceStatus: targetStatus, updatedAt: new Date() })
-      .where(eq(architectureElement.id, el.id));
-
-    // Log
-    await db.insert(eamGovernanceLog).values({
-      orgId: ctx.orgId,
-      elementId: el.id,
-      elementType: el.type,
-      fromStatus: el.governanceStatus ?? "draft",
-      toStatus: targetStatus,
-      action,
-      performedBy: ctx.userId,
-      justification,
-    });
-
-    results.push({ elementId: el.id, success: true });
-  }
+  }> = elements.map((el) => ({ elementId: el.id, success: true }));
 
   return Response.json({ data: { results, processedCount: results.length } });
 }

@@ -1,5 +1,5 @@
 import { db, risk, riskControl, control, aiPromptLog } from "@grc/db";
-import { eq, and, isNull, sql, count } from "drizzle-orm";
+import { eq, and, isNull, sql, count, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { aiRcmGapAnalysisSchema } from "@grc/shared";
 import { aiComplete } from "@grc/ai";
@@ -35,7 +35,44 @@ export async function POST(req: Request) {
     .from(risk)
     .where(and(...riskConditions));
 
-  // Fetch control linkage for each risk
+  // Fetch control linkage for ALL risks in one query.
+  //
+  // #PERF-N-PLUS-1: was one riskControl ⋈ control query per risk —
+  // on a 500-risk register that's 500 sequential round-trips before
+  // the AI call even starts. Replaced with a single inArray query
+  // plus in-memory grouping (same pattern as erm/residual/recompute).
+  const riskIds = risks.map((r) => r.id);
+  const links =
+    riskIds.length > 0
+      ? await db
+          .select({
+            riskId: riskControl.riskId,
+            title: control.title,
+            controlType: control.controlType,
+            frequency: control.frequency,
+          })
+          .from(riskControl)
+          .innerJoin(control, eq(control.id, riskControl.controlId))
+          .where(
+            and(
+              inArray(riskControl.riskId, riskIds),
+              eq(riskControl.orgId, ctx.orgId),
+              isNull(control.deletedAt),
+            ),
+          )
+      : [];
+
+  const linksByRisk = new Map<
+    string,
+    Array<{ title: string; type: string; frequency: string }>
+  >();
+  for (const l of links) {
+    if (l.riskId == null) continue;
+    const bucket = linksByRisk.get(l.riskId) ?? [];
+    bucket.push({ title: l.title, type: l.controlType, frequency: l.frequency });
+    linksByRisk.set(l.riskId, bucket);
+  }
+
   const riskData: Array<{
     id: string;
     title: string;
@@ -45,34 +82,16 @@ export async function POST(req: Request) {
   }> = [];
 
   for (const r of risks) {
-    const links = await db
-      .select({
-        title: control.title,
-        controlType: control.controlType,
-        frequency: control.frequency,
-      })
-      .from(riskControl)
-      .innerJoin(control, eq(control.id, riskControl.controlId))
-      .where(
-        and(
-          eq(riskControl.riskId, r.id),
-          eq(riskControl.orgId, ctx.orgId),
-          isNull(control.deletedAt),
-        ),
-      );
+    const controls = linksByRisk.get(r.id) ?? [];
 
-    if (body.data.scope === "unlinked" && links.length > 0) continue;
+    if (body.data.scope === "unlinked" && controls.length > 0) continue;
 
     riskData.push({
       id: r.id,
       title: r.title,
       category: r.riskCategory,
       inherentScore: r.riskScoreInherent,
-      controls: links.map((l) => ({
-        title: l.title,
-        type: l.controlType,
-        frequency: l.frequency,
-      })),
+      controls,
     });
   }
 

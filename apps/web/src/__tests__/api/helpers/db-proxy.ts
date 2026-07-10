@@ -10,6 +10,12 @@ interface MockDb {
   delete: ReturnType<typeof vi.fn>;
   execute: ReturnType<typeof vi.fn>;
   transaction: ReturnType<typeof vi.fn>;
+  /** Drizzle relational API: db.query.<table>.findFirst/findMany.
+   *  Every table resolves to "no rows" so token-based routes 404 cleanly. */
+  query: Record<
+    string,
+    { findFirst: ReturnType<typeof vi.fn>; findMany: ReturnType<typeof vi.fn> }
+  >;
 }
 
 export function chainable<T>(value: T) {
@@ -49,6 +55,18 @@ export function makeMockDb(): MockDb {
     delete: vi.fn(() => chainable([])),
     execute: vi.fn().mockResolvedValue([]),
     transaction: vi.fn(async (cb: (tx: MockDb) => Promise<unknown>) => cb(db)),
+    query: new Proxy(
+      {},
+      {
+        get: (_t, p) =>
+          typeof p === "symbol"
+            ? undefined
+            : {
+                findFirst: vi.fn().mockResolvedValue(undefined),
+                findMany: vi.fn().mockResolvedValue([]),
+              },
+      },
+    ) as MockDb["query"],
   };
   return db;
 }

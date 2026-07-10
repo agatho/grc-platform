@@ -2,7 +2,29 @@
 
 > **Lies das zuerst.** Dieses Dokument ist die maßgebliche Status-Übersicht der ARCTOS-Plattform. Es existiert, um Fehleinschätzungen des Reifegrads zu vermeiden — insbesondere durch Doku-Texte, die noch von „Sprint 1 Foundation" sprechen.
 >
-> Stand: **2026-05-21**. Letzte Migration: `0346_seed_bcm_security_external_auditor_users.sql`. Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** (Wave 24 + DR-Drill #217 merged).
+> Stand: **2026-07-10** (Realitäts-Audit, siehe nächster Abschnitt). Letzte Migration: `0361_audit_trigger_dedupe.sql` — **340 Migrations-Files** insgesamt (Nummerierung nicht lückenlos: `0358`/`0359` existieren nicht, dafür `0349a`/`0349b`). Letzter Release: **0.1.0-alpha** (2026-04-20). Letzte abgeschlossene Welle: **Wave 24** (in PR #218, post-Wave-23 Alpha-Quality-Closure). Aktive Arbeit: **Alpha-Invite-Vorbereitung** + Nachrüstungen 2026-07-10 (BPM-Approval-Kette, DMS Effective Dating/Document Control, Audit-Trigger-Backfill/-Dedupe, Risk-Acceptance-API+UI).
+
+## Realitäts-Audit 2026-07-10
+
+Systematischer Abgleich aller prüfbaren Claims dieses Dokuments (und der Kopfzahlen in `CLAUDE.md`) gegen den Code, nachdem drei falsche „Done"-Claims aufgeflogen waren (DMS SHA-256-Hash, `POST /documents/[id]/versions`, Risk-Acceptance „UI Done"). **58 Claims geprüft: 30 KORREKT, 19 VERALTET (korrigiert), 3 FALSCH (inzwischen nachgerüstet bzw. richtiggestellt), 6 NICHT PRÜFBAR** (prod-Verifikationen, PR-/CI-Referenzen, DB-Laufzeitzustand). Volle Befundtabelle: [`docs/audits/doc-reality-audit-2026-07-10.md`](./audits/doc-reality-audit-2026-07-10.md). Alle Zahlen in diesem Dokument sind auf den Code-Stand 2026-07-10 nachgezählt; historisch datierte Abschnitte („gezählt 2026-05-10" etc.) bleiben als Snapshots stehen.
+
+## Webhook-/Plugin-Blocker verifiziert 2026-07-10 (Triage-Findings F#4/F#5/F#8 Re-Audit)
+
+Code-Re-Verifikation der Overnight-Audit-Blocker „Webhook-Dispatcher gestubbt + SSRF" und „Plugin-Execution ohne Sandbox" gegen den IST-Stand (die Closure-Claims aus `docs/audits/wave-24-alpha-blockers-status-2026-05-21.md` stimmen):
+
+- **Webhook-Versand ist real, kein `console.log` mehr** — zwei Delivery-Pfade: `apps/worker/src/webhooks/webhook-delivery.ts` (fetch + HMAC-SHA256 `X-Arctos-Signature`, 10s-AbortController-Timeout, 3 Retries mit Backoff 60s/300s/1800s via `webhook_delivery_log.next_retry_at` + `webhook-retry`-Cron, volle Delivery-Log-Persistenz) und `apps/worker/src/crons/automation-engine-init.ts` `triggerWebhook` (F#6-Closure, gleiche Härtung inline).
+- **SSRF-Schutz zweischichtig** — `packages/shared/src/url-safety.ts` (sync: Protokoll-Allowlist http/https, https-only ohne `WEBHOOK_ALLOW_HTTP=1`, verbotene Hostnames, private/reservierte IP-Literale inkl. IPv6/CGNAT/IMDS) + `packages/shared/src/lib/url-safety-server.ts` (async `node:dns/promises`-Lookup gegen DNS-Rebinding). Registration-time via Zod-Refine in `packages/shared/src/schemas/event-bus.ts`, delivery-time im Worker. Tests: `packages/shared/tests/url-safety.test.ts`.
+- **Nachgehärtet (2026-07-10):** `webhook-delivery.ts` lief bislang nur die DNS-Prüfung (Layer 2) — Legacy-Rows mit `http://`- oder Forbidden-Host-URLs von vor PR #200 wären zugestellt worden. Jetzt läuft `checkWebhookUrl` (Layer 1) vor jeder Delivery, Parität zum Automation-Pfad. Zusätzlich `X-Arctos-Timestamp`-Header (ISO-8601) auf beiden Delivery-Pfaden für Consumer-seitige Replay-Erkennung. Neue Tests: `apps/worker/tests/webhooks/webhook-delivery.test.ts` (6 Cases).
+- **Plugin-Code wird nirgends ausgeführt** — es existiert **kein Execution-Pfad** (kein `vm`/`worker_threads`/`WebAssembly.instantiate`/`new Function` im Plugin-Kontext; `plugin_execution_log` hat keinen Writer, nur Reader in `plugin-health-check`-Cron + Logs-Route). `executionMode` ist zweifach enforced: `createPluginSchema`/`updatePluginSchema` (`z.enum(["wasm","isolated"])`, `native` → 422) + Install-Time-Gate in `apps/web/src/app/api/v1/plugins/installations/route.ts` (Legacy-`native`-Rows → 422). Tests: `packages/shared/tests/plugin-execution-mode.test.ts`. **Kein Sandbox-Bau nötig, solange kein Runtime-Pfad existiert** — bei Einführung eines echten Plugin-Runtimes muss die Sandbox-Frage neu auf den Tisch.
+- **Bekannte Dormanz (kein Blocker, dokumentiert):** Der Sprint-22 Event-Bus-Fan-out an registrierte Webhooks ist end-to-end tot — `eventBus.registerWebhookHandler()` wird nirgends aufgerufen (Fan-out no-op't) **und** die `emitEntity*`-Helper aus `packages/events/src/emit-helpers.ts` werden von keiner API-Route genutzt. Registrierte Webhooks feuern heute nur via Automation-Rule-Action (`triggerWebhook`) und die `/webhooks/[id]/test`-Route. Wiring erfordert Event-Emission in den Web-Routen + Handler-Registrierung → eigenes Arbeitspaket, nicht Teil der Alpha-Blocker.
+- Die Blocker-Liste im Abschnitt „🚨 Identifizierte offene Alpha-Blocker" weiter unten ist **historisch** (Stand 2026-05-18) — maßgeblich ist das Re-Triage-Doc vom 2026-05-21 (7 Done / 1 Partial = F#1 refresh_token-Spalte, dormant).
+
+## Änderungen 2026-07-10 (BPM-Approvals · DMS-Overhaul · Audit-Trigger · Risk-Acceptance)
+
+- **BPM Multi-Stage-Approval-Kette** (Commit `c7d321a2`): Migrationen `0349a_process_approval_step.sql` + `0349b_process_version_type.sql`; neue Routen `POST/GET /processes/[id]/approval-steps`, `POST /processes/[id]/approval-steps/[stepId]/decide`, `POST /processes/bulk-approve`; Working-Copies für Prozessversionen.
+- **DMS-Overhaul** (Commit `c7d321a2`): Migrationen `0353_dms_effective_dating` · `0354_dms_document_control` · `0355_dms_integrity_retention` · `0356_dms_search_multifile`. Neue Routen u. a. `GET /documents/[id]/versions/at` (Effective Dating), `POST /documents/[id]/versions/[versionId]/restore`, `GET /documents/[id]/verify-integrity` (**SHA-256-File-Hash — damit ist der zuvor falsche Claim aus `docs/qa-reports/wave19-n7-dms-scope-decision.md` jetzt real**), Multi-File (`/files`, `/files/[fileId]`), Document-Control-Approval-Steps. `POST /documents/[id]/versions` existiert weiterhin bewusst **nicht** — Versionen entstehen über `/upload`.
+- **Audit-Trigger-Backfill + Dedupe** (Commit `33c851d4` / `f255dd13`): `0357_audit_trigger_backfill.sql` registriert `audit_trigger()` explizit auf 177 Tabellen (statisch sichtbar für `audit-rls-coverage.mjs`); `0361_audit_trigger_dedupe.sql` entfernt Doppel-Trigger auf 117 Tabellen (0337-Sweep + Alt-Trigger → doppelte audit_log-Einträge).
+- **Risk-Acceptance-Repair** (Commits `33c851d4` + `f255dd13`): Details im nächsten Abschnitt; zusätzlich zur API jetzt auch **dedizierte UI** `/(dashboard)/risk-acceptances` (Review-Cockpit mit Statusfilter, Expiring-Soon, Revoke/Edit-Dialog).
 
 ## Risk-Acceptance-API nachgezogen 2026-07-10 (Triage-Finding F#2/F#3 Closure)
 
@@ -14,7 +36,7 @@ Das Risk-Acceptance-Modul (ISO 27005 Kap. 10) war als „✅ Done" geführt, hat
 - **Shared**: State-Machine `active → expired|revoked` + Authority-Band-Resolver + Zod-Schemas (`@grc/shared` state-machines/risk-acceptance, schemas/risk-acceptance).
 - **Worker-Cron `risk-acceptance-expiry`** (analog document-auto-expire, aber org-iterierend wegen FORCE RLS): befristete Akzeptanzen → `expired`, Risk zurück in `identified`, Notification an Akzeptierenden.
 - **Tests**: `packages/shared/tests/risk-acceptance-state-machine.test.ts` + `apps/web/src/__tests__/api/risk-acceptances-rbac.test.ts` (401/403/404/409/422/RBAC/Four-Eyes).
-- **Offen**: `risk_acceptance`/`risk_acceptance_authority` fehlen im Audit-Trigger-Backfill `0357` (auf frischen DBs greift 0089 nicht, weil die Tabellen erst mit 0360 entstehen) — Trigger-Registrierung dort ergänzen. Dedizierte Risk-Acceptance-UI existiert weiterhin nicht (nur Status-Badge im Risk-Register) — „UI Done"-Claim war falsch.
+- **Erledigt (Stand 2026-07-10, Commit `f255dd13`)**: Die Audit-Trigger für `risk_acceptance`/`risk_acceptance_authority` werden inzwischen **in `0360` selbst registriert** (idempotenter Guard, Pattern 0357 — siehe 0360 Zeilen 165–179), da 0357 auf frischen DBs vor 0360 läuft; `0361` dedupliziert etwaige Doppel-Trigger. Außerdem existiert jetzt eine **dedizierte Risk-Acceptance-UI** unter `/(dashboard)/risk-acceptances` (Review-Cockpit: org-weite Liste, Statusfilter, Expiring-Soon-Toggle, Revoke mit Pflichtbegründung, Limited-Edit). Der historische „UI Done"-Claim war bis dahin **falsch** — es gab nur den Status-Badge im Risk-Register. Hinweis: der Kopf-Kommentar in `0360` („Audit-Trigger werden hier bewusst NICHT registriert") ist durch den später ergänzten Trigger-Block überholt.
 
 ## Wave 24 — Alpha-Quality-Closure 2026-05-20 (PR #218, awaiting CI)
 
@@ -158,21 +180,21 @@ Empfohlene Reihenfolge: nach Sequenz im Triage-Doc, ~6h Aufwand insgesamt.
 
 ## TL;DR
 
-ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-05-18):
+ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-07-10, nachgezählt im Realitäts-Audit):
 
-- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 23 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18.
-- **108 Drizzle-Schema-Files**, **319 SQL-Migrationen** bis `0340_tprm_overhaul.sql` (vorher 305 / `0326`).
-- **563+ `pgTable()`-Definitionen** plus die 3 neuen `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report Re-Audit nach 0336 (gap-closure-v5) + 0337 (audit-trigger-gap-closure) ausstehend.
-- **1.310 `route.ts`-Files** unter `/api/v1/` (vorher 1.246, +64 durch BPM-Overhaul + Audit/DPMS/TPRM-Overhauls und Coverage-Route-Recovery via PR #185).
-- **470+ Next.js `page.tsx`**.
-- **46 Compliance-Frameworks geseedet** (~2.860 Catalog-Einträge), **~960 Cross-Framework-Mappings**.
-- **270+ Test-Files** (Stand 2026-05-18 nach BPM-Overhaul + 3 Modul-Overhauls): gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
+- **86+ Sprints + Programme Cockpit Sprint 13 + Wave 24 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18 und die Nachrüstungen 2026-07-10 (BPM-Approvals, DMS, Audit-Trigger, Risk-Acceptance).
+- **110 Drizzle-Schema-Files**, **340 SQL-Migrations-Files** bis `0361_audit_trigger_dedupe.sql` (vorher 319 / `0340`; Nummerierung nicht lückenlos).
+- **576 `pgTable()`-Definitionen** inkl. der 3 `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report zuletzt regeneriert 2026-05-13; Re-Run nach 0357/0361 ausstehend.
+- **1.332 `route.ts`-Files** unter `/api/v1/` (vorher 1.310; +22 u. a. durch DMS-Overhaul, BPM-Approval-Steps, Risk-Acceptance-API).
+- **479 Next.js `page.tsx`**.
+- **46 Compliance-Frameworks geseedet** (46 `seed_catalog_*.sql`-Files verifiziert; ~2.860 Catalog-Einträge und ~960 Cross-Framework-Mappings sind Seed-Angaben, nicht gegen die DB nachgezählt).
+- **314 Test-Files** in `apps/` + `packages/` (plus 47 Playwright-E2E-Specs, s. u.): gates-Tests (`process-gates`, `audit-gates`, `dpia-gates`, `vendor-gates`), RBAC-Matrix-Tests (`bpm-rbac-matrix`, `audit-rbac-matrix`, `dpms-rbac-matrix`, `tprm-rbac-matrix`), `risk-acceptance-state-machine`, `risk-acceptances-rbac`, `racm-aggregation`, `process-cascade-delete`, `sign-off-chain` (pure functions).
 - **~410k LOC** Source-Code insgesamt (apps + packages, ohne node_modules).
 - **CI-Status (2026-05-18 nach PR #185)**: Lint / Type Check / Unit / E2E / DB Migration / Static schema + RLS / Aggregate coverage / Security Audit / CodeQL / gitleaks **grün**. Einzige verbleibende Rote: `budget-audit-integrity` Integration-Test (pre-existing, `bb6a3c49`, erwartete 6 Einträge / aktuell 11; nicht durch Overhauls verursacht). Zwischendrin hatten die ZIP-Overhauls + Windows-CRLF-Drift Prettier + tsc kurzzeitig rot — durch PR #185 (`fix/prettier-lf-cleanup`) komplett bereinigt.
 
 ## Bekannte technische Schulden aus den Overhauls
 
-- **Sign-Off-Chain-Race**: alle 3 Sign-Off-Tabellen (process/audit/vendor) haben **kein `UNIQUE (entity_id, previous_chain_hash)` Constraint** und lesen `prev` **außerhalb der INSERT-Transaktion**. Zwei gleichzeitige POST-/sign-off-Calls (Doppelklick, Retry) erzeugen Sibling-Rows mit identischem `previous_chain_hash` — `verifyChain` liefert dann `ok:false`. Severity in der Praxis niedrig (Sign-Off ist menschliche Aktion, append-only), aber leicht zu fixen via Migration `UNIQUE NULLS NOT DISTINCT`.
+- ~~**Sign-Off-Chain-Race**~~ **BEHOBEN** (Realitäts-Audit 2026-07-10: dieser Eintrag war durch PR #187 überholt): Migration `0341_signoff_chain_concurrency_guard.sql` hat `UNIQUE NULLS NOT DISTINCT (entity_id, previous_chain_hash)` auf process/audit/vendor `*_sign_off` ergänzt, die POST-Handler fangen 23505 → 409 (siehe Abschnitt „Verifizierte Fixes", #187). `0342` ergänzte die RLS-Policies auf den Sign-Off-Tabellen.
 - **Sign-Off-Payload-Type-Drift**: `apps/web/src/lib/sign-off-chain.ts` exportiert `SignOffPayload` mit `processId/processName/processVersionId` als Pflichtfelder. Audit + Vendor passen ihre eigenen IDs als `processId` durch (mit Kommentar „payload field is generic — reused as auditId here"). Funktional korrekt (Hash ist generisch), aber Type-Signatur lügt.
 - **`tsconfig.tsbuildinfo`** war versehentlich getrackt — gefixt + in `.gitignore` aufgenommen (PR #185).
 
@@ -204,9 +226,13 @@ Vollständige Übersicht in [`docs/feature-catalog.md`](./feature-catalog.md). H
 | Marketplace, Stakeholder Portals, Academy, Simulation Engine, Community Edition                                                                        | 82–86     | ✅         |
 | Cross-Cutting post-86 (Audit-Hash-Chain, RLS-Gap-Closure, ISMS-CAP, Risk Acceptance, ISO-27005-Kataloge, SoA, Programme Cockpit, Stakeholder Register) | post-86   | ✅ laufend |
 
+> ⚠️ Realitäts-Audit 2026-07-10: Das ✅ für **Risk Acceptance** war bis 2026-07-10 **falsch** — es existierten nur Schema-/Migrationsdateien (und selbst die Tabellen fehlten auf der Dev-DB wegen des 0088-Rollbacks), keine API, keine UI. Seit 2026-07-10 ist das Modul real (Migration `0360`, API, UI, Cron, Tests — siehe Abschnitt oben). Lehre: ✅ in dieser Tabelle heißt „behauptet", nicht „verifiziert" — im Zweifel Route/Page im Code prüfen.
+
 ## Modul-Reifegrad-Matrix
 
 Statische Zählung über `packages/db/src/schema/` und `apps/web/src/app/`. „Tables" = `pgTable()`-Aufrufe in den jeweiligen Schema-Files.
+
+> ⚠️ **Snapshot ~2026-05-16** (Realitäts-Audit 2026-07-10): Diese Matrix ist **vor** den BPM/Audit/DPMS/TPRM-Overhauls und den Juli-Nachrüstungen gezählt — z. B. fehlt in der bpm-Zeile `process-grc.ts` (4. Schema-File) und die ~18 BPM-Overhaul-Routen; die erm-Zeile kennt die Risk-Acceptance-API/UI noch nicht. Als Größenordnung weiterhin brauchbar, für exakte Zahlen neu zählen.
 
 | Modul-Domain                                                                                                             | Schema-Files | Tabellen |                                                     UI-Pages |                        API-Routen |
 | ------------------------------------------------------------------------------------------------------------------------ | -----------: | -------: | -----------------------------------------------------------: | --------------------------------: |
@@ -239,8 +265,8 @@ Aktuelle Stand-Daten aus `package.json`-Workspaces und CHANGELOG (0.1.0-alpha, 2
 | Layer      | Technologie                                                                        | Anmerkung                                             |
 | ---------- | ---------------------------------------------------------------------------------- | ----------------------------------------------------- |
 | Frontend   | Next.js 15, React 19, Tailwind 4, shadcn/ui, recharts, bpmn-js                     | App Router, Server Components default, Turbopack dev  |
-| Backend    | Node.js 22 LTS, TypeScript 5, Hono.js (Worker)                                     | Worker hat 120 Cron-Jobs, läuft via `tsx`             |
-| ORM        | Drizzle ORM                                                                        | 107 Schemas, 278 Migrationen                          |
+| Backend    | Node.js 22 LTS, TypeScript 5, Hono.js (Worker)                                     | Worker hat 124 Cron-Job-Files (inkl. `risk-acceptance-expiry`), läuft via `tsx` |
+| ORM        | Drizzle ORM                                                                        | 110 Schemas, 340 Migrations-Files (bis `0361`)        |
 | Datenbank  | PostgreSQL 16 + TimescaleDB + pgvector, RLS                                        | Hypertables für KRI/Sim-Results/CCM-Checkpoints       |
 | Auth       | Auth.js v5 self-hosted + Custom RBAC + Three Lines of Defense                      | Drizzle-Adapter, Azure AD optional, MFA TOTP+WebAuthn |
 | AI         | Multi-Provider-Router (Claude, OpenAI, Gemini, Ollama lokal)                       | `packages/ai`                                         |
@@ -284,7 +310,7 @@ Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). W
 
 ### E2E-Specs (Playwright)
 
-40 Specs unter `tests/e2e/regression/`, gruppiert nach Modul:
+**47 Specs** unter `tests/e2e/regression/` (nachgezählt 2026-07-10; die Gruppenliste unten ist der Stand von ~2026-05, seither kamen 7 Specs hinzu), gruppiert nach Modul:
 
 - **B-01 bis B-06** — BCMS (BIA, BCP, Crisis, Exercise, Resilience, Readiness)
 - **D-01 bis D-03** — DORA (Incident, Providers, TLPT)
@@ -304,27 +330,19 @@ Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). W
 
 ## Sicherheits-Coverage
 
-### RLS + Audit-Trigger (Stand 2026-04-18 + 0288 Gap-Closure)
+### RLS + Audit-Trigger (Report-Stand 2026-05-13, Migrations-Stand 2026-07-10)
 
-Quelle: [`docs/security/rls-coverage-report.md`](./security/rls-coverage-report.md), [`scripts/audit-rls-coverage.mjs`](../scripts/audit-rls-coverage.mjs).
+Quelle: [`docs/security/rls-coverage-report.md`](./security/rls-coverage-report.md) (regeneriert 2026-05-13), [`scripts/audit-rls-coverage.mjs`](../scripts/audit-rls-coverage.mjs).
 
-| Status             |                               Tabellen | Bedeutung                                                                          |
-| ------------------ | -------------------------------------: | ---------------------------------------------------------------------------------- |
-| ✅ OK              |                                **347** | RLS + Policy + Audit-Trigger vollständig                                           |
-| ❌ RLS_MISSING     | **131** (urspr. 132, durch 0288 → 131) | `org_id` vorhanden, aber `ENABLE ROW LEVEL SECURITY` fehlt                         |
-| ❌ AUDIT_MISSING   |                                 **52** | RLS+Policy ja, aber `audit_trigger()` nicht registriert                            |
-| ⚪ PLATFORM_EXEMPT |                                     15 | Plattform-weite Tabellen (catalog, module_definition, user, audit_log selbst etc.) |
-| **Total**          |                                **545** |                                                                                    |
+| Status             | Tabellen | Bedeutung                                                                          |
+| ------------------ | -------: | ---------------------------------------------------------------------------------- |
+| ✅ OK              |  **365** | RLS + Policy + Audit-Trigger vollständig                                           |
+| ❌ RLS_MISSING     |    **0** | Durch die Gap-Closure-Wellen (0288 → 0315 v4 → 0336 v5) vollständig geschlossen    |
+| ❌ AUDIT_MISSING   |  **180** | RLS+Policy ja, aber `audit_trigger()` nicht **statisch nachweisbar** registriert   |
+| ⚪ PLATFORM_EXEMPT |       15 | Plattform-weite Tabellen (catalog, module_definition, user, audit_log selbst etc.) |
+| **Total**          |  **560** |                                                                                    |
 
-Migration `0288_rls_gap_closure_v3.sql` hat 11 Tabellen geschlossen (AI Act, Audit-Risk-Prediction, Sim-Results, Scenario-Engine). Aktuelle Lücken-Schwerpunkte:
-
-- `bcms.ts` (BCP, BIA, crisis\_\*, continuity_strategy, essential_process)
-- `dpms.ts` (ropa*\*, dpia*_, dsr_, data_breach, tia)
-- `tprm.ts` (vendor*, contract*)
-- `process.ts` (alle process\_\* Tabellen)
-- `whistleblowing.ts` (wb_case\*, wb_report, wb_anonymous_mailbox)
-- `isms.ts` (assessment\_\*, soa_entry, threat, vulnerability, security_incident, control_maturity, management_review)
-- `esg.ts` (esrs*\*, esg*\*)
+> Realitäts-Audit 2026-07-10: Die zuvor hier stehenden Zahlen (347 OK / 131 RLS_MISSING / 52 AUDIT_MISSING / 545, Stand 2026-04-18) waren zwei Report-Generationen alt; die RLS_MISSING-Schwerpunktliste (bcms/dpms/tprm/process/wb/isms/esg) ist obsolet. Die 180 AUDIT_MISSING waren größtenteils ein **Sichtbarkeits-Artefakt** (der dynamische 0337-Sweep ist statisch nicht analysierbar); Migration `0357_audit_trigger_backfill.sql` (2026-07-10) registriert `audit_trigger()` jetzt **explizit auf 177 Tabellen**, `0361` dedupliziert 117 Doppel-Trigger, `0360` deckt `risk_acceptance`/`risk_acceptance_authority` ab. **Report-Re-Run nach 0357/0360/0361 steht aus** — erst danach sind die Restlücken belastbar.
 
 ### Three Lines of Defense (Stand 2026-04-18)
 
@@ -353,8 +371,8 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | **Webhook-HMAC-Tampering-Schutz**                                        |       P0 | ✅ 11 Cases verifiziert grün — Tampering, Length-Attack, Unicode                                                                                                              |
 | **Template-Injection in Reporting**                                      |       P0 | ✅ 16 Cases verifiziert grün — Whitelist-Namespaces, no nested re-rendering                                                                                                   |
 | **Risk-Lifecycle-State-Validation (Schema-Layer)**                       |       P1 | ✅ 16+20 Cases — alle 5 Status-Werte, case-sensitivity, Financial-Impact-Refine. **Server-side State-Transition-Logik (z. B. closed → identified verbieten) fehlt weiterhin** |
-| 131 Tabellen ohne RLS-Policy                                             |       P1 | Pure-Function-Test der Klassifikationslogik geschrieben (10 Cases). Schließung läuft im `release/0.2-rls-gap-closure`                                                         |
-| 52 Tabellen ohne `audit_trigger()`                                       |       P1 | dito                                                                                                                                                                          |
+| ~~131 Tabellen ohne RLS-Policy~~ — geschlossen (Report 2026-05-13: RLS_MISSING = 0) |       P1 | ✅ erledigt via Gap-Closure-Wellen bis 0336; Zeile war veraltet (Realitäts-Audit 2026-07-10)                                                                                  |
+| ~~52 Tabellen ohne `audit_trigger()`~~ — 180 lt. Report 2026-05-13, per `0357`/`0360`/`0361` explizit registriert |       P1 | ✅ Backfill gemergt 2026-07-10; Report-Re-Run ausstehend                                                                                                                      |
 | 99 verbleibende TypeScript-Errors (Web 0, Worker 0, Rest in Tests/Tools) |       P3 | offen                                                                                                                                                                         |
 | 137 N+1-Query-Kandidaten                                                 |       P3 | offen                                                                                                                                                                         |
 | 1.738 fehlende Index-Vorschläge (53 davon RLS-High)                      |       P2 | offen                                                                                                                                                                         |
@@ -371,7 +389,7 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | **W23-C3** Contract POST {name:'X'} → 500 statt 422                      |       P1 | Wave 23: Wave-22-Alias funktioniert, POST jetzt withErrorHandler-gewrappt → niemals empty 500                                                                                 |
 | **W23-Pilot-Readiness-Gate** als CI-Pre-Merge-Check                      |       P0 | Wave 23: `scripts/pilot-readiness-gate.sh` läuft gegen Staging, GitHub-Actions-Job blockt Merges                                                                              |
 
-## Wave 23 — Endgame (laufend, Pilot-Readiness-Gate)
+## Wave 23 — Endgame (historisch — Wave 23 ist abgeschlossen, siehe Wave-24-Abschnitt oben)
 
 Wave 22 hat festgestellt: A1 + A2 haben **korrekten Repo-Code, falsches Production-Behavior** — d. h. Deploy-/Migration-Drift, kein Code-Bug. Wave 23 ist der Endgame-Cycle, der genau das zur Unmöglichkeit macht:
 

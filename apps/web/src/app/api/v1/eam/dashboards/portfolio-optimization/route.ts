@@ -21,25 +21,34 @@ export async function GET(req: Request) {
     "six_r_strategy",
   ];
 
-  const distributions: Record<
-    string,
-    Array<{ value: string; count: number }>
-  > = {};
-
-  for (const dim of dimensions) {
-    const result = await db.execute(sql`
+  // #PERF-N-PLUS-1: the 7 per-dimension GROUP BY queries are fully
+  // independent but previously ran sequentially (7 round-trips of
+  // added latency). Batched via Promise.all — same pattern as the
+  // isms/dashboard fix. `dim` values come from the fixed list above,
+  // so sql.raw() stays injection-safe.
+  const results = await Promise.all(
+    dimensions.map((dim) =>
+      db.execute(sql`
       SELECT ${sql.raw(dim)} AS value, COUNT(*)::int AS count
       FROM application_portfolio ap
       JOIN architecture_element ae ON ap.element_id = ae.id
       WHERE ae.org_id = ${ctx.orgId} AND ae.status != 'retired' AND ${sql.raw(dim)} IS NOT NULL
       GROUP BY ${sql.raw(dim)}
       ORDER BY count DESC
-    `);
-    distributions[dim] = result as unknown as Array<{
+    `),
+    ),
+  );
+
+  const distributions: Record<
+    string,
+    Array<{ value: string; count: number }>
+  > = {};
+  dimensions.forEach((dim, i) => {
+    distributions[dim] = results[i] as unknown as Array<{
       value: string;
       count: number;
     }>;
-  }
+  });
 
   return Response.json({ data: distributions });
 }

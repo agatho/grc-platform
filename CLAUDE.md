@@ -4,7 +4,7 @@
 
 ## What is ARCTOS?
 
-A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **108 Drizzle schemas, 563 pgTable() definitions, 305 SQL migrations (latest: `0326_seed_arctistx_rbac_users.sql`), 1.246 `route.ts` files (~1.700 endpoints), 470 Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings, 258 test files + 47 Playwright E2E specs.** Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 22** (2026-05-16). Active: **Wave 23 endgame** + Programme Cockpit Sprint 13.
+A self-hosted GRC & BPM SaaS platform for multi-entity corporations. Integrates risk management, compliance, audit, data privacy, BPM, and internal controls into a single platform. **110 Drizzle schemas, 576 pgTable() definitions, 340 SQL migration files (latest: `0361_audit_trigger_dedupe.sql`; numbering has gaps), 1.332 `route.ts` files, 479 Next.js pages, 46 catalog frameworks (~2.860 entries), ~960 cross-framework mappings, 314 test files + 47 Playwright E2E specs.** (Counts re-verified 2026-07-10, doc-reality audit.) Current release: **0.1.0-alpha** (2026-04-20). Last completed cycle: **Wave 24** (closed 2026-05-21). For current work see [`docs/STATUS.md`](./docs/STATUS.md).
 
 ## Tech Stack
 
@@ -32,7 +32,7 @@ arctos/
 ├── packages/
 │   ├── db/           → Drizzle Schema, Migrations, Seed
 │   │   ├── src/schema/  → platform.ts, risk.ts, process.ts, task.ts, asset.ts, control.ts, work-item.ts, budget.ts, catalog.ts, ...
-│   │   ├── drizzle/     → SQL migrations (0001–0068)
+│   │   ├── drizzle/     → SQL migrations (0001–0361, 340 files)
 │   │   └── sql/         → Seed data (catalogs, reference data, cross-framework mappings)
 │   ├── ui/           → shadcn/ui Components
 │   ├── shared/       → Zod Schemas, Types, Constants
@@ -99,7 +99,7 @@ arctos/
 | **EU AI Act Full Compliance** (13 DB tables, 14 pages, GPAI/Incidents/Prohibited/QMS/Corrective/Authority/Penalties) | ✅ Done |
 | **ISMS IS-Risikoszenarien** (ISO 27005: Threat×Vuln×Asset → Bewertung → ERM-Sync)                                    | ✅ Done |
 | **ISMS CAP-Modul** (ISO 27001 Kap. 10: Nichtkonformitäten + Korrekturmaßnahmen)                                      | ✅ Done |
-| **Risk Acceptance** (ISO 27005 Kap. 10: Formale Akzeptanz + Authority Matrix)                                        | ✅ Done |
+| **Risk Acceptance** (ISO 27005 Kap. 10: Formale Akzeptanz + Authority Matrix) — real erst seit 2026-07-10 (Migration `0360` + API + UI); davor war dieses ✅ falsch (nur Schema-Files, Tabellen fehlten auf Dev-DB) | ✅ Done |
 | **ISO 27005 Kataloge** (31 Bedrohungen + 23 Schwachstellen)                                                          | ✅ Done |
 | **SoA mit 93 Annex A Kontrollen** (control_catalog_entry verknüpft)                                                  | ✅ Done |
 | Management-system sidebar navigation (10 groups)                                                                     | ✅ Done |
@@ -287,7 +287,7 @@ requireAuth() → requireModule('module_key') → orgContextMiddleware → requi
 
 ### i18n System
 
-- 71 namespace files per locale in `messages/{de,en}/`
+- 72 namespace files per locale in `messages/{de,en}/` (recounted 2026-07-10)
 - All namespaces loaded in `src/i18n/request.ts` and merged at request time
 - Root-level keys from `common.json` accessible without namespace prefix
 - Other namespaces accessed via `useTranslations('identity')`, `useTranslations('fair')`, etc.
@@ -354,7 +354,7 @@ without granting write access to either domain.
 
 ### i18n
 
-- next-intl with 71 namespace files: `messages/{de,en}/*.json`
+- next-intl with 72 namespace files: `messages/{de,en}/*.json`
 - Date formats: DE = `dd.MM.yyyy`, EN = `MM/dd/yyyy`
 - Number formats: DE = `1.234,56`, EN = `1,234.56`
 - Fallback: German if translation is missing

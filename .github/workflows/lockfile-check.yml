@@ -1,0 +1,41 @@
+# Lockfile-Kompatibilitäts-Gate
+# ---------------------------------------------------------------------------
+# Hintergrund (2026-07-10): Ein mit npm 11 (Windows-Dev) umgeschriebenes
+# package-lock.json ließ `npm ci` mit npm 10 im Docker-Deps-Stage
+# (node:22.20-alpine) scheitern — "Missing: react@x.y.z from lock file".
+# Dieser Check führt `npm ci --dry-run` mit exakt dem Container-Image des
+# Dockerfiles aus und fängt solche Drifts vor dem Merge ab.
+# Das Image hier MUSS mit ARG NODE_IMAGE im Dockerfile übereinstimmen.
+name: lockfile-check
+
+on:
+  pull_request:
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "apps/*/package.json"
+      - "packages/*/package.json"
+      - ".github/workflows/lockfile-check.yml"
+  push:
+    branches: [main]
+    paths:
+      - "package.json"
+      - "package-lock.json"
+      - "apps/*/package.json"
+      - "packages/*/package.json"
+
+permissions:
+  contents: read
+
+jobs:
+  npm-ci-dry-run:
+    name: npm ci --dry-run (container npm)
+    runs-on: ubuntu-latest
+    container:
+      image: node:22.20-alpine # muss Dockerfile ARG NODE_IMAGE entsprechen
+    steps:
+      - uses: actions/checkout@v4
+      - name: Versions
+        run: node --version && npm --version
+      - name: Validate lockfile against container npm
+        run: npm ci --dry-run --no-audit --no-fund

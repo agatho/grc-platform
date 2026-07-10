@@ -7,7 +7,7 @@ import {
   questionnaireQuestion,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, asc } from "drizzle-orm";
+import { eq, and, asc, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 
 interface RouteParams {
@@ -39,28 +39,22 @@ export async function GET(req: Request, { params }: RouteParams) {
     .where(eq(questionnaireSection.templateId, session.templateId))
     .orderBy(asc(questionnaireSection.sortOrder));
 
-  const questions = await db
-    .select()
-    .from(questionnaireQuestion)
-    .where(
-      eq(
-        questionnaireQuestion.sectionId,
-        sections.length > 0
-          ? sections[0].id
-          : "00000000-0000-0000-0000-000000000000",
-      ),
-    );
-
-  // Fetch all questions across all sections
-  const allQuestions: Array<typeof questionnaireQuestion.$inferSelect> = [];
-  for (const section of sections) {
-    const sectionQuestions = await db
-      .select()
-      .from(questionnaireQuestion)
-      .where(eq(questionnaireQuestion.sectionId, section.id))
-      .orderBy(asc(questionnaireQuestion.sortOrder));
-    allQuestions.push(...sectionQuestions);
-  }
+  // Fetch all questions across all sections.
+  //
+  // #PERF-N-PLUS-1: was one SELECT per section (10–20 round-trips per
+  // template) plus a redundant first-section pre-fetch. Replaced with a
+  // single inArray query; the per-section grouping below already
+  // happens in memory via `filter`. Within-section ordering is
+  // preserved (sortOrder asc, same as the old per-section orderBy).
+  const sectionIds = sections.map((s) => s.id);
+  const allQuestions: Array<typeof questionnaireQuestion.$inferSelect> =
+    sectionIds.length > 0
+      ? await db
+          .select()
+          .from(questionnaireQuestion)
+          .where(inArray(questionnaireQuestion.sectionId, sectionIds))
+          .orderBy(asc(questionnaireQuestion.sortOrder))
+      : [];
 
   // Fetch all responses
   const responses = await db

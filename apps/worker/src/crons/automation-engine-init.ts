@@ -242,6 +242,7 @@ const automationActionServices: ActionServices = {
             ...formatted.headers,
             ...((webhook.headers as Record<string, string>) ?? {}),
             "X-Arctos-Signature": signature,
+            "X-Arctos-Timestamp": new Date().toISOString(),
             "X-Arctos-Event": "automation.trigger",
             "User-Agent": "ARCTOS-Webhook/1.0",
           },
