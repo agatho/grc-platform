@@ -1,4 +1,4 @@
-import { db, process, processVersion, processStep } from "@grc/db";
+import { db, process, processVersion, processStep, user } from "@grc/db";
 import { createVersionSchema } from "@grc/shared";
 import { parseBpmnXml, computeBpmnDiff } from "@grc/shared";
 import { requireModule } from "@grc/auth";
@@ -10,6 +10,10 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { rehydrateFromBpmnXml } from "@/lib/bpmn-arctos-rehydrate";
+import {
+  upsertWorkingVersion,
+  findWorkingVersion,
+} from "@/lib/process-working-version";
 
 // POST /api/v1/processes/:id/versions — Save BPMN as new version
 export async function POST(
@@ -38,6 +42,7 @@ export async function POST(
       id: process.id,
       currentVersion: process.currentVersion,
       processOwnerId: process.processOwnerId,
+      status: process.status,
     })
     .from(process)
     .where(
@@ -83,6 +88,35 @@ export async function POST(
     } catch {
       // Diff computation failed — store null, not blocking
     }
+  }
+
+  // B2.4 Release-Cycle: saves on a published process land in a single
+  // working copy — the released version, process.currentVersion and all
+  // derived artifacts (steps, cross-links) stay untouched until the
+  // working copy passes re-approval and is promoted. Once a working copy
+  // exists (e.g. the process moved on to re-review), saves keep updating
+  // it until it is promoted.
+  const hasWorkingCopy = Boolean(await findWorkingVersion(db, id));
+  if (existing.status === "published" || hasWorkingCopy) {
+    const workingRow = await withAuditContext(
+      ctx,
+      async (tx) =>
+        upsertWorkingVersion({
+          tx,
+          processId: id,
+          orgId: ctx.orgId,
+          userId: ctx.userId,
+          currentVersion: existing.currentVersion,
+          bpmnXml: body.data.bpmnXml,
+          changeSummary: body.data.changeSummary ?? null,
+          diffSummaryJson,
+        }),
+      { actionDetail: "Working copy saved (published process)" },
+    );
+    return Response.json(
+      { data: workingRow, meta: { workingCopy: true } },
+      { status: 201 },
+    );
   }
 
   const result = await withAuditContext(ctx, async (tx) => {
@@ -242,6 +276,8 @@ export async function GET(
     return Response.json({ error: "Process not found" }, { status: 404 });
   }
 
+  // B3.3: join the creator's display name so the UI can render it
+  // instead of the raw UUID.
   const versions = await db
     .select({
       id: processVersion.id,
@@ -249,10 +285,13 @@ export async function GET(
       versionNumber: processVersion.versionNumber,
       changeSummary: processVersion.changeSummary,
       isCurrent: processVersion.isCurrent,
+      versionType: processVersion.versionType,
       createdBy: processVersion.createdBy,
+      createdByName: user.name,
       createdAt: processVersion.createdAt,
     })
     .from(processVersion)
+    .leftJoin(user, eq(processVersion.createdBy, user.id))
     .where(eq(processVersion.processId, id))
     .orderBy(desc(processVersion.versionNumber));
 

@@ -75,7 +75,16 @@ export async function evaluateTransitionGates({
              JOIN process_step ps ON ps.id = psr.process_step_id
              WHERE ps.process_id = ${processId}
            )
-      )::int AS untreated_risks
+      )::int AS untreated_risks,
+      -- B2.2: a valid process_owner sign-off must exist for the current
+      -- version before the process may be published.
+      (SELECT COUNT(*) FROM process_sign_off pso
+         JOIN process_version pv ON pv.id = pso.process_version_id
+         WHERE pso.process_id = ${processId}
+           AND pso.org_id = ${orgId}
+           AND pso.signer_role = 'process_owner'
+           AND pv.is_current = true
+      )::int AS owner_sign_offs
   `)) as any[];
 
   const activities = Number(stats?.activities ?? 0);
@@ -84,6 +93,7 @@ export async function evaluateTransitionGates({
   const frameworkMappings = Number(stats?.framework_mappings ?? 0);
   const openFindings = Number(stats?.open_findings ?? 0);
   const untreatedRisks = Number(stats?.untreated_risks ?? 0);
+  const ownerSignOffs = Number(stats?.owner_sign_offs ?? 0);
 
   // Gate: draft → in_review
   if (target === "in_review") {
@@ -157,6 +167,18 @@ export async function evaluateTransitionGates({
         gate: "approved_to_published",
         message:
           "At least one framework mapping (ISO/NIS2/GDPR/...) is required for publication.",
+        severity: "error",
+      });
+    }
+    // B2.2: hard blocker — publication requires a cryptographic sign-off
+    // (process_sign_off hash chain) of the process_owner for the current
+    // version.
+    if (ownerSignOffs === 0) {
+      blockers.push({
+        code: "missing_owner_sign_off",
+        gate: "approved_to_published",
+        message:
+          "A process-owner sign-off for the current version is required before publication.",
         severity: "error",
       });
     }

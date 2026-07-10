@@ -60,6 +60,7 @@
     "open_findings": "Open findings must be resolved before publication.",
     "no_framework_mapping": "At least one framework mapping (ISO/NIS2/GDPR/...) is required for publication.",
     "weak_description": "Process description must be at least 20 characters.",
-    "untreated_risks": "Linked risks are not yet treated."
+    "untreated_risks": "Linked risks are not yet treated.",
+    "missing_owner_sign_off": "A process-owner sign-off for the current version is missing."
   }
 }

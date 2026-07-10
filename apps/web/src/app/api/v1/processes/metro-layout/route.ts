@@ -19,15 +19,17 @@ export async function GET(req: Request) {
   const moduleCheck = await requireModule("bpm", ctx.orgId, req.method);
   if (moduleCheck) return moduleCheck;
 
-  // Get processes with health and metro layout (columns from migrations 877, 878)
+  // Get processes with health and metro layout (columns from migrations
+  // 0132/0133). B1.4: the name column is `name` — `title` never existed
+  // on the process table.
   const result = await db.execute(
-    sql`SELECT id, title, parent_process_id,
+    sql`SELECT id, name, parent_process_id,
                COALESCE(process_health, 'healthy') as process_health,
                metro_layout,
                level
         FROM process
         WHERE org_id = ${ctx.orgId} AND deleted_at IS NULL
-        ORDER BY level ASC NULLS FIRST, title ASC`,
+        ORDER BY level ASC NULLS FIRST, name ASC`,
   );
 
   const processes = result;
@@ -61,7 +63,7 @@ export async function GET(req: Request) {
 
     stations.push({
       processId: String(parent.id),
-      processName: String(parent.title ?? ""),
+      processName: String(parent.name ?? ""),
       health: String(parent.process_health ?? "healthy"),
       x: layoutData?.x ?? idx * 200,
       y: layoutData?.y ?? 100,
@@ -78,7 +80,7 @@ export async function GET(req: Request) {
 
       stations.push({
         processId: String(child.id),
-        processName: String(child.title ?? ""),
+        processName: String(child.name ?? ""),
         health: String(child.process_health ?? "healthy"),
         x: childLayout?.x ?? idx * 200 + (childIdx + 1) * 150,
         y: childLayout?.y ?? 100,
@@ -89,7 +91,7 @@ export async function GET(req: Request) {
 
     lines.push({
       id: String(parent.id),
-      name: String(parent.title ?? ""),
+      name: String(parent.name ?? ""),
       color,
       stationIds: lineStationIds,
     });

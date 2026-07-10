@@ -5,14 +5,17 @@
 // Insert-only (idempotent via existing FK checks); never deletes existing
 // links unless explicitly requested.
 
-import { sql } from "drizzle-orm";
-import {
-  extractGrcMetadata,
-  type GrcMetadata,
-} from "@/components/bpmn/arctos-grc-extractor";
+import { sql, type SQL } from "drizzle-orm";
+import type { GrcMetadata } from "@/components/bpmn/arctos-grc-extractor";
+import { parseArctosGrcMetadataMap } from "@/lib/bpmn-arctos-parse";
+
+/** Minimal structural view of a Drizzle db/transaction handle. */
+interface SqlExecutor {
+  execute(query: SQL): Promise<unknown>;
+}
 
 interface RehydrateArgs {
-  tx: any;
+  tx: SqlExecutor;
   processId: string;
   orgId: string;
   userId: string;
@@ -39,21 +42,12 @@ export async function rehydrateFromBpmnXml(
     ropaProfilesUpdated: 0,
   };
 
-  // Find every bpmn element id whose body directly wraps an
-  // <arctos:grcMetadata>. The negative lookahead on `id="..."` excludes
-  // outer wrappers (e.g. <bpmn:process id="Proc">) when an inner element
-  // (e.g. <bpmn:userTask id="Task_1">) is the actual parent.
-  const elementIds = new Set<string>();
-  const re =
-    /<[a-zA-Z:]+\b[^>]*?\bid="([^"]+)"[^>]*?>(?:(?!\bid="[^"]+").)*?<arctos:grcMetadata/gs;
-  let m: RegExpExecArray | null;
-  while ((m = re.exec(args.bpmnXml)) !== null) {
-    elementIds.add(m[1]);
-  }
+  // B1.2: real moddle-based XML parsing — the whole document is parsed
+  // once and every element carrying an <arctos:grcMetadata> extension is
+  // returned with its already-structured metadata.
+  const metaByElement = await parseArctosGrcMetadataMap(args.bpmnXml);
 
-  for (const elementId of elementIds) {
-    const meta = extractGrcMetadata(args.bpmnXml, elementId);
-    if (!meta) continue;
+  for (const [elementId, meta] of metaByElement) {
     const stepId = args.stepIdByBpmnElement.get(elementId);
 
     if (stepId && meta.lineOfDefense) {
@@ -140,8 +134,15 @@ export interface ExportLinks {
   meta: GrcMetadata;
 }
 
+interface ExportLinkRow {
+  bpmn_element_id: string;
+  line_of_defense: string | null;
+  risk_refs: NonNullable<GrcMetadata["riskRefs"]> | null;
+  control_refs: NonNullable<GrcMetadata["controlRefs"]> | null;
+}
+
 export async function buildArctosLinksFromDb(
-  tx: any,
+  tx: SqlExecutor,
   processId: string,
   orgId: string,
 ): Promise<ExportLinks[]> {
@@ -174,7 +175,7 @@ export async function buildArctosLinksFromDb(
       ) AS control_refs
     FROM process_step ps
     WHERE ps.process_id = ${processId}::uuid AND ps.deleted_at IS NULL
-  `)) as any[];
+  `)) as ExportLinkRow[];
 
   return rows.map((r) => ({
     bpmnElementId: r.bpmn_element_id,

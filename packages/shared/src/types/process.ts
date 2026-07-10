@@ -41,6 +41,8 @@ export interface Process {
   deletedBy?: string;
 }
 
+export type ProcessVersionType = "working" | "released";
+
 export interface ProcessVersion {
   id: string;
   processId: string;
@@ -51,7 +53,39 @@ export interface ProcessVersion {
   changeSummary?: string;
   diffSummaryJson?: unknown;
   isCurrent: boolean;
+  /** B2.4: 'working' = editable copy of a published process */
+  versionType?: ProcessVersionType;
   createdBy?: string;
+  /** B3.3: display name of the creator (joined in the versions API) */
+  createdByName?: string;
+  createdAt: string;
+}
+
+// B2.1: multi-stage approval chain (process_approval_step)
+export type ProcessApprovalStepType = "review" | "approval" | "acknowledgment";
+export type ProcessApprovalStepStatus =
+  | "pending"
+  | "in_progress"
+  | "completed"
+  | "rejected"
+  | "skipped";
+
+export interface ProcessApprovalStep {
+  id: string;
+  processId: string;
+  versionNumber: number;
+  stepOrder: number;
+  stepType: ProcessApprovalStepType;
+  assigneeUserId?: string | null;
+  assigneeUserName?: string | null;
+  assigneeRole?: string | null;
+  status: ProcessApprovalStepStatus;
+  decision?: string | null;
+  comment?: string | null;
+  decidedAt?: string | null;
+  decidedBy?: string | null;
+  decidedByName?: string | null;
+  dueDate?: string | null;
   createdAt: string;
 }
 

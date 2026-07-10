@@ -2,6 +2,11 @@ export * from "./schemas";
 export * from "./types";
 export * from "./modules";
 export * from "./process-status";
+// B2 Release-Cycle: multi-stage approval chain logic (process_approval_step)
+export * from "./process-approval";
+// DMS document control: major/minor versioning, effective dating,
+// four-eyes check, review-reminder staging, retention-purge rules.
+export * from "./document-control";
 export {
   getRequiredHexKey,
   aesGcmEncrypt,

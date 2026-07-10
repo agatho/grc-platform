@@ -10,7 +10,7 @@ import { db, process, processVersion } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
-import { extractGrcMetadata } from "@/components/bpmn/arctos-grc-extractor";
+import { parseArctosGrcMetadataMap } from "@/lib/bpmn-arctos-parse";
 
 interface ArctosDiff {
   bpmnElementId: string;
@@ -79,24 +79,17 @@ export async function GET(
   }
 
   // Compute arctos:* diff: enumerate elements with metadata in either xml.
-  const elementIdRe = /\bid="([^"]+)"[^>]*?>[\s\S]*?<arctos:grcMetadata/g;
-  const collect = (xml: string | null) => {
-    const set = new Set<string>();
-    if (!xml) return set;
-    let m: RegExpExecArray | null;
-    while ((m = elementIdRe.exec(xml)) !== null) set.add(m[1]);
-    elementIdRe.lastIndex = 0;
-    return set;
-  };
-  const ids = new Set<string>([
-    ...collect(from.bpmnXml),
-    ...collect(to.bpmnXml),
+  // B1.2: real moddle-based XML parsing instead of regex scraping.
+  const [fromMeta, toMeta] = await Promise.all([
+    parseArctosGrcMetadataMap(from.bpmnXml),
+    parseArctosGrcMetadataMap(to.bpmnXml),
   ]);
+  const ids = new Set<string>([...fromMeta.keys(), ...toMeta.keys()]);
 
   const diffs: ArctosDiff[] = [];
   for (const eid of ids) {
-    const a = from.bpmnXml ? extractGrcMetadata(from.bpmnXml, eid) : null;
-    const b = to.bpmnXml ? extractGrcMetadata(to.bpmnXml, eid) : null;
+    const a = fromMeta.get(eid) ?? null;
+    const b = toMeta.get(eid) ?? null;
 
     const aRisks = new Set(
       (a?.riskRefs ?? []).map((r) => r.id).filter(Boolean) as string[],

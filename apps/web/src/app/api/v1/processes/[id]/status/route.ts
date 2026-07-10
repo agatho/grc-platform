@@ -2,6 +2,7 @@ import {
   db,
   process,
   processVersion,
+  processApprovalStep,
   notification,
   userOrganizationRole,
 } from "@grc/db";
@@ -11,12 +12,14 @@ import {
   TRANSITIONS_REQUIRING_COMMENT,
 } from "@grc/shared";
 import { requireModule } from "@grc/auth";
-import { eq, and, isNull } from "drizzle-orm";
-import { withAuth, withAuditContext } from "@/lib/api";
+import { eq, and, isNull, sql } from "drizzle-orm";
+import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
 import type { ProcessStatus } from "@grc/shared";
 import { evaluateTransitionGates } from "@/lib/process-gates";
+import { promoteWorkingVersion } from "@/lib/process-working-version";
 
 // PUT /api/v1/processes/:id/status — Status transition
+// (also exported as PATCH below for client robustness — B1.3)
 export async function PUT(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -104,7 +107,9 @@ export async function PUT(
   // BPM Overhaul Phase 3: structured gate-checks via evaluateTransitionGates.
   // Replaces the ad-hoc version pre-condition; the gate library now owns it.
   if (["in_review", "approved", "published"].includes(targetStatus)) {
-    const blockers = await db.transaction(async (tx) =>
+    // withReadContext sets app.current_org_id — required because the gate
+    // library reads FORCE-RLS tables (process_sign_off) since B2.2.
+    const blockers = await withReadContext(ctx, async (tx) =>
       evaluateTransitionGates({
         tx,
         processId: id,
@@ -148,51 +153,131 @@ export async function PUT(
     // row so the audit trail and diff-view have a stable per-status anchor.
     if (["approved", "published", "archived"].includes(targetStatus)) {
       try {
-        const [curr] = await tx
-          .select({
-            bpmnXml: processVersion.bpmnXml,
-            diagramJson: processVersion.diagramJson,
-            versionNumber: processVersion.versionNumber,
-          })
-          .from(processVersion)
-          .where(
-            and(
-              eq(processVersion.processId, id),
-              eq(processVersion.isCurrent, true),
-            ),
-          )
-          .limit(1);
+        // B2.4 Release-Cycle: if a working copy exists it is promoted to
+        // the next released version on (re-)approval / publication —
+        // instead of snapshotting the old released state.
+        let promoted: { id: string; versionNumber: number } | null = null;
+        if (targetStatus === "approved" || targetStatus === "published") {
+          promoted = await promoteWorkingVersion({
+            tx,
+            processId: id,
+            orgId: ctx.orgId,
+            userId: ctx.userId,
+          });
+        }
 
-        if (curr) {
-          await tx
-            .update(processVersion)
-            .set({ isCurrent: false })
+        if (!promoted) {
+          const [curr] = await tx
+            .select({
+              bpmnXml: processVersion.bpmnXml,
+              diagramJson: processVersion.diagramJson,
+              versionNumber: processVersion.versionNumber,
+            })
+            .from(processVersion)
             .where(
               and(
                 eq(processVersion.processId, id),
                 eq(processVersion.isCurrent, true),
               ),
-            );
+            )
+            .limit(1);
 
-          await tx.insert(processVersion).values({
-            processId: id,
-            orgId: ctx.orgId,
-            versionNumber: (curr.versionNumber ?? 0) + 1,
-            bpmnXml: curr.bpmnXml,
-            diagramJson: curr.diagramJson,
-            isCurrent: true,
-            changeSummary: `Auto-version on status -> ${targetStatus}`,
-            createdBy: ctx.userId,
-          });
+          if (curr) {
+            // Number past ALL rows (incl. a possible working copy) so the
+            // (process_id, version_number) unique index cannot collide.
+            const [maxRow] = await tx
+              .select({
+                max: sql<number>`COALESCE(MAX(${processVersion.versionNumber}), 0)`,
+              })
+              .from(processVersion)
+              .where(eq(processVersion.processId, id));
+            const nextNumber = Number(maxRow?.max ?? 0) + 1;
 
-          await tx
-            .update(process)
-            .set({ currentVersion: (curr.versionNumber ?? 0) + 1 })
-            .where(eq(process.id, id));
+            await tx
+              .update(processVersion)
+              .set({ isCurrent: false })
+              .where(
+                and(
+                  eq(processVersion.processId, id),
+                  eq(processVersion.isCurrent, true),
+                ),
+              );
+
+            await tx.insert(processVersion).values({
+              processId: id,
+              orgId: ctx.orgId,
+              versionNumber: nextNumber,
+              bpmnXml: curr.bpmnXml,
+              diagramJson: curr.diagramJson,
+              isCurrent: true,
+              versionType: "released",
+              changeSummary: `Auto-version on status -> ${targetStatus}`,
+              createdBy: ctx.userId,
+            });
+
+            await tx
+              .update(process)
+              .set({ currentVersion: nextNumber })
+              .where(eq(process.id, id));
+          }
         }
       } catch (e) {
         // Auto-versioning is best-effort; do not block the state transition.
         console.error("auto-versioning failed", e);
+      }
+    }
+
+    // B2.3 Kenntnisnahme: on publish, pending acknowledgment steps become
+    // active and every assignee is notified.
+    if (targetStatus === "published") {
+      try {
+        const ackSteps = await tx
+          .select({
+            id: processApprovalStep.id,
+            assigneeUserId: processApprovalStep.assigneeUserId,
+          })
+          .from(processApprovalStep)
+          .where(
+            and(
+              eq(processApprovalStep.processId, id),
+              eq(processApprovalStep.orgId, ctx.orgId),
+              eq(processApprovalStep.stepType, "acknowledgment"),
+              eq(processApprovalStep.status, "pending"),
+            ),
+          );
+
+        for (const step of ackSteps) {
+          await tx
+            .update(processApprovalStep)
+            .set({
+              status: "in_progress",
+              updatedAt: new Date(),
+              updatedBy: ctx.userId,
+            })
+            .where(eq(processApprovalStep.id, step.id));
+
+          if (step.assigneeUserId) {
+            await tx.insert(notification).values({
+              userId: step.assigneeUserId,
+              orgId: ctx.orgId,
+              type: "approval_request",
+              entityType: "process",
+              entityId: id,
+              title: `Acknowledgment requested: ${existing.name}`,
+              message: body.data.comment ?? null,
+              channel: "both",
+              templateKey: "process_acknowledgment_requested",
+              templateData: {
+                processId: id,
+                processName: existing.name,
+                requestedBy: ctx.userId,
+              },
+              createdBy: ctx.userId,
+            });
+          }
+        }
+      } catch (e) {
+        console.error("acknowledgment activation failed", e);
       }
     }
 
@@ -254,3 +339,7 @@ export async function PUT(
 
   return Response.json({ data: updated });
 }
+
+// B1.3: PATCH alias — the UI historically called PATCH while only PUT was
+// exported; accept both so older clients keep working.
+export { PUT as PATCH };

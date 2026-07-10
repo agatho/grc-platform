@@ -14,7 +14,10 @@ export const PROCESS_STATUS_TRANSITIONS: Record<
   draft: ["in_review"],
   in_review: ["approved", "draft"], // draft = rejection
   approved: ["published", "in_review"], // in_review = send back
-  published: ["archived"],
+  // B2.4 Release-Cycle: in_review = start re-approval of the working copy
+  // (the last released version stays the current released version until
+  // the working copy is approved again).
+  published: ["archived", "in_review"],
   archived: [], // terminal state
 };
 
@@ -29,6 +32,7 @@ export const PROCESS_TRANSITION_ROLES: Record<string, string[]> = {
   "approved->published": ["admin"],
   "approved->in_review": ["auditor", "admin"], // send back
   "published->archived": ["admin"],
+  "published->in_review": ["process_owner", "admin"], // B2.4: re-approval of working copy
 };
 
 // ──────────────────────────────────────────────────────────────

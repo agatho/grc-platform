@@ -83,6 +83,7 @@ import { ProcessComplianceProfileSwitcher } from "@/components/process/process-c
 import { ProcessAuditTrailTab } from "@/components/process/process-audit-trail-tab";
 import { ArctosPropertiesPanel } from "@/components/bpmn/arctos-properties-panel";
 import { ProcessDocumentDropzone } from "@/components/process/process-document-dropzone";
+import { ProcessApprovalTab } from "@/components/process/process-approval-tab";
 
 // Dynamic imports — bpmn-js does NOT work with SSR
 const BpmnEditorDynamic = dynamic(
@@ -126,6 +127,9 @@ interface ProcessDetail extends Process {
   versions?: ProcessVersion[];
   steps?: ProcessStep[];
   riskCount?: number;
+  currentVersionData?: ProcessVersion | null;
+  // B2.4: working copy of a published process (parallel to the released version)
+  workingVersionData?: ProcessVersion | null;
 }
 
 interface ProcessRisk {
@@ -335,7 +339,7 @@ function ProcessDetailContent() {
     setTransitioning(true);
     try {
       const res = await fetch(`/api/v1/processes/${processId}/status`, {
-        method: "PATCH",
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           status: target,
@@ -553,6 +557,7 @@ function ProcessDetailContent() {
           <TabsTrigger value="bia">BIA</TabsTrigger>
           <TabsTrigger value="findings">Findings</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="approval">{t("tabs.approval")}</TabsTrigger>
           <TabsTrigger value="signoff">Sign-off</TabsTrigger>
           <TabsTrigger value="audit-trail">Audit Trail</TabsTrigger>
           <TabsTrigger value="documents">
@@ -645,6 +650,19 @@ function ProcessDetailContent() {
         <TabsContent value="compliance">
           <div className="mt-4">
             <ProcessComplianceTab processId={processId} />
+          </div>
+        </TabsContent>
+
+        {/* B2.5: Release-cycle approval chain */}
+        <TabsContent value="approval">
+          <div className="mt-4">
+            <ProcessApprovalTab
+              processId={processId}
+              processStatus={process.status}
+              canEdit={canEdit}
+              currentUserId={session?.user?.id}
+              onChanged={fetchProcess}
+            />
           </div>
         </TabsContent>
 
@@ -807,12 +825,14 @@ function OverviewTab({
           <CardTitle className="text-base">{t("detail.bpmnPreview")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {process.versions?.some((v) => v.bpmnXml) ? (
+          {(process.versions?.some((v) => v.bpmnXml) ||
+            Boolean(process.currentVersionData?.bpmnXml)) ? (
             <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
               <BpmnViewerDynamic
                 xml={
-                  process.versions.find((v) => v.isCurrent)?.bpmnXml ??
-                  process.versions[0]?.bpmnXml ??
+                  process.versions?.find((v) => v.isCurrent)?.bpmnXml ??
+                  process.versions?.[0]?.bpmnXml ??
+                  process.currentVersionData?.bpmnXml ??
                   ""
                 }
                 className="h-full"
@@ -904,11 +924,18 @@ function EditorTab({
 }) {
   const readOnly = !canEdit;
 
-  // Get initial XML from current version
+  // B2.4: when a working copy exists, the editor continues on it — the
+  // released version stays untouched until re-approval.
+  const workingVersion = process.workingVersionData ?? null;
   const initialXml = useMemo(() => {
-    const currentVersion = process.versions?.find((v) => v.isCurrent);
-    return currentVersion?.bpmnXml || EMPTY_BPMN_XML;
-  }, [process.versions]);
+    const currentVersion =
+      process.currentVersionData ??
+      process.versions?.find((v) => v.isCurrent) ??
+      null;
+    return (
+      workingVersion?.bpmnXml || currentVersion?.bpmnXml || EMPTY_BPMN_XML
+    );
+  }, [process.currentVersionData, process.versions, workingVersion]);
 
   // BPMN editor hook
   const {
@@ -1091,6 +1118,25 @@ function EditorTab({
 
   return (
     <div className="mt-4 space-y-0">
+      {/* B2.4: working copy vs. released badge */}
+      {(workingVersion || process.status === "published") && (
+        <div className="flex items-center gap-2 pb-2">
+          {workingVersion ? (
+            <Badge className="bg-amber-100 text-amber-900 border-amber-200">
+              {t("versions.workingCopy")}
+            </Badge>
+          ) : (
+            <Badge className="bg-green-100 text-green-900 border-green-200">
+              {t("versions.released")}
+            </Badge>
+          )}
+          {workingVersion && (
+            <span className="text-xs text-gray-500">
+              {t("versions.workingCopyHint")}
+            </span>
+          )}
+        </div>
+      )}
       {/* Toolbar */}
       <BpmnToolbar
         version={process.currentVersion}
@@ -1221,13 +1267,43 @@ function VersionsTab({
   );
   const [restoring, setRestoring] = useState(false);
 
+  // B3.3: fetch versions from the versions API (joins the creator's
+  // display name) instead of relying on the detail payload.
+  const [fetchedVersions, setFetchedVersions] = useState<
+    ProcessVersion[] | null
+  >(null);
+  useEffect(() => {
+    fetch(`/api/v1/processes/${process.id}/versions`)
+      .then((r) => (r.ok ? r.json() : { data: null }))
+      .then((json) => setFetchedVersions(json.data ?? null))
+      .catch(() => setFetchedVersions(null));
+  }, [process.id, process.currentVersion]);
+
   const versions = useMemo(
     () =>
-      (process.versions ?? []).sort(
+      (fetchedVersions ?? process.versions ?? []).sort(
         (a, b) => b.versionNumber - a.versionNumber,
       ),
-    [process.versions],
+    [fetchedVersions, process.versions],
   );
+
+  // The list endpoint omits the XML payload — fetch the single version
+  // lazily when it is opened in the viewer dialog.
+  const handleView = async (version: ProcessVersion) => {
+    setViewingVersion(version);
+    if (version.bpmnXml) return;
+    try {
+      const res = await fetch(
+        `/api/v1/processes/${process.id}/versions/${version.id}`,
+      );
+      if (res.ok) {
+        const json = await res.json();
+        if (json.data) setViewingVersion(json.data as ProcessVersion);
+      }
+    } catch {
+      // keep the placeholder dialog
+    }
+  };
 
   const handleRestore = async (version: ProcessVersion) => {
     if (
@@ -1298,10 +1374,16 @@ function VersionsTab({
                           {t("versions.current")}
                         </Badge>
                       )}
+                      {version.versionType === "working" && (
+                        <Badge className="bg-amber-100 text-amber-900 border-amber-200 text-xs">
+                          {t("versions.workingCopy")}
+                        </Badge>
+                      )}
                     </div>
                     <p className="text-sm text-gray-500">
                       {formatDateTime(version.createdAt)}
-                      {version.createdBy && ` · ${version.createdBy}`}
+                      {(version.createdByName || version.createdBy) &&
+                        ` · ${version.createdByName ?? version.createdBy}`}
                     </p>
                     {version.changeSummary && (
                       <p className="text-sm text-gray-700 italic">
@@ -1313,7 +1395,7 @@ function VersionsTab({
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setViewingVersion(version)}
+                      onClick={() => void handleView(version)}
                     >
                       <Eye size={14} />
                       {t("versions.view")}

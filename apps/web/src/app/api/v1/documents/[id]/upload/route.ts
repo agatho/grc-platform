@@ -1,10 +1,10 @@
-import { db, document } from "@grc/db";
+import { db, document, documentVersion, documentFile } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { writeFile, mkdir } from "fs/promises";
 import { join } from "path";
-import { randomUUID } from "crypto";
+import { randomUUID, createHash } from "crypto";
 
 const UPLOAD_DIR =
   process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
@@ -29,7 +29,10 @@ const ALLOWED_MIMES = new Set([
   "text/xml",
 ]);
 
-// POST /api/v1/documents/:id/upload — Upload file attachment
+// POST /api/v1/documents/:id/upload — Upload file attachment.
+// D3: computes SHA-256 over the file buffer for tamper evidence.
+// D4: creates a document_file row (multi-file support); the legacy
+// inline columns on document keep mirroring the newest upload.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -95,9 +98,40 @@ export async function POST(
   const relativePath = `${ctx.orgId}/${id}/${storedName}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
+  // D3: SHA-256 integrity hash over the raw file buffer
+  const sha256 = createHash("sha256").update(buffer).digest("hex");
   await writeFile(filePath, buffer);
 
-  // Update document with file info
+  // D4: pin the file to the version that is current at upload time
+  const [currentVersion] = await db
+    .select({ id: documentVersion.id })
+    .from(documentVersion)
+    .where(
+      and(
+        eq(documentVersion.documentId, id),
+        eq(documentVersion.orgId, ctx.orgId),
+        eq(documentVersion.isCurrent, true),
+      ),
+    );
+
+  const [fileRow] = await db
+    .insert(documentFile)
+    .values({
+      orgId: ctx.orgId,
+      documentId: id,
+      versionId: currentVersion?.id ?? null,
+      fileName: file.name,
+      filePath: relativePath,
+      fileSize: file.size,
+      mimeType: file.type,
+      sha256,
+      uploadedBy: ctx.userId,
+      createdBy: ctx.userId,
+      updatedBy: ctx.userId,
+    })
+    .returning();
+
+  // Legacy inline fields mirror the newest (primary) file
   const [updated] = await db
     .update(document)
     .set({
@@ -105,18 +139,36 @@ export async function POST(
       filePath: relativePath,
       fileSize: file.size,
       mimeType: file.type,
+      fileSha256: sha256,
       updatedAt: new Date(),
       updatedBy: ctx.userId,
     })
     .where(eq(document.id, id))
     .returning();
 
+  // Keep the current version's file snapshot in sync so restores of
+  // this version bring back the file that belonged to it.
+  if (currentVersion) {
+    await db
+      .update(documentVersion)
+      .set({
+        fileName: file.name,
+        filePath: relativePath,
+        fileSize: file.size,
+        mimeType: file.type,
+        fileSha256: sha256,
+      })
+      .where(eq(documentVersion.id, currentVersion.id));
+  }
+
   return Response.json(
     {
       data: {
+        fileId: fileRow.id,
         fileName: updated.fileName,
         fileSize: updated.fileSize,
         mimeType: updated.mimeType,
+        sha256,
       },
     },
     { status: 201 },

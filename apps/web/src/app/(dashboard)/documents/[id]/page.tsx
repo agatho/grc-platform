@@ -19,6 +19,9 @@ import {
   Upload,
   Download,
   File,
+  Trash2,
+  Search,
+  Fingerprint,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -32,6 +35,7 @@ import type {
   Document,
   DocumentVersion,
   DocumentEntityLink,
+  DocumentFile,
   Acknowledgment,
   DocumentStatus,
 } from "@grc/shared";
@@ -95,18 +99,24 @@ function DocumentDetailInner() {
 
   const [doc, setDoc] = useState<DocumentDetail | null>(null);
   const [versions, setVersions] = useState<DocumentVersion[]>([]);
+  const [files, setFiles] = useState<DocumentFile[]>([]);
   const [entityLinks, setEntityLinks] = useState<DocumentEntityLink[]>([]);
   const [acknowledgments, setAcknowledgments] = useState<AckUser[]>([]);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
+  // D1: point-in-time lookup ("Which version was effective on …?")
+  const [pitDate, setPitDate] = useState("");
+  const [pitResult, setPitResult] = useState<DocumentVersion | null>(null);
+  const [pitNotFound, setPitNotFound] = useState(false);
 
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [docRes, versionsRes, linksRes, acksRes, logRes] =
+      const [docRes, versionsRes, filesRes, linksRes, acksRes, logRes] =
         await Promise.all([
           fetch(`/api/v1/documents/${docId}`),
           fetch(`/api/v1/documents/${docId}/versions`),
+          fetch(`/api/v1/documents/${docId}/files`),
           fetch(`/api/v1/documents/${docId}/entity-links`),
           fetch(`/api/v1/documents/${docId}/acknowledgments`),
           fetch(
@@ -120,6 +130,10 @@ function DocumentDetailInner() {
       if (versionsRes.ok) {
         const json = await versionsRes.json();
         setVersions(json.data ?? []);
+      }
+      if (filesRes.ok) {
+        const json = await filesRes.json();
+        setFiles(json.data ?? []);
       }
       if (linksRes.ok) {
         const json = await linksRes.json();
@@ -155,6 +169,56 @@ function DocumentDetailInner() {
       toast.error(t("acknowledgments.reminderError"));
     }
   };
+
+  const handleRestore = async (versionId: string) => {
+    try {
+      const res = await fetch(
+        `/api/v1/documents/${docId}/versions/${versionId}/restore`,
+        { method: "POST" },
+      );
+      if (!res.ok) throw new Error("Failed");
+      toast.success(t("versions.restoreSuccess"));
+      void fetchData();
+    } catch {
+      toast.error(t("versions.restoreError"));
+    }
+  };
+
+  const handlePointInTime = async () => {
+    if (!pitDate) return;
+    setPitResult(null);
+    setPitNotFound(false);
+    try {
+      const res = await fetch(
+        `/api/v1/documents/${docId}/versions/at?date=${encodeURIComponent(pitDate)}`,
+      );
+      if (res.ok) {
+        const json = await res.json();
+        setPitResult(json.data ?? null);
+        setPitNotFound(!json.data);
+      } else {
+        setPitNotFound(true);
+      }
+    } catch {
+      setPitNotFound(true);
+    }
+  };
+
+  const handleDeleteFile = async (fileId: string) => {
+    try {
+      const res = await fetch(`/api/v1/documents/${docId}/files/${fileId}`, {
+        method: "DELETE",
+      });
+      if (!res.ok) throw new Error("Failed");
+      toast.success(t("files.deleteSuccess"));
+      void fetchData();
+    } catch {
+      toast.error(t("files.deleteError"));
+    }
+  };
+
+  const versionLabelOf = (v: DocumentVersion) =>
+    v.versionLabel ?? String(v.versionNumber);
 
   if (loading) {
     return (
@@ -210,7 +274,9 @@ function DocumentDetailInner() {
               {t(`status.${doc.status}`)}
             </Badge>
             <span className="text-xs font-mono text-gray-500">
-              v{doc.currentVersion}
+              v
+              {versions.find((v) => v.isCurrent)?.versionLabel ??
+                doc.currentVersion}
             </span>
             {doc.tags.length > 0 &&
               doc.tags.map((tag) => (
@@ -254,31 +320,65 @@ function DocumentDetailInner() {
                   </p>
                 )}
 
-                {/* File attachment section */}
+                {/* D4: Files list (multi-file attachments) */}
                 <div className="mt-6 pt-4 border-t">
-                  {(doc as any).fileName ? (
-                    <div className="flex items-center justify-between rounded-lg bg-gray-50 p-3">
-                      <div className="flex items-center gap-3">
-                        <File size={20} className="text-blue-500" />
-                        <div>
-                          <p className="text-sm font-medium">
-                            {(doc as any).fileName}
-                          </p>
-                          <p className="text-xs text-gray-500">
-                            {(doc as any).mimeType} &middot;{" "}
-                            {((doc as any).fileSize / 1024).toFixed(0)} KB
-                          </p>
+                  <p className="text-xs font-medium text-gray-500 uppercase mb-2">
+                    {t("files.title")}
+                  </p>
+                  {files.length === 0 ? (
+                    <p className="text-xs text-gray-400">{t("files.empty")}</p>
+                  ) : (
+                    <div className="space-y-2">
+                      {files.map((f) => (
+                        <div
+                          key={f.id}
+                          className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
+                        >
+                          <div className="flex items-center gap-3 min-w-0">
+                            <File size={20} className="text-blue-500 shrink-0" />
+                            <div className="min-w-0">
+                              <p className="text-sm font-medium truncate">
+                                {f.fileName}
+                              </p>
+                              <p className="text-xs text-gray-500">
+                                {f.mimeType} &middot;{" "}
+                                {((f.fileSize ?? 0) / 1024).toFixed(0)} KB
+                              </p>
+                              {f.sha256 && (
+                                <p
+                                  className="text-[10px] font-mono text-gray-400 truncate"
+                                  title={`${t("files.sha256")}: ${f.sha256}`}
+                                >
+                                  <Fingerprint
+                                    size={10}
+                                    className="inline mr-1"
+                                  />
+                                  {t("files.sha256")}: {f.sha256.slice(0, 16)}…
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2 shrink-0">
+                            <a
+                              href={`/api/v1/documents/${docId}/files/${f.id}/download`}
+                              className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
+                            >
+                              <Download size={14} />
+                              {t("download")}
+                            </a>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteFile(f.id)}
+                              title={t("files.delete")}
+                            >
+                              <Trash2 size={14} className="text-red-500" />
+                            </Button>
+                          </div>
                         </div>
-                      </div>
-                      <a
-                        href={`/api/v1/documents/${docId}/download`}
-                        className="inline-flex items-center gap-1 rounded-md bg-primary px-3 py-1.5 text-xs font-medium text-primary-foreground hover:bg-primary/90"
-                      >
-                        <Download size={14} />
-                        {t("download")}
-                      </a>
+                      ))}
                     </div>
-                  ) : null}
+                  )}
                   <div className="mt-3">
                     <label className="flex cursor-pointer flex-col items-center gap-2 rounded-lg border-2 border-dashed border-gray-200 bg-gray-50/50 py-4 hover:border-primary/50 hover:bg-gray-50 transition-colors">
                       <Upload size={20} className="text-gray-400" />
@@ -357,7 +457,43 @@ function DocumentDetailInner() {
         </TabsContent>
 
         {/* Versions */}
-        <TabsContent value="versions" className="mt-4">
+        <TabsContent value="versions" className="mt-4 space-y-4">
+          {/* D1: Point-in-time lookup */}
+          <Card>
+            <CardContent className="py-3">
+              <div className="flex flex-wrap items-center gap-2">
+                <Search size={14} className="text-gray-400" />
+                <span className="text-sm text-gray-700">
+                  {t("versions.pointInTime.title")}
+                </span>
+                <input
+                  type="date"
+                  value={pitDate}
+                  onChange={(e) => setPitDate(e.target.value)}
+                  className="rounded-md border border-gray-200 px-2 py-1 text-sm"
+                />
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={!pitDate}
+                  onClick={handlePointInTime}
+                >
+                  {t("versions.pointInTime.lookup")}
+                </Button>
+                {pitResult && (
+                  <Badge className="bg-blue-600 text-white">
+                    v{versionLabelOf(pitResult)}
+                  </Badge>
+                )}
+                {pitNotFound && (
+                  <span className="text-xs text-gray-500">
+                    {t("versions.pointInTime.none")}
+                  </span>
+                )}
+              </div>
+            </CardContent>
+          </Card>
+
           {versions.length === 0 ? (
             <div className="flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-gray-200 bg-gray-50 py-12">
               <GitBranch size={28} className="text-gray-400 mb-3" />
@@ -376,12 +512,20 @@ function DocumentDetailInner() {
                           : "bg-white border-gray-300"
                       }`}
                     />
-                    <Card className={v.isCurrent ? "border-blue-300" : ""}>
+                    <Card
+                      className={
+                        v.isCurrent
+                          ? "border-blue-300"
+                          : pitResult?.id === v.id
+                            ? "border-amber-300"
+                            : ""
+                      }
+                    >
                       <CardContent className="py-3">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <span className="font-mono text-sm font-medium text-gray-900">
-                              v{v.versionNumber}
+                              v{versionLabelOf(v)}
                             </span>
                             {v.isCurrent && (
                               <Badge className="bg-blue-600 text-white text-[10px]">
@@ -389,10 +533,33 @@ function DocumentDetailInner() {
                               </Badge>
                             )}
                           </div>
-                          <span className="text-xs text-gray-500">
-                            {formatDate(v.createdAt)}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs text-gray-500">
+                              {formatDate(v.createdAt)}
+                            </span>
+                            {!v.isCurrent && (
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleRestore(v.id)}
+                              >
+                                <RotateCcw size={12} />
+                                {t("versions.restore")}
+                              </Button>
+                            )}
+                          </div>
                         </div>
+                        {/* D1: effective-dating window */}
+                        <p className="text-xs text-gray-500 mt-1">
+                          {t("versions.validity", {
+                            from: v.validFrom
+                              ? formatDate(v.validFrom)
+                              : formatDate(v.createdAt),
+                            until: v.validUntil
+                              ? formatDate(v.validUntil)
+                              : t("versions.openEnded"),
+                          })}
+                        </p>
                         {v.changeSummary && (
                           <p className="text-xs text-gray-600 mt-1">
                             {v.changeSummary}

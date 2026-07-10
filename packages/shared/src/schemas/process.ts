@@ -78,6 +78,58 @@ export const transitionProcessStatusSchema = z.object({
   comment: z.string().max(1000).optional(),
 });
 
+// ─── Approval Chain (B2 Release-Cycle) ───────────────────────
+
+export const approvalStepTypeValues = [
+  "review",
+  "approval",
+  "acknowledgment",
+] as const;
+
+const approvalStepInputSchema = z
+  .object({
+    stepType: z.enum(approvalStepTypeValues),
+    assigneeUserId: z.string().uuid().optional().nullable(),
+    assigneeRole: z.string().max(80).optional().nullable(),
+    dueDate: z
+      .string()
+      .regex(/^\d{4}-\d{2}-\d{2}$/, "dueDate must be YYYY-MM-DD")
+      .optional()
+      .nullable(),
+  })
+  .refine((s) => Boolean(s.assigneeUserId || s.assigneeRole), {
+    message: "Either assigneeUserId or assigneeRole is required",
+    path: ["assigneeUserId"],
+  });
+
+export const createApprovalStepsSchema = z.object({
+  versionNumber: z.number().int().min(1).optional(),
+  // Explicit chain; when omitted the default chain is generated
+  // (1 reviewer → 1 approver → acknowledgment list).
+  steps: z.array(approvalStepInputSchema).min(1).max(100).optional(),
+  // Users that must acknowledge the published version (default chain).
+  acknowledgmentUserIds: z.array(z.string().uuid()).max(100).optional(),
+});
+
+export const decideApprovalStepSchema = z
+  .object({
+    decision: z.enum(["approve", "reject"]),
+    comment: z.string().max(2000).optional(),
+  })
+  .refine(
+    (d) =>
+      d.decision !== "reject" ||
+      (typeof d.comment === "string" && d.comment.trim().length > 0),
+    {
+      message: "A comment is required when rejecting",
+      path: ["comment"],
+    },
+  );
+
+export const acknowledgeProcessSchema = z.object({
+  comment: z.string().max(1000).optional(),
+});
+
 // ─── Risk Linkage ────────────────────────────────────────────
 
 export const linkProcessRiskSchema = z.object({

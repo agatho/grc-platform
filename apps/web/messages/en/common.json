@@ -1303,7 +1303,8 @@
       "versions": "Versions",
       "risks": "Risks",
       "history": "History",
-      "comments": "Comments"
+      "comments": "Comments",
+      "approval": "Approval"
     },
     "status": {
       "draft": "Draft",
@@ -1366,7 +1367,10 @@
       "noVersions": "No versions available",
       "changeSummary": "Change Summary",
       "createdBy": "Created by",
-      "compareVersions": "Compare Versions"
+      "compareVersions": "Compare Versions",
+      "workingCopy": "Working copy",
+      "released": "Released",
+      "workingCopyHint": "Changes are saved to the working copy — the released version remains unchanged."
     },
     "risks": {
       "processRisks": "Process Risks",
@@ -1486,6 +1490,46 @@
       "lastReviewed": "Last Reviewed",
       "cycleDays": "Cycle (days)",
       "reminderSent": "Reminder Sent"
+    },
+    "approval": {
+      "title": "Approval chain",
+      "subtitle": "Multi-stage approval: review → approval → acknowledgment",
+      "noSteps": "No approval chain has been defined for this version yet.",
+      "createDefaultChain": "Create default approval chain",
+      "chainCreated": "Approval chain created",
+      "version": "Version v{version}",
+      "stepTypes": {
+        "review": "Review",
+        "approval": "Approval",
+        "acknowledgment": "Acknowledgment"
+      },
+      "statuses": {
+        "pending": "Pending",
+        "in_progress": "In progress",
+        "completed": "Completed",
+        "rejected": "Rejected",
+        "skipped": "Skipped"
+      },
+      "approve": "Approve",
+      "reject": "Reject",
+      "rejectTitle": "Reject step",
+      "rejectCommentRequired": "A rationale is required when rejecting.",
+      "cancel": "Cancel",
+      "approvedToast": "Step approved",
+      "rejectedToast": "Step rejected — process returned to draft",
+      "acknowledgmentTitle": "Acknowledgment",
+      "acknowledgmentProgress": "{acknowledged} of {total} acknowledged",
+      "noAcknowledgments": "No acknowledgments requested.",
+      "acknowledge": "Acknowledge",
+      "acknowledged": "Acknowledged",
+      "acknowledgedToast": "Acknowledgment recorded"
+    },
+    "raci": {
+      "consulted": "RACI: Consulted roles",
+      "informed": "RACI: Informed roles",
+      "noRoles": "No roles available.",
+      "saved": "Saved",
+      "saveError": "Save failed"
     }
   },
   "processGovernance": {
@@ -1793,7 +1837,30 @@
     },
     "versions": {
       "empty": "No versions recorded",
-      "current": "Current"
+      "current": "Current",
+      "restore": "Restore",
+      "restoreSuccess": "Version restored — a new version was created",
+      "restoreError": "Failed to restore version",
+      "validity": "Effective from {from} until {until}",
+      "openEnded": "open",
+      "pointInTime": {
+        "title": "Which version was effective on …?",
+        "lookup": "Look up",
+        "none": "No version was effective at that date"
+      }
+    },
+    "files": {
+      "title": "Files",
+      "empty": "No files attached",
+      "delete": "Delete file",
+      "deleteSuccess": "File deleted",
+      "deleteError": "Failed to delete file",
+      "sha256": "SHA-256"
+    },
+    "errors": {
+      "fourEyesApprove": "Four-eyes principle: the author or last editor must not approve the document themselves",
+      "fourEyesPublish": "Four-eyes principle: the author or last editor must not publish the document themselves",
+      "legalHold": "Document is under legal hold and cannot be deleted"
     },
     "entityLinks": {
       "empty": "No entity links"

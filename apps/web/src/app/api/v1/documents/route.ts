@@ -227,6 +227,27 @@ export async function GET(req: Request) {
     );
   }
 
+  // D4: full-text search via the generated tsvector column
+  // (migration 0356). websearch_to_tsquery('simple', …) handles quoted
+  // phrases and -exclusions; 'simple' config because the corpus is
+  // mixed DE/EN. Queries shorter than 3 chars fall back to ILIKE —
+  // too short for meaningful lexemes.
+  const q = searchParams.get("q")?.trim();
+  let rankExpr: SQL | null = null;
+  if (q) {
+    if (q.length >= 3) {
+      conditions.push(
+        sql`"document"."search_vector" @@ websearch_to_tsquery('simple', ${q})`,
+      );
+      rankExpr = sql`ts_rank("document"."search_vector", websearch_to_tsquery('simple', ${q}))`;
+    } else {
+      const pattern = `%${q}%`;
+      conditions.push(
+        or(ilike(document.title, pattern), ilike(document.content, pattern))!,
+      );
+    }
+  }
+
   const where = and(...conditions);
 
   // Sort
@@ -247,7 +268,11 @@ export async function GET(req: Request) {
       orderBy = sortDir(document.createdAt);
       break;
     default:
-      orderBy = desc(document.updatedAt);
+      // Full-text queries rank by relevance unless an explicit sort
+      // was requested (ts_rank DESC, recency as tie-breaker).
+      orderBy = rankExpr
+        ? sql`${rankExpr} DESC, "document"."updated_at" DESC`
+        : desc(document.updatedAt);
   }
 
   const [items, [{ value: total }]] = await Promise.all([

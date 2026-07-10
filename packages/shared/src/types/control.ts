@@ -212,6 +212,17 @@ export interface Document {
   publishedAt?: string;
   expiresAt?: string;
   reviewDate?: string;
+  // Legacy inline file fields (mirror the newest document_file)
+  fileName?: string | null;
+  filePath?: string | null;
+  fileSize?: number | null;
+  mimeType?: string | null;
+  fileSha256?: string | null;
+  // D2/D3: document control + retention
+  lastReminderSentAt?: string | null;
+  retentionPolicyId?: string | null;
+  retentionUntil?: string | null;
+  legalHold?: boolean;
   createdAt: string;
   updatedAt: string;
   createdBy?: string;
@@ -227,8 +238,61 @@ export interface DocumentVersion {
   content?: string;
   changeSummary?: string;
   isCurrent: boolean;
+  // D1: effective dating + major/minor label
+  validFrom?: string | null;
+  validUntil?: string | null;
+  versionLabel?: string | null;
+  versionMajor?: number | null;
+  versionMinor?: number | null;
+  fileName?: string | null;
+  fileSha256?: string | null;
   createdBy?: string;
   createdAt: string;
+}
+
+export type DocumentApprovalStepType = "review" | "approval";
+export type DocumentApprovalStepStatus = "pending" | "completed" | "rejected";
+
+export interface DocumentApprovalStep {
+  id: string;
+  orgId: string;
+  documentId: string;
+  versionId?: string | null;
+  stepOrder: number;
+  stepType: DocumentApprovalStepType;
+  assigneeUserId: string;
+  status: DocumentApprovalStepStatus;
+  decision?: "approved" | "rejected" | null;
+  comment?: string | null;
+  decidedAt?: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RetentionPolicy {
+  id: string;
+  orgId: string;
+  name: string;
+  description?: string | null;
+  retentionYears: number;
+  basis: "created" | "published" | "expired";
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface DocumentFile {
+  id: string;
+  orgId: string;
+  documentId: string;
+  versionId?: string | null;
+  fileName: string;
+  filePath: string;
+  fileSize?: number | null;
+  mimeType?: string | null;
+  sha256?: string | null;
+  uploadedBy?: string | null;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface Acknowledgment {

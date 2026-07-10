@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import "./bpmn-editor.css";
+import arctosModdleExtension from "./arctos-moddle-extension.json";
 import type { RiskOverlayData } from "./bpmn-editor";
 
 // ---------------------------------------------------------------------------
@@ -73,6 +74,8 @@ export function BpmnViewer({
 
         const viewer = new ViewerClass({
           container: containerRef.current,
+          // B1.1: keep arctos:* extension attributes intact on import.
+          moddleExtensions: { arctos: arctosModdleExtension },
         }) as unknown as ViewerInstance;
 
         if (destroyed) {

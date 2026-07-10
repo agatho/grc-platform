@@ -113,6 +113,7 @@ describe("evaluateTransitionGates", () => {
           framework_mappings: 0,
           open_findings: 3,
           untreated_risks: 0,
+          owner_sign_offs: 1,
         },
       ],
     });
@@ -125,6 +126,45 @@ describe("evaluateTransitionGates", () => {
     const codes = blockers.map((b) => b.code);
     expect(codes).toContain("open_findings");
     expect(codes).toContain("no_framework_mapping");
+  });
+
+  // B2.2: publication requires a process-owner sign-off on the current version
+  it("approved → published: blocks when the process-owner sign-off is missing", async () => {
+    const tx = mkTx({
+      process: [
+        {
+          id: "p1",
+          name: "Test",
+          status: "approved",
+          process_owner_id: "u1",
+          reviewer_id: "u2",
+          is_critical_process: false,
+          description: "this is a sufficient description for publication",
+        },
+      ],
+      stats: [
+        {
+          activities: 5,
+          activities_without_desc: 0,
+          versions: 2,
+          framework_mappings: 2,
+          open_findings: 0,
+          untreated_risks: 0,
+          owner_sign_offs: 0,
+        },
+      ],
+    });
+    const blockers = await evaluateTransitionGates({
+      tx: tx as any,
+      processId: "p1",
+      orgId: "o1",
+      target: "published" as ProcessStatus,
+    });
+    const signOffBlocker = blockers.find(
+      (b) => b.code === "missing_owner_sign_off",
+    );
+    expect(signOffBlocker).toBeDefined();
+    expect(signOffBlocker?.severity).toBe("error");
   });
 
   it("approved → published: passes when prerequisites met", async () => {
@@ -148,6 +188,7 @@ describe("evaluateTransitionGates", () => {
           framework_mappings: 2,
           open_findings: 0,
           untreated_risks: 0,
+          owner_sign_offs: 1,
         },
       ],
     });

@@ -1303,7 +1303,8 @@
       "versions": "Versionen",
       "risks": "Risiken",
       "history": "Historie",
-      "comments": "Kommentare"
+      "comments": "Kommentare",
+      "approval": "Freigabe"
     },
     "status": {
       "draft": "Entwurf",
@@ -1366,7 +1367,10 @@
       "noVersions": "Keine Versionen vorhanden",
       "changeSummary": "Änderungszusammenfassung",
       "createdBy": "Erstellt von",
-      "compareVersions": "Versionen vergleichen"
+      "compareVersions": "Versionen vergleichen",
+      "workingCopy": "Arbeitskopie",
+      "released": "Freigegeben",
+      "workingCopyHint": "Änderungen werden in der Arbeitskopie gespeichert — die freigegebene Version bleibt unverändert."
     },
     "risks": {
       "processRisks": "Prozessrisiken",
@@ -1486,6 +1490,46 @@
       "lastReviewed": "Zuletzt geprüft",
       "cycleDays": "Zyklus (Tage)",
       "reminderSent": "Erinnerung gesendet"
+    },
+    "approval": {
+      "title": "Freigabekette",
+      "subtitle": "Mehrstufige Freigabe: Prüfung → Freigabe → Kenntnisnahme",
+      "noSteps": "Für diese Version ist noch keine Freigabekette definiert.",
+      "createDefaultChain": "Standard-Freigabekette anlegen",
+      "chainCreated": "Freigabekette angelegt",
+      "version": "Version v{version}",
+      "stepTypes": {
+        "review": "Prüfung",
+        "approval": "Freigabe",
+        "acknowledgment": "Kenntnisnahme"
+      },
+      "statuses": {
+        "pending": "Ausstehend",
+        "in_progress": "In Bearbeitung",
+        "completed": "Abgeschlossen",
+        "rejected": "Abgelehnt",
+        "skipped": "Übersprungen"
+      },
+      "approve": "Freigeben",
+      "reject": "Ablehnen",
+      "rejectTitle": "Schritt ablehnen",
+      "rejectCommentRequired": "Bei Ablehnung ist eine Begründung erforderlich.",
+      "cancel": "Abbrechen",
+      "approvedToast": "Schritt freigegeben",
+      "rejectedToast": "Schritt abgelehnt — Prozess zurück auf Entwurf",
+      "acknowledgmentTitle": "Kenntnisnahme",
+      "acknowledgmentProgress": "{acknowledged} von {total} bestätigt",
+      "noAcknowledgments": "Keine Kenntnisnahmen angefordert.",
+      "acknowledge": "Kenntnisnahme bestätigen",
+      "acknowledged": "Bestätigt",
+      "acknowledgedToast": "Kenntnisnahme gespeichert"
+    },
+    "raci": {
+      "consulted": "RACI: Consulted (Rollen)",
+      "informed": "RACI: Informed (Rollen)",
+      "noRoles": "Keine Rollen vorhanden.",
+      "saved": "Gespeichert",
+      "saveError": "Speichern fehlgeschlagen"
     }
   },
   "processGovernance": {
@@ -1793,7 +1837,30 @@
     },
     "versions": {
       "empty": "Keine Versionen erfasst",
-      "current": "Aktuell"
+      "current": "Aktuell",
+      "restore": "Wiederherstellen",
+      "restoreSuccess": "Version wiederhergestellt — eine neue Version wurde erstellt",
+      "restoreError": "Version konnte nicht wiederhergestellt werden",
+      "validity": "Galt von {from} bis {until}",
+      "openEnded": "offen",
+      "pointInTime": {
+        "title": "Welche Version galt am …?",
+        "lookup": "Anzeigen",
+        "none": "Zu diesem Zeitpunkt galt keine Version"
+      }
+    },
+    "files": {
+      "title": "Dateien",
+      "empty": "Keine Dateien angehängt",
+      "delete": "Datei löschen",
+      "deleteSuccess": "Datei gelöscht",
+      "deleteError": "Datei konnte nicht gelöscht werden",
+      "sha256": "SHA-256"
+    },
+    "errors": {
+      "fourEyesApprove": "Vier-Augen-Prinzip: Der Ersteller bzw. letzte Bearbeiter darf das Dokument nicht selbst genehmigen",
+      "fourEyesPublish": "Vier-Augen-Prinzip: Der Ersteller bzw. letzte Bearbeiter darf das Dokument nicht selbst veröffentlichen",
+      "legalHold": "Dokument steht unter Legal Hold und kann nicht gelöscht werden"
     },
     "entityLinks": {
       "empty": "Keine Verknuepfungen"
@@ -3236,8 +3303,7 @@
       "positive": "Positiv-Bewertung",
       "opportunity_for_improvement": "Hinweis (OFI)",
       "minor_nonconformity": "Nebenabweichung",
-      "major_nonconformity": "Hauptabweichung",
-      "conforming": "Konform"
+      "major_nonconformity": "Hauptabweichung"
     },
     "methods": {
       "interview": "Interview",

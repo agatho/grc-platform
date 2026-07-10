@@ -129,6 +129,39 @@ describe("validateStatusTransition", () => {
     expect(result.valid).toBe(true);
   });
 
+  // ── published -> in_review (B2.4: re-approval of working copy) ──
+
+  it("published -> in_review: allowed for process_owner (start revision)", () => {
+    const result = validateStatusTransition(
+      "published",
+      "in_review",
+      "process_owner",
+      false,
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it("published -> in_review: allowed for admin", () => {
+    const result = validateStatusTransition(
+      "published",
+      "in_review",
+      "admin",
+      false,
+    );
+    expect(result.valid).toBe(true);
+  });
+
+  it("published -> in_review: denied for viewer", () => {
+    const result = validateStatusTransition(
+      "published",
+      "in_review",
+      "viewer",
+      false,
+    );
+    expect(result.valid).toBe(false);
+    expect(result.error).toBeDefined();
+  });
+
   // ── published -> archived ──────────────────────────────────
 
   it("published -> archived: allowed for admin", () => {
@@ -308,9 +341,10 @@ describe("PROCESS_STATUS_TRANSITIONS", () => {
     expect(PROCESS_STATUS_TRANSITIONS["approved"]).toContain("in_review");
   });
 
-  it("published has exactly 1 transition target", () => {
-    expect(PROCESS_STATUS_TRANSITIONS["published"]).toHaveLength(1);
-    expect(PROCESS_STATUS_TRANSITIONS["published"]).toEqual(["archived"]);
+  it("published has exactly 2 transition targets (B2.4 adds in_review)", () => {
+    expect(PROCESS_STATUS_TRANSITIONS["published"]).toHaveLength(2);
+    expect(PROCESS_STATUS_TRANSITIONS["published"]).toContain("archived");
+    expect(PROCESS_STATUS_TRANSITIONS["published"]).toContain("in_review");
   });
 
   it("archived has exactly 0 transition targets (terminal state)", () => {

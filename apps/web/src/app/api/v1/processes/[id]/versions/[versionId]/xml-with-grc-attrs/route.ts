@@ -5,10 +5,8 @@ import { db, process, processVersion } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withReadContext } from "@/lib/api";
-import {
-  ensureArctosNamespace,
-  injectGrcMetadata,
-} from "@/components/bpmn/arctos-grc-extractor";
+import type { GrcMetadata } from "@/components/bpmn/arctos-grc-extractor";
+import { injectGrcMetadataModdle } from "@/lib/bpmn-arctos-write";
 import { buildArctosLinksFromDb } from "@/lib/bpmn-arctos-rehydrate";
 
 export async function GET(
@@ -53,11 +51,15 @@ export async function GET(
     buildArctosLinksFromDb(tx, id, ctx.orgId),
   );
 
-  // Inject into the XML
-  let xml = ensureArctosNamespace(version.bpmnXml);
-  for (const l of links) {
-    xml = injectGrcMetadata(xml, l.bpmnElementId, l.meta);
-  }
+  // Inject into the XML via the moddle object model (B1.3) — replaces the
+  // legacy regex writer; the xmlns:arctos declaration is emitted by the
+  // moddle serializer itself.
+  const metadataMap = new Map<string, GrcMetadata>(
+    links
+      .filter((l) => Boolean(l.bpmnElementId))
+      .map((l) => [l.bpmnElementId, l.meta]),
+  );
+  const xml = await injectGrcMetadataModdle(version.bpmnXml, metadataMap);
 
   const url = new URL(req.url);
   const asDownload = url.searchParams.get("download") === "1";

@@ -60,13 +60,24 @@ export async function GET(
     return Response.json({ error: "Process not found" }, { status: 404 });
   }
 
-  // Get current version
+  // Get current version + working copy (B2.4)
   const [currentVer] = await db
     .select()
     .from(processVersion)
     .where(
       and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
     );
+
+  const [workingVer] = await db
+    .select()
+    .from(processVersion)
+    .where(
+      and(
+        eq(processVersion.processId, id),
+        eq(processVersion.versionType, "working"),
+      ),
+    )
+    .limit(1);
 
   // Get step count and risk count
   const [[{ value: stepCount }], [{ value: riskCount }]] = await Promise.all([
@@ -84,6 +95,7 @@ export async function GET(
     data: {
       ...row,
       currentVersionData: currentVer ?? null,
+      workingVersionData: workingVer ?? null,
       stepCount,
       riskCount,
     },

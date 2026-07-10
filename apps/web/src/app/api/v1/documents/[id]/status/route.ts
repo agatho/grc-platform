@@ -1,11 +1,13 @@
-import { db, document, workItem, notification } from "@grc/db";
+import { db, document, documentVersion, workItem, notification } from "@grc/db";
 import {
   documentStatusTransitionSchema,
   VALID_DOCUMENT_TRANSITIONS,
+  checkFourEyes,
 } from "@grc/shared";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, desc } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { createDocumentVersion } from "@/lib/document-versioning";
 
 // Map document status to work item status
 const DOCUMENT_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -67,6 +69,49 @@ export async function PUT(
     );
   }
 
+  // D2: four-eyes enforcement — in_review→approved and
+  // approved→published must not be performed by the creator / last
+  // content editor of the current version. UI maps the `code` to the
+  // i18n keys documents.errors.fourEyesApprove / fourEyesPublish.
+  const [currentVersionRow] = await db
+    .select({
+      createdBy: documentVersion.createdBy,
+    })
+    .from(documentVersion)
+    .where(
+      and(
+        eq(documentVersion.documentId, id),
+        eq(documentVersion.orgId, ctx.orgId),
+        eq(documentVersion.isCurrent, true),
+      ),
+    )
+    .orderBy(desc(documentVersion.versionNumber))
+    .limit(1);
+
+  const fourEyes = checkFourEyes({
+    currentStatus,
+    targetStatus,
+    actorId: ctx.userId,
+    currentVersionCreatedBy: currentVersionRow?.createdBy ?? null,
+    documentCreatedBy: existing.createdBy,
+    documentUpdatedBy: existing.updatedBy,
+  });
+  if (fourEyes.violation) {
+    return Response.json(
+      {
+        error:
+          fourEyes.guardedTransition === "approve"
+            ? "Four-eyes principle: the author or last content editor of a document must not approve it. Ask another authorized user to approve."
+            : "Four-eyes principle: the author or last content editor of a document must not publish it. Ask another authorized user to publish.",
+        code:
+          fourEyes.guardedTransition === "approve"
+            ? "four_eyes_approve"
+            : "four_eyes_publish",
+      },
+      { status: 422 },
+    );
+  }
+
   const updated = await withAuditContext(ctx, async (tx) => {
     const updateValues: Record<string, unknown> = {
       status: targetStatus,
@@ -74,9 +119,29 @@ export async function PUT(
       updatedAt: new Date(),
     };
 
-    // Set publishedAt when publishing
+    // Set publishedAt when publishing; D1: the published content
+    // becomes a new MAJOR version (validFrom = now); the predecessor
+    // window is closed (validUntil = now) inside the helper.
     if (targetStatus === "published") {
-      updateValues.publishedAt = new Date();
+      const publishedAt = new Date();
+      updateValues.publishedAt = publishedAt;
+      const created = await createDocumentVersion(tx, {
+        documentId: id,
+        orgId: ctx.orgId,
+        userId: ctx.userId,
+        bump: "major",
+        content: existing.content,
+        changeSummary: "Published as new major version",
+        file: {
+          fileName: existing.fileName,
+          filePath: existing.filePath,
+          fileSize: existing.fileSize,
+          mimeType: existing.mimeType,
+          fileSha256: existing.fileSha256,
+        },
+        now: publishedAt,
+      });
+      updateValues.currentVersion = created.versionNumber;
     }
 
     const [row] = await tx

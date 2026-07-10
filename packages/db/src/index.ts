@@ -63,6 +63,7 @@ import * as riskEvaluationSchema from "./schema/risk-evaluation";
 import * as incidentTimelineSchema from "./schema/incident-timeline";
 import * as processRaciSchema from "./schema/process-raci";
 import * as processGrcSchema from "./schema/process-grc";
+import * as processApprovalSchema from "./schema/process-approval";
 import * as apiPlatformSchema from "./schema/api-platform";
 import * as extensionSchema from "./schema/extension";
 import * as onboardingSchema from "./schema/onboarding";
@@ -216,6 +217,7 @@ export const db = drizzle(client, {
     ...incidentTimelineSchema,
     ...processRaciSchema,
     ...processGrcSchema,
+    ...processApprovalSchema,
     ...apiPlatformSchema,
     ...extensionSchema,
     ...onboardingSchema,
@@ -328,6 +330,7 @@ export * from "./schema/risk-evaluation";
 export * from "./schema/incident-timeline";
 export * from "./schema/process-raci";
 export * from "./schema/process-grc";
+export * from "./schema/process-approval";
 export * from "./schema/api-platform";
 export * from "./schema/extension";
 export * from "./schema/onboarding";

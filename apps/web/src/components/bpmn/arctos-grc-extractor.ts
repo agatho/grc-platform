@@ -58,6 +58,10 @@ const NS = "https://arctos.grc/schema/bpmn/1.0";
 
 /**
  * Ensure the BPMN root declares xmlns:arctos. Idempotent.
+ *
+ * @deprecated Only needed by the legacy regex writer below. The
+ * moddle-based writer (`injectGrcMetadataModdle` in
+ * `@/lib/bpmn-arctos-write`) emits the namespace declaration itself.
  */
 export function ensureArctosNamespace(xml: string): string {
   if (xml.includes("xmlns:arctos=")) return xml;
@@ -143,6 +147,11 @@ function renderMetadata(meta: GrcMetadata): string {
 /**
  * Inject GRC metadata into a BPMN activity element.
  * Replaces any existing extensionElements/arctos:grcMetadata for that node.
+ *
+ * @deprecated Regex/string-based writer — use the moddle-based
+ * `injectGrcMetadataModdle` from `@/lib/bpmn-arctos-write` instead (B1.3).
+ * Kept only for the legacy synchronous round-trip tests; no production
+ * code path uses it anymore.
  */
 export function injectGrcMetadata(
   xml: string,
@@ -206,6 +215,11 @@ export function injectGrcMetadata(
 
 /**
  * Extract GRC metadata from a BPMN XML for the given element id.
+ *
+ * @deprecated Server-side callers should use the moddle-based
+ * `parseArctosGrcMetadataMap` / `extractGrcMetadataFromXml` from
+ * `@/lib/bpmn-arctos-parse` instead (B1.2). This regex variant remains
+ * only for synchronous client-side use and legacy tests.
  */
 export function extractGrcMetadata(
   xml: string,

@@ -17,12 +17,29 @@
           "type": "Boolean",
           "default": false
         },
-        { "name": "riskRefs", "type": "RiskRef", "isMany": true },
-        { "name": "controlRefs", "type": "ControlRef", "isMany": true },
-        { "name": "documentRefs", "type": "DocumentRef", "isMany": true },
+        { "name": "riskRefs", "type": "RiskRefs" },
+        { "name": "controlRefs", "type": "ControlRefs" },
+        { "name": "documentRefs", "type": "DocumentRefs" },
         { "name": "raci", "type": "Raci" },
         { "name": "bcmKpi", "type": "BcmKpi" },
         { "name": "ropa", "type": "Ropa" }
+      ]
+    },
+    {
+      "name": "RiskRefs",
+      "superClass": ["Element"],
+      "properties": [{ "name": "values", "type": "RiskRef", "isMany": true }]
+    },
+    {
+      "name": "ControlRefs",
+      "superClass": ["Element"],
+      "properties": [{ "name": "values", "type": "ControlRef", "isMany": true }]
+    },
+    {
+      "name": "DocumentRefs",
+      "superClass": ["Element"],
+      "properties": [
+        { "name": "values", "type": "DocumentRef", "isMany": true }
       ]
     },
     {

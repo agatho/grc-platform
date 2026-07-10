@@ -1496,6 +1496,10 @@ import { processResilienceScoreSnapshot } from "./crons/resilience-score-snapsho
 import { processRetentionMonitoring } from "./crons/retention-monitoring";
 import { processTranslationStalenessCheck } from "./crons/translation-staleness-check";
 import { aggregateUsage } from "./crons/usage-aggregation";
+// DMS Dokumentenlenkung (Pakete D2 + D3)
+import { processDocumentReviewReminders } from "./crons/document-review-reminder";
+import { processDocumentAutoExpire } from "./crons/document-auto-expire";
+import { processDocumentRetentionPurge } from "./crons/document-retention-purge";
 
 const batchCrons: Record<string, () => Promise<unknown>> = {
   "anomaly-detection": processAnomalyDetection,
@@ -1508,6 +1512,9 @@ const batchCrons: Record<string, () => Promise<unknown>> = {
   "control-test-scheduler": processControlTestScheduler,
   "copilot-rag-indexer": processCopilotRagIndexer,
   "deficiency-escalation": processDeficiencyEscalation,
+  "document-review-reminder": processDocumentReviewReminders,
+  "document-auto-expire": processDocumentAutoExpire,
+  "document-retention-purge": processDocumentRetentionPurge,
   "emerging-risk-review": processEmergingRiskReviews,
   "evidence-freshness": evidenceFreshnessCheck,
   "evidence-review": processEvidenceReviewJobs,

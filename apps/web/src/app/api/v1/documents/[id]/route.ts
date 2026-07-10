@@ -1,8 +1,9 @@
-import { db, document, documentVersion, workItem, user } from "@grc/db";
-import { updateDocumentSchema } from "@grc/shared";
+import { db, document, workItem, user, retentionPolicy } from "@grc/db";
+import { updateDocumentSchema, computeRetentionUntil } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { createDocumentVersion } from "@/lib/document-versioning";
 
 // GET /api/v1/documents/:id — Document detail
 export async function GET(
@@ -39,6 +40,13 @@ export async function GET(
       publishedAt: document.publishedAt,
       expiresAt: document.expiresAt,
       reviewDate: document.reviewDate,
+      fileName: document.fileName,
+      fileSize: document.fileSize,
+      mimeType: document.mimeType,
+      fileSha256: document.fileSha256,
+      retentionPolicyId: document.retentionPolicyId,
+      retentionUntil: document.retentionUntil,
+      legalHold: document.legalHold,
       createdAt: document.createdAt,
       updatedAt: document.updatedAt,
       createdBy: document.createdBy,
@@ -104,6 +112,28 @@ export async function PUT(
     );
   }
 
+  // D3: validate retention policy belongs to this org before assigning
+  let assignedPolicy: typeof retentionPolicy.$inferSelect | null = null;
+  if (body.data.retentionPolicyId) {
+    const [policy] = await db
+      .select()
+      .from(retentionPolicy)
+      .where(
+        and(
+          eq(retentionPolicy.id, body.data.retentionPolicyId),
+          eq(retentionPolicy.orgId, ctx.orgId),
+          isNull(retentionPolicy.deletedAt),
+        ),
+      );
+    if (!policy) {
+      return Response.json(
+        { error: "Retention policy not found in this organization" },
+        { status: 422 },
+      );
+    }
+    assignedPolicy = policy;
+  }
+
   const updated = await withAuditContext(ctx, async (tx) => {
     const updateValues: Record<string, unknown> = {
       updatedBy: ctx.userId,
@@ -137,32 +167,47 @@ export async function PUT(
         ? new Date(body.data.reviewDate)
         : null;
 
-    // Auto-version on content change
+    // D3: retention assignment + legal hold
+    if (body.data.legalHold !== undefined)
+      updateValues.legalHold = body.data.legalHold;
+    if (body.data.retentionPolicyId !== undefined) {
+      updateValues.retentionPolicyId = body.data.retentionPolicyId;
+      if (assignedPolicy) {
+        updateValues.retentionUntil = computeRetentionUntil({
+          basis: assignedPolicy.basis,
+          retentionYears: assignedPolicy.retentionYears,
+          createdAt: existing.createdAt,
+          publishedAt: existing.publishedAt,
+          expiresAt:
+            body.data.expiresAt !== undefined
+              ? body.data.expiresAt
+              : existing.expiresAt,
+        });
+      } else {
+        updateValues.retentionUntil = null;
+      }
+    }
+
+    // D1: auto-version on content change — minor bump (draft edit).
+    // Major bumps happen exclusively on the publish transition in
+    // [id]/status/route.ts via the same helper.
     if (contentChanged) {
-      const newVersion = existing.currentVersion + 1;
-      updateValues.currentVersion = newVersion;
-
-      // Mark old version as not current
-      await tx
-        .update(documentVersion)
-        .set({ isCurrent: false })
-        .where(
-          and(
-            eq(documentVersion.documentId, id),
-            eq(documentVersion.isCurrent, true),
-          ),
-        );
-
-      // Create new version
-      await tx.insert(documentVersion).values({
+      const created = await createDocumentVersion(tx, {
         documentId: id,
         orgId: ctx.orgId,
-        versionNumber: newVersion,
-        content: body.data.content,
-        changeSummary: `Updated content (version ${newVersion})`,
-        isCurrent: true,
-        createdBy: ctx.userId,
+        userId: ctx.userId,
+        bump: "minor",
+        content: body.data.content ?? null,
+        changeSummary: `Updated content (version ${existing.currentVersion + 1})`,
+        file: {
+          fileName: existing.fileName,
+          filePath: existing.filePath,
+          fileSize: existing.fileSize,
+          mimeType: existing.mimeType,
+          fileSha256: existing.fileSha256,
+        },
       });
+      updateValues.currentVersion = created.versionNumber;
     }
 
     const [row] = await tx

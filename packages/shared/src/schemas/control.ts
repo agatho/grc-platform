@@ -354,10 +354,75 @@ export const updateDocumentSchema = z.object({
   approverId: z.string().uuid().nullable().optional(),
   expiresAt: z.string().datetime().nullable().optional(),
   reviewDate: z.string().datetime().nullable().optional(),
+  // D3: retention assignment + legal hold
+  retentionPolicyId: z.string().uuid().nullable().optional(),
+  legalHold: z.boolean().optional(),
 });
 
 export const documentStatusTransitionSchema = z.object({
   status: z.enum(documentStatusValues),
+});
+
+// ─── Document Versioning (D1) ────────────────────────────────
+
+// GET /documents/[id]/versions/at?date=ISO — accepts full ISO datetimes
+// (with or without offset) and plain dates ("2026-01-31").
+export const documentVersionAtQuerySchema = z.object({
+  date: z
+    .string()
+    .min(1)
+    .refine((v) => !Number.isNaN(Date.parse(v)), {
+      message: "date must be a valid ISO 8601 date or datetime",
+    }),
+});
+
+export const restoreDocumentVersionSchema = z.object({
+  changeSummary: z.string().max(1000).optional(),
+});
+
+// ─── Document Approval Steps (D2) ────────────────────────────
+
+export const createDocumentApprovalStepsSchema = z.object({
+  steps: z
+    .array(
+      z.object({
+        stepOrder: z.number().int().min(1),
+        stepType: z.enum(["review", "approval"]).default("review"),
+        assigneeUserId: z.string().uuid(),
+      }),
+    )
+    .min(1)
+    .max(20),
+});
+
+export const decideDocumentApprovalStepSchema = z.object({
+  decision: z.enum(["approved", "rejected"]),
+  comment: z.string().max(2000).optional(),
+});
+
+// ─── Retention Policies (D3) ─────────────────────────────────
+
+const retentionBasisValues = ["created", "published", "expired"] as const;
+
+export const createRetentionPolicySchema = z.object({
+  name: z.string().min(1).max(255),
+  description: z.string().max(2000).optional(),
+  retentionYears: z.number().int().min(1).max(100),
+  basis: z.enum(retentionBasisValues).default("created"),
+});
+
+export const updateRetentionPolicySchema = z.object({
+  name: z.string().min(1).max(255).optional(),
+  description: z.string().max(2000).nullable().optional(),
+  retentionYears: z.number().int().min(1).max(100).optional(),
+  basis: z.enum(retentionBasisValues).optional(),
+});
+
+// ─── GDPR Erasure (D3) ───────────────────────────────────────
+
+export const eraseDocumentSchema = z.object({
+  // Mandatory justification — lands in the audit log before deletion.
+  reason: z.string().min(10).max(2000),
 });
 
 // ─── Document Entity Link ────────────────────────────────────

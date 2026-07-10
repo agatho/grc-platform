@@ -54,6 +54,12 @@ export const lodEnum = pgEnum("lod_enum", [
   "oversight",
 ]);
 
+// B2.4 (0349b): working copy vs. released version
+export const processVersionTypeEnum = pgEnum("process_version_type", [
+  "working",
+  "released",
+]);
+
 export const complianceProfileEnum = pgEnum("compliance_profile_enum", [
   "standard",
   "gdpr_ropa",
@@ -97,6 +103,11 @@ export const process = pgTable(
       .default("standard"),
     // Gallery thumbnail (Sprint 3b)
     galleryThumbnailPath: varchar("gallery_thumbnail_path", { length: 1000 }),
+    // Sprint 56 (migrations 0132/0133) — previously missing from the
+    // Drizzle schema (B1.4 drift fix): traffic-light health + metro map
+    // layout used by the metro-layout endpoints.
+    processHealth: varchar("process_health", { length: 10 }).default("healthy"),
+    metroLayout: jsonb("metro_layout"),
     // Review cycle (Gap 2)
     reviewDate: timestamp("review_date", { withTimezone: true }),
     reviewCycleDays: integer("review_cycle_days"),
@@ -143,6 +154,12 @@ export const processVersion = pgTable(
     changeSummary: text("change_summary"),
     diffSummaryJson: jsonb("diff_summary_json"),
     isCurrent: boolean("is_current").notNull().default(false),
+    // B2.4 (0349b): 'working' = editable draft copy of a published
+    // process (max. one per process, overwritten on save); 'released' =
+    // immutable released version.
+    versionType: processVersionTypeEnum("version_type")
+      .notNull()
+      .default("released"),
     createdBy: uuid("created_by").references(() => user.id),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

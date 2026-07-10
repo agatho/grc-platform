@@ -60,6 +60,7 @@
     "open_findings": "Offene Findings müssen vor der Veröffentlichung geschlossen werden.",
     "no_framework_mapping": "Mindestens ein Framework-Mapping (ISO/NIS2/GDPR/...) ist für die Veröffentlichung erforderlich.",
     "weak_description": "Prozessbeschreibung muss mindestens 20 Zeichen umfassen.",
-    "untreated_risks": "Verknüpfte Risiken sind noch nicht behandelt."
+    "untreated_risks": "Verknüpfte Risiken sind noch nicht behandelt.",
+    "missing_owner_sign_off": "Für die aktuelle Version fehlt der Sign-off des Prozessverantwortlichen."
   }
 }

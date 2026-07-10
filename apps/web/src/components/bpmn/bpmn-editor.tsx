@@ -8,6 +8,7 @@ import {
   forwardRef,
 } from "react";
 import "./bpmn-editor.css";
+import arctosModdleExtension from "./arctos-moddle-extension.json";
 
 // ---------------------------------------------------------------------------
 // bpmn-js instance type — using an interface to satisfy TS while
@@ -135,6 +136,10 @@ export const BpmnEditor = forwardRef<BpmnEditorRef, BpmnEditorProps>(
           const instance = new BpmnClass({
             container: containerRef.current,
             keyboard: { bindTo: document },
+            // B1.1: register the arctos moddle extension so arctos:*
+            // extension elements survive import/export round-trips and are
+            // readable/writable through the moddle model.
+            moddleExtensions: { arctos: arctosModdleExtension },
           }) as unknown as BpmnInstance & {
             __keyHandler?: (e: KeyboardEvent) => void;
           };

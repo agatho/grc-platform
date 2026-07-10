@@ -72,12 +72,16 @@ export async function GET(
   const effectiveMimeType =
     mimeType === "image/svg+xml" ? "application/octet-stream" : mimeType;
 
-  return new Response(buffer, {
-    headers: {
-      "Content-Type": effectiveMimeType,
-      "Content-Disposition": `attachment; filename="${encodeURIComponent(fileName)}"`,
-      "Content-Length": String(buffer.length),
-      "X-Content-Type-Options": "nosniff",
-    },
-  });
+  const headers: Record<string, string> = {
+    "Content-Type": effectiveMimeType,
+    "Content-Disposition": `attachment; filename="${encodeURIComponent(fileName)}"`,
+    "Content-Length": String(buffer.length),
+    "X-Content-Type-Options": "nosniff",
+  };
+  // D3: expose the stored SHA-256 so clients can verify integrity
+  if (doc.fileSha256) {
+    headers["X-File-SHA256"] = doc.fileSha256;
+  }
+
+  return new Response(buffer, { headers });
 }
