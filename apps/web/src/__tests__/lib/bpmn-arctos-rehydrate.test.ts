@@ -79,6 +79,7 @@ describe("rehydrateFromBpmnXml", () => {
       documentLinksAdded: 0,
       lodAssignments: 0,
       ropaProfilesUpdated: 0,
+      calledProcessLinks: 0,
     });
     expect(exec.mock.calls.length).toBe(0);
   });

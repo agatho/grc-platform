@@ -57,6 +57,32 @@ export async function PUT(
     return Response.json({ error: "Step not found" }, { status: 404 });
   }
 
+  // Call-Activity Drill-Down: validate the linked child process.
+  if (body.data.calledProcessId) {
+    if (body.data.calledProcessId === id) {
+      return Response.json(
+        { error: "A step cannot call its own process" },
+        { status: 422 },
+      );
+    }
+    const [target] = await db
+      .select({ id: process.id })
+      .from(process)
+      .where(
+        and(
+          eq(process.id, body.data.calledProcessId),
+          eq(process.orgId, ctx.orgId),
+          isNull(process.deletedAt),
+        ),
+      );
+    if (!target) {
+      return Response.json(
+        { error: "Called process not found in this organization" },
+        { status: 422 },
+      );
+    }
+  }
+
   const updated = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
       .update(processStep)

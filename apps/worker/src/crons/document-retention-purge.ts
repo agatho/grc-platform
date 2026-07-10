@@ -10,18 +10,15 @@
 //   1. audit_log entry (BEFORE deletion, so the purge is traceable)
 //   2. DB hard delete — document row; versions, acknowledgments,
 //      entity links, approval steps and file rows go via FK cascade
-//   3. physical files via fs.unlink (after commit — a failed unlink
-//      must not resurrect the DB rows)
+//   3. physical files via the FileStorage abstraction (after commit —
+//      a failed delete must not resurrect the DB rows). Local FS or
+//      S3, depending on STORAGE_BACKEND (keys = file_path column).
 
 import { db, document, documentFile } from "@grc/db";
 import { and, isNotNull, inArray, eq, sql } from "drizzle-orm";
 import { isRetentionPurgeEligible } from "@grc/shared";
-import { unlink } from "fs/promises";
-import { join } from "path";
+import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { withCronInstrumentation } from "../lib/cron-instrument";
-
-const UPLOAD_DIR =
-  process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
 
 interface DocumentRetentionPurgeResult {
   scanned: number;
@@ -118,10 +115,12 @@ export const processDocumentRetentionPurge = withCronInstrumentation(
         purged++;
 
         // 3. Physical files (best effort, after commit)
+        const storage = getFileStorage();
         for (const relPath of filePaths) {
           try {
-            await unlink(join(UPLOAD_DIR, relPath));
-            filesDeleted++;
+            if (await storage.delete(relPath)) {
+              filesDeleted++;
+            }
           } catch {
             // Already gone or not accessible — nothing to do.
           }

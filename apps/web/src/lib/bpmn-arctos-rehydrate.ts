@@ -29,6 +29,7 @@ export interface RehydrationStats {
   documentLinksAdded: number;
   lodAssignments: number;
   ropaProfilesUpdated: number;
+  calledProcessLinks: number;
 }
 
 export async function rehydrateFromBpmnXml(
@@ -40,6 +41,7 @@ export async function rehydrateFromBpmnXml(
     documentLinksAdded: 0,
     lodAssignments: 0,
     ropaProfilesUpdated: 0,
+    calledProcessLinks: 0,
   };
 
   // B1.2: real moddle-based XML parsing — the whole document is parsed
@@ -58,6 +60,30 @@ export async function rehydrateFromBpmnXml(
         WHERE id = ${stepId}
       `);
       stats.lodAssignments += 1;
+    }
+
+    // Call-Activity Drill-Down: restore the child-process link only when
+    // the step doesn't carry one yet (DB stays authoritative), the target
+    // exists in this org and it is not a self-reference.
+    if (
+      stepId &&
+      meta.calledProcessId &&
+      meta.calledProcessId !== args.processId
+    ) {
+      await args.tx.execute(sql`
+        UPDATE process_step
+        SET called_process_id = ${meta.calledProcessId}::uuid,
+            updated_at = now()
+        WHERE id = ${stepId}::uuid
+          AND called_process_id IS NULL
+          AND EXISTS (
+            SELECT 1 FROM process
+            WHERE id = ${meta.calledProcessId}::uuid
+              AND org_id = ${args.orgId}::uuid
+              AND deleted_at IS NULL
+          )
+      `);
+      stats.calledProcessLinks += 1;
     }
 
     if (stepId && meta.riskRefs?.length) {
@@ -137,6 +163,7 @@ export interface ExportLinks {
 interface ExportLinkRow {
   bpmn_element_id: string;
   line_of_defense: string | null;
+  called_process_id: string | null;
   risk_refs: NonNullable<GrcMetadata["riskRefs"]> | null;
   control_refs: NonNullable<GrcMetadata["controlRefs"]> | null;
 }
@@ -150,6 +177,7 @@ export async function buildArctosLinksFromDb(
     SELECT
       ps.bpmn_element_id,
       ps.line_of_defense,
+      ps.called_process_id,
       (
         SELECT json_agg(json_build_object(
           'id', r.id,
@@ -181,6 +209,7 @@ export async function buildArctosLinksFromDb(
     bpmnElementId: r.bpmn_element_id,
     meta: {
       lineOfDefense: r.line_of_defense ?? undefined,
+      calledProcessId: r.called_process_id ?? undefined,
       riskRefs: r.risk_refs ?? undefined,
       controlRefs: r.control_refs ?? undefined,
     },

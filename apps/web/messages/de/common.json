@@ -139,6 +139,7 @@
       "contractsObligations": "Pflichten",
       "contractsSla": "SLA-Monitoring",
       "processes": "Prozessregister",
+      "myProcesses": "Meine Prozesse",
       "processGovernance": "Prozess-Governance",
       "bpmMining": "Process Mining",
       "bpmKpis": "Prozess-KPIs",

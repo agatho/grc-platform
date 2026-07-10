@@ -199,6 +199,13 @@ export const processStep = pgTable(
     lineOfDefense: lodEnum("line_of_defense"),
     raciResponsibleRoleId: uuid("raci_responsible_role_id"),
     raciAccountableRoleId: uuid("raci_accountable_role_id"),
+    // Call-Activity Drill-Down (0363): child process invoked by a
+    // call_activity / subprocess step. ON DELETE SET NULL — a deleted
+    // target leaves an orphaned link the UI surfaces subtly.
+    calledProcessId: uuid("called_process_id").references(
+      (): AnyPgColumn => process.id,
+      { onDelete: "set null" },
+    ),
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()
       .defaultNow(),
@@ -212,6 +219,7 @@ export const processStep = pgTable(
     index("process_step_org_idx").on(table.orgId),
     uniqueIndex("process_step_unique").on(table.processId, table.bpmnElementId),
     index("process_step_lod_idx").on(table.processId, table.lineOfDefense),
+    index("process_step_called_process_idx").on(table.calledProcessId),
   ],
 );
 

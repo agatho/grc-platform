@@ -3,11 +3,7 @@ import { requireModule } from "@grc/auth";
 import { eraseDocumentSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { unlink } from "fs/promises";
-import { join } from "path";
-
-const UPLOAD_DIR =
-  process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
+import { getFileStorage } from "@grc/shared/lib/file-storage";
 
 // DELETE /api/v1/documents/:id/erase — GDPR Art. 17 hard erasure (D3).
 // Admin only, mandatory justification. Removes the document, ALL
@@ -115,11 +111,13 @@ export async function DELETE(
   );
 
   // Remove physical files after the DB transaction committed — a
-  // failed unlink must not roll back the erasure (orphaned files are
-  // preferable to a half-erased record).
+  // failed delete must not roll back the erasure (orphaned files are
+  // preferable to a half-erased record). Storage-agnostic: local FS
+  // or S3, depending on STORAGE_BACKEND.
+  const storage = getFileStorage();
   for (const relPath of filePaths) {
     try {
-      await unlink(join(UPLOAD_DIR, relPath));
+      await storage.delete(relPath);
     } catch {
       // File already gone or not accessible — nothing to do.
     }

@@ -67,6 +67,7 @@ import {
 import type {
   BpmnEditorRef,
   RiskOverlayData,
+  CallActivityOverlayData,
 } from "@/components/bpmn/bpmn-editor";
 import { BpmnToolbar } from "@/components/bpmn/bpmn-toolbar";
 import { ShapeSidePanel } from "@/components/bpmn/shape-side-panel";
@@ -144,6 +145,26 @@ interface ProcessRisk {
   context?: string;
 }
 
+// Call-Activity Drill-Down: /call-links response shapes
+interface CallLinkCall {
+  stepId: string;
+  bpmnElementId: string;
+  stepName: string | null;
+  stepType: StepType;
+  calledProcessId: string | null;
+  calledProcessName: string | null;
+  calledProcessStatus: ProcessStatus | null;
+}
+
+interface CallLinkCaller {
+  stepId: string;
+  bpmnElementId: string;
+  stepName: string | null;
+  processId: string;
+  processName: string;
+  processStatus: ProcessStatus;
+}
+
 interface AuditLogEntry {
   id: string;
   userName: string | null;
@@ -190,6 +211,7 @@ export default function ProcessDetailPage() {
 
 function ProcessDetailContent() {
   const t = useTranslations("process");
+  const tDrill = useTranslations("bpmOverhaul");
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
@@ -202,6 +224,20 @@ function ProcessDetailContent() {
   const shapeParam = searchParams.get("shape");
   const commentParam = searchParams.get("comment");
   const tabParam = searchParams.get("tab");
+  // Call-Activity Drill-Down: ?from=<parentProcessId> → back bar
+  const fromParam = searchParams.get("from");
+  const [fromProcessName, setFromProcessName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!fromParam || fromParam === processId) {
+      setFromProcessName(null);
+      return;
+    }
+    fetch(`/api/v1/processes/${fromParam}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => setFromProcessName(json?.data?.name ?? null))
+      .catch(() => setFromProcessName(null));
+  }, [fromParam, processId]);
 
   // Deep link: ?tab=editor&shape=Activity_1 or ?tab=comments&comment=uuid
   const [activeTab, setActiveTab] = useState(
@@ -401,6 +437,17 @@ function ProcessDetailContent() {
         <ArrowLeft size={14} />
         {t("detail.backToList")}
       </Link>
+
+      {/* Call-Activity Drill-Down: back bar to the calling parent process */}
+      {fromParam && fromProcessName && (
+        <Link
+          href={`/processes/${fromParam}`}
+          className="flex items-center gap-2 rounded-md border border-indigo-200 bg-indigo-50 px-3 py-2 text-sm text-indigo-800 hover:bg-indigo-100 transition-colors"
+        >
+          <ArrowLeft size={14} />
+          {tDrill("drilldown.calledFrom", { name: fromProcessName })}
+        </Link>
+      )}
 
       {/* Header */}
       <div className="rounded-lg border border-gray-200 bg-white p-6">
@@ -702,6 +749,8 @@ function OverviewTab({
 }) {
   const steps = process.steps ?? [];
   const tGov = useTranslations("processGovernance");
+  const tDrill = useTranslations("bpmOverhaul");
+  const router = useRouter();
   const { formatDate } = useDateFormat();
 
   // Validation state
@@ -710,6 +759,41 @@ function OverviewTab({
     errorCount: number;
     warningCount: number;
   } | null>(null);
+
+  // Call-Activity Drill-Down: process relations (both directions)
+  const [callLinks, setCallLinks] = useState<{
+    calls: CallLinkCall[];
+    calledBy: CallLinkCaller[];
+  } | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/v1/processes/${process.id}/call-links`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((json) => {
+        if (json?.data) {
+          setCallLinks({
+            calls: json.data.calls ?? [],
+            calledBy: json.data.calledBy ?? [],
+          });
+        }
+      })
+      .catch(() => setCallLinks(null));
+  }, [process.id]);
+
+  const viewerCallOverlay = useMemo<CallActivityOverlayData[]>(
+    () =>
+      (callLinks?.calls ?? [])
+        .filter(
+          (c): c is CallLinkCall & { calledProcessId: string } =>
+            Boolean(c.calledProcessId) && Boolean(c.calledProcessName),
+        )
+        .map((c) => ({
+          bpmnElementId: c.bpmnElementId,
+          calledProcessId: c.calledProcessId,
+          calledProcessName: c.calledProcessName,
+        })),
+    [callLinks],
+  );
 
   useEffect(() => {
     fetch(`/api/v1/processes/${process.id}/validate`)
@@ -835,6 +919,10 @@ function OverviewTab({
                   process.currentVersionData?.bpmnXml ??
                   ""
                 }
+                callActivityOverlayData={viewerCallOverlay}
+                onNavigateToProcess={(childId) =>
+                  router.push(`/processes/${childId}?from=${process.id}`)
+                }
                 className="h-full"
                 minHeight={400}
               />
@@ -849,6 +937,106 @@ function OverviewTab({
           )}
         </CardContent>
       </Card>
+
+      {/* Call-Activity Drill-Down: process relations */}
+      {callLinks && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">
+              {tDrill("drilldown.relations.title")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {callLinks.calls.length === 0 &&
+            callLinks.calledBy.length === 0 ? (
+              <p className="text-sm text-gray-400">
+                {tDrill("drilldown.relations.none")}
+              </p>
+            ) : (
+              <div className="space-y-4">
+                {callLinks.calls.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                      {tDrill("drilldown.relations.calls")}
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {callLinks.calls.map((c) => (
+                        <li
+                          key={c.stepId}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <ExternalLink
+                            size={14}
+                            className="text-indigo-500 flex-shrink-0"
+                          />
+                          {c.calledProcessId && c.calledProcessName ? (
+                            <>
+                              <Link
+                                href={`/processes/${c.calledProcessId}?from=${process.id}`}
+                                className="font-medium text-indigo-600 hover:underline truncate"
+                              >
+                                {c.calledProcessName}
+                              </Link>
+                              {c.calledProcessStatus && (
+                                <ProcessStatusBadge
+                                  status={c.calledProcessStatus}
+                                  size="sm"
+                                />
+                              )}
+                            </>
+                          ) : (
+                            <span className="text-amber-600">
+                              {tDrill("drilldown.relations.orphanedEntry")}
+                            </span>
+                          )}
+                          <span className="text-xs text-gray-400 truncate">
+                            {tDrill("drilldown.relations.viaStep")}{" "}
+                            {c.stepName ?? c.bpmnElementId}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+                {callLinks.calledBy.length > 0 && (
+                  <div>
+                    <h4 className="text-xs font-semibold text-gray-500 uppercase mb-2">
+                      {tDrill("drilldown.relations.calledBy")}
+                    </h4>
+                    <ul className="space-y-1.5">
+                      {callLinks.calledBy.map((c) => (
+                        <li
+                          key={c.stepId}
+                          className="flex items-center gap-2 text-sm"
+                        >
+                          <ArrowLeft
+                            size={14}
+                            className="text-gray-400 flex-shrink-0"
+                          />
+                          <Link
+                            href={`/processes/${c.processId}`}
+                            className="font-medium text-indigo-600 hover:underline truncate"
+                          >
+                            {c.processName}
+                          </Link>
+                          <ProcessStatusBadge
+                            status={c.processStatus}
+                            size="sm"
+                          />
+                          <span className="text-xs text-gray-400 truncate">
+                            {tDrill("drilldown.relations.viaStep")}{" "}
+                            {c.stepName ?? c.bpmnElementId}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       {/* Review Schedule */}
       <ProcessReviewConfig processId={process.id} />
@@ -923,6 +1111,50 @@ function EditorTab({
   t: ReturnType<typeof useTranslations<"process">>;
 }) {
   const readOnly = !canEdit;
+  const router = useRouter();
+
+  // Call-Activity Drill-Down: synced steps carry calledProcessId — used
+  // for the drill-down badges (the detail payload doesn't include steps).
+  const [syncedSteps, setSyncedSteps] = useState<ProcessStep[]>([]);
+  const loadSyncedSteps = useCallback(async () => {
+    try {
+      const res = await fetch(`/api/v1/processes/${processId}/steps`);
+      if (res.ok) {
+        const json = await res.json();
+        setSyncedSteps((json.data ?? []) as ProcessStep[]);
+      }
+    } catch {
+      // Best-effort — badges just stay hidden
+    }
+  }, [processId]);
+
+  useEffect(() => {
+    void loadSyncedSteps();
+  }, [loadSyncedSteps, process.currentVersion]);
+
+  const callActivityOverlay = useMemo<CallActivityOverlayData[]>(
+    () =>
+      syncedSteps
+        .filter(
+          (s): s is ProcessStep & { calledProcessId: string } =>
+            typeof s.calledProcessId === "string" &&
+            s.calledProcessId.length > 0 &&
+            Boolean(s.calledProcessName),
+        )
+        .map((s) => ({
+          bpmnElementId: s.bpmnElementId,
+          calledProcessId: s.calledProcessId,
+          calledProcessName: s.calledProcessName ?? null,
+        })),
+    [syncedSteps],
+  );
+
+  const navigateToChildProcess = useCallback(
+    (childId: string) => {
+      router.push(`/processes/${childId}?from=${processId}`);
+    },
+    [router, processId],
+  );
 
   // B2.4: when a working copy exists, the editor continues on it — the
   // released version stays untouched until re-approval.
@@ -1214,6 +1446,8 @@ function EditorTab({
             }
             lodOverlayData={showLodOverlay ? lodOverlay : []}
             findingsOverlayData={showFindingsOverlay ? findingsOverlay : []}
+            callActivityOverlayData={callActivityOverlay}
+            onNavigateToProcess={navigateToChildProcess}
             className="h-full"
           />
         </div>
@@ -1238,6 +1472,7 @@ function EditorTab({
             <ArctosPropertiesPanel
               processId={processId}
               bpmnElementId={selectedElement.id}
+              onChange={() => void loadSyncedSteps()}
             />
           </div>
         )}

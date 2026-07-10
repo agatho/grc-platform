@@ -116,6 +116,10 @@ export const document = pgTable(
     fileSize: bigint("file_size", { mode: "number" }),
     mimeType: varchar("mime_type", { length: 255 }),
     fileSha256: varchar("file_sha256", { length: 64 }),
+    // Extracted plain text of the newest file (best effort, capped at
+    // 500KB) — feeds the GENERATED search_vector (weight C, migration
+    // 0368) so full-text search also matches file contents.
+    fileText: text("file_text"),
     // D2: staged review reminders (30/14/7/0 days, worker cron)
     lastReminderSentAt: timestamp("last_reminder_sent_at", {
       withTimezone: true,
@@ -354,6 +358,12 @@ export const documentFile = pgTable(
     fileSize: bigint("file_size", { mode: "number" }),
     mimeType: varchar("mime_type", { length: 255 }),
     sha256: varchar("sha256", { length: 64 }),
+    // ClamAV malware-scan outcome (migration 0367). NULL for files
+    // uploaded before scanning was introduced.
+    scanStatus: varchar("scan_status", { length: 16 }).$type<
+      "clean" | "infected" | "skipped" | "error"
+    >(),
+    scannedAt: timestamp("scanned_at", { withTimezone: true }),
     uploadedBy: uuid("uploaded_by").references(() => user.id),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })

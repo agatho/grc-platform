@@ -840,6 +840,16 @@ export const NAV_GROUPS: NavGroup[] = [
         parentModule: "bpm",
       },
       {
+        // Process portal for end users — visible to every role, like
+        // rcsaMyAssignments (personal "my" views are never role-locked).
+        labelKey: "nav.grouped.myProcesses",
+        href: "/my-processes",
+        icon: ListTodo,
+        roles: "all",
+        moduleKey: "bpm",
+        parentModule: "bpm",
+      },
+      {
         labelKey: "nav.grouped.processGovernance",
         href: "/processes/governance",
         icon: Shield,

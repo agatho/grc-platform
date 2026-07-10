@@ -139,6 +139,7 @@
       "contractsObligations": "Obligations",
       "contractsSla": "SLA Monitoring",
       "processes": "Process Register",
+      "myProcesses": "My Processes",
       "processGovernance": "Process Governance",
       "bpmMining": "Process Mining",
       "bpmKpis": "Process KPIs",

@@ -1,13 +1,16 @@
-import { db, document, documentVersion, documentFile } from "@grc/db";
+import { db, document, documentVersion, documentFile, auditLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
-import { withAuth } from "@/lib/api";
-import { writeFile, mkdir } from "fs/promises";
-import { join } from "path";
+import { withAuth, withAuditContext } from "@/lib/api";
+import { getFileStorage } from "@grc/shared/lib/file-storage";
+import {
+  scanBuffer,
+  isClamAvFailClosed,
+  type ClamScanResult,
+} from "@grc/shared/lib/clamav";
+import { extractFileText } from "@/lib/documents/extract-text";
 import { randomUUID, createHash } from "crypto";
 
-const UPLOAD_DIR =
-  process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
 const MAX_FILE_SIZE = 50 * 1024 * 1024; // 50MB
 
 const ALLOWED_MIMES = new Set([
@@ -33,6 +36,12 @@ const ALLOWED_MIMES = new Set([
 // D3: computes SHA-256 over the file buffer for tamper evidence.
 // D4: creates a document_file row (multi-file support); the legacy
 // inline columns on document keep mirroring the newest upload.
+// Storage goes through the FileStorage abstraction (local FS or S3,
+// STORAGE_BACKEND env) — the stored key stays the historical
+// {orgId}/{docId}/{uuid}-{filename} relative path.
+// Optional ClamAV scan (CLAMAV_HOST): infected uploads are rejected
+// with 422 + audit-log entry; scan errors follow CLAMAV_FAIL_CLOSED.
+// Best-effort text extraction feeds document.file_text → search_vector.
 export async function POST(
   req: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -87,20 +96,74 @@ export async function POST(
     );
   }
 
-  // Generate safe path: uploads/documents/{orgId}/{docId}/{uuid}-{filename}
-  const orgDir = join(UPLOAD_DIR, ctx.orgId);
-  const docDir = join(orgDir, id);
-  await mkdir(docDir, { recursive: true });
-
+  // Storage key: {orgId}/{docId}/{uuid}-{filename} — identical to the
+  // historical relative path, so existing rows stay compatible.
   const safeFileName = file.name.replace(/[^a-zA-Z0-9._-]/g, "_");
   const storedName = `${randomUUID()}-${safeFileName}`;
-  const filePath = join(docDir, storedName);
   const relativePath = `${ctx.orgId}/${id}/${storedName}`;
 
   const buffer = Buffer.from(await file.arrayBuffer());
   // D3: SHA-256 integrity hash over the raw file buffer
   const sha256 = createHash("sha256").update(buffer).digest("hex");
-  await writeFile(filePath, buffer);
+
+  // Malware scan (optional — skipped with a one-time notice when
+  // CLAMAV_HOST is unset).
+  const scan: ClamScanResult = await scanBuffer(buffer);
+  if (scan.status === "infected") {
+    // Compliance trail: rejected uploads are security events.
+    await withAuditContext(ctx, async (tx) => {
+      await tx.insert(auditLog).values({
+        orgId: ctx.orgId,
+        userId: ctx.userId,
+        userEmail: ctx.session.user.email,
+        userName: ctx.session.user.name,
+        entityType: "document",
+        entityId: id,
+        entityTitle: doc.title,
+        action: "update",
+        actionDetail: "upload_rejected_infected",
+        metadata: {
+          fileName: file.name,
+          mimeType: file.type,
+          fileSize: file.size,
+          sha256,
+          signature: scan.signature,
+        },
+      });
+    });
+    return Response.json(
+      {
+        error: `Upload rejected: malware detected (${scan.signature ?? "unknown signature"})`,
+        code: "malware_detected",
+        signature: scan.signature,
+      },
+      { status: 422 },
+    );
+  }
+  if (scan.status === "error") {
+    if (isClamAvFailClosed()) {
+      console.error(
+        `[documents/upload] ClamAV scan failed (fail-closed): ${scan.error}`,
+      );
+      return Response.json(
+        {
+          error: "Malware scan unavailable — upload rejected (fail-closed)",
+          code: "scan_unavailable",
+        },
+        { status: 503 },
+      );
+    }
+    console.warn(
+      `[documents/upload] ClamAV scan failed (fail-open, file accepted): ${scan.error}`,
+    );
+  }
+  const scannedAt = scan.status === "skipped" ? null : new Date();
+
+  const storage = getFileStorage();
+  await storage.put(relativePath, buffer, { contentType: file.type });
+
+  // Best-effort full-text extraction (never blocks the upload).
+  const fileText = await extractFileText(buffer, file.type, file.name);
 
   // D4: pin the file to the version that is current at upload time
   const [currentVersion] = await db
@@ -125,6 +188,8 @@ export async function POST(
       fileSize: file.size,
       mimeType: file.type,
       sha256,
+      scanStatus: scan.status,
+      scannedAt,
       uploadedBy: ctx.userId,
       createdBy: ctx.userId,
       updatedBy: ctx.userId,
@@ -140,6 +205,7 @@ export async function POST(
       fileSize: file.size,
       mimeType: file.type,
       fileSha256: sha256,
+      fileText,
       updatedAt: new Date(),
       updatedBy: ctx.userId,
     })
@@ -169,6 +235,7 @@ export async function POST(
         fileSize: updated.fileSize,
         mimeType: updated.mimeType,
         sha256,
+        scanStatus: scan.status,
       },
     },
     { status: 201 },

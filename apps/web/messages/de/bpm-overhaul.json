@@ -51,6 +51,30 @@
       "retire": "Außerbetriebnahme"
     }
   },
+  "drilldown": {
+    "linkedProcess": "Verknüpfter Prozess",
+    "searchPlaceholder": "Prozess suchen…",
+    "noResults": "Keine Prozesse gefunden",
+    "notLinked": "Kein Prozess verknüpft",
+    "link": "Verknüpfen",
+    "unlink": "Verknüpfung entfernen",
+    "orphaned": "Verknüpfung verwaist — der Zielprozess wurde gelöscht.",
+    "openProcess": "Prozess öffnen",
+    "linkSaved": "Prozess verknüpft",
+    "linkRemoved": "Verknüpfung entfernt",
+    "saveError": "Speichern fehlgeschlagen",
+    "selfLinkError": "Ein Schritt kann nicht den eigenen Prozess aufrufen.",
+    "calledFrom": "Aufgerufen aus: {name}",
+    "openChildProcess": "Verknüpften Prozess öffnen",
+    "relations": {
+      "title": "Prozessbeziehungen",
+      "calls": "Aufgerufene Kindprozesse",
+      "calledBy": "Wird aufgerufen von",
+      "none": "Keine Prozessbeziehungen vorhanden.",
+      "viaStep": "über Schritt",
+      "orphanedEntry": "Verwaiste Verknüpfung"
+    }
+  },
   "blockers": {
     "missing_process_owner": "Process Owner muss zugewiesen sein.",
     "no_activities": "Prozess muss mindestens eine Aktivität enthalten.",

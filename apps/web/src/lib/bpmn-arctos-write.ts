@@ -59,6 +59,7 @@ function createGrcMetadataElement(meta: GrcMetadata): ModdleElement | null {
   const attrs: Record<string, unknown> = {};
   if (meta.lineOfDefense) attrs.lineOfDefense = meta.lineOfDefense;
   if (meta.complianceProfile) attrs.complianceProfile = meta.complianceProfile;
+  if (meta.calledProcessId) attrs.calledProcessId = meta.calledProcessId;
   if (meta.isCriticalProcess) attrs.isCriticalProcess = true;
 
   const el = arctosModdle.create("arctos:GrcMetadata", attrs);

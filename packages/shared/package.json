@@ -8,7 +8,10 @@
     "./lib/freetsa": "./src/lib/freetsa.ts",
     "./lib/opentimestamps": "./src/lib/opentimestamps.ts",
     "./lib/opentimestamps-upgrade": "./src/lib/opentimestamps-upgrade.ts",
-    "./lib/url-safety-server": "./src/lib/url-safety-server.ts"
+    "./lib/url-safety-server": "./src/lib/url-safety-server.ts",
+    "./lib/file-storage": "./src/lib/file-storage.ts",
+    "./lib/sigv4": "./src/lib/sigv4.ts",
+    "./lib/clamav": "./src/lib/clamav.ts"
   },
   "scripts": {
     "test": "vitest run",

@@ -1,6 +1,7 @@
 import { db, process, processStep } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, asc } from "drizzle-orm";
+import { alias } from "drizzle-orm/pg-core";
 import { withAuth } from "@/lib/api";
 
 // GET /api/v1/processes/:id/steps — List process steps (sorted by sequenceOrder)
@@ -32,6 +33,11 @@ export async function GET(
     return Response.json({ error: "Process not found" }, { status: 404 });
   }
 
+  // Call-Activity Drill-Down (0363): join the linked child process so the
+  // properties panel can render name + status. A soft-deleted target keeps
+  // its id but yields NULL name/status → the UI flags the link as orphaned.
+  const calledProcess = alias(process, "calledProcess");
+
   const steps = await db
     .select({
       id: processStep.id,
@@ -42,10 +48,20 @@ export async function GET(
       stepType: processStep.stepType,
       responsibleRole: processStep.responsibleRole,
       sequenceOrder: processStep.sequenceOrder,
+      calledProcessId: processStep.calledProcessId,
+      calledProcessName: calledProcess.name,
+      calledProcessStatus: calledProcess.status,
       createdAt: processStep.createdAt,
       updatedAt: processStep.updatedAt,
     })
     .from(processStep)
+    .leftJoin(
+      calledProcess,
+      and(
+        eq(processStep.calledProcessId, calledProcess.id),
+        isNull(calledProcess.deletedAt),
+      ),
+    )
     .where(and(eq(processStep.processId, id), isNull(processStep.deletedAt)))
     .orderBy(asc(processStep.sequenceOrder));
 

@@ -31,6 +31,8 @@ export interface GrcMetadata {
   lineOfDefense?: string;
   complianceProfile?: string;
   isCriticalProcess?: boolean;
+  /** Call-Activity Drill-Down: id of the child process this step invokes. */
+  calledProcessId?: string;
   riskRefs?: GrcRiskRef[];
   controlRefs?: GrcControlRef[];
   documentRefs?: GrcDocumentRef[];

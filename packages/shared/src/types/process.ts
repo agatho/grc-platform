@@ -99,6 +99,10 @@ export interface ProcessStep {
   stepType: StepType;
   responsibleRole?: string;
   sequenceOrder: number;
+  // Call-Activity Drill-Down: linked child process (call_activity/subprocess)
+  calledProcessId?: string | null;
+  calledProcessName?: string | null;
+  calledProcessStatus?: ProcessStatus | null;
   createdAt: string;
   updatedAt: string;
   deletedAt?: string;

@@ -103,6 +103,8 @@ function mapGrcMetadata(el: ModdleElement): GrcMetadata {
   if (lod) meta.lineOfDefense = lod;
   const profile = asString(el.complianceProfile);
   if (profile) meta.complianceProfile = profile;
+  const calledProcessId = asString(el.calledProcessId);
+  if (calledProcessId) meta.calledProcessId = calledProcessId;
   meta.isCriticalProcess = asBoolean(el.isCriticalProcess);
 
   const riskRefs = containerItems(el.riskRefs).map(mapRiskRef);

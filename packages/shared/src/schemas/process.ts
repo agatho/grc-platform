@@ -161,6 +161,8 @@ export const generateBpmnSchema = z.object({
 export const updateProcessStepSchema = z.object({
   responsibleRole: z.string().max(255).optional().nullable(),
   description: z.string().max(2000).optional().nullable(),
+  // Call-Activity Drill-Down: linked child process (null = unlink)
+  calledProcessId: z.string().uuid().optional().nullable(),
 });
 
 // ─── Asset Linkage (Gap 1) ────────────────────────────────────

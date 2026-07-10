@@ -5,9 +5,20 @@
 // the currently selected BPMN element.
 
 import { useCallback, useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useTranslations } from "next-intl";
 import { toast } from "sonner";
-import { Loader2, Save, ShieldCheck, FileText, Users } from "lucide-react";
+import {
+  ExternalLink,
+  Loader2,
+  Network,
+  Save,
+  ShieldCheck,
+  FileText,
+  Users,
+  X,
+} from "lucide-react";
+import type { ProcessStatus } from "@grc/shared";
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -15,6 +26,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ProcessStatusBadge } from "@/components/process/process-status-badge";
 import {
   Select,
   SelectContent,
@@ -27,9 +39,20 @@ interface Step {
   id: string;
   bpmnElementId: string;
   name: string | null;
+  stepType?: string | null;
   lineOfDefense?: string | null;
   raciResponsibleRoleId?: string | null;
   raciAccountableRoleId?: string | null;
+  // Call-Activity Drill-Down
+  calledProcessId?: string | null;
+  calledProcessName?: string | null;
+  calledProcessStatus?: ProcessStatus | null;
+}
+
+interface ProcessSearchResult {
+  id: string;
+  name: string;
+  status: ProcessStatus;
 }
 
 interface ControlLink {
@@ -54,6 +77,8 @@ export function ArctosPropertiesPanel({
   onChange?: () => void;
 }) {
   const t = useTranslations("process");
+  const tDrill = useTranslations("bpmOverhaul");
+  const router = useRouter();
   const [step, setStep] = useState<Step | null>(null);
   const [controls, setControls] = useState<ControlLink[]>([]);
   const [roles, setRoles] = useState<CustomRole[]>([]);
@@ -69,6 +94,13 @@ export function ArctosPropertiesPanel({
   const [initialCi, setInitialCi] = useState<Map<string, "C" | "I">>(
     new Map(),
   );
+  // Call-Activity Drill-Down: linked-process search state
+  const [processSearch, setProcessSearch] = useState("");
+  const [processResults, setProcessResults] = useState<ProcessSearchResult[]>(
+    [],
+  );
+  const [processSearching, setProcessSearching] = useState(false);
+  const [linkingProcess, setLinkingProcess] = useState(false);
 
   const reload = useCallback(async () => {
     setLoading(true);
@@ -151,6 +183,75 @@ export function ArctosPropertiesPanel({
       setConsultedIds((prev) => prev.filter((id) => id !== roleId));
     }
   }, []);
+
+  // Call-Activity Drill-Down: only call activities and (collapsed)
+  // subprocesses can invoke another process.
+  const isCallStep =
+    step?.stepType === "call_activity" || step?.stepType === "subprocess";
+
+  // Debounced process search (org-scoped list API); the current process is
+  // excluded — self-linking is rejected server-side anyway (422).
+  useEffect(() => {
+    if (!isCallStep || processSearch.trim().length < 2) {
+      setProcessResults([]);
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setProcessSearching(true);
+      try {
+        const resp = await fetch(
+          `/api/v1/processes?search=${encodeURIComponent(processSearch.trim())}&limit=10`,
+        );
+        if (resp.ok) {
+          const j = await resp.json();
+          setProcessResults(
+            ((j.data ?? []) as ProcessSearchResult[]).filter(
+              (p) => p.id !== processId,
+            ),
+          );
+        }
+      } catch {
+        setProcessResults([]);
+      } finally {
+        setProcessSearching(false);
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [processSearch, processId, isCallStep]);
+
+  const saveCalledProcess = useCallback(
+    async (calledProcessId: string | null) => {
+      if (!step) return;
+      setLinkingProcess(true);
+      try {
+        const resp = await fetch(
+          `/api/v1/processes/${processId}/steps/${step.id}`,
+          {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            body: JSON.stringify({ calledProcessId }),
+          },
+        );
+        if (!resp.ok) {
+          const e = await resp.json().catch(() => ({}));
+          toast.error(e.error ?? tDrill("drilldown.saveError"));
+          return;
+        }
+        toast.success(
+          calledProcessId
+            ? tDrill("drilldown.linkSaved")
+            : tDrill("drilldown.linkRemoved"),
+        );
+        setProcessSearch("");
+        setProcessResults([]);
+        await reload();
+        onChange?.();
+      } finally {
+        setLinkingProcess(false);
+      }
+    },
+    [step, processId, reload, onChange, tDrill],
+  );
 
   const saveLod = useCallback(async () => {
     if (!step) return;
@@ -254,6 +355,109 @@ export function ArctosPropertiesPanel({
 
   return (
     <div className="space-y-3">
+      {/* Call-Activity Drill-Down: linked child process */}
+      {isCallStep && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 text-sm">
+              <Network className="h-4 w-4" />{" "}
+              {tDrill("drilldown.linkedProcess")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-2">
+            {step.calledProcessId ? (
+              <div className="space-y-2">
+                <div className="flex items-center justify-between gap-2 rounded-md border border-gray-200 bg-gray-50 px-3 py-2">
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-sm font-medium text-gray-900">
+                      {step.calledProcessName ??
+                        tDrill("drilldown.relations.orphanedEntry")}
+                    </p>
+                    {step.calledProcessStatus && (
+                      <ProcessStatusBadge
+                        status={step.calledProcessStatus}
+                        size="sm"
+                        className="mt-1"
+                      />
+                    )}
+                  </div>
+                  <div className="flex flex-shrink-0 items-center gap-1">
+                    {step.calledProcessName && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-7 w-7"
+                        title={tDrill("drilldown.openProcess")}
+                        onClick={() =>
+                          router.push(
+                            `/processes/${step.calledProcessId}?from=${processId}`,
+                          )
+                        }
+                      >
+                        <ExternalLink className="h-3.5 w-3.5" />
+                      </Button>
+                    )}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-7 w-7 text-gray-400 hover:text-red-500"
+                      title={tDrill("drilldown.unlink")}
+                      disabled={linkingProcess}
+                      onClick={() => void saveCalledProcess(null)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </div>
+                {!step.calledProcessName && (
+                  <p className="text-xs text-amber-600">
+                    {tDrill("drilldown.orphaned")}
+                  </p>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground">
+                  {tDrill("drilldown.notLinked")}
+                </p>
+                <Input
+                  className="h-8"
+                  value={processSearch}
+                  onChange={(e) => setProcessSearch(e.target.value)}
+                  placeholder={tDrill("drilldown.searchPlaceholder")}
+                />
+                {processSearching && (
+                  <Loader2 className="mx-auto h-4 w-4 animate-spin text-muted-foreground" />
+                )}
+                {processResults.length > 0 && (
+                  <div className="max-h-40 overflow-y-auto rounded-md border border-gray-200">
+                    {processResults.map((p) => (
+                      <button
+                        key={p.id}
+                        type="button"
+                        disabled={linkingProcess}
+                        className="flex w-full items-center justify-between gap-2 border-b border-gray-100 px-3 py-2 text-left text-sm last:border-b-0 hover:bg-gray-50"
+                        onClick={() => void saveCalledProcess(p.id)}
+                      >
+                        <span className="truncate font-medium">{p.name}</span>
+                        <ProcessStatusBadge status={p.status} size="sm" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {processSearch.trim().length >= 2 &&
+                  !processSearching &&
+                  processResults.length === 0 && (
+                    <p className="text-xs text-muted-foreground">
+                      {tDrill("drilldown.noResults")}
+                    </p>
+                  )}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
+
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-sm">

@@ -2,12 +2,8 @@ import { db, document, auditLog } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { readFile } from "fs/promises";
-import { join } from "path";
+import { getFileStorage } from "@grc/shared/lib/file-storage";
 import { createHash } from "crypto";
-
-const UPLOAD_DIR =
-  process.env.UPLOAD_DIR ?? join(process.cwd(), "../../uploads/documents");
 
 // GET /api/v1/documents/:id/verify-integrity — Recompute the SHA-256
 // of the stored file and compare it with the hash captured at upload
@@ -56,7 +52,7 @@ export async function GET(
   let actual: string | null = null;
   let fileMissing = false;
   try {
-    const buffer = await readFile(join(UPLOAD_DIR, doc.filePath));
+    const buffer = await getFileStorage().get(doc.filePath);
     actual = createHash("sha256").update(buffer).digest("hex");
   } catch {
     fileMissing = true;

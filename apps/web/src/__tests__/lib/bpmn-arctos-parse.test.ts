@@ -45,6 +45,7 @@ const WITH_EXISTING = `<?xml version="1.0" encoding="UTF-8"?>
 const META: GrcMetadata = {
   lineOfDefense: "second",
   isCriticalProcess: true,
+  calledProcessId: "3d3adf6a-9d3f-4b6e-8a6c-0f0e1d2c3b4a",
   riskRefs: [
     { id: "risk-1", title: "Fraud", inherentScore: 20, residualScore: 8 },
   ],
@@ -72,6 +73,11 @@ describe("parseArctosGrcMetadataMap", () => {
     const meta = map.get("Task_1")!;
     expect(meta.lineOfDefense).toBe("second");
     expect(meta.isCriticalProcess).toBe(true);
+    // Call-Activity Drill-Down: linked child process survives the round-trip
+    expect(meta.calledProcessId).toBe("3d3adf6a-9d3f-4b6e-8a6c-0f0e1d2c3b4a");
+    expect(xml).toContain(
+      'calledProcessId="3d3adf6a-9d3f-4b6e-8a6c-0f0e1d2c3b4a"',
+    );
     expect(meta.riskRefs).toHaveLength(1);
     expect(meta.riskRefs?.[0]).toMatchObject({
       id: "risk-1",
@@ -113,6 +119,22 @@ describe("parseArctosGrcMetadataMap", () => {
     expect(map.size).toBe(2);
     expect(map.get("Task_1")?.riskRefs?.[0]?.id).toBe("r1");
     expect(map.get("Task_2")?.lineOfDefense).toBe("third");
+  });
+
+  it("round-trips a calledProcessId-only metadata (call activity link)", async () => {
+    const xml = await injectGrcMetadataModdle(
+      BASIC,
+      new Map<string, GrcMetadata>([
+        ["Task_2", { calledProcessId: "b1b2c3d4-e5f6-4a1b-9c8d-7e6f5a4b3c2d" }],
+      ]),
+    );
+    const map = await parseArctosGrcMetadataMap(xml);
+    expect(map.size).toBe(1);
+    expect(map.get("Task_2")?.calledProcessId).toBe(
+      "b1b2c3d4-e5f6-4a1b-9c8d-7e6f5a4b3c2d",
+    );
+    // Absent on parse when never written
+    expect(map.get("Task_2")?.lineOfDefense).toBeUndefined();
   });
 
   it("returns an empty map for XML without arctos metadata", async () => {

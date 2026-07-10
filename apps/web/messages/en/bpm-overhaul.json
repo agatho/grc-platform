@@ -51,6 +51,30 @@
       "retire": "Retire"
     }
   },
+  "drilldown": {
+    "linkedProcess": "Linked process",
+    "searchPlaceholder": "Search process…",
+    "noResults": "No processes found",
+    "notLinked": "No process linked",
+    "link": "Link",
+    "unlink": "Remove link",
+    "orphaned": "Orphaned link — the target process was deleted.",
+    "openProcess": "Open process",
+    "linkSaved": "Process linked",
+    "linkRemoved": "Link removed",
+    "saveError": "Saving failed",
+    "selfLinkError": "A step cannot call its own process.",
+    "calledFrom": "Called from: {name}",
+    "openChildProcess": "Open linked process",
+    "relations": {
+      "title": "Process relations",
+      "calls": "Called child processes",
+      "calledBy": "Called by",
+      "none": "No process relations.",
+      "viaStep": "via step",
+      "orphanedEntry": "Orphaned link"
+    }
+  },
   "blockers": {
     "missing_process_owner": "Process owner must be assigned.",
     "no_activities": "Process must contain at least one activity.",
