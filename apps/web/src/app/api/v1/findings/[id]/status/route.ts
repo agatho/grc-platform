@@ -6,6 +6,7 @@ import {
 import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 
 // Map finding status to work item status
 const FINDING_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -153,6 +154,17 @@ export async function PUT(
   if (!updated) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityStatusChanged({
+    orgId: ctx.orgId,
+    entityType: "finding",
+    entityId: id,
+    userId: ctx.userId,
+    oldStatus: currentStatus,
+    newStatus: targetStatus,
+    data: { title: existing.title },
+  });
 
   return Response.json({ data: updated });
 }

@@ -27,6 +27,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/documents — Create document
@@ -145,6 +146,15 @@ export async function POST(req: Request) {
     }
 
     return { ...row, elementId: wi.elementId };
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "document",
+    entityId: created.id,
+    userId: ctx.userId,
+    data: created,
   });
 
   return Response.json({ data: created }, { status: 201 });

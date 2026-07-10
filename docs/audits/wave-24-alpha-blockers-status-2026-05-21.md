@@ -2,10 +2,37 @@
 
 Re-triage of the 8 alpha-blockers from `docs/audits-overnight-2026-05-18/00-triage-summary.md` after Waves 23 and 24. Every status claim is backed by a file/line citation; no vibes.
 
+> **Nachtrag 2026-07-10 — F#1 geschlossen (8/8 Done).** Der letzte
+> Partial-Rest (Item 1, plaintext `refresh_token`-Spalte) ist behoben:
+>
+> - Neue Utility `packages/shared/src/secret-crypto.ts`: AES-256-GCM,
+>   Ein-Spalten-Envelope `v1:<iv_b64>:<tag_b64>:<ct_b64>`, Key
+>   `SECRET_ENCRYPTION_KEY` (32 Byte, base64/hex, lazy validiert, kein
+>   Fail-open), Rotation via `SECRET_ENCRYPTION_KEY_PREVIOUS`.
+>   Zugriffsschicht: `sealSecret()` (encrypt-on-write, idempotent) /
+>   `openSecret()` (erkennt Legacy-Plaintext via `isEncryptedSecret()`).
+> - `POST /api/v1/connectors/[id]/credentials` akzeptiert jetzt optional
+>   `refreshToken` und schreibt ihn ausschließlich versiegelt — der im
+>   Verdict beschriebene „silently store plaintext"-Pfad kann nicht mehr
+>   entstehen. Schema-Kommentar in
+>   `packages/db/src/schema/evidence-connector.ts` korrigiert.
+> - Beifang: `sso_config.oidc_client_secret` wurde entgegen seinem
+>   Schema-Kommentar („encrypted at rest") **live plaintext** geschrieben
+>   (`POST/PUT /api/v1/admin/sso`) und gelesen (OIDC-Callback). Jetzt
+>   versiegelt, POST/PUT-Responses maskieren das Secret, Altwerte
+>   migrieren beim nächsten Save oder via
+>   `scripts/encrypt-connector-secrets.mjs` (idempotent, `--dry-run`).
+> - Keine Migration nötig (keine neuen Spalten). Dev-DB verifiziert
+>   2026-07-10: `connector_credential`, `connector_instance`,
+>   `sso_config` — alle 0 Rows, keine Bestandsdaten.
+> - Tests: `packages/shared/tests/secret-crypto.test.ts` (Roundtrip,
+>   Tamper→Fehler, falscher Key→Fehler, Rotation-Fallback,
+>   Plaintext-Erkennung, Seal/Open-Zugriffsschicht).
+
 ## TL;DR
 
-- **Done: 7**
-- **Partial: 1**
+- **Done: 7** _(→ 8 seit Nachtrag 2026-07-10)_
+- **Partial: 1** _(→ 0 seit Nachtrag 2026-07-10)_
 - **Open: 0** (live data-exposure path)
 
 Wave 24 closed the entire 🚨 cluster. The single remaining item (#1, OAuth refresh-token) is a **dormant schema artifact** — the column exists but no code path writes to it, so the alpha invite is not gated on it. It is recommended as a small cleanup PR before any production OAuth-connector ships.

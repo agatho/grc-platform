@@ -9,6 +9,7 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { emitEntityCreated } from "@/lib/entity-events";
 
 // GET /api/v1/isms/incidents
 export const GET = withErrorHandler(async function GET(req: Request) {
@@ -125,6 +126,15 @@ export async function POST(req: Request) {
       })
       .returning();
     return created;
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "incident",
+    entityId: result.id,
+    userId: ctx.userId,
+    data: result,
   });
 
   return Response.json({ data: result }, { status: 201 });

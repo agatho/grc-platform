@@ -9,6 +9,7 @@ import {
 } from "@grc/auth/oidc";
 import { resolveRole, groupRoleMappingToEntries } from "@grc/auth";
 import { logAccessEvent } from "@grc/auth/providers";
+import { openSecret } from "@grc/shared";
 import type { OidcClaimMapping, GroupRoleMapping } from "@grc/shared";
 import { getBaseUrl } from "@/lib/base-url";
 
@@ -116,7 +117,11 @@ export async function GET(req: Request) {
       code,
       redirectUri: `${baseUrl}/api/v1/auth/sso/oidc/callback`,
       clientId: config.oidcClientId,
-      clientSecret: config.oidcClientSecret ?? undefined,
+      // oidc_client_secret is stored as a v1 AES-256-GCM envelope
+      // (SECRET_ENCRYPTION_KEY). openSecret() decrypts it and passes
+      // legacy plaintext rows through unchanged; those are re-sealed
+      // the next time an admin saves the SSO config.
+      clientSecret: openSecret(config.oidcClientSecret)?.plaintext,
       codeVerifier: storedVerifier,
     });
 

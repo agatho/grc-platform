@@ -46,6 +46,8 @@ import { processScheduledExport } from "./crons/scheduled-export";
 import { processScimSyncCleanup } from "./crons/scim-sync-cleanup";
 import { processScimTokenAudit } from "./crons/scim-token-audit";
 import { processWebhookRetryJob } from "./crons/webhook-retry";
+import { processWebhookDispatchJob } from "./crons/webhook-dispatch";
+import { registerWebhookEnqueueHandler } from "@grc/events";
 import { processRiskAppetiteCheck } from "./crons/risk-appetite-check";
 import { processAssuranceSnapshot } from "./crons/assurance-snapshot";
 import { processPostureSnapshot } from "./crons/posture-snapshot";
@@ -131,6 +133,11 @@ const moduleCrons = registerModuleCrons();
 
 // Sprint 28: Initialize Automation Engine (subscribes to Event Bus)
 initAutomationEngine();
+
+// Webhook fan-out (2026-07-10): route entity events emitted in THIS
+// process to the webhook_delivery_log outbox. The web app registers the
+// same handler lazily on first emission (see @grc/events emit-helpers).
+registerWebhookEnqueueHandler();
 
 // ──────────────────────────────────────────────────────────────
 // Middleware: CRON_SECRET verification for /crons/* routes
@@ -761,6 +768,20 @@ app.post("/crons/webhook-retry", async (c) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error("[worker] webhook-retry cron failed:", message);
+    return c.json({ success: false, error: message }, 500);
+  }
+});
+
+// Webhook fan-out dispatch (2026-07-10): drains 'pending' outbox rows
+// enqueued by the event-bus fan-out. webhook-retry also flushes pending
+// rows; this endpoint allows a tighter dispatch schedule.
+app.post("/crons/webhook-dispatch", async (c) => {
+  try {
+    const result = await processWebhookDispatchJob();
+    return c.json({ success: true, ...result });
+  } catch (err) {
+    const message = err instanceof Error ? err.message : String(err);
+    console.error("[worker] webhook-dispatch cron failed:", message);
     return c.json({ success: false, error: message }, 500);
   }
 });

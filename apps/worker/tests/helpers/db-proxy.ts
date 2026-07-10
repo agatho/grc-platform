@@ -69,6 +69,9 @@ export const eventsMockFactory = () => ({
   hashSecret: vi.fn().mockReturnValue("x"),
   signPayload: vi.fn().mockReturnValue("sig"),
   verifySignature: vi.fn().mockReturnValue(true),
+  enqueueWebhookDelivery: vi.fn().mockResolvedValue(undefined),
+  registerWebhookEnqueueHandler: vi.fn(),
+  sanitizeWebhookData: vi.fn((v: unknown) => v),
 });
 
 /** Stub for @grc/ai. */

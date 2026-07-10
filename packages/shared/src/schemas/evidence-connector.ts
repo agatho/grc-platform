@@ -119,6 +119,9 @@ export const updateEvidenceConnectorSchema = z.object({
 export const createConnectorCredentialSchema = z.object({
   credentialType: z.enum(credentialTypeValues),
   payload: z.string().min(1).max(50000), // raw payload, will be encrypted server-side
+  // Raw OAuth2 refresh token. Stored via sealSecret() (SECRET_ENCRYPTION_KEY,
+  // v1 envelope) — never plaintext. See packages/shared/src/secret-crypto.ts.
+  refreshToken: z.string().min(1).max(10000).optional(),
   scopes: z.array(z.string().max(100)).max(50).optional(),
 });
 

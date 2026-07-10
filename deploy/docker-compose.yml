@@ -64,6 +64,11 @@ services:
       # WB_ENCRYPTION_KEY (64-char hex). Different value.
       # Generate: openssl rand -hex 32
       CONNECTOR_ENCRYPTION_KEY: ${CONNECTOR_ENCRYPTION_KEY}
+      # Required when SSO/OIDC or OAuth connectors are used. 32 bytes,
+      # base64 (openssl rand -base64 32) or 64-char hex. Encrypts
+      # single-column secrets (v1 envelope, secret-crypto.ts).
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
       CRON_SECRET: ${CRON_SECRET}
       NODE_ENV: production
       REDIS_URL: redis://:${REDIS_PASSWORD:-arctos-redis}@redis:6379

@@ -13,6 +13,18 @@ export {
   aesGcmDecrypt,
   type AesGcmCiphertext,
 } from "./env-key";
+// Wave-24 F#1: versioned single-column encrypt-at-rest envelope
+// (SECRET_ENCRYPTION_KEY, "v1:<iv>:<tag>:<ct>", rotation via
+// SECRET_ENCRYPTION_KEY_PREVIOUS). For new secret columns prefer this
+// over the three-column env-key.ts layout.
+export {
+  encryptSecret,
+  decryptSecret,
+  isEncryptedSecret,
+  sealSecret,
+  openSecret,
+  type OpenedSecret,
+} from "./secret-crypto";
 export {
   checkWebhookUrl,
   webhookUrlRefine,

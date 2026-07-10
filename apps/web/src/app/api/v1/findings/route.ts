@@ -26,6 +26,7 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 
 // #WAVE23-A1: Sentinel-Error-Class für Post-Insert-FK-Mismatch. Wave 22
@@ -230,6 +231,15 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     }
 
     return { ...row, elementId: wi.elementId };
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "finding",
+    entityId: created.id,
+    userId: ctx.userId,
+    data: created,
   });
 
   return Response.json({ data: created }, { status: 201 });

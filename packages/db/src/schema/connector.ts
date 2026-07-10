@@ -52,7 +52,11 @@ export const connectorInstance = pgTable("connector_instance", {
     .default("oauth2")
     .notNull(),
   config: jsonb("config").default({}).notNull(),
-  // Verschluesselt mit CONNECTOR_ENCRYPTION_KEY (env-var, ADR-018)
+  // Dormant (kein Reader/Writer, Stand 2026-07-10). Wenn dieses Feld
+  // aktiviert wird: mit sealSecret()/openSecret() aus @grc/shared
+  // fuellen (SECRET_ENCRYPTION_KEY, v1-Envelope) — NICHT plaintext
+  // schreiben. Historischer Plan war CONNECTOR_ENCRYPTION_KEY
+  // (ADR-018), es existiert aber keine Pipeline dafuer.
   credentialsEncrypted: text("credentials_encrypted"),
   // pull | push | bidirectional
   syncDirection: varchar("sync_direction", { length: 20 })

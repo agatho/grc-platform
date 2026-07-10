@@ -15,6 +15,7 @@ import {
 import { eq, and, isNull, inArray } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 import { log } from "@/lib/logger";
 
 // Map risk status to work item status
@@ -339,6 +340,17 @@ export async function PUT(
   if (!updated) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityStatusChanged({
+    orgId: ctx.orgId,
+    entityType: "risk",
+    entityId: id,
+    userId: ctx.userId,
+    oldStatus: currentStatus,
+    newStatus: targetStatus,
+    data: { title: existing.title },
+  });
 
   return Response.json({ data: updated });
 }

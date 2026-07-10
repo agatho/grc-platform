@@ -27,6 +27,7 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/controls — Create control
@@ -135,6 +136,15 @@ export const POST = withErrorHandler(async function POST(req: Request) {
     }
 
     return { ...row, elementId: wi.elementId };
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "control",
+    entityId: created.id,
+    userId: ctx.userId,
+    data: created,
   });
 
   return Response.json({ data: created }, { status: 201 });

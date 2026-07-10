@@ -8,6 +8,7 @@ import { eq, and, isNull, desc } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { createDocumentVersion } from "@/lib/document-versioning";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 
 // Map document status to work item status
 const DOCUMENT_TO_WORK_ITEM_STATUS: Record<string, string> = {
@@ -249,6 +250,17 @@ export async function PUT(
   if (!updated) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityStatusChanged({
+    orgId: ctx.orgId,
+    entityType: "document",
+    entityId: id,
+    userId: ctx.userId,
+    oldStatus: currentStatus,
+    newStatus: targetStatus,
+    data: { title: existing.title },
+  });
 
   return Response.json({ data: updated });
 }

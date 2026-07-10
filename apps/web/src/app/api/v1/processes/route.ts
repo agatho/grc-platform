@@ -27,6 +27,7 @@ import {
   paginatedResponse,
 } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 
 // POST /api/v1/processes — Create process + initial version
@@ -121,6 +122,15 @@ export async function POST(req: Request) {
       .returning();
 
     return { process: row, version };
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "process",
+    entityId: result.process.id,
+    userId: ctx.userId,
+    data: result.process,
   });
 
   return Response.json({ data: result }, { status: 201 });

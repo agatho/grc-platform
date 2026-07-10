@@ -4,6 +4,7 @@ import { eq, and, isNull } from "drizzle-orm";
 import { requireModule } from "@grc/auth";
 import { withAuth, withAuditContext } from "@/lib/api";
 import { withErrorHandler } from "@/lib/api-wrapper";
+import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { requireUuidParam } from "@/lib/param-validation";
 
 type IdCtx = { params: Promise<{ id: string }> };
@@ -194,6 +195,16 @@ export const PUT = withErrorHandler<IdCtx>(async function PUT(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityUpdated({
+    orgId: ctx.orgId,
+    entityType: "risk",
+    entityId: id,
+    userId: ctx.userId,
+    before: existing,
+    after: updated,
+  });
+
   return Response.json({ data: updated });
 });
 
@@ -244,6 +255,15 @@ export const DELETE = withErrorHandler<IdCtx>(async function DELETE(
   if (!deleted) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityDeleted({
+    orgId: ctx.orgId,
+    entityType: "risk",
+    entityId: id,
+    userId: ctx.userId,
+    data: { id, workItemId: deleted.workItemId },
+  });
 
   return Response.json({ data: { id, deleted: true } });
 });

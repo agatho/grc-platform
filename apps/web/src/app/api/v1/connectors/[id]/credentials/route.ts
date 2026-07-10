@@ -3,6 +3,7 @@ import {
   createConnectorCredentialSchema,
   getRequiredHexKey,
   aesGcmEncrypt,
+  sealSecret,
 } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
@@ -64,6 +65,11 @@ export async function POST(
     body.data.payload,
   );
 
+  // Wave-24 F#1: the refresh_token column stores a versioned envelope
+  // (sealSecret → "v1:<iv>:<tag>:<ct>", SECRET_ENCRYPTION_KEY), never
+  // plaintext. sealSecret throws with a setup hint if the key is unset.
+  const sealedRefreshToken = sealSecret(body.data.refreshToken);
+
   const created = await withAuditContext(ctx, async (tx) => {
     const [row] = await tx
       .insert(connectorCredential)
@@ -74,6 +80,7 @@ export async function POST(
         encryptedPayload,
         iv,
         authTag,
+        refreshToken: sealedRefreshToken,
         scopes: body.data.scopes ?? [],
         createdBy: ctx.userId,
       })

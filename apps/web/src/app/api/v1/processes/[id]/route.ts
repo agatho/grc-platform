@@ -4,6 +4,7 @@ import { updateProcessSchema } from "@grc/shared";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, count, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { alias } from "drizzle-orm/pg-core";
 
 // GET /api/v1/processes/:id — Full detail
@@ -178,6 +179,18 @@ export async function PUT(
     return row;
   });
 
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  if (updated) {
+    emitEntityUpdated({
+      orgId: ctx.orgId,
+      entityType: "process",
+      entityId: id,
+      userId: ctx.userId,
+      before: existing,
+      after: updated,
+    });
+  }
+
   return Response.json({ data: updated });
 }
 
@@ -219,6 +232,15 @@ export async function DELETE(
         updatedAt: new Date(),
       })
       .where(and(eq(process.id, id), eq(process.orgId, ctx.orgId)));
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityDeleted({
+    orgId: ctx.orgId,
+    entityType: "process",
+    entityId: id,
+    userId: ctx.userId,
+    data: { id },
   });
 
   return Response.json({ data: { id, deleted: true } });

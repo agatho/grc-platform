@@ -3,6 +3,7 @@ import { workItemStatusTransitionSchema } from "@grc/shared";
 import type { WorkItemStatus } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 
 // Valid status transitions map
 const VALID_TRANSITIONS: Record<WorkItemStatus, WorkItemStatus[]> = {
@@ -128,6 +129,17 @@ export async function PUT(
   if (!updated) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityStatusChanged({
+    orgId: ctx.orgId,
+    entityType: "work_item",
+    entityId: id,
+    userId: ctx.userId,
+    oldStatus: currentStatus,
+    newStatus,
+    data: { name: existing.name },
+  });
 
   return Response.json({ data: updated });
 }

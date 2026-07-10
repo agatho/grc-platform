@@ -2,6 +2,7 @@ import { db, finding, workItem, user, evidence } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 import { updateFindingSchema } from "@grc/shared";
 
 // #WAVE19-P1-01: schema lifted to packages/shared so the canonical
@@ -197,6 +198,16 @@ export async function PUT(
     return Response.json({ error: "Not found" }, { status: 404 });
   }
 
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityUpdated({
+    orgId: ctx.orgId,
+    entityType: "finding",
+    entityId: id,
+    userId: ctx.userId,
+    before: existing,
+    after: updated,
+  });
+
   return Response.json({ data: updated });
 }
 
@@ -258,6 +269,15 @@ export async function DELETE(
   if (!deleted) {
     return Response.json({ error: "Not found" }, { status: 404 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityDeleted({
+    orgId: ctx.orgId,
+    entityType: "finding",
+    entityId: id,
+    userId: ctx.userId,
+    data: { id, workItemId: deleted.workItemId },
+  });
 
   return Response.json({ data: { id, deleted: true } });
 }

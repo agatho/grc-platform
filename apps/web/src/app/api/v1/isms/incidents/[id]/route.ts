@@ -3,6 +3,7 @@ import { requireModule } from "@grc/auth";
 import { updateIncidentSchema } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityDeleted, emitEntityUpdated } from "@/lib/entity-events";
 
 // GET /api/v1/isms/incidents/[id]
 export async function GET(
@@ -105,6 +106,18 @@ export async function PUT(
     return Response.json({ error: "Incident not found" }, { status: 404 });
   }
 
+  // Webhook fan-out (best-effort, after commit — never fails the request).
+  // No full before-image is fetched on this path; consumers get the
+  // updated row plus the submitted patch keys as changed fields.
+  emitEntityUpdated({
+    orgId: ctx.orgId,
+    entityType: "incident",
+    entityId: id,
+    userId: ctx.userId,
+    before: {},
+    after: result,
+  });
+
   return Response.json({ data: result });
 }
 
@@ -132,6 +145,15 @@ export async function DELETE(
           isNull(securityIncident.deletedAt),
         ),
       );
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityDeleted({
+    orgId: ctx.orgId,
+    entityType: "incident",
+    entityId: id,
+    userId: ctx.userId,
+    data: { id },
   });
 
   return Response.json({ success: true });

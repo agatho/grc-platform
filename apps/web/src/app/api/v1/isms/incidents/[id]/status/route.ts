@@ -6,6 +6,7 @@ import {
 } from "@grc/shared";
 import { eq, and, isNull } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 
 // PUT /api/v1/isms/incidents/[id]/status
 export async function PUT(
@@ -27,6 +28,8 @@ export async function PUT(
   }
 
   const { status: newStatus } = parsed.data;
+
+  let previousStatus: string | null = null;
 
   const result = await withAuditContext(ctx, async (tx) => {
     // Get current status
@@ -51,6 +54,8 @@ export async function PUT(
         error: `Invalid transition from ${current.status} to ${newStatus}`,
       };
     }
+
+    previousStatus = current.status;
 
     const setValues: Record<string, unknown> = {
       status: newStatus,
@@ -78,6 +83,17 @@ export async function PUT(
   if ("error" in result) {
     return Response.json({ error: result.error }, { status: 422 });
   }
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityStatusChanged({
+    orgId: ctx.orgId,
+    entityType: "incident",
+    entityId: id,
+    userId: ctx.userId,
+    oldStatus: previousStatus ?? "unknown",
+    newStatus,
+    data: { title: result.title },
+  });
 
   return Response.json({ data: result });
 }

@@ -18,6 +18,7 @@ import {
   paginate,
   paginatedResponse,
 } from "@/lib/api";
+import { emitEntityCreated } from "@/lib/entity-events";
 import type { SQL } from "drizzle-orm";
 import type { WorkItemStatus } from "@grc/shared";
 
@@ -173,6 +174,15 @@ export async function POST(req: Request) {
       .returning();
 
     return row;
+  });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  emitEntityCreated({
+    orgId: ctx.orgId,
+    entityType: "work_item",
+    entityId: created.id,
+    userId: ctx.userId,
+    data: created,
   });
 
   return Response.json({ data: created }, { status: 201 });

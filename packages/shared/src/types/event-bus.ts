@@ -17,7 +17,8 @@ export type EntityType =
   | "kri"
   | "bcp"
   | "ropa_entry"
-  | "dpia";
+  | "dpia"
+  | "work_item";
 
 export type ReferenceRelationship =
   | "mitigates"
@@ -170,6 +171,7 @@ export const AVAILABLE_ENTITY_TYPES: EntityType[] = [
   "bcp",
   "ropa_entry",
   "dpia",
+  "work_item",
 ];
 
 export const AVAILABLE_EVENT_TYPES: GrcEventType[] = [

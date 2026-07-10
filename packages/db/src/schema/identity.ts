@@ -71,7 +71,13 @@ export const ssoConfig = pgTable(
     // OIDC fields
     oidcDiscoveryUrl: varchar("oidc_discovery_url", { length: 2000 }),
     oidcClientId: varchar("oidc_client_id", { length: 500 }),
-    oidcClientSecret: text("oidc_client_secret"), // encrypted at rest
+    // Encrypted at rest since 2026-07-10 (Wave-24 F#1 follow-up):
+    // sealSecret()/openSecret() envelope from @grc/shared, key =
+    // SECRET_ENCRYPTION_KEY. Writers: /api/v1/admin/sso (POST/PUT).
+    // Reader: /api/v1/auth/sso/oidc/callback. Legacy plaintext rows
+    // are tolerated on read and migrated on the next admin save
+    // (or via scripts/encrypt-connector-secrets.mjs).
+    oidcClientSecret: text("oidc_client_secret"),
     oidcScopes: text("oidc_scopes").default("openid profile email"),
     oidcClaimMapping: jsonb("oidc_claim_mapping").default(
       '{"email":"email","firstName":"given_name","lastName":"family_name","groups":"groups"}',

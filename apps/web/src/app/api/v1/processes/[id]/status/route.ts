@@ -14,6 +14,7 @@ import {
 import { requireModule } from "@grc/auth";
 import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth, withAuditContext, withReadContext } from "@/lib/api";
+import { emitEntityStatusChanged } from "@/lib/entity-events";
 import type { ProcessStatus } from "@grc/shared";
 import { evaluateTransitionGates } from "@/lib/process-gates";
 import { promoteWorkingVersion } from "@/lib/process-working-version";
@@ -336,6 +337,19 @@ export async function PUT(
 
     return row;
   });
+
+  // Webhook fan-out (best-effort, after commit — never fails the request)
+  if (updated) {
+    emitEntityStatusChanged({
+      orgId: ctx.orgId,
+      entityType: "process",
+      entityId: id,
+      userId: ctx.userId,
+      oldStatus: currentStatus,
+      newStatus: targetStatus,
+      data: { name: existing.name },
+    });
+  }
 
   return Response.json({ data: updated });
 }

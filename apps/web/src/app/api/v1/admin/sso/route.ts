@@ -1,7 +1,27 @@
 import { db, ssoConfig } from "@grc/db";
 import { eq, sql } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
-import { createSsoConfigSchema, updateSsoConfigSchema } from "@grc/shared";
+import {
+  createSsoConfigSchema,
+  updateSsoConfigSchema,
+  sealSecret,
+} from "@grc/shared";
+
+// oidc_client_secret is encrypted at rest (Wave-24 F#1 follow-up):
+// sealSecret() wraps the plaintext in the v1 AES-256-GCM envelope keyed
+// by SECRET_ENCRYPTION_KEY before any INSERT/UPDATE. sealSecret is
+// idempotent, so legacy plaintext rows migrate on the next save.
+// Responses never contain the secret (masked below).
+
+/** Mask the client secret in API responses — never return it, not even encrypted. */
+function maskSsoSecret<T extends { oidcClientSecret: string | null }>(
+  config: T,
+): T {
+  return {
+    ...config,
+    oidcClientSecret: config.oidcClientSecret ? "••••••••" : null,
+  };
+}
 
 // GET /api/v1/admin/sso — Get SSO configuration for current org
 export async function GET(req: Request) {
@@ -18,12 +38,7 @@ export async function GET(req: Request) {
   }
 
   // Never return the OIDC client secret in full
-  const sanitized = {
-    ...config,
-    oidcClientSecret: config.oidcClientSecret ? "••••••••" : null,
-  };
-
-  return Response.json({ data: sanitized });
+  return Response.json({ data: maskSsoSecret(config) });
 }
 
 // POST /api/v1/admin/sso — Create SSO configuration
@@ -67,7 +82,7 @@ export async function POST(req: Request) {
         samlAttributeMapping: parsed.data.samlAttributeMapping ?? undefined,
         oidcDiscoveryUrl: parsed.data.oidcDiscoveryUrl,
         oidcClientId: parsed.data.oidcClientId,
-        oidcClientSecret: parsed.data.oidcClientSecret,
+        oidcClientSecret: sealSecret(parsed.data.oidcClientSecret),
         oidcScopes: parsed.data.oidcScopes,
         oidcClaimMapping: parsed.data.oidcClaimMapping ?? undefined,
         isActive: parsed.data.isActive ?? false,
@@ -81,7 +96,7 @@ export async function POST(req: Request) {
     return created;
   });
 
-  return Response.json({ data: result }, { status: 201 });
+  return Response.json({ data: maskSsoSecret(result) }, { status: 201 });
 }
 
 // PUT /api/v1/admin/sso — Update SSO configuration
@@ -119,6 +134,10 @@ export async function PUT(req: Request) {
   for (const key of Object.keys(updateData)) {
     if (updateData[key] === undefined) delete updateData[key];
   }
+  // Encrypt-at-rest before UPDATE (idempotent for already-sealed values)
+  if (typeof updateData.oidcClientSecret === "string") {
+    updateData.oidcClientSecret = sealSecret(updateData.oidcClientSecret);
+  }
 
   const result = await withAuditContext(ctx, async (tx) => {
     const [updated] = await tx
@@ -129,7 +148,7 @@ export async function PUT(req: Request) {
     return updated;
   });
 
-  return Response.json({ data: result });
+  return Response.json({ data: maskSsoSecret(result) });
 }
 
 // DELETE /api/v1/admin/sso — Delete (soft) SSO configuration

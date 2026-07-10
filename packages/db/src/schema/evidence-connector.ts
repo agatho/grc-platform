@@ -77,17 +77,16 @@ export const connectorCredential = pgTable(
     authTag: varchar("auth_tag", { length: 64 }).notNull(), // GCM auth tag
     keyVersion: integer("key_version").notNull().default(1),
     expiresAt: timestamp("expires_at", { withTimezone: true }),
-    // #WAVE24-AUDIT: dormant column. The Sprint-62 evidence-connector
-    // OAuth2 flow never shipped (no route writes to refresh_token
-    // today; grep -r refreshToken in apps/ returns zero hits). The
-    // earlier comment claimed "encrypted" but the column is plain
-    // text and no encryption pipeline exists for it. Before the
-    // first OAuth2 refresh flow ships, mirror this column into the
-    // encrypted_payload / iv / auth_tag scheme used by the rest of
-    // this table (see /api/v1/connectors/[id]/credentials/route.ts
-    // for the pattern). Leaving the column nullable + plain so the
-    // pending refactor can introduce a typed `RefreshTokenEnvelope`
-    // without a schema migration today.
+    // #WAVE24-AUDIT F#1 — CLOSED 2026-07-10. Stores a versioned
+    // AES-256-GCM envelope ("v1:<iv>:<tag>:<ciphertext>", key =
+    // SECRET_ENCRYPTION_KEY), NEVER plaintext. Write via
+    // sealSecret(), read via openSecret() from @grc/shared
+    // (packages/shared/src/secret-crypto.ts). The only writer is
+    // /api/v1/connectors/[id]/credentials/route.ts, which seals
+    // before INSERT. Legacy plaintext rows (there were none on any
+    // known env as of 2026-07-10) are detected via
+    // isEncryptedSecret() and can be backfilled with
+    // scripts/encrypt-connector-secrets.mjs.
     refreshToken: text("refresh_token"),
     scopes: jsonb("scopes").default("[]"), // granted OAuth2 scopes
     lastRotatedAt: timestamp("last_rotated_at", { withTimezone: true }),

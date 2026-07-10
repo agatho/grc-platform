@@ -4,7 +4,7 @@
 
 import { db, webhookRegistration, webhookDeliveryLog } from "@grc/db";
 import { formatWebhookPayload, signPayload } from "@grc/events";
-import { eq } from "drizzle-orm";
+import { asc, eq } from "drizzle-orm";
 import type { GrcEvent } from "@grc/events";
 import { checkWebhookUrl } from "@grc/shared";
 import { checkResolvedHostIsPublic } from "@grc/shared/lib/url-safety-server";
@@ -37,7 +37,21 @@ export async function processWebhookDelivery(
     .where(eq(webhookRegistration.id, webhookId));
 
   if (!webhook || !webhook.isActive) {
-    return; // Webhook deleted or deactivated, skip
+    // Webhook deleted or deactivated. If this delivery came from the
+    // outbox (fan-out enqueue / retry), close the row so the dispatch
+    // cron does not re-scan it forever.
+    if (job.deliveryLogId) {
+      await db
+        .update(webhookDeliveryLog)
+        .set({
+          status: "failed",
+          errorMessage: "Webhook deleted or deactivated",
+          deliveredAt: new Date(),
+          nextRetryAt: null,
+        })
+        .where(eq(webhookDeliveryLog.id, job.deliveryLogId));
+    }
+    return;
   }
 
   // Format payload based on template type
@@ -199,6 +213,56 @@ async function handleDeliveryFailure(
       })
       .where(eq(webhookDeliveryLog.id, deliveryLogId));
   }
+}
+
+/**
+ * Process queued (pending) outbox deliveries — called by cron job.
+ *
+ * Fan-out wiring (2026-07-10): API routes emit entity events via the
+ * @grc/events bus, whose enqueue handler inserts matching webhook
+ * deliveries as 'pending' rows into webhook_delivery_log. This function
+ * drains that outbox through the hardened delivery path (SSRF guards,
+ * HMAC signature, timeout, retry scheduling).
+ *
+ * Rows are reconstructed the same way processWebhookRetries does: the
+ * stored payload is the generic envelope { event, entityType, entityId,
+ * orgId, userId, payload, timestamp }. At-least-once semantics: a crash
+ * mid-delivery leaves the row 'pending' and it is retried on the next
+ * run — consumers must deduplicate on their side (standard webhook
+ * contract).
+ */
+export async function processWebhookDispatch(): Promise<{
+  dispatched: number;
+}> {
+  const pending = await db
+    .select()
+    .from(webhookDeliveryLog)
+    .where(eq(webhookDeliveryLog.status, "pending"))
+    .orderBy(asc(webhookDeliveryLog.createdAt))
+    .limit(50);
+
+  let dispatched = 0;
+
+  for (const delivery of pending) {
+    const payload = delivery.payload as Record<string, unknown>;
+    await processWebhookDelivery({
+      webhookId: delivery.webhookId,
+      event: {
+        orgId: (payload.orgId as string) ?? "",
+        eventType: delivery.eventType as GrcEvent["eventType"],
+        entityType: delivery.entityType,
+        entityId: delivery.entityId,
+        userId: (payload.userId as string | undefined) ?? undefined,
+        payload: (payload.payload as GrcEvent["payload"]) ?? {},
+        emittedAt: new Date(delivery.createdAt),
+      },
+      deliveryLogId: delivery.id,
+      retryCount: delivery.retryCount,
+    });
+    dispatched++;
+  }
+
+  return { dispatched };
 }
 
 /**
