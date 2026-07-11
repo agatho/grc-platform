@@ -1,0 +1,83 @@
+{
+  "tabTitle": "Signaturen",
+  "signedBadge": "Signiert",
+  "sequentialBadge": "Sequenziell",
+  "description": "Elektronische Signaturen für dieses Dokument anfordern und nachverfolgen.",
+  "empty": "Noch keine Signaturanforderungen für dieses Dokument.",
+  "requestedAt": "Angefordert",
+  "dueDate": "Frist",
+  "you": "Sie",
+  "requestStatus": {
+    "pending": "Ausstehend",
+    "completed": "Abgeschlossen",
+    "declined": "Abgelehnt",
+    "cancelled": "Storniert"
+  },
+  "requestDialog": {
+    "trigger": "Signatur anfordern",
+    "title": "Signaturen anfordern",
+    "signers": "Signer (in Reihenfolge)",
+    "addSigner": "Signer hinzufügen …",
+    "noSigners": "Noch keine Signer ausgewählt.",
+    "moveUp": "Nach oben",
+    "moveDown": "Nach unten",
+    "remove": "Entfernen",
+    "sequential": "Reihenfolge erzwingen",
+    "sequentialHint": "Signer müssen nacheinander in der festgelegten Reihenfolge signieren.",
+    "message": "Nachricht an die Signer",
+    "messagePlaceholder": "Optionale Nachricht, z. B. Kontext oder Hinweise …",
+    "dueDate": "Frist (optional)",
+    "cancel": "Abbrechen",
+    "submit": "Anforderung senden"
+  },
+  "signerStatus": {
+    "signedAt": "Signiert am {date}",
+    "declineReason": "Ablehnungsgrund",
+    "upNext": "Signatur ausstehend — jetzt an der Reihe"
+  },
+  "signArea": {
+    "title": "Ihre Signatur wird angefordert",
+    "legalNotice": "Mit dem Klick auf „Signieren“ geben Sie eine elektronische Signatur i.S.d. Art. 25 eIDAS (einfache elektronische Signatur) ab. Zeitpunkt, IP-Adresse und ein kryptografischer Hash des Dokuments werden revisionssicher protokolliert."
+  },
+  "signConfirm": {
+    "title": "Dokument elektronisch signieren?",
+    "body": "Sie signieren die Signaturanforderung „{title}“. Diese Aktion kann nicht rückgängig gemacht werden.",
+    "cancel": "Abbrechen",
+    "confirm": "Jetzt signieren"
+  },
+  "declineDialog": {
+    "title": "Signatur ablehnen",
+    "reason": "Begründung",
+    "reasonPlaceholder": "Warum lehnen Sie die Signatur ab? (Pflichtfeld)",
+    "cancel": "Abbrechen",
+    "confirm": "Ablehnen"
+  },
+  "actions": {
+    "sign": "Signieren",
+    "decline": "Ablehnen",
+    "cancel": "Anforderung stornieren",
+    "verify": "Verifizieren",
+    "certificate": "Zertifikat (PDF)"
+  },
+  "verify": {
+    "valid": "Signatur gültig — Hash-Kette und Datei-Integrität verifiziert",
+    "invalid": "Verifikation fehlgeschlagen",
+    "chainValid": "Hash-Kette intakt",
+    "chainBroken": "Hash-Kette gebrochen ab Glied {index}",
+    "fileUnchanged": "Datei unverändert",
+    "fileChanged": "Datei wurde nach der Anforderung verändert"
+  },
+  "toasts": {
+    "requestCreated": "Signaturanforderung erstellt",
+    "signed": "Dokument signiert",
+    "declined": "Signatur abgelehnt",
+    "cancelled": "Signaturanforderung storniert",
+    "verifyError": "Verifikation fehlgeschlagen",
+    "error": "Aktion fehlgeschlagen"
+  },
+  "myPending": {
+    "title": "Meine ausstehenden Signaturen",
+    "empty": "Keine ausstehenden Signaturen",
+    "waitingForTurn": "Wartet auf vorherige Signer"
+  }
+}

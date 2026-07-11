@@ -76,9 +76,28 @@ so deployers don't expect built-in signing on day one.
 
 ## Acceptance criteria for the follow-up PR
 
-- [ ] `POST /api/v1/documents/[id]/sign-requests` creates signature requests
-- [ ] `POST /api/v1/sign-requests/[id]/sign` records a signature
-- [ ] State-machine: `pending → signed | declined | expired`
-- [ ] Notification + email trigger on each transition
-- [ ] Audit-log entry per signature with SHA-256 of the signed version
-- [ ] vitest suite covering the state-machine + notification fan-out
+- [x] `POST /api/v1/documents/[id]/sign-requests` creates signature requests
+      _(shipped as `POST /api/v1/documents/[id]/signature-requests` — kebab-case-plural convention)_
+- [x] `POST /api/v1/sign-requests/[id]/sign` records a signature
+      _(shipped as `POST /api/v1/signature-requests/[requestId]/sign`)_
+- [x] State-machine: `pending → signed | declined | expired`
+      _(shipped as request-level `pending → completed | declined | cancelled` + per-signer `pending → signed | declined`; due-date/`expired` escalation deferred, see STATUS.md)_
+- [x] Notification + email trigger on each transition (in-app + email via the notification `channel: both` path)
+- [x] Audit-log entry per signature with SHA-256 of the signed version (DB audit trigger + SHA-256 **hash chain** per signature, migration 0375)
+- [x] vitest suite covering the state-machine + notification fan-out (26 tests: chain unit tests + API tests incl. 403/409/422 guards, completion, certificate `%PDF`)
+
+## Nachtrag 2026-07-11 — W21-DMS-MULTISIGN-01 umgesetzt (Option A, in-house)
+
+The tracker item was resolved with **Option A (build in-house)** on top of the
+proven `process_sign_off` hash-chain pattern, extended with a
+**provider interface** (`apps/web/src/lib/documents/signature-provider.ts`,
+env `SIGNATURE_PROVIDER`, default `inhouse`) so Option B (sproof / DocuSign,
+eIDAS QES via vendor CA) can be added later without touching routes or UI.
+Scope beyond the original acceptance criteria: frozen version + file-hash at
+request time (sign refuses with 422 if the document bytes changed),
+sequential-order enforcement (409), cancel flow, per-link verification
+endpoint, PDF signature certificate, "my pending signatures" endpoint, and a
+"Signaturen" tab + signed badge on the document detail page.
+Details: `docs/STATUS.md` section "W21-DMS-MULTISIGN-01 umgesetzt 2026-07-11".
+What it is **not**: a qualified electronic signature (no HSM/CA) — the
+in-house signature is a simple electronic signature per Art. 25 eIDAS.

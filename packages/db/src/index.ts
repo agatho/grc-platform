@@ -9,6 +9,7 @@ import * as assetSchema from "./schema/asset";
 import * as workItemSchema from "./schema/work-item";
 import * as controlSchema from "./schema/control";
 import * as documentSchema from "./schema/document";
+import * as documentSignatureSchema from "./schema/document-signature";
 import * as catalogSchema from "./schema/catalog";
 import * as ismsSchema from "./schema/isms";
 import * as bcmsSchema from "./schema/bcms";
@@ -163,6 +164,7 @@ export const db = drizzle(client, {
     ...workItemSchema,
     ...controlSchema,
     ...documentSchema,
+    ...documentSignatureSchema,
     ...catalogSchema,
     ...ismsSchema,
     ...bcmsSchema,
@@ -276,6 +278,7 @@ export * from "./schema/asset";
 export * from "./schema/work-item";
 export * from "./schema/control";
 export * from "./schema/document";
+export * from "./schema/document-signature";
 export * from "./schema/catalog";
 export * from "./schema/isms";
 export * from "./schema/bcms";

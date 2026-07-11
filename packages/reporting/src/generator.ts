@@ -16,11 +16,12 @@ import {
   fetchKPIValue,
   type FetchContext,
 } from "./section-data-fetcher";
+import { buildReportHTML } from "./renderers/pdf-renderer";
 import {
-  renderPDF,
-  buildReportHTML,
+  buildReportDocument,
   type ResolvedSection,
-} from "./renderers/pdf-renderer";
+} from "./report-document";
+import { renderReportDocumentPdf } from "./renderers/pdfkit-renderer";
 import { renderExcel } from "./renderers/excel-renderer";
 import * as fs from "fs/promises";
 import * as path from "path";
@@ -148,15 +149,17 @@ export class ReportGenerator {
         }),
       );
 
-      // 5. Render to format
+      // 5. Render to format. PDF goes template → neutral ReportDocument
+      //    model → pdfkit (Puppeteer path removed 2026-07-11).
       let buffer: Buffer;
       if (format === "xlsx") {
         buffer = await renderExcel(resolvedSections);
       } else {
-        buffer = await renderPDF(
+        const reportDocument = buildReportDocument(
           resolvedSections,
           template.brandingJson as ReportBrandingConfig | null,
         );
+        buffer = await renderReportDocumentPdf(reportDocument);
       }
 
       // 6. Write to disk

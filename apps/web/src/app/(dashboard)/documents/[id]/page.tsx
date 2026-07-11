@@ -22,6 +22,7 @@ import {
   Trash2,
   Search,
   Fingerprint,
+  BadgeCheck,
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -30,6 +31,10 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import {
+  DocumentSignaturesTab,
+  type SignatureRequestEntry,
+} from "@/components/documents/document-signatures-tab";
 import { useDateFormat } from "@/lib/format-date";
 import type {
   Document,
@@ -93,6 +98,7 @@ export default function DocumentDetailPage() {
 function DocumentDetailInner() {
   const { formatDate } = useDateFormat();
   const t = useTranslations("documents");
+  const tSig = useTranslations("documentSignature");
   const params = useParams();
   const router = useRouter();
   const docId = params.id as string;
@@ -102,6 +108,9 @@ function DocumentDetailInner() {
   const [files, setFiles] = useState<DocumentFile[]>([]);
   const [entityLinks, setEntityLinks] = useState<DocumentEntityLink[]>([]);
   const [acknowledgments, setAcknowledgments] = useState<AckUser[]>([]);
+  const [signatureRequests, setSignatureRequests] = useState<
+    SignatureRequestEntry[]
+  >([]);
   const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
   const [loading, setLoading] = useState(true);
   // D1: point-in-time lookup ("Which version was effective on …?")
@@ -112,17 +121,25 @@ function DocumentDetailInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [docRes, versionsRes, filesRes, linksRes, acksRes, logRes] =
-        await Promise.all([
-          fetch(`/api/v1/documents/${docId}`),
-          fetch(`/api/v1/documents/${docId}/versions`),
-          fetch(`/api/v1/documents/${docId}/files`),
-          fetch(`/api/v1/documents/${docId}/entity-links`),
-          fetch(`/api/v1/documents/${docId}/acknowledgments`),
-          fetch(
-            `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
-          ),
-        ]);
+      const [
+        docRes,
+        versionsRes,
+        filesRes,
+        linksRes,
+        acksRes,
+        sigRes,
+        logRes,
+      ] = await Promise.all([
+        fetch(`/api/v1/documents/${docId}`),
+        fetch(`/api/v1/documents/${docId}/versions`),
+        fetch(`/api/v1/documents/${docId}/files`),
+        fetch(`/api/v1/documents/${docId}/entity-links`),
+        fetch(`/api/v1/documents/${docId}/acknowledgments`),
+        fetch(`/api/v1/documents/${docId}/signature-requests`),
+        fetch(
+          `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
+        ),
+      ]);
       if (docRes.ok) {
         const json = await docRes.json();
         setDoc(json.data ?? null);
@@ -142,6 +159,10 @@ function DocumentDetailInner() {
       if (acksRes.ok) {
         const json = await acksRes.json();
         setAcknowledgments(json.data ?? []);
+      }
+      if (sigRes.ok) {
+        const json = await sigRes.json();
+        setSignatureRequests(json.data ?? []);
       }
       if (logRes.ok) {
         const json = await logRes.json();
@@ -247,6 +268,13 @@ function DocumentDetailInner() {
     );
   }
 
+  // W21-DMS-MULTISIGN-01: "Signed" header badge when a completed
+  // signature request exists for the current version.
+  const currentVersionRow = versions.find((v) => v.isCurrent);
+  const isSignedCurrentVersion = signatureRequests.some(
+    (r) => r.status === "completed" && r.versionId === currentVersionRow?.id,
+  );
+
   const ackPct =
     acknowledgments.length > 0
       ? Math.round(
@@ -278,6 +306,15 @@ function DocumentDetailInner() {
               {versions.find((v) => v.isCurrent)?.versionLabel ??
                 doc.currentVersion}
             </span>
+            {isSignedCurrentVersion && (
+              <Badge
+                variant="outline"
+                className="bg-emerald-100 text-emerald-800 border-emerald-200"
+              >
+                <BadgeCheck size={12} className="mr-1" />
+                {tSig("signedBadge")}
+              </Badge>
+            )}
             {doc.tags.length > 0 &&
               doc.tags.map((tag) => (
                 <Badge key={tag} variant="secondary" className="text-[10px]">
@@ -294,6 +331,14 @@ function DocumentDetailInner() {
           <TabsTrigger value="content">{t("tabs.content")}</TabsTrigger>
           <TabsTrigger value="versions">{t("tabs.versions")}</TabsTrigger>
           <TabsTrigger value="entityLinks">{t("tabs.entityLinks")}</TabsTrigger>
+          <TabsTrigger value="signatures">
+            {tSig("tabTitle")}
+            {signatureRequests.some((r) => r.status === "pending") && (
+              <span className="ml-1.5 rounded-full bg-blue-100 px-1.5 py-0.5 text-[10px] font-semibold text-blue-700">
+                {signatureRequests.filter((r) => r.status === "pending").length}
+              </span>
+            )}
+          </TabsTrigger>
           <TabsTrigger value="acknowledgments">
             {t("tabs.acknowledgments")}
             {doc.requiresAcknowledgment && (
@@ -608,6 +653,15 @@ function DocumentDetailInner() {
               ))}
             </div>
           )}
+        </TabsContent>
+
+        {/* Signatures (W21-DMS-MULTISIGN-01) */}
+        <TabsContent value="signatures" className="mt-4">
+          <DocumentSignaturesTab
+            docId={docId}
+            requests={signatureRequests}
+            onChanged={() => void fetchData()}
+          />
         </TabsContent>
 
         {/* Acknowledgments */}

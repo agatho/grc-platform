@@ -7,7 +7,11 @@ import { db, organization, orgBranding } from "@grc/db";
 import { eq } from "drizzle-orm";
 import { existsSync } from "fs";
 import { join } from "path";
-import { DEFAULT_PRIMARY_COLOR, type ReportBranding } from "./core";
+import {
+  DEFAULT_PRIMARY_COLOR,
+  resolveReportStyle,
+  type ReportBranding,
+} from "./core";
 
 const UPLOAD_ROOT = join(process.cwd(), "public", "uploads");
 
@@ -20,6 +24,7 @@ export async function loadReportBranding(
       primaryColor: orgBranding.primaryColor,
       confidentialityNotice: orgBranding.confidentialityNotice,
       logoPath: orgBranding.logoPath,
+      reportTemplate: orgBranding.reportTemplate,
     })
     .from(organization)
     .leftJoin(orgBranding, eq(orgBranding.orgId, organization.id))
@@ -40,5 +45,8 @@ export async function loadReportBranding(
     primaryColor: row?.primaryColor ?? DEFAULT_PRIMARY_COLOR,
     confidentialityNotice: row?.confidentialityNotice ?? null,
     logoFilePath,
+    // Left join yields null when no org_branding row exists; the mock DB
+    // in tests yields undefined — both degrade to "standard".
+    reportTemplate: resolveReportStyle(row?.reportTemplate),
   };
 }

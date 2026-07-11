@@ -1,16 +1,21 @@
-// Sprint 30: PDF Renderer — Puppeteer HTML-to-PDF
-// Renders resolved sections + branding into A4 PDF
+// Sprint 30 HTML builder — today only the browser preview
+// (POST /api/v1/reports/preview → text/html).
+//
+// The Puppeteer HTML→PDF path (`renderPDF`) that used to live here was
+// removed 2026-07-11: PDF generation now goes through the neutral
+// ReportDocument model + pdfkit (see ../report-document.ts and
+// ./pdfkit-renderer.ts). Nothing in the repo imports puppeteer anymore;
+// the puppeteer entries in package.json (root, apps/web,
+// packages/reporting) and the PUPPETEER_* setup in the Dockerfile can be
+// dropped at the next dependency maintenance window.
 
 import type { ReportBrandingConfig, ReportSectionConfig } from "@grc/shared";
 import type { TableData, ChartData, KPIData } from "../section-data-fetcher";
+import type { ResolvedSection } from "../report-document";
 
-export interface ResolvedSection {
-  type: ReportSectionConfig["type"];
-  config: ReportSectionConfig["config"];
-  content?: string;
-  data?: TableData | ChartData;
-  value?: KPIData;
-}
+// Re-export for back-compat: excel-renderer and external callers import
+// the type from this module.
+export type { ResolvedSection } from "../report-document";
 
 /**
  * Build complete HTML document for PDF rendering.
@@ -272,39 +277,4 @@ function escapeHtml(text: string): string {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
-}
-
-/**
- * Generate PDF buffer using Puppeteer.
- * Puppeteer is lazy-loaded to avoid import errors in environments without it.
- */
-export async function renderPDF(
-  sections: ResolvedSection[],
-  branding?: ReportBrandingConfig | null,
-): Promise<Buffer> {
-  const html = buildReportHTML(sections, branding);
-
-  // Dynamic import — puppeteer may not be available in all environments
-  const puppeteer = await import("puppeteer");
-  const browser = await puppeteer.launch({
-    headless: true,
-    args: [
-      "--no-sandbox",
-      "--disable-setuid-sandbox",
-      "--disable-dev-shm-usage",
-    ],
-  });
-
-  try {
-    const page = await browser.newPage();
-    await page.setContent(html, { waitUntil: "load" });
-    const pdf = await page.pdf({
-      format: "A4",
-      printBackground: true,
-      margin: { top: "2cm", bottom: "2cm", left: "2cm", right: "2cm" },
-    });
-    return Buffer.from(pdf);
-  } finally {
-    await browser.close();
-  }
 }

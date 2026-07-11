@@ -1,0 +1,83 @@
+{
+  "tabTitle": "Signatures",
+  "signedBadge": "Signed",
+  "sequentialBadge": "Sequential",
+  "description": "Request and track electronic signatures for this document.",
+  "empty": "No signature requests for this document yet.",
+  "requestedAt": "Requested",
+  "dueDate": "Due date",
+  "you": "you",
+  "requestStatus": {
+    "pending": "Pending",
+    "completed": "Completed",
+    "declined": "Declined",
+    "cancelled": "Cancelled"
+  },
+  "requestDialog": {
+    "trigger": "Request signature",
+    "title": "Request signatures",
+    "signers": "Signers (in order)",
+    "addSigner": "Add signer …",
+    "noSigners": "No signers selected yet.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "remove": "Remove",
+    "sequential": "Enforce order",
+    "sequentialHint": "Signers must sign one after another in the defined order.",
+    "message": "Message to signers",
+    "messagePlaceholder": "Optional message, e.g. context or instructions …",
+    "dueDate": "Due date (optional)",
+    "cancel": "Cancel",
+    "submit": "Send request"
+  },
+  "signerStatus": {
+    "signedAt": "Signed on {date}",
+    "declineReason": "Decline reason",
+    "upNext": "Signature pending — up next"
+  },
+  "signArea": {
+    "title": "Your signature is requested",
+    "legalNotice": "By clicking \"Sign\" you provide an electronic signature within the meaning of Art. 25 eIDAS (simple electronic signature). Timestamp, IP address and a cryptographic hash of the document are recorded in a tamper-evident log."
+  },
+  "signConfirm": {
+    "title": "Sign document electronically?",
+    "body": "You are signing the signature request \"{title}\". This action cannot be undone.",
+    "cancel": "Cancel",
+    "confirm": "Sign now"
+  },
+  "declineDialog": {
+    "title": "Decline signature",
+    "reason": "Reason",
+    "reasonPlaceholder": "Why are you declining the signature? (required)",
+    "cancel": "Cancel",
+    "confirm": "Decline"
+  },
+  "actions": {
+    "sign": "Sign",
+    "decline": "Decline",
+    "cancel": "Cancel request",
+    "verify": "Verify",
+    "certificate": "Certificate (PDF)"
+  },
+  "verify": {
+    "valid": "Signature valid — hash chain and file integrity verified",
+    "invalid": "Verification failed",
+    "chainValid": "Hash chain intact",
+    "chainBroken": "Hash chain broken at link {index}",
+    "fileUnchanged": "File unchanged",
+    "fileChanged": "File was modified after the request"
+  },
+  "toasts": {
+    "requestCreated": "Signature request created",
+    "signed": "Document signed",
+    "declined": "Signature declined",
+    "cancelled": "Signature request cancelled",
+    "verifyError": "Verification failed",
+    "error": "Action failed"
+  },
+  "myPending": {
+    "title": "My pending signatures",
+    "empty": "No pending signatures",
+    "waitingForTurn": "Waiting for earlier signers"
+  }
+}

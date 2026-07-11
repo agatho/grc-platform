@@ -17,11 +17,19 @@ export {
   type ChartData,
   type KPIData,
 } from "./section-data-fetcher";
+export { buildReportHTML } from "./renderers/pdf-renderer";
 export {
-  buildReportHTML,
-  renderPDF,
+  buildReportDocument,
   type ResolvedSection,
-} from "./renderers/pdf-renderer";
+  type ReportDocument,
+  type ReportDocumentSection,
+  type ReportDocumentBranding,
+  type ReportDocumentCell,
+} from "./report-document";
+export {
+  renderReportDocumentPdf,
+  type RenderReportDocumentPdfOptions,
+} from "./renderers/pdfkit-renderer";
 export { renderExcel } from "./renderers/excel-renderer";
 export { DEFAULT_REPORT_TEMPLATES } from "./default-templates";
 export { seedDefaultTemplates, seedDefaultThreatFeeds } from "./seed";

@@ -21,6 +21,7 @@ import {
   reportFileResponse,
   reportLabel,
   soaImplementationLabel,
+  REPORT_STYLES,
   type ReportBar,
   type ReportCell,
   type ReportDefinition,
@@ -31,6 +32,8 @@ const querySchema = z.object({
   frameworkId: z.string().uuid(),
   format: z.enum(["pdf", "xlsx"]).default("pdf"),
   lang: z.enum(["de", "en"]).default("de"),
+  // Optional override of org_branding.report_template (standard|formal|minimal)
+  style: z.enum(REPORT_STYLES).optional(),
 });
 
 interface ChapterStats {
@@ -277,6 +280,8 @@ export const GET = withErrorHandler(async function GET(req: Request) {
     branding,
     generatedAt: new Date(),
     sections,
+    // Query override wins; otherwise branding.reportTemplate applies.
+    style: query.style,
   };
 
   const buffer =

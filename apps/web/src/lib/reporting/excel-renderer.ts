@@ -10,6 +10,8 @@ import ExcelJS from "exceljs";
 import {
   chrome,
   confidentialityText,
+  defaultDocumentId,
+  effectiveStyle,
   formatCell,
   DEFAULT_PRIMARY_COLOR,
   type ReportCell,
@@ -45,6 +47,14 @@ export async function renderReportXlsx(def: ReportDefinition): Promise<Buffer> {
   summary.addRow([
     `${chrome(def.locale, "generatedAt")}: ${formatCell(def.generatedAt, "text", def.locale)}`,
   ]);
+  // Style variants are primarily a PDF concern (cover page, chrome,
+  // row heights). In the workbook the formal style adds the document
+  // number to the summary metadata; standard/minimal are identical.
+  if (effectiveStyle(def) === "formal") {
+    summary.addRow([
+      `${chrome(def.locale, "documentNo")}: ${def.documentId ?? defaultDocumentId(def.generatedAt)}`,
+    ]).font = { size: 9, color: { argb: "FF9CA3AF" } };
+  }
   const confRow = summary.addRow([confidentialityText(def)]);
   confRow.font = { bold: true, size: 9, color: { argb: "FF991B1B" } };
   summary.addRow([]);
@@ -53,6 +63,13 @@ export async function renderReportXlsx(def: ReportDefinition): Promise<Buffer> {
     if (section.kind === "paragraph") {
       const r = summary.addRow([section.text]);
       r.alignment = { wrapText: true, vertical: "top" };
+      summary.addRow([]);
+    } else if (section.kind === "heading") {
+      summary.addRow([section.text]).font = {
+        bold: true,
+        size: 12,
+        color: { argb: primaryArgb },
+      };
       summary.addRow([]);
     } else if (section.kind === "kpis") {
       for (const kpi of section.items) {

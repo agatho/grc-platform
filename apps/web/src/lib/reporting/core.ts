@@ -2,10 +2,12 @@
 // for the standard report suite (risk register, SoA, compliance status).
 //
 // Design notes (Bestandsaufnahme 2026-07-11):
-//   - packages/reporting is the Sprint-30 *template* engine. Its PDF path
-//     is Puppeteer-based, which #WAVE11-P1-EXPORT explicitly retired in
-//     favour of pdfkit (see apps/web/src/lib/pdf.ts). We therefore do NOT
-//     build on renderPDF() from @grc/reporting.
+//   - packages/reporting is the Sprint-30 *template* engine. Its former
+//     Puppeteer PDF path (renderPDF) was removed 2026-07-11; the engine
+//     now emits a neutral ReportDocument model rendered with pdfkit
+//     (packages/reporting/src/renderers/pdfkit-renderer.ts for the
+//     generator/worker, ./report-document-renderer.ts for branded
+//     web-side rendering on this core).
 //   - lib/pdf.ts (renderStructuredPdfBuffer) is the proven pdfkit pipeline
 //     but has fixed equal column widths, no per-page org header, no
 //     repeated table header after page breaks and German-only formatting.
@@ -21,6 +23,18 @@ import { formatDate, formatDateTime, formatNumber, formatPercent } from "@/lib/f
 
 export type ReportLocale = "de" | "en";
 export type ReportFormat = "pdf" | "xlsx";
+
+/**
+ * Report style variants, driven by `org_branding.report_template`
+ * (enum `branding_template_style`, migration 0329):
+ *   - standard: default chrome (org header + logo, KPI cards, zebra tables)
+ *   - formal:   cover page + table of contents, wider spacing, thin rules,
+ *               document number in the footer — for board/auditor handouts
+ *   - minimal:  no logo, single-line header, tight rows, frameless KPIs —
+ *               for quick working printouts
+ */
+export const REPORT_STYLES = ["standard", "formal", "minimal"] as const;
+export type ReportStyle = (typeof REPORT_STYLES)[number];
 
 export type ReportCellFormat = "text" | "int" | "decimal" | "percent" | "date";
 
@@ -57,9 +71,11 @@ export interface ReportBar {
 
 export type ReportSection =
   | { kind: "paragraph"; text: string }
+  | { kind: "heading"; text: string }
   | { kind: "kpis"; items: ReportKpi[] }
   | { kind: "table"; title?: string; table: ReportTable }
-  | { kind: "bars"; title?: string; items: ReportBar[] };
+  | { kind: "bars"; title?: string; items: ReportBar[] }
+  | { kind: "pageBreak" };
 
 export interface ReportBranding {
   orgName: string;
@@ -69,6 +85,12 @@ export interface ReportBranding {
   confidentialityNotice: string | null;
   /** Absolute filesystem path of a PNG logo, or null when unavailable. */
   logoFilePath: string | null;
+  /**
+   * Org-level style preference (org_branding.report_template).
+   * Optional so hand-built branding objects (tests, callers without a
+   * branding row) keep working; renderers fall back to "standard".
+   */
+  reportTemplate?: ReportStyle;
 }
 
 export interface ReportDefinition {
@@ -78,6 +100,13 @@ export interface ReportDefinition {
   branding: ReportBranding;
   generatedAt: Date;
   sections: ReportSection[];
+  /** Style variant; falls back to branding.reportTemplate, then "standard". */
+  style?: ReportStyle;
+  /**
+   * Document number shown in the formal footer. When absent, a
+   * deterministic id is derived from generatedAt (see defaultDocumentId).
+   */
+  documentId?: string;
 }
 
 export const DEFAULT_PRIMARY_COLOR = "#1e3a5f";
@@ -92,6 +121,8 @@ const CHROME: Record<ReportLocale, Record<string, string>> = {
     of: "von",
     noData: "Keine Daten vorhanden.",
     confidentialFallback: "Vertraulich — nur für den internen Gebrauch",
+    contents: "Inhaltsübersicht",
+    documentNo: "Dokument-Nr.",
   },
   en: {
     generatedAt: "Generated",
@@ -99,6 +130,8 @@ const CHROME: Record<ReportLocale, Record<string, string>> = {
     of: "of",
     noData: "No data available.",
     confidentialFallback: "Confidential — for internal use only",
+    contents: "Table of contents",
+    documentNo: "Document no.",
   },
 };
 
@@ -110,6 +143,48 @@ export function confidentialityText(def: ReportDefinition): string {
   return (
     def.branding.confidentialityNotice?.trim() ||
     chrome(def.locale, "confidentialFallback")
+  );
+}
+
+// ─── Style resolution (pure, unit-tested) ────────────────────────
+
+function isReportStyle(value: unknown): value is ReportStyle {
+  return (
+    typeof value === "string" &&
+    (REPORT_STYLES as readonly string[]).includes(value)
+  );
+}
+
+/**
+ * Resolve the effective report style: an explicit (query) override wins,
+ * then the org branding preference, then "standard". Invalid values
+ * degrade instead of throwing — a tampered org_branding row must never
+ * break report generation.
+ */
+export function resolveReportStyle(
+  brandingStyle: string | null | undefined,
+  override?: string | null,
+): ReportStyle {
+  if (isReportStyle(override)) return override;
+  if (isReportStyle(brandingStyle)) return brandingStyle;
+  return "standard";
+}
+
+/** Effective style of a report definition (style → branding → standard). */
+export function effectiveStyle(def: ReportDefinition): ReportStyle {
+  return resolveReportStyle(def.branding.reportTemplate, def.style);
+}
+
+/**
+ * Deterministic document number for the formal footer when the caller
+ * does not provide one: RPT-YYYYMMDD-HHMMSS (UTC).
+ */
+export function defaultDocumentId(generatedAt: Date): string {
+  const p = (n: number, len = 2): string => String(n).padStart(len, "0");
+  return (
+    `RPT-${generatedAt.getUTCFullYear()}${p(generatedAt.getUTCMonth() + 1)}` +
+    `${p(generatedAt.getUTCDate())}-${p(generatedAt.getUTCHours())}` +
+    `${p(generatedAt.getUTCMinutes())}${p(generatedAt.getUTCSeconds())}`
   );
 }
 

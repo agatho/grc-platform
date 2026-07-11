@@ -6,4 +6,9 @@ export * from "./core";
 export { renderReportPdf } from "./pdf-renderer";
 export { renderReportXlsx } from "./excel-renderer";
 export { loadReportBranding } from "./branding";
+export {
+  renderReportDocument,
+  reportDocumentToDefinition,
+  type RenderReportDocumentOptions,
+} from "./report-document-renderer";
 export * from "./labels";
