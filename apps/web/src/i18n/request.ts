@@ -86,6 +86,7 @@ async function loadIndividualFiles(locale: string) {
     ["cci", "cci"],
     ["management-review", "managementReview"],
     ["document-signature", "documentSignature"],
+    ["ai-assist", "aiAssist"],
   ];
 
   const modules = await Promise.all(

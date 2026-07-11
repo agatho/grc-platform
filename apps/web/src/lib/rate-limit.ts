@@ -114,6 +114,9 @@ export const LIMITS = {
   DEFAULT: { capacity: 300, windowSeconds: 60 },
   AUTH: { capacity: 10, windowSeconds: 60 },
   COPILOT: { capacity: 30, windowSeconds: 60 },
+  // AI-Assist endpoints (draft-policy, suggest-controls, explain-gap):
+  // single-shot completion calls — tighter than the chat copilot.
+  AI_ASSIST: { capacity: 10, windowSeconds: 60 },
   IMPORT: { capacity: 5, windowSeconds: 3600 },
   AUDIT_INTEGRITY: { capacity: 1, windowSeconds: 60 },
 } as const;

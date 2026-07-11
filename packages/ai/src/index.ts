@@ -59,3 +59,17 @@ export {
   buildRopaFieldDraftPrompt,
   buildDpiaMeasureDraftPrompt,
 } from "./prompts/dpms";
+export {
+  buildPolicyDraftPrompt,
+  type PolicyDraftPromptArgs,
+  type PolicyDraftRequirement,
+} from "./prompts/dms";
+export {
+  buildControlAdvisorPrompt,
+  type ControlAdvisorPromptArgs,
+  type ControlAdvisorCandidate,
+} from "./prompts/erm";
+export {
+  buildGapExplanationPrompt,
+  type GapExplanationPromptArgs,
+} from "./prompts/compliance";

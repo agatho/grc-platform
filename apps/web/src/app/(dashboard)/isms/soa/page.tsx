@@ -12,6 +12,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { ModuleTabNav } from "@/components/layout/module-tab-nav";
+import { AiExplainGapDialog } from "@/components/isms/ai-explain-gap-dialog";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { SoaApplicability, SoaImplementation } from "@grc/shared";
@@ -310,6 +311,7 @@ function SoaInner() {
                 <th className="text-left px-4 py-3 font-medium text-gray-600">
                   {t("soa.linkedControl")}
                 </th>
+                <th className="px-4 py-3" aria-hidden="true"></th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
@@ -352,6 +354,12 @@ function SoaInner() {
                     ) : (
                       <span className="text-gray-400">—</span>
                     )}
+                  </td>
+                  <td className="px-4 py-3 text-right">
+                    {row.applicability === "applicable" &&
+                      row.implementation !== "implemented" && (
+                        <AiExplainGapDialog soaEntryId={row.id} />
+                      )}
                   </td>
                 </tr>
               ))}

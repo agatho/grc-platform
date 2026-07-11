@@ -1,0 +1,60 @@
+{
+  "common": {
+    "aiDisclaimer": "KI-generierter Vorschlag — bitte fachlich prüfen. Es wird nichts ohne Ihre ausdrückliche Bestätigung gespeichert.",
+    "unavailable": "Kein KI-Provider konfiguriert. Bitte einen API-Schlüssel oder Ollama in der Server-Umgebung hinterlegen.",
+    "retry": "Erneut versuchen",
+    "close": "Schließen"
+  },
+  "draftPolicy": {
+    "trigger": "Mit KI entwerfen",
+    "title": "Dokument mit KI entwerfen",
+    "framework": "Framework",
+    "frameworkPlaceholder": "Framework auswählen …",
+    "requirements": "Anforderungen",
+    "searchPlaceholder": "Anforderungen durchsuchen …",
+    "selectedCount": "{count} von {max} ausgewählt",
+    "maxSelected": "Maximal {max} Anforderungen auswählbar",
+    "noEntries": "Keine Anforderungen gefunden",
+    "category": "Dokumentkategorie",
+    "categories": {
+      "policy": "Richtlinie (Policy)",
+      "procedure": "Verfahrensanweisung (Procedure)",
+      "guideline": "Leitfaden (Guideline)"
+    },
+    "language": "Sprache",
+    "languageDe": "Deutsch",
+    "languageEn": "Englisch",
+    "context": "Organisationskontext (optional)",
+    "contextPlaceholder": "z. B. Branche, Größe, besondere Rahmenbedingungen …",
+    "generate": "Entwurf erzeugen",
+    "generating": "Entwurf wird erzeugt …",
+    "coveredRequirements": "Abgedeckte Anforderungen",
+    "back": "Zurück",
+    "apply": "Als Entwurf übernehmen",
+    "created": "Dokument als Entwurf angelegt",
+    "error": "Der Entwurf konnte nicht erzeugt werden. Bitte erneut versuchen."
+  },
+  "suggestControls": {
+    "trigger": "KI-Vorschläge",
+    "title": "Kontroll-Vorschläge",
+    "loading": "Vorschläge werden erzeugt …",
+    "existing": "Bestehende Kontrolle",
+    "newControl": "Neue Kontrolle",
+    "reason": "Begründung",
+    "linkExisting": "Verknüpfen",
+    "createAndLink": "Kontrolle anlegen",
+    "applied": "Vorschlag übernommen",
+    "appliedBadge": "Übernommen",
+    "empty": "Keine Vorschläge erhalten",
+    "error": "Vorschläge konnten nicht geladen bzw. übernommen werden."
+  },
+  "explainGap": {
+    "trigger": "Erklären",
+    "title": "Lücken-Erklärung",
+    "loading": "Erklärung wird erzeugt …",
+    "explanation": "Was verlangt die Anforderung?",
+    "steps": "Empfohlene Umsetzungsschritte",
+    "evidence": "Erwartete Nachweise (Audit)",
+    "error": "Die Erklärung konnte nicht erzeugt werden. Bitte erneut versuchen."
+  }
+}

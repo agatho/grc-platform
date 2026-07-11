@@ -1,0 +1,60 @@
+{
+  "common": {
+    "aiDisclaimer": "AI-generated proposal — please review before use. Nothing is saved without your explicit confirmation.",
+    "unavailable": "No AI provider configured. Please set an API key or enable Ollama in the server environment.",
+    "retry": "Retry",
+    "close": "Close"
+  },
+  "draftPolicy": {
+    "trigger": "Draft with AI",
+    "title": "Draft document with AI",
+    "framework": "Framework",
+    "frameworkPlaceholder": "Select framework …",
+    "requirements": "Requirements",
+    "searchPlaceholder": "Search requirements …",
+    "selectedCount": "{count} of {max} selected",
+    "maxSelected": "You can select at most {max} requirements",
+    "noEntries": "No requirements found",
+    "category": "Document category",
+    "categories": {
+      "policy": "Policy",
+      "procedure": "Procedure",
+      "guideline": "Guideline"
+    },
+    "language": "Language",
+    "languageDe": "German",
+    "languageEn": "English",
+    "context": "Organization context (optional)",
+    "contextPlaceholder": "e.g. industry, size, special constraints …",
+    "generate": "Generate draft",
+    "generating": "Generating draft …",
+    "coveredRequirements": "Covered requirements",
+    "back": "Back",
+    "apply": "Adopt as draft",
+    "created": "Document created as draft",
+    "error": "The draft could not be generated. Please try again."
+  },
+  "suggestControls": {
+    "trigger": "AI suggestions",
+    "title": "Control suggestions",
+    "loading": "Generating suggestions …",
+    "existing": "Existing control",
+    "newControl": "New control",
+    "reason": "Reason",
+    "linkExisting": "Link",
+    "createAndLink": "Create control",
+    "applied": "Suggestion applied",
+    "appliedBadge": "Applied",
+    "empty": "No suggestions received",
+    "error": "Suggestions could not be loaded or applied."
+  },
+  "explainGap": {
+    "trigger": "Explain",
+    "title": "Gap explanation",
+    "loading": "Generating explanation …",
+    "explanation": "What does the requirement demand?",
+    "steps": "Recommended implementation steps",
+    "evidence": "Expected audit evidence",
+    "error": "The explanation could not be generated. Please try again."
+  }
+}

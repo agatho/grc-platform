@@ -37,6 +37,7 @@ import {
 
 import { ModuleGate } from "@/components/module/module-gate";
 import { EntityDocumentsPanel } from "@/components/documents/entity-documents-panel";
+import { AiControlSuggestionsDialog } from "@/components/risk/ai-control-suggestions-dialog";
 import { RiskAcceptancePanel } from "@/components/risk/risk-acceptance-panel";
 import { useDateFormat } from "@/lib/format-date";
 import { Badge } from "@/components/ui/badge";
@@ -1561,12 +1562,18 @@ function RiskDetailContent() {
                     <CardTitle className="text-sm">
                       Verknüpfte Kontrollen
                     </CardTitle>
-                    <Link href={`/controls/new?riskId=${riskId}`}>
-                      <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
-                        <Plus size={12} />
-                        Kontrolle zuweisen
-                      </button>
-                    </Link>
+                    <div className="flex items-center gap-3">
+                      <AiControlSuggestionsDialog
+                        riskId={riskId}
+                        onApplied={() => void fetchLinkages()}
+                      />
+                      <Link href={`/controls/new?riskId=${riskId}`}>
+                        <button className="inline-flex items-center gap-1 text-xs text-blue-600 hover:text-blue-800">
+                          <Plus size={12} />
+                          Kontrolle zuweisen
+                        </button>
+                      </Link>
+                    </div>
                   </div>
                 </CardHeader>
                 <CardContent>

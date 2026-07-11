@@ -8,6 +8,7 @@ import { Plus, Loader2, Search, RefreshCcw, FileText } from "lucide-react";
 import Link from "next/link";
 
 import { ModuleGate } from "@/components/module/module-gate";
+import { AiDraftPolicyDialog } from "@/components/documents/ai-draft-policy-dialog";
 import { DataTable, SortableHeader } from "@/components/ui/data-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -298,6 +299,7 @@ function DocumentsPageInner() {
           >
             <RefreshCcw size={14} className={loading ? "animate-spin" : ""} />
           </Button>
+          <AiDraftPolicyDialog />
           <Button size="sm" onClick={() => router.push("/documents/new")}>
             <Plus size={16} />
             {t("create")}
