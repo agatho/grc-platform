@@ -89,6 +89,7 @@ vi.mock("@grc/events", () => ({
 
 vi.mock("@grc/ai", () => ({
   generateEmbedding: vi.fn().mockResolvedValue([0, 0, 0]),
+  getEmbeddingProvider: vi.fn().mockReturnValue(null),
   callLlm: vi.fn().mockResolvedValue({ content: "" }),
   routeRequest: vi.fn().mockResolvedValue({ content: "" }),
   getAvailableProviders: vi.fn().mockReturnValue([]),

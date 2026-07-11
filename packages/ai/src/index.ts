@@ -11,6 +11,14 @@ export {
   getDefaultProvider,
   type FailoverOptions,
 } from "./router";
+export {
+  generateEmbedding,
+  getEmbeddingProvider,
+  padToStorageDimension,
+  EMBEDDING_VECTOR_DIMENSION,
+  type EmbeddingProvider,
+  type EmbeddingProviderInfo,
+} from "./embeddings";
 export { callClaudeCli } from "./providers/claude-cli";
 export { callClaudeApi } from "./providers/claude-api";
 export { callOpenAI } from "./providers/openai";

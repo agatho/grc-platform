@@ -141,25 +141,16 @@ COPY --from=builder /app/packages/db/sql packages/db/sql
 COPY scripts/docker-entrypoint.sh /app/docker-entrypoint.sh
 RUN chmod +x /app/docker-entrypoint.sh
 
-# Install psql for migrations + Chromium for PDF export.
-# Puppeteer's bundled Chrome needs glibc and won't run on Alpine, so we
-# install the Alpine-native chromium package and point puppeteer at it
-# via PUPPETEER_EXECUTABLE_PATH. The companion env var
-# PUPPETEER_SKIP_DOWNLOAD prevents `npm ci` from pulling the bundled
-# Chrome we'd never use. font-noto-cjk + ttf-freefont cover both Latin
-# and CJK glyphs in rendered exports.
+# Install psql for migrations. PDF export runs entirely through pdfkit
+# (pure Node, Standard-14 .afm font metrics shipped inside the package)
+# since 2026-07-11 — the previous Chromium/Puppeteer install
+# (chromium + nss/freetype/harfbuzz/ttf-freefont/font-noto-cjk and the
+# PUPPETEER_SKIP_DOWNLOAD / PUPPETEER_EXECUTABLE_PATH env vars) is gone.
+# ca-certificates stays: outbound TLS (Resend, FreeTSA anchoring,
+# webhooks) needs a current trust store.
 RUN apk add --no-cache \
     postgresql-client \
-    chromium \
-    nss \
-    freetype \
-    harfbuzz \
-    ca-certificates \
-    ttf-freefont \
-    font-noto-cjk
-
-ENV PUPPETEER_SKIP_DOWNLOAD=true
-ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium-browser
+    ca-certificates
 
 USER arctos
 

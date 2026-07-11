@@ -8,10 +8,11 @@
   "dependencies": {
     "@grc/db": "^0.1.0",
     "@grc/shared": "^0.1.0",
-    "puppeteer": "^24.43.0",
-    "exceljs": "^4.4.0"
+    "exceljs": "^4.4.0",
+    "pdfkit": "^0.18.0"
   },
   "devDependencies": {
+    "@types/pdfkit": "^0.17.6",
     "@vitest/coverage-v8": "^4.1.7",
     "typescript": "^5.7",
     "vitest": "^4.1.5"

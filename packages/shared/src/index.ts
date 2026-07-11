@@ -7,6 +7,9 @@ export * from "./process-approval";
 // DMS document control: major/minor versioning, effective dating,
 // four-eyes check, review-reminder staging, retention-purge rules.
 export * from "./document-control";
+// Control embeddings: canonical text + SHA-256 content hash for the
+// pgvector sync cron (control_embedding, migration 0377).
+export * from "./control-embedding";
 export {
   getRequiredHexKey,
   aesGcmEncrypt,

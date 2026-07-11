@@ -1,9 +1,17 @@
 // AI-Assist #2: POST /api/v1/ai/suggest-controls
 //
 // Suggests up to 5 controls for a risk: either linking one of the org's
-// existing controls (candidates ranked by simple token-overlap text
-// similarity — the control table has no pgvector embeddings) or creating
-// a new one. Suggestions are proposals only; linking/creating happens
+// existing controls or creating a new one. Candidate ranking uses two
+// strategies (migration 0377):
+//   1. pgvector embeddings — when the org has synced control_embedding
+//      rows for the active embedding model (control-embedding-sync
+//      worker cron), the top 20 candidates come from cosine similarity
+//      (`<=>`) between a query embedding of the risk text and the
+//      stored control embeddings.
+//   2. Token-overlap fallback — the original heuristic, used when no
+//      embedding provider is configured, the org has no embeddings yet,
+//      or the embedding call fails. Deterministic and dependency-free.
+// Suggestions are proposals only; linking/creating happens
 // through the existing APIs after an explicit user click:
 //   POST /api/v1/controls/:id/risk-links   (link existing)
 //   POST /api/v1/controls                   (create new)
@@ -18,14 +26,16 @@ import { requireModule } from "@grc/auth";
 import {
   aiComplete,
   buildControlAdvisorPrompt,
+  generateEmbedding,
   getAvailableProviders,
+  getEmbeddingProvider,
   safeJsonParse,
 } from "@grc/ai";
 import {
   aiSuggestControlsSchema,
   aiControlSuggestionsResponseSchema,
 } from "@grc/shared";
-import { eq, and, isNull } from "drizzle-orm";
+import { eq, and, isNull, sql } from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { rateLimit, LIMITS } from "@/lib/rate-limit";
 
@@ -42,6 +52,71 @@ function overlapScore(a: Set<string>, b: Set<string>): number {
   let n = 0;
   for (const t of a) if (b.has(t)) n++;
   return n;
+}
+
+interface CandidateControl {
+  id: string;
+  title: string;
+  description: string | null;
+  controlType: string;
+  status: string;
+  score: number;
+}
+
+/**
+ * Embedding-based candidate selection (strategy 1). Returns null when
+ * the embedding path is unavailable — no provider configured, no synced
+ * embeddings for this org+model, embedding call failed, or the result
+ * set is empty — so the caller falls back to token overlap.
+ */
+async function embeddingCandidates(
+  orgId: string,
+  riskText: string,
+  linkedIds: Set<string>,
+): Promise<CandidateControl[] | null> {
+  const provider = getEmbeddingProvider();
+  if (!provider) return null;
+
+  try {
+    const countRows = (await db.execute(
+      sql`SELECT count(*)::int AS n FROM control_embedding WHERE org_id = ${orgId}::uuid AND model = ${provider.model}`,
+    )) as unknown as Array<{ n: number }>;
+    if (!countRows[0] || Number(countRows[0].n) === 0) return null;
+
+    const queryVector = await generateEmbedding(riskText, provider);
+    const vectorLiteral = `[${queryVector.join(",")}]`;
+
+    // Cosine distance operator `<=>` (pgvector), served by the HNSW index
+    // ctrl_emb_hnsw_cosine_idx (migration 0377). LIMIT 40 leaves headroom
+    // for filtering out already-linked controls before slicing to 20.
+    const rows = (await db.execute(sql`
+      SELECT c.id,
+             c.title,
+             c.description,
+             c.control_type AS "controlType",
+             c.status,
+             1 - (ce.embedding <=> ${vectorLiteral}::vector) AS score
+      FROM control_embedding ce
+      INNER JOIN control c ON c.id = ce.control_id
+      WHERE ce.org_id = ${orgId}::uuid
+        AND c.org_id = ${orgId}::uuid
+        AND ce.model = ${provider.model}
+        AND c.deleted_at IS NULL
+      ORDER BY ce.embedding <=> ${vectorLiteral}::vector ASC
+      LIMIT 40
+    `)) as unknown as CandidateControl[];
+
+    const filtered = rows
+      .filter((r) => !linkedIds.has(r.id))
+      .slice(0, 20)
+      .map((r) => ({ ...r, score: Number(r.score) }));
+    return filtered.length > 0 ? filtered : null;
+  } catch {
+    // Embedding provider hiccup — or control_embedding does not exist
+    // yet (migration 0377 no-ops until pgvector is installed on the
+    // server). The deterministic token-overlap fallback covers both.
+    return null;
+  }
 }
 
 export async function POST(req: Request) {
@@ -136,35 +211,39 @@ export async function POST(req: Request) {
 
   const linkedIds = new Set(linked.map((l) => l.controlId));
 
-  // Candidate pool: the org's controls, ranked by token overlap with the
-  // risk text. No embeddings exist for controls, so simple text
-  // similarity keeps this dependency-free and deterministic.
-  const orgControls = await db
-    .select({
-      id: control.id,
-      title: control.title,
-      description: control.description,
-      controlType: control.controlType,
-      status: control.status,
-    })
-    .from(control)
-    .where(and(eq(control.orgId, ctx.orgId), isNull(control.deletedAt)))
-    .limit(500);
+  // Candidate pool — strategy 1: pgvector cosine similarity over the
+  // org's synced control embeddings (see embeddingCandidates above).
+  const riskText = `${riskRow.title} ${riskRow.description ?? ""} ${riskRow.riskCategory}`;
+  let candidates = await embeddingCandidates(ctx.orgId, riskText, linkedIds);
 
-  const riskTokens = tokenize(
-    `${riskRow.title} ${riskRow.description ?? ""} ${riskRow.riskCategory}`,
-  );
-  const candidates = orgControls
-    .filter((c) => !linkedIds.has(c.id))
-    .map((c) => ({
-      ...c,
-      score: overlapScore(
-        riskTokens,
-        tokenize(`${c.title} ${c.description ?? ""}`),
-      ),
-    }))
-    .sort((a, b) => b.score - a.score)
-    .slice(0, 20);
+  // Strategy 2 (fallback): the org's controls ranked by token overlap
+  // with the risk text — dependency-free and deterministic.
+  if (!candidates) {
+    const orgControls = await db
+      .select({
+        id: control.id,
+        title: control.title,
+        description: control.description,
+        controlType: control.controlType,
+        status: control.status,
+      })
+      .from(control)
+      .where(and(eq(control.orgId, ctx.orgId), isNull(control.deletedAt)))
+      .limit(500);
+
+    const riskTokens = tokenize(riskText);
+    candidates = orgControls
+      .filter((c) => !linkedIds.has(c.id))
+      .map((c) => ({
+        ...c,
+        score: overlapScore(
+          riskTokens,
+          tokenize(`${c.title} ${c.description ?? ""}`),
+        ),
+      }))
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20);
+  }
 
   const prompt = buildControlAdvisorPrompt({
     risk: {

@@ -7,15 +7,15 @@
 // reportGenerator (crons/report-scheduler.ts) and packages must never
 // import from apps.
 //
-// Dependency note: pdfkit is intentionally NOT declared in
-// packages/reporting/package.json (dependency manifests are frozen in
-// this change window). It resolves at runtime through the hoisted
-// workspace-root node_modules (apps/web declares pdfkit + @types/pdfkit),
-// which serves both the web and the worker process. The import is lazy —
-// the same pattern the retired Puppeteer path used — so environments
-// without pdfkit fail at render time with a clear module error, not at
-// package load. TODO(dependency window): declare pdfkit as an explicit
-// dependency of @grc/reporting and remove puppeteer everywhere.
+// Dependency note: pdfkit (+ @types/pdfkit) is a declared dependency of
+// @grc/reporting since the 2026-07-11 dependency maintenance window
+// (which also removed puppeteer repo-wide). apps/web keeps pdfkit in
+// serverExternalPackages (next.config.ts) so the import below stays
+// external to the webpack bundle and pdfkit's .afm font metrics resolve
+// from node_modules at runtime; apps/worker runs via tsx and uses plain
+// Node resolution.
+
+import PDFDocument from "pdfkit";
 
 import type {
   ReportDocument,
@@ -52,9 +52,6 @@ export async function renderReportDocumentPdf(
   model: ReportDocument,
   options: RenderReportDocumentPdfOptions = {},
 ): Promise<Buffer> {
-  // Lazy import — see dependency note in the file header.
-  const { default: PDFDocument } = await import("pdfkit");
-
   return new Promise((resolve, reject) => {
     try {
       const doc = new PDFDocument({

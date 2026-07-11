@@ -147,8 +147,9 @@ report new ones.
   (`ARCTOS_DEBUG_TRACE_ENABLED`). Report if you can reproduce it
   via the UI and we'll prioritise.
 - **Some report PDFs** — Risk Quarterly Summary, BCM Annual
-  Review, ESG ESRS Disclosure render via Puppeteer; performance
-  on long reports (50+ pages) is variable.
+  Review, ESG ESRS Disclosure now render via pdfkit (the former
+  Puppeteer/Chromium pipeline was removed 2026-07-11); charts
+  degrade to bar rectangles or value tables. No PDF/A profile yet.
 - **Marketplace + GRC Academy** — sidebar items exist, base
   content is light. Browse, but don't expect 1.0 polish.
 

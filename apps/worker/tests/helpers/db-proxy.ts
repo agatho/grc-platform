@@ -77,6 +77,7 @@ export const eventsMockFactory = () => ({
 /** Stub for @grc/ai. */
 export const aiMockFactory = () => ({
   generateEmbedding: vi.fn().mockResolvedValue([0, 0, 0]),
+  getEmbeddingProvider: vi.fn().mockReturnValue(null),
   callLlm: vi.fn().mockResolvedValue({ content: "" }),
   routeRequest: vi.fn().mockResolvedValue({ content: "" }),
 });

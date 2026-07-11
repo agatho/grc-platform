@@ -4,10 +4,10 @@
 // The Puppeteer HTML→PDF path (`renderPDF`) that used to live here was
 // removed 2026-07-11: PDF generation now goes through the neutral
 // ReportDocument model + pdfkit (see ../report-document.ts and
-// ./pdfkit-renderer.ts). Nothing in the repo imports puppeteer anymore;
-// the puppeteer entries in package.json (root, apps/web,
-// packages/reporting) and the PUPPETEER_* setup in the Dockerfile can be
-// dropped at the next dependency maintenance window.
+// ./pdfkit-renderer.ts). The puppeteer dependency was removed repo-wide
+// in the 2026-07-11 dependency maintenance window (package.json entries,
+// lockfile tree, PUPPETEER_*/chromium setup in the Dockerfile); pdfkit
+// is now a declared dependency of @grc/reporting.
 
 import type { ReportBrandingConfig, ReportSectionConfig } from "@grc/shared";
 import type { TableData, ChartData, KPIData } from "../section-data-fetcher";

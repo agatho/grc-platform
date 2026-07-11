@@ -1,6 +1,6 @@
 // ReportDocument → PDF via pdfkit (the renderer that replaced the
-// Sprint-30 Puppeteer path). pdfkit resolves through the hoisted
-// workspace-root node_modules (declared by apps/web).
+// Sprint-30 Puppeteer path). pdfkit is a declared dependency of
+// @grc/reporting since the 2026-07-11 dependency maintenance window.
 //
 // compress:false keeps content streams readable. pdfkit emits text as
 // hex-encoded TJ arrays split at kerning points (e.g. "Titel" →

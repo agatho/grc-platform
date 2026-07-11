@@ -1521,6 +1521,10 @@ import { aggregateUsage } from "./crons/usage-aggregation";
 import { processDocumentReviewReminders } from "./crons/document-review-reminder";
 import { processDocumentAutoExpire } from "./crons/document-auto-expire";
 import { processDocumentRetentionPurge } from "./crons/document-retention-purge";
+// W21-DMS-MULTISIGN-02: Signatur-Fristen-Erinnerung + Eskalation
+import { processSignatureDueReminders } from "./crons/signature-due-reminder";
+// Control-Embeddings für AI suggest-controls (Migration 0377)
+import { processControlEmbeddingSync } from "./crons/control-embedding-sync";
 // Risk Acceptance (ISO 27005 Clause 10) — befristete Akzeptanzen ablaufen lassen
 import { processRiskAcceptanceExpiry } from "./crons/risk-acceptance-expiry";
 
@@ -1531,6 +1535,7 @@ const batchCrons: Record<string, () => Promise<unknown>> = {
   "connector-health-monitor": connectorHealthMonitor,
   "connector-schedule-runner": connectorScheduleRunner,
   "consent-metrics": processConsentMetrics,
+  "control-embedding-sync": processControlEmbeddingSync,
   "control-test-learning": processControlTestLearning,
   "control-test-scheduler": processControlTestScheduler,
   "copilot-rag-indexer": processCopilotRagIndexer,
@@ -1552,6 +1557,7 @@ const batchCrons: Record<string, () => Promise<unknown>> = {
   "resilience-score": processResilienceScoreSnapshot,
   "risk-acceptance-expiry": processRiskAcceptanceExpiry,
   "retention-monitoring": processRetentionMonitoring,
+  "signature-due-reminder": processSignatureDueReminders,
   "translation-staleness": processTranslationStalenessCheck,
   "usage-aggregation": aggregateUsage,
 };

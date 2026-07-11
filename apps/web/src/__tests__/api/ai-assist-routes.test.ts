@@ -21,6 +21,8 @@ const requireModuleMock = vi.fn();
 const rateLimitMock = vi.fn();
 const aiCompleteMock = vi.fn();
 const getAvailableProvidersMock = vi.fn();
+const getEmbeddingProviderMock = vi.fn();
+const generateEmbeddingMock = vi.fn();
 
 vi.mock("@grc/db", () => ({
   get db() {
@@ -82,6 +84,12 @@ vi.mock("@grc/ai", () => ({
   },
   get getAvailableProviders() {
     return getAvailableProvidersMock;
+  },
+  get getEmbeddingProvider() {
+    return getEmbeddingProviderMock;
+  },
+  get generateEmbedding() {
+    return generateEmbeddingMock;
   },
   // Prompt builders: minimal message arrays — the real builders are
   // covered by packages/ai/tests/ai-assist-prompts.test.ts.
@@ -155,6 +163,8 @@ beforeEach(() => {
   rateLimitMock.mockReset();
   aiCompleteMock.mockReset();
   getAvailableProvidersMock.mockReset();
+  getEmbeddingProviderMock.mockReset();
+  generateEmbeddingMock.mockReset();
 
   withAuthMock.mockResolvedValue(AUTH_CTX);
   requireModuleMock.mockResolvedValue(undefined);
@@ -164,6 +174,9 @@ beforeEach(() => {
     retryAfterSeconds: 0,
   });
   getAvailableProvidersMock.mockReturnValue(["ollama"]);
+  // Default: no embedding provider → suggest-controls uses the
+  // token-overlap fallback, keeping the pre-embedding tests untouched.
+  getEmbeddingProviderMock.mockReturnValue(null);
 });
 
 // ─────────────────────────────────────────────────────────────────
@@ -460,6 +473,127 @@ describe("POST /api/v1/ai/suggest-controls", () => {
     });
     const res = await call(validBody);
     expect(res.status).toBe(422);
+  });
+
+  // ── Embedding path (control_embedding, migration 0377) ──────────
+
+  const EMBEDDING_PROVIDER = {
+    provider: "openai" as const,
+    model: "text-embedding-3-small",
+  };
+
+  function queueRiskAndLinkedOnly() {
+    // 1st select: the risk
+    mockDb.select.mockReturnValueOnce(
+      chainable([
+        {
+          id: UUID_A,
+          title: "Ransomware attack",
+          description: "Encryption of file shares",
+          riskCategory: "security",
+          riskScoreInherent: 20,
+          riskScoreResidual: 12,
+        },
+      ]),
+    );
+    // 2nd select: already linked controls
+    mockDb.select.mockReturnValueOnce(chainable([]));
+  }
+
+  it("ranks candidates via pgvector when the org has synced embeddings", async () => {
+    getEmbeddingProviderMock.mockReturnValue(EMBEDDING_PROVIDER);
+    generateEmbeddingMock.mockResolvedValue([0.1, 0.2, 0.3]);
+    queueRiskAndLinkedOnly();
+    // db.execute #1: embedding count for org+model, #2: cosine top-N
+    mockDb.execute
+      .mockResolvedValueOnce([{ n: 1 }])
+      .mockResolvedValueOnce([
+        {
+          id: UUID_B,
+          title: "Endpoint detection and response",
+          description: "EDR on all endpoints",
+          controlType: "detective",
+          status: "implemented",
+          score: 0.91,
+        },
+      ]);
+    aiCompleteMock.mockResolvedValue(
+      aiText({
+        suggestions: [
+          {
+            type: "link_existing",
+            controlId: UUID_B,
+            reason: "EDR erkennt Ransomware-Aktivität",
+          },
+        ],
+      }),
+    );
+
+    const res = await call(validBody);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.suggestions).toHaveLength(1);
+    expect(json.data.suggestions[0].controlId).toBe(UUID_B);
+    expect(json.data.suggestions[0].controlTitle).toBe(
+      "Endpoint detection and response",
+    );
+    // Query embedding generated over the risk text with the pinned provider
+    expect(generateEmbeddingMock).toHaveBeenCalledTimes(1);
+    expect(generateEmbeddingMock).toHaveBeenCalledWith(
+      expect.stringContaining("Ransomware attack"),
+      EMBEDDING_PROVIDER,
+    );
+    // Embedding path used → NO token-overlap pool query (only risk + linked)
+    expect(mockDb.select).toHaveBeenCalledTimes(2);
+  });
+
+  it("falls back to token overlap when the org has no embeddings yet", async () => {
+    getEmbeddingProviderMock.mockReturnValue(EMBEDDING_PROVIDER);
+    queueRiskAndControls(); // risk, linked, control pool
+    mockDb.execute.mockResolvedValueOnce([{ n: 0 }]); // count → none synced
+    aiCompleteMock.mockResolvedValue(
+      aiText({
+        suggestions: [
+          {
+            type: "link_existing",
+            controlId: UUID_B,
+            reason: "EDR erkennt Ransomware-Aktivität",
+          },
+        ],
+      }),
+    );
+
+    const res = await call(validBody);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.suggestions[0].controlId).toBe(UUID_B);
+    expect(generateEmbeddingMock).not.toHaveBeenCalled();
+    // Fallback pool query ran → 3 selects
+    expect(mockDb.select).toHaveBeenCalledTimes(3);
+  });
+
+  it("falls back to token overlap when the embedding call fails", async () => {
+    getEmbeddingProviderMock.mockReturnValue(EMBEDDING_PROVIDER);
+    generateEmbeddingMock.mockRejectedValue(new Error("provider down"));
+    queueRiskAndControls();
+    mockDb.execute.mockResolvedValueOnce([{ n: 5 }]);
+    aiCompleteMock.mockResolvedValue(
+      aiText({
+        suggestions: [
+          {
+            type: "link_existing",
+            controlId: UUID_B,
+            reason: "EDR erkennt Ransomware-Aktivität",
+          },
+        ],
+      }),
+    );
+
+    const res = await call(validBody);
+    expect(res.status).toBe(200);
+    const json = await res.json();
+    expect(json.data.suggestions[0].controlId).toBe(UUID_B);
+    expect(mockDb.select).toHaveBeenCalledTimes(3);
   });
 });
 

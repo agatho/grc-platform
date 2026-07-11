@@ -8,6 +8,7 @@ import * as moduleSchema from "./schema/module";
 import * as assetSchema from "./schema/asset";
 import * as workItemSchema from "./schema/work-item";
 import * as controlSchema from "./schema/control";
+import * as controlEmbeddingSchema from "./schema/control-embedding";
 import * as documentSchema from "./schema/document";
 import * as documentSignatureSchema from "./schema/document-signature";
 import * as catalogSchema from "./schema/catalog";
@@ -163,6 +164,7 @@ export const db = drizzle(client, {
     ...assetSchema,
     ...workItemSchema,
     ...controlSchema,
+    ...controlEmbeddingSchema,
     ...documentSchema,
     ...documentSignatureSchema,
     ...catalogSchema,
@@ -277,6 +279,7 @@ export * from "./schema/module";
 export * from "./schema/asset";
 export * from "./schema/work-item";
 export * from "./schema/control";
+export * from "./schema/control-embedding";
 export * from "./schema/document";
 export * from "./schema/document-signature";
 export * from "./schema/catalog";

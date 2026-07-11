@@ -85,6 +85,15 @@ export const documentSignatureRequest = pgTable(
     sequential: boolean("sequential").notNull().default(false),
     dueDate: timestamp("due_date", { withTimezone: true }),
     completedAt: timestamp("completed_at", { withTimezone: true }),
+    // Cron staging (migration 0376, W21-DMS-MULTISIGN-02): anchor for the
+    // staged due-date reminders (3 days before / on due date) sent by the
+    // signature-due-reminder worker cron — pattern document.lastReminderSentAt.
+    lastReminderSentAt: timestamp("last_reminder_sent_at", {
+      withTimezone: true,
+    }),
+    // One-time marker: overdue escalation (> 3 days past dueDate) to the
+    // request creator + document owner was sent. Deliberately no auto-cancel.
+    escalatedAt: timestamp("escalated_at", { withTimezone: true }),
     // Cross-cutting mandatory fields
     createdAt: timestamp("created_at", { withTimezone: true })
       .notNull()

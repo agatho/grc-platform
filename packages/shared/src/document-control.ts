@@ -186,6 +186,69 @@ export function shouldSendReviewReminder(input: {
   return stageNow < stageAtLast;
 }
 
+// ─── Signature due-date reminders (3/0 days) + escalation ────
+// W21-DMS-MULTISIGN-02: staged reminders for pending signature
+// requests, same once-per-stage mechanic as the review reminders
+// above, but with a tighter 3-day window; plus a one-time overdue
+// escalation (> 3 days past due) to creator + document owner.
+
+export const SIGNATURE_DUE_REMINDER_STAGES = [3, 0] as const;
+
+/**
+ * Map "days until signature due date" to the reminder stage. Returns
+ * null when the due date is more than 3 days out (no reminder yet).
+ * daysUntil <= 0 → stage 0 (due/overdue).
+ */
+export function signatureDueReminderStage(daysUntilDue: number): number | null {
+  if (daysUntilDue > 3) return null;
+  if (daysUntilDue > 0) return 3;
+  return 0;
+}
+
+/**
+ * Decide whether a staged signature due-date reminder should be sent
+ * now. Fires once per stage: when no reminder was ever sent, or when
+ * the request has moved into a closer stage since the last one
+ * (pattern: shouldSendReviewReminder).
+ */
+export function shouldSendSignatureDueReminder(input: {
+  dueDate: Date;
+  lastReminderSentAt: Date | null;
+  now: Date;
+}): boolean {
+  const stageNow = signatureDueReminderStage(
+    daysBetween(input.now, input.dueDate),
+  );
+  if (stageNow === null) return false;
+  if (input.lastReminderSentAt === null) return true;
+  const stageAtLast = signatureDueReminderStage(
+    daysBetween(input.lastReminderSentAt, input.dueDate),
+  );
+  if (stageAtLast === null) return true;
+  return stageNow < stageAtLast;
+}
+
+/** Grace period after the due date before the one-time escalation. */
+export const SIGNATURE_ESCALATION_GRACE_MS = 3 * 86_400_000;
+
+/**
+ * One-time overdue escalation: fires when the request is overdue by
+ * more than 3 full days AND has not been escalated yet (escalated_at,
+ * migration 0376). Deliberately no auto-cancel — the request creator
+ * decides (cancel route).
+ */
+export function shouldEscalateSignatureRequest(input: {
+  dueDate: Date;
+  escalatedAt: Date | null;
+  now: Date;
+}): boolean {
+  if (input.escalatedAt !== null) return false;
+  return (
+    input.now.getTime() - input.dueDate.getTime() >
+    SIGNATURE_ESCALATION_GRACE_MS
+  );
+}
+
 // ─── Retention ───────────────────────────────────────────────
 
 export type RetentionBasis = "created" | "published" | "expired";

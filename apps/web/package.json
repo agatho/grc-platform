@@ -52,7 +52,6 @@
     "pdf-lib": "^1.17.1",
     "pdfjs-dist": "^5.7.284",
     "pdfkit": "^0.18.0",
-    "puppeteer": "^24.43.1",
     "react": "^19.2.6",
     "react-dom": "^19.2.5",
     "react-grid-layout": "^1.5.3",
