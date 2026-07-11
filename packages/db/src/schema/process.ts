@@ -113,6 +113,10 @@ export const process = pgTable(
     // Prozesslandkarte (0373): management / core / support band. Nullable —
     // children without a category inherit their parent's band on the map.
     mapCategory: processMapCategoryEnum("map_category"),
+    // Prozesslandkarte (0374): manual order within a band (steps of 10 via
+    // the reorder endpoint). Nullable — unsorted processes come last,
+    // alphabetically (ORDER BY map_sequence NULLS LAST, name).
+    mapSequence: integer("map_sequence"),
     // Sprint 56 (migrations 0132/0133) — previously missing from the
     // Drizzle schema (B1.4 drift fix): traffic-light health + metro map
     // layout used by the metro-layout endpoints.
@@ -142,6 +146,11 @@ export const process = pgTable(
     index("process_status_idx").on(table.orgId, table.status),
     index("process_level_idx").on(table.orgId, table.level),
     index("process_map_category_idx").on(table.orgId, table.mapCategory),
+    index("process_map_sequence_idx").on(
+      table.orgId,
+      table.mapCategory,
+      table.mapSequence,
+    ),
   ],
 );
 

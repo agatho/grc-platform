@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import {
@@ -57,6 +57,213 @@ interface GenerationJob {
   logId: string;
   status: string;
   templateName: string;
+}
+
+interface FrameworkOption {
+  id: string;
+  name: string;
+  version: string | null;
+}
+
+const RISK_STATUSES = [
+  "identified",
+  "assessed",
+  "treated",
+  "accepted",
+  "closed",
+  "reopened",
+] as const;
+
+const RISK_CATEGORIES = [
+  "strategic",
+  "operational",
+  "financial",
+  "compliance",
+  "cyber",
+  "reputational",
+  "esg",
+] as const;
+
+// ─── Standard report suite (risk register, SoA, compliance status) ───
+
+function StandardReportsSection() {
+  const t = useTranslations("reporting");
+  const locale = useLocale();
+
+  const [frameworks, setFrameworks] = useState<FrameworkOption[]>([]);
+  const [riskStatus, setRiskStatus] = useState<string>("all");
+  const [riskCategory, setRiskCategory] = useState<string>("all");
+  const [soaFramework, setSoaFramework] = useState<string>("");
+  const [complianceFramework, setComplianceFramework] = useState<string>("");
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      const res = await fetch("/api/v1/catalogs?type=control&limit=100");
+      if (!res.ok || cancelled) return;
+      const body = await res.json();
+      if (!cancelled) setFrameworks(body.data || []);
+    })().catch(() => {
+      /* framework select stays empty; cards remain usable for risk report */
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  const download = (
+    path: string,
+    format: "pdf" | "xlsx",
+    params: Record<string, string>,
+  ) => {
+    const search = new URLSearchParams({ format, lang: locale, ...params });
+    window.open(`${path}?${search.toString()}`, "_blank");
+  };
+
+  const frameworkSelect = (
+    value: string,
+    onChange: (v: string) => void,
+  ) => (
+    <Select value={value} onValueChange={onChange}>
+      <SelectTrigger className="w-full">
+        <SelectValue placeholder={t("standardReports.selectFramework")} />
+      </SelectTrigger>
+      <SelectContent>
+        {frameworks.map((fw) => (
+          <SelectItem key={fw.id} value={fw.id}>
+            {fw.name}
+            {fw.version ? ` (${fw.version})` : ""}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
+  );
+
+  const downloadButtons = (
+    path: string,
+    params: Record<string, string>,
+    disabled = false,
+  ) => (
+    <div className="flex gap-2">
+      <Button
+        size="sm"
+        disabled={disabled}
+        onClick={() => download(path, "pdf", params)}
+      >
+        <FileText className="mr-1 h-3 w-3" />
+        PDF
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        disabled={disabled}
+        onClick={() => download(path, "xlsx", params)}
+      >
+        <FileSpreadsheet className="mr-1 h-3 w-3" />
+        Excel
+      </Button>
+    </div>
+  );
+
+  return (
+    <div>
+      <h2 className="text-lg font-semibold mb-1">
+        {t("standardReports.title")}
+      </h2>
+      <p className="text-sm text-muted-foreground mb-3">
+        {t("standardReports.subtitle")}
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        {/* Risk register */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {t("standardReports.riskRegister")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("standardReports.riskRegisterDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <Select value={riskStatus} onValueChange={setRiskStatus}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("standardReports.allStatuses")}
+                </SelectItem>
+                {RISK_STATUSES.map((s) => (
+                  <SelectItem key={s} value={s}>
+                    {t(`standardReports.riskStatus.${s}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={riskCategory} onValueChange={setRiskCategory}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">
+                  {t("standardReports.allCategories")}
+                </SelectItem>
+                {RISK_CATEGORIES.map((c) => (
+                  <SelectItem key={c} value={c}>
+                    {t(`standardReports.riskCategory.${c}`)}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {downloadButtons("/api/v1/reports/risk-register", {
+              ...(riskStatus !== "all" ? { status: riskStatus } : {}),
+              ...(riskCategory !== "all" ? { category: riskCategory } : {}),
+            })}
+          </CardContent>
+        </Card>
+
+        {/* Statement of Applicability */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {t("standardReports.soa")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("standardReports.soaDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {frameworkSelect(soaFramework, setSoaFramework)}
+            {downloadButtons(
+              "/api/v1/reports/soa",
+              { frameworkId: soaFramework },
+              !soaFramework,
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Compliance status */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base">
+              {t("standardReports.complianceStatus")}
+            </CardTitle>
+            <CardDescription className="text-xs">
+              {t("standardReports.complianceStatusDesc")}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            {frameworkSelect(complianceFramework, setComplianceFramework)}
+            {downloadButtons(
+              "/api/v1/reports/compliance-status",
+              { frameworkId: complianceFramework },
+              !complianceFramework,
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
 }
 
 export default function ReportCenterPage() {
@@ -235,6 +442,9 @@ export default function ReportCenterPage() {
             </Button>
           </div>
         </div>
+
+        {/* Standard report suite */}
+        <StandardReportsSection />
 
         {/* Active Job Banner */}
         {activeJob &&

@@ -66,6 +66,25 @@ export const updateProcessSchema = z.object({
     .optional(),
   // Prozesslandkarte: null = keine Kategorie (erbt Band des Parents)
   mapCategory: z.enum(processMapCategoryValues).nullable().optional(),
+  // Prozesslandkarte: manuelle Reihenfolge im Band (null = unsortiert,
+  // landet hinter den sortierten). Bulk-Umsortierung läuft über
+  // PUT /processes/map/reorder mit reorderProcessMapSchema.
+  mapSequence: z.number().int().min(0).max(1_000_000).nullable().optional(),
+});
+
+// ─── Prozesslandkarte: Reorder (PUT /processes/map/reorder) ──
+
+export const reorderProcessMapSchema = z.object({
+  // "unassigned" is a real band on the map (uncategorized root
+  // processes) and stays sortable like the three value-chain bands.
+  category: z.enum([...processMapCategoryValues, "unassigned"]),
+  orderedIds: z
+    .array(z.string().uuid())
+    .min(1)
+    .max(100)
+    .refine((ids) => new Set(ids).size === ids.length, {
+      message: "orderedIds must not contain duplicates",
+    }),
 });
 
 // ─── Process Version ─────────────────────────────────────────

@@ -125,7 +125,9 @@ export async function GET(req: Request) {
         parentCondition,
       ),
     )
-    .orderBy(process.name);
+    // Manual order first (0374, set via /processes/map/reorder), then
+    // alphabetical for everything without a sequence.
+    .orderBy(sql`${process.mapSequence} ASC NULLS LAST`, process.name);
 
   const groups = groupProcessesForMap(nodes, parentCategory);
 

@@ -23,6 +23,15 @@
     "hint": "Create processes and assign them a map category to populate the map.",
     "goToProcesses": "Go to process register"
   },
+  "sort": {
+    "start": "Sort",
+    "save": "Save order",
+    "cancel": "Cancel",
+    "hint": "Adjust the tile order with the arrows, then save.",
+    "moveUp": "Move up",
+    "moveDown": "Move down",
+    "saveError": "Failed to save the order"
+  },
   "category": {
     "label": "Map category",
     "management": "Management",

@@ -1,4 +1,34 @@
 {
+  "standardReports": {
+    "title": "Standard Reports",
+    "subtitle": "Directly downloadable PDF and Excel reports with org branding",
+    "riskRegister": "Risk Report",
+    "riskRegisterDesc": "Executive summary and full risk register with gross/net scores, owners and treatments",
+    "soa": "Statement of Applicability (SoA)",
+    "soaDesc": "Statement of Applicability per framework — the mandatory ISO 27001 document",
+    "complianceStatus": "Compliance Status",
+    "complianceStatusDesc": "Fulfilment per chapter/domain with gap list and responsible owners",
+    "selectFramework": "Select framework...",
+    "allStatuses": "All statuses",
+    "allCategories": "All categories",
+    "riskStatus": {
+      "identified": "Identified",
+      "assessed": "Assessed",
+      "treated": "Treated",
+      "accepted": "Accepted",
+      "closed": "Closed",
+      "reopened": "Reopened"
+    },
+    "riskCategory": {
+      "strategic": "Strategic",
+      "operational": "Operational",
+      "financial": "Financial",
+      "compliance": "Compliance",
+      "cyber": "Cyber",
+      "reputational": "Reputational",
+      "esg": "ESG"
+    }
+  },
   "title": "Report Center",
   "subtitle": "Templates, generate reports and manage scheduled reports",
   "templates": "Report Templates",

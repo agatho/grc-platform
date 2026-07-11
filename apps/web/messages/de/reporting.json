@@ -1,4 +1,34 @@
 {
+  "standardReports": {
+    "title": "Standard-Berichte",
+    "subtitle": "Direkt herunterladbare PDF- und Excel-Berichte mit Org-Branding",
+    "riskRegister": "Risikobericht",
+    "riskRegisterDesc": "Executive Summary und vollständiges Risikoregister mit Brutto-/Netto-Scores, Ownern und Maßnahmen",
+    "soa": "Statement of Applicability (SoA)",
+    "soaDesc": "Erklärung zur Anwendbarkeit je Framework — das ISO-27001-Pflichtdokument",
+    "complianceStatus": "Compliance-Status",
+    "complianceStatusDesc": "Erfüllungsgrad je Kapitel/Domäne mit Lücken-Liste und Verantwortlichen",
+    "selectFramework": "Framework wählen...",
+    "allStatuses": "Alle Status",
+    "allCategories": "Alle Kategorien",
+    "riskStatus": {
+      "identified": "Identifiziert",
+      "assessed": "Bewertet",
+      "treated": "Behandelt",
+      "accepted": "Akzeptiert",
+      "closed": "Geschlossen",
+      "reopened": "Wiedereröffnet"
+    },
+    "riskCategory": {
+      "strategic": "Strategisch",
+      "operational": "Operativ",
+      "financial": "Finanziell",
+      "compliance": "Compliance",
+      "cyber": "Cyber",
+      "reputational": "Reputation",
+      "esg": "ESG"
+    }
+  },
   "title": "Berichtszentrum",
   "subtitle": "Vorlagen, Berichte generieren und geplante Berichte verwalten",
   "templates": "Berichtsvorlagen",

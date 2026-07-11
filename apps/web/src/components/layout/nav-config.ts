@@ -1111,7 +1111,9 @@ export const NAV_GROUPS: NavGroup[] = [
         labelKey: "nav.grouped.reports",
         href: "/reports",
         icon: BarChart3,
-        roles: ["admin", "risk_manager", "auditor"],
+        // Standard report suite (risk register, SoA, compliance status)
+        // is relevant beyond ERM/audit: CISO + quality manager added.
+        roles: ["admin", "ciso", "quality_manager", "risk_manager", "auditor"],
         parentModule: "platform",
       },
       {

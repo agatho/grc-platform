@@ -24,6 +24,18 @@ async function makeDocx(bodyXml: string): Promise<Buffer> {
   return zip.generateAsync({ type: "nodebuffer" });
 }
 
+/** Build a real multi-page PDF fixture (pdf-lib is a direct dependency). */
+async function makePdf(pageTexts: string[]): Promise<Buffer> {
+  const { PDFDocument, StandardFonts } = await import("pdf-lib");
+  const doc = await PDFDocument.create();
+  const font = await doc.embedFont(StandardFonts.Helvetica);
+  for (const pageText of pageTexts) {
+    const page = doc.addPage();
+    page.drawText(pageText, { x: 50, y: 700, size: 14, font });
+  }
+  return Buffer.from(await doc.save());
+}
+
 describe("extractFileText", () => {
   it("decodes text/plain directly", async () => {
     const text = await extractFileText(
@@ -58,10 +70,32 @@ describe("extractFileText", () => {
     expect(text).not.toContain("<w:");
   });
 
-  it("returns null for PDFs (no extractor available — documented)", async () => {
-    const pdf = Buffer.from("%PDF-1.4\n...");
-    expect(await extractFileText(pdf, "application/pdf", "doc.pdf")).toBeNull();
-  });
+  it("extracts text from both pages of a PDF (pdfjs-dist legacy build)", async () => {
+    const pdf = await makePdf([
+      "Erste Seite ISMS Leitlinie",
+      "Zweite Seite Anhang Kryptokonzept",
+    ]);
+    const text = await extractFileText(pdf, "application/pdf", "doc.pdf");
+    expect(text).toContain("Erste Seite ISMS Leitlinie");
+    expect(text).toContain("Zweite Seite Anhang Kryptokonzept");
+  }, 30000);
+
+  it("extracts PDFs uploaded as octet-stream via the .pdf extension", async () => {
+    const pdf = await makePdf(["Fallback via Dateiendung"]);
+    const text = await extractFileText(
+      pdf,
+      "application/octet-stream",
+      "Scan.PDF",
+    );
+    expect(text).toContain("Fallback via Dateiendung");
+  }, 30000);
+
+  it("returns null for a corrupt PDF instead of throwing", async () => {
+    const broken = Buffer.from("%PDF-1.4\nthis is not a real pdf body");
+    expect(
+      await extractFileText(broken, "application/pdf", "broken.pdf"),
+    ).toBeNull();
+  }, 30000);
 
   it("returns null for images and unknown binaries", async () => {
     expect(

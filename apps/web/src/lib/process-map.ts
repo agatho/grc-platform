@@ -50,6 +50,25 @@ export function resolveInheritedCategory(
  * - At root level (no parent / uncategorized chain) it lands in the
  *   "unassigned" strip so nothing becomes invisible.
  */
+/**
+ * Move one tile up/down inside its band (manual sort mode). Pure —
+ * returns a new array; out-of-range moves return the input unchanged.
+ */
+export function moveItemInBand<T>(
+  items: readonly T[],
+  index: number,
+  direction: "up" | "down",
+): T[] {
+  const target = direction === "up" ? index - 1 : index + 1;
+  if (index < 0 || index >= items.length) return items.slice();
+  if (target < 0 || target >= items.length) return items.slice();
+  const next = items.slice();
+  const tmp = next[index];
+  next[index] = next[target];
+  next[target] = tmp;
+  return next;
+}
+
 export function groupProcessesForMap(
   items: ProcessMapItem[],
   parentCategory: ProcessMapCategory | null = null,

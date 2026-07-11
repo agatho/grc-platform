@@ -23,6 +23,15 @@
     "hint": "Lege Prozesse an und weise ihnen eine Landkarten-Kategorie zu, um die Landkarte zu füllen.",
     "goToProcesses": "Zum Prozessregister"
   },
+  "sort": {
+    "start": "Sortieren",
+    "save": "Reihenfolge speichern",
+    "cancel": "Abbrechen",
+    "hint": "Reihenfolge der Kacheln mit den Pfeilen anpassen und anschließend speichern.",
+    "moveUp": "Nach oben verschieben",
+    "moveDown": "Nach unten verschieben",
+    "saveError": "Reihenfolge konnte nicht gespeichert werden"
+  },
   "category": {
     "label": "Landkarten-Kategorie",
     "management": "Management",

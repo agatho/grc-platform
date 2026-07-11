@@ -31,6 +31,8 @@ export interface Process {
   isEssential: boolean;
   /** Prozesslandkarte: null = inherits the parent's band on the map */
   mapCategory?: ProcessMapCategory | null;
+  /** Prozesslandkarte: manual order within a band (null = unsorted, last) */
+  mapSequence?: number | null;
   publishedAt?: string;
   // Review cycle (Gap 2)
   reviewDate?: string;
