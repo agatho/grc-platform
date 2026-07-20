@@ -35,6 +35,49 @@ else
   echo "  $OLD_COMMIT → $NEW_COMMIT"
 fi
 
+# ── 1b. Env-Migration: neue Variablen sicherstellen ───────
+# setup-hetzner.sh erzeugt die .env nur EINMAL bei Erstinstallation.
+# Variablen, die spaetere Releases einfuehren, muessen nachgezogen
+# werden — sonst laufen die Container mit leeren Werten. Dieser Block
+# ist idempotent: bestehende Eintraege (auch auskommentierte) werden
+# NIE angefasst, Pflicht-Secrets werden generiert, optionale Variablen
+# nur als kommentierter Hinweis ergaenzt.
+echo ""
+echo "[1b/5] Env-Migration (neue Variablen sicherstellen)..."
+ENV_FILE=/opt/arctos/.env
+
+ensure_env_secret() {
+  # $1 = Key, $2 = Generator-Kommando
+  if ! grep -Eq "^#? *${1}=" "$ENV_FILE"; then
+    printf '\n# Auto-generiert von update-all.sh am %s\n%s=%s\n' \
+      "$(date -u +%F)" "$1" "$($2)" >> "$ENV_FILE"
+    echo "  + $1 generiert"
+  fi
+}
+
+ensure_env_hint() {
+  # $1 = Key, $2 = Kommentar-Hinweis
+  if ! grep -Eq "^#? *${1}=" "$ENV_FILE"; then
+    printf '\n# %s\n# %s=\n' "$2" "$1" >> "$ENV_FILE"
+    echo "  + $1 als Hinweis ergaenzt (optional, auskommentiert)"
+  fi
+}
+
+# Pflicht: Encrypt-at-rest fuer Connector-/SSO-Secrets (seit 2026-07-10).
+# Ohne Key verweigern die betroffenen Routen das Speichern (fail-hard by design).
+ensure_env_secret "SECRET_ENCRYPTION_KEY" "openssl rand -base64 32"
+
+# Optional: AI-Provider (Policy-Entwurf, Kontroll-Vorschlaege, Gap-Erklaerung;
+# Embeddings brauchen OPENAI_API_KEY oder Ollama)
+ensure_env_hint "ANTHROPIC_API_KEY" "AI-Assist via Claude (optional)"
+ensure_env_hint "OPENAI_API_KEY" "AI-Assist + Kontroll-Embeddings via OpenAI (optional)"
+
+# Optional: DMS-Storage-Backend (Default: lokales FS, kein Eintrag noetig)
+ensure_env_hint "STORAGE_BACKEND" "DMS-Storage: local (Default) oder s3 — bei s3 zusaetzlich S3_ENDPOINT/S3_REGION/S3_BUCKET/S3_ACCESS_KEY_ID/S3_SECRET_ACCESS_KEY setzen"
+
+# Optional: ClamAV-Upload-Scan (Container clamav/clamd, sonst wird uebersprungen)
+ensure_env_hint "CLAMAV_HOST" "ClamAV-Virus-Scan fuer DMS-Uploads (optional, z.B. clamav bei Sidecar-Container)"
+
 # ── 2. Docker Images neu bauen (web + worker) ─────────────
 # Worker MUSS mit gebaut werden, sonst läuft die Cron-Engine noch mit
 # einem alten Image — typischer Crash-Loop wäre "Cannot find module ..."
