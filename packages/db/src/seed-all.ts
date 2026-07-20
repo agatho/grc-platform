@@ -219,6 +219,50 @@ async function main() {
     console.error("  ✗ seed_demo_13_programmes.sql:", (err as Error).message);
   }
 
+  // ── 3.7 Juli-2026-Feature-Demo-Daten ────────────────────────────────────
+  // seed_demo_14_july_features.sql: Prozesslandkarte, Freigabekette +
+  // Kenntnisnahme, Management-Review-Cockpit, DMS Effective-Dating +
+  // e-Signatur (pgcrypto-Hash-Kette), Risk-Acceptance + Authority-Matrix,
+  // Retention-Policy. Idempotent (ON CONFLICT DO NOTHING + UPDATE-Guards).
+  // Der Seed referenziert neben dem Haupt-User weitere Demo-User per
+  // fester UUID; auf frisch geseedeten DBs (seed.ts) werden diese per
+  // E-Mail nachgeschlagen und ersetzt (Fallback: Admin-User).
+  console.log("\nPhase 2.7: July 2026 feature demo data");
+  try {
+    let sql = readFileSync(
+      join(SQL_DIR, "seed_demo_14_july_features.sql"),
+      "utf-8",
+    );
+    sql = sql.replaceAll(OLD_ORG_ID, newOrgId);
+
+    // Secondary demo users referenced by seed_demo_14 (see seed_demo_00)
+    const SECONDARY_USERS: Record<string, string> = {
+      "f22a4bc0-0147-4c0d-a02f-98cf65f1e768": "admin@arctos.dev",
+      "d4e5f6a7-b8c9-0123-def0-456789abcdef": "compliance@arctos.dev",
+      "a7b8c9d0-e1f2-3456-0123-789abcdef012": "qm@arctos.dev",
+      "f6a7b8c9-d0e1-2345-f012-6789abcdef01": "contracts@arctos.dev",
+      "e1f2a3b4-c5d6-7890-4567-bcdef0123456": "risk@arctos.dev",
+      "d0e1f2a3-b4c5-6789-3456-abcdef012345": "dpo@arctos.dev",
+    };
+    for (const [oldId, email] of Object.entries(SECONDARY_USERS)) {
+      const [u] = await client.unsafe(
+        `SELECT id FROM "user" WHERE email = '${email}' LIMIT 1`,
+      );
+      sql = sql.replaceAll(oldId, (u?.id as string) ?? newUserId);
+    }
+    // Main user LAST so secondary fallbacks above stay deterministic
+    sql = sql.replaceAll(OLD_USER_ID, newUserId);
+    sql = sql.replace(/^BEGIN;/gm, "-- BEGIN;");
+    sql = sql.replace(/^COMMIT;/gm, "-- COMMIT;");
+    await client.unsafe(sql);
+    console.log("  ✓ seed_demo_14_july_features.sql");
+  } catch (err) {
+    console.error(
+      "  ✗ seed_demo_14_july_features.sql:",
+      (err as Error).message,
+    );
+  }
+
   // ── 4. Summary ─────────────────────────────────────────────────────────
   console.log("\n── Summary ──");
   const counts = await client.unsafe(`

@@ -162,8 +162,14 @@ fi
 #   - seed_demo_13_programmes.sql        → 2 Journey-Instances (ISO 27001 Cert
 #                                           2026 + DSGVO Roadmap) für die
 #                                           Haupt-/Demo-DB grc_platform.
+#   - seed_demo_14_july_features.sql     → Demo-Daten für die Juli-2026-Features
+#                                           (Prozesslandkarte, Freigabekette,
+#                                           Management-Review-Cockpit, DMS-
+#                                           Effective-Dating + e-Signatur,
+#                                           Risk-Acceptance, Retention) —
+#                                           Main-DB only, wie seed_demo_13.
 #
-# Alle drei sind idempotent (ON CONFLICT DO NOTHING) — kann bei jedem
+# Alle Seeds sind idempotent (ON CONFLICT DO NOTHING) — kann bei jedem
 # Update neu laufen. Templates seeden wir nur in der Main-DB (Demo-Daten);
 # Tenants können Programme manuell anlegen.
 echo ""
@@ -206,6 +212,20 @@ if [ -f "$DEMO_PROG" ]; then
   docker compose -f "$COMPOSE_FILE" exec -T postgres \
     psql -U grc -d grc_platform -v ON_ERROR_STOP=0 -q -f /dev/stdin \
     < "$DEMO_PROG" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
+fi
+
+# Juli-2026-Features: Landkarte, Freigabekette/Kenntnisnahme, Management-
+# Review-Cockpit, DMS Effective-Dating + e-Signatur (Hash-Kette via
+# pgcrypto), Risk-Acceptance + Authority, Retention-Policy. Nur Main-DB
+# (Demo-Daten der Meridian-Demo-Org). ON_ERROR_STOP=1, weil der Seed eine
+# BEGIN/COMMIT-Transaktion ist — Teilausführung würde die Hash-Kette
+# inkonsistent hinterlassen.
+echo "  → seed_demo_14_july_features.sql (Main-DB only)"
+DEMO_JULY=/opt/arctos/packages/db/sql/seed_demo_14_july_features.sql
+if [ -f "$DEMO_JULY" ]; then
+  docker compose -f "$COMPOSE_FILE" exec -T postgres \
+    psql -U grc -d grc_platform -v ON_ERROR_STOP=1 -q -f /dev/stdin \
+    < "$DEMO_JULY" 2>&1 | grep -E '^(ERROR|FATAL):' | head -3 | sed 's/^/    /' || true
 fi
 
 # ── 4. Haupt-Container neu starten (web + worker) ─────────

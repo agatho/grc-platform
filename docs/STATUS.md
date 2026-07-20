@@ -217,7 +217,7 @@ ARCTOS ist **kein Greenfield-Projekt**. Stand heute (2026-07-10, nachgezählt im
 
 - **86+ Sprints + Programme Cockpit Sprint 13 + Wave 24 abgeschlossen** plus 4 Modul-Komplett-Overhauls (BPM · Audit · DPMS · TPRM) im Overnight-Modus 2026-05-17/18 und die Nachrüstungen 2026-07-10 (BPM-Approvals, DMS, Audit-Trigger, Risk-Acceptance).
 - **110 Drizzle-Schema-Files**, **340 SQL-Migrations-Files** bis `0361_audit_trigger_dedupe.sql` (vorher 319 / `0340`; Nummerierung nicht lückenlos).
-- **576 `pgTable()`-Definitionen** inkl. der 3 `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report zuletzt regeneriert 2026-05-13; Re-Run nach 0357/0361 ausstehend.
+- **576 `pgTable()`-Definitionen** inkl. der 3 `*_sign_off`-Tabellen (`process_sign_off`, `audit_sign_off`, `vendor_sign_off`). RLS-Coverage-Report regeneriert 2026-07-20: 555 OK / 0 RLS_MISSING / 0 AUDIT_MISSING / 4 AUDIT_EXEMPT / 15 PLATFORM_EXEMPT (574 Tabellen).
 - **1.332 `route.ts`-Files** unter `/api/v1/` (vorher 1.310; +22 u. a. durch DMS-Overhaul, BPM-Approval-Steps, Risk-Acceptance-API).
 - **479 Next.js `page.tsx`**.
 - **46 Compliance-Frameworks geseedet** (46 `seed_catalog_*.sql`-Files verifiziert; ~2.860 Catalog-Einträge und ~960 Cross-Framework-Mappings sind Seed-Angaben, nicht gegen die DB nachgezählt).
@@ -343,7 +343,15 @@ Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). W
 
 ### E2E-Specs (Playwright)
 
-**47 Specs** unter `tests/e2e/regression/` (nachgezählt 2026-07-10; die Gruppenliste unten ist der Stand von ~2026-05, seither kamen 7 Specs hinzu), gruppiert nach Modul:
+**47 Specs** unter `tests/e2e/regression/` + **20 Specs** unter `apps/web/e2e/` (nachgezählt 2026-07-20). Neu 2026-07-20 (API-first-Stil wie `bpm-approval-pipeline.spec.ts`, statisch verifiziert via `tsc --strict` + `playwright test --list`; **erster Lauf steht beim nächsten lokalen Dev-Start aus** — bei der Erstellung lief keine Instanz auf localhost:3000):
+
+- `process-portal.spec.ts` — Publish-Gate-Flow → `/bpm/my-processes` mit Rolle → Kenntnisnahme-Step → Acknowledge → Compliance-% 0→100
+- `document-signature.spec.ts` — PDF-Upload → 2-Signer-sequential-Ceremony (falsche Reihenfolge 409, Zweit-Session via Demo-User) → verify valid → Zertifikat `%PDF` → Controlled-Copy-Header
+- `process-map.spec.ts` — Band-Gruppierung management/core/support → Reorder → Band-Vererbung beim Drill-in
+- `reports.spec.ts` — risk-register PDF/XLSX-Magic-Bytes, SoA + Compliance-Status gegen erstes geseedetes Framework (skip mit Begründung falls keins), formal > minimal
+- `management-review.spec.ts` — Review-Lifecycle, Dashboard-Shape (9.3.2-Inputs), Item+Maßnahme→work_item, completed→read-only 422, PDF-Export
+
+Bestand `tests/e2e/regression/` (Gruppenliste Stand ~2026-05, seither kamen 7 Specs hinzu), gruppiert nach Modul:
 
 - **B-01 bis B-06** — BCMS (BIA, BCP, Crisis, Exercise, Resilience, Readiness)
 - **D-01 bis D-03** — DORA (Incident, Providers, TLPT)
@@ -363,27 +371,28 @@ Quelle: [`coverage/aggregated-summary.md`](../coverage/aggregated-summary.md). W
 
 ## Sicherheits-Coverage
 
-### RLS + Audit-Trigger (Report-Stand 2026-05-13, Migrations-Stand 2026-07-10)
+### RLS + Audit-Trigger (Report-Stand 2026-07-20, regeneriert nach 0357/0360/0361)
 
-Quelle: [`docs/security/rls-coverage-report.md`](./security/rls-coverage-report.md) (regeneriert 2026-05-13), [`scripts/audit-rls-coverage.mjs`](../scripts/audit-rls-coverage.mjs).
+Quelle: [`docs/security/rls-coverage-report.md`](./security/rls-coverage-report.md) (regeneriert 2026-07-20), [`scripts/audit-rls-coverage.mjs`](../scripts/audit-rls-coverage.mjs).
 
-| Status             | Tabellen | Bedeutung                                                                          |
-| ------------------ | -------: | ---------------------------------------------------------------------------------- |
-| ✅ OK              |  **365** | RLS + Policy + Audit-Trigger vollständig                                           |
-| ❌ RLS_MISSING     |    **0** | Durch die Gap-Closure-Wellen (0288 → 0315 v4 → 0336 v5) vollständig geschlossen    |
-| ❌ AUDIT_MISSING   |  **180** | RLS+Policy ja, aber `audit_trigger()` nicht **statisch nachweisbar** registriert   |
-| ⚪ PLATFORM_EXEMPT |       15 | Plattform-weite Tabellen (catalog, module_definition, user, audit_log selbst etc.) |
-| **Total**          |  **560** |                                                                                    |
+| Status             | Tabellen | Bedeutung                                                                                                       |
+| ------------------ | -------: | --------------------------------------------------------------------------------------------------------------- |
+| ✅ OK              |  **555** | RLS + Policy + Audit-Trigger vollständig                                                                        |
+| ❌ RLS_MISSING     |    **0** | Durch die Gap-Closure-Wellen (0288 → 0315 v4 → 0336 v5) vollständig geschlossen                                 |
+| ❌ AUDIT_MISSING   |    **0** | Der 0357/0360/0361-Backfill hat alle statisch nicht nachweisbaren Registrierungen explizit gemacht              |
+| ⚪ AUDIT_EXEMPT    |    **4** | Bewusst ohne `audit_trigger()`: `session`, `account`, `verification_token` (Secret-tragend), `process_event` (High-Volume-Stream) — siehe Addendum in Migration 0357 |
+| ⚪ PLATFORM_EXEMPT |       15 | Plattform-weite Tabellen (catalog, module_definition, user, audit_log selbst etc.)                              |
+| **Total**          |  **574** |                                                                                                                  |
 
-> Realitäts-Audit 2026-07-10: Die zuvor hier stehenden Zahlen (347 OK / 131 RLS_MISSING / 52 AUDIT_MISSING / 545, Stand 2026-04-18) waren zwei Report-Generationen alt; die RLS_MISSING-Schwerpunktliste (bcms/dpms/tprm/process/wb/isms/esg) ist obsolet. Die 180 AUDIT_MISSING waren größtenteils ein **Sichtbarkeits-Artefakt** (der dynamische 0337-Sweep ist statisch nicht analysierbar); Migration `0357_audit_trigger_backfill.sql` (2026-07-10) registriert `audit_trigger()` jetzt **explizit auf 177 Tabellen**, `0361` dedupliziert 117 Doppel-Trigger, `0360` deckt `risk_acceptance`/`risk_acceptance_authority` ab. **Report-Re-Run nach 0357/0360/0361 steht aus** — erst danach sind die Restlücken belastbar.
+> Der im Realitäts-Audit 2026-07-10 angekündigte **Report-Re-Run nach 0357/0360/0361 ist erledigt (2026-07-20)**: Die 180 AUDIT_MISSING aus dem Report-Stand 2026-05-13 waren wie vermutet ein Sichtbarkeits-Artefakt des dynamischen 0337-Sweeps — nach dem expliziten Backfill bleiben **0 AUDIT_MISSING** und 4 dokumentierte AUDIT_EXEMPT.
 
-### Three Lines of Defense (Stand 2026-04-18)
+### Three Lines of Defense (Stand 2026-07-20, Scan-Logik erweitert)
 
 Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 
-- 1.606 API-Routen analysiert, 796 mutating
-- 17 anonymous mutating — **alle legitim** (Auth-Callbacks, Portal-Token-Routes, SCIM-IdP-Push, DD-Submit)
-- LoD-Verteilung: cross 1.313, 2nd 900, 3rd 347, 1st 277, read 270, isolated 6 (Whistleblowing)
+- 1.802 API-Routen analysiert, 906 mutating
+- **0 anonymous mutating** — die 17 „anonymous mutating" aus dem Report-Stand 2026-04-18 waren False Positives des Scans (er matchte nur `withAuth`; Befund des RBAC-Smoke-Agents zu `auth/switch-org` + SCIM). Der Scan erkennt jetzt zusätzlich direkte Auth.js-Session-Auth (`await auth()`), In-Handler-Token-Validatoren (`validateScimToken`, `validateDdToken`, `validateMailboxToken`, SAML-Assertion-Validierung) und eine dokumentierte Public-by-Design-Allowlist (Login, Invitation-Token, Whistleblowing-Intake, Vendor-DD-Submit). Aufschlüsselung: 1 session-auth, 11 token-auth, 5 public-by-design.
+- LoD-Verteilung: cross 1.399, 2nd 956, 3rd 364, 1st 337, read 280, isolated 12 (Whistleblowing)
 
 ### Audit-Trail-Hash-Chain
 
@@ -405,7 +414,7 @@ Quelle: [`docs/security/lod-coverage.md`](./security/lod-coverage.md).
 | **Template-Injection in Reporting**                                      |       P0 | ✅ 16 Cases verifiziert grün — Whitelist-Namespaces, no nested re-rendering                                                                                                   |
 | **Risk-Lifecycle-State-Validation (Schema-Layer)**                       |       P1 | ✅ 16+20 Cases — alle 5 Status-Werte, case-sensitivity, Financial-Impact-Refine. **Server-side State-Transition-Logik (z. B. closed → identified verbieten) fehlt weiterhin** |
 | ~~131 Tabellen ohne RLS-Policy~~ — geschlossen (Report 2026-05-13: RLS_MISSING = 0) |       P1 | ✅ erledigt via Gap-Closure-Wellen bis 0336; Zeile war veraltet (Realitäts-Audit 2026-07-10)                                                                                  |
-| ~~52 Tabellen ohne `audit_trigger()`~~ — 180 lt. Report 2026-05-13, per `0357`/`0360`/`0361` explizit registriert |       P1 | ✅ Backfill gemergt 2026-07-10; Report-Re-Run ausstehend                                                                                                                      |
+| ~~52 Tabellen ohne `audit_trigger()`~~ — 180 lt. Report 2026-05-13, per `0357`/`0360`/`0361` explizit registriert |       P1 | ✅ Backfill gemergt 2026-07-10; Report-Re-Run 2026-07-20: **AUDIT_MISSING 0**, AUDIT_EXEMPT 4 (dokumentiert)                                                                  |
 | 99 verbleibende TypeScript-Errors (Web 0, Worker 0, Rest in Tests/Tools) |       P3 | offen                                                                                                                                                                         |
 | 137 N+1-Query-Kandidaten                                                 |       P3 | offen                                                                                                                                                                         |
 | 1.738 fehlende Index-Vorschläge (53 davon RLS-High)                      |       P2 | offen                                                                                                                                                                         |

@@ -29,8 +29,9 @@ docker compose up -d postgres redis
 
 # Migrations + Seed
 cd packages/db
-npm run migrate
-npm run seed-demo   # optional: Meridian-Demo-Daten
+npm run db:migrate
+npm run db:seed      # Basis-Daten (Orgs, User, Module)
+npm run db:seed-all  # optional: Kataloge + Meridian-Demo-Daten
 cd ../..
 
 # Dev-Server
@@ -59,7 +60,7 @@ git checkout -b feature/FR-NN-description
 # 3. Schema-Änderung? → drizzle/ nutzen, NICHT src/migrations/ (ADR-014)
 cd packages/db
 npx drizzle-kit generate  # erzeugt drizzle/XXXX_*.sql
-npm run migrate           # lokal anwenden
+npm run db:migrate        # lokal anwenden
 
 # 4. Test
 cd apps/web
@@ -130,7 +131,7 @@ await requireLineOfDefense(["second", "third"]);
 
 ## 7. i18n
 
-- 71 Namespace-Files pro Locale: `messages/{de,en}/*.json`
+- 72 Namespace-Files pro Locale: `messages/{de,en}/*.json`
 - Nutzung: `const t = useTranslations("auditMgmt"); t("title")`
 - **Keine dotted keys** — nested objects ({"foo": {"bar": "..."}})
 - Fallback: German wenn EN fehlt
@@ -154,10 +155,27 @@ Jede Request hat eine `X-Request-ID` im Response-Header — für Log-Korrelation
 3. **Neue Tabelle ohne RLS**: CI `schema-drift.yml` warnt wenn RLS_MISSING-Count steigt.
 4. **Race-Condition mit Session-Update**: Nach Mutationen, die Rollen ändern, **hard reload** (`window.location.href`) statt `router.refresh()` — siehe F-04/F-05.
 
+## Neue Features Juli 2026 — wo finde ich was?
+
+Ein-Zeilen-Einstiege in die Juli-Features (Demo-Daten via `seed_demo_14_july_features.sql`, läuft in `db:seed-all` und `deploy/update-all.sh` Abschnitt 3c mit):
+
+| Feature                                        | Einstieg                                                                           |
+| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
+| Prozesslandkarte (management/core/support)     | `/process-map` — Bänder via `process.map_category`/`map_sequence`                  |
+| Prozess-Portal (Kenntnisnahmen, RACI)          | `/my-processes` — pending acknowledgment-Steps aus `process_approval_step`         |
+| BPM-Freigabekette (review → approval → ack)    | `/processes/[id]` → Tab Sign-off/Freigabe; API `/processes/[id]/approval-steps`    |
+| Call-Activity-Drilldown                        | `/processes/[id]` BPMN-Viewer — `process_step.called_process_id` (Migration 0363)  |
+| DMS Effective Dating (1.0 → 1.1 → 2.0)         | `/documents/[id]` → Versionen; API `GET /documents/[id]/versions/at`               |
+| e-Signatur (Hash-Kette, Verify, Zertifikat)    | `/documents/[id]` → Tab „Signaturen"; Chain-Logik `lib/documents/signature-chain.ts` |
+| Management-Review-Cockpit (ISO 27001 9.3)      | `/isms/reviews` — completed Q2/2026 + planned Review mit „seit letztem Review"     |
+| Risk-Acceptance (Authority-Matrix, Expiry)     | `/risk-acceptances` — eine Demo-Akzeptanz läuft 2026-08-10 ab (Expiry-Highlight)   |
+| Retention-Policies (GoBD)                      | Dokument-Detail (DOC-001 hat „Aufbewahrung 10 Jahre (GoBD)" zugewiesen)            |
+| Standard-Reports (PDF/Excel, Branding-Stile)   | `/reports` → „Standard-Berichte" (Risk Register, SoA, Compliance-Status)           |
+
 ## 10. Weiterführend
 
 - **Audit-Test-Protokoll**: [`audit-test-2026-04-17/00-PROTOKOLL.md`](../audit-test-2026-04-17/00-PROTOKOLL.md) — konkrete Bug-Reports und Fixes
-- **Playwright-Setup** (Tests): `tests/e2e/` (TBD Bundle 4)
+- **Playwright-Setup** (Tests): `apps/web/e2e/` (47 E2E-Specs)
 - **Drizzle Docs**: https://orm.drizzle.team/docs/overview
 - **Next.js 15 App Router**: https://nextjs.org/docs/app
 

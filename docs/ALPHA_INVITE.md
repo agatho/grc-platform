@@ -1,6 +1,6 @@
 # ARCTOS Alpha — Tester Onboarding
 
-_Status: 0.1.0-alpha · Updated: 2026-05-21 (post-Wave-24 closure)_
+_Status: 0.1.0-alpha · Updated: 2026-07-20 (July feature drop + demo data)_
 
 Hi 👋 — and thanks for trying ARCTOS. This guide gets you from
 "invite link arrived" to "I can poke around all the modules" in
@@ -117,6 +117,46 @@ Lines split, but sometimes we tighten too far).
 
 ---
 
+## New since the last invite (July 2026 feature drop)
+
+All of these ship **with demo data** in the Meridian tenant, so
+they show something the moment you open them:
+
+- **Process map** — Processes now sit on a graphical value-chain
+  map (management / core / support bands). Try the
+  *Auftragsabwicklung Textilservice* core process: it drills down
+  into child processes, and its BPMN call activity links straight
+  to the *Tourenplanung* sub-process.
+- **Process approvals & portal** — published processes carry a
+  multi-stage approval chain (review → approval → acknowledgment).
+  The *Incident-Response-Prozess* has a completed chain plus an
+  **open acknowledgment waiting for `process-owner@meridian.test`**
+  — log in as that role and confirm it in the process portal.
+- **DMS effective dating & versioning** — the new
+  *KI-Nutzungsrichtlinie* policy has three versions
+  (1.0 → 1.1 → 2.0) with validity windows, so you can ask "which
+  text was in force on a given date".
+- **E-signatures with hash chain** — the same policy carries a
+  completed two-signer signature ceremony. Open its *Signaturen*
+  tab, hit **Verify** (the SHA-256 chain recomputes clean) and
+  download the signature certificate PDF.
+- **Management-review cockpit** (ISO 27001 9.3) — a completed
+  Q2/2026 review with structured findings/decisions, plus a
+  planned review whose input period auto-derives from "since the
+  last completed review".
+- **Risk acceptances** — formal ISO 27005 acceptances with an
+  authority matrix. One acceptance (cloud-provider outage)
+  expires on **2026-08-10**, so you'll see the expiry highlight
+  in the review cockpit.
+- **Retention policies** — a "10 Jahre (GoBD)" retention policy
+  is assigned to the Informationssicherheitsrichtlinie; the
+  document shows its retention-until date.
+- **Standard reports** — Risk Register, SoA and Compliance-Status
+  as branded PDF/Excel downloads under *Platform → Reports*
+  (style variants standard / formal / minimal).
+
+---
+
 ## Known limitations & gotchas (alpha)
 
 We're tracking these openly; please ignore the rough edges or
@@ -140,12 +180,11 @@ report new ones.
 
 ### Not yet finished
 
-- **Finding cross-module FK persistence** — There's a known issue
-  where `controlId` / `auditId` / `riskId` posted to `POST /findings`
-  occasionally persist as `null`. We're root-causing it via a
-  diagnostic endpoint deployed but currently disabled
-  (`ARCTOS_DEBUG_TRACE_ENABLED`). Report if you can reproduce it
-  via the UI and we'll prioritise.
+- **E-signature scope** — the multi-signer signature workflow is a
+  simple electronic signature (eIDAS Art. 25) with an in-house
+  SHA-256 hash chain. No qualified signatures (QES), no HSM, no
+  external provider yet — the provider interface exists so
+  sproof/DocuSign can dock on later.
 - **Some report PDFs** — Risk Quarterly Summary, BCM Annual
   Review, ESG ESRS Disclosure now render via pdfkit (the former
   Puppeteer/Chromium pipeline was removed 2026-07-11); charts
@@ -194,16 +233,15 @@ than a structured bug report we receive a week later.
 
 Roadmap is loose, but in priority order:
 
-1. **A1 fix** — settling the finding-FK regression so the cross-
-   module audit trail is bulletproof.
-2. **Email delivery** — moving from sandboxed SMTP to a real
+1. **Email delivery** — moving from sandboxed SMTP to a real
    Resend/Postmark setup before we open up beyond this invite
-   cycle.
-3. **AI cost guardrails** — per-org daily budget + UI surface for
+   cycle. (The old #1, the finding-FK regression "A1", was closed
+   2026-05-21 — root cause was a stale prod build, not a code bug.)
+2. **AI cost guardrails** — per-org daily budget + UI surface for
    admins to enable/disable AI features themselves.
-4. **Mobile** — Sprint-60 mobile shell exists but is incomplete.
-5. **Beta** — once those four land, we open up self-serve
-   onboarding for organisations that aren't on the invite list.
+3. **Mobile** — Sprint-60 mobile shell exists but is incomplete.
+4. **Beta** — once those land, we open up self-serve onboarding
+   for organisations that aren't on the invite list.
 
 Thanks again for being here. The reason this thing is opinionated
 enough to be useful is feedback from people like you in this exact
