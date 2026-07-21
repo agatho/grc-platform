@@ -54,6 +54,67 @@ services:
     networks:
       - arctos
 
+  # ── MinIO (S3-kompatibler Objektspeicher, self-hosted) ────────
+  # DMS-File-Storage. Der Web-Container ist read_only — lokales FS
+  # funktioniert dort nur über das uploads-Volume; MinIO ist der
+  # empfohlene Backend (STORAGE_BACKEND=s3 in .env). Path-style URLs.
+  minio:
+    image: minio/minio:RELEASE.2025-04-22T22-12-26Z
+    restart: unless-stopped
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-arctos}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
+    volumes:
+      - miniodata:/data
+    healthcheck:
+      test: ["CMD", "mc", "ready", "local"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - arctos
+    # Kein Port exposed — nur intern; Console bei Bedarf via SSH-Tunnel:
+    # ssh -L 9001:localhost:9001 und Port temporär mappen.
+
+  # One-shot: Bucket anlegen (idempotent), dann Exit.
+  minio-init:
+    image: minio/mc:RELEASE.2025-04-16T18-13-26Z
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      mc alias set arctos http://minio:9000 $${MINIO_ROOT_USER} $${MINIO_ROOT_PASSWORD} &&
+      mc mb --ignore-existing arctos/$${S3_BUCKET} &&
+      echo 'minio-init: bucket ready'"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-arctos}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-}
+      S3_BUCKET: ${S3_BUCKET:-arctos-dms}
+    networks:
+      - arctos
+    restart: "no"
+
+  # ── ClamAV (Malware-Scan für DMS-Uploads) ─────────────────────
+  # Achtung: braucht ~1–1.5 GB RAM für die Signatur-DB. Auf kleinen
+  # Servern vorher `free -h` prüfen. Ohne CLAMAV_HOST in .env wird
+  # der Scan app-seitig einfach übersprungen — der Container kann
+  # dann entfernt/gestoppt werden.
+  clamav:
+    image: clamav/clamav:1.4
+    restart: unless-stopped
+    volumes:
+      - clamdb:/var/lib/clamav
+    healthcheck:
+      test: ["CMD", "clamdcheck.sh"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+      start_period: 180s
+    networks:
+      - arctos
+
   # ── ARCTOS Web App ────────────────────────────────────────────
   web:
     image: ghcr.io/${GITHUB_REPOSITORY:-arctos}/grc-web:${IMAGE_TAG:-latest}
@@ -79,6 +140,11 @@ services:
     read_only: true
     tmpfs:
       - /tmp
+    volumes:
+      # Fallback für STORAGE_BACKEND=local + Branding-Logos: ohne diese
+      # Volumes schlagen Datei-Uploads am read_only-Rootfs fehl (EROFS).
+      - uploads:/app/uploads
+      - branding:/app/apps/web/public/uploads
     environment:
       DATABASE_URL: postgresql://grc:${DB_PASSWORD:?Set DB_PASSWORD in .env}@postgres:5432/grc_platform
       AUTH_SECRET: ${AUTH_SECRET:?Set AUTH_SECRET in .env}
@@ -100,6 +166,19 @@ services:
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
+      # DMS-Storage (local = Volume oben; s3 = MinIO-Sidecar/extern)
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads/documents}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
+      # ClamAV-Scan (leer = übersprungen)
+      CLAMAV_HOST: ${CLAMAV_HOST:-}
+      CLAMAV_PORT: ${CLAMAV_PORT:-3310}
+      CLAMAV_FAIL_CLOSED: ${CLAMAV_FAIL_CLOSED:-}
       # Impressum (§ 5 DDG) — siehe .env.production.example
       IMPRINT_COMPANY_NAME: ${IMPRINT_COMPANY_NAME:-}
       IMPRINT_LEGAL_FORM: ${IMPRINT_LEGAL_FORM:-}
@@ -150,7 +229,25 @@ services:
       RESEND_API_KEY: ${RESEND_API_KEY:-}
       EMAIL_ENABLED: ${EMAIL_ENABLED:-false}
       ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      # Embedding-Sync-Cron braucht den OpenAI-Key (fehlte bisher!)
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      # Connector-/SSO-Secret-Entschlüsselung in Crons
+      SECRET_ENCRYPTION_KEY: ${SECRET_ENCRYPTION_KEY:-}
+      SECRET_ENCRYPTION_KEY_PREVIOUS: ${SECRET_ENCRYPTION_KEY_PREVIOUS:-}
+      # Retention-Purge löscht Files über das Storage-Interface —
+      # muss dieselbe Storage-Config sehen wie web
+      UPLOAD_DIR: ${UPLOAD_DIR:-/app/uploads/documents}
+      STORAGE_BACKEND: ${STORAGE_BACKEND:-local}
+      S3_ENDPOINT: ${S3_ENDPOINT:-}
+      S3_REGION: ${S3_REGION:-us-east-1}
+      S3_BUCKET: ${S3_BUCKET:-}
+      S3_ACCESS_KEY_ID: ${S3_ACCESS_KEY_ID:-}
+      S3_SECRET_ACCESS_KEY: ${S3_SECRET_ACCESS_KEY:-}
+      S3_FORCE_PATH_STYLE: ${S3_FORCE_PATH_STYLE:-1}
       PORT: "3001"
+    volumes:
+      # Gleiche Sicht auf lokale Uploads wie web (Retention-Purge/Erase)
+      - uploads:/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
@@ -162,6 +259,10 @@ services:
 
 volumes:
   pgdata:
+  uploads:
+  branding:
+  miniodata:
+  clamdb:
 
 networks:
   arctos:

@@ -67,6 +67,10 @@ ensure_env_hint() {
 # Ohne Key verweigern die betroffenen Routen das Speichern (fail-hard by design).
 ensure_env_secret "SECRET_ENCRYPTION_KEY" "openssl rand -base64 32"
 
+# MinIO-Sidecar (docker-compose.production.yml): Root-Passwort generieren.
+# Aktiviert wird das S3-Backend erst durch STORAGE_BACKEND=s3 + S3_*-Werte.
+ensure_env_secret "MINIO_ROOT_PASSWORD" "openssl rand -hex 24"
+
 # Optional: AI-Provider (Policy-Entwurf, Kontroll-Vorschlaege, Gap-Erklaerung;
 # Embeddings brauchen OPENAI_API_KEY oder Ollama)
 ensure_env_hint "ANTHROPIC_API_KEY" "AI-Assist via Claude (optional)"
@@ -231,6 +235,10 @@ fi
 # ── 4. Haupt-Container neu starten (web + worker) ─────────
 echo ""
 echo "[4/5] Haupt-Container neu starten (web + worker)..."
+# Sidecars (MinIO/ClamAV/minio-init) zuerst sicherstellen — up ohne
+# --force-recreate startet sie nur, wenn sie fehlen/geaendert sind.
+docker compose -f "$COMPOSE_FILE" up -d minio clamav 2>&1 | tail -3 || true
+docker compose -f "$COMPOSE_FILE" up -d minio-init 2>&1 | tail -2 || true
 docker compose -f "$COMPOSE_FILE" up -d --force-recreate web worker 2>&1 | tail -5
 
 # Worker-Health quick-check: zeigt sofort ob die Cron-Engine startet
