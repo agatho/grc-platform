@@ -9,7 +9,7 @@
     "@grc/db": "^0.1.0",
     "@grc/shared": "^0.1.0",
     "exceljs": "^4.4.0",
-    "pdfkit": "^0.18.0"
+    "pdfkit": "^0.19.1"
   },
   "devDependencies": {
     "@types/pdfkit": "^0.17.6",
