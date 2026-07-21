@@ -35,6 +35,17 @@ else
   echo "  $OLD_COMMIT → $NEW_COMMIT"
 fi
 
+# ── 1a. Self-Update: mit neuer Script-Version neu starten ─
+# bash fuehrt das bereits geladene Script zu Ende — Aenderungen an
+# update-all.sh selbst wuerden sonst erst beim UEBERNAECHSTEN Lauf
+# greifen (so geschehen bei der Env-Migration). Re-exec einmalig,
+# wenn der Pull dieses Script veraendert hat.
+if [ "${ARCTOS_UPDATE_REEXEC:-0}" != "1" ] && [ "$OLD_COMMIT" != "$NEW_COMMIT" ] \
+   && ! git diff --quiet "$OLD_COMMIT" "$NEW_COMMIT" -- deploy/update-all.sh; then
+  echo "  update-all.sh wurde aktualisiert — starte mit neuer Version neu..."
+  ARCTOS_UPDATE_REEXEC=1 exec bash /opt/arctos/deploy/update-all.sh
+fi
+
 # ── 1b. Env-Migration: neue Variablen sicherstellen ───────
 # setup-hetzner.sh erzeugt die .env nur EINMAL bei Erstinstallation.
 # Variablen, die spaetere Releases einfuehren, muessen nachgezogen
