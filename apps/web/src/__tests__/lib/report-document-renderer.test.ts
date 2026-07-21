@@ -122,8 +122,7 @@ describe("renderReportDocument", () => {
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
     expect(buffer.subarray(-32).toString("latin1")).toContain("%%EOF");
     // pageBreak in the model → at least 2 pages
-    const pages =
-      buffer.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? [];
+    const pages = buffer.toString("latin1").match(/\/Type\s*\/Page[^s]/g) ?? [];
     expect(pages.length).toBeGreaterThanOrEqual(2);
   });
 

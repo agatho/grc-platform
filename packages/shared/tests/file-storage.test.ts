@@ -129,7 +129,11 @@ describe("S3Storage", () => {
   });
 
   it("builds virtual-hosted AWS URLs without endpoint", () => {
-    const s3 = new S3Storage({ ...baseCfg, endpoint: undefined, forcePathStyle: false });
+    const s3 = new S3Storage({
+      ...baseCfg,
+      endpoint: undefined,
+      forcePathStyle: false,
+    });
     expect(s3.objectUrl("k.txt").toString()).toBe(
       "https://arctos-docs.s3.us-east-1.amazonaws.com/k.txt",
     );
@@ -172,9 +176,7 @@ describe("S3Storage", () => {
   it("delete/exists map S3 status codes", async () => {
     const { fetchFn } = mockFetch((req) => {
       if (req.method === "DELETE") return { status: 204 };
-      return req.url.endsWith("/there.bin")
-        ? { status: 200 }
-        : { status: 404 };
+      return req.url.endsWith("/there.bin") ? { status: 200 } : { status: 404 };
     });
     const s3 = new S3Storage({ ...baseCfg, fetchFn });
 

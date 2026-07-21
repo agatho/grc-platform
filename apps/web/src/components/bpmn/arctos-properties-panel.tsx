@@ -91,9 +91,7 @@ export function ArctosPropertiesPanel({
   // overrides (process_raci_override; participantBpmnId = role id).
   const [consultedIds, setConsultedIds] = useState<string[]>([]);
   const [informedIds, setInformedIds] = useState<string[]>([]);
-  const [initialCi, setInitialCi] = useState<Map<string, "C" | "I">>(
-    new Map(),
-  );
+  const [initialCi, setInitialCi] = useState<Map<string, "C" | "I">>(new Map());
   // Call-Activity Drill-Down: linked-process search state
   const [processSearch, setProcessSearch] = useState("");
   const [processResults, setProcessResults] = useState<ProcessSearchResult[]>(

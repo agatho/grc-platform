@@ -80,11 +80,11 @@ und `packages/**/src`. Sortiert nach Scope.
 
 ## Connector Framework (Sprint 62-66)
 
-| Variable                   | req/opt                         | Beschreibung                               |
-| -------------------------- | ------------------------------- | ------------------------------------------ |
-| `CONNECTOR_ENCRYPTION_KEY` | req wenn Connectors aktiv · sec | Verschluesselt Connector-Credentials in DB (3-Spalten-Layout `encrypted_payload/iv/auth_tag`) |
-| `SECRET_ENCRYPTION_KEY` | req wenn SSO/OIDC oder OAuth-Connectors aktiv · sec | 32 Byte, base64 (`openssl rand -base64 32`) oder 64-char hex. Verschluesselt Ein-Spalten-Secrets (`sso_config.oidc_client_secret`, `connector_credential.refresh_token`) als `v1:`-Envelope — siehe `packages/shared/src/secret-crypto.ts` |
-| `SECRET_ENCRYPTION_KEY_PREVIOUS` | opt · sec | Nur waehrend Key-Rotation: alter Key als Decrypt-Fallback. Nach Re-Seal (`scripts/encrypt-connector-secrets.mjs`) wieder entfernen |
+| Variable                         | req/opt                                             | Beschreibung                                                                                                                                                                                                                               |
+| -------------------------------- | --------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `CONNECTOR_ENCRYPTION_KEY`       | req wenn Connectors aktiv · sec                     | Verschluesselt Connector-Credentials in DB (3-Spalten-Layout `encrypted_payload/iv/auth_tag`)                                                                                                                                              |
+| `SECRET_ENCRYPTION_KEY`          | req wenn SSO/OIDC oder OAuth-Connectors aktiv · sec | 32 Byte, base64 (`openssl rand -base64 32`) oder 64-char hex. Verschluesselt Ein-Spalten-Secrets (`sso_config.oidc_client_secret`, `connector_credential.refresh_token`) als `v1:`-Envelope — siehe `packages/shared/src/secret-crypto.ts` |
+| `SECRET_ENCRYPTION_KEY_PREVIOUS` | opt · sec                                           | Nur waehrend Key-Rotation: alter Key als Decrypt-Fallback. Nach Re-Seal (`scripts/encrypt-connector-secrets.mjs`) wieder entfernen                                                                                                         |
 
 ## Regulatory Feeds (Sprint 24, 72)
 

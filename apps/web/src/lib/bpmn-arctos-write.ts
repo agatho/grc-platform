@@ -41,9 +41,7 @@ function createRefContainer(
 ): ModdleElement | null {
   const values = items
     .filter((it) => it.id)
-    .map((it) =>
-      arctosModdle.create(itemType, pruned({ ...it })),
-    );
+    .map((it) => arctosModdle.create(itemType, pruned({ ...it })));
   if (values.length === 0) return null;
   const container = arctosModdle.create(containerType, { values });
   for (const v of values) v.$parent = container;
@@ -74,7 +72,11 @@ function createGrcMetadataElement(meta: GrcMetadata): ModdleElement | null {
 
   attach(
     "riskRefs",
-    createRefContainer("arctos:RiskRefs", "arctos:RiskRef", meta.riskRefs ?? []),
+    createRefContainer(
+      "arctos:RiskRefs",
+      "arctos:RiskRef",
+      meta.riskRefs ?? [],
+    ),
   );
   attach(
     "controlRefs",

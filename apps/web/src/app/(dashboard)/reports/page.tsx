@@ -120,10 +120,7 @@ function StandardReportsSection() {
     window.open(`${path}?${search.toString()}`, "_blank");
   };
 
-  const frameworkSelect = (
-    value: string,
-    onChange: (v: string) => void,
-  ) => (
+  const frameworkSelect = (value: string, onChange: (v: string) => void) => (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className="w-full">
         <SelectValue placeholder={t("standardReports.selectFramework")} />

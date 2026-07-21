@@ -37,8 +37,7 @@ import {
 
 // ─── Row types ──────────────────────────────────────────────────────
 
-export type SignatureRequestRow =
-  typeof documentSignatureRequest.$inferSelect;
+export type SignatureRequestRow = typeof documentSignatureRequest.$inferSelect;
 export type SignatureRow = typeof documentSignature.$inferSelect;
 
 // ─── Errors ─────────────────────────────────────────────────────────
@@ -202,9 +201,7 @@ async function loadSignatures(
 }
 
 /** Live file hash of the frozen version (fallback: document inline hash). */
-async function loadLiveFileSha(
-  versionId: string,
-): Promise<string | null> {
+async function loadLiveFileSha(versionId: string): Promise<string | null> {
   const [row] = await db
     .select({
       versionSha: documentVersion.fileSha256,
@@ -392,7 +389,9 @@ class InHouseSignatureProvider implements SignatureProvider {
 
         return { request, signatures };
       },
-      { actionDetail: `Signature request created (${signerUserIds.length} signers)` },
+      {
+        actionDetail: `Signature request created (${signerUserIds.length} signers)`,
+      },
     );
   }
 
@@ -522,7 +521,9 @@ class InHouseSignatureProvider implements SignatureProvider {
 
           return { signature: updated, requestCompleted };
         },
-        { actionDetail: `Document signed (chain ${link.chainHash.slice(0, 12)}…)` },
+        {
+          actionDetail: `Document signed (chain ${link.chainHash.slice(0, 12)}…)`,
+        },
       );
     } catch (err) {
       // Migration 0375: partial UNIQUE (request_id, previous_chain_hash)

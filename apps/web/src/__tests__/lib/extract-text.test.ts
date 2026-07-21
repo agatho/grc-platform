@@ -48,10 +48,18 @@ describe("extractFileText", () => {
 
   it("decodes JSON, XML and CSV", async () => {
     expect(
-      await extractFileText(Buffer.from('{"a":1}'), "application/json", "a.json"),
+      await extractFileText(
+        Buffer.from('{"a":1}'),
+        "application/json",
+        "a.json",
+      ),
     ).toBe('{"a":1}');
     expect(
-      await extractFileText(Buffer.from("<r>x</r>"), "application/xml", "a.xml"),
+      await extractFileText(
+        Buffer.from("<r>x</r>"),
+        "application/xml",
+        "a.xml",
+      ),
     ).toBe("<r>x</r>");
     expect(
       await extractFileText(Buffer.from("a;b\n1;2"), "text/csv", "a.csv"),
@@ -110,15 +118,17 @@ describe("extractFileText", () => {
   });
 
   it("strips NUL bytes (PostgreSQL text columns reject them)", async () => {
-    const withNul = Buffer.concat([Buffer.from("ab"), Buffer.alloc(1), Buffer.from("cd")]);
+    const withNul = Buffer.concat([
+      Buffer.from("ab"),
+      Buffer.alloc(1),
+      Buffer.from("cd"),
+    ]);
     expect(await extractFileText(withNul, "text/plain", "a.txt")).toBe("abcd");
   });
 
   it("never throws on corrupt input (returns null)", async () => {
     const notAZip = Buffer.from("definitely not a zip");
-    expect(
-      await extractFileText(notAZip, DOCX_MIME, "broken.docx"),
-    ).toBeNull();
+    expect(await extractFileText(notAZip, DOCX_MIME, "broken.docx")).toBeNull();
   });
 });
 

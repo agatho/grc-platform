@@ -121,25 +121,18 @@ function DocumentDetailInner() {
   const fetchData = useCallback(async () => {
     setLoading(true);
     try {
-      const [
-        docRes,
-        versionsRes,
-        filesRes,
-        linksRes,
-        acksRes,
-        sigRes,
-        logRes,
-      ] = await Promise.all([
-        fetch(`/api/v1/documents/${docId}`),
-        fetch(`/api/v1/documents/${docId}/versions`),
-        fetch(`/api/v1/documents/${docId}/files`),
-        fetch(`/api/v1/documents/${docId}/entity-links`),
-        fetch(`/api/v1/documents/${docId}/acknowledgments`),
-        fetch(`/api/v1/documents/${docId}/signature-requests`),
-        fetch(
-          `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
-        ),
-      ]);
+      const [docRes, versionsRes, filesRes, linksRes, acksRes, sigRes, logRes] =
+        await Promise.all([
+          fetch(`/api/v1/documents/${docId}`),
+          fetch(`/api/v1/documents/${docId}/versions`),
+          fetch(`/api/v1/documents/${docId}/files`),
+          fetch(`/api/v1/documents/${docId}/entity-links`),
+          fetch(`/api/v1/documents/${docId}/acknowledgments`),
+          fetch(`/api/v1/documents/${docId}/signature-requests`),
+          fetch(
+            `/api/v1/audit-log?entityType=document&entityId=${docId}&limit=50`,
+          ),
+        ]);
       if (docRes.ok) {
         const json = await docRes.json();
         setDoc(json.data ?? null);
@@ -380,7 +373,10 @@ function DocumentDetailInner() {
                           className="flex items-center justify-between rounded-lg bg-gray-50 p-3"
                         >
                           <div className="flex items-center gap-3 min-w-0">
-                            <File size={20} className="text-blue-500 shrink-0" />
+                            <File
+                              size={20}
+                              className="text-blue-500 shrink-0"
+                            />
                             <div className="min-w-0">
                               <p className="text-sm font-medium truncate">
                                 {f.fileName}

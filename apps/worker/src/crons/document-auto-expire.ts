@@ -46,7 +46,9 @@ export const processDocumentAutoExpire = withCronInstrumentation(
         await db
           .update(document)
           .set({ status: "expired", updatedAt: now })
-          .where(and(eq(document.id, doc.id), eq(document.status, "published")));
+          .where(
+            and(eq(document.id, doc.id), eq(document.status, "published")),
+          );
 
         if (doc.workItemId) {
           await db

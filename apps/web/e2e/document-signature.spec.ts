@@ -19,7 +19,12 @@
  * Requires the seeded demo user risk.manager@arctos.dev (SETUP.md) to be
  * a member of the admin's active org — otherwise the spec skips.
  */
-import { test, expect, type Browser, type BrowserContext } from "@playwright/test";
+import {
+  test,
+  expect,
+  type Browser,
+  type BrowserContext,
+} from "@playwright/test";
 
 const SIGNER_EMAIL = "risk.manager@arctos.dev";
 const SIGNER_PASSWORD = "arctos2026!";
@@ -203,9 +208,7 @@ test.describe("DMS — Multi-signer signature ceremony", () => {
       expect(toPublished.ok(), await toPublished.text()).toBeTruthy();
 
       // 9. Published PDF download carries the controlled-copy watermark
-      const dl = await request.get(
-        `/api/v1/documents/${documentId}/download`,
-      );
+      const dl = await request.get(`/api/v1/documents/${documentId}/download`);
       expect(dl.ok(), await dl.text()).toBeTruthy();
       expect(dl.headers()["x-controlled-copy"]).toBe("watermarked");
       const dlBody = await dl.body();

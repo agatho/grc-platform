@@ -76,7 +76,10 @@ function makeDef(rowCount: number): ReportDefinition {
 describe("computeColumnWidths", () => {
   it("distributes by weight and sums exactly to totalWidth", () => {
     const widths = computeColumnWidths(
-      [{ key: "a", label: "A", width: 1 }, { key: "b", label: "B", width: 3 }],
+      [
+        { key: "a", label: "A", width: 1 },
+        { key: "b", label: "B", width: 3 },
+      ],
       495,
     );
     expect(widths).toHaveLength(2);
@@ -86,7 +89,10 @@ describe("computeColumnWidths", () => {
 
   it("defaults missing weights to 1", () => {
     const widths = computeColumnWidths(
-      [{ key: "a", label: "A" }, { key: "b", label: "B" }],
+      [
+        { key: "a", label: "A" },
+        { key: "b", label: "B" },
+      ],
       100,
     );
     expect(widths[0] + widths[1]).toBe(100);
@@ -128,7 +134,10 @@ describe("paginateRows", () => {
 
   it("uses the larger capacity for subsequent pages", () => {
     const chunks = paginateRows([1, 1, 1, 1, 1, 1], 2, 4);
-    expect(chunks).toEqual([[0, 1], [2, 3, 4, 5]]);
+    expect(chunks).toEqual([
+      [0, 1],
+      [2, 3, 4, 5],
+    ]);
   });
 
   it("never emits an empty chunk even for oversized rows", () => {
@@ -214,7 +223,11 @@ describe("renderReportXlsx", () => {
 
 describe("reportFileResponse", () => {
   it("sets PDF content type + sanitized filename", async () => {
-    const res = reportFileResponse(Buffer.from("%PDF-1.3"), "risk report!", "pdf");
+    const res = reportFileResponse(
+      Buffer.from("%PDF-1.3"),
+      "risk report!",
+      "pdf",
+    );
     expect(res.headers.get("Content-Type")).toBe("application/pdf");
     expect(res.headers.get("Content-Disposition")).toBe(
       'attachment; filename="risk_report_.pdf"',

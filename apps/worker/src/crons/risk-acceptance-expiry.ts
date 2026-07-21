@@ -91,7 +91,9 @@ export const processRiskAcceptanceExpiry = withCronInstrumentation(
               await tx
                 .update(risk)
                 .set({ status: "identified", updatedAt: now })
-                .where(and(eq(risk.id, row.riskId), eq(risk.status, "accepted")));
+                .where(
+                  and(eq(risk.id, row.riskId), eq(risk.status, "accepted")),
+                );
               risksReopened++;
             }
 

@@ -21,7 +21,9 @@ let requireModuleMock: ReturnType<typeof vi.fn>;
 vi.mock("@grc/db", () => {
   const tableStub = new Proxy(
     {},
-    { get: (_t, p) => (typeof p === "symbol" ? undefined : `col_${String(p)}`) },
+    {
+      get: (_t, p) => (typeof p === "symbol" ? undefined : `col_${String(p)}`),
+    },
   );
   return new Proxy(
     {},
@@ -108,7 +110,9 @@ describe("GET /api/v1/isms/reviews/[id]/dashboard", () => {
     withAuthMock.mockResolvedValueOnce(unauthorized());
     const { GET } = await import(DASHBOARD_ROUTE);
     const res = await GET(
-      makeRequest(`http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`),
+      makeRequest(
+        `http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`,
+      ),
       { params: makeParams({ id: REVIEW_ID }) },
     );
     expect(res.status).toBe(401);
@@ -119,7 +123,9 @@ describe("GET /api/v1/isms/reviews/[id]/dashboard", () => {
     mockDb.select.mockReturnValueOnce(chainable([]));
     const { GET } = await import(DASHBOARD_ROUTE);
     const res = await GET(
-      makeRequest(`http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`),
+      makeRequest(
+        `http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`,
+      ),
       { params: makeParams({ id: REVIEW_ID }) },
     );
     expect(res.status).toBe(404);
@@ -142,7 +148,9 @@ describe("GET /api/v1/isms/reviews/[id]/dashboard", () => {
     );
     const { GET } = await import(DASHBOARD_ROUTE);
     const res = await GET(
-      makeRequest(`http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`),
+      makeRequest(
+        `http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`,
+      ),
       { params: makeParams({ id: REVIEW_ID }) },
     );
     expect(res.status).toBe(200);
@@ -212,7 +220,9 @@ describe("GET /api/v1/isms/reviews/[id]/dashboard", () => {
       );
     const { GET } = await import(DASHBOARD_ROUTE);
     const res = await GET(
-      makeRequest(`http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`),
+      makeRequest(
+        `http://localhost/api/v1/isms/reviews/${REVIEW_ID}/dashboard`,
+      ),
       { params: makeParams({ id: REVIEW_ID }) },
     );
     expect(res.status).toBe(200);
@@ -278,12 +288,16 @@ describe("POST /api/v1/isms/reviews/[id]/items", () => {
 
   it("creates an item and a linked work_item when an action is given", async () => {
     mockDb.select
-      .mockReturnValueOnce(chainable([{ id: REVIEW_ID, status: "in_progress" }]))
+      .mockReturnValueOnce(
+        chainable([{ id: REVIEW_ID, status: "in_progress" }]),
+      )
       // max(sortOrder) im tx
       .mockReturnValueOnce(chainable([{ max: 1 }]));
     mockDb.insert
       // work_item insert
-      .mockReturnValueOnce(chainable([{ id: "wi-1", elementId: "WIT00000042" }]))
+      .mockReturnValueOnce(
+        chainable([{ id: "wi-1", elementId: "WIT00000042" }]),
+      )
       // item insert
       .mockReturnValueOnce(
         chainable([

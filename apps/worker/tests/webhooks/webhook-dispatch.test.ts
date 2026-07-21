@@ -125,10 +125,7 @@ describe("processWebhookDispatch", () => {
     expect(m.insert).not.toHaveBeenCalled();
     const setCalls = (updateChain.set as Mock).mock.calls;
     expect(setCalls.length).toBeGreaterThan(0);
-    const lastSet = setCalls[setCalls.length - 1][0] as Record<
-      string,
-      unknown
-    >;
+    const lastSet = setCalls[setCalls.length - 1][0] as Record<string, unknown>;
     expect(lastSet.status).toBe("delivered");
     expect(lastSet.responseStatus).toBe(200);
   });
@@ -147,10 +144,7 @@ describe("processWebhookDispatch", () => {
     expect(fetchMock).not.toHaveBeenCalled();
     const setCalls = (updateChain.set as Mock).mock.calls;
     expect(setCalls.length).toBeGreaterThan(0);
-    const lastSet = setCalls[setCalls.length - 1][0] as Record<
-      string,
-      unknown
-    >;
+    const lastSet = setCalls[setCalls.length - 1][0] as Record<string, unknown>;
     expect(lastSet.status).toBe("failed");
     expect(String(lastSet.errorMessage)).toMatch(/deactivated/i);
   });

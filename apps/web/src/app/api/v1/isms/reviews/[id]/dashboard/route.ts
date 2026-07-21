@@ -34,7 +34,19 @@ import {
   kri,
 } from "@grc/db";
 import { requireModule } from "@grc/auth";
-import { eq, and, ne, lte, lt, gte, isNull, isNotNull, desc, asc, sql } from "drizzle-orm";
+import {
+  eq,
+  and,
+  ne,
+  lte,
+  lt,
+  gte,
+  isNull,
+  isNotNull,
+  desc,
+  asc,
+  sql,
+} from "drizzle-orm";
 import { withAuth } from "@/lib/api";
 import { resolveReviewPeriod } from "@/lib/isms/review-period";
 

@@ -166,11 +166,16 @@ function drawPageChrome(
       lineBreak: false,
       ellipsis: true,
     });
-  doc.text(`Page ${pageNo} of ${pageCount}`, PAGE_WIDTH - MARGIN - 90, footerY, {
-    width: 90,
-    align: "right",
-    lineBreak: false,
-  });
+  doc.text(
+    `Page ${pageNo} of ${pageCount}`,
+    PAGE_WIDTH - MARGIN - 90,
+    footerY,
+    {
+      width: 90,
+      align: "right",
+      lineBreak: false,
+    },
+  );
 }
 
 // ─── Sections ────────────────────────────────────────────────────

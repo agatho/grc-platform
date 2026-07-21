@@ -5,9 +5,7 @@
 import { describe, it, expect, beforeEach, vi } from "vitest";
 
 const processWebhookRetriesMock = vi.fn().mockResolvedValue({ processed: 0 });
-const processWebhookDispatchMock = vi
-  .fn()
-  .mockResolvedValue({ dispatched: 0 });
+const processWebhookDispatchMock = vi.fn().mockResolvedValue({ dispatched: 0 });
 
 vi.mock("../../src/webhooks/webhook-delivery", () => ({
   get processWebhookRetries() {

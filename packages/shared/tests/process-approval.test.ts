@@ -48,9 +48,7 @@ describe("APPROVAL_STEP_STATUS_TRANSITIONS", () => {
     );
     expect(isValidApprovalStepTransition("completed", "pending")).toBe(false);
     expect(isValidApprovalStepTransition("rejected", "completed")).toBe(false);
-    expect(isValidApprovalStepTransition("in_progress", "pending")).toBe(
-      false,
-    );
+    expect(isValidApprovalStepTransition("in_progress", "pending")).toBe(false);
   });
 
   it("isDecidableStepStatus is true only for pending/in_progress", () => {
@@ -180,9 +178,7 @@ describe("evaluateApprovalDecision", () => {
     chain[0].status = "completed";
     chain[1].status = "in_progress";
     const outcome = evaluateApprovalDecision(chain, "s2", "reject");
-    expect(
-      outcome.stepUpdates.find((u) => u.id === "s1"),
-    ).toBeUndefined();
+    expect(outcome.stepUpdates.find((u) => u.id === "s1")).toBeUndefined();
     expect(outcome.stepUpdates).toContainEqual({
       id: "s2",
       status: "rejected",

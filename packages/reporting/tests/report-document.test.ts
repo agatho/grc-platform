@@ -13,7 +13,10 @@ import {
 
 const GENERATED_AT = new Date("2026-07-11T09:30:00.000Z");
 
-function build(sections: ResolvedSection[], branding?: Parameters<typeof buildReportDocument>[1]) {
+function build(
+  sections: ResolvedSection[],
+  branding?: Parameters<typeof buildReportDocument>[1],
+) {
   return buildReportDocument(sections, branding, { generatedAt: GENERATED_AT });
 }
 

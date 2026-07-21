@@ -19,7 +19,12 @@
 // Everything in this file is pure (no pdfkit/exceljs imports) so the
 // layout logic is unit-testable without rendering.
 
-import { formatDate, formatDateTime, formatNumber, formatPercent } from "@/lib/format";
+import {
+  formatDate,
+  formatDateTime,
+  formatNumber,
+  formatPercent,
+} from "@/lib/format";
 
 export type ReportLocale = "de" | "en";
 export type ReportFormat = "pdf" | "xlsx";
@@ -210,7 +215,9 @@ export function formatCell(
           })
         : String(cell);
     case "percent":
-      return typeof cell === "number" ? formatPercent(cell, locale) : String(cell);
+      return typeof cell === "number"
+        ? formatPercent(cell, locale)
+        : String(cell);
     case "date": {
       if (cell instanceof Date) return formatDate(cell, locale);
       // ISO strings from Drizzle date columns

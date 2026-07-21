@@ -103,15 +103,15 @@ test.describe("ISMS — Management review cockpit", () => {
     expect(item.actionElementId).toBeTruthy();
 
     // Item list resolves the linked work item
-    const listRes = await request.get(
-      `/api/v1/isms/reviews/${reviewId}/items`,
-    );
+    const listRes = await request.get(`/api/v1/isms/reviews/${reviewId}/items`);
     expect(listRes.ok()).toBeTruthy();
-    const listed = ((await listRes.json()).data as Array<{
-      id: string;
-      actionWorkItemId: string | null;
-      actionStatus: string | null;
-    }>).find((i) => i.id === itemId);
+    const listed = (
+      (await listRes.json()).data as Array<{
+        id: string;
+        actionWorkItemId: string | null;
+        actionStatus: string | null;
+      }>
+    ).find((i) => i.id === itemId);
     expect(listed).toBeTruthy();
     expect(listed!.actionWorkItemId).toBe(item.actionWorkItemId);
 
@@ -138,10 +138,9 @@ test.describe("ISMS — Management review cockpit", () => {
     expect(itemCreate.status()).toBe(422);
 
     // Review header mutation is rejected as well (terminal state)
-    const reviewUpdate = await request.put(
-      `/api/v1/isms/reviews/${reviewId}`,
-      { data: { title: `${title}-changed` } },
-    );
+    const reviewUpdate = await request.put(`/api/v1/isms/reviews/${reviewId}`, {
+      data: { title: `${title}-changed` },
+    });
     expect(reviewUpdate.status()).toBe(422);
 
     // 7. PDF export (Beschluss-Protokoll)

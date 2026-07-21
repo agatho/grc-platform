@@ -70,8 +70,7 @@ export function canDecideApprovalStep(
 ): boolean {
   if (actor.roles.includes("admin")) return true;
   if (step.assigneeUserId && step.assigneeUserId === actor.userId) return true;
-  if (step.assigneeRole && actor.roles.includes(step.assigneeRole))
-    return true;
+  if (step.assigneeRole && actor.roles.includes(step.assigneeRole)) return true;
   return false;
 }
 

@@ -353,9 +353,7 @@ describe("POST /api/v1/ai/suggest-controls", () => {
   }, 90_000);
 
   async function call(body: unknown) {
-    const { POST } = await import(
-      "../../app/api/v1/ai/suggest-controls/route"
-    );
+    const { POST } = await import("../../app/api/v1/ai/suggest-controls/route");
     return POST(post("http://localhost/api/v1/ai/suggest-controls", body));
   }
 
@@ -458,9 +456,7 @@ describe("POST /api/v1/ai/suggest-controls", () => {
       (s: { type: string }) => s.type === "link_existing",
     );
     expect(linkSuggestion.controlId).toBe(UUID_B);
-    expect(linkSuggestion.controlTitle).toBe(
-      "Endpoint detection and response",
-    );
+    expect(linkSuggestion.controlTitle).toBe("Endpoint detection and response");
     expect(mockDb.insert).toHaveBeenCalledTimes(1);
   });
 
@@ -505,18 +501,16 @@ describe("POST /api/v1/ai/suggest-controls", () => {
     generateEmbeddingMock.mockResolvedValue([0.1, 0.2, 0.3]);
     queueRiskAndLinkedOnly();
     // db.execute #1: embedding count for org+model, #2: cosine top-N
-    mockDb.execute
-      .mockResolvedValueOnce([{ n: 1 }])
-      .mockResolvedValueOnce([
-        {
-          id: UUID_B,
-          title: "Endpoint detection and response",
-          description: "EDR on all endpoints",
-          controlType: "detective",
-          status: "implemented",
-          score: 0.91,
-        },
-      ]);
+    mockDb.execute.mockResolvedValueOnce([{ n: 1 }]).mockResolvedValueOnce([
+      {
+        id: UUID_B,
+        title: "Endpoint detection and response",
+        description: "EDR on all endpoints",
+        controlType: "detective",
+        status: "implemented",
+        score: 0.91,
+      },
+    ]);
     aiCompleteMock.mockResolvedValue(
       aiText({
         suggestions: [

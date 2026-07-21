@@ -25,10 +25,7 @@ async function loadReview(
     .select({ id: managementReview.id, status: managementReview.status })
     .from(managementReview)
     .where(
-      and(
-        eq(managementReview.id, reviewId),
-        eq(managementReview.orgId, orgId),
-      ),
+      and(eq(managementReview.id, reviewId), eq(managementReview.orgId, orgId)),
     );
   return rows[0] ?? null;
 }

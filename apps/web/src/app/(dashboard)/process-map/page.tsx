@@ -118,9 +118,7 @@ function ProcessMapContent() {
   // Same edit gate as the process PUT route (admin, process_owner).
   const canSort = useMemo(() => {
     const roles = session?.user?.roles ?? [];
-    return roles.some(
-      (r) => r.role === "admin" || r.role === "process_owner",
-    );
+    return roles.some((r) => r.role === "admin" || r.role === "process_owner");
   }, [session]);
 
   const fetchLevel = useCallback(async () => {
@@ -215,7 +213,11 @@ function ProcessMapContent() {
   }, [draft, groups, fetchLevel, t]);
 
   const sortControlsFor = useCallback(
-    (band: ProcessMapBand, index: number, length: number): TileSortControls => ({
+    (
+      band: ProcessMapBand,
+      index: number,
+      length: number,
+    ): TileSortControls => ({
       canUp: index > 0,
       canDown: index < length - 1,
       onUp: () => moveDraftItem(band, index, "up"),
@@ -281,9 +283,7 @@ function ProcessMapContent() {
                 {t("sort.cancel")}
               </Button>
               <Button size="sm" onClick={saveSort} disabled={savingSort}>
-                {savingSort && (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                )}
+                {savingSort && <Loader2 className="h-4 w-4 animate-spin" />}
                 {t("sort.save")}
               </Button>
             </>
@@ -661,10 +661,7 @@ function ChevronTile({
   const inner = (
     <>
       <div className="flex items-center gap-2">
-        <span
-          className="text-sm font-semibold leading-snug"
-          title={item.name}
-        >
+        <span className="text-sm font-semibold leading-snug" title={item.name}>
           {item.name}
         </span>
         <ProcessStatusBadge status={item.status} size="sm" showDot={false} />

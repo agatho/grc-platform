@@ -105,10 +105,7 @@ export async function GET(
     })
     .from(processVersion)
     .where(
-      and(
-        eq(processVersion.processId, id),
-        eq(processVersion.isCurrent, true),
-      ),
+      and(eq(processVersion.processId, id), eq(processVersion.isCurrent, true)),
     )
     .limit(1);
 
@@ -168,8 +165,8 @@ export async function GET(
     );
 
   // Risks/controls: counts only — details are modeller territory.
-  const [[{ value: riskCount }], [{ value: controlCount }]] =
-    await Promise.all([
+  const [[{ value: riskCount }], [{ value: controlCount }]] = await Promise.all(
+    [
       db
         .select({ value: count() })
         .from(processRisk)
@@ -178,7 +175,8 @@ export async function GET(
         .select({ value: count() })
         .from(processControl)
         .where(eq(processControl.processId, id)),
-    ]);
+    ],
+  );
 
   // FORCE-RLS reads (process_approval_step) + role resolution inputs.
   const { myRoleIds, overrides, ackRows } = await withReadContext(
@@ -231,7 +229,11 @@ export async function GET(
         )
         .orderBy(asc(processApprovalStep.stepOrder));
 
-      return { myRoleIds: roleIds, overrides: overrideRows, ackRows: acknowledgmentRows };
+      return {
+        myRoleIds: roleIds,
+        overrides: overrideRows,
+        ackRows: acknowledgmentRows,
+      };
     },
   );
 

@@ -48,7 +48,10 @@ function decodeSafe(segment: string): string {
 
 /** AWS date stamps: 20150830T123600Z / 20150830 */
 export function toAmzDate(date: Date): { amzDate: string; dateStamp: string } {
-  const iso = date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}/, "");
+  const iso = date
+    .toISOString()
+    .replace(/[-:]/g, "")
+    .replace(/\.\d{3}/, "");
   return { amzDate: iso, dateStamp: iso.slice(0, 8) };
 }
 
@@ -102,7 +105,10 @@ export function signRequest(input: SigV4Input): SigV4Result {
   if (!lowerKeys.has("x-amz-date")) headers["x-amz-date"] = amzDate;
 
   const sortedHeaderEntries = Object.entries(headers)
-    .map(([name, value]) => [name.toLowerCase(), value.trim().replace(/\s+/g, " ")] as const)
+    .map(
+      ([name, value]) =>
+        [name.toLowerCase(), value.trim().replace(/\s+/g, " ")] as const,
+    )
     .sort((a, b) => (a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0));
 
   const canonicalHeaders = sortedHeaderEntries

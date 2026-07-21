@@ -146,9 +146,9 @@ describe("GET /api/v1/processes/map", () => {
     expect(res.status).toBe(200);
     const body = await res.json();
     expect(body.data.parent).toBeNull();
-    expect(body.data.groups.management.map((i: { id: string }) => i.id)).toEqual(
-      ["p-mgmt"],
-    );
+    expect(
+      body.data.groups.management.map((i: { id: string }) => i.id),
+    ).toEqual(["p-mgmt"]);
     expect(body.data.groups.core).toHaveLength(1);
     expect(body.data.groups.core[0]).toMatchObject({
       id: "p-core",
@@ -157,9 +157,9 @@ describe("GET /api/v1/processes/map", () => {
     });
     expect(body.data.groups.support).toHaveLength(0);
     // Root level: no parent band to inherit → unassigned strip
-    expect(body.data.groups.unassigned.map((i: { id: string }) => i.id)).toEqual(
-      ["p-none"],
-    );
+    expect(
+      body.data.groups.unassigned.map((i: { id: string }) => i.id),
+    ).toEqual(["p-none"]);
   });
 
   it("inherits the parent's effective band on drill-in", async () => {

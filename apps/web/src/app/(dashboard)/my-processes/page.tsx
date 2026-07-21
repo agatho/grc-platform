@@ -220,13 +220,12 @@ function ProcessCard({
                 {t(`roles.${role}`)}
               </Badge>
             ))}
-            {!pending &&
-              item.acknowledgment?.status === "completed" && (
-                <Badge className="bg-green-100 text-green-800">
-                  <CheckCircle className="mr-1 h-3 w-3" />
-                  {t("acknowledged")}
-                </Badge>
-              )}
+            {!pending && item.acknowledgment?.status === "completed" && (
+              <Badge className="bg-green-100 text-green-800">
+                <CheckCircle className="mr-1 h-3 w-3" />
+                {t("acknowledged")}
+              </Badge>
+            )}
           </div>
           {item.ownerName && (
             <p className="flex items-center gap-1 text-sm text-muted-foreground">

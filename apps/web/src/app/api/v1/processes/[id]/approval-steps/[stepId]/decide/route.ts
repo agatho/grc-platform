@@ -82,10 +82,7 @@ export async function POST(
     );
   const step = stepRows[0];
   if (!step) {
-    return Response.json(
-      { error: "Approval step not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Approval step not found" }, { status: 404 });
   }
   if (step.stepType === "acknowledgment") {
     return Response.json(

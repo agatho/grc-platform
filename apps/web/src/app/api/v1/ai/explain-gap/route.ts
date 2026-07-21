@@ -96,7 +96,9 @@ async function resolveRequirement(
   if (!generic) return null;
   return {
     code: generic.code,
-    title: (preferDe ? (generic.nameDe ?? generic.name) : generic.name) ?? generic.code,
+    title:
+      (preferDe ? (generic.nameDe ?? generic.name) : generic.name) ??
+      generic.code,
     description: preferDe
       ? (generic.descriptionDe ?? generic.description)
       : (generic.description ?? generic.descriptionDe),
@@ -183,7 +185,10 @@ export async function POST(req: Request) {
       })
       .from(soaEntry)
       .where(
-        and(eq(soaEntry.id, body.data.soaEntryId), eq(soaEntry.orgId, ctx.orgId)),
+        and(
+          eq(soaEntry.id, body.data.soaEntryId),
+          eq(soaEntry.orgId, ctx.orgId),
+        ),
       )
       .limit(1);
     if (!row) {
@@ -219,10 +224,7 @@ export async function POST(req: Request) {
   }
   const requirement = await resolveRequirement(requirementId, preferDe);
   if (!requirement) {
-    return Response.json(
-      { error: "Catalog entry not found" },
-      { status: 404 },
-    );
+    return Response.json({ error: "Catalog entry not found" }, { status: 404 });
   }
 
   // Linked organizational control, if any (org-scoped).

@@ -69,7 +69,11 @@ export async function POST(req: Request) {
   for (const l of links) {
     if (l.riskId == null) continue;
     const bucket = linksByRisk.get(l.riskId) ?? [];
-    bucket.push({ title: l.title, type: l.controlType, frequency: l.frequency });
+    bucket.push({
+      title: l.title,
+      type: l.controlType,
+      frequency: l.frequency,
+    });
     linksByRisk.set(l.riskId, bucket);
   }
 

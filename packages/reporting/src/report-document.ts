@@ -72,11 +72,15 @@ export interface ReportDocument {
 
 // ─── Builders ────────────────────────────────────────────────────
 
-function isTableData(data: TableData | ChartData | undefined): data is TableData {
+function isTableData(
+  data: TableData | ChartData | undefined,
+): data is TableData {
   return !!data && "headers" in data;
 }
 
-function isChartData(data: TableData | ChartData | undefined): data is ChartData {
+function isChartData(
+  data: TableData | ChartData | undefined,
+): data is ChartData {
   return !!data && "datasets" in data && "labels" in data;
 }
 
@@ -92,10 +96,7 @@ function toCell(value: unknown): ReportDocumentCell {
  * carry snake_case keys ("element_id") while headers are display labels
  * ("Element ID" → "element_id" via lowercase + underscores).
  */
-function cellForHeader(
-  row: Record<string, unknown>,
-  header: string,
-): unknown {
+function cellForHeader(row: Record<string, unknown>, header: string): unknown {
   return row[header] ?? row[header.toLowerCase().replace(/ /g, "_")] ?? null;
 }
 

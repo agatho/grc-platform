@@ -107,8 +107,7 @@ let authResult: unknown = null; // set in beforeEach
 vi.mock("@/lib/api", () => ({
   withAuth: vi.fn(async () => authResult),
   withAuditContext: vi.fn(
-    async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) =>
-      fn(txMock),
+    async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) => fn(txMock),
   ),
 }));
 
@@ -208,7 +207,10 @@ beforeEach(() => {
 describe("POST /documents/[id]/signature-requests", () => {
   const call = (body: unknown) =>
     createRequest(
-      jsonRequest("http://localhost/api/v1/documents/doc-1/signature-requests", body),
+      jsonRequest(
+        "http://localhost/api/v1/documents/doc-1/signature-requests",
+        body,
+      ),
       { params: Promise.resolve({ id: "doc-1" }) },
     );
 
@@ -364,9 +366,7 @@ describe("POST /signature-requests/[id]/sign", () => {
     expect(set.ipAddress).toBe("203.0.113.7");
 
     // Request completed
-    const reqUpdate = updated.find(
-      (u) => u.table === documentSignatureRequest,
-    );
+    const reqUpdate = updated.find((u) => u.table === documentSignatureRequest);
     expect((reqUpdate!.set as { status: string }).status).toBe("completed");
 
     // Creator notified
@@ -415,9 +415,7 @@ describe("POST /signature-requests/[id]/decline", () => {
     expect(set.declineReason).toBe("Inhaltlich falsch");
     expect(set.contentHash).toMatch(/^[0-9a-f]{64}$/);
 
-    const reqUpdate = updated.find(
-      (u) => u.table === documentSignatureRequest,
-    );
+    const reqUpdate = updated.find((u) => u.table === documentSignatureRequest);
     expect((reqUpdate!.set as { status: string }).status).toBe("declined");
   });
 });

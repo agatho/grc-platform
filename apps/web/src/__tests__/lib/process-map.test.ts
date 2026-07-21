@@ -27,10 +27,7 @@ describe("resolveInheritedCategory", () => {
 
   it("returns null when nothing in the chain is categorized", () => {
     expect(
-      resolveInheritedCategory([
-        { mapCategory: null },
-        { mapCategory: null },
-      ]),
+      resolveInheritedCategory([{ mapCategory: null }, { mapCategory: null }]),
     ).toBeNull();
   });
 

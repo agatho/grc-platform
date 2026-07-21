@@ -124,20 +124,20 @@ they show something the moment you open them:
 
 - **Process map** — Processes now sit on a graphical value-chain
   map (management / core / support bands). Try the
-  *Auftragsabwicklung Textilservice* core process: it drills down
+  _Auftragsabwicklung Textilservice_ core process: it drills down
   into child processes, and its BPMN call activity links straight
-  to the *Tourenplanung* sub-process.
+  to the _Tourenplanung_ sub-process.
 - **Process approvals & portal** — published processes carry a
   multi-stage approval chain (review → approval → acknowledgment).
-  The *Incident-Response-Prozess* has a completed chain plus an
+  The _Incident-Response-Prozess_ has a completed chain plus an
   **open acknowledgment waiting for `process-owner@meridian.test`**
   — log in as that role and confirm it in the process portal.
 - **DMS effective dating & versioning** — the new
-  *KI-Nutzungsrichtlinie* policy has three versions
+  _KI-Nutzungsrichtlinie_ policy has three versions
   (1.0 → 1.1 → 2.0) with validity windows, so you can ask "which
   text was in force on a given date".
 - **E-signatures with hash chain** — the same policy carries a
-  completed two-signer signature ceremony. Open its *Signaturen*
+  completed two-signer signature ceremony. Open its _Signaturen_
   tab, hit **Verify** (the SHA-256 chain recomputes clean) and
   download the signature certificate PDF.
 - **Management-review cockpit** (ISO 27001 9.3) — a completed
@@ -152,7 +152,7 @@ they show something the moment you open them:
   is assigned to the Informationssicherheitsrichtlinie; the
   document shows its retention-until date.
 - **Standard reports** — Risk Register, SoA and Compliance-Status
-  as branded PDF/Excel downloads under *Platform → Reports*
+  as branded PDF/Excel downloads under _Platform → Reports_
   (style variants standard / formal / minimal).
 
 ---

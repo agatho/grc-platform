@@ -92,10 +92,7 @@ export async function GET(
         ),
       )
       .where(
-        and(
-          eq(processStep.calledProcessId, id),
-          isNull(processStep.deletedAt),
-        ),
+        and(eq(processStep.calledProcessId, id), isNull(processStep.deletedAt)),
       )
       .orderBy(asc(callerProcess.name)),
   ]);

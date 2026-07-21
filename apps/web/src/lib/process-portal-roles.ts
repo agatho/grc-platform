@@ -77,7 +77,10 @@ export function resolveMyProcessRoles(
 
     for (const override of facts.raciOverrides) {
       const letter = (override.raciRole ?? "").toUpperCase();
-      if (myRoleIds.has(override.participantBpmnId) && RACI_LETTERS.has(letter)) {
+      if (
+        myRoleIds.has(override.participantBpmnId) &&
+        RACI_LETTERS.has(letter)
+      ) {
         roles.add(letter as MyProcessRole);
       }
     }

@@ -107,9 +107,7 @@ export const processSignatureDueReminders = withCronInstrumentation(
           .where(eq(documentSignature.requestId, req.id))
           .orderBy(asc(documentSignature.signOrder));
 
-        const pendingCount = slots.filter(
-          (s) => s.status === "pending",
-        ).length;
+        const pendingCount = slots.filter((s) => s.status === "pending").length;
         // Fully decided requests are closed by the sign/decline routes;
         // a still-'pending' request without pending slots is transient.
         if (pendingCount === 0) continue;
@@ -128,10 +126,7 @@ export const processSignatureDueReminders = withCronInstrumentation(
             now,
           })
         ) {
-          const recipients = selectReminderRecipients(
-            slots,
-            req.sequential,
-          );
+          const recipients = selectReminderRecipients(slots, req.sequential);
           for (const recipientId of recipients) {
             await db.insert(notification).values({
               userId: recipientId,
@@ -175,9 +170,7 @@ export const processSignatureDueReminders = withCronInstrumentation(
         if (
           shouldEscalateSignatureRequest({
             dueDate,
-            escalatedAt: req.escalatedAt
-              ? new Date(req.escalatedAt)
-              : null,
+            escalatedAt: req.escalatedAt ? new Date(req.escalatedAt) : null,
             now,
           })
         ) {
@@ -188,8 +181,8 @@ export const processSignatureDueReminders = withCronInstrumentation(
 
           const escalationRecipients = [
             ...new Set(
-              [req.createdBy, doc?.ownerId ?? null].filter(
-                (v): v is string => Boolean(v),
+              [req.createdBy, doc?.ownerId ?? null].filter((v): v is string =>
+                Boolean(v),
               ),
             ),
           ];

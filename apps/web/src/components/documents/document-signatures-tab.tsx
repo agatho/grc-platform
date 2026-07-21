@@ -247,9 +247,12 @@ export function DocumentSignaturesTab({ docId, requests, onChanged }: Props) {
     if (!signTarget) return;
     setActionBusy(true);
     try {
-      const res = await fetch(`/api/v1/signature-requests/${signTarget.id}/sign`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `/api/v1/signature-requests/${signTarget.id}/sign`,
+        {
+          method: "POST",
+        },
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Request failed");
@@ -293,9 +296,12 @@ export function DocumentSignaturesTab({ docId, requests, onChanged }: Props) {
 
   const handleCancel = async (requestId: string) => {
     try {
-      const res = await fetch(`/api/v1/signature-requests/${requestId}/cancel`, {
-        method: "POST",
-      });
+      const res = await fetch(
+        `/api/v1/signature-requests/${requestId}/cancel`,
+        {
+          method: "POST",
+        },
+      );
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error ?? "Request failed");
@@ -427,7 +433,9 @@ export function DocumentSignaturesTab({ docId, requests, onChanged }: Props) {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="sig-message">{t("requestDialog.message")}</Label>
+                <Label htmlFor="sig-message">
+                  {t("requestDialog.message")}
+                </Label>
                 <Textarea
                   id="sig-message"
                   value={message}
@@ -578,13 +586,18 @@ export function DocumentSignaturesTab({ docId, requests, onChanged }: Props) {
                             className="text-emerald-500 shrink-0"
                           />
                         ) : sig.status === "declined" ? (
-                          <XCircle size={16} className="text-red-500 shrink-0" />
+                          <XCircle
+                            size={16}
+                            className="text-red-500 shrink-0"
+                          />
                         ) : (
                           <Clock size={16} className="text-gray-400 shrink-0" />
                         )}
                         <div className="min-w-0 flex-1">
                           <p className="text-sm font-medium truncate">
-                            {sig.signerName ?? sig.signerEmail ?? sig.signerUserId}
+                            {sig.signerName ??
+                              sig.signerEmail ??
+                              sig.signerUserId}
                             {sig.signerUserId === currentUserId && (
                               <span className="ml-1 text-xs text-gray-400">
                                 ({t("you")})

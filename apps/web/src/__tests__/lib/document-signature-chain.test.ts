@@ -49,10 +49,12 @@ describe("signature-chain", () => {
 
   it("content hash changes when any payload field changes", () => {
     const base = computeContentHash(payload());
-    expect(computeContentHash(payload({ decision: "declined" }))).not.toBe(base);
-    expect(computeContentHash(payload({ fileSha256: "b".repeat(64) }))).not.toBe(
+    expect(computeContentHash(payload({ decision: "declined" }))).not.toBe(
       base,
     );
+    expect(
+      computeContentHash(payload({ fileSha256: "b".repeat(64) })),
+    ).not.toBe(base);
     expect(
       computeContentHash(payload({ signedAt: "2026-07-11T10:00:00.001Z" })),
     ).not.toBe(base);

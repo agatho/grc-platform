@@ -300,7 +300,10 @@ function ReviewDetailInner() {
   };
 
   const handleTransition = async (status: ReviewStatus) => {
-    if (status === "completed" && !window.confirm(tmr("statusFlow.completeConfirm"))) {
+    if (
+      status === "completed" &&
+      !window.confirm(tmr("statusFlow.completeConfirm"))
+    ) {
       return;
     }
     await fetch(`/api/v1/isms/reviews/${id}`, {
@@ -311,7 +314,11 @@ function ReviewDetailInner() {
     void fetchReview();
   };
 
-  const adoptItem = async (key: string, category: ItemCategory, content: string) => {
+  const adoptItem = async (
+    key: string,
+    category: ItemCategory,
+    content: string,
+  ) => {
     const res = await fetch(`/api/v1/isms/reviews/${id}/items`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -465,7 +472,12 @@ function ReviewDetailInner() {
                 setPerformanceFeedback,
                 t("review.performance"),
               ],
-              ["auditResults", auditResults, setAuditResults, t("review.auditResults")],
+              [
+                "auditResults",
+                auditResults,
+                setAuditResults,
+                t("review.auditResults"),
+              ],
               [
                 "improvements",
                 improvementOpportunities,
@@ -509,7 +521,9 @@ function ReviewDetailInner() {
               />
               {!isReadOnly && (
                 <button
-                  onClick={() => setDecisions(decisions.filter((_, j) => j !== i))}
+                  onClick={() =>
+                    setDecisions(decisions.filter((_, j) => j !== i))
+                  }
                   className="text-red-400 hover:text-red-600 text-sm"
                 >
                   x
@@ -620,7 +634,9 @@ function ReviewDetailInner() {
                       {!isReadOnly && (
                         <button
                           onClick={() =>
-                            setActionItems(actionItems.filter((_, j) => j !== i))
+                            setActionItems(
+                              actionItems.filter((_, j) => j !== i),
+                            )
                           }
                           className="text-red-400 hover:text-red-600 text-sm"
                         >
@@ -748,7 +764,11 @@ function CockpitCard({
   );
 }
 
-function CompactList({ rows }: { rows: Array<{ key: string; left: string; right?: string }> }) {
+function CompactList({
+  rows,
+}: {
+  rows: Array<{ key: string; left: string; right?: string }>;
+}) {
   if (rows.length === 0) return null;
   return (
     <ul className="divide-y divide-gray-100 text-sm">
@@ -1017,7 +1037,9 @@ function CockpitTab({
           }
           kpis={[
             {
-              label: tmr("cockpit.sections.controlEffectiveness.testedInPeriod"),
+              label: tmr(
+                "cockpit.sections.controlEffectiveness.testedInPeriod",
+              ),
               value: d.controlEffectiveness.testedInPeriod,
             },
             {
@@ -1182,7 +1204,11 @@ function ProtocolTab({
           {tmr("protocol.title")}
         </h2>
         {!isReadOnly && (
-          <Button variant="outline" size="sm" onClick={() => setShowAdd(!showAdd)}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowAdd(!showAdd)}
+          >
             <Plus size={14} className="mr-1" /> {tmr("protocol.addItem")}
           </Button>
         )}
@@ -1211,7 +1237,11 @@ function ProtocolTab({
             />
           </div>
           <div className="flex justify-end gap-2">
-            <Button variant="outline" size="sm" onClick={() => setShowAdd(false)}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowAdd(false)}
+            >
               {tmr("protocol.cancel")}
             </Button>
             <Button size="sm" onClick={handleAdd} disabled={!newContent.trim()}>
@@ -1364,7 +1394,9 @@ function ProtocolItemRow({
             {tmr("protocol.content")}
           </label>
           {isReadOnly ? (
-            <p className="text-sm text-gray-700 whitespace-pre-wrap">{content}</p>
+            <p className="text-sm text-gray-700 whitespace-pre-wrap">
+              {content}
+            </p>
           ) : (
             <textarea
               className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"

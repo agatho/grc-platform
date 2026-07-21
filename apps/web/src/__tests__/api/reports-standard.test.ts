@@ -133,7 +133,8 @@ describe("GET /api/v1/reports/risk-register", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import("../../app/api/v1/reports/risk-register/route");
+    const { GET } =
+      await import("../../app/api/v1/reports/risk-register/route");
     const res = await GET(
       new Request("http://localhost/api/v1/reports/risk-register"),
       undefined,
@@ -144,8 +145,13 @@ describe("GET /api/v1/reports/risk-register", () => {
   it("returns a PDF with %PDF magic bytes", async () => {
     authOk();
     // select #1 risks, #2 treatment counts, #3 branding
-    sequenceSelect([[riskRow], [{ riskId: "risk-1", value: 2 }], [brandingRow]]);
-    const { GET } = await import("../../app/api/v1/reports/risk-register/route");
+    sequenceSelect([
+      [riskRow],
+      [{ riskId: "risk-1", value: 2 }],
+      [brandingRow],
+    ]);
+    const { GET } =
+      await import("../../app/api/v1/reports/risk-register/route");
     const res = await GET(
       new Request(
         "http://localhost/api/v1/reports/risk-register?format=pdf&status=assessed",
@@ -158,7 +164,8 @@ describe("GET /api/v1/reports/risk-register", () => {
   it("returns an XLSX workbook with PK magic bytes", async () => {
     authOk();
     sequenceSelect([[riskRow], [], [brandingRow]]);
-    const { GET } = await import("../../app/api/v1/reports/risk-register/route");
+    const { GET } =
+      await import("../../app/api/v1/reports/risk-register/route");
     const res = await GET(
       new Request("http://localhost/api/v1/reports/risk-register?format=xlsx"),
       undefined,
@@ -170,7 +177,11 @@ describe("GET /api/v1/reports/risk-register", () => {
 // ─── Statement of Applicability ──────────────────────────────────
 
 describe("GET /api/v1/reports/soa", () => {
-  const framework = { id: FRAMEWORK_ID, name: "ISO 27001 Annex A", version: "2022" };
+  const framework = {
+    id: FRAMEWORK_ID,
+    name: "ISO 27001 Annex A",
+    version: "2022",
+  };
   const entryRow = {
     id: "entry-1",
     code: "A.5.1",
@@ -247,7 +258,11 @@ describe("GET /api/v1/reports/soa", () => {
 // ─── Compliance status ───────────────────────────────────────────
 
 describe("GET /api/v1/reports/compliance-status", () => {
-  const framework = { id: FRAMEWORK_ID, name: "ISO 27001 Annex A", version: "2022" };
+  const framework = {
+    id: FRAMEWORK_ID,
+    name: "ISO 27001 Annex A",
+    version: "2022",
+  };
   const chapter = {
     id: "chap-1",
     parentEntryId: null,
@@ -276,9 +291,8 @@ describe("GET /api/v1/reports/compliance-status", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/reports/compliance-status/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/reports/compliance-status/route");
     const res = await GET(
       new Request(
         `http://localhost/api/v1/reports/compliance-status?frameworkId=${FRAMEWORK_ID}`,
@@ -292,9 +306,8 @@ describe("GET /api/v1/reports/compliance-status", () => {
     authOk();
     // select #1 framework, #2 entries, #3 soa rows, #4 branding
     sequenceSelect([[framework], [chapter, leaf], [soaRow], []]);
-    const { GET } = await import(
-      "../../app/api/v1/reports/compliance-status/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/reports/compliance-status/route");
     const res = await GET(
       new Request(
         `http://localhost/api/v1/reports/compliance-status?frameworkId=${FRAMEWORK_ID}&format=pdf`,
@@ -307,9 +320,8 @@ describe("GET /api/v1/reports/compliance-status", () => {
   it("returns an XLSX workbook with PK magic bytes", async () => {
     authOk();
     sequenceSelect([[framework], [chapter, leaf], [soaRow], []]);
-    const { GET } = await import(
-      "../../app/api/v1/reports/compliance-status/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/reports/compliance-status/route");
     const res = await GET(
       new Request(
         `http://localhost/api/v1/reports/compliance-status?frameworkId=${FRAMEWORK_ID}&format=xlsx`,

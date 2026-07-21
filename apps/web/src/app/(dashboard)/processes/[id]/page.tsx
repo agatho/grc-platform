@@ -926,8 +926,8 @@ function OverviewTab({
           <CardTitle className="text-base">{t("detail.bpmnPreview")}</CardTitle>
         </CardHeader>
         <CardContent>
-          {(process.versions?.some((v) => v.bpmnXml) ||
-            Boolean(process.currentVersionData?.bpmnXml)) ? (
+          {process.versions?.some((v) => v.bpmnXml) ||
+          Boolean(process.currentVersionData?.bpmnXml) ? (
             <div className="rounded-lg border border-gray-200 bg-white min-h-[400px] overflow-hidden">
               <BpmnViewerDynamic
                 xml={
@@ -964,8 +964,7 @@ function OverviewTab({
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {callLinks.calls.length === 0 &&
-            callLinks.calledBy.length === 0 ? (
+            {callLinks.calls.length === 0 && callLinks.calledBy.length === 0 ? (
               <p className="text-sm text-gray-400">
                 {tDrill("drilldown.relations.none")}
               </p>
@@ -1181,9 +1180,7 @@ function EditorTab({
       process.currentVersionData ??
       process.versions?.find((v) => v.isCurrent) ??
       null;
-    return (
-      workingVersion?.bpmnXml || currentVersion?.bpmnXml || EMPTY_BPMN_XML
-    );
+    return workingVersion?.bpmnXml || currentVersion?.bpmnXml || EMPTY_BPMN_XML;
   }, [process.currentVersionData, process.versions, workingVersion]);
 
   // BPMN editor hook

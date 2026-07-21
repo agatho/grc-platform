@@ -124,7 +124,9 @@ export async function POST(
   }
 
   // All assignees must belong to this org
-  const assigneeIds = [...new Set(body.data.steps.map((s) => s.assigneeUserId))];
+  const assigneeIds = [
+    ...new Set(body.data.steps.map((s) => s.assigneeUserId)),
+  ];
   const memberRows = await db
     .select({ userId: userOrganizationRole.userId })
     .from(userOrganizationRole)

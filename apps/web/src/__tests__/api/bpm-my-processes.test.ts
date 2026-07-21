@@ -107,26 +107,21 @@ describe("GET /api/v1/bpm/my-processes", () => {
     requireModuleMock.mockReset();
     withReadContextMock.mockReset();
     withReadContextMock.mockImplementation(
-      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) =>
-        fn(mockDb),
+      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) => fn(mockDb),
     );
   });
 
   // First import transforms the route module — cold-start headroom.
-  it(
-    "returns 401 when not authenticated",
-    async () => {
-      withAuthMock.mockResolvedValue(
-        Response.json({ error: "Unauthorized" }, { status: 401 }),
-      );
-      const { GET } = await import("../../app/api/v1/bpm/my-processes/route");
-      const res = await GET(listRequest());
-      expect(res.status).toBe(401);
-      // Open to every authenticated org member — no role gate.
-      expect(withAuthMock).toHaveBeenCalledWith();
-    },
-    20000,
-  );
+  it("returns 401 when not authenticated", async () => {
+    withAuthMock.mockResolvedValue(
+      Response.json({ error: "Unauthorized" }, { status: 401 }),
+    );
+    const { GET } = await import("../../app/api/v1/bpm/my-processes/route");
+    const res = await GET(listRequest());
+    expect(res.status).toBe(401);
+    // Open to every authenticated org member — no role gate.
+    expect(withAuthMock).toHaveBeenCalledWith();
+  }, 20000);
 
   it("returns 404 when the BPM module is disabled", async () => {
     withAuthMock.mockResolvedValue(AUTH_CTX);
@@ -195,7 +190,12 @@ describe("GET /api/v1/bpm/my-processes", () => {
     requireModuleMock.mockResolvedValue(undefined);
     mockDb.select
       .mockReturnValueOnce(chainable([{ customRoleId: "role-a" }])) // my roles
-      .mockReturnValueOnce(chainable([FOREIGN_PROCESS, { ...OWNED_PROCESS, id: "proc-3", processOwnerId: "user-9" }]))
+      .mockReturnValueOnce(
+        chainable([
+          FOREIGN_PROCESS,
+          { ...OWNED_PROCESS, id: "proc-3", processOwnerId: "user-9" },
+        ]),
+      )
       .mockReturnValueOnce(
         chainable([
           {
@@ -226,8 +226,7 @@ describe("GET /api/v1/bpm/my-processes/[id]", () => {
     requireModuleMock.mockReset();
     withReadContextMock.mockReset();
     withReadContextMock.mockImplementation(
-      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) =>
-        fn(mockDb),
+      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) => fn(mockDb),
     );
   });
 
@@ -235,9 +234,8 @@ describe("GET /api/v1/bpm/my-processes/[id]", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/bpm/my-processes/[id]/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/bpm/my-processes/[id]/route");
     const res = await GET(
       new Request("http://localhost/api/v1/bpm/my-processes/proc-1"),
       params,
@@ -251,9 +249,8 @@ describe("GET /api/v1/bpm/my-processes/[id]", () => {
     // The published filter is part of the WHERE clause — drafts resolve
     // to an empty result set exactly like unknown ids.
     mockDb.select.mockReturnValueOnce(chainable([]));
-    const { GET } = await import(
-      "../../app/api/v1/bpm/my-processes/[id]/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/bpm/my-processes/[id]/route");
     const res = await GET(
       new Request("http://localhost/api/v1/bpm/my-processes/proc-1"),
       params,

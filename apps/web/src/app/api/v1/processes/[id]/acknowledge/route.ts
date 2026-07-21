@@ -63,19 +63,19 @@ export async function POST(
   // (process_approval_step is FORCE-RLS — read via withReadContext.)
   const ownRows: Array<typeof processApprovalStep.$inferSelect> =
     await withReadContext(ctx, (tx) =>
-    tx
-      .select()
-      .from(processApprovalStep)
-      .where(
-        and(
-          eq(processApprovalStep.processId, id),
-          eq(processApprovalStep.orgId, ctx.orgId),
-          eq(processApprovalStep.stepType, "acknowledgment"),
-          eq(processApprovalStep.assigneeUserId, ctx.userId),
-        ),
-      )
-      .orderBy(asc(processApprovalStep.stepOrder)),
-  );
+      tx
+        .select()
+        .from(processApprovalStep)
+        .where(
+          and(
+            eq(processApprovalStep.processId, id),
+            eq(processApprovalStep.orgId, ctx.orgId),
+            eq(processApprovalStep.stepType, "acknowledgment"),
+            eq(processApprovalStep.assigneeUserId, ctx.userId),
+          ),
+        )
+        .orderBy(asc(processApprovalStep.stepOrder)),
+    );
   const own = ownRows[0];
 
   if (own && own.status === "completed") {

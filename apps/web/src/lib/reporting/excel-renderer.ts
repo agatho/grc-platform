@@ -41,7 +41,10 @@ export async function renderReportXlsx(def: ReportDefinition): Promise<Buffer> {
   const titleRow = summary.addRow([def.title]);
   titleRow.font = { bold: true, size: 16, color: { argb: primaryArgb } };
   if (def.subtitle) {
-    summary.addRow([def.subtitle]).font = { size: 10, color: { argb: "FF6B7280" } };
+    summary.addRow([def.subtitle]).font = {
+      size: 10,
+      color: { argb: "FF6B7280" },
+    };
   }
   summary.addRow([def.branding.orgName]);
   summary.addRow([
@@ -85,7 +88,11 @@ export async function renderReportXlsx(def: ReportDefinition): Promise<Buffer> {
         };
       }
       for (const bar of section.items) {
-        const r = summary.addRow([bar.label, bar.percent / 100, bar.detail ?? ""]);
+        const r = summary.addRow([
+          bar.label,
+          bar.percent / 100,
+          bar.detail ?? "",
+        ]);
         r.getCell(2).numFmt = "0.0%";
       }
       summary.addRow([]);
@@ -98,7 +105,8 @@ export async function renderReportXlsx(def: ReportDefinition): Promise<Buffer> {
     if (section.kind !== "table") continue;
     tableIndex++;
     const name = sanitizeSheetName(
-      section.title ?? `${def.locale === "de" ? "Daten" : "Data"} ${tableIndex}`,
+      section.title ??
+        `${def.locale === "de" ? "Daten" : "Data"} ${tableIndex}`,
     );
     const ws = wb.addWorksheet(name, {
       views: [{ state: "frozen", ySplit: 1 }],

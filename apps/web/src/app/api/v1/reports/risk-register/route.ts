@@ -33,7 +33,14 @@ const querySchema = z.object({
   // Optional override of org_branding.report_template (standard|formal|minimal)
   style: z.enum(REPORT_STYLES).optional(),
   status: z
-    .enum(["identified", "assessed", "treated", "accepted", "closed", "reopened"])
+    .enum([
+      "identified",
+      "assessed",
+      "treated",
+      "accepted",
+      "closed",
+      "reopened",
+    ])
     .optional(),
   category: z
     .enum([

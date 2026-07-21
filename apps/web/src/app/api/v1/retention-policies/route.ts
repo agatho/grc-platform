@@ -2,7 +2,12 @@ import { db, retentionPolicy } from "@grc/db";
 import { requireModule } from "@grc/auth";
 import { createRetentionPolicySchema } from "@grc/shared";
 import { eq, and, isNull, asc, count } from "drizzle-orm";
-import { withAuth, withAuditContext, paginate, paginatedResponse } from "@/lib/api";
+import {
+  withAuth,
+  withAuditContext,
+  paginate,
+  paginatedResponse,
+} from "@/lib/api";
 
 // GET /api/v1/retention-policies — List retention policies (D3)
 export async function GET(req: Request) {

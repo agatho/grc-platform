@@ -49,10 +49,11 @@ export const documentSignatureRequestStatusEnum = pgEnum(
   ["pending", "completed", "declined", "cancelled"],
 );
 
-export const documentSignatureStatusEnum = pgEnum(
-  "document_signature_status",
-  ["pending", "signed", "declined"],
-);
+export const documentSignatureStatusEnum = pgEnum("document_signature_status", [
+  "pending",
+  "signed",
+  "declined",
+]);
 
 // ──────────────────────────────────────────────────────────────
 // document_signature_request — signing ceremony (frozen version)
@@ -155,7 +156,10 @@ export const documentSignature = pgTable(
     index("dsig_org_idx").on(table.orgId),
     index("dsig_request_idx").on(table.requestId, table.signOrder),
     index("dsig_signer_status_idx").on(table.signerUserId, table.status),
-    unique("dsig_request_signer_unique").on(table.requestId, table.signerUserId),
+    unique("dsig_request_signer_unique").on(
+      table.requestId,
+      table.signerUserId,
+    ),
     // dsig_request_prev_chain_uniq (partial, NULLS NOT DISTINCT) lives in
     // migration 0375 — see header comment.
   ],

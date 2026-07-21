@@ -26,10 +26,7 @@ declare module "bpmn-moddle" {
       options?: { format?: boolean },
     ): Promise<{ xml: string }>;
     /** Instantiate a typed element, e.g. `create("arctos:GrcMetadata", {...})`. */
-    create(
-      type: string,
-      properties?: Record<string, unknown>,
-    ): ModdleElement;
+    create(type: string, properties?: Record<string, unknown>): ModdleElement;
   }
 
   /** Factory — pre-registers the BPMN packages plus the given extensions. */

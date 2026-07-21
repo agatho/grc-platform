@@ -79,9 +79,8 @@ const twoPendingOneSigned = [
 ];
 
 async function run() {
-  const { processSignatureDueReminders } = await import(
-    "../../src/crons/signature-due-reminder"
-  );
+  const { processSignatureDueReminders } =
+    await import("../../src/crons/signature-due-reminder");
   return processSignatureDueReminders();
 }
 
@@ -303,9 +302,8 @@ describe("processSignatureDueReminders", () => {
   // ── Pure recipient selection ───────────────────────────────────
 
   it("selectReminderRecipients: sequential picks lowest pending sign_order", async () => {
-    const { selectReminderRecipients } = await import(
-      "../../src/crons/signature-due-reminder"
-    );
+    const { selectReminderRecipients } =
+      await import("../../src/crons/signature-due-reminder");
     const slots = [
       { signerUserId: "a", signOrder: 2, status: "pending" as const },
       { signerUserId: "b", signOrder: 1, status: "signed" as const },

@@ -73,30 +73,24 @@ describe("PUT /api/v1/processes/map/reorder", () => {
   });
 
   // First import transforms the full @grc/shared barrel — allow headroom.
-  it(
-    "returns 401 when not authenticated",
-    async () => {
-      withAuthMock.mockResolvedValue(
-        Response.json({ error: "Unauthorized" }, { status: 401 }),
-      );
-      const { PUT } = await import(
-        "../../app/api/v1/processes/map/reorder/route"
-      );
-      const res = await PUT(putReorder(VALID_BODY));
-      expect(res.status).toBe(401);
-      // Same edit roles as PUT /processes/:id
-      expect(withAuthMock).toHaveBeenCalledWith("admin", "process_owner");
-    },
-    20000,
-  );
+  it("returns 401 when not authenticated", async () => {
+    withAuthMock.mockResolvedValue(
+      Response.json({ error: "Unauthorized" }, { status: 401 }),
+    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
+    const res = await PUT(putReorder(VALID_BODY));
+    expect(res.status).toBe(401);
+    // Same edit roles as PUT /processes/:id
+    expect(withAuthMock).toHaveBeenCalledWith("admin", "process_owner");
+  }, 20000);
 
   it("returns 403 when the role is rejected", async () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(putReorder(VALID_BODY));
     expect(res.status).toBe(403);
   });
@@ -106,9 +100,8 @@ describe("PUT /api/v1/processes/map/reorder", () => {
     requireModuleMock.mockResolvedValue(
       Response.json({ error: "Module disabled" }, { status: 404 }),
     );
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(putReorder(VALID_BODY));
     expect(res.status).toBe(404);
     expect(requireModuleMock).toHaveBeenCalledWith("bpm", "org-1", "PUT");
@@ -117,9 +110,8 @@ describe("PUT /api/v1/processes/map/reorder", () => {
   it("returns 422 for an invalid category", async () => {
     withAuthMock.mockResolvedValue(AUTH_CTX);
     requireModuleMock.mockResolvedValue(undefined);
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(
       putReorder({ category: "value_chain", orderedIds: [ID_A] }),
     );
@@ -132,9 +124,8 @@ describe("PUT /api/v1/processes/map/reorder", () => {
   it("returns 422 for duplicate orderedIds", async () => {
     withAuthMock.mockResolvedValue(AUTH_CTX);
     requireModuleMock.mockResolvedValue(undefined);
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(
       putReorder({ category: "core", orderedIds: [ID_A, ID_A] }),
     );
@@ -145,12 +136,9 @@ describe("PUT /api/v1/processes/map/reorder", () => {
     withAuthMock.mockResolvedValue(AUTH_CTX);
     requireModuleMock.mockResolvedValue(undefined);
     // Org-scoped existence check finds only two of the three ids.
-    mockDb.select.mockReturnValueOnce(
-      chainable([{ id: ID_B }, { id: ID_A }]),
-    );
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    mockDb.select.mockReturnValueOnce(chainable([{ id: ID_B }, { id: ID_A }]));
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(putReorder(VALID_BODY));
     expect(res.status).toBe(422);
     const body = await res.json();
@@ -165,12 +153,10 @@ describe("PUT /api/v1/processes/map/reorder", () => {
       chainable([{ id: ID_A }, { id: ID_B }, { id: ID_C }]),
     );
     withAuditContextMock.mockImplementation(
-      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) =>
-        fn(mockDb),
+      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) => fn(mockDb),
     );
-    const { PUT } = await import(
-      "../../app/api/v1/processes/map/reorder/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/map/reorder/route");
     const res = await PUT(putReorder(VALID_BODY));
     expect(res.status).toBe(200);
     const body = await res.json();

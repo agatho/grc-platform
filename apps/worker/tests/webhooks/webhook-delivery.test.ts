@@ -143,7 +143,8 @@ describe("processWebhookDelivery — SSRF guard layers", () => {
     const { setMock } = setupDb("https://rebind.example.com/hook");
     dnsCheckMock.mockResolvedValue({
       ok: false,
-      reason: "'rebind.example.com' resolves to private IPv4 10.0.0.5; refusing.",
+      reason:
+        "'rebind.example.com' resolves to private IPv4 10.0.0.5; refusing.",
     });
 
     await processWebhookDelivery({ webhookId: "wh-1", event });

@@ -149,9 +149,9 @@ describe("webhook enqueue handler (fan-out)", () => {
     expect(envelope.entityId).toBe(ENTITY_ID);
     expect(envelope.orgId).toBe(ORG_A);
     expect(envelope.timestamp).toBe("2026-07-10T12:00:00.000Z");
-    expect(
-      (envelope.payload as { after: { title: string } }).after.title,
-    ).toBe("Server room risk");
+    expect((envelope.payload as { after: { title: string } }).after.title).toBe(
+      "Server room risk",
+    );
   });
 
   it("scopes the webhook lookup to the emitting org and active hooks", async () => {
@@ -165,9 +165,7 @@ describe("webhook enqueue handler (fan-out)", () => {
   });
 
   it("skips webhooks whose event filter does not match the event type", async () => {
-    const setup = setupDb([
-      makeWebhookRow({ events: ["entity.deleted"] }),
-    ]);
+    const setup = setupDb([makeWebhookRow({ events: ["entity.deleted"] })]);
 
     await eventBus.emitEvent(makeEvent({ eventType: "entity.created" }));
 

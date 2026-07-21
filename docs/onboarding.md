@@ -159,18 +159,18 @@ Jede Request hat eine `X-Request-ID` im Response-Header — für Log-Korrelation
 
 Ein-Zeilen-Einstiege in die Juli-Features (Demo-Daten via `seed_demo_14_july_features.sql`, läuft in `db:seed-all` und `deploy/update-all.sh` Abschnitt 3c mit):
 
-| Feature                                        | Einstieg                                                                           |
-| ---------------------------------------------- | ---------------------------------------------------------------------------------- |
-| Prozesslandkarte (management/core/support)     | `/process-map` — Bänder via `process.map_category`/`map_sequence`                  |
-| Prozess-Portal (Kenntnisnahmen, RACI)          | `/my-processes` — pending acknowledgment-Steps aus `process_approval_step`         |
-| BPM-Freigabekette (review → approval → ack)    | `/processes/[id]` → Tab Sign-off/Freigabe; API `/processes/[id]/approval-steps`    |
-| Call-Activity-Drilldown                        | `/processes/[id]` BPMN-Viewer — `process_step.called_process_id` (Migration 0363)  |
-| DMS Effective Dating (1.0 → 1.1 → 2.0)         | `/documents/[id]` → Versionen; API `GET /documents/[id]/versions/at`               |
-| e-Signatur (Hash-Kette, Verify, Zertifikat)    | `/documents/[id]` → Tab „Signaturen"; Chain-Logik `lib/documents/signature-chain.ts` |
-| Management-Review-Cockpit (ISO 27001 9.3)      | `/isms/reviews` — completed Q2/2026 + planned Review mit „seit letztem Review"     |
-| Risk-Acceptance (Authority-Matrix, Expiry)     | `/risk-acceptances` — eine Demo-Akzeptanz läuft 2026-08-10 ab (Expiry-Highlight)   |
-| Retention-Policies (GoBD)                      | Dokument-Detail (DOC-001 hat „Aufbewahrung 10 Jahre (GoBD)" zugewiesen)            |
-| Standard-Reports (PDF/Excel, Branding-Stile)   | `/reports` → „Standard-Berichte" (Risk Register, SoA, Compliance-Status)           |
+| Feature                                      | Einstieg                                                                             |
+| -------------------------------------------- | ------------------------------------------------------------------------------------ |
+| Prozesslandkarte (management/core/support)   | `/process-map` — Bänder via `process.map_category`/`map_sequence`                    |
+| Prozess-Portal (Kenntnisnahmen, RACI)        | `/my-processes` — pending acknowledgment-Steps aus `process_approval_step`           |
+| BPM-Freigabekette (review → approval → ack)  | `/processes/[id]` → Tab Sign-off/Freigabe; API `/processes/[id]/approval-steps`      |
+| Call-Activity-Drilldown                      | `/processes/[id]` BPMN-Viewer — `process_step.called_process_id` (Migration 0363)    |
+| DMS Effective Dating (1.0 → 1.1 → 2.0)       | `/documents/[id]` → Versionen; API `GET /documents/[id]/versions/at`                 |
+| e-Signatur (Hash-Kette, Verify, Zertifikat)  | `/documents/[id]` → Tab „Signaturen"; Chain-Logik `lib/documents/signature-chain.ts` |
+| Management-Review-Cockpit (ISO 27001 9.3)    | `/isms/reviews` — completed Q2/2026 + planned Review mit „seit letztem Review"       |
+| Risk-Acceptance (Authority-Matrix, Expiry)   | `/risk-acceptances` — eine Demo-Akzeptanz läuft 2026-08-10 ab (Expiry-Highlight)     |
+| Retention-Policies (GoBD)                    | Dokument-Detail (DOC-001 hat „Aufbewahrung 10 Jahre (GoBD)" zugewiesen)              |
+| Standard-Reports (PDF/Excel, Branding-Stile) | `/reports` → „Standard-Berichte" (Risk Register, SoA, Compliance-Status)             |
 
 ## 10. Weiterführend
 

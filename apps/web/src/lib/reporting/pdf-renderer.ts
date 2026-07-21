@@ -764,7 +764,8 @@ function renderBars(ctx: RenderCtx, items: ReportBar[]): void {
       .fill();
     // Fill
     if (pct > 0) {
-      const fillColor = pct >= 80 ? "#166534" : pct >= 50 ? "#854d0e" : "#991b1b";
+      const fillColor =
+        pct >= 80 ? "#166534" : pct >= 50 ? "#854d0e" : "#991b1b";
       doc
         .rect(barX, y + 4, (barWidth * pct) / 100, 10)
         .fillColor(fillColor)

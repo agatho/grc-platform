@@ -68,9 +68,8 @@ const controls = [
 ];
 
 async function run() {
-  const { processControlEmbeddingSync } = await import(
-    "../../src/crons/control-embedding-sync"
-  );
+  const { processControlEmbeddingSync } =
+    await import("../../src/crons/control-embedding-sync");
   return processControlEmbeddingSync();
 }
 

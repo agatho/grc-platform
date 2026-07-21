@@ -44,7 +44,10 @@ export async function GET(
 
   if (!doc.fileSha256) {
     return Response.json(
-      { error: "No stored hash available — file was uploaded before integrity hashing was introduced" },
+      {
+        error:
+          "No stored hash available — file was uploaded before integrity hashing was introduced",
+      },
       { status: 422 },
     );
   }

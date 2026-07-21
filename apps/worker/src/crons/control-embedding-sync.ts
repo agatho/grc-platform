@@ -18,10 +18,7 @@
 import { db, control, controlEmbedding } from "@grc/db";
 import { and, eq, isNull, ne, or, sql } from "drizzle-orm";
 import { generateEmbedding, getEmbeddingProvider } from "@grc/ai";
-import {
-  controlEmbeddingContentHash,
-  controlEmbeddingText,
-} from "@grc/shared";
+import { controlEmbeddingContentHash, controlEmbeddingText } from "@grc/shared";
 import { withCronInstrumentation } from "../lib/cron-instrument";
 
 const BATCH_LIMIT = 50;
@@ -94,10 +91,7 @@ export const processControlEmbeddingSync = withCronInstrumentation(
           controlEmbeddingText(c.title, c.description),
           provider,
         );
-        const contentHash = controlEmbeddingContentHash(
-          c.title,
-          c.description,
-        );
+        const contentHash = controlEmbeddingContentHash(c.title, c.description);
         const now = new Date();
         await db
           .insert(controlEmbedding)

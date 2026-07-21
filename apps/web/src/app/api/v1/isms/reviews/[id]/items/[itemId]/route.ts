@@ -9,15 +9,16 @@ import { updateManagementReviewItemSchema } from "@grc/shared";
 import { eq, and } from "drizzle-orm";
 import { withAuth, withAuditContext } from "@/lib/api";
 
-async function loadReviewAndItem(reviewId: string, itemId: string, orgId: string) {
+async function loadReviewAndItem(
+  reviewId: string,
+  itemId: string,
+  orgId: string,
+) {
   const reviewRows = await db
     .select({ id: managementReview.id, status: managementReview.status })
     .from(managementReview)
     .where(
-      and(
-        eq(managementReview.id, reviewId),
-        eq(managementReview.orgId, orgId),
-      ),
+      and(eq(managementReview.id, reviewId), eq(managementReview.orgId, orgId)),
     );
   const review = reviewRows[0] ?? null;
   if (!review) return { review: null, item: null };

@@ -126,7 +126,10 @@ test.describe("BPM — Process portal (my-processes + acknowledgment)", () => {
         acknowledgment: { stepId: string; status: string } | null;
       }> = (await myRes.json()).data;
       const mine = myItems.find((p) => p.id === processId);
-      expect(mine, "published process must appear in my-processes").toBeTruthy();
+      expect(
+        mine,
+        "published process must appear in my-processes",
+      ).toBeTruthy();
       expect(mine!.myRoles).toContain("owner");
       // No acknowledgment step created yet
       expect(mine!.acknowledgment).toBeNull();
@@ -140,9 +143,7 @@ test.describe("BPM — Process portal (my-processes + acknowledgment)", () => {
         {
           data: {
             versionNumber: currentVersion,
-            steps: [
-              { stepType: "acknowledgment", assigneeUserId: userId },
-            ],
+            steps: [{ stepType: "acknowledgment", assigneeUserId: userId }],
           },
         },
       );

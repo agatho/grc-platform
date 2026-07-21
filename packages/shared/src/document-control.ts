@@ -176,7 +176,9 @@ export function shouldSendReviewReminder(input: {
   lastReminderSentAt: Date | null;
   now: Date;
 }): boolean {
-  const stageNow = reviewReminderStage(daysBetween(input.now, input.reviewDate));
+  const stageNow = reviewReminderStage(
+    daysBetween(input.now, input.reviewDate),
+  );
   if (stageNow === null) return false;
   if (input.lastReminderSentAt === null) return true;
   const stageAtLast = reviewReminderStage(

@@ -468,9 +468,7 @@ export function RiskAcceptancePanel({
                     <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2">
                       <p className="text-xs font-medium text-red-800">
                         {t("detail.revokeReason")}
-                        {r.revokedAt
-                          ? ` (${formatDateTime(r.revokedAt)})`
-                          : ""}
+                        {r.revokedAt ? ` (${formatDateTime(r.revokedAt)})` : ""}
                       </p>
                       <p className="text-xs text-red-700 whitespace-pre-wrap mt-0.5">
                         {r.revokeReason}

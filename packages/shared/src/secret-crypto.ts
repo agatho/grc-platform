@@ -43,7 +43,8 @@ const PREVIOUS_KEY_ENV = "SECRET_ENCRYPTION_KEY_PREVIOUS";
 
 // Strict base64 (standard alphabet, correct padding). Buffer.from(_,
 // "base64") is forgiving about garbage, so validate with a regex first.
-const BASE64_RE = /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
+const BASE64_RE =
+  /^(?:[A-Za-z0-9+/]{4})*(?:[A-Za-z0-9+/]{2}==|[A-Za-z0-9+/]{3}=)?$/;
 const HEX_KEY_RE = /^[0-9a-fA-F]{64}$/;
 
 /**
@@ -99,7 +100,11 @@ export function isEncryptedSecret(value: unknown): value is string {
   const parts = value.split(":");
   if (parts.length !== 4 || parts[0] !== ENVELOPE_VERSION) return false;
   const [, ivB64, tagB64, ctB64] = parts as [string, string, string, string];
-  if (!BASE64_RE.test(ivB64) || !BASE64_RE.test(tagB64) || !BASE64_RE.test(ctB64)) {
+  if (
+    !BASE64_RE.test(ivB64) ||
+    !BASE64_RE.test(tagB64) ||
+    !BASE64_RE.test(ctB64)
+  ) {
     return false;
   }
   return (
@@ -130,7 +135,12 @@ export function encryptSecret(plaintext: string): string {
   ].join(":");
 }
 
-function decryptWithKey(key: Buffer, ivB64: string, tagB64: string, ctB64: string): string {
+function decryptWithKey(
+  key: Buffer,
+  ivB64: string,
+  tagB64: string,
+  ctB64: string,
+): string {
   const decipher = createDecipheriv(ALGO, key, Buffer.from(ivB64, "base64"));
   decipher.setAuthTag(Buffer.from(tagB64, "base64"));
   const plain = Buffer.concat([

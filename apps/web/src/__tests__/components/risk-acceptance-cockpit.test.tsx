@@ -7,15 +7,20 @@
 // "expiring soon only" toggle is activated.
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { render, screen, fireEvent, waitFor, cleanup } from "@testing-library/react";
+import {
+  render,
+  screen,
+  fireEvent,
+  waitFor,
+  cleanup,
+} from "@testing-library/react";
 import React from "react";
 
 // ── Runtime stubs (same idiom as all-components-smoke.test.tsx) ──────
 
 vi.mock("next-intl", () => ({
   useTranslations:
-    (ns?: string) =>
-    (key: string, params?: Record<string, unknown>) => {
+    (ns?: string) => (key: string, params?: Record<string, unknown>) => {
       const full = ns ? `${ns}.${key}` : key;
       return params ? `${full}(${JSON.stringify(params)})` : full;
     },
@@ -35,13 +40,8 @@ vi.mock("next/navigation", () => ({
 }));
 
 vi.mock("next/link", () => ({
-  default: ({
-    children,
-    href,
-  }: {
-    children: React.ReactNode;
-    href: string;
-  }) => React.createElement("a", { href }, children),
+  default: ({ children, href }: { children: React.ReactNode; href: string }) =>
+    React.createElement("a", { href }, children),
 }));
 
 vi.mock("sonner", () => ({
@@ -154,9 +154,7 @@ describe("Risk-Acceptance cockpit page", () => {
     expect(
       screen.getByText(/risk\.acceptance\.expiry\.expiresInDays/),
     ).toBeTruthy();
-    expect(
-      screen.getByText("risk.acceptance.expiry.unlimited"),
-    ).toBeTruthy();
+    expect(screen.getByText("risk.acceptance.expiry.unlimited")).toBeTruthy();
   });
 
   it("re-fetches with expiringBefore when the expiring-soon toggle is enabled", async () => {

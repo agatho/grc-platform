@@ -17,10 +17,7 @@ import {
   type FetchContext,
 } from "./section-data-fetcher";
 import { buildReportHTML } from "./renderers/pdf-renderer";
-import {
-  buildReportDocument,
-  type ResolvedSection,
-} from "./report-document";
+import { buildReportDocument, type ResolvedSection } from "./report-document";
 import { renderReportDocumentPdf } from "./renderers/pdfkit-renderer";
 import { renderExcel } from "./renderers/excel-renderer";
 import * as fs from "fs/promises";

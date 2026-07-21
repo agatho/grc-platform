@@ -131,35 +131,29 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
 
   // First import of the route transforms the full @grc/shared barrel —
   // give the cold-start test more headroom than the 5s default.
-  it(
-    "returns 401 when not authenticated",
-    async () => {
-      withAuthMock.mockResolvedValue(
-        Response.json({ error: "Unauthorized" }, { status: 401 }),
-      );
-      const { POST } = await import(
-        "../../app/api/v1/risks/[id]/acceptance/route"
-      );
-      const res = await POST(postAcceptance(VALID_BODY), params);
-      expect(res.status).toBe(401);
-      expect(withAuthMock).toHaveBeenCalledWith(
-        "admin",
-        "risk_manager",
-        "process_owner",
-        "ciso",
-        "control_owner",
-      );
-    },
-    20000,
-  );
+  it("returns 401 when not authenticated", async () => {
+    withAuthMock.mockResolvedValue(
+      Response.json({ error: "Unauthorized" }, { status: 401 }),
+    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
+    const res = await POST(postAcceptance(VALID_BODY), params);
+    expect(res.status).toBe(401);
+    expect(withAuthMock).toHaveBeenCalledWith(
+      "admin",
+      "risk_manager",
+      "process_owner",
+      "ciso",
+      "control_owner",
+    );
+  }, 20000);
 
   it("returns 403 when role is rejected", async () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Forbidden" }, { status: 403 }),
     );
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(403);
   });
@@ -169,9 +163,8 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
     requireModuleMock.mockResolvedValue(
       Response.json({ error: "Module disabled" }, { status: 404 }),
     );
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(404);
     expect(requireModuleMock).toHaveBeenCalledWith("erm", "org-1", "POST");
@@ -180,9 +173,8 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
   it("returns 422 when justification is missing (ISO 27005 mandatory)", async () => {
     withAuthMock.mockResolvedValue(AUTH_CTX);
     requireModuleMock.mockResolvedValue(undefined);
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance({}), params);
     expect(res.status).toBe(422);
     const body = await res.json();
@@ -196,9 +188,8 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
     mockDb.select.mockReturnValueOnce(
       chainable([{ ...SCORED_RISK, ownerId: "user-1" }]),
     );
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(422);
     const body = await res.json();
@@ -212,9 +203,8 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
     mockDb.select
       .mockReturnValueOnce(chainable([SCORED_RISK])) // risk
       .mockReturnValueOnce(chainable([{ id: "acc-existing" }])); // active row
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(409);
   });
@@ -236,9 +226,8 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
         ]),
       ) // authority matrix
       .mockReturnValueOnce(chainable([])); // caller holds neither role
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(403);
     const body = await res.json();
@@ -265,12 +254,10 @@ describe("POST /api/v1/risks/[id]/acceptance", () => {
     const inserted = { id: "acc-new", status: "active" };
     mockDb.insert.mockReturnValue(chainable([inserted]));
     withAuditContextMock.mockImplementation(
-      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) =>
-        fn(mockDb),
+      async (_ctx: unknown, fn: (tx: MockDb) => Promise<unknown>) => fn(mockDb),
     );
-    const { POST } = await import(
-      "../../app/api/v1/risks/[id]/acceptance/route"
-    );
+    const { POST } =
+      await import("../../app/api/v1/risks/[id]/acceptance/route");
     const res = await POST(postAcceptance(VALID_BODY), params);
     expect(res.status).toBe(201);
     const body = await res.json();

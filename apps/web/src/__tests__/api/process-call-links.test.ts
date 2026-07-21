@@ -54,8 +54,7 @@ vi.mock("@/lib/api", () => ({
     return withAuthMock;
   },
   withAuditContext: vi.fn(
-    async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) =>
-      fn(mockDb),
+    async (_ctx: unknown, fn: (tx: unknown) => Promise<unknown>) => fn(mockDb),
   ),
 }));
 
@@ -106,9 +105,8 @@ describe("GET /api/v1/processes/:id/call-links", () => {
     withAuthMock.mockResolvedValue(
       Response.json({ error: "Unauthorized" }, { status: 401 }),
     );
-    const { GET } = await import(
-      "../../app/api/v1/processes/[id]/call-links/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/processes/[id]/call-links/route");
     const res = await GET(
       makeRequest(`http://localhost/api/v1/processes/${PROCESS_ID}/call-links`),
       { params: makeParams({ id: PROCESS_ID }) },
@@ -123,9 +121,8 @@ describe("GET /api/v1/processes/:id/call-links", () => {
     requireModuleMock.mockResolvedValue(undefined);
     mockSelectSequence([[]]); // process lookup → not found
 
-    const { GET } = await import(
-      "../../app/api/v1/processes/[id]/call-links/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/processes/[id]/call-links/route");
     const res = await GET(
       makeRequest(`http://localhost/api/v1/processes/${PROCESS_ID}/call-links`),
       { params: makeParams({ id: PROCESS_ID }) },
@@ -152,9 +149,8 @@ describe("GET /api/v1/processes/:id/call-links", () => {
       [], // calledBy
     ]);
 
-    const { GET } = await import(
-      "../../app/api/v1/processes/[id]/call-links/route"
-    );
+    const { GET } =
+      await import("../../app/api/v1/processes/[id]/call-links/route");
     const res = await GET(
       makeRequest(`http://localhost/api/v1/processes/${PROCESS_ID}/call-links`),
       { params: makeParams({ id: PROCESS_ID }) },
@@ -190,9 +186,8 @@ describe("PUT /api/v1/processes/:id/steps/:stepId — calledProcessId", () => {
       [{ id: STEP_ID }], // step exists
     ]);
 
-    const { PUT } = await import(
-      "../../app/api/v1/processes/[id]/steps/[stepId]/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/[id]/steps/[stepId]/route");
     const res = await PUT(
       makeRequest(
         `http://localhost/api/v1/processes/${PROCESS_ID}/steps/${STEP_ID}`,
@@ -214,9 +209,8 @@ describe("PUT /api/v1/processes/:id/steps/:stepId — calledProcessId", () => {
       [], // target process lookup → not found in org
     ]);
 
-    const { PUT } = await import(
-      "../../app/api/v1/processes/[id]/steps/[stepId]/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/[id]/steps/[stepId]/route");
     const res = await PUT(
       makeRequest(
         `http://localhost/api/v1/processes/${PROCESS_ID}/steps/${STEP_ID}`,
@@ -238,14 +232,11 @@ describe("PUT /api/v1/processes/:id/steps/:stepId — calledProcessId", () => {
       [{ id: OTHER_PROCESS_ID }], // target process exists in org
     ]);
     mockDb.update.mockImplementation(() =>
-      chainable([
-        { id: STEP_ID, calledProcessId: OTHER_PROCESS_ID },
-      ]),
+      chainable([{ id: STEP_ID, calledProcessId: OTHER_PROCESS_ID }]),
     );
 
-    const { PUT } = await import(
-      "../../app/api/v1/processes/[id]/steps/[stepId]/route"
-    );
+    const { PUT } =
+      await import("../../app/api/v1/processes/[id]/steps/[stepId]/route");
     const res = await PUT(
       makeRequest(
         `http://localhost/api/v1/processes/${PROCESS_ID}/steps/${STEP_ID}`,

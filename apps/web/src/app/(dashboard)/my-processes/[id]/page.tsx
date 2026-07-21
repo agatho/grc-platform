@@ -24,12 +24,7 @@ import {
 import { ModuleGate } from "@/components/module/module-gate";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { BpmnViewer } from "@/components/bpmn/bpmn-viewer";
 import { useDateFormat } from "@/lib/format-date";
 import type { MyProcessRole } from "@/lib/process-portal-roles";
@@ -136,7 +131,10 @@ export default function MyProcessDetailPage() {
       <ModuleGate moduleKey="bpm">
         <div className="text-center py-12 space-y-4">
           <p className="text-muted-foreground">{t("notFound")}</p>
-          <Button variant="outline" onClick={() => router.push("/my-processes")}>
+          <Button
+            variant="outline"
+            onClick={() => router.push("/my-processes")}
+          >
             <ArrowLeft className="mr-2 h-4 w-4" />
             {t("backToList")}
           </Button>
@@ -166,9 +164,7 @@ export default function MyProcessDetailPage() {
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div className="flex-1">
-            <h1 className="text-2xl font-bold tracking-tight">
-              {detail.name}
-            </h1>
+            <h1 className="text-2xl font-bold tracking-tight">{detail.name}</h1>
             <p className="text-muted-foreground text-sm">
               {t("versionLabel", { version: detail.versionNumber })}
               {detail.department ? ` · ${detail.department}` : ""}
@@ -201,8 +197,7 @@ export default function MyProcessDetailPage() {
                     {detail.acknowledgment?.dueDate && (
                       <>
                         {" "}
-                        {t("dueBy")}{" "}
-                        {formatDate(detail.acknowledgment.dueDate)}
+                        {t("dueBy")} {formatDate(detail.acknowledgment.dueDate)}
                       </>
                     )}
                   </p>
@@ -253,9 +248,7 @@ export default function MyProcessDetailPage() {
               </p>
             </div>
             <div>
-              <p className="text-xs text-muted-foreground">
-                {t("nextReview")}
-              </p>
+              <p className="text-xs text-muted-foreground">{t("nextReview")}</p>
               <p className="text-sm font-medium">
                 {detail.reviewDate ? formatDate(detail.reviewDate) : "—"}
               </p>

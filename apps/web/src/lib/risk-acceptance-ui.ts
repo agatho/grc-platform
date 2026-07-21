@@ -97,7 +97,10 @@ export function buildAcceptanceListQuery(
   params.set("page", String(opts.page));
   params.set("limit", String(opts.limit));
   // Expiring-soon review reads best in ascending expiry order.
-  params.set("sort", opts.sort ?? (opts.expiringOnly ? "validUntil" : "acceptedAt"));
+  params.set(
+    "sort",
+    opts.sort ?? (opts.expiringOnly ? "validUntil" : "acceptedAt"),
+  );
   params.set("sortDir", opts.sortDir ?? (opts.expiringOnly ? "asc" : "desc"));
   if (opts.status && opts.status !== "all") {
     params.set("status", opts.status);

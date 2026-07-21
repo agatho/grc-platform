@@ -23,7 +23,9 @@ test.describe("Reporting — standard reports (PDF/XLSX contracts)", () => {
   test("risk-register: PDF + XLSX magic bytes and content types", async ({
     request,
   }) => {
-    const pdfRes = await request.get("/api/v1/reports/risk-register?format=pdf");
+    const pdfRes = await request.get(
+      "/api/v1/reports/risk-register?format=pdf",
+    );
     expect(pdfRes.ok(), await pdfRes.text()).toBeTruthy();
     expect(pdfRes.headers()["content-type"]).toContain("application/pdf");
     const pdfBody = await pdfRes.body();
@@ -45,9 +47,8 @@ test.describe("Reporting — standard reports (PDF/XLSX contracts)", () => {
     // control frameworks in a full dev setup).
     const catRes = await request.get("/api/v1/catalogs?type=control&limit=50");
     expect(catRes.ok(), await catRes.text()).toBeTruthy();
-    const catalogs: Array<{ id: string; name: string }> = (
-      await catRes.json()
-    ).data;
+    const catalogs: Array<{ id: string; name: string }> = (await catRes.json())
+      .data;
     test.skip(
       !catalogs || catalogs.length === 0,
       "No control-framework catalog seeded in this org — run the catalog seeds (packages/db/sql) first.",

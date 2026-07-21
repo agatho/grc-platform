@@ -109,10 +109,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       .orderBy(direction(sortColumn), asc(riskAcceptance.id))
       .limit(limit)
       .offset(offset),
-    db
-      .select({ total: count() })
-      .from(riskAcceptance)
-      .where(where),
+    db.select({ total: count() }).from(riskAcceptance).where(where),
   ]);
 
   return paginatedResponse(rows, Number(total ?? 0), page, limit);

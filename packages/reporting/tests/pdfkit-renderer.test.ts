@@ -144,9 +144,7 @@ describe("renderReportDocumentPdf", () => {
   });
 
   it("renders empty models without throwing", async () => {
-    const buffer = await renderReportDocumentPdf(
-      makeModel({ sections: [] }),
-    );
+    const buffer = await renderReportDocumentPdf(makeModel({ sections: [] }));
     expect(buffer.subarray(0, 5).toString("latin1")).toBe("%PDF-");
   });
 });

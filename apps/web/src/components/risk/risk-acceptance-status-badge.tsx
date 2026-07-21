@@ -2,10 +2,7 @@
 
 import { useTranslations } from "next-intl";
 import { Badge } from "@/components/ui/badge";
-import {
-  isRiskAcceptanceStatus,
-  type RiskAcceptanceStatus,
-} from "@grc/shared";
+import { isRiskAcceptanceStatus, type RiskAcceptanceStatus } from "@grc/shared";
 
 // Status badge for risk-acceptance records (active / expired / revoked).
 // Colors mirror the governance semantics: green = decision in force,

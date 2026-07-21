@@ -44,8 +44,7 @@ export function ProcessMapCategorySelect({
     setCurrent(v);
     setPending(true);
     try {
-      const mapCategory =
-        v === NONE_VALUE ? null : (v as ProcessMapCategory);
+      const mapCategory = v === NONE_VALUE ? null : (v as ProcessMapCategory);
       const res = await fetch(`/api/v1/processes/${processId}`, {
         method: "PUT",
         headers: { "content-type": "application/json" },
@@ -55,9 +54,7 @@ export function ProcessMapCategorySelect({
       toast.success(t("category.saved"));
       onChanged?.(mapCategory);
     } catch (err) {
-      toast.error(
-        err instanceof Error ? err.message : t("category.saveError"),
-      );
+      toast.error(err instanceof Error ? err.message : t("category.saveError"));
       setCurrent(prev);
     } finally {
       setPending(false);

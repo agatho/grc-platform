@@ -3,10 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import "./bpmn-editor.css";
 import arctosModdleExtension from "./arctos-moddle-extension.json";
-import type {
-  RiskOverlayData,
-  CallActivityOverlayData,
-} from "./bpmn-editor";
+import type { RiskOverlayData, CallActivityOverlayData } from "./bpmn-editor";
 
 // ---------------------------------------------------------------------------
 // bpmn-js viewer instance type

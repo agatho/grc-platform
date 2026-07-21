@@ -127,9 +127,7 @@ function setupSuccessfulCreate() {
   );
   // 1st insert: work item; 2nd insert: risk row.
   mockDb.insert
-    .mockReturnValueOnce(
-      chainable([{ id: "wi-1", elementId: "RSK00000001" }]),
-    )
+    .mockReturnValueOnce(chainable([{ id: "wi-1", elementId: "RSK00000001" }]))
     .mockReturnValueOnce(
       chainable([{ id: RISK_ID, title: "Fan-out test risk" }]),
     );

@@ -306,10 +306,7 @@ function RiskAcceptancesInner() {
   // Cells
   // ---------------------------------------------------------------------------
 
-  function validUntilCell(row: {
-    validUntil: string | null;
-    status: string;
-  }) {
+  function validUntilCell(row: { validUntil: string | null; status: string }) {
     if (!row.validUntil) {
       return (
         <span className="text-sm text-gray-400">{t("expiry.unlimited")}</span>
@@ -378,7 +375,10 @@ function RiskAcceptancesInner() {
           <p className="text-sm text-gray-500 mt-1">
             {t("subtitle")}
             {pagination.total > 0 && (
-              <span> — {t("pagination.total", { total: pagination.total })}</span>
+              <span>
+                {" "}
+                — {t("pagination.total", { total: pagination.total })}
+              </span>
             )}
           </p>
         </div>

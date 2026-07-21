@@ -82,9 +82,7 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
 
     // 3d. Give every step a description — hard gate for in_review → approved
     // (`activities_missing_description`).
-    const stepsRes = await request.get(
-      `/api/v1/processes/${processId}/steps`,
-    );
+    const stepsRes = await request.get(`/api/v1/processes/${processId}/steps`);
     expect(stepsRes.ok()).toBeTruthy();
     const steps: Array<{ id: string }> = (await stepsRes.json()).data;
     expect(steps.length).toBeGreaterThan(0);
@@ -138,12 +136,9 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     );
     expect(approveNoComment.status()).toBe(422); // comment missing
 
-    const approve = await request.put(
-      `/api/v1/processes/${processId}/status`,
-      {
-        data: { status: "approved", comment: "E2E review passed." },
-      },
-    );
+    const approve = await request.put(`/api/v1/processes/${processId}/status`, {
+      data: { status: "approved", comment: "E2E review passed." },
+    });
     expect(approve.ok(), await approve.text()).toBeTruthy();
 
     // 7. B2.2: approved → published without a process_owner sign-off for the
@@ -172,10 +167,9 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     );
     expect(signPublish.ok(), await signPublish.text()).toBeTruthy();
 
-    const publish = await request.put(
-      `/api/v1/processes/${processId}/status`,
-      { data: { status: "published" } },
-    );
+    const publish = await request.put(`/api/v1/processes/${processId}/status`, {
+      data: { status: "published" },
+    });
     expect(publish.ok(), await publish.text()).toBeTruthy();
 
     // 9. Verify sign-off chain is valid (review + publish sign-offs)
@@ -220,9 +214,7 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
       isCurrent: boolean;
       versionNumber: number;
     }> = (await versionsAfterSave.json()).data;
-    const workingRows = versionRows.filter(
-      (v) => v.versionType === "working",
-    );
+    const workingRows = versionRows.filter((v) => v.versionType === "working");
     expect(workingRows).toHaveLength(1);
     // The released current version is NOT the working copy.
     const currentRow = versionRows.find((v) => v.isCurrent);
@@ -285,9 +277,7 @@ test.describe("BPM — Approval pipeline with gates + sign-off chain", () => {
     expect(
       promotedRows.filter((v) => v.versionType === "working"),
     ).toHaveLength(0);
-    expect(promotedRows.find((v) => v.isCurrent)?.versionType).toBe(
-      "released",
-    );
+    expect(promotedRows.find((v) => v.isCurrent)?.versionType).toBe("released");
 
     // Process is back in 'approved' — a fresh owner sign-off would be
     // required again before the next publication (gate re-armed).

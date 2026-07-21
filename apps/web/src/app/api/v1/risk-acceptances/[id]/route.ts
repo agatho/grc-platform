@@ -71,9 +71,7 @@ export async function GET(
     .leftJoin(risk, eq(risk.id, riskAcceptance.riskId))
     .leftJoin(acceptor, eq(acceptor.id, riskAcceptance.acceptedBy))
     .leftJoin(revoker, eq(revoker.id, riskAcceptance.revokedBy))
-    .where(
-      and(eq(riskAcceptance.id, id), eq(riskAcceptance.orgId, ctx.orgId)),
-    );
+    .where(and(eq(riskAcceptance.id, id), eq(riskAcceptance.orgId, ctx.orgId)));
 
   if (!row) {
     return Response.json(
@@ -111,9 +109,7 @@ export async function PATCH(
   const [existing] = await db
     .select()
     .from(riskAcceptance)
-    .where(
-      and(eq(riskAcceptance.id, id), eq(riskAcceptance.orgId, ctx.orgId)),
-    );
+    .where(and(eq(riskAcceptance.id, id), eq(riskAcceptance.orgId, ctx.orgId)));
 
   if (!existing) {
     return Response.json(

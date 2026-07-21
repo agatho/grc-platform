@@ -178,10 +178,7 @@ export const GET = withErrorHandler(async function GET(req: Request) {
       gaps.push([
         entry.code,
         localName(entry),
-        soaImplementationLabel(
-          locale,
-          soa ? implementation : "not_assessed",
-        ),
+        soaImplementationLabel(locale, soa ? implementation : "not_assessed"),
         soa?.responsibleName ?? "",
         soa?.notes ?? "",
       ]);

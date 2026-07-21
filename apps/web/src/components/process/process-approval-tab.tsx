@@ -255,9 +255,7 @@ export function ProcessApprovalTab({
                           {t(`approval.stepTypes.${step.stepType}`)}
                         </p>
                         <p className="text-xs text-gray-500">
-                          {step.assigneeUserName ??
-                            step.assigneeRole ??
-                            "—"}
+                          {step.assigneeUserName ?? step.assigneeRole ?? "—"}
                           {step.decidedAt &&
                             ` · ${formatDateTime(step.decidedAt)}`}
                           {step.decidedByName && ` · ${step.decidedByName}`}
