@@ -213,7 +213,9 @@ function FAIRResultsInner() {
                       String(value),
                       t("frequency"),
                     ]}
-                    labelFormatter={(label: unknown) => formatEURFromUnknown(label)}
+                    labelFormatter={(label: unknown) =>
+                      formatEURFromUnknown(label)
+                    }
                   />
                   <ReferenceLine
                     x={
