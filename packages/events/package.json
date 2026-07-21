@@ -11,7 +11,7 @@
     "@grc/shared": "*"
   },
   "devDependencies": {
-    "@vitest/coverage-v8": "^4.1.7",
+    "@vitest/coverage-v8": "^4.1.10",
     "typescript": "^5.7",
     "vitest": "^4.0"
   }
