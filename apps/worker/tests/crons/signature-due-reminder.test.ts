@@ -219,12 +219,20 @@ describe("processSignatureDueReminders", () => {
   });
 
   it("does not re-remind within the same stage", async () => {
+    // Anchor both dates to ONE timestamp. With two separate Date.now()
+    // calls (makeRequest default dueDate vs. this override) even 1 ms of
+    // skew pushes dueDate−lastReminderSentAt past exactly 3 days, and
+    // daysBetween's Math.ceil then yields 4 → stageAtLast null → the cron
+    // "re-reminds". Coverage instrumentation made that skew near-certain
+    // in CI. Half a day of margin keeps both dates safely in stage 3.
+    const anchor = Date.now();
     mockDb.select
       .mockReturnValueOnce(
         chainable([
           makeRequest({
-            // due in 2 days, last reminder yesterday → same 3-day stage
-            lastReminderSentAt: new Date(Date.now() - DAY).toISOString(),
+            // due in 2 days, last reminder half a day ago → same 3-day stage
+            dueDate: new Date(anchor + 2 * DAY).toISOString(),
+            lastReminderSentAt: new Date(anchor - DAY / 2).toISOString(),
           }),
         ]),
       )
