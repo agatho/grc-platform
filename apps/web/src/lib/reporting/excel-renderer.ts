@@ -197,7 +197,7 @@ function columnCharWidth(weight: number, columnCount: number): number {
 function sanitizeSheetName(name: string): string {
   return (
     name
-      .replace(/[\\/*?\[\]:]/g, "")
+      .replace(/[\\/*?[\]:]/g, "")
       .substring(0, 31)
       .trim() || "Sheet"
   );

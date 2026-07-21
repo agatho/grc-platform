@@ -139,6 +139,7 @@ export async function extractFileText(
     if (!text) return null;
 
     // Strip NUL bytes — PostgreSQL text columns reject .
+    // eslint-disable-next-line no-control-regex -- intentional NUL strip
     const cleaned = text.replace(/\u0000/g, "").trim();
     if (!cleaned) return null;
     return cleaned.length > MAX_EXTRACT_CHARS
