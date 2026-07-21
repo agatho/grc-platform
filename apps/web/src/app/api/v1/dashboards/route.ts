@@ -15,10 +15,7 @@ export async function GET(req: Request) {
 
   const { page, limit, offset, searchParams } = paginate(req);
   const visibility = searchParams.get("visibility") as
-    | "personal"
-    | "team"
-    | "org"
-    | null;
+    "personal" | "team" | "org" | null;
   const isDefault = searchParams.get("isDefault");
   const isFavorite = searchParams.get("isFavorite");
   const search = searchParams.get("search");

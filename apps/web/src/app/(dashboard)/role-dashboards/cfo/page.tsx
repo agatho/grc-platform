@@ -32,8 +32,7 @@ export default function CfoDashboardPage() {
   if (!data) return null;
 
   const financial = data.financialExposure as
-    | Record<string, number>
-    | undefined;
+    Record<string, number> | undefined;
   const audit = data.auditEffort as Record<string, number> | undefined;
 
   return (

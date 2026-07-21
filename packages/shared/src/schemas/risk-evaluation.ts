@@ -103,12 +103,7 @@ export type CreateRiskTreatmentLink = z.infer<
 // ─── Risk Value Colors ────────────────────────────────────────
 
 export type RiskValueRange =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "minimal"
-  | "none";
+  "critical" | "high" | "medium" | "low" | "minimal" | "none";
 
 export function getRiskValueRange(
   value: number | null | undefined,

@@ -24,11 +24,7 @@ interface WorkItem {
   title: string;
   code: string | null;
   status:
-    | ProgrammeStepStatus
-    | "in_progress"
-    | "pending"
-    | "completed"
-    | "skipped";
+    ProgrammeStepStatus | "in_progress" | "pending" | "completed" | "skipped";
   dueDate: string | null;
   isMandatory?: boolean;
   isMilestone?: boolean;

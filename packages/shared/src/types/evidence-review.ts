@@ -2,27 +2,14 @@
 
 export type EvidenceReviewScope = "all" | "control" | "framework" | "custom";
 export type EvidenceReviewJobStatus =
-  | "pending"
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "pending" | "running" | "completed" | "failed" | "cancelled";
 export type EvidenceClassification =
-  | "compliant"
-  | "partially_compliant"
-  | "non_compliant"
-  | "inconclusive";
+  "compliant" | "partially_compliant" | "non_compliant" | "inconclusive";
 export type EvidenceGapType =
-  | "missing_evidence"
-  | "outdated"
-  | "incomplete"
-  | "quality_issue";
+  "missing_evidence" | "outdated" | "incomplete" | "quality_issue";
 export type EvidenceGapSeverity = "critical" | "high" | "medium" | "low";
 export type EvidenceGapStatus =
-  | "open"
-  | "acknowledged"
-  | "remediated"
-  | "false_positive";
+  "open" | "acknowledged" | "remediated" | "false_positive";
 
 export interface EvidenceReviewJob {
   id: string;

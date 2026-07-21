@@ -28,8 +28,7 @@ export async function POST(req: Request) {
   let correct = 0;
   for (const answer of body.answersJson) {
     const q = questions[answer.questionIndex] as
-      | { correctIndex?: number }
-      | undefined;
+      { correctIndex?: number } | undefined;
     if (q && q.correctIndex === answer.selectedIndex) correct++;
   }
   const scorePct =

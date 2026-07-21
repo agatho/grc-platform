@@ -15,12 +15,7 @@
  */
 
 export type AiProvider =
-  | "claude_cli"
-  | "claude_api"
-  | "openai"
-  | "gemini"
-  | "ollama"
-  | "lmstudio";
+  "claude_cli" | "claude_api" | "openai" | "gemini" | "ollama" | "lmstudio";
 
 export interface AiMessage {
   role: "system" | "user" | "assistant";

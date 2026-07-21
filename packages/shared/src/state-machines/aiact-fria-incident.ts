@@ -188,10 +188,7 @@ export interface IncidentDeadlineResult {
   notificationDeadlineDays: number;
   notificationDeadlineHours: number;
   deadlineCategory:
-    | "immediate_2d"
-    | "widespread_2d"
-    | "serious_15d"
-    | "not_reportable";
+    "immediate_2d" | "widespread_2d" | "serious_15d" | "not_reportable";
   reasoning: string;
 }
 

@@ -1,34 +1,16 @@
 // Sprint 69: AI Regulatory Change Agent Types
 
 export type RegulatorySourceType =
-  | "official_gazette"
-  | "regulator"
-  | "industry_body"
-  | "eu_lex"
-  | "custom_feed";
+  "official_gazette" | "regulator" | "industry_body" | "eu_lex" | "custom_feed";
 export type RegulatoryChangeType =
-  | "new_regulation"
-  | "amendment"
-  | "repeal"
-  | "guidance"
-  | "enforcement";
+  "new_regulation" | "amendment" | "repeal" | "guidance" | "enforcement";
 export type RegulatoryClassification =
-  | "critical"
-  | "major"
-  | "minor"
-  | "informational";
+  "critical" | "major" | "minor" | "informational";
 export type RegulatoryChangeStatus =
-  | "new"
-  | "under_review"
-  | "assessed"
-  | "acknowledged"
-  | "not_applicable";
+  "new" | "under_review" | "assessed" | "acknowledged" | "not_applicable";
 export type ImpactLevel = "critical" | "high" | "medium" | "low" | "none";
 export type ImpactAssessmentStatus =
-  | "draft"
-  | "in_review"
-  | "approved"
-  | "rejected";
+  "draft" | "in_review" | "approved" | "rejected";
 export type RegulatoryCalendarEventType =
   | "compliance_deadline"
   | "enforcement_date"

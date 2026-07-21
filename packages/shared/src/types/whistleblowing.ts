@@ -8,17 +8,10 @@ export type WbCategory =
   | "health_safety"
   | "other";
 export type WbCaseStatus =
-  | "received"
-  | "acknowledged"
-  | "investigating"
-  | "resolved"
-  | "closed";
+  "received" | "acknowledged" | "investigating" | "resolved" | "closed";
 export type WbPriority = "low" | "medium" | "high" | "critical";
 export type WbResolutionCategory =
-  | "substantiated"
-  | "unsubstantiated"
-  | "inconclusive"
-  | "referred";
+  "substantiated" | "unsubstantiated" | "inconclusive" | "referred";
 export type WbDirection = "inbound" | "outbound";
 export type WbAuthorType = "whistleblower" | "ombudsperson";
 

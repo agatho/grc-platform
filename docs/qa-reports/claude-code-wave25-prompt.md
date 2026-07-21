@@ -317,9 +317,7 @@ Endpoint existiert (war 404), aber kein Schema-Discovery-Endpoint.
 // GET /api/v1/vendors/{id}/assessments/schema
 return Response.json({
   data: {
-    fields: {
-      /* JSON-Schema-style required/optional fields */
-    },
+    fields: {/* JSON-Schema-style required/optional fields */},
     example: {
       assessmentType: "initial",
       scoringScale: "standard",

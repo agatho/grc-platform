@@ -33,8 +33,7 @@ export default function BoardDashboardPage() {
   if (!data) return null;
 
   const compliance = data.compliancePosture as
-    | Record<string, number>
-    | undefined;
+    Record<string, number> | undefined;
   const maturity = data.maturityRadar as Array<Record<string, string>>;
   const topRisks = data.topRisks as Array<Record<string, string>>;
 

@@ -1,10 +1,7 @@
 // Sprint 73: EU AI Act Governance Module Types
 
 export type AiRiskClassification =
-  | "unacceptable"
-  | "high"
-  | "limited"
-  | "minimal";
+  "unacceptable" | "high" | "limited" | "minimal";
 export type AiTechnique =
   | "machine_learning"
   | "deep_learning"
@@ -13,11 +10,7 @@ export type AiTechnique =
   | "expert_system"
   | "generative_ai";
 export type AiAnnexCategory =
-  | "annex_i"
-  | "annex_ii"
-  | "annex_iii"
-  | "annex_iv"
-  | "none";
+  "annex_i" | "annex_ii" | "annex_iii" | "annex_iv" | "none";
 export type AiProviderDeployer = "provider" | "deployer" | "both";
 export type AiSystemStatus =
   | "draft"
@@ -27,15 +20,10 @@ export type AiSystemStatus =
   | "non_compliant"
   | "decommissioned";
 export type AiAssessmentType =
-  | "self_assessment"
-  | "third_party"
-  | "notified_body";
+  "self_assessment" | "third_party" | "notified_body";
 export type AiAssessmentResult = "pass" | "fail" | "conditional" | "pending";
 export type AiAssessmentStatus =
-  | "draft"
-  | "in_progress"
-  | "completed"
-  | "expired";
+  "draft" | "in_progress" | "completed" | "expired";
 export type AiOversightLogType =
   | "decision_override"
   | "intervention"
@@ -48,18 +36,12 @@ export type AiTransparencyEntryType =
   | "user_notification"
   | "marking_labeling";
 export type AiTransparencyStatus =
-  | "draft"
-  | "published"
-  | "updated"
-  | "withdrawn";
+  "draft" | "published" | "updated" | "withdrawn";
 export type AiFriaImpact = "high" | "medium" | "low" | "negligible";
 export type AiFriaStatus = "draft" | "in_progress" | "completed" | "approved";
 export type AiFramework = "iso_42001" | "nist_ai_rmf" | "eu_ai_act";
 export type AiImplementationStatus =
-  | "not_started"
-  | "in_progress"
-  | "implemented"
-  | "not_applicable";
+  "not_started" | "in_progress" | "implemented" | "not_applicable";
 
 export interface AiSystem {
   id: string;

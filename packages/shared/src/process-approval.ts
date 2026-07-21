@@ -5,11 +5,7 @@
 export type ApprovalStepType = "review" | "approval" | "acknowledgment";
 
 export type ApprovalStepStatus =
-  | "pending"
-  | "in_progress"
-  | "completed"
-  | "rejected"
-  | "skipped";
+  "pending" | "in_progress" | "completed" | "rejected" | "skipped";
 
 export type ApprovalDecision = "approve" | "reject";
 

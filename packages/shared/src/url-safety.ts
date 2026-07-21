@@ -104,8 +104,7 @@ const FORBIDDEN_HOSTNAMES = new Set([
 ]);
 
 export type WebhookUrlCheckResult =
-  | { ok: true; url: URL }
-  | { ok: false; reason: string };
+  { ok: true; url: URL } | { ok: false; reason: string };
 
 /**
  * Sync, hostname-literal check for SSRF safety. Use at registration time

@@ -3,10 +3,7 @@
 export type CloudProvider = "aws" | "azure" | "gcp";
 
 export type CloudTestExecutionStatus =
-  | "running"
-  | "completed"
-  | "failed"
-  | "cancelled";
+  "running" | "completed" | "failed" | "cancelled";
 
 export type CloudTestTrigger = "schedule" | "manual" | "api";
 

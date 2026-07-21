@@ -4,12 +4,7 @@
 // arbeiten mit varchar + eigenem Typ fuer Consistent-Validation.
 
 export type AvvAgreementStatus =
-  | "pending"
-  | "negotiated"
-  | "signed"
-  | "active"
-  | "expired"
-  | "terminated";
+  "pending" | "negotiated" | "signed" | "active" | "expired" | "terminated";
 
 export const AVV_ALLOWED_TRANSITIONS: Record<
   AvvAgreementStatus,

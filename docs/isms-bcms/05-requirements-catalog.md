@@ -356,25 +356,25 @@
 
 ## 9. Nicht-funktionale Anforderungen
 
-| ID          | Anforderung                                         | Priorität | Akzeptanzkriterium                 | Status                                   |
+| ID | Anforderung | Priorität | Akzeptanzkriterium | Status |
 | ----------- | --------------------------------------------------- | --------- | ---------------------------------- | ---------------------------------------- | --------------------------------- |
-| REQ-NFR-001 | Verfügbarkeit ≥ 99.5 %                              | SHOULD    | SLA dokumentiert, Monitoring aktiv | DOC-only — Monitoring vorhanden          |
-| REQ-NFR-002 | RTO der Plattform ≤ 4 h                             | SHOULD    | BIA für die Plattform selbst       | DOC-only                                 |
-| REQ-NFR-003 | RPO ≤ 1 h                                           | SHOULD    | Backup-Frequenz                    | DOC-only                                 |
-| REQ-NFR-004 | Backup mit Offsite-Kopie                            | MUST      | ADR-015                            | IMPLEMENTED (ADR)                        |
-| REQ-NFR-005 | Encryption at rest (DB)                             | MUST      | A.8.24                             | DB-Cluster encrypted                     | INFRA                             |
-| REQ-NFR-006 | Encryption in transit                               | MUST      | A.8.24                             | TLS 1.2+                                 | INFRA                             |
-| REQ-NFR-007 | Logging zentral, mit Retention 1+ Jahr              | MUST      | A.8.15                             | Logging-Stack                            | INFRA                             |
-| REQ-NFR-008 | Monitoring + Alerting                               | MUST      | A.8.16                             | Prometheus/Grafana o. ä.                 | ADR-017                           |
-| REQ-NFR-009 | DR-Test mind. jährlich                              | MUST      | A.5.30                             | Übungs-Plan                              | BCMS                              |
-| REQ-NFR-010 | Code-Coverage Backend ≥ 80 %                        | SHOULD    | (CLAUDE.md)                        | vitest-coverage                          | TBD — siehe Test-Execution-Report |
-| REQ-NFR-011 | Code-Coverage Frontend ≥ 60 %                       | SHOULD    | (CLAUDE.md)                        | vitest-coverage                          | TBD                               |
-| REQ-NFR-012 | CI/CD-Pipeline mit Pflicht-Checks (Lint+Test+Build) | MUST      | A.8.28                             | GH-Actions Required-Checks               | IMPLEMENTED (`github-ci.yml`)     |
-| REQ-NFR-013 | Secret-Management                                   | MUST      | A.8.24                             | ADR-018, Doppler/HashiCorp Vault o. ä.   | ADR-018                           |
-| REQ-NFR-014 | Rate-Limiting                                       | MUST      | A.8.6                              | Per-IP + Per-API-Key Rate-Limits         | ADR-019                           |
-| REQ-NFR-015 | API-Versionierung                                   | MUST      | A.8.31                             | `/api/v1/...`-Präfix, Deprecation-Header | ADR-020                           |
-| REQ-NFR-016 | Strukturierte Fehlerbehandlung                      | MUST      | A.8.30                             | Error-Codes + Trace-IDs                  | ADR-021                           |
-| REQ-NFR-017 | Migration-Rollback-Fähigkeit                        | MUST      | A.8.32                             | ADR-023                                  | ADR-023                           |
+| REQ-NFR-001 | Verfügbarkeit ≥ 99.5 % | SHOULD | SLA dokumentiert, Monitoring aktiv | DOC-only — Monitoring vorhanden |
+| REQ-NFR-002 | RTO der Plattform ≤ 4 h | SHOULD | BIA für die Plattform selbst | DOC-only |
+| REQ-NFR-003 | RPO ≤ 1 h | SHOULD | Backup-Frequenz | DOC-only |
+| REQ-NFR-004 | Backup mit Offsite-Kopie | MUST | ADR-015 | IMPLEMENTED (ADR) |
+| REQ-NFR-005 | Encryption at rest (DB) | MUST | A.8.24 | DB-Cluster encrypted | INFRA |
+| REQ-NFR-006 | Encryption in transit | MUST | A.8.24 | TLS 1.2+ | INFRA |
+| REQ-NFR-007 | Logging zentral, mit Retention 1+ Jahr | MUST | A.8.15 | Logging-Stack | INFRA |
+| REQ-NFR-008 | Monitoring + Alerting | MUST | A.8.16 | Prometheus/Grafana o. ä. | ADR-017 |
+| REQ-NFR-009 | DR-Test mind. jährlich | MUST | A.5.30 | Übungs-Plan | BCMS |
+| REQ-NFR-010 | Code-Coverage Backend ≥ 80 % | SHOULD | (CLAUDE.md) | vitest-coverage | TBD — siehe Test-Execution-Report |
+| REQ-NFR-011 | Code-Coverage Frontend ≥ 60 % | SHOULD | (CLAUDE.md) | vitest-coverage | TBD |
+| REQ-NFR-012 | CI/CD-Pipeline mit Pflicht-Checks (Lint+Test+Build) | MUST | A.8.28 | GH-Actions Required-Checks | IMPLEMENTED (`github-ci.yml`) |
+| REQ-NFR-013 | Secret-Management | MUST | A.8.24 | ADR-018, Doppler/HashiCorp Vault o. ä. | ADR-018 |
+| REQ-NFR-014 | Rate-Limiting | MUST | A.8.6 | Per-IP + Per-API-Key Rate-Limits | ADR-019 |
+| REQ-NFR-015 | API-Versionierung | MUST | A.8.31 | `/api/v1/...`-Präfix, Deprecation-Header | ADR-020 |
+| REQ-NFR-016 | Strukturierte Fehlerbehandlung | MUST | A.8.30 | Error-Codes + Trace-IDs | ADR-021 |
+| REQ-NFR-017 | Migration-Rollback-Fähigkeit | MUST | A.8.32 | ADR-023 | ADR-023 |
 
 ---
 

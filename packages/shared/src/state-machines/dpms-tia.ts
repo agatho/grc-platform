@@ -130,12 +130,7 @@ export const ADEQUACY_COUNTRIES = new Set([
 ]);
 
 export type LegalMechanism =
-  | "adequacy"
-  | "sccs"
-  | "bcrs"
-  | "certifications"
-  | "art_49"
-  | "none";
+  "adequacy" | "sccs" | "bcrs" | "certifications" | "art_49" | "none";
 
 export interface TransferRiskAssessment {
   country: string;

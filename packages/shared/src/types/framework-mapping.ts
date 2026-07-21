@@ -13,34 +13,22 @@ export type FrameworkKey =
   | "CIS";
 
 export type MappingRelationshipType =
-  | "equal"
-  | "subset"
-  | "superset"
-  | "intersect"
-  | "not_related";
+  "equal" | "subset" | "superset" | "intersect" | "not_related";
 
 export type MappingSource = "nist_olir" | "manual" | "ai_suggested";
 
 export type MappingRuleType = "override" | "addition" | "exclusion";
 
 export type CoverageStatus =
-  | "covered"
-  | "partially_covered"
-  | "not_covered"
-  | "not_applicable";
+  "covered" | "partially_covered" | "not_covered" | "not_applicable";
 
 export type CoverageSource =
-  | "direct_assessment"
-  | "mapped"
-  | "inherited"
-  | "manual";
+  "direct_assessment" | "mapped" | "inherited" | "manual";
 
 export type EvidenceStatus = "fresh" | "stale" | "missing" | "not_required";
 
 export type AssessmentResult =
-  | "effective"
-  | "partially_effective"
-  | "ineffective";
+  "effective" | "partially_effective" | "ineffective";
 
 export type RiskExposure = "critical" | "high" | "medium" | "low";
 

@@ -3,38 +3,19 @@
 export type AgentTestType = "automated" | "manual" | "hybrid";
 export type TestConnectorType = "api" | "database" | "file_system" | "cloud";
 export type TestFrequency =
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "quarterly"
-  | "on_demand";
+  "daily" | "weekly" | "monthly" | "quarterly" | "on_demand";
 export type TestExecutionStatus =
-  | "pending"
-  | "running"
-  | "passed"
-  | "failed"
-  | "error"
-  | "cancelled";
+  "pending" | "running" | "passed" | "failed" | "error" | "cancelled";
 export type AgentTestResult = "pass" | "fail" | "inconclusive";
 export type AgentTestResultSeverity =
-  | "critical"
-  | "high"
-  | "medium"
-  | "low"
-  | "info";
+  "critical" | "high" | "medium" | "low" | "info";
 export type TestTriggeredBy = "manual" | "scheduled" | "agent";
 export type ChecklistStatus =
-  | "draft"
-  | "in_progress"
-  | "completed"
-  | "archived";
+  "draft" | "in_progress" | "completed" | "archived";
 export type AgentChecklistResult = "pass" | "fail" | "partial";
 export type ChecklistItemResponse = "yes" | "no" | "na" | "partial";
 export type LearningPatternType =
-  | "common_failure"
-  | "effective_test"
-  | "false_positive"
-  | "improvement";
+  "common_failure" | "effective_test" | "false_positive" | "improvement";
 
 export interface ControlTestScript {
   id: string;

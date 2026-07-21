@@ -82,9 +82,7 @@ export async function GET(req: Request) {
     for (const entity of entities) {
       for (const field of fields) {
         const fieldValue = entity[field] as
-          | Record<string, string>
-          | string
-          | null;
+          Record<string, string> | string | null;
         const sourceText = resolveField(fieldValue, source, source);
         const targetText = resolveField(fieldValue, target, source);
 
@@ -116,9 +114,7 @@ export async function GET(req: Request) {
   for (const entity of entities) {
     for (const field of fields) {
       const fieldValue = entity[field] as
-        | Record<string, string>
-        | string
-        | null;
+        Record<string, string> | string | null;
       const sourceText = resolveField(fieldValue, source, source);
       const targetText = resolveField(fieldValue, target, source);
 

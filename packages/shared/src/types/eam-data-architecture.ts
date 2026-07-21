@@ -1,15 +1,9 @@
 // Sprint 50: EAM Data Architecture & Scenario Planning types
 
 export type DataCategory =
-  | "master_data"
-  | "transaction_data"
-  | "reference_data"
-  | "analytical_data";
+  "master_data" | "transaction_data" | "reference_data" | "analytical_data";
 export type DataClassificationLevel =
-  | "public"
-  | "internal"
-  | "confidential"
-  | "restricted";
+  "public" | "internal" | "confidential" | "restricted";
 export type ContextType = "as_is" | "to_be" | "scenario" | "historical";
 export type ContextStatus = "draft" | "active" | "archived";
 

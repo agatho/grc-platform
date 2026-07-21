@@ -427,24 +427,22 @@ function QuestionnaireEditInner() {
     const newSections: Section[] = sections.map((section, sIdx) => {
       const questions = importEntries
         .filter((e) => e.level >= 1 && e.parentCode === section.code)
-        .map(
-          (q, qIdx): Question => ({
-            id: `temp-import-q-${Date.now()}-${sIdx}-${qIdx}`,
-            sectionId: `temp-import-s-${Date.now()}-${sIdx}`,
-            questionType: "text",
-            questionDe: q.title,
-            questionEn: q.title,
-            helpTextDe: q.description ?? "",
-            helpTextEn: q.description ?? "",
-            options: [],
-            isRequired: true,
-            isEvidenceRequired: false,
-            conditionalOn: null,
-            weight: "1.0",
-            maxScore: 0,
-            sortOrder: qIdx,
-          }),
-        );
+        .map((q, qIdx): Question => ({
+          id: `temp-import-q-${Date.now()}-${sIdx}-${qIdx}`,
+          sectionId: `temp-import-s-${Date.now()}-${sIdx}`,
+          questionType: "text",
+          questionDe: q.title,
+          questionEn: q.title,
+          helpTextDe: q.description ?? "",
+          helpTextEn: q.description ?? "",
+          options: [],
+          isRequired: true,
+          isEvidenceRequired: false,
+          conditionalOn: null,
+          weight: "1.0",
+          maxScore: 0,
+          sortOrder: qIdx,
+        }));
 
       return {
         id: `temp-import-s-${Date.now()}-${sIdx}`,

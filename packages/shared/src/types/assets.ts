@@ -1,8 +1,6 @@
 // Asset & Work Item types (Sprint 1.4)
 export type AssetTier =
-  | "business_structure"
-  | "primary_asset"
-  | "supporting_asset";
+  "business_structure" | "primary_asset" | "supporting_asset";
 
 export type WorkItemStatus =
   | "draft"

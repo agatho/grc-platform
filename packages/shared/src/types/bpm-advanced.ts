@@ -87,10 +87,7 @@ export interface ProcessMiningSuggestion {
   id: string;
   conformanceResultId: string;
   suggestionType:
-    | "add_activity"
-    | "remove_activity"
-    | "add_path"
-    | "modify_path";
+    "add_activity" | "remove_activity" | "add_path" | "modify_path";
   description: string;
   evidenceFrequency?: number;
   status: "pending" | "accepted" | "rejected";

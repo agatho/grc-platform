@@ -5,11 +5,7 @@
 // ──────────────────────────────────────────────────────────────
 
 export type AnalysisType =
-  | "benford"
-  | "duplicate"
-  | "three_way_match"
-  | "outlier"
-  | "sample";
+  "benford" | "duplicate" | "three_way_match" | "outlier" | "sample";
 
 // ──────────────────────────────────────────────────────────────
 // Sampling Methods

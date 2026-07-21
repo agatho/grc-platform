@@ -8,19 +8,10 @@ export type LifecyclePhase =
   | "phase_out"
   | "inactive";
 export type GridColoringMode =
-  | "lifecycle"
-  | "time"
-  | "six_r"
-  | "criticality"
-  | "functional_fit";
+  "lifecycle" | "time" | "six_r" | "criticality" | "functional_fit";
 export type OverlayMode = "none" | "risk" | "vulnerability";
 export type RoadmapGroupBy =
-  | "lifecycle"
-  | "capability"
-  | "department"
-  | "category"
-  | "time"
-  | "six_r";
+  "lifecycle" | "capability" | "department" | "category" | "time" | "six_r";
 export type ContextDiagramSector =
   | "business"
   | "organization"

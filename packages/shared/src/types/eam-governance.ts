@@ -8,11 +8,7 @@ export type GovernanceStatus =
   | "rejected"
   | "archived";
 export type GovernanceAction =
-  | "publish"
-  | "approve"
-  | "reject"
-  | "archive"
-  | "change_to_suggestion";
+  "publish" | "approve" | "reject" | "archive" | "change_to_suggestion";
 export type GovernanceRole = "author" | "examiner" | "responsible";
 export type BpmnPlacementType = "application" | "it_component" | "data_object";
 export type BiExportFormat = "json" | "csv";

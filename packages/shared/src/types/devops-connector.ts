@@ -27,11 +27,7 @@ export type DevopsTestCategory =
   | "firewall_rules";
 
 export type DevopsResourceType =
-  | "repository"
-  | "project"
-  | "space"
-  | "endpoint"
-  | "firewall";
+  "repository" | "project" | "space" | "endpoint" | "firewall";
 
 export type ItCheckType =
   | "endpoint_encryption"
@@ -43,18 +39,10 @@ export type ItCheckType =
   | "certificate_expiry";
 
 export type ItResourceType =
-  | "endpoint"
-  | "firewall"
-  | "switch"
-  | "router"
-  | "certificate"
-  | "vpn";
+  "endpoint" | "firewall" | "switch" | "router" | "certificate" | "vpn";
 
 export type InfraComplianceStatus =
-  | "compliant"
-  | "non_compliant"
-  | "warning"
-  | "error";
+  "compliant" | "non_compliant" | "warning" | "error";
 
 export interface DevopsConnectorConfig {
   id: string;

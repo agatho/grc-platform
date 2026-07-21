@@ -18,10 +18,7 @@ export type VendorCategory =
   | "hr_services"
   | "other";
 export type DueDiligenceStatus =
-  | "pending"
-  | "in_progress"
-  | "completed"
-  | "expired";
+  "pending" | "in_progress" | "completed" | "expired";
 export type ContractStatus =
   | "draft"
   | "negotiation"
@@ -42,16 +39,9 @@ export type ContractType =
   | "consulting"
   | "other";
 export type ObligationStatus =
-  | "pending"
-  | "in_progress"
-  | "completed"
-  | "overdue";
+  "pending" | "in_progress" | "completed" | "overdue";
 export type ObligationType =
-  | "deliverable"
-  | "payment"
-  | "reporting"
-  | "compliance"
-  | "audit_right";
+  "deliverable" | "payment" | "reporting" | "compliance" | "audit_right";
 
 export interface Vendor {
   id: string;
@@ -260,11 +250,7 @@ export type QuestionType =
   | "date"
   | "file_upload";
 export type DdSessionStatus =
-  | "invited"
-  | "in_progress"
-  | "submitted"
-  | "expired"
-  | "revoked";
+  "invited" | "in_progress" | "submitted" | "expired" | "revoked";
 
 export interface QuestionOption {
   value: string;

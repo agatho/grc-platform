@@ -31,11 +31,7 @@ export type TaxRiskCategory =
   | "legal_change"
   | "interpretation";
 export type TaxRiskStatus =
-  | "identified"
-  | "assessed"
-  | "treated"
-  | "accepted"
-  | "closed";
+  "identified" | "assessed" | "treated" | "accepted" | "closed";
 export type GobdDocumentType =
   | "invoice"
   | "receipt"
@@ -45,10 +41,7 @@ export type GobdDocumentType =
   | "tax_return"
   | "assessment_notice";
 export type GobdArchiveStatus =
-  | "active"
-  | "under_review"
-  | "expired"
-  | "destroyed";
+  "active" | "under_review" | "expired" | "destroyed";
 export type IcfrControlType = "preventive" | "detective" | "corrective";
 export type IcfrProcessArea =
   | "revenue"
@@ -58,35 +51,16 @@ export type IcfrProcessArea =
   | "tax_reporting"
   | "treasury";
 export type IcfrAssertion =
-  | "existence"
-  | "completeness"
-  | "valuation"
-  | "rights"
-  | "presentation";
+  "existence" | "completeness" | "valuation" | "rights" | "presentation";
 export type IcfrFrequency =
-  | "daily"
-  | "weekly"
-  | "monthly"
-  | "quarterly"
-  | "annually";
+  "daily" | "weekly" | "monthly" | "quarterly" | "annually";
 export type IcfrAutomationLevel = "manual" | "semi_automated" | "automated";
 export type IcfrTestResult =
-  | "effective"
-  | "partially_effective"
-  | "not_effective"
-  | "not_tested";
+  "effective" | "partially_effective" | "not_effective" | "not_tested";
 export type TaxAuditType =
-  | "regular"
-  | "special"
-  | "follow_up"
-  | "vat_audit"
-  | "transfer_pricing";
+  "regular" | "special" | "follow_up" | "vat_audit" | "transfer_pricing";
 export type TaxAuditPrepStatus =
-  | "preparation"
-  | "active"
-  | "fieldwork"
-  | "closing"
-  | "completed";
+  "preparation" | "active" | "fieldwork" | "closing" | "completed";
 
 export interface TaxCmsElement {
   id: string;

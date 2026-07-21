@@ -51,8 +51,7 @@ function isProviderConfigured(provider: EmbeddingProvider): boolean {
  */
 export function getEmbeddingProvider(): EmbeddingProviderInfo | null {
   const explicit = process.env.EMBEDDING_PROVIDER as
-    | EmbeddingProvider
-    | undefined;
+    EmbeddingProvider | undefined;
   if (explicit === "openai" || explicit === "ollama") {
     if (!isProviderConfigured(explicit)) return null;
     return {

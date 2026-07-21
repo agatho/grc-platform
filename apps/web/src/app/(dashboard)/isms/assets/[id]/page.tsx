@@ -228,10 +228,7 @@ function AssetDetailInner() {
               <ProtectionLevelBadge
                 level={
                   classification.overallProtection as
-                    | "normal"
-                    | "high"
-                    | "very_high"
-                    | null
+                    "normal" | "high" | "very_high" | null
                 }
               />
             )}
@@ -451,10 +448,7 @@ function AssetDetailInner() {
                         <ProtectionLevelBadge
                           level={
                             classification.overallProtection as
-                              | "normal"
-                              | "high"
-                              | "very_high"
-                              | null
+                              "normal" | "high" | "very_high" | null
                           }
                         />
                       </div>

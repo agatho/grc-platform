@@ -3,16 +3,10 @@
 // ─── Trigger Types ──────────────────────────────────────────
 
 export type AutomationTriggerType =
-  | "entity_change"
-  | "deadline_expired"
-  | "score_threshold"
-  | "periodic";
+  "entity_change" | "deadline_expired" | "score_threshold" | "periodic";
 
 export type AutomationEventType =
-  | "created"
-  | "updated"
-  | "deleted"
-  | "status_changed";
+  "created" | "updated" | "deleted" | "status_changed";
 
 export interface AutomationTriggerConfig {
   entityType: string;

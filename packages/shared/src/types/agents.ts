@@ -1,20 +1,13 @@
 // Sprint 35: GRC Monitoring Agents types
 
 export type AgentType =
-  | "evidence_review"
-  | "compliance_monitor"
-  | "vendor_signal"
-  | "sla_monitor";
+  "evidence_review" | "compliance_monitor" | "vendor_signal" | "sla_monitor";
 export type AgentStatus = "idle" | "running" | "error" | "disabled";
 export type AgentPhase = "observe" | "evaluate" | "recommend" | "complete";
 export type RecommendationSeverity = "info" | "warning" | "critical";
 export type RecommendationStatus = "pending" | "accepted" | "dismissed";
 export type SuggestedAction =
-  | "create_task"
-  | "create_finding"
-  | "update_score"
-  | "escalate"
-  | "notify";
+  "create_task" | "create_finding" | "update_score" | "escalate" | "notify";
 
 export interface AgentConfig {
   scanFrequencyMinutes: number;

@@ -35,9 +35,7 @@
     "verified": { "v1": 1229, "v2": 6 },
     "skipped": { "v0_broken": 0 },
     "rowMismatches": [],
-    "chainMismatches": [
-      /* 6 entries */
-    ],
+    "chainMismatches": [/* 6 entries */],
     "healthy": false
   }
 }
