@@ -213,7 +213,7 @@ function FAIRResultsInner() {
                       String(value),
                       t("frequency"),
                     ]}
-                    labelFormatter={(label) => formatEUR(label)}
+                    labelFormatter={(label: unknown) => formatEURFromUnknown(label)}
                   />
                   <ReferenceLine
                     x={
@@ -293,8 +293,8 @@ function FAIRResultsInner() {
                       `${(Number(value) * 100).toFixed(1)}%`,
                       t("probability"),
                     ]}
-                    labelFormatter={(label) =>
-                      `${t("lossExceeds")} ${formatEUR(label)}`
+                    labelFormatter={(label: unknown) =>
+                      `${t("lossExceeds")} ${formatEURFromUnknown(label)}`
                     }
                   />
                   <Line
@@ -452,6 +452,15 @@ function formatEUR(value: number): string {
     currency: "EUR",
     maximumFractionDigits: 0,
   }).format(value);
+}
+
+/**
+ * Recharts >=3.9 widens Tooltip label/formatter values from number to
+ * ReactNode, so formatter callbacks must accept unknown and coerce.
+ */
+function formatEURFromUnknown(value: unknown): string {
+  const num = Number(value);
+  return Number.isFinite(num) ? formatEUR(num) : String(value ?? "-");
 }
 
 function formatCompactEUR(value: number): string {
